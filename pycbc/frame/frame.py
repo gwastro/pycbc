@@ -631,7 +631,8 @@ class StatusBuffer(DataBuffer):
                        max_buffer=2048,
                        valid_mask=3,
                        force_update_cache=False,
-                       increment_update_cache=None):
+                       increment_update_cache=None,
+                       padding=0):
         """ Create a rolling buffer of status data from a frame
 
         Parameters
@@ -654,6 +655,8 @@ class StatusBuffer(DataBuffer):
                             increment_update_cache=increment_update_cache,
                             dtype=numpy.int32)
         self.valid_mask = valid_mask
+        # NOTE padding is only saved, not actually enforced in the methods
+        self.padding = padding
 
     def check_valid(self, values, flag=None):
         """Check if the data contains any non-valid status information

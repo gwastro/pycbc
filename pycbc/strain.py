@@ -1120,7 +1120,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  increment_update_cache=None,
                  analyze_flags=None,
                  data_quality_flags=None,
-                 ):
+                 dq_padding=0):
         """ Class to produce overwhitened strain incrementally
         
         Parameters
@@ -1182,6 +1182,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             *any* use.
         data_quality_flags: list of strs
             The flags used to determine if to keep triggers.
+        dq_padding: {float, 0}, optional
+            Extra seconds to consider invalid before/after times with bad DQ.
         increment_update_cache: {str, None}, Optional
             Pattern to look for frame files in a GPS dependent directory. This
             is an alternate to the forced updated of the frame cache, and
@@ -1225,7 +1227,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 max_buffer=max_buffer,
                 valid_mask=valid_mask,
                 force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache)
+                increment_update_cache=increment_update_cache,
+                padding=dq_padding)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
