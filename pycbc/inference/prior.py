@@ -83,8 +83,10 @@ class PriorEvaluator(object):
 
         # store the names of the variable params
         self.variable_args = tuple(variable_args)
+
         # store the distributions
         self.distributions = distributions
+
         # store the constraints
         self.constraints = kwargs["constraints"] \
                                   if "constraints" in kwargs.keys() else []
