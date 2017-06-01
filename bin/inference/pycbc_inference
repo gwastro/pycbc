@@ -149,14 +149,16 @@ with ctx:
     cp = option_utils.config_parser_from_cli(opts)
 
     # get the vairable and static arguments from the config file
-    variable_args, static_args = option_utils.read_args_from_config(cp)
+    variable_args, static_args, constraints = \
+                                         option_utils.read_args_from_config(cp)
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
     dists = distributions.read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
-    prior_eval = prior.PriorEvaluator(variable_args, *dists)
+    prior_eval = prior.PriorEvaluator(variable_args, *dists,
+                                      **{"constraints" : constraints})
 
     # get sampling transformations
     if cp.has_section('sampling_parameters'):
@@ -218,7 +220,8 @@ with ctx:
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
-        init_prior = prior.PriorEvaluator(variable_args, *initial_dists)
+        init_prior = prior.PriorEvaluator(variable_args, *initial_dists,
+                                          **{"constraints" : constraints})
         p0 = None
     else:
         init_prior = None

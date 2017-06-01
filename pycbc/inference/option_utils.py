@@ -130,8 +130,30 @@ def read_args_from_config(cp, section_group=None):
             # return val if it does not begin (end) with [ (])
             static_args[key] = convert_liststring_to_list(val) 
 
-    return variable_args, static_args
+    # get additional constraints to apply in prior
+    constraints = []
+    section = "{}constraint".format(section_prefix)
+    for subsection in cp.get_subsections(section):
+        special_opts = ["name"]
+        name = cp.get_opt_tag(section, "name", subsection)
+        kwargs = {}
+        for key in cp.options(section + "-" + subsection):
+            if key == "name":
+                continue
+            val = cp.get_opt_tag(section, key, subsection)
+            if key == "required_parameters":
+                kwargs["required_parameters"] = val.split(
+                                                        bounded.VARARGS_DELIM)
+                continue
+            try:
+                val = float(val)
+            except ValueError:
+                pass
+            kwargs[key] = val
+        constraints.append(
+                         constraint.constraints[name](variable_args, **kwargs))
 
+    return variable_args, static_args, constraints
 
 def read_sampling_args_from_config(cp, section_group=None):
     """Reads sampling parameters from the given config file.
