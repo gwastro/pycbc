@@ -37,6 +37,7 @@ from pycbc import types
 from pycbc.io.inference_hdf import InferenceFile
 from pycbc.waveform import generator
 from pycbc.inference import option_utils
+from pycbc.inference import prior
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -155,7 +156,7 @@ with ctx:
     dists = distributions.read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
-    prior_eval = inference.PriorEvaluator(variable_args, *dists)
+    prior_eval = prior.PriorEvaluator(variable_args, *dists)
 
     # get sampling transformations
     if cp.has_section('sampling_parameters'):
@@ -217,7 +218,7 @@ with ctx:
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
-        initial = inference.PriorEvaluator(variable_args, *initial_dists)
+        initial = prior.PriorEvaluator(variable_args, *initial_dists)
         p0 = None
     else:
         initial = None
