@@ -327,6 +327,8 @@ class _BaseLikelihoodEvaluator(object):
         """
         logj = self.logjacobian(**params)
         logp = self._prior(**params) + logj
+        if numpy.isnan(logp):
+            logp = -numpy.inf
         return self._formatreturn(logp, prior=logp, logjacobian=logj)
 
     def prior_rvs(self, size=1, prior=None):
