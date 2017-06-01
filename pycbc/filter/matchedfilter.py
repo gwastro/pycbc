@@ -1552,7 +1552,7 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
         dq_duration = state_duration + 2 * data_reader.dq.padding
         if data_reader.dq is not None \
                 and not data_reader.dq.is_extent_valid(
-                        dq_start_time, dq_duration)):
+                        dq_start_time, dq_duration):
             return None, None
 
     stilde = data_reader.overwhitened_data(htilde.delta_f)
