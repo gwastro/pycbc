@@ -406,18 +406,18 @@ class EmceePTSampler(BaseMCMCSampler):
         # emcee returns ntemps x nwalkers x niterations
         return self._sampler.lnprobability
 
-    def set_p0(self, prior=None, samples=None):
+    def set_p0(self, samples=None, prior=None):
         """Sets the initial position of the walkers.
 
         Parameters
         ----------
-        prior : PriorEvaluator, optional
-            Use the given prior to set the initial positions rather than
-            `likelihood_evaultor`'s prior.
         samples : FieldArray, optional
             Use the given samples to set the initial positions. The samples
             will be transformed to the likelihood evaluator's `sampling_args`
             space.
+        prior : PriorEvaluator, optional
+            Use the given prior to set the initial positions rather than
+            `likelihood_evaultor`'s prior.
 
         Returns
         -------

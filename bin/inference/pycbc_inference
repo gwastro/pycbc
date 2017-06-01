@@ -214,16 +214,16 @@ with ctx:
             logging.info("Initial positions taken from iteration %i in %s",
                          iteration, opts.samples_file)
             p0 = fp.read_samples(sampler.variable_args, iteration=iteration)
-        initial = None
+        init_prior = None
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
-        initial = prior.PriorEvaluator(variable_args, *initial_dists)
+        init_prior = prior.PriorEvaluator(variable_args, *initial_dists)
         p0 = None
     else:
-        initial = None
+        init_prior = None
         p0 = None
-    sampler.set_p0(prior=initial, samples=p0)
+    sampler.set_p0(samples=p0, prior=init_prior)
 
     # setup checkpointing
     if opts.checkpoint_interval:
