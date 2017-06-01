@@ -1548,8 +1548,8 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
             return None, None
 
         # was the data quality ok for the full amount of involved data?
-        dq_start_time = state_start_time - data_reader.dq.padding
-        dq_duration = state_duration + 2 * data_reader.dq.padding
+        dq_start_time = state_start_time - data_reader.dq_padding
+        dq_duration = state_duration + 2 * data_reader.dq_padding
         if data_reader.dq is not None \
                 and not data_reader.dq.is_extent_valid(
                         dq_start_time, dq_duration):

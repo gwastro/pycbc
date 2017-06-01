@@ -1227,8 +1227,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 max_buffer=max_buffer,
                 valid_mask=valid_mask,
                 force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache,
-                padding=dq_padding)
+                increment_update_cache=increment_update_cache)
+            self.dq_padding = dq_padding
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
