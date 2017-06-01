@@ -79,7 +79,7 @@ class SingleCoincForGraceDB(object):
             in the hdf file for this time.
         """
         self.ifos = ifos
-        self.followup_ifos = kwargs.get('followup_ifos') or []
+        followup_ifos = kwargs.get('followup_ifos') or []
         self.template_id = coinc_results['foreground/%s/template_id' % self.ifos[0]]
 
         # remember if this should be marked as HWINJ
@@ -129,7 +129,7 @@ class SingleCoincForGraceDB(object):
             self.snr_series = {}
             self.snr_series_psd = {}
             htilde = kwargs['bank'][self.template_id]
-            for ifo in self.ifos + self.followup_ifos:
+            for ifo in ifos + followup_ifos:
                 if ifo in ifos:
                     trig_time = coinc_results['foreground/%s/end_time' % ifo]
                 else:
@@ -139,7 +139,7 @@ class SingleCoincForGraceDB(object):
                 # produce valid SNR series.
                 snr_series, snr_series_psd = compute_followup_snr_series(
                         kwargs['data_readers'][ifo], htilde, trig_time,
-                        check_state=(ifo in self.followup_ifos))
+                        check_state=(ifo in followup_ifos))
                 if snr_series is not None:
                     self.snr_series[ifo] = snr_series
                     self.snr_series_psd[ifo] = snr_series_psd
@@ -149,7 +149,7 @@ class SingleCoincForGraceDB(object):
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
         sngl_populated = None
-        for sngl_id, ifo in enumerate(ifos + self.followup_ifos):
+        for sngl_id, ifo in enumerate(ifos + followup_ifos):
             if self.upload_snr_series and ifo not in self.snr_series:
                 # SNR series could not be computed, so skip this
                 continue
@@ -193,7 +193,7 @@ class SingleCoincForGraceDB(object):
         bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
                                  'spin1y spin1z spin2x spin2y spin2z').split()
         for sngl in sngl_inspiral_table:
-            if sngl.ifo in self.followup_ifos:
+            if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
                 sngl.set_end(lal.LIGOTimeGPS(subthreshold_sngl_time))
