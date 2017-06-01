@@ -88,7 +88,7 @@ class PriorEvaluator(object):
         self.distributions = distributions
 
         # store the constraints
-        self.constraints = kwargs["constraints"] \
+        self._constraints = kwargs["constraints"] \
                                   if "constraints" in kwargs.keys() else []
 
         # check that all of the variable args are described by the given
@@ -112,7 +112,7 @@ class PriorEvaluator(object):
         # of samples rejected
         n_test_samples = kwargs["n_test_samples"] \
                              if "n_test_samples" in kwargs else int(1e6)
-        if self.constraints:
+        if self._constraints:
             logging.info("Renormalizing prior for constraints")
 
             # draw samples
@@ -124,7 +124,7 @@ class PriorEvaluator(object):
 
             # evaluate constraints
             result = numpy.ones(len(samples.values()[0]), dtype=bool)
-            for constraint in self.constraints:
+            for constraint in self._constraints:
                 result = constraint(samples) & result
 
             # set new scaling factor for prior to be
@@ -162,7 +162,7 @@ class PriorEvaluator(object):
     def __call__(self, **params):
         """Evalualate prior for parameters.
         """
-        for constraint in self.constraints:
+        for constraint in self._constraints:
             if not constraint(params):
                 return -numpy.inf
         return sum([d(**params)
