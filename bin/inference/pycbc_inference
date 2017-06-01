@@ -155,7 +155,7 @@ with ctx:
     dists = distributions.read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
-    prior = inference.PriorEvaluator(variable_args, *dists)
+    prior_eval = inference.PriorEvaluator(variable_args, *dists)
 
     # get sampling transformations
     if cp.has_section('sampling_parameters'):
@@ -186,7 +186,7 @@ with ctx:
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
                         generated_waveform, stilde_dict,
                         low_frequency_cutoff_dict.values()[0],
-                        psds=psd_dict, prior=prior,
+                        psds=psd_dict, prior=prior_eval,
                         sampling_parameters=sampling_parameters,
                         replace_parameters=replace_parameters,
                         sampling_transforms=sampling_transforms)
