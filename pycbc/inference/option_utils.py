@@ -19,12 +19,13 @@
 
 import logging
 import numpy
+import pycbc.inference.sampler
 from pycbc import conversions
 from pycbc import transforms
+from pycbc.distributions import constraints
 from pycbc.io import InferenceFile
-from pycbc.workflow import WorkflowConfigParser
-import pycbc.inference.sampler
 from pycbc.inference import likelihood
+from pycbc.workflow import WorkflowConfigParser
 from pycbc.pool import choose_pool
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
@@ -131,7 +132,7 @@ def read_args_from_config(cp, section_group=None):
             static_args[key] = convert_liststring_to_list(val) 
 
     # get additional constraints to apply in prior
-    constraints = []
+    cons = []
     section = "{}constraint".format(section_prefix)
     for subsection in cp.get_subsections(section):
         special_opts = ["name"]
@@ -150,10 +151,9 @@ def read_args_from_config(cp, section_group=None):
             except ValueError:
                 pass
             kwargs[key] = val
-        constraints.append(
-                         constraint.constraints[name](variable_args, **kwargs))
+        cons.append(constraints.constraints[name](variable_args, **kwargs))
 
-    return variable_args, static_args, constraints
+    return variable_args, static_args, cons
 
 def read_sampling_args_from_config(cp, section_group=None):
     """Reads sampling parameters from the given config file.
