@@ -81,18 +81,18 @@ class PriorEvaluator(object):
 
     def __init__(self, variable_args, *distributions, **kwargs):
 
-        # store the names of the sampling parameters
+        # store the names of the parameters defined in the distributions
         self.variable_args = tuple(variable_args)
 
         # store the distributions
         self.distributions = distributions
 
-        # store the constraints on the sampling parameters
-        # with uniform distributions
+        # store the constraints on the parameters defined inside the
+        # distributions list
         self._constraints = kwargs["constraints"] \
                                   if "constraints" in kwargs.keys() else []
 
-        # check that all of the sampling parameters are described by the given
+        # check that all of the supplied parameters are described by the given
         # distributions
         distparams = set()
         [distparams.update(set(dist.params)) for dist in distributions]
