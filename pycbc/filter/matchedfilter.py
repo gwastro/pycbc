@@ -1539,7 +1539,7 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
     """
     if check_state:
         # was the detector observing for the full amount of involved data?
-        state_start_time = trig_time - duration / 2 - htilde.duration
+        state_start_time = trig_time - duration / 2 - htilde.length_in_time
         state_end_time = trig_time + duration / 2
         state_duration = state_end_time - state_start_time
         if data_reader.state is not None \

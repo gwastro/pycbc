@@ -1202,6 +1202,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.data_quality_flags = data_quality_flags
         self.state = None
         self.dq = None
+        self.dq_padding = dq_padding
 
         # State channel
         if state_channel is not None:
@@ -1228,7 +1229,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 valid_mask=valid_mask,
                 force_update_cache=force_update_cache,
                 increment_update_cache=increment_update_cache)
-            self.dq_padding = dq_padding
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
