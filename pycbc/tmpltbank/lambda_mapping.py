@@ -44,7 +44,7 @@ def generate_mapping(order):
 
     NOTE: This is not a great way of doing this. It would be nice to clean
     this up. Hence pulling this function out. The valid PN orders are
-    {}
+    {0}
 
     Parameters
     ----------
@@ -91,7 +91,7 @@ def generate_inverse_mapping(order):
     This function will generate the opposite of generate mapping. So where
     generate_mapping gives dict[key] = item this will give
     dict[item] = key. Valid PN orders are:
-    {}
+    {0}
     
     Parameters
     ----------
@@ -152,7 +152,7 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
-    {}
+    {0}
  
     Parameters
     ----------
@@ -245,7 +245,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
     """
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
-    {}
+    {0}
  
     Parameters
     ----------
@@ -327,7 +327,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
             lambda7 = lambda7 * 3./(128.*eta) * (pi * totmass * f0)**(2/3.)
             lambdas.append(lambda7)
         else:
-            err_msg = "Do not understand term {}.".format(mapping[idx])
+            err_msg = "Do not understand term {0}.".format(mapping[idx])
             raise ValueError(err_msg)
                  
     return lambdas
