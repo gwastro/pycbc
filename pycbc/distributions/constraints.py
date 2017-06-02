@@ -17,8 +17,6 @@ This modules provides classes for evaluating multi-dimensional constraints.
 """
 
 from pycbc import transforms
-from pycbc.distributions import bounded
-from pycbc.workflow import configuration
 
 class Constraint(object):
     """ Creates a constraint that evaluates to True if parameters obey
@@ -70,11 +68,11 @@ class CartesianSpinSpace(Constraint):
     def _constraint(self, params):
         """ Evaluates constraint function.
         """
-        if (params["spin1x"]**2 + params["spin1y"]**2
-            + params["spin1z"]**2)**2 > 1:
+        if (params["spin1x"]**2 + params["spin1y"]**2 +
+                params["spin1z"]**2)**2 > 1:
             return False
-        elif (params["spin2x"]**2 + params["spin2y"]**2
-              + params["spin2z"]**2)**2 > 1:
+        elif (params["spin2x"]**2 + params["spin2y"]**2 +
+                  params["spin2z"]**2)**2 > 1:
             return False
         else:
             return True
