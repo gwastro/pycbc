@@ -36,6 +36,7 @@ matplotlib.use('agg')
 from matplotlib import pyplot
 from multiprocessing import Pool
 import pycbc.results
+from pycbc import transforms
 from pycbc.inference import option_utils
 from pycbc.io.inference_hdf import InferenceFile
 from pycbc.results.scatter_histograms import create_multidim_plot, \
@@ -183,9 +184,13 @@ else:
     raise ValueError("At least one of frame-number or frame-step must be "
                      "provided.")
 
-samples = fp.read_samples(parameters, thin_start=thin_start,
-                          thin_end=thin_end, thin_interval=thinint,
+# get samples from InferenceFile
+file_parameters, trans = transforms.get_common_cbc_transforms(
+                                         parameters, fp.variable_args)
+samples = fp.read_samples(file_parameters, thin_start=thin_start,
+                          thin_interval=thinint, thin_end=thin_end,
                           iteration=itermask, flatten=False)
+samples = transforms.apply_transforms(samples, trans)
 
 # Get z-values
 if opts.z_arg is not None:
@@ -242,7 +247,7 @@ def _make_frame(frame):
         z = None
     sample_num = str(iterations[frame] + 1)
     sample_num = sample_num.zfill(len(str(max_sample_num)))
-    output = opts.output_file + '-{}.png'.format(sample_num)
+    output = opts.output_prefix + '-{}.png'.format(sample_num)
 
     fig, axis_dict = create_multidim_plot(parameters, plotargs, labels=labels,
                         mins=mins, maxs=maxs,
@@ -289,11 +294,12 @@ mfunc(make_frame, range(len(iterations)))
 
 if opts.movie_file:
     logging.info("Making movie")
-    frame_files = opts.output_file + "*.png"
+    frame_files = opts.output_prefix + "*.png"
     if os.path.isfile(opts.movie_file):
         os.remove(opts.movie_file)
-    subprocess.call(["ffmpeg","-pix_fmt","yuv420p","-s","1024x768",
-                     "-pattern_type","glob","-i",frame_files,opts.movie_file])
+    subprocess.call(["ffmpeg", "-pix_fmt", "yuv420p", "-s", "1024x768",
+                     "-pattern_type", "glob", "-i",
+                     frame_files, opts.movie_file])
     if opts.cleanup:
         logging.info("Removing frames")
         for frame in glob.glob(frame_files):
