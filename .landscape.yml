@@ -6,6 +6,9 @@ ignore-patterns:
     - test/*
     - docs/*
     - tools/*
+    - build/*
+    - dist/*
+    - PyCBC.egg-info/*
 
 pylint:
   disable:
