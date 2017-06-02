@@ -22,6 +22,7 @@ import numpy
 import pycbc.inference.sampler
 from pycbc import conversions
 from pycbc import transforms
+from pycbc.distributions import bounded
 from pycbc.distributions import constraints
 from pycbc.io import InferenceFile
 from pycbc.inference import likelihood
@@ -135,7 +136,6 @@ def read_args_from_config(cp, section_group=None):
     cons = []
     section = "{}constraint".format(section_prefix)
     for subsection in cp.get_subsections(section):
-        special_opts = ["name"]
         name = cp.get_opt_tag(section, "name", subsection)
         kwargs = {}
         for key in cp.options(section + "-" + subsection):
