@@ -157,6 +157,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_virtualenv" ] ; then
 
   echo -e "\\n>> [`date`] Installing PyCBC and dependencies"
   cd /pycbc
+  pip install Mako
   python setup.py install
 
   echo -e "\\n>> [`date`] Installing PyCBC PyLAL"
