@@ -53,7 +53,6 @@ matrix:
     services:
     - docker
   - env: PYCBC_CONTAINER=build_and_test
-    sudo: required
 
 before_install:
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
