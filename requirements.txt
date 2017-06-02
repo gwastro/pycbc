@@ -12,7 +12,7 @@ jinja2
 mpld3>=0.3
 pyRXP>=2.1.0
 pycbc-glue-obsolete==1.1.0
-weave
+weave>=0.16.0
 
 # Needed for Parameter Estimation Tasks
 kombine==0.8.1
@@ -20,12 +20,10 @@ emcee>=2.2.0
 corner>=2.0.1
 
 # For LDG service access
+dqsegdb
 http://download.pegasus.isi.edu/pegasus/4.7.3/pegasus-python-source-4.7.3.tar.gz
-git+https://github.com/ligovirgo/dqsegdb@clean_pip_install_1_4_1#egg=dqsegdb
 
 # For building documentation
 Sphinx>=1.5.0
 sphinx-rtd-theme
 git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
-
-pycbc

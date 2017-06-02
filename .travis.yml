@@ -14,8 +14,6 @@ addons:
     - libfreetype6-dev
     - libdb-dev
 env:
-  matrix:
-  - PYCBC_CONTAINER=build_and_test
   global:
   - secure: xlIlPHEm1gN6HCR9tnAWE/Nc9tuX9slCSTbEEcIW+XM1KgZLrH6I+nfvWyUGIgQJ+VVZYyYNNSQaGa7rS06eq6hXtdfhC6Qr9kyDkgCkcLhowXEf/8vdrJlTsLA7FuPdJh+mWIIW3vemMVQaz4fG7pf29zcepbUKM3f1bcJTa36sDU4fltPBb8vMwYkgso9R7M/b/G7fCPKr/oQedYNgCXX0AUijUPV60xaZ9VLrLpwYFGTvcXhTySM7Ut+4WxsqPDuqNkQvqZh6ytUu+vUXhuB913HnDqNx2UxrLiIg0Bv34NYNQ+6J9UUTK9XqhTIcSZR91LUYZZnLu9YhPk3QaeShgQSPcF6fLtVX59DPyUEcegVi4DvsDCrGYwejj8Vy7M8sB0gm/quRnXXwykktVnvWBodCWF3XuwvDZhMfqjvjKBhokeTXAg66e2GDC4VqEyTscMgNZz9DZr6A2uHRmMFCs0xwFWfVHRsZOAccbWACcVyw4rqfElBqStLSl9AWqPcFOQDHh4+tVNrdgDL+M5kjc9AGC0jZ8R7+cJevaUssVh381RHHry5Sm9vqvtMf3EpoUMkP/oMPwoKmT+49OJEWOavDHOtX4zDkFlYCSClSpPx9F1hV/kOHEe2zo1eLzmk0v+NbLAyX5AVVuDfXn/t134JiRFsgxMFZXvU9zno=
   - secure: hOgtAVrb1IRR0EU0+JDmpZ/biuBoT+ZSNYdyy9KDKb+k4G5hMqJX3rC5l8HFGkSWvB8wTXS84SuhuXMgJiVDVmDhSI4dXp8XCbjhv4DgdiCxsA2iSAz+RrAUYDQ4p2jcE/CHI7kqGN/CGpu64WAyC9UjKC+vMwPhwgMvievJszEHBrvTPmPGaSnJUXJ+sorDorw08JncZ2EsBhp7P1pEfk4EAtSYzjaVEjzMMP+1GYJaogHliyH0rWuRktR3Zy2uGfRrpSrKIOlqevYfipkmcwdg5f0LKfvBrWngjin1fQ170lsXfFlMZmLUZxdGJUpf2ApgJgmkxRw0LDE0kDU2XccbEhMuJSAbThT7J2FQ1K2z/53Xi/1Iof8YVbv0t/dxkt98VKg/vZR29joIeeA71KWmo+A65qhgJahxXvyhUWysP1XvE2IeQNJbXFahHO3CHP8lDHnfHbMpMz1eHdCn8SG5q8AqB/1Aqs2iEqpCtxk7+ihtmgqoktClZ6mI5QEzzyU2G6JQBHagUMrs9e2qB/t2tLhviyJrn0F7L996brlHzJ4oVI7GUr1KBmyE7TpYtXe/fr62YLPRj0nhec2G6hrJJfA/VoBnaXNqV0bVwGDWN83buKimt9UZkYXxY8vZCg0spaM098/1dJO9SxnRz7y7UEfXakmAYERh1ylijSk=
@@ -54,6 +52,8 @@ matrix:
     sudo: required
     services:
     - docker
+  - env: PYCBC_CONTAINER=build_and_test
+
 before_install:
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then docker build -t ${DOCKER_IMG}-tmp . ; fi
