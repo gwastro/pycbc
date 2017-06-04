@@ -79,10 +79,7 @@ class SingleCoincForGraceDB(object):
             in the hdf file for this time.
         """
         self.ifos = ifos
-        if 'followup_ifos' in kwargs and kwargs['followup_ifos'] is not None:
-            self.followup_ifos = kwargs['followup_ifos']
-        else:
-            self.followup_ifos = []
+        followup_ifos = kwargs.get('followup_ifos') or []
         self.template_id = coinc_results['foreground/%s/template_id' % self.ifos[0]]
 
         # remember if this should be marked as HWINJ
@@ -123,16 +120,42 @@ class SingleCoincForGraceDB(object):
         coinc_event_table.append(coinc_event_row)
         outdoc.childNodes[0].appendChild(coinc_event_table)
 
+        # compute SNR time series
+        subthreshold_sngl_time = numpy.mean(
+                [coinc_results['foreground/%s/end_time' % ifo]
+                 for ifo in ifos])
+        self.upload_snr_series = kwargs.get('upload_snr_series')
+        if self.upload_snr_series:
+            self.snr_series = {}
+            self.snr_series_psd = {}
+            htilde = kwargs['bank'][self.template_id]
+            for ifo in ifos + followup_ifos:
+                if ifo in ifos:
+                    trig_time = coinc_results['foreground/%s/end_time' % ifo]
+                else:
+                    trig_time = subthreshold_sngl_time
+                # NOTE we only check the state/DQ of followup IFOs here.
+                # IFOs producing the coincidence are assumed to also
+                # produce valid SNR series.
+                snr_series, snr_series_psd = compute_followup_snr_series(
+                        kwargs['data_readers'][ifo], htilde, trig_time,
+                        check_state=(ifo in followup_ifos))
+                if snr_series is not None:
+                    self.snr_series[ifo] = snr_series
+                    self.snr_series_psd[ifo] = snr_series_psd
+
         # Set up sngls
         sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
-        sngl_event_id_map = {}
         sngl_populated = None
-        for sngl_id, ifo in enumerate(ifos + self.followup_ifos):
+        for sngl_id, ifo in enumerate(ifos + followup_ifos):
+            if self.upload_snr_series and ifo not in self.snr_series:
+                # SNR series could not be computed, so skip this
+                continue
+
             sngl = return_empty_sngl(nones=True)
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
-            sngl_event_id_map[ifo] = sngl.event_id
             sngl.process_id = proc_id
             sngl.ifo = ifo
             names = [n.split('/')[-1] for n in coinc_results
@@ -163,14 +186,14 @@ class SingleCoincForGraceDB(object):
             coinc_map_row.event_id = sngl.event_id
             coinc_event_map_table.append(coinc_map_row)
 
+            if self.upload_snr_series and ifo in self.snr_series:
+                snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
+
         # for subthreshold detectors, respect BAYESTAR's assumptions and checks
         bayestar_check_fields = ('mass1 mass2 mtotal mchirp eta spin1x '
                                  'spin1y spin1z spin2x spin2y spin2z').split()
-        subthreshold_sngl_time = numpy.mean(
-                [coinc_results['foreground/%s/end_time' % ifo]
-                 for ifo in ifos])
         for sngl in sngl_inspiral_table:
-            if sngl.ifo in self.followup_ifos:
+            if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
                 sngl.set_end(lal.LIGOTimeGPS(subthreshold_sngl_time))
@@ -197,24 +220,6 @@ class SingleCoincForGraceDB(object):
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
         self.outdoc = outdoc
         self.time = sngl_populated.get_end()
-
-        # compute SNR time series
-        self.upload_snr_series = kwargs['upload_snr_series']
-        if self.upload_snr_series:
-            htilde = kwargs['bank'][self.template_id]
-            self.snr_series = {}
-            self.snr_series_psd = {}
-            for ifo in self.ifos + self.followup_ifos:
-                if ifo in ifos:
-                    trig_time = coinc_results['foreground/%s/end_time' % ifo]
-                else:
-                    trig_time = subthreshold_sngl_time
-                self.snr_series[ifo], self.snr_series_psd[ifo] = \
-                        compute_followup_snr_series(
-                                kwargs['data_readers'][ifo], htilde,
-                                trig_time)
-                snr_series_to_xml(self.snr_series[ifo], outdoc,
-                                  sngl_event_id_map[ifo])
 
     def save(self, filename):
         """Write this trigger to gracedb compatible xml format
@@ -286,7 +291,7 @@ class SingleCoincForGraceDB(object):
 
         if self.upload_snr_series:
             snr_series_fname = fname + '.hdf'
-            for ifo in self.ifos + self.followup_ifos:
+            for ifo in self.snr_series:
                 self.snr_series[ifo].save(snr_series_fname,
                                           group='%s/snr' % ifo)
                 self.snr_series_psd[ifo].save(snr_series_fname,

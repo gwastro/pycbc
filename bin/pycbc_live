@@ -365,7 +365,8 @@ with ctx:
                             force_update_cache=args.force_update_cache,
                             increment_update_cache=args.increment_update_cache[ifo],
                             analyze_flags=args.analyze_flags,
-                            data_quality_flags=args.data_quality_flags)
+                            data_quality_flags=args.data_quality_flags,
+                            dq_padding=args.data_quality_padding)
     if args.enable_background_estimation and evnt.rank == 0:
         estimator = LiveCoincTimeslideBackgroundEstimator.from_cli(args,
                             len(bank), args.analysis_chunk, ifos)
@@ -429,8 +430,9 @@ with ctx:
                     start = data_reader[ifo].start_time
                     end = data_reader[ifo].end_time
                     times = results[ifo]['end_time']
-                    idx = data_reader[ifo].dq.indices_of_flag(start, valid_pad, times,
-                                                              padding=args.data_quality_padding)
+                    idx = data_reader[ifo].dq.indices_of_flag(
+                            start, valid_pad, times,
+                            padding=data_reader[ifo].dq_padding)
                     logging.info('Keeping %s triggers out of %s triggers in %s', len(idx), len(times), ifo)
                     for key in results[ifo]:
                         if len(results[ifo][key]) > 0:

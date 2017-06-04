@@ -1498,7 +1498,7 @@ class LiveBatchMatchedFilter(object):
         return result, veto_info
 
 def compute_followup_snr_series(data_reader, htilde, trig_time,
-                                duration=0.095):
+                                duration=0.095, check_state=True):
     """Given a StrainBuffer, a template frequency series and a trigger time,
     compute a portion of the SNR time series centered on the trigger for its
     rapid sky localization and followup.
@@ -1523,14 +1523,38 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
         Duration of the computed SNR series in seconds. If omitted, it defaults
         to twice the Earth light travel time plus 10 ms of timing uncertainty.
 
+    check_state : boolean
+        If True, and the detector was offline or flagged for bad data quality
+        at any point during the inspiral, then return (None, None) instead.
+
     Returns
     -------
     snr : TimeSeries
-        The portion of SNR around the trigger.
+        The portion of SNR around the trigger. None if the detector is offline
+        or has bad data quality, and check_state is True.
 
     psd : FrequencySeries
-        The noise PSD corresponding to the trigger time.
+        The noise PSD corresponding to the trigger time. None if the detector
+        is offline or has bad data quality, and check_state is True.
     """
+    if check_state:
+        # was the detector observing for the full amount of involved data?
+        state_start_time = trig_time - duration / 2 - htilde.length_in_time
+        state_end_time = trig_time + duration / 2
+        state_duration = state_end_time - state_start_time
+        if data_reader.state is not None \
+                and not data_reader.state.is_extent_valid(
+                        state_start_time, state_duration):
+            return None, None
+
+        # was the data quality ok for the full amount of involved data?
+        dq_start_time = state_start_time - data_reader.dq_padding
+        dq_duration = state_duration + 2 * data_reader.dq_padding
+        if data_reader.dq is not None \
+                and not data_reader.dq.is_extent_valid(
+                        dq_start_time, dq_duration):
+            return None, None
+
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
     norm = 4.0 * htilde.delta_f * htilde.sigmasq(stilde.psd) ** (-0.5)
