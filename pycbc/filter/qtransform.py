@@ -128,14 +128,13 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=
     """
     # store q-transforms of each tile in a dict
     qplane_qtrans_dict = {}
-    dur = fseries.to_timeseries().duration
+    dur = 1.0 / fseries.delta_f
 
     # check for sampling rate
     sampling = (len(fseries) - 1) * 2 * fseries.delta_f
 
     max_energy = []
     for i, key in enumerate(qplane_tile_dict):
-        print key
         energies_lst=[]
         for tile in qplane_tile_dict[key]:
             energies = qtransform(fseries, tile[1], tile[0])
@@ -169,11 +168,10 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=
             frequencies.append(i[0])
 
         # 2-D interpolation
-        time_array = np.linspace(-(dur / 2.),(dur / 2.),int(dur * sampling))
+        time_array = np.linspace(0, dur, int(dur * sampling))
         interp = interp2d(time_array, frequencies, result)
-
-    out = interp(np.linspace(0, 1, 1. / tres), np.arange(int(frange[0]), int(frange[1]), fres))
-
+ 
+    out = interp(np.arange(0, dur, tres), np.arange(int(frange[0]), int(frange[1]), fres))
     return out, interp
 
 def qtiling(fseries, qrange, frange, mismatch):
@@ -201,7 +199,7 @@ def qtiling(fseries, qrange, frange, mismatch):
     deltam = deltam_f(mismatch)
     qrange = (float(qrange[0]), float(qrange[1]))
     frange = [float(frange[0]), float(frange[1])]
-    dur = fseries.to_timeseries().duration
+    dur = 1.0 / fseries.delta_f
     qplane_tile_dict = {}
 
     # check for sampling rate
@@ -218,8 +216,8 @@ def qtiling(fseries, qrange, frange, mismatch):
         qtilefreq = np.array(list(_iter_frequencies(q, frange, mismatch, dur)))
         qlst = np.empty(len(qtilefreq), dtype=float)
         qlst.fill(q)
-        qtiles_array = np.vstack((qtilefreq,qlst)).T
-        qplane_tiles_list = list(map(tuple,qtiles_array))
+        qtiles_array = np.vstack((qtilefreq, qlst)).T
+        qplane_tiles_list = list(map(tuple, qtiles_array))
         qplane_tile_dict[q] = qplane_tiles_list
 
     return qplane_tile_dict, frange
@@ -321,7 +319,7 @@ def qtransform(fseries, Q, f0):
 
     # initialize parameters
     qprime = Q / 11**(1/2.) # ... self.qprime
-    dur = fseries.to_timeseries().duration
+    dur = 1.0 / fseries.delta_f
 
     # check for sampling rate
     sampling = (len(fseries) - 1) * 2 * fseries.delta_f
@@ -330,8 +328,8 @@ def qtransform(fseries, Q, f0):
     window_size = 2 * int(f0 / qprime * dur) + 1
 
     # get start and end indices
-    start = (f0 - (f0 / qprime)) * dur
-    end = start + window_size
+    start = int((f0 - (f0 / qprime)) * dur)
+    end = int(start + window_size)
 
     # apply window to fft
     # normalize and generate bi-square window
@@ -340,7 +338,7 @@ def qtransform(fseries, Q, f0):
 
     # choice of output sampling rate
     output_sampling = sampling # Can lower this to highest bandwidth
-    output_samples = dur * output_sampling
+    output_samples = int(dur * output_sampling)
 
     # pad data, move negative frequencies to the end, and IFFT
     padded = np.pad(windowed, padding(window_size, output_samples), mode='constant')
@@ -355,7 +353,7 @@ def qtransform(fseries, Q, f0):
                          delta_t=tdenergy.delta_t, copy=False)
     energy = type(cenergy)(
         cenergy.real() ** 2. + cenergy.imag() ** 2.,
-        delta_t=1, copy=False)
+        delta_t=1./sampling, copy=False)
     medianenergy = np.median(energy)
     norm_energy = energy / medianenergy
    
