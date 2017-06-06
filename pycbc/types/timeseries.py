@@ -147,6 +147,11 @@ class TimeSeries(Array):
         return int(1.0/self.delta_t)
     sample_rate = property(get_sample_rate,
                            doc="The sample rate of the time series.")
+    @property
+    def delta_f(self):
+        """Return the delta_f this ts would have in the frequency domain
+        """
+        return 1.0 / self.duration
 
     @property
     def start_time(self):
