@@ -131,10 +131,23 @@ class FrequencySeries(Array):
         return self.epoch
 
     @property
+    def end_time(self):
+        """Return the end time of this vector
+        """
+        return self.start_time + self.duration
+
+    @property
     def duration(self):
         """Return the time duration of this vector
         """
         return 1.0 / self.delta_f
+
+    @property
+    def delta_t(self):
+        """Return the time between samples if this were a time series.
+        This assume the time series is even in length!
+        """
+        return 1.0 / self.sample_rate
 
     @property
     def sample_rate(self):
