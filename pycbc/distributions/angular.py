@@ -222,6 +222,10 @@ class SinAngle(UniformAngle):
         self._domain = boundaries.Bounds(self._domainbounds[0],
             self._domainbounds[1], btype_min='closed', btype_max='closed',
             cyclic=False)
+        self._lognorm = -sum([numpy.log(
+            abs(self._func(bnd[1]) - self._func(bnd[0]))) \
+            for bnd in self._bounds.values()])
+        self._norm = numpy.exp(self._lognorm)
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
