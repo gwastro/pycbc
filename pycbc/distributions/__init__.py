@@ -23,6 +23,7 @@ from pycbc.distributions.gaussian import *
 from pycbc.distributions.power_law import *
 from pycbc.distributions.sky_location import *
 from pycbc.distributions.uniform import *
+from pycbc.distributions import uniform_log
 from pycbc.distributions.spins import IndependentChiPChiEff
 
 # a dict of all available distributions
@@ -39,6 +40,7 @@ distribs = {
     SinAngle.name : SinAngle,
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
+    uniform_log.UniformLog10.name : uniform_log.UniformLog10,
 }
 
 def read_distributions_from_config(cp, section="prior"):
