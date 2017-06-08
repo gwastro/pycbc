@@ -20,6 +20,23 @@ import numpy
 from pycbc.distributions import uniform
 
 class UniformLog10(uniform.Uniform):
+    """ A uniform distribution on the log base 10 of the given parameters.
+    The parameters are independent of each other. Instances of this class can
+    be called like a function. By default, logpdf will be called.
+
+    Parameters
+    ----------
+    \**params :
+        The keyword arguments should provide the names of parameters and their
+        corresponding bounds, as either tuples or a `boundaries.Bounds`
+        instance.
+
+    Attributes
+    ----------
+    name : "uniform_log10"
+        The name of this distribution.
+    """
+    name = "uniform_log10"
 
     def __init__(self, **params):
         super(UniformLog10, self).__init__(**params)
@@ -28,6 +45,24 @@ class UniformLog10(uniform.Uniform):
         self._lognorm = numpy.log(self._norm)
 
     def rvs(self, size=1, param=None):
+        """Gives a set of random values drawn from this distribution.
+
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
+        """
 
         if param is not None:
             dtype = [(param, float)]
@@ -49,7 +84,7 @@ class UniformLog10(uniform.Uniform):
         if kwargs in self:
             vals = numpy.array([numpy.log(10) * self._norm * kwargs[param]
                                 for param in kwargs.keys()])
-            return 1.0 / vals
+            return 1.0 / numpy.prod(vals)
         else:
             return 0.
 
