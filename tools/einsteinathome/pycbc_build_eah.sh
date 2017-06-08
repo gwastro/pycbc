@@ -1287,7 +1287,8 @@ if $failed; then
     p="lal-data-r11.tar.gz"
     md5="d4009ac3328fa55b654c9fafc1006a5c"
     rm -f "$p"
-    wget $wget_opts "$albert/$p"
+    # FIXME: @bema-ligo switch this to albert
+    wget $wget_opts "$duncan/$p"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
         exit 1
