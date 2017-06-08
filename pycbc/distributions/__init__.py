@@ -23,7 +23,7 @@ from pycbc.distributions.gaussian import *
 from pycbc.distributions.power_law import *
 from pycbc.distributions.sky_location import *
 from pycbc.distributions.uniform import *
-from pycbc.distributoins import uniform_log
+from pycbc.distributions import uniform_log
 from pycbc.distributions.spins import IndependentChiPChiEff
 
 # a dict of all available distributions
