@@ -95,7 +95,7 @@ single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
             triggername, segDir)
-    logging.error("No science segments available.")
+    logging.warning("No science segments available.")
     sys.exit()
 elif len(sciSegs.keys()) < 2 and not single_ifo:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(sciSegs),
@@ -104,20 +104,19 @@ elif len(sciSegs.keys()) < 2 and not single_ifo:
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
     msg += "configuration file." 
-    logging.error(msg)
+    logging.warning(msg)
     sys.exit()
-elif len(sciSegs.keys()) < 2:
-    logging.info("Generating a single IFO search.")
-    onSrc, offSrc = _workflow.get_triggered_single_ifo_segment(wflow, segDir,
-                                                               sciSegs)
 else:
-    onSrc, offSrc = _workflow.get_triggered_coherent_segment(wflow, segDir,
-            sciSegs, single_ifo)
+    if len(sciSegs.keys()) < 2:
+        logging.info("Generating a single IFO search.")
+    onSrc, offSrc = _workflow.generate_triggered_segment(wflow, segDir,
+                                                         sciSegs)
 
 sciSegs = segmentlistdict(sciSegs)
 if onSrc is None:
     plot_met = make_grb_segments_plot(wflow, sciSegs, triggertime, triggername,
             segDir, fail_criterion=offSrc)
+    logging.info("Making segment plot and exiting.")
     sys.exit()
 else:
     plot_met = make_grb_segments_plot(wflow, sciSegs, triggertime, triggername,

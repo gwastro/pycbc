@@ -678,7 +678,6 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
     # Make plot
     fig, subs = plt.subplots(len(ifos), sharey=True)
     plt.xticks(rotation=20, ha='right')
-    plt.subplots_adjust(bottom=0.15)
     for sub, ifo in zip(subs, ifos):
         for seg in science_segs[ifo]:
             sub.add_patch(Rectangle((seg[0], 0.1), abs(seg), 0.8,
@@ -713,23 +712,25 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
         sub.set_frame_on(False)
         sub.set_yticks([])
         sub.set_ylabel(ifo, rotation=45)
+        sub.set_ylim([0, 1])
         sub.set_xlim([float(extent[0]), float(extent[1])])
         sub.get_xaxis().get_major_formatter().set_useOffset(False)
         sub.get_xaxis().get_major_formatter().set_scientific(False)
         sub.get_xaxis().tick_bottom()
-        if not sub is subs[-1]:
+        if sub is subs[-1]:
+            sub.tick_params(labelsize=10, pad=1)
+        else:
             sub.get_xaxis().set_ticks([])
             sub.get_xaxis().set_ticklabels([])
-        else:
-            sub.tick_params(labelsize=10, pad=1)
 
     xmin, xmax = fig.axes[-1].get_xaxis().get_view_interval()
     ymin, ymax = fig.axes[-1].get_yaxis().get_view_interval()
-    fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymax), color='black',
-                                linewidth=2))
+    fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymin), color='black',
+                                   linewidth=2))
     fig.axes[-1].set_xlabel('GPS Time')
 
     fig.axes[0].set_title('Science Segments for GRB%s' % trigger_name)
+    plt.tight_layout()
     fig.subplots_adjust(hspace=0)
     
     plot_name = 'GRB%s_segments.png' % trigger_name
