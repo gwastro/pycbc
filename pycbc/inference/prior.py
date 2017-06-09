@@ -131,7 +131,7 @@ class PriorEvaluator(object):
             # set new scaling factor for prior to be
             # the fraction of acceptances in random sampling of entire space
             # times 100
-            self._pdf_scale = 100.0 * sum(result) / float(n_test_samples)
+            self._pdf_scale = sum(result) / float(n_test_samples)
 
         else:
             self._pdf_scale = 1.0
@@ -167,7 +167,7 @@ class PriorEvaluator(object):
             if not constraint(params):
                 return -numpy.inf
         return sum([d(**params)
-                    for d in self.distributions]) +  self._logpdf_scale
+                    for d in self.distributions]) - self._logpdf_scale
 
     def rvs(self, size=1):
         """ Rejection samples the prior parameter space.
