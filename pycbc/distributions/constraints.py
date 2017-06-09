@@ -25,8 +25,8 @@ class Constraint(object):
     """
     name = "custom"
     required_parameters = []
-    def __init__(self, variable_args, func, **kwargs):
-        self.func = func
+    def __init__(self, variable_args, constraint_arg, **kwargs):
+        self.constraint_arg = constraint_arg
 
         # set any given attributes and get transforms from variable_args
         # to required parameters
@@ -59,7 +59,7 @@ class Constraint(object):
     def _constraint(self, params):
         """ Evaluates constraint function.
         """
-        return params[self.func]
+        return params[self.constraint_arg]
 
 class MtotalLT(Constraint):
     """ Pre-defined constraint that check if total mass is less than a value.
