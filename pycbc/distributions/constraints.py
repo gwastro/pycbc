@@ -17,6 +17,7 @@ This modules provides classes for evaluating multi-dimensional constraints.
 """
 
 from pycbc import transforms
+from pycbc.io import record
 
 class Constraint(object):
     """ Creates a constraint that evaluates to True if parameters obey
@@ -37,15 +38,28 @@ class Constraint(object):
     def __call__(self, params):
         """ Evaluates constraint.
         """
+
+        # cast to FieldArray
+        if isinstance(params, dict):
+            params = record.FieldArray.from_kwargs(**params)
+        elif not isinstance(params, record.FieldArray):
+           raise ValueError("params must be dict or FieldArray instance")
+
+        # apply transforms
         params = transforms.apply_transforms(params, self.transforms) \
                      if self.transforms else params
-        return self._constraint(params)
+
+        # apply constraints
+        out = self._constraint(params)
+        if out.size == 1:
+            out = out.item()
+
+        return out
 
     def _constraint(self, params):
         """ Evaluates constraint function.
         """
-        return eval(self.func)
-
+        return params[self.func]
 
 class MtotalLT(Constraint):
     """ Pre-defined constraint that check if total mass is less than a value.
