@@ -137,10 +137,10 @@ def read_args_from_config(cp, section_group=None):
     section = "{}constraint".format(section_prefix)
     for subsection in cp.get_subsections(section):
         name = cp.get_opt_tag(section, "name", subsection)
-        func = cp.get_opt_tag(section, "func", subsection)
+        constraint_arg = cp.get_opt_tag(section, "constraint_arg", subsection)
         kwargs = {}
         for key in cp.options(section + "-" + subsection):
-            if key in ["name", "func"]:
+            if key in ["name", "constraint_arg"]:
                 continue
             val = cp.get_opt_tag(section, key, subsection)
             if key == "required_parameters":
@@ -153,7 +153,7 @@ def read_args_from_config(cp, section_group=None):
                 pass
             kwargs[key] = val
         cons.append(constraints.constraints[name](variable_args,
-                                                  func, **kwargs))
+                                                  constraint_arg, **kwargs))
 
     return variable_args, static_args, cons
 
