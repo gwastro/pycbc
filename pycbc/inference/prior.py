@@ -130,7 +130,6 @@ class PriorEvaluator(object):
 
             # set new scaling factor for prior to be
             # the fraction of acceptances in random sampling of entire space
-            # times 100
             self._pdf_scale = sum(result) / float(n_test_samples)
 
         else:
