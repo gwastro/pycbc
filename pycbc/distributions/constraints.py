@@ -24,7 +24,8 @@ class Constraint(object):
     """
     name = "custom"
     required_parameters = []
-    def __init__(self, variable_args, **kwargs):
+    def __init__(self, variable_args, func, **kwargs):
+        self.func = func
 
         # set any given attributes and get transforms from variable_args
         # to required parameters
