@@ -26,6 +26,7 @@ This modules provides classes and functions for evaluating the prior
 for parameter estimation.
 """
 
+import logging
 import numpy
 from pycbc.io import record
 
@@ -80,15 +81,18 @@ class PriorEvaluator(object):
 
     def __init__(self, variable_args, *distributions, **kwargs):
 
-        # store the names of the variable params
+        # store the names of the parameters defined in the distributions
         self.variable_args = tuple(variable_args)
+
         # store the distributions
         self.distributions = distributions
-        # store the constraints
-        self.constraints = kwargs["constraints"] \
+
+        # store the constraints on the parameters defined inside the
+        # distributions list
+        self._constraints = kwargs["constraints"] \
                                   if "constraints" in kwargs.keys() else []
 
-        # check that all of the variable args are described by the given
+        # check that all of the supplied parameters are described by the given
         # distributions
         distparams = set()
         [distparams.update(set(dist.params)) for dist in distributions]
@@ -102,6 +106,38 @@ class PriorEvaluator(object):
         if extra_params:
             raise ValueError("variable_args %s " %(','.join(extra_params)) +
                 "are not in any of the provided distributions")
+
+        # if there are constraints then find the renormalization factor
+        # since a constraint will cut out part of the space
+        # do this by random sampling the full space and find the percent
+        # of samples rejected
+        n_test_samples = kwargs["n_test_samples"] \
+                             if "n_test_samples" in kwargs else int(1e6)
+        if self._constraints:
+            logging.info("Renormalizing prior for constraints")
+
+            # draw samples
+            samples = {}
+            for dist in self.distributions:
+                draw = dist.rvs(n_test_samples)
+                for param in dist.params:
+                    samples[param] = draw[param][:]
+
+            # evaluate constraints
+            result = numpy.ones(len(samples.values()[0]), dtype=bool)
+            for constraint in self._constraints:
+                result = constraint(samples) & result
+
+            # set new scaling factor for prior to be
+            # the fraction of acceptances in random sampling of entire space
+            self._pdf_scale = sum(result) / float(n_test_samples)
+
+        else:
+            self._pdf_scale = 1.0
+
+        # since Distributions will return logpdf we keep the scale factor
+        # in log scale as well for self.__call__
+        self._logpdf_scale = numpy.log(self._pdf_scale)
 
     def apply_boundary_conditions(self, **params):
         """Applies each distributions' boundary conditions to the given list
@@ -126,10 +162,11 @@ class PriorEvaluator(object):
     def __call__(self, **params):
         """Evalualate prior for parameters.
         """
-        for constraint in self.constraints:
+        for constraint in self._constraints:
             if not constraint(params):
                 return -numpy.inf
-        return sum([d(**params) for d in self.distributions])
+        return sum([d(**params)
+                    for d in self.distributions]) - self._logpdf_scale
 
     def rvs(self, size=1):
         """ Rejection samples the prior parameter space.

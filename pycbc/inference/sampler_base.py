@@ -238,18 +238,19 @@ class BaseMCMCSampler(_BaseSampler):
     def pos(self):
         return self._pos
 
-    def set_p0(self, prior=None, samples=None):
-        """Sets the initial position of the walkers.
+    def set_p0(self, samples=None, prior=None):
+        """Sets the initial position of the walkers. Must be supplied a
+        FieldArray of values or a list of Distributions or a PriorEvaluator.
 
         Parameters
         ----------
-        prior : PriorEvaluator, optional
-            Use the given prior to set the initial positions rather than
-            `likelihood_evaultor`'s prior.
         samples : FieldArray, optional
             Use the given samples to set the initial positions. The samples
             will be transformed to the likelihood evaluator's `sampling_args`
             space.
+        prior : PriorEvaluator, optional
+            Use the given prior to set the initial positions rather than
+            `likelihood_evaultor`'s prior.
 
         Returns
         -------
@@ -260,7 +261,7 @@ class BaseMCMCSampler(_BaseSampler):
         nwalkers = self.nwalkers
         ndim = len(self.variable_args)
         p0 = numpy.ones((nwalkers, ndim))
-        # if samples are given then use those as initial poistions
+        # if samples are given then use those as initial positions
         if samples is not None:
             # transform to sampling parameter space
             samples = self.likelihood_evaluator.apply_sampling_transforms(

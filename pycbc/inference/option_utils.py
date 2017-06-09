@@ -19,12 +19,14 @@
 
 import logging
 import numpy
+import pycbc.inference.sampler
 from pycbc import conversions
 from pycbc import transforms
+from pycbc.distributions import bounded
+from pycbc.distributions import constraints
 from pycbc.io import InferenceFile
-from pycbc.workflow import WorkflowConfigParser
-import pycbc.inference.sampler
 from pycbc.inference import likelihood
+from pycbc.workflow import WorkflowConfigParser
 from pycbc.pool import choose_pool
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
@@ -130,8 +132,30 @@ def read_args_from_config(cp, section_group=None):
             # return val if it does not begin (end) with [ (])
             static_args[key] = convert_liststring_to_list(val) 
 
-    return variable_args, static_args
+    # get additional constraints to apply in prior
+    cons = []
+    section = "{}constraint".format(section_prefix)
+    for subsection in cp.get_subsections(section):
+        name = cp.get_opt_tag(section, "name", subsection)
+        constraint_arg = cp.get_opt_tag(section, "constraint_arg", subsection)
+        kwargs = {}
+        for key in cp.options(section + "-" + subsection):
+            if key in ["name", "constraint_arg"]:
+                continue
+            val = cp.get_opt_tag(section, key, subsection)
+            if key == "required_parameters":
+                kwargs["required_parameters"] = val.split(
+                                                        bounded.VARARGS_DELIM)
+                continue
+            try:
+                val = float(val)
+            except ValueError:
+                pass
+            kwargs[key] = val
+        cons.append(constraints.constraints[name](variable_args,
+                                                  constraint_arg, **kwargs))
 
+    return variable_args, static_args, cons
 
 def read_sampling_args_from_config(cp, section_group=None):
     """Reads sampling parameters from the given config file.
