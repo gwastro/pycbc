@@ -572,7 +572,7 @@ def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
         return tc
     detector = Detector(detector_name)
     if ref_frame == 'geocentric':
-        return tc + detector.time_delay_from_center(ra, dec, tc)
+        return tc + detector.time_delay_from_earth_center(ra, dec, tc)
     else:
         other = Detector(ref_frame)
         return tc + detector.time_delay_from_detector(other, ra, dec, tc)
