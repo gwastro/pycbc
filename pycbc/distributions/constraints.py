@@ -51,8 +51,8 @@ class Constraint(object):
 
         # apply constraints
         out = self._constraint(params)
-        if out.size == 1:
-            out = out.item()
+        if isinstance(out, record.FieldArray):
+            out = out.item() if params.size == 1 else out
 
         return out
 
