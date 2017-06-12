@@ -138,8 +138,8 @@ class _BaseLikelihoodEvaluator(object):
         The log of the noise likelihood summed over the number of detectors.
     return_meta : {True, bool}
         If True, `prior`, `logposterior`, and `logplr` will return the value
-        of the prior, the loglikelihood ratio, and the log jacobian, along with
-        the posterior/plr.
+        of the prior, the log-likelihood ratio, the log-likelihood ratio in
+        each detector, and the log jacobian, along with the posterior/plr.
 
     Methods
     -------
@@ -376,9 +376,10 @@ class _BaseLikelihoodEvaluator(object):
 
     # the names and order of data returned by _formatreturn when
     # return_metadata is True
-    metadata_fields = ["prior", "loglr", "logjacobian"]
+    metadata_fields = ["prior", "loglr", "det_loglr", "logjacobian"]
 
-    def _formatreturn(self, val, prior=None, loglr=None, logjacobian=0.):
+    def _formatreturn(self, val, prior=None, loglr=None, det_loglr=None,
+                      logjacobian=0.):
         """Adds the prior to the return value if return_meta is True.
         Otherwise, just returns the value.
 
@@ -399,11 +400,12 @@ class _BaseLikelihoodEvaluator(object):
         val : float
             The given value to return.
         *If return_meta is True:*
-        metadata : (prior, loglr, logjacobian)
-            A tuple of the prior, log likelihood ratio, and logjacobian.
+        metadata : (prior, loglr, det_loglr, logjacobian)
+            A tuple of the prior, log likelihood ratio, a dictionary of the
+            log likelihood ratio in each detector, and the logjacobian.
         """
         if self.return_meta:
-            return val, (prior, loglr, logjacobian)
+            return val, (prior, loglr, det_loglr, logjacobian)
         else:
             return val
 
@@ -411,37 +413,45 @@ class _BaseLikelihoodEvaluator(object):
         """Returns the log of the prior-weighted likelihood ratio.
         """
         if self.return_meta:
-            logp, (_, _, logj) = self.prior(**params)
+            logp, (_, _, _, logj) = self.prior(**params)
         else:
             logp = self.prior(**params)
             logj = None
         # if the prior returns -inf, just return
         if logp == -numpy.inf:
             return self._formatreturn(logp, prior=logp, logjacobian=logj)
-        llr = self.loglr(**params)
+        llr, det_llr = self.loglr(**params)
         return self._formatreturn(llr + logp, prior=logp, loglr=llr,
-                                  logjacobian=logj)
+                                   det_loglr=det_llr, logjacobian=logj)
 
     def logposterior(self, **params):
         """Returns the log of the posterior of the given params.
         """
         if self.return_meta:
-            logp, (_, _, logj) = self.prior(**params)
+            logp, (_, _, _, logj) = self.prior(**params)
         else:
             logp = self.prior(**params)
             logj = None
         # if the prior returns -inf, just return
         if logp == -numpy.inf:
             return self._formatreturn(logp, prior=logp, logjacobian=logj)
-        ll = self.loglikelihood(**params)
+        ll, det_ll = self.loglikelihood(**params)
         return self._formatreturn(ll + logp, prior=logp, loglr=ll-self._lognl,
+                                  det_loglr={det: dll-self._lognl
+                                             for det,dll in det_ll.items()},
                                   logjacobian=logj)
 
     def snr(self, **params):
         """Returns the "SNR" of the given params. This will return
         imaginary values if the log likelihood ratio is < 0.
         """
-        return conversions.snr_from_loglr(self.loglr(**params))
+        loglr = self.loglr(**params)
+        if self.return_meta:
+            loglr, meta = loglr
+            meta = dict(zip(self.metadata_fields, meta))
+        else:
+            meta = None
+        return self._formatreturn(conversions.snr_from_loglr(loglr), **meta)
 
     _callfunc = logposterior
 
@@ -701,6 +711,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
             The value of the log likelihood ratio evaluated at the given point.
         """
         lr = 0.
+        det_lr = {}
         try:
             wfs = self._waveform_generator.generate(**params)
         except NoWaveformError:
@@ -715,13 +726,15 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
             h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
-            lr += (
+            dlr = (
                 # <h, d>
                 self.data[det][self._kmin:kmax].inner(h[self._kmin:kmax]).real
                 # - <h, h>/2.
                 - 0.5*h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
                 )
-        return numpy.float64(lr)
+            lr += dlr
+            det_lr[det] = dlr
+        return numpy.float64(lr), det_lr
 
     def loglikelihood(self, **params):
         r"""Computes the log likelihood of the paramaters,
@@ -743,7 +756,9 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         """
         # since the loglr has fewer terms, we'll call that, then just add
         # back the noise term that canceled in the log likelihood ratio
-        return self.loglr(**params) + self._lognl
+        loglr, det_loglr = self.loglr(**params)
+        return  loglr + self._lognl, {det: ll+self._lognl
+                                      for det,ll in det_loglr.items()}
 
 
     def logposterior(self, **params):
@@ -769,11 +784,11 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
         # back the noise term that canceled in the log likelihood ratio
         logplr = self.logplr(**params)
         if self.return_meta:
-            logplr, (pr, lr, lj) = logplr
+            logplr, (pr, lr, dlr, lj) = logplr
         else:
-            pr = lr = lj = None
+            pr = lr = dlr = lj = None
         return self._formatreturn(logplr + self._lognl, prior=pr, loglr=lr,
-                                  logjacobian=lj)
+                                  det_loglr=dlr, logjacobian=lj)
 
 likelihood_evaluators = {GaussianLikelihood.name: GaussianLikelihood}
 
