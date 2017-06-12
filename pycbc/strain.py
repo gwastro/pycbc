@@ -264,6 +264,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if precision == 'single':
             logging.info("Converting to float32")
             strain = (strain * dyn_range_fac).astype(pycbc.types.float32)
+        elif precision == "double":
+            logging.info("Converting to float64")
+            strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
+        else:
+            raise ValueError("unrecognized precision {}".format(precision))
 
         if opt.gating_file is not None:
             logging.info("Gating glitches")
