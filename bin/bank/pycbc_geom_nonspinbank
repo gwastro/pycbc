@@ -355,7 +355,7 @@ for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
         continue
     iters = points[:,0]
     bestXis = points[dist.argmin(),1:]
-    bestMasses = physMasses[points[dist.argmin(),0]]
+    bestMasses = physMasses[int(points[dist.argmin(),0] + 0.5)]
     
     # Reject point if it is too far from physical space
     masses = tmpltbank.get_physical_covaried_masses([v1,v2],\
