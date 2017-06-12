@@ -266,7 +266,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = (strain * dyn_range_fac).astype(pycbc.types.float32)
         elif precision == "double":
             logging.info("Converting to float64")
-            strain = strain.astype(pycbc.types.float64)
+            strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
         else:
             raise ValueError("unrecognized precision {}".format(precision))
 
