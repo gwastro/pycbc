@@ -327,7 +327,9 @@ class BaseMCMCSampler(_BaseSampler):
         stats were returned to the sampler by the likelihood evaluator, returns
         None.
         """
-        stats = numpy.array(self._sampler.blobs)
+        getordered = lambda x: [x[field]
+            for field in self.likelihood_evaluator.metadata_fields]
+        stats = numpy.array(map(getordered, self._sampler.blobs))
         if stats.size == 0:
             return None
         # we'll force arrays to float; this way, if there are `None`s in the

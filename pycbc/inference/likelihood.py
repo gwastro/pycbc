@@ -167,6 +167,11 @@ class _BaseLikelihoodEvaluator(object):
     """
     name = None
 
+    # the names and order of data returned by _formatreturn when
+    # return_metadata is True. The loglr in each detector is added
+    # to these on initalization.
+    _metadata_fields = ["prior", "loglr", "logjacobian"]
+
     def __init__(self, waveform_generator, data, prior=None,
                  sampling_parameters=None, replace_parameters=None,
                  sampling_transforms=None,
@@ -204,6 +209,9 @@ class _BaseLikelihoodEvaluator(object):
         # initialize the log nl to 0
         self._lognl = None
         self.return_meta = return_meta
+        # add the single-detector's snrs to the metadata fields
+        self.metadata_fields = self._metadata_fields + ['{}_loglr'.format(det)
+                                                        for det in self._data]
         # store sampling parameters and transforms
         if sampling_parameters is not None:
             if replace_parameters is None or \
@@ -280,6 +288,39 @@ class _BaseLikelihoodEvaluator(object):
     def set_lognl(self, lognl):
         """Set the value of the log noise likelihood."""
         self._lognl = lognl
+
+    def _formatreturn(self, val, prior=None, loglr=None, det_loglr=None,
+                      logjacobian=0.):
+        """Adds the prior to the return value if return_meta is True.
+        Otherwise, just returns the value.
+
+        Parameters
+        ----------
+        val : float
+            The value to return.
+        prior : float, optional
+            The value of the prior.
+        loglr : float, optional
+            The value of the log likelihood-ratio.
+        logjacobian : float, optional
+            The value of the log jacobian used to go from the variable args
+            to the sampling args.
+
+        Returns
+        -------
+        val : float
+            The given value to return.
+        *If return_meta is True:*
+        metadata : dict
+            A dictionary of the metadata field names and corresponding data.
+        """
+        if self.return_meta:
+            meta = {'prior': prior, 'loglr': loglr, 'logjacobian': logjacobian}
+            if det_loglr is not None:
+                meta.update(det_loglr)
+            return val, meta 
+        else:
+            return val
 
     def logjacobian(self, **params):
         r"""Returns the log of the jacobian needed to transform pdfs in the
@@ -373,47 +414,12 @@ class _BaseLikelihoodEvaluator(object):
         """
         raise NotImplementedError("Likelihood ratio function not set.")
 
-
-    # the names and order of data returned by _formatreturn when
-    # return_metadata is True
-    metadata_fields = ["prior", "loglr", "det_loglr", "logjacobian"]
-
-    def _formatreturn(self, val, prior=None, loglr=None, det_loglr=None,
-                      logjacobian=0.):
-        """Adds the prior to the return value if return_meta is True.
-        Otherwise, just returns the value.
-
-        Parameters
-        ----------
-        val : float
-            The value to return.
-        prior : float, optional
-            The value of the prior.
-        loglr : float, optional
-            The value of the log likelihood-ratio.
-        logjacobian : float, optional
-            The value of the log jacobian used to go from the variable args
-            to the sampling args.
-
-        Returns
-        -------
-        val : float
-            The given value to return.
-        *If return_meta is True:*
-        metadata : (prior, loglr, det_loglr, logjacobian)
-            A tuple of the prior, log likelihood ratio, a dictionary of the
-            log likelihood ratio in each detector, and the logjacobian.
-        """
-        if self.return_meta:
-            return val, (prior, loglr, det_loglr, logjacobian)
-        else:
-            return val
-
     def logplr(self, **params):
         """Returns the log of the prior-weighted likelihood ratio.
         """
         if self.return_meta:
-            logp, (_, _, _, logj) = self.prior(**params)
+            logp, meta = self.prior(**params)
+            logj = meta['logjacobian']
         else:
             logp = self.prior(**params)
             logj = None
@@ -428,7 +434,8 @@ class _BaseLikelihoodEvaluator(object):
         """Returns the log of the posterior of the given params.
         """
         if self.return_meta:
-            logp, (_, _, _, logj) = self.prior(**params)
+            logp, meta = self.prior(**params)
+            logj = meta['logjacobian']
         else:
             logp = self.prior(**params)
             logj = None
@@ -448,9 +455,8 @@ class _BaseLikelihoodEvaluator(object):
         loglr = self.loglr(**params)
         if self.return_meta:
             loglr, meta = loglr
-            meta = dict(zip(self.metadata_fields, meta))
         else:
-            meta = None
+            meta = {}
         return self._formatreturn(conversions.snr_from_loglr(loglr), **meta)
 
     _callfunc = logposterior
@@ -733,7 +739,7 @@ class GaussianLikelihood(_BaseLikelihoodEvaluator):
                 - 0.5*h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
                 )
             lr += dlr
-            det_lr[det] = dlr
+            det_lr['{}_loglr'.format(det)] = dlr
         return numpy.float64(lr), det_lr
 
     def loglikelihood(self, **params):
