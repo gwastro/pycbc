@@ -24,5 +24,6 @@ NO_HWINJ = NO_STOCH_HW_INJ | NO_CBC_HW_INJ | \
 
 # O2 Low-Latency DQ vector definition
 # If the bit is 0 then we should veto
+# https://wiki.ligo.org/DetChar/DmtDqVector
 OMC_DCPD_ADC_OVERFLOW = 2
 ETMY_ESD_DAC_OVERFLOW = 4
