@@ -137,7 +137,6 @@ def set_threads_backend(backend=None):
     # This is the user facing function.  If given a backend it just
     # calls _init_threads and lets it do the work.  If not (the default)
     # then it cycles in order through threaded backends,
-    global _fftw_threaded_set
     if backend is not None:
         retval = _init_threads(backend)
         # Since the user specified this backend raise an exception if the above failed
