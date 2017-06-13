@@ -173,17 +173,18 @@ parser = argparse.ArgumentParser(description="Look for CBC signals in low "
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--version', action='version', version=version.git_verbose_msg)
-parser.add_argument('--bank-file', help="Template bank xml file")
+parser.add_argument('--bank-file', required=True, help="Template bank xml file")
 parser.add_argument('--low-frequency-cutoff', help="low frequency cutoff", type=int)
 parser.add_argument('--sample-rate', help="output sample rate", type=int)
 parser.add_argument('--chisq-bins', help="Number of chisq bins")
-parser.add_argument('--analysis-chunk', type=int,
+parser.add_argument('--analysis-chunk', type=int, required=True,
                         help="Amount of data to produce triggers in a  block")
 
 parser.add_argument('--snr-threshold', type=float)
 parser.add_argument('--snr-abort-threshold', type=float)
 
-parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+')
+parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+',
+                    required=True)
 parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+', 
           help="The channel containing frame status information. This is used "
                "to determine when to analyze the hoft data. This somewhat "
@@ -210,9 +211,9 @@ parser.add_argument('--highpass-bandwidth', type=float,
                         help="Width of the highpass turnover region in Hz")
 parser.add_argument('--psd-recalculate-difference', type=float, default=.01)
 parser.add_argument('--psd-abort-difference', type=float, default=.20)
-parser.add_argument('--psd-samples', type=int, 
+parser.add_argument('--psd-samples', type=int, required=True,
                         help="Number of PSD segments to use in the rolling estimate")
-parser.add_argument('--psd-segment-length', type=int, 
+parser.add_argument('--psd-segment-length', type=int, required=True,
                         help="Length in seconds of each PSD segment")
 parser.add_argument('--psd-inverse-length', type=float, 
                         help="Lenght in time for the equivelant FIR filter")
