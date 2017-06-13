@@ -30,7 +30,7 @@ class LiveSingleFarThreshold(object):
                    duration_threshold=args.single_duration_threshold,
                    )
 
-    def check(self, triggers, data_reader):
+    def check(self, triggers, data_reader, **kwds):
         """ Look for a single detector trigger that passes the thresholds in 
         the current data.
         """
@@ -51,6 +51,7 @@ class LiveSingleFarThreshold(object):
             d['stat'] = nsnr
             d['ifar'] = self.fixed_ifar
             return SingleForGraceDB(self.ifo, d, 
-                                    hardware_injection=data_reader.near_hwinj())
+                                    hardware_injection=data_reader.near_hwinj(), 
+                                    **kwds)
         else:
             return None        

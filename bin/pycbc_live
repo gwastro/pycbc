@@ -85,7 +85,8 @@ class LiveEventManager(object):
             event = SingleCoincForGraceDB(
                     ifos, coinc_results, data_readers=data_readers,
                     bank=bank, upload_snr_series=args.upload_snr_series,
-                    followup_ifos=followup_ifos)
+                    followup_ifos=followup_ifos,
+                    gracedb_server=args.gracedb_server)
 
             end_time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml' % end_time)
@@ -104,7 +105,11 @@ class LiveEventManager(object):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
-            single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
+            single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
+                    data_readers=data_readers,
+                    bank=bank, upload_snr_series=args.upload_snr_series,
+                    followup_ifos=followup_ifos,
+                    gracedb_server=args.gracedb_server)
             if single is not None:
                 fname = 'single-%s-%s.xml' % (ifo, int(single.time))
                 fname = os.path.join(self.path, fname)
@@ -260,6 +265,9 @@ parser.add_argument('--round-start-time', type=int,
                     help="Round up the start time to the nearest multiple of X"
                          " seconds. This is useful for forcing agreement "
                          " with frame file production.")
+parser.add_argument('--gracedb-server',
+                    help="Location of gracedb server. If not provide, the "
+                         "default location is used. ")
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
