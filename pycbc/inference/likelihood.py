@@ -198,9 +198,10 @@ class BaseLikelihoodEvaluator(object):
         else:
             # check that the variable args of the prior evaluator is the same
             # as the waveform generator
-            if prior.variable_args != self._waveform_generator.variable_args:
-                raise ValueError("variable args of prior and waveform "
-                    "generator do not match")
+            #FIXME
+            #if prior.variable_args != self._waveform_generator.variable_args:
+            #    raise ValueError("variable args of prior and waveform "
+            #        "generator do not match")
             self._prior = prior
         self._variable_args = self._waveform_generator.variable_args
         # initialize the log nl to 0
