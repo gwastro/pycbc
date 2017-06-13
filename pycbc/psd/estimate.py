@@ -138,7 +138,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
     delta_f = 1. / timeseries.delta_t / seg_len
     segment_tilde = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
         delta_f=delta_f, dtype=fs_dtype)
-        
+
     segment_psds = []
     for i in xrange(num_segments):
         segment_start = i * seg_stride
@@ -147,13 +147,13 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
         assert len(segment) == seg_len
         fft(segment * w, segment_tilde)
         seg_psd = abs(segment_tilde * segment_tilde.conj()).numpy()
-      
+
         #halve the DC and Nyquist components to be consistent with TO10095
         seg_psd[0] /= 2
         seg_psd[-1] /= 2
-        
+
         segment_psds.append(seg_psd)
-        
+
     segment_psds = numpy.array(segment_psds)   
 
     if avg_method == 'mean':
@@ -171,7 +171,8 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
 
     psd *= 2 * delta_f * seg_len / (w*w).sum()
 
-    return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
+    return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype,
+                           epoch=timeseries.start_time)
 
 def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, trunc_method=None):
     """Modify a PSD such that the impulse response associated with its inverse
