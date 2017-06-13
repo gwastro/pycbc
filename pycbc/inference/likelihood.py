@@ -33,6 +33,7 @@ from pycbc.waveform import NoWaveformError
 from pycbc.types import Array
 from pycbc.io import FieldArray
 import numpy
+from pycbc.inference import recal
 
 # Used to manage a likelihood instance across multiple cores or MPI
 _global_instance = None
@@ -197,9 +198,10 @@ class BaseLikelihoodEvaluator(object):
         else:
             # check that the variable args of the prior evaluator is the same
             # as the waveform generator
-            if prior.variable_args != self._waveform_generator.variable_args:
-                raise ValueError("variable args of prior and waveform "
-                    "generator do not match")
+            #FIXME
+            #if prior.variable_args != self._waveform_generator.variable_args:
+            #    raise ValueError("variable args of prior and waveform "
+            #        "generator do not match")
             self._prior = prior
         self._variable_args = self._waveform_generator.variable_args
         # initialize the log nl to 0
@@ -643,7 +645,8 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     def __init__(self, waveform_generator, data, f_lower, psds=None,
                  f_upper=None, norm=None, prior=None,
                  sampling_parameters=None, replace_parameters=None,
-                 sampling_transforms=None, return_meta=True):
+                 sampling_transforms=None, return_meta=True,
+                 transfer_functions=None):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
@@ -677,6 +680,8 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         self.set_lognl(-0.5*sum([
             d[kmin:kmax].inner(d[kmin:kmax]).real
             for d in self._data.values()]))
+        # store the calibration transfer functions
+        self.tfs = transfer_functions
         # set default call function to logplor
         self.set_callfunc('logplr')
 
@@ -718,12 +723,24 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
-            h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
+            fs = params["calib_fs"]
+            qinv = params["calib_qinv"]
+            a_tst0 = self.tfs[det][0][:, 1]
+            a_pu0 = self.tfs[det][1][:, 1]
+            c0 = self.tfs[det][2][:, 1]
+            d0 = self.tfs[det][3][:, 1]
+            freqs = numpy.real(self.tfs[det][4])
+            h_adjusted = recal.adjust_strain(h, fs0=7., qinv0=0.05,
+                                             fc0=341., fs=fs, qinv=qinv,
+                                             a_tst0=a_tst0, freqs=freqs,
+                                             a_pu0=a_pu0, c0=c0,
+                                             d0=d0)
+            h_adjusted[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
                 # <h, d>
-                self.data[det][self._kmin:kmax].inner(h[self._kmin:kmax]).real
+                self.data[det][self._kmin:kmax].inner(h_adjusted[self._kmin:kmax]).real
                 # - <h, h>/2.
-                - 0.5*h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
+                - 0.5*h_adjusted[self._kmin:kmax].inner(h_adjusted[self._kmin:kmax]).real
                 )
         return numpy.float64(lr)
 
