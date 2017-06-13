@@ -85,6 +85,9 @@ class SingleCoincForGraceDB(object):
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results)
 
+        # remember if we want to use a non-standard gracedb server
+        self.gracedb_server = kwargs.get('gracedb_server')
+
         # Set up the bare structure of the xml document
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
@@ -259,7 +262,10 @@ class SingleCoincForGraceDB(object):
         else:
             group = 'CBC'
 
-        gracedb = GraceDb()
+        if self.gracedb_server is not None:
+            gracedb = GraceDb(self.gracedb_server)
+        else:
+            gracedb = GraceDb()
         r = gracedb.createEvent(group, "pycbc", fname, "AllSky").json()
         logging.info("Uploaded event %s.", r["graceid"])
 
@@ -302,7 +308,7 @@ class SingleCoincForGraceDB(object):
 
 class SingleForGraceDB(SingleCoincForGraceDB):
     """Create xml files and submit them to gracedb from PyCBC Live"""
-    def __init__(self, ifo, sngls_dict, hardware_injection=False):
+    def __init__(self, ifo, sngls_dict, hardware_injection=False, **kwds):
         """Initialize a ligolw xml representation of this single trigger for
         upload to gracedb
 
@@ -321,5 +327,5 @@ class SingleForGraceDB(SingleCoincForGraceDB):
             fake_coinc['foreground/%s/%s' % (ifo, key)] = sngls_dict[key]
         if hardware_injection:
             fake_coinc['HWINJ'] = True
-        SingleCoincForGraceDB.__init__(self, [ifo], fake_coinc)
+        SingleCoincForGraceDB.__init__(self, [ifo], fake_coinc, **kwds)
  
