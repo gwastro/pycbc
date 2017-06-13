@@ -230,7 +230,7 @@ def _cplxreal(z, tol=None):
 
     # Find runs of (approximately) the same real part
     same_real = np.diff(zp.real) <= tol * abs(zp[:-1])
-    diffs = np.diff(concatenate(([0], same_real, [0])))
+    diffs = np.diff(np.concatenate(([0], same_real, [0])))
     run_starts = np.where(diffs > 0)[0]
     run_stops = np.where(diffs < 0)[0]
 
