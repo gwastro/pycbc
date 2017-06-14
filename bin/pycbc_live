@@ -278,7 +278,8 @@ args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 
 import platform
-pycbc.init_logging(args.verbose, format="%(asctime)s: %(message)s" + ": %s: " % platform.node())
+log_format = "%(asctime)s {0} %(message)s".format(platform.node())
+pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 
