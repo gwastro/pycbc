@@ -646,7 +646,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                  f_upper=None, norm=None, prior=None,
                  sampling_parameters=None, replace_parameters=None,
                  sampling_transforms=None, return_meta=True,
-                 transfer_functions=None):
+                 transfer_functions=None, detune=None):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
@@ -682,6 +682,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
             for d in self._data.values()]))
         # store the calibration transfer functions
         self.tfs = transfer_functions
+        self.detune = detune
         # set default call function to logplor
         self.set_callfunc('logplr')
 
@@ -723,24 +724,25 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
-            fs = params["calib_fs"]
-            qinv = params["calib_qinv"]
-            a_tst0 = self.tfs[det][0][:, 1]
-            a_pu0 = self.tfs[det][1][:, 1]
-            c0 = self.tfs[det][2][:, 1]
-            d0 = self.tfs[det][3][:, 1]
-            freqs = numpy.real(self.tfs[det][4])
-            h_adjusted = recal.adjust_strain(h, fs0=7., qinv0=0.05,
-                                             fc0=341., fs=fs, qinv=qinv,
-                                             a_tst0=a_tst0, freqs=freqs,
-                                             a_pu0=a_pu0, c0=c0,
-                                             d0=d0)
-            h_adjusted[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
+            if self.detune:
+                fs = params["calib_fs"]
+                qinv = params["calib_qinv"]
+                a_tst0 = self.tfs[det][0][:, 1]
+                a_pu0 = self.tfs[det][1][:, 1]
+                c0 = self.tfs[det][2][:, 1]
+                d0 = self.tfs[det][3][:, 1]
+                fc0 = self.tfs[det][4]
+                freqs = numpy.real(self.tfs[det][4])
+                h = recal.adjust_strain(h, fs0=7., qinv0=0.05,
+                                        fc0=fc0, fs=fs, qinv=qinv,
+                                        a_tst0=a_tst0, freqs=freqs,
+                                        a_pu0=a_pu0, c0=c0, d0=d0)
+            h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
                 # <h, d>
-                self.data[det][self._kmin:kmax].inner(h_adjusted[self._kmin:kmax]).real
+                self.data[det][self._kmin:kmax].inner(h[self._kmin:kmax]).real
                 # - <h, h>/2.
-                - 0.5*h_adjusted[self._kmin:kmax].inner(h_adjusted[self._kmin:kmax]).real
+                - 0.5*h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
                 )
         return numpy.float64(lr)
 

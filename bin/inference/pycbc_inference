@@ -81,6 +81,9 @@ parser.add_argument("--samples-file", default=None,
                          "positions from the InferenceFile being read.")
 
 # calibration data options
+parser.add_argument("--detune", action="store_true",
+                  help="Switch to determine whether cal parameters are "
+                       "included in sampling.")
 parser.add_argument("--h1-transfer-function-a-tst", type=str, required=True,
                   help="Path to ASCII file that contains reference actuation "
                        "function A_tst for test mass.")
@@ -274,8 +277,8 @@ with ctx:
     l1_c = tf_from_file(opts.l1_transfer_function_c)
     l1_d = tf_from_file(opts.l1_transfer_function_d)
     l1_freqlist = l1_c[:, 0]
-    tf_dict = {"H1": (h1_a_tst, h1_a_pu, h1_c, h1_d, h1_freqlist),
-               "L1": (l1_a_tst, l1_a_pu, l1_c, l1_d, l1_freqlist)}
+    tf_dict = {"H1": (h1_a_tst, h1_a_pu, h1_c, h1_d, h1_freqlist, 360.),
+               "L1": (l1_a_tst, l1_a_pu, l1_c, l1_d, l1_freqlist, 376.)}
 
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
@@ -292,6 +295,8 @@ with ctx:
                        **static_args)
 
     # construct class that will return the natural logarithm of likelihood
+    if not opts.detune:
+        logging.info("Calib parameters will not be included")
     likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
                         generated_waveform, stilde_dict,
                         low_frequency_cutoff_dict.values()[0],
@@ -299,7 +304,7 @@ with ctx:
                         sampling_parameters=sampling_parameters,
                         replace_parameters=replace_parameters,
                         sampling_transforms=sampling_transforms,
-                        transfer_functions=tf_dict)
+                        transfer_functions=tf_dict, detune=opts.detune)
 
     burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
                                 min_iterations=opts.min_burn_in)
