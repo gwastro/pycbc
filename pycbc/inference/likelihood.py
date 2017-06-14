@@ -479,7 +479,10 @@ class _BaseLikelihoodEvaluator(object):
         params = dict(zip(self._sampling_args, params))
         # apply inverse transforms to go from sampling parameters to
         # variable args
+        # temporarily silence numpy warnings
+        numpysettings = numpy.seterr(divide='ignore', invalid='ignore')
         params = self.apply_sampling_transforms(params, inverse=True)
+        numpy.seterr(**numpysettings)
         # apply any boundary conditions to the parameters before
         # generating/evaluating
         if callfunc is not None:
