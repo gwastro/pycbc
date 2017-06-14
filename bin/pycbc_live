@@ -106,7 +106,7 @@ class LiveEventManager(object):
         if len(active) == 1:
             ifo = active[0]
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
-                    data_readers=data_readers,
+                    data_readers=data_reader,
                     bank=bank, upload_snr_series=args.upload_snr_series,
                     followup_ifos=followup_ifos,
                     gracedb_server=args.gracedb_server)
