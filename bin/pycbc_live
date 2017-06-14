@@ -196,8 +196,9 @@ parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs
                 "to determine when hoft may be suspect and may be used to veto"
                 "triggers or not analyze a segment of data. This roughly "
                 "corresponds to CAT2 information")
-parser.add_argument('--data-quality-flags', nargs='+', 
-          help='The flags used to determine when to throw triggers away')
+parser.add_argument('--data-quality-flags', action=MultiDetOptionAction, nargs='+',
+          help='The flags used to determine when to throw triggers away. '
+               'For each detector, give a comma-separated list of flags.')
 parser.add_argument('--data-quality-padding', type=float, default=0,
 	  help='Time in seconds around a bad dq time to additionally remove triggers')
 parser.add_argument('--frame-src', action=MultiDetOptionAction, nargs='+')
@@ -253,7 +254,9 @@ parser.add_argument('--enable-profiling', type=int,
                          " the end of program executrion")
 
 parser.add_argument('--enable-background-estimation', default=False, action='store_true')
-parser.add_argument('--ifar-upload-threshold', type=float)
+parser.add_argument('--ifar-upload-threshold', type=float, required=True,
+                    help='Inverse-FAR threshold for uploading coincident '
+                         'triggers to GraceDB, in years.')
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False)
 parser.add_argument('--file-prefix', default='Live')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False)
@@ -341,8 +344,13 @@ with ctx:
     data_reader = {}
     sngl_estimator = {}
     for ifo in advancing_ifos:
-        state = '%s:%s' % (ifo, args.state_channel[ifo]) if args.state_channel else None
-        dq ='%s:%s' % (ifo, args.data_quality_channel[ifo]) if args.data_quality_channel else None
+        state = dq = dqf = None
+        if args.state_channel and ifo in args.state_channel:
+            state = '%s:%s' % (ifo, args.state_channel[ifo])
+        if args.data_quality_channel and ifo in args.data_quality_channel \
+                and args.data_quality_flags and ifo in args.data_quality_flags:
+            dq ='%s:%s' % (ifo, args.data_quality_channel[ifo])
+            dqf = args.data_quality_flags[ifo].split(',')
 
         if args.frame_type:
             frame_src = frame.frame_paths(args.frame_type[ifo], args.start_time, args.end_time)
@@ -375,7 +383,7 @@ with ctx:
                             force_update_cache=args.force_update_cache,
                             increment_update_cache=args.increment_update_cache[ifo],
                             analyze_flags=args.analyze_flags,
-                            data_quality_flags=args.data_quality_flags,
+                            data_quality_flags=dqf,
                             dq_padding=args.data_quality_padding)
     if args.enable_background_estimation and evnt.rank == 0:
         estimator = LiveCoincTimeslideBackgroundEstimator.from_cli(args,
