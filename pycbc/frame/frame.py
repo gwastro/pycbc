@@ -699,7 +699,7 @@ class StatusBuffer(DataBuffer):
         """
         sr = self.raw_buffer.sample_rate
         s = int((start_time - self.raw_buffer.start_time) * sr)
-        e = s + int(duration * sr)
+        e = s + int(duration * sr) + 1
         data = self.raw_buffer[s:e]
         return self.check_valid(data, flag=flag)
 
