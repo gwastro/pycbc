@@ -101,12 +101,13 @@ class LiveEventManager(object):
 
             logging.info('saving coinc to xml %s', fname)
 
-    def check_singles(self, results, data_reader, psds, low_frequency_cutoff):
+    def check_singles(self, results, data_reader, psds, low_frequency_cutoff,
+                      followup_ifos=None):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
-                    data_readers=data_readers,
+                    data_readers=data_reader,
                     bank=bank, upload_snr_series=args.upload_snr_series,
                     followup_ifos=followup_ifos,
                     gracedb_server=args.gracedb_server)
@@ -173,17 +174,18 @@ parser = argparse.ArgumentParser(description="Look for CBC signals in low "
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--version', action='version', version=version.git_verbose_msg)
-parser.add_argument('--bank-file', help="Template bank xml file")
+parser.add_argument('--bank-file', required=True, help="Template bank xml file")
 parser.add_argument('--low-frequency-cutoff', help="low frequency cutoff", type=int)
 parser.add_argument('--sample-rate', help="output sample rate", type=int)
 parser.add_argument('--chisq-bins', help="Number of chisq bins")
-parser.add_argument('--analysis-chunk', type=int,
+parser.add_argument('--analysis-chunk', type=int, required=True,
                         help="Amount of data to produce triggers in a  block")
 
 parser.add_argument('--snr-threshold', type=float)
 parser.add_argument('--snr-abort-threshold', type=float)
 
-parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+')
+parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+',
+                    required=True)
 parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+', 
           help="The channel containing frame status information. This is used "
                "to determine when to analyze the hoft data. This somewhat "
@@ -195,8 +197,9 @@ parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs
                 "to determine when hoft may be suspect and may be used to veto"
                 "triggers or not analyze a segment of data. This roughly "
                 "corresponds to CAT2 information")
-parser.add_argument('--data-quality-flags', nargs='+', 
-          help='The flags used to determine when to throw triggers away')
+parser.add_argument('--data-quality-flags', action=MultiDetOptionAction, nargs='+',
+          help='The flags used to determine when to throw triggers away. '
+               'For each detector, give a comma-separated list of flags.')
 parser.add_argument('--data-quality-padding', type=float, default=0,
 	  help='Time in seconds around a bad dq time to additionally remove triggers')
 parser.add_argument('--frame-src', action=MultiDetOptionAction, nargs='+')
@@ -210,9 +213,9 @@ parser.add_argument('--highpass-bandwidth', type=float,
                         help="Width of the highpass turnover region in Hz")
 parser.add_argument('--psd-recalculate-difference', type=float, default=.01)
 parser.add_argument('--psd-abort-difference', type=float, default=.20)
-parser.add_argument('--psd-samples', type=int, 
+parser.add_argument('--psd-samples', type=int, required=True,
                         help="Number of PSD segments to use in the rolling estimate")
-parser.add_argument('--psd-segment-length', type=int, 
+parser.add_argument('--psd-segment-length', type=int, required=True,
                         help="Length in seconds of each PSD segment")
 parser.add_argument('--psd-inverse-length', type=float, 
                         help="Lenght in time for the equivelant FIR filter")
@@ -252,7 +255,9 @@ parser.add_argument('--enable-profiling', type=int,
                          " the end of program executrion")
 
 parser.add_argument('--enable-background-estimation', default=False, action='store_true')
-parser.add_argument('--ifar-upload-threshold', type=float)
+parser.add_argument('--ifar-upload-threshold', type=float, required=True,
+                    help='Inverse-FAR threshold for uploading coincident '
+                         'triggers to GraceDB, in years.')
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False)
 parser.add_argument('--file-prefix', default='Live')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False)
@@ -277,7 +282,8 @@ args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 
 import platform
-pycbc.init_logging(args.verbose, format="%(asctime)s: %(message)s" + ": %s: " % platform.node())
+log_format = "%(asctime)s {0} %(message)s".format(platform.node())
+pycbc.init_logging(args.verbose, format=log_format)
 
 ctx = scheme.from_cli(args)
 
@@ -339,8 +345,13 @@ with ctx:
     data_reader = {}
     sngl_estimator = {}
     for ifo in advancing_ifos:
-        state = '%s:%s' % (ifo, args.state_channel[ifo]) if args.state_channel else None
-        dq ='%s:%s' % (ifo, args.data_quality_channel[ifo]) if args.data_quality_channel else None
+        state = dq = dqf = None
+        if args.state_channel and ifo in args.state_channel:
+            state = '%s:%s' % (ifo, args.state_channel[ifo])
+        if args.data_quality_channel and ifo in args.data_quality_channel \
+                and args.data_quality_flags and ifo in args.data_quality_flags:
+            dq ='%s:%s' % (ifo, args.data_quality_channel[ifo])
+            dqf = args.data_quality_flags[ifo].split(',')
 
         if args.frame_type:
             frame_src = frame.frame_paths(args.frame_type[ifo], args.start_time, args.end_time)
@@ -373,7 +384,7 @@ with ctx:
                             force_update_cache=args.force_update_cache,
                             increment_update_cache=args.increment_update_cache[ifo],
                             analyze_flags=args.analyze_flags,
-                            data_quality_flags=args.data_quality_flags,
+                            data_quality_flags=dqf,
                             dq_padding=args.data_quality_padding)
     if args.enable_background_estimation and evnt.rank == 0:
         estimator = LiveCoincTimeslideBackgroundEstimator.from_cli(args,
@@ -394,6 +405,7 @@ with ctx:
         t1 = time()
         logging.info('%s: Analyzing up to %s', evnt.rank, data_end())
         results = {}
+        usable_followup_ifos = []
 
         for ifo in advancing_ifos:
             results[ifo] = False
@@ -411,6 +423,9 @@ with ctx:
 
             if ifo in followup_ifos:
                 # we advanced the data and handled the PSD, that's it
+                if status is True:
+                    usable_followup_ifos.append(ifo)
+                    logging.info('%s usable for followup', ifo)
                 continue
 
             if status is True:
@@ -452,11 +467,13 @@ with ctx:
                 coinc_results = estimator.add_singles(results, data_reader)
                 evnt.check_coincs(results.keys(), coinc_results,
                                   psds, args.low_frequency_cutoff, data_reader, bank,
-                                  followup_ifos=followup_ifos)
+                                  followup_ifos=usable_followup_ifos)
 
             # Check for singles if we don't have coinc time
             if args.enable_single_detector_background:
-                evnt.check_singles(results, data_reader, psds, args.low_frequency_cutoff)
+                evnt.check_singles(results, data_reader, psds,
+                                   args.low_frequency_cutoff,
+                                   followup_ifos=usable_followup_ifos)
 
             prefix = '%s-%s-%s-%s' % (''.join(ifos), args.file_prefix, data_end() - args.analysis_chunk, valid_pad)
             evnt.dump(results, prefix, time_index=data_end(),

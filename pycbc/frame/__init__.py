@@ -4,6 +4,7 @@ from . frame import (locations_to_cache, read_frame, datafind_connection,
                      
 
 # Status flags for the calibration state vector
+# See e.g. https://dcc.ligo.org/LIGO-G1700234
 HOFT_OK = 1
 SCIENCE_INTENT = 2
 SCIENCE_QUALITY = 4
@@ -24,5 +25,10 @@ NO_HWINJ = NO_STOCH_HW_INJ | NO_CBC_HW_INJ | \
 
 # O2 Low-Latency DQ vector definition
 # If the bit is 0 then we should veto
+# https://wiki.ligo.org/DetChar/DmtDqVector
 OMC_DCPD_ADC_OVERFLOW = 2
 ETMY_ESD_DAC_OVERFLOW = 4
+
+# Virgo state vector
+# https://wiki.virgo-gw.eu/DetChar/DetCharVirgoStateVector
+VIRGO_GOOD_DQ = 1 << 10
