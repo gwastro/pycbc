@@ -134,6 +134,10 @@ pycbc.init_logging(opts.verbose)
 numpy.random.seed(opts.seed)
 logging.info("Using seed %i", opts.seed)
 
+# we'll silence numpy warnings since they are benign and make for confusing
+# logging output
+numpy.seterr(divide='ignore', invalid='ignore')
+
 # get scheme
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
