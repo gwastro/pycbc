@@ -101,7 +101,8 @@ class LiveEventManager(object):
 
             logging.info('saving coinc to xml %s', fname)
 
-    def check_singles(self, results, data_reader, psds, low_frequency_cutoff):
+    def check_singles(self, results, data_reader, psds, low_frequency_cutoff,
+                      followup_ifos=None):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
@@ -404,6 +405,7 @@ with ctx:
         t1 = time()
         logging.info('%s: Analyzing up to %s', evnt.rank, data_end())
         results = {}
+        usable_followup_ifos = []
 
         for ifo in advancing_ifos:
             results[ifo] = False
@@ -421,6 +423,9 @@ with ctx:
 
             if ifo in followup_ifos:
                 # we advanced the data and handled the PSD, that's it
+                if status is True:
+                    usable_followup_ifos.append(ifo)
+                    logging.info('%s usable for followup', ifo)
                 continue
 
             if status is True:
@@ -462,11 +467,13 @@ with ctx:
                 coinc_results = estimator.add_singles(results, data_reader)
                 evnt.check_coincs(results.keys(), coinc_results,
                                   psds, args.low_frequency_cutoff, data_reader, bank,
-                                  followup_ifos=followup_ifos)
+                                  followup_ifos=usable_followup_ifos)
 
             # Check for singles if we don't have coinc time
             if args.enable_single_detector_background:
-                evnt.check_singles(results, data_reader, psds, args.low_frequency_cutoff)
+                evnt.check_singles(results, data_reader, psds,
+                                   args.low_frequency_cutoff,
+                                   followup_ifos=usable_followup_ifos)
 
             prefix = '%s-%s-%s-%s' % (''.join(ifos), args.file_prefix, data_end() - args.analysis_chunk, valid_pad)
             evnt.dump(results, prefix, time_index=data_end(),
