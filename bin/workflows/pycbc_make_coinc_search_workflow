@@ -415,8 +415,13 @@ seg_summ_plot = wf.make_seg_plot(workflow, curr_files,
                         curr_names, ['SUMMARY'])
 
 curr_files = [insp_files_seg_file] + final_veto_file + cum_veto_files
+# Add in singular veto files
+curr_files = curr_files + veto_cat_files + [science_seg_file]
 curr_names = [trig_generated_name + '&' + veto_name\
                    for veto_name in veto_names+final_veto_name]
+# And SCIENCE - CAT 1 vetoes explicitly.
+curr_names += [sci_seg_name + '&' + 'VETO_CAT1']
+
 veto_summ_table = wf.make_seg_table(workflow, curr_files, curr_names,
                       rdir['analysis_time/segments'], ['VETO_SUMMARY'],
                       title_text='Time removed by vetoes',
