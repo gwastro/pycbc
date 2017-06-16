@@ -314,12 +314,16 @@ ifos = set(args.channel_name.keys())
 followup_ifos = set(args.followup_detectors)
 ifos -= followup_ifos
 ifos, followup_ifos = list(ifos), list(followup_ifos)
-
 # the root must also advance followup ifos, other threads don't need to
+advancing_ifos = (ifos + followup_ifos) if evnt.rank == 0 else ifos
+
+# make sure we can talk to GraceDB
 if evnt.rank == 0:
-    advancing_ifos = ifos + followup_ifos
-else:
-    advancing_ifos = ifos
+    logging.info('Testing access to GraceDB')
+    from ligo.gracedb.rest import GraceDb
+    gdb_client = GraceDb(args.gracedb_server) if args.gracedb_server else GraceDb()
+    gdb_client.ping()
+    del gdb_client
 
 # I'm not the root, so do some actually filtering.
 with ctx:
