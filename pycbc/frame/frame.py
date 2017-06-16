@@ -432,6 +432,7 @@ class DataBuffer(object):
         self.read_pos = start_time
         self.force_update_cache = force_update_cache
         self.increment_update_cache = increment_update_cache
+        self.detector = channel_name.split(':')[0]
 
         self.update_cache()
         self.channel_type, self.raw_sample_rate = self._retrieve_metadata(self.stream, self.channel_name)
@@ -505,7 +506,7 @@ class DataBuffer(object):
                               epoch=self.read_pos, 
                               dtype=dtype)     
         except Exception:
-            raise RuntimeError('Cannot read requested frame data') 
+            raise RuntimeError('Cannot read {0} frame data'.format(self.channel_name))
 
     def null_advance(self, blocksize):
         """Advance and insert zeros
@@ -612,12 +613,12 @@ class DataBuffer(object):
             if lal.GPSTimeNow() > timeout + self.raw_buffer.end_time:
                 # The frame is not there and it should be by now, so we give up
                 # and treat it as zeros
-                logging.info('Frame missing, giving up...')
+                logging.info('{0} frame missing, giving up'.format(self.detector))
                 DataBuffer.null_advance(self, blocksize)
                 return None
             else:
                 # I am too early to give up on this frame, so we should try again
-                logging.info('Frame missing, waiting a bit more...')
+                logging.info('{0} frame missing, waiting a bit more'.format(self.detector))
                 time.sleep(1)
                 return self.attempt_advance(blocksize, timeout=timeout)
 
