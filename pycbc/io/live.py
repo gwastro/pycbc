@@ -302,7 +302,7 @@ class SingleCoincForGraceDB(object):
                                           group='%s/snr' % ifo)
                 self.snr_series_psd[ifo].save(snr_series_fname,
                                               group='%s/psd' % ifo)
-            GraceDb().writeFile(r['graceid'], snr_series_fname)
+            gracedb.writeFile(r['graceid'], snr_series_fname)
 
         return r['graceid']
 

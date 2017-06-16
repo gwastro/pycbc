@@ -438,9 +438,7 @@ with ctx:
         if evnt.rank > 0:
             evnt.commit_results((results, data_end()))
         else:
-            psds = {}
-            for ifo in data_reader:
-                psds[ifo] = data_reader[ifo].psd
+            psds = {ifo: data_reader[ifo].psd for ifo in data_reader if data_reader[ifo].psd is not None}
 
             # Collect together the single detector triggers
             if evnt.size > 1:
