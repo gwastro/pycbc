@@ -198,10 +198,9 @@ class BaseLikelihoodEvaluator(object):
         else:
             # check that the variable args of the prior evaluator is the same
             # as the waveform generator
-            #FIXME
-            #if prior.variable_args != self._waveform_generator.variable_args:
-            #    raise ValueError("variable args of prior and waveform "
-            #        "generator do not match")
+            if prior.variable_args != self._waveform_generator.variable_args:
+                raise ValueError("variable args of prior and waveform "
+                    "generator do not match")
             self._prior = prior
         self._variable_args = self._waveform_generator.variable_args
         # initialize the log nl to 0
@@ -680,7 +679,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         self.set_lognl(-0.5*sum([
             d[kmin:kmax].inner(d[kmin:kmax]).real
             for d in self._data.values()]))
-        # store the calibration transfer functions
+        # store the calibration transfer functions and params
         self.tfs = transfer_functions
         self.detune = detune
         # set default call function to logplor
@@ -725,18 +724,43 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
             if self.detune:
-                fs = params["calib_fs"]
-                qinv = params["calib_qinv"]
-                a_tst0 = self.tfs[det][0][:, 1]
-                a_pu0 = self.tfs[det][1][:, 1]
-                c0 = self.tfs[det][2][:, 1]
-                d0 = self.tfs[det][3][:, 1]
-                fc0 = self.tfs[det][4]
+                a_tst0 = self.tfs[det][0]
+                a_pu0 = self.tfs[det][1]
+                c0 = self.tfs[det][2]
+                d0 = self.tfs[det][3]
                 freqs = numpy.real(self.tfs[det][4])
-                h = recal.adjust_strain(h, fs0=7., qinv0=0.05,
-                                        fc0=fc0, fs=fs, qinv=qinv,
+                fc0 = self.tfs[det][5]
+                fs0 = 6.9
+                qinv0 = 0.05
+                cal_params = [("fs", fs0), ("qinv", qinv0),
+                              ("deltafc", fc0), ("kappa_c", 1.0),
+                              ("kappa_tst_re", 1.0), ("kappa_tst_im", 0.0),
+                              ("kappa_pu_re", 1.0), ("kappa_pu_im", 0.0)]
+                cal_dict = {}
+                for p in cal_params:
+                    if "calib_"+p[0] in params:
+                        cal_dict.update({p[0]: params["calib_"+p[0]]} if \
+                                        p[0] != "deltafc" else \
+                                        {"fc": params["calib_"+p[0]]+fc0})
+                    else:
+                        cal_dict.update({p[0]: p[1]} if p[0] != "deltafc" \
+                                        else {"fc": fc0})
+                #fs = params["calib_fs"] if "calib_fs" in params else fs0
+                #qinv = params["calib_qinv"] if "calib_qinv" in params \
+                #       else qinv0
+                #fc = params["calib_deltafc"]+fc0 if "calib_deltafc" in params \
+                #     else fc0
+                h = recal.adjust_strain(h, fs0=fs0, qinv0=qinv0, fc0=fc0,
                                         a_tst0=a_tst0, freqs=freqs,
-                                        a_pu0=a_pu0, c0=c0, d0=d0)
+                                        a_pu0=a_pu0, c0=c0, d0=d0,
+                                        fs=cal_dict["fs"],
+                                        qinv=cal_dict["qinv"],
+                                        fc=cal_dict["fc"],
+                                        kappa_c=cal_dict["kappa_c"],
+                                        kappa_tst_re=cal_dict["kappa_tst_re"],
+                                        kappa_tst_im=cal_dict["kappa_tst_im"],
+                                        kappa_pu_re=cal_dict["kappa_pu_re"],
+                                        kappa_pu_im=cal_dict["kappa_pu_im"])
             h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
                 # <h, d>

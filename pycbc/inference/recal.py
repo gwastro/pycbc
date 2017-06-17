@@ -6,43 +6,49 @@ import numpy
 import scipy
 import pycbc
 
-def tf_from_file(path, delimiter=" "):
-    """ Convert the contents of a file with the columns
-    [freq, real(h), imag(h)] to a numpy.array with columns
-    [freq, real(h)+j*imag(h)].
-    """
-    data = numpy.loadtxt(path, delimiter=delimiter)
-    freq = data[:, 0]
-    h = data[:, 1] + 1.0j * data[:, 2]
-    return numpy.array([freq, h]).transpose()
-
-def update_c(fs=None, qinv=None, fc0=None, freqs=None, c_res=None):
+def update_c(fs=None, qinv=None, fc=None, freqs=None, c_res=None,
+             kappa_c=1.0):
     detuning_term = freqs**2 / (freqs**2 - 1.0j * freqs * fs * qinv + fs**2)
-    return c_res * 1.0 / (1 + 1.0j * freqs / fc0) * detuning_term
+    return c_res * kappa_c / (1 + 1.0j * freqs / fc) * detuning_term
 
-def update_g(fs=None, qinv=None, a_tst0=None, a_pu0=None, fc0=None,
-             freqs=None, c_res=None, d0=None):
-    c = update_c(fs=fs, qinv=qinv, fc0=fc0, freqs=freqs, c_res=c_res)
-    return c * d0 * (a_tst0 + a_pu0)
+def update_g(fs=None, qinv=None, a_tst0=None, a_pu0=None, fc=None,
+             freqs=None, c_res=None, d0=None, kappa_tst_re=1.0,
+             kappa_tst_im=0.0, kappa_pu_re=1.0, kappa_pu_im=0.0,
+             kappa_c=1.0):
+    c = update_c(fs=fs, qinv=qinv, fc=fc, freqs=freqs, c_res=c_res,
+                 kappa_c=kappa_c)
+    a_tst = a_tst0 * (kappa_tst_re + 1.0j * kappa_tst_im)
+    a_pu = a_pu0 * (kappa_pu_re + 1.0j * kappa_pu_im)
+    return c * d0 * (a_tst + a_pu)
 
-def update_r(fs=None, qinv=None, a_tst0=None, a_pu0=None, fc0=None,
-             freqs=None, c_res=None, d0=None):
-    c = update_c(fs=fs, qinv=qinv, fc0=fc0, freqs=freqs, c_res=c_res)
-    g = update_g(fs=fs, qinv=qinv, a_tst0=a_tst0, a_pu0=a_pu0, fc0=fc0,
-                 freqs=freqs, c_res=c_res, d0=d0)
+def update_r(fs=None, qinv=None, a_tst0=None, a_pu0=None, fc=None,
+             freqs=None, c_res=None, d0=None, kappa_c=1.0,
+             kappa_tst_re=1.0, kappa_tst_im=0.0, kappa_pu_re=1.0,
+             kappa_pu_im=0.0):
+    c = update_c(fs=fs, qinv=qinv, fc=fc, freqs=freqs, c_res=c_res,
+                 kappa_c=kappa_c)
+    g = update_g(fs=fs, qinv=qinv, a_tst0=a_tst0, a_pu0=a_pu0, fc=fc,
+                 freqs=freqs, c_res=c_res, d0=d0, kappa_c=kappa_c,
+                 kappa_tst_re=kappa_tst_re, kappa_tst_im=kappa_tst_im,
+                 kappa_pu_re=kappa_pu_re, kappa_pu_im=kappa_pu_im)
     return (1.0 + g) / c
 
 def adjust_strain(strain, fc0=None, c0=None, d0=None, a_tst0=None,
-                  a_pu0=None, fs0=None, qinv0=None,
-                  fs=None, qinv=None, freqs=None):
+                  a_pu0=None, fs0=None, qinv0=None, fs=None,
+                  qinv=None, fc=None, freqs=None, kappa_c=1.0,
+                  kappa_tst_re=1.0, kappa_tst_im=0.0,
+                  kappa_pu_re=1.0, kappa_pu_im=0.0):
     """Adjust the FrequencySeries strain
     """
     g0 = c0 * d0 * (a_tst0 + a_pu0)
     r0 = (1.0 + g0) / c0
     init_detuning = freqs**2 / (freqs**2 - 1.0j * freqs * fs0 * qinv0 + fs0**2)
     c_res = c0 * (1 + 1.0j * freqs / fc0) / init_detuning
-    r_adjusted = update_r(fs=fs, qinv=qinv, a_tst0=a_tst0, a_pu0=a_pu0, fc0=fc0,
-                          freqs=freqs, c_res=c_res, d0=d0)
+
+    r_adjusted = update_r(fs=fs, qinv=qinv, a_tst0=a_tst0, a_pu0=a_pu0, fc=fc,
+                          freqs=freqs, c_res=c_res, d0=d0, kappa_c=kappa_c,
+                          kappa_tst_re=kappa_tst_re, kappa_tst_im=kappa_tst_im,
+                          kappa_pu_re=kappa_pu_re, kappa_pu_im=kappa_pu_im)
 
     # calculate error function
     k = r_adjusted / r0
