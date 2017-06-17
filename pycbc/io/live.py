@@ -1,4 +1,5 @@
 import logging
+import os
 import pycbc
 import numpy
 import lal
@@ -253,25 +254,12 @@ class SingleCoincForGraceDB(object):
             Switch to determine if the upload should be sent to gracedb as a
         test trigger (True) or a production trigger (False)
         """
-        from ligo.gracedb.rest import GraceDb
+        from ligo.gracedb.rest import GraceDb, HTTPError
+
+        # first of all, make sure the event and PSDs are saved on disk
+        # as GraceDB operations can fail later
 
         self.save(fname)
-        extra_strings = [] if extra_strings is None else extra_strings
-        if testing:
-            group = 'Test'
-        else:
-            group = 'CBC'
-
-        if self.gracedb_server is not None:
-            gracedb = GraceDb(self.gracedb_server)
-        else:
-            gracedb = GraceDb()
-        r = gracedb.createEvent(group, "pycbc", fname, "AllSky").json()
-        logging.info("Uploaded event %s.", r["graceid"])
-
-        if self.is_hardware_injection:
-            gracedb.writeLabel(r['graceid'], 'INJ')
-            logging.info("Tagging event %s as an injection", r["graceid"])
 
         psds_lal = {}
         for ifo in psds:
@@ -283,26 +271,76 @@ class SingleCoincForGraceDB(object):
             fseries.data.data = psd.numpy()[kmin:] / pycbc.DYN_RANGE_FAC ** 2.0
             psds_lal[ifo] = fseries
         psd_xmldoc = make_psd_xmldoc(psds_lal)
-
-        ligolw_utils.write_filename(psd_xmldoc, "tmp_psd.xml.gz", gz=True)
-        gracedb.writeLog(r["graceid"],
-                         "PyCBC PSD estimate from the time of event",
-                         "psd.xml.gz", open("tmp_psd.xml.gz", "rb").read(),
-                         "psd").json()
-        gracedb.writeLog(r["graceid"],
-            "using pycbc code hash %s" % pycbc_version.git_hash).json()
-        for text in extra_strings:
-            gracedb.writeLog(r["graceid"], text).json()
-        logging.info("Uploaded file psd.xml.gz to event %s.", r["graceid"])
+        psd_xml_path = os.path.splitext(fname)[0] + '-psd.xml.gz'
+        ligolw_utils.write_filename(psd_xmldoc, psd_xml_path, gz=True)
 
         if self.upload_snr_series:
-            snr_series_fname = fname + '.hdf'
+            snr_series_fname = os.path.splitext(fname)[0] + '.hdf'
             for ifo in self.snr_series:
                 self.snr_series[ifo].save(snr_series_fname,
                                           group='%s/snr' % ifo)
                 self.snr_series_psd[ifo].save(snr_series_fname,
                                               group='%s/psd' % ifo)
-            gracedb.writeFile(r['graceid'], snr_series_fname)
+
+        # try connecting to GraceDB
+        try:
+            gracedb = GraceDb(self.gracedb_server) \
+                    if self.gracedb_server is not None else GraceDb()
+        except Exception as exc:
+            logging.error('Cannot connect to GraceDB')
+            logging.error(str(exc))
+            logging.error('Carrying on, but event %s will NOT be uploaded!', fname)
+            return None
+
+        # create GraceDB event
+        group = 'Test' if testing else 'CBC'
+        try:
+            r = gracedb.createEvent(group, "pycbc", fname, "AllSky").json()
+        except Exception as exc:
+            logging.error('Cannot create GraceDB event')
+            logging.error(str(exc))
+            logging.error('Carrying on, but event %s will NOT be uploaded!', fname)
+            return None
+        logging.info("Uploaded event %s", r["graceid"])
+
+        if self.is_hardware_injection:
+            try:
+                gracedb.writeLabel(r['graceid'], 'INJ')
+            except Exception as exc:
+                logging.error("Cannot tag event %s as an injection", r["graceid"])
+                logging.error(str(exc))
+            logging.info("Tagging event %s as an injection", r["graceid"])
+
+        # upload PSDs
+        try:
+            gracedb.writeLog(r["graceid"],
+                             "PyCBC PSD estimate from the time of event",
+                             "psd.xml.gz", open(psd_xml_path, "rb").read(),
+                             "psd").json()
+        except Exception as exc:
+            logging.error("Cannot upload PSDs for event %s", r["graceid"])
+            logging.error(str(exc))
+        logging.info("Uploaded PSDs for event %s", r["graceid"])
+
+        # add other tags and comments
+        try:
+            gracedb.writeLog(r["graceid"],
+                "Using PyCBC code hash %s" % pycbc_version.git_hash).json()
+            extra_strings = [] if extra_strings is None else extra_strings
+            for text in extra_strings:
+                gracedb.writeLog(r["graceid"], text).json()
+        except Exception as exc:
+            logging.error("Cannot write comments for event %s", r["graceid"])
+            logging.error(str(exc))
+
+        # upload SNR series in HDF format
+        if self.upload_snr_series:
+            try:
+                gracedb.writeFile(r['graceid'], snr_series_fname)
+            except Exception as exc:
+                logging.error("Cannot upload HDF SNR series for event %s",
+                              r["graceid"])
+                logging.error(str(exc))
 
         return r['graceid']
 
