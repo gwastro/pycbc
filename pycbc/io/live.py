@@ -78,9 +78,8 @@ class SingleCoincForGraceDB(object):
             pycbc/events/coinc.py and matches the on disk representation
             in the hdf file for this time.
         """
-        self.ifos = ifos
         followup_ifos = kwargs.get('followup_ifos') or []
-        self.template_id = coinc_results['foreground/%s/template_id' % self.ifos[0]]
+        self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
 
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results)
@@ -88,13 +87,42 @@ class SingleCoincForGraceDB(object):
         # remember if we want to use a non-standard gracedb server
         self.gracedb_server = kwargs.get('gracedb_server')
 
+        # compute SNR time series if needed, and figure out which of
+        # the followup detectors are usable
+        subthreshold_sngl_time = numpy.mean(
+                [coinc_results['foreground/%s/end_time' % ifo]
+                 for ifo in ifos])
+        self.upload_snr_series = kwargs.get('upload_snr_series')
+        usable_ifos = []
+        if self.upload_snr_series:
+            self.snr_series = {}
+            self.snr_series_psd = {}
+            htilde = kwargs['bank'][self.template_id]
+            for ifo in ifos + followup_ifos:
+                if ifo in ifos:
+                    trig_time = coinc_results['foreground/%s/end_time' % ifo]
+                else:
+                    trig_time = subthreshold_sngl_time
+                # NOTE we only check the state/DQ of followup IFOs here.
+                # IFOs producing the coincidence are assumed to also
+                # produce valid SNR series.
+                snr_series, snr_series_psd = compute_followup_snr_series(
+                        kwargs['data_readers'][ifo], htilde, trig_time,
+                        check_state=(ifo in followup_ifos))
+                if snr_series is not None:
+                    self.snr_series[ifo] = snr_series
+                    self.snr_series_psd[ifo] = snr_series_psd
+                    usable_ifos.append(ifo)
+        else:
+            usable_ifos = ifos
+
         # Set up the bare structure of the xml document
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
         proc_id = ligolw_process.register_to_xmldoc(
-            outdoc, 'pycbc',
-            {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
+            outdoc, 'pycbc', {}, ifos=usable_ifos, comment='',
+            version=pycbc_version.git_hash,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
             cvs_entry_time=pycbc_version.date).process_id
 
@@ -114,8 +142,8 @@ class SingleCoincForGraceDB(object):
         coinc_event_table = lsctables.New(lsctables.CoincTable)
         coinc_event_row = lsctables.Coinc()
         coinc_event_row.coinc_def_id = coinc_def_id
-        coinc_event_row.nevents = len(ifos)
-        coinc_event_row.instruments = ','.join(ifos)
+        coinc_event_row.nevents = len(usable_ifos)
+        coinc_event_row.instruments = ','.join(usable_ifos)
         coinc_event_row.time_slide_id = lsctables.TimeSlideID(0)
         coinc_event_row.process_id = proc_id
         coinc_event_row.coinc_event_id = coinc_id
@@ -123,40 +151,12 @@ class SingleCoincForGraceDB(object):
         coinc_event_table.append(coinc_event_row)
         outdoc.childNodes[0].appendChild(coinc_event_table)
 
-        # compute SNR time series
-        subthreshold_sngl_time = numpy.mean(
-                [coinc_results['foreground/%s/end_time' % ifo]
-                 for ifo in ifos])
-        self.upload_snr_series = kwargs.get('upload_snr_series')
-        if self.upload_snr_series:
-            self.snr_series = {}
-            self.snr_series_psd = {}
-            htilde = kwargs['bank'][self.template_id]
-            for ifo in ifos + followup_ifos:
-                if ifo in ifos:
-                    trig_time = coinc_results['foreground/%s/end_time' % ifo]
-                else:
-                    trig_time = subthreshold_sngl_time
-                # NOTE we only check the state/DQ of followup IFOs here.
-                # IFOs producing the coincidence are assumed to also
-                # produce valid SNR series.
-                snr_series, snr_series_psd = compute_followup_snr_series(
-                        kwargs['data_readers'][ifo], htilde, trig_time,
-                        check_state=(ifo in followup_ifos))
-                if snr_series is not None:
-                    self.snr_series[ifo] = snr_series
-                    self.snr_series_psd[ifo] = snr_series_psd
-
         # Set up sngls
         sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
         sngl_populated = None
-        for sngl_id, ifo in enumerate(ifos + followup_ifos):
-            if self.upload_snr_series and ifo not in self.snr_series:
-                # SNR series could not be computed, so skip this
-                continue
-
+        for sngl_id, ifo in enumerate(usable_ifos):
             sngl = return_empty_sngl(nones=True)
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
             sngl.process_id = proc_id
@@ -189,7 +189,7 @@ class SingleCoincForGraceDB(object):
             coinc_map_row.event_id = sngl.event_id
             coinc_event_map_table.append(coinc_map_row)
 
-            if self.upload_snr_series and ifo in self.snr_series:
+            if self.upload_snr_series:
                 snr_series_to_xml(self.snr_series[ifo], outdoc, sngl.event_id)
 
         # for subthreshold detectors, respect BAYESTAR's assumptions and checks
@@ -210,7 +210,7 @@ class SingleCoincForGraceDB(object):
         # This seems to be used as FAP, which should not be in gracedb
         coinc_inspiral_row.false_alarm_rate = 0
         coinc_inspiral_row.minimum_duration = 0.
-        coinc_inspiral_row.set_ifos(ifos)
+        coinc_inspiral_row.set_ifos(usable_ifos)
         coinc_inspiral_row.coinc_event_id = coinc_id
         coinc_inspiral_row.mchirp = sngl_populated.mchirp
         coinc_inspiral_row.mass = sngl_populated.mtotal
