@@ -115,11 +115,10 @@ class LiveEventManager(object):
                 fname = 'single-%s-%s.xml' % (ifo, int(single.time))
                 fname = os.path.join(self.path, fname)
                 if args.enable_single_detector_upload:
-                    single.upload(fname, {ifo:psds[ifo]},
-                              low_frequency_cutoff,
-                              testing=self.gracedb_testing) 
+                    single.upload(fname, psds, low_frequency_cutoff,
+                                  testing=self.gracedb_testing)
                 else:
-                    single.save(fname)                   
+                    single.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
                   store_loudest_index=False,
