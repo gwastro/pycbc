@@ -212,7 +212,7 @@ with ctx:
     variable_args, static_args, constraints = \
                                          option_utils.read_args_from_config(cp)
     wf_varargs = [item for item in variable_args if not item.startswith("calib_")]
-    calib_varargs = [item for item in variable_args if item.startswith("calib_")]
+    cal_varargs = [item for item in variable_args if item.startswith("calib_")]
 
     # get prior distribution for each variable parameter
     # split waveform param dists and calibration param dists
@@ -227,9 +227,6 @@ with ctx:
     # split waveform prior instance and calibration prior instance
     prior_eval = prior.PriorEvaluator(variable_args, *dists,
                                       **{"constraints": constraints})
-    wf_prior_eval = prior.PriorEvaluator(wf_varargs, *wf_dists,
-                                         **{"constraints" : constraints})
-    calib_prior_eval = prior.PriorEvaluator(calib_varargs, *calib_dists,
 
     # get sampling transformations
     if cp.has_section('sampling_parameters'):
@@ -290,8 +287,10 @@ with ctx:
     l1_c = tf_from_file(opts.l1_transfer_function_c)
     l1_d = tf_from_file(opts.l1_transfer_function_d)
     l1_freqlist = l1_c[:, 0]
-    tf_dict = {"H1": (h1_a_tst, h1_a_pu, h1_c, h1_d, h1_freqlist, 360.),
-               "L1": (l1_a_tst, l1_a_pu, l1_c, l1_d, l1_freqlist, 376.)}
+    tf_dict = {"H1": (h1_a_tst[:, 1], h1_a_pu[:, 1], h1_c[:, 1], h1_d[:, 1],
+                      h1_freqlist, 360.),
+               "L1": (l1_a_tst[:, 1], l1_a_pu[:, 1], l1_c[:, 1], l1_d[:, 1],
+                      l1_freqlist, 376.)}
 
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
