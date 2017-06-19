@@ -286,7 +286,7 @@ with ctx:
             l1_d = tf_from_file(opts.l1_transfer_function_d)
             l1_freqlist = l1_c[:, 0]
         except:
-            raise IOError("Required calibration data is missing")
+            raise IOError("error reading transfer function file")
             
         tf_dict = {"H1": (h1_a_tst[:, 1], h1_a_pu[:, 1], h1_c[:, 1], h1_d[:, 1],
                           h1_freqlist, h1_fc0),
