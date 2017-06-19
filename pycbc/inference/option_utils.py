@@ -581,6 +581,12 @@ def results_from_cli(opts, load_samples=True, **kwargs):
     else:
         samples = None
 
+    # why is this not included in the above transforms??
+    if 'eta' in parameters:
+        m1, m2 = samples['mass1'], samples['mass2']
+        eta = conversions.eta_from_mass1_mass2(m1, m2)
+        samples = samples.add_fields(eta, 'eta')
+
     return fp, parameters, labels, samples
 
 
