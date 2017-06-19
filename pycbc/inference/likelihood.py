@@ -645,7 +645,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                  f_upper=None, norm=None, prior=None,
                  sampling_parameters=None, replace_parameters=None,
                  sampling_transforms=None, return_meta=True,
-                 transfer_functions=None, detune=None):
+                 transfer_functions=None, calib=None):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
@@ -681,7 +681,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
             for d in self._data.values()]))
         # store the calibration transfer functions and params
         self.tfs = transfer_functions
-        self.detune = detune
+        self.calib = calib
         # set default call function to logplor
         self.set_callfunc('logplr')
 
@@ -723,7 +723,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
-            if self.detune:
+            if self.calib:
                 a_tst0 = self.tfs[det][0]
                 a_pu0 = self.tfs[det][1]
                 c0 = self.tfs[det][2]
@@ -736,6 +736,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                               ("deltafc", fc0), ("kappa_c", 1.0),
                               ("kappa_tst_re", 1.0), ("kappa_tst_im", 0.0),
                               ("kappa_pu_re", 1.0), ("kappa_pu_im", 0.0)]
+
                 cal_dict = {}
                 for p in cal_params:
                     if "calib_"+p[0] in params:
@@ -745,11 +746,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                     else:
                         cal_dict.update({p[0]: p[1]} if p[0] != "deltafc" \
                                         else {"fc": fc0})
-                #fs = params["calib_fs"] if "calib_fs" in params else fs0
-                #qinv = params["calib_qinv"] if "calib_qinv" in params \
-                #       else qinv0
-                #fc = params["calib_deltafc"]+fc0 if "calib_deltafc" in params \
-                #     else fc0
+
                 h = recal.adjust_strain(h, fs0=fs0, qinv0=qinv0, fc0=fc0,
                                         a_tst0=a_tst0, freqs=freqs,
                                         a_pu0=a_pu0, c0=c0, d0=d0,
