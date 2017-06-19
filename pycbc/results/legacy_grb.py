@@ -724,7 +724,7 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
             sub.get_xaxis().set_ticklabels([])
 
     xmin, xmax = fig.axes[-1].get_xaxis().get_view_interval()
-    ymin, ymax = fig.axes[-1].get_yaxis().get_view_interval()
+    ymin, _ = fig.axes[-1].get_yaxis().get_view_interval()
     fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymin), color='black',
                                    linewidth=2))
     fig.axes[-1].set_xlabel('GPS Time')
