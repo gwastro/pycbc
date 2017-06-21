@@ -1,4 +1,0 @@
-
-
-
-from gaussian import *

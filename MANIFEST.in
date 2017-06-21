@@ -1,4 +1,0 @@
-include test/*test*py
-include bin/*
-recursive-include examples *py *sh *xml
-recursive-include tools *py
