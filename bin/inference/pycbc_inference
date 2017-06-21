@@ -22,6 +22,7 @@ import os
 import argparse
 import logging
 import numpy
+import h5py
 import pycbc
 import pycbc.opt
 import pycbc.weave
@@ -82,42 +83,10 @@ parser.add_argument("--samples-file", default=None,
 
 # calibration data options
 parser.add_argument("--calib", action="store_true", default=False,
-                  help="Switch to determine whether cal parameters are "
-                       "included in likelihood calculation.")
-parser.add_argument("--h1-fc0", type=float, default=360.,
-                  help="H1 cavity pole frequency at reference time")
-parser.add_argument("--h1-transfer-function-a-tst", type=str,
-                  help="Path to ASCII file that contains H1 reference actuation "
-                       "function A_tst for test mass.")
-parser.add_argument("--h1-transfer-function-a-pu", type=str,
-                  help="Path to ASCII file that contains H1 reference actuation "
-                       "function A_pu for the upper pendulum stages.")
-parser.add_argument("--h1-transfer-function-a-uim", type=str,
-                  help="Path to ASCII file that contains H1 reference actuation "
-                       "function A_uim.")
-parser.add_argument("--h1-transfer-function-c", type=str,
-                  help="Path to ASCII file that contains H1 reference "
-                       "sensing function.")
-parser.add_argument("--h1-transfer-function-d", type=str,
-                  help="Path to ASCII file that contains H1 reference "
-                       "digital filters.")
-parser.add_argument("--l1-fc0", type=float, default=376.,
-                  help="L1 cavity pole frequency at reference time")
-parser.add_argument("--l1-transfer-function-a-tst", type=str,
-                  help="Path to ASCII file that contains L1 reference actuation "
-                       "function A_tst for test mass.")
-parser.add_argument("--l1-transfer-function-a-pu", type=str,
-                  help="Path to ASCII file that contains L1 reference actuation "
-                       "function A_pu for the upper pendulum stages.")
-parser.add_argument("--l1-transfer-function-a-uim", type=str,
-                  help="Path to ASCII file that contains L1 reference actuation "
-                       "function A_uim.")
-parser.add_argument("--l1-transfer-function-c", type=str,
-                  help="Path to ASCII file that contains L1 reference "
-                       "sensing function.")
-parser.add_argument("--l1-transfer-function-d", type=str,
-                  help="Path to ASCII file that contains L1 reference "
-                       "digital filters.")
+                  help="Switch to determine whether calibration parameters are"
+                       " included in likelihood calculation.")
+parser.add_argument("--transfer-functions", type=str,
+                  help="Path to hdf file containing calibration data")
 
 # add sampler options
 option_utils.add_sampler_option_group(parser)
@@ -252,36 +221,31 @@ with ctx:
         sampling_parameters = replace_parameters = sampling_transforms = None
     
     # read in calibration transfer functions
-    if opts.calib:
+    if opts.calib and opts.transfer_functions:
         logging.info("Calibration parameters will be included in likelihood "
                      "calculation")
-        logging.info("Reading in transfer functions")
-        try:
-            # H1
-            h1_fc0 = opts.h1_fc0
-            h1_a_tst = tf_from_file(opts.h1_transfer_function_a_tst)
-            h1_a_pu = tf_from_file(opts.h1_transfer_function_a_pu)
-            h1_a_uim = tf_from_file(opts.h1_transfer_function_a_uim)
-            h1_a_pu += h1_a_uim # current convention is to sum these stages
-            h1_c = tf_from_file(opts.h1_transfer_function_c)
-            h1_d = tf_from_file(opts.h1_transfer_function_d)
+        logging.info("Reading calibration data file")
+        with h5py.File(opts.transfer_functions, "r") as fp:
+            h1_fc0 = fp["h1_fc0"].value
+            h1_a_tst = fp["h1_a_tst"][:]
+            h1_a_pu = fp["h1_a_pu"][:]
+            h1_c = fp["h1_c"][:]
+            h1_d = fp["h1_d"][:]
             h1_freqlist = h1_c[:, 0]
-            # L1
-            l1_fc0 = opts.l1_fc0
-            l1_a_tst = tf_from_file(opts.l1_transfer_function_a_tst)
-            l1_a_pu = tf_from_file(opts.l1_transfer_function_a_pu)
-            l1_a_uim = tf_from_file(opts.l1_transfer_function_a_uim)
-            l1_a_pu += l1_a_uim # current convention is to sum these stages
-            l1_c = tf_from_file(opts.l1_transfer_function_c)
-            l1_d = tf_from_file(opts.l1_transfer_function_d)
+            l1_fc0 = fp["l1_fc0"].value
+            l1_a_tst = fp["l1_a_tst"][:]
+            l1_a_pu = fp["l1_a_pu"][:]
+            l1_c = fp["l1_c"][:]
+            l1_d = fp["l1_d"][:]
             l1_freqlist = l1_c[:, 0]
-        except:
-            raise IOError("error reading transfer function file")
             
         tf_dict = {"H1": (h1_a_tst[:, 1], h1_a_pu[:, 1], h1_c[:, 1], h1_d[:, 1],
                           h1_freqlist, h1_fc0),
                    "L1": (l1_a_tst[:, 1], l1_a_pu[:, 1], l1_c[:, 1], l1_d[:, 1],
                           l1_freqlist, l1_fc0)}
+    elif opts.calib and not opts.transfer_functions:
+         raise OSError("transfer function data file must be supplied with "
+                       "--transfer-functions")
     else:
         logging.info("Calibration parameters will not be included in likelihood"
                      " calculation")
