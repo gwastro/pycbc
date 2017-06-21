@@ -42,7 +42,160 @@ from pycbc.fft import ifft
 from pycbc.types import zeros
 from numpy import fft as npfft
 import os
+import h5py
+from pycbc.filter import highpass_fir, matched_filter
+from pycbc.psd import welch, interpolate
 
+def pycbc_insp_main(segments, filename='q_info.hdf'):
+    """Main function for pycbc_inspiral implementation of qtransform.py
+    Parameters
+    ----------
+    segments:
+        list of pycbc frequency series segments
+    filename:
+        name of output file for qtransform info to be stored
+
+    """
+
+    comb_q_dict = {}
+    for s_num, stilde in enumerate(segments):
+        # getting q-tiles for segments
+        Qbase, q_frange, q_data = pycbc_insp_tiling(stilde, stilde.psd)
+
+        # getting q-plane for segment
+        Qplane, interp, qs_time, qe_time = qplane(Qbase, q_data, q_frange, fres=None, seg=stilde)
+        
+        del q_frange, q_data
+
+        # write q info to an hdf file
+        Qbase_tmp = {}
+        Qplane_tmp = {}
+        print 'start time: %s, end time: %s' % (qs_time, qe_time)
+        if not 'qtiles' in comb_q_dict:
+            Qbase_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qbase
+            comb_q_dict['qtiles'] = Qbase_tmp
+        if not 'qplanes' in comb_q_dict:
+            Qplane_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qplane
+            comb_q_dict['qplanes'] = Qplane_tmp
+        else:
+            comb_q_dict['qtiles']['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qbase
+            comb_q_dict['qplanes']['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qplane
+
+    # save qtransform info to hdf5 file
+    #path = '/'
+    #recursively_save_dict_contents_to_group(out_vals, path, comb_q_dict)
+
+    return comb_q_dict
+
+def pycbc_insp_tiling(seg, frange=(0,1024), qrange=(4,64)):
+    """Iterable constructor of QTile tuples
+    Parameters
+    ----------
+    seg:
+        fft'd analysis chunck
+    frange:
+        frequency range
+    qrange:
+        q range
+
+    Returns
+    -------
+    Qbase: 'dict'
+        dictionary containing Q-tile tuples for a set of Q-planes
+    frange: 'list'
+        upper and lower bounds on frequency range
+    data:
+        whitened strain of analysis chunk
+
+    """
+
+    # assume segment is fft'd
+    # check for sampling rate
+    sampling = (len(seg) - 1) * 2 * seg.delta_f
+    sampling = 64.
+    mismatch = 0.2
+    qrange=(4,64)
+    frange=(0,np.inf)
+
+    valid_time = seg.to_timeseries()
+
+    # highpass and suppress frequencies below 20Hz
+    data = highpass_fir(valid_time, 20, 8)
+    dur = data.duration
+
+    # calculate the noise spectrum
+    seg_psd = interpolate(welch(data), 1.0 / dur)
+
+    # retrieve whitened strain
+    white_strain = (data.to_frequencyseries() / seg_psd ** 0.5 * seg_psd.delta_f)            
+    data = white_strain
+ 
+    # perform Q-tiling
+    Qbase, frange = qtiling(data, qrange, frange, mismatch)
+
+    return Qbase, frange, data
+
+def save_dict_to_hdf5(dic, filename):
+    """
+    Parameters
+    ----------
+    dic:
+        python dictionary to be converted to hdf5 format
+    filename:
+        desired name of hdf5 file
+    """
+    with h5py.File(filename, 'w') as h5file:
+        recursively_save_dict_contents_to_group(h5file, '/', dic)
+
+def recursively_save_dict_contents_to_group(h5file, path, dic):
+    """
+    Parameters
+    ----------
+    h5file:
+        h5py file to be written to
+    path:
+        path within h5py file to saved dictionary
+    dic:
+        python dictionary to be converted to hdf5 format
+    """
+    for key, item in dic.items():
+        if isinstance(item, (np.ndarray, np.int64, np.float64, str, bytes, tuple, list)):
+            h5file[path + str(key)] = item
+        elif isinstance(item, dict):
+            recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
+        else:
+            raise ValueError('Cannot save %s type'%type(item))
+
+def load_dict_from_hdf5(filename):
+    """
+    Parameters
+    ----------
+    filename:
+        name of h5py file to be loaded
+
+    Returns
+    -------
+    recursively_load_dict_contents_from_group():
+        python dictionary object
+    """
+    with h5py.File(filename, 'r') as h5file:
+        return recursively_load_dict_contents_from_group(h5file, '/')
+
+def recursively_load_dict_contents_from_group(h5file, path):
+    """
+    Parameters
+    ----------
+    h5file:
+        h5py file to be loaded from
+    path:
+        path within h5py file to items
+    """
+    ans = {}
+    for key, item in h5file[path].items():
+        if isinstance(item, h5py._hl.dataset.Dataset):
+            ans[key] = item.value
+
+    
 
 def plotter(interp, out_dir, now, frange, tres, fres):
     """Plotting mechanism for pycbc spectrograms
@@ -98,7 +251,7 @@ def plotter(interp, out_dir, now, frange, tres, fres):
 
     return plt
 
-def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=1.):
+def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1., seg=None):
     """Performs q-transform on each tile for each q-plane and selects
        tile with the maximum normalized energy. Q-transform is then
        interpolated to a desired frequency and time resolution.
@@ -128,10 +281,11 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=
     """
     # store q-transforms of each tile in a dict
     qplane_qtrans_dict = {}
-    dur = 1.0 / fseries.delta_f
+    dur = fseries.to_timeseries().duration
 
     # check for sampling rate
     sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+    #sampling = 64.
 
     max_energy = []
     for i, key in enumerate(qplane_tile_dict):
@@ -142,25 +296,35 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=
                 energies = energies[0]
             else:
                 energies = energies[1]
-            energies_lst.append(energies.numpy())
-            maxen = float(energies.max())
+            energies_lst.append(energies)
             if i == 0:
-                max_energy.append(maxen)
+                max_energy.append(max(energies))
                 max_energy.append(tile)
                 max_energy.append(key)
-            elif maxen > max_energy[0]:
-                max_energy[0] = maxen
+            elif max(energies) > max_energy[0]:
+                max_energy[0] = max(energies)
                 max_energy[1] = tile
                 max_energy[2] = key
-                max_energy[3] = energies
-        qplane_qtrans_dict[key] = np.array(energies_lst)
+                max_energy[3] = energies 
+        qplane_qtrans_dict[key] = energies_lst
 
-    # record peak q calculate above and q-transform output for peak q
+    # record q-transform output for peak q
     result = qplane_qtrans_dict[max_energy[2]]
+    qtile_max = qplane_tile_dict[key]
 
     # then interpolate the spectrogram to increase the frequency resolution
     if fres is None:  # unless user tells us not to
-        return result
+        if not seg:
+            return result, qtile_max
+        elif seg:
+            #result[0].start_time
+            s_time = seg.epoch + (seg.analyze.start*(1. / sampling))
+            e_time = seg.epoch + (seg.analyze.stop*(1. / sampling))
+            result = np.array(result)
+            s_idx = int(((len(result[:,0]) / dur) / sampling) * seg.analyze.start)
+            e_idx = int(((len(result[:,0]) / dur) / sampling) * seg.analyze.stop)
+            result = result[:,s_idx:e_idx]
+            return result, qtile_max, s_time, e_time
     else:
         # initialize some variables
         frequencies = []
@@ -169,13 +333,22 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=0.001, fres=
             frequencies.append(i[0])
 
         # 2-D interpolation
-        time_array = np.linspace(0, dur, int(dur * sampling))
-        interp = interp2d(time_array, frequencies, result)
- 
-    out = interp(np.arange(0, dur, tres), np.arange(int(frange[0]), int(frange[1]), fres))
+        time_array = np.linspace(-(dur / 2.),(dur / 2.),int(dur * sampling))
+        interp = interp2d(time_array, frequencies, np.array(result))
+
+    out = interp(np.linspace(0,1, 1. / tres), np.arange(int(frange[0]), int(frange[1]), fres))
+
+    # if segment, downsample to valid time
+    if not seg:
+        seg = None
+    elif seg:
+        s_idx = int((((1. / tres) / dur) / sampling) * seg.analyze.start)
+        e_idx = int((((1. / tres) / dur) / sampling) * seg.analyze.stop)
+        out = out[s_idx:e_idx,:]
+
     return out, interp
 
-def qtiling(fseries, qrange, frange, mismatch):
+def qtiling(fseries, qrange, frange, mismatch=0.2):
     """Iterable constructor of QTile tuples
 
     Parameters
@@ -200,11 +373,12 @@ def qtiling(fseries, qrange, frange, mismatch):
     deltam = deltam_f(mismatch)
     qrange = (float(qrange[0]), float(qrange[1]))
     frange = [float(frange[0]), float(frange[1])]
-    dur = 1.0 / fseries.delta_f
+    dur = fseries.to_timeseries().duration
     qplane_tile_dict = {}
 
     # check for sampling rate
     sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+    #sampling = 64.
 
     qs = list(_iter_qs(qrange, deltam))
     if frange[0] == 0:  # set non-zero lower frequency
@@ -217,8 +391,8 @@ def qtiling(fseries, qrange, frange, mismatch):
         qtilefreq = np.array(list(_iter_frequencies(q, frange, mismatch, dur)))
         qlst = np.empty(len(qtilefreq), dtype=float)
         qlst.fill(q)
-        qtiles_array = np.vstack((qtilefreq, qlst)).T
-        qplane_tiles_list = list(map(tuple, qtiles_array))
+        qtiles_array = np.vstack((qtilefreq,qlst)).T
+        qplane_tiles_list = list(map(tuple,qtiles_array))
         qplane_tile_dict[q] = qplane_tiles_list
 
     return qplane_tile_dict, frange
@@ -315,17 +489,16 @@ def qtransform(fseries, Q, f0):
         A 'TimeSeries' of the complex energy from the Q-transform of 
         this tile against the data.
     """
+
     # q-transform data for each (Q, frequency) tile
+
     # initialize parameters
     qprime = Q / 11**(1/2.) # ... self.qprime
-    dur = 1.0 / fseries.delta_f
+    dur = fseries.to_timeseries().duration
 
     # check for sampling rate
     sampling = (len(fseries) - 1) * 2 * fseries.delta_f
-
-    # choice of output sampling rate
-    output_sampling = sampling # Can lower this to highest bandwidth
-    output_samples = int(dur * output_sampling)
+    #sampling = 64.
 
     # window fft
     window_size = 2 * int(f0 / qprime * dur) + 1
@@ -337,7 +510,11 @@ def qtransform(fseries, Q, f0):
     # apply window to fft
     # normalize and generate bi-square window
     norm = np.sqrt(315. * qprime / (128. * f0))
-    windowed = fseries[start:end].numpy() * (bisquare(window_size) * norm)
+    windowed = fseries[start:end] * (bisquare(window_size) * norm)
+
+    # choice of output sampling rate
+    output_sampling = sampling # Can lower this to highest bandwidth
+    output_samples = dur * output_sampling
 
     # pad data, move negative frequencies to the end, and IFFT
     padded = np.pad(windowed, padding(window_size, output_samples), mode='constant')
@@ -345,12 +522,17 @@ def qtransform(fseries, Q, f0):
 
     # return a 'TimeSeries'
     wenergy = FrequencySeries(wenergy, delta_f=1./dur)
-    cenergy = TimeSeries(zeros(output_samples, dtype=np.complex128),
+    tdenergy = TimeSeries(zeros(int(output_samples), dtype=np.complex128),
                             delta_t=1./sampling)
-    ifft(wenergy, cenergy)
-    energy = cenergy.squared_norm()
-    medianenergy = np.median(energy.numpy())
-    norm_energy = energy / float(medianenergy)
+    ifft(wenergy, tdenergy)
+    cenergy = TimeSeries(tdenergy,
+                         delta_t=tdenergy.delta_t, copy=False)
+    energy = type(cenergy)(
+        cenergy.real() ** 2. + cenergy.imag() ** 2.,
+        delta_t=1, copy=False)
+    medianenergy = np.median(energy)
+    norm_energy = energy / medianenergy
+ 
     return norm_energy, cenergy
 
 def padding(window_size, desired_size):

@@ -30,6 +30,9 @@ import pycbc.weave
 import pycbc.inject
 import time
 
+sys.path.insert(0, '/home/hunter.gabbard/ml_fulbright/pycbc_qtransform/pycbc_copy/pycbc/filter')
+import qtransform
+
 last_progress_update = -1.0
 
 def update_progress(p,u,n):
@@ -223,6 +226,7 @@ with ctx:
         'bank_chisq'     : float32,
         'bank_chisq_dof' : int,
         'cont_chisq'     : float32,
+        'qtransform'     : dict,
                 }
     out_types.update(SingleDetSGChisq.returns)
     out_vals = {key: None for key in out_types}
@@ -307,13 +311,16 @@ with ctx:
 
     tsetup = time.time() - tstart
 
+    logging.info("Performing q-transform on analysis segments")
+    out_vals['qtransform'] = qtransform.pycbc_insp_main(segments)
+
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in
     # the 'template_mem' argument to MatchedFilterControl with the next template
     # from the bank.
     for t_num in xrange(len(bank)):
         tmplt_generated = False
-
+       
         for s_num, stilde in enumerate(segments):
             # Filter check checks the 'inj_filter_rejector' options to
             # determine whether
