@@ -51,16 +51,6 @@ def tf_from_file(path, delimiter=" "):
     h = data[:, 1] + 1.0j * data[:, 2]
     return numpy.array([freq, h]).transpose()
 
-def tf_from_file(path, delimiter=" "):
-    """Convert the contents of a file with the columns
-    [freq, real(h), imag(h)] to a numpy.array with columns
-    [freq, real(h)+j*imag(h)].
-    """
-    data = numpy.loadtxt(path, delimiter=delimiter)
-    freq = data[:, 0]
-    h = data[:, 1] + 1.0j * data[:, 2]
-    return numpy.array([freq, h]).transpose()
-
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
@@ -256,42 +246,6 @@ with ctx:
     elif opts.calib and not opts.transfer_functions:
          raise OSError("transfer function data file must be supplied with "
                        "--transfer-functions")
-    else:
-        logging.info("Calibration parameters will not be included in likelihood"
-                     " calculation")
-        tf_dict = None
-
-    # read in calibration transfer functions
-    if opts.calib:
-        logging.info("Calibration parameters will be included in likelihood "
-                     "calculation")
-        logging.info("Reading in transfer functions")
-        try:
-            # H1
-            h1_fc0 = opts.h1_fc0
-            h1_a_tst = tf_from_file(opts.h1_transfer_function_a_tst)
-            h1_a_pu = tf_from_file(opts.h1_transfer_function_a_pu)
-            h1_a_uim = tf_from_file(opts.h1_transfer_function_a_uim)
-            h1_a_pu += h1_a_uim # current convention is to sum these stages
-            h1_c = tf_from_file(opts.h1_transfer_function_c)
-            h1_d = tf_from_file(opts.h1_transfer_function_d)
-            h1_freqlist = h1_c[:, 0]
-            # L1
-            l1_fc0 = opts.l1_fc0
-            l1_a_tst = tf_from_file(opts.l1_transfer_function_a_tst)
-            l1_a_pu = tf_from_file(opts.l1_transfer_function_a_pu)
-            l1_a_uim = tf_from_file(opts.l1_transfer_function_a_uim)
-            l1_a_pu += l1_a_uim # current convention is to sum these stages
-            l1_c = tf_from_file(opts.l1_transfer_function_c)
-            l1_d = tf_from_file(opts.l1_transfer_function_d)
-            l1_freqlist = l1_c[:, 0]
-        except:
-            raise IOError("error reading transfer function file")
-            
-        tf_dict = {"H1": (h1_a_tst[:, 1], h1_a_pu[:, 1], h1_c[:, 1], h1_d[:, 1],
-                          h1_freqlist, h1_fc0),
-                   "L1": (l1_a_tst[:, 1], l1_a_pu[:, 1], l1_c[:, 1], l1_d[:, 1],
-                          l1_freqlist, l1_fc0)}
     else:
         logging.info("Calibration parameters will not be included in likelihood"
                      " calculation")
