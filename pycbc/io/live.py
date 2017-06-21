@@ -254,7 +254,7 @@ class SingleCoincForGraceDB(object):
             Switch to determine if the upload should be sent to gracedb as a
         test trigger (True) or a production trigger (False)
         """
-        from ligo.gracedb.rest import GraceDb, HTTPError
+        from ligo.gracedb.rest import GraceDb
 
         # first of all, make sure the event and PSDs are saved on disk
         # as GraceDB operations can fail later
