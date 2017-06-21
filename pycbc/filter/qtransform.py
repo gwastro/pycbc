@@ -47,7 +47,7 @@ from pycbc.filter import highpass_fir, matched_filter
 from pycbc.psd import welch, interpolate
 from pycbc.io import hdf
 
-def pycbc_insp_main(segments, filename='q_info.hdf'):
+def inspiral_qtransform_generator(segments, filename='q_info.hdf'):
     """Main function for pycbc_inspiral implementation of qtransform.py
     Parameters
     ----------
@@ -61,7 +61,7 @@ def pycbc_insp_main(segments, filename='q_info.hdf'):
     comb_q_dict = {}
     for s_num, stilde in enumerate(segments):
         # getting q-tiles for segments
-        Qbase, q_frange, q_data = pycbc_insp_tiling(stilde)
+        Qbase, q_frange, q_data = inspiral_tiling(stilde)
 
         # getting q-plane for segment
         Qplane, interp, qs_time, qe_time = qplane(Qbase, q_data, q_frange, fres=None, seg=stilde)
@@ -82,14 +82,10 @@ def pycbc_insp_main(segments, filename='q_info.hdf'):
             comb_q_dict['qtiles']['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qbase
             comb_q_dict['qplanes']['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qplane
 
-    # save qtransform info to hdf5 file
-    #path = '/'
-    #recursively_save_dict_contents_to_group(out_vals, path, comb_q_dict)
-
     return comb_q_dict
 
-def pycbc_insp_tiling(seg, frange=(0,np.inf), qrange=(4,64), mismatch=0.2):
-    """Iterable constructor of QTile tuples
+def inspiral_tiling(seg, frange=(0,np.inf), qrange=(4,64), mismatch=0.2):
+    """Pycbc inspiral iterable constructor of QTile tuples
     Parameters
     ----------
     seg:

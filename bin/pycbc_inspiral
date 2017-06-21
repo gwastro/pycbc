@@ -309,7 +309,7 @@ with ctx:
     tsetup = time.time() - tstart
 
     logging.info("Performing q-transform on analysis segments")
-    out_vals['qtransform'] = qtransform.pycbc_insp_main(segments)
+    out_vals['qtransform'] = qtransform.inspiral_qtransform_generator(segments)
 
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in
