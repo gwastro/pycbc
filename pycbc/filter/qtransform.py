@@ -60,7 +60,7 @@ def pycbc_insp_main(segments, filename='q_info.hdf'):
     comb_q_dict = {}
     for s_num, stilde in enumerate(segments):
         # getting q-tiles for segments
-        Qbase, q_frange, q_data = pycbc_insp_tiling(stilde, stilde.psd)
+        Qbase, q_frange, q_data = pycbc_insp_tiling(stilde)
 
         # getting q-plane for segment
         Qplane, interp, qs_time, qe_time = qplane(Qbase, q_data, q_frange, fres=None, seg=stilde)
@@ -87,7 +87,7 @@ def pycbc_insp_main(segments, filename='q_info.hdf'):
 
     return comb_q_dict
 
-def pycbc_insp_tiling(seg, frange=(0,1024), qrange=(4,64)):
+def pycbc_insp_tiling(seg, frange=(0,np.inf), qrange=(4,64), mismatch=0.2):
     """Iterable constructor of QTile tuples
     Parameters
     ----------
@@ -112,19 +112,12 @@ def pycbc_insp_tiling(seg, frange=(0,1024), qrange=(4,64)):
     # assume segment is fft'd
     # check for sampling rate
     sampling = (len(seg) - 1) * 2 * seg.delta_f
-    sampling = 64.
-    mismatch = 0.2
-    qrange=(4,64)
-    frange=(0,np.inf)
 
-    valid_time = seg.to_timeseries()
+    data = seg.to_timeseries()
 
     # highpass and suppress frequencies below 20Hz
-    data = highpass_fir(valid_time, 20, 8)
     dur = data.duration
-
-    # calculate the noise spectrum
-    seg_psd = interpolate(welch(data), 1.0 / dur)
+    seg_psd = seg.psd
 
     # retrieve whitened strain
     white_strain = (data.to_frequencyseries() / seg_psd ** 0.5 * seg_psd.delta_f)            
@@ -285,7 +278,6 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
 
     # check for sampling rate
     sampling = (len(fseries) - 1) * 2 * fseries.delta_f
-    #sampling = 64.
 
     max_energy = []
     for i, key in enumerate(qplane_tile_dict):
@@ -378,7 +370,6 @@ def qtiling(fseries, qrange, frange, mismatch=0.2):
 
     # check for sampling rate
     sampling = (len(fseries) - 1) * 2 * fseries.delta_f
-    #sampling = 64.
 
     qs = list(_iter_qs(qrange, deltam))
     if frange[0] == 0:  # set non-zero lower frequency
@@ -498,7 +489,6 @@ def qtransform(fseries, Q, f0):
 
     # check for sampling rate
     sampling = (len(fseries) - 1) * 2 * fseries.delta_f
-    #sampling = 64.
 
     # window fft
     window_size = 2 * int(f0 / qprime * dur) + 1
