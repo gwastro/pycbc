@@ -22,16 +22,13 @@ import pycbc
 import pycbc.version
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
-from pycbc.filter import MatchedFilterControl, make_frequency_series
+from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw, pycbc.version
 import pycbc.opt
 import pycbc.weave
 import pycbc.inject
 import time
-
-sys.path.insert(0, '/home/hunter.gabbard/ml_fulbright/pycbc_qtransform/pycbc_copy/pycbc/filter')
-import qtransform
 
 last_progress_update = -1.0
 
