@@ -33,7 +33,7 @@ from pycbc.waveform import NoWaveformError
 from pycbc.types import Array
 from pycbc.io import FieldArray
 import numpy
-from pycbc.inference import recal
+from pycbc.inference.recal import Recalibrate
 
 # Used to manage a likelihood instance across multiple cores or MPI
 _global_instance = None
@@ -724,40 +724,20 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
             if self.calib:
-                a_tst0 = self.tfs[det][0]
-                a_pu0 = self.tfs[det][1]
-                c0 = self.tfs[det][2]
-                d0 = self.tfs[det][3]
-                freqs = numpy.real(self.tfs[det][4])
-                fc0 = self.tfs[det][5]
-                fs0 = 6.9
-                qinv0 = 0.05
-                cal_params = [("fs", fs0), ("qinv", qinv0),
-                              ("deltafc", fc0), ("kappa_c", 1.0),
-                              ("kappa_tst_re", 1.0), ("kappa_tst_im", 0.0),
-                              ("kappa_pu_re", 1.0), ("kappa_pu_im", 0.0)]
+                cal_init = {}
+                init_keys = ["a_tst0", "a_pu0", "c0", "d0", "freq", "fc0",
+                             "fs0", "qinv0"]
+                init_vals = [self.tfs[det][i] for i in range(6)] + [6.9, 0.05]
+                cal_init.update({i: v for i, v in zip(init_keys, init_vals)})
 
-                cal_dict = {}
-                for p in cal_params:
-                    if "calib_"+p[0] in params:
-                        cal_dict.update({p[0]: params["calib_"+p[0]]} if \
-                                        p[0] != "deltafc" else \
-                                        {"fc": params["calib_"+p[0]]+fc0})
-                    else:
-                        cal_dict.update({p[0]: p[1]} if p[0] != "deltafc" \
-                                        else {"fc": fc0})
+                # set up recalibrator
+                recalibrator = Recalibrate(cal_init)
 
-                h = recal.adjust_strain(h, fs0=fs0, qinv0=qinv0, fc0=fc0,
-                                        a_tst0=a_tst0, freqs=freqs,
-                                        a_pu0=a_pu0, c0=c0, d0=d0,
-                                        fs=cal_dict["fs"],
-                                        qinv=cal_dict["qinv"],
-                                        fc=cal_dict["fc"],
-                                        kappa_c=cal_dict["kappa_c"],
-                                        kappa_tst_re=cal_dict["kappa_tst_re"],
-                                        kappa_tst_im=cal_dict["kappa_tst_im"],
-                                        kappa_pu_re=cal_dict["kappa_pu_re"],
-                                        kappa_pu_im=cal_dict["kappa_pu_im"])
+                cal_adjust = {i: v for i, v in params.items() if
+                              i.startswith("calib_")}
+
+                h = recalibrator.adjust_strain(h, cal_adjust)
+
             h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
                 # <h, d>
