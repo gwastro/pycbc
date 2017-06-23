@@ -6,7 +6,7 @@ import numpy
 from scipy.interpolate import UnivariateSpline
 from pycbc.types import FrequencySeries
 
-class Recalibrate:
+class Recalibrate(object):
     """ Class for adjusting time-varying calibration parameters.
     """
 
@@ -59,9 +59,7 @@ class Recalibrate:
                           kappa_pu_re=kappa_pu_re, kappa_pu_im=kappa_pu_im)
         return (1.0 + g) / c
 
-    def adjust_strain(self, strain, params): #fs=None, qinv=None, fc=None, kappa_c=1.0,
-                      #kappa_tst_re=1.0, kappa_tst_im=0.0, kappa_pu_re=1.0,
-                      #kappa_pu_im=0.0):
+    def adjust_strain(self, strain, params):
         """Adjust the FrequencySeries strain
         """
 
