@@ -95,8 +95,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
 
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
     echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
-    echo -e "\\n>> [`date`] Removing LAL RPMs"
-    yum -y -q remove "*lal*"
     ENV_OS="x86_64_rhel_7"
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
     echo -e "\\n>> [`date`] Building pycbc virtual environment for Debian"
