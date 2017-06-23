@@ -176,8 +176,8 @@ def plotter(interp, out_dir, now, frange, tres, fres):
 
 def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1., seg=None):
     """Performs q-transform on each tile for each q-plane and selects
-       tile with the maximum normalized energy. Q-transform is then
-       interpolated to a desired frequency and time resolution.
+       tile with the maximum normalized energy. Q-transform can then
+       be interpolated to a desired frequency and time resolution.
 
     Parameters
     ----------

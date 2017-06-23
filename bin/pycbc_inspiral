@@ -72,6 +72,9 @@ parser.add_argument("--max-template-length", type=float,
                   help="The maximum length of a template is seconds. The "
                        "starting frequency of the template is modified to "
                        "ensure the proper length")
+parser.add_argument("--q-transform", type=bool, default=False,
+                  help="compute the q-transform for each segment of a "
+                       "given analysis run. (default = False)"
 # add approximant arg
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--order", type=int,
@@ -308,8 +311,9 @@ with ctx:
 
     tsetup = time.time() - tstart
 
-    logging.info("Performing q-transform on analysis segments")
-    out_vals['qtransform'] = qtransform.inspiral_qtransform_generator(segments)
+    if opt.q_transform == True:
+        logging.info("Performing q-transform on analysis segments")
+        out_vals['qtransform'] = qtransform.inspiral_qtransform_generator(segments)
 
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in
