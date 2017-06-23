@@ -91,13 +91,22 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   popd
 fi
 
-if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
-  echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
+if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
 
-  echo -e "\\n>> [`date`] Removing LAL RPMs"
-  yum -y -q remove "*lal*"
+  if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
+    echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
+    echo -e "\\n>> [`date`] Removing LAL RPMs"
+    yum -y -q remove "*lal*"
+    ENV_OS="x86_64_rhel_7"
+  elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
+    echo -e "\\n>> [`date`] Building pycbc virtual environment for Debian"
+    ENV_OS="x86_64_deb_8"
+  else
+    echo -e "\\n>> [`date`] Unknown operating system for virtual environment build"
+    exit 1
+  fi
 
-  CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv
+  CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
 
   VENV_PATH=${CVMFS_PATH}/pycbc-${TRAVIS_TAG}
@@ -109,7 +118,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
   mkdir -p ${VIRTUAL_ENV}/.local
   echo -e "[easy_install]\\nzip_ok = false\\n" > ~/.pydistutils.cfg
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
-  
+    
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
   pip install --upgrade pip
   pip install six packaging appdirs
@@ -138,7 +147,11 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
   echo -e "\\n>> [`date`] Installing LALApps"
   source ${VENV_PATH}/bin/activate
   cd $VIRTUAL_ENV/src/lalsuite/lalapps
-  LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+  if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
+    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+  elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
+    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+  fi
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
   make -j 2 2>&1 | grep Entering
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
@@ -172,7 +185,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
   pip install ipython
   pip install jupyter
 
-cat << EOF >> $VIRTUAL_ENV/bin/activate
+  cat << EOF >> $VIRTUAL_ENV/bin/activate
 
 # if a suitable MKL exists, set it up
 if [ -f /opt/intel/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
@@ -180,7 +193,7 @@ if [ -f /opt/intel/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
   . /opt/intel/composer_xe_2015/mkl/bin/mklvars.sh intel64
 elif [ -f /opt/intel/2015/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
   # location on atlas cluster
-  . /opt/intel/2015/composer_xe_2015/mkl/bin/mklvars.sh
+  . /opt/intel/2015/composer_xe_2015/mkl/bin/mklvars.sh intel64
 elif [ -f /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh ] ; then
   # location on cit cluster
   . /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
@@ -204,23 +217,23 @@ EOF
     echo -e "\\n>> [`date`] Setting virtual environment permissions for deployment"
     find ${VENV_PATH} -type d -exec chmod go+rx {} \;
     chmod -R go+r ${VENV_PATH}
-  
+
     echo -e "\\n>> [`date`] Deploying virtual environment ${VENV_PATH}"
     echo -e "\\n>> [`date`] Deploying virtual environment to sugwg-condor.phy.syr.edu"
-    ssh pycbc@sugwg-condor.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
-    rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ pycbc@sugwg-condor.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
+    ssh pycbc@sugwg-condor.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/${ENV_OS}/virtualenv/pycbc-${TRAVIS_TAG}"
+    rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ pycbc@sugwg-condor.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/${ENV_OS}/virtualenv/pycbc-${TRAVIS_TAG}/
     if [ "x${TRAVIS_TAG}" != "xlatest" ] ; then
       echo -e "\\n>> [`date`] Deploying release ${TRAVIS_TAG} to CVMFS"
       # remove lalsuite source and deploy on cvmfs
       rm -rf ${VENV_PATH}/src/lalsuite
-      ssh ouser.ligo@oasis-login.opensciencegrid.org "mkdir -p /home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}"
-      rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ ouser.ligo@oasis-login.opensciencegrid.org:/home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/
+      ssh ouser.ligo@oasis-login.opensciencegrid.org "mkdir -p /home/login/ouser.ligo/ligo/deploy/sw/pycbc/${ENV_OS}/virtualenv/pycbc-${TRAVIS_TAG}"
+      rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ ouser.ligo@oasis-login.opensciencegrid.org:/home/login/ouser.ligo/ligo/deploy/sw/pycbc/${ENV_OS}/virtualenv/pycbc-${TRAVIS_TAG}/
       ssh ouser.ligo@oasis-login.opensciencegrid.org osg-oasis-update
     fi
     echo -e "\\n>> [`date`] virtualenv deployment complete"
   fi
 fi 
 
-echo -e "\\n>> [`date`] CentOS Docker script exiting"
+echo -e "\\n>> [`date`] Docker script exiting"
 
 exit 0

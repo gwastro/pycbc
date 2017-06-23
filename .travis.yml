@@ -44,6 +44,10 @@ matrix:
     sudo: required
     services:
     - docker
+  - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev
+    sudo: required
+    services:
+    - docker
   - env: PYCBC_CONTAINER=pycbc_inspiral_bundle DOCKER_IMG=pycbc/sl6-travis
     sudo: required
     services:
@@ -57,7 +61,7 @@ matrix:
   - env: PYCBC_CONTAINER=build_and_test
 
 before_install:
-- if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
+- if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then docker build -t ${DOCKER_IMG}-tmp . ; fi
 install:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
