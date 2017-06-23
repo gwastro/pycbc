@@ -204,10 +204,10 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
     """
     # store q-transforms of each tile in a dict
     qplane_qtrans_dict = {}
-    dur = fseries.to_timeseries().duration
+    dur = fseries.duration
 
     # check for sampling rate
-    sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+    sampling = fseries.sample_rate
 
     max_energy = []
     for i, key in enumerate(qplane_tile_dict):
@@ -295,11 +295,11 @@ def qtiling(fseries, qrange, frange, mismatch=0.2):
     deltam = deltam_f(mismatch)
     qrange = (float(qrange[0]), float(qrange[1]))
     frange = [float(frange[0]), float(frange[1])]
-    dur = fseries.to_timeseries().duration
+    dur = fseries.duration
     qplane_tile_dict = {}
 
     # check for sampling rate
-    sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+    sampling = fseries.sample_rate
 
     qs = list(_iter_qs(qrange, deltam))
     if frange[0] == 0:  # set non-zero lower frequency
@@ -415,10 +415,10 @@ def qtransform(fseries, Q, f0):
 
     # initialize parameters
     qprime = Q / 11**(1/2.) # ... self.qprime
-    dur = fseries.to_timeseries().duration
+    dur = fseries.duration
 
     # check for sampling rate
-    sampling = (len(fseries) - 1) * 2 * fseries.delta_f
+    sampling = fseries.sample_rate
 
     # window fft
     window_size = 2 * int(f0 / qprime * dur) + 1
@@ -434,7 +434,7 @@ def qtransform(fseries, Q, f0):
 
     # choice of output sampling rate
     output_sampling = sampling # Can lower this to highest bandwidth
-    output_samples = dur * output_sampling
+    output_samples = int(dur * output_sampling)
 
     # pad data, move negative frequencies to the end, and IFFT
     padded = np.pad(windowed, padding(window_size, output_samples), mode='constant')
@@ -442,7 +442,7 @@ def qtransform(fseries, Q, f0):
 
     # return a 'TimeSeries'
     wenergy = FrequencySeries(wenergy, delta_f=1./dur)
-    tdenergy = TimeSeries(zeros(int(output_samples), dtype=np.complex128),
+    tdenergy = TimeSeries(zeros(output_samples, dtype=np.complex128),
                             delta_t=1./sampling)
     ifft(wenergy, tdenergy)
     cenergy = TimeSeries(tdenergy,
