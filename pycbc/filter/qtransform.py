@@ -42,12 +42,10 @@ from pycbc.fft import ifft
 from pycbc.types import zeros
 from numpy import fft as npfft
 import os
-import h5py
-from pycbc.filter import highpass_fir, matched_filter
-from pycbc.psd import welch, interpolate
-from pycbc.io import hdf
+from pycbc.filter import highpass_fir
+from pycbc.psd import welch
 
-def inspiral_qtransform_generator(segments, filename='q_info.hdf'):
+def inspiral_qtransform_generator(segments):
     """Main function for pycbc_inspiral implementation of qtransform.py
     Parameters
     ----------
@@ -61,21 +59,22 @@ def inspiral_qtransform_generator(segments, filename='q_info.hdf'):
     comb_q_dict = {}
     for s_num, stilde in enumerate(segments):
         # getting q-tiles for segments
+        del s_num
         Qbase, q_frange, q_data = inspiral_tiling(stilde)
 
         # getting q-plane for segment
         Qplane, interp, qs_time, qe_time = qplane(Qbase, q_data, q_frange, fres=None, seg=stilde)
         
-        del q_frange, q_data
+        del q_frange, q_data, interp
 
         # write q info to an hdf file
         Qbase_tmp = {}
         Qplane_tmp = {}
         print 'start time: %s, end time: %s' % (qs_time, qe_time)
-        if not 'qtiles' in comb_q_dict:
+        if 'qtiles' not in comb_q_dict:
             Qbase_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qbase
             comb_q_dict['qtiles'] = Qbase_tmp
-        if not 'qplanes' in comb_q_dict:
+        if 'qplanes' not in comb_q_dict:
             Qplane_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qplane
             comb_q_dict['qplanes'] = Qplane_tmp
         else:
@@ -107,17 +106,13 @@ def inspiral_tiling(seg, frange=(0,np.inf), qrange=(4,64), mismatch=0.2):
     """
 
     # assume segment is fft'd
-    # check for sampling rate
-    sampling = (len(seg) - 1) * 2 * seg.delta_f
-
     data = seg.to_timeseries()
 
-    # highpass and suppress frequencies below 20Hz
-    dur = data.duration
+    # retrieve segment psd value
     seg_psd = seg.psd
 
     # retrieve whitened strain
-    white_strain = (data.to_frequencyseries() / seg_psd ** 0.5 * seg_psd.delta_f)            
+    white_strain = (data.to_frequencyseries() / seg_psd ** 0.5 * seg_psd.delta_f)
     data = white_strain
  
     # perform Q-tiling
@@ -232,7 +227,7 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
                 max_energy[0] = max(energies)
                 max_energy[1] = tile
                 max_energy[2] = key
-                max_energy[3] = energies 
+                max_energy[3] = energies
         qplane_qtrans_dict[key] = energies_lst
 
     # record q-transform output for peak q
