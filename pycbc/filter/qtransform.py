@@ -237,7 +237,6 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
         if not seg:
             return result, qtile_max
         elif seg:
-            #result[0].start_time
             s_time = seg.epoch + (seg.analyze.start*(1. / sampling))
             e_time = seg.epoch + (seg.analyze.stop*(1. / sampling))
             result = np.array(result)
