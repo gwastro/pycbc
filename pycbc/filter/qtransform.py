@@ -71,7 +71,6 @@ def inspiral_qtransform_generator(segments):
         # write q info to an hdf file
         q_base_tmp = {}
         q_plane_tmp = {}
-        print 'start time: %s, end time: %s' % (qs_time, qe_time)
         if 'qtiles' not in comb_q_dict:
             q_base_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = q_base
             comb_q_dict['qtiles'] = q_base_tmp
