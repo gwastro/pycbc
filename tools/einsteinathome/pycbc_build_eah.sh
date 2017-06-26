@@ -1236,6 +1236,8 @@ cd test
 
 if $run_analysis; then
 echo -e "\\n\\n>> [`date`] running analysis" >&3
+
+echo -e "\\n\\n>> [`date`] downloading LOSC frame data" >&3
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
 if check_md5 "$p" "$md5"; then
@@ -1251,6 +1253,7 @@ frames="$PWD/$p"
 # free some space by removing a possible old ROM tarball
 rm -f lal-data-r7.tar.gz
 
+echo -e "\\n\\n>> [`date`] downloading ROM data" >&3
 failed=false
 while read f md5; do
     if check_md5 "$f" "$md5"; then
@@ -1296,6 +1299,7 @@ if $failed; then
 fi
 
 #fb5ec108c69f9e424813de104731370c  H1L1-PREGEN_TMPLTBANK_SPLITBANK_BANK16-1126051217-3331800-short2k.xml.gz
+echo -e "\\n\\n>> [`date`] downloading template bank" >&3
 p="H1L1-SBANK_FOR_GW150914ER10.xml.gz"
 md5="c24f5513d3066b4f637daffb6aa20fec"
 if check_md5 "$p" "$md5"; then
