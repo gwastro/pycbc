@@ -74,7 +74,7 @@ parser.add_argument("--max-template-length", type=float,
                        "ensure the proper length")
 parser.add_argument("--q-transform", type=bool, default=False,
                   help="compute the q-transform for each segment of a "
-                       "given analysis run. (default = False)"
+                       "given analysis run. (default = False)")
 # add approximant arg
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--order", type=int,
