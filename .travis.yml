@@ -44,7 +44,7 @@ matrix:
     sudo: required
     services:
     - docker
-  - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev
+  - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev:jessie
     sudo: required
     services:
     - docker
