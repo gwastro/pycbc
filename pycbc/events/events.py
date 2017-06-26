@@ -508,6 +508,17 @@ class EventManager(object):
             f['search/setup_time_fraction'] = \
                 numpy.array([float(self.setup_time) / float(self.run_time)])
 
+        if 'q_trans' in self.global_params:
+            qtrans = self.global_params['q_trans']
+            for key in qtrans:
+                if key == 'qtiles':
+                    for seg in qtrans[key]:
+                        for q in qtrans[key][seg]:
+                            f['qtransform/%s/%s/%s' % (key,seg,q)]=qtrans[key][seg][q]
+                elif key == 'qplanes':
+                    for seg in qtrans[key]:
+                        f['qtransform/%s/%s' % (key,seg)]=qtrans[key][seg]
+
         if 'gating_info' in self.global_params:
             gating_info = self.global_params['gating_info']
             for gate_type in ['file', 'auto']:

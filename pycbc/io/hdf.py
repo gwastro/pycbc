@@ -835,3 +835,34 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         raise ValueError(err_msg)
     return chisq
 
+def save_dict_to_hdf5(dic, filename):
+    """
+    Parameters
+    ----------
+    dic:
+        python dictionary to be converted to hdf5 format
+    filename:
+        desired name of hdf5 file
+    """
+    with h5py.File(filename, 'w') as h5file:
+        recursively_save_dict_contents_to_group(h5file, '/', dic)
+
+def recursively_save_dict_contents_to_group(h5file, path, dic):
+    """
+    Parameters
+    ----------
+    h5file:
+        h5py file to be written to
+    path:
+        path within h5py file to saved dictionary
+    dic:
+        python dictionary to be converted to hdf5 format
+    """
+    for key, item in dic.items():
+        if isinstance(item, (np.ndarray, np.int64, np.float64, str, bytes, tuple, list)):
+            h5file[path + str(key)] = item
+        elif isinstance(item, dict):
+            recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
+        else:
+            raise ValueError('Cannot save %s type'%type(item))
+

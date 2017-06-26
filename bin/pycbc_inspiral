@@ -20,9 +20,9 @@ import sys
 import logging, argparse, numpy, itertools
 import pycbc
 import pycbc.version
-from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
+from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
-from pycbc.filter import MatchedFilterControl, make_frequency_series
+from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw, pycbc.version
 import pycbc.opt
@@ -72,6 +72,9 @@ parser.add_argument("--max-template-length", type=float,
                   help="The maximum length of a template is seconds. The "
                        "starting frequency of the template is modified to "
                        "ensure the proper length")
+parser.add_argument("--enable-q-transform", action='store_true',
+                  help="compute the q-transform for each segment of a "
+                       "given analysis run. (default = False)")
 # add approximant arg
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--order", type=int,
@@ -238,10 +241,17 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
+    if opt.enable_q_transform:
+        logging.info("Performing q-transform on analysis segments")
+        q_trans = qtransform.inspiral_qtransform_generator(segments)
+
+    else:
+        q_trans = {}
+
     # FIXME: Maybe we should use the PSD corresponding to each trigger
     event_mgr = events.EventManager(
             opt, names, [out_types[n] for n in names], psd=segments[0].psd,
-            gating_info=gwstrain.gating_info)
+            gating_info=gwstrain.gating_info, q_trans=q_trans)
 
     template_mem = zeros(tlen, dtype = complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
@@ -313,7 +323,7 @@ with ctx:
     # from the bank.
     for t_num in xrange(len(bank)):
         tmplt_generated = False
-
+       
         for s_num, stilde in enumerate(segments):
             # Filter check checks the 'inj_filter_rejector' options to
             # determine whether
