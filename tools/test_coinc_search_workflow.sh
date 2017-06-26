@@ -15,7 +15,7 @@ echo -e "\\n>> [`date`] Entering virtual environment pycbc-${TRAVIS_TAG}"
 source /cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/bin/activate
 
 echo -e "\\n>> [`date`] Cloning pycbc-config git repository"
-test -r pycbc-config || git clone --depth 1 git@code.pycbc.phy.syr.edu:ligo-cbc/pycbc-config.git
+test -r pycbc-config || git clone --depth 1 git@github.com:ligo-cbc/pycbc-config.git
 CONFIG_PATH="file://`pwd`/pycbc-config"
 
 test -r veto-definitions || git clone --depth 1 git@code.pycbc.phy.syr.edu:detchar/veto-definitions.git
