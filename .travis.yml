@@ -48,7 +48,7 @@ matrix:
     sudo: required
     services:
     - docker
-  - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7:v1.0
+  - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
     sudo: required
     services:
     - docker
