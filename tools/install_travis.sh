@@ -26,7 +26,7 @@ export XDG_CACHE_HOME=${BUILD}/.cache
 
 # run the einstein at home build and test script
 pushd ${BUILD}
-${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh ${LALSUITE_CODE} ${PYCBC_CODE} --clean-pycbc --silent-build
+${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh ${LALSUITE_CODE} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/blob/710a51f4770cbba77f61dfb798472bebe6c43d38/travis
 popd
 
 # setup the pycbc environment to run the additional travis tests
