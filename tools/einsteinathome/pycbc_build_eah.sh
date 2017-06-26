@@ -1237,6 +1237,14 @@ cd test
 if $run_analysis; then
 echo -e "\\n\\n>> [`date`] running analysis" >&3
 
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&-
+    exec 2>&-
+    exec 1>&3
+    exec 2>&4
+fi
+
 echo -e "\\n\\n>> [`date`] downloading LOSC frame data" >&3
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
@@ -1343,14 +1351,6 @@ if ! test -z "$extra_approx" || ! test -z "$extra_bank" ; then
 fi
 
 n_runs=${#bank_array[@]}
-
-if $silent_build ; then
-    # redirect stdout and stderr back to the screen
-    exec 1>&-
-    exec 2>&-
-    exec 1>&3
-    exec 2>&4
-fi
 
 for (( i=0; i<${n_runs}; i++ ))
 do
