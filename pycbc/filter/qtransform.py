@@ -42,8 +42,6 @@ from pycbc.fft import ifft
 from pycbc.types import zeros
 from numpy import fft as npfft
 import os
-from pycbc.filter import highpass_fir
-from pycbc.psd import welch
 
 def inspiral_qtransform_generator(segments):
     """Main function for pycbc_inspiral implementation of qtransform.py
