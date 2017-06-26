@@ -517,7 +517,7 @@ class EventManager(object):
                             f['qtransform/%s/%s/%s' % (key,seg,q)]=qtrans[key][seg][q]
                 elif key == 'qplanes':
                     for seg in qtrans[key]:
-                        f['qtransform/%s/%s' % (key,seg)]=qtrans[key][seg] 
+                        f['qtransform/%s/%s' % (key,seg)]=qtrans[key][seg]
 
         if 'gating_info' in self.global_params:
             gating_info = self.global_params['gating_info']
