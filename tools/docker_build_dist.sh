@@ -56,10 +56,10 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
 
   # get library to build optimized pycbc_inspiral bundle
   wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
-  primary_url="https://code.pycbc.phy.syr.edu/ligo-cbc/pycbc-software/download/03f2048c770492f66f80528493fd6cecded63769"
+  primary_url="https://git.ligo.org/ligo-cbc/pycbc-software/raw/"
   secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown"
   pushd /pycbc
-  for p in "x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz" "bank-files/testbank_TF2v4ROM.hdf" ; do
+  for p in "cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz" "cea5bd67440f6c3195c555a388def3cc6d695a5c/bank-files/testbank_TF2v4ROM.hdf" ; do
     set +e
     test -r `basename $p` || wget $wget_opts ${primary_url}/${p}
     set -e
