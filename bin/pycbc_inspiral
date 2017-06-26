@@ -20,7 +20,7 @@ import sys
 import logging, argparse, numpy, itertools
 import pycbc
 import pycbc.version
-from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
+from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
@@ -226,7 +226,6 @@ with ctx:
         'bank_chisq'     : float32,
         'bank_chisq_dof' : int,
         'cont_chisq'     : float32,
-        'qtransform'     : dict,
                 }
     out_types.update(SingleDetSGChisq.returns)
     out_vals = {key: None for key in out_types}
@@ -242,10 +241,17 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
+    if opt.q_transform == True:
+        logging.info("Performing q-transform on analysis segments")
+        q_trans = qtransform.inspiral_qtransform_generator(segments)
+
+    elif opt.q_transform == False:
+        q_trans = {}
+
     # FIXME: Maybe we should use the PSD corresponding to each trigger
     event_mgr = events.EventManager(
             opt, names, [out_types[n] for n in names], psd=segments[0].psd,
-            gating_info=gwstrain.gating_info)
+            gating_info=gwstrain.gating_info, q_trans=q_trans)
 
     template_mem = zeros(tlen, dtype = complex64)
     cluster_window = int(opt.cluster_window * gwstrain.sample_rate)
@@ -310,10 +316,6 @@ with ctx:
         logging.info("Template bank size after thinning: %s", len(bank))
 
     tsetup = time.time() - tstart
-
-    if opt.q_transform == True:
-        logging.info("Performing q-transform on analysis segments")
-        out_vals['qtransform'] = qtransform.inspiral_qtransform_generator(segments)
 
     # Note: in the class-based approach used now, 'template' is not explicitly used
     # within the loop.  Rather, the iteration simply fills the memory specifed in

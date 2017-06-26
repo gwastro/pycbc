@@ -53,31 +53,34 @@ def inspiral_qtransform_generator(segments):
         name of output file for qtransform info to be stored
 
     """
+    # Overwhitening frequency-domain data segments
+    for seg in segments:
+        seg /= seg.psd
 
     comb_q_dict = {}
     for s_num, stilde in enumerate(segments):
         # getting q-tiles for segments
         del s_num
-        Qbase, q_frange, q_data = inspiral_tiling(stilde)
+        q_base, q_frange, q_data = inspiral_tiling(stilde)
 
         # getting q-plane for segment
-        Qplane, interp, qs_time, qe_time = qplane(Qbase, q_data, q_frange, fres=None, seg=stilde)
+        q_plane, interp, qs_time, qe_time = qplane(q_base, q_data, q_frange, fres=None, seg=stilde)
         
         del q_frange, q_data, interp
 
         # write q info to an hdf file
-        Qbase_tmp = {}
-        Qplane_tmp = {}
+        q_base_tmp = {}
+        q_plane_tmp = {}
         print 'start time: %s, end time: %s' % (qs_time, qe_time)
         if 'qtiles' not in comb_q_dict:
-            Qbase_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qbase
-            comb_q_dict['qtiles'] = Qbase_tmp
+            q_base_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = q_base
+            comb_q_dict['qtiles'] = q_base_tmp
         if 'qplanes' not in comb_q_dict:
-            Qplane_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qplane
-            comb_q_dict['qplanes'] = Qplane_tmp
+            q_plane_tmp['seg_%s-%s' % (str(qs_time),str(qe_time))] = q_plane
+            comb_q_dict['qplanes'] = q_plane_tmp
         else:
-            comb_q_dict['qtiles']['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qbase
-            comb_q_dict['qplanes']['seg_%s-%s' % (str(qs_time),str(qe_time))] = Qplane
+            comb_q_dict['qtiles']['seg_%s-%s' % (str(qs_time),str(qe_time))] = q_base
+            comb_q_dict['qplanes']['seg_%s-%s' % (str(qs_time),str(qe_time))] = q_plane
 
     return comb_q_dict
 
@@ -103,20 +106,17 @@ def inspiral_tiling(seg, frange=(0,np.inf), qrange=(4,64), mismatch=0.2):
 
     """
 
-    # assume segment is fft'd
-    data = seg.to_timeseries()
-
     # retrieve segment psd value
     seg_psd = seg.psd
 
     # retrieve whitened strain
-    white_strain = (data.to_frequencyseries() / seg_psd ** 0.5 * seg_psd.delta_f)
+    white_strain = (seg / seg_psd ** 0.5 * seg_psd.delta_f)
     data = white_strain
  
     # perform Q-tiling
-    Qbase, frange = qtiling(data, qrange, frange, mismatch)
+    q_base, frange = qtiling(data, qrange, frange, mismatch)
 
-    return Qbase, frange, data
+    return q_base, frange, data
 
 def plotter(interp, out_dir, now, frange, tres, fres):
     """Plotting mechanism for pycbc spectrograms
@@ -439,16 +439,14 @@ def qtransform(fseries, Q, f0):
 
     # return a 'TimeSeries'
     wenergy = FrequencySeries(wenergy, delta_f=1./dur)
-    tdenergy = TimeSeries(zeros(output_samples, dtype=np.complex128),
+    cenergy = TimeSeries(zeros(output_samples, dtype=np.complex128),
                             delta_t=1./sampling)
-    ifft(wenergy, tdenergy)
-    cenergy = TimeSeries(tdenergy,
-                         delta_t=tdenergy.delta_t, copy=False)
-    energy = type(cenergy)(
-        cenergy.real() ** 2. + cenergy.imag() ** 2.,
-        delta_t=1, copy=False)
-    medianenergy = np.median(energy)
-    norm_energy = energy / medianenergy
+
+    ifft(wenergy, cenergy)
+
+    energy = cenergy.squared_norm()
+    medianenergy = np.median(energy.numpy())
+    norm_energy = energy / float(medianenergy)
  
     return norm_energy, cenergy
 
