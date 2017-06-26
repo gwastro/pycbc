@@ -91,7 +91,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   popd
 fi
 
-if [ "x${PYCBC_CONTAINER}" == "xpycbc_virtualenv" ] ; then
+if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
   echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
 
   echo -e "\\n>> [`date`] Removing LAL RPMs"
