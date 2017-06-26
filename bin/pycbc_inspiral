@@ -241,7 +241,7 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
-    if opt.q_transform:
+    if opt.enable_q_transform:
         logging.info("Performing q-transform on analysis segments")
         q_trans = qtransform.inspiral_qtransform_generator(segments)
 
