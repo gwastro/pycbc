@@ -59,7 +59,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   primary_url="https://git.ligo.org/ligo-cbc/pycbc-software/raw/"
   secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown"
   pushd /pycbc
-  for p in "cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz" "cea5bd67440f6c3195c555a388def3cc6d695a5c/bank-files/testbank_TF2v4ROM.hdf" ; do
+  for p in "cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz" "2d7e4a4f2f1503db5b93d70907fa24ad54bffbcb/travis/testbank_TF2v4ROM.hdf" ; do
     set +e
     test -r `basename $p` || wget $wget_opts ${primary_url}/${p}
     set -e
