@@ -72,7 +72,7 @@ parser.add_argument("--max-template-length", type=float,
                   help="The maximum length of a template is seconds. The "
                        "starting frequency of the template is modified to "
                        "ensure the proper length")
-parser.add_argument("--q-transform", type=bool, default=False,
+parser.add_argument("--enable-q-transform", action='store_true',
                   help="compute the q-transform for each segment of a "
                        "given analysis run. (default = False)")
 # add approximant arg
@@ -241,11 +241,11 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
-    if opt.q_transform == True:
+    if opt.q_transform:
         logging.info("Performing q-transform on analysis segments")
         q_trans = qtransform.inspiral_qtransform_generator(segments)
 
-    elif opt.q_transform == False:
+    else:
         q_trans = {}
 
     # FIXME: Maybe we should use the PSD corresponding to each trigger
