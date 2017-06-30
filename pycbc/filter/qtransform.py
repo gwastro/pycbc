@@ -229,7 +229,7 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
 
     # record q-transform output for peak q
     result = qplane_qtrans_dict[max_energy[2]]
-    qtile_max = qplane_tile_dict[key]
+    qtile_max = qplane_tile_dict[max_energy[2]]
 
     # then interpolate the spectrogram to increase the frequency resolution
     if fres is None:  # unless user tells us not to
