@@ -479,18 +479,18 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
             mass1, mass2 = map(numpy.array, [maps["mass1"], maps["mass2"]])
             mask_mass1_gte_mass2 = mass1 >= mass2
             mask_mass1_lt_mass2 = mass1 < mass2
-            out[parameters.spin1x] = numpy.concatenate(
+            out[parameters.spin1x] = numpy.concatenate((
                                         spinx_p[mask_mass1_gte_mass2],
-                                        spinx_s[mask_mass1_lt_mass2])
-            out[parameters.spin1y] = numpy.concatenate(
+                                        spinx_s[mask_mass1_lt_mass2]))
+            out[parameters.spin1y] = numpy.concatenate((
                                         spiny_p[mask_mass1_gte_mass2],
-                                        spiny_s[mask_mass1_lt_mass2])
-            out[parameters.spin2x] = numpy.concatenate(
+                                        spiny_s[mask_mass1_lt_mass2]))
+            out[parameters.spin2x] = numpy.concatenate((
                                         spinx_p[mask_mass1_lt_mass2],
-                                        spinx_s[mask_mass1_gte_mass2])
-            out[parameters.spin2y] = numpy.concatenate(
+                                        spinx_s[mask_mass1_gte_mass2]))
+            out[parameters.spin2y] = numpy.concatenate((
                                         spinx_p[mask_mass1_lt_mass2],
-                                        spinx_s[mask_mass1_gte_mass2])
+                                        spinx_s[mask_mass1_gte_mass2]))
         elif maps["mass1"] > maps["mass2"]:
             out[parameters.spin1x] = spinx_p
             out[parameters.spin1y] = spiny_p
