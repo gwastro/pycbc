@@ -148,7 +148,7 @@ class TimeSeries(Array):
     sample_rate = property(get_sample_rate,
                            doc="The sample rate of the time series.")
 
-    def select_time(self, start, end):
+    def time_slice(self, start, end):
         """Return the slice of the time series that contains the time range
         in GPS seconds.
         """
