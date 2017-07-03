@@ -147,6 +147,21 @@ class TimeSeries(Array):
         return int(1.0/self.delta_t)
     sample_rate = property(get_sample_rate,
                            doc="The sample rate of the time series.")
+
+    def time_slice(self, start, end):
+        """Return the slice of the time series that contains the time range
+        in GPS seconds.
+        """
+        if start < self.start_time:
+            raise ValueError('Time series does not contain a time as early as %s' % start)
+
+        if end > self.end_time:
+            raise ValueError('Time series does not contain a time as late as %s' % end)
+
+        start_idx = int((start - self.start_time) * self.sample_rate)
+        end_idx = int((end - self.start_time) * self.sample_rate)
+        return self[start_idx:end_idx]
+
     @property
     def delta_f(self):
         """Return the delta_f this ts would have in the frequency domain
