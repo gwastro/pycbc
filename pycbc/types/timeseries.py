@@ -425,7 +425,7 @@ class TimeSeries(Array):
         seg_stride = seg_len / 2
         return welch(self, seg_len=seg_len,
                            seg_stride=seg_stride,
-                           avg_method=avg_method, **kwds)
+                           **kwds)
 
     def save(self, path, group = None):
         """
