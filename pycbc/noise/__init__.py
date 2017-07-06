@@ -1,1 +1,1 @@
-from gaussian import noise_from_psd, noise_from_string, frequency_noise_from_psd # pyflakes:disable=F401
+from gaussian import noise_from_psd, noise_from_string, frequency_noise_from_psd # silence pyflakes
