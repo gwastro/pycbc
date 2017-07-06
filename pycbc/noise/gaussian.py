@@ -32,7 +32,7 @@ from lalsimulation import SimNoise
 import lal
 import numpy.random
 
-def frequency_noise_from_psd(psd, seed = None):
+def frequency_noise_from_psd(psd, seed=None):
     """ Create noise with a given psd.
     
     Return noise coloured with the given psd. The returned noise 
@@ -72,7 +72,7 @@ def frequency_noise_from_psd(psd, seed = None):
                            delta_f=psd.delta_f,
                            dtype=dtype) 
 
-def noise_from_psd(length, delta_t, psd, seed=0):
+def noise_from_psd(length, delta_t, psd, seed=None):
     """ Create noise with a given psd.
     
     Return noise with a given psd. Note that if unique noise is desired 
@@ -95,6 +95,9 @@ def noise_from_psd(length, delta_t, psd, seed=0):
         A TimeSeries containing gaussian noise colored by the given psd. 
     """
     noise_ts = TimeSeries(zeros(length), delta_t=delta_t)
+    
+    if seed is None:
+        seed = numpy.random.randint(2**32)
     
     randomness = lal.gsl_rng("ranlux", seed)
     
@@ -123,7 +126,7 @@ def noise_from_psd(length, delta_t, psd, seed=0):
         
     return noise_ts
   
-def noise_from_string(psd_name, length, delta_t, seed=0, low_frequency_cutoff=10.0):
+def noise_from_string(psd_name, length, delta_t, seed=None, low_frequency_cutoff=10.0):
     """ Create noise from an analytic PSD
     
     Return noise from the chosen PSD. Note that if unique noise is desired 
@@ -138,7 +141,7 @@ def noise_from_string(psd_name, length, delta_t, seed=0, low_frequency_cutoff=10
         The length of noise to generate in samples.
     delta_t : float
         The time step of the noise. 
-    seed : {0, int}
+    seed : {None, int}
         The seed to generate the noise. 
     low_frequency_cutof : {10.0, float}
         The low frequency cutoff to pass to the PSD generation.
