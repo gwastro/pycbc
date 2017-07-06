@@ -401,6 +401,31 @@ class TimeSeries(Array):
         """
         scaled = _numpy.int16(self.numpy()/max(abs(self)) * 32767)
         write_wav(file_name, self.sample_rate, scaled)
+        
+    def psd(self, segment_duration, **kwds):
+        """ Calculate the power spectral density of this time series.
+        
+        Use the `pycbc.psd.welch` method to estimate the psd of this time segment.
+        For more complete options, please see that function.
+        
+        Parameters
+        ----------
+        segment_duration: float
+            Duration in seconds to use for each sample of the spectrum.
+        kwds : keywords
+            Additional keyword arguments are passed on to the `pycbc.psd.welch` method.
+            
+        Returns
+        -------
+        psd : FrequencySeries
+            Frequency series containing the estimated PSD.
+        """
+        from pycbc.psd import welch
+        seg_len = int(segment_duration * self.sample_rate)
+        seg_stride = seg_len / 2
+        return welch(self, seg_len=seg_len,
+                           seg_stride=seg_stride,
+                           **kwds)
 
     def save(self, path, group = None):
         """
