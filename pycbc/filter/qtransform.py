@@ -58,9 +58,8 @@ def inspiral_qtransform_generator(segments):
         seg /= seg.psd
 
     comb_q_dict = {}
-    for s_num, stilde in enumerate(segments):
+    for stilde in segments:
         # getting q-tiles for segments
-        del s_num
         q_base, q_frange, q_data = inspiral_tiling(stilde)
 
         # getting q-plane for segment
@@ -104,18 +103,13 @@ def inspiral_tiling(seg, frange=(0,np.inf), qrange=(4,64), mismatch=0.2):
         whitened strain of analysis chunk
 
     """
-
-    # retrieve segment psd value
-    seg_psd = seg.psd
-
     # retrieve whitened strain
-    white_strain = (seg / seg_psd ** 0.5 * seg_psd.delta_f)
-    data = white_strain
+    white_strain = (seg / seg.psd ** 0.5 * seg.psd.delta_f)
  
     # perform Q-tiling
-    q_base, frange = qtiling(data, qrange, frange, mismatch)
+    q_base, frange = qtiling(white_strain, qrange, frange, mismatch)
 
-    return q_base, frange, data
+    return q_base, frange, white_strain
 
 def plotter(interp, out_dir, now, frange, tres, fres):
     """Plotting mechanism for pycbc spectrograms
@@ -206,30 +200,30 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
     # check for sampling rate
     sampling = fseries.sample_rate
 
-    max_energy = []
+    max_energy, max_key = None, None
     for i, key in enumerate(qplane_tile_dict):
         energies_lst=[]
         for tile in qplane_tile_dict[key]:
-            energies = qtransform(fseries, tile[1], tile[0])
+            normed, raw = qtransform(fseries, tile[1], tile[0])
             if normalized:
-                energies = energies[0]
+                energies = normed
             else:
-                energies = energies[1]
+                energies = raw
+
             energies_lst.append(energies)
+
             if i == 0:
-                max_energy.append(max(energies))
-                max_energy.append(tile)
-                max_energy.append(key)
-            elif max(energies) > max_energy[0]:
-                max_energy[0] = max(energies)
-                max_energy[1] = tile
-                max_energy[2] = key
-                max_energy[3] = energies
+                max_energy = max(energies)
+                max_key = key
+            elif max(energies) > max_energy:
+                max_energy = max(energies)
+                max_key = key
+
         qplane_qtrans_dict[key] = energies_lst
 
     # record q-transform output for peak q
-    result = qplane_qtrans_dict[max_energy[2]]
-    qtile_max = qplane_tile_dict[max_energy[2]]
+    result = qplane_qtrans_dict[max_key]
+    qtile_max = qplane_tile_dict[max_key]
 
     # then interpolate the spectrogram to increase the frequency resolution
     if fres is None:  # unless user tells us not to
@@ -247,7 +241,7 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
         # initialize some variables
         frequencies = []
 
-        for i in qplane_tile_dict[max_energy[2]]:
+        for i in qtile_max:
             frequencies.append(i[0])
 
         # 2-D interpolation
