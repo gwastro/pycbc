@@ -35,7 +35,7 @@ Example
 from numpy import pi, ceil, log, exp
 import numpy as np
 from pycbc.strain  import next_power_of_2
-from pycbc.types.timeseries import FrequencySeries, TimeSeries, Array
+from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from scipy.interpolate import (interp2d)
 from pycbc.fft import ifft
 from pycbc.types import zeros
