@@ -476,7 +476,7 @@ class TimeSeries(Array):
 
         return white
 
-    def qtransform(self, delta_t, delta_f, 
+    def qtransform(self, delta_t, delta_f,
                   frange=(0,_numpy.inf), qrange=(4,64), mismatch=0.2):
         """ Return the interpolated 2d qtransform of this data
         
@@ -501,7 +501,7 @@ class TimeSeries(Array):
             The frequencies that the qtransform is samled.
         qplane : numpy.ndarray (2d)
             The two dimensional interpolated qtransform of this time series.
-        """          
+        """
         from pycbc.filter.qtransform import qtiling, qplane
         q_base, q_frange = qtiling(self, qrange, frange, mismatch)
         q_plane, _ = qplane(q_base, self.to_frequencyseries(), q_frange,
