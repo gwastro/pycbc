@@ -1,0 +1,170 @@
+#! /usr/bin/env python
+
+# Copyright (C) 2017 Collin Capano
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import os, sys
+import argparse
+import logging
+import numpy
+import pycbc
+from pycbc import distributions
+from pycbc.workflow import WorkflowConfigParser
+from pycbc.inference import option_utils
+from pycbc.inference.prior import PriorEvaluator
+from pycbc.waveform import parameters
+from pycbc import transforms
+import h5py
+
+# stuff for writing xml files... remove this when we drop xml
+import pycbc_glue.ligolw.utils
+import pycbc_glue.ligolw.table
+from pycbc_glue.ligolw import ligolw, lsctables
+
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+# Map parameter names used in pycbc to names used in the sim_inspiral
+# table, if they are different
+sim_inspiral_map = {
+    'ra': 'longitude',
+    'dec': 'latitude',
+    'approximant': 'waveform',
+    }
+
+def set_sim_data(sim, field, data):
+    """Sets data of a SimInspiral instance."""
+    try:
+        sim_field = sim_inspiral_map[field]
+    except KeyError:
+        sim_field = field
+    # for tc, map to geocentric times
+    if sim_field == 'tc':
+        sim.geocent_end_time = int(data)
+        sim.geocent_end_time_ns = int(1e9*(data % 1))
+    else:
+        setattr(sim, sim_field, data)
+
+def write_to_xml(filename, samples, write_args, static_args=None):
+    """Writes the injection samples to the given xml.
+    """
+    xmldoc = ligolw.Document()
+    xmldoc.appendChild(ligolw.LIGO_LW())
+    simtable = lsctables.New(lsctables.SimInspiralTable)
+    xmldoc.childNodes[0].appendChild(simtable)
+    if static_args is None:
+        static_args = {}
+    for ii in range(samples.size):
+        sim = lsctables.SimInspiral()
+        # initialize all elements to None
+        [setattr(sim, col, None) for col in sim.__slots__]
+        for field in write_args:
+            data = samples[ii][field]
+            set_sim_data(sim, field, data)
+        # set any static args
+        [set_sim_data(sim, field, value)
+         for field,value in static_args.items()]
+        simtable.append(sim)
+    pycbc_glue.ligolw.utils.write_filename(xmldoc, filename,
+                                           gz=filename.endswith('gz'))
+
+
+def write_to_hdf(filename, samples, write_args, static_args=None):
+    """Writes the injection samples to the given hdf file.
+    """
+    fp = h5py.File(filename, 'w')
+    # write metadata
+    if static_args is None:
+        static_args = {}
+    fp.attrs["cmd"] = " ".join(sys.argv)
+    fp.attrs["static_args"] = static_args.keys()
+    for arg, val in static_args.items():
+        fp.attrs[arg] = val
+    for field in write_args:
+        fp[field] = samples[field]
+    return fp
+
+
+parser = argparse.ArgumentParser()
+option_utils.add_config_opts_to_parser(parser)
+parser.add_argument('--ninjections', required=True, type=int,
+                    help='Number of injections to create.')
+parser.add_argument('--seed', type=int, default=0,
+                    help='Seed to use for the random number generator. '
+                         'Default is 0.')
+parser.add_argument('--dist-section', default='distribution',
+                    help='What section in the config-file to load '
+                          'distributions from. Default is "distribution".')
+parser.add_argument('--output-file', required=True,
+                    help='Output file to save to. If ends in ".xml[.gz]", '
+                         'injections will be written to a sim_inspiral table '
+                         'in an xml file. Otherwise, results will be written '
+                         'to an hdf file.')
+parser.add_argument("--force", action="store_true", default=False,
+                    help="If the output-file already exists, overwrite it. "
+                         "Otherwise, an OSError is raised.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Print logging messages.")
+opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
+
+if os.path.exists(opts.output_file) and not opts.force:
+    raise OSError("output-file already exists; use --force if you wish to "
+                  "overwrite it.")
+
+numpy.random.seed(opts.seed)
+
+logging.info("Loading config file")
+cp = option_utils.config_parser_from_cli(opts)
+
+# get the vairable and static arguments from the config file
+variable_args, static_args, constraints = \
+                                     option_utils.read_args_from_config(cp,
+                                     prior_section=opts.dist_section)
+
+if cp.has_section('replace_parameters'):
+    replace_args, out_args = option_utils.read_sampling_args_from_config(cp,
+                               section='replace_parameters')
+    write_transforms = transforms.read_transforms_from_config(cp, 'transform')
+    write_args = [arg for arg in variable_args if arg not in replace_args]
+    write_args += out_args
+else:
+    write_args = variable_args
+    write_transforms = None
+
+
+# get prior distribution for each variable parameter
+logging.info("Reading distributions")
+dists = distributions.read_distributions_from_config(cp, opts.dist_section)
+
+# construct class that will draw the samples
+randomsampler = PriorEvaluator(variable_args, *dists,
+                               **{"constraints" : constraints})
+
+logging.info("Drawing samples")
+samples = randomsampler.rvs(size=opts.ninjections)
+
+if write_transforms is not None:
+    logging.info("Transforming to output variables")
+    samples = transforms.apply_transforms(samples, write_transforms)
+
+# write results
+logging.info("Writing results")
+if opts.output_file.endswith('.xml') or opts.output_file.endswith('.xml.gz'):
+    write_to_xml(opts.output_file, samples, write_args, static_args)
+else:
+    write_to_hdf(opts.output_file, samples, write_args, static_args)
