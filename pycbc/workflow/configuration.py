@@ -42,6 +42,7 @@ import itertools
 import pycbc_glue.pipeline
 
 from cookielib import (_warn_unhandled_exception, LoadError, Cookie)
+from bs4 import BeautifulSoup
 
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
     """
@@ -164,6 +165,25 @@ def resolve_url(url, directory=None, permissions=None):
             errMsg = "Unable to download %s\nError code = %d" % (url,
                 r.status_code)
             raise ValueError(errMsg)
+
+        # if we are downloading from git.ligo.org, check that we
+        # did not get redirected to the sign-in page
+        if u.netloc == 'git.ligo.org':
+            soup = BeautifulSoup(r.content, 'html.parser')
+            desc = soup.findAll(attrs={"property":"og:url"})
+            if len(desc) and \
+              desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
+                errMsg = "The attempt to download the file at\n\n%s\n" % url
+                errMsg += """
+was redirected to the git.ligo.org sign-in page. This means that you likely
+forgot to initialize your ECP cookie or that your LIGO.ORG credentials are
+otherwise invalid. Create a valid ECP cookie for git.ligo.org by running
+
+ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback albert.einstein
+
+before attempting to download files from git.ligo.org.
+"""
+                raise ValueError(errMsg)
 
         output_fp = open(filename, 'w')
         output_fp.write(r.content)
