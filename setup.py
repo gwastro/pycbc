@@ -72,6 +72,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'kombine==0.8.1',
                       'emcee>=2.2.0',
                       'corner>=2.0.1',
+                      'requests>=1.2.1'
                       ]
 
 #FIXME Remove me when we bump to h5py > 2.5
