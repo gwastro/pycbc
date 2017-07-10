@@ -54,6 +54,7 @@ extra_bank=""
 extra_approx=""
 processing_scheme=""
 lal_data_path="."
+albert="http://albert.phys.uwm.edu/download"
 
 # defaults, possibly overwritten by OS-specific settings
 build_ssl=false
@@ -275,6 +276,8 @@ usage="
 
     --no-cleanup                    keep build directories after successful build for later inspection
 
+    --download-url=<url>            download test frame, template bank, and roms from <url>
+
     --with-extra-libs=<url>         add extra files from a tar file at <url> to the bundles
 
     --with-extra-bank=<file>        run pycbc_inspiral again with an extra template bank
@@ -341,6 +344,7 @@ for i in $*; do
                     echo $now > "$SOURCE/last_sunday_build"
                 fi
             fi ;;
+        --download-url=*) albert="`echo $i|sed 's/^--download-url=//'`";;
         --with-extra-libs=*) extra_libs="`echo $i|sed 's/^--with-extra-libs=//'`";;
         --with-extra-bank=*) extra_bank="$extra_bank `echo $i|sed 's/^--with-extra-bank=//'`";;
         --with-extra-approximant=*) extra_approx="${extra_approx}`echo $i|sed 's/^--with-extra-approximant=//'` ";;
@@ -389,7 +393,6 @@ echo "WORKSPACE='$WORKSPACE'" # for Jenkins jobs
 pypi="https://pypi.python.org/packages"
 gitlab="https://gitlab.aei.uni-hannover.de/einsteinathome"
 atlas="https://www.atlas.aei.uni-hannover.de/~bema"
-albert="http://albert.phys.uwm.edu/download"
 duncan="https://www.atlas.aei.uni-hannover.de/~dbrown"
 aei="http://www.aei.mpg.de/~bema"
 
@@ -1237,14 +1240,6 @@ cd test
 if $run_analysis; then
 echo -e "\\n\\n>> [`date`] running analysis" >&3
 
-if $silent_build ; then
-    # redirect stdout and stderr back to the screen
-    exec 1>&-
-    exec 2>&-
-    exec 1>&3
-    exec 2>&4
-fi
-
 echo -e "\\n\\n>> [`date`] downloading LOSC frame data" >&3
 p="H-H1_LOSC_4_V1-1126257414-4096.gwf"
 md5="a7d5cbd6ef395e8a79ef29228076d38d"
@@ -1351,6 +1346,14 @@ if ! test -z "$extra_approx" || ! test -z "$extra_bank" ; then
 fi
 
 n_runs=${#bank_array[@]}
+
+if $silent_build ; then
+    # redirect stdout and stderr back to the screen
+    exec 1>&-
+    exec 2>&-
+    exec 1>&3
+    exec 2>&4
+fi
 
 for (( i=0; i<${n_runs}; i++ ))
 do
