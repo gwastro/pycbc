@@ -86,18 +86,6 @@ class InjectionSet(object):
         self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
         self.extra_args = kwds
 
-    def getswigrow(self, glue_row):
-        """Translates glue row from the table to libmetaio row"""
-        import lalmetaio as lmt
-        swigrow = lmt.SimInspiralTable()
-        for simattr in lsctables.SimInspiralTable.validcolumns.keys():
-            if simattr in ["waveform", "source", "numrel_data", "taper"]:
-                setattr( swigrow, simattr, str(getattr(glue_row, simattr)) )
-            else:
-                setattr( swigrow, simattr, getattr(glue_row, simattr) )
-        swigrow.geocent_end_time.gpsNanoSeconds = glue_row.geocent_end_time_ns
-        return swigrow
-
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
               simulation_ids=None, inj_filter_rejector=None):
         """Add injections (as seen by a particular detector) to a time series.
@@ -224,6 +212,7 @@ class InjectionSet(object):
             phase_order=phase_order,
             f_lower=f_l, distance=inj.distance,
             **self.extra_args)
+
         hp /= distance_scale
         hc /= distance_scale
 
@@ -268,18 +257,6 @@ class SGBurstInjectionSet(object):
         self.table = table.get_table(
             self.indoc, lsctables.SimBurstTable.tableName)
         self.extra_args = kwds
-
-    def getswigrow(self, glue_row):
-        """Translates glue row from the table to libmetaio row"""
-        import lalmetaio as lmt
-        swigrow = lmt.SimBurstTable()
-        for simattr in lsctables.SimBurstTable.validcolumns.keys():
-            if simattr in ["waveform"]:
-                setattr( swigrow, simattr, str(getattr(glue_row, simattr)) )
-            else:
-                setattr( swigrow, simattr, getattr(glue_row, simattr) )
-        swigrow.geocent_end_time.gpsNanoSeconds = glue_row.geocent_end_time_ns
-        return swigrow
 
     def apply(self, strain, detector_name, f_lower=None, distance_scale=1):
         """Add injections (as seen by a particular detector) to a time series.
