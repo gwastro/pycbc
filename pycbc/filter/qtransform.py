@@ -32,11 +32,10 @@ Example
 
 """
 
-
 from numpy import pi, ceil, log, exp
 import numpy as np
 from pycbc.strain  import next_power_of_2
-from pycbc.types.timeseries import FrequencySeries, TimeSeries
+from pycbc.types.timeseries import FrequencySeries, TimeSeries, Array
 from scipy.interpolate import (interp2d)
 from pycbc.fft import ifft
 from pycbc.types import zeros
@@ -51,12 +50,7 @@ def inspiral_qtransform_generator(segments):
         list of pycbc frequency series segments
     filename:
         name of output file for qtransform info to be stored
-
     """
-    # Overwhitening frequency-domain data segments
-    for seg in segments:
-        seg /= seg.psd
-
     comb_q_dict = {}
     for stilde in segments:
         # getting q-tiles for segments
@@ -196,8 +190,6 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
     # store q-transforms of each tile in a dict
     qplane_qtrans_dict = {}
     dur = fseries.duration
-
-    # check for sampling rate
     sampling = fseries.sample_rate
 
     max_energy, max_key = None, None
@@ -209,14 +201,15 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
                 energies = normed
             else:
                 energies = raw
+            menergy = energies.max()
 
-            energies_lst.append(energies)
+            energies_lst.append(energies.numpy())
 
             if i == 0:
-                max_energy = max(energies)
+                max_energy = energies.max()
                 max_key = key
-            elif max(energies) > max_energy:
-                max_energy = max(energies)
+            elif menergy > max_energy:
+                max_energy = menergy
                 max_key = key
 
         qplane_qtrans_dict[key] = energies_lst
@@ -238,18 +231,15 @@ def qplane(qplane_tile_dict, fseries, frange, normalized=True, tres=1., fres=1.,
             result = result[:,s_idx:e_idx]
             return result, qtile_max, s_time, e_time
     else:
-        # initialize some variables
-        frequencies = []
-
-        for i in qtile_max:
-            frequencies.append(i[0])
-
         # 2-D interpolation
-        time_array = np.linspace(-(dur / 2.),(dur / 2.),int(dur * sampling))
+        frequencies = np.array([i[0] for i in qtile_max])
+        time_array = np.linspace(0, dur, int(dur * sampling))
         interp = interp2d(time_array, frequencies, np.array(result))
 
-    out = interp(np.linspace(0,1, 1. / tres), np.arange(int(frange[0]), int(frange[1]), fres))
-
+    times = np.linspace(0, dur, dur / tres)
+    freqs = np.arange(int(frange[0]), int(frange[1]), fres)
+    out = interp(times, freqs)
+    
     # if segment, downsample to valid time
     if not seg:
         seg = None
@@ -420,7 +410,7 @@ def qtransform(fseries, Q, f0):
     # apply window to fft
     # normalize and generate bi-square window
     norm = np.sqrt(315. * qprime / (128. * f0))
-    windowed = fseries[start:end] * (bisquare(window_size) * norm)
+    windowed = fseries[start:end].numpy() * bisquare(window_size) * norm
 
     # choice of output sampling rate
     output_sampling = sampling # Can lower this to highest bandwidth
