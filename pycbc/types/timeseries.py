@@ -427,6 +427,56 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
+    def whiten(self, segment_duration, max_filter_duration, trunc_method='hann',
+                     remove_corrupted=True, low_frequency_cutoff=None, **kwds):
+        """ Return a whitened time series
+
+        Parameters
+        ----------
+        segment_duration: float
+            Duration in seconds to use for each sample of the spectrum.
+        max_filter_duration : int
+            Maximum length of the time-domain filter in seconds.
+        trunc_method : {None, 'hann'}
+            Function used for truncating the time-domain filter.
+            None produces a hard truncation at `max_filter_len`.
+        remove_corrupted : {True, boolean}
+            If True, the region of the time series corrupted by the whitening
+            is excised before returning. If false, the corrupted regions
+            are not excised and the full time series is returned.
+        low_frequency_cutoff : {None, float}
+            Low frequency cutoff to pass to the inverse spectrum truncation. 
+            This should be matched to a known low frequency cutoff of the 
+            data if there is one.
+        kwds : keywords
+            Additional keyword arguments are passed on to the `pycbc.psd.welch` method.
+            
+        Returns
+        -------
+        whitened_data : TimeSeries
+            The whitened time series
+        """
+        from pycbc.psd import inverse_spectrum_truncation, interpolate
+        # Estimate the noise spectrum
+        psd = self.psd(segment_duration, **kwds)
+        psd = interpolate(psd, self.delta_f)
+        max_filter_len = int(max_filter_duration * self.sample_rate)
+        
+        # Interpolate and smooth to the desired corruption length
+        psd = inverse_spectrum_truncation(psd,
+                   max_filter_len=max_filter_len, 
+                   low_frequency_cutoff=low_frequency_cutoff,
+                   trunc_method=trunc_method)
+
+        # Whiten the data by the asd
+        white = (self.to_frequencyseries() / psd ** 0.5).to_timeseries()
+
+        if remove_corrupted:
+            white = white[max_filter_len/2:len(self)-max_filter_len/2]
+
+        return white
+        
+
     def save(self, path, group = None):
         """
         Save time series to a Numpy .npy, hdf, or text file. The first column
