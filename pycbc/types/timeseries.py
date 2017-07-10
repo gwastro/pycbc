@@ -445,8 +445,8 @@ class TimeSeries(Array):
             is excised before returning. If false, the corrupted regions
             are not excised and the full time series is returned.
         low_frequency_cutoff : {None, float}
-            Low frequency cutoff to pass to the inverse spectrum truncation. 
-            This should be matched to a known low frequency cutoff of the 
+            Low frequency cutoff to pass to the inverse spectrum truncation.
+            This should be matched to a known low frequency cutoff of the
             data if there is one.
         kwds : keywords
             Additional keyword arguments are passed on to the `pycbc.psd.welch` method.
@@ -464,7 +464,7 @@ class TimeSeries(Array):
         
         # Interpolate and smooth to the desired corruption length
         psd = inverse_spectrum_truncation(psd,
-                   max_filter_len=max_filter_len, 
+                   max_filter_len=max_filter_len,
                    low_frequency_cutoff=low_frequency_cutoff,
                    trunc_method=trunc_method)
 
