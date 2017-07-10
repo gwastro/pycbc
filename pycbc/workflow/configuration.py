@@ -35,7 +35,6 @@ import logging
 import urlparse
 import cookielib
 import requests
-import time
 import distutils.spawn
 import ConfigParser
 import itertools
@@ -140,10 +139,10 @@ def resolve_url(url, directory=None, permissions=None):
     if u.scheme == '' or u.scheme == 'file':
         # for regular files, make a direct copy
         if os.path.isfile(u.path):
-           shutil.copy(u.path,filename)
+            shutil.copy(u.path,filename)
         else:
-           errMsg  = "Cannot open file %s from URL %s" % (u.path, url)
-           raise ValueError(errMsg)
+            errmsg  = "Cannot open file %s from URL %s" % (u.path, url)
+            raise ValueError(errmsg)
 
     elif u.scheme == 'http' or u.scheme == 'https':
         s = requests.Session()
@@ -162,9 +161,9 @@ def resolve_url(url, directory=None, permissions=None):
 
         r = s.get(url, cookies=cookie_dict, allow_redirects=True)
         if r.status_code != 200:
-            errMsg = "Unable to download %s\nError code = %d" % (url,
+            errmsg = "Unable to download %s\nError code = %d" % (url,
                 r.status_code)
-            raise ValueError(errMsg)
+            raise ValueError(errmsg)
 
         # if we are downloading from git.ligo.org, check that we
         # did not get redirected to the sign-in page
@@ -173,8 +172,8 @@ def resolve_url(url, directory=None, permissions=None):
             desc = soup.findAll(attrs={"property":"og:url"})
             if len(desc) and \
               desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
-                errMsg = "The attempt to download the file at\n\n%s\n" % url
-                errMsg += """
+                errmsg = "The attempt to download the file at\n\n%s\n" % url
+                errmsg += """
 was redirected to the git.ligo.org sign-in page. This means that you likely
 forgot to initialize your ECP cookie or that your LIGO.ORG credentials are
 otherwise invalid. Create a valid ECP cookie for git.ligo.org by running
@@ -183,7 +182,7 @@ ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback alb
 
 before attempting to download files from git.ligo.org.
 """
-                raise ValueError(errMsg)
+                raise ValueError(errmsg)
 
         output_fp = open(filename, 'w')
         output_fp.write(r.content)
@@ -192,13 +191,13 @@ before attempting to download files from git.ligo.org.
     else:
         # TODO: We could support other schemes such as gsiftp by
         # calling out to globus-url-copy
-        errMsg  = "Unknown URL scheme: %s\n" % (u.scheme)
-        errMsg += "Currently supported are: file, http, and https." 
-        raise ValueError(errMsg)
+        errmsg  = "Unknown URL scheme: %s\n" % (u.scheme)
+        errmsg += "Currently supported are: file, http, and https." 
+        raise ValueError(errmsg)
 
     if not os.path.isfile(filename):
-        errMsg = "Error trying to create file %s from %s" % (filename,url)
-        raise ValueError(errMsg)
+        errmsg = "Error trying to create file %s from %s" % (filename,url)
+        raise ValueError(errmsg)
 
     if permissions:
         os.chmod(filename, permissions)
@@ -349,9 +348,9 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
         # Do overrides from command line
         for override in overrideTuples:
             if len(override) not in [2,3]:
-                errMsg = "Overrides must be tuples of length 2 or 3."
-                errMsg = "Got %s." % (str(override) )
-                raise ValueError(errMsg)
+                errmsg = "Overrides must be tuples of length 2 or 3."
+                errmsg = "Got %s." % (str(override) )
+                raise ValueError(errmsg)
             section = override[0]
             option = override[1]
             value = ''
@@ -526,9 +525,9 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             if testList[0] == 'which':
                 newString = distutils.spawn.find_executable(testList[1])
                 if not newString:
-                    errMsg = "Cannot find exe %s in your path " %(testList[1])
-                    errMsg += "and you specified ${which:%s}." %(testList[1])
-                    raise ValueError(errMsg)
+                    errmsg = "Cannot find exe %s in your path " %(testList[1])
+                    errmsg += "and you specified ${which:%s}." %(testList[1])
+                    raise ValueError(errmsg)
 
         return newString
 
