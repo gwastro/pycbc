@@ -212,9 +212,7 @@ class InjectionSet(object):
             phase_order=phase_order,
             f_lower=f_l, distance=inj.distance,
             **self.extra_args)
-
-
-
+        
         hp /= distance_scale
         hc /= distance_scale
 
