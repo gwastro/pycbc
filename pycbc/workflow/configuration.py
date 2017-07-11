@@ -175,7 +175,7 @@ def resolve_url(url, directory=None, permissions=None):
 
         # if we are downloading from git.ligo.org, check that we
         # did not get redirected to the sign-in page
-        if u.netloc == 'git.ligo.org':
+        if u.netloc == 'git.ligo.org' or u.netloc == 'code.pycbc.phy.syr.edu':
             soup = BeautifulSoup(r.content, 'html.parser')
             desc = soup.findAll(attrs={"property":"og:url"})
             if len(desc) and \
