@@ -11,7 +11,7 @@ if [ "x${VENV_PATH}" == "x" ] ; then
   exit 1
 fi
 
-echo -e "\\n>> [`date`] Entering virtual environment VENV_PATH"
+echo -e "\\n>> [`date`] Entering virtual environment $VENV_PATH"
 source ${VENV_PATH}/bin/activate
 
 echo -e "\\n>> [`date`] Cloning pycbc-config git repository"
