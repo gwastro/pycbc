@@ -155,8 +155,17 @@ def resolve_url(url, directory=None, permissions=None):
         if os.path.isfile(ecp_file):
             cj = cookielib.MozillaCookieJar()
             cj.load(ecp_file, ignore_discard=True, ignore_expires=True)
-            for c in cj: 
-                if c.domain == u.netloc: cookie_dict[c.name] = c.value
+        else:
+            cj = []
+
+        for c in cj: 
+            if c.domain == u.netloc:
+                # load cookies for this server
+                cookie_dict[c.name] = c.value
+            elif u.netloc == "code.pycbc.phy.syr.edu" and \
+              c.domain == "git.ligo.org":
+                # handle the redirect for code.pycbc to git.ligo.org
+                cookie_dict[c.name] = c.value
 
         r = s.get(url, cookies=cookie_dict, allow_redirects=True)
         if r.status_code != 200:
