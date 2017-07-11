@@ -100,6 +100,8 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     echo -e "\\n>> [`date`] Building pycbc virtual environment for Debian"
     ENV_OS="x86_64_deb_8"
     apt-get -y install python-pip
+    apt-get -y install ligo-proxy-utils
+    apt-get -y install ecp-cookie-init
   else
     echo -e "\\n>> [`date`] Unknown operating system for virtual environment build"
     exit 1
