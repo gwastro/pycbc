@@ -27,7 +27,7 @@ VETO_DEFINER="https://git.ligo.org/detchar/veto-definitions/raw/a07f542b37ccfcfb
 echo -e "\\n>> [`date`] Using veto definer file from ${VETO_DEFINER}"
 
 BANK_FILE="${CONFIG_PATH}/O1/bank/H1L1-UBERBANK_MAXM100_NS0p05_ER8HMPSD-1126033217-223200.xml.gz"
-echo -e "\\n>> [`date`] Using template bank from ${BANK_FIL}"
+echo -e "\\n>> [`date`] Using template bank from ${BANK_FILE}"
 
 echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 
