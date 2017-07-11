@@ -29,7 +29,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 
 import os, sys, shutil, stat, copy, itertools
 import logging
-import urllib2, urlparse
+import urlparse
 import lal
 from pycbc_glue import segments, segmentsUtils
 from pycbc_glue.ligolw import utils, table, lsctables, ligolw
@@ -401,11 +401,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
                                      "segments-veto-definer-url", [tag])
         vetoDefBaseName = os.path.basename(vetoDefUrl)
         vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
-        response = urllib2.urlopen(vetoDefUrl)
-        html = response.read()
-        out_file = open(vetoDefNewPath, 'w')
-        out_file.write(html)
-        out_file.close()
+        resolve_url(vetoDefUrl,out_dir)
         # and update location
         cp.set("workflow-segments", "segments-veto-definer-file",
                 vetoDefNewPath)
@@ -1269,13 +1265,7 @@ def save_veto_definer(cp, out_dir, tags=None):
     veto_def_new_path = os.path.abspath(os.path.join(out_dir,
                                         veto_def_base_name))
     # Don't need to do this if already done
-    if veto_def_url == veto_def_new_path:
-        return
-    response = urllib2.urlopen(veto_def_url)
-    html = response.read()
-    out_file = open(veto_def_new_path, 'w')
-    out_file.write(html)
-    out_file.close()
+    resolve_url(veto_def_url,out_dir)
 
     # and update location
     cp.set("workflow-segments", "segments-veto-definer-file", veto_def_new_path)
