@@ -208,7 +208,7 @@ EOF
     echo -e "\\n>> [`date`] Running test_coinc_search_workflow.sh"
     mkdir -p /pycbc/workflow-test
     pushd /pycbc/workflow-test
-    /pycbc/tools/test_coinc_search_workflow.sh ${TRAVIS_TAG}
+    /pycbc/tools/test_coinc_search_workflow.sh ${VENV_PATH}
     popd
   fi
 
