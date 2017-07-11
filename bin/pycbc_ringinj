@@ -81,12 +81,22 @@ parser.add_argument('--dec', required=True, type=float,
                     help='Declination for detector frame waveform generator class.')
 parser.add_argument('--polarization', required=True, type=float,
                     help='Polarization for detector frame waveform generator class.')
+parser.add_argument('--taper', default=None, type=float,
+                    help='Taper at the beginning of the time-domain ringdown '
+                         'waveform. Duration of the taper will be taper * tau,'
+                         ' with tau the damping time of the ringdown.')
 
 opts = parser.parse_args()
 
 # Check that the approximant given is a valid rindown approximant
-if opts.approximant not in ringdown.ringdown_fd_approximants.keys()+ringdown.ringdown_td_approximants.keys():
+approxs = ringdown.ringdown_fd_approximants.keys() + \
+          ringdown.ringdown_td_approximants.keys()
+if opts.approximant not in approxs:
     raise ValueError('Invalid ringdown approximant')
+
+# Check that the taper option is only given with time-domain approximan
+if opts.taper is not None and opts.approximant in ringdown.ringdown_fd_approximants.keys():
+    raise ValueError('The taper option can only be given for time-domain approximants.')
 
 # Write hdf file with the parameters for the injection
 injection = h5py.File('%s' %opts.output, 'w')
@@ -102,6 +112,8 @@ if opts.approximant in ringdown.ringdown_fd_approximants:
     if opts.f_final is not None:
         injection.create_dataset('f_final', data=opts.f_final)
 else:
+    if opts.taper is not None:
+        injection.create_dataset('taper', data=opts.taper)
     if opts.t_final is not None:
         injection.create_dataset('t_final', data=opts.t_final)
 
