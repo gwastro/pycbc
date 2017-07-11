@@ -121,7 +121,20 @@ def _really_load(self, f, filename, ignore_discard, ignore_expires):
                         (filename, line))
 
 # Now monkey patch the code
-cookielib.MozillaCookieJar._really_load = _really_load
+cookielib.MozillaCookieJar._really_load = _really_load # noqa
+
+ecp_cookie_error = """The attempt to download the file at
+
+{}
+
+was redirected to the git.ligo.org sign-in page. This means that you likely
+forgot to initialize your ECP cookie or that your LIGO.ORG credentials are
+otherwise invalid. Create a valid ECP cookie for git.ligo.org by running
+
+ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback albert.einstein
+
+before attempting to download files from git.ligo.org.
+"""
 
 def resolve_url(url, directory=None, permissions=None):
     """
@@ -180,17 +193,7 @@ def resolve_url(url, directory=None, permissions=None):
             desc = soup.findAll(attrs={"property":"og:url"})
             if len(desc) and \
               desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
-                errmsg = "The attempt to download the file at\n\n%s\n" % url
-                errmsg += """
-was redirected to the git.ligo.org sign-in page. This means that you likely
-forgot to initialize your ECP cookie or that your LIGO.ORG credentials are
-otherwise invalid. Create a valid ECP cookie for git.ligo.org by running
-
-ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback albert.einstein
-
-before attempting to download files from git.ligo.org.
-"""
-                raise ValueError(errmsg)
+                raise ValueError(ecp_cookie_error.format(url))
 
         output_fp = open(filename, 'w')
         output_fp.write(r.content)
