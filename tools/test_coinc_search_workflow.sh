@@ -4,15 +4,15 @@ set -e
 
 echo -e "\\n>> [`date`] Testing pycbc_make_coinc_search_workflow"
 
-TRAVIS_TAG=${1}
+VENV_PATH=${1}
 
-if [ "x${TRAVIS_TAG}" == "x" ] ; then
-  echo -e "\\n>> [`date`] Error: TRAVIS_TAG was not passed to script or is empty"
+if [ "x${VENV_PATH}" == "x" ] ; then
+  echo -e "\\n>> [`date`] Error: VENV_PATH was not passed to script or is empty"
   exit 1
 fi
 
-echo -e "\\n>> [`date`] Entering virtual environment pycbc-${TRAVIS_TAG}"
-source /cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/x86_64_rhel_7/virtualenv/pycbc-${TRAVIS_TAG}/bin/activate
+echo -e "\\n>> [`date`] Entering virtual environment VENV_PATH"
+source ${VENV_PATH}/bin/activate
 
 echo -e "\\n>> [`date`] Cloning pycbc-config git repository"
 test -r pycbc-config || git clone --depth 1 git@github.com:ligo-cbc/pycbc-config.git
