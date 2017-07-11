@@ -153,7 +153,7 @@ def resolve_url(url, directory=None, permissions=None):
     if u.scheme == '' or u.scheme == 'file':
         # for regular files, make a direct copy
         if os.path.isfile(u.path):
-            if filecmp.cmp(u.path, filename):
+            if os.path.isfile(filename) and filecmp.cmp(u.path, filename):
                 filename = u.path
             else:
                 shutil.copy(u.path, filename)
