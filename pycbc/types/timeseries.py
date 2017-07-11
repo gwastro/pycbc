@@ -475,7 +475,42 @@ class TimeSeries(Array):
             white = white[max_filter_len/2:len(self)-max_filter_len/2]
 
         return white
+
+    def qtransform(self, delta_t, delta_f,
+                  frange=(0,_numpy.inf), qrange=(4,64), mismatch=0.2):
+        """ Return the interpolated 2d qtransform of this data
         
+        Parameters
+        ----------
+        delta_t : float
+            The time resolution
+        delta_f : float
+            The frequency resolution
+        frange : {(0, inf), tuple}
+            frequency range
+        qrange : {(4, 64), tuple}
+            q range
+        mismatch : float
+            Mismatch between frequency tiles
+         
+        Returns
+        -------
+        times : numpy.ndarray
+            The time that the qtransform is sampled.
+        freqs : numpy.ndarray
+            The frequencies that the qtransform is samled.
+        qplane : numpy.ndarray (2d)
+            The two dimensional interpolated qtransform of this time series.
+        """
+        from pycbc.filter.qtransform import qtiling, qplane
+        q_base, q_frange = qtiling(self, qrange, frange, mismatch)
+        q_plane, _ = qplane(q_base, self.to_frequencyseries(), q_frange,
+                            fres=delta_f, tres=delta_t)
+        times = _numpy.linspace(float(self.start_time),
+                                float(self.end_time),
+                                self.duration / delta_t)
+        freqs = _numpy.arange(int(q_frange[0]), int(q_frange[1]), delta_f)
+        return times, freqs, q_plane
 
     def save(self, path, group = None):
         """
