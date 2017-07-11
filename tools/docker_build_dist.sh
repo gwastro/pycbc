@@ -100,6 +100,11 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     echo -e "\\n>> [`date`] Building pycbc virtual environment for Debian"
     ENV_OS="x86_64_deb_8"
     apt-get -y install python-pip
+    echo "deb http://software.ligo.org/gridtools/debian jessie main" > /etc/apt/sources.list.d/gridtools.list
+    echo "deb http://software.ligo.org/lscsoft/debian jessie contrib" > /etc/apt/sources.list.d/lscsoft.list
+    apt-get update
+    apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
+    apt-get update
     apt-get -y install ligo-proxy-utils
     apt-get -y install ecp-cookie-init
   else
