@@ -122,7 +122,7 @@ pycbc_make_coinc_search_workflow \
   "injections-imbhimrphenomd_inj" \
   "injections-imbhseobnrv3_inj" \
   "injections-imbheobnrv2hm_inj" \
-  "inspiral:enable-bank-start-frequency" || cat /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats*
+  "inspiral:enable-bank-start-frequency"
 
 pushd output
 
