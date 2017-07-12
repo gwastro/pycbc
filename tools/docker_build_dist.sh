@@ -235,7 +235,7 @@ EOF
     echo -e "\\n>> [`date`] Deploying virtual environment to sugwg-condor.phy.syr.edu"
     ssh pycbc@sugwg-condor.phy.syr.edu "mkdir -p /home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/${ENV_OS}/virtualenv/pycbc-${TRAVIS_TAG}"
     rsync --rsh=ssh $RSYNC_OPTIONS -qraz ${VENV_PATH}/ pycbc@sugwg-condor.phy.syr.edu:/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/${ENV_OS}/virtualenv/pycbc-${TRAVIS_TAG}/
-    if [ "x${TRAVIS_TAG}" != "xlatest" ] ; then
+    if [ "x${TRAVIS_TAG}" != "xmaster" ] ; then
       echo -e "\\n>> [`date`] Deploying release ${TRAVIS_TAG} to CVMFS"
       # remove lalsuite source and deploy on cvmfs
       rm -rf ${VENV_PATH}/src/lalsuite
