@@ -82,7 +82,7 @@ def config_parser_from_cli(opts):
     return WorkflowConfigParser(opts.config_files, overrides)
 
 
-def read_args_from_config(cp, section_group=None):
+def read_args_from_config(cp, section_group=None, prior_section='prior'):
     """Given an open config file, loads the static and variable arguments to
     use in the parameter estmation run.
 
@@ -96,6 +96,8 @@ def read_args_from_config(cp, section_group=None):
         variable arguments will be retrieved from section
         `[foo_variable_args]`. If None, no prefix will be appended to section
         names.
+    prior_section : str, optional
+        Check that priors exist in the given section. Default is 'prior.'
 
     Returns
     -------
@@ -112,7 +114,8 @@ def read_args_from_config(cp, section_group=None):
 
     # sanity check that each parameter in [variable_args] has a priors section
     variable_args = cp.options("{}variable_args".format(section_prefix))
-    subsections = cp.get_subsections("{}prior".format(section_prefix))
+    subsections = cp.get_subsections("{}{}".format(section_prefix,
+                                                   prior_section))
     tags = numpy.concatenate([tag.split("+") for tag in subsections])
     if not any(param in tags for param in variable_args):
         raise KeyError("You are missing a priors section in the config file.")
@@ -157,10 +160,11 @@ def read_args_from_config(cp, section_group=None):
 
     return variable_args, static_args, cons
 
-def read_sampling_args_from_config(cp, section_group=None):
+def read_sampling_args_from_config(cp, section_group=None,
+                                   section='sampling_parameters'):
     """Reads sampling parameters from the given config file.
 
-    Parameters are read from the `[({section_group}_)sampling_params]` section.
+    Parameters are read from the `[({section_group}_){section}]` section.
     The options should list the variable args to transform; the parameters they
     point to should list the parameters they are to be transformed to for
     sampling. If a multiple parameters are transformed together, they should
@@ -185,6 +189,8 @@ def read_sampling_args_from_config(cp, section_group=None):
         An open config parser to read from.
     section_group : str, optional
         Append `{section_group}_` to the section name. Default is None.
+    section : str, optional
+        The name of the section. Default is 'sampling_parameters'.
 
     Returns
     -------
@@ -197,7 +203,7 @@ def read_sampling_args_from_config(cp, section_group=None):
         section_prefix = '{}_'.format(section_group)
     else:
         section_prefix = ''
-    section = section_prefix + 'sampling_parameters'
+    section = section_prefix + section
     replaced_params = set()
     sampling_params = set()
     for args in cp.options(section):
