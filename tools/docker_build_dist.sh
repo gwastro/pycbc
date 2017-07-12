@@ -186,8 +186,8 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   pip install -r requirements.txt
   python setup.py install
 
-  echo -e "\\n>> [`date`] Installing PyCBC PyLAL"
-  pip install pycbc-pylal
+  echo -e "\\n>> [`date`] Installing PyCBC PyLAL 1.0.2"
+  pip install "pycbc-pylal==1.0.2"
 
   echo -e "\\n>> [`date`] Installing modules needed to build documentation"
   pip install "Sphinx>=1.5.0"
