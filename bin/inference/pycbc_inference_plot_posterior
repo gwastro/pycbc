@@ -72,6 +72,19 @@ else:
     show_colorbar = False
 fp.close()
 
+# If no plotting options selected, set default options based on number
+# of parameters.
+plot_options = [opts.plot_marginal, opts.plot_scatter, opts.plot_density]
+if not numpy.any(plot_options):
+    if len(parameters) == 1:
+        opts.plot_marginal = True
+    else:
+        opts.plot_scatter = True
+        # FIXME: right now if there are two parameters it wants both plot_scatter
+        # and plot_marginal. One should have the option of give only plot_scatter
+        # and that should be the default for two or more parameters
+        opts.plot_marginal = True
+
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
 # add any missing parameters
 for p in parameters:
