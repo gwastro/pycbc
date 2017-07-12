@@ -16,6 +16,103 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""Generates injections drawn from a distribution read from a config file.
+
+Config file syntax
+------------------
+The configuration file should have a [variable_args], a [static_args],
+and one or more [distribution] sections. Multiple [constraint] sections and
+a [replace_parameters] and one or more [transform] sections may also be
+provided. An example:
+
+    [variable_args]
+    mass1 =
+    mass2 =
+    spin1_a =
+    spin1_azimuthal =
+    spin1_polar =
+
+    [static_args]
+    approximant = IMRPhenomPv2
+    f_lower = 19
+
+    [distribution-mass1]
+    name = uniform
+    min-mass1 = 3
+    max-mass1 = 12
+
+    [distribution-mass2]
+    name = uniform
+    min-mass2 = 1
+    max-mass2 = 3
+
+    [constraint-1]
+    name = custom
+    constraint_arg = q_from_mass1_mass2(mass1, mass2) <= 4
+
+    [distribution-spin1_a]
+    name = uniform
+    min-spin1_a = 0.0
+    max-spin1_a = 0.9
+
+    [distribution-spin1_polar+spin1_azimuthal]
+    name = uniform_solidangle
+    polar-angle = spin1_polar
+    azimuthal-angle = spin1_azimuthal
+
+    [replace_parameters]
+    ; replace parameters on the right with parameters on the left
+    spin1x, spin1y, spin1z : spin1_a, spin1_azimuthal, spin1_polar
+
+    [transform-spin1x+spin1y+spin1z]
+    name = spherical_spin_1_to_cartesian_spin_1
+
+This config file would generate injections uniform in mass1 and mass2, with a
+cut on mass ratio (q) <= 4. The spin of the larger body is also varied,
+uniform in magnitude < 0.9, and isotropic in orientation (spin1_polar,
+spin1_azimuthal). Because the waveform module expects spins to be provided in
+cartesian coordinates, the spherical spin coordinates are transformed prior to
+being written out to file.
+
+The [variable_args] section gives the list of waveform parameters to
+randomize.  The [static_args] section gives parameters that are fixed for all
+of the injections.
+
+The [distribution-{tag}] sections provide the arguments needed to initialize
+the distribution for each parameter. Every parameter specified in
+[variable_args] must have a distribution section; the name of the parameter(s)
+used by that distribution must be in the 'tag' part of the section header (the
+bit after the dash). If a distribution covers multiple parameters, the
+parameters should be separated by a '+'.  Any distribution in the distributions
+module may be used.  The rest of the options should provide the necessary
+arguments to initialize that distribution; see the distributions module for
+details.
+
+The variable_args need not be parameters understood by the waveform module.  In
+that case, a [replace_parameters] section and corresponding [transform]
+sections must be provided that map variable_args not understood by the waveform
+module to parameters that are understood. In the above example, spin1_a,
+spin1_azimuthal, and spin1_polar are converted to spin1x, spin1y, and spin1z
+before being written out. Any transform in the transforms module may be used to
+do this; see that module for details. No attempt is made to check that provided
+parameter names are sensible. It is up to the user to ensure that written
+parameters are understood by the waveform approximant that will be used.
+
+One or more constraints may be applied to the distributions; these are
+specified by the [constraint] section(s). Additional constraints may be
+supplied by adding more [constraint-{tag}] sections. Any tag may be used; the
+only requirement is that they be unique. If multiple constaint sections are
+provided, the union of all constraints are applied. Alternatively, multiple
+constraints may be joined in a single argument using numpy's logical operators.
+
+The parameter that constraints are applied to may be any parameter in
+variable_args or any output parameter of the transforms. Functions may be
+applied on these parameters to obtain constraints on derived parameters. Any
+function in the conversions, coordinates, or cosmology module may be used,
+along with any numpy ufunc. So, in the above example, mass ratio (q) is
+constrained to be <= 4 by using a function from the conversions module.
+"""
+
 import os, sys
 import argparse
 import logging
@@ -98,7 +195,8 @@ def write_to_hdf(filename, samples, write_args, static_args=None):
     return fp
 
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
 option_utils.add_config_opts_to_parser(parser)
 parser.add_argument('--ninjections', required=True, type=int,
                     help='Number of injections to create.')
