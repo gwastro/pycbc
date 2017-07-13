@@ -29,8 +29,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 
 import os
 import re
+import stat
 import shutil
-import filecmp
 import time
 import logging
 import urlparse
@@ -153,8 +153,12 @@ def resolve_url(url, directory=None, permissions=None):
     if u.scheme == '' or u.scheme == 'file':
         # for regular files, make a direct copy
         if os.path.isfile(u.path):
-            if os.path.isfile(filename) and filecmp.cmp(u.path, filename):
-                filename = u.path
+            if os.path.isfile(filename):
+                # check to see if src and dest are the same file
+                src_inode = os.stat(u.path)[stat.ST_INO]
+                dst_inode = os.stat(filename)[stat.ST_INO]
+                if src_inode != dst_inode:
+                    shutil.copy(u.path, filename)
             else:
                 shutil.copy(u.path, filename)
         else:
@@ -215,7 +219,14 @@ def resolve_url(url, directory=None, permissions=None):
         raise ValueError(errmsg)
 
     if permissions:
-        os.chmod(filename, permissions)
+        if os.access(filename, os.W_OK):
+            os.chmod(filename, permissions)
+        else:
+            # check that the file has at least the permissions requested
+            s = os.stat(filename)[stat.ST_MODE]
+            if (s & permissions) != permissions:
+                errmsg = "Could not change permissions on %s (read-only)" % url
+                raise ValueError(errmsg)
 
     return filename
 
