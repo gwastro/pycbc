@@ -718,7 +718,7 @@ class EmceePTSampler(BaseMCMCSampler):
 
         # get the slice to use
         if iteration is not None:
-            get_index = iteration
+            get_index = [iteration]
         else:
             if thin_end is None:
                 # use the number of current iterations
