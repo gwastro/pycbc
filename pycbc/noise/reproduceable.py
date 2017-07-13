@@ -37,8 +37,8 @@ def block(seed):
     Parameters
     ----------
     seed : {None, int}
-        The seed to generate the noise. 
-        
+        The seed to generate the noise.
+
     Returns
     --------
     noise : numpy.ndarray
@@ -51,7 +51,7 @@ def block(seed):
 
 def normal(start, end, seed=0):
     """ Generate data with a white Gaussian (normal) distribution
-    
+
     Parameters
     ----------
     start_time : int
@@ -59,25 +59,25 @@ def normal(start, end, seed=0):
     end_time : int
         End time in GPS seconds to generate nosie
     seed : {None, int}
-        The seed to generate the noise. 
+        The seed to generate the noise.
 
     Returns
     --------
     noise : TimeSeries
-        A TimeSeries containing gaussian noise 
+        A TimeSeries containing gaussian noise
     """
     # This is reproduceable because we used fixed seeds from known values
     s = int(start / BLOCK_SIZE)
     e = int(end / BLOCK_SIZE)
-    
+
     sv = RandomState(seed).randint(-2**50, 2**50)
     data = numpy.concatenate([block(i + sv) for i in numpy.arange(s, e + 1, 1)])
     return TimeSeries(data, delta_t=1.0 / SAMPLE_RATE, epoch=start)
 
-def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0): 
+def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """ Create noise from a PSD
-    
-    Return noise from the chosen PSD. Note that if unique noise is desired 
+
+    Return noise from the chosen PSD. Note that if unique noise is desired
     a unique seed should be provided.
 
     Parameters
@@ -89,20 +89,20 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     end_time : int
         End time in GPS seconds to generate nosie
     seed : {None, int}
-        The seed to generate the noise. 
+        The seed to generate the noise.
     low_frequency_cutof : {10.0, float}
         The low frequency cutoff to pass to the PSD generation.
-        
+
     Returns
     --------
     noise : TimeSeries
-        A TimeSeries containing gaussian noise colored by the given psd. 
+        A TimeSeries containing gaussian noise colored by the given psd.
     """ 
     white_noise = normal(start_time - FILTER_LENGTH, end_time + FILTER_LENGTH,
                           seed=seed)   
     flen = (SAMPLE_RATE / psd.delta_f) / 2 + 1
     psd.resize(flen)
-    psd = pycbc.psd.interpolate(psd, 1.0 / white_noise.duration) 
+    psd = pycbc.psd.interpolate(psd, 1.0 / white_noise.duration)
     invpsd = pycbc.psd.inverse_spectrum_truncation(1.0 / psd,
                                 FILTER_LENGTH * SAMPLE_RATE, 
                                 low_frequency_cutoff=low_frequency_cutoff,
@@ -112,8 +112,8 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     
 def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """ Create noise from an analytic PSD
-    
-    Return noise from the chosen PSD. Note that if unique noise is desired 
+
+    Return noise from the chosen PSD. Note that if unique noise is desired
     a unique seed should be provided.
 
     Parameters
@@ -128,11 +128,11 @@ def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cuto
         The seed to generate the noise. 
     low_frequency_cutof : {10.0, float}
         The low frequency cutoff to pass to the PSD generation.
-        
+
     Returns
     --------
     noise : TimeSeries
-        A TimeSeries containing gaussian noise colored by the given psd. 
+        A TimeSeries containing gaussian noise colored by the given psd.
     """   
     delta_f = 1.0 / FILTER_LENGTH
     flen = int(SAMPLE_RATE / delta_f) / 2 + 1
