@@ -31,7 +31,6 @@ import os
 import re
 import stat
 import shutil
-import filecmp
 import time
 import logging
 import urlparse
