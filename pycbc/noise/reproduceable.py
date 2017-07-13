@@ -46,7 +46,8 @@ def block(seed):
     """ 
     num = SAMPLE_RATE * BLOCK_SIZE
     rng = RandomState(seed % 2**32)
-    return rng.normal(size=num)
+    variance = SAMPLE_RATE / 2
+    return rng.normal(size=num, scale=variance**0.5)
 
 def normal(start, end, seed=0):
     """ Generate data with a white Gaussian (normal) distribution
