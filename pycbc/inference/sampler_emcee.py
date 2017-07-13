@@ -559,10 +559,10 @@ class EmceePTSampler(BaseMCMCSampler):
             arrays.append(fp[group.format(tk=tk)][wmask])
         return numpy.vstack(arrays)
 
-    def _write_samples_group(self, fp, samples_group, parameters, samples,
+    @staticmethod
+    def write_samples_group(fp, samples_group, parameters, samples,
                              start_iteration=0, end_iteration=None,
-                             max_iterations=None,
-                             apply_boundary_conditions=False):
+                             index_offset=0, max_iterations=None):
         """Writes samples to the given file.
 
         Results are written to:
@@ -588,6 +588,10 @@ class EmceePTSampler(BaseMCMCSampler):
             Write results starting from the given iteration.
         end_iteration : {None, int}
             Write results up to the given iteration.
+        index_offset : int, optional
+            Offset the indices used to access the arrays on disk and the
+            samples. Specifically, index_offset = file array indices - samples'
+            indices. Default is 0.
         max_iterations : {None, int}
             If samples have not previously been written to the file, a new
             dataset will be created. By default, the size of this dataset will
@@ -599,13 +603,13 @@ class EmceePTSampler(BaseMCMCSampler):
         ntemps, nwalkers, niterations = samples.shape
         # due to clearing memory, there can be a difference between indices in
         # memory and on disk
-        niterations += self._lastclear
+        niterations += index_offset
         fa = start_iteration # file start index
         if end_iteration is None:
             end_iteration = niterations
         fb = end_iteration # file end index
-        ma = fa - self._lastclear # memory start index
-        mb = fb - self._lastclear # memory end index
+        ma = fa - index_offset # memory start index
+        mb = fb - index_offset # memory end index
 
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "

@@ -478,7 +478,34 @@ def add_inference_results_option_group(parser):
     return results_reading_group
 
 
-def results_from_cli(opts, load_samples=True, walkers=None):
+def parse_parameters_opt(parameters):
+    """Parses the --parameters opt in the results_reading_group.
+
+    Parameters
+    ----------
+    parameters : list of str or None
+        The parameters to parse.
+    Returns
+    -------
+    parameters : list of str
+        The parameters.
+    labels : dict
+        A dictionary mapping parameters for which labels were provide to those
+        labels.
+    """
+    if parameters is None:
+        return None, {}
+    # load the labels
+    labels = {}
+    for ii,p in enumerate(parameters):
+        if len(p.split(':')) == 2:
+            p, label = p.split(':')
+            parameters[ii] = p
+            labels[p] = label
+    return parameters, labels
+
+
+def results_from_cli(opts, load_samples=True, **kwargs):
     """
     Loads an inference result file along with any labels associated with it
     from the command line options.
@@ -491,9 +518,10 @@ def results_from_cli(opts, load_samples=True, walkers=None):
         Load samples from the results file using the parameters, thin_start,
         and thin_interval specified in the options. The samples are returned
         as a FieldArray instance.
-    walkers : {None, (list of) int}
-        If loading samples, the walkers to load from. If None, will load from
-        all walkers.
+
+    \**kwargs :
+        All other keyword arguments are passed to the InferenceFile's
+        read_samples function.
 
     Returns
     -------
@@ -513,12 +541,13 @@ def results_from_cli(opts, load_samples=True, walkers=None):
                  else opts.parameters
 
     # load the labels
+    parameters, ldict = parse_parameters_opt(parameters)
+    # convert labels dict to list
     labels = []
-    for ii,p in enumerate(parameters):
-        if len(p.split(':')) == 2:
-            p, label = p.split(':')
-            parameters[ii] = p
-        else:
+    for p in parameters:
+        try:
+            label = ldict[p]
+        except KeyError:
             label = fp.read_label(p)
         labels.append(label)
 
@@ -529,11 +558,11 @@ def results_from_cli(opts, load_samples=True, walkers=None):
         file_parameters, ts = transforms.get_common_cbc_transforms(
                                                  parameters, fp.variable_args)
         # read samples from file
-        samples = fp.read_samples(
-            file_parameters, walkers=walkers,
+        samples = fp.read_samples(file_parameters,
             thin_start=opts.thin_start, thin_interval=opts.thin_interval,
             thin_end=opts.thin_end, iteration=opts.iteration,
-            samples_group=opts.parameters_group)
+            samples_group=opts.parameters_group,
+            **kwargs)
         # add parameters not included in file
         samples = transforms.apply_transforms(samples, ts)
     else:
