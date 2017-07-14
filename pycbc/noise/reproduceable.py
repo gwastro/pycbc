@@ -102,7 +102,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     --------
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
-    """ 
+    """
     white_noise = normal(start_time - FILTER_LENGTH, end_time + FILTER_LENGTH,
                           seed=seed)
     flen = (SAMPLE_RATE / psd.delta_f) / 2 + 1
@@ -115,7 +115,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
                                 trunc_method='hann')
     colored = (white_noise.to_frequencyseries() / invpsd ** 0.5).to_timeseries()
     return colored.time_slice(start_time, end_time)
-    
+
 def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """ Create noise from an analytic PSD
 
