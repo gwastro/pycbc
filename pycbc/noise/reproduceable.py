@@ -70,6 +70,10 @@ def normal(start, end, seed=0):
     s = int(start / BLOCK_SIZE)
     e = int(end / BLOCK_SIZE)
 
+    # The data evenly divides so the last block would be superfluous
+    if end % BLOCK_SIZE == 0:
+        e -= 1
+
     sv = RandomState(seed).randint(-2**50, 2**50)
     data = numpy.concatenate([block(i + sv) for i in numpy.arange(s, e + 1, 1)])
     ts = TimeSeries(data, delta_t=1.0 / SAMPLE_RATE, epoch=start)
