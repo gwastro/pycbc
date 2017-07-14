@@ -893,6 +893,7 @@ def get_fd_lm_allmodes(template=None, **kwargs):
 
 def get_td_freqtau_allmodes(template=None, taper=None, **kwargs):
     """Return time domain ringdown with all the modes specified.
+
     Parameters
     ----------
     template: object
@@ -934,6 +935,7 @@ def get_td_freqtau_allmodes(template=None, taper=None, **kwargs):
         The ending time of the output frequency series.
         If None, it will be set to the time at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
+
     Returns
     -------
     hplustilde: FrequencySeries
@@ -988,20 +990,21 @@ def get_td_freqtau_allmodes(template=None, taper=None, **kwargs):
 
 def get_fd_freqtau_allmodes(template=None, **kwargs):
     """Return frequency domain ringdown with all the modes specified.
+
     Parameters
     ----------
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    f_lmn: float
-        Central frequency of the lmn overtone, as many as number of modes.
-    tau_lmn: float
-        Damping time of the lmn overtone, as many as number of modes.
     lmns : list
         Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
         The n specifies the number of overtones desired for the corresponding
         lm pair (maximum n=8).
         Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
+    f_lmn: float
+        Central frequency of the lmn overtone, as many as number of modes.
+    tau_lmn: float
+        Damping time of the lmn overtone, as many as number of modes.
     amp220 : float
         Amplitude of the fundamental 220 mode.
     amplmn : float
@@ -1023,6 +1026,7 @@ def get_fd_freqtau_allmodes(template=None, **kwargs):
         The ending frequency of the output frequency series.
         If None, it will be set to the frequency at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
+
     Returns
     -------
     hplustilde: FrequencySeries
