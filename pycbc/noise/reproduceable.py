@@ -33,17 +33,17 @@ FILTER_LENGTH = 128
 
 def block(seed):
     """ Return block of normal random numbers
-    
+
     Parameters
     ----------
     seed : {None, int}
-        The seed to generate the noise.
+        The seed to generate the noise.sd
 
     Returns
     --------
     noise : numpy.ndarray
         Array of random numbers
-    """ 
+    """
     num = SAMPLE_RATE * BLOCK_SIZE
     rng = RandomState(seed % 2**32)
     variance = SAMPLE_RATE / 2
@@ -72,7 +72,8 @@ def normal(start, end, seed=0):
 
     sv = RandomState(seed).randint(-2**50, 2**50)
     data = numpy.concatenate([block(i + sv) for i in numpy.arange(s, e + 1, 1)])
-    return TimeSeries(data, delta_t=1.0 / SAMPLE_RATE, epoch=start)
+    ts = TimeSeries(data, delta_t=1.0 / SAMPLE_RATE, epoch=start)
+    return ts.time_slice(start, end)
 
 def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """ Create noise from a PSD
@@ -99,12 +100,13 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
         A TimeSeries containing gaussian noise colored by the given psd.
     """ 
     white_noise = normal(start_time - FILTER_LENGTH, end_time + FILTER_LENGTH,
-                          seed=seed)   
+                          seed=seed)
     flen = (SAMPLE_RATE / psd.delta_f) / 2 + 1
+    psd = psd * 1
     psd.resize(flen)
     psd = pycbc.psd.interpolate(psd, 1.0 / white_noise.duration)
     invpsd = pycbc.psd.inverse_spectrum_truncation(1.0 / psd,
-                                FILTER_LENGTH * SAMPLE_RATE, 
+                                FILTER_LENGTH * SAMPLE_RATE,
                                 low_frequency_cutoff=low_frequency_cutoff,
                                 trunc_method='hann')
     colored = (white_noise.to_frequencyseries() / invpsd ** 0.5).to_timeseries()
@@ -125,7 +127,7 @@ def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cuto
     end_time : int
         End time in GPS seconds to generate nosie
     seed : {None, int}
-        The seed to generate the noise. 
+        The seed to generate the noise.
     low_frequency_cutof : {10.0, float}
         The low frequency cutoff to pass to the PSD generation.
 
