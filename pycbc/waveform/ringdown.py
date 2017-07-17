@@ -288,10 +288,17 @@ def get_td_qnm(template=None, taper=None, **kwargs):
         The ringdown-frequency.
     tau : float
         The damping time of the sinusoid.
-    phi : float
-        The initial phase of the ringdown.
     amp : float
         The amplitude of the ringdown (constant for now).
+    phi : float
+        The initial phase of the ringdown. Should also include the information
+        from the azimuthal angle (phi_0 + m*Phi)
+    inclination : {0., float}, optional
+        Inclination of the system in radians. Default is 0 (face on).
+    l : {2, int}, optional
+        l mode for the spherical harmonics. Default is l=2.
+    m : {2, int}, optional
+        m mode for the spherical harmonics. Default is m=2.
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
@@ -316,6 +323,9 @@ def get_td_qnm(template=None, taper=None, **kwargs):
     amp = input_params.pop('amp')
     phi = input_params.pop('phi')
     # the following may not be in input_params
+    inc = input_params.pop('inclination', 0.)
+    l = input_params.pop('l', 2)
+    m = input_params.pop('m', 2)
     delta_t = input_params.pop('delta_t', None)
     t_final = input_params.pop('t_final', None)
 
@@ -329,8 +339,17 @@ def get_td_qnm(template=None, taper=None, **kwargs):
 
     times = numpy.arange(kmax) * delta_t
 
-    hp = amp * numpy.exp(-times/tau) * numpy.cos(two_pi*f_0*times + phi)
-    hc = amp * numpy.exp(-times/tau) * numpy.sin(two_pi*f_0*times + phi)
+    # FIXME: we are using spin -2 weighted spherical harmonics for now,
+    # when possible switch to spheroidal harmonics.
+    sph_lm = lal.SpinWeightedSphericalHarmonic(inc, 0., -2, l, m).real
+    sph_lminusm = lal.SpinWeightedSphericalHarmonic(inc, 0., -2, l, -m).real
+    spherical_plus = sph_lm + (-1)**l * sph_lminusm
+    spherical_cross = sph_lm - (-1)**l * sph_lminusm
+
+    hp = amp * spherical_plus * numpy.exp(-times/tau) * \
+                                numpy.cos(two_pi*f_0*times + phi)
+    hc = amp * spherical_cross * numpy.exp(-times/tau) * \
+                                numpy.sin(two_pi*f_0*times + phi)
 
     # If size of tapering window is less than delta_t, do not apply taper.
     if taper is None or delta_t > taper*tau:
@@ -367,10 +386,17 @@ def get_fd_qnm(template=None, **kwargs):
         The ringdown-frequency.
     tau : float
         The damping time of the sinusoid.
-    phi : float
-        The initial phase of the ringdown.
     amp : float
         The amplitude of the ringdown (constant for now).
+    phi : float
+        The initial phase of the ringdown. Should also include the information
+        from the azimuthal angle (phi_0 + m*Phi).
+    inclination : {0., float}, optional
+        Inclination of the system in radians. Default is 0 (face on).
+    l : {2, int}, optional
+        l mode for the spherical harmonics. Default is l=2.
+    m : {2, int}, optional
+        m mode for the spherical harmonics. Default is m=2.
     t_0 :  {0, float}, optional
         The starting time of the ringdown.
     delta_f : {None, float}, optional
@@ -402,6 +428,9 @@ def get_fd_qnm(template=None, **kwargs):
     # the following have defaults, and so will be populated
     t_0 = input_params.pop('t_0')
     # the following may not be in input_params
+    inc = input_params.pop('inclination', 0.)
+    l = input_params.pop('l', 2)
+    m = input_params.pop('m', 2)
     delta_f = input_params.pop('delta_f', None)
     f_lower = input_params.pop('f_lower', None)
     f_final = input_params.pop('f_final', None)
@@ -421,6 +450,13 @@ def get_fd_qnm(template=None, **kwargs):
 
     freqs = numpy.arange(kmin, kmax)*delta_f
 
+    # FIXME: we are using spin -2 weighted spherical harmonics for now,
+    # when possible switch to spheroidal harmonics.
+    sph_lm = lal.SpinWeightedSphericalHarmonic(inc, 0., -2, l, m).real
+    sph_lminusm = lal.SpinWeightedSphericalHarmonic(inc, 0., -2, l, -m).real
+    spherical_plus = sph_lm + (-1)**l * sph_lminusm
+    spherical_cross = sph_lm - (-1)**l * sph_lminusm
+
     denominator = 1 + (4j * pi * freqs * tau) - (4 * pi_sq * ( freqs*freqs - f_0*f_0) * tau*tau)
     norm = amp * tau / denominator
     if t_0 != 0:
@@ -428,10 +464,10 @@ def get_fd_qnm(template=None, **kwargs):
         norm *= time_shift
 
     # Analytical expression for the Fourier transform of the ringdown (damped sinusoid)
-    hp_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.cos(phi)
-                               - two_pi * f_0 * tau * numpy.sin(phi) )
-    hc_tilde = norm * ( (1 + 2j * pi * freqs * tau) * numpy.sin(phi)
-                               + two_pi * f_0 * tau * numpy.cos(phi) )
+    hp_tilde = norm * spherical_plus * ( (1 + 2j * pi * freqs * tau) * numpy.cos(phi)
+                                        - two_pi * f_0 * tau * numpy.sin(phi) )
+    hc_tilde = norm * spherical_cross * ( (1 + 2j * pi * freqs * tau) * numpy.sin(phi)
+                                        + two_pi * f_0 * tau * numpy.cos(phi) )
 
     hplustilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
     hcrosstilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
@@ -472,8 +508,13 @@ def get_td_lm(template=None, taper=None, **kwargs):
     amplmn : float
         Fraction of the amplitude of the lmn overtone relative to the 
         fundamental mode, as many as the number of subdominant modes.
-    philmn : float
+    phi : float
         Phase of the lmn overtone, as many as the number of nmodes.
+    philmn : float
+        The initial phase of the ringdown. Should also include the information
+        from the azimuthal angle (phi + m*Phi).
+    inclination : {0., float}, optional
+        Inclination of the system in radians. Default is 0 (face on).
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
@@ -497,6 +538,7 @@ def get_td_lm(template=None, taper=None, **kwargs):
     amps, phis = lm_amps_phases(**input_params)
     final_mass = input_params.pop('final_mass')
     final_spin = input_params.pop('final_spin')
+    inc = input_params.pop('inclination', 0.)
     l, m = input_params.pop('l'), input_params.pop('m')
     nmodes = input_params.pop('nmodes')
     if int(nmodes) == 0:
@@ -527,6 +569,7 @@ def get_td_lm(template=None, taper=None, **kwargs):
         hplus, hcross = get_td_qnm(template=None, taper=taper, f_0=f_0[n],
                             tau=tau[n], phi=phis['%d%d%d' %(l,m,n)],
                             amp=amps['%d%d%d' %(l,m,n)],
+                            inclination=inc, l=l, m=m,
                             delta_t=delta_t, t_final=t_final)
         if taper is None:
             outplus.data += hplus.data
@@ -558,7 +601,10 @@ def get_fd_lm(template=None, **kwargs):
     amplmn : float
         Amplitude of the lmn overtone, as many as the number of nmodes.
     philmn : float
-        Phase of the lmn overtone, as many as the number of nmodes.
+        The initial phase of the ringdown. Should also include the information
+        from the azimuthal angle (phi + m*Phi).
+    inclination : {0., float}, optional
+        Inclination of the system in radians. Default is 0 (face on).
     delta_f : {None, float}, optional
         The frequency step used to generate the ringdown.
         If None, it will be set to the inverse of the time at which the
@@ -586,6 +632,7 @@ def get_fd_lm(template=None, **kwargs):
     final_mass = input_params.pop('final_mass')
     final_spin = input_params.pop('final_spin')
     l, m = input_params.pop('l'), input_params.pop('m')
+    inc = input_params.pop('inclination', 0.)
     nmodes = input_params.pop('nmodes')
     if int(nmodes) == 0:
         raise ValueError('Number of overtones (nmodes) must be greater '
@@ -607,7 +654,9 @@ def get_fd_lm(template=None, **kwargs):
     f_0, tau = get_lm_f0tau(final_mass, final_spin, l, m, nmodes)
     for n in range(nmodes):
         hplus, hcross = get_fd_qnm(template=None, f_0=f_0[n], tau=tau[n], 
-                            phi=phis['%d%d%d' %(l,m,n)], amp=amps['%d%d%d' %(l,m,n)], delta_f=delta_f, 
+                            amp=amps['%d%d%d' %(l,m,n)],
+                            phi=phis['%d%d%d' %(l,m,n)],
+                            inclination=inc, l=l, m=m, delta_f=delta_f, 
                             f_lower=f_lower, f_final=f_final)
         outplus.data += hplus.data
         outcross.data += hcross.data
@@ -646,7 +695,10 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
         Fraction of the amplitude of the lmn overtone relative to the 
         fundamental mode, as many as the number of subdominant modes.
     philmn : float
-        Phase of the lmn overtone, as many as the number of modes.
+        The initial phase of the ringdown. Should also include the information
+        from the azimuthal angle (phi + m*Phi).
+    inclination : {0., float}, optional
+        Inclination of the system in radians. Default is 0 (face on).
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
@@ -671,6 +723,7 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
     # Get required args
     final_mass = input_params['final_mass']
     final_spin = input_params['final_spin']
+    inc = input_params.pop('inclination', 0.)
     lmns = input_params['lmns']
     for lmn in lmns:
         if int(lmn[2]) == 0:
@@ -698,7 +751,8 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
     for lmn in lmns:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         hplus, hcross = get_td_lm(taper=taper, l=l, m=m, nmodes=nmodes,
-                             delta_t=delta_t, t_final=t_final, **input_params)
+                             inclination=inc, delta_t=delta_t, t_final=t_final,
+                             **input_params)
         if taper is None:
             outplus.data += hplus.data
             outcross.data += hcross.data
@@ -731,7 +785,10 @@ def get_fd_lm_allmodes(template=None, **kwargs):
         Fraction of the amplitude of the lmn overtone relative to the 
         fundamental mode, as many as the number of subdominant modes.
     philmn : float
-        Phase of the lmn overtone, as many as the number of modes.
+        The initial phase of the ringdown. Should also include the information
+        from the azimuthal angle (phi + m*Phi).
+    inclination : {0., float}, optional
+        Inclination of the system in radians. Default is 0 (face on).
     delta_f : {None, float}, optional
         The frequency step used to generate the ringdown.
         If None, it will be set to the inverse of the time at which the
@@ -759,6 +816,7 @@ def get_fd_lm_allmodes(template=None, **kwargs):
     # Get required args
     final_mass = input_params['final_mass']
     final_spin = input_params['final_spin']
+    inc = input_params.pop('inclination', 0.)
     lmns = input_params['lmns']
     for lmn in lmns:
         if int(lmn[2]) == 0:
@@ -781,8 +839,10 @@ def get_fd_lm_allmodes(template=None, **kwargs):
     outcrosstilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
     for lmn in lmns:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        hplustilde, hcrosstilde = get_fd_lm(l=l, m=m, nmodes=nmodes, delta_f=delta_f,
-                                       f_lower=f_lower, f_final=f_final, **input_params)
+        hplustilde, hcrosstilde = get_fd_lm(l=l, m=m, nmodes=nmodes,
+                                       inclination=inc, delta_f=delta_f,
+                                       f_lower=f_lower, f_final=f_final,
+                                       **input_params)
         outplustilde.data += hplustilde.data
         outcrosstilde.data += hcrosstilde.data
 
