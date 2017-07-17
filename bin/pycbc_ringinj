@@ -81,6 +81,9 @@ parser.add_argument('--dec', required=True, type=float,
                     help='Declination for detector frame waveform generator class.')
 parser.add_argument('--polarization', required=True, type=float,
                     help='Polarization for detector frame waveform generator class.')
+parser.add_argument('--inclination', type=float,
+                    help='Inclination for the spherical harmonics. '
+                         'Default is 0 (face on).')
 parser.add_argument('--taper', default=None, type=float,
                     help='Taper at the beginning of the time-domain ringdown '
                          'waveform. Duration of the taper will be taper * tau,'
@@ -106,6 +109,8 @@ injection.create_dataset('tc', data=opts.tc)
 injection.create_dataset('ra', data=opts.ra)
 injection.create_dataset('dec', data=opts.dec)
 injection.create_dataset('polarization', data=opts.polarization)
+if opts.inclination is not None:
+    injection.create_dataset('inclination', data=opts.inclination)
 if opts.approximant in ringdown.ringdown_fd_approximants:
     if opts.f_lower is not None:
         injection.create_dataset('f_lower', data=opts.f_lower)
