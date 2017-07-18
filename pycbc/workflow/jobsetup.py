@@ -267,7 +267,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             else:
                 curr_parent = [None]
 
-
+            curr_dfouts = None
             if datafind_outs:
                 curr_dfouts = datafind_outs.find_all_output_in_range(ifo,
                                               job_data_seg, useSplitLists=True)
@@ -637,10 +637,6 @@ class PyCBCInspiralExecutable(Executable):
                              "%s. Please check the ini file." % self.name)
         pad_data = int(self.get_opt('pad-data'))
 
-        if not dfParents:
-            raise ValueError("%s must be supplied with data file(s)"
-                              %(self.name))
-
         # set remaining options flags
         node.add_opt('--gps-start-time',
                      int_gps_time_to_str(data_seg[0] + pad_data))
@@ -657,26 +653,9 @@ class PyCBCInspiralExecutable(Executable):
         fil = node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
                          store_file=self.retain_files, use_tmp_subdirs=True)
         fil.add_metadata('data_seg', data_seg)
-        node.add_input_list_opt('--frame-files', dfParents)
-        node.add_input_opt('--bank-file', parent, )
-
-        # FIXME: This hack is needed for pipedown compatibility. user-tag is
-        #        no-op and is only needed for pipedown to know whether this is
-        #        a "FULL_DATA" job or otherwise. Alex wants to burn this code
-        #        with fire.
-        if node.output_files[0].storage_path is not None:
-            outFile = os.path.basename(node.output_files[0].storage_path)
-            userTag = outFile.split('-')[1]
-            userTag = userTag.split('_')[1:]
-            if userTag[0] == 'FULL' and userTag[1] == 'DATA':
-                userTag = 'FULL_DATA'
-            elif userTag[0] == 'PLAYGROUND':
-                userTag = 'PLAYGROUND'
-            elif userTag[0].endswith("INJ"):
-                userTag = userTag[0]
-            else:
-                userTag = '_'.join(userTag)
-            node.add_opt("--user-tag", userTag)
+        node.add_input_opt('--bank-file', parent)
+        if dfParents is not None:
+            node.add_input_list_opt('--frame-files', dfParents)
 
         return node
 

@@ -332,10 +332,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                 epoch=opt.gps_start_time)
         else:
             logging.info("Making colored noise")
-            from pycbc.noise.reproduceable import noise_from_psd
-            strain = noise_from_psd(strain_psd, opt.gps_start_time,
+            from pycbc.noise.reproduceable import colored_noise
+            strain = colored_noise(strain_psd, opt.gps_start_time,
                                           opt.gps_end_time,
-                                          seed=opt.fake_strain_seed)
+                                          seed=opt.fake_strain_seed, 
+                                          low_frequency_cutoff=opt.strain_high_pass)
             strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 
 

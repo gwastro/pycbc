@@ -105,7 +105,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """
     white_noise = normal(start_time - FILTER_LENGTH, end_time + FILTER_LENGTH,
                           seed=seed)
-    flen = (SAMPLE_RATE / psd.delta_f) / 2 + 1
+    flen = int(SAMPLE_RATE / psd.delta_f) / 2 + 1
     psd = psd * 1
     psd.resize(flen)
     psd = pycbc.psd.interpolate(psd, 1.0 / white_noise.duration)
