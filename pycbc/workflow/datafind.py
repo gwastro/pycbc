@@ -103,7 +103,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
     cp = workflow.cp
 
     # Parse for options in ini file
-    datafindMethod = cp.get_opt_tags("workflow-datafind",
+    datafind_method = cp.get_opt_tags("workflow-datafind",
                                      "datafind-method", tags)
 
     if cp.has_option_tags("workflow-datafind",
@@ -126,39 +126,40 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
         checkSegmentSummary = "no_test"
 
     logging.info("Starting datafind with setup_datafind_runtime_generated")
-    if datafindMethod == "AT_RUNTIME_MULTIPLE_CACHES":
+    if datafind_method == "AT_RUNTIME_MULTIPLE_CACHES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_SINGLE_CACHES":
+    elif datafind_method == "AT_RUNTIME_SINGLE_CACHES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES":
+    elif datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
+    elif datafind_method == "AT_RUNTIME_SINGLE_FRAMES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
 
-    elif datafindMethod == "FROM_PREGENERATED_LCF_FILES":
+    elif datafind_method == "FROM_PREGENERATED_LCF_FILES":
         ifos = scienceSegs.keys()
         datafindcaches, datafindouts = \
             setup_datafind_from_pregenerated_lcf_files(cp, ifos,
                                                        outputDir, tags=tags)
     else:
-        msg = "Entry datafind-method in [workflow-datafind] does not have "
-        msg += "expected value. Valid values are "
-        msg += "AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES "
-        msg += "AT_RUNTIME_MULTIPLE_CACHES or AT_RUNTIME_SINGLE_CACHES. "
-        msg += "Consult the documentation for more info."
+        msg = """Entry datafind-method in [workflow-datafind] does not have "
+              expected value. Valid values are 
+              AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES 
+              AT_RUNTIME_MULTIPLE_CACHES, AT_RUNTIME_SINGLE_CACHES,
+              FROM_PREGENERATED_LCF_FILES, or AT_RUNTIME_FAKE_DATA.
+              Consult the documentation for more info."""
         raise ValueError(msg)
 
     using_backup_server = False
-    if datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES" or \
-                                  datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
+    if datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES" or \
+                                  datafind_method == "AT_RUNTIME_SINGLE_FRAMES":
         if cp.has_option_tags("workflow-datafind",
                           "datafind-backup-datafind-server", tags):
             using_backup_server = True
@@ -179,7 +180,8 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
     logging.info("setup_datafind_runtime_generated completed")
     # If we don't have frame files covering all times we can update the science
     # segments.
-    if checkSegmentGaps in ['warn','update_times','raise_error']:
+    if checkSegmentGaps in ['warn','update_times','raise_error'] and \
+        datafind_method is not "AT_RUNTIME_FAKE_DATA":
         logging.info("Checking science segments against datafind output....")
         newScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
         logging.info("New segments calculated from data find output.....")
@@ -224,7 +226,8 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
         raise ValueError(errMsg)
 
     # Do all of the frame files that were returned actually exist?
-    if checkFramesExist in ['warn','update_times','raise_error']:
+    if checkFramesExist in ['warn','update_times','raise_error'] and \
+        datafind_method is not "AT_RUNTIME_FAKE_DATA":
         logging.info("Verifying that all frames exist on disk.")
         missingFrSegs, missingFrames = \
                           get_missing_segs_from_frame_file_cache(datafindcaches)
@@ -280,7 +283,8 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
 
     # Check if there are cases where frames exist, but no entry in the segment
     # summary table are present.
-    if checkSegmentSummary in ['warn', 'raise_error']:
+    if checkSegmentSummary in ['warn', 'raise_error'] and \
+        datafind_method is not "AT_RUNTIME_FAKE_DATA":
         logging.info("Checking the segment summary table against frames.")
         dfScienceSegs = get_science_segs_from_datafind_outs(datafindcaches)
         missingFlag = False
@@ -344,7 +348,13 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
                             extension='.xml', tags=tags, directory=outputDir)
 
     logging.info("Leaving datafind module")
-    return FileList(datafindouts), sci_avlble_file, scienceSegs, sci_avlble_name
+    if datafind_method == "AT_RUNTIME_FAKE_DATA":
+        datafindouts = None
+    else:
+        datafindouts = FileList(datafindouts) 
+
+
+    return datafindouts, sci_avlble_file, scienceSegs, sci_avlble_name
 
 
 def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
