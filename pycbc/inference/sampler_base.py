@@ -189,6 +189,18 @@ class _BaseSampler(object):
         fp.attrs['log_evidence'] = lnz
         fp.attrs['dlog_evidence'] = dlnz
 
+    @staticmethod
+    def write_burnin_iterations(fp, burnin_iterations):
+        """Writes the burn in iterations to the given file.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        burnin_iterations : array
+            Array of values giving the iteration of the burn in of each walker.
+        """
+        fp['burn_in_iterations'] = burnin_iterations
 
 class BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
