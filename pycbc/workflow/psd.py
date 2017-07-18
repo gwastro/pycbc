@@ -92,6 +92,7 @@ def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
     
     if frame_files and not exe.has_opt('frame-type'):
         node.add_input_list_opt('--frame-files', frame_files)
+
     node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
     workflow += node
     return node.output_files[0]
