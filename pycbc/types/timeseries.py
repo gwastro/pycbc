@@ -390,7 +390,27 @@ class TimeSeries(Array):
         lal_data.data.data[:] = self.numpy()
 
         return lal_data
-      
+
+    def crop(self, duration):
+        """ Remove given seconds from either end of time series
+
+        Parameters
+        ----------
+        duration : float
+            Number of seconds of data to remove from either end of the series
+
+        Returns
+        -------
+        cropped : pycbc.types.TimeSeries
+            The reduced time series
+        """
+        if duration * 2 > self.duration:
+            raise ValueError('Cannot crop more data than we have')
+
+        s = int(duration * self.sample_rate)
+        e = len(self) - s
+        return self[s:e]
+
     def save_to_wav(self, file_name):
         """ Save this time series to a wav format audio file.
         
