@@ -243,7 +243,12 @@ def add_sampler_option_group(parser):
     sampler_group.add_argument("--ntemps", type=int, default=None,
         help="Number of temperatures to use in sampler. Required for parallel "
              "tempered MCMC samplers.")
-    sampler_group.add_argument("--min-burn-in", type=int, default=None,
+    sampler_group.add_argument("--burn-in-function", default=None, nargs='+',
+        help="Use the given function to determine when chains are burned in. "
+             "If none provided, no burn in will be estimated."
+             "If multiple functions are provided, will use the maximum "
+             "iteration from all functions.")
+    sampler_group.add_argument("--min-burn-in", type=int, default=0,
         help="Force the burn-in to be at least the given number of "
              "iterations. If a sampler has an internal algorithm for "
              "determining the burn-in size (e.g., kombine), and it returns "
