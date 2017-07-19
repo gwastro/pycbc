@@ -109,8 +109,7 @@ def use_sampler(sampler, fp):
     """Uses the sampler's burn_in function.
     """
     sampler.burn_in()
-    return numpy.repeat(sampler.burn_in_iterations,
-                        sampler.nwalkers).astype(int)
+    return sampler.burn_in_iterations
 
 
 burnin_functions = {
@@ -150,8 +149,9 @@ class BurnIn(object):
         return burnidx
 
     def update(self, sampler, fp):
-        """Evaluates burn in saves updated indices to the given file.
+        """Evaluates burn in and saves the updated indices to the given file.
         """
         burnidx = self.evaluate(sampler, fp)
+        sampler.burn_in_iterations = burnidx
         sampler.write_burnin_iterations(fp, burnidx)
 
