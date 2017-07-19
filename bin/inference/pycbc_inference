@@ -123,6 +123,13 @@ scheme.verify_processing_options(opts, parser)
 #strain.verify_strain_options(opts, parser)
 pycbc.weave.verify_weave_options(opts, parser)
 
+# warn user about options that will be removed
+if opts.skip_burn_in:
+    logging.warning("Option --skip-burn-in has been deprecated and does "
+                    "nothing. If you wish to use no burn in, simply do not "
+                    "provide a burn-in-function. This option will be removed "
+                    "in future versions.")
+
 # check for the output file
 if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "

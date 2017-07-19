@@ -20,6 +20,7 @@
 import logging
 import numpy
 import pycbc.inference.sampler
+from pycbc.inference import burnin
 from pycbc import conversions
 from pycbc import transforms
 from pycbc.distributions import bounded
@@ -244,20 +245,19 @@ def add_sampler_option_group(parser):
         help="Number of temperatures to use in sampler. Required for parallel "
              "tempered MCMC samplers.")
     sampler_group.add_argument("--burn-in-function", default=None, nargs='+',
+        choices=burnin.burnin_functions.keys(),
         help="Use the given function to determine when chains are burned in. "
              "If none provided, no burn in will be estimated."
              "If multiple functions are provided, will use the maximum "
              "iteration from all functions.")
     sampler_group.add_argument("--min-burn-in", type=int, default=0,
         help="Force the burn-in to be at least the given number of "
-             "iterations. If a sampler has an internal algorithm for "
-             "determining the burn-in size (e.g., kombine), and it returns "
-             "a value < this, the burn-in will be repeated until the "
-             "number of iterations is at least this value.")
+             "iterations.")
     sampler_group.add_argument("--skip-burn-in", action="store_true",
         default=False,
-        help="Do not burn in with sampler. An error will be raised if "
-             "min-burn-in is also provided.")
+        help="DEPRECATED. Turning this option on has no effect; "
+             "it will be removed in future versions. If no burn in is "
+             "desired, simply do not provide a burn-in-function argument.")
     sampler_group.add_argument("--update-interval", type=int, default=None,
         help="If using kombine, specify the number of steps to take between "
              "proposal updates. Note: for purposes of updating, kombine "
