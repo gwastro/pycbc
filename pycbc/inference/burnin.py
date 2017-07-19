@@ -114,7 +114,7 @@ def use_sampler(sampler, fp):
 
 
 burnin_functions = {
-    'max_posterior': posterior_based,
+    'max_posterior': max_posterior,
     'posterior_step': posterior_step,
     'half_chain': half_chain,
     'use_sampler': use_sampler,

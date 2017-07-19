@@ -247,7 +247,7 @@ def add_sampler_option_group(parser):
     sampler_group.add_argument("--burn-in-function", default=None, nargs='+',
         choices=burnin.burnin_functions.keys(),
         help="Use the given function to determine when chains are burned in. "
-             "If none provided, no burn in will be estimated."
+             "If none provided, no burn in will be estimated. "
              "If multiple functions are provided, will use the maximum "
              "iteration from all functions.")
     sampler_group.add_argument("--min-burn-in", type=int, default=0,
