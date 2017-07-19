@@ -201,6 +201,7 @@ class _BaseSampler(object):
             Array of values giving the iteration of the burn in of each walker.
         """
         fp['burn_in_iterations'] = burnin_iterations
+        fp.attrs['burn_in_iterations'] = burnin_iterations.max()
 
 class BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
