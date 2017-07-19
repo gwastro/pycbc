@@ -330,7 +330,7 @@ class FDomainFreqTauRingdownGenerator(BaseGenerator):
 
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainMassSpinRingdownGenerator, self).__init__(ringdown.get_fd_from_freqtau,
+        super(FDomainFreqTauRingdownGenerator, self).__init__(ringdown.get_fd_from_freqtau,
             variable_args=variable_args, **frozen_params)
 
 class FDomainDetFrameGenerator(object):
