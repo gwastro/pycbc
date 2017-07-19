@@ -291,7 +291,7 @@ def taper_shift(waveform, output):
 # Functions to generate ringdown waveforms ####################################
 
 ######################################################
-#### Single mode approximants
+#### Basic functions to generate damped sinusoid
 ######################################################
 
 def get_td_qnm(template=None, taper=None, **kwargs):
@@ -695,10 +695,10 @@ def get_fd_lm(template=None, **kwargs):
     return outplus, outcross
 
 ######################################################
-#### Multi mode approximants in mass and spin
+#### Approximants
 ######################################################
 
-def get_td_lm_allmodes(template=None, taper=None, **kwargs):
+def get_td_from_final_mass_spin(template=None, taper=None, **kwargs):
     """Return time domain ringdown with all the modes specified.
 
     Parameters
@@ -799,7 +799,7 @@ def get_td_lm_allmodes(template=None, taper=None, **kwargs):
 
     return outplus, outcross
 
-def get_fd_lm_allmodes(template=None, **kwargs):
+def get_fd_from_final_mass_spin(template=None, **kwargs):
     """Return frequency domain ringdown with all the modes specified.
 
     Parameters
@@ -887,11 +887,7 @@ def get_fd_lm_allmodes(template=None, **kwargs):
 
     return outplustilde, outcrosstilde
 
-######################################################
-#### Multi mode approximants in f_0 and tau
-######################################################
-
-def get_td_freqtau_allmodes(template=None, taper=None, **kwargs):
+def get_td_from_freqtau(template=None, taper=None, **kwargs):
     """Return time domain ringdown with all the modes specified.
 
     Parameters
@@ -988,7 +984,7 @@ def get_td_freqtau_allmodes(template=None, taper=None, **kwargs):
 
     return outplus, outcross
 
-def get_fd_freqtau_allmodes(template=None, **kwargs):
+def get_fd_from_freqtau(template=None, **kwargs):
     """Return frequency domain ringdown with all the modes specified.
 
     Parameters
@@ -1075,7 +1071,7 @@ def get_fd_freqtau_allmodes(template=None, **kwargs):
     return outplustilde, outcrosstilde
 
 # Approximant names ###########################################################
-ringdown_fd_approximants = {'FdQNM': get_fd_qnm, 'FdQNMmultiModes': get_fd_lm_allmodes,
-                            'FdFreqTauMultiModes': get_fd_freqtau_allmodes}
-ringdown_td_approximants = {'TdQNM': get_td_qnm, 'TdQNMmultiModes': get_td_lm_allmodes,
-                            'TdFreqTauMultiModes': get_td_freqtau_allmodes}
+ringdown_fd_approximants = {'FdQNMfromFinalMassSpin': get_fd_from_final_mass_spin,
+                            'FdQNMfromFreqTau': get_fd_from_freqtau}
+ringdown_td_approximants = {'TdQNMfromFinalMassSpin': get_td_from_final_mass_spin,
+                            'TdQNMfromFreqTau': get_td_from_freqtau}
