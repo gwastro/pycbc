@@ -214,9 +214,6 @@ class BaseMCMCSampler(_BaseSampler):
     likelihood_evaluator : likelihood class
         An instance of the likelihood class from the
         pycbc.inference.likelihood module.
-    min_burn_in : {None, int}
-        Set the minimum number of burn in iterations to use. If None,
-        `burn_in_iterations` will be initialized to `0`.
 
     Attributes
     ----------
@@ -230,16 +227,14 @@ class BaseMCMCSampler(_BaseSampler):
     """
     name = None
 
-    def __init__(self, sampler, likelihood_evaluator, min_burn_in=None):
+    def __init__(self, sampler, likelihood_evaluator):
         self._sampler = sampler
         self._pos = None
         self._p0 = None
         self._currentblob = None
         self._nwalkers = None
-        if min_burn_in is None:
-            min_burn_in = 0
-        self.burn_in_iterations = min_burn_in
         self._lastclear = 0
+        self.burn_in_iterations = None
         # initialize
         super(BaseMCMCSampler, self).__init__(likelihood_evaluator)
 
@@ -363,7 +358,6 @@ class BaseMCMCSampler(_BaseSampler):
         super(BaseMCMCSampler, self).write_metadata(fp)
         # add info about walkers, burn in
         fp.attrs["nwalkers"] = self.nwalkers
-        fp.attrs['burn_in_iterations'] = self.burn_in_iterations
 
     def _write_samples_group(self, fp, samples_group, parameters, samples,
                              start_iteration=0, end_iteration=None,

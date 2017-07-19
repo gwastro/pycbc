@@ -57,9 +57,6 @@ class KombineSampler(BaseMCMCSampler):
     processes : {None, int}
         Number of processes to use with multiprocessing. If None, all available
         cores are used.
-    min_burn_in : {None, int}
-        Set the minimum number of burn in iterations to use. If None,
-        `burn_in_iterations` will be initialized to `0`.
     update_interval : {None, int}
         Make the sampler update the proposal densities every `update_interval`
         iterations.
@@ -67,7 +64,7 @@ class KombineSampler(BaseMCMCSampler):
     name = "kombine"
 
     def __init__(self, likelihood_evaluator, nwalkers, transd=False,
-                 min_burn_in=None, pool=None, likelihood_call=None,  
+                 pool=None, likelihood_call=None,  
                  update_interval=None):
 
         try:
@@ -84,8 +81,7 @@ class KombineSampler(BaseMCMCSampler):
                                   transd=transd, pool=pool,
                                   processes=pool.count)
         # initialize
-        super(KombineSampler, self).__init__(sampler, likelihood_evaluator,
-                                             min_burn_in=min_burn_in)
+        super(KombineSampler, self).__init__(sampler, likelihood_evaluator)
         self._nwalkers = nwalkers
         self.update_interval = update_interval
 
@@ -106,8 +102,9 @@ class KombineSampler(BaseMCMCSampler):
         KombineSampler
             A kombine sampler initialized based on the given arguments.
         """
-        return cls(likelihood_evaluator, opts.nwalkers, likelihood_call=likelihood_call,
-                   min_burn_in=opts.min_burn_in, pool=pool, update_interval=opts.update_interval)
+        return cls(likelihood_evaluator, opts.nwalkers,
+                   likelihood_call=likelihood_call,
+                   pool=pool, update_interval=opts.update_interval)
 
     def run(self, niterations, **kwargs):
         """Advance the sampler for a number of samples.
@@ -213,16 +210,9 @@ class KombineSampler(BaseMCMCSampler):
         else:
             blob0 = None
         res = self._sampler.burnin(self.p0, blob0=blob0)
+        # store the number of iterations used
+        self.burn_in_iterations = numpy.repeat(self.niterations, self.nwalkers)
         p, post, q = res[0], res[1], res[2]
-        # continue running until minimum burn in is satistfied
-        while self.niterations < self.burn_in_iterations:
-            p0 = p
-            res = self._sampler.burnin(p0)
-            p, post, q = res[0], res[1], res[2]
-            # update position
-            self._pos = p
-            self._currentblob = self._sampler.blobs[-1]
-        self.burn_in_iterations = self.niterations
         return p, post, q
 
     def _write_kde(self, fp, dataset_name, kde):
