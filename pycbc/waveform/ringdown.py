@@ -33,8 +33,8 @@ from pycbc.waveform.waveform import get_obj_attrs
 default_qnm_args = {'t_0':0}
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
 lm_required_args = ['freqs','taus','l','m','nmodes']
-lm_allmodes_required_args = ['final_mass','final_spin', 'lmns']
-freqtau_allmodes_required_args = ['lmns']
+mass_spin_required_args = ['final_mass','final_spin', 'lmns']
+freqtau_required_args = ['lmns']
 
 max_freq = 16384.
 min_dt = 1. / (2 * max_freq)
@@ -753,7 +753,7 @@ def get_td_from_final_mass_spin(template=None, taper=None, **kwargs):
         n overtones in frequency domain.
     """
 
-    input_params = props(template, lm_allmodes_required_args, **kwargs)
+    input_params = props(template, mass_spin_required_args, **kwargs)
 
     # Get required args
     final_mass = input_params['final_mass']
@@ -848,7 +848,7 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
         n overtones in frequency domain.
     """
 
-    input_params = props(template, lm_allmodes_required_args, **kwargs)
+    input_params = props(template, mass_spin_required_args, **kwargs)
 
     # Get required args
     final_mass = input_params['final_mass']
@@ -942,7 +942,7 @@ def get_td_from_freqtau(template=None, taper=None, **kwargs):
         n overtones in frequency domain.
     """
 
-    input_params = props(template, freqtau_allmodes_required_args, **kwargs)
+    input_params = props(template, freqtau_required_args, **kwargs)
 
     # Get required args
     f_0, tau = lm_freqs_taus(**input_params)
@@ -1033,7 +1033,7 @@ def get_fd_from_freqtau(template=None, **kwargs):
         n overtones in frequency domain.
     """
 
-    input_params = props(template, freqtau_allmodes_required_args, **kwargs)
+    input_params = props(template, freqtau_required_args, **kwargs)
 
     # Get required args
     f_0, tau = lm_freqs_taus(**input_params)
