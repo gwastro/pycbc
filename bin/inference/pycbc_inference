@@ -123,13 +123,6 @@ scheme.verify_processing_options(opts, parser)
 #strain.verify_strain_options(opts, parser)
 pycbc.weave.verify_weave_options(opts, parser)
 
-# warn user about options that will be removed
-if opts.skip_burn_in:
-    logging.warning("Option --skip-burn-in has been deprecated and does "
-                    "nothing. If you wish to use no burn in, simply do not "
-                    "provide a burn-in-function. This option will be removed "
-                    "in future versions.")
-
 # check for the output file
 if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
@@ -137,6 +130,14 @@ if os.path.exists(opts.output_file) and not opts.force:
 
 # setup log
 pycbc.init_logging(opts.verbose)
+
+# warn user about options that will be removed
+if opts.skip_burn_in:
+    logging.warning("DEPRECATION WARNING: Option --skip-burn-in has been "
+                    "deprecated and does nothing. "
+                    "If you wish to use no burn in, simply do not "
+                    "provide a burn-in-function. This option will be removed "
+                    "in future versions.")
 
 # set seed
 numpy.random.seed(opts.seed)
@@ -271,7 +272,7 @@ with ctx:
             numpy.random.set_state(fp.read_random_state())
 
     # run sampler's burn in if it is in the list of burn in functions
-    if 'use_sampler' in burnin_eval.burnin_funcs:
+    if 'use_sampler' in burnin_eval.burnin_functions:
         # remove the sampler's burn in so we don't run more than once
         burnin_eval.burnin_functions.pop('use_sampler')
         with InferenceFile(opts.output_file, "a") as fp:
@@ -288,7 +289,9 @@ with ctx:
                 logging.warn("Writing state is not implemented for %s",
                              sampler.name)
             # increase the intervals to account for the burn in
-            intervals += n_burnin
+            intervals += n_sampler_burnin
+    else:
+        n_sampler_burnin = 0
 
 
     # loop over number of checkpoints
@@ -299,7 +302,8 @@ with ctx:
         # run sampler and set initial values to None so that sampler
         # picks up from where it left off next call
         logging.info("Running sampler for %i to %i out of %i iterations",
-                     start - n_burnin, end - n_burnin, opts.niterations)
+                     start-n_sampler_burnin, end-n_sampler_burnin,
+                     opts.niterations)
         sampler.run(end - start)
 
         # write new samples
@@ -308,7 +312,8 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp, start_iteration=start,
                                   end_iteration=end,
-                                  max_iterations=opts.niterations + n_burnin)
+                                  max_iterations=opts.niterations+
+                                                 n_sampler_burnin)
             logging.info("Writing state to file")
             fp.write_random_state()
 

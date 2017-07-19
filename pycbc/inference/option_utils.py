@@ -296,9 +296,6 @@ def sampler_from_cli(opts, likelihood_evaluator, pool=None):
         likelihood_call = None
 
     sclass = pycbc.inference.sampler.samplers[opts.sampler]
-    # check for consistency
-    if opts.skip_burn_in and opts.min_burn_in is not None:
-        raise ValueError("both skip-burn-in and min-burn-in specified")
 
     pool = choose_pool(mpi=opts.use_mpi, processes=opts.nprocesses)
 

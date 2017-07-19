@@ -200,7 +200,10 @@ class _BaseSampler(object):
         burnin_iterations : array
             Array of values giving the iteration of the burn in of each walker.
         """
-        fp['burn_in_iterations'] = burnin_iterations
+        try:
+            fp['burn_in_iterations'][:] = burnin_iterations
+        except KeyError:
+            fp['burn_in_iterations'] = burnin_iterations
         fp.attrs['burn_in_iterations'] = burnin_iterations.max()
 
 class BaseMCMCSampler(_BaseSampler):
