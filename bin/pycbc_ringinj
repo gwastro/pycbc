@@ -37,14 +37,14 @@ def mode_info_from_input(all_modes, option, input):
     for mode in all_modes:
         if mode not in info_modes:
             raise ValueError('Number of modes in option lmns does not match '
-                             'number of modes in option %s'.format(option))
+                             'number of modes in option {}'.format(option))
     for info in input:
         try:
             x['%s' %info.split(':')[0]]=info.split(':')[1]
             y['%s' %info.split(':')[0]]=info.split(':')[2]
         except:
-            raise ValueError('Information missing in %s '
-                             'for mode %s'.format(option,mode))
+            raise ValueError('Information missing in {} '
+                             'for mode {}'.format(option,mode))
     return x, y
 
 parser = argparse.ArgumentParser()
@@ -135,18 +135,6 @@ else:
     if opts.t_final is not None:
         injection.create_dataset('t_final', data=opts.t_final)
 
-## Single mode approximant
-#if opts.approximant=='FdQNM' or opts.approximant=='TdQNM':
-#    # Check that the necessary arguments are given
-#    for parameter in ringdown.qnm_required_args:
-#        if getattr(opts, parameter) is None:
-#            raise ValueError('%s is required' %parameter)
-#    # Create datasets for each argument
-#    injection.create_dataset('f_0', data=opts.f_0)
-#    injection.create_dataset('tau', data=opts.tau)
-#    injection.create_dataset('amp', data=opts.amp)
-#    injection.create_dataset('phi', data=opts.phi)
-
 # Amplitudes and phases for each mode have to be given
 all_modes = []
 for lmn in opts.lmns:
@@ -164,8 +152,8 @@ if '220' not in all_modes:
     except:
         raise ValueError('Please provide information of 220 mode')
 
-if opts.approximant=='FdQNMfrom_final_mass_spin' \
-or opts.approximant=='TdQNMfrom_final_mass_spin':
+if opts.approximant=='FdQNMfromFinalMassSpin' \
+or opts.approximant=='TdQNMfromFinalMassSpin':
     # Check that the necessary arguments are given
     for parameter in ringdown.mass_spin_required_args:
         if getattr(opts, parameter) is None:
@@ -173,8 +161,8 @@ or opts.approximant=='TdQNMfrom_final_mass_spin':
     injection.create_dataset('final_mass', data=opts.final_mass)
     injection.create_dataset('final_spin', data=opts.final_spin)
 
-if opts.approximant=='FdQNMfrom_freqtau' \
-or opts.approximant=='TdQNMfrom_freqtau':
+if opts.approximant=='FdQNMfromFreqTau' \
+or opts.approximant=='TdQNMfromFreqTau':
     # Frequencies and damping times for each mode have to be given
     freqs, taus = mode_info_from_input(all_modes, 'freqs-taus', opts.freqs_taus)
     # Create datasets for each argument
