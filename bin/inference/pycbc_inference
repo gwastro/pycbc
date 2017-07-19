@@ -272,9 +272,9 @@ with ctx:
             numpy.random.set_state(fp.read_random_state())
 
     # run sampler's burn in if it is in the list of burn in functions
-    if 'use_sampler' in burnin_eval.burnin_functions:
+    if 'use_sampler' in burnin_eval.burn_in_functions:
         # remove the sampler's burn in so we don't run more than once
-        burnin_eval.burnin_functions.pop('use_sampler')
+        burnin_eval.burn_in_functions.pop('use_sampler')
         with InferenceFile(opts.output_file, "a") as fp:
             logging.info("Running sampler's burn in function")
             burnidx = burnin.use_sampler(sampler, fp)

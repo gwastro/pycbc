@@ -49,7 +49,7 @@ def max_posterior(sampler, fp):
         samples_group=fp.stats_group, thin_interval=1, thin_start=0,
         thin_end=None, flatten=False)
     chain_posteriors = chain_stats['loglr'] + chain_stats['prior']
-    dim = len(sampler.variable_args)
+    dim = len(fp.variable_args)
     # find the posterior to compare against
     maxP = chain_posteriors.max()
     criteria = maxP - dim/2
@@ -85,10 +85,12 @@ def posterior_step(sampler, fp):
         samples_group=fp.stats_group, thin_interval=1, thin_start=0,
         thin_end=None, flatten=False)
     chain_posteriors = chain_stats['loglr'] + chain_stats['prior']
-    dim = len(sampler.variable_args)
-    burnin_idx = numpy.zeros(niterations, nwalkers).astype(int)
+    nwalkers = chain_posteriors.shape[-2]
+    niterations = chain_posteriors.shape[-1]
+    dim = len(fp.variable_args)
+    burnin_idx = numpy.zeros(nwalkers).astype(int)
     for ii in range(nwalkers):
-        chain = chain_posterior[...,ii,:]
+        chain = chain_posteriors[...,ii,:]
         criteria = chain.max() - dim/2.
         dp = numpy.diff(chain)
         idx = numpy.where(dp >= criteria)[-1]
@@ -112,7 +114,7 @@ def use_sampler(sampler, fp):
     return sampler.burn_in_iterations
 
 
-burnin_functions = {
+burn_in_functions = {
     'max_posterior': max_posterior,
     'posterior_step': posterior_step,
     'half_chain': half_chain,
@@ -123,12 +125,12 @@ class BurnIn(object):
     """Class to estimate the number of burn in iterations.
     """
 
-    def __init__(self, burnin_functions, min_iterations=0):
-        if burnin_functions is None:
-            burnin_functions = []
+    def __init__(self, function_names, min_iterations=0):
+        if function_names is None:
+            function_names = []
         self.min_iterations = min_iterations
-        self.burnin_functions = {fname: burnin_funcs[fname]
-                                 for fname in burnin_functions}
+        self.burn_in_functions = {fname: burn_in_functions[fname]
+                                  for fname in function_names}
 
     def evaluate(self, sampler, fp):
         """Evaluates sampler's chains to find burn in.
@@ -140,9 +142,9 @@ class BurnIn(object):
         except KeyError:
             # just use the minimum
             burnidx = numpy.repeat(self.min_iterations, sampler.nwalkers)
-        if self.burnin_functions != {}:
+        if self.burn_in_functions != {}:
             newidx = numpy.vstack([func(sampler, fp)
-                for func in self.burnin_functions.values()]).max(axis=0)
+                for func in self.burn_in_functions.values()]).max(axis=0)
             mask = burnidx < newidx
             burnidx[mask] = newidx[mask]
         burnidx[burnidx < self.min_iterations] = self.min_iterations
