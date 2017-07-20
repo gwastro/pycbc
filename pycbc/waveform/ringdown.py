@@ -879,7 +879,7 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
     for lmn in lmns:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         hplustilde, hcrosstilde = get_fd_lm(freqs=f_0, taus=tau,
-                                        l=l, m=m, nmodes=nmodes,
+                                        inclination=inc, l=l, m=m, nmodes=nmodes,
                                         delta_f=delta_f, f_lower=f_lower,
                                         f_final=f_final, **input_params)
         outplustilde.data += hplustilde.data
