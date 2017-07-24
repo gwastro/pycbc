@@ -34,7 +34,8 @@ def max_posterior(sampler, fp):
     Parameters
     ----------
     sampler : pycbc.inference.sampler
-        Sampler instance to determine burn in for.
+        Sampler to determine burn in for. May be either an instance of a
+        `inference.sampler`, or the class itself.
     fp : InferenceFile
         Open inference hdf file containing the samples to load for determing
         burn in.
@@ -70,7 +71,8 @@ def posterior_step(sampler, fp):
     Parameters
     ----------
     sampler : pycbc.inference.sampler
-        Sampler instance to determine burn in for.
+        Sampler to determine burn in for. May be either an instance of a
+        `inference.sampler`, or the class itself.
     fp : InferenceFile
         Open inference hdf file containing the samples to load for determing
         burn in.
@@ -101,14 +103,42 @@ def posterior_step(sampler, fp):
 
 def half_chain(sampler, fp):
     """Takes the second half of the iterations as post-burn in.
+
+    Parameters
+    ----------
+    sampler : pycbc.inference.sampler
+        Sampler to determine burn in for. May be either an instance of a
+        `inference.sampler`, or the class itself.
+    fp : InferenceFile
+        Open inference hdf file containing the samples to load for determing
+        burn in.
+
+    Returns
+    -------
+    burnin_idx :
+        Array of indices giving the burn-in index for each chain.
     """ 
     nwalkers = sampler.nwalkers
     niterations = fp.niterations
     return numpy.repeat(niterations/2, nwalkers).astype(int)
 
 
-def use_sampler(sampler, fp):
+def use_sampler(sampler, fp=None):
     """Uses the sampler's burn_in function.
+
+    Parameters
+    ----------
+    sampler : pycbc.inference.sampler
+        Sampler to determine burn in for. Must be an instance of an
+        `inference.sampler` that has a `burn_in` function.
+    fp : InferenceFile, optional
+        This option is not used; it is just here give consistent API as the
+        other burn in functions.
+
+    Returns
+    -------
+    burnin_idx :
+        Array of indices giving the burn-in index for each chain.
     """
     sampler.burn_in()
     return sampler.burn_in_iterations
