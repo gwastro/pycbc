@@ -111,9 +111,9 @@ def _test_fft(test_case,inarr,expec,tol):
     outarr.clear()
     if hasattr(outarr,'_epoch'):
         outarr._epoch *= 5*tol
-    if hasattr(outarr,'delta_t'):
+    if hasattr(outarr,'_delta_t'):
         outarr._delta_t *= 5*tol
-    if hasattr(outarr,'delta_f'):
+    if hasattr(outarr,'_delta_f'):
         outarr._delta_f *= 5*tol
     with tc.context:
         pycbc.fft.fft(inarr, outarr)
@@ -142,9 +142,9 @@ def _test_ifft(test_case,inarr,expec,tol):
     outarr.clear()
     if hasattr(outarr,'_epoch'):
         outarr._epoch *= 5*tol
-    if hasattr(outarr,'delta_t'):
+    if hasattr(outarr,'_delta_t'):
         outarr._delta_t *= 5*tol
-    if hasattr(outarr,'delta_f'):
+    if hasattr(outarr,'_delta_f'):
         outarr._delta_f *= 5*tol
     with tc.context:
         pycbc.fft.ifft(inarr, outarr)
@@ -394,7 +394,7 @@ class _BaseTestFFTClass(unittest.TestCase):
                              delta_f=delta_f)
             _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
             # Reuse random arrays for the LAL tests:
-            _test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            #_test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
             # Clean these up since they could be big:
             del rand_inarr
             del rand_outarr
@@ -497,19 +497,6 @@ class _BaseTestFFTClass(unittest.TestCase):
             outexp = ts(self.out_c2r_o,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
             outexp *= delta_f
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
-            # Random---we don't do that in 'reverse' tests, since both
-            # directions are already tested in forward, and if we just passed
-            # in arrays in the other order we'd only get exceptions
-            #
-            # However, we do still generate the arrays for T/F series, so that we may
-            # do the LAL comparison test.  As usual, we then delete those arrays.
-            rand_inarr = fs(zeros(self.rand_len_c,dtype=_other_kind[rev_dtype]),epoch=self.epoch,
-                            delta_f=self.delta)
-            rand_outarr = ts(zeros(self.rand_len_r,dtype=rev_dtype),epoch=self.epoch,
-                             delta_t=self.delta)
-            _test_lal_tf_ifft(self,rand_inarr,rand_outarr,self.tdict[rev_dtype])
-            del rand_inarr
-            del rand_outarr
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).
