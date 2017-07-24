@@ -42,7 +42,7 @@ def max_posterior(sampler, fp):
 
     Returns
     -------
-    burnin_idx :
+    array :
         Array of indices giving the burn-in index for each chain.
     """
     # get the posteriors
@@ -79,7 +79,7 @@ def posterior_step(sampler, fp):
 
     Returns
     -------
-    burnin_idx :
+    array :
         Array of indices giving the burn-in index for each chain.
     """
     # get the posteriors
@@ -115,7 +115,7 @@ def half_chain(sampler, fp):
 
     Returns
     -------
-    burnin_idx :
+    array :
         Array of indices giving the burn-in index for each chain.
     """ 
     nwalkers = sampler.nwalkers
@@ -137,7 +137,7 @@ def use_sampler(sampler, fp=None):
 
     Returns
     -------
-    burnin_idx :
+    array :
         Array of indices giving the burn-in index for each chain.
     """
     sampler.burn_in()
@@ -153,6 +153,18 @@ burn_in_functions = {
 
 class BurnIn(object):
     """Class to estimate the number of burn in iterations.
+
+    Parameters
+    ----------
+    function_names : list, optional
+        List of name of burn in functions to use. All names in the provided
+        list muset be in the `burn_in_functions` dict. If none provided, will
+        use now burn in functions.
+    min_iterations : int, optional
+        Minimum number of burn in iterations to use. The burn in iterations
+        returned by evaluate will be the maximum of this value
+        and the values returned by the burn in functions provided in
+        `function_names`. Default is 0.
     """
 
     def __init__(self, function_names, min_iterations=0):
@@ -164,6 +176,20 @@ class BurnIn(object):
 
     def evaluate(self, sampler, fp):
         """Evaluates sampler's chains to find burn in.
+
+        Parameters
+        ----------
+        sampler : pycbc.inference.sampler
+            Sampler to determine burn in for. May be either an instance of a
+            `inference.sampler`, or the class itself.
+        fp : InferenceFile
+            Open inference hdf file containing the samples to load for
+            determing burn in.
+
+        Returns
+        -------
+        array :
+            Array of indices giving the burn-in index for each chain.
         """
         # if the file already has burn in iterations saved, use those as a
         # base
@@ -182,6 +208,15 @@ class BurnIn(object):
 
     def update(self, sampler, fp):
         """Evaluates burn in and saves the updated indices to the given file.
+
+        Parameters
+        ----------
+        sampler : pycbc.inference.sampler
+            Sampler to determine burn in for. May be either an instance of a
+            `inference.sampler`, or the class itself.
+        fp : InferenceFile
+            Open inference hdf file containing the samples to load for
+            determing burn in.
         """
         burnidx = self.evaluate(sampler, fp)
         sampler.burn_in_iterations = burnidx
