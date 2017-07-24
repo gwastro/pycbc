@@ -236,7 +236,10 @@ def add_sampler_option_group(parser):
         choices=pycbc.inference.sampler.samplers.keys(),
         help="Sampler class to use for finding posterior.")
     sampler_group.add_argument("--niterations", type=int, required=True,
-        help="Number of iterations to perform after burn in.")
+        help="Number of iterations to perform. If 'use_sampler' is given to "
+             "burn-in-function, this will be counted after the sampler's burn "
+             "function has run. Otherwise, this is the total number of "
+             "iterations, including any burn in.")
     # sampler-specific options
     sampler_group.add_argument("--nwalkers", type=int, default=None,
         help="Number of walkers to use in sampler. Required for MCMC "
