@@ -809,7 +809,10 @@ class BaseMCMCSampler(_BaseSampler):
                                            thin_start=start_index,
                                            thin_interval=1, thin_end=end_index,
                                            walkers=wi)[param]
-                acl = autocorrelation.calculate_acl(samples)
+                if samples.size < 2:
+                    acl = 1
+                else:
+                    acl = autocorrelation.calculate_acl(samples)
                 these_acls.append(min(acl, samples.size))
             acls[param] = numpy.array(these_acls, dtype=int)
         return FieldArray.from_kwargs(**acls)
