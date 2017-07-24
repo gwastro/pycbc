@@ -114,7 +114,7 @@ def lm_freqs_taus(**kwargs):
 
     return freqs, taus
 
-# Functions to obtain f_0 and tau for the higher modes ########################
+# Functions to obtain f_0 and tau from mass and spin #########################
 
 def get_lm_f0tau(mass, spin, l, m, nmodes):
     """Return the f_0 and the tau of each overtone for a given lm mode 
@@ -259,21 +259,37 @@ def lm_deltaf(damping_times, modes):
 
     return min(df.values())
 
-# Functions for tapering #######################################################
+# Spherical harmonics #########################################################
 
-def apply_taper(delta_t, taper, f_0, tau, amp, phi):
+def spher_harms(l, m, inclination):
+    """Return spherical harmonic polarizations
+    """
+
+    # FIXME: we are using spin -2 weighted spherical harmonics for now,
+    # when possible switch to spheroidal harmonics.
+    Y_lm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m).real
+    Y_lminusm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, -m).real
+    Y_plus = Y_lm + (-1)**l * Y_lminusm
+    Y_cross = Y_lm - (-1)**l * Y_lminusm
+
+    return Y_plus, Y_cross
+
+# Functions for tapering ######################################################
+
+def apply_taper(delta_t, taper, f_0, tau, amp, phi, l, m, inclination):
     """Return tapering window.
     """
 
     # Times of tapering do not include t=0
     taper_times = -numpy.arange(delta_t, taper*tau, delta_t)
     taper_times.sort()
-    taper_hp = amp * numpy.exp(10*taper_times/tau) * \
+    Y_plus, Y_cross = spher_harms(l, m, inclination)
+    taper_hp = amp * Y_plus * numpy.exp(10*taper_times/tau) * \
                      numpy.cos(two_pi*f_0*taper_times + phi)
-    taper_hc = amp * numpy.exp(10*taper_times/tau) * \
+    taper_hc = amp * Y_cross * numpy.exp(10*taper_times/tau) * \
                      numpy.sin(two_pi*f_0*taper_times + phi)
 
-    return taper_hp, taper_hc, len(taper_times), taper_times[0]
+    return taper_hp, taper_hc
 
 def taper_shift(waveform, output):
     """Add waveform to output with waveform shifted accordingly (for tapering
@@ -282,7 +298,6 @@ def taper_shift(waveform, output):
 
     if len(waveform) == len(output):
         output.data += waveform.data
-        output._epoch = waveform._epoch
     else:
         output.data[len(output)-len(waveform):] += waveform.data
 
@@ -360,44 +375,41 @@ def get_td_qnm(template=None, taper=None, **kwargs):
             delta_t = min_dt
     if t_final is None:
         t_final = qnm_time_decay(tau, 1./1000)
+
     kmax = int(t_final / delta_t) + 1
-
     times = numpy.arange(kmax) * delta_t
+    Y_plus, Y_cross = spher_harms(l, m, inc)
 
-    # FIXME: we are using spin -2 weighted spherical harmonics for now,
-    # when possible switch to spheroidal harmonics.
-    sph_lm = lal.SpinWeightedSphericalHarmonic(inc, 0., -2, l, m).real
-    sph_lminusm = lal.SpinWeightedSphericalHarmonic(inc, 0., -2, l, -m).real
-    spherical_plus = sph_lm + (-1)**l * sph_lminusm
-    spherical_cross = sph_lm - (-1)**l * sph_lminusm
-
-    hp = amp * spherical_plus * numpy.exp(-times/tau) * \
+    hplus = amp * Y_plus * numpy.exp(-times/tau) * \
                                 numpy.cos(two_pi*f_0*times + phi)
-    hc = amp * spherical_cross * numpy.exp(-times/tau) * \
+    hcross = amp * Y_cross * numpy.exp(-times/tau) * \
                                 numpy.sin(two_pi*f_0*times + phi)
+
+    if taper is not None and delta_t < taper*tau:
+        taper_window = int(taper*tau/delta_t)
+        kmax += taper_window
+
+    outplus = TimeSeries(zeros(kmax), delta_t=delta_t)
+    outcross = TimeSeries(zeros(kmax), delta_t=delta_t)
 
     # If size of tapering window is less than delta_t, do not apply taper.
     if taper is None or delta_t > taper*tau:
-        hplus = TimeSeries(zeros(kmax), delta_t=delta_t)
-        hcross = TimeSeries(zeros(kmax), delta_t=delta_t)
-        hplus.data[:kmax] = hp
-        hcross.data[:kmax] = hc
+        outplus.data[:kmax] = hplus
+        outcross.data[:kmax] = hcross
 
-        return hplus, hcross
+        return outplus, outcross
 
     else:
-        taper_hp, taper_hc, taper_window, start = apply_taper(delta_t, taper,
-                                                        f_0, tau, amp, phi)
-        hplus = TimeSeries(zeros(taper_window+kmax), delta_t=delta_t)
-        hcross = TimeSeries(zeros(taper_window+kmax), delta_t=delta_t)
-        hplus.data[:taper_window] = taper_hp
-        hplus.data[taper_window:] = hp
-        hplus._epoch = start
-        hcross.data[:taper_window] = taper_hc
-        hcross.data[taper_window:] = hc
-        hcross._epoch = start
+        taper_hp, taper_hc = apply_taper(delta_t, taper, f_0, tau, amp, phi,
+                                                                    l, m, inc)
+        start = - taper * tau
+        outplus.data[:taper_window] = taper_hp
+        outplus.data[taper_window:] = hplus
+        outcross.data[:taper_window] = taper_hc
+        outcross.data[taper_window:] = hcross
+        outplus._epoch, outcross._epoch = start, start
 
-        return hplus, hcross
+        return outplus, outcross
 
 def get_fd_qnm(template=None, **kwargs):
     """Return a frequency domain damped sinusoid.
@@ -474,13 +486,7 @@ def get_fd_qnm(template=None, **kwargs):
     kmax = int(f_final / delta_f) + 1
 
     freqs = numpy.arange(kmin, kmax)*delta_f
-
-    # FIXME: we are using spin -2 weighted spherical harmonics for now,
-    # when possible switch to spheroidal harmonics.
-    sph_lm = lal.SpinWeightedSphericalHarmonic(inc, 0., -2, l, m).real
-    sph_lminusm = lal.SpinWeightedSphericalHarmonic(inc, 0., -2, l, -m).real
-    spherical_plus = sph_lm + (-1)**l * sph_lminusm
-    spherical_cross = sph_lm - (-1)**l * sph_lminusm
+    Y_plus, Y_cross = spher_harms(l, m, inc)
 
     denominator = 1 + (4j * pi * freqs * tau) - (4 * pi_sq * ( freqs*freqs - f_0*f_0) * tau*tau)
     norm = amp * tau / denominator
@@ -489,24 +495,24 @@ def get_fd_qnm(template=None, **kwargs):
         norm *= time_shift
 
     # Analytical expression for the Fourier transform of the ringdown (damped sinusoid)
-    hp_tilde = norm * spherical_plus * ( (1 + 2j * pi * freqs * tau) * numpy.cos(phi)
+    hp_tilde = norm * Y_plus * ( (1 + 2j * pi * freqs * tau) * numpy.cos(phi)
                                         - two_pi * f_0 * tau * numpy.sin(phi) )
-    hc_tilde = norm * spherical_cross * ( (1 + 2j * pi * freqs * tau) * numpy.sin(phi)
+    hc_tilde = norm * Y_cross * ( (1 + 2j * pi * freqs * tau) * numpy.sin(phi)
                                         + two_pi * f_0 * tau * numpy.cos(phi) )
 
-    hplustilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
-    hcrosstilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
-    hplustilde.data[kmin:kmax] = hp_tilde
-    hcrosstilde.data[kmin:kmax] = hc_tilde
+    outplus = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+    outcross = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
+    outplus.data[kmin:kmax] = hp_tilde
+    outcross.data[kmin:kmax] = hc_tilde
 
-    return hplustilde, hcrosstilde
+    return outplus, outcross
 
 ######################################################
 #### Single lm mode with overtones
 ######################################################
 
 def get_td_lm(template=None, taper=None, **kwargs):
-    """Return frequency domain lm mode with the given number of overtones.
+    """Return time domain lm mode with the given number of overtones.
 
     Parameters
     ----------
@@ -555,10 +561,10 @@ def get_td_lm(template=None, taper=None, **kwargs):
 
     Returns
     -------
-    hplustilde: FrequencySeries
-        The plus phase of a lm mode with overtones (n) in frequency domain.
-    hcrosstilde: FrequencySeries
-        The cross phase of a lm mode with overtones (n) in frequency domain.
+    hplus: TimeSeries
+        The plus phase of a lm mode with overtones (n) in time domain.
+    hcross: TimeSeries
+        The cross phase of a lm mode with overtones (n) in time domain.
     """
 
     input_params = props(template, lm_required_args, **kwargs)
@@ -591,6 +597,9 @@ def get_td_lm(template=None, taper=None, **kwargs):
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
+    if taper is not None:
+        start = - taper * max(tau.values())
+        outplus._epoch, outcross._epoch = start, start
 
     for n in range(nmodes):
         hplus, hcross = get_td_qnm(template=None, taper=taper,
@@ -784,6 +793,10 @@ def get_td_from_final_mass_spin(template=None, taper=None, **kwargs):
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
+    if taper is not None:
+        start = - taper * max(tau.values())
+        outplus._epoch, outcross._epoch = start, start
+
     for lmn in lmns:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         hplus, hcross = get_td_lm(taper=taper, freqs=f_0, taus=tau,
@@ -970,6 +983,10 @@ def get_td_from_freqtau(template=None, taper=None, **kwargs):
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
+    if taper is not None:
+        start = - taper * max(tau.values())
+        outplus._epoch, outcross._epoch = start, start
+
     for lmn in lmns:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         hplus, hcross = get_td_lm(freqs=f_0, taus=tau, l=l, m=m, nmodes=nmodes,
