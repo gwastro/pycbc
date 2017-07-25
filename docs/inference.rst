@@ -148,7 +148,7 @@ An example configuration file (named ``inference.ini``) is::
 
     [prior-distance]
     ; distance prior
-    name = uniform
+    name = uniform_radius
     min-distance = 10
     max-distance = 1000
 
