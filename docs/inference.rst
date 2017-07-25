@@ -90,8 +90,8 @@ An example configuration file (named ``inference.ini``) is::
     [variable_args]
     ; waveform parameters that will vary in MCMC
     tc =
-    mchirp =
-    q =
+    mass1 =
+    mass2 =
     spin1_a =
     spin1_azimuthal =
     spin1_polar =
@@ -116,15 +116,15 @@ An example configuration file (named ``inference.ini``) is::
     min-tc = 1126259461.8
     max-tc = 1126259462.2
 
-    [prior-mchirp]
+    [prior-mass1]
     name = uniform
-    min-mchirp = 7.
-    max-mchirp = 40.
+    min-mass1 = 10.
+    max-mass1 = 80.
 
-    [prior-q]
+    [prior-mass2]
     name = uniform
-    min-q = 1.
-    max-q = 5.
+    min-mass2 = 10.
+    max-mass2 = 80.
 
     [prior-spin1_a]
     name = uniform
@@ -147,8 +147,8 @@ An example configuration file (named ``inference.ini``) is::
     azimuthal-angle = spin2_azimuthal
 
     [prior-distance]
-    ; distance prior
-    name = uniform
+    ; following gives a uniform volume prior
+    name = uniform_radius
     min-distance = 10
     max-distance = 1000
 
@@ -167,6 +167,19 @@ An example configuration file (named ``inference.ini``) is::
     [prior-polarization]
     ; polarization prior
     name = uniform_angle
+
+    ;
+    ;   Sampling transforms
+    ;
+    [sampling_parameters]
+    ; parameters on the left will be sampled in
+    ; parametes on the right
+    mass1, mass2 : mchirp, q
+
+    [sampling_transforms-mchirp+q]
+    ; inputs mass1, mass2
+    ; outputs mchirp, q
+    name = mass1_mass2_to_mchirp_q
 
 An example of generating an injection::
 
@@ -348,7 +361,6 @@ Now run::
     # sampler parameters
     CONFIG_PATH=inference.ini
     OUTPUT_PATH=inference.hdf
-    SEGLEN=8
     IFOS="H1 L1"
     SAMPLE_RATE=2048
     F_HIGHPASS=20
@@ -490,7 +502,7 @@ An example of plotting the posteriors at a specific iteration::
         --parameters "ra*12/pi:$\alpha$ (h)" \
                      "dec*180/pi:$\delta$ (deg)" \
                      "polarization*180/pi:$\psi$ (deg)" \
-                     mchirp q spin1_a spin1_azimuthal spin1_polar \
+                     mass1 mass2 spin1_a spin1_azimuthal spin1_polar \
                      spin2_a spin2_azimuthal spin2_polar \
                      "inclination*180/pi:$\iota$ (deg)" distance \
                      "coa_phase*180/pi:$\phi_0$ (deg)" tc
@@ -518,7 +530,7 @@ There are also options for thinning the chains of samples from the command line,
         --parameters "ra*12/pi:$\alpha$ (h)" \
                      "dec*180/pi:$\delta$ (deg)" \
                      "polarization*180/pi:$\psi$ (deg)" \
-                     mchirp q spin1_a spin1_azimuthal spin1_polar \
+                     mass1 mass2 spin1_a spin1_azimuthal spin1_polar \
                      spin2_a spin2_azimuthal spin2_polar \
                      "inclination*180/pi:$\iota$ (deg)" distance \
                      "coa_phase*180/pi:$\phi_0$ (deg)" tc
@@ -551,7 +563,7 @@ Making a movie (``pycbc_inference_plot_movie``)
         --plot-marginal \
         --z-arg snr \
         --dpi ${DPI} \
-        --parameters mchirp q spin1_a spin1_azimuthal spin1_polar \
+        --parameters mass1 mass2 spin1_a spin1_azimuthal spin1_polar \
                	     spin2_a spin2_azimuthal spin2_polar \
             
 This will create a 24-second movie for a selection of parameters. The option ``--cleanup`` deletes the individual frame files prefixed as specified by the variable ``OUTPUT_PREFIX``. This is optional. 
