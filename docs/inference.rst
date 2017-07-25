@@ -147,7 +147,7 @@ An example configuration file (named ``inference.ini``) is::
     azimuthal-angle = spin2_azimuthal
 
     [prior-distance]
-    ; distance prior
+    ; following gives a uniform volume prior
     name = uniform_radius
     min-distance = 10
     max-distance = 1000
