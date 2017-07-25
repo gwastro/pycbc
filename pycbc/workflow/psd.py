@@ -59,7 +59,7 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
         num_parts = 1
         
     # get rid of duplicate segments which happen when splitting the bank
-    segments = segmentlist(frozenset(segments))       
+    segments = segmentlist(frozenset(segments))
         
     segment_lists = list(chunks(segments, num_parts)) 
     
@@ -90,8 +90,9 @@ def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
     node.add_input_opt('--analysis-segment-file', segment_file)
     node.add_opt('--segment-name', segment_name)
     
-    if not exe.has_opt('frame-type'):
+    if frame_files and not exe.has_opt('frame-type'):
         node.add_input_list_opt('--frame-files', frame_files)
+
     node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
     workflow += node
     return node.output_files[0]

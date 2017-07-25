@@ -103,7 +103,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
     cp = workflow.cp
 
     # Parse for options in ini file
-    datafindMethod = cp.get_opt_tags("workflow-datafind",
+    datafind_method = cp.get_opt_tags("workflow-datafind",
                                      "datafind-method", tags)
 
     if cp.has_option_tags("workflow-datafind",
@@ -126,39 +126,41 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
         checkSegmentSummary = "no_test"
 
     logging.info("Starting datafind with setup_datafind_runtime_generated")
-    if datafindMethod == "AT_RUNTIME_MULTIPLE_CACHES":
+    if datafind_method == "AT_RUNTIME_MULTIPLE_CACHES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_SINGLE_CACHES":
+    elif datafind_method == "AT_RUNTIME_SINGLE_CACHES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES":
+    elif datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
+    elif datafind_method == "AT_RUNTIME_SINGLE_FRAMES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-
-    elif datafindMethod == "FROM_PREGENERATED_LCF_FILES":
+    elif datafind_method == "AT_RUNTIME_FAKE_DATA":
+        pass
+    elif datafind_method == "FROM_PREGENERATED_LCF_FILES":
         ifos = scienceSegs.keys()
         datafindcaches, datafindouts = \
             setup_datafind_from_pregenerated_lcf_files(cp, ifos,
                                                        outputDir, tags=tags)
     else:
-        msg = "Entry datafind-method in [workflow-datafind] does not have "
-        msg += "expected value. Valid values are "
-        msg += "AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES "
-        msg += "AT_RUNTIME_MULTIPLE_CACHES or AT_RUNTIME_SINGLE_CACHES. "
-        msg += "Consult the documentation for more info."
+        msg = """Entry datafind-method in [workflow-datafind] does not have "
+              expected value. Valid values are 
+              AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES 
+              AT_RUNTIME_MULTIPLE_CACHES, AT_RUNTIME_SINGLE_CACHES,
+              FROM_PREGENERATED_LCF_FILES, or AT_RUNTIME_FAKE_DATA.
+              Consult the documentation for more info."""
         raise ValueError(msg)
 
     using_backup_server = False
-    if datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES" or \
-                                  datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
+    if datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES" or \
+                                  datafind_method == "AT_RUNTIME_SINGLE_FRAMES":
         if cp.has_option_tags("workflow-datafind",
                           "datafind-backup-datafind-server", tags):
             using_backup_server = True
@@ -344,7 +346,13 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
                             extension='.xml', tags=tags, directory=outputDir)
 
     logging.info("Leaving datafind module")
-    return FileList(datafindouts), sci_avlble_file, scienceSegs, sci_avlble_name
+    if datafind_method == "AT_RUNTIME_FAKE_DATA":
+        datafindouts = None
+    else:
+        datafindouts = FileList(datafindouts) 
+
+
+    return datafindouts, sci_avlble_file, scienceSegs, sci_avlble_name
 
 
 def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,

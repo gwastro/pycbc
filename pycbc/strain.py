@@ -328,13 +328,17 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
             strain = TimeSeries(pycbc.types.zeros(tlen),
-                                delta_t=1.0/opt.sample_rate)
+                                delta_t=1.0/opt.sample_rate,
+                                epoch=opt.gps_start_time)
         else:
             logging.info("Making colored noise")
-            strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
-                                                strain_psd,
-                                                seed=opt.fake_strain_seed)
-        strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
+            from pycbc.noise.reproduceable import colored_noise
+            strain = colored_noise(strain_psd, opt.gps_start_time,
+                                          opt.gps_end_time,
+                                          seed=opt.fake_strain_seed, 
+                                          low_frequency_cutoff=opt.strain_high_pass)
+            strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
+
 
         if opt.injection_file:
             logging.info("Applying injections")

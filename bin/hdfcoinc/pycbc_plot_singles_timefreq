@@ -72,6 +72,7 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
+opts.low_frequency_cutoff = opts.f_low
 strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.center_time is None:

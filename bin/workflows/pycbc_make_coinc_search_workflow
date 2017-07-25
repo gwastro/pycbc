@@ -175,7 +175,7 @@ bank_plot = [(wf.make_template_plot(workflow, hdfbank[0],
 
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow,
-                                                     output_dir="inj_files")
+                                                  output_dir="inj_files")
 
 ######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
@@ -323,11 +323,12 @@ for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
     insp_files_seg_dict[ifo + ":" + data_analysed_name] = \
                                                         data_analysed_segs[ifo]
 
-    # NOTE: Should we also store the coalesced segments?
-
-    psd_files += [wf.setup_psd_calculate(workflow,
-                  datafind_files.find_output_with_ifo(ifo), ifo,
-                  data_analysed_segs[ifo], data_analysed_name, 'psds')]
+    if datafind_files:
+        frame_files = datafind_files.find_output_with_ifo(ifo)
+    else:
+        frame_files = None
+    psd_files += [wf.setup_psd_calculate(workflow, frame_files, ifo,
+              data_analysed_segs[ifo], data_analysed_name, 'psds')]
 
 insp_files_seg_file = wf.SegFile.from_segment_list_dict('INSP_SEGMENTS',
                  insp_files_seg_dict, valid_segment=workflow.analysis_time,
@@ -342,7 +343,7 @@ r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'],
 
 det_summ = [(s, r[0] if len(r) != 0 else None)]
 layout.two_column_layout(rdir['detector_sensitivity'],
-                         det_summ + list(layout.grouper(r2, 2)))
+                     det_summ + list(layout.grouper(r2, 2)))
 
 # run minifollowups on the output of the loudest events
 wf.setup_foreground_minifollowups(workflow, final_bg_file,
