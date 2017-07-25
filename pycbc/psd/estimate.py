@@ -230,13 +230,16 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
     
     trunc_start = max_filter_len / 2
     trunc_end = N - max_filter_len / 2
+    if trunc_end < trunc_start:
+        raise ValueError('Invalid value in inverse_spectrum_truncation')
 
     if trunc_method == 'hann':
         trunc_window = Array(numpy.hanning(max_filter_len), dtype=q.dtype)
         q[0:trunc_start] *= trunc_window[max_filter_len/2:max_filter_len]
         q[trunc_end:N] *= trunc_window[0:max_filter_len/2]
 
-    q[trunc_start:trunc_end] = 0
+    if trunc_start < trunc_end:
+        q[trunc_start:trunc_end] = 0
     psd_trunc = FrequencySeries(numpy.zeros(len(psd)), delta_f=psd.delta_f, \
                                 dtype=complex_same_precision_as(psd))
     fft(q, psd_trunc)
