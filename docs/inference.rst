@@ -174,7 +174,7 @@ An example configuration file (named ``inference.ini``) is::
     [sampling_parameters]
     ; parameters on the left will be sampled in
     ; parametes on the right
-    mass1, mass2 : mchirp, logitq
+    mass1, mass2 : mchirp, q
 
     [sampling_transforms-mchirp+q]
     ; inputs mass1, mass2
