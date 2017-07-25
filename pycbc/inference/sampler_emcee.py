@@ -267,23 +267,20 @@ class _callable(object):
 class _callprior(object):
     """Calls the likelihood function's prior function, and ensures that no
     metadata is returned."""
-    def __init__(self, likelihood_evaluator):
-        self.instance = likelihood_evaluator
+    def __init__(self, likelihood_call):
+        self.callable = likelihood_call
 
     def __call__(self, args):
-        out = self.instance.evaluate(args, callfunc='prior')
-        if self.instance.return_meta:
-            out = out[0]
-        return out
+        return self.callable(args, callfunc='prior')[0]
 
 class _callloglikelihood(object):
     """Calls the likelihood function's loglikelihood function.
     """
-    def __init__(self, likelihood_evaluator):
-        self.instance = likelihood_evaluator
+    def __init__(self, likelihood_call):
+        self.callable = likelihood_call
 
     def __call__(self, args):
-        return self.instance.evaluate(args, callfunc='loglikelihood')
+        return self.callable(args, callfunc='loglikelihood')
 
 
 class EmceePTSampler(BaseMCMCSampler):
@@ -310,19 +307,22 @@ class EmceePTSampler(BaseMCMCSampler):
     name = "emcee_pt"
 
     def __init__(self, likelihood_evaluator, ntemps, nwalkers, pool=None,
-                 burn_in_iterations=None):
+                 burn_in_iterations=None, likelihood_call=None):
 
         try:
             import emcee
         except ImportError:
             raise ImportError("emcee is not installed.")
 
+        if likelihood_call is None:
+            likelihood_call = likelihood_evaluator
+
         # construct the sampler: PTSampler needs the likelihood and prior
         # functions separately
         ndim = len(likelihood_evaluator.variable_args)
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                  _callloglikelihood(likelihood_evaluator),
-                                  _callprior(likelihood_evaluator),
+                                  _callloglikelihood(likelihood_call),
+                                  _callprior(likelihood_call),
                                   pool=pool)
         # initialize
         super(EmceePTSampler, self).__init__(
@@ -355,7 +355,8 @@ class EmceePTSampler(BaseMCMCSampler):
             raise ValueError("%s requires that you provide a non-zero " % (
                 cls.name) + "--min-burn-in if not skipping burn-in")
         return cls(likelihood_evaluator, opts.ntemps, opts.nwalkers,
-                   pool=pool, burn_in_iterations=opts.min_burn_in)
+                   pool=pool, burn_in_iterations=opts.min_burn_in,
+                   likelihood_call=likelihood_call)
 
     @property
     def ntemps(self):
