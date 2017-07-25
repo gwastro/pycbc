@@ -22,7 +22,7 @@
 # =============================================================================
 #
 import numpy, pycbc.psd
-from pycbc.types import TimeSeries
+from pycbc.types import TimeSeries, FrequencySeries, complex_same_precision_as
 from numpy.random import RandomState
 
 # These need to be constant to be able to recover identical results.
@@ -103,18 +103,55 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
     """
-    white_noise = normal(start_time - FILTER_LENGTH, end_time + FILTER_LENGTH,
-                          seed=seed)
-    flen = int(SAMPLE_RATE / psd.delta_f) / 2 + 1
     psd = psd * 1
+    flen = int(SAMPLE_RATE / psd.delta_f) / 2 + 1
+    oldlen = len(psd)
     psd.resize(flen)
-    psd = pycbc.psd.interpolate(psd, 1.0 / white_noise.duration)
-    invpsd = pycbc.psd.inverse_spectrum_truncation(1.0 / psd,
+    # Want to avoid zeroes in PSD.
+    max_val = psd.max()
+    for i in xrange(len(psd)):
+        if i >= (oldlen-1):
+            psd.data[i] = psd[oldlen - 2]
+        if psd[i] == 0:
+            psd.data[i] = max_val
+    wn_dur = (end_time - start_time) + 2*FILTER_LENGTH
+    if psd.delta_f >= 1. / (2.*FILTER_LENGTH):
+        # If the PSD is short enough, this method is less memory intensive than
+        # resizing and then calling inverse_spectrum_truncation
+        psd = pycbc.psd.interpolate(psd, 1.0 / (2.*FILTER_LENGTH))
+        # inverse_spectrum_truncation truncates the inverted PSD. To truncate
+        # the non-inverted PSD we give it the inverted PSD to truncate and then
+        # invert the output.
+        psd = 1. / pycbc.psd.inverse_spectrum_truncation(1./psd,
                                 FILTER_LENGTH * SAMPLE_RATE,
                                 low_frequency_cutoff=low_frequency_cutoff,
                                 trunc_method='hann')
-    colored = (white_noise.to_frequencyseries() / invpsd ** 0.5).to_timeseries()
-    return colored.time_slice(start_time, end_time)
+        psd = FrequencySeries(psd, dtype=complex_same_precision_as(psd))
+        # Zero-pad the time-domain PSD to desired length. Zeroes must be added
+        # in the middle, so some rolling between a resize is used.
+        psd = psd.to_timeseries()
+        psd.roll(SAMPLE_RATE * FILTER_LENGTH)
+        psd.resize(wn_dur * SAMPLE_RATE)
+        psd.roll(-SAMPLE_RATE * FILTER_LENGTH)
+        # As time series is still mirrored the complex frequency components are
+        # 0. But convert to real by using abs as in inverse_spectrum_truncate
+        psd = psd.to_frequencyseries()
+        psd = abs(psd)**0.5
+    else:
+        wn_dur = (end_time - start_time) + 2*FILTER_LENGTH
+        psd = pycbc.psd.interpolate(psd, 1.0 / wn_dur)
+        psd = 1. / pycbc.psd.inverse_spectrum_truncation(1./psd,
+                                FILTER_LENGTH * SAMPLE_RATE,
+                                low_frequency_cutoff=low_frequency_cutoff,
+                                trunc_method='hann')
+        psd = psd**0.5
+    white_noise = normal(start_time - FILTER_LENGTH, end_time + FILTER_LENGTH,
+                          seed=seed)
+    white_noise = white_noise.to_frequencyseries()
+    # Here we color. Do not want to duplicate memory here though so use '*='
+    white_noise *= psd
+    del psd
+    return white_noise.to_timeseries()
 
 def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """ Create noise from an analytic PSD
