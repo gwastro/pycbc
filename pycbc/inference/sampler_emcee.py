@@ -254,16 +254,6 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
 # This is needed for two reason
 # 1) pools freeze state when created and so classes *cannot be updated*
 # 2) methods cannot be pickled. 
-class _callable(object):
-    """ Create a callable function from an instance and method name"""
-    def __init__(self, instance, method_name):
-        self.instance = instance
-        self.method_name = method_name
-
-    def __call__(self, *args, **kwds):
-        return getattr(self.instance, self.method_name)(*args, **kwds)
-
-
 class _callprior(object):
     """Calls the likelihood function's prior function, and ensures that no
     metadata is returned."""
