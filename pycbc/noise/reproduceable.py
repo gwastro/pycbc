@@ -151,7 +151,9 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     # Here we color. Do not want to duplicate memory here though so use '*='
     white_noise *= psd
     del psd
-    return white_noise.to_timeseries()
+    colored = white_noise.to_timeseries()
+    del white_noise
+    return colored.time_slice(start_time, end_time)
 
 def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     """ Create noise from an analytic PSD
