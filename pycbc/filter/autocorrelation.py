@@ -71,8 +71,18 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     else:
         y = data
 
+    # Zero mean
+    y = y - y.mean()
+    ny_orig = len(y)
+
+    npad = 1
+    while npad < 2*ny_orig:
+        npad = npad << 1
+    ypad = numpy.zeros(npad)
+    ypad[:ny_orig] = y    
+        
     # FFT data minus the mean
-    fdata = TimeSeries(y-y.mean(), delta_t=delta_t).to_frequencyseries()
+    fdata = TimeSeries(ypad, delta_t=delta_t).to_frequencyseries()
 
     # correlate
     # do not need to give the congjugate since correlate function does it
@@ -82,6 +92,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
 
     # IFFT correlated data to get unnormalized autocovariance time series
     acf = cdata.to_timeseries()
+    acf = acf[:ny_orig]
 
     # normalize the autocovariance
     # note that dividing by acf[0] is the same as ( y.var() * len(acf) )
