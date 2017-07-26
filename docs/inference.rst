@@ -109,7 +109,7 @@ An example configuration file (named ``inference.ini``) is::
     ; waveform parameters that will not change in MCMC
     approximant = IMRPhenomPv2
     f_lower = 18
-    f_ref = 20
+    f_ref = 18
 
     [prior-tc]
     ; coalescence time prior
@@ -195,7 +195,7 @@ An example of generating an injection::
     COA_PHASE=1.5
     POLARIZATION=1.75
     DISTANCE=100000 # in kpc
-    INJ_F_MIN=28.
+    INJ_F_MIN=18.
     TAPER="start"
 
     # path of injection file that will be created in the example
