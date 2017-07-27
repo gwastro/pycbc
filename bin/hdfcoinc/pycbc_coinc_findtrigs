@@ -219,9 +219,9 @@ for tnum in range(tmin, tmax):
 
     logging.info('Calculating Single Detector Statistic')
     s0, s1 = rank_method.single(trigs0), rank_method.single(trigs1)
+
     logging.info('Calculating Multi-Detector Combined Statistic')
     c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
-    if len(c): print(s0[i0], s1[i1], c)
 
     #index values of the zerolag triggers
     fi = numpy.where(slide == 0)[0]
