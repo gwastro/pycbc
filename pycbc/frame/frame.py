@@ -245,11 +245,9 @@ def datafind_connection(server=None):
         cert_file, key_file = None, None
 
     # Is a port specified in the server URL
-    server, port = datafind_server.split(':',1)
-    if port == "":
-        port = None
-    else:
-        port = int(port)
+    dfs_fields = datafind_server.split(':', 1)
+    server = dfs_fields[0]
+    port = int(dfs_fields[1]) if len(dfs_fields) == 2 else None
 
     # Open connection to the datafind server
     if cert_file and key_file:
