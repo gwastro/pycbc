@@ -109,7 +109,7 @@ An example configuration file (named ``inference.ini``) is::
     ; waveform parameters that will not change in MCMC
     approximant = IMRPhenomPv2
     f_lower = 18
-    f_ref = 18
+    f_ref = 20
 
     [prior-tc]
     ; coalescence time prior
