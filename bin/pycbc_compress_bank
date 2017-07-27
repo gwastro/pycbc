@@ -142,8 +142,8 @@ output = bank.write_to_hdf(args.output, force=args.force)
 
 # get the psd
 logging.info("getting psd")
-psd = pycbc.psd.from_cli(args, length=psd_length, delta_f=df,
-                         low_frequency_cutoff=fmin,
+psd = pycbc.psd.from_cli(args, length=N/2+1, delta_f=df,
+                         low_frequency_cutoff=templates.f_lower.min(),
                          dyn_range_factor=pycbc.DYN_RANGE_FAC,
                          precision='double')
 
