@@ -133,6 +133,14 @@ class NewSNRStatistic(Stat):
         return (s0**2. + s1**2.) ** 0.5
 
 
+class NetworkSNRStatistic(NewSNRStatistic):
+
+    """Same as the NewSNR statistic, but just sum of squares of SNRs"""
+
+    def single(self, trigs):
+        return trigs['snr']
+
+
 class NewSNRCutStatistic(NewSNRStatistic):
 
     """Same as the NewSNR statistic, but demonstrates a cut of the triggers"""
@@ -485,6 +493,7 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
 statistic_dict = {
     'newsnr': NewSNRStatistic,
+    'network_snr': NetworkSNRStatistic,
     'newsnr_cut': NewSNRCutStatistic,
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
