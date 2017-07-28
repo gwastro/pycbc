@@ -57,7 +57,13 @@ parser.add_argument("--low-frequency-cutoff", type=float, default=None,
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--sample-rate", type=int, required=True,
                     help="Half this value sets the maximum frequency of "
-                    "the compressed waveforms.")
+                    "the compressed waveforms. Must be a power of 2.")
+parser.add_argument("--segment-length", type=int, required=True,
+                    help="The segment length to use for generating the "
+                    "templates for compression, and for calculating "
+                    "overlap for tolerance. Must be a power of 2, "
+                    "and at least twice as long as the longest template "
+                    "in the bank.")
 parser.add_argument("--tmplt-index", nargs=2, type=int, default=None,
                     help="Only generate compressed waveforms for the given "
                     "indices in the bank file. Must provide both a start "
@@ -106,15 +112,22 @@ pycbc.init_logging(args.verbose)
 if args.psd_model or args.psd_file or args.asd_file :
     psd.verify_psd_options(args, parser)
 
+if args.sample_rate % 2 != 0:
+    raise ValueError("sample rate must be a power of 2")
+if args.segment_length % 2 != 0:
+    raise ValueError("segment length must be a power of 2")
+
+df = 1./args.segment_length
 fmax = args.sample_rate/2.
+N = args.sample_rate * args.segment_length
 
 # load the bank
 logging.info("loading bank")
 # we'll do everything in double precision; if single is desired, we'll
 # cast to single when saving the waveforms
 dtype = numpy.complex128
-# we'll just use dummy values for N, df for now
-bank = waveform.FilterBank(args.bank_file, 5, 0.25, dtype,
+
+bank = waveform.FilterBank(args.bank_file, N/2+1, df, dtype,
                            low_frequency_cutoff=args.low_frequency_cutoff,
                            approximant=args.approximant)
 templates = bank.table
@@ -122,60 +135,42 @@ if args.tmplt_index is not None:
     imin, imax = args.tmplt_index
     templates = templates[imin:imax]
     bank.table = templates
-else:
-    imin, imax = 0, templates.size
-
-# figure out the dfs needed for each waveform
-logging.info("getting needed dfs")
-# we'll ensure that the there are atleast 2 samples in a waveform
-seg_lens = 4*numpy.array([max(4./args.sample_rate,
-    2**numpy.ceil(numpy.log2(compress.rough_time_estimate(m1, m2, flow))))
-    for m1,m2,flow in zip(templates.mass1, templates.mass2, templates.f_lower)])
 
 # generate output file
 logging.info("writing template info to output")
 output = bank.write_to_hdf(args.output, force=args.force)
 
+# get the psd
+logging.info("getting psd")
+psd = pycbc.psd.from_cli(args, length=N/2+1, delta_f=df,
+                         low_frequency_cutoff=templates.f_lower.min(),
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC,
+                         precision='double')
+
 # get the compressed sample points for each template
 logging.info("getting compressed amplitude and phase")
-mismatches = numpy.zeros(imax-imin, dtype=float)
 
-# Create a dictionary to store the psd for every value of N that is used
-psd_dict = {}
+# scratch space
+decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=dtype), delta_f=df)
 
-for ii in range(imin, imax):
-    # update the N, df to use based on this waveform
-    N = int(args.sample_rate*seg_lens[ii-imin])
-    df = 1./seg_lens[ii-imin]
-    bank.delta_f = df
-    bank.N = N
-    bank.filter_length = N/2 + 1
-    # scratch space
-    decomp_scratch = FrequencySeries(numpy.zeros(N, dtype=dtype), delta_f=df)
+for ii in range(templates.size):
     # generate the waveform
-    htilde = bank[ii-imin]
-    tmplt = bank.table[ii-imin]
+    htilde = bank[ii]
+    tmplt = bank.table[ii]
     fmin=tmplt.f_lower
-    template_duration=htilde.chirp_length
-    output['template_duration'][ii-imin]=template_duration
+    template_duration = htilde.chirp_length
+    output['template_duration'][ii] = template_duration
+    # check that the segment length is at least twice the template duration
+    if args.segment_length < 2*template_duration:
+        raise ValueError("segment length is < twice the duration "
+                         "({}) of template {}".format(template_duration,
+                         tmplt.template_hash))
     kmin = int(numpy.ceil(fmin / df))
     if numpy.abs(htilde[kmin]) == 0:
         raise ValueError("""The amplitude of the waveform at the
                          low_frequency_cutoff is zero. A non-zero value
                          is required.""")
     kmax = numpy.nonzero(abs(htilde))[0][-1]
-    # Calculate psd if psd options are provided as input. The psd would
-    # be used to compute the overlap between the full waveform and the
-    # decompressed waveform.
-    try:
-        psd = psd_dict[N]
-    except KeyError:
-        psd_length = N / 2  + 1
-        psd = pycbc.psd.from_cli(args, length=psd_length, delta_f=df,
-                                 low_frequency_cutoff=fmin,
-                                 dyn_range_factor=pycbc.DYN_RANGE_FAC,
-                                 precision='double')
-        psd_dict[N] = psd
 
     # get the compressed sample points
     if args.compression_algorithm == 'mchirp':
