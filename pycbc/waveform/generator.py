@@ -250,7 +250,7 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     Initialize a generator:
 
     >>> from pycbc.waveform.generator import TDomainCBCGenerator
-    >>> generator = waveform.TDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
+    >>> generator = TDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
