@@ -108,7 +108,8 @@ An example configuration file (named ``inference.ini``) is::
     [static_args]
     ; waveform parameters that will not change in MCMC
     approximant = IMRPhenomPv2
-    f_lower = 19.0
+    f_lower = 18
+    f_ref = 20
 
     [prior-tc]
     ; coalescence time prior
@@ -129,7 +130,7 @@ An example configuration file (named ``inference.ini``) is::
     [prior-spin1_a]
     name = uniform
     min-spin1_a = 0.0
-    max-spin1_a = 0.9
+    max-spin1_a = 0.99
 
     [prior-spin1_polar+spin1_azimuthal]
     name = uniform_solidangle
@@ -139,7 +140,7 @@ An example configuration file (named ``inference.ini``) is::
     [prior-spin2_a]
     name = uniform
     min-spin2_a = 0.0
-    max-spin2_a = 0.9
+    max-spin2_a = 0.99
 
     [prior-spin2_polar+spin2_azimuthal]
     name = uniform_solidangle
@@ -194,7 +195,7 @@ An example of generating an injection::
     COA_PHASE=1.5
     POLARIZATION=1.75
     DISTANCE=100000 # in kpc
-    INJ_F_MIN=28.
+    INJ_F_MIN=18.
     TAPER="start"
 
     # path of injection file that will be created in the example
@@ -249,7 +250,7 @@ An example of running ``pycbc_inference`` to analyze the injection in fake data:
     IFOS="H1 L1"
     STRAIN="H1:aLIGOZeroDetHighPower L1:aLIGOZeroDetHighPower"
     SAMPLE_RATE=2048
-    F_MIN=30.
+    F_MIN=20
     N_UPDATE=500
     N_WALKERS=5000
     N_ITERATIONS=12000
@@ -354,8 +355,8 @@ Now run::
     # PSD estimation options
     PSD_ESTIMATION="H1:median L1:median"
     PSD_INVLEN=4
-    PSD_SEG_LEN=8
-    PSD_STRIDE=4
+    PSD_SEG_LEN=16
+    PSD_STRIDE=8
     PSD_DATA_LEN=1024
 
     # sampler parameters
@@ -363,8 +364,8 @@ Now run::
     OUTPUT_PATH=inference.hdf
     IFOS="H1 L1"
     SAMPLE_RATE=2048
-    F_HIGHPASS=20
-    F_MIN=30.
+    F_HIGHPASS=15
+    F_MIN=20
     N_UPDATE=500
     N_WALKERS=5000
     N_ITERATIONS=12000
