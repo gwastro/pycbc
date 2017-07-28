@@ -589,9 +589,13 @@ class EmceePTSampler(BaseMCMCSampler):
         end_iteration : {None, int}
             Write results up to the given iteration.
         index_offset : int, optional
-            Offset the indices used to access the arrays on disk and the
-            samples. Specifically, index_offset = file array indices - samples'
-            indices. Default is 0.
+            Write the samples to the arrays on disk starting at
+            `start_iteration` + `index_offset`. For example, if
+            `start_iteration=0`, `end_iteration=1000` and `index_offset=500`,
+            then `samples[0:1000]` will be written to indices `500:1500` in the
+            arrays on disk. This is needed if you are adding new samples to
+            a chain that was previously written to file, and you want to
+            preserve the history (e.g., after a checkpoint). Default is 0.
         max_iterations : {None, int}
             If samples have not previously been written to the file, a new
             dataset will be created. By default, the size of this dataset will
