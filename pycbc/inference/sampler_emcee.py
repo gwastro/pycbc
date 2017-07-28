@@ -779,10 +779,7 @@ class EmceePTSampler(BaseMCMCSampler):
                             thin_start=start_index, thin_interval=1,
                             thin_end=end_index,
                             walkers=wi, temps=tk)[param]
-                    if samples.size < 2:
-                        acl = 1
-                    else:
-                        acl = autocorrelation.calculate_acl(samples)
+                    acl = autocorrelation.calculate_acl(samples)
                     these_acls[tk, wi] = int(min(acl, samples.size))
             acls[param] = these_acls
         return FieldArray.from_kwargs(**acls)

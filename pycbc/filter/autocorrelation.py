@@ -142,6 +142,10 @@ def calculate_acl(data, m=5, k=2, dtype=int):
     if dtype not in [int, float]:
         raise ValueError("The dtype must be either int or float.")
 
+    # if we have only a single point, just return 1
+    if len(data) < 2:
+        return 1
+
     # calculate ACF that is normalized by the zero-lag value
     acf = calculate_acf(data)
 
