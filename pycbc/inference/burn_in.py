@@ -46,6 +46,8 @@ def max_posterior(sampler, fp):
         Array of indices giving the burn-in index for each chain.
     """
     # get the posteriors
+    # Note: multi-tempered samplers should just return the coldest chain by
+    # default
     chain_stats = sampler.read_samples(fp, ['loglr', 'prior'],
         samples_group=fp.stats_group, thin_interval=1, thin_start=0,
         thin_end=None, flatten=False)
@@ -57,8 +59,14 @@ def max_posterior(sampler, fp):
     nwalkers = chain_posteriors.shape[-2]
     niterations = chain_posteriors.shape[-1]
     burn_in_idx = numpy.repeat(niterations, nwalkers).astype(int)
+    # find the first iteration in each chain where the logplr has exceeded
+    # max_p - dim/2
     for ii in range(nwalkers):
         chain = chain_posteriors[...,ii,:]
+        # numpy.where will return a tuple with multiple arrays if the chain is
+        # more than 1D (which can happen for multi-tempered samplers). Always
+        # taking the last array ensures we are looking at the indices that
+        # count out iterations
         idx = numpy.where(chain >= criteria)[-1]
         if idx.size != 0:
             burn_in_idx[ii] = idx[0]
@@ -83,18 +91,21 @@ def posterior_step(sampler, fp):
         Array of indices giving the burn-in index for each chain.
     """
     # get the posteriors
+    # Note: multi-tempered samplers should just return the coldest chain by
+    # default
     chain_stats = sampler.read_samples(fp, ['loglr', 'prior'],
         samples_group=fp.stats_group, thin_interval=1, thin_start=0,
         thin_end=None, flatten=False)
     chain_posteriors = chain_stats['loglr'] + chain_stats['prior']
     nwalkers = chain_posteriors.shape[-2]
-    niterations = chain_posteriors.shape[-1]
     dim = len(fp.variable_args)
     burn_in_idx = numpy.zeros(nwalkers).astype(int)
+    criteria = dim/2.
+    # find the last iteration in each chain where the logplr has
+    # jumped by more than dim/2
     for ii in range(nwalkers):
         chain = chain_posteriors[...,ii,:]
-        criteria = chain.max() - dim/2.
-        dp = numpy.diff(chain)
+        dp = abs(numpy.diff(chain))
         idx = numpy.where(dp >= criteria)[-1]
         if idx.size != 0:
             burn_in_idx[ii] = idx[-1] + 1
