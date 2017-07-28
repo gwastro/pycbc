@@ -196,7 +196,8 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
+    >>> from pycbc.waveform.generator import FDomainCBCGenerator
+    >>> generator = FDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
@@ -207,7 +208,7 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     Initialize a generator using mchirp, eta as the variable args, and generate
     a waveform:
 
-    >>> generator = waveform.FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
+    >>> generator = FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
     >>> generator.generate(mchirp=1.5, eta=0.25)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x109a104d0>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x109a10b50>)
@@ -248,7 +249,8 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.TDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
+    >>> from pycbc.waveform.generator import TDomainCBCGenerator
+    >>> generator = TDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
@@ -259,7 +261,7 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     Initialize a generator using mchirp, eta as the variable args, and generate
     a waveform:
 
-    >>> generator = waveform.TDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
+    >>> generator = TDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
     >>> generator.generate(mchirp=1.75, eta=0.2)
         (<pycbc.types.timeseries.TimeSeries at 0x116ac6050>,
          <pycbc.types.timeseries.TimeSeries at 0x116ac6950>)
@@ -291,7 +293,8 @@ class FDomainMassSpinRingdownGenerator(BaseGenerator):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainMassSpinRingdownGenerator(variable_args=['final_mass',
+    >>> from pycbc.waveform.generator import FDomainMassSpinRingdownGenerator
+    >>> generator = FDomainMassSpinRingdownGenerator(variable_args=['final_mass',
                     'final_spin','amp220','amp210','phi220','phi210'], lmns=['221','211'],
                     delta_f=1./32, f_lower=30., f_final=500)
 
@@ -317,7 +320,8 @@ class FDomainFreqTauRingdownGenerator(BaseGenerator):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainFreqTauRingdownGenerator(variable_args=['f_220',
+    >>> from pycbc.waveform.generator import FDomainFreqTauRingdownGenerator
+    >>> generator = FDomainFreqTauRingdownGenerator(variable_args=['f_220',
                     'tau_220','f_210','tau_210','amp220','amp210','phi220','phi210'],
                     lmns=['221','211'], delta_f=1./32, f_lower=30., f_final=500)
 
@@ -407,7 +411,8 @@ class FDomainDetFrameGenerator(object):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
+    >>> from pycbc.waveform.generator import FDomainDetFrameGenerator
+    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
 
     Generate a waveform:
 
@@ -539,7 +544,8 @@ def select_waveform_generator(approximant):
     >>> ringdown.ringdown_fd_approximants.keys()
 
     Get generator object:
-    >>> waveform.select_waveform_generator(waveform.fd_approximants()[0])
+    >>> from pycbc.waveform.generator import select_waveform_generator
+    >>> select_waveform_generator(waveform.fd_approximants()[0])
     """
 
     # check if frequency-domain CBC waveform
