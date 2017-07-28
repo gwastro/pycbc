@@ -52,8 +52,8 @@ def max_posterior(sampler, fp):
     chain_posteriors = chain_stats['loglr'] + chain_stats['prior']
     dim = len(fp.variable_args)
     # find the posterior to compare against
-    maxP = chain_posteriors.max()
-    criteria = maxP - dim/2
+    max_p = chain_posteriors.max()
+    criteria = max_p - dim/2
     nwalkers = chain_posteriors.shape[-2]
     niterations = chain_posteriors.shape[-1]
     burn_in_idx = numpy.repeat(niterations, nwalkers).astype(int)

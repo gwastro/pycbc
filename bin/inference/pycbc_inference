@@ -272,9 +272,9 @@ with ctx:
             numpy.random.set_state(fp.read_random_state())
 
     # run sampler's burn in if it is in the list of burn in functions
-    if 'use_sampler' in burn_in_eval.burn_in_functions:
+    if "use_sampler" in burn_in_eval.burn_in_functions:
         # remove the sampler's burn in so we don't run more than once
-        burn_in_eval.burn_in_functions.pop('use_sampler')
+        burn_in_eval.burn_in_functions.pop("use_sampler")
         with InferenceFile(opts.output_file, "a") as fp:
             logging.info("Running sampler's burn in function")
             burnidx = burn_in.use_sampler(sampler, fp)
@@ -282,7 +282,8 @@ with ctx:
             # write the burn in results
             nburn_in = burnidx.max()
             logging.info("Writing burn in samples to file")
-            sampler.write_results(fp, max_iterations=opts.niterations+nburn_in)
+            sampler.write_results(fp,
+                                  max_iterations=opts.niterations + nburn_in)
             try:
                 sampler.write_state(fp)
             except NotImplementedError:
@@ -302,7 +303,7 @@ with ctx:
         # run sampler and set initial values to None so that sampler
         # picks up from where it left off next call
         logging.info("Running sampler for %i to %i out of %i iterations",
-                     start-n_sampler_burn_in, end-n_sampler_burn_in,
+                     start - n_sampler_burn_in, end - n_sampler_burn_in,
                      opts.niterations)
         sampler.run(end - start)
 
@@ -312,7 +313,7 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp, start_iteration=start,
                                   end_iteration=end,
-                                  max_iterations=opts.niterations+
+                                  max_iterations=opts.niterations +
                                                  n_sampler_burn_in)
             logging.info("Writing state to file")
             fp.write_random_state()
