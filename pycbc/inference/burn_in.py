@@ -56,13 +56,13 @@ def max_posterior(sampler, fp):
     criteria = maxP - dim/2
     nwalkers = chain_posteriors.shape[-2]
     niterations = chain_posteriors.shape[-1]
-    burnin_idx = numpy.repeat(niterations, nwalkers).astype(int)
+    burn_in_idx = numpy.repeat(niterations, nwalkers).astype(int)
     for ii in range(nwalkers):
         chain = chain_posteriors[...,ii,:]
         idx = numpy.where(chain >= criteria)[-1]
         if idx.size != 0:
-            burnin_idx[ii] = idx[0]
-    return burnin_idx
+            burn_in_idx[ii] = idx[0]
+    return burn_in_idx
 
 
 def posterior_step(sampler, fp):
@@ -90,15 +90,15 @@ def posterior_step(sampler, fp):
     nwalkers = chain_posteriors.shape[-2]
     niterations = chain_posteriors.shape[-1]
     dim = len(fp.variable_args)
-    burnin_idx = numpy.zeros(nwalkers).astype(int)
+    burn_in_idx = numpy.zeros(nwalkers).astype(int)
     for ii in range(nwalkers):
         chain = chain_posteriors[...,ii,:]
         criteria = chain.max() - dim/2.
         dp = numpy.diff(chain)
         idx = numpy.where(dp >= criteria)[-1]
         if idx.size != 0:
-            burnin_idx[ii] = idx[-1] + 1
-    return burnin_idx
+            burn_in_idx[ii] = idx[-1] + 1
+    return burn_in_idx
 
 
 def half_chain(sampler, fp):
@@ -220,5 +220,5 @@ class BurnIn(object):
         """
         burnidx = self.evaluate(sampler, fp)
         sampler.burn_in_iterations = burnidx
-        sampler.write_burnin_iterations(fp, burnidx)
+        sampler.write_burn_in_iterations(fp, burnidx)
 

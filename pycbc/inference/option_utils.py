@@ -20,7 +20,7 @@
 import logging
 import numpy
 import pycbc.inference.sampler
-from pycbc.inference import burnin
+from pycbc.inference import burn_in
 from pycbc import conversions
 from pycbc import transforms
 from pycbc.distributions import bounded
@@ -248,7 +248,7 @@ def add_sampler_option_group(parser):
         help="Number of temperatures to use in sampler. Required for parallel "
              "tempered MCMC samplers.")
     sampler_group.add_argument("--burn-in-function", default=None, nargs='+',
-        choices=burnin.burn_in_functions.keys(),
+        choices=burn_in.burn_in_functions.keys(),
         help="Use the given function to determine when chains are burned in. "
              "If none provided, no burn in will be estimated. "
              "If multiple functions are provided, will use the maximum "
