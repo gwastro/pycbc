@@ -170,12 +170,29 @@ class BurnIn(object):
     function_names : list, optional
         List of name of burn in functions to use. All names in the provided
         list muset be in the `burn_in_functions` dict. If none provided, will
-        use now burn in functions.
+        use no burn-in functions.
     min_iterations : int, optional
         Minimum number of burn in iterations to use. The burn in iterations
         returned by evaluate will be the maximum of this value
         and the values returned by the burn in functions provided in
         `function_names`. Default is 0.
+
+    Examples
+    --------
+    Initialize a `BurnIn` instance that will use `max_posterior` and
+    `posterior_step` as the burn in criteria:
+
+    >>> from pycbc import inference
+    >>> burn_in = inference.BurnIn(['max_posterior', 'posterior_step'])
+
+    Use this `BurnIn` instance to find the burn-in iteration of each walker
+    in an inference result file:
+
+    >>> from pycbc.io import InferenceFile
+    >>> fp = InferenceFile('inference.hdf', 'r')
+    >>> burn_in.evaluate(inference.samplers[fp.sampler_name], fp)
+    array([11486, 11983, 11894, ..., 11793, 11888, 11981])
+
     """
 
     def __init__(self, function_names, min_iterations=0):
@@ -208,7 +225,7 @@ class BurnIn(object):
             burnidx = fp['burn_in_iterations'][:]
         except KeyError:
             # just use the minimum
-            burnidx = numpy.repeat(self.min_iterations, sampler.nwalkers)
+            burnidx = numpy.repeat(self.min_iterations, fp.nwalkers)
         if self.burn_in_functions != {}:
             newidx = numpy.vstack([func(sampler, fp)
                 for func in self.burn_in_functions.values()]).max(axis=0)
