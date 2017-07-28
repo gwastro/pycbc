@@ -130,7 +130,7 @@ An example configuration file (named ``inference.ini``) is::
     [prior-spin1_a]
     name = uniform
     min-spin1_a = 0.0
-    max-spin1_a = 0.9
+    max-spin1_a = 0.99
 
     [prior-spin1_polar+spin1_azimuthal]
     name = uniform_solidangle
@@ -140,7 +140,7 @@ An example configuration file (named ``inference.ini``) is::
     [prior-spin2_a]
     name = uniform
     min-spin2_a = 0.0
-    max-spin2_a = 0.9
+    max-spin2_a = 0.99
 
     [prior-spin2_polar+spin2_azimuthal]
     name = uniform_solidangle
