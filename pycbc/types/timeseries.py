@@ -597,6 +597,30 @@ class TimeSeries(Array):
                            delta_f=delta_f)
         fft(tmp, f)
         return f
+    
+    @_nocomplex
+    def shift_time(self, dt):
+        """Shift the data by a given number of seconds
+        
+        Shift the data by a given number of seconds. This may
+        be smaller than the intrinsic sample rate of the data. Note that
+        data will be cycliclly rotated, so if you shift by 2 seconds, the
+        final 2 seconds of your data will now be at the beginning of the
+        data set.
+
+        Parameters
+        ----------
+        dt : float
+            Amount of time to shift the vector.
+
+        Returns
+        -------
+        data : pycbc.types.TimeSeries
+            The time shifted time series.
+        """
+        # This might be sped up in the future by adding a special case
+        # for when you happen to be shifting by an exact number of samples
+        return self.to_frequencyseries().shift_time(dt).to_timeseries()
 
 def load_timeseries(path, group=None):
     """

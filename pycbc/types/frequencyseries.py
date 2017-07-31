@@ -460,7 +460,32 @@ class FrequencySeries(Array):
                            delta_t=delta_t)
         ifft(tmp, f)
         return f
-            
+
+    @_noreal
+    def shift_time(self, dt):
+        """Shift the data by a given number of seconds
+        
+        Shift the data in the time domain a given number of seconds. This may
+        be smaller than the intrinsic sample rate of the data. Note that
+        data will be cycliclly rotated, so if you shift by 2 seconds, the
+        final 2 seconds of your data will now be at the beginning of the
+        data set.
+
+        Parameters
+        ----------
+        dt : float
+            Amount of time to shift the vector.
+
+        Returns
+        -------
+        data : pycbc.types.FrequencySeries
+            The time shifted frequency series.
+        """
+        from pycbc.waveform import apply_fseries_time_shift
+        data = apply_fseries_time_shift(self, dt)
+        data._epoch = self._epoch - dt
+        return data
+        
 
 def load_frequencyseries(path, group=None):
     """
