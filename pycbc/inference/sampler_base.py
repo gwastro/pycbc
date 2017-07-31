@@ -352,9 +352,10 @@ class BaseMCMCSampler(_BaseSampler):
         fp.attrs["nwalkers"] = self.nwalkers
         fp.attrs['burn_in_iterations'] = self.burn_in_iterations
 
-    def _write_samples_group(self, fp, samples_group, parameters, samples,
-                             start_iteration=0, end_iteration=None,
-                             max_iterations=None):
+    @staticmethod
+    def write_samples_group(fp, samples_group, parameters, samples,
+                            start_iteration=0, end_iteration=None,
+                            index_offset=0, max_iterations=None):
         """Writes samples to the given file.
 
         Results are written to:
@@ -379,6 +380,14 @@ class BaseMCMCSampler(_BaseSampler):
             Write results starting from the given iteration.
         end_iteration : {None, int}
             Write results up to the given iteration.
+        index_offset : int, optional
+            Write the samples to the arrays on disk starting at
+            `start_iteration` + `index_offset`. For example, if
+            `start_iteration=0`, `end_iteration=1000` and `index_offset=500`,
+            then `samples[0:1000]` will be written to indices `500:1500` in the
+            arrays on disk. This is needed if you are adding new samples to
+            a chain that was previously written to file, and you want to
+            preserve the history (e.g., after a checkpoint). Default is 0.
         max_iterations : {None, int}
             If samples have not previously been written to the file, a new
             dataset will be created. By default, the size of this dataset will
@@ -390,13 +399,13 @@ class BaseMCMCSampler(_BaseSampler):
         # due to clearing memory, there can be a difference between indices in
         # memory and on disk
         nwalkers, niterations = samples.shape
-        niterations += self._lastclear
+        niterations += index_offset
         fa = start_iteration # file start index
         if end_iteration is None:
             end_iteration = niterations
         fb = end_iteration # file end index
-        ma = fa - self._lastclear # memory start index
-        mb = fb - self._lastclear # memory end index
+        ma = fa - index_offset # memory start index
+        mb = fb - index_offset # memory end index
 
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
@@ -459,10 +468,11 @@ class BaseMCMCSampler(_BaseSampler):
         parameters = self.variable_args
         samples_group = fp.samples_group
         # write data
-        self._write_samples_group(
+        self.write_samples_group(
                          fp, samples_group, parameters, samples,
                          start_iteration=start_iteration,
                          end_iteration=end_iteration,
+                         index_offset=self._lastclear,
                          max_iterations=max_iterations)
 
     def write_likelihood_stats(self, fp, start_iteration=0, end_iteration=None,
@@ -509,10 +519,11 @@ class BaseMCMCSampler(_BaseSampler):
         parameters = samples.fieldnames
         samples_group = fp.stats_group
         # write data
-        self._write_samples_group(
+        self.write_samples_group(
                          fp, samples_group, parameters, samples,
                          start_iteration=start_iteration,
                          end_iteration=end_iteration,
+                         index_offset=self._lastclear,
                          max_iterations=max_iterations)
         return samples
 

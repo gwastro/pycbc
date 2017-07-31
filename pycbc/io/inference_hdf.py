@@ -25,14 +25,67 @@
 inference samplers generate.
 """
 
+import sys
 import h5py
 import numpy
+import logging
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries
 from pycbc.waveform import parameters as wfparams
 import pycbc.inference.sampler
 import pycbc.inference.likelihood
-import sys
+from pycbc.io import FieldArray
+
+class _PosteriorOnlyParser(object):
+    """Provides interface for reading/writing samples from/to an InferenceFile
+    that contains flattened posterior samples.
+    """
+    @staticmethod
+    def _read_fields(fp, fields_group, fields, array_class,
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None):
+        """Reads fields from the given file.
+        """
+        if iteration is not None:
+            get_index = iteration
+        else:
+            get_index = fp.get_slice(thin_start=thin_start, thin_end=thin_end,
+                                     thin_interval=thin_interval)
+        # load
+        arrays = {}
+        group = fields_group + '/{}'
+        arrays = {field: fp[group.format(field)][get_index]
+                  for field in fields}
+        return array_class.from_kwargs(**arrays)
+
+    @classmethod
+    def read_samples(cls, fp, parameters, samples_group=None,
+                     thin_start=0, thin_end=None, thin_interval=1,
+                     iteration=None, array_class=None):
+        """Reads posterior samples from a posterior-only file.
+        """
+        # get the group to load from
+        if samples_group is None:
+            samples_group = fp.samples_group
+        # get the type of array class to use
+        if array_class is None:
+            array_class = FieldArray
+        # get the names of fields needed for the given parameters
+        possible_fields = fp[samples_group].keys()
+        loadfields = array_class.parse_parameters(parameters, possible_fields)
+        return cls._read_fields(fp, samples_group, loadfields, array_class,
+                                thin_start=thin_start,
+                                thin_interval=thin_interval, thin_end=thin_end,
+                                iteration=iteration)
+
+    @staticmethod
+    def write_samples_group(fp, samples_group, fields, samples):
+        """Writes the given samples to the given samples group.
+        """
+        for field in samples.fieldnames:
+            grp = '{}/{}'.format(samples_group, field)
+            fp[grp] = samples[field]
+
 
 class InferenceFile(h5py.File):
     """ A subclass of the h5py.File object that has extra functions for
@@ -53,9 +106,35 @@ class InferenceFile(h5py.File):
         super(InferenceFile, self).__init__(path, mode, **kwargs)
 
     @property
+    def posterior_only(self):
+        """Whether the file only contains flattened posterior samples.
+        """
+        try:
+            return self.attrs['posterior_only']
+        except KeyError:
+            return False
+
+    @property
     def sampler_name(self):
         """Returns the name of the sampler that was used."""
         return self.attrs["sampler"]
+
+    @property
+    def sampler_class(self):
+        """Returns the sampler class that was used."""
+        try:
+            sampler = self.sampler_name
+        except KeyError:
+            return None
+        return pycbc.inference.sampler.samplers[sampler]
+
+    @property
+    def samples_parser(self):
+        """Returns the class to use to read/write samples from/to the file."""
+        if self.posterior_only:
+            return _PosteriorOnlyParser
+        else:
+            return self.sampler_class
 
     @property
     def likelihood_eval_name(self):
@@ -183,11 +262,10 @@ class InferenceFile(h5py.File):
             FieldArray.
         """
         # get the appropriate sampler class
-        samples_group = samples_group if samples_group \
-                             else InferenceFile.samples_group
-        sclass = pycbc.inference.sampler.samplers[self.sampler_name]
-        return sclass.read_samples(self, parameters,
-                                   samples_group=samples_group, **kwargs)
+        samples_group = samples_group if samples_group else self.samples_group
+        return self.samples_parser.read_samples(self, parameters,
+                                                samples_group=samples_group,
+                                                **kwargs)
 
     def read_likelihood_stats(self, **kwargs):
         """Reads likelihood stats from self.
@@ -206,8 +284,8 @@ class InferenceFile(h5py.File):
             group.
         """
         parameters = self[self.stats_group].keys()
-        return self.read_samples(
-                          parameters, samples_group=self.stats_group, **kwargs)
+        return self.read_samples(parameters, samples_group=self.stats_group,
+                                 **kwargs)
 
     def read_acceptance_fraction(self, **kwargs):
         """Returns the acceptance fraction that was written to the file.
@@ -222,17 +300,13 @@ class InferenceFile(h5py.File):
         numpy.array
             The acceptance fraction.
         """
-        # get the appropriate sampler class
-        sclass = pycbc.inference.sampler.samplers[self.sampler_name]
-        return sclass.read_acceptance_fraction(self, **kwargs)
+        return self.sampler.read_acceptance_fraction(self, **kwargs)
 
     def read_acls(self):
         """Returns all of the individual chains' acls. See the `read_acls`
         function of this file's sampler for more details.
         """
-        # get the appropriate sampler class
-        sclass = pycbc.inference.sampler.samplers[self.sampler_name]
-        return sclass.read_acls(self)
+        return self.sampler.read_acls(self)
 
     def read_label(self, parameter, error_on_none=False):
         """Returns the label for the parameter.
@@ -472,3 +546,107 @@ class InferenceFile(h5py.File):
             except KeyError:
                 pass
         return slice(thin_start, thin_end, thin_interval)
+
+    def copy_metadata(self, other):
+        """Copies all metadata from this file to the other file.
+        
+        Metadata is defined as all data that is not in either the samples or
+        stats group.
+
+        Parameters
+        ----------
+        other : InferenceFile
+            An open inference file to write the data to.
+        """
+        logging.info("Copying metadata")
+        # copy non-samples/stats data
+        for key in self.keys():
+            if key not in [self.samples_group, self.stats_group]:
+                super(InferenceFile, self).copy(key, other)
+        # copy attributes
+        for key in self.attrs.keys():
+            other.attrs[key] = self.attrs[key]
+
+
+    def copy(self, other, parameters=None, parameter_names=None,
+             posterior_only=False, **kwargs):
+        """Copies data in this file to another file.
+
+        The samples and stats to copy may be down selected using the given
+        kwargs. All other data (the "metadata") are copied exactly.
+
+        Parameters
+        ----------
+        other : str or InferenceFile
+            The file to write to. May be either a string giving a filename,
+            or an open hdf file. If the former, the file will be opened with
+            the write attribute (note that if a file already exists with that
+            name, it will be deleted).
+        parameters : list of str, optional
+            List of parameters to copy. If None, will copy all parameters.
+        parameter_names : dict, optional
+            Rename one or more parameters to the given name. The dictionary
+            should map parameter -> parameter name. If None, will just use the
+            original parameter names.
+        posterior_only : bool, optional
+            Write the samples and likelihood stats as flattened arrays, and
+            set other's posterior_only attribute. For example, if this file
+            has a parameter's samples written to
+            `{samples_group}/{param}/walker{x}`, then other will have all of
+            the selected samples from all walkers written to
+            `{samples_group}/{param}/`.
+        \**kwargs :
+            All other keyword arguments are passed to `read_samples`.
+
+        Returns
+        -------
+        InferenceFile
+            The open file handler to other.
+        """
+        if not isinstance(other, h5py.File):
+            # check that we're not trying to overwrite this file
+            if other == self.name:
+                raise IOError("destination is the same as this file")
+            other = InferenceFile(other, 'w')
+        # copy metadata over
+        self.copy_metadata(other)
+        # update other's posterior attribute
+        if posterior_only:
+            other.attrs['posterior_only'] = posterior_only
+        # select the samples to copy
+        logging.info("Reading samples to copy")
+        if parameters is None:
+            parameters = self.variable_args
+        # if list of desired parameters is different, rename variable args
+        if set(parameters) != set(self.variable_args):
+            other.attrs['variable_args'] = parameters
+        # if only the posterior is desired, we'll flatten the results
+        if not posterior_only and not self.posterior_only:
+            kwargs['flatten'] = False
+        samples = self.read_samples(parameters, **kwargs)
+        logging.info("Copying {} samples".format(samples.size))
+        # if different parameter names are desired, get them from the samples
+        if parameter_names:
+            arrs = {pname: samples[p] for p,pname in parameter_names.items()}
+            arrs.update({p: samples[p] for p in parameters
+                                        if p not in parameter_names})
+            samples = FieldArray.from_kwargs(**arrs)
+            other.attrs['variable_args'] = samples.fieldnames
+        logging.info("Writing samples")
+        other.samples_parser.write_samples_group(other, self.samples_group,
+                                                 samples.fieldnames, samples)
+        # do the same for the likelihood stats
+        logging.info("Reading stats to copy")
+        stats = self.read_likelihood_stats(**kwargs)
+        logging.info("Writing stats")
+        other.samples_parser.write_samples_group(other, self.stats_group,
+                                                 stats.fieldnames, stats)
+        # if any down selection was done, re-set the burn in iterations and
+        # the acl, and the niterations.
+        # The last dimension of the samples returned by the sampler should
+        # be the number of iterations.
+        if samples.shape[-1] != self.niterations:
+            other.attrs['acl'] = 1
+            other.attrs['burn_in_iterations'] = 0
+            other.attrs['niterations'] = samples.shape[-1]
+        return other

@@ -448,6 +448,7 @@ setup (
                'bin/pycbc_condition_strain',
                'bin/workflows/pycbc_make_inference_workflow',
                'bin/inference/pycbc_inference',
+               'bin/inference/pycbc_inference_extract_samples',
                'bin/inference/pycbc_inference_plot_acceptance_rate',
                'bin/inference/pycbc_inference_plot_acf',
                'bin/inference/pycbc_inference_plot_acl',
