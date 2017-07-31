@@ -399,7 +399,7 @@ class TimeSeries(Array):
         left : float
             Number of seconds of data to remove from the left of the time series.
         right : float
-            Number of seconds of data to remove from the right of the time series.     
+            Number of seconds of data to remove from the right of the time series.
 
         Returns
         -------
