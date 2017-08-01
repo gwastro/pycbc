@@ -88,6 +88,7 @@ class BaseLikelihoodEvaluator(object):
     simply sum over the detectors. For example, the log likelihood ratio is:
 
     .. math::
+
         \log \mathcal{L}(\Theta) = \sum_i \left[\log p(\Theta|d_i) - \log p(n|d_i)\right]
    
     This class provides boiler-plate methods and attributes for evaluating the
@@ -501,9 +502,9 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
 
     .. math::
 
-        \log p(d|\Theta) &= -\frac{1}{2} \sum_i \left<h_i(\Theta) - d_i | h_i(\Theta) - d_i\right> \\
+        \log p(d|\Theta) = -\frac{1}{2} \sum_i \left<h_i(\Theta) - d_i | h_i(\Theta) - d_i\right>
 
-        \log p(d|n) &= -\frac{1}{2} \sum_i \left<d_i | d_i\right>
+        \log p(d|n) = -\frac{1}{2} \sum_i \left<d_i | d_i\right>
 
     where the sum is over the number of detectors, :math:`d_i` is the data in
     each detector, and :math:`h_i(\Theta)` is the model signal in each
