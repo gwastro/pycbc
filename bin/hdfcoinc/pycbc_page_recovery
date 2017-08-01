@@ -7,6 +7,7 @@ import matplotlib.pyplot as plot
 
 import pycbc.version, pycbc.detector
 from pycbc import pnutils, results
+from pycbc.events import triggers
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
@@ -77,47 +78,6 @@ above_min_ifar = ifar_found > float(args.min_ifar)
 found = found[above_min_ifar]
 ifar_found = ifar_found[above_min_ifar]
 
-def get_inj_param(injfile, param, ifo):
-    """
-    Translates some popular injection parameters into functions that calculate
-    them from an hdf found injection file
-
-    Parameters
-    ----------
-    injfile: hdf5 File object
-        Injection file of format known to ANitz (DOCUMENTME)
-    param: string
-        Parameter to be calculated for the injected signals
-    ifo: string
-        Standard detector name, ex. 'L1'
-
-    Returns
-    -------
-    [return value]: NumPy array of floats
-        The calculated parameter values
-    """
-    det = pycbc.detector.Detector(ifo)
-    _time_delay = lambda dec, ra, t: \
-          det.time_delay_from_earth_center(dec, ra, t)
-    time_delay = numpy.vectorize(_time_delay)
-
-    inj = injfile["injections"]
-    if param in inj.keys():
-        return injs["injections/"+param]
-    inj_param_dict = {
-      "mtotal" : inj['mass1'][:] + inj['mass2'][:],
-      "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
-                 inj['mass2'][:])[0],
-      "eta"    : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
-                 inj['mass2'][:])[1],
-      "effective_spin" : pnutils.phenomb_chi(inj['mass1'][:], inj['mass2'][:],
-                 inj['spin1z'][:], inj['spin2z'][:]),
-      "end_time_"+ifo[0].lower() : inj['end_time'][:] + \
-                 time_delay(inj['longitude'][:], inj['latitude'][:],
-                 inj['end_time'][:]),
-    }
-    return inj_param_dict[param]
-
 # Get the injected param values
 # need to hack end time and eff dist as different between detectors
 param = args.error_param
@@ -127,7 +87,7 @@ if args.error_param == "effective_distance":
     param = "eff_dist_"+site
 # calculate the parameter for all injections, then select those found and 
 # above the IFAR threshold
-inj_params = get_inj_param(injs, param, args.ifo)[found]
+inj_params = triggers.get_inj_param(injs, param, args.ifo)[found]
 
 # Get the injected x-axis values
 if args.x_param:
@@ -136,62 +96,17 @@ if args.x_param:
         xparam = "end_time_"+site
     if args.x_param == "effective_distance":
         xparam = "eff_dist_"+site
-    inj_xparams = get_inj_param(injs, xparam, args.ifo)[found]
+    inj_xparams = triggers.get_inj_param(injs, xparam, args.ifo)[found]
 # need a string value when defining axis labels even if not used
 args.x_param = args.x_param or "badger"
-
-def get_found_param(injfile, bankfile, trigfile, param, ifo):
-    """
-    Translates some popular trigger parameters into functions that calculate
-    them from an hdf found injection file
-
-    Parameters
-    ----------
-    injfile: hdf5 File object
-        Injection file of format known to ANitz (DOCUMENTME)
-    bankfile: hdf5 File object
-        Template bank file
-    trigfile: hdf5 File object
-        Single-detector trigger file
-    param: string
-        Parameter to be calculated for the recovered triggers
-    ifo: string
-        Standard ifo name, ex. 'L1'
-
-    Returns
-    -------
-    [return value]: NumPy array of floats
-        The calculated parameter values
-    """
-    foundtmp = injfile["found_after_vetoes/template_id"]
-    if trigfile is not None:
-        # get the name of the ifo in the injection file, eg "detector_1"
-        # and the integer from that name
-        ifolabel = [name for name,val in injfile.attrs.items() if val == ifo][0]
-        foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
-    if bankfile is not None and param in bankfile.keys():
-        return bankfile[param][:][foundtmp]
-    elif trigfile is not None and param in trigfile[ifo].keys():
-        return trigfile[ifo][param][:][foundtrg]
-    else:
-        b = bankfile
-        found_param_dict = {
-          "mtotal" : (b['mass1'][:] + b['mass2'][:])[foundtmp],
-          "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
-                     b['mass2'][:])[0][foundtmp],
-          "eta"    : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
-                     b['mass2'][:])[1][foundtmp],
-          "effective_spin" : pnutils.phenomb_chi(b['mass1'][:], b['mass2'][:],
-                             b['spin1z'][:], b['spin2z'][:])[foundtmp]
-        }
-    return found_param_dict[param]
 
 # Get the recovered values
 # unhack the parameter name as triggers are stored by ifo
 param = args.error_param
 # calculate parameters for all recovered injection triggers, then select
 # only those above the IFAR threshold
-rec_params = get_found_param(injs, bank, trig, param, args.ifo)[above_min_ifar]
+rec_params = triggers.get_found_param(injs, bank, trig, param,
+                                      args.ifo)[above_min_ifar]
 
 # calculate needed values
 if "err" in args.plot_type:
