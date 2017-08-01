@@ -582,12 +582,15 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     --------
     Create a signal, and set up the likelihood evaluator on that signal:
 
+    >>> from pycbc import psd as pypsd
+    >>> from pycbc.waveform.generator import FDomainDetFrameGenerator
+    >>> from pycbc import inference
     >>> seglen = 4
     >>> sample_rate = 2048
     >>> N = seglen*sample_rate/2+1
     >>> fmin = 30.
     >>> m1, m2, s1z, s2z, tsig, ra, dec, pol, dist = 38.6, 29.3, 0., 0., 3.1, 1.37, -1.26, 2.76, 3*500.
-    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['tc'], detectors=['H1', 'L1'], delta_f=1./seglen, f_lower=fmin, approximant='SEOBNRv2_ROM_DoubleSpin', mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra, dec=dec, polarization=pol, distance=dist)
+    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['tc'], detectors=['H1', 'L1'], delta_f=1./seglen, f_lower=fmin, approximant='SEOBNRv2_ROM_DoubleSpin', mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra, dec=dec, polarization=pol, distance=dist)
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
@@ -625,11 +628,11 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         [<matplotlib.lines.Line2D at 0x1274b5c50>]
     >>> fig.show()
 
-    Create a prior and use it (see prior module for more details):
+    Create a prior and use it (see distributions module for more details):
 
-    >>> from pycbc.inference import prior
-    >>> uniform_prior = prior.Uniform(tc=(tsig-0.2,tsig+0.2))
-    >>> prior_eval = prior.PriorEvaluator(['tc'], uniform_prior)
+    >>> from pycbc import distributions
+    >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
+    >>> prior_eval = inference.PriorEvaluator(['tc'], uniform_prior)
     >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds, prior=prior_eval, return_meta=False)
     >>> likelihood_eval.logplr([tsig]), likelihood_eval.logposterior([tsig])
         (ArrayWithAligned(278.84574353071264), ArrayWithAligned(0.9162907318741418))
