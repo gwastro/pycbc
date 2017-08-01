@@ -583,14 +583,14 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     Create a signal, and set up the likelihood evaluator on that signal:
 
     >>> from pycbc import psd as pypsd
-    >>> from pycbc.waveform.generator import FDomainDetFrameGenerator
+    >>> from pycbc.waveform.generator import FDomainDetFrameGenerator, FDomainCBCGenerator
     >>> from pycbc import inference
     >>> seglen = 4
     >>> sample_rate = 2048
     >>> N = seglen*sample_rate/2+1
     >>> fmin = 30.
     >>> m1, m2, s1z, s2z, tsig, ra, dec, pol, dist = 38.6, 29.3, 0., 0., 3.1, 1.37, -1.26, 2.76, 3*500.
-    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['tc'], detectors=['H1', 'L1'], delta_f=1./seglen, f_lower=fmin, approximant='SEOBNRv2_ROM_DoubleSpin', mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra, dec=dec, polarization=pol, distance=dist)
+    >>> generator = FDomainDetFrameGenerator(FDomainCBCGenerator, 0., variable_args=['tc'], detectors=['H1', 'L1'], delta_f=1./seglen, f_lower=fmin, approximant='SEOBNRv2_ROM_DoubleSpin', mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z, ra=ra, dec=dec, polarization=pol, distance=dist)
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
