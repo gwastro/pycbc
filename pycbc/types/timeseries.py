@@ -621,7 +621,7 @@ class TimeSeries(Array):
         # We do this in the frequency domain to allow us to do sub-sample
         # time shifts. This also results in the shift being circular. It
         # is left to a future update to do a faster impelementation in the case
-        # where the time shift can be done with an exact number of sapmles.
+        # where the time shift can be done with an exact number of samples.
         return self.to_frequencyseries().shift_time(dt).to_timeseries()
 
 def load_timeseries(path, group=None):
