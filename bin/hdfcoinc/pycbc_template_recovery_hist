@@ -5,6 +5,7 @@ import logging, h5py, argparse, numpy as np
 from matplotlib import use
 use('Agg')
 from matplotlib import pyplot as plt
+from pycbc.events import triggers
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--verbose', action='count')
@@ -16,7 +17,7 @@ parser.add_argument('--inspiral-trigger-files', dest='trig', nargs='+',
                          'one per found injection file')
 parser.add_argument('--bank-files', nargs='*', default=[],
                     help='hdf file(s) with template parameters')
-parser.add_argument('--x-param', choices=['template_duration'],
+parser.add_argument('--x-param', #choices=['template_duration'],
                     help='parameter to histogram over')
 parser.add_argument('--num-bins', type=int, default=30)
 parser.add_argument('--log-x', action='store_true',
@@ -34,7 +35,7 @@ if args.verbose:
 # should be same number of inj and trig files
 # and either 0 or 1 bank files or 1 per inj file
 assert len(args.found) == len(args.trig)
-if not(len(args.bank_files) < 1 or len(args.bank_files) == len(args.found)):
+if not(len(args.bank_files) < 2 or len(args.bank_files) == len(args.found)):
     raise RuntimeError('If multiple bank files are used, must be one per '
                        'injection file!')
 
@@ -46,25 +47,26 @@ elif len(args.bank_files) == 0:
 foundstat = np.array([])
 foundifar = np.array([])
 foundparam = np.array([])
-for f, t, b in zip(args.found, args.trig, args.bank_files):
-    logging.info('Processing %s, %s, %s' % (f, t, b))
+for f, b, t in zip(args.found, args.bank_files, args.trig):
+    logging.info('Processing %s, %s, %s' % (f, b, t))
     f = h5py.File(f, 'r')
     t = h5py.File(t, 'r')
+    b = h5py.File(b, 'r') if b else None
     foundstat = np.concatenate((foundstat, f['found_after_vetoes/stat'][:]))
     foundifar = np.concatenate((foundifar, f['found_after_vetoes/ifar'][:]))
-    ftempl = f['found_after_vetoes/template_id'][:]
     # acrobatics to find right ifo
     ifo = t.keys()[0]
-    # each tuple is of form ('L1', 'detector_1')
-    dettuples = [(val, key) for (key, val) in f.attrs.items()
-                 if "detector" in key]
-    ifotag = [tag for (name, tag) in dettuples if name == ifo][0]
-    # get the trigger ids
-    ftrig_id = f['found_after_vetoes/trigger_id%s' % ifotag[-1]]
-    if args.x_param == 'template_duration':
-        # duration values
-        foundparam = np.concatenate((foundparam,
-                                 t['%s/template_duration' % ifo][:][ftrig_id]))
+    ## each tuple is of form ('L1', 'detector_1')
+    #dettuples = [(val, key) for (key, val) in f.attrs.items()
+    #             if "detector" in key]
+    #ifotag = [tag for (name, tag) in dettuples if name == ifo][0]
+    ## get the trigger ids
+    #ftrig_id = f['found_after_vetoes/trigger_id%s' % ifotag[-1]]
+    fparam = triggers.get_found_param(f, b, t, args.x_param, ifo)
+    #if args.x_param == 'template_duration':
+    #    # duration values
+    foundparam = np.concatenate((foundparam, fparam))
+                                # t['%s/template_duration' % ifo][:][ftrig_id]))
 
 # apply filters
 if args.min_stat is not None:

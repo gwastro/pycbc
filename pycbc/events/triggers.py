@@ -257,11 +257,12 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo):
     [return value]: NumPy array of floats
         The calculated parameter values
     """
-    foundtmp = injfile["found_after_vetoes/template_id"]
+    foundtmp = injfile["found_after_vetoes/template_id"][:]
     if trigfile is not None:
         # get the name of the ifo in the injection file, eg "detector_1"
         # and the integer from that name
-        ifolabel = [name for name,val in injfile.attrs.items() if val == ifo][0]
+        ifolabel = [name for name, val in injfile.attrs.items() if \
+                    "detector" in name and val == ifo][0]
         foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
     if bankfile is not None and param in bankfile.keys():
         return bankfile[param][:][foundtmp]
