@@ -58,19 +58,19 @@ class BaseLikelihoodEvaluator(object):
     follows: Given some model parameters :math:`\Theta` and some data
     :math:`d` with noise model :math:`n`, we define:
 
-     * the *likelihood function*: :math:`p(d|\Theta)`
+     * the **likelihood function**: :math:`p(d|\Theta)`
 
-     * the *noise likelihood*: :math:`p(d|n)`
+     * the **noise likelihood**: :math:`p(d|n)`
 
-     * the *likelihood ratio*: :math:`\mathcal{L}(\Theta) = \frac{p(d|\Theta)}{p(d|n)}`
+     * the **likelihood ratio**: :math:`\mathcal{L}(\Theta) = \frac{p(d|\Theta)}{p(d|n)}`
 
-     * the *prior*: :math:`p(\Theta)`
+     * the **prior**: :math:`p(\Theta)`
 
-     * the *posterior*: :math:`p(\Theta|d) \propto p(d|\Theta)p(\Theta)`
+     * the **posterior**: :math:`p(\Theta|d) \propto p(d|\Theta)p(\Theta)`
 
-     * the *prior-weighted likelihood ratio*: :math:`\hat{\mathcal{L}}(\Theta) = \frac{p(d|\Theta)p(\Theta)}{p(d|n)}`
+     * the **prior-weighted likelihood ratio**: :math:`\hat{\mathcal{L}}(\Theta) = \frac{p(d|\Theta)p(\Theta)}{p(d|n)}`
    
-     * the *SNR*: :math:`\rho(\Theta) = \sqrt{2\log\mathcal{L}(\Theta)}`; for
+     * the **SNR**: :math:`\rho(\Theta) = \sqrt{2\log\mathcal{L}(\Theta)}`; for
        two detectors, this is approximately the same quantity as the coincident
        SNR used in the CBC search.
    
@@ -94,7 +94,7 @@ class BaseLikelihoodEvaluator(object):
     This class provides boiler-plate methods and attributes for evaluating the
     log likelihood ratio, log prior, and log likelihood. This class
     makes no assumption about the detectors' noise model :math:`n`. As such,
-    the methods for computing these values raise ``NotImplementedError``s. These
+    the methods for computing these values raise ``NotImplementedErrors``. These
     functions need to be monkey patched, or other classes that inherit from
     this class need to define their own functions.
 
@@ -290,7 +290,7 @@ class BaseLikelihoodEvaluator(object):
         Let :math:`\mathbf{x}` be the set of variable parameters,
         :math:`\mathbf{y} = f(\mathbf{x})` the set of sampling parameters, and
         :math:`p_x(\mathbf{x})` a probability density function defined over
-        :math:`mathbf{x}`. The corresponding pdf in :math:`\mathbf{y}` is then:
+        :math:`\mathbf{x}`. The corresponding pdf in :math:`\mathbf{y}` is then:
 
         .. math::
 
@@ -498,13 +498,13 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     r"""Computes log likelihoods assuming the detectors' noise is Gaussian.
 
     With Gaussian noise the log likelihood functions for signal
-    :math:`\log p(d|\Theta)` and for noise :math:`log p(d|n)` are given by:
+    :math:`\log p(d|\Theta)` and for noise :math:`\log p(d|n)` are given by:
 
     .. math::
 
-        \log p(d|\Theta) = -\frac{1}{2} \sum_i \left<h_i(\Theta) - d_i | h_i(\Theta) - d_i\right>
+            \log p(d|\Theta) = -\frac{1}{2} \sum_i \left<h_i(\Theta) - d_i | h_i(\Theta) - d_i\right>
 
-        \log p(d|n) = -\frac{1}{2} \sum_i \left<d_i | d_i\right>
+            \log p(d|n) = -\frac{1}{2} \sum_i \left<d_i | d_i\right>
 
     where the sum is over the number of detectors, :math:`d_i` is the data in
     each detector, and :math:`h_i(\Theta)` is the model signal in each
