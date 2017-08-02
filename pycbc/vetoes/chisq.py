@@ -127,7 +127,6 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     chisq: Array
         An array containing only the chisq at the selected points.
     """
-    logging.info('doing fast point chisq')
     num_bins = len(bins) - 1
     chisq = shift_sum(corr, indices, bins) # pylint:disable=assignment-from-no-return
     return (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm ** 2.0)
@@ -331,13 +330,11 @@ class SingleDetPowerChisq(object):
             num_bins = int(self.parse_option(template, self.num_bins))
 
             if hasattr(psd, 'sigmasq_vec') and template.approximant in psd.sigmasq_vec:
-                logging.info("...Calculating fast power chisq bins")
                 kmin = int(template.f_lower / psd.delta_f)
                 kmax = template.end_idx
                 bins = power_chisq_bins_from_sigmasq_series(
                     psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax)
             else:
-                logging.info("...Calculating power chisq bins")
                 bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
             template._bin_cache[key] = bins
 
@@ -357,8 +354,6 @@ class SingleDetPowerChisq(object):
         """
 
         if self.do:
-            logging.info("...Doing power chisq")
-
             num_above = len(indices)
             if self.snr_threshold:
                 above = abs(snrv * snr_norm) > self.snr_threshold
@@ -404,13 +399,11 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
         num_bins = int(self.parse_option(template, self.num_bins))
         if hasattr(psd, 'sigmasq_vec') and \
                                        template.approximant in psd.sigmasq_vec:
-            logging.info("...Calculating fast power chisq bins")
             kmin = int(template.f_lower / psd.delta_f)
             kmax = template.end_idx
             bins = power_chisq_bins_from_sigmasq_series(
                    psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax)
         else:
-            logging.info("...Calculating power chisq bins")
             bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
         return bins
 
@@ -430,8 +423,6 @@ class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
             in the given template
         """
         if self.do:
-            logging.info("...Doing power chisq")
-
             num_above = len(indices)
             if self.snr_threshold:
                 above = abs(snrv) > self.snr_threshold
