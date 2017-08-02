@@ -62,7 +62,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'weave>=0.16.0',
                       'unittest2',
                       'matplotlib>=1.3.1',
-                      'numpy>=1.6.4',
+                      'numpy>=1.9.0',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
@@ -73,7 +73,8 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'emcee>=2.2.0',
                       'corner>=2.0.1',
                       'requests>=1.2.1',
-                      'beautifulsoup4>=4.6.0'
+                      'beautifulsoup4>=4.6.0',
+                      'astropy>=2.0.1'
                       ]
 
 #FIXME Remove me when we bump to h5py > 2.5
