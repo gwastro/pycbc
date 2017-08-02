@@ -104,6 +104,7 @@ if args.random_sort:
     idx = numpy.arange(templates.size)
     numpy.random.shuffle(idx)
     templates = templates[idx]
+    tmplt_bank.table = templates
 
 # Split the templates in the bank taken as input into the smaller banks
 
