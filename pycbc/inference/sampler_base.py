@@ -189,6 +189,22 @@ class _BaseSampler(object):
         fp.attrs['log_evidence'] = lnz
         fp.attrs['dlog_evidence'] = dlnz
 
+    @staticmethod
+    def write_burn_in_iterations(fp, burn_in_iterations):
+        """Writes the burn in iterations to the given file.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        burn_in_iterations : array
+            Array of values giving the iteration of the burn in of each walker.
+        """
+        try:
+            fp['burn_in_iterations'][:] = burn_in_iterations
+        except KeyError:
+            fp['burn_in_iterations'] = burn_in_iterations
+        fp.attrs['burn_in_iterations'] = burn_in_iterations.max()
 
 class BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
@@ -201,9 +217,6 @@ class BaseMCMCSampler(_BaseSampler):
     likelihood_evaluator : likelihood class
         An instance of the likelihood class from the
         pycbc.inference.likelihood module.
-    min_burn_in : {None, int}
-        Set the minimum number of burn in iterations to use. If None,
-        `burn_in_iterations` will be initialized to `0`.
 
     Attributes
     ----------
@@ -217,16 +230,14 @@ class BaseMCMCSampler(_BaseSampler):
     """
     name = None
 
-    def __init__(self, sampler, likelihood_evaluator, min_burn_in=None):
+    def __init__(self, sampler, likelihood_evaluator):
         self._sampler = sampler
         self._pos = None
         self._p0 = None
         self._currentblob = None
         self._nwalkers = None
-        if min_burn_in is None:
-            min_burn_in = 0
-        self.burn_in_iterations = min_burn_in
         self._lastclear = 0
+        self.burn_in_iterations = None
         # initialize
         super(BaseMCMCSampler, self).__init__(likelihood_evaluator)
 
@@ -350,7 +361,6 @@ class BaseMCMCSampler(_BaseSampler):
         super(BaseMCMCSampler, self).write_metadata(fp)
         # add info about walkers, burn in
         fp.attrs["nwalkers"] = self.nwalkers
-        fp.attrs['burn_in_iterations'] = self.burn_in_iterations
 
     @staticmethod
     def write_samples_group(fp, samples_group, parameters, samples,

@@ -52,15 +52,12 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         Number of walkers to use in sampler.
     pool : function with map, Optional
         A provider of a map function that allows a function call to be run
-        over multiple sets of arguments and possibly maps them to cores/nodes/etc.
-    burn_in_iterations : {None, int}, Optional
-        Set the number of burn in iterations to use. If None,
-        `burn_in_ieterations` will be initialized to 0.
+        over multiple sets of arguments and possibly maps them to
+        cores/nodes/etc.
     """
     name = "emcee"
 
     def __init__(self, likelihood_evaluator, nwalkers, pool=None,
-                 burn_in_iterations=None,
                  likelihood_call=None):
         try:
             import emcee
@@ -76,7 +73,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
                                         pool=pool)
         # initialize
         super(EmceeEnsembleSampler, self).__init__(
-              sampler, likelihood_evaluator, min_burn_in=burn_in_iterations)
+              sampler, likelihood_evaluator)
         self._nwalkers = nwalkers
 
     @classmethod
@@ -97,16 +94,8 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         EmceeEnsembleSampler
             An emcee sampler initialized based on the given arguments.
         """
-        # check that if not skipping burn in, more than one burn in iteration
-        # has been specified
-        if not opts.skip_burn_in and (
-                opts.min_burn_in is None or opts.min_burn_in == 0):
-            raise ValueError("{name} requires that you provide a ".format(
-                name=cls.name) + " non-zero --min-burn-in if not skipping "
-                "burn-in")
         return cls(likelihood_evaluator, opts.nwalkers,
-                   pool=pool, likelihood_call=likelihood_call,
-                   burn_in_iterations=opts.min_burn_in)
+                   pool=pool, likelihood_call=likelihood_call)
 
     @property
     def lnpost(self):
@@ -157,25 +146,6 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         # update the positions
         self._pos = p
         return p, lnpost, rstate
-
-    def burn_in(self, **kwargs):
-        """Advance the ensemble by the number of the sampler's
-        `burn_in_iterations`.
-
-        Returns
-        -------
-        p : numpy.array
-            An array of current walker positions with shape (nwalkers, ndim).
-        lnpost : {None, numpy.array}
-            The list of log posterior probabilities for the walkers at
-            positions p, with shape (nwalkers, ndim).
-        rstate :
-            The current state of the random number generator.
-        """
-        if self.burn_in_iterations == 0:
-            raise ValueError("must specify a non-zero number of iterations "
-                             "to burn in")
-        return self.run(self.burn_in_iterations, **kwargs)
 
     # Emcee defines acceptance fraction differently, so have to override
     # write functions
@@ -290,14 +260,11 @@ class EmceePTSampler(BaseMCMCSampler):
         A provider of a map function that allows a function call to be run
         over multiple sets of arguments and possibly maps them to
         cores/nodes/etc.
-    burn_in_iterations : {None, int}, Optional
-        Set the number of burn in iterations to use. If None,
-        `burn_in_ieterations` will be initialized to 0.
     """
     name = "emcee_pt"
 
     def __init__(self, likelihood_evaluator, ntemps, nwalkers, pool=None,
-                 burn_in_iterations=None, likelihood_call=None):
+                 likelihood_call=None):
 
         try:
             import emcee
@@ -316,7 +283,7 @@ class EmceePTSampler(BaseMCMCSampler):
                                   pool=pool)
         # initialize
         super(EmceePTSampler, self).__init__(
-              sampler, likelihood_evaluator, min_burn_in=burn_in_iterations)
+              sampler, likelihood_evaluator)
         self._nwalkers = nwalkers
         self._ntemps = ntemps
 
@@ -338,15 +305,8 @@ class EmceePTSampler(BaseMCMCSampler):
         EmceePTSampler
             An emcee sampler initialized based on the given arguments.
         """
-        # check that if not skipping burn in, more than one burn in iteration
-        # has been specified
-        if not opts.skip_burn_in and (
-                opts.min_burn_in is None or opts.min_burn_in == 0):
-            raise ValueError("%s requires that you provide a non-zero " % (
-                cls.name) + "--min-burn-in if not skipping burn-in")
         return cls(likelihood_evaluator, opts.ntemps, opts.nwalkers,
-                   pool=pool, burn_in_iterations=opts.min_burn_in,
-                   likelihood_call=likelihood_call)
+                   pool=pool, likelihood_call=likelihood_call)
 
     @property
     def ntemps(self):
@@ -461,25 +421,6 @@ class EmceePTSampler(BaseMCMCSampler):
         # update the positions
         self._pos = p
         return p, lnpost, rstate
-
-    def burn_in(self, **kwargs):
-        """Advance the ensemble by the number of the sampler's
-        `burn_in_iterations`.
-
-        Returns
-        -------
-        p : numpy.array
-            An array of current walker positions with shape (nwalkers, ndim).
-        lnpost : {None, numpy.array}
-            The list of log posterior probabilities for the walkers at
-            positions p, with shape (nwalkers, ndim).
-        rstate :
-            The current state of the random number generator.
-        """
-        if self.burn_in_iterations == 0:
-            raise ValueError("must specify a non-zero number of iterations "
-                             "to burn in")
-        return self.run(self.burn_in_iterations, **kwargs)
 
     # read/write functions
 

@@ -20,6 +20,7 @@
 import logging
 import numpy
 import pycbc.inference.sampler
+from pycbc.inference import burn_in
 from pycbc import conversions
 from pycbc import transforms
 from pycbc.distributions import bounded
@@ -235,7 +236,10 @@ def add_sampler_option_group(parser):
         choices=pycbc.inference.sampler.samplers.keys(),
         help="Sampler class to use for finding posterior.")
     sampler_group.add_argument("--niterations", type=int, required=True,
-        help="Number of iterations to perform after burn in.")
+        help="Number of iterations to perform. If 'use_sampler' is given to "
+             "burn-in-function, this will be counted after the sampler's burn "
+             "function has run. Otherwise, this is the total number of "
+             "iterations, including any burn in.")
     # sampler-specific options
     sampler_group.add_argument("--nwalkers", type=int, default=None,
         help="Number of walkers to use in sampler. Required for MCMC "
@@ -243,16 +247,20 @@ def add_sampler_option_group(parser):
     sampler_group.add_argument("--ntemps", type=int, default=None,
         help="Number of temperatures to use in sampler. Required for parallel "
              "tempered MCMC samplers.")
-    sampler_group.add_argument("--min-burn-in", type=int, default=None,
+    sampler_group.add_argument("--burn-in-function", default=None, nargs='+',
+        choices=burn_in.burn_in_functions.keys(),
+        help="Use the given function to determine when chains are burned in. "
+             "If none provided, no burn in will be estimated. "
+             "If multiple functions are provided, will use the maximum "
+             "iteration from all functions.")
+    sampler_group.add_argument("--min-burn-in", type=int, default=0,
         help="Force the burn-in to be at least the given number of "
-             "iterations. If a sampler has an internal algorithm for "
-             "determining the burn-in size (e.g., kombine), and it returns "
-             "a value < this, the burn-in will be repeated until the "
-             "number of iterations is at least this value.")
+             "iterations.")
     sampler_group.add_argument("--skip-burn-in", action="store_true",
         default=False,
-        help="Do not burn in with sampler. An error will be raised if "
-             "min-burn-in is also provided.")
+        help="DEPRECATED. Turning this option on has no effect; "
+             "it will be removed in future versions. If no burn in is "
+             "desired, simply do not provide a burn-in-function argument.")
     sampler_group.add_argument("--update-interval", type=int, default=None,
         help="If using kombine, specify the number of steps to take between "
              "proposal updates. Note: for purposes of updating, kombine "
@@ -291,9 +299,6 @@ def sampler_from_cli(opts, likelihood_evaluator, pool=None):
         likelihood_call = None
 
     sclass = pycbc.inference.sampler.samplers[opts.sampler]
-    # check for consistency
-    if opts.skip_burn_in and opts.min_burn_in is not None:
-        raise ValueError("both skip-burn-in and min-burn-in specified")
 
     pool = choose_pool(mpi=opts.use_mpi, processes=opts.nprocesses)
 

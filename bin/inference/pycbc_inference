@@ -38,6 +38,7 @@ from pycbc.io.inference_hdf import InferenceFile
 from pycbc.waveform import generator
 from pycbc.inference import option_utils
 from pycbc.inference import prior
+from pycbc.inference import burn_in
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -130,6 +131,14 @@ if os.path.exists(opts.output_file) and not opts.force:
 # setup log
 pycbc.init_logging(opts.verbose)
 
+# warn user about options that will be removed
+if opts.skip_burn_in:
+    logging.warning("DEPRECATION WARNING: Option --skip-burn-in has been "
+                    "deprecated and does nothing. "
+                    "If you wish to use no burn in, simply do not "
+                    "provide a burn-in-function. This option will be removed "
+                    "in future versions.")
+
 # set seed
 numpy.random.seed(opts.seed)
 logging.info("Using seed %i", opts.seed)
@@ -198,6 +207,9 @@ with ctx:
                         replace_parameters=replace_parameters,
                         sampling_transforms=sampling_transforms)
 
+    burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
+                                min_iterations=opts.min_burn_in)
+
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
 
@@ -252,29 +264,36 @@ with ctx:
 
     intervals = numpy.array(intervals)
 
-    # check if user wants to burn in
-    if not opts.skip_burn_in:
-        logging.info("Burn in")
-        sampler.burn_in()
-        n_burnin = sampler.burn_in_iterations
-        logging.info("Used %i burn in samples", n_burnin)
-        with InferenceFile(opts.output_file, "a") as fp:
-            # write the burn in results
-            sampler.write_results(fp,
-                                  max_iterations=opts.niterations + n_burnin)
-    else:
-        n_burnin = 0
-
-
-    # increase the intervals to account for the burn in
-    intervals += n_burnin
-
     # if getting samples from file then put sampler and random number generator
     # back in its former state
     if opts.samples_file:
         with InferenceFile(opts.samples_file, "r") as fp:
             sampler.set_state_from_file(fp)
             numpy.random.set_state(fp.read_random_state())
+
+    # run sampler's burn in if it is in the list of burn in functions
+    if "use_sampler" in burn_in_eval.burn_in_functions:
+        # remove the sampler's burn in so we don't run more than once
+        burn_in_eval.burn_in_functions.pop("use_sampler")
+        with InferenceFile(opts.output_file, "a") as fp:
+            logging.info("Running sampler's burn in function")
+            burnidx = burn_in.use_sampler(sampler, fp)
+            sampler.write_burn_in_iterations(fp, burnidx)
+            # write the burn in results
+            nburn_in = burnidx.max()
+            logging.info("Writing burn in samples to file")
+            sampler.write_results(fp,
+                                  max_iterations=opts.niterations + nburn_in)
+            try:
+                sampler.write_state(fp)
+            except NotImplementedError:
+                logging.warn("Writing state is not implemented for %s",
+                             sampler.name)
+            # increase the intervals to account for the burn in
+            intervals += n_sampler_burn_in
+    else:
+        n_sampler_burn_in = 0
+
 
     # loop over number of checkpoints
     for i, start in enumerate(intervals[:-1]):
@@ -284,7 +303,8 @@ with ctx:
         # run sampler and set initial values to None so that sampler
         # picks up from where it left off next call
         logging.info("Running sampler for %i to %i out of %i iterations",
-                     start - n_burnin, end - n_burnin, opts.niterations)
+                     start - n_sampler_burn_in, end - n_sampler_burn_in,
+                     opts.niterations)
         sampler.run(end - start)
 
         # write new samples
@@ -293,9 +313,13 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp, start_iteration=start,
                                   end_iteration=end,
-                                  max_iterations=opts.niterations + n_burnin)
+                                  max_iterations=opts.niterations +
+                                                 n_sampler_burn_in)
             logging.info("Writing state to file")
             fp.write_random_state()
+
+            logging.info("Updating burn in")
+            burn_in_eval.update(sampler, fp)
 
             # include a try-except statement because all samples might not
             # have this implemented

@@ -536,6 +536,11 @@ class InferenceFile(h5py.File):
         if thin_start is None:
             try:
                 thin_start = self.burn_in_iterations
+                # if the sampler hasn't burned in, the burn_in_iterations will
+                # be the same as the number of iterations, which would result
+                # in 0 samples. In that case, just use the last one
+                if thin_start == self.niterations:
+                    thin_start = thin_start - 1
             except KeyError:
                 pass
 
