@@ -243,13 +243,13 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo):
     ----------
     injfile: hdf5 File object
         Injection file of format known to ANitz (DOCUMENTME)
-    bankfile: hdf5 File object
+    bankfile: hdf5 File object or None
         Template bank file
-    trigfile: hdf5 File object
+    trigfile: hdf5 File object or None
         Single-detector trigger file
     param: string
         Parameter to be calculated for the recovered triggers
-    ifo: string
+    ifo: string or None
         Standard ifo name, ex. 'L1'
 
     Returns
@@ -302,13 +302,12 @@ def get_inj_param(injfile, param, ifo):
         The calculated parameter values
     """
     det = pycbc.detector.Detector(ifo)
-    _time_delay = lambda dec, ra, t: \
-          det.time_delay_from_earth_center(dec, ra, t)
-    time_delay = numpy.vectorize(_time_delay)
+    time_delay = numpy.vectorize(lambda dec, ra, t :
+                                 det.time_delay_from_earth_center(dec, ra, t))
 
     inj = injfile["injections"]
     if param in inj.keys():
-        return injs["injections/"+param]
+        return inj["injections/"+param]
     inj_param_dict = {
       "mtotal" : inj['mass1'][:] + inj['mass2'][:],
       "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
@@ -319,6 +318,6 @@ def get_inj_param(injfile, param, ifo):
                  inj['spin1z'][:], inj['spin2z'][:]),
       "end_time_"+ifo[0].lower() : inj['end_time'][:] + \
                  time_delay(inj['longitude'][:], inj['latitude'][:],
-                 inj['end_time'][:]),
+                            inj['end_time'][:]),
     }
     return inj_param_dict[param]

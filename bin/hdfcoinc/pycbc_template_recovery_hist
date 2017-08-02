@@ -12,9 +12,10 @@ parser.add_argument('--verbose', action='count')
 parser.add_argument('--output', required=True)
 parser.add_argument('--found-injection-files', dest='found', nargs='+',
                     help='hdf file(s) with found injections')
-parser.add_argument('--inspiral-trigger-files', dest='trig', nargs='+',
+parser.add_argument('--inspiral-trigger-files', dest='trig', nargs='*',
+                    default=[],
                     help='hdf files(s) with injection single-ifo triggers, '
-                         'one per found injection file')
+                         'if supplied must be one per found injection file')
 parser.add_argument('--bank-files', nargs='*', default=[],
                     help='hdf file(s) with template parameters')
 parser.add_argument('--x-param', #choices=['template_duration'],
@@ -34,7 +35,9 @@ if args.verbose:
 
 # should be same number of inj and trig files
 # and either 0 or 1 bank files or 1 per inj file
-assert len(args.found) == len(args.trig)
+if not(len(args.trig) == 0 or len(args.trig) == len(args.found)):
+    raise RuntimeError('If trigger files are given, must be one per injection '
+                       'file!')
 if not(len(args.bank_files) < 2 or len(args.bank_files) == len(args.found)):
     raise RuntimeError('If multiple bank files are used, must be one per '
                        'injection file!')
@@ -44,18 +47,20 @@ if len(args.bank_files) == 1:
     args.bank_files = [args.bank_files[0] for f in args.found]
 elif len(args.bank_files) == 0:
     args.bank_files = [None for f in args.found]
+if len(args.trig) == 0:
+    args.trig = [None for f in args.found]
 foundstat = np.array([])
 foundifar = np.array([])
 foundparam = np.array([])
 for f, b, t in zip(args.found, args.bank_files, args.trig):
     logging.info('Processing %s, %s, %s' % (f, b, t))
     f = h5py.File(f, 'r')
-    t = h5py.File(t, 'r')
+    t = h5py.File(t, 'r') if t else None
     b = h5py.File(b, 'r') if b else None
     foundstat = np.concatenate((foundstat, f['found_after_vetoes/stat'][:]))
     foundifar = np.concatenate((foundifar, f['found_after_vetoes/ifar'][:]))
     # acrobatics to find right ifo
-    ifo = t.keys()[0]
+    ifo = t.keys()[0] if t else None
     ## each tuple is of form ('L1', 'detector_1')
     #dettuples = [(val, key) for (key, val) in f.attrs.items()
     #             if "detector" in key]
