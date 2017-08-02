@@ -341,12 +341,18 @@ class BaseMCMCSampler(_BaseSampler):
         stats = numpy.array(self._sampler.blobs)
         if stats.size == 0:
             return None
-        # we'll force arrays to float; this way, if there are `None`s in the
-        # blobs, they will be changed to `nan`s
-        arrays = {field: stats[..., fi].astype(float)
+        # since the blobs are dictionarys, the dtype is object. Convert each
+        # dictionary into an array of values, in order of the metadata fields.
+        # we'll also force arrays to float; this way, if there are `None`s in
+        # the blobs, they will be changed to `nan`s
+        getordered = lambda x: [x[field]
+            for field in self.likelihood_evaluator.metadata_fields]
+        stats = numpy.array([map(getordered, stats[...,ii])
+                             for ii in range(stats.shape[-1])]).astype(float)
+        arrays = {field: stats[..., fi]
                   for fi, field in
                   enumerate(self.likelihood_evaluator.metadata_fields)}
-        return FieldArray.from_kwargs(**arrays).transpose()
+        return FieldArray.from_kwargs(**arrays)
 
     # write and read functions
     def write_metadata(self, fp):
