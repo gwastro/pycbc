@@ -619,6 +619,32 @@ class TimeSeries(Array):
                            delta_f=delta_f)
         fft(tmp, f)
         return f
+    
+    @_nocomplex
+    def cyclic_time_shift(self, dt):
+        """Shift the data by a given number of seconds
+        
+        Shift the data by a given number of seconds. This may
+        be smaller than the intrinsic sample rate of the data. Note that
+        data will be cycliclly rotated, so if you shift by 2 seconds, the
+        final 2 seconds of your data will now be at the beginning of the
+        data set.
+
+        Parameters
+        ----------
+        dt : float
+            Amount of time to shift the vector.
+
+        Returns
+        -------
+        data : pycbc.types.TimeSeries
+            The time shifted time series.
+        """
+        # We do this in the frequency domain to allow us to do sub-sample
+        # time shifts. This also results in the shift being circular. It
+        # is left to a future update to do a faster impelementation in the case
+        # where the time shift can be done with an exact number of samples.
+        return self.to_frequencyseries().shift_time(dt).to_timeseries()
 
 def load_timeseries(path, group=None):
     """

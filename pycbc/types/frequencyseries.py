@@ -130,6 +130,12 @@ class FrequencySeries(Array):
         """
         return self.epoch
 
+    @start_time.setter
+    def start_time(self, time):
+        """ Set the start time
+        """
+        self._epoch = _lal.LIGOTimeGPS(time)
+
     @property
     def end_time(self):
         """Return the end time of this vector
@@ -460,7 +466,32 @@ class FrequencySeries(Array):
                            delta_t=delta_t)
         ifft(tmp, f)
         return f
-            
+
+    @_noreal
+    def cyclic_time_shift(self, dt):
+        """Shift the data by a given number of seconds
+        
+        Shift the data in the time domain a given number of seconds. This may
+        be smaller than the intrinsic sample rate of the data. Note that
+        data will be cycliclly rotated, so if you shift by 2 seconds, the
+        final 2 seconds of your data will now be at the beginning of the
+        data set.
+
+        Parameters
+        ----------
+        dt : float
+            Amount of time to shift the vector.
+
+        Returns
+        -------
+        data : pycbc.types.FrequencySeries
+            The time shifted frequency series.
+        """
+        from pycbc.waveform import apply_fseries_time_shift
+        data = apply_fseries_time_shift(self, dt)
+        data.start_time = self.start_time - dt
+        return data
+        
 
 def load_frequencyseries(path, group=None):
     """
