@@ -255,6 +255,24 @@ dquad_mon1 = Parameter("dquad_mon1",
 dquad_mon2 = Parameter("dquad_mon2",
                 dtype=float, default=0., label=r"$qm_2$",
                 description="Quadrupole-monopole parameter / m_2^5 -1.")
+lambda_octu1 = Parameter("lambda_octu1",
+                dtype=float, default=0., label=r"$\Lambda_3^{(1)}$",
+                description="The octupolar tidal deformability parameter of object 1.")
+lambda_octu2 = Parameter("lambda_octu2",
+                dtype=float, default=0., label=r"$\Lambda_3^{(2)}$",
+                description="The octupolar tidal deformability parameter of object 2.")
+quadfmode1 = Parameter("quadfmode1",
+                dtype=float, default=0., label=r"$m_1 \omega_{02}^{(1)}$",
+                description="The quadrupolar f-mode angular frequency of object 1.")
+quadfmode2 = Parameter("quadfmode2",
+                dtype=float, default=0., label=r"$m_ \omega_{02}^{(2)}$",
+                description="The quadrupolar f-mode angular frequency of object 2.")
+octufmode1 = Parameter("octufmode1",
+                dtype=float, default=0., label=r"$m_1 \omega_{03}^{(1)}$",
+                description="The octupolar f-mode angular frequency of object 1.")
+octufmode2 = Parameter("octufmode2",
+                dtype=float, default=0., label=r"$m_ \omega_{03}^{(2)}$",
+                description="The octupolar f-mode angular frequency of object 2.")
 
 # derived parameters for component spin magnitude and angles
 spin1_a = Parameter("spin1_a",
@@ -416,7 +434,9 @@ extrinsic_params = orientation_params + location_params
 # intrinsic parameters of a CBC waveform
 cbc_intrinsic_params = ParameterList([
     mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-    eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2])
+    eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2,
+    lambda_octu1, lambda_octu2, quadfmode1, quadfmode2,
+    octufmode1, octufmode2])
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params

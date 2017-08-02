@@ -98,6 +98,18 @@ def _check_lal_pars(p):
         lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(lal_pars, p['lambda1'])
     if p['lambda2']:
         lalsimulation.SimInspiralWaveformParamsInsertTidalLambda2(lal_pars, p['lambda2'])
+    if p['lambda_octu1'] != parameters.lambda_octu1.default:
+        lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarLambda1(lal_pars, p['lambda_octu1'])
+    if p['lambda_octu2'] != parameters.lambda_octu2.default:
+        lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarLambda2(lal_pars, p['lambda_octu2'])
+    if p['quadfmode1'] != parameters.quadfmode1.default:
+        lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(lal_pars, p['quadfmode1'])
+    if p['quadfmode2'] != parameters.quadfmode2.default:
+        lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(lal_pars, p['lambda_octu2'])
+    if p['octufmode1'] != parameters.octufmode1.default:
+        lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarFMode1(lal_pars, p['octufmode1'])
+    if p['octufmode2'] != parameters.octufmode2.default:
+        lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarFMode2(lal_pars, p['octufmode2'])
     if p['dquad_mon1']:
         lalsimulation.SimInspiralWaveformParamsInsertdQuadMon1(lal_pars, p['dquad_mon1'])
     if p['dquad_mon2']:
