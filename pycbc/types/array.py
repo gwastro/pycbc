@@ -940,6 +940,10 @@ class Array(object):
             The new dtype that should be used to interpret the bytes of self
         """
         return self._data.view(dtype)
+
+    def copy(self):
+        """ Return copy of this array """
+        return self._return(self.data.copy())
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
