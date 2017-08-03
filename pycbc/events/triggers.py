@@ -276,8 +276,10 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo):
                      b['mass2'][:])[0][foundtmp],
           "eta"    : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
                      b['mass2'][:])[1][foundtmp],
-          "effective_spin" : pnutils.phenomb_chi(b['mass1'][:], b['mass2'][:],
-                             b['spin1z'][:], b['spin2z'][:])[foundtmp]
+          "effective_spin" : pnutils.phenomb_chi(b['mass1'][:],
+                                                 b['mass2'][:],
+                                                 b['spin1z'][:],
+                                                 b['spin2z'][:])[foundtmp]
         }
 
     return found_param_dict[param]
@@ -317,7 +319,8 @@ def get_inj_param(injfile, param, ifo):
       "effective_spin" : pnutils.phenomb_chi(inj['mass1'][:], inj['mass2'][:],
                  inj['spin1z'][:], inj['spin2z'][:]),
       "end_time_"+ifo[0].lower() : inj['end_time'][:] + \
-                 time_delay(inj['longitude'][:], inj['latitude'][:],
+                 time_delay(inj['longitude'][:],
+                            inj['latitude'][:],
                             inj['end_time'][:]),
     }
     return inj_param_dict[param]
