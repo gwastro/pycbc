@@ -1465,7 +1465,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # We have given up so there is no time series
         if ts is None:
-            logging.info("Giving on up %s frame...", self.detector)
+            logging.info("%s frame is late, giving up", self.detector)
             self.null_advance_strain(blocksize)
             if self.state:
                 self.state.null_advance(blocksize)
