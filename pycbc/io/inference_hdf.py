@@ -86,6 +86,12 @@ class _PosteriorOnlyParser(object):
             grp = '{}/{}'.format(samples_group, field)
             fp[grp] = samples[field]
 
+    @classmethod
+    def n_independent_samples(cls, fp):
+        """Returns the number of independent samples stored in the file.
+        """
+        return cls.read_samples(fp, fp.variable_args[0]).size
+
 
 class InferenceFile(h5py.File):
     """ A subclass of the h5py.File object that has extra functions for
@@ -186,6 +192,12 @@ class InferenceFile(h5py.File):
             Number of iterations performed.
         """
         return self.attrs["niterations"]
+
+    @property
+    def n_independent_samples(self):
+        """Returns the number of independent samples stored in the file.
+        """
+        return self.samples_parser.n_independent_samples(self)
 
     @property
     def burn_in_iterations(self):

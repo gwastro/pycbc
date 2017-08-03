@@ -398,13 +398,11 @@ class BaseMCMCSampler(_BaseSampler):
             arrays on disk. This is needed if you are adding new samples to
             a chain that was previously written to file, and you want to
             preserve the history (e.g., after a checkpoint). Default is 0.
-        max_iterations : {None, int}
-            If samples have not previously been written to the file, a new
-            dataset will be created. By default, the size of this dataset will
-            be whatever the length of the sampler's chain is at this point. If
-            you intend to run more iterations, set this value to that size so
-            that the array in the file will be large enough to accomodate
-            future data.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the samples have not previously been written
+            to file. The default (None) is to use the maximum size allowed by
+            h5py.
         """
         # due to clearing memory, there can be a difference between indices in
         # memory and on disk
@@ -420,8 +418,6 @@ class BaseMCMCSampler(_BaseSampler):
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
-        elif max_iterations is None:
-            max_iterations = niterations
 
         group = samples_group + '/{name}/walker{wi}'
 
@@ -463,13 +459,11 @@ class BaseMCMCSampler(_BaseSampler):
             Write results starting from the given iteration.
         end_iteration : {None, int}
             Write results up to the given iteration.
-        max_iterations : {None, int}
-            If samples have not previously been written to the file, a new
-            dataset will be created. By default, the size of this dataset will
-            be whatever the length of the sampler's chain is at this point. If
-            you intend to run more iterations, set this value to that size so
-            that the array in the file will be large enough to accomodate
-            future data.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the samples have not previously been written
+            to file. The default (None) is to use the maximum size allowed by
+            h5py.
         samples_group : str
             Name of samples group to write.
         """
@@ -506,13 +500,11 @@ class BaseMCMCSampler(_BaseSampler):
             Write results starting from the given iteration.
         end_iteration : {None, int}
             Write results up to the given iteration.
-        max_iterations : {None, int}
-            If the stats have not previously been written to the file, a new
-            dataset will be created. By default, the size of this dataset will
-            be whatever the length of the sampler's chain is at this point. If
-            you intend to run more iterations, set this value to that size so
-            that the array in the file will be large enough to accomodate
-            future data.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the samples have not previously been written
+            to file. The default (None) is to use the maximum size allowed by
+            h5py.
 
         Returns
         -------
@@ -546,13 +538,11 @@ class BaseMCMCSampler(_BaseSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
-        max_iterations : {None, int}
-            If acceptance fraction have not previously been written to the
-            file, a new dataset will be created. By default, the size of this
-            dataset will be whatever the length of the sampler's chain is at
-            this point. If you intend to run more iterations, set this value
-            to that size so that arrays in the file will be large enough to
-            accomodate future data.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the acceptance fraction has not previously been
+            written to the file. The default (None) is to use the maximum size
+            allowed by h5py.
         """
         dataset_name = "acceptance_fraction"
         acf = self.acceptance_fraction
@@ -563,8 +553,6 @@ class BaseMCMCSampler(_BaseSampler):
         if max_iterations is not None and max_iterations < acf.size:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
-        elif max_iterations is None:
-            max_iterations = acf.size
 
         try:
             if end_iteration > fp[dataset_name].size:
@@ -594,13 +582,11 @@ class BaseMCMCSampler(_BaseSampler):
             Write results starting from the given iteration.
         end_iteration : {None, int}
             Write results up to the given iteration.
-        max_iterations : {None, int}
-            If results have not previously been written to the
-            file, new datasets will be created. By default, the size of these
-            datasets will be whatever the length of the sampler's chain is at
-            this point. If you intend to run more iterations in the future,
-            set this value to that size so that the array in the file will be
-            large enough to accomodate future data.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the acceptance fraction has not previously been
+            written to the file. The default (None) is to use the maximum size
+            allowed by h5py.
         """
         self.write_metadata(fp)
         self.write_chain(fp, start_iteration=start_iteration,
@@ -738,6 +724,24 @@ class BaseMCMCSampler(_BaseSampler):
                                 thin_interval=thin_interval, thin_end=thin_end,
                                 iteration=iteration, walkers=walkers,
                                 flatten=flatten)
+
+    @classmethod
+    def n_independent_samples(cls, fp):
+        """Returns the number of independent samples stored in a file.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read.
+
+        Returns
+        -------
+        int
+            The number of independent samples.
+        """
+        # we'll just read a single parameter from the file
+        samples = cls.read_samples(fp, fp.variable_args[0])
+        return samples.size
 
     @staticmethod
     def read_acceptance_fraction(fp, thin_start=None, thin_interval=None,
