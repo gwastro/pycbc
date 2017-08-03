@@ -358,12 +358,13 @@ with ctx:
             start = end
 
     # compute evidence, if supported
-    try:
-        lnz, dlnz = sampler.calculate_logevidence(fp)
-        logging.info("Saving evidence")
-        sampler.write_logevidence(fp, lnz, dlnz)
-    except NotImplementedError:
-        pass
+    with InferenceFile(opts.output_file, 'a') as fp:
+        try:
+            lnz, dlnz = sampler.calculate_logevidence(fp)
+            logging.info("Saving evidence")
+            sampler.write_logevidence(fp, lnz, dlnz)
+        except NotImplementedError:
+            pass
 
 
 # exit
