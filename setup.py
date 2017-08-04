@@ -437,6 +437,7 @@ setup (
                'bin/hdfcoinc/pycbc_fit_sngls_by_template',
                'bin/hdfcoinc/pycbc_fit_sngls_over_param',
                'bin/hdfcoinc/pycbc_fit_sngls_binned',
+               'bin/hdfcoinc/pycbc_template_recovery_hist',
                'bin/hwinj/pycbc_generate_hwinj',
                'bin/hwinj/pycbc_generate_hwinj_from_xml',
                'bin/hwinj/pycbc_plot_hwinj',

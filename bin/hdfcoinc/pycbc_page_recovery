@@ -7,6 +7,7 @@ import matplotlib.pyplot as plot
 
 import pycbc.version, pycbc.detector
 from pycbc import pnutils, results
+from pycbc.events import triggers
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
@@ -17,11 +18,11 @@ parser.add_argument("--injection-file", required=True,
                          "Required.")
 parser.add_argument("--bank-file", required=True,
                     help="hdf bank file containing template parameters. "
-                         "Required")
+                         "Required for some parameters, ex. chirp mass")
 parser.add_argument("--trigger-file",
                     help="hdf trigger merge file containing single triggers. "
-                         "Required for some parameters, e.g. end_time.")
-parser.add_argument("--detector", required=True,
+                         "Required for some parameters, ex. end_time.")
+parser.add_argument("--ifo", required=True,
                     help="Detector where injections are recovered. Required")
 parser.add_argument("--min-ifar", default=0,
                     help="Minimum IFAR for which to plot injections. Units:years")
@@ -31,13 +32,14 @@ parser.add_argument("--error-param", required=True,
 parser.add_argument("--x-param",
                     help="Injected parameter to plot on x-axis. Required if "
                          "--plot-type is err_v_param or fracerr_v_param.")
-parser.add_argument("--log-x",
+parser.add_argument("--log-x", action="store_true",
                     help="Use a logarithmic x-axis.")
-parser.add_argument("--log-y",
+parser.add_argument("--log-y", action="store_true",
                     help="Use a logarithmic y-axis.")
 parser.add_argument("--plot-type", choices=["scatter", "err", "fracerr",
                     "err_v_param", "fracerr_v_param", "errhist",
-                    "fracerrhist"], default="scatter",
+                    "fracerrhist", "ratio", "ratio_v_param"],
+                    default="scatter",
                     help="Type of plot to show accuracy of recovery. "
                          "Default='scatter'")
 parser.add_argument("--gradient-far", action="store_true",
@@ -45,11 +47,9 @@ parser.add_argument("--gradient-far", action="store_true",
 parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 
-if args.x_param is not None and \
-                     args.plot_type not in ["err_v_param", "fracerr_v_param"]:
+if args.x_param is not None and "v_param" not in args.plot_type:
     raise RuntimeError("Can't use an --x-param with this plot type!")
-if args.plot_type in ["err_v_param", "fracerr_v_param"] and \
-                                                          args.x_param is None:
+if "v_param" in args.plot_type and args.x_param is None:
     raise RuntimeError("Need an --x-param to plot errors against!")
 
 if args.verbose:
@@ -58,17 +58,16 @@ if args.verbose:
 
 logging.info("Reading data...")
 injs = h5py.File(args.injection_file, "r")
-bank = h5py.File(args.bank_file, "r")
+bank = h5py.File(args.bank_file, "r") if args.bank_file else None
 trig = h5py.File(args.trigger_file, "r") if args.trigger_file else None
 
 # First check the detector
-ifo = args.detector
 dettuples = [(val,name) for (name,val) in injs.attrs.items()
                                                          if "detector" in name]
 dets = [t[0] for t in dettuples]
-if ifo not in dets:
-    raise RuntimeError("Can't find detector %s in injection file!" % ifo)
-site = ifo[0].lower()
+if args.ifo not in dets:
+    raise RuntimeError("Can't find detector %s in injection file!" % args.ifo)
+site = args.ifo[0].lower()
 
 # Determine which injections are found
 found = injs["found_after_vetoes/injection_index"][:]
@@ -79,47 +78,6 @@ above_min_ifar = ifar_found > float(args.min_ifar)
 found = found[above_min_ifar]
 ifar_found = ifar_found[above_min_ifar]
 
-def get_inj_param(injfile, param, args):
-    """
-    Translates some popular injection parameters into functions that calculate
-    them from an hdf found injection file
-
-    Parameters
-    ----------
-    injfile: hdf5 File object
-        Injection file of format known to ANitz (DOCUMENTME)
-    param: string
-        Parameter to be calculated for the injected signals
-    args: argparse.Namespace object
-        Parsed options given to the code
-
-    Returns
-    -------
-    [return value]: NumPy array of floats
-        The calculated parameter values
-    """
-    det = pycbc.detector.Detector(args.detector)
-    _time_delay = lambda dec, ra, t: \
-          det.time_delay_from_earth_center(dec, ra, t)
-    time_delay = numpy.vectorize(_time_delay)
-
-    inj = injfile["injections"]
-    if param in inj.keys():
-        return injs["injections/"+param]
-    inj_param_dict = {
-      "mtotal" : inj['mass1'][:] + inj['mass2'][:],
-      "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
-                 inj['mass2'][:])[0],
-      "eta"    : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
-                 inj['mass2'][:])[1],
-      "effective_spin" : pnutils.phenomb_chi(inj['mass1'][:], inj['mass2'][:],
-                 inj['spin1z'][:], inj['spin2z'][:]),
-      "end_time_"+args.detector[0].lower() : inj['end_time'][:] + \
-                 time_delay(inj['longitude'][:], inj['latitude'][:],
-                 inj['end_time'][:]),
-    }
-    return inj_param_dict[param]
-
 # Get the injected param values
 # need to hack end time and eff dist as different between detectors
 param = args.error_param
@@ -129,7 +87,7 @@ if args.error_param == "effective_distance":
     param = "eff_dist_"+site
 # calculate the parameter for all injections, then select those found and 
 # above the IFAR threshold
-inj_params = get_inj_param(injs, param, args)[found]
+inj_params = triggers.get_inj_param(injs, param, args.ifo)[found]
 
 # Get the injected x-axis values
 if args.x_param:
@@ -138,78 +96,34 @@ if args.x_param:
         xparam = "end_time_"+site
     if args.x_param == "effective_distance":
         xparam = "eff_dist_"+site
-    inj_xparams = get_inj_param(injs, xparam, args)[found]
-else:
-    # will need this to be a string when defining axis labels even if not used
-    args.x_param = "badger"
-
-def get_found_param(injfile, bankfile, trigfile, param, args):
-    """
-    Translates some popular trigger parameters into functions that calculate
-    them from an hdf found injection file
-
-    Parameters
-    ----------
-    injfile: hdf5 File object
-        Injection file of format known to ANitz (DOCUMENTME)
-    bankfile: hdf5 File object
-        Template bank file
-    trigfile: hdf5 File object
-        Single-detector trigger file
-    param: string
-        Parameter to be calculated for the recovered triggers
-    args: argparse.Namespace object
-        Parsed options given to the code
-
-    Returns
-    -------
-    [return value]: NumPy array of floats
-        The calculated parameter values
-    """
-    foundtmp = injfile["found_after_vetoes/template_id"]
-    # get the internal name of the ifo in the injection file, eg "detector_1"
-    ifolabel = [name for name,val in injfile.attrs.items()
-                                                    if val == args.detector][0]
-    # and the integer from that name ...
-    ifoid = ifolabel[-1]
-    if args.trigger_file:
-        foundtrg = injfile["found_after_vetoes/trigger_id"+ifoid]
-    if param in bankfile.keys():
-        return bankfile[param][:][foundtmp]
-    elif trigfile is not None and param in trigfile[args.detector].keys():
-        return trigfile[args.detector][param][:][foundtrg]
-    else:
-        b = bankfile
-        found_param_dict = {
-          "mtotal" : (b['mass1'][:] + b['mass2'][:])[foundtmp],
-          "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
-                     b['mass2'][:])[0][foundtmp],
-          "eta"    : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
-                     b['mass2'][:])[1][foundtmp],
-          "effective_spin" : pnutils.phenomb_chi(b['mass1'][:], b['mass2'][:],
-                             b['spin1z'][:], b['spin2z'][:])[foundtmp]
-        }
-    return found_param_dict[param]
+    inj_xparams = triggers.get_inj_param(injs, xparam, args.ifo)[found]
+# need a string value when defining axis labels even if not used
+args.x_param = args.x_param or "badger"
 
 # Get the recovered values
 # unhack the parameter name as triggers are stored by ifo
 param = args.error_param
 # calculate parameters for all recovered injection triggers, then select
 # only those above the IFAR threshold
-rec_params = get_found_param(injs, bank, trig, param, args)[above_min_ifar]
+rec_params = triggers.get_found_param(injs, bank, trig, param,
+                                      args.ifo)[above_min_ifar]
 
 # calculate needed values
 if "err" in args.plot_type:
     diff = rec_params - inj_params
 if "fracerr" in args.plot_type:
     reldiff = diff / inj_params
+if "ratio" in args.plot_type:
+    errrat = rec_params / inj_params
 
 x_dict = {
   "scatter" : "inj_params",
   "err" : "inj_params",
   "fracerr" : "inj_params",
+  "ratio" : "inj_params",
   "err_v_param" : "inj_xparams",
   "fracerr_v_param" : "inj_xparams",
+  "ratio_v_param" : "inj_xparams",
   "errhist" : "diff",
   "fracerrhist" : "reldiff"
 }
@@ -217,8 +131,10 @@ xlabels = {
   "scatter" : "Injected "+args.error_param,
   "err" : "Injected "+args.error_param,
   "fracerr" : "Injected "+args.error_param,
+  "ratio" : "Injected "+args.error_param,
   "err_v_param" : "Injected "+args.x_param,
   "fracerr_v_param" : "Injected "+args.x_param,
+  "ratio_v_param" : "Injected "+args.x_param,
   "errhist" : "Error (rec-inj) in "+args.error_param,
   "fracerrhist" : "Fractional error (rec-inj)/inj in "+args.error_param
 }
@@ -227,8 +143,10 @@ y_dict = {
   "scatter" : "rec_params",
   "err" : "diff",
   "fracerr" : "reldiff",
+  "ratio" : "errrat",
   "err_v_param" : "diff",
   "fracerr_v_param" : "reldiff",
+  "ratio_v_param" : "errrat",
   "errhist" : "None",
   "fracerrhist" : "None"
 }
@@ -236,8 +154,10 @@ ylabels = {
   "scatter" : "Recovered "+args.error_param,
   "err" : "Error (rec-inj) in "+args.error_param,
   "fracerr" : "Fractional error (rec-inj)/inj in "+args.error_param,
+  "ratio" : "Ratio rec/inj in "+args.error_param,
   "err_v_param" : "Error (rec-inj) in "+args.error_param,
   "fracerr_v_param" : "Fractional error (rec-inj)/inj in "+args.error_param,
+  "ratio_v_param" : "Ratio rec/inj in "+args.error_param,
   "errhist" : "Number of injections",
   "fracerrhist" : "Number of injections"
 }

@@ -19,9 +19,10 @@ from the command line.
 
 import h5py
 import numpy
-from pycbc import types
+from pycbc import types, pnutils
 from pycbc.events import coinc
 from pycbc.io import hdf
+import pycbc.detector
 
 def insert_bank_bins_option_group(parser):
     """ Add options to the optparser object for selecting templates in bins.
@@ -232,3 +233,96 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
         raise ValueError("Must have --bank-file and --sngl-trigger-files")
 
     return bin_names, bin_results
+
+def get_found_param(injfile, bankfile, trigfile, param, ifo):
+    """
+    Translates some popular trigger parameters into functions that calculate
+    them from an hdf found injection file
+
+    Parameters
+    ----------
+    injfile: hdf5 File object
+        Injection file of format known to ANitz (DOCUMENTME)
+    bankfile: hdf5 File object or None
+        Template bank file
+    trigfile: hdf5 File object or None
+        Single-detector trigger file
+    param: string
+        Parameter to be calculated for the recovered triggers
+    ifo: string or None
+        Standard ifo name, ex. 'L1'
+
+    Returns
+    -------
+    [return value]: NumPy array of floats
+        The calculated parameter values
+    """
+    foundtmp = injfile["found_after_vetoes/template_id"][:]
+    if trigfile is not None:
+        # get the name of the ifo in the injection file, eg "detector_1"
+        # and the integer from that name
+        ifolabel = [name for name, val in injfile.attrs.items() if \
+                    "detector" in name and val == ifo][0]
+        foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
+    if bankfile is not None and param in bankfile.keys():
+        return bankfile[param][:][foundtmp]
+    elif trigfile is not None and param in trigfile[ifo].keys():
+        return trigfile[ifo][param][:][foundtrg]
+    else:
+        b = bankfile
+        found_param_dict = {
+          "mtotal" : (b['mass1'][:] + b['mass2'][:])[foundtmp],
+          "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
+                     b['mass2'][:])[0][foundtmp],
+          "eta"    : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
+                     b['mass2'][:])[1][foundtmp],
+          "effective_spin" : pnutils.phenomb_chi(b['mass1'][:],
+                                                 b['mass2'][:],
+                                                 b['spin1z'][:],
+                                                 b['spin2z'][:])[foundtmp]
+        }
+
+    return found_param_dict[param]
+
+def get_inj_param(injfile, param, ifo):
+    """
+    Translates some popular injection parameters into functions that calculate
+    them from an hdf found injection file
+
+    Parameters
+    ----------
+    injfile: hdf5 File object
+        Injection file of format known to ANitz (DOCUMENTME)
+    param: string
+        Parameter to be calculated for the injected signals
+    ifo: string
+        Standard detector name, ex. 'L1'
+
+    Returns
+    -------
+    [return value]: NumPy array of floats
+        The calculated parameter values
+    """
+    det = pycbc.detector.Detector(ifo)
+    time_delay = numpy.vectorize(#lambda dec, ra, t :
+                                 det.time_delay_from_earth_center)#(dec, ra, t))
+
+    inj = injfile["injections"]
+    if param in inj.keys():
+        return inj["injections/"+param]
+    inj_param_dict = {
+        "mtotal" : inj['mass1'][:] + inj['mass2'][:],
+        "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
+                                                     inj['mass2'][:])[0],
+        "eta" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
+                                                  inj['mass2'][:])[1],
+        "effective_spin" : pnutils.phenomb_chi(inj['mass1'][:],
+                                               inj['mass2'][:],
+                                               inj['spin1z'][:],
+                                               inj['spin2z'][:]),
+        "end_time_"+ifo[0].lower() :
+            inj['end_time'][:] + time_delay(inj['longitude'][:],
+                                            inj['latitude'][:],
+                                            inj['end_time'][:]),
+    }
+    return inj_param_dict[param]
