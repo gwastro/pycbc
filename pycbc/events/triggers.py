@@ -304,23 +304,25 @@ def get_inj_param(injfile, param, ifo):
         The calculated parameter values
     """
     det = pycbc.detector.Detector(ifo)
-    time_delay = numpy.vectorize(lambda dec, ra, t :
-                                 det.time_delay_from_earth_center(dec, ra, t))
+    time_delay = numpy.vectorize(#lambda dec, ra, t :
+                                 det.time_delay_from_earth_center)#(dec, ra, t))
 
     inj = injfile["injections"]
     if param in inj.keys():
         return inj["injections/"+param]
     inj_param_dict = {
-      "mtotal" : inj['mass1'][:] + inj['mass2'][:],
-      "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
-                 inj['mass2'][:])[0],
-      "eta"    : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
-                 inj['mass2'][:])[1],
-      "effective_spin" : pnutils.phenomb_chi(inj['mass1'][:], inj['mass2'][:],
-                 inj['spin1z'][:], inj['spin2z'][:]),
-      "end_time_"+ifo[0].lower() : inj['end_time'][:] + \
-                 time_delay(inj['longitude'][:],
-                            inj['latitude'][:],
-                            inj['end_time'][:]),
+        "mtotal" : inj['mass1'][:] + inj['mass2'][:],
+        "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
+                                                     inj['mass2'][:])[0],
+        "eta" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
+                                                  inj['mass2'][:])[1],
+        "effective_spin" : pnutils.phenomb_chi(inj['mass1'][:],
+                                               inj['mass2'][:],
+                                               inj['spin1z'][:],
+                                               inj['spin2z'][:]),
+        "end_time_"+ifo[0].lower() :
+            inj['end_time'][:] + time_delay(inj['longitude'][:],
+                                            inj['latitude'][:],
+                                            inj['end_time'][:]),
     }
     return inj_param_dict[param]
