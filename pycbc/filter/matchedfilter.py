@@ -1123,9 +1123,12 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
     v2_norm : {None, float}, optional
         The normalization of the second waveform. This is equivalent to its
         sigmasq value. If None, it is internally calculated.
+
     Returns
     -------
     match: float
+    index: int
+        The number of samples to shift to get the match.
     """
 
     htilde = make_frequency_series(vec1)

@@ -619,7 +619,7 @@ class TimeSeries(Array):
                            delta_f=delta_f)
         fft(tmp, f)
         return f
-    
+
     @_nocomplex
     def cyclic_time_shift(self, dt):
         """Shift the data by a given number of seconds
@@ -645,6 +645,36 @@ class TimeSeries(Array):
         # is left to a future update to do a faster impelementation in the case
         # where the time shift can be done with an exact number of samples.
         return self.to_frequencyseries().shift_time(dt).to_timeseries()
+
+    def match(self, other, psd=None,
+              low_frequency_cutoff=None, high_frequency_cutoff=None):
+        """ Return the match between the two TimeSeries or FrequencySeries.
+
+        Return the match between two waveforms. This is equivelant to the overlap
+        maximized over time and phase. By default, the other vector will be
+        resized to match self. This may remove high frequency content or the
+        end of the vector.
+
+        Parameters
+        ----------
+        other : TimeSeries or FrequencySeries
+            The input vector containing a waveform.
+        psd : Frequency Series
+            A power spectral density to weight the overlap.
+        low_frequency_cutoff : {None, float}, optional
+            The frequency to begin the match.
+        high_frequency_cutoff : {None, float}, optional
+            The frequency to stop the match.
+
+        Returns
+        -------
+        match: float
+        index: int
+            The number of samples to shift to get the match.
+        """
+        return self.to_frequencyseries().match(other, psd=psd,
+                     low_frequency_cutoff=low_frequency_cutoff,
+                     high_frequency_cutoff=high_frequency_cutoff)
 
 def load_timeseries(path, group=None):
     """

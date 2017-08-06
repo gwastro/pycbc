@@ -491,7 +491,54 @@ class FrequencySeries(Array):
         data = apply_fseries_time_shift(self, dt)
         data.start_time = self.start_time - dt
         return data
+
+    def match(self, other, psd=None,
+              low_frequency_cutoff=None, high_frequency_cutoff=None):
+        """ Return the match between the two TimeSeries or FrequencySeries.
+
+        Return the match between two waveforms. This is equivelant to the overlap
+        maximized over time and phase. By default, the other vector will be
+        resized to match self. Beware, this may remove high frequency content or the
+        end of the vector.
+
+        Parameters
+        ----------
+        other : TimeSeries or FrequencySeries
+            The input vector containing a waveform.
+        psd : Frequency Series
+            A power spectral density to weight the overlap.
+        low_frequency_cutoff : {None, float}, optional
+            The frequency to begin the match.
+        high_frequency_cutoff : {None, float}, optional
+            The frequency to stop the match.
+        index: int
+            The number of samples to shift to get the match.
+
+        Returns
+        -------
+        match: float
+        """
+        from pycbc.types import TimeSeries
+        from pycbc.filter import match
+
+        if isinstance(other, TimeSeries):
+            if other.duration != self.duration:
+                other = other.copy()
+                other.resize(int(other.sample_rate * self.duration))
+
+            other = other.to_frequencyseries()
         
+        if len(other) != len(self):
+            other = other.copy()
+            other.resize(len(self))
+
+        if psd is not None and len(psd) > len(self):
+            psd = psd.copy()
+            psd.resize(len(self))
+
+        return match(self, other, psd=psd, 
+                     low_frequency_cutoff=low_frequency_cutoff,
+                     high_frequency_cutoff=high_frequency_cutoff)
 
 def load_frequencyseries(path, group=None):
     """
