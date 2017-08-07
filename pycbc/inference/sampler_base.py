@@ -791,9 +791,11 @@ class BaseMCMCSampler(_BaseSampler):
 
     @classmethod
     def compute_acls(cls, fp, start_index=None, end_index=None):
-        """Computes the autocorrleation length for all variable args and all
-        walkers in the given file. If the returned acl is inf, will default
-        to the number of requested iterations.
+        """Computes the autocorrleation length for all variable args in the
+        given file.
+
+        Parameter values are averaged over all walkers at each iteration.
+        The ACL is then calculated over the averaged chain.
 
         Parameters
         -----------
@@ -809,9 +811,8 @@ class BaseMCMCSampler(_BaseSampler):
 
         Returns
         -------
-        FieldArray
-            An nwalkers-long `FieldArray` containing the acl for each walker
-            and each variable argument, with the variable arguments as fields.
+        dict
+            A dictionary giving the ACL for each parameter.
         """
         acls = {}
         if end_index is None:
@@ -828,46 +829,35 @@ class BaseMCMCSampler(_BaseSampler):
 
     @staticmethod
     def write_acls(fp, acls):
-        """Writes the given autocorrelation lengths to the given file. The acl
-        of each walker and each parameter is saved to
-        `fp[fp.samples_group/{param}/walker{i}].attrs['acl']`; the maximum
-        over all the walkers for a given param is saved to
+        """Writes the given autocorrelation lengths to the given file.
+        
+        The ACL of each parameter is saved to
         `fp[fp.samples_group/{param}].attrs['acl']`; the maximum over all the
-        parameters and all of the walkers is saved to the file's 'acl'
-        attribute.
+        parameters is saved to the file's 'acl' attribute.
 
         Parameters
         ----------
         fp : InferenceFile
             An open file handler to write the samples to.
-        acls : FieldArray
-            An array of autocorrelation lengths (the sort of thing returned by
-            `compute_acls`).
+        acls : dict
+            A dictionary of ACLs keyed by the parameter.
 
         Returns
         -------
-        acl
+        ACL
             The maximum of the acls that was written to the file.
         """
         # write the individual acls
         pgroup = fp.samples_group + '/{param}'
-        group = pgroup + '/walker{wi}'
-        max_acls = []
-        for param in acls.fieldnames:
-            max_acl = 0
-            for wi, acl in enumerate(acls[param]):
-                fp[group.format(param=param, wi=wi)].attrs['acl'] = acl
-                max_acl = max(max_acl, acl)
-            max_acls.append(max_acl)
-            # write the maximum over the params
-            fp[pgroup.format(param=param)].attrs['acl'] = max_acl
+        for param in acls:
+            fp[pgroup.format(param=param)].attrs['acl'] = acls[param]
         # write the maximum over all params
-        fp.attrs['acl'] = max(max_acls)
+        fp.attrs['acl'] = max(acls.values())
         return fp.attrs['acl']
 
     @staticmethod
     def read_acls(fp):
-        """Reads the acls of all the walker chains saved in the given file.
+        """Reads the acls of all the parameters in the given file.
 
         Parameters
         ----------
@@ -876,18 +866,12 @@ class BaseMCMCSampler(_BaseSampler):
 
         Returns
         -------
-        FieldArray
-            An nwalkers-long `FieldArray` containing the acl for each walker
-            and each variable argument, with the variable arguments as fields.
+        dict
+            A dictionary of the ACLs, keyed by the parameter name.
         """
-        group = fp.samples_group + '/{param}/walker{wi}'
-        widx = numpy.arange(fp.nwalkers)
-        arrays = {}
-        for param in fp.variable_args:
-            arrays[param] = numpy.array([
-                fp[group.format(param=param, wi=wi)].attrs['acl']
-                for wi in widx])
-        return FieldArray.from_kwargs(**arrays)
+        group = fp.samples_group + '/{param}'
+        return {param: fp[group.format(param=param)]
+                for param in fp.variable_args}
 
     def write_state(self, fp):
         """ Saves the state of the sampler in a file.
