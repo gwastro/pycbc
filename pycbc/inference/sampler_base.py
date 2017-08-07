@@ -795,7 +795,8 @@ class BaseMCMCSampler(_BaseSampler):
         given file.
 
         Parameter values are averaged over all walkers at each iteration.
-        The ACL is then calculated over the averaged chain.
+        The ACL is then calculated over the averaged chain. If the returned ACL
+        is `inf`,  will default to the number of current iterations.
 
         Parameters
         -----------
