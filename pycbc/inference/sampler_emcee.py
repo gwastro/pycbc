@@ -779,7 +779,7 @@ class EmceePTSampler(BaseMCMCSampler):
                 samples = cls.read_samples(fp, param, thin_start=start_index,
                                            thin_interval=1, thin_end=end_index,
                                            temps=tk, flatten=False)[param]
-                samples = samples.mean(axis=-1)
+                samples = samples.mean(axis=0)
                 these_acls[tk] = autocorrelation.calculate_acl(samples)
             acls[param] = these_acls
         return FieldArray.from_kwargs(**acls)

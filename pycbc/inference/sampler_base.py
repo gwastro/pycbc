@@ -827,7 +827,9 @@ class BaseMCMCSampler(_BaseSampler):
             ``nwalkers x niterations``.
         """
         acfs = {}
-        for param in fp.variable_args:
+        if parameters is None:
+            parameters = fp.variable_args
+        for param in parameters:
             if per_walker:
                 # just call myself with a single walker
                 if walkers is None:
@@ -844,9 +846,9 @@ class BaseMCMCSampler(_BaseSampler):
                                            thin_interval=1, thin_end=end_index,
                                            walkers=walkers,
                                            flatten=False)[param]
-                samples = samples.mean(axis=-1)
-                acfs[param] = autocorrelation.calculate_acf(samples)
-        return FieldArray.from_kwargs(**acls)
+                samples = samples.mean(axis=0)
+                acfs[param] = autocorrelation.calculate_acf(samples).numpy()
+        return FieldArray.from_kwargs(**acfs)
 
     @classmethod
     def compute_acls(cls, fp, start_index=None, end_index=None):
@@ -880,7 +882,7 @@ class BaseMCMCSampler(_BaseSampler):
                                            thin_start=start_index,
                                            thin_interval=1, thin_end=end_index,
                                            flatten=False)[param]
-            samples = samples.mean(axis=-1)
+            samples = samples.mean(axis=0)
             acls[param] = autocorrelation.calculate_acl(samples)
         return acls
 

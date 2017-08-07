@@ -75,6 +75,7 @@ logging.info("Plotting autocorrelation functions")
 fig = plt.figure()
 ax = fig.add_subplot(111)
 for pi,param in enumerate(parameters):
+    logging.info("Parameter {}".format(param))
     if opts.per_walker:
         for wi in range(acfs.shape[0]):
             ax.plot(acfs[param][wi,:], alpha=0.25)
