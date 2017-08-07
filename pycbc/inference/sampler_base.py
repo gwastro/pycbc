@@ -790,6 +790,65 @@ class BaseMCMCSampler(_BaseSampler):
         return acfs
 
     @classmethod
+    def compute_acfs(cls, fp, start_index=None, end_index=None,
+                     per_walker=False, walkers=None, parameters=None):
+        """Computes the autocorrleation function of the variable args in the
+        given file.
+
+        By default, parameter values are averaged over all walkers at each
+        iteration. The ACF is then calculated over the averaged chain. An
+        ACF per-walker will be returned instead if ``per_walker=True``.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        start_index : {None, int}
+            The start index to compute the acl from. If None, will try to use
+            the number of burn-in iterations in the file; otherwise, will start
+            at the first sample.
+        end_index : {None, int}
+            The end index to compute the acl to. If None, will go to the end
+            of the current iteration.
+        per_walker : optional, bool
+            Return the ACF for each walker separately. Default is False.
+        walkers : optional, int or array
+            Calculate the ACF using only the given walkers. If None (the
+            default) all walkers will be used.
+        parameters : optional, str or array
+            Calculate the ACF for only the given parameters. If None (the
+            default) will calculate the ACF for all of the variable args.
+
+        Returns
+        -------
+        FieldArray
+            A ``FieldArray`` of the ACF vs iteration for each parameter. If
+            `per-walker` is True, the FieldArray will have shape
+            ``nwalkers x niterations``.
+        """
+        acfs = {}
+        for param in fp.variable_args:
+            if per_walker:
+                # just call myself with a single walker
+                if walkers is None:
+                    walkers = numpy.arange(fp.nwalkers)
+                arrays = [cls.compute_acfs(fp, start_index=start_index,
+                                           end_index=end_index,
+                                           per_walker=False, walkers=ii,
+                                           parameters=param)[param]
+                          for ii in walkers]
+                acfs[param] = numpy.vstack(arrays)
+            else:
+                samples = cls.read_samples(fp, param,
+                                           thin_start=start_index,
+                                           thin_interval=1, thin_end=end_index,
+                                           walkers=walkers,
+                                           flatten=False)[param]
+                samples = samples.mean(axis=-1)
+                acfs[param] = autocorrelation.calculate_acf(samples)
+        return FieldArray.from_kwargs(**acls)
+
+    @classmethod
     def compute_acls(cls, fp, start_index=None, end_index=None):
         """Computes the autocorrleation length for all variable args in the
         given file.
@@ -815,9 +874,6 @@ class BaseMCMCSampler(_BaseSampler):
         dict
             A dictionary giving the ACL for each parameter.
         """
-        acls = {}
-        if end_index is None:
-            end_index = fp.niterations
         acls = {}
         for param in fp.variable_args:
             samples = cls.read_samples(fp, param,
