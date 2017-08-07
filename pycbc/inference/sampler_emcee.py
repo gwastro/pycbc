@@ -742,9 +742,13 @@ class EmceePTSampler(BaseMCMCSampler):
 
     @classmethod
     def compute_acls(cls, fp, start_index=None, end_index=None):
-        """Computes the autocorrleation length for all variable args for all
-        walkers for all temps in the given file. If the returned acl is inf,
-        will default to the number of requested iterations.
+        """Computes the autocorrleation length for all variable args and
+        temperatures in the given file.
+        
+        Parameter values are averaged over all walkers at each iteration and
+        temperature.  The ACL is then calculated over the averaged chain. If
+        the returned ACL is `inf`,  will default to the number of current
+        iterations.
 
         Parameters
         -----------
@@ -761,40 +765,34 @@ class EmceePTSampler(BaseMCMCSampler):
         Returns
         -------
         FieldArray
-            An ntemps x nwalkers `FieldArray` containing the acl for each
-            walker and temp for each variable argument, with the variable
-            arguments as fields.
+            An ntemps-long `FieldArray` containing the ACL for each temperature
+            and for each variable argument, with the variable arguments as
+            fields.
         """
         acls = {}
         if end_index is None:
             end_index = fp.niterations
         tidx = numpy.arange(fp.ntemps)
-        widx = numpy.arange(fp.nwalkers)
         for param in fp.variable_args:
-            these_acls = numpy.zeros((fp.ntemps, fp.nwalkers), dtype=int)
+            these_acls = numpy.zeros(fp.ntemps, dtype=int)
             for tk in tidx:
-                for wi in widx:
-                    samples = cls.read_samples(
-                            fp, param,
-                            thin_start=start_index, thin_interval=1,
-                            thin_end=end_index,
-                            walkers=wi, temps=tk)[param]
-                    acl = autocorrelation.calculate_acl(samples)
-                    these_acls[tk, wi] = int(min(acl, samples.size))
+                samples = cls.read_samples(fp, param, thin_start=start_index,
+                                           thin_interval=1, thin_end=end_index,
+                                           temps=tk, flatten=False)[param]
+                samples = samples.mean(axis=-1)
+                these_acls[tk] = autocorrelation.calculate_acl(samples)
             acls[param] = these_acls
         return FieldArray.from_kwargs(**acls)
 
     @staticmethod
     def write_acls(fp, acls):
-        """Writes the given autocorrelation lengths to the given file. The acl
-        of each walker at each temperature and each parameter is saved to
-        `fp[fp.samples_group/{param}/temp{k}/walker{i}].attrs['acl']`; the
-        maximum over all the walkers for a given temperature and param is
-        saved to `fp[fp.samples_group/{param}/temp{k}].attrs['acl']`; the
-        maximum over all of the temperatures and walkers is saved to
-        `fp[fp.samples_group/{param}].attrs['acl']`; the maximum over all the
-        parameters, temperatures, and walkers is saved to the file's 'acl'
-        attribute.
+        """Writes the given autocorrelation lengths to the given file.
+        
+        The acl of each parameter at each temperature is saved to
+        ``fp[fp.samples_group/{param}/temp{k}].attrs['acl']``; the maximum over
+        all temperatures is saved to
+        ``fp[fp.samples_group/{param}].attrs['acl']``; the maximum over all the
+        parameters and temperatures is saved to the file's 'acl' attribute.
 
         Parameters
         ----------
@@ -812,29 +810,19 @@ class EmceePTSampler(BaseMCMCSampler):
         # write the individual acls
         pgroup = fp.samples_group + '/{param}'
         tgroup = pgroup + '/temp{tk}'
-        group = tgroup + '/walker{wi}'
         tidx = numpy.arange(fp.ntemps)
         overall_max = 0
+        param_acls = {}
         for param in acls.fieldnames:
             max_acls = []
+            aclp = acls[param]
             for tk in tidx:
-                max_acl = 0
-                for wi, acl in enumerate(acls[param][tk, :]):
-                    fp[group.format(param=param, tk=tk,
-                                    wi=wi)].attrs['acl'] = acl
-                    max_acl = max(max_acl, acl)
-                # write the maximum over the walkers
-                fp[tgroup.format(param=param, tk=tk)].attrs['acl'] = max_acl
-                max_acls.append(max_acl)
-            # write the maximum over the temperatures
-            this_max = max(max_acls)
-            fp[pgroup.format(param=param)].attrs['acl'] = this_max
-            overall_max = max(overall_max, this_max)
-            # write the maximum over the params
-            fp[pgroup.format(param=param)].attrs['acl'] = max_acl
-        # write the maximum over all params
-        fp.attrs['acl'] = overall_max
-        return fp.attrs['acl']
+                # write the acl for this temperature
+                fp[tgroup.format(param=param, tk=tk)].attrs['acl'] = aclp[tidx]
+            # save the maximum
+            param_acls[param] = aclp.max()
+        # use the parent class to write the acls overs the temps
+        return super(EmceePTSampler, self).write_acls(fp, acls)
 
     @staticmethod
     def read_acls(fp):
@@ -848,17 +836,15 @@ class EmceePTSampler(BaseMCMCSampler):
         Returns
         -------
         FieldArray
-            An ntemps x nwalkers `FieldArray` containing the acls for
-            every temp and walker, with the variable arguments as fields.
+            An ntemps-long ``FieldArray`` containing the acls for every
+            temperature, with the variable arguments as fields.
         """
-        group = fp.samples_group + '/{param}/temp{tk}/walker{wi}'
-        widx = numpy.arange(fp.nwalkers)
+        group = fp.samples_group + '/{param}/temp{tk}'
         tidx = numpy.arange(fp.ntemps)
         arrays = {}
         for param in fp.variable_args:
             arrays[param] = numpy.array([
-                [fp[group.format(param=param, tk=tk, wi=wi)].attrs['acl']
-                    for wi in widx]
+                fp[group.format(param=param, tk=tk)].attrs['acl']
                 for tk in tidx])
         return FieldArray.from_kwargs(**arrays)
 
