@@ -58,10 +58,16 @@ compartmentalize SIMD code from OpenMP code.
 
 tc_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
 #include <stdint.h> // For uint32_t, int64_t
-#include <error.h>
 #include <complex> // Must use C++ header with weave
 #include <math.h> // For M_SQRT2
 
+/* Rough approx of GCC's error function. */
+void error(int status, int errnum, const char *format) {
+  fprintf(stderr, format);
+  if (status != 0) {
+    exit(status);
+  }
+}
 """
 
 # The following maximizes over an interval that can be no longer than
