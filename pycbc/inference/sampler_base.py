@@ -816,18 +816,15 @@ class BaseMCMCSampler(_BaseSampler):
         acls = {}
         if end_index is None:
             end_index = fp.niterations
-        widx = numpy.arange(fp.nwalkers)
+        acls = {}
         for param in fp.variable_args:
-            these_acls = []
-            for wi in widx:
-                samples = cls.read_samples(fp, param,
+            samples = cls.read_samples(fp, param,
                                            thin_start=start_index,
                                            thin_interval=1, thin_end=end_index,
-                                           walkers=wi)[param]
-                acl = autocorrelation.calculate_acl(samples)
-                these_acls.append(min(acl, samples.size))
-            acls[param] = numpy.array(these_acls, dtype=int)
-        return FieldArray.from_kwargs(**acls)
+                                           flatten=False)[param]
+            samples = samples.mean(axis=-1)
+            acls[param] = autocorrelation.calculate_acl(samples)
+        return acls
 
     @staticmethod
     def write_acls(fp, acls):
