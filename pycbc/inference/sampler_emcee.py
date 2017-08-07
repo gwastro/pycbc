@@ -204,13 +204,11 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
             Write results starting from the given iteration.
         end_iteration : {None, int}
             Write results up to the given iteration.
-        max_iterations : {None, int}
-            If results have not previously been written to the
-            file, new datasets will be created. By default, the size of these
-            datasets will be whatever the length of the sampler's chain is at
-            this point. If you intend to run more iterations in the future,
-            set this value to that size so that the array in the file will be
-            large enough to accomodate future data.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the samples have not previously been written
+            to file. The default (None) is to use the maximum size allowed by
+            h5py.
         """
         self.write_metadata(fp)
         self.write_chain(fp, start_iteration=start_iteration,
@@ -528,13 +526,11 @@ class EmceePTSampler(BaseMCMCSampler):
             arrays on disk. This is needed if you are adding new samples to
             a chain that was previously written to file, and you want to
             preserve the history (e.g., after a checkpoint). Default is 0.
-        max_iterations : {None, int}
-            If samples have not previously been written to the file, a new
-            dataset will be created. By default, the size of this dataset will
-            be whatever the length of the sampler's chain is at this point. If
-            you intend to run more iterations, set this value to that size so
-            that the array in the file will be large enough to accomodate
-            future data.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the samples have not previously been written
+            to file. The default (None) is to use the maximum size allowed by
+            h5py.
         """
         ntemps, nwalkers, niterations = samples.shape
         # due to clearing memory, there can be a difference between indices in
@@ -550,8 +546,6 @@ class EmceePTSampler(BaseMCMCSampler):
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
-        elif max_iterations is None:
-            max_iterations = niterations
 
         group = samples_group + '/{name}/temp{tk}/walker{wi}'
 
@@ -592,13 +586,11 @@ class EmceePTSampler(BaseMCMCSampler):
             Write results starting from the given iteration.
         end_iteration : {None, int}
             Write results up to the given iteration.
-        max_iterations : {None, int}
-            If results have not previously been written to the
-            file, new datasets will be created. By default, the size of these
-            datasets will be whatever the length of the sampler's chain is at
-            this point. If you intend to run more iterations in the future,
-            set this value to that size so that the array in the file will be
-            large enough to accomodate future data.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the samples have not previously been written
+            to file. The default (None) is to use the maximum size allowed by
+            h5py.
         """
         self.write_metadata(fp)
         self.write_chain(fp, start_iteration=start_iteration,
