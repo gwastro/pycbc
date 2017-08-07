@@ -517,6 +517,8 @@ class FrequencySeries(Array):
         Returns
         -------
         match: float
+        index: int
+            The number of samples to shift to get the match.
         """
         from pycbc.types import TimeSeries
         from pycbc.filter import match
@@ -536,7 +538,7 @@ class FrequencySeries(Array):
             psd = psd.copy()
             psd.resize(len(self))
 
-        return match(self, other, psd=psd, 
+        return match(self, other, psd=psd,
                      low_frequency_cutoff=low_frequency_cutoff,
                      high_frequency_cutoff=high_frequency_cutoff)
 
