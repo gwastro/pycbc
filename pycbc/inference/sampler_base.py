@@ -885,7 +885,10 @@ class BaseMCMCSampler(_BaseSampler):
                                            thin_interval=1, thin_end=end_index,
                                            flatten=False)[param]
             samples = samples.mean(axis=0)
-            acls[param] = autocorrelation.calculate_acl(samples)
+            acl = autocorrelation.calculate_acl(samples)
+            if numpy.isinf(acl):
+                acl = samples.size
+            acls[param] = acl
         return acls
 
     @staticmethod
