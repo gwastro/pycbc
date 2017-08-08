@@ -741,6 +741,104 @@ class EmceePTSampler(BaseMCMCSampler):
                 walkers=walkers, flatten=flatten)
 
     @classmethod
+    def compute_acfs(cls, fp, start_index=None, end_index=None,
+                     per_walker=False, walkers=None, parameters=None,
+                     temps=None):
+        """Computes the autocorrleation function of the variable args in the
+        given file.
+
+        By default, parameter values are averaged over all walkers at each
+        iteration. The ACF is then calculated over the averaged chain for each
+        temperature. An ACF per-walker will be returned instead if
+        ``per_walker=True``.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        start_index : {None, int}
+            The start index to compute the acl from. If None, will try to use
+            the number of burn-in iterations in the file; otherwise, will start
+            at the first sample.
+        end_index : {None, int}
+            The end index to compute the acl to. If None, will go to the end
+            of the current iteration.
+        per_walker : optional, bool
+            Return the ACF for each walker separately. Default is False.
+        walkers : optional, int or array
+            Calculate the ACF using only the given walkers. If None (the
+            default) all walkers will be used.
+        parameters : optional, str or array
+            Calculate the ACF for only the given parameters. If None (the
+            default) will calculate the ACF for all of the variable args.
+        temps : optional, (list of) int or 'all'
+            The temperature index (or list of indices) to retrieve. If None
+            (the default), the ACF will only be computed for the coldest (= 0)
+            temperature chain. To compute an ACF for all temperates pass 'all',
+            or a list of all of the temperatures.
+
+        Returns
+        -------
+        FieldArray
+            A ``FieldArray`` of the ACF vs iteration for each parameter. If
+            `per-walker` is True, the FieldArray will have shape
+            ``ntemps x nwalkers x niterations``. Otherwise, the returned
+            array will have shape ``ntemps x niterations``.
+        """
+        acfs = {}
+        if parameters is None:
+            parameters = fp.variable_args
+        if isinstance(parameters, str) or isinstance(parameters, unicode):
+            parameters = [parameters]
+        if isinstance(temps, int):
+            temps = [temps]
+        elif temps == 'all':
+            temps = numpy.arange(fp.ntemps)
+        elif temps is None:
+            temps = [0]
+        for param in parameters:
+            subacfs = []
+            for tk in temps:
+                if per_walker:
+                    # just call myself with a single walker
+                    if walkers is None:
+                        walkers = numpy.arange(fp.nwalkers)
+                    arrays = [cls.compute_acfs(fp, start_index=start_index,
+                                               end_index=end_index,
+                                               per_walker=False, walkers=ii,
+                                               parameters=param,
+                                               temps=tk)[param][0,:]
+                              for ii in walkers]
+                    # we'll stack all of the walker arrays to make a single
+                    # nwalkers x niterations array; when these are stacked
+                    # below, we'll get a ntemps x nwalkers x niterations array
+                    subacfs.append(numpy.vstack(arrays))
+                else:
+                    samples = cls.read_samples(fp, param,
+                                               thin_start=start_index,
+                                               thin_interval=1,
+                                               thin_end=end_index,
+                                               walkers=walkers, temps=tk,
+                                               flatten=False)[param]
+                    # contract the walker dimension using the mean, and flatten
+                    # the (length 1) temp dimension
+                    samples = samples.mean(axis=1)[0,:]
+                    thisacf = autocorrelation.calculate_acf(samples).numpy()
+                    subacfs.append(thisacf)
+            # stack the temperatures
+            # FIXME: the following if/else can be condensed to a single line
+            # using numpy.stack, once the version requirements are bumped to
+            # numpy >= 1.10
+            if per_walker:
+                nw, ni = subacfs[0].shape
+                acfs[param] = numpy.zeros((len(temps), nw, ni), dtype=float)
+                for tk in temps:
+                    acfs[param][tk,...] = subacfs[tk]
+            else:
+                acfs[param] = numpy.vstack(subacfs)
+        return FieldArray.from_kwargs(**acfs)
+
+    @classmethod
     def compute_acls(cls, fp, start_index=None, end_index=None):
         """Computes the autocorrleation length for all variable args and
         temperatures in the given file.
