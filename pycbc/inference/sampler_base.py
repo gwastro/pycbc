@@ -790,10 +790,76 @@ class BaseMCMCSampler(_BaseSampler):
         return acfs
 
     @classmethod
+    def compute_acfs(cls, fp, start_index=None, end_index=None,
+                     per_walker=False, walkers=None, parameters=None):
+        """Computes the autocorrleation function of the variable args in the
+        given file.
+
+        By default, parameter values are averaged over all walkers at each
+        iteration. The ACF is then calculated over the averaged chain. An
+        ACF per-walker will be returned instead if ``per_walker=True``.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        start_index : {None, int}
+            The start index to compute the acl from. If None, will try to use
+            the number of burn-in iterations in the file; otherwise, will start
+            at the first sample.
+        end_index : {None, int}
+            The end index to compute the acl to. If None, will go to the end
+            of the current iteration.
+        per_walker : optional, bool
+            Return the ACF for each walker separately. Default is False.
+        walkers : optional, int or array
+            Calculate the ACF using only the given walkers. If None (the
+            default) all walkers will be used.
+        parameters : optional, str or array
+            Calculate the ACF for only the given parameters. If None (the
+            default) will calculate the ACF for all of the variable args.
+
+        Returns
+        -------
+        FieldArray
+            A ``FieldArray`` of the ACF vs iteration for each parameter. If
+            `per-walker` is True, the FieldArray will have shape
+            ``nwalkers x niterations``.
+        """
+        acfs = {}
+        if parameters is None:
+            parameters = fp.variable_args
+        if isinstance(parameters, str) or isinstance(parameters, unicode):
+            parameters = [parameters]
+        for param in parameters:
+            if per_walker:
+                # just call myself with a single walker
+                if walkers is None:
+                    walkers = numpy.arange(fp.nwalkers)
+                arrays = [cls.compute_acfs(fp, start_index=start_index,
+                                           end_index=end_index,
+                                           per_walker=False, walkers=ii,
+                                           parameters=param)[param]
+                          for ii in walkers]
+                acfs[param] = numpy.vstack(arrays)
+            else:
+                samples = cls.read_samples(fp, param,
+                                           thin_start=start_index,
+                                           thin_interval=1, thin_end=end_index,
+                                           walkers=walkers,
+                                           flatten=False)[param]
+                samples = samples.mean(axis=0)
+                acfs[param] = autocorrelation.calculate_acf(samples).numpy()
+        return FieldArray.from_kwargs(**acfs)
+
+    @classmethod
     def compute_acls(cls, fp, start_index=None, end_index=None):
-        """Computes the autocorrleation length for all variable args and all
-        walkers in the given file. If the returned acl is inf, will default
-        to the number of requested iterations.
+        """Computes the autocorrleation length for all variable args in the
+        given file.
+
+        Parameter values are averaged over all walkers at each iteration.
+        The ACL is then calculated over the averaged chain. If the returned ACL
+        is `inf`,  will default to the number of current iterations.
 
         Parameters
         -----------
@@ -809,68 +875,53 @@ class BaseMCMCSampler(_BaseSampler):
 
         Returns
         -------
-        FieldArray
-            An nwalkers-long `FieldArray` containing the acl for each walker
-            and each variable argument, with the variable arguments as fields.
+        dict
+            A dictionary giving the ACL for each parameter.
         """
         acls = {}
-        if end_index is None:
-            end_index = fp.niterations
-        widx = numpy.arange(fp.nwalkers)
         for param in fp.variable_args:
-            these_acls = []
-            for wi in widx:
-                samples = cls.read_samples(fp, param,
+            samples = cls.read_samples(fp, param,
                                            thin_start=start_index,
                                            thin_interval=1, thin_end=end_index,
-                                           walkers=wi)[param]
-                acl = autocorrelation.calculate_acl(samples)
-                these_acls.append(min(acl, samples.size))
-            acls[param] = numpy.array(these_acls, dtype=int)
-        return FieldArray.from_kwargs(**acls)
+                                           flatten=False)[param]
+            samples = samples.mean(axis=0)
+            acl = autocorrelation.calculate_acl(samples)
+            if numpy.isinf(acl):
+                acl = samples.size
+            acls[param] = acl
+        return acls
 
     @staticmethod
     def write_acls(fp, acls):
-        """Writes the given autocorrelation lengths to the given file. The acl
-        of each walker and each parameter is saved to
-        `fp[fp.samples_group/{param}/walker{i}].attrs['acl']`; the maximum
-        over all the walkers for a given param is saved to
+        """Writes the given autocorrelation lengths to the given file.
+        
+        The ACL of each parameter is saved to
         `fp[fp.samples_group/{param}].attrs['acl']`; the maximum over all the
-        parameters and all of the walkers is saved to the file's 'acl'
-        attribute.
+        parameters is saved to the file's 'acl' attribute.
 
         Parameters
         ----------
         fp : InferenceFile
             An open file handler to write the samples to.
-        acls : FieldArray
-            An array of autocorrelation lengths (the sort of thing returned by
-            `compute_acls`).
+        acls : dict
+            A dictionary of ACLs keyed by the parameter.
 
         Returns
         -------
-        acl
+        ACL
             The maximum of the acls that was written to the file.
         """
         # write the individual acls
         pgroup = fp.samples_group + '/{param}'
-        group = pgroup + '/walker{wi}'
-        max_acls = []
-        for param in acls.fieldnames:
-            max_acl = 0
-            for wi, acl in enumerate(acls[param]):
-                fp[group.format(param=param, wi=wi)].attrs['acl'] = acl
-                max_acl = max(max_acl, acl)
-            max_acls.append(max_acl)
-            # write the maximum over the params
-            fp[pgroup.format(param=param)].attrs['acl'] = max_acl
+        for param in acls:
+            fp[pgroup.format(param=param)].attrs['acl'] = acls[param]
         # write the maximum over all params
-        fp.attrs['acl'] = max(max_acls)
+        fp.attrs['acl'] = max(acls.values())
         return fp.attrs['acl']
 
     @staticmethod
     def read_acls(fp):
-        """Reads the acls of all the walker chains saved in the given file.
+        """Reads the acls of all the parameters in the given file.
 
         Parameters
         ----------
@@ -879,18 +930,12 @@ class BaseMCMCSampler(_BaseSampler):
 
         Returns
         -------
-        FieldArray
-            An nwalkers-long `FieldArray` containing the acl for each walker
-            and each variable argument, with the variable arguments as fields.
+        dict
+            A dictionary of the ACLs, keyed by the parameter name.
         """
-        group = fp.samples_group + '/{param}/walker{wi}'
-        widx = numpy.arange(fp.nwalkers)
-        arrays = {}
-        for param in fp.variable_args:
-            arrays[param] = numpy.array([
-                fp[group.format(param=param, wi=wi)].attrs['acl']
-                for wi in widx])
-        return FieldArray.from_kwargs(**arrays)
+        group = fp.samples_group + '/{param}'
+        return {param: fp[group.format(param=param)]
+                for param in fp.variable_args}
 
     def write_state(self, fp):
         """ Saves the state of the sampler in a file.
