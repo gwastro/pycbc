@@ -832,7 +832,7 @@ class EmceePTSampler(BaseMCMCSampler):
             if per_walker:
                 nw, ni = subacfs[0].shape
                 acfs[param] = numpy.zeros((len(temps), nw, ni), dtype=float)
-                for tk in temps:
+                for tk in range(len(temps)):
                     acfs[param][tk,...] = subacfs[tk]
             else:
                 acfs[param] = numpy.vstack(subacfs)
