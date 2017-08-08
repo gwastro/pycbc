@@ -42,8 +42,18 @@ ccorrf_parallel: Runs multicore, but not explicitly vectorized.
 
 corr_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
 #include <stdint.h> // For uint32_t, int64_t
-#include <error.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <complex> // Must use C++ header with weave
+
+/* Rough approx of GCC's error function. */
+void error(int status, int errnum, const char *format) {
+  fprintf(stderr, format);
+  if (status != 0) {
+    exit(status);
+  }
+}
 """
 
 corr_support = corr_common_support + """
