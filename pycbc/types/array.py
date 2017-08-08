@@ -733,6 +733,7 @@ class Array(object):
         if new_size == len(self):
             return
         else:
+            self._saved = {}
             new_arr = zeros(new_size, dtype=self.dtype)
             if len(self) <= new_size:
                 new_arr[0:len(self)] = self
