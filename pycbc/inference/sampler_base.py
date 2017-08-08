@@ -829,6 +829,8 @@ class BaseMCMCSampler(_BaseSampler):
         acfs = {}
         if parameters is None:
             parameters = fp.variable_args
+        if isinstance(parameters, str) or isinstance(parameters, unicode):
+            parameters = [parameters]
         for param in parameters:
             if per_walker:
                 # just call myself with a single walker
