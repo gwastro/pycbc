@@ -248,7 +248,8 @@ class _HDFInjectionSet(object):
             hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
             hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
         except AttributeError:
-            pass
+            hp_tapered = hp
+            hc_tapered = hc
 
         # compute the detector response and add it to the strain
         signal = detector.project_wave(hp_tapered, hc_tapered,
