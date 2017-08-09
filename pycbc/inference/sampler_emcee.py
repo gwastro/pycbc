@@ -925,7 +925,7 @@ class EmceePTSampler(BaseMCMCSampler):
             # save the maximum
             param_acls[param] = aclp.max()
         # use the parent class to write the acls overs the temps
-        return super(EmceePTSampler, self).write_acls(fp, acls)
+        return super(EmceePTSampler, EmceePTSampler).write_acls(fp, param_acls)
 
     @staticmethod
     def read_acls(fp):
