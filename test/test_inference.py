@@ -150,7 +150,7 @@ class TestSamplers(unittest.TestCase):
         signal = waveform_gen.generate(**{p : v
                                           for p, v in zip(self.parameters,
                                                           self.values)})
-        assert(type(signal) == dict)
+        assert(isinstance(signal, dict))
         assert(signal.values()[0].dtype == numpy.complex128)
 
         # assert that prior evaluator class returns a float
@@ -171,7 +171,7 @@ class TestSamplers(unittest.TestCase):
         """ Runs each sampler for 4 iterations.
         """
         for likelihood_eval in self.likelihood_evals:
-            for sampler_name, sampler_class in sampler.samplers.iteritems():
+            for _, sampler_class in sampler.samplers.iteritems():
                 s = sampler_class.from_cli(self.opts, likelihood_eval)
                 s.set_p0()
                 s.run(self.opts.niterations)
