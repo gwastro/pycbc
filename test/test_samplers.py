@@ -29,6 +29,7 @@ import pycbc
 import unittest
 import numpy
 from pycbc import distributions
+from pycbc.inference import likelihood
 from pycbc.inference import prior
 from pycbc.inference import sampler
 from pycbc.psd import analytical
@@ -65,7 +66,11 @@ class TestSamplers(unittest.TestCase):
             ("mass2", 30.0),
             ("tc", 100.0),
             ("coa_phase", 1.1),
+            ("spin1x", 0.0),
+            ("spin1y", 0.0),
             ("spin1z", 0.0),
+            ("spin2x", 0.0),
+            ("spin2y", 0.0),
             ("spin2z", 0.0),
             ("ra", 0.1),
             ("dec", 0.1),
@@ -76,7 +81,19 @@ class TestSamplers(unittest.TestCase):
         self.parameters, self.values = zip(*cbc_test_parameters)
         self.epoch = dict(cbc_test_parameters)["tc"]
 
-    def get_cbc_fdomain_generator(self, approximant="SEOBNRv2_ROM_DoubleSpin"):
+        # get list of evaluators to test
+        self.likelihood_evals = [self.get_cbc_fdomain_likelihood_evaluator()]
+
+        # get a set of simulated command line options for sampler
+        class Arguments(object):
+            ntemps = 2
+            nwalkers = 30
+            niterations = 4
+            update_interval = 2
+            nprocesses = 2
+        self.opts = Arguments()
+
+    def get_cbc_fdomain_generator(self, approximant="IMRPhenomPv2"):
         """ Returns the waveform generator class for a CBC signal in the
         detector frame.
         """
@@ -103,8 +120,9 @@ class TestSamplers(unittest.TestCase):
             elif param in ["distance"]:
                 dist = distributions.UniformRadius(distance=(val - 100,
                                                              val + 300))
-            elif param in ["spin1z", "spin2z"]:
-                dist = distributions.Uniform(**{param : (-1, 1)})
+            elif param in ["spin1x", "spin1y", "spin1z",
+                           "spin2x", "spin2y", "spin2z",]:
+                dist = distributions.Uniform(**{param : (-0.1, 0.1)})
             elif param in ["tc"]:
                 dist = distributions.Uniform(tc=(val - 0.2, val + 0.2))
             else:
@@ -112,10 +130,22 @@ class TestSamplers(unittest.TestCase):
             prior_dists.append(dist)
         return prior.PriorEvaluator(parameters, *prior_dists)
 
-    def test_cbc_fdomain_generator(self):
-        """ Test that we can generate a dict of FrequencySeries waveforms
-        for each detector.
+    def get_likelihood_evaluator(self, waveform_gen, data, prior_eval):
+        """ Returns the likelihood evaluator class.
         """
+        likelihood_eval = likelihood.GaussianLikelihood(
+                                             waveform_gen, data, self.fmin,
+                                             psds=self.psds, prior=prior_eval,
+                                             return_meta=False)
+        return likelihood_eval
+
+    def get_cbc_fdomain_likelihood_evaluator(self):
+        """ Returns the likelihood evalauator class for a CBC signal.
+        The data `FrequencySeries` used in the inner product is the signal
+        generated from the waveform parameters in `self.setUp`.
+        """
+
+        # assert that waveform generator returns a dict of complex
         waveform_gen = self.get_cbc_fdomain_generator()
         signal = waveform_gen.generate(**{p : v
                                           for p, v in zip(self.parameters,
@@ -123,26 +153,28 @@ class TestSamplers(unittest.TestCase):
         assert(type(signal) == dict)
         assert(signal.values()[0].dtype == numpy.complex128)
 
-    def test_cbc_prior_evaluator(self):
-        """ Test that prior evaluator class returns a float.
-        """
+        # assert that prior evaluator class returns a float
         prior_eval = self.get_prior_evaluator(self.parameters, self.values)
         p = prior_eval(**{p : v for p, v in zip(self.parameters,
                                                 self.values)})
         assert(p.dtype == numpy.float64)
 
-    def test_cbc_fdomain_sampler(self):
+        # assert that likelihood evaluator returns a float
+        # use generated waveform as data
+        likelihood_eval = self.get_likelihood_evaluator(waveform_gen,
+                                                        signal, prior_eval)
+        likelihood_eval(self.values)
 
-        # get waveform generator in radiation frame
-        waveform_gen = self.get_cbc_fdomain_generator()
+        return likelihood_eval
 
-        # get prior evaluator
-        prior_eval = self.get_prior_evaluator(self.parameters, self.values)
-
-        # get likelihood evaluator
-
-        for sampler_class, sampler_name in sampler.samplers.iteritems():
-            print sampler_class, sampler_name
+    def test_sampler(self):
+        """ Runs each sampler for 4 iterations.
+        """
+        for likelihood_eval in self.likelihood_evals:
+            for sampler_name, sampler_class in sampler.samplers.iteritems():
+                s = sampler_class.from_cli(self.opts, likelihood_eval)
+                s.set_p0()
+                s.run(self.opts.niterations)
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestSamplers))
