@@ -281,8 +281,7 @@ def apply_taper(delta_t, taper, f_0, tau, amp, phi, l, m, inclination):
     """
 
     # Times of tapering do not include t=0
-    taper_times = -numpy.arange(delta_t, taper*tau, delta_t)
-    taper_times.sort()
+    taper_times = -numpy.arange(1, int(taper*tau/delta_t))[::-1] * delta_t
     Y_plus, Y_cross = spher_harms(l, m, inclination)
     taper_hp = amp * Y_plus * numpy.exp(10*taper_times/tau) * \
                      numpy.cos(two_pi*f_0*taper_times + phi)
