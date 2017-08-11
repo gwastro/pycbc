@@ -59,6 +59,8 @@ matrix:
     services:
     - docker
   - env: PYCBC_CONTAINER=build_and_test
+    # the line below needs to be fixed. see https://github.com/ligo-cbc/pycbc/issues/1758
+    dist: precise
 
 before_install:
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
