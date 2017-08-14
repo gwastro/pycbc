@@ -194,9 +194,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
         pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
         fake-strain, fake-strain-seed, fake-strain-from-file, gating_file).
-    dyn_range_fac: {float, 1}, optional
+    dyn_range_fac : {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
-    inj_filter_rejector: InjFilterRejector instance; optional, default=None
+    precision : string
+        Precision of the returned strain ('single' or 'double').
+    inj_filter_rejector : InjFilterRejector instance; optional, default=None
         If given send the InjFilterRejector instance to the inject module so
         that it can store a reduced representation of injections if
         necessary.
@@ -269,7 +271,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Converting to float64")
             strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
         else:
-            raise ValueError("unrecognized precision {}".format(precision))
+            raise ValueError("Unrecognized precision {}".format(precision))
 
         if opt.gating_file is not None:
             logging.info("Gating glitches")
@@ -362,6 +364,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if precision == 'single':
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
+        elif precision == 'double':
+            logging.info("Converting to float64")
+            strain = (dyn_range_fac * strain).astype(pycbc.types.float64)
+        else:
+            raise ValueError("Unrecognized precision {}".format(precision))
 
     if opt.taper_data:
         logging.info("Tapering data")
