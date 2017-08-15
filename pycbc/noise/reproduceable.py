@@ -136,7 +136,6 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
         # As time series is still mirrored the complex frequency components are
         # 0. But convert to real by using abs as in inverse_spectrum_truncate
         psd = psd.to_frequencyseries()
-        psd = abs(psd)**0.5
     else:
         wn_dur = (end_time - start_time) + 2*FILTER_LENGTH
         psd = pycbc.psd.interpolate(psd, 1.0 / wn_dur)
@@ -144,13 +143,14 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
                                 FILTER_LENGTH * SAMPLE_RATE,
                                 low_frequency_cutoff=low_frequency_cutoff,
                                 trunc_method='hann')
-        psd = psd**0.5
+    asd = (psd.real())**0.5
+    del psd
     white_noise = normal(start_time - FILTER_LENGTH, end_time + FILTER_LENGTH,
                           seed=seed)
     white_noise = white_noise.to_frequencyseries()
     # Here we color. Do not want to duplicate memory here though so use '*='
-    white_noise *= psd
-    del psd
+    white_noise *= asd
+    del asd
     colored = white_noise.to_timeseries()
     del white_noise
     return colored.time_slice(start_time, end_time)
