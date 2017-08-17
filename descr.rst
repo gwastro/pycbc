@@ -4,4 +4,4 @@ PyCBC is developed collaboratively and lead by a team of LIGO scientists with th
 
 Some interactive examples using portions of the PyCBC library are also hosted as jupyter notebooks on Microsoft Azure. `Feel free to give them a try. <https://notebooks.azure.com/nitz/libraries/pycbc>`_  You can also explore the `full documentation pages <https://ligo-cbc.github.io/pycbc/latest/html/index.html>`_ or the `source code on GitHub. <https://github.com/ligo-cbc/pycbc>`_ 
 
-If you use PyCBC in scientific publications, please see our `citation guidelines. https://ligo-cbc.github.io/pycbc/latest/html/credit.html>`_ 
+If you use PyCBC in scientific publications, please see our `citation guidelines. <https://ligo-cbc.github.io/pycbc/latest/html/credit.html>`_ 
