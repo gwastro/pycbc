@@ -273,6 +273,7 @@ def get_version_info():
     except:
         version = '1.7.7'
         release = 'True'
+
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
 
         with open('pycbc/version.py', 'w') as f:
