@@ -343,7 +343,7 @@ setup (
     name = 'PyCBC',
     version = VERSION,
     description = 'Analyze gravitational-wave data, find signals, and study their parameters.',
-    long_description = open('descr.txt').read(),
+    long_description = open('descr.rst').read(),
     author = 'Ligo Virgo Collaboration - PyCBC team',
     author_email = 'alex.nitz@ligo.org',
     url = 'https://ligo-cbc.github.io',
