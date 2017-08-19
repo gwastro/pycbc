@@ -306,6 +306,31 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
+        if opt.witness_frame_type:
+            stilde = strain.to_frequencyseries()
+            tf_file = h5py.File(opt.witness_tf_file)
+            for key in tf_file:
+                witness = pycbc.frame.query_and_read_frame(opt.witness_frame_type, key,
+                       start_time=strain.start_time, end_time=strain.end_time)
+                witness = (witness * dyn_range_fac).astype(strain.dtype)
+                tf = pycbc.types.load_frequencyseries(opt.witness_tf_file, group=key)
+                tf = tf.astype(stilde.dtype)
+                
+                flen = opt.witness_filter_len * strain.sample_rate
+                tf = pycbc.psd.interpolate(tf, stilde.delta_f)
+
+                tf_time = tf.to_timeseries()              
+                window = Array(numpy.hanning(flen), dtype=.dtype)
+                tf_time[0:flen] *= window[flen/2:]
+                tf_time[len(tf_time)-flen:] *= window[0:flen/2]                
+                tf = tf_time.to_frequencyseries()
+                
+                kmax = min(len(tf), len(stilde)-1)
+                stilde[:kmax] -= tf[:kmax] * witness.to_frequencyseries()[:kmax]
+                
+            strain = stilde.to_timeseries()
+                
+
         logging.info("Remove Padding")
         start = opt.pad_data*opt.sample_rate
         end = len(strain)-opt.sample_rate*opt.pad_data
@@ -530,6 +555,15 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--zpk-k", type=float,
                     help="(optional) Zero-pole-gain (zpk) filter strain. "
                         "Transfer function gain")
+                        
+    # Options to apply to subtract noise from a witness channel and known
+    # transfer function.
+    data_reading_group.add_argument("--witness-frame-type", type=str,
+                    help="(optional), frame type which will be use to query the"
+                         "witness channel data)."
+    data_reading_group.add_argument("--witness-tf-file", type=str, nargs='+',
+                    help="(optional), an hdf file containing the transfer"
+                         "  functions and the associated channel names")
 
     return data_reading_group
 
