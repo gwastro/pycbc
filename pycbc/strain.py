@@ -320,10 +320,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                 flen = int(opt.witness_filter_length * strain.sample_rate)
                 tf = pycbc.psd.interpolate(tf, stilde.delta_f)
 
-                tf_time = tf.to_timeseries()              
+                tf_time = tf.to_timeseries()
                 window = Array(numpy.hanning(flen*2), dtype=strain.dtype)
                 tf_time[0:flen] *= window[flen:]
-                tf_time[len(tf_time)-flen:] *= window[0:flen]                
+                tf_time[len(tf_time)-flen:] *= window[0:flen]
                 tf = tf_time.to_frequencyseries()
                 
                 kmax = min(len(tf), len(stilde)-1)
