@@ -316,11 +316,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                 tf = pycbc.types.load_frequencyseries(opt.witness_tf_file, group=key)
                 tf = tf.astype(stilde.dtype)
                 
-                flen = opt.witness_filter_len * strain.sample_rate
+                flen = opt.witness_filter_length * strain.sample_rate
                 tf = pycbc.psd.interpolate(tf, stilde.delta_f)
 
                 tf_time = tf.to_timeseries()              
-                window = Array(numpy.hanning(flen), dtype=.dtype)
+                window = Array(numpy.hanning(flen), dtype=strain.dtype)
                 tf_time[0:flen] *= window[flen/2:]
                 tf_time[len(tf_time)-flen:] *= window[0:flen/2]                
                 tf = tf_time.to_frequencyseries()
@@ -560,10 +560,12 @@ def insert_strain_option_group(parser, gps_times=True):
     # transfer function.
     data_reading_group.add_argument("--witness-frame-type", type=str,
                     help="(optional), frame type which will be use to query the"
-                         "witness channel data)."
+                         "witness channel data.")
     data_reading_group.add_argument("--witness-tf-file", type=str, nargs='+',
-                    help="(optional), an hdf file containing the transfer"
+                    help="an hdf file containing the transfer"
                          "  functions and the associated channel names")
+    data_reading_group.add_argument("--witness-filter-length", type=float,
+                    help="filter length in seconds for the transfer function")
 
     return data_reading_group
 
