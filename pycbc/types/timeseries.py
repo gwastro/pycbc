@@ -644,7 +644,7 @@ class TimeSeries(Array):
         # time shifts. This also results in the shift being circular. It
         # is left to a future update to do a faster impelementation in the case
         # where the time shift can be done with an exact number of samples.
-        return self.to_frequencyseries().shift_time(dt).to_timeseries()
+        return self.to_frequencyseries().cyclic_time_shift(dt).to_timeseries()
 
     def match(self, other, psd=None,
               low_frequency_cutoff=None, high_frequency_cutoff=None):
