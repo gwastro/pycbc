@@ -473,7 +473,7 @@ class FrequencySeries(Array):
 
         Shift the data and timestamps in the time domain a given number of 
         seconds. To just change the time stamps, do ts.start_time += dt. 
-        This may be smaller than the intrinsic sample rate of the data.
+        The time shift may be smaller than the intrinsic sample rate of the data.
         Note that data will be cycliclly rotated, so if you shift by 2
         seconds, the final 2 seconds of your data will now be at the 
         beginning of the data set.
