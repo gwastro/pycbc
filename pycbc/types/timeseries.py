@@ -622,7 +622,7 @@ class TimeSeries(Array):
 
     @_nocomplex
     def cyclic_time_shift(self, dt):
-        """Shift the data by a given number of seconds
+        """Shift the data and timestamps by a given number of seconds
         
         Shift the data by a given number of seconds. This may
         be smaller than the intrinsic sample rate of the data. Note that
