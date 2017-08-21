@@ -163,7 +163,7 @@ class TestSamplers(unittest.TestCase):
         # use generated waveform as data
         likelihood_eval = self.get_likelihood_evaluator(waveform_gen,
                                                         signal, prior_eval)
-        assert(likelihood_eval(self.values) == numpy.float64)
+        assert(likelihood_eval(self.values).dtype == numpy.float64)
 
         return likelihood_eval
 
