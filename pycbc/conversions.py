@@ -631,7 +631,7 @@ def snr_from_loglr(loglr):
     return snrs
 
 
-__all__ = ['primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
+__all__ = ['lambda_tilde', 'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
            'eta_from_mass1_mass2', 'mchirp_from_mass1_mass2',
            'mass1_from_mtotal_q', 'mass2_from_mtotal_q',
