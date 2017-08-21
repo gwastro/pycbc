@@ -13,6 +13,7 @@ addons:
     - zlib1g-dev
     - libfreetype6-dev
     - libdb-dev
+    - libopenblas-base
 env:
   global:
   - secure: xlIlPHEm1gN6HCR9tnAWE/Nc9tuX9slCSTbEEcIW+XM1KgZLrH6I+nfvWyUGIgQJ+VVZYyYNNSQaGa7rS06eq6hXtdfhC6Qr9kyDkgCkcLhowXEf/8vdrJlTsLA7FuPdJh+mWIIW3vemMVQaz4fG7pf29zcepbUKM3f1bcJTa36sDU4fltPBb8vMwYkgso9R7M/b/G7fCPKr/oQedYNgCXX0AUijUPV60xaZ9VLrLpwYFGTvcXhTySM7Ut+4WxsqPDuqNkQvqZh6ytUu+vUXhuB913HnDqNx2UxrLiIg0Bv34NYNQ+6J9UUTK9XqhTIcSZR91LUYZZnLu9YhPk3QaeShgQSPcF6fLtVX59DPyUEcegVi4DvsDCrGYwejj8Vy7M8sB0gm/quRnXXwykktVnvWBodCWF3XuwvDZhMfqjvjKBhokeTXAg66e2GDC4VqEyTscMgNZz9DZr6A2uHRmMFCs0xwFWfVHRsZOAccbWACcVyw4rqfElBqStLSl9AWqPcFOQDHh4+tVNrdgDL+M5kjc9AGC0jZ8R7+cJevaUssVh381RHHry5Sm9vqvtMf3EpoUMkP/oMPwoKmT+49OJEWOavDHOtX4zDkFlYCSClSpPx9F1hV/kOHEe2zo1eLzmk0v+NbLAyX5AVVuDfXn/t134JiRFsgxMFZXvU9zno=
