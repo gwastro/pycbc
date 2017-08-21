@@ -622,13 +622,14 @@ class TimeSeries(Array):
 
     @_nocomplex
     def cyclic_time_shift(self, dt):
-        """Shift the data by a given number of seconds
+        """Shift the data and timestamps by a given number of seconds
         
-        Shift the data by a given number of seconds. This may
-        be smaller than the intrinsic sample rate of the data. Note that
-        data will be cycliclly rotated, so if you shift by 2 seconds, the
-        final 2 seconds of your data will now be at the beginning of the
-        data set.
+        Shift the data and timestamps in the time domain a given number of 
+        seconds. To just change the time stamps, do ts.start_time += dt. 
+        The time shift may be smaller than the intrinsic sample rate of the data.
+        Note that data will be cycliclly rotated, so if you shift by 2
+        seconds, the final 2 seconds of your data will now be at the 
+        beginning of the data set.
 
         Parameters
         ----------
@@ -644,7 +645,7 @@ class TimeSeries(Array):
         # time shifts. This also results in the shift being circular. It
         # is left to a future update to do a faster impelementation in the case
         # where the time shift can be done with an exact number of samples.
-        return self.to_frequencyseries().shift_time(dt).to_timeseries()
+        return self.to_frequencyseries().cyclic_time_shift(dt).to_timeseries()
 
     def match(self, other, psd=None,
               low_frequency_cutoff=None, high_frequency_cutoff=None):
