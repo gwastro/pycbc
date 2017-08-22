@@ -18,7 +18,7 @@ beautifulsoup4>=4.6.0
 astropy>=2.0.1
 
 # Needed for Parameter Estimation Tasks
-kombine==0.8.1
+kombine=>0.8.2
 emcee>=2.2.0
 corner>=2.0.1
 
