@@ -17,7 +17,7 @@
 This modules contains functions reading, generating, and segmenting strain data
 """
 import copy
-import logging, numpy, lal
+import logging, numpy
 import pycbc.noise
 import pycbc.types
 from pycbc.types import TimeSeries, zeros
