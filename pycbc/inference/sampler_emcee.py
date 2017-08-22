@@ -229,7 +229,8 @@ class _callprior(object):
         self.callable = likelihood_call
 
     def __call__(self, args):
-        return self.callable(args, callfunc='prior')[0]
+        prior = self.callable(args, callfunc='prior')
+        return prior if isinstance(prior, numpy.float64) else prior[0]
 
 class _callloglikelihood(object):
     """Calls the likelihood function's loglikelihood function.
