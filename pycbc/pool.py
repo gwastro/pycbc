@@ -88,6 +88,13 @@ class BroadcastPool(multiprocessing.pool.Pool):
 def _dummy_broadcast(self, f, args):
     self.map(f, [args] * self.size)    
 
+class SinglePool(object):
+    def broadcast(self, fcn, args):
+        return self.map(fcn, [args])
+
+    def map(self, f, items):
+        return [f(a) for a in items]
+
 def choose_pool(processes, mpi=False):
     if mpi:
         try:
@@ -98,6 +105,8 @@ def choose_pool(processes, mpi=False):
         except ImportError:
             raise ValueError("Failed to start up an MPI pool, "
                              "install mpi4py / schwimmbadd")
+    elif processes == 1:
+        pool = SinglePool()
     else:
         pool = BroadcastPool(processes)
     return pool
