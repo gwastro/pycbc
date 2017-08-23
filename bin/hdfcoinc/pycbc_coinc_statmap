@@ -241,6 +241,7 @@ while numpy.any(fnlouder == 0):
         trig_id2 = all_trigs.trigger_id2[fore_locs]
         f['foreground_h%s/trigger_id1' % h_iterations] = trig_id1
         f['foreground_h%s/trigger_id2' % h_iterations] = trig_id2
+        f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
 
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
@@ -356,6 +357,7 @@ while numpy.any(fnlouder == 0):
         trig_id2 = all_trigs.trigger_id2[fore_locs]
         f['foreground_h%s/trigger_id1' % h_iterations] = trig_id1
         f['foreground_h%s/trigger_id2' % h_iterations] = trig_id2
+        f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
 
 # Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
