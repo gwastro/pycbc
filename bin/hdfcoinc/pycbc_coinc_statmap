@@ -237,13 +237,15 @@ while numpy.any(fnlouder == 0):
         f['foreground_h%s/stat' % h_iterations] = fore_stat
         f['foreground_h%s/ifar' % h_iterations] = sec_to_year(ifar)
         f['foreground_h%s/fap' % h_iterations] = fap
-        f['foreground_h%s/ifar_exc' % h_iterations] = ifar_exc
-        f['foreground_h%s/fap_exc' % h_iterations] = fap_exc
+#        f['foreground_h%s/ifar_exc' % h_iterations] = sec_to_year(ifar_exc)
+#        f['foreground_h%s/fap_exc' % h_iterations] = fap_exc
         trig_id1 = all_trigs.trigger_id1[fore_locs]
         trig_id2 = all_trigs.trigger_id2[fore_locs]
         f['foreground_h%s/trigger_id1' % h_iterations] = trig_id1
         f['foreground_h%s/trigger_id2' % h_iterations] = trig_id2
         f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
+        f['foreground_h%s/time1' % h_iterations] = all_trigs.time1[fore_locs]
+        f['foreground_h%s/time2' % h_iterations] = all_trigs.time2[fore_locs]
 
     # Add the iteration number of hierarchical removals done.
     h_iterations += 1
@@ -360,8 +362,10 @@ while numpy.any(fnlouder == 0):
         f['foreground_h%s/trigger_id1' % h_iterations] = trig_id1
         f['foreground_h%s/trigger_id2' % h_iterations] = trig_id2
         f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
-        f['foreground_h%s/ifar_exc' % h_iterations] = ifar_exc
-        f['foreground_h%s/fap_exc' % h_iterations] = fap_exc
+#        f['foreground_h%s/ifar_exc' % h_iterations] = sec_to_year(ifar_exc)
+#        f['foreground_h%s/fap_exc' % h_iterations] = fap_exc
+        f['foreground_h%s/time1' % h_iterations] = all_trigs.time1[fore_locs]
+        f['foreground_h%s/time2' % h_iterations] = all_trigs.time2[fore_locs]
 
 # Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
