@@ -6,7 +6,7 @@ write FARs and p-values for intermediary hierarchical removal steps.
 import argparse
 import h5py, logging, numpy
 from pycbc.io import hdf
-import h5py, numpy, logging
+import h5py, logging
 from pycbc.pnutils import mass1_mass2_to_mchirp_eta
 import pycbc.results, pycbc.results.followup
 from pycbc.results.versioning import save_fig_with_metadata
@@ -65,6 +65,9 @@ if h_num_rm >= 0:
                                       sngl_files=args.single_detector_triggers,
                                       n_loudest=args.num_coincs_to_write,
                                       group='foreground_h%s' % h_num_rm)
+    fortrigs_supp = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
+                                           sngl_files=args.single_detector_triggers,
+                                           n_loudest=args.num_coincs_to_write)
 
 else :
     fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
@@ -72,51 +75,42 @@ else :
                                       n_loudest=args.num_coincs_to_write)
 
 if args.output_file.endswith('.html'):
-    # If hierarchical removals were done and the user wants to look at a
-    # particular stage of hierarchical removals (h_num_rm), remove that
-    # number of loudest triggers by stat from the list of triggers.
-#    if h_num_rm >= 0:
-#        fortrigs.ignore_x_loudest(h_num_rm)
-
     ifar = fortrigs.get_coincfile_array('ifar')
-    ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
     fap = fortrigs.get_coincfile_array('fap')
-    fap_exc = fortrigs.get_coincfile_array('fap_exc')
     stat = fortrigs.get_coincfile_array('stat')
-    time1 = fortrigs.get_coincfile_array('time1')
-    time2 = fortrigs.get_coincfile_array('time2')
     mass1 = fortrigs.get_bankfile_array('mass1')
     mass2 = fortrigs.get_bankfile_array('mass2')
     spin1z = fortrigs.get_bankfile_array('spin1z')
     spin2z = fortrigs.get_bankfile_array('spin2z')
+    time1 = fortrigs.get_coincfile_array('time1')
+    time2 = fortrigs.get_coincfile_array('time2')
 
-    # Write the correct false alarm rates and other significance values
-    # to the table after h_num_rm hierarchical removals
- #   if h_num_rm >= 0:
-        # Regenerate the list of inclusive ifar and fap from foreground
-        # trigger id's from fortrigs.get_coincfile_array and stat file
+    if h_num_rm >= 0:
+        # This information is not stored at all levels of the coinc trigger file
+        # so grab from the top level and populate the variables for output later
+ 
+        ifar_exc_orig = fortrigs_supp.get_coincfile_array('ifar_exc')
+        fap_exc_orig = fortrigs_supp.get_coincfile_array('fap_exc')
 
-#        trig_id1_table = fortrigs.get_coincfile_array('trigger_id1')
-#        print "Loc 1"
-#        print 'foreground_h%s/trigger_id1' % h_num_rm
-#        trig_attempt = fortrigs.get_coincfile_array('foreground_h%s/trigger_id1' % h_num_rm)
-#        print "Loc 2"
+        trig_id1 = fortrigs_supp.get_coincfile_array('trigger_id1')
+        trig_id1_hrm = fortrigs.get_coincfile_array('trigger_id1')
 
-#        trig_id1_hrm = f['foreground_h%s/trigger_id1' % h_num_rm][:]
-#        trig_id2_hrm = f['foreground_h%s/trigger_id2' % h_num_rm][:]
+        # Get the list of id's that map from one to the other set
+        idx1_list = []
+        for i in range(len(trig_id1)):
+            for j in range(len(trig_id1_hrm)):
+                 if trig_id1[i] == trig_id1_hrm[j]:
+                     idx1_list.append(i)
 
-#        ifar_hrm = f['foreground_h%s/ifar' % h_num_rm][:]
-#        fap_hrm = f['foreground_h%s/fap' % h_num_rm][:]
+        ifar_exc = numpy.zeros(len(ifar), dtype=numpy.float64)
+        fap_exc = numpy.zeros(len(ifar), dtype=numpy.float64)
+        for k in range(len(idx1_list)):
+            ifar_exc[k] = ifar_exc_orig[idx1_list[k]]
+            fap_exc[k] = fap_exc_orig[idx1_list[k]]
 
-#        idx1_list = []
-#        for i in range(len(trig_id1_table)):
-#             for j in range(len(trig_id1_hrm)):
-#                 if trig_id1_table[i] == trig_id1_hrm[j]:
-#                     idx1_list.append(j)
-
-#        for k in range(len(idx1_list)):
-#            ifar[k] = ifar_hrm[idx1_list[k]]
-#            fap[k] = fap_hrm[idx1_list[k]]
+    else :
+        ifar_exc = fortrigs.get_coincfile_array('ifar_exc')
+        fap_exc = fortrigs.get_coincfile_array('fap_exc')
 
     mchirp, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
 
