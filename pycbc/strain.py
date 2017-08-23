@@ -306,7 +306,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
-        if opt.witness_frame_type:
+        if hasattr(opt, 'witness_frame_type') and opt.witness_frame_type:
             stilde = strain.to_frequencyseries()
             import h5py
             tf_file = h5py.File(opt.witness_tf_file)
