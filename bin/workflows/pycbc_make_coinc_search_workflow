@@ -266,7 +266,7 @@ for bin_file in bin_files:
 
     # Create Hierarchical Removal plots
     if(h_num_rm[bin_file] > 0):
-        for i in range(h_num_rm[bin_file])
+        for i in range(h_num_rm[bin_file] + 1):
             snrifar = wf.make_snrifar_plot(workflow, bin_file,
                                            rdir['open_box_result/hierarchical_removal'],
                                            h_rm_num = i 
