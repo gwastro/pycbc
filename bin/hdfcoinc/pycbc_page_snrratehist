@@ -62,7 +62,7 @@ if h_inc_back_num is None:
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
     import sys
-    fig = plt.figure()
+    fig = pylab.figure()
     ax = fig.add_subplot(111)
 
     ax.set_xlim(0, 1)    
