@@ -68,14 +68,13 @@ if h_inc_back_num > h_iterations:
     ax.set_xlim(0, 1)    
     ax.set_ylim(0, 1)
 
-    ax.text(0.25, 0.5, 'No more hierarchical removals performed',
+    ax.text(0.5, 0.5, 'No more hierarchical removals performed',
         horizontalalignment='center',
         verticalalignment='center')
 
     pycbc.results.save_fig_with_metadata(fig, args.output_file,
         title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank",
-        caption="Histogram of the FAR vs the ranking statistic in the search. Null plot, no "
-                "hierarchical removals performed.",
+        caption="No hierarchical removals performed.",
         cmd=' '.join(sys.argv))    
 
     # Exit the code successfully and bypass the rest of the plotting code.
