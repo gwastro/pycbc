@@ -34,6 +34,7 @@ from pycbc.waveform import parameters
 from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
 from pycbc.detector import Detector
 import lal as _lal
+from pycbc import gate
 
 #
 #   Generator for CBC waveforms
@@ -427,7 +428,7 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-            variable_args=(), recalib=None, **frozen_params):
+                 variable_args=(), recalib=None, gates=None, **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         self._static_args = frozen_params.copy()
@@ -461,6 +462,7 @@ class FDomainDetFrameGenerator(object):
         else:
             self.detectors = {'RF': None}
         self.detector_names = sorted(self.detectors.keys())
+        self.gates = gates
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
@@ -527,6 +529,8 @@ class FDomainDetFrameGenerator(object):
                 hp = apply_fd_time_shift(hp, self.current_params['tc']+tshift,
                                          copy=False)
             h['RF'] = hp
+        if self.gates is not None:
+            h = gate.apply_gates_to_fd(h, self.gates)
         return h
 
 
