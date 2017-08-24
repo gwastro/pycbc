@@ -382,8 +382,9 @@ class EmceePTSampler(BaseMCMCSampler):
         p0 = numpy.ones((ntemps, nwalkers, ndim))
         # if samples are given then use those as initial poistions
         if samples is not None:
-            raise NotImplementedError("Cannot set initial positions from "
-                                      "InferenceFile with emcee sampler.")
+            # transform to sampling parameter space
+            samples = self.likelihood_evaluator.apply_sampling_transforms(
+                samples)
         # draw random samples if samples are not provided
         else:
             samples = self.likelihood_evaluator.prior_rvs(
