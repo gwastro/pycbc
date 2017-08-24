@@ -61,11 +61,14 @@ if args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
         raise ValueError(err_msg)
 
 if h_num_rm >= 0:
+    # read in the triggers from the group corresponding to the removal stage
     fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                       sngl_files=args.single_detector_triggers,
                                       n_loudest=args.num_coincs_to_write,
                                       group='foreground_h%s' % h_num_rm)
-    fortrigs_supp = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
+    # read in the regular triggers to get the exclusive ifar which is 
+    # independent of any removal
+    fortrigs_exclusive = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                            sngl_files=args.single_detector_triggers,
                                            n_loudest=args.num_coincs_to_write)
 
@@ -89,10 +92,10 @@ if args.output_file.endswith('.html'):
         # This information is not stored at all levels of the coinc trigger file
         # so grab from the top level and populate the variables for output later
  
-        ifar_exc_orig = fortrigs_supp.get_coincfile_array('ifar_exc')
-        fap_exc_orig = fortrigs_supp.get_coincfile_array('fap_exc')
+        ifar_exc_orig = fortrigs_exclusive.get_coincfile_array('ifar_exc')
+        fap_exc_orig = fortrigs_exclusive.get_coincfile_array('fap_exc')
 
-        trig_id1 = fortrigs_supp.get_coincfile_array('trigger_id1')
+        trig_id1 = fortrigs_exclusive.get_coincfile_array('trigger_id1')
         trig_id1_hrm = fortrigs.get_coincfile_array('trigger_id1')
 
         # Get the list of id's that map from one to the other set
