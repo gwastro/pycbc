@@ -323,8 +323,8 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
         files += node.output_files
     return files
 
-def make_snrratehist_plot(workflow, bg_file, h_rm_num=None, out_dir, closed_box=False,
-                         tags=None):
+def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
+                         tags=None, h_rm_num=None):
     tags = [] if tags is None else tags
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrratehist', ifos=workflow.ifos,
