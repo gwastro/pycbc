@@ -333,7 +333,7 @@ def setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
     statmap_files = FileList([])
 
     # Check to see if the user wants to do hierarchical removal of loud triggers
-    if wf.cp.has_option_tags('workflow-coincidence', 'hierarchical-removals-per-bin', tags=[tag]):
+    if workflow.cp.has_option_tags('workflow-coincidence', 'hierarchical-removals-per-bin', tags=[tag]):
         h_num_rm = workflow.cp.get_opt_tags('workflow-coincidence', 'hierarchical-removal-per-bin', tags).split(' ')
       #  h_num_rm = [x for x in h_num_rm if x != '']
 
