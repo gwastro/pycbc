@@ -40,6 +40,7 @@ from pycbc.waveform import generator
 from pycbc.inference import option_utils
 from pycbc.inference import prior
 from pycbc.inference import burn_in
+from pycbc import gate
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -225,13 +226,16 @@ with ctx:
     generator_function = generator.select_waveform_generator(
                                                     static_args["approximant"])
 
+    # get gates for templates
+    gates = gate.gates_from_cli(opts)
+
     # construct class that will generate waveforms
     generated_waveform = generator.FDomainDetFrameGenerator(
                        generator_function, epoch=stilde_dict.values()[0].epoch,
                        variable_args=variable_args, detectors=opts.instruments,
                        delta_f=stilde_dict.values()[0].delta_f,
                        delta_t=strain_dict.values()[0].delta_t,
-                       recalib=recalib,
+                       recalib=recalib, gates=gates,
                        **static_args)
 
     # construct class that will return the natural logarithm of likelihood
