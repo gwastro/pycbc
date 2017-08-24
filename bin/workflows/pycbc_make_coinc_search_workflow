@@ -199,6 +199,8 @@ statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
 # Check to see if the user has requested hiearchical removal
 if workflow.cp.has_option_tags('workflow-coincidence', 'hierarchical-removals-per-bin', tags=[tag]):
     h_num_rm = workflow.cp.get_opt_tags('workflow-coincidence', 'hierarchical-removal-per-bin', tags).split(' ')
+else :
+    h_num_rm = 0
 
 # setup coinc for the filtering jobs
 full_insps = insps
