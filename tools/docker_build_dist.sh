@@ -197,6 +197,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install ipython
   pip install jupyter
+  pip install hide_code
 
   cat << EOF >> $VIRTUAL_ENV/bin/activate
 
