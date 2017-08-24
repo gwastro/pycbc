@@ -100,8 +100,28 @@ if h_inc_back_num is None:
     h_inc_back_num = 0
 
 if h_inc_back_num > h_iterations:
-    raise ValueError('User requested inclusive background after '
-                     'hierarchical removals that does not exist!')
+    # Produce a null plot saying no hierarchical removals can be plotted
+    import sys
+    fig = pylab.figure()
+    ax = fig.add_subplot(111)
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+
+    output_message = "No more hierarchical removals performed.\n" \
+                     "Attempted to show " + str(h_inc_back_num) + " removals,\n" \
+                     "but only " + str(h_iterations) + " removals done."
+
+    ax.text(0.5, 0.5, output_message, horizontalalignment='center',
+            verticalalignment='center')
+
+    pycbc.results.save_fig_with_metadata(fig, args.output_file,
+      title="%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank",
+      caption='No hierarchical removals done here',
+      cmd=' '.join(sys.argv))
+
+    # Exit the code successfully and bypass the rest of the plotting code.
+    sys.exit(0)
 
 args.cumulative = not args.not_cumulative
 

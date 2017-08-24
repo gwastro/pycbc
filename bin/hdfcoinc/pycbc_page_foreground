@@ -47,8 +47,18 @@ except KeyError:
     h_iterations = None
 
 if h_num_rm > h_iterations:
-    raise ValueError('User requested FANs after %s hierarchical removals. '
-                     'This many removals were not done.' % h_num_rm)
+    col_one = numpy.array([h_num_rm])
+    col_two = numpy.array([h_iterations])
+    columns = [col_one, col_two]
+    names = ["Hierarchical Removals Requested", "Hierarchical Removals Performed"]
+    format_strings = ['#', '#']
+    html_table = pycbc.results.table(columns, names,
+                                   format_strings=format_strings, page_size=10)
+
+    kwds = { 'title' : 'No more hierarchical removals were performed.',
+        'cmd' :' '.join(sys.argv), }
+    save_fig_with_metadata(str(html_table), args.output_file, **kwds)
+    sys.exit(0)
 
 if args.verbose:
     log_level = logging.INFO
