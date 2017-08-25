@@ -132,10 +132,10 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
                           hierarchical_level=None):
 
     if hierarchical_level and tags:
-        tags = [("HIERARCHICAL_LEVEL_{num:02d}".format(
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
                 hierarchical_level))] + tags
     elif hierarchical_level and not tags:
-        tags = ["HIERARCHICAL_LEVEL_{num:02d}".format(hierarchical_level)]
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
     elif not hierarchical_level and not tags:
         tags = []
 
@@ -279,10 +279,10 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
     """
 
     if hierarchical_level and tags:
-        tags = [("HIERARCHICAL_LEVEL_{num:02d}".format(
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
                 hierarchical_level))] + tags
     elif hierarchical_level and not tags:
-        tags = ["HIERARCHICAL_LEVEL_{num:02d}".format(hierarchical_level)]
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
     elif not hierarchical_level and not tags:
         tags = []
 
@@ -340,10 +340,10 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
                          tags=None, hierarchical_level=None):
 
     if hierarchical_level and tags:
-        tags = [("HIERARCHICAL_LEVEL_{num:02d}".format(
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
                 hierarchical_level))] + tags
     elif hierarchical_level and not tags:
-        tags = ["HIERARCHICAL_LEVEL_{num:02d}".format(hierarchical_level)]
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
     elif not hierarchical_level and not tags:
         tags = []
 
@@ -365,10 +365,10 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
                      cumulative=True, tags=None, hierarchical_level=None):
 
     if hierarchical_level and tags:
-        tags = [("HIERARCHICAL_LEVEL_{num:02d}".format(
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
                 hierarchical_level))] + tags
     elif hierarchical_level and not tags:
-        tags = ["HIERARCHICAL_LEVEL_{num:02d}".format(hierarchical_level)]
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
     elif not hierarchical_level and not tags:
         tags = []
 
