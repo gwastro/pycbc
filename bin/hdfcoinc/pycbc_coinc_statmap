@@ -52,7 +52,7 @@ parser.add_argument('--hierarchical-removal-window', type=float, default=1.0,
                     help='Time around each trigger to window out for a very '
                          'louder trigger in the hierarchical removal '
                          'procedure. [default=1.0s]')
-parser.add_argument('--max-hier-removal', type=int, default=0,
+parser.add_argument('--max-hierarchical-removal', type=int, default=0,
                     help='Maximum amount of hierarchical removals to carry '
                          'out when hierarchical removal is desired. Choose '
                          '-1 for continuous hiearchical removal until no '
