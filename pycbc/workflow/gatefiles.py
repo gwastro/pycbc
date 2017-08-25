@@ -29,6 +29,7 @@ workflows.
 
 from __future__ import division
 
+import os
 import ConfigParser
 import urlparse, urllib
 import logging
@@ -116,7 +117,8 @@ def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
             pre_gen_file = cp.get_opt_tags('workflow-gating',
                             'gating-file-%s' % ifo.lower(),
                             tags)
-            pre_gen_file = resolve_url(pre_gen_file,output_dir)
+            pre_gen_file = resolve_url(pre_gen_file,
+                                       os.path.join(os.getcwd(),output_dir)))
             file_url = urlparse.urljoin('file:',
                                          urllib.pathname2url(pre_gen_file))
             curr_file = File(ifo, user_tag, global_seg, file_url,
