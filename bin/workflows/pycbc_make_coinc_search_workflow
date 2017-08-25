@@ -154,7 +154,7 @@ final_veto_file, final_veto_name, ind_cats = \
                                             execute_now=False)
 
 # setup gating files if provided
-gate_files = wf.setup_gating_workflow(workflow, "gating")
+gate_files = wf.setup_gating_workflow(workflow, output_dir="gating")
 
 # add the gate files to the jobs that use them
 for job in ['calculate_psd', 'inspiral', 'single_template', 
