@@ -226,7 +226,7 @@ orig_fore_stat = fore_stat
 while numpy.any(fnlouder == 0):
     # If the user wants to stop doing hierarchical removals after a set
     # number of iterations then break when that happens.
-    if (h_iterations == args.max_hier_removal): 
+    if (h_iterations == args.max_hierarchical_removal): 
         break
 
     # Write foreground trigger info before hierarchical removals for
