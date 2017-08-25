@@ -260,8 +260,7 @@ for bin_file in bin_files:
     # Closed box
     ifar_cb = wf.make_ifar_plot(workflow, bin_file,
                     rdir['coincident_triggers'],
-                    tags=bin_file.tags + ['closed_box'],
-                    hierarchical_level=hierarchical_level)
+                    tags=bin_file.tags + ['closed_box'])
     closed_box_ifars.append(ifar_cb)
     
 # Open box table
