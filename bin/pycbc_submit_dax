@@ -521,7 +521,7 @@ DB_TRY=0
 
 # force a condor reschedule to get the workflow running
 set +e
-condor_reschdule &> /dev/null
+condor_reschedule &> /dev/null
 set -e
 
 /bin/echo "Querying Pegasus database for workflow stored in ${SUBMIT_DIR}/work"
