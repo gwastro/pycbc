@@ -71,7 +71,8 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
 
     if gateMethod == "PREGENERATED_FILE":
         logging.info("Setting gating from pre-generated file(s).")
-        gate_files = setup_gate_pregenerated(workflow, tags=tags)
+        gate_files = setup_gate_pregenerated(workflow, 
+                                             output_dir=output_dir, tags=tags)
     else:
         errMsg = "Gating method not recognized. Only "
         errMsg += "PREGENERATED_FILE is currently supported."
