@@ -89,7 +89,7 @@ logging.info('Read in the data')
 f = h5py.File(args.trigger_file, 'r')
 
 # Parse which inclusive background to use for the plotting
-h_inc_back_num = args.h_iter_inc_background
+h_inc_back_num = args.use_hierarchical_level
 
 try:
     h_iterations = f.attrs['hierarchical_removal_iterations']
