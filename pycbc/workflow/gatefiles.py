@@ -118,7 +118,7 @@ def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
                             'gating-file-%s' % ifo.lower(),
                             tags)
             pre_gen_file = resolve_url(pre_gen_file,
-                                       os.path.join(os.getcwd(),output_dir)))
+                                       os.path.join(os.getcwd(),output_dir))
             file_url = urlparse.urljoin('file:',
                                          urllib.pathname2url(pre_gen_file))
             curr_file = File(ifo, user_tag, global_seg, file_url,
