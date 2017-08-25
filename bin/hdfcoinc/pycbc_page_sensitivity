@@ -14,8 +14,9 @@ parser.add_argument('--injection-file', required=True,
                     help="Required. HDF format injection result file.")
 parser.add_argument('--output-file', required=True,
                     help='Destination file for the plot')
-parser.add_argument('--bin-type', choices=['spin', 'mchirp',
-                                           'total_mass', 'eta', 'template_duration'],
+parser.add_argument('--bin-type', choices=['spin', 'mchirp', 'total_mass',
+                                           'max_mass', 'eta',
+                                           'template_duration'],
                     default='mchirp',
                     help="Parameter used to bin injections. Default 'mchirp'")
 # FIXME: Make bins options properly optional, if no bins are specified then
@@ -112,6 +113,7 @@ values = {}
 values['mchirp'] = mchirp
 values['eta'] = eta
 values['total_mass'] = m1 + m2
+values['max_mass'] = numpy.maximum(m1, m2)
 values['template_duration'] = duration
 
 if args.spin_frame == 'line-of-sight':
@@ -125,6 +127,7 @@ values['spin'] = (m1 * s1 + m2 * s2) / (m1 + m2)
 labels = {}
 labels['mchirp'] = "$ M_{\\rm chirp} \in [%5.2f, %5.2f] M_\odot $"
 labels['total_mass'] = "$ M_{\\rm total} \in [%5.2f, %5.2f] M_\odot $"
+labels['max_mass'] = "$ {\\rm max}(m_1, m_2) \in [%5.2f, %5.2f] M_\odot $"
 labels['spin'] = "$\\chi^{\\parallel}_{\\rm eff} \in [%5.2f, %5.2f] $"
 labels['template_duration'] = "$t_{\\rm template} \in [%5.2f, %5.2f] s$"
 
@@ -221,7 +224,7 @@ for j in range(len(args.bins)-1):
                 vol, vol_err = sensitivity.volume_montecarlo(f_dist, m_dist_full,
                       found_mchirp, missed_mchirp, args.distance_param,
                       args.distribution, args.limits_param,
-                      args.max_param, args.min_param)
+                      args.min_param, args.max_param)
 
             vols.append(vol)
             vol_errors.append(vol_err)
