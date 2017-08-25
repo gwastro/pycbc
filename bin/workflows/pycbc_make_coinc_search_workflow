@@ -290,7 +290,7 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
 
     if hierarchical_level == 0:
         hierarchical_level_page = 'open_box_result/no_event_removal'
-    else
+    else:
         hierarchical_level_page = \
             'open_box_result/hierarchical_removal_level_{}'.format(
                  hierarchical_level)
