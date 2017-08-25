@@ -676,25 +676,33 @@ def convert_cachelist_to_filelist(datafindcache_list):
     datafind_filelist : FileList of frame File objects
         The list of frame files.
     """
-    datafind_filelist = FileList([])
     prev_file = None
+    prev_name = None
+    this_name = None
+
+    datafind_filelist = FileList([])
+
     for cache in datafindcache_list:
+        # sort the cache into time sequential order
+        cache.sort()
         curr_ifo = cache.ifo
         for frame in cache:
-            # Don't add a new workflow file entry for this frame if
-            # if is a duplicate. These are assumed to be returned in time
-            # order
-            if prev_file:
-                prev_name = prev_file.cache_entry.url.split('/')[-1]
-                this_name = frame.url.split('/')[-1]
-                if prev_name == this_name:
-                    continue
-
             # Pegasus doesn't like "localhost" in URLs.
             frame.url = frame.url.replace('file://localhost','file://')
 
-            currFile = File(curr_ifo, frame.description,
+            # Create one File() object for each unique frame file that we
+            # get back in the cache.
+            if prev_file:
+                prev_name = os.path.basename(prev_file.cache_entry.url)
+                this_name = os.path.basename(frame.url)
+
+            if (prev_file is None) or (prev_name != this_name):
+                currFile = File(curr_ifo, frame.description,
                     frame.segment, file_url=frame.url, use_tmp_subdirs=True)
+                datafind_filelist.append(currFile)
+                prev_file = currFile
+
+            # Populate the PFNs for the File() we just created
             if frame.url.startswith('file://'):
                 currFile.PFN(frame.url, site='local')
                 if frame.url.startswith(
@@ -713,8 +721,7 @@ def convert_cachelist_to_filelist(datafindcache_list):
                         'gsiftp://ldas-grid.ligo.caltech.edu/hdfs/'), site='osg')
             else:
                 currFile.PFN(frame.url, site='notlocal')
-            datafind_filelist.append(currFile)
-            prev_file = currFile
+
     return datafind_filelist
 
 

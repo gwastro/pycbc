@@ -518,6 +518,12 @@ fi
 WORKFLOW_ID_STRING=""
 WORKFLOW_DB_CMD="sqlite3 -csv ${HOME}/.pegasus/workflow.db \"select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';\""
 DB_TRY=0
+
+# force a condor reschedule to get the workflow running
+set +e
+condor_reschedule &> /dev/null
+set -e
+
 /bin/echo "Querying Pegasus database for workflow stored in ${SUBMIT_DIR}/work"
 /bin/echo -n "This may take up to 120 seconds. Please wait..."
 rm -f pegasus_db.log
