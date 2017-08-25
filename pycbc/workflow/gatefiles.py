@@ -81,7 +81,7 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
     return gate_files
 
 
-def setup_gate_pregenerated(workflow, tags=None):
+def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
     '''
     Setup CBC workflow to use pregenerated gating files.
     The file given in cp.get('workflow','gating-file-(ifo)') will 
@@ -91,6 +91,8 @@ def setup_gate_pregenerated(workflow, tags=None):
     ----------
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
+    output_dir : path string
+       The directory where data products will be placed. 
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
@@ -113,7 +115,7 @@ def setup_gate_pregenerated(workflow, tags=None):
             pre_gen_file = cp.get_opt_tags('workflow-gating',
                             'gating-file-%s' % ifo.lower(),
                             tags)
-            pre_gen_file = resolve_url(pre_gen_file)
+            pre_gen_file = resolve_url(pre_gen_file,output_dir)
             file_url = urlparse.urljoin('file:',
                                          urllib.pathname2url(pre_gen_file))
             curr_file = File(ifo, user_tag, global_seg, file_url,
