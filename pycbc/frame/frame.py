@@ -111,7 +111,8 @@ def locations_to_cache(locations):
     return cum_cache
 
 def read_frame(location, channels, start_time=None, 
-               end_time=None, duration=None, check_integrity=True):
+               end_time=None, duration=None, check_integrity=True,
+               sieve=None):
     """Read time series from frame data.
 
     Using the `location`, which can either be a frame file ".gwf" or a 
@@ -137,6 +138,9 @@ def read_frame(location, channels, start_time=None,
         incompatible with `end`.
     check_integrity : {True, bool}, optional
         Test the frame files for internal integrity.
+    sieve : string, optional
+        Selects only frames where the frame URL matches the regular
+        expression sieve
 
     Returns
     -------
@@ -154,6 +158,10 @@ def read_frame(location, channels, start_time=None,
         locations = [location]
 
     cum_cache = locations_to_cache(locations)    
+    if sieve:
+        logging.info("Using frames that match regexp: {}".format(sieve))
+        lal.CacheSieve(cum_cache, 0, 0, None, None, sieve)
+
     stream = lalframe.FrStreamCacheOpen(cum_cache)
     stream.mode = lalframe.FR_STREAM_VERBOSE_MODE
    
@@ -290,7 +298,8 @@ def frame_paths(frame_type, start_time, end_time, server=None):
     paths = [entry.path for entry in cache]
     return paths    
     
-def query_and_read_frame(frame_type, channels, start_time, end_time):
+def query_and_read_frame(frame_type, channels, start_time, end_time,
+                         sieve=None):
     """Read time series from frame data.
 
     Query for the locatin of physical frames matching the frame type. Return
@@ -308,6 +317,9 @@ def query_and_read_frame(frame_type, channels, start_time, end_time):
         beginning of the available frame(s). 
     end_time : LIGOTimeGPS or int
         The gps end time of the time series. Defaults to the end of the frame.
+    sieve : string, optional
+        Selects only frames where the frame URL matches the regular
+        expression sieve
 
     Returns
     -------
@@ -331,7 +343,8 @@ def query_and_read_frame(frame_type, channels, start_time, end_time):
     logging.info('found files: %s' % (' '.join(paths)))
     return read_frame(paths, channels, 
                       start_time=start_time, 
-                      end_time=end_time)
+                      end_time=end_time,
+                      sieve=sieve)
     
 __all__ = ['read_frame', 'frame_paths', 
            'datafind_connection', 

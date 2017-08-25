@@ -217,15 +217,22 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             frame_source = opt.frame_files
 
         logging.info("Reading Frames")
+
+        if hasattr(opt, 'frame_sieve') and opt.frame_sieve:
+            sieve = opt.frame_sieve
+        else:
+            sieve = None
         
         if opt.frame_type:
             strain = query_and_read_frame(opt.frame_type, opt.channel_name,
                                           start_time=opt.gps_start_time-opt.pad_data,
-                                          end_time=opt.gps_end_time+opt.pad_data)
+                                          end_time=opt.gps_end_time+opt.pad_data,
+                                          sieve=sieve)
         else:
             strain = read_frame(frame_source, opt.channel_name,
                             start_time=opt.gps_start_time-opt.pad_data,
-                            end_time=opt.gps_end_time+opt.pad_data)
+                            end_time=opt.gps_end_time+opt.pad_data,
+                            sieve=sieve)
 
         if opt.zpk_z and opt.zpk_p and opt.zpk_k:
             logging.info("Highpass Filtering")
@@ -486,6 +493,12 @@ def insert_strain_option_group(parser, gps_times=True):
                             help="(optional), replaces frame-files. Use datafind "
                                  "to get the needed frame file(s) of this type.")
 
+    #Filter frame files by URL
+    data_reading_group.add_argument("--frame-sieve",
+                            type=str,
+                            help="(optional), Only use frame files where the "
+                                 "URL matches the regular expression given.")
+
     #Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
                 help="Name of model PSD for generating fake gaussian noise.",
@@ -644,6 +657,13 @@ def insert_strain_option_group_multi_ifo(parser):
                                     help="(optional) Replaces frame-files. "
                                          "Use datafind to get the needed frame "
                                          "file(s) of this type.")
+
+    #Filter frame files by URL
+    data_reading_group_multi.add_argument("--frame-sieve", type=str, nargs="+",
+                            action=MultiDetOptionAction,
+                            metavar='IFO:FRAME_SIEVE',
+                            help="(optional), Only use frame files where the "
+                                 "URL matches the regular expression given.")
 
     #Generate gaussian noise with given psd
     data_reading_group_multi.add_argument("--fake-strain", type=str, nargs="+",
