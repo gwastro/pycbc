@@ -130,7 +130,6 @@ if opts.open_box:
         fore_ifar = fp['foreground_h%s/ifar' % h_inc_back_num][:]
         # Get ifar of hierarchically removed foreground triggers
         supp_fore_ifar = fp['foreground/ifar'][:]
-#        count_hrm_diff = len(supp_fore_ifar) - len(fore_ifar)
 
         # Use to plot hierarchically removed foreground triggers
         # on the plot and correct the cumulative number at IFAR level
@@ -151,12 +150,25 @@ expected_ifar = numpy.logspace(-8, 2, num=100, endpoint=True, base=10.0)
 expected_cumnum = fp.attrs['foreground_time'] / expected_ifar / lal.YRJUL_SI 
 
 # get background timeslide IDs and IFAR values
-if h_inc_back_num > 0:
+
+# Use these backgrounds for n-th stage of hierarchical removals
+# and if the open box option
+if h_inc_back_num > 0 and opts.open_box:
     back_tsid = fp['background_h%s/timeslide_id' % h_inc_back_num][:]
     back_ifar = fp['background_h%s/ifar' % h_inc_back_num][:]
 else :
-    back_tsid = fp['background/timeslide_id'][:]
-    back_ifar = fp['background/ifar'][:]
+    # If the box is closed use the background from no hierarchical
+    # removals. Results should be agnostic of judgments about
+    # whether a hierarchical removal was done.
+    if not opts.open_box and h_iterations > 0:
+        back_tsid = fp['background_h0/timeslide_id'][:]
+        back_ifar = fp['background_h0/ifar'][:]
+
+    # Otherwise the box is closed and no hierarchical removals
+    # were done so use top level background
+    else :
+        back_tsid = fp['background/timeslide_id'][:]
+        back_ifar = fp['background/ifar'][:]
 
 # get IFO segments
 h1_segments = segments.segmentlist([segments.segment(s,e) for s,e in zip(fp['segments']['H1']['start'][:],fp['segments']['H1']['end'][:])])
