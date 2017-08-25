@@ -24,7 +24,7 @@
 
 """
 This module is responsible for setting up the gating files used by CBC
-workflows. 
+workflows.
 """
 
 from __future__ import division
@@ -45,7 +45,7 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
     output_dir : path string
-        The directory where data products will be placed. 
+        The directory where data products will be placed.
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
@@ -60,8 +60,8 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
     logging.info("Entering gating module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
-    
-    # Parse for options in ini file.  
+
+    # Parse for options in ini file.
     try:
         gateMethod = cp.get_opt_tags("workflow-gating", "gating-method",
                                      tags)
@@ -72,7 +72,7 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
 
     if gateMethod == "PREGENERATED_FILE":
         logging.info("Setting gating from pre-generated file(s).")
-        gate_files = setup_gate_pregenerated(workflow, 
+        gate_files = setup_gate_pregenerated(workflow,
                                              output_dir=output_dir, tags=tags)
     else:
         errMsg = "Gating method not recognized. Only "
@@ -86,7 +86,7 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
 def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
     '''
     Setup CBC workflow to use pregenerated gating files.
-    The file given in cp.get('workflow','gating-file-(ifo)') will 
+    The file given in cp.get('workflow','gating-file-(ifo)') will
     be used as the --gating-file for all jobs for that ifo.
 
     Parameters
