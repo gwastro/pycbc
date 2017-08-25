@@ -159,7 +159,7 @@ def read_frame(location, channels, start_time=None,
 
     cum_cache = locations_to_cache(locations)    
     if sieve:
-        logging.info("Using frames that match regexp: {}".format(sieve))
+        logging.info("Using frames that match regexp: %s", sieve)
         lal.CacheSieve(cum_cache, 0, 0, None, None, sieve)
 
     stream = lalframe.FrStreamCacheOpen(cum_cache)
