@@ -234,6 +234,7 @@ while numpy.any(fnlouder == 0):
     if h_iterations == 0:
         f['background_h%s/stat' % h_iterations] = back_stat 
         f['background_h%s/ifar' % h_iterations] = sec_to_year(background_time / (back_cnum + 1))
+        f['background_h%s/timeslide_id' % h_iterations] = all_trigs.data['timeslide_id'][back_locs]
         f['foreground_h%s/stat' % h_iterations] = fore_stat
         f['foreground_h%s/ifar' % h_iterations] = sec_to_year(ifar)
         f['foreground_h%s/fap' % h_iterations] = fap
