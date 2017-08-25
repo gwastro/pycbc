@@ -97,7 +97,7 @@ except KeyError:
     h_iterations = 0
 
 if h_inc_back_num is None:
-    h_inc_back_num = 0
+    h_inc_back_num = h_iterations
 
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
