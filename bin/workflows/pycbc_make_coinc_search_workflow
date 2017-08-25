@@ -158,7 +158,8 @@ gate_files = wf.setup_gating_workflow(workflow, analyzable_segs,
                                            datafind_files, "gating")
 
 # add the gate files to the jobs that use them
-for job in ['calculate_psd', 'inspiral', 'single_template']:
+for job in ['calculate_psd', 'inspiral', 'single_template', 
+            'plot_singles_timefreq']:
   for gate_file in gate_files:
       ifo_gate = gate_file.cache_entry.url
       try:
