@@ -29,14 +29,12 @@ workflows.
 
 from __future__ import division
 
-import os
 import ConfigParser
 import urlparse, urllib
 import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 
-def setup_gating_workflow(workflow, science_segs, datafind_outs,
-                             output_dir=None, tags=None):
+def setup_gating_workflow(workflow, output_dir=None, tags=None):
     '''
     Setup gating section of CBC workflow. At present this only supports pregenerated
     gating files, in the future these could be created within the workflow.
@@ -45,11 +43,6 @@ def setup_gating_workflow(workflow, science_segs, datafind_outs,
     ----------
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
-    science_segs : Keyed dictionary of glue.segmentlist objects
-        scienceSegs[ifo] holds the science segments to be analysed for each
-        ifo. 
-    datafind_outs : pycbc.workflow.core.FileList
-        The file list containing the datafind files.
     output_dir : path string
         The directory where data products will be placed. 
     tags : list of strings
@@ -71,7 +64,7 @@ def setup_gating_workflow(workflow, science_segs, datafind_outs,
     try:
         gateMethod = cp.get_opt_tags("workflow-gating", "gating-method",
                                      tags)
-    except:
+    except ConfigParser.Error:
         # Gating is optional, just return an empty list if not
         # provided.
         return FileList([])
@@ -128,11 +121,10 @@ def setup_gate_pregenerated(workflow, tags=None):
             curr_file.PFN(file_url, site='local')
             gate_files.append(curr_file)
 
-            logging.info("Using gating file {} for {}".format(file_url, ifo))
+            logging.info("Using gating file %s for %s", file_url, ifo)
 
         except ConfigParser.Error:
-            logging.info("No gating file specified for %s." % (ifo,))
-            pass
+            logging.info("No gating file specified for %s", ifo)
         
     return gate_files
 
