@@ -91,8 +91,8 @@ def setup_gating_workflow(workflow, science_segs, datafind_outs,
 def setup_gate_pregenerated(workflow, tags=None):
     '''
     Setup CBC workflow to use pregenerated gating files.
-    The file given in cp.get('workflow','pregenerated-gating-file-(ifo)') will 
-    be used as the --gating-file for all matched-filtering jobs for that ifo.
+    The file given in cp.get('workflow','gating-file-(ifo)') will 
+    be used as the --gating-file for all jobs for that ifo.
 
     Parameters
     ----------
@@ -118,7 +118,7 @@ def setup_gate_pregenerated(workflow, tags=None):
     for ifo in workflow.ifos:
         try:
             pre_gen_file = cp.get_opt_tags('workflow-gating',
-                            'gating-pregenerated-file-%s' % ifo.lower(),
+                            'gating-file-%s' % ifo.lower(),
                             tags)
             pre_gen_file = resolve_url(pre_gen_file)
             file_url = urlparse.urljoin('file:',
@@ -128,10 +128,10 @@ def setup_gate_pregenerated(workflow, tags=None):
             curr_file.PFN(file_url, site='local')
             gate_files.append(curr_file)
 
+            logging.info("Using gating file {} for {}".format(file_url, ifo))
+
         except ConfigParser.Error:
-            # It's unlikely, but not impossible, that only some ifos
-            # will be gated
-            logging.warn("No gating file specified for IFO %s." % (ifo,))
+            logging.info("No gating file specified for %s." % (ifo,))
             pass
         
     return gate_files
