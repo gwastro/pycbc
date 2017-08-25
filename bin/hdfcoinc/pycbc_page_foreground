@@ -39,7 +39,7 @@ args = parser.parse_args()
 f = h5py.File(args.trigger_file, 'r')
 
 # Parse which inclusive background to use for the plotting
-h_num_rm = args.hierarchical_rm_iterations
+h_num_rm = args.use_hierarchical_level
 
 try:
     h_iterations = f.attrs['hierarchical_removal_iterations']
