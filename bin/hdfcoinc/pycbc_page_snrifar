@@ -97,7 +97,7 @@ except KeyError:
     h_iterations = 0
 
 if h_inc_back_num is None:
-    h_inc_back_num = 0
+    h_inc_back_num = h_iterations
 
 if h_inc_back_num > h_iterations:
     # Produce a null plot saying no hierarchical removals can be plotted
@@ -342,7 +342,7 @@ if args.cumulative:
 else:
     figure_caption = "Mapping between the ranking statistic and false alarm rate."
     pylab.grid()
-    pylab.legend(loc="upper right")
+    pylab.legend(loc="lower left")
     ax2.set_yscale('log')
     ymin, ymax = ax1.get_ylim()
     
