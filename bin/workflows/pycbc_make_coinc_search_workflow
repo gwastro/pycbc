@@ -256,9 +256,16 @@ for bin_file in bin_files:
 
     results_page += [(snrifar, ratehist)]
 
-    # Level 0 hierarchical removal page
-    symlink_result(snrifar, 'open_box_result/no_event_removal')
-    symlink_result(ratehist, 'open_box_result/no_event_removal')
+    # Significance page
+    symlink_result(snrifar, 'open_box_result/significance')
+    symlink_result(ratehist, 'open_box_result/significance')
+
+    snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
+                    rdir['open_box_result/significance'],
+                    cumulative=False, tags=bin_file.tags + ['ifar'])
+    ifar_ob = wf.make_ifar_plot(workflow, bin_file,
+                    rdir['open_box_result/significance'],
+                    tags=bin_file.tags + ['open_box'])
 
     # Closed box
     ifar_cb = wf.make_ifar_plot(workflow, bin_file,
@@ -270,6 +277,8 @@ for bin_file in bin_files:
 table = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.html', tags=["html"])
+
+symlink_result(table, 'open_box_result/significance')
 
 # Open box results summary
 results_page += [(table,)]
@@ -292,29 +301,30 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
     results_aux_page = []
 
     if hierarchical_level == 0:
-        hierarchical_level_page = 'open_box_result/no_event_removal'
+        hierarchical_level_page = 'open_box_result/no_events_removed'
+    elif hierarchical_level == 1:
+        hierarchical_level_page = 'open_box_result/loudest_event_removed'
     else:
         hierarchical_level_page = \
-            'open_box_result/hierarchical_removal_level_{}'.format(
+            'open_box_result/loudest_{}_events_removed'.format(
                  hierarchical_level)
 
     for bin_file in bin_files:
-        if hierarchical_level > 0:
-            snrifar = wf.make_snrifar_plot(workflow, bin_file,
-                            rdir[hierarchical_level_page], tags=bin_file.tags,
-                            hierarchical_level=hierarchical_level)
-            ratehist = wf.make_snrratehist_plot(workflow, bin_file,
-                            rdir[hierarchical_level_page], tags=bin_file.tags,
-                            hierarchical_level=hierarchical_level)
-
+        snrifar = wf.make_snrifar_plot(workflow, bin_file,
+                       rdir[hierarchical_level_page], tags=bin_file.tags,
+                       hierarchical_level=hierarchical_level)
+        ratehist = wf.make_snrratehist_plot(workflow, bin_file,
+                        rdir[hierarchical_level_page], tags=bin_file.tags,
+                        hierarchical_level=hierarchical_level)
         snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
                         rdir[hierarchical_level_page],
-                        cumulative=False, tags=bin_file.tags + ['ifar'],
+                        cumulative=False, tags=bin_file.tags + ['ifar'])
                         hierarchical_level=hierarchical_level)
         ifar_ob = wf.make_ifar_plot(workflow, bin_file,
-                        rdir[hierarchical_level_page],
-                        tags=bin_file.tags + ['open_box'],
-                        hierarchical_level=hierarchical_level)
+                       rdir[hierarchical_level_page],
+                       tags=bin_file.tags + ['open_box'],
+                       hierarchical_level=hierarchical_level)
+
         results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
 
     table = wf.make_foreground_table(workflow, final_bg_file,
