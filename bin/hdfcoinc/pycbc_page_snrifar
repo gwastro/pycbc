@@ -46,7 +46,7 @@ parser.add_argument('--trials-factor', type=int, default=1,
                     help='Trials factor to divide from p-value and '
                          'divide from IFAR to account for look-elsewhere '
                          'effect. [default=1]')
-parser.add_argument('--h-iter-inc-background', type=int, default=None,
+parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which inclusive background and FARs of '
                          'foreground triggers to plot if there were any '
                          'hierarchical removals done. Choosing None plots '
@@ -89,7 +89,7 @@ logging.info('Read in the data')
 f = h5py.File(args.trigger_file, 'r')
 
 # Parse which inclusive background to use for the plotting
-h_inc_back_num = args.h_iter_inc_background
+h_inc_back_num = args.use_hierarchical_level
 
 try:
     h_iterations = f.attrs['hierarchical_removal_iterations']

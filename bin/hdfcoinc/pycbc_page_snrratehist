@@ -28,7 +28,7 @@ parser.add_argument('--output-file')
 parser.add_argument('--bin-size', type=float, default=0.1)
 parser.add_argument('--x-min', type=float, default=8.0)
 parser.add_argument('--trials-factor', type=int, default=1)
-parser.add_argument('--h-iter-inc-background', type=int, default=None,
+parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which inclusive background to plot '
                          'with the foreground triggers if there were '
                          'any hierarchical removals done. Choosing 0 '
@@ -49,7 +49,7 @@ logging.info('Read in the data')
 f = h5py.File(args.trigger_file, 'r')
 
 # Determine which inclusive background to plot.
-h_inc_back_num = args.h_iter_inc_background
+h_inc_back_num = args.use_hierarchical_level
 
 try:
     h_iterations = f.attrs['hierarchical_removal_iterations']

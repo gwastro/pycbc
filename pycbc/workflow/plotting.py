@@ -128,15 +128,25 @@ def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
     workflow += node
 
 def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
-                          singles=None, extension='.html', tags=None):
-    if tags is None:
+                          singles=None, extension='.html', tags=None,
+                          hierarchical_level=None):
+
+    if hierarchical_level is not None and tags:
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
+                hierarchical_level))] + tags
+    elif hierarchical_level is not None and not tags:
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
+    elif hierarchical_level is None and not tags:
         tags = []
+
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--foreground-tag', ftag)
     node.add_input_opt('--trigger-file', trig_file)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
     if singles is not None:
         node.add_input_list_opt('--single-detector-triggers', singles)
     node.new_output_file_opt(bank_file.segment, extension, '--output-file')
@@ -262,16 +272,26 @@ def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     workflow += node
     return node.output_files[0]
 
-def make_ifar_plot(workflow, trigger_file, out_dir, tags=None):
+def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
+                   hierarchical_level=None):
     """ Creates a node in the workflow for plotting cumulative histogram
     of IFAR values.
     """
 
-    if tags is None: tags = []
+    if hierarchical_level is not None and tags:
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
+                hierarchical_level))] + tags
+    elif hierarchical_level is not None and not tags:
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
+    elif hierarchical_level is None and not tags:
+        tags = []
+
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'page_ifar', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', trigger_file)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
@@ -317,12 +337,22 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
     return files
 
 def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
-                         tags=None):
-    tags = [] if tags is None else tags
+                         tags=None, hierarchical_level=None):
+
+    if hierarchical_level is not None and tags:
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
+                hierarchical_level))] + tags
+    elif hierarchical_level is not None and not tags:
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
+    elif hierarchical_level is None and not tags:
+        tags = []
+
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrratehist', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', bg_file)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
 
     if closed_box:
         node.add_opt('--closed-box')
@@ -332,12 +362,22 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
     return node.output_files[0]
 
 def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
-                     cumulative=True, tags=None):
-    tags = [] if tags is None else tags
+                     cumulative=True, tags=None, hierarchical_level=None):
+
+    if hierarchical_level is not None and tags:
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
+                hierarchical_level))] + tags
+    elif hierarchical_level is not None and not tags:
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
+    elif hierarchical_level is None and not tags:
+        tags = []
+
     makedir(out_dir)
     node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', bg_file)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
 
     if closed_box:
         node.add_opt('--closed-box')
