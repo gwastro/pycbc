@@ -333,9 +333,9 @@ else:
 
 pylab.xlabel(r'Coincident Ranking Statistic')
 pylab.yscale('log')
-pylab.ylim(plot_ymin, plot_ymax * 50.0)
+pylab.ylim(plot_ymin, plot_ymax * 10.0)
 pylab.xlim(plot_xmin, plot_xmax)
-pylab.legend(loc="upper center", fontsize=9)
+pylab.legend(loc="upper right", fontsize=9)
 
 if args.cumulative:
     pylab.grid()
