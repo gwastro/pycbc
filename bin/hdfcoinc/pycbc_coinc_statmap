@@ -59,7 +59,10 @@ parser.add_argument('--max-hierarchical-removal', type=int, default=0,
                          'foreground triggers are louder than the '
                          '(inclusive/exclusive) background. Choose 0 to do '
                          'no hierarchical removals.  Choose 1 to do at most '
-                         '1 hierarchical removal, and so on. [default=0]')
+                         '1 hierarchical removal, and so on. If given, user '
+                         'must also give option '
+                         '--hierarchical-removal-against to indicate which '
+                         'background to remove triggers against. [default=0]')
 parser.add_argument('--hierarchical-removal-against', type=str,
                                                       default=None,
                     help='Make a choice to hierarchically remove foreground '
@@ -67,7 +70,7 @@ parser.add_argument('--hierarchical-removal-against', type=str,
                          'inclusive (little-dogs-in) background or the '
                          'exclusive (little-dogs-out) background. Choose by '
                          'entering <inclusive> or <exclusive>. '
-                         '[default=inclusive]')
+                         '[default=None]')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -76,11 +79,10 @@ args = parser.parse_args()
 
 if args.max_hierarchical_removal == 0:
     if args.hierarchical_removal_against is not None:
-        parser.error("Cannot choose to do no hierarchical removals and " \
-                     "still ask to do hierarchical removals against an " \
-                     "inclusive or exclusive background. Please use " \
-                     "pycbc_coinc_statmap with --help option for more " \
-                     "information.")
+        parser.error("User Error: 0 maximum hierarchical removals chosen " \
+                     "but option for --hierarchical-removal-against " \
+                     "was still given. These are conflicting options. " \
+                     "Use with --help for more information.")
 
 else :
     is_bkg_inc = (args.hierarchical_removal_against == 'inclusive')
@@ -263,6 +265,14 @@ if args.max_hierarchical_removal != 0:
     else :
         louder_foreground = fnlouder_exc
 
+else :
+    # It doesn't matter if you choose louder_foreground = fnlouder
+    # or vice versa, the while loop below will break if
+    # louder_foreground doesn't contain 0, or at the comparison
+    # h_iterations == args.max_hierarchical_removal. But this avoids
+    # a NameError
+    louder_foreground = fnlouder
+
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
 #          will happen when fnlouder has no elements that equal 0.
 
@@ -374,6 +384,21 @@ while numpy.any(louder_foreground == 0):
     back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat, 
                                                    all_trigs.decimation_factor[back_locs])
 
+    # Update the louder_foreground criteria depending on whether foreground
+    # triggers are being removed via inclusive or exclusive background.
+    if is_bkg_inc == True:
+        louder_foreground = fnlouder
+
+    # Exclusive background doesn't change when removing foreground triggers.
+    # So we don't have to take back_cnum_exc, jut repopulate fnlouder_exc
+    else :
+        _, fnlouder_exc = coinc.calculate_n_louder(exc_zero_trigs.stat,
+                                                   fore_stat,
+                                                   exc_zero_trigs.decimation_factor)
+        louder_foreground = fnlouder_exc
+    # louder_foreground has been updated and the code can continue.
+
+
     logging.info("Calculating ifar/fap values")
 
     f['background_h%s/ifar' % h_iterations] = sec_to_year(background_time / (back_cnum + 1))
@@ -407,19 +432,11 @@ while numpy.any(louder_foreground == 0):
         f['foreground_h%s/time1' % h_iterations] = all_trigs.time1[fore_locs]
         f['foreground_h%s/time2' % h_iterations] = all_trigs.time2[fore_locs]
 
-    if is_bkg_inc == True:
-        louder_foreground = fnlouder
-
-    # Otherwise user wants to remove against exclusive background.
-    # Exclusive background doesn't change when removing foreground triggers.
-    # So we don't have to take back_cnum_exc, jut repopulate fnlouder_exc
-    else :
-        _, fnlouder_exc = coinc.calculate_n_louder(exc_zero_trigs.stat,
-                                                   fore_stat,
-                                                   exc_zero_trigs.decimation_factor) 
-        louder_foreground = fnlouder_exc
-
 # Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
+
+# Write what kind of hierarchical removal was done.
+if h_iterations != 0:
+    f.attrs['hierarchical_removal_method'
 
 logging.info("Done") 
