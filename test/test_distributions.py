@@ -17,16 +17,23 @@
 """
 These are the unittests for distributions in the pycbc.distribtions subpackage.
 """
-import unittest
+
+import matplotlib.pyplot as plt
 import numpy
 import os
+import unittest
 from pycbc import distributions
+from pycbc.inference import kl
 from pycbc.inference import option_utils
 from utils import parse_args_cpu_only
 from utils import simple_exit
 
 # some distributions are not checked in this unit test
-EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary"]
+EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
+                      "uniform_solidangle", "uniform_sky",
+                      "independent_chip_chieff",
+                      "uniform_power_law", "uniform_radius",
+                      "sin_angle", "cos_angle"]
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
@@ -66,9 +73,38 @@ class TestDistributions(unittest.TestCase):
 
     def test_pdf_rvs(self):
 
-        # 
+        # set threshold for KL divergence
+        threshold = 0.1
+
+        # number of samples in random draw for test
+        n_samples = int(1e6)
+
+        # step size to take in PDF evaluation
+        step = 0.1
+
+        # loop over distributions
         for dist in self.dists:
-            pass
+            for param in dist.params:
+
+                # get min and max
+                hist_min = dist.bounds[param][0]
+                hist_max = dist.bounds[param][1]
+
+                # generate some random draws
+                samples = dist.rvs(n_samples)[param]
+
+                # get the PDF
+                x = numpy.arange(hist_min, hist_max, step)
+                pdf = numpy.array([dist.pdf(**{param : xx}) for xx in x])
+
+                # compute the KL divergence and check if below threshold
+                kl_val = kl.kl(samples, pdf, bins=pdf.size, pdf2=True,
+                               hist_min=hist_min, hist_max=hist_max)
+                if not (kl_val < threshold):
+                    raise ValueError(
+                              "Class {} KL divergence is {} which is "
+                               "greater than the threshold "
+                               "of {}".format(dist.name, kl_val, threshold))
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDistributions))
