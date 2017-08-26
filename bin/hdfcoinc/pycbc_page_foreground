@@ -55,7 +55,8 @@ if h_num_rm > h_iterations:
     html_table = pycbc.results.table(columns, names,
                                    format_strings=format_strings, page_size=10)
 
-    kwds = { 'title' : 'No more hierarchical removals were performed.',
+    kwds = { 'title' :
+        'No more events louder than all background at this removal level.',
         'cmd' :' '.join(sys.argv), }
     save_fig_with_metadata(str(html_table), args.output_file, **kwds)
     sys.exit(0)
