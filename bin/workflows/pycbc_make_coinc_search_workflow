@@ -256,6 +256,10 @@ for bin_file in bin_files:
 
     results_page += [(snrifar, ratehist)]
 
+    # Level 0 hierarchical removal page
+    symlink_result(snrifar, 'open_box_result/no_event_removal')
+    symlink_result(ratehist, 'open_box_result/no_event_removal')
+
     # Closed box
     ifar_cb = wf.make_ifar_plot(workflow, bin_file,
                     rdir['coincident_triggers'],
@@ -295,12 +299,13 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
                  hierarchical_level)
 
     for bin_file in bin_files:
-        snrifar = wf.make_snrifar_plot(workflow, bin_file,
-                        rdir[hierarchical_level_page], tags=bin_file.tags,
-                        hierarchical_level=hierarchical_level)
-        ratehist = wf.make_snrratehist_plot(workflow, bin_file,
-                        rdir[hierarchical_level_page], tags=bin_file.tags,
-                        hierarchical_level=hierarchical_level)
+        if hierarchical_level > 0:
+            snrifar = wf.make_snrifar_plot(workflow, bin_file,
+                            rdir[hierarchical_level_page], tags=bin_file.tags,
+                            hierarchical_level=hierarchical_level)
+            ratehist = wf.make_snrratehist_plot(workflow, bin_file,
+                            rdir[hierarchical_level_page], tags=bin_file.tags,
+                            hierarchical_level=hierarchical_level)
 
         snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
                         rdir[hierarchical_level_page],
@@ -313,10 +318,10 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
         results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
 
     table = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
+                    hdfbank[0], tag, rdir[hierarchical_level_page], 
+                    singles=insps,
                     extension='.html', tags=["html"],
                     hierarchical_level=hierarchical_level)
-
 
     results_aux_page += [(table,)]
     layout.two_column_layout(rdir[hierarchical_level_page], results_aux_page)
