@@ -9,8 +9,6 @@ matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
 from scipy.special import erf, erfinv
 
-pylab.rc('text', usetex=True)
-
 def sigma_from_p(p):
     return - erfinv(1 - (1 - p) * 2) * 2**0.5
 
