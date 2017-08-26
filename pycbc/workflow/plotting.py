@@ -131,12 +131,12 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
                           singles=None, extension='.html', tags=None,
                           hierarchical_level=None):
 
-    if hierarchical_level and tags:
+    if hierarchical_level is not None and tags:
         tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
                 hierarchical_level))] + tags
-    elif hierarchical_level and not tags:
+    elif hierarchical_level is not None and not tags:
         tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
-    elif not hierarchical_level and not tags:
+    elif hierarchical_level is None and not tags:
         tags = []
 
     makedir(out_dir)
@@ -278,12 +278,12 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
     of IFAR values.
     """
 
-    if hierarchical_level and tags:
+    if hierarchical_level is not None and tags:
         tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
                 hierarchical_level))] + tags
-    elif hierarchical_level and not tags:
+    elif hierarchical_level is not None and not tags:
         tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
-    elif not hierarchical_level and not tags:
+    elif hierarchical_level is None and not tags:
         tags = []
 
     makedir(out_dir)
@@ -339,12 +339,12 @@ def make_foundmissed_plot(workflow, inj_file, out_dir, exclude=None,
 def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
                          tags=None, hierarchical_level=None):
 
-    if hierarchical_level and tags:
+    if hierarchical_level is not None and tags:
         tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
                 hierarchical_level))] + tags
-    elif hierarchical_level and not tags:
+    elif hierarchical_level is not None and not tags:
         tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
-    elif not hierarchical_level and not tags:
+    elif hierarchical_level is None and not tags:
         tags = []
 
     makedir(out_dir)
@@ -364,12 +364,12 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
 def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
                      cumulative=True, tags=None, hierarchical_level=None):
 
-    if hierarchical_level and tags:
+    if hierarchical_level is not None and tags:
         tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
                 hierarchical_level))] + tags
-    elif hierarchical_level and not tags:
+    elif hierarchical_level is not None and not tags:
         tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
-    elif not hierarchical_level and not tags:
+    elif hierarchical_level is None and not tags:
         tags = []
 
     makedir(out_dir)
