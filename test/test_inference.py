@@ -35,7 +35,7 @@ from pycbc.inference import sampler
 from pycbc.psd import analytical
 from pycbc.waveform import generator
 from utils import parse_args_cpu_only
-from utils import  simple_exit
+from utils import simple_exit
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Samplers")

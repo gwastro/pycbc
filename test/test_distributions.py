@@ -25,6 +25,9 @@ from pycbc.inference import option_utils
 from utils import parse_args_cpu_only
 from utils import simple_exit
 
+# some distributions are not checked in this unit test
+EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary"]
+
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
 
@@ -56,8 +59,9 @@ class TestDistributions(unittest.TestCase):
 
         # check that all distriubtions will be tested
         for dname, dclass in distributions.distribs.iteritems():
-            if not numpy.any([isinstance(dist, dclass)
-                              for dist in self.dists]):
+            if (not numpy.any([isinstance(dist, dclass)
+                               for dist in self.dists])
+                and dname not in EXCLUDE_DIST_NAMES):
                 raise ValueError("There is no test for {}".format(dname))
 
     def test_pdf_rvs(self):
