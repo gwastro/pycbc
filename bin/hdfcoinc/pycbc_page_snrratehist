@@ -70,8 +70,8 @@ if h_inc_back_num > h_iterations:
 
     output_message = "No more foreground events louder than all background\n" \
                      "at this removal level.\n" \
-                     "Attempted to show " + str(h_inc_back_num) + " removals,\n" \
-                     "but only " + str(h_iterations) + " removals done."
+                     "Attempted to show " + str(h_inc_back_num) + " removal(s),\n" \
+                     "but only " + str(h_iterations) + " removal(s) done."
 
     ax.text(0.5, 0.5, output_message, horizontalalignment='center',
             verticalalignment='center')
