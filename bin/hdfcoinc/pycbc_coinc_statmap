@@ -435,8 +435,11 @@ while numpy.any(louder_foreground == 0):
 # Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
 
-# Write what kind of hierarchical removal was done.
+# Write whether hierarchical removals were removed against the
+# inclusive background or the exclusive background. Have to use
+# numpy.string_ datatype.
 if h_iterations != 0:
-    f.attrs['hierarchical_removal_method'
+    hrm_method = args.hierarchical_removal_against
+    f.attrs['hierarchical_removal_method'] = numpy.string_(hrm_method) 
 
 logging.info("Done") 
