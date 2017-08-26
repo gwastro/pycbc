@@ -241,6 +241,7 @@ for bg_file, bg_bins in (bg_files + final_bg_files):
 max_hierarchical_removal = workflow.cp.get('workflow-results', 
                                            'max-hierarchical-removal')
 results_page = []
+results_aux_page = []
 closed_box_ifars = []
 
 # create the main results page with the two plots and the table
@@ -267,6 +268,8 @@ for bin_file in bin_files:
                     rdir['open_box_result/significance'],
                     tags=bin_file.tags + ['open_box'])
 
+    results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
+
     # Closed box
     ifar_cb = wf.make_ifar_plot(workflow, bin_file,
                     rdir['coincident_triggers'],
@@ -282,8 +285,11 @@ symlink_result(table, 'open_box_result/significance')
 
 # Open box results summary
 results_page += [(table,)]
-
 layout.two_column_layout(rdir['open_box_result'], results_page)
+
+# Significance page
+results_aux_page += [(table,)]
+layout.two_column_layout(rdir['open_box_result/significance'], results_aux_page)
 
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
@@ -298,7 +304,7 @@ layout.group_layout(rdir['coincident_triggers'],
 
 # Now make the plots showing each stage of hierarchical removal
 for hierarchical_level in range(int(max_hierarchical_removal) + 1):
-    results_aux_page = []
+    results_hier_page = []
 
     if hierarchical_level == 0:
         hierarchical_level_page = 'open_box_result/no_events_removed'
@@ -325,7 +331,7 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
                        tags=bin_file.tags + ['open_box'],
                        hierarchical_level=hierarchical_level)
 
-        results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
+        results_hier_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
 
     table = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir[hierarchical_level_page], 
@@ -333,8 +339,8 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
                     extension='.html', tags=["html"],
                     hierarchical_level=hierarchical_level)
 
-    results_aux_page += [(table,)]
-    layout.two_column_layout(rdir[hierarchical_level_page], results_aux_page)
+    results_hier_page += [(table,)]
+    layout.two_column_layout(rdir[hierarchical_level_page], results_hier_page)
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto,
                     'closed_box', rdir['single_triggers'], tags=[tag])
