@@ -39,6 +39,10 @@ def calculate_time_slide_duration(ifo1_segments, ifo2_segments, offset=0):
 
    return duration
 
+
+pylab.rc('text', usetex=True)
+pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+
 # parser command line
 parser = argparse.ArgumentParser(usage='pycbc_page_ifar [--options]',
                     description='Plots a cumulative histogram of IFAR for'
@@ -108,16 +112,17 @@ if h_inc_back_num > h_iterations:
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
 
-    output_message = "No more hierarchical removals performed.\n" \
-                     "Attempted to show " + str(h_inc_back_num) + " removals,\n" \
-                     "but only " + str(h_iterations) + " removals done."
+    output_message = "No more foreground events louder than all background\n" \
+                     "at this removal level.\n" \
+                     "Attempted to show " + str(h_inc_back_num) + " removal(s),\n" \
+                     "but only " + str(h_iterations) + " removal(s) done."
 
     ax.text(0.5, 0.5, output_message, horizontalalignment='center',
             verticalalignment='center')
 
     pycbc.results.save_fig_with_metadata(fig, opts.output_file,
      title='Cumulative Number vs. IFAR',
-     caption='No hierarchical removals done here',
+     caption=output_message,
      cmd=' '.join(sys.argv))
 
     # Exit the code successfully and bypass the rest of the plotting code.
@@ -271,7 +276,7 @@ elif len(allbkg_cumnum) > 0:
     pylab.ylim(0.8, 1.1 * len(allbkg_cumnum))
     pylab.xlim(0.9 * min(allbkg_ifars))
 pylab.grid()
-pylab.legend()
+pylab.legend(loc='upper right', fontsize=9)
 pylab.ylabel('Cumulative Number')
 pylab.xlabel('Inverse False Alarm Rate (yr)')
 

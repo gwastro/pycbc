@@ -9,8 +9,6 @@ matplotlib.use('Agg')
 import pylab, pycbc.results, pycbc.version
 from scipy.special import erf, erfinv
 
-pylab.rc('text', usetex=True)
-
 def sigma_from_p(p):
     return - erfinv(1 - (1 - p) * 2) * 2**0.5
 
@@ -18,6 +16,7 @@ def p_from_sigma(sig):
     return 1 - (1 - erf(sig / 2**0.5)) / 2
     
 pylab.rc('text', usetex=True)
+pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 parser = argparse.ArgumentParser()
 # General required options
@@ -68,16 +67,17 @@ if h_inc_back_num > h_iterations:
     ax.set_xlim(0, 1)    
     ax.set_ylim(0, 1)
 
-    output_message = "No more hierarchical removals performed.\n" \
-                     "Attempted to show " + str(h_inc_back_num) + " removals,\n" \
-                     "but only " + str(h_iterations) + " removals done."
+    output_message = "No more foreground events louder than all background\n" \
+                     "at this removal level.\n" \
+                     "Attempted to show " + str(h_inc_back_num) + " removal(s),\n" \
+                     "but only " + str(h_iterations) + " removal(s) done."
 
     ax.text(0.5, 0.5, output_message, horizontalalignment='center',
             verticalalignment='center')
 
     pycbc.results.save_fig_with_metadata(fig, args.output_file,
         title="%s bin, Count vs Rank" % f.attrs['name'] if 'name' in f.attrs else "Count vs Rank",
-        caption="No hierarchical removals performed.",
+        caption=output_message,
         cmd=' '.join(sys.argv))    
 
     # Exit the code successfully and bypass the rest of the plotting code.

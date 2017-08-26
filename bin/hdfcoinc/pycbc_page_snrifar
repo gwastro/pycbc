@@ -108,16 +108,17 @@ if h_inc_back_num > h_iterations:
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
 
-    output_message = "No more hierarchical removals performed.\n" \
-                     "Attempted to show " + str(h_inc_back_num) + " removals,\n" \
-                     "but only " + str(h_iterations) + " removals done."
+    output_message = "No more foreground events louder than all background\n" \
+                     "at this removal level.\n" \
+                     "Attempted to show " + str(h_inc_back_num) + " removal(s),\n" \
+                     "but only " + str(h_iterations) + " removal(s) done."
 
     ax.text(0.5, 0.5, output_message, horizontalalignment='center',
             verticalalignment='center')
 
     pycbc.results.save_fig_with_metadata(fig, args.output_file,
       title="%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank",
-      caption='No hierarchical removals done here',
+      caption=output_message,
       cmd=' '.join(sys.argv))
 
     # Exit the code successfully and bypass the rest of the plotting code.
@@ -287,6 +288,8 @@ if not args.closed_box:
                for ii in louder_pts:
                    r = cstat_fore_h_rm[ii]
                    arr_start = cstat_rate_h_rm[ii]
+                   if arr_start > far_back_exc.min():
+                       continue
                    # make the arrow length 1/15 the height of the plot
                    arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
                    pylab.plot([r, r], [arr_start, arr_end], lw=2,
@@ -332,17 +335,16 @@ else:
 
 pylab.xlabel(r'Coincident Ranking Statistic')
 pylab.yscale('log')
-pylab.ylim(plot_ymin, plot_ymax)
+pylab.ylim(plot_ymin, plot_ymax * 10.0)
 pylab.xlim(plot_xmin, plot_xmax)
+pylab.legend(loc="upper right", fontsize=9)
 
 if args.cumulative:
-    pylab.legend(loc="lower left")
     pylab.grid()
     figure_caption = "Cumulative histogram of foreground and background triggers."
 else:
     figure_caption = "Mapping between the ranking statistic and false alarm rate."
     pylab.grid()
-    pylab.legend(loc="lower left")
     ax2.set_yscale('log')
     ymin, ymax = ax1.get_ylim()
     
