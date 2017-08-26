@@ -314,12 +314,12 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
                        rdir[hierarchical_level_page], tags=bin_file.tags,
                        hierarchical_level=hierarchical_level)
         ratehist = wf.make_snrratehist_plot(workflow, bin_file,
-                        rdir[hierarchical_level_page], tags=bin_file.tags,
-                        hierarchical_level=hierarchical_level)
+                       rdir[hierarchical_level_page], tags=bin_file.tags,
+                       hierarchical_level=hierarchical_level)
         snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
-                        rdir[hierarchical_level_page],
-                        cumulative=False, tags=bin_file.tags + ['ifar'])
-                        hierarchical_level=hierarchical_level)
+                       rdir[hierarchical_level_page],
+                       cumulative=False, tags=bin_file.tags + ['ifar'],
+                       hierarchical_level=hierarchical_level)
         ifar_ob = wf.make_ifar_plot(workflow, bin_file,
                        rdir[hierarchical_level_page],
                        tags=bin_file.tags + ['open_box'],
