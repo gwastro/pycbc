@@ -77,7 +77,6 @@ def apply_gates_to_td(strain_dict, gates):
     # copy data to new dictionary
     outdict = dict(strain_dict.items())
     for ifo in gates:
-        logging.info("Gating {} strain".format(ifo))
         outdict[ifo] = strain.gate_data(outdict[ifo], gates[ifo])
     return outdict
 
