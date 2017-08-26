@@ -310,7 +310,8 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
         hierarchical_level_page = \
         'open_box_result/no_events_removed_from_background'
     elif hierarchical_level == 1:
-        hierarchical_level_page = 'open_box_result/loudest_event_removed'
+        hierarchical_level_page = \
+        'open_box_result/loudest_event_removed_from_background'
     else:
         hierarchical_level_page = \
             'open_box_result/loudest_{}_events_removed_from_background'.format(
