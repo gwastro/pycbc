@@ -410,7 +410,9 @@ while numpy.any(louder_foreground == 0):
     if is_bkg_inc == True:
         louder_foreground = fnlouder
 
-    # Otherwise user wants to remove against exclusive background
+    # Otherwise user wants to remove against exclusive background.
+    # Exclusive background doesn't change when removing foreground triggers.
+    # So we don't have to take back_cnum_exc, jut repopulate fnlouder_exc
     else :
         _, fnlouder_exc = coinc.calculate_n_louder(exc_zero_trigs.stat,
                                                    fore_stat,
