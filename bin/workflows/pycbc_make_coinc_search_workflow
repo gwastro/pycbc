@@ -307,12 +307,13 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
     results_hier_page = []
 
     if hierarchical_level == 0:
-        hierarchical_level_page = 'open_box_result/no_events_removed'
+        hierarchical_level_page = \
+        'open_box_result/no_events_removed_from_background'
     elif hierarchical_level == 1:
         hierarchical_level_page = 'open_box_result/loudest_event_removed'
     else:
         hierarchical_level_page = \
-            'open_box_result/loudest_{}_events_removed'.format(
+            'open_box_result/loudest_{}_events_removed_from_background'.format(
                  hierarchical_level)
 
     for bin_file in bin_files:
