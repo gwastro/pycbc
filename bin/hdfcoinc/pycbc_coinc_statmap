@@ -254,14 +254,14 @@ orig_fore_stat = fore_stat
 # Assign a new variable to keep track of whether we care about fnlouder or
 # fnlouder_exc. Whether we want to remove hierarchically against inclusive
 # or exclusive background.
+if args.max_hierarchical_removal != 0:
+    # If user wants to remove against inclusive background.
+    if is_bkg_inc == True:
+        louder_foreground = fnlouder
 
-# If user wants to remove against inclusive background.
-if is_bkg_inc == True:
-    louder_foreground = fnlouder
-
-# Otherwise user wants to remove against exclusive background
-else :
-    louder_foreground = fnlouder_exc
+    # Otherwise user wants to remove against exclusive background
+    else :
+        louder_foreground = fnlouder_exc
 
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
 #          will happen when fnlouder has no elements that equal 0.
