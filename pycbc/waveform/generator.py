@@ -31,7 +31,8 @@ from pycbc import filter
 from pycbc import transforms
 from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries
+from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
+                                 ceilpow2
 from pycbc.detector import Detector
 import lal as _lal
 from pycbc import gate
@@ -530,6 +531,8 @@ class FDomainDetFrameGenerator(object):
                                          copy=False)
             h['RF'] = hp
         if self.gates is not None:
+            # resize all to nearest power of 2
+            [d.resize(ceilpow2(len(d)-1)+1) for d in h.values()]
             h = gate.apply_gates_to_fd(h, self.gates)
         return h
 
