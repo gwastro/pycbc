@@ -288,6 +288,8 @@ if not args.closed_box:
                for ii in louder_pts:
                    r = cstat_fore_h_rm[ii]
                    arr_start = cstat_rate_h_rm[ii]
+                   if arr_start > far_back_exc.min():
+                       continue
                    # make the arrow length 1/15 the height of the plot
                    arr_end = arr_start * (plot_ymin / plot_ymax) ** (1./15)
                    pylab.plot([r, r], [arr_start, arr_end], lw=2,
