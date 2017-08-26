@@ -75,7 +75,7 @@ args = parser.parse_args()
 # hierarchical removals of foreground triggers against.
 
 if args.max_hierarchical_removal == 0:
-    if args.hierarical_removal_against is not None:
+    if args.hierarchical_removal_against is not None:
         parser.error("Cannot choose to do no hierarchical removals and " \
                      "still ask to do hierarchical removals against an " \
                      "inclusive or exclusive background. Please use " \
