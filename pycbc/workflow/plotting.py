@@ -145,8 +145,8 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--foreground-tag', ftag)
     node.add_input_opt('--trigger-file', trig_file)
-    if hierarchical_level: node.add_opt('--use-hierarchical-level',
-                                        hierarchical_level)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
     if singles is not None:
         node.add_input_list_opt('--single-detector-triggers', singles)
     node.new_output_file_opt(bank_file.segment, extension, '--output-file')
@@ -290,8 +290,8 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
     node = PlotExecutable(workflow.cp, 'page_ifar', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', trigger_file)
-    if hierarchical_level: node.add_opt('--use-hierarchical-level',
-                                        hierarchical_level)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
@@ -351,8 +351,8 @@ def make_snrratehist_plot(workflow, bg_file, out_dir, closed_box=False,
     node = PlotExecutable(workflow.cp, 'plot_snrratehist', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', bg_file)
-    if hierarchical_level: node.add_opt('--use-hierarchical-level',
-                                        hierarchical_level)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
 
     if closed_box:
         node.add_opt('--closed-box')
@@ -376,8 +376,8 @@ def make_snrifar_plot(workflow, bg_file, out_dir, closed_box=False,
     node = PlotExecutable(workflow.cp, 'plot_snrifar', ifos=workflow.ifos,
                 out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', bg_file)
-    if hierarchical_level: node.add_opt('--use-hierarchical-level',
-                                        hierarchical_level)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
 
     if closed_box:
         node.add_opt('--closed-box')
