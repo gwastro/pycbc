@@ -56,12 +56,43 @@ parser.add_argument('--max-hierarchical-removal', type=int, default=0,
                     help='Maximum amount of hierarchical removals to carry '
                          'out when hierarchical removal is desired. Choose '
                          '-1 for continuous hiearchical removal until no '
-                         'foreground triggers are louder than the inclusive '
-                         'background. Choose 0 to do no hierarchical '
-                         'removals.  Choose 1 to do at most 1 hierarchical '
-                         'removal, and so on. [default=0]')
+                         'foreground triggers are louder than the '
+                         '(inclusive/exclusive) background. Choose 0 to do '
+                         'no hierarchical removals.  Choose 1 to do at most '
+                         '1 hierarchical removal, and so on. [default=0]')
+parser.add_argument('--hierarchical-removal-against', type=string,
+                                                      default=None,
+                    help='Make a choice to hierarchically remove foreground '
+                         'triggers based on whether it is louder than the '
+                         'inclusive (little-dogs-in) background or the '
+                         'exclusive (little-dogs-out) background. Choose by '
+                         'entering <inclusive> or <exclusive>. '
+                         '[default=inclusive]')
 parser.add_argument('--output-file')
 args = parser.parse_args()
+
+# Check that the user chose inclusive or exclusive background to perform
+# hierarchical removals of foreground triggers against.
+
+if args.max_hierarchical_removals == 0:
+    if args.hierarical_removal_against is not None:
+        parser.error("Cannot choose to do no hierarchical removals and " \
+                     "still ask to do hierarchical removals against an " \
+                     "inclusive or exclusive background. Please use " \
+                     "pycbc_coinc_statmap with --help option for more " \
+                     "information.")
+
+else :
+    is_bkg_inc = (args.hierarchical_removal_against == 'inclusive')
+    is_bkg_exc = (args.hierarchical_removal_against == 'exclusive')
+    either_bkg = is_bkg_inc or is_bkg_exc
+
+    if either_bkg == False:
+        parser.error("--max-hierarchical-removal requires a choice of which " \
+                     "background to remove foreground triggers against, " \
+                     "inclusive or exclusive. Use with --help option for " \
+                     "more information.")
+
 pycbc.init_logging(args.verbose)
 
 logging.info("Loading coinc triggers")    
@@ -220,10 +251,22 @@ h_iterations = 0
 
 orig_fore_stat = fore_stat
 
+# Assign a new variable to keep track of whether we care about fnlouder or
+# fnlouder_exc. Whether we want to remove hierarchically against inclusive
+# or exclusive background.
+
+# If user wants to remove against inclusive background.
+if is_bkg_inc == True:
+    louder_foreground = fnlouder
+
+# Otherwise user wants to remove against exclusive background
+else :
+    louder_foreground = fnlouder_exc
+
 # Step 2 : Loop until we don't have to hierarchically remove anymore. This
 #          will happen when fnlouder has no elements that equal 0.
 
-while numpy.any(fnlouder == 0):
+while numpy.any(louder_foreground == 0):
     # If the user wants to stop doing hierarchical removals after a set
     # number of iterations then break when that happens.
     if (h_iterations == args.max_hierarchical_removal): 
@@ -363,6 +406,16 @@ while numpy.any(fnlouder == 0):
         f['foreground_h%s/template_id' % h_iterations] = all_trigs.data['template_id'][fore_locs]
         f['foreground_h%s/time1' % h_iterations] = all_trigs.time1[fore_locs]
         f['foreground_h%s/time2' % h_iterations] = all_trigs.time2[fore_locs]
+
+    if is_bkg_inc == True:
+        louder_foreground = fnlouder
+
+    # Otherwise user wants to remove against exclusive background
+    else :
+        _, fnlouder_exc = coinc.calculate_n_louder(exc_zero_trigs.stat,
+                                                   fore_stat,
+                                                   exc_zero_trigs.decimation_factor) 
+        louder_foreground = fnlouder_exc
 
 # Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
