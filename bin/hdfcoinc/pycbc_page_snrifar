@@ -333,7 +333,7 @@ else:
 
 pylab.xlabel(r'Coincident Ranking Statistic')
 pylab.yscale('log')
-pylab.ylim(plot_ymin, plot_ymax)
+pylab.ylim(plot_ymin, plot_ymax * 10.0)
 pylab.xlim(plot_xmin, plot_xmax)
 pylab.legend(loc="upper center", fontsize=9)
 
@@ -346,7 +346,7 @@ else:
     ax2.set_yscale('log')
     ymin, ymax = ax1.get_ylim()
     
-    ax2.set_ylim(ymin, ymax*10)
+    ax2.set_ylim(ymin, ymax)
     # Put ticks at FAPs of 10^{-x}, where x is an integer get the ymin, ymax
     # in terms of probability.
     pymin = p_from_far(ymin, foreground_livetime)
