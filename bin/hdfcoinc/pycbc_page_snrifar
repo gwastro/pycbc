@@ -335,19 +335,18 @@ pylab.xlabel(r'Coincident Ranking Statistic')
 pylab.yscale('log')
 pylab.ylim(plot_ymin, plot_ymax)
 pylab.xlim(plot_xmin, plot_xmax)
+pylab.legend(loc="upper center", fontsize=9)
 
 if args.cumulative:
-    pylab.legend(loc="lower left")
     pylab.grid()
     figure_caption = "Cumulative histogram of foreground and background triggers."
 else:
     figure_caption = "Mapping between the ranking statistic and false alarm rate."
     pylab.grid()
-    pylab.legend(loc="lower left")
     ax2.set_yscale('log')
     ymin, ymax = ax1.get_ylim()
     
-    ax2.set_ylim(ymin, ymax)
+    ax2.set_ylim(ymin, ymax*10)
     # Put ticks at FAPs of 10^{-x}, where x is an integer get the ymin, ymax
     # in terms of probability.
     pymin = p_from_far(ymin, foreground_livetime)
