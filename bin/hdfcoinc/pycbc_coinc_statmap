@@ -60,7 +60,7 @@ parser.add_argument('--max-hierarchical-removal', type=int, default=0,
                          '(inclusive/exclusive) background. Choose 0 to do '
                          'no hierarchical removals.  Choose 1 to do at most '
                          '1 hierarchical removal, and so on. [default=0]')
-parser.add_argument('--hierarchical-removal-against', type=string,
+parser.add_argument('--hierarchical-removal-against', type=str,
                                                       default=None,
                     help='Make a choice to hierarchically remove foreground '
                          'triggers based on whether it is louder than the '
