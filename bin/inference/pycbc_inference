@@ -266,8 +266,12 @@ with ctx:
     # back in its former state
     if opts.samples_file:
         with InferenceFile(opts.samples_file, "r") as fp:
-            sampler.set_state_from_file(fp)
-            numpy.random.set_state(fp.read_random_state())
+            try:
+                sampler.set_state_from_file(fp)
+                numpy.random.set_state(fp.read_random_state())
+            except NotImplementedError:
+                logging.warning("Sampler does not support setting a random "
+                                "state. Just setting initial positions.")
 
     # run sampler's burn in if it is in the list of burn in functions
     n_sampler_burn_in = 0
