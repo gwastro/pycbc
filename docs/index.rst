@@ -1,7 +1,6 @@
-.. PyCBC documentation master file, created by
-   sphinx-quickstart on Tue Jun 11 17:02:52 2013.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+=======
+PyCBC
+=======
 
 PyCBC is a software package used to explore astrophysical sources of gravitational waves.
 It contains algorithms that can detect coalescing compact binaries and measure
