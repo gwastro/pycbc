@@ -31,15 +31,14 @@ from utils import simple_exit
 # some distributions are not checked in this unit test
 EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
                       "uniform_solidangle", "uniform_sky",
-                      "independent_chip_chieff",
-                      "sin_angle", "cos_angle"]
+                      "independent_chip_chieff"]
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
 
 class TestDistributions(unittest.TestCase):
 
-    def setUp(self, *args):
+    def setUp(self):
 
         # set random seed
         numpy.random.seed(1024)
@@ -71,6 +70,11 @@ class TestDistributions(unittest.TestCase):
                 raise ValueError("There is no test for {}".format(dname))
 
     def test_pdf_rvs(self):
+        """ Check the Kullback-Leibler divergence between draws of random
+        samples form the distribution and the probability density function
+        of the distribution. This implementation only works for
+        one dimensional distriubtions.
+        """
 
         # set threshold for KL divergence
         threshold = 0.1
@@ -95,10 +99,6 @@ class TestDistributions(unittest.TestCase):
                 # get the PDF
                 x = numpy.arange(hist_min, hist_max, step)
                 pdf = numpy.array([dist.pdf(**{param : xx}) for xx in x])
-
-                #plt.plot(x, pdf, "--")
-                #plt.hist(samples, bins=pdf.size, normed=True)
-                #plt.show()
 
                 # compute the KL divergence and check if below threshold
                 kl_val = kl.kl(samples, pdf, bins=pdf.size, pdf2=True,
