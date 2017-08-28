@@ -20,7 +20,8 @@
 Read strain data, apply the standard preparation done in offline CBC searches
 (highpass, downsampling, gating, injections etc) and write the result back to a
 file. Optionally also write the gating data to a text file. This program can
-also be used to generate frames of simulated strain data.
+also be used to generate frames of simulated strain data, with or without
+injections.
 """
 
 import logging
@@ -62,10 +63,6 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 # read and condition strain as pycbc_inspiral would do
 out_strain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC)
-
-if args.output_precision == 'single' and not args.dyn_range_factor:
-    logging.warn('Warning: saving strain in single precision without the '
-                 'dynamic range scaling factor. This might lead to underflows')
 
 # force strain precision to be as requested
 out_strain = out_strain.astype(
