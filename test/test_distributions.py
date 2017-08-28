@@ -18,6 +18,7 @@
 These are the unittests for distributions in the pycbc.distribtions subpackage.
 """
 
+import itertools
 import matplotlib.pyplot as plt
 import numpy
 import os
@@ -28,13 +29,20 @@ from pycbc.inference import option_utils
 from utils import parse_args_cpu_only
 from utils import simple_exit
 
-# some distributions are not checked in this unit test
+# distributions to exclude from one-dimensional distribution unit tests
+# some of these distributons have their own specific unit test
 EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff"]
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
+
+def cartesian(arrays):
+    """ Returns a cartesian product from a list of iterables.
+    """
+    return numpy.array([numpy.array(element)
+                        for element in itertools.product(*arrays)])
 
 class TestDistributions(unittest.TestCase):
 
@@ -87,6 +95,8 @@ class TestDistributions(unittest.TestCase):
 
         # loop over distributions
         for dist in self.dists:
+            if dist.name in EXCLUDE_DIST_NAMES:
+                continue
             for param in dist.params:
 
                 # get min and max
@@ -123,6 +133,8 @@ class TestDistributions(unittest.TestCase):
 
         # loop over distributions
         for dist in self.dists:
+            if dist.name in EXCLUDE_DIST_NAMES:
+                continue
             for param in dist.params:
 
                 # get min and max
@@ -139,10 +151,102 @@ class TestDistributions(unittest.TestCase):
 
                 # see if each element in ratio of these two logarithm of PDF
                 # values are within the specified tolerance
-                if not numpy.all(1.0 - logpdf / pdf_log < tolerance):
+                if not numpy.all(abs(1.0 - logpdf / pdf_log) < tolerance):
                     raise ValueError("The PDF and logarithm of the PDF "
                                      "functions for distribution {} "
                                      "do not agree".format(dist.name))
+
+    def test_solid_angle(self):
+        """ The uniform solid angle and uniform sky position distributions
+        are two independent one-dimensional distributions. This tests checks
+        that the two indepdent one-dimensional distributions agree by comparing
+        the `rvs`, `pdf`, and `logpdf` functions.
+        """
+
+        # set tolerance for comparing PDF and logPDF functions
+        tolerance = 0.01
+
+        # set threshold for KL divergence test
+        threshold = 0.1
+
+        # number of random draws for KL divergence test
+        n_samples = int(1e6)
+
+        # create generic angular distributions for test 
+        sin_dist = distributions.SinAngle(theta=(0, 1))
+        cos_dist = distributions.CosAngle(theta=(-0.5, 0.5))
+        ang_dist = distributions.UniformAngle(theta=(0, 2))
+
+        # step size for PDF calculation
+        step = 0.1
+
+        # valid range of parameters
+        polar_sin = numpy.arange(0, numpy.pi, step)
+        polar_cos = numpy.arange(-numpy.pi, numpy.pi, step)
+        azimuthal = numpy.arange(0, 2 * numpy.pi, step)
+
+        # get Cartesian product to explore the two-dimensional space
+        cart_sin = cartesian([polar_sin, azimuthal])
+        cart_cos = cartesian([polar_cos, azimuthal])
+
+        # loop over distributions
+        for dist in self.dists:
+            if dist.name == distributions.UniformSolidAngle.name:
+                polar_vals = polar_sin
+                polar_dist = sin_dist
+            elif dist.name == distributions.UniformSky.name:
+                polar_vals = polar_cos
+                polar_dist = cos_dist
+            else:
+                continue
+
+            # check PDF equilvalent
+            pdf_1 = numpy.array([dist.pdf(**{dist.polar_angle : p,
+                                             dist.azimuthal_angle : a})
+                                 for p, a in cart_sin])
+            pdf_2 = numpy.array([polar_dist.pdf(**{"theta" : p})
+                                 * ang_dist.pdf(**{"theta" : a})
+                                 for p, a in cart_sin])
+            if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
+                       < tolerance)):
+                raise ValueError("The {} distribution PDF does not match its "
+                                 "component distriubtions.".format(dist.name))
+
+            # check logPDF equilvalent
+            pdf_1 = numpy.array([dist.logpdf(**{dist.polar_angle : p,
+                                                dist.azimuthal_angle : a})
+                                 for p, a in cart_sin])
+            pdf_2 = numpy.array([polar_dist.logpdf(**{"theta" : p})
+                                 + ang_dist.logpdf(**{"theta" : a})
+                                 for p, a in cart_sin])
+            if not (numpy.all(numpy.nan_to_num(abs(1.0 - pdf_1 / pdf_2))
+                       < tolerance)):
+                raise ValueError("The {} distribution PDF does not match its "
+                                 "component distriubtions.".format(dist.name))
+
+            # check random draws from polar angle equilvalent
+            ang_1 = dist.rvs(n_samples)[dist.polar_angle]
+            ang_2 = polar_dist.rvs(n_samples)["theta"]
+            kl_val = kl.kl(ang_1, ang_2, bins=polar_vals.size,
+                           hist_min=polar_vals.min(),
+                           hist_max=polar_vals.max())
+            if not (kl_val < threshold):
+                raise ValueError(
+                          "Class {} KL divergence is {} which is "
+                           "greater than the threshold "
+                           "of {}".format(dist.name, kl_val, threshold))
+
+            # check random draws from azimuthal angle equilvalent
+            ang_1 = dist.rvs(n_samples)[dist.azimuthal_angle]
+            ang_2 = ang_dist.rvs(n_samples)["theta"]
+            kl_val = kl.kl(ang_1, ang_2, bins=azimuthal.size,
+                           hist_min=azimuthal.min(),
+                           hist_max=azimuthal.max())
+            if not (kl_val < threshold):
+                raise ValueError(
+                          "Class {} KL divergence is {} which is "
+                           "greater than the threshold "
+                           "of {}".format(dist.name, kl_val, threshold))
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDistributions))
