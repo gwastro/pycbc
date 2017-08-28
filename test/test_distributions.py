@@ -19,7 +19,6 @@ These are the unittests for distributions in the pycbc.distribtions subpackage.
 """
 
 import itertools
-import matplotlib.pyplot as plt
 import numpy
 import os
 import unittest
@@ -160,7 +159,7 @@ class TestDistributions(unittest.TestCase):
         """ The uniform solid angle and uniform sky position distributions
         are two independent one-dimensional distributions. This tests checks
         that the two indepdent one-dimensional distributions agree by comparing
-        the `rvs`, `pdf`, and `logpdf` functions.
+        the `rvs`, `pdf`, and `logpdf` functions' output.
         """
 
         # set tolerance for comparing PDF and logPDF functions
@@ -212,7 +211,7 @@ class TestDistributions(unittest.TestCase):
                 raise ValueError("The {} distribution PDF does not match its "
                                  "component distriubtions.".format(dist.name))
 
-            # check logPDF equilvalent
+            # check logarithm of PDF equilvalent
             pdf_1 = numpy.array([dist.logpdf(**{dist.polar_angle : p,
                                                 dist.azimuthal_angle : a})
                                  for p, a in cart_sin])
@@ -233,7 +232,7 @@ class TestDistributions(unittest.TestCase):
             if not (kl_val < threshold):
                 raise ValueError(
                           "Class {} KL divergence is {} which is "
-                           "greater than the threshold "
+                           "greater than the threshold for polar angle"
                            "of {}".format(dist.name, kl_val, threshold))
 
             # check random draws from azimuthal angle equilvalent
@@ -245,7 +244,7 @@ class TestDistributions(unittest.TestCase):
             if not (kl_val < threshold):
                 raise ValueError(
                           "Class {} KL divergence is {} which is "
-                           "greater than the threshold "
+                           "greater than the threshold for azimuthal angle"
                            "of {}".format(dist.name, kl_val, threshold))
 
 suite = unittest.TestSuite()
