@@ -289,9 +289,18 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow._adag.addDependency(dep)
     logging.info('Leaving injection minifollowups module')
 
+
 class SingleTemplateExecutable(PlotExecutable):
     """Class to be used for to create workflow.Executable instances for the
     pycbc_single_template executable. Basically inherits directly from
+    PlotExecutable but adds the file_input_options.
+    """
+    file_input_options = ['--gating-file']
+
+
+class SingleTimeFreqExecutable(PlotExecutable):
+    """Class to be used for to create workflow.Executable instances for the
+    pycbc_plot_singles_timefreq executable. Basically inherits directly from
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
@@ -586,7 +595,7 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
     makedir(out_dir)
     name = 'plot_singles_timefreq'
 
-    curr_exe = PlotExecutable(workflow.cp, name, ifos=[single.ifo],
+    curr_exe = SingleTimeFreqExecutable(workflow.cp, name, ifos=[single.ifo],
                           out_dir=out_dir, tags=tags)
     node = curr_exe.create_node()
     node.add_input_opt('--trig-file', single)
