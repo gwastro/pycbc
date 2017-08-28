@@ -136,7 +136,9 @@ def findchirp_cluster_over_window(times, values, window_length):
     indices: Array
         The reduced list of indices of the SNR values
     """
-    assert window_length > 0, 'Clustering window length is not positive'
+    #Commented out the below assert statement to allow for no clustering
+    #in the coherent matched_filter codes
+    #assert window_length > 0, 'Clustering window length is not positive'
 
     from weave import inline
     indices = numpy.zeros(len(times), dtype=int)
@@ -337,7 +339,10 @@ class EventManager(object):
         """
         cvec = self.template_events[column]
         tvec = self.template_events[tcolumn]
-        indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+        if window_size == 0:
+            indices = numpy.arange(len(tvec))
+        else:
+            indices = findchirp_cluster_over_window(tvec, cvec, window_size)
         self.template_events = numpy.take(self.template_events, indices)
 
     def new_template(self, **kwds):
@@ -733,7 +738,7 @@ class EventManagerMultiDet(EventManager):
                         f['gating/' + gate_type + '/pad'] = \
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
-__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr', 'newsnr_sgveto',
+__all__ = ['threshold_only', 'threshold_and_cluster', 'newsnr', 'effsnr','newsnr_sgveto',
            'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
            'threshold_real_numpy', 'threshold_only',
