@@ -32,7 +32,6 @@ from utils import simple_exit
 EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff",
-                      "uniform_power_law", "uniform_radius",
                       "sin_angle", "cos_angle"]
 
 # tests only need to happen on the CPU
@@ -96,6 +95,10 @@ class TestDistributions(unittest.TestCase):
                 # get the PDF
                 x = numpy.arange(hist_min, hist_max, step)
                 pdf = numpy.array([dist.pdf(**{param : xx}) for xx in x])
+
+                #plt.plot(x, pdf, "--")
+                #plt.hist(samples, bins=pdf.size, normed=True)
+                #plt.show()
 
                 # compute the KL divergence and check if below threshold
                 kl_val = kl.kl(samples, pdf, bins=pdf.size, pdf2=True,
