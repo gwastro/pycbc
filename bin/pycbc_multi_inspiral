@@ -168,7 +168,8 @@ with ctx:
                                    use_cluster,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
-                                   upsample_method=opt.upsample_method)
+                                   upsample_method=opt.upsample_method,
+                                   cluster_function='symmetric')
 
     logging.info("Initializing signal-based vetoes.")
     # The existing SingleDetPowerChisq can calculate the single detector
@@ -222,6 +223,8 @@ with ctx:
                                approximant=opt.approximant, out=template_mem)
 
     for t_num, template in enumerate(bank):
+        if t_num == 100: #use small sample set for development
+           break
         sigmasq = {}
         for ifo in opt.instruments:
             sigmasq[ifo] = template.sigmasq(psds[ifo])
@@ -232,16 +235,19 @@ with ctx:
                 cluster_window = int(opt.cluster_window * sample_rate)
             elif opt.cluster_method == "template":
                 cluster_window = int(template.chirp_length * sample_rate)
+            elif opt.cluster_window == 0:
+                 cluster_window = int(0)
 
             for s_num, stilde in enumerate(segments[ifo]):
                 logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
                              (t_num + 1, len(bank), ifo, s_num + 1,
                               len(segments[ifo])))       
-
+                
                 snr, norm, corr, idx, snrv = \
                         matched_filter.matched_filter_and_cluster(s_num,
-                            template.sigmasq(stilde.psd), cluster_window)
-
+                            template.sigmasq(stilde.psd), window=cluster_window)
+                #Adding print statement for test
+                print "use_cluster=" + str(use_cluster) + " idx_length=" + str(len(idx))
                 if len(idx) == 0:
                     continue
 
