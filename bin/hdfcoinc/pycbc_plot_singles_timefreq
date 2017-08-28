@@ -212,7 +212,10 @@ if opts.veto_file:
     logging.info('Loading and plotting veto segments')
     veto_segs = pycbc.events.veto.select_segments_by_definer(
             opts.veto_file, ifo=opts.detector)
+    veto_segs.coalesce()
     for seg in veto_segs:
+        if seg[0] > opts.gps_end_time or seg[1] < opts.gps_start_time:
+            continue
         ax.axvspan(seg[0] - center_time, seg[1] - center_time,
                    hatch='x', facecolor='none', edgecolor='#ff0000')
 
