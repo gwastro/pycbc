@@ -109,6 +109,41 @@ class TestDistributions(unittest.TestCase):
                                "greater than the threshold "
                                "of {}".format(dist.name, kl_val, threshold))
 
+    def test_pdf_logpdf(self):
+        """ Checks that the probability density function (PDF) is within some
+        tolerance of the natural logarithm of the PDF. This implementation is
+        for one dimensional distributions.
+        """
+
+        # assign tolerance for element-wise ratio of logarithm of PDF
+        tolerance = 0.01
+
+        # step size to take in PDF evaluation
+        step = 0.1
+
+        # loop over distributions
+        for dist in self.dists:
+            for param in dist.params:
+
+                # get min and max
+                hist_min = dist.bounds[param][0]
+                hist_max = dist.bounds[param][1]
+
+                # get the PDF and logarithm of the PDF from the distriubtion
+                x = numpy.arange(hist_min, hist_max, step)
+                pdf = numpy.array([dist.pdf(**{param : xx}) for xx in x])
+                logpdf = numpy.array([dist.logpdf(**{param : xx}) for xx in x])
+
+                # find the logarithm of the PDF
+                pdf_log = numpy.log(pdf)
+
+                # see if each element in ratio of these two logarithm of PDF
+                # values are within the specified tolerance
+                if not numpy.all(1.0 - logpdf / pdf_log < tolerance):
+                    raise ValueError("The PDF and logarithm of the PDF "
+                                     "functions for distribution {} "
+                                     "do not agree".format(dist.name))
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDistributions))
 
