@@ -491,7 +491,7 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
             A dict with key as parameter name and value as numpy.array or float
             of transformed values.
         """
-        sx, sy, sz = self._outputs
+        sx, sy, sz = self._inputs
         data = coordinates.cartesian_to_spherical(maps[sx], maps[sy], maps[sz])
         out = {param : val for param, val in zip(self._outputs, data)}
         return self.format_output(maps, out)
