@@ -15,12 +15,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-from foton import FilterFile, Filter
 import argparse
 import logging
 import numpy
 import sys
-import foton
+from foton import FilterFile, Filter
 
 from pycbc.filter.fotonfilter import filter_data, get_swstat_bits, read_gain_from_frames
 from pycbc.frame import frame_paths
