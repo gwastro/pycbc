@@ -64,6 +64,14 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 # read and condition strain as pycbc_inspiral would do
 out_strain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC)
 
+# if requested, save the gates while we have them
+if args.output_gates_file:
+    logging.info('Writing output gates')
+    with file(args.output_gates_file, 'wb') as gate_f:
+        for k, v in out_strain.gating_info.items():
+            for t, w, p in v:
+                gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))
+
 # force strain precision to be as requested
 out_strain = out_strain.astype(
         float32 if args.output_precision == 'single' else float64)
@@ -79,12 +87,5 @@ if args.output_strain_file.endswith('.gwf'):
                             out_strain)
 else:
     out_strain.save(args.output_strain_file, group=output_channel_name)
-
-if args.output_gates_file:
-    logging.info('Writing output gates')
-    with file(args.output_gates_file, 'wb') as gate_f:
-        for k, v in out_strain.gating_info.items():
-            for t, w, p in v:
-                gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))
 
 logging.info('Done')
