@@ -21,8 +21,10 @@ from pycbc import transforms
 from utils import parse_args_cpu_only
 from utils import simple_exit
 
-# list of transforms without an inverse function
+# list of transforms without an inverse function and to ignore
 NO_INVERSE = ["distance_to_redshift", "chi_p_to_cartesian_spin"]
+IGNORE = NO_INVERSE + ["aligned_mass_spin_to_cartesian_spin",
+                       "precession_mass_spin_to_cartesian_spin"]
 
 # ranges to draw random numbers for each parameter
 RANGES = {
@@ -31,10 +33,10 @@ RANGES = {
     "mchirp" : (1.0, 20.0),
     "q" : (1.0, 10.0),
     "spin1_a" : (0.0, 1.0),
-    "spin1_polar" : (-numpy.pi / 2, numpy.pi / 2),
+    "spin1_polar" : (0, numpy.pi),
     "spin1_azimuthal" : (0.0, 2 * numpy.pi),
     "spin2_a" : (0.0, 1.0),
-    "spin2_polar" : (-numpy.pi / 2, numpy.pi / 2),
+    "spin2_polar" : (0, numpy.pi),
     "spin2_azimuthal" : (0.0, 2 * numpy.pi),
     "chi_eff" : (-1.0, 1.0),
     "chi_a" : (0.0, 1.0),
@@ -57,28 +59,28 @@ class TestTransforms(unittest.TestCase):
 
     def test_inverse(self):
 
+        # set threshold how similar values must be
         threshold = 0.001
 
         # loop over forward CBC transforms
         for trans in transforms.common_cbc_forward_transforms:
 
             # check if inverse exists
-            if trans.name in NO_INVERSE:
+            if trans.name in IGNORE:
                 continue
             inv = trans.inverse()
 
-            # transforms random numbers to and back from inverse transform
+            # generate some random points
             in_map = {p : numpy.random.uniform(*RANGES[p])
                       for p in trans.inputs}
+
+            # transforms to and back from inverse transform
             intermediate_map = trans.transform(in_map)
             out_map = inv.transform(intermediate_map)
 
             # check that input equals outputs to some threshold
             in_arr = numpy.array([in_map[p] for p in trans.inputs])
             out_arr = numpy.array([out_map[p] for p in trans.inputs])
-            print in_map
-            print intermediate_map
-            print out_map
             if not numpy.all(1.0 - in_arr / out_arr < threshold):
                 raise ValueError(
                 "Transform {} does not map back to itself.".format(trans.name))
