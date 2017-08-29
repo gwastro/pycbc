@@ -145,8 +145,6 @@ else:
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime + padding,
                                   int(sciSegs[ifo][0][1]) - deadtime - padding)
 
-wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
-                                       int(sciSegs[ifo][0][1]))
 ext_file = None
 
 # DATAFIND
@@ -176,6 +174,8 @@ datafind_veto_files = _workflow.FileList([])
 # GATING
 if wflow.cp.has_option("workflow-condition_strain", "do-autogating"):
     logging.info("Creating autogating jobs.")
+    wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
+                                           int(sciSegs[ifo][0][1]))
     gating_nodes, gated_files = _workflow.make_gating_node(wflow,
             datafind_files, outdir=dfDir)
     gating_method = wflow.cp.get("workflow-condition_strain",
@@ -207,6 +207,7 @@ if wflow.cp.has_option("workflow-condition_strain", "do-autogating"):
 
 datafind_veto_files.extend(datafind_files)
 ifo = sciSegs.keys()[0]
+ifo_list = sciSegs.keys()
 ifos = ''.join(sciSegs.keys())
 wflow.ifos = ifos
 
@@ -366,6 +367,25 @@ all_files.extend(_workflow.FileList([inspiral_cache]))
 inspiral_cache_entries = inspiral_files.convert_to_lal_cache()
 inspiral_cache_entries.tofile(open(inspiral_cache.storage_path, "w"))
 
+# LONG TIME SLIDES
+long_slides = True if wflow.cp.has_option("workflow", "do-long-slides") else False
+if long_slides:
+    tsDir = os.path.join(currDir, "timeslides")
+    num_slides = int((int(wflow.cp.get("workflow", "end-time")) - \
+                      int(wflow.cp.get("workflow", "start-time"))) / \
+                     float(int(wflow.cp.get("inspiral", "segment-duration")) * \
+                           (len(ifo_list) - 1)))
+    logging.info("Doing {} long slides".format(num_slides))
+    inspiral_ts_files = _workflow.FileList([])
+    for slide in range(num_slides):
+        inspiral_slide_files = _workflow.setup_matchedfltr_workflow(wflow,
+                sciSegs, datafind_veto_files, splitbank_files, tsDir,
+                tags=[mf_tag + "_no_injections", "slide{}".format(slide)])
+        inspiral_ts_files.extend(inspiral_slide_files)
+        all_files.extend(inspiral_slide_files)
+else:
+    inspiral_ts_files=None
+
 # POST-PROCESSING
 ppDir = os.path.join(currDir, "post_processing")
 post_proc_method = wflow.cp.get_opt_tags("workflow-postproc",
@@ -389,6 +409,7 @@ if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
             inspiral_files, inspiral_cache, ppDir, segDir,
             injection_trigger_files=inj_insp_files, injection_files=injs,
             injection_trigger_caches=inj_insp_caches,
+            timeslide_trigger_files=inspiral_ts_files,
             injection_caches=inj_caches, config_file=cp_file, web_dir=html_dir,
             segments_plot=segs_plot, ifos=ifos, inj_tags=inj_tags)
 

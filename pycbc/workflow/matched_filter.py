@@ -314,9 +314,22 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                                  out_dir=output_dir,
                                  injection_file=injection_file,
                                  tags=tags)
-        multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
-                                     science_segs, datafind_outs, output_dir,
-                                     parents=tmplt_banks)
+        if cp.has_option("workflow", "do-long-slides") and "slide" in tags[-1]:
+            slide_num = int(tags[-1].replace("slide", ""))
+            logging.info("Setting up matched-filtering for slide {}"
+                         .format(slide_num))
+            num_ifos = range(len(ifos))
+            slide_shift = int(cp.get("inspiral", "segment-duration"))
+            time_slide_dict = {ifo: (slide_num + 1) * num_ifos.pop() *
+                               slide_shift for ifo in ifos}
+            multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
+                                         science_segs, datafind_outs,
+                                         output_dir, parents=tmplt_banks,
+                                         slide_dict=time_slide_dict)
+        else:
+            multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
+                                         science_segs, datafind_outs,
+                                         output_dir, parents=tmplt_banks)
     else:
         # Select the appropriate class
         raise ValueError("Not currently supported.")

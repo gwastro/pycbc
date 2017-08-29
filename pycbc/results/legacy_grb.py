@@ -677,6 +677,8 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
 
     # Make plot
     fig, subs = plt.subplots(len(ifos), sharey=True)
+    if len(ifos) == 1:
+        subs = [subs]
     plt.xticks(rotation=20, ha='right')
     for sub, ifo in zip(subs, ifos):
         for seg in science_segs[ifo]:
