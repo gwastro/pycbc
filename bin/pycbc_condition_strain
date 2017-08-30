@@ -20,9 +20,8 @@
 Read strain data, apply the standard preparation done in offline CBC searches
 (highpass, downsampling, gating, injections etc) and write the result back to a
 file. Optionally also write the gating data to a text file. This program can
-also be used to generate frames of simulated strain data.  Note that, by
-default, the output strain is scaled by a large factor (pycbc.DYN_RANGE_FAC) in
-order to make it representable in single precision without underflowing.
+also be used to generate frames of simulated strain data, with or without
+injections.
 """
 
 import logging
@@ -30,6 +29,7 @@ import argparse
 import pycbc.strain
 import pycbc.version
 import pycbc.frame
+from pycbc.types import float32, float64
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -45,28 +45,40 @@ parser.add_argument('--output-channel-name',
 parser.add_argument('--output-gates-file',
                     help='Save gating info to specified file, in the same '
                          'format as accepted by the --gating-file option')
-parser.add_argument('--single-precision', action='store_true',
-                    help='Output the strain in single precision.')
-parser.add_argument('--no-dyn-range-factor', action='store_true',
-                    help='Do not apply the %f scaling factor to the output '
-                         'strain. Use this to generate frames of simulated '
-                         'data. Incompatible with --single-precision as that '
-                         'would produce underflows.' % pycbc.DYN_RANGE_FAC)
+parser.add_argument('--output-precision', type=str,
+                    choices=['single', 'double'], default='double',
+                    help='Precision of output strain, %(default)s by default')
+parser.add_argument('--dyn-range-factor', action='store_true',
+                    help='Scale the output strain by a large factor (%f) '
+                         'to avoid underflows in subsequent '
+                         'calculations' % pycbc.DYN_RANGE_FAC)
 parser.add_argument('--low-frequency-cutoff', type=float,
                     help='Provide a low-frequency-cutoff for fake strain. '
                          'This is only needed if fake-strain or '
-                         'fake-strain-from-file is used.')
+                         'fake-strain-from-file is used')
 pycbc.strain.insert_strain_option_group(parser)
 args = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-if args.single_precision and args.no_dyn_range_factor:
-    parser.error('Refusing to save strain in single precision without the '
-                 'dynamic range factor, as it would lead to underflows')
-precision = 'single' if args.single_precision else 'double'
-dyn_range_factor = 1 if args.no_dyn_range_factor else pycbc.DYN_RANGE_FAC
-out_strain = pycbc.strain.from_cli(args, dyn_range_factor, precision=precision)
+# read and condition strain as pycbc_inspiral would do
+out_strain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC)
+
+# if requested, save the gates while we have them
+if args.output_gates_file:
+    logging.info('Writing output gates')
+    with file(args.output_gates_file, 'wb') as gate_f:
+        for k, v in out_strain.gating_info.items():
+            for t, w, p in v:
+                gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))
+
+# force strain precision to be as requested
+out_strain = out_strain.astype(
+        float32 if args.output_precision == 'single' else float64)
+
+# unless asked otherwise, revert the dynamic range factor
+if not args.dyn_range_factor:
+    out_strain /= pycbc.DYN_RANGE_FAC
 
 logging.info('Writing output strain')
 output_channel_name = args.output_channel_name or args.channel_name
@@ -75,12 +87,5 @@ if args.output_strain_file.endswith('.gwf'):
                             out_strain)
 else:
     out_strain.save(args.output_strain_file, group=output_channel_name)
-
-if args.output_gates_file:
-    logging.info('Writing output gates')
-    with file(args.output_gates_file, 'wb') as gate_f:
-        for k, v in out_strain.gating_info.items():
-            for t, w, p in v:
-                gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))
 
 logging.info('Done')
