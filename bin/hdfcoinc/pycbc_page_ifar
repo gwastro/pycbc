@@ -131,7 +131,7 @@ if h_inc_back_num > h_iterations:
 # get foreground IFAR values and cumulative number for each IFAR value
 if opts.open_box:
 
-    if h_inc_back_num > 0:
+    if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
         fore_ifar = fp['foreground_h%s/ifar' % h_inc_back_num][:]
         # Get ifar of hierarchically removed foreground triggers
         supp_fore_ifar = fp['foreground/ifar'][:]
@@ -158,7 +158,7 @@ expected_cumnum = fp.attrs['foreground_time'] / expected_ifar / lal.YRJUL_SI
 
 # Use these backgrounds for n-th stage of hierarchical removals
 # and if the open box option
-if h_inc_back_num > 0 and opts.open_box:
+if h_inc_back_num >= 0 and opts.open_box and h_iterations is not None and h_iterations != 0:
     back_tsid = fp['background_h%s/timeslide_id' % h_inc_back_num][:]
     back_ifar = fp['background_h%s/ifar' % h_inc_back_num][:]
 else :
