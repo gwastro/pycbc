@@ -77,9 +77,9 @@ class Recalibrate(object):
         self.c_res = self.c0 * (1 + 1.0j * self.freq / self.fc0)/init_detuning
 
     def update_c(self, fs=None, qinv=None, fc=None, kappa_c=1.0):
-        """ Calculate the sensing function c(f,t) given the new parameters 
+        """ Calculate the sensing function c(f,t) given the new parameters
         kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.
-        
+
         Parameters
         ----------
         fc : float
@@ -103,7 +103,7 @@ class Recalibrate(object):
     def update_g(self, fs=None, qinv=None, fc=None, kappa_tst_re=1.0,
                  kappa_tst_im=0.0, kappa_pu_re=1.0, kappa_pu_im=0.0,
                  kappa_c=1.0):
-        """ Calculate the open loop gain g(f,t) given the new parameters 
+        """ Calculate the open loop gain g(f,t) given the new parameters
         kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.
         
         Parameters
@@ -142,7 +142,7 @@ class Recalibrate(object):
     def update_r(self, fs=None, qinv=None, fc=None, kappa_c=1.0,
                  kappa_tst_re=1.0, kappa_tst_im=0.0, kappa_pu_re=1.0,
                  kappa_pu_im=0.0):
-        """ Calculate the response function R(f,t) given the new parameters 
+        """ Calculate the response function R(f,t) given the new parameters
         kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.
 
         Parameters
