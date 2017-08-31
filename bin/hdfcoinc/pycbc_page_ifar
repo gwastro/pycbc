@@ -91,7 +91,7 @@ opts = parser.parse_args()
 
 # Check that user does not ask for --use-hierarchical-level if the box is
 # not open.
-if args.use_hierarchical_level is not None and args.open_box is False:
+if opts.use_hierarchical_level is not None and opts.open_box is False:
     parser.error("User error: Cannot ask for --use-hierarchical-level " \
                  "when the box is closed (when --open-box is not given. " \
                  "These are conflicting options. Please use --help for " \
