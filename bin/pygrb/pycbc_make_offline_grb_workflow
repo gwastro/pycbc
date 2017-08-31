@@ -151,8 +151,24 @@ ext_file = None
 
 # DATAFIND
 dfDir = os.path.join(currDir, "datafind")
-datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow,
-        sciSegs, dfDir, segsFileList)
+if wflow.cp.has_option("workflow-condition_strain", "do-autogating"):
+    gating_pad = int(wflow.cp.get("condition_strain", "pad-data"))
+    gatSegs = segmentlistdict({key: segmentlist([\
+            segment(int(sciSegs[key][0][0] - gating_pad),
+                    int(sciSegs[key][0][1] + gating_pad))]) \
+            for key in sciSegs.keys()})
+    wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(gatSegs[ifo][0][0]),
+                                           int(gatSegs[ifo][0][1]))
+    datafind_files, _, gatSegs, _ = _workflow.setup_datafind_workflow(wflow,
+        gatSegs, dfDir, segsFileList)
+    wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
+                                           int(sciSegs[ifo][0][1]))
+else:
+    wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
+                                           int(sciSegs[ifo][0][1]))
+    datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow,
+            sciSegs, dfDir, segsFileList)
+
 ifos = sciSegs.keys()
 wflow.ifos = ifos
 datafind_veto_files = _workflow.FileList([])
