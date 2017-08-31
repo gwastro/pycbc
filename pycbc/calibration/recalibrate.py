@@ -28,22 +28,40 @@ class Recalibrate(object):
     ----------
     strain : FrequencySeries
         The strain to be adjusted.
-    calib_dict : dict
-        Dictionary of calibration parameters and their values at reference
-        time t0
+    freq : array
+        The frequencies corresponding to the values of c0, d0, a0 in Hertz.
+    fc0 : float
+        Coupled-cavity (CC) pole at time t0, when c0=c(t0) and a0=a(t0) are
+        measured.
+    c0 : array
+        Initial sensing function at t0 for the frequencies.
+    d0 : array
+        Digital filter for the frequencies.
+    a_tst0 : array
+        Initial actuation function for the test mass at t0 for the
+        frequencies.
+    a_pu0 : array
+        Initial actuation function for the penultimate mass at t0 for the
+        frequencies.
+    fs0 : float
+        Initial spring frequency at t0 for the signal recycling cavity.
+    qinv0 : float
+        Initial inverse quality factor at t0 for the signal recycling
+        cavity.
     """
 
-    def __init__(self, strain, calib_dict=None):
+    def __init__(self, strain, freq=None, fc0=None, c0=None, d0=None,
+                 a_tst0=None, a_pu0=None, fs0=None, qinv0=None):
 
         self.strain = strain
-        self.freq = numpy.real(calib_dict["freq"])
-        self.c0 = calib_dict["c0"]
-        self.d0 = calib_dict["d0"]
-        self.a_tst0 = calib_dict["a_tst0"]
-        self.a_pu0 = calib_dict["a_pu0"]
-        self.fc0 = float(calib_dict["fc0"])
-        self.fs0 = float(calib_dict["fs0"])
-        self.qinv0 = float(calib_dict["qinv0"])
+        self.freq = numpy.real(freq)
+        self.c0 = c0
+        self.d0 = d0
+        self.a_tst0 = a_tst0
+        self.a_pu0 = a_pu0
+        self.fc0 = float(fc0)
+        self.fs0 = float(fs0)
+        self.qinv0 = float(qinv0)
 
         # initial detuning at time t0
         init_detuning = self.freq**2 / (self.freq**2 - 1.0j * self.freq * \
@@ -162,14 +180,16 @@ class Recalibrate(object):
                           kappa_pu_re=kappa_pu_re, kappa_pu_im=kappa_pu_im)
         return (1.0 + g) / c
 
-    def adjust_strain(self, params):
+    def adjust_strain(self, fs=None, qinv=None, delta_fc=None, kappa_c=1.0,
+                      kappa_tst_re=1.0, kappa_tst_im=0.0, kappa_pu_re=1.0,
+                      kappa_pu_im=0.0):
         """Adjust the FrequencySeries strain by changing the time-dependent
         calibration parameters kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.
     
         Parameters
         ----------
-        fc : float
-            Coupled-cavity (CC) pole at time t.
+        delta_fc : float
+            Change in coupled-cavity (CC) pole at time t.
         kappa_c : float
             Scalar correction factor for sensing function c0 at time t.
         kappa_tst_re : float
@@ -194,20 +214,9 @@ class Recalibrate(object):
         strain_adjusted : FrequencySeries
             The adjusted strain.
         """
-        fs = params["calib_fs"] if "calib_fs" in params else self.fs0
-        qinv = params["calib_qinv"] if "calib_qinv" in params else self.qinv0
-        fc = self.fc0+params["calib_deltafc"] if "calib_deltafc" in params \
-             else self.fc0
-        kappa_c = params["calib_kappa_c"] if "calib_kappa_c" in params else 1.0
-        kappa_tst_re = params["calib_kappa_tst_re"] if "calib_kappa_tst_re" in \
-                       params else 1.0
-        kappa_tst_im = params["calib_kappa_tst_im"] if "calib_kappa_tst_im" in \
-                       params else 0.0
-        kappa_pu_re = params["calib_kappa_pu_re"] if "calib_kappa_pu_re" in \
-                      params else 1.0
-        kappa_pu_im = params["calib_kappa_pu_im"] if "calib_kappa_pu_im" in \
-                      params else 0.0
+        fc = self.fc0 + delta_fc if delta_fc else self.fc0
 
+        # calculate adjusted response function
         r_adjusted = self.update_r(fs=fs, qinv=qinv, fc=fc, kappa_c=kappa_c,
                                    kappa_tst_re=kappa_tst_re,
                                    kappa_tst_im=kappa_tst_im,
