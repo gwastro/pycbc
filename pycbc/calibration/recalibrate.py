@@ -90,7 +90,7 @@ class Recalibrate(object):
             Spring frequency for signal recycling cavity.
         qinv : float
             Inverse quality factor for signal recycling cavity.
-        
+
         Returns
         -------
         c : numpy.array
@@ -105,7 +105,7 @@ class Recalibrate(object):
                  kappa_c=1.0):
         """ Calculate the open loop gain g(f,t) given the new parameters
         kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.
-        
+
         Parameters
         ----------
         fc : float
@@ -128,7 +128,7 @@ class Recalibrate(object):
             Spring frequency for signal recycling cavity.
         qinv : float
             Inverse quality factor for signal recycling cavity.
-        
+
         Returns
         -------
         g : numpy.array
@@ -185,7 +185,7 @@ class Recalibrate(object):
                       kappa_pu_im=0.0):
         """Adjust the FrequencySeries strain by changing the time-dependent
         calibration parameters kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.
-    
+
         Parameters
         ----------
         delta_fc : float
@@ -208,7 +208,7 @@ class Recalibrate(object):
             Spring frequency for signal recycling cavity.
         qinv : float
             Inverse quality factor for signal recycling cavity.
-    
+
         Returns
         -------
         strain_adjusted : FrequencySeries
