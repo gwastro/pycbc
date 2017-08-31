@@ -163,6 +163,10 @@ if opts.open_box:
         back_tsid = fp['background_h%s/timeslide_id' % h_inc_back_num][:]
         back_ifar = fp['background_h%s/ifar' % h_inc_back_num][:]
 
+    else :
+        back_tsid = fp['background/timeslide_id'][:]
+        back_ifar = fp['background/ifar'][:]
+
 else :
     # If the box is closed use the background from no hierarchical
     # removals. Results should be agnostic of judgments about
