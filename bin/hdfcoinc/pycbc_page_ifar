@@ -158,14 +158,16 @@ expected_cumnum = fp.attrs['foreground_time'] / expected_ifar / lal.YRJUL_SI
 
 # Use these backgrounds for n-th stage of hierarchical removals
 # and test for backwards compatibility and that stage was written. 
-if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
-    back_tsid = fp['background_h%s/timeslide_id' % h_inc_back_num][:]
-    back_ifar = fp['background_h%s/ifar' % h_inc_back_num][:]
+if opts.open_box:
+    if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
+        back_tsid = fp['background_h%s/timeslide_id' % h_inc_back_num][:]
+        back_ifar = fp['background_h%s/ifar' % h_inc_back_num][:]
+
 else :
     # If the box is closed use the background from no hierarchical
     # removals. Results should be agnostic of judgments about
     # whether a hierarchical removal was done.
-    if not opts.open_box and h_iterations > 0:
+    if h_iterations > 0 and h_iterations is not None:
         back_tsid = fp['background_h0/timeslide_id'][:]
         back_ifar = fp['background_h0/ifar'][:]
 
