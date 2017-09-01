@@ -113,7 +113,7 @@ class NewSNRStatistic(Stat):
         """
         return get_newsnr(trigs)
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
 
         Parameters
@@ -150,7 +150,7 @@ class NewSNRSGStatistic(Stat):
         """
         return get_newsnr_sgveto(trigs)
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
 
         Parameters
@@ -201,7 +201,7 @@ class NewSNRCutStatistic(NewSNRStatistic):
         newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
         return newsnr
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
 
         Parameters
@@ -413,7 +413,7 @@ class ExpFitStatistic(NewSNRStatistic):
         """Single-detector statistic, here just equal to the log noise rate"""
         return self.lognoiserate(trigs)
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
         # Approximate log likelihood ratio by summing single-ifo negative
         # log noise likelihoods
@@ -454,7 +454,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / (2.**0.5)
 
