@@ -18,8 +18,9 @@
 
 import logging, argparse, sys, numpy
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft
+from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc import DYN_RANGE_FAC
-from pycbc.filter import MatchedFilterSkyMaxControl, make_frequency_series
+from pycbc.filter import MatchedFilterSkyMaxControl, make_frequency_series, MatchedFilterSkyMaxControlNoPhase
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
 import pycbc.fft.fftw
 import pycbc.opt
@@ -138,7 +139,8 @@ parser.add_argument("--keep-loudest-interval", type=float,
 parser.add_argument("--keep-loudest-num", type=int,
                     help="Number of triggers to keep from each maximization interval")
 parser.add_argument("--gpu-callback-method", default='none')
-
+parser.add_argument("--sky-maximization-method", required=True,
+                    choices=["precessing", "hom"])
 
 # Add options groups
 psd.insert_psd_option_group(parser)
@@ -148,6 +150,7 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 pycbc.opt.insert_optimization_option_group(parser)
 pycbc.weave.insert_weave_option_group(parser)
+SingleDetSGChisq.insert_option_group(parser)
 
 opt = parser.parse_args()
 
@@ -192,18 +195,8 @@ with ctx:
         'coa_phase' : float32,
         'hplus_cross_corr' : float32
                 }
-    out_vals = {
-        'time_index' : None,
-        'snr'        : None,
-        'chisq'      : None,
-        'chisq_dof'  : None,
-        'bank_chisq' : None,
-        'bank_chisq_dof' : None,
-        'cont_chisq' : None,
-        'u_vals' : None,
-        'coa_phase' : None,
-        'hplus_cross_corr' : None
-               }
+    out_types.update(SingleDetSGChisq.returns)
+    out_vals = {key: None for key in out_types}
     names = sorted(out_vals.keys())
 
 
@@ -217,8 +210,14 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
+    if opt.sky_maximization_method == 'hom':    
 
-    matched_filter = MatchedFilterSkyMaxControl(opt.low_frequency_cutoff,
+       matched_filter = MatchedFilterSkyMaxControlNoPhase(opt.low_frequency_cutoff,
+                                   None, opt.snr_threshold, tlen, delta_f,
+                                   complex64)
+    else:
+
+       matched_filter = MatchedFilterSkyMaxControl(opt.low_frequency_cutoff,
                                    None, opt.snr_threshold, tlen, delta_f,
                                    complex64)
 
@@ -255,6 +254,8 @@ with ctx:
                     out_cross=zeros(tlen, dtype=complex64),
                     max_template_length=opt.max_template_length,
                     low_frequency_cutoff=lfc)
+
+    sg_chisq = SingleDetSGChisq.from_cli(opt, bank, opt.chisq_bins)
 
     for t_num, (hplus, hcross) in enumerate(bank):
         # FIXME: Here we need to store sigmasq for plus *and* cross. Derived
@@ -297,6 +298,12 @@ with ctx:
                       corr_plus, corr_cross, snrv, stilde.psd,
                       idx+stilde.analyze.start, hplus, hcross, u_vals,
                       hplus_cross_corr, hpnorm, hcnorm)
+
+            out_vals['sg_chisq'] = sg_chisq.values(stilde, hplus, stilde.psd,
+                                          snrv, 1.,
+                                          out_vals['chisq'],
+                                          out_vals['chisq_dof'],
+                                          idx+stilde.analyze.start)
 
             # This hasn't been implemented yet, but the stub is still here.
             out_vals['cont_chisq'] = \
