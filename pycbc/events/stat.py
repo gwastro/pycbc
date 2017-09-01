@@ -132,6 +132,43 @@ class NewSNRStatistic(Stat):
         """
         return (s0**2. + s1**2.) ** 0.5
 
+class NewSNRSGStatistic(Stat):
+
+    """ Calculate the NewSNR coincident detection statistic """
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return get_newsnr_sgveto(trigs)
+
+    def coinc(self, s0, s1, slide, step):
+        """Calculate the coincident detection statistic.
+
+        Parameters
+        ----------
+        s0: numpy.ndarray
+            Single detector ranking statistic for the first detector.
+        s1: numpy.ndarray
+            Single detector ranking statistic for the second detector.
+        slide: (unused in this statistic)
+        step: (unused in this statistic)
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of coincident ranking statistic values
+        """
+        return (s0**2. + s1**2.) ** 0.5
+
 
 class NetworkSNRStatistic(NewSNRStatistic):
 
@@ -500,7 +537,8 @@ statistic_dict = {
     'exp_fit_csnr': ExpFitCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
-    'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic
+    'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
+    'newsnr_sgveto': NewSNRSGStatistic
 }
 
 def get_statistic(stat):
