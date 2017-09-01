@@ -365,7 +365,6 @@ setup (
                'bin/minifollowups/pycbc_page_snglinfo',
                'bin/minifollowups/pycbc_plot_trigger_timeseries',
                'bin/pycbc_banksim',
-               'bin/pycbc_banksim_skymax',
                'bin/pycbc_banksim_combine_banks',
                'bin/pycbc_banksim_match_combine',
                'bin/pycbc_faithsim',

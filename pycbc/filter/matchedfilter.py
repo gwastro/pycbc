@@ -260,7 +260,7 @@ class MatchedFilterControl(object):
         self.correlators[segnum].correlate()
         self.ifft.execute()
         snrv, idx = self.threshold_and_clusterers[segnum].threshold_and_cluster(self.snr_threshold / norm, window)
-        
+
         if len(idx) == 0:
             return [], [], [], [], []
 
@@ -359,7 +359,7 @@ class MatchedFilterControl(object):
             return [], [], [], [], []
 
         logging.info("%s points above threshold" % str(len(idx)))
-        
+
         snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
@@ -522,9 +522,9 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
     if thresh:
         # This is the statistic that always overestimates the SNR...
         # It allows some unphysical freedom that the full statistic does not
-        idx_p, _ = events.threshold(hplus[analyse_slice],
+        idx_p, _ = events.threshold_only(hplus[analyse_slice],
                                                     thresh / (2**0.5 * hpnorm))
-        idx_c, _ = events.threshold(hcross[analyse_slice],
+        idx_c, _ = events.threshold_only(hcross[analyse_slice],
                                                     thresh / (2**0.5 * hcnorm))
         idx_p = idx_p + analyse_slice.start
         idx_c = idx_c + analyse_slice.start
@@ -630,14 +630,18 @@ def compute_u_val_for_sky_loc_stat(hplus, hcross, hphccorr,
     sq_root = b*b - 4*a*c
     sq_root = sq_root**0.5
     sq_root = -sq_root
-    u = (-b + sq_root) / (2*a)
     # Catch the a->0 case
     bad_lgc = (a == 0)
     dbl_bad_lgc = numpy.logical_and(c == 0, b == 0)
     dbl_bad_lgc = numpy.logical_and(bad_lgc, dbl_bad_lgc)
-    u[bad_lgc] = -c[bad_lgc] / b[bad_lgc]
+    # Initialize u
+    u = sq_root * 0.
     # In this case u is completely degenerate, so set it to 1
     u[dbl_bad_lgc] = 1.
+    # If a->0 avoid overflow by just setting to a large value
+    u[bad_lgc & ~dbl_bad_lgc] = 1E17
+    # Otherwise normal statistic
+    u[~bad_lgc] = (-b[~bad_lgc] + sq_root[~bad_lgc]) / (2*a[~bad_lgc])
 
     snr_cplx = hplus * u + hcross
     coa_phase = numpy.angle(snr_cplx)
@@ -713,9 +717,9 @@ def compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
         # For now this is copied from the max-over-phase statistic. One could
         # probably make this faster by removing the imaginary components of
         # the matched filter, as these are not used here.
-        idx_p, _ = events.threshold(hplus[analyse_slice],
+        idx_p, _ = events.threshold_only(hplus[analyse_slice],
                                                     thresh / (2**0.5 * hpnorm))
-        idx_c, _ = events.threshold(hcross[analyse_slice],
+        idx_c, _ = events.threshold_only(hcross[analyse_slice],
                                                     thresh / (2**0.5 * hcnorm))
         idx_p = idx_p + analyse_slice.start
         idx_c = idx_c + analyse_slice.start
@@ -764,10 +768,9 @@ def compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
     hcross_magsq = numpy.real(hcross) * numpy.real(hcross)
     rho_pluscross = numpy.real(hplus) * numpy.real(hcross)
 
-    det_stat_sq = (hplus_magsq + hcross_magsq - \
-                   2 * rho_pluscross*hphccorr)
+    det_stat_sq = (hplus_magsq + hcross_magsq - 2 * rho_pluscross*hphccorr)
 
-    det_stat = numpy.sqrt(det_stat_sq)
+    det_stat = numpy.sqrt(det_stat_sq / denom)
 
     if thresh:
         out.data[locs] = det_stat
@@ -777,39 +780,42 @@ def compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
         return Array(det_stat, copy=False)
 
 def compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
-                                 hpnorm=None, hcnorm=None, indices=None):
+                                 hpnorm=None , hcnorm=None, indices=None):
     """The max-over-sky location (no phase) detection statistic maximizes over
     an amplitude and the ratio of F+ and Fx, encoded in a variable called u.
     Here we return the value of u for the given indices.
 
-    
+
     """
-    #Defining some intermediate variables (gamma hat is the one defined in Harry+16)
-        
-    gamma_hat = numpy.real(hplus*numpy.conj(hcross))
-    hplus_magsq = numpy.real(hplus) * numpy.real(hplus)
-    hcross_magsq = numpy.real(hcross) * numpy.real(hcross)
-      
-    hpluscross_sq_diff = hplus_magsq - hcross_magsq
-    I_rhoplus_gamma_term = (hphccorr*hplus_magsq - gamma_hat)
-   
-    #I think we have to choose the '+' root here, right? 
-    
-    u_val_numerator = - (hpluscross_sq_diff) + numpy.sqrt(hpluscross_sq_diff**2 -4*I_rhoplus_gamma_term* (gamma_hat - hphccorr*hcross_magsq))
-    u_val_denominator = 2*I_rhoplus_gamma_term
+    if indices is not None:
+        hplus = hplus[indices]
+        hcross = hcross[indices]
 
-    u_val = u_val_numerator / u_val_denominator
+    if hpnorm is not None:
+        hplus = hplus * hpnorm
+    if hcnorm is not None:
+        hcross = hcross * hcnorm
 
+    rhoplusre=numpy.real(hplus)
+    rhocrossre=numpy.real(hcross)
+    overlap=numpy.real(hphccorr)
 
-    # FIXME: Need to test this!!!
-    # return numpy.ones(len(indices)), numpy.ones(len(indices))
-    return u_val
+    denom = (-rhocrossre+overlap*rhoplusre)
+    # Initialize tan_kappa array
+    u_val = denom * 0.
+    # Catch the denominator -> 0 case
+    bad_lgc = (denom == 0)
+    u_val[bad_lgc] = 1E17
+    # Otherwise do normal statistic
+    u_val[~bad_lgc] = (-rhoplusre+overlap*rhocrossre) / \
+        (-rhocrossre+overlap*rhoplusre)
+    coa_phase = numpy.zeros(len(indices), dtype=numpy.float32)
+
+    return u_val, coa_phase
 
 class MatchedFilterSkyMaxControl(object):
     # FIXME: This seems much more simplistic than the aligned-spin class.
     #        E.g. no correlators. Is this worth updating?
-    _internal_snr_function = compute_max_snr_over_sky_loc_stat
-    _internal_ext_params_function = compute_u_val_for_sky_loc_stat
     def __init__(self, low_frequency_cutoff, high_frequency_cutoff,
                 snr_threshold, tlen, delta_f, dtype):
         """
@@ -875,12 +881,14 @@ class MatchedFilterSkyMaxControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
+
         I_plus, Iplus_corr, Iplus_norm = matched_filter_core(hplus, stilde,
                                           h_norm=hplus_norm,
                                           low_frequency_cutoff=self.flow,
                                           high_frequency_cutoff=self.fhigh,
                                           out=self.snr_plus_mem,
                                           corr_out=self.corr_plus_mem)
+
 
         I_cross, Icross_corr, Icross_norm = matched_filter_core(hcross,
                                           stilde, h_norm=hcross_norm,
@@ -911,43 +919,59 @@ class MatchedFilterSkyMaxControl(object):
         else:
             hplus_cross_corr = self.cached_hplus_hcross_correlation
 
-        snr = self._internal_snr_function(I_plus,I_cross,
-                                          hplus_cross_corr,
-                                          thresh=self.snr_threshold,
-                                          out=self.snr_mem,
-                                          hpnorm=Iplus_norm,
-                                          hcnorm=Icross_norm,
-                                          analyse_slice=stilde.analyze)
+        snr = self._maximized_snr(I_plus,I_cross,
+                                  hplus_cross_corr,
+                                  hpnorm=Iplus_norm,
+                                  hcnorm=Icross_norm,
+                                  out=self.snr_mem,
+                                  thresh=self.snr_threshold,
+                                  analyse_slice=stilde.analyze)
         # FIXME: This should live further down
         # Convert output to pycbc TimeSeries
         delta_t = 1.0 / (self.tlen * stilde.delta_f)
 
-        snr = TimeSeries(snr, epoch=stilde._epoch, delta_t=delta_t, copy=False)
+        snr = TimeSeries(snr, epoch=stilde.start_time, delta_t=delta_t,
+                         copy=False)
 
         idx, snrv = events.threshold_real_numpy(snr[stilde.analyze],
                                                 self.snr_threshold)
 
         if len(idx) == 0:
             return [], 0, 0, [], [], [], [], 0, 0, 0
-        logging.info("%s points above threshold" % str(len(idx)))
+        logging.info("%s points above threshold", str(len(idx)))
 
 
         idx, snrv = events.cluster_reduce(idx, snrv, window)
-        logging.info("%s clustered points" % str(len(idx)))
-
-        u_vals, coa_phase = self._internal_ext_params_function\
+        logging.info("%s clustered points", str(len(idx)))
+        # erased self.
+        u_vals, coa_phase = self._maximized_extrinsic_params\
             (I_plus.data, I_cross.data, hplus_cross_corr,
              indices=idx+stilde.analyze.start, hpnorm=Iplus_norm,
              hcnorm=Icross_norm)
 
+
+
         return snr, Iplus_corr, Icross_corr, idx, snrv, u_vals, coa_phase,\
                                       hplus_cross_corr, Iplus_norm, Icross_norm
 
-def MatchedFilterSkyMaxControlNoPhase(object):
+    def _maximized_snr(self, hplus, hcross, hphccorr, **kwargs):
+        return compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
+                                                 **kwargs)
+
+    def _maximized_extrinsic_params(self, hplus, hcross, hphccorr, **kwargs):
+        return compute_u_val_for_sky_loc_stat(hplus, hcross, hphccorr,
+                                              **kwargs)
+
+class MatchedFilterSkyMaxControlNoPhase(MatchedFilterSkyMaxControl):
     # Basically the same as normal SkyMaxControl, except we use a slight
     # variation in the internal SNR functions.
-    _internal_snr_function = compute_max_snr_over_sky_loc_stat
-    _internal_ext_params_function = compute_u_val_for_sky_loc_stat
+    def _maximized_snr(self, hplus, hcross, hphccorr, **kwargs):
+        return compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross,
+                                                          hphccorr, **kwargs)
+
+    def _maximized_extrinsic_params(self, hplus, hcross, hphccorr, **kwargs):
+        return compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
+                                                       **kwargs)
 
 def make_frequency_series(vec):
     """Return a frequency series of the input vector.
@@ -1173,8 +1197,8 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     if corr_out is not None:
         qtilde = corr_out
     else:
-        qtilde = zeros(N, dtype=complex_same_precision_as(data))    
-    
+        qtilde = zeros(N, dtype=complex_same_precision_as(data))
+
     if out is None:
         _q = zeros(N, dtype=complex_same_precision_as(data))
     elif (len(out) == N) and type(out) is Array and out.kind =='complex':
@@ -1659,6 +1683,7 @@ class LiveBatchMatchedFilter(object):
                 result[key].append(htilde.dict_params[key])
             i += 1
 
+
         result['snr'] = abs(snr[0:i])
         result['coa_phase'] = numpy.angle(snr[0:i])
         result['end_time'] = time[0:i]
@@ -1759,6 +1784,6 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
            'matched_filter_core', 'correlate', 'MatchedFilterControl', 'LiveBatchMatchedFilter',
-           'MatchedFilterSkyMaxControl', 'compute_max_snr_over_sky_loc_stat',
-           'compute_followup_snr_series']
+           'MatchedFilterSkyMaxControl','MatchedFilterSkyMaxControlNoPhase','compute_max_snr_over_sky_loc_stat_no_phase', 'compute_max_snr_over_sky_loc_stat',
+           'compute_followup_snr_series','compute_u_val_for_sky_loc_stat_no_phase','compute_u_val_for_sky_loc_stat']
 
