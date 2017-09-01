@@ -477,6 +477,7 @@ setup (
                ],
     packages = [
                'pycbc',
+               'pycbc.calibration',
                'pycbc.distributions',
                'pycbc.fft',
                'pycbc.types',
