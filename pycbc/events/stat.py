@@ -132,6 +132,7 @@ class NewSNRStatistic(Stat):
         """
         return (s0**2. + s1**2.) ** 0.5
 
+
 class NewSNRSGStatistic(NewSNRStatistic):
 
     """ Calculate the NewSNRSG coincident detection statistic """
