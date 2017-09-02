@@ -132,9 +132,9 @@ class NewSNRStatistic(Stat):
         """
         return (s0**2. + s1**2.) ** 0.5
 
-class NewSNRSGStatistic(Stat):
+class NewSNRSGStatistic(NewSNRStatistic):
 
-    """ Calculate the NewSNR coincident detection statistic """
+    """ Calculate the NewSNRSG coincident detection statistic """
 
     def single(self, trigs):
         """Calculate the single detector statistic, here equal to newsnr
@@ -149,25 +149,6 @@ class NewSNRSGStatistic(Stat):
             The array of single detector values
         """
         return get_newsnr_sgveto(trigs)
-
-    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
-        """Calculate the coincident detection statistic.
-
-        Parameters
-        ----------
-        s0: numpy.ndarray
-            Single detector ranking statistic for the first detector.
-        s1: numpy.ndarray
-            Single detector ranking statistic for the second detector.
-        slide: (unused in this statistic)
-        step: (unused in this statistic)
-
-        Returns
-        -------
-        numpy.ndarray
-            Array of coincident ranking statistic values
-        """
-        return (s0**2. + s1**2.) ** 0.5
 
 
 class NetworkSNRStatistic(NewSNRStatistic):
