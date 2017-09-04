@@ -33,6 +33,9 @@ pycbcValidOrdersHelpDescriptions="""
      * threePN: Will include orbit terms to 3PN and spin terms to 2.5PN.
      * threePointFivePN: Include orbit terms to 3.5PN and spin terms to 2.5PN
 """
+# FIXME:
+# Add to above when support for lambdas is added in template bank front-ends
+# * tidalTerms: As threePointFivePN, but includes 5 and 6PN tidal terms
 
 
 def generate_mapping(order):
@@ -79,7 +82,7 @@ def generate_mapping(order):
     mapping['Lambda7'] = 7
     if order == 'threePointFivePN':
         return mapping
-    if order == 'tidalTesting':
+    if order == 'tidalTerms':
         mapping['Lambda10'] = 8
         mapping['Lambda12'] = 9
         return mapping
@@ -96,7 +99,7 @@ def generate_inverse_mapping(order):
     generate_mapping gives dict[key] = item this will give
     dict[item] = key. Valid PN orders are:
     {}
-    
+
     Parameters
     ----------
     order : string
@@ -120,7 +123,7 @@ generate_inverse_mapping.__doc__ = \
 
 def get_ethinca_orders():
     """
-    Returns the dictionary mapping TaylorF2 PN order names to twice-PN 
+    Returns the dictionary mapping TaylorF2 PN order names to twice-PN
     orders (powers of v/c)
     """
     ethinca_orders = {"zeroPN"           : 0,
@@ -135,13 +138,13 @@ def get_ethinca_orders():
 
 def ethinca_order_from_string(order):
     """
-    Returns the integer giving twice the post-Newtonian order 
+    Returns the integer giving twice the post-Newtonian order
     used by the ethinca calculation. Currently valid only for TaylorF2 metric
 
     Parameters
     ----------
     order : string
-    
+
     Returns
     -------
     int
@@ -159,7 +162,7 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order,
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
     {}
- 
+
     Parameters
     ----------
     mass1 : float or array
@@ -269,7 +272,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
     {}
- 
+
     Parameters
     ----------
     mass1 : float or array
@@ -340,7 +343,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
             lambda6 = lambda6 * 3./(128.*eta) * (pi * totmass * f0)**(1/3.)
             lambdas.append(lambda6)
         elif mapping[idx] == 'LogLambda6':
-            loglambda6 =  -( 6848./21) 
+            loglambda6 =  -( 6848./21)
             loglambda6 = loglambda6 * 3./(128.*eta)\
                          * (pi * totmass * f0)**(1/3.)
             lambdas.append(loglambda6)
@@ -352,7 +355,7 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
         else:
             err_msg = "Do not understand term {}.".format(mapping[idx])
             raise ValueError(err_msg)
-                 
+
     return lambdas
 
 get_chirp_params_old.__doc__ = \
