@@ -282,11 +282,6 @@ proc_id = utils.process.register_to_xmldoc(
                     cvs_repository=pycbc_glue.git_version.branch,
                     cvs_entry_time=pycbc_glue.git_version.date).process_id
 
-# create sim_inspiral table
-sim_table = lsctables.New(lsctables.SimInspiralTable,
-                          columns=lsctables.SimInspiralTable.validcolumns)
-outdoc.childNodes[0].appendChild(sim_table)
-
 # create sim_inspiral row for injection
 # and populate non-IFO-specific columns in XML output file
 
@@ -305,6 +300,11 @@ if opts.dquad_mon2 is not None:
 class SimInspiralNew(lsctables.SimInspiral):
     __slots__ = lsctables.SimInspiralTable.validcolumns.keys()
 lsctables.SimInspiral = SimInspiralNew
+
+# create sim_inspiral table
+sim_table = lsctables.New(lsctables.SimInspiralTable,
+                          columns=lsctables.SimInspiralTable.validcolumns)
+outdoc.childNodes[0].appendChild(sim_table)
 
 sim = _empty_row(lsctables.SimInspiral)
 sim.f_lower = opts.waveform_low_frequency_cutoff
