@@ -300,6 +300,7 @@ if opts.dquad_mon2 is not None:
 class SimInspiralNew(lsctables.SimInspiral):
     __slots__ = lsctables.SimInspiralTable.validcolumns.keys()
 lsctables.SimInspiral = SimInspiralNew
+lsctables.SimInspiralTable.RowType = SimInspiralNew
 
 # create sim_inspiral table
 sim_table = lsctables.New(lsctables.SimInspiralTable,
