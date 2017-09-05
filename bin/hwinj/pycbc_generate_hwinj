@@ -289,6 +289,23 @@ outdoc.childNodes[0].appendChild(sim_table)
 
 # create sim_inspiral row for injection
 # and populate non-IFO-specific columns in XML output file
+
+# If using tidal terms some hacking is currently needed. Hopefully this can
+# be resolved in the future by using HDF injection files!
+if opts.lambda1 is not None:
+    lsctables.SimInspiralTable.validcolumns['lambda1'] = 'real_4'
+if opts.lambda2 is not None:
+    lsctables.SimInspiralTable.validcolumns['lambda2'] = 'real_4'
+if opts.dquad_mon1 is not None:
+    lsctables.SimInspiralTable.validcolumns['dquad_mon1'] = 'real_4'
+if opts.dquad_mon2 is not None:
+    lsctables.SimInspiralTable.validcolumns['dquad_mon2'] = 'real_4'
+# You'd think that would it to redefine the table columns, but wait, it gets
+# worse!
+class SimInspiralNew(lsctables.SimInspiral):
+    __slots__ = lsctables.SimInspiralTable.validcolumns.keys()
+lsctables.SimInspiral = SimInspiralNew
+
 sim = _empty_row(lsctables.SimInspiral)
 sim.f_lower = opts.waveform_low_frequency_cutoff
 sim.geocent_end_time = int(opts.geocentric_end_time)
