@@ -324,17 +324,12 @@ sim.spin2z = opts.spin2z
 sim.spin2y = opts.spin2y
 sim.spin2x = opts.spin2x
 if opts.lambda1 is not None:
-    # REDEFINE THE SIM INSPIRAL TABLE DEFINITION!!!
-    lsctables.SimInspiralTable.validcolumns['lambda1'] = 'real_4'
     sim.lambda1 = opts.lambda1
 if opts.lambda2 is not None:
-    lsctables.SimInspiralTable.validcolumns['lambda2'] = 'real_4'
     sim.lambda2 = opts.lambda2
 if opts.dquad_mon1 is not None:
-    lsctables.SimInspiralTable.validcolumns['dquad_mon1'] = 'real_4'
     sim.dquad_mon1 = opts.dquad_mon1
 if opts.dquad_mon2 is not None:
-    lsctables.SimInspiralTable.validcolumns['dquad_mon2'] = 'real_4'
     sim.dquad_mon2 = opts.dquad_mon2
 sim.polarization = opts.polarization
 sim.taper = opts.taper
