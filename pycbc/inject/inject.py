@@ -88,7 +88,7 @@ class _HDFInjectionSet(object):
     def __init__(self, sim_file, **kwds):
         # open the file
         fp = h5py.File(sim_file, 'r')
-        self.filehandler = fp 
+        self.filehandler = fp
         # get parameters
         parameters = fp.keys()
         # get all injection parameter values
