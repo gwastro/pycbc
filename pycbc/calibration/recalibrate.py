@@ -24,6 +24,11 @@ class Recalibrate(object):
     """ Class for adjusting time-varying calibration parameters of given
     strain data.
 
+    Attributes
+    ----------
+    name : 'physical_model'
+        The name of this calibration model.
+
     Parameters
     ----------
     strain : FrequencySeries
@@ -50,6 +55,7 @@ class Recalibrate(object):
         cavity.
     """
 
+    name = 'physical_model'
     def __init__(self, strain, freq=None, fc0=None, c0=None, d0=None,
                  a_tst0=None, a_pu0=None, fs0=None, qinv0=None):
 
