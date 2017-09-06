@@ -175,7 +175,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
   echo -e "\\n>> [`date`] Installing Pegasus and DQSegDB"
-  pip install http://download.pegasus.isi.edu/pegasus/4.7.4/pegasus-python-source-4.7.4.tar.gz
+  pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
   pip install dqsegdb
 
   echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
