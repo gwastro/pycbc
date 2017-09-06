@@ -83,6 +83,8 @@ script:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/travis_build_and_test.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
+    sudo chown -R 1000:1000 .
+    sudo chown -R 1000:1000 ~/.ssh
     docker run --name pycbc_inst --cidfile docker.cid -d -e USERID=$UID -v ~/.ssh:/home/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' ;
     sleep 10 ;
     docker ps -a ;
@@ -98,6 +100,8 @@ script:
     docker stop pycbc_inst ;
     docker ps -a ;
     docker commit $TMP_CONTAINER_ID $DOCKER_IMG ;
+    sudo chown -R $UID .
+    sudo chown -R $UID ~/.ssh
   else
     ./tools/docker_build_and_test.sh ;
   fi
