@@ -181,9 +181,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
   pip install 'matplotlib==1.5.3'
 
-  echo -e "\\n>> [`date`] Installing PyCBC and dependencies"
-  cd /pycbc
-  pip install -r requirements.txt
+  echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   set +e
   id
   df -h
@@ -195,6 +193,10 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo ">>> /pycbc/pycbc"
   ls -al /pycbc/pycbc
   set -e
+  cd /pycbc
+  pip install -r requirements.txt
+
+  echo -e "\\n>> [`date`] Installing PyCBC from source"
   python setup.py install
 
   echo -e "\\n>> [`date`] Installing PyCBC PyLAL 1.0.2"
