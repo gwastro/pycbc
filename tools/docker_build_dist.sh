@@ -184,6 +184,17 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Installing PyCBC and dependencies"
   cd /pycbc
   pip install -r requirements.txt
+  set +e
+  id
+  df -h
+  cat /etc/mtab
+  echo ">>> /"
+  ls -al /
+  echo ">>> /pycbc"
+  ls -al /pycbc
+  echo ">>> /pycbc/pycbc"
+  ls -al /pycbc/pycbc
+  set -e
   python setup.py install
 
   echo -e "\\n>> [`date`] Installing PyCBC PyLAL 1.0.2"
