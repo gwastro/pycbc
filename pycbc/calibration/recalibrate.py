@@ -186,7 +186,8 @@ class Recalibrate(object):
                           kappa_pu_re=kappa_pu_re, kappa_pu_im=kappa_pu_im)
         return (1.0 + g) / c
 
-    def adjust_strain(self, fs=None, qinv=None, delta_fc=None, kappa_c=1.0,
+    def adjust_strain(self, delta_fs=None, delta_qinv=None, delta_fc=None,
+                      kappa_c=1.0,
                       kappa_tst_re=1.0, kappa_tst_im=0.0, kappa_pu_re=1.0,
                       kappa_pu_im=0.0):
         """Adjust the FrequencySeries strain by changing the time-dependent
@@ -221,6 +222,8 @@ class Recalibrate(object):
             The adjusted strain.
         """
         fc = self.fc0 + delta_fc if delta_fc else self.fc0
+        fs = self.fs0 + delta_fs if delta_fs else self.fs0
+        qinv = self.qinv0 + delta_qinv if delta_qinv else self.qinv0
 
         # calculate adjusted response function
         r_adjusted = self.update_r(fs=fs, qinv=qinv, fc=fc, kappa_c=kappa_c,
@@ -248,3 +251,45 @@ class Recalibrate(object):
                                           delta_f=self.strain.delta_f)
 
         return strain_adjusted
+
+    def tf_from_file(self, path, delimiter=" "):
+        """Convert the contents of a file with the columns
+        [freq, real(h), imag(h)] to a numpy.array with columns
+        [freq, real(h)+j*imag(h)].
+
+        Parameters
+        ----------
+        Return
+        ------
+        """
+        data = numpy.loadtxt(path, delimiter=delimiter)
+        freq = data[:, 0]
+        h = data[:, 1] + 1.0j * data[:, 2]
+        return numpy.array([freq, h]).transpose()
+
+    def from_config(self, cp, ifo):
+        """
+        Parameters
+        ----------
+        Return
+        ------
+        """
+        # read transfer functions
+        tfs = []
+        tf_names = ["a-tst", "a-pu", "c", "d"]
+        for tag in ['-'.join([ifo, "transfer-function", name])
+                        for name in tf_names]:
+            tf_path = cp.get_opt_tag("calibration", tag)
+            tfs.append(self.tf_from_file(tf_path))
+        a_tst0 = tfs[0][:, 1]
+        a_pu0 = tfs[1][:, 1]
+        c0 = tfs[2][:, 1]
+        d0 = tfs[3][:, 1]
+        freq = tfs[0][:, 0]
+
+        # read fc0, fs0, and qinv0
+        fc0 = cp.get_opt_tag("calibration", '-'.join([ifo, "fc0"]))
+        fs0 = cp.get_opt_tag("calibration", '-'.join([ifo, "fs0"]))
+        qinv0 = cp.get_opt_tag("calibration", '-'.join([ifo, "qinv0"]))
+
+        return freq, fc0, c0, d0, a_tst0, a_pu0, fs0, qinv0
