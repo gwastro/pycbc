@@ -101,7 +101,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
     yum clean all
     yum makecache
-    yum update
+    yum -y update
     yum -y install pegasus
     yum -y install ligo-proxy-utils
     yum -y install ecp-cookie-init
