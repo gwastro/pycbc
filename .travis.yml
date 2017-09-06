@@ -87,12 +87,12 @@ script:
     sleep 10 ;
     docker ps -a ;
     TMP_CONTAINER_ID=$(cat docker.cid) ;
-    travis_retry docker exec -it pycbc_inst /bin/bash -lc "id; df -h; ls -al /; ls -al /pycbc; cd /pycbc; pip install -r requirements.txt; python setup.py install; exit $?" ;
-    travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; exit $?" ;
+    travis_retry docker exec -it pycbc_inst /bin/bash -lc "cd /pycbc && pip install -r requirements.txt && python setup.py install; exit $?" ;
+    travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/src && cd ~/src && git clone https://github.com/ligo-cbc/pycbc.git; exit $?" ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       LAL_EXTRA_TAG="11" ; 
-      travis_retry docker exec -it pycbc_inst /bin/bash -lc "echo -e mkdir -p ~/pycbc-software/share/lal-data; rsync --exclude='SEOBNRv1ROM*' --exclude='SEOBNRv2ROM_DS_HI_v1.0.hdf5' -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation/ /home/pycbc/pycbc-software/share/lal-data/" ;
-      docker exec -it pycbc_inst /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bash_profile' ;
+      travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/pycbc-software/share/lal-data && rsync --exclude='SEOBNRv1ROM*' --exclude='SEOBNRv2ROM_DS_HI_v1.0.hdf5' -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation/ /home/pycbc/pycbc-software/share/lal-data/ && exit $?" ;
+      docker exec -it pycbc_inst /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bash_profile; exit $?' ;
     fi ;
     sleep 10 ;
     docker stop pycbc_inst ;
