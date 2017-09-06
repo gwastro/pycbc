@@ -153,7 +153,7 @@ elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/nu
     pyinstaller_lsb="--no-lsb"
     build_onefile_bundles=true
     appendix="_Linux64"
-elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
+elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null || grep -q "Ubuntu 14" /etc/issue 2>/dev/null ; then
     link_gcc_version=4.6
     gcc_path="/usr/bin"
     build_python=true
