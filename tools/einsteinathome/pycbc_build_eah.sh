@@ -137,17 +137,9 @@ elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then 
 elif grep -q "CentOS release 5" /etc/redhat-release 2>/dev/null; then # SL6
     echo -e "\\n\\n>> [`date`] Using CentOS release 5 settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
-    link_gcc_version=4.4.7
+    link_gcc_version=4.2
     gcc_path="/usr/bin"
     build_python=true
-    build_hdf5=true
-    build_pegasus=false
-    build_fftw=false
-    build_gsl=false
-    build_ssl=false
-    build_lapack=false
-    build_freetype=false
-    build_zlib=false
     build_wrapper=false
     build_fstab=false
     pyinstaller_lsb="--no-lsb"
