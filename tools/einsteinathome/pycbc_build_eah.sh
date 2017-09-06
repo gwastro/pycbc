@@ -139,7 +139,7 @@ elif grep -q "CentOS release 5" /etc/redhat-release 2>/dev/null; then # SL6
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     link_gcc_version=4.2
     gcc_path="/usr/bin"
-    build_ssl=false
+    build_ssl=true
     build_python=true
     build_wrapper=false
     build_fstab=false
