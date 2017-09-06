@@ -46,7 +46,7 @@ if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
 fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
-  echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
+  echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for pypa/manylinux" 
 
   # create working dir for build script
   BUILD=/pycbc/build
@@ -70,6 +70,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
+  cat /etc/issue
+  ls -al /usr/gcc*
+  ls -al /usr/bin/gcc*
   /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/710a51f4770cbba77f61dfb798472bebe6c43d38/travis --with-extra-approximant='SPAtmplt:mtotal<4' --with-extra-approximant='SEOBNRv4_ROM:else'  --with-extra-approximant=--use-compressed-waveforms --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl --with-extra-bank=/pycbc/testbank_TF2v4ROM.hdf
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
