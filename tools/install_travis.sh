@@ -47,6 +47,10 @@ pip install --upgrade pip setuptools
 # needed by mock 
 pip install 'setuptools==18.2' --upgrade
 
+# XXX this is a fix for https://github.com/travis-ci/travis-ci/issues/7940
+# as Pegasus pulls in boto which hits this issue
+export BOTO_CONFIG=/dev/null
+
 # install pegasus
 pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
 
