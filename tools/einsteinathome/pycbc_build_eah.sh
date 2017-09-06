@@ -134,8 +134,8 @@ elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then 
     pyinstaller_lsb="--no-lsb"
     build_onefile_bundles=true
     appendix="_Linux64"
-elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/null; then # SL6
-    echo -e "\\n\\n>> [`date`] Using Scientific Linux CERN SLC release 6 (Carbon) settings"
+elif grep -q "CentOS release 5" /etc/redhat-release 2>/dev/null; then # SL6
+    echo -e "\\n\\n>> [`date`] Using CentOS release 5 settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
     link_gcc_version=4.4.7
     gcc_path="/usr/bin"
