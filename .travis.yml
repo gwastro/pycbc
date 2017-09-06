@@ -55,8 +55,6 @@ matrix:
     - docker
   - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
     sudo: required
-    # the line below needs to be fixed. see https://github.com/ligo-cbc/pycbc/issues/1758
-    group: deprecated-2017Q2
     services:
     - docker
   - env: PYCBC_CONTAINER=build_and_test
