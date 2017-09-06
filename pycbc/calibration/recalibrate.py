@@ -278,7 +278,7 @@ class Recalibrate(object):
         tfs = []
         tf_names = ["a-tst", "a-pu", "c", "d"]
         for tag in ['-'.join([ifo, "transfer-function", name])
-                        for name in tf_names]:
+                    for name in tf_names]:
             tf_path = cp.get_opt_tag("calibration", tag)
             tfs.append(self.tf_from_file(tf_path))
         a_tst0 = tfs[0][:, 1]

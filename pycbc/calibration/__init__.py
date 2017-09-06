@@ -24,7 +24,7 @@ def read_model_from_config(cp, strain, ifo, section="calibration"):
         An instance of the calibration model class.
     """
     name = cp.get_opt_tag(section, "name")
-    freq, fc0, c0, d0, a_tst0, a_pu0, fs0, qinv0 = Recalibrate.fromconfig(cp, ifo)
+    freq, fc0, c0, d0, a_tst0, a_pu0, fs0, qinv0 = Recalibrate.from_config(cp, ifo)
     recalibrator = models[name](strain, freq=freq, fc0=fc0, c0=c0, d0=d0,
                                 a_tst0=a_tst0, a_pu0=a_pu0, fs0=fs0,
                                 qinv0=qinv0)
