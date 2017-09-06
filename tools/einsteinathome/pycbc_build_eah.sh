@@ -366,7 +366,9 @@ if [ ".$link_gcc_version" != "." ]; then
                 if test -x "${gcc_path}/$i-$link_gcc_version"; then
                     ln -s "${gcc_path}/$i-$link_gcc_version" $i
                 else
-                    echo ERROR; "${gcc_path}/$i-$link_gcc_version" not found
+                    echo ERROR: "${gcc_path}/$i-$link_gcc_version" not found
+                    ls -l ${gcc_path}/${i}-*
+                    exit 1
                 fi
         done
     )
