@@ -55,13 +55,9 @@ matrix:
     - docker
   - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
     sudo: required
-    # the line below needs to be fixed. see https://github.com/ligo-cbc/pycbc/issues/1758
-    group: deprecated-2017Q2
     services:
     - docker
   - env: PYCBC_CONTAINER=build_and_test
-    # the line below needs to be fixed. see https://github.com/ligo-cbc/pycbc/issues/1758
-    dist: precise
 
 before_install:
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
@@ -82,24 +78,30 @@ install:
     chmod 600 ~/.ssh/id_rsa ~/.ssh/config ~/.ssh/ldg_user ~/.ssh/ldg_token ;
   fi
 script:
+# FIXME The line below is to work around https://github.com/travis-ci/travis-ci/issues/7940
+- export BOTO_CONFIG=/dev/null
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/travis_build_and_test.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
-    docker run --name pycbc_inst --cidfile docker.cid -d -v ~/.ssh:/home/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' ;
+    sudo chown -R 1000:1000 . ;
+    sudo chown -R 1000:1000 ~/.ssh ;
+    docker run --name pycbc_inst --cidfile /tmp/docker.cid -d -e USERID=$UID -v ~/.ssh:/home/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' ;
     sleep 10 ;
     docker ps -a ;
-    TMP_CONTAINER_ID=$(cat docker.cid) ;
-    travis_retry docker exec -it pycbc_inst /bin/bash -lc "cd /pycbc; pip install -r requirements.txt; python setup.py install; exit $?" ;
-    travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/src; cd ~/src ; git clone https://github.com/ligo-cbc/pycbc.git; exit $?" ;
+    TMP_CONTAINER_ID=$(cat /tmp/docker.cid) ;
+    travis_retry docker exec -it pycbc_inst /bin/bash -lc "id; ls -al /pycbc; cd /pycbc && pip install -r requirements.txt && python setup.py install || exit 1" ;
+    travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/src && cd ~/src && git clone https://github.com/ligo-cbc/pycbc.git || exit 1" ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       LAL_EXTRA_TAG="11" ; 
-      travis_retry docker exec -it pycbc_inst /bin/bash -lc "echo -e mkdir -p ~/pycbc-software/share/lal-data; rsync --exclude='SEOBNRv1ROM*' --exclude='SEOBNRv2ROM_DS_HI_v1.0.hdf5' -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation/ /home/pycbc/pycbc-software/share/lal-data/" ;
-      docker exec -it pycbc_inst /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bash_profile' ;
+      travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/pycbc-software/share/lal-data && rsync --exclude='SEOBNRv1ROM*' --exclude='SEOBNRv2ROM_DS_HI_v1.0.hdf5' -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation/ /home/pycbc/pycbc-software/share/lal-data/ && exit $?" ;
+      docker exec -it pycbc_inst /bin/bash -lc 'echo "export LAL_DATA_PATH=/home/pycbc/pycbc-software/share/lal-data/" >> /home/pycbc/.bash_profile; exit $?' ;
     fi ;
     sleep 10 ;
     docker stop pycbc_inst ;
     docker ps -a ;
     docker commit $TMP_CONTAINER_ID $DOCKER_IMG ;
+    sudo chown -R $UID . ;
+    sudo chown -R $UID ~/.ssh ;
   else
     ./tools/docker_build_and_test.sh ;
   fi

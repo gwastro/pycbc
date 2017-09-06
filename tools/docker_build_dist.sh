@@ -175,15 +175,17 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
   echo -e "\\n>> [`date`] Installing Pegasus and DQSegDB"
-  pip install http://download.pegasus.isi.edu/pegasus/4.7.4/pegasus-python-source-4.7.4.tar.gz
+  pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
   pip install dqsegdb
 
   echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
   pip install 'matplotlib==1.5.3'
 
-  echo -e "\\n>> [`date`] Installing PyCBC and dependencies"
+  echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
   pip install -r requirements.txt
+
+  echo -e "\\n>> [`date`] Installing PyCBC from source"
   python setup.py install
 
   echo -e "\\n>> [`date`] Installing PyCBC PyLAL 1.0.2"

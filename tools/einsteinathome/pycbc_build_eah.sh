@@ -153,8 +153,27 @@ elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/nu
     pyinstaller_lsb="--no-lsb"
     build_onefile_bundles=true
     appendix="_Linux64"
-elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null; then
+elif grep -q "Ubuntu 12" /etc/issue 2>/dev/null ; then
     link_gcc_version=4.6
+    gcc_path="/usr/bin"
+    build_python=true
+    build_pcre=true
+    pyinstaller_lsb="--no-lsb"
+    build_onefile_bundles=false
+    appendix="_Linux64"
+    if test x$TRAVIS_OS_NAME = xlinux ; then
+        build_fftw=false
+        build_hdf5=false
+        build_ssl=false
+        build_lapack=false
+        build_gsl=false
+        build_freetype=false
+        build_zlib=false
+        build_wrapper=false
+        build_fstab=false
+    fi
+elif grep -q "Ubuntu 14" /etc/issue 2>/dev/null ; then
+    link_gcc_version=4.8
     gcc_path="/usr/bin"
     build_python=true
     build_pcre=true
@@ -366,7 +385,9 @@ if [ ".$link_gcc_version" != "." ]; then
                 if test -x "${gcc_path}/$i-$link_gcc_version"; then
                     ln -s "${gcc_path}/$i-$link_gcc_version" $i
                 else
-                    echo ERROR; "${gcc_path}/$i-$link_gcc_version" not found
+                    echo ERROR: "${gcc_path}/$i-$link_gcc_version" not found
+                    ls -l ${gcc_path}/${i}-*
+                    exit 1
                 fi
         done
     )
