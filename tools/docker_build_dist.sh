@@ -182,17 +182,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   pip install 'matplotlib==1.5.3'
 
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
-  set +e
-  id
-  df -h
-  cat /etc/mtab
-  echo ">>> /"
-  ls -al /
-  echo ">>> /pycbc"
-  ls -al /pycbc
-  echo ">>> /pycbc/pycbc"
-  ls -al /pycbc/pycbc
-  set -e
   cd /pycbc
   pip install -r requirements.txt
 
