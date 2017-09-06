@@ -78,6 +78,8 @@ install:
     chmod 600 ~/.ssh/id_rsa ~/.ssh/config ~/.ssh/ldg_user ~/.ssh/ldg_token ;
   fi
 script:
+# The line below is to work around https://github.com/travis-ci/travis-ci/issues/7940
+- export BOTO_CONFIG=/dev/null
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/travis_build_and_test.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
