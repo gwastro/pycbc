@@ -105,6 +105,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     yum clean all
     yum makecache
     yum -y update
+    yum -y install openssl-devel
     yum -y install pegasus
     yum -y install ligo-proxy-utils
     yum -y install ecp-cookie-init
