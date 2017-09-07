@@ -171,6 +171,32 @@ parser.add_argument('--spin2y', type=float, default=0.0,
 parser.add_argument('--spin2x', type=float, default=0.0,
                     help='(optional) Spin in x direction for mass2.')
 
+# tidal options
+parser.add_argument('--lambda1', type=float, default=None,
+                    help='(optional) Tidal lambda term for mass1.'
+                         'WARNING: Giving this option will produce an XML '
+                         'file containing a lambda1 column. This file will '
+                         'not be readable by default methods.')
+parser.add_argument('--lambda2', type=float, default=None,
+                    help='(optional) Tidal lambda term for mass2. '
+                         'WARNING: Giving this option will produce an XML '
+                         'file containing a lambda2 column. This file will '
+                         'not be readable by default methods.')
+parser.add_argument('--dquad-mon1', type=float, default=None,
+                    help='(optional) Tidal self-spin term for mass1, '
+                         'for BHs this is 0 (its the deformation relative to '
+                         'Kerr. '
+                         'WARNING: Giving this option will produce an XML '
+                         'file containing a dquad_mon1 column. This file will '
+                         'not be readable by default methods.')
+parser.add_argument('--dquad-mon2', type=float, default=None,
+                    help='(optional) Tidal self-spin term for mass2, '
+                         'for BHs this is 0 (its the deformation relative to '
+                         'Kerr. '
+                         'WARNING: Giving this option will produce an XML '
+                         'file containing a dquad_mon2 column. This file will '
+                         'not be readable by default methods.')
+
 # Use this for NR injections
 parser.add_argument('--numrel-data', type=str, default='',
                     help="Location of NR data file if using NR injections.")
@@ -256,13 +282,31 @@ proc_id = utils.process.register_to_xmldoc(
                     cvs_repository=pycbc_glue.git_version.branch,
                     cvs_entry_time=pycbc_glue.git_version.date).process_id
 
+# create sim_inspiral row for injection
+# and populate non-IFO-specific columns in XML output file
+
+# If using tidal terms some hacking is currently needed. Hopefully this can
+# be resolved in the future by using HDF injection files!
+if opts.lambda1 is not None:
+    lsctables.SimInspiralTable.validcolumns['lambda1'] = 'real_4'
+if opts.lambda2 is not None:
+    lsctables.SimInspiralTable.validcolumns['lambda2'] = 'real_4'
+if opts.dquad_mon1 is not None:
+    lsctables.SimInspiralTable.validcolumns['dquad_mon1'] = 'real_4'
+if opts.dquad_mon2 is not None:
+    lsctables.SimInspiralTable.validcolumns['dquad_mon2'] = 'real_4'
+# You'd think that would it to redefine the table columns, but wait, it gets
+# worse!
+class SimInspiralNew(lsctables.SimInspiral):
+    __slots__ = lsctables.SimInspiralTable.validcolumns.keys()
+lsctables.SimInspiral = SimInspiralNew
+lsctables.SimInspiralTable.RowType = SimInspiralNew
+
 # create sim_inspiral table
 sim_table = lsctables.New(lsctables.SimInspiralTable,
                           columns=lsctables.SimInspiralTable.validcolumns)
 outdoc.childNodes[0].appendChild(sim_table)
 
-# create sim_inspiral row for injection
-# and populate non-IFO-specific columns in XML output file
 sim = _empty_row(lsctables.SimInspiral)
 sim.f_lower = opts.waveform_low_frequency_cutoff
 sim.geocent_end_time = int(opts.geocentric_end_time)
@@ -280,6 +324,14 @@ sim.spin1x = opts.spin1x
 sim.spin2z = opts.spin2z
 sim.spin2y = opts.spin2y
 sim.spin2x = opts.spin2x
+if opts.lambda1 is not None:
+    sim.lambda1 = opts.lambda1
+if opts.lambda2 is not None:
+    sim.lambda2 = opts.lambda2
+if opts.dquad_mon1 is not None:
+    sim.dquad_mon1 = opts.dquad_mon1
+if opts.dquad_mon2 is not None:
+    sim.dquad_mon2 = opts.dquad_mon2
 sim.polarization = opts.polarization
 sim.taper = opts.taper
 sim.distance = distance
