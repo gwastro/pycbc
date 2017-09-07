@@ -25,6 +25,7 @@ import numpy
 import pycbc
 import pycbc.opt
 import pycbc.weave
+from pycbc import calibration
 from pycbc import distributions
 from pycbc import transforms
 from pycbc import fft
@@ -202,6 +203,13 @@ with ctx:
     else:
         sampling_parameters = replace_parameters = sampling_transforms = None
 
+    # get ifo-specific instances of calibration model
+    if cp.has_section('calibration'):
+        recal = {ifo : calibration.read_model_from_config(cp, ifo) for
+                 ifo in opts.instruments.split()}
+    else:
+        recal = None
+
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
     logging.info("Setting up sampler")
@@ -223,7 +231,8 @@ with ctx:
                         psds=psd_dict, prior=prior_eval,
                         sampling_parameters=sampling_parameters,
                         replace_parameters=replace_parameters,
-                        sampling_transforms=sampling_transforms)
+                        sampling_transforms=sampling_transforms,
+                        recal=recal)
 
     burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
                                 min_iterations=opts.min_burn_in)
