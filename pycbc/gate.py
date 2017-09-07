@@ -16,7 +16,6 @@
 """ Functions for applying gates to data.
 """
 
-import logging
 from pycbc import strain
 
 def _gates_from_cli(opts, gate_opt):
