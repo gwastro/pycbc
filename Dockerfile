@@ -39,8 +39,6 @@ RUN yum -y install man-db
 RUN yum -y install osg-oasis
 RUN echo "/cvmfs /etc/auto.cvmfs" > /etc/auto.master
 ADD tools/cvmfs.default.local /etc/cvmfs/default.local
-RUN systemctl enable autofs
-RUN systemctl start autofs
 
 # uninstall lalsuite
 RUN yum -y uninstall *lal*
