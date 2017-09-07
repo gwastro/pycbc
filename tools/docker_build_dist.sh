@@ -49,6 +49,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for pypa/manylinux" 
   
   yum -y install openssl-devel
+  yum -y install libdb
 
   # create working dir for build script
   BUILD=/pycbc/build
