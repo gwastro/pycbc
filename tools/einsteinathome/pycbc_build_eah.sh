@@ -598,7 +598,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared $static --prefix="$PREFIX"
+	./configure LIBS="-lm" $shared $static --prefix="$PREFIX"
 	make
 	make install
 	cd ..
