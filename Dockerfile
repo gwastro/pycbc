@@ -11,7 +11,7 @@ RUN yum -q -y install lscsoft-epel-config
 RUN yum -q -y install lscsoft-ius-config
 RUN yum clean all
 RUN yum makecache
-RUN yum -q -y install git2u-all lscsoft-all
+RUN yum -q -y install git2u-all
 RUN yum -q -y install zlib-devel libpng-devel libjpeg-devel libsqlite3-dev sqlite-devel db4-devel
 RUN yum -q -y install tkinter libpng-devel lynx telnet
 RUN yum -q -y install compat-glibc compat-glibc-headers
