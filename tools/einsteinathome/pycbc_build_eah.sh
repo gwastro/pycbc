@@ -126,28 +126,22 @@ elif test ".$1" = ".--force-debian4" ||
 elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6 (Carbon) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
-    link_gcc_version=4.4.7
     gcc_path="/usr/bin"
+    link_gcc_version=4.4.7
     build_ssl=true
     build_python=true
     build_pegasus=false
     pyinstaller_lsb="--no-lsb"
     build_onefile_bundles=true
     appendix="_Linux64"
-elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/null; then # SL6
-    echo -e "\\n\\n>> [`date`] Using Scientific Linux CERN SLC release 6 (Carbon) settings"
+elif grep -q "CentOS release 5" /etc/redhat-release 2>/dev/null; then # SL6
+    echo -e "\\n\\n>> [`date`] Using CentOS release 5 settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
-    link_gcc_version=4.4.7
-    gcc_path="/usr/bin"
+    link_gcc_version=4.8.2
+    gcc_path="/opt/rh/devtoolset-2/root/usr/bin"
+    build_ssl=true
     build_python=true
-    build_hdf5=true
-    build_pegasus=false
-    build_fftw=false
-    build_gsl=false
-    build_ssl=false
-    build_lapack=false
-    build_freetype=false
-    build_zlib=false
+    build_subprocess32=true
     build_wrapper=false
     build_fstab=false
     pyinstaller_lsb="--no-lsb"
@@ -386,7 +380,6 @@ if [ ".$link_gcc_version" != "." ]; then
                     ln -s "${gcc_path}/$i-$link_gcc_version" $i
                 else
                     echo ERROR: "${gcc_path}/$i-$link_gcc_version" not found
-                    ls -l ${gcc_path}/${i}-*
                     exit 1
                 fi
         done
@@ -606,7 +599,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 	rm -rf $p
 	tar -xzf $p.tar.gz
 	cd $p
-	./configure $shared $static --prefix="$PREFIX"
+	./configure LIBS="-lm" $shared $static --prefix="$PREFIX"
 	make
 	make install
 	cd ..

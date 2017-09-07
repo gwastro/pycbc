@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for key in rsa dsa ecdsa ed25519
+do
+  key_file=/etc/ssh/ssh_host_${key}_key
+  if [ ! -f ${key_file} ] ; then
+    ssh-keygen -f ${key_file} -N '' -t ${key}
+  fi
+done
+
+/usr/sbin/sshd
+
+exit 0

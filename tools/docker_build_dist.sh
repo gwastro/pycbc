@@ -46,7 +46,13 @@ if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
 fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
-  echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
+  echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for pypa/manylinux" 
+
+  echo -e "\\n>> [`date`] Installing rpm dependencies" 
+  yum -y install openssl-devel db4-devel pcre-devel zip
+  ln -s /opt/rh/devtoolset-2/root/usr/bin/gcc /opt/rh/devtoolset-2/root/usr/bin/gcc-4.8.2
+  ln -s /opt/rh/devtoolset-2/root/usr/bin/g++ /opt/rh/devtoolset-2/root/usr/bin/g++-4.8.2
+  ln -s /opt/rh/devtoolset-2/root/usr/bin/gfortran /opt/rh/devtoolset-2/root/usr/bin/gfortran-4.8.2
 
   # create working dir for build script
   BUILD=/pycbc/build
@@ -70,6 +76,8 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
+  cat /etc/issue
+  rpm -qa | grep gcc || /bin/true
   /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/710a51f4770cbba77f61dfb798472bebe6c43d38/travis --with-extra-approximant='SPAtmplt:mtotal<4' --with-extra-approximant='SEOBNRv4_ROM:else'  --with-extra-approximant=--use-compressed-waveforms --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl --with-extra-bank=/pycbc/testbank_TF2v4ROM.hdf
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
@@ -96,6 +104,17 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
     echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
     ENV_OS="x86_64_rhel_7"
+    yum -y install python2-pip python-setuptools which
+    yum -y install curl
+    curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
+    yum clean all
+    yum makecache
+    yum -y update
+    yum -y install openssl-devel
+    yum -y install pegasus
+    yum -y install ligo-proxy-utils
+    yum -y install ecp-cookie-init
+    yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
     echo -e "\\n>> [`date`] Building pycbc virtual environment for Debian"
     ENV_OS="x86_64_deb_8"
@@ -161,9 +180,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   source ${VENV_PATH}/bin/activate
   cd $VIRTUAL_ENV/src/lalsuite/lalapps
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
-    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
-    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --disable-lalxml --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   fi
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
   make -j 2 2>&1 | grep Entering
@@ -174,16 +193,12 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   make lalapps_coh_PTF_inspiral
   cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
-  echo -e "\\n>> [`date`] Installing Pegasus and DQSegDB"
-  pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
-  pip install dqsegdb
-
-  echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
-  pip install 'matplotlib==1.5.3'
-
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
   pip install -r requirements.txt
+
+  echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
+  pip install 'matplotlib==1.5.3'
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
   python setup.py install
