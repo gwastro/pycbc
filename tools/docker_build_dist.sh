@@ -49,7 +49,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for pypa/manylinux" 
 
   echo -e "\\n>> [`date`] Installing rpm dependencies" 
-  yum -y install openssl-devel db4-devel
+  yum -y install openssl-devel db4-devel pcre-devel
   ln -s /opt/rh/devtoolset-2/root/usr/bin/gcc /opt/rh/devtoolset-2/root/usr/bin/gcc-4.8.2
   ln -s /opt/rh/devtoolset-2/root/usr/bin/g++ /opt/rh/devtoolset-2/root/usr/bin/g++-4.8.2
   ln -s /opt/rh/devtoolset-2/root/usr/bin/gfortran /opt/rh/devtoolset-2/root/usr/bin/gfortran-4.8.2
