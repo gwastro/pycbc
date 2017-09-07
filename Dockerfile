@@ -41,7 +41,7 @@ RUN echo "/cvmfs /etc/auto.cvmfs" > /etc/auto.master
 ADD tools/cvmfs.default.local /etc/cvmfs/default.local
 
 # uninstall lalsuite
-RUN yum -y uninstall *lal*
+RUN yum -y remove "*lal*"
 
 # enable ssh
 EXPOSE 22
