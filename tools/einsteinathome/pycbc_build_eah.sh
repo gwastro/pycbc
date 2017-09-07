@@ -141,6 +141,7 @@ elif grep -q "CentOS release 5" /etc/redhat-release 2>/dev/null; then # SL6
     gcc_path="/opt/rh/devtoolset-2/root/usr/bin"
     build_ssl=true
     build_python=true
+    build_subprocess32=true
     build_wrapper=false
     build_fstab=false
     pyinstaller_lsb="--no-lsb"
