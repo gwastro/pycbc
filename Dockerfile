@@ -24,8 +24,6 @@ RUN yum -y install gettext-devel avahi-devel dyninst-devel crash-devel latex2htm
 RUN yum -y install xmlto-tex patch
 RUN yum -y install ant asciidoc xsltproc fop docbook-style-xsl.noarch
 RUN yum -y install vim-enhanced
-RUN rpm -Uvh https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm
-RUN yum clean all
 RUN yum -y install openssh-server
 RUN yum install -y globus-gsi-cert-utils-progs gsi-openssh-clients osg-ca-certs ligo-proxy-utils
 RUN yum -y install wget
