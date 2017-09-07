@@ -104,7 +104,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
     echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
     ENV_OS="x86_64_rhel_7"
-    yum -y install python2-pip
+    yum -y install python2-pip python-setuptools which
     yum -y install curl
     curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
     yum clean all
