@@ -532,7 +532,8 @@ class FDomainDetFrameGenerator(object):
             h['RF'] = hp
         if self.gates is not None:
             # resize all to nearest power of 2
-            [d.resize(ceilpow2(len(d)-1)+1) for d in h.values()]
+            for d in h.values():
+                d.resize(ceilpow2(len(d)-1) + 1)
             h = gate.apply_gates_to_fd(h, self.gates)
         return h
 
