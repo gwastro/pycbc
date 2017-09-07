@@ -272,7 +272,8 @@ class Recalibrate(object):
         h = data[:, 1] + 1.0j * data[:, 2]
         return numpy.array([freq, h]).transpose()
 
-    def from_config(self, cp, strain, ifo, section):
+    @classmethod
+    def from_config(cls, cp, strain, ifo, section):
         """Read a config file to get calibration options and transfer
         functions which will be used to intialize the model.
 
@@ -292,6 +293,7 @@ class Recalibrate(object):
         Return
         ------
         instance
+            An instance of the Recalibrate class.
         """
         # read transfer functions
         tfs = []
@@ -299,7 +301,7 @@ class Recalibrate(object):
         for tag in ['-'.join([ifo, "transfer-function", name])
                     for name in tf_names]:
             tf_path = cp.get_opt_tag(section, tag)
-            tfs.append(self.tf_from_file(tf_path))
+            tfs.append(cls.tf_from_file(tf_path))
         a_tst0 = tfs[0][:, 1]
         a_pu0 = tfs[1][:, 1]
         c0 = tfs[2][:, 1]
@@ -311,6 +313,5 @@ class Recalibrate(object):
         fs0 = cp.get_opt_tag(section, '-'.join([ifo, "fs0"]))
         qinv0 = cp.get_opt_tag(section, '-'.join([ifo, "qinv0"]))
 
-        return self.__class__(strain, freq=freq, fc0=fc0, c0=c0, d0=d0,
-                              a_tst0=a_tst0, a_pu0=a_pu0, fs0=fs0,
-                              qinv0=qinv0)
+        return cls(strain, freq=freq, fc0=fc0, c0=c0, d0=d0, a_tst0=a_tst0,
+                   a_pu0=a_pu0, fs0=fs0, qinv0=qinv0)
