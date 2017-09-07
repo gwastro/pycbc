@@ -1,0 +1,3 @@
+CVMFS_REPOSITORIES="`echo $((echo oasis.opensciencegrid.org;echo cms.cern.ch;ls /cvmfs)|sort -u)|tr ' ' ,`"
+CVMFS_QUOTA_LIMIT=20000
+CVMFS_HTTP_PROXY=DIRECT

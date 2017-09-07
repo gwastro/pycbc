@@ -40,11 +40,7 @@ RUN yum -y install man-db
 # set up cvmfs
 RUN yum -y install osg-oasis
 RUN echo "/cvmfs /etc/auto.cvmfs" > /etc/auto.master
-RUN echo > /etc/cvmfs/default.local <<EOF
-CVMFS_REPOSITORIES="`echo $((echo oasis.opensciencegrid.org;echo cms.cern.ch;ls /cvmfs)|sort -u)|tr ' ' ,`"
-CVMFS_QUOTA_LIMIT=20000
-CVMFS_HTTP_PROXY=DIRECT
-EOF
+ADD tools/cvmfs.default.local /etc/cvmfs/default.local
 RUN systemctl enable autofs
 RUN systemctl start autofs
 
