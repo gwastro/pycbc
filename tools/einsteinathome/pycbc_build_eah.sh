@@ -126,8 +126,8 @@ elif test ".$1" = ".--force-debian4" ||
 elif grep -q "Scientific Linux release 6" /etc/redhat-release 2>/dev/null; then # SL6
     echo -e "\\n\\n>> [`date`] Using Scientific Linux release 6 (Carbon) settings"
     test ".$LC_ALL" = "." && export LC_ALL="$LANG"
-    link_gcc_version=4.4.7
-    gcc_path="/usr/bin"
+    link_gcc_version=4.8.2
+    gcc_path="/opt/rh/devtoolset-2/root/usr/bin"
     build_ssl=true
     build_python=true
     build_pegasus=false
