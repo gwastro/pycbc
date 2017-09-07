@@ -3,10 +3,9 @@ FROM ligo/lalsuite-dev:el7
 USER root
 
 RUN curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
-RUN rpm -ivh http://software.ligo.org/lscsoft/scientific/7.2/x86_64/production/lscsoft-production-config-1.3-1.el7.noarch.rpm
 RUN yum clean all
 RUN yum makecache
-RUN yum update
+RUN yum -y update
 RUN yum -y install lscsoft-backports-config
 RUN yum -y install lscsoft-epel-config
 RUN yum -y install lscsoft-ius-config
@@ -37,6 +36,20 @@ RUN mv htcondor-stable-rhel7.repo /etc/yum.repos.d/htcondor-stable-rhel7.repo
 RUN yum -y install condor condor-classads condor-python condor-procd condor-external-libs
 RUN yum -y install ecp-cookie-init
 RUN yum -y install man-db
+
+# set up cvmfs
+RUN yum -y install osg-oasis
+RUN echo "/cvmfs /etc/auto.cvmfs" > /etc/auto.master
+RUN echo > /etc/cvmfs/default.local <<EOF
+CVMFS_REPOSITORIES="`echo $((echo oasis.opensciencegrid.org;echo cms.cern.ch;ls /cvmfs)|sort -u)|tr ' ' ,`"
+CVMFS_QUOTA_LIMIT=20000
+CVMFS_HTTP_PROXY=DIRECT
+EOF
+RUN systemctl enable autofs
+RUN systemctl start autofs
+
+# uninstall lalsuite
+RUN yum -y uninstall *lal*
 
 # enable ssh
 EXPOSE 22
