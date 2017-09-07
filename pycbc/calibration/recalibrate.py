@@ -252,15 +252,20 @@ class Recalibrate(object):
 
         return strain_adjusted
 
-    def tf_from_file(self, path, delimiter=" "):
+    @classmethod
+    def tf_from_file(cls, path, delimiter=" "):
         """Convert the contents of a file with the columns
         [freq, real(h), imag(h)] to a numpy.array with columns
         [freq, real(h)+j*imag(h)].
 
         Parameters
         ----------
+        path : string
+        delimiter : {" ", string}
+
         Return
         ------
+        numpy.array
         """
         data = numpy.loadtxt(path, delimiter=delimiter)
         freq = data[:, 0]
@@ -268,11 +273,20 @@ class Recalibrate(object):
         return numpy.array([freq, h]).transpose()
 
     def from_config(self, cp, ifo):
-        """
+        """Read a config file to get calibration options and transfer
+        functions which will be used to intialize the model.
+
         Parameters
         ----------
+        cp : WorkflowConfigParser
+            An open config file.
+        ifo : string
+            The detector (H1, L1) for which the calibration model will
+            be loaded.
+
         Return
         ------
+        list
         """
         # read transfer functions
         tfs = []
@@ -292,4 +306,4 @@ class Recalibrate(object):
         fs0 = cp.get_opt_tag("calibration", '-'.join([ifo, "fs0"]))
         qinv0 = cp.get_opt_tag("calibration", '-'.join([ifo, "qinv0"]))
 
-        return freq, fc0, c0, d0, a_tst0, a_pu0, fs0, qinv0
+        return [freq, fc0, c0, d0, a_tst0, a_pu0, fs0, qinv0]
