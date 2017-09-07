@@ -56,10 +56,9 @@ class Recalibrate(object):
     """
 
     name = 'physical_model'
-    def __init__(self, strain, freq=None, fc0=None, c0=None, d0=None,
+    def __init__(self, freq=None, fc0=None, c0=None, d0=None,
                  a_tst0=None, a_pu0=None, fs0=None, qinv0=None):
 
-        self.strain = strain
         self.freq = numpy.real(freq)
         self.c0 = c0
         self.d0 = d0
@@ -186,15 +185,16 @@ class Recalibrate(object):
                           kappa_pu_re=kappa_pu_re, kappa_pu_im=kappa_pu_im)
         return (1.0 + g) / c
 
-    def adjust_strain(self, delta_fs=None, delta_qinv=None, delta_fc=None,
-                      kappa_c=1.0,
-                      kappa_tst_re=1.0, kappa_tst_im=0.0, kappa_pu_re=1.0,
-                      kappa_pu_im=0.0):
+    def adjust_strain(self, strain, delta_fs=None, delta_qinv=None,
+                      delta_fc=None, kappa_c=1.0, kappa_tst_re=1.0,
+                      kappa_tst_im=0.0, kappa_pu_re=1.0, kappa_pu_im=0.0):
         """Adjust the FrequencySeries strain by changing the time-dependent
         calibration parameters kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.
 
         Parameters
         ----------
+        strain : FrequencySeries
+            The strain data to be adjusted.
         delta_fc : float
             Change in coupled-cavity (CC) pole at time t.
         kappa_c : float
@@ -243,12 +243,12 @@ class Recalibrate(object):
         order = 1
         k_amp_off = UnivariateSpline(self.freq, k_amp, k=order, s=0)
         k_phase_off = UnivariateSpline(self.freq, k_phase, k=order, s=0)
-        freq_even = self.strain.sample_frequencies.numpy()
+        freq_even = strain.sample_frequencies.numpy()
         k_even_sample = k_amp_off(freq_even) * \
                         numpy.exp(1.0j * k_phase_off(freq_even))
-        strain_adjusted = FrequencySeries(self.strain.numpy() * \
+        strain_adjusted = FrequencySeries(strain.numpy() * \
                                           k_even_sample,
-                                          delta_f=self.strain.delta_f)
+                                          delta_f=strain.delta_f)
 
         return strain_adjusted
 
@@ -273,7 +273,7 @@ class Recalibrate(object):
         return numpy.array([freq, h]).transpose()
 
     @classmethod
-    def from_config(cls, cp, strain, ifo, section):
+    def from_config(cls, cp, ifo, section):
         """Read a config file to get calibration options and transfer
         functions which will be used to intialize the model.
 
@@ -281,8 +281,6 @@ class Recalibrate(object):
         ----------
         cp : WorkflowConfigParser
             An open config file.
-        strain : FrequencySeries
-            The data to be recalibrated.
         ifo : string
             The detector (H1, L1) for which the calibration model will
             be loaded.
@@ -313,5 +311,5 @@ class Recalibrate(object):
         fs0 = cp.get_opt_tag(section, '-'.join([ifo, "fs0"]))
         qinv0 = cp.get_opt_tag(section, '-'.join([ifo, "qinv0"]))
 
-        return cls(strain, freq=freq, fc0=fc0, c0=c0, d0=d0, a_tst0=a_tst0,
+        return cls(freq=freq, fc0=fc0, c0=c0, d0=d0, a_tst0=a_tst0,
                    a_pu0=a_pu0, fs0=fs0, qinv0=qinv0)

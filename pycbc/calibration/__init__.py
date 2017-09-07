@@ -4,7 +4,7 @@ models = {
     Recalibrate.name : Recalibrate
 }
 
-def read_model_from_config(cp, strain, ifo, section="calibration"):
+def read_model_from_config(cp, ifo, section="calibration"):
     """Returns an instance of the calibration model specified in the
     given configuration file.
 
@@ -12,8 +12,6 @@ def read_model_from_config(cp, strain, ifo, section="calibration"):
     ----------
     cp : WorflowConfigParser
         An open config file to read.
-    strain : FrequencySeries
-        The strain data that will be recalibrated.
     ifo : string
         The detector (H1, L1)  whose model will be loaded.
     section : {"calibration", string}
@@ -25,6 +23,6 @@ def read_model_from_config(cp, strain, ifo, section="calibration"):
         An instance of the calibration model class.
     """
     name = cp.get_opt_tag(section, "name")
-    recalibrator = models[name].from_config(cp, strain, ifo, section)
+    recalibrator = models[name].from_config(cp, ifo, section)
 
     return recalibrator
