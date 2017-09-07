@@ -312,6 +312,7 @@ class FromFile(Arbitrary):
         BoundedDist
             A distribution instance from the pycbc.inference.prior module.
         """
-        return super(FromFile, cls).from_config(cp, section, variable_args)
+        return bounded.bounded_from_config(cls, cp, section, variable_args,
+                                           bounds_required=False)
 
 __all__ = ['Arbitrary', 'FromFile']
