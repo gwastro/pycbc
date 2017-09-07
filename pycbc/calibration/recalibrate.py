@@ -272,7 +272,7 @@ class Recalibrate(object):
         h = data[:, 1] + 1.0j * data[:, 2]
         return numpy.array([freq, h]).transpose()
 
-    def from_config(self, cp, ifo):
+    def from_config(self, cp, strain, ifo, section):
         """Read a config file to get calibration options and transfer
         functions which will be used to intialize the model.
 
@@ -280,20 +280,25 @@ class Recalibrate(object):
         ----------
         cp : WorkflowConfigParser
             An open config file.
+        strain : FrequencySeries
+            The data to be recalibrated.
         ifo : string
             The detector (H1, L1) for which the calibration model will
             be loaded.
+        section : string
+            The section name in the config file from which to retrieve
+            the calibration options.
 
         Return
         ------
-        list
+        instance
         """
         # read transfer functions
         tfs = []
         tf_names = ["a-tst", "a-pu", "c", "d"]
         for tag in ['-'.join([ifo, "transfer-function", name])
                     for name in tf_names]:
-            tf_path = cp.get_opt_tag("calibration", tag)
+            tf_path = cp.get_opt_tag(section, tag)
             tfs.append(self.tf_from_file(tf_path))
         a_tst0 = tfs[0][:, 1]
         a_pu0 = tfs[1][:, 1]
@@ -302,8 +307,10 @@ class Recalibrate(object):
         freq = tfs[0][:, 0]
 
         # read fc0, fs0, and qinv0
-        fc0 = cp.get_opt_tag("calibration", '-'.join([ifo, "fc0"]))
-        fs0 = cp.get_opt_tag("calibration", '-'.join([ifo, "fs0"]))
-        qinv0 = cp.get_opt_tag("calibration", '-'.join([ifo, "qinv0"]))
+        fc0 = cp.get_opt_tag(section, '-'.join([ifo, "fc0"]))
+        fs0 = cp.get_opt_tag(section, '-'.join([ifo, "fs0"]))
+        qinv0 = cp.get_opt_tag(section, '-'.join([ifo, "qinv0"]))
 
-        return [freq, fc0, c0, d0, a_tst0, a_pu0, fs0, qinv0]
+        return self.__class__(strain, freq=freq, fc0=fc0, c0=c0, d0=d0,
+                              a_tst0=a_tst0, a_pu0=a_pu0, fs0=fs0,
+                              qinv0=qinv0)
