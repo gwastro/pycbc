@@ -52,7 +52,7 @@ pip install 'setuptools==18.2' --upgrade
 export BOTO_CONFIG=/dev/null
 
 # install pegasus
-pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
+pip install http://download.pegasus.isi.edu/pegasus/4.7.4/pegasus-python-source-4.7.4.tar.gz
 
 # install M2Crypto
 SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
