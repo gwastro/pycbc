@@ -96,6 +96,17 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
     echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
     ENV_OS="x86_64_rhel_7"
+    yum -y install python2-pip python-setuptools which
+    yum -y install curl
+    curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
+    yum clean all
+    yum makecache
+    yum -y update
+    yum -y install openssl-devel
+    yum -y install pegasus
+    yum -y install ligo-proxy-utils
+    yum -y install ecp-cookie-init
+    yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
     echo -e "\\n>> [`date`] Building pycbc virtual environment for Debian"
     ENV_OS="x86_64_deb_8"
@@ -161,9 +172,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   source ${VENV_PATH}/bin/activate
   cd $VIRTUAL_ENV/src/lalsuite/lalapps
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
-    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
-    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   fi
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
   make -j 2 2>&1 | grep Entering
@@ -173,10 +184,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/ring
   make lalapps_coh_PTF_inspiral
   cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
-
-  echo -e "\\n>> [`date`] Installing Pegasus and DQSegDB"
-  pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
-  pip install dqsegdb
 
   echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
   pip install 'matplotlib==1.5.3'
