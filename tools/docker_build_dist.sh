@@ -196,18 +196,12 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   make lalapps_coh_PTF_inspiral
   cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
-  echo -e "\\n>> [`date`] Installing Pegasus"
-  pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
-
-  echo -e "\\n>> [`date`] Installing DQSegDB"
-  pip install dqsegdb
-
-  echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
-  pip install 'matplotlib==1.5.3'
-
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
   pip install -r requirements.txt
+
+  echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
+  pip install 'matplotlib==1.5.3'
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
   python setup.py install
