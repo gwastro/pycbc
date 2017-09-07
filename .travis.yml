@@ -49,7 +49,7 @@ matrix:
     sudo: required
     services:
     - docker
-  - env: PYCBC_CONTAINER=pycbc_inspiral_bundle DOCKER_IMG=quay.io/pypa/manylinux1_x86_64
+  - env: PYCBC_CONTAINER=pycbc_inspiral_bundle DOCKER_IMG=pycbc/sl6-travis
     sudo: required
     services:
     - docker
