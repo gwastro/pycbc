@@ -32,7 +32,23 @@ echo -e "\\n>> [`date`] Using template bank from ${BANK_FILE}"
 echo -e "\\n>> [`date`] Patching ligo-proxy-init for Travis"
 
 cp `which ligo-proxy-init` .
-patch -p0 ligo-proxy-init 1>/dev/null <<EOF
+proxy_ver=`md5sum ligo-proxy-init`
+if test "x${proxy_ver}" == "xbb3d053f43a2bc1e04d68f6e56a2443d" ; then
+patch -p0 ligo-proxy-init <<EOF
+--- /bin/ligo-proxy-init	2017-04-12 12:27:45.000000000 +0000
++++ ligo-proxy-init	2017-09-07 23:37:51.224116188 +0000
+@@ -212,7 +212,7 @@
+ 
+     login=${1/@*/}
+     [[ $login == *","* ]] && echo "Replacing comma characters in login!"; login=${login//,/.}
+-    curl_auth_method="--user $login"
++    curl_auth_method="--user $login:${LIGO_TOKEN}"
+     echo "Your identity: $login@LIGO.ORG"
+ fi
+ 
+EOF
+else
+patch -p0 ligo-proxy-init <<EOF
 --- /bin/ligo-proxy-init	2016-12-05 07:18:14.000000000 -0500
 +++ ligo-proxy-init	2017-04-09 12:49:35.575182509 -0400
 @@ -210,7 +210,7 @@
@@ -44,11 +60,12 @@ patch -p0 ligo-proxy-init 1>/dev/null <<EOF
      echo "Your identity: \$login@LIGO.ORG"
  fi
 EOF
+fi
 
 echo -e "\\n>> [`date`] Patching ecp-cookie-init for Travis"
 
 cp `which ecp-cookie-init` .
-patch -p0 ecp-cookie-init 1>/dev/null << EOF
+patch -p0 ecp-cookie-init << EOF
 --- /bin/ecp-cookie-init        2016-12-21 08:41:13.000000000 -0500
 +++ /tmp/ecp-cookie-init        2017-07-11 09:43:30.846451317 -0400
 @@ -268,7 +268,7 @@
