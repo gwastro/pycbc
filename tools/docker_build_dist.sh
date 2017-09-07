@@ -47,9 +47,16 @@ fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for pypa/manylinux" 
+  wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
   
   yum -y install openssl-devel
-  yum -y install compat-db
+  wget $wget_opts  http://download.oracle.com/berkeley-db/db-4.8.30.tar.gz
+  tar zxvf db-4.8.30.tar.gz
+  cd db-4.8.30/build_unix
+  ../dist/configure --prefix=/
+  make
+  make install
+  cd ../..
 
   # create working dir for build script
   BUILD=/pycbc/build
@@ -58,7 +65,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   export XDG_CACHE_HOME=${BUILD}/.cache
 
   # get library to build optimized pycbc_inspiral bundle
-  wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
   primary_url="https://git.ligo.org/ligo-cbc/pycbc-software/raw/"
   secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown"
   pushd /pycbc
