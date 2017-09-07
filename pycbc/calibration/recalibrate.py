@@ -24,6 +24,11 @@ class Recalibrate(object):
     """ Class for adjusting time-varying calibration parameters of given
     strain data.
 
+    Attributes
+    ----------
+    name : 'physical_model'
+        The name of this calibration model.
+
     Parameters
     ----------
     strain : FrequencySeries
@@ -50,10 +55,10 @@ class Recalibrate(object):
         cavity.
     """
 
-    def __init__(self, strain, freq=None, fc0=None, c0=None, d0=None,
+    name = 'physical_model'
+    def __init__(self, freq=None, fc0=None, c0=None, d0=None,
                  a_tst0=None, a_pu0=None, fs0=None, qinv0=None):
 
-        self.strain = strain
         self.freq = numpy.real(freq)
         self.c0 = c0
         self.d0 = d0
@@ -180,14 +185,16 @@ class Recalibrate(object):
                           kappa_pu_re=kappa_pu_re, kappa_pu_im=kappa_pu_im)
         return (1.0 + g) / c
 
-    def adjust_strain(self, fs=None, qinv=None, delta_fc=None, kappa_c=1.0,
-                      kappa_tst_re=1.0, kappa_tst_im=0.0, kappa_pu_re=1.0,
-                      kappa_pu_im=0.0):
+    def adjust_strain(self, strain, delta_fs=None, delta_qinv=None,
+                      delta_fc=None, kappa_c=1.0, kappa_tst_re=1.0,
+                      kappa_tst_im=0.0, kappa_pu_re=1.0, kappa_pu_im=0.0):
         """Adjust the FrequencySeries strain by changing the time-dependent
         calibration parameters kappa_c(t), kappa_a(t), f_c(t), fs, and qinv.
 
         Parameters
         ----------
+        strain : FrequencySeries
+            The strain data to be adjusted.
         delta_fc : float
             Change in coupled-cavity (CC) pole at time t.
         kappa_c : float
@@ -215,6 +222,8 @@ class Recalibrate(object):
             The adjusted strain.
         """
         fc = self.fc0 + delta_fc if delta_fc else self.fc0
+        fs = self.fs0 + delta_fs if delta_fs else self.fs0
+        qinv = self.qinv0 + delta_qinv if delta_qinv else self.qinv0
 
         # calculate adjusted response function
         r_adjusted = self.update_r(fs=fs, qinv=qinv, fc=fc, kappa_c=kappa_c,
@@ -234,11 +243,73 @@ class Recalibrate(object):
         order = 1
         k_amp_off = UnivariateSpline(self.freq, k_amp, k=order, s=0)
         k_phase_off = UnivariateSpline(self.freq, k_phase, k=order, s=0)
-        freq_even = self.strain.sample_frequencies.numpy()
+        freq_even = strain.sample_frequencies.numpy()
         k_even_sample = k_amp_off(freq_even) * \
                         numpy.exp(1.0j * k_phase_off(freq_even))
-        strain_adjusted = FrequencySeries(self.strain.numpy() * \
+        strain_adjusted = FrequencySeries(strain.numpy() * \
                                           k_even_sample,
-                                          delta_f=self.strain.delta_f)
+                                          delta_f=strain.delta_f)
 
         return strain_adjusted
+
+    @classmethod
+    def tf_from_file(cls, path, delimiter=" "):
+        """Convert the contents of a file with the columns
+        [freq, real(h), imag(h)] to a numpy.array with columns
+        [freq, real(h)+j*imag(h)].
+
+        Parameters
+        ----------
+        path : string
+        delimiter : {" ", string}
+
+        Return
+        ------
+        numpy.array
+        """
+        data = numpy.loadtxt(path, delimiter=delimiter)
+        freq = data[:, 0]
+        h = data[:, 1] + 1.0j * data[:, 2]
+        return numpy.array([freq, h]).transpose()
+
+    @classmethod
+    def from_config(cls, cp, ifo, section):
+        """Read a config file to get calibration options and transfer
+        functions which will be used to intialize the model.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser
+            An open config file.
+        ifo : string
+            The detector (H1, L1) for which the calibration model will
+            be loaded.
+        section : string
+            The section name in the config file from which to retrieve
+            the calibration options.
+
+        Return
+        ------
+        instance
+            An instance of the Recalibrate class.
+        """
+        # read transfer functions
+        tfs = []
+        tf_names = ["a-tst", "a-pu", "c", "d"]
+        for tag in ['-'.join([ifo, "transfer-function", name])
+                    for name in tf_names]:
+            tf_path = cp.get_opt_tag(section, tag)
+            tfs.append(cls.tf_from_file(tf_path))
+        a_tst0 = tfs[0][:, 1]
+        a_pu0 = tfs[1][:, 1]
+        c0 = tfs[2][:, 1]
+        d0 = tfs[3][:, 1]
+        freq = tfs[0][:, 0]
+
+        # read fc0, fs0, and qinv0
+        fc0 = cp.get_opt_tag(section, '-'.join([ifo, "fc0"]))
+        fs0 = cp.get_opt_tag(section, '-'.join([ifo, "fs0"]))
+        qinv0 = cp.get_opt_tag(section, '-'.join([ifo, "qinv0"]))
+
+        return cls(freq=freq, fc0=fc0, c0=c0, d0=d0, a_tst0=a_tst0,
+                   a_pu0=a_pu0, fs0=fs0, qinv0=qinv0)
