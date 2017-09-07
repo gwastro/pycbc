@@ -29,7 +29,7 @@ echo -e "\\n>> [`date`] Using veto definer file from ${VETO_DEFINER}"
 BANK_FILE="${CONFIG_PATH}/O1/bank/H1L1-UBERBANK_MAXM100_NS0p05_ER8HMPSD-1126033217-223200.xml.gz"
 echo -e "\\n>> [`date`] Using template bank from ${BANK_FILE}"
 
-echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
+echo -e "\\n>> [`date`] Patching ligo-proxy-init for Travis"
 
 cp `which ligo-proxy-init` .
 patch -p0 ligo-proxy-init 1>/dev/null <<EOF
@@ -44,6 +44,8 @@ patch -p0 ligo-proxy-init 1>/dev/null <<EOF
      echo "Your identity: \$login@LIGO.ORG"
  fi
 EOF
+
+echo -e "\\n>> [`date`] Patching ecp-cookie-init for Travis"
 
 cp `which ecp-cookie-init` .
 patch -p0 ecp-cookie-init 1>/dev/null << EOF
@@ -63,10 +65,15 @@ EOF
 unset X509_USER_PROXY
 export LIGO_TOKEN=`cat ~/.ssh/ldg_token`
 LIGO_USER=`cat ~/.ssh/ldg_user`
+
+echo -e "\\n>> [`date`] Creating proxy"
 ./ligo-proxy-init -p ${LIGO_USER} 1>/dev/null
+
+echo -e "\\n>> [`date`] Creating ECP cookie"
 ./ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback ${LIGO_USER} 1>/dev/null
 unset LIGO_TOKEN LIGO_USER
 
+echo -e "\\n>> [`date`] Creating test workflow"
 UUID=`uuidgen`
 WORKFLOW_NAME=test-workflow-$UUID
 OUTPUT_PATH=`pwd`/public_html/test_workflow/${WORKFLOW_NAME}
@@ -74,6 +81,8 @@ export LIGO_DATAFIND_SERVER="datafind.ligo.org:443"
 
 mkdir $WORKFLOW_NAME
 pushd $WORKFLOW_NAME
+
+echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 
 pycbc_make_coinc_search_workflow \
 --workflow-name ${WORKFLOW_NAME} --output-dir output \
