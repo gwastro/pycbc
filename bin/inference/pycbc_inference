@@ -205,10 +205,11 @@ with ctx:
 
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
-        recal = {ifo : calibration.read_model_from_config(cp, ifo) for
-                 ifo in opts.instruments.split()}
+        logging.info("Initializing calibration model")
+        recalib = {ifo : calibration.read_model_from_config(cp, ifo) for
+                   ifo in opts.instruments}
     else:
-        recal = None
+        recalib = None
 
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
@@ -222,6 +223,7 @@ with ctx:
                        variable_args=variable_args, detectors=opts.instruments,
                        delta_f=stilde_dict.values()[0].delta_f,
                        delta_t=strain_dict.values()[0].delta_t,
+                       recalib=recalib,
                        **static_args)
 
     # construct class that will return the natural logarithm of likelihood
@@ -231,8 +233,7 @@ with ctx:
                         psds=psd_dict, prior=prior_eval,
                         sampling_parameters=sampling_parameters,
                         replace_parameters=replace_parameters,
-                        sampling_transforms=sampling_transforms,
-                        recal=recal)
+                        sampling_transforms=sampling_transforms)
 
     burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
                                 min_iterations=opts.min_burn_in)
