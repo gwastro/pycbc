@@ -643,7 +643,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     def __init__(self, waveform_generator, data, f_lower, psds=None,
                  f_upper=None, norm=None, prior=None,
                  sampling_parameters=None, replace_parameters=None,
-                 sampling_transforms=None, recal=None, return_meta=True):
+                 sampling_transforms=None, return_meta=True):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
@@ -673,8 +673,6 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         # whiten the data
         for det in self._data:
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
-        # calibration model
-        self.recal = recal
         # compute the log likelihood function of the noise and save it
         self.set_lognl(-0.5*sum([
             d[kmin:kmax].inner(d[kmin:kmax]).real
@@ -720,19 +718,6 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
-            # recalibrate the data if calibration options are present
-            if self.recal:
-                # get cal params
-
-                # adjust strain using cal params and model
-                h = recal[det].adjust_strain(h, delta_fs=delta_fs,
-                                             delta_qinv=delta_qinv,
-                                             delta_fc=delta_fc,
-                                             kappa_c=kappa_c,
-                                             kappa_tst_re=kappa_tst_re,
-                                             kappa_tst_im=kappa_tst_im,
-                                             kappa_pu_re=kappa_pu_re,
-                                             kappa_pu_im=kappa_pu_im)
             h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
                 # <h, d>
