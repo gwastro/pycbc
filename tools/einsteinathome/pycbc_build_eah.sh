@@ -142,7 +142,6 @@ elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/nu
     build_python=true
     build_hdf5=true
     build_pegasus=false
-    build_fftw=false
     build_gsl=false
     build_ssl=false
     build_lapack=false
