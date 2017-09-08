@@ -21,7 +21,7 @@ else
 fi
 
 # set the lalsuite checkout to use
-LALSUITE_HASH="539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
+LALSUITE_HASH="95ad957cee1a37b7fc3128883d8b723556f9ec38"
 
 if [ "x$TRAVIS_TAG" == "x" ] ; then
   TRAVIS_TAG="master"
@@ -222,7 +222,7 @@ elif [ -f /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mk
   . /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
 fi
 
-# Use the revison 11 ROM data from CVMFS
+# Use the ROM data from CVMFS
 export LAL_DATA_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/e02dab8c/share/lalsimulation
 EOF
 

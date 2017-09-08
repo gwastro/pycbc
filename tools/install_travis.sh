@@ -11,7 +11,7 @@ else
 fi
 
 # set the lalsuite checkout to use
-LALSUITE_CODE="--lalsuite-commit=539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
+LALSUITE_CODE="--lalsuite-commit=95ad957cee1a37b7fc3128883d8b723556f9ec38
 
 echo -e "\\n>> [`date`] Ubuntu build"
 
