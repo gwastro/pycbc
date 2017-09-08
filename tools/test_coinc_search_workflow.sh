@@ -52,9 +52,9 @@ patch -p0 ligo-proxy-init <<EOF
  
      login=${1/@*/}
      [[ $login == *","* ]] && echo "Replacing comma characters in login!"; login=${login//,/.}
--    curl_auth_method="--user $login"
-+    curl_auth_method="--user $login:${LIGO_TOKEN}"
-     echo "Your identity: $login@LIGO.ORG"
+-    curl_auth_method="--user \$login"
++    curl_auth_method="--user \$login:\${LIGO_TOKEN}"
+     echo "Your identity: \$login@LIGO.ORG"
  fi
 EOF
 if [ ! $? -eq 0 ] ; then
