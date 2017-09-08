@@ -170,7 +170,10 @@ class BaseCBCGenerator(BaseGenerator):
                                        list(self.possible_args), variable_args)
         for c in cs:
             self._add_pregenerate(c)
-        # check that there are no unused parameters
+        # check that there are no unused (non-calibration) parameters
+        calib_args = set([a for a in self.variable_args if
+                          a.startswith('calib_')])
+        all_args = all_args - calib_args
         unused_args = all_args.difference(params_used) \
                               .difference(self.possible_args)
         if len(unused_args):
@@ -424,7 +427,7 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-            variable_args=(), **frozen_params):
+            variable_args=(), recalib=None, **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         self._static_args = frozen_params.copy()
@@ -442,6 +445,8 @@ class FDomainDetFrameGenerator(object):
         self.rframe_generator = rFrameGeneratorClass(
             variable_args=rframe_variables, **frozen_params)
         self.set_epoch(epoch)
+        # set calibration model
+        self.recalib = recalib
         # if detectors are provided, convert to detector type; also ensure that
         # location variables are specified
         if detectors is not None:
@@ -511,6 +516,11 @@ class FDomainDetFrameGenerator(object):
                     det.time_delay_from_earth_center(self.current_params['ra'],
                          self.current_params['dec'], self.current_params['tc'])
                 h[detname] = apply_fd_time_shift(thish, tc+tshift, copy=False)
+                if self.recalib:
+                    # recalibrate with given calibration model
+                    h[detname] = \
+                        self.recalib[detname].map_to_adjust(h[detname],
+                            **self.current_params)
         else:
             # no detector response, just use the + polarization
             if 'tc' in self.current_params:
