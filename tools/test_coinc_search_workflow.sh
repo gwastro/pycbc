@@ -44,7 +44,7 @@ patch -p0 ligo-proxy-init <<EOF
      echo "Your identity: \$login@LIGO.ORG"
  fi
 EOF
-if $? ; then
+if [ ! $? -eq 0 ] ; then
 patch -p0 ligo-proxy-init <<EOF
 --- /bin/ligo-proxy-init	2017-04-12 12:27:45.000000000 +0000
 +++ ligo-proxy-init	2017-09-07 23:37:51.224116188 +0000
@@ -57,7 +57,7 @@ patch -p0 ligo-proxy-init <<EOF
      echo "Your identity: $login@LIGO.ORG"
  fi
 EOF
-if $? ; then
+if [ ! $? -eq 0 ] ; then
 echo -e "\\n>> [`date`] ERROR: could not patch ligo-proxy-init for Travis"
 exit 1
 fi
