@@ -306,6 +306,13 @@ class Recalibrate(object):
         d0 = tfs[3][:, 1]
         freq = tfs[0][:, 0]
 
+        # if upper stage actuation is included, read that in and add it
+        # to a_pu0
+        uim_tag = '-'.join([ifo, 'transfer-function-a-uim'])
+        if cp.has_option(section, uim_tag):
+            tf_path = cp.get_opt_tag(section, uim_tag, None)
+            a_pu0 += cls.tf_from_file(tf_path)[:, 1]
+
         # read fc0, fs0, and qinv0
         fc0 = cp.get_opt_tag(section, '-'.join([ifo, "fc0"]), None)
         fs0 = cp.get_opt_tag(section, '-'.join([ifo, "fs0"]), None)
