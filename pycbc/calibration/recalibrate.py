@@ -298,7 +298,7 @@ class Recalibrate(object):
         tf_names = ["a-tst", "a-pu", "c", "d"]
         for tag in ['-'.join([ifo, "transfer-function", name])
                     for name in tf_names]:
-            tf_path = cp.get_opt_tag(section, tag)
+            tf_path = cp.get_opt_tag(section, tag, None)
             tfs.append(cls.tf_from_file(tf_path))
         a_tst0 = tfs[0][:, 1]
         a_pu0 = tfs[1][:, 1]
@@ -307,9 +307,52 @@ class Recalibrate(object):
         freq = tfs[0][:, 0]
 
         # read fc0, fs0, and qinv0
-        fc0 = cp.get_opt_tag(section, '-'.join([ifo, "fc0"]))
-        fs0 = cp.get_opt_tag(section, '-'.join([ifo, "fs0"]))
-        qinv0 = cp.get_opt_tag(section, '-'.join([ifo, "qinv0"]))
+        fc0 = cp.get_opt_tag(section, '-'.join([ifo, "fc0"]), None)
+        fs0 = cp.get_opt_tag(section, '-'.join([ifo, "fs0"]), None)
+        qinv0 = cp.get_opt_tag(section, '-'.join([ifo, "qinv0"]), None)
 
         return cls(freq=freq, fc0=fc0, c0=c0, d0=d0, a_tst0=a_tst0,
                    a_pu0=a_pu0, fs0=fs0, qinv0=qinv0)
+
+    def map_to_adjust(self, strain, **params):
+        """Map an input dictionary of sampling parameters to the
+        adjust_strain function by filtering the dictionary for the
+        calibration parameters, then calling adjust_strain.
+
+        Parameters
+        ----------
+        strain : FrequencySeries
+            The strain to be recalibrated.
+        params : dict
+            Dictionary of sampling parameters which includes
+            calibration parameters.
+
+        Return
+        ------
+        strain_adjusted : FrequencySeries
+            The recalibrated strain.
+        """
+        # calibration param names
+        arg_names = ['delta_fs', 'delta_fc', 'delta_qinv', 'kappa_c',
+                     'kappa_tst_re', 'kappa_tst_im', 'kappa_pu_re',
+                     'kappa_pu_im']
+        # calibration param labels as they exist in config files
+        arg_labels = [''.join(['calib_', name]) for name in arg_names]
+        # default values for calibration params
+        default_values = [0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0]
+        # make list of calibration param values
+        calib_args = []
+        for arg, val in zip(arg_labels, default_values):
+            if arg in params:
+                calib_args.append(params[arg])
+            else:
+                calib_args.append(val)
+        # adjust the strain using calibration param values
+        strain_adjusted = self.adjust_strain(strain, delta_fs=calib_args[0],
+                              delta_fc=calib_args[1], delta_qinv=calib_args[2],
+                              kappa_c=calib_args[3],
+                              kappa_tst_re=calib_args[4],
+                              kappa_tst_im=calib_args[5],
+                              kappa_pu_re=calib_args[6],
+                              kappa_pu_im=calib_args[7])
+        return strain_adjusted
