@@ -30,24 +30,8 @@ BANK_FILE="${CONFIG_PATH}/O1/bank/H1L1-UBERBANK_MAXM100_NS0p05_ER8HMPSD-11260332
 echo -e "\\n>> [`date`] Using template bank from ${BANK_FILE}"
 
 echo -e "\\n>> [`date`] Patching ligo-proxy-init for Travis"
-
 cp `which ligo-proxy-init` .
-proxy_ver=`md5sum ligo-proxy-init`
-if test "x${proxy_ver}" == "xbb3d053f43a2bc1e04d68f6e56a2443d" ; then
-patch -p0 ligo-proxy-init <<EOF
---- /bin/ligo-proxy-init	2017-04-12 12:27:45.000000000 +0000
-+++ ligo-proxy-init	2017-09-07 23:37:51.224116188 +0000
-@@ -212,7 +212,7 @@
- 
-     login=${1/@*/}
-     [[ $login == *","* ]] && echo "Replacing comma characters in login!"; login=${login//,/.}
--    curl_auth_method="--user $login"
-+    curl_auth_method="--user $login:${LIGO_TOKEN}"
-     echo "Your identity: $login@LIGO.ORG"
- fi
- 
-EOF
-else
+set +e
 patch -p0 ligo-proxy-init <<EOF
 --- /bin/ligo-proxy-init	2016-12-05 07:18:14.000000000 -0500
 +++ ligo-proxy-init	2017-04-09 12:49:35.575182509 -0400
@@ -60,10 +44,27 @@ patch -p0 ligo-proxy-init <<EOF
      echo "Your identity: \$login@LIGO.ORG"
  fi
 EOF
+if $? ; then
+patch -p0 ligo-proxy-init <<EOF
+--- /bin/ligo-proxy-init	2017-04-12 12:27:45.000000000 +0000
++++ ligo-proxy-init	2017-09-07 23:37:51.224116188 +0000
+@@ -212,7 +212,7 @@
+ 
+     login=${1/@*/}
+     [[ $login == *","* ]] && echo "Replacing comma characters in login!"; login=${login//,/.}
+-    curl_auth_method="--user $login"
++    curl_auth_method="--user $login:${LIGO_TOKEN}"
+     echo "Your identity: $login@LIGO.ORG"
+ fi
+EOF
+if $? ; then
+echo -e "\\n>> [`date`] ERROR: could not patch ligo-proxy-init for Travis"
+exit 1
 fi
+fi
+set -e
 
 echo -e "\\n>> [`date`] Patching ecp-cookie-init for Travis"
-
 cp `which ecp-cookie-init` .
 patch -p0 ecp-cookie-init << EOF
 --- /bin/ecp-cookie-init        2016-12-21 08:41:13.000000000 -0500
