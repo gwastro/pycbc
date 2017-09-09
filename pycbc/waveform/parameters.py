@@ -396,6 +396,29 @@ redshift = Parameter("redshift",
                 description="Redshift.")
 
 #
+#   Calibration parameters
+#
+delta_fs = Parameter("calib_delta_fs",
+                     dtype=float,
+                     description="Change in optical spring freq (Hz).")
+delta_fc = Parameter("calib_delta_fc",
+                     dtype=float,
+                     description="Change in cavity pole freq (Hz).")
+delta_qinv = Parameter("calib_delta_qinv",
+                       dtype=float,
+                       description="Change in inverse quality factor.")
+kappa_c = Parameter("calib_kappa_c",
+                    dtype=float)
+kappa_tst_re = Parameter("calib_kappa_tst_re",
+                         dtype=float)
+kappa_tst_im = Parameter("calib_kappa_tst_im",
+                         dtype=float)
+kappa_pu_re = Parameter("calib_kappa_pu_re",
+                        dtype=float)
+kappa_pu_im = Parameter("calib_kappa_pu_im",
+                        dtype=float)
+
+#
 #   Non mandatory flags with default values
 #
 frame_axis = Parameter("frame_axis",
@@ -440,6 +463,11 @@ cbc_intrinsic_params = ParameterList([
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params
+
+# calibration parameters
+calibration_params = ParameterList([
+    delta_fc, delta_fs, delta_qinv, kappa_c, kappa_tst_re, kappa_tst_im,
+    kappa_pu_re, kappa_pu_im])
 
 # common generation parameters are parameters needed to generate either
 # a TD, FD, or frequency sequence waveform

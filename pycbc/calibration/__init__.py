@@ -22,7 +22,7 @@ def read_model_from_config(cp, ifo, section="calibration"):
     instance
         An instance of the calibration model class.
     """
-    name = cp.get_opt_tag(section, "name")
-    recalibrator = models[name].from_config(cp, ifo, section)
+    name = cp.get_opt_tag(section, "name", None)
+    recalibrator = models[name].from_config(cp, ifo.lower(), section)
 
     return recalibrator

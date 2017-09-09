@@ -25,6 +25,7 @@ import numpy
 import pycbc
 import pycbc.opt
 import pycbc.weave
+from pycbc import calibration
 from pycbc import distributions
 from pycbc import transforms
 from pycbc import fft
@@ -202,6 +203,14 @@ with ctx:
     else:
         sampling_parameters = replace_parameters = sampling_transforms = None
 
+    # get ifo-specific instances of calibration model
+    if cp.has_section('calibration'):
+        logging.info("Initializing calibration model")
+        recalib = {ifo : calibration.read_model_from_config(cp, ifo) for
+                   ifo in opts.instruments}
+    else:
+        recalib = None
+
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
     logging.info("Setting up sampler")
@@ -214,6 +223,7 @@ with ctx:
                        variable_args=variable_args, detectors=opts.instruments,
                        delta_f=stilde_dict.values()[0].delta_f,
                        delta_t=strain_dict.values()[0].delta_t,
+                       recalib=recalib,
                        **static_args)
 
     # construct class that will return the natural logarithm of likelihood

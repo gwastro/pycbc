@@ -69,11 +69,11 @@ class BaseLikelihoodEvaluator(object):
      * the **posterior**: :math:`p(\Theta|d) \propto p(d|\Theta)p(\Theta)`
 
      * the **prior-weighted likelihood ratio**: :math:`\hat{\mathcal{L}}(\Theta) = \frac{p(d|\Theta)p(\Theta)}{p(d|n)}`
-   
+
      * the **SNR**: :math:`\rho(\Theta) = \sqrt{2\log\mathcal{L}(\Theta)}`; for
        two detectors, this is approximately the same quantity as the coincident
        SNR used in the CBC search.
-   
+
     .. note::
 
         Although the posterior probability is only proportional to
@@ -90,7 +90,7 @@ class BaseLikelihoodEvaluator(object):
     .. math::
 
         \log \mathcal{L}(\Theta) = \sum_i \left[\log p(\Theta|d_i) - \log p(n|d_i)\right]
-   
+
     This class provides boiler-plate methods and attributes for evaluating the
     log likelihood ratio, log prior, and log likelihood. This class
     makes no assumption about the detectors' noise model :math:`n`. As such,
@@ -514,7 +514,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         \left<a | b\right> = 4\Re \int_{0}^{\infty} \frac{\tilde{a}(f) \tilde{b}(f)}{S_n(f)} \mathrm{d}f,
 
     where :math:`S_n(f)` is the PSD in the given detector.
-    
+
     Note that the log prior-weighted likelihood ratio has one less term
     than the log posterior, since the :math:`\left<d_i|d_i\right>` term cancels
     in the likelihood ratio:
@@ -530,13 +530,13 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     Upon initialization, the data is whitened using the given PSDs. If no PSDs
     are given the data and waveforms returned by the waveform generator are
     assumed to be whitened. The likelihood function of the noise,
-    
+
     .. math::
-    
+
         p(d|n) = \frac{1}{2} \sum_i \left<d_i|d_i\right>,
 
     is computed on initialization and stored as the `lognl` attribute.
-    
+
     By default, the data is assumed to be equally sampled in frequency, but
     unequally sampled data can be supported by passing the appropriate
     normalization using the ``norm`` keyword argument.
@@ -663,7 +663,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         # we'll store the weight to apply to the inner product
         if psds is None:
             w = Array(numpy.sqrt(norm)*numpy.ones(N))
-            self._weight = {det: w for det in data} 
+            self._weight = {det: w for det in data}
         else:
             # temporarily suppress numpy divide by 0 warning
             numpysettings = numpy.seterr(divide='ignore')
@@ -686,9 +686,9 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
 
     def loglr(self, **params):
         r"""Computes the log likelihood ratio,
-        
+
         .. math::
-            
+
             \log \mathcal{L}(\Theta) = \sum_i \left<h_i(\Theta)|d_i\right> - \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
 
         at the given point in parameter space :math:`\Theta`.
@@ -729,9 +729,9 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
 
     def loglikelihood(self, **params):
         r"""Computes the log likelihood of the paramaters,
-        
+
         .. math::
-        
+
             p(d|\Theta) = -\frac{1}{2}\sum_i \left<h_i(\Theta) - d_i | h_i(\Theta) - d_i\right>
 
         Parameters

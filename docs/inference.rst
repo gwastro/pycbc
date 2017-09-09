@@ -77,6 +77,8 @@ A list of all distributions that can be used is found with
 .. literalinclude:: ../examples/distributions/list_distributions.py
 .. command-output:: python ../examples/distributions/list_distributions.py
 
+If any calibration parameters are used (prefix ``calib_``), a ``[calibration]`` section must be included. This section must have a ``name`` option that identifies what calibration model to use. The models are described in :py:mod:`pycbc.calibration`. The ``[calibration]`` section must also include reference values ``fc0``, ``fs0``, and ``qinv0``, as well as paths to ASCII transfer function files for the test mass actuation, penultimate mass actuation, sensing function, and digital filter for each IFO being used in the analysis. E.g. for an analysis using H1 only, the required options would be ``h1-fc0``, ``h1-fs0``, ``h1-qinv0``, ``h1-transfer-function-a-tst``, ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``, ``h1-transfer-function-d``.
+
 A simple example is given in the subsection below.
 
 ------------------------------
