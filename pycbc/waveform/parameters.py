@@ -359,6 +359,14 @@ numrel_data = Parameter("numrel_data",
                 dtype=str, default="", label=None,
                 description="Sets the NR flags; only needed for NR waveforms.")
 
+mode_array_l = Parameter("mode_array_l",
+                dtype=int, default="2", label=None,
+                description="Sets the l-mode of the NR waveform.")
+
+mode_array_m = Parameter("mode_array_m",
+                dtype=int, default="2", label=None,
+                description="Sets the m-mode of the NR waveforms")
+
 #
 #   General location parameters
 #
@@ -489,7 +497,7 @@ fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
 
 # the following are parameters needed to generate a TD waveform
 td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
-    common_gen_equal_sampled_params + ParameterList([numrel_data]) + \
+    common_gen_equal_sampled_params + ParameterList([numrel_data, mode_array_l, mode_array_m]) + \
     flags_generation_params
 
 # the following are parameters needed to generate a frequency series waveform
