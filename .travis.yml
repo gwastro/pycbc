@@ -83,12 +83,14 @@ script:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/travis_build_and_test.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
+    dh -h ;
     sudo chown -R 1000:1000 . ;
     sudo chown -R 1000:1000 ~/.ssh ;
     docker run --name pycbc_inst --cidfile /tmp/docker.cid -d -e USERID=$UID -v ~/.ssh:/home/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' || exit 1 ;
     sleep 10 ;
     docker ps -a || exit 1 ;
     TMP_CONTAINER_ID=$(cat /tmp/docker.cid) ;
+    travis_retry docker exec -it pycbc_inst /bin/bash -lc "df -h || exit 1" || exit 1 ;
     travis_retry docker exec -it pycbc_inst /bin/bash -lc "id; ls -al /pycbc; cd /pycbc && pip install -r requirements.txt && python setup.py install || exit 1" || exit 1 ;
     travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/src && cd ~/src && git clone https://github.com/ligo-cbc/pycbc.git || exit 1" || exit 1 ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
