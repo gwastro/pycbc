@@ -1379,7 +1379,7 @@ for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
     echo "\
->> [`date`] pycbc_inspiral using
+>> [`date`] Running pycbc_inspiral using
 >>   --bank-file ${bank_array[$i]}
 >>   --approximant ${approx_array[$i]}
 >>   ROM data from $lal_data_path"
