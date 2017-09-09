@@ -181,9 +181,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
   make lalapps_inspinj
   cp lalapps_inspinj $VIRTUAL_ENV/bin
-  cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/ring
-  make lalapps_coh_PTF_inspiral
-  cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
   echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
   pip install 'matplotlib==1.5.3'
@@ -194,9 +191,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
   python setup.py install
-
-  echo -e "\\n>> [`date`] Installing PyCBC PyLAL 1.0.2"
-  pip install "pycbc-pylal==1.0.2"
 
   echo -e "\\n>> [`date`] Installing modules needed to build documentation"
   pip install "Sphinx>=1.5.0"
