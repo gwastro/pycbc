@@ -201,6 +201,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   pip install ipython
   pip install jupyter
   pip install hide_code
+  jupyter nbextension install --sys-prefix --py hide_code
+  jupyter nbextension enable --sys-prefix --py hide_code
+  jupyter serverextension enable --sys-prefix --py hide_code
 
   cat << EOF >> $VIRTUAL_ENV/bin/activate
 
