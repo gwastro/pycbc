@@ -22,6 +22,7 @@ import os
 import argparse
 import logging
 import numpy
+import h5py
 import pycbc
 import pycbc.opt
 import pycbc.weave
@@ -40,6 +41,16 @@ from pycbc.waveform import generator
 from pycbc.inference import option_utils
 from pycbc.inference import prior
 from pycbc.inference import burn_in
+
+def tf_from_file(path, delimiter=" "):
+    """Convert the contents of a file with the columns
+    [freq, real(h), imag(h)] to a numpy.array with columns
+    [freq, real(h)+j*imag(h)].
+    """
+    data = numpy.loadtxt(path, delimiter=delimiter)
+    freq = data[:, 0]
+    h = data[:, 1] + 1.0j * data[:, 2]
+    return numpy.array([freq, h]).transpose()
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -70,6 +81,13 @@ parser.add_argument("--samples-file", default=None,
                          "section in the configuration file should be used. "
                          "The priors must allow encompass the initial "
                          "positions from the InferenceFile being read.")
+
+# calibration data options
+parser.add_argument("--calib", action="store_true", default=False,
+                  help="Switch to determine whether calibration parameters are"
+                       " included in likelihood calculation.")
+parser.add_argument("--transfer-functions", type=str,
+                  help="Path to hdf file containing calibration data")
 
 # add sampler options
 option_utils.add_sampler_option_group(parser)
@@ -190,7 +208,7 @@ with ctx:
 
     # construct class that will return the prior
     prior_eval = prior.PriorEvaluator(variable_args, *dists,
-                                      **{"constraints" : constraints})
+                                      **{"constraints": constraints})
 
     # get sampling transformations
     if cp.has_section('sampling_parameters'):
@@ -202,6 +220,37 @@ with ctx:
             ', '.join(sampling_parameters), ', '.join(replace_parameters)))
     else:
         sampling_parameters = replace_parameters = sampling_transforms = None
+    
+    # read in calibration transfer functions
+    if opts.calib and opts.transfer_functions:
+        logging.info("Calibration parameters will be included in likelihood "
+                     "calculation")
+        logging.info("Reading calibration data file")
+        with h5py.File(opts.transfer_functions, "r") as fp:
+            h1_fc0 = fp["h1_fc0"].value
+            h1_a_tst = fp["h1_a_tst"][:]
+            h1_a_pu = fp["h1_a_pu"][:]
+            h1_c = fp["h1_c"][:]
+            h1_d = fp["h1_d"][:]
+            h1_freqlist = h1_c[:, 0]
+            l1_fc0 = fp["l1_fc0"].value
+            l1_a_tst = fp["l1_a_tst"][:]
+            l1_a_pu = fp["l1_a_pu"][:]
+            l1_c = fp["l1_c"][:]
+            l1_d = fp["l1_d"][:]
+            l1_freqlist = l1_c[:, 0]
+            
+        tf_dict = {"H1": (h1_a_tst[:, 1], h1_a_pu[:, 1], h1_c[:, 1], h1_d[:, 1],
+                          h1_freqlist, h1_fc0),
+                   "L1": (l1_a_tst[:, 1], l1_a_pu[:, 1], l1_c[:, 1], l1_d[:, 1],
+                          l1_freqlist, l1_fc0)}
+    elif opts.calib and not opts.transfer_functions:
+         raise OSError("transfer function data file must be supplied with "
+                       "--transfer-functions")
+    else:
+        logging.info("Calibration parameters will not be included in likelihood"
+                     " calculation")
+        tf_dict = None
 
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
@@ -233,7 +282,8 @@ with ctx:
                         psds=psd_dict, prior=prior_eval,
                         sampling_parameters=sampling_parameters,
                         replace_parameters=replace_parameters,
-                        sampling_transforms=sampling_transforms)
+                        sampling_transforms=sampling_transforms,
+                        transfer_functions=tf_dict, calib=opts.calib)
 
     burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
                                 min_iterations=opts.min_burn_in)

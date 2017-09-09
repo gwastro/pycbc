@@ -1,0 +1,95 @@
+#! /usr/bin/env python
+
+import numpy
+import argparse
+import logging
+import h5py
+
+def tf_from_file(path, delimiter=" "):
+    """Convert the contents of a file with the columns
+    [freq, real(h), imag(h)] to a numpy.array with columns
+    [freq, real(h)+j*imag(h)].
+    """
+    data = numpy.loadtxt(path, delimiter=delimiter)
+    freq = data[:, 0]
+    h = data[:, 1] + 1.0j * data[:, 2]
+    return numpy.array([freq, h]).transpose()
+
+
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
+                                 description=__doc__)
+parser.add_argument("--output-file", type=str, default="calib_data.hdf")
+
+parser.add_argument("--h1-fc0", type=float, default=360.,
+                  help="H1 cavity pole frequency at reference time")
+parser.add_argument("--h1-transfer-function-a-tst", type=str, required=True,
+                  help="Path to ASCII file that contains H1 reference actuation "
+                       "function A_tst for test mass.")
+parser.add_argument("--h1-transfer-function-a-pu", type=str, required=True,
+                  help="Path to ASCII file that contains H1 reference actuation "
+                       "function A_pu for the upper pendulum stages.")
+parser.add_argument("--h1-transfer-function-a-uim", type=str, default=None,
+                  help="Path to ASCII file that contains H1 reference actuation "
+                       "function A_uim.")
+parser.add_argument("--h1-transfer-function-c", type=str, required=True,
+                  help="Path to ASCII file that contains H1 reference "
+                       "sensing function.")
+parser.add_argument("--h1-transfer-function-d", type=str, required=True,
+                  help="Path to ASCII file that contains H1 reference "
+                       "digital filters.")
+parser.add_argument("--l1-fc0", type=float, default=376.,
+                  help="L1 cavity pole frequency at reference time")
+parser.add_argument("--l1-transfer-function-a-tst", type=str, required=True,
+                  help="Path to ASCII file that contains L1 reference actuation "
+                       "function A_tst for test mass.")
+parser.add_argument("--l1-transfer-function-a-pu", type=str, required=True,
+                  help="Path to ASCII file that contains L1 reference actuation "
+                       "function A_pu for the upper pendulum stages.")
+parser.add_argument("--l1-transfer-function-a-uim", type=str, default=None,
+                  help="Path to ASCII file that contains L1 reference actuation "
+                       "function A_uim.")
+parser.add_argument("--l1-transfer-function-c", type=str, required=True,
+                  help="Path to ASCII file that contains L1 reference "
+                       "sensing function.")
+parser.add_argument("--l1-transfer-function-d", type=str, required=True,
+                  help="Path to ASCII file that contains L1 reference "
+                       "digital filters.")
+
+opts = parser.parse_args()
+
+logging.info("Reading in transfer functions")
+# H1
+h1_fc0 = opts.h1_fc0
+h1_a_tst = tf_from_file(opts.h1_transfer_function_a_tst)
+h1_a_pu = tf_from_file(opts.h1_transfer_function_a_pu)
+if opts.h1_transfer_function_a_uim:
+    h1_a_uim = tf_from_file(opts.h1_transfer_function_a_uim)
+    h1_a_pu += h1_a_uim # current convention is to sum these stages
+h1_c = tf_from_file(opts.h1_transfer_function_c)
+h1_d = tf_from_file(opts.h1_transfer_function_d)
+# L1
+l1_fc0 = opts.l1_fc0
+l1_a_tst = tf_from_file(opts.l1_transfer_function_a_tst)
+l1_a_pu = tf_from_file(opts.l1_transfer_function_a_pu)
+if opts.l1_transfer_function_a_uim:
+    l1_a_uim = tf_from_file(opts.l1_transfer_function_a_uim)
+    l1_a_pu += l1_a_uim # current convention is to sum these stages
+l1_c = tf_from_file(opts.l1_transfer_function_c)
+l1_d = tf_from_file(opts.l1_transfer_function_d)
+
+with h5py.File(opts.output_file, "w") as fp:
+    #h1_tfs = fp.create_group("H1")
+    #l1_tfs = fp.create_group("L1")
+    fp.create_dataset("h1_fc0", data=h1_fc0)
+    fp.create_dataset("h1_a_tst", data=h1_a_tst)
+    #fp.create_dataset("h1_a_uim", data=h1_a_uim)
+    fp.create_dataset("h1_a_pu", data=h1_a_pu)
+    fp.create_dataset("h1_c", data=h1_c)
+    fp.create_dataset("h1_d", data=h1_d)
+    fp.create_dataset("l1_fc0", data=l1_fc0)
+    fp.create_dataset("l1_a_tst", data=l1_a_tst)
+    #fp.create_dataset("l1_a_uim", data=l1_a_uim)
+    fp.create_dataset("l1_a_pu", data=l1_a_pu)
+    fp.create_dataset("l1_c", data=l1_c)
+    fp.create_dataset("l1_d", data=l1_d)
+

@@ -33,6 +33,7 @@ from pycbc.waveform import NoWaveformError
 from pycbc.types import Array
 from pycbc.io import FieldArray
 import numpy
+from pycbc.inference.recal import Recalibrate
 
 # Used to manage a likelihood instance across multiple cores or MPI
 _global_instance = None
@@ -643,7 +644,8 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     def __init__(self, waveform_generator, data, f_lower, psds=None,
                  f_upper=None, norm=None, prior=None,
                  sampling_parameters=None, replace_parameters=None,
-                 sampling_transforms=None, return_meta=True):
+                 sampling_transforms=None, return_meta=True,
+                 transfer_functions=None, calib=None):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
@@ -677,6 +679,9 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         self.set_lognl(-0.5*sum([
             d[kmin:kmax].inner(d[kmin:kmax]).real
             for d in self._data.values()]))
+        # store the calibration transfer functions and params
+        self.tfs = transfer_functions
+        self.calib = calib
         # set default call function to logplor
         self.set_callfunc('logplr')
 
@@ -718,6 +723,21 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
+            if self.calib:
+                cal_init = {}
+                init_keys = ["a_tst0", "a_pu0", "c0", "d0", "freq", "fc0",
+                             "fs0", "qinv0"]
+                init_vals = [self.tfs[det][i] for i in range(6)] + [6.9, 0.05]
+                cal_init.update({i: v for i, v in zip(init_keys, init_vals)})
+
+                # set up recalibrator
+                recalibrator = Recalibrate(cal_init)
+
+                cal_adjust = {i: v for i, v in params.items() if
+                              i.startswith("calib_")}
+
+                h = recalibrator.adjust_strain(h, cal_adjust)
+
             h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
             lr += (
                 # <h, d>
