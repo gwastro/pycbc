@@ -48,8 +48,6 @@ fi
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
 
-  yum -y install strace
-
   # create working dir for build script
   BUILD=/pycbc/build
   mkdir -p ${BUILD}

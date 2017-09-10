@@ -1430,7 +1430,7 @@ do
 #        "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args 2>&1|
 #          awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
 #    else
-        strace "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args
+        "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args
 #    fi
 done
 
