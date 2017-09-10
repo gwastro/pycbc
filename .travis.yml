@@ -1,4 +1,3 @@
-language: python
 sudo: false
 addons:
   apt:
@@ -42,22 +41,27 @@ env:
 matrix:
   include:
   - env: PYCBC_CONTAINER=pycbc_rhel_virtualenv DOCKER_IMG=ligo/lalsuite-dev:el7
+    language: minimal
     sudo: required
     services:
     - docker
   - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev:jessie
+    language: minimal
     sudo: required
     services:
     - docker
   - env: PYCBC_CONTAINER=pycbc_inspiral_bundle DOCKER_IMG=pycbc/sl6-travis
+    language: minimal
     sudo: required
     services:
     - docker
   - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
+    language: minimal
     sudo: required
     services:
     - docker
   - env: PYCBC_CONTAINER=build_and_test
+    language: python
 
 before_install:
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
@@ -86,10 +90,10 @@ script:
     df -h ;
     sudo chown -R 1000:1000 . ;
     sudo chown -R 1000:1000 ~/.ssh ;
-    docker run --name pycbc_inst --cidfile /tmp/docker.cid -d -e USERID=$UID -v ~/.ssh:/home/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' || exit 1 ;
+    docker run --name pycbc_inst --cidfile docker.cid -d -e USERID=$UID -v ~/.ssh:/home/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' || exit 1 ;
     sleep 10 ;
     docker ps -a || exit 1 ;
-    TMP_CONTAINER_ID=$(cat /tmp/docker.cid) ;
+    TMP_CONTAINER_ID=$(cat docker.cid) ;
     travis_retry docker exec -it pycbc_inst /bin/bash -lc "df -h || exit 1" || exit 1 ;
     travis_retry docker exec -it pycbc_inst /bin/bash -lc "id; ls -al /pycbc; cd /pycbc && pip install -r requirements.txt && python setup.py install || exit 1" || exit 1 ;
     travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/src && cd ~/src && git clone https://github.com/ligo-cbc/pycbc.git || exit 1" || exit 1 ;
