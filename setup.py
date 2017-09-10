@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (C) 2012 Alex Nitz, Andrew Miller, Josh Willis
+# Copyright (C) 2012 Alex Nitz, Duncan Brown, Andrew Miller, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -271,8 +271,8 @@ def get_version_info():
 
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.9.0dev'
-        release = 'False'
+        version = '1.8.1'
+        release = 'True'
 
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
 
