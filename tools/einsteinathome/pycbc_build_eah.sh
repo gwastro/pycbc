@@ -89,6 +89,7 @@ use_pycbc_pyinstaller_hooks=true
 build_onefile_bundles=false
 run_analysis=true
 silent_build=false
+lal_pulsar="--enable-lalpulsar"
 
 if echo ".$WORKSPACE" | grep CYGWIN64_FRONTEND >/dev/null; then
     # hack to use the script as a frontend for a Cygwin build slave for a Jenkins job
@@ -148,6 +149,7 @@ elif grep -q "Scientific Linux CERN SLC release 6" /etc/redhat-release 2>/dev/nu
     build_lapack=false
     build_freetype=false
     build_zlib=false
+    lal_pulsar="--disable-lal-pulsar"
     build_wrapper=false
     build_fstab=false
     pyinstaller_lsb="--no-lsb"
@@ -907,7 +909,7 @@ EOF
     cd lalsuite-build
     echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
     ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
-        --disable-all-lal --enable-lalframe --enable-lalmetaio --enable-lalsimulation --enable-lalinspiral --enable-lalpulsar --enable-swig-python
+        --disable-all-lal --enable-lalframe --enable-lalmetaio --enable-lalsimulation --enable-lalinspiral ${lal_pulsar} --enable-swig-python
     if $build_dlls; then
 	echo '#include "/usr/include/stdlib.h"
 extern int setenv(const char *name, const char *value, int overwrite);
