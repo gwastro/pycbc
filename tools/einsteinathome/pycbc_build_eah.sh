@@ -1426,12 +1426,12 @@ do
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} \
       --verbose"
-#    if $silent_build; then
-#        "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args 2>&1|
-#          awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
-#    else
+    if $silent_build; then
+        "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args 2>&1|
+          awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
+    else
         "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args
-#    fi
+    fi
 done
 
 # test for GW150914
