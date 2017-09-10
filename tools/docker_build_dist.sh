@@ -21,7 +21,7 @@ else
 fi
 
 # set the lalsuite checkout to use
-LALSUITE_HASH="539c8700af92eb6dd00e0e91b9dbaf5bae51f004"
+LALSUITE_HASH="95ad957cee1a37b7fc3128883d8b723556f9ec38"
 
 if [ "x$TRAVIS_TAG" == "x" ] ; then
   TRAVIS_TAG="master"
@@ -102,7 +102,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     yum clean all
     yum makecache
     yum -y update
-    yum -y install openssl-devel
+    yum -y install openssl-devel openssl-static
     yum -y install pegasus
     yum -y install ligo-proxy-utils
     yum -y install ecp-cookie-init
@@ -172,18 +172,15 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   source ${VENV_PATH}/bin/activate
   cd $VIRTUAL_ENV/src/lalsuite/lalapps
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
-    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+    LIBS="-lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
-    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   fi
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
   make -j 2 2>&1 | grep Entering
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
   make lalapps_inspinj
   cp lalapps_inspinj $VIRTUAL_ENV/bin
-  cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/ring
-  make lalapps_coh_PTF_inspiral
-  cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
 
   echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
   pip install 'matplotlib==1.5.3'
@@ -195,9 +192,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Installing PyCBC from source"
   python setup.py install
 
-  echo -e "\\n>> [`date`] Installing PyCBC PyLAL 1.0.2"
-  pip install "pycbc-pylal==1.0.2"
-
   echo -e "\\n>> [`date`] Installing modules needed to build documentation"
   pip install "Sphinx>=1.5.0"
   pip install sphinx-rtd-theme
@@ -207,6 +201,9 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   pip install ipython
   pip install jupyter
   pip install hide_code
+  jupyter nbextension install --sys-prefix --py hide_code
+  jupyter nbextension enable --sys-prefix --py hide_code
+  jupyter serverextension enable --sys-prefix --py hide_code
 
   cat << EOF >> $VIRTUAL_ENV/bin/activate
 
@@ -222,7 +219,7 @@ elif [ -f /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mk
   . /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
 fi
 
-# Use the revison 11 ROM data from CVMFS
+# Use the ROM data from CVMFS
 export LAL_DATA_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/e02dab8c/share/lalsimulation
 EOF
 
