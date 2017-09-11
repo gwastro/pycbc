@@ -38,11 +38,11 @@ import matplotlib
 import sys
 if not 'matplotlib.backends' in sys.modules:
     matplotlib.use('agg')
+from matplotlib import offsetbox
 from matplotlib import pyplot
 import matplotlib.gridspec as gridspec
 from pycbc.results import str_utils
 from pycbc.io import FieldArray
-#pyplot.rcParams.update({'text.usetex': True})
 
 def create_axes_grid(parameters, labels=None, height_ratios=None,
         width_ratios=None, no_diagonals=False):
@@ -284,8 +284,8 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
 
 def create_marginalized_hist(ax, values, label, percentiles=None,
-        color='k', fillcolor='gray', linecolor='navy', title=True,
-        expected_value=None, expected_color='red',
+        color='k', fillcolor='gray', linecolor='navy',
+        title=True, expected_value=None, expected_color='red',
         rotated=False, plot_min=None, plot_max=None):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
@@ -355,10 +355,14 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         poserror = values_max - values_med
         fmt = '$' + str_utils.format_value(values_med, negerror,
               plus_error=poserror, ndecs=2) + '$'
+
         if rotated:
             ax.yaxis.set_label_position("right")
-            ax.set_ylabel('{} = {}'.format(label, fmt), rotation=-90,
-                labelpad=26, fontsize=18)
+
+            # sets colored title for marginal histogram
+            set_marginal_histogram_title(ax, fmt, color,
+                                         label=label, rotated=rotated)
+
             # Remove x-ticks
             ax.set_xticks([])
             # turn off x-labels
@@ -370,8 +374,12 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             if plot_max is not None:
                 ymax = plot_max
             ax.set_ylim(ymin, ymax)
+
         else:
-            ax.set_title('{} = {}'.format(label, fmt), fontsize=18, y=1.04)
+
+            # sets colored title for marginal histogram
+            set_marginal_histogram_title(ax, fmt, color, label=label)
+
             # Remove y-ticks
             ax.set_yticks([])
             # turn off y-label
@@ -385,16 +393,91 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             ax.set_xlim(xmin, xmax)
 
 
+def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
+    """ Sets the title of the marginal histograms.
+
+    Parameters
+    ----------
+    ax : Axes
+        The `Axes` instance for the plot.
+    fmt : str
+        The string to add to the title.
+    color : str
+        The color of the text to add to the title.
+    label : str
+        If title does not exist, then include label at beginning of the string.
+    rotated : bool
+        If `True` then rotate the text 270 degrees for sideways title.
+    """
+
+    # get rotation angle of the title
+    rotation = 270 if rotated else 0
+
+    # get how much to displace title on axes
+    xscale = 1.05 if rotated else 0.0
+    if rotated:
+        yscale = 1.0
+    elif len(ax.get_figure().axes) > 1:
+        yscale = 1.15
+    else:
+        yscale = 1.05
+
+    # get class that packs text boxes vertical or horizonitally
+    packer_class = offsetbox.VPacker if rotated else offsetbox.HPacker
+
+    # if no title exists
+    if not hasattr(ax, "title_boxes"):
+
+        # create a text box
+        title = "{} = {}".format(label, fmt)
+        tbox1 = offsetbox.TextArea(
+                   title,
+                   textprops=dict(color=color, size=15, rotation=rotation,
+                                  ha='left', va='bottom'))
+
+        # save a list of text boxes as attribute for later
+        ax.title_boxes = [tbox1]
+
+        # pack text boxes
+        ybox = packer_class(children=ax.title_boxes,
+                            align="bottom", pad=0, sep=5)
+
+    # else append existing title
+    else:
+
+        # delete old title
+        ax.title_anchor.remove()
+
+        # add new text box to list
+        tbox1 = offsetbox.TextArea(
+                   " {}".format(fmt),
+                   textprops=dict(color=color, size=15, rotation=rotation,
+                                  ha='left', va='bottom'))
+        ax.title_boxes = ax.title_boxes + [tbox1]
+
+        # pack text boxes
+        ybox = packer_class(children=ax.title_boxes,
+                            align="bottom", pad=0, sep=5)
+
+    # add new title and keep reference to instance as an attribute
+    anchored_ybox = offsetbox.AnchoredOffsetbox(
+                      loc=2, child=ybox, pad=0.,
+                      frameon=False, bbox_to_anchor=(xscale, yscale),
+                      bbox_transform=ax.transAxes, borderpad=0.)
+    ax.title_anchor = ax.add_artist(anchored_ybox)
+
+
 def create_multidim_plot(parameters, samples, labels=None,
                 mins=None, maxs=None, expected_parameters=None,
                 expected_parameters_color='r',
-                plot_marginal=True,
-                plot_scatter=True,
-                    zvals=None, show_colorbar=True, cbar_label=None,
-                    vmin=None, vmax=None, scatter_cmap='plasma',
+                plot_marginal=True, plot_scatter=True,
+                zvals=None, show_colorbar=True, cbar_label=None,
+                vmin=None, vmax=None, scatter_cmap='plasma',
                 plot_density=False, plot_contours=True,
-                    density_cmap='viridis', contour_color=None,
-                    use_kombine=False):
+                density_cmap='viridis',
+                contour_color=None, hist_color='black',
+                line_color=None, fill_color='gray',
+                use_kombine=False, fig=None, axis_dict=None):
     """Generate a figure with several plots and histograms.
 
     Parameters
@@ -519,9 +602,11 @@ def create_multidim_plot(parameters, samples, labels=None,
             maxs[param] = maxs[param] - float(offset)
 
     # create the axis grid
-    fig, axis_dict = create_axes_grid(parameters, labels=labels,
-        width_ratios=width_ratios, height_ratios=height_ratios,
-        no_diagonals=not plot_marginal)
+    if fig is None and axis_dict is None:
+        fig, axis_dict = create_axes_grid(
+            parameters, labels=labels,
+            width_ratios=width_ratios, height_ratios=height_ratios,
+            no_diagonals=not plot_marginal)
 
 
     # Diagonals...
@@ -540,8 +625,8 @@ def create_multidim_plot(parameters, samples, labels=None,
             else:
                 expected_value = None
             create_marginalized_hist(ax, samples[param], label=labels[param],
-                color='k', fillcolor='gray', linecolor='navy', title=True,
-                expected_value=expected_value,
+                color=hist_color, fillcolor=fill_color, linecolor=line_color,
+                title=True, expected_value=expected_value,
                 expected_color=expected_parameters_color,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
 

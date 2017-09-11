@@ -452,8 +452,9 @@ def add_inference_results_option_group(parser):
         "inference results")
 
     # required options
-    results_reading_group.add_argument("--input-file", type=str, required=True,
-        help="Path to input HDF file.")
+    results_reading_group.add_argument(
+        "--input-file", type=str, required=True, nargs="+",
+        help="Path to input HDF files.")
     results_reading_group.add_argument(
         "--parameters-group", type=str, default=InferenceFile.samples_group,
         choices=[InferenceFile.samples_group, InferenceFile.stats_group],
@@ -538,50 +539,84 @@ def results_from_cli(opts, load_samples=True, **kwargs):
 
     Returns
     -------
-    result_file : pycbc.io.InferenceFile
-        The result file as an InferenceFile.
-    parameters : list
+    fp_all : pycbc.io.InferenceFile
+        The result file as an InferenceFile. If more than one input file,
+        then it returns a list.
+    parameters_all : list
         List of the parameters to use, parsed from the parameters option.
-    labels : list
-        List of labels to associate with the parameters.
-    samples : {None, FieldArray}
+        If more than one input file, then it returns a list.
+    labels_all : list
+        List of labels to associate with the parameters. If more than one
+        input file, then it returns a list.
+    samples_all : {None, FieldArray}
         If load_samples, the samples as a FieldArray; otherwise, None.
+        If more than one input file, then it returns a list.
     """
 
-    logging.info("Reading input file")
-    fp = InferenceFile(opts.input_file, "r")
-    parameters = fp.variable_args if opts.parameters is None \
-                 else opts.parameters
+    # lists for files and samples from all input files
+    fp_all = []
+    parameters_all = []
+    labels_all = []
+    samples_all = []
 
-    # load the labels
-    parameters, ldict = parse_parameters_opt(parameters)
-    # convert labels dict to list
-    labels = []
-    for p in parameters:
-        try:
-            label = ldict[p]
-        except KeyError:
-            label = fp.read_label(p)
-        labels.append(label)
+    # loop over all input files
+    for input_file in opts.input_file:
+        logging.info("Reading input file %s", input_file)
 
-    # load the samples
-    if load_samples:
-        logging.info("Loading samples")
-        # check if need extra parameters for a non-sampling parameter
-        file_parameters, ts = transforms.get_common_cbc_transforms(
+        # read input file
+        fp = InferenceFile(input_file, "r")
+
+        # get parameters and a dict of labels for each parameter
+        parameters = fp.variable_args if opts.parameters is None \
+                         else opts.parameters
+        parameters, ldict = parse_parameters_opt(parameters)
+
+        # convert labels dict to list
+        labels = []
+        for p in parameters:
+            try:
+                label = ldict[p]
+            except KeyError:
+                label = fp.read_label(p)
+            labels.append(label)
+
+        # load the samples
+        if load_samples:
+            logging.info("Loading samples")
+
+            # check if need extra parameters for a non-sampling parameter
+            file_parameters, ts = transforms.get_common_cbc_transforms(
                                                  parameters, fp.variable_args)
-        # read samples from file
-        samples = fp.read_samples(file_parameters,
-            thin_start=opts.thin_start, thin_interval=opts.thin_interval,
-            thin_end=opts.thin_end, iteration=opts.iteration,
-            samples_group=opts.parameters_group,
-            **kwargs)
-        # add parameters not included in file
-        samples = transforms.apply_transforms(samples, ts)
-    else:
-        samples = None
 
-    return fp, parameters, labels, samples
+            # read samples from file
+            samples = fp.read_samples(
+                file_parameters, thin_start=opts.thin_start,
+                thin_interval=opts.thin_interval, thin_end=opts.thin_end,
+                iteration=opts.iteration,
+                samples_group=opts.parameters_group, **kwargs)
+
+            # add parameters not included in file
+            samples = transforms.apply_transforms(samples, ts)
+
+        # else do not read samples
+        else:
+            samples = None
+
+        # add results to lists from all input files
+        if len(opts.input_file) > 1:
+            fp_all.append(fp)
+            parameters_all.append(parameters)
+            labels_all.append(labels)
+            samples_all.append(samples)
+
+        # else only one input file then do not return lists
+        else:
+            fp_all = fp
+            parameters_all = parameters
+            labels_all = labels
+            samples_all = samples
+
+    return fp_all, parameters_all, labels_all, samples_all
 
 
 def get_zvalues(fp, arg, likelihood_stats):
@@ -784,7 +819,7 @@ def add_density_option_group(parser):
     density_group.add_argument("--density-cmap", type=str, default='viridis',
                     help="Specify the colormap to use for the density. "
                          "Default is viridis.")
-    density_group.add_argument("--contour-color", type=str,
+    density_group.add_argument("--contour-color", type=str, default=None,
                     help="Specify the color to use for the contour lines. "
                          "Default is white for density plots and black "
                          "for scatter plots.")
