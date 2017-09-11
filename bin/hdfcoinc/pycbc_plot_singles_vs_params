@@ -101,7 +101,8 @@ y = y[mask]
 
 hexbin_style = {
     'gridsize': opts.grid_size,
-    'mincnt': 1,
+    # hexbin shows bins with *less* than mincnt as blank
+    'mincnt': 0,
     'linewidths': 0.03
 }
 if opts.log_x:
