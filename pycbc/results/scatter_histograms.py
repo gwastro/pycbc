@@ -43,7 +43,6 @@ from matplotlib import pyplot
 import matplotlib.gridspec as gridspec
 from pycbc.results import str_utils
 from pycbc.io import FieldArray
-import matplotlib as mpl
 
 def create_axes_grid(parameters, labels=None, height_ratios=None,
         width_ratios=None, no_diagonals=False):
@@ -354,7 +353,6 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         values_max = values.max()
         negerror = values_med - values_min
         poserror = values_max - values_med
-        mpl.rcParams['text.latex.preamble'] = [r'\usepackage{xcolor}']
         fmt = '$' + str_utils.format_value(values_med, negerror,
               plus_error=poserror, ndecs=2) + '$'
 
