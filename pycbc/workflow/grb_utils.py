@@ -277,3 +277,10 @@ def make_gating_node(workflow, datafind_files, outdir=None, tags=None):
         condition_strain_outs.extend(FileList([condition_strain_out]))
 
     return condition_strain_nodes, condition_strain_outs
+
+
+def get_fermi_grid_scale(sky_error, sigma_sys=6.8359):
+    """
+    Increase the radius of the search patch when analysing a Fermi GBM GRB.
+    """
+    return 1.65 * (sky_error**2 + sigma_sys**2)**0.5
