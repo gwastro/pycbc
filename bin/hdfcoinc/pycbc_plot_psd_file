@@ -14,7 +14,8 @@ parser.add_argument("--version", action="version",
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to plot')
 parser.add_argument("--ifos", nargs="+",
-                    help="What ifo(s) to plot.")
+                    help="What ifo(s) to plot. If none provided, will look "
+                         "for an 'ifo_list' attribute in the hdf file.")
 parser.add_argument("--output-file", required=True, help='Output file name')
 parser.add_argument("--memory-limit", default=2., type=float, metavar="X GB",
                     help="Reading in all PSD files can use a lot of memory. "
