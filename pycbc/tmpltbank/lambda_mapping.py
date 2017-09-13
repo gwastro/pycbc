@@ -253,31 +253,36 @@ def get_chirp_params_newer(mass1, mass2, spin1z, spin2z, f0, order,
         phasing_vlogvsqs[:,idx] = \
             phasing_arr.data[2*jmp + lng*idx : 2*jmp + lng*(idx+1)]
 
-    pmf = PI * (mass1 + mass2)*MTSUN_SI * f0
+    pim = PI * (mass1 + mass2)*MTSUN_SI
+    pmf = pim * f0
     pmf13 = pmf**(1./3.)
+    logpim13 = numpy.log((pim)**(1./3.))
 
     mapping = generate_inverse_mapping(order)
     lambdas = []
     lambda_str = '^Lambda([0-9]+)'
     loglambda_str = '^LogLambda([0-9]+)'
-    logloglambda_str = '^LogLogLambda([0-9]+'
+    logloglambda_str = '^LogLogLambda([0-9]+)'
     for idx in xrange(len(mapping.keys())):
         # RE magic engage!
         rematch = re.match(lambda_str, mapping[idx])
         if rematch:
             pn_order = int(rematch.groups()[0])
-            lambdas.append(phasing_vs[:,pn_order] * pmf13**(-5+pn_order))
+            term = phasing_vs[:,pn_order]
+            term = term + logpim13 * phasing_vlogvs[:,pn_order]
+            lambdas.append(term * pmf13**(-5+pn_order))
             continue
         rematch = re.match(loglambda_str, mapping[idx])
         if rematch:
             pn_order = int(rematch.groups()[0])
-            lambdas.append(phasing_vlogvs[:,pn_order] * pmf13**(-5+pn_order))
+            lambdas.append((phasing_vlogvs[:,pn_order]) * pmf13**(-5+pn_order))
             continue
         rematch = re.match(logloglambda_str, mapping[idx])
         if rematch:
-            pn_order = int(rematch.groups()[0])
-            lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
-            continue
+            raise ValueError("LOGLOG terms are not implemented")
+            #pn_order = int(rematch.groups()[0])
+            #lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
+            #continue
         err_msg = "Failed to parse " +  mapping[idx]
         raise ValueError(err_msg)
 
@@ -366,8 +371,10 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order,
         phasing_vlogvs[i] = phasing.vlogv
         phasing_vlogvsqs[i] = phasing.vlogvsq
 
-    pmf = PI * (mass1 + mass2)*MTSUN_SI * f0
+    pim = PI * (mass1 + mass2)*MTSUN_SI
+    pmf = pim * f0
     pmf13 = pmf**(1./3.)
+    pim13 = pim**(1./3.)
 
     mapping = generate_inverse_mapping(order)
     lambdas = []
@@ -384,12 +391,13 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order,
         rematch = re.match(loglambda_str, mapping[idx])
         if rematch:
             pn_order = int(rematch.groups()[0])
-            lambdas.append(phasing_vlogvs[:,pn_order] * pmf13**(-5+pn_order))
+            lambdas.append(phasing_vlogvs[:,pn_order] * pmf13**(-5+pn_order) * pim13)
             continue
         rematch = re.match(logloglambda_str, mapping[idx])
         if rematch:
             pn_order = int(rematch.groups()[0])
-            lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
+            lambdas.append(phasing_vlogvsqs[:,pn_order] * \
+                           pmf13**(-5+pn_order))
             continue
         err_msg = "Failed to parse " +  mapping[idx]
         raise ValueError(err_msg)
@@ -402,7 +410,9 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order,
 get_chirp_params_new.__doc__ = \
     get_chirp_params_new.__doc__.format(pycbcValidOrdersHelpDescriptions)
 
-def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
+def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order,
+                         quadparam1=None, quadparam2=None, lambda1=None,
+                         lambda2=None):
     """
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
@@ -487,6 +497,12 @@ def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
                       - (74045.*pi*eta*eta)/756.
             lambda7 = lambda7 * 3./(128.*eta) * (pi * totmass * f0)**(2/3.)
             lambdas.append(lambda7)
+        elif mapping[idx] == 'Lambda10':
+            lambda10 = 0. * eta
+            lambdas.append(lambda10)
+        elif mapping[idx] == 'Lambda12':
+            lambda12 = 0. * eta
+            lambdas.append(lambda12)
         else:
             err_msg = "Do not understand term {}.".format(mapping[idx])
             raise ValueError(err_msg)
