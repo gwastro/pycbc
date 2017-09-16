@@ -564,6 +564,8 @@ def results_from_cli(opts, load_samples=True, **kwargs):
         input_files = [input_files]
 
     # loop over all input files
+    input_files = [opts.input_file] if isinstance(opts.input_file, str) \
+                                                           else opts.input_file
     for input_file in input_files:
         logging.info("Reading input file %s", input_file)
 
