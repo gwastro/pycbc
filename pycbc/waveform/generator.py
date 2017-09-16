@@ -489,7 +489,7 @@ class FDomainDetFrameGenerator(object):
         """
         self.current_params.update(kwargs)
         rfparams = {param: self.current_params[param]
-            for param in self.rframe_generator.variable_args}
+            for param in kwargs if param not in self.location_args}
         hp, hc = self.rframe_generator.generate(**rfparams)
         if isinstance(hp, TimeSeries):
             df = self.current_params['delta_f']

@@ -499,7 +499,7 @@ class BaseLikelihoodEvaluator(object):
             f = getattr(self, callfunc)
         else:
             f = self._callfunc
-        return f(**self._prior.apply_boundary_conditions(**params))
+        return f(**params)
 
     __call__ = evaluate
 
