@@ -162,6 +162,25 @@ class BaseTransform(object):
 
 class CustomTransform(BaseTransform):
     """Allows for any transform to be defined.
+
+    Parameters
+    ----------
+    input_args : (list of) str
+        The names of the input parameters.
+    output_args : (list of) str
+        The names of the output parameters.
+    transform_functions : dict
+        Dictionary mapping input args to a string giving a function call;
+        e.g., ``{'q': 'q_from_mass1_mass2(mass1, mass2)'}``.
+    inverse_functions : dict
+        Dictionary mapping output args to a string giving a function call;
+        e.g., ``{'mass1': 'mass1_from_mchirp_q(mchirp, q)'}``.
+    jacobian : str
+        String giving a jacobian function. The `function must be in terms of
+        the input arguments.
+    inverse_jacobian : str
+        String giving an inverse jacobian function. The function must
+        be in terms of the output arguments.
     """
     name = "custom"
 
@@ -174,32 +193,58 @@ class CustomTransform(BaseTransform):
             output_args = [output_args]
         self.inputs = set(input_args)
         self.outputs = set(output_args)
-        if transform_functions is not None:
-            if not isinstance(transform_functions, list):
-                transform_functions = [transform_functions]
         self.transform_functions = transform_functions
-        if inverse_functions is not None:
-            if not isinstance(inverse_functions, list):
-                inverse_functions = [inverse_functions]
         self.inverse_functions = inverse_functions
-        self.jacobian = jacobian
-        self.inverse_jacobian = inverse_jacobian
+        self._jacobian = jacobian
+        self._inverse_jacobian = inverse_jacobian
         # we'll create a scratch FieldArray space to do transforms on
-        self._scratch = record.FieldArray(1, dtype=[(p, float)
-            for p in self.inputs+self.outputs])
+        self._forscratch = record.FieldArray(1, dtype=[(p, float)
+            for p in self.inputs])
+        self._invscratch = record.FieldArray(1, dtype=[(p, float)
+            for p in self.outputs])
+
+    def _copytoscratch(self, maps, forward=True):
+        if forward:
+            for p in self.inputs:
+                self._forscratch[p][:] = maps[p]
+        else:
+            for p in self.outputs:
+                self._invscratch[p][:] = maps[p]
 
     def transform(self, maps):
         if self.transform_functions is None:
-            raise NotImplementedError("no tansform function(s) provided")
+            raise NotImplementedError("no transform function(s) provided")
         # copy values to scratch
-        for p in self.inputs:
-            self._scratch[p] = maps[p]
+        self._copytoscratch(maps, forward=True)
         # evaluate the functions
-        out = {}
-        for func in self.transform_functions:
-            vals = self.scratch[func]
-            out.update({
+        out = {p: self._forscratch[func][0]
+               for p,func in self.transform_functions.items()}
+        return self.format_return(maps, out)
             
+    def inverse_transform(self, maps):
+        if self.inverse_functions is None:
+            raise NotImplementedError("no inverse function(s) provided")
+        # copy values to scratch
+        self._copytoscratch(maps, forward=False)
+        # evaluate the functions
+        out = {p: self._invscratch[func][0]
+               for p,func in self.inverse_functions.items()}
+        return self.format_return(maps, out)
+
+    def jacobian(self, maps):
+        if self._jacobian is None:
+            raise NotImplementedError("no jacobian provided")
+        # copy values to scratch
+        self._copytoscratch(maps, forward=True)
+        return self._forscratch[self._jacobian][0]
+        
+    def inverse_jacobian(self, maps):
+        if self._inverse_jacobian is None:
+            raise NotImplementedError("no jacobian provided")
+        # copy values to scratch
+        self._copytoscratch(maps, forward=False)
+        return self._invscratch[self._invjacobian][0]
+        
 #
 # =============================================================================
 #
