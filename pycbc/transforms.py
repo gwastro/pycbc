@@ -217,9 +217,11 @@ class CustomTransform(BaseTransform):
     def from_config(cls, cp, section, outputs):
         """Loads a CustomTransform from the given config file.
 
-        Example:
+        Example section:
 
-            [section-outputs]
+        .. code-block:: ini
+
+            [{section}-outvar1+outvar2]
             name = custom
             inputs = inputvar1, inputvar2
             outvar1 = func1(inputs)
