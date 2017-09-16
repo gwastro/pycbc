@@ -23,7 +23,7 @@ import numpy
 import os
 import unittest
 from pycbc import distributions
-from pycbc.inference import kl
+from pycbc.inference import entropy
 from pycbc.inference import option_utils
 from utils import parse_args_cpu_only
 from utils import simple_exit
@@ -110,8 +110,8 @@ class TestDistributions(unittest.TestCase):
                 pdf = numpy.array([dist.pdf(**{param : xx}) for xx in x])
 
                 # compute the KL divergence and check if below threshold
-                kl_val = kl.kl(samples, pdf, bins=pdf.size, pdf2=True,
-                               hist_min=hist_min, hist_max=hist_max)
+                kl_val = entropy.kl(samples, pdf, bins=pdf.size, pdf2=True,
+                                    hist_min=hist_min, hist_max=hist_max)
                 if not (kl_val < threshold):
                     raise ValueError(
                               "Class {} KL divergence is {} which is "
@@ -238,9 +238,9 @@ class TestDistributions(unittest.TestCase):
             # check random draws from azimuthal angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.azimuthal_angle]
             ang_2 = ang_dist.rvs(n_samples)["theta"]
-            kl_val = kl.kl(ang_1, ang_2, bins=azimuthal.size,
-                           hist_min=azimuthal.min(),
-                           hist_max=azimuthal.max())
+            kl_val = entropy.kl(ang_1, ang_2, bins=azimuthal.size,
+                                hist_min=azimuthal.min(),
+                                hist_max=azimuthal.max())
             if not (kl_val < threshold):
                 raise ValueError(
                           "Class {} KL divergence is {} which is "
