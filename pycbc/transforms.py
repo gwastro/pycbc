@@ -160,6 +160,46 @@ class BaseTransform(object):
         return out
 
 
+class CustomTransform(BaseTransform):
+    """Allows for any transform to be defined.
+    """
+    name = "custom"
+
+    def __init__(self, input_args, output_args, transform_functions=None,
+                 inverse_functions=None, jacobian=None,
+                 inverse_jacobian=None):
+        if isinstance(input_args, str) or isinstance(input_args, unicode):
+            input_args = [input_args]
+        if isinstance(output_args, str) or isinstance(output_args, unicode):
+            output_args = [output_args]
+        self.inputs = set(input_args)
+        self.outputs = set(output_args)
+        if transform_functions is not None:
+            if not isinstance(transform_functions, list):
+                transform_functions = [transform_functions]
+        self.transform_functions = transform_functions
+        if inverse_functions is not None:
+            if not isinstance(inverse_functions, list):
+                inverse_functions = [inverse_functions]
+        self.inverse_functions = inverse_functions
+        self.jacobian = jacobian
+        self.inverse_jacobian = inverse_jacobian
+        # we'll create a scratch FieldArray space to do transforms on
+        self._scratch = record.FieldArray(1, dtype=[(p, float)
+            for p in self.inputs+self.outputs])
+
+    def transform(self, maps):
+        if self.transform_functions is None:
+            raise NotImplementedError("no tansform function(s) provided")
+        # copy values to scratch
+        for p in self.inputs:
+            self._scratch[p] = maps[p]
+        # evaluate the functions
+        out = {}
+        for func in self.transform_functions:
+            vals = self.scratch[func]
+            out.update({
+            
 #
 # =============================================================================
 #
