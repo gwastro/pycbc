@@ -160,6 +160,92 @@ class BaseTransform(object):
         return out
 
 
+class CustomTransform(BaseTransform):
+    """Allows for any transform to be defined.
+
+    Parameters
+    ----------
+    input_args : (list of) str
+        The names of the input parameters.
+    output_args : (list of) str
+        The names of the output parameters.
+    transform_functions : dict
+        Dictionary mapping input args to a string giving a function call;
+        e.g., ``{'q': 'q_from_mass1_mass2(mass1, mass2)'}``.
+    jacobian : str, optional
+        String giving a jacobian function. The function must be in terms of
+        the input arguments.
+    """
+    name = "custom"
+
+    def __init__(self, input_args, output_args, transform_functions,
+                 jacobian=None):
+        if isinstance(input_args, str) or isinstance(input_args, unicode):
+            input_args = [input_args]
+        if isinstance(output_args, str) or isinstance(output_args, unicode):
+            output_args = [output_args]
+        self.inputs = set(input_args)
+        self.outputs = set(output_args)
+        self.transform_functions = transform_functions
+        self._jacobian = jacobian
+        # we'll create a scratch FieldArray space to do transforms on
+        self._scratch = record.FieldArray(1, dtype=[(p, float)
+            for p in self.inputs])
+
+    def _copytoscratch(self, maps):
+        for p in self.inputs:
+            self._scratch[p][:] = maps[p]
+
+    def transform(self, maps):
+        if self.transform_functions is None:
+            raise NotImplementedError("no transform function(s) provided")
+        # copy values to scratch
+        self._copytoscratch(maps)
+        # evaluate the functions
+        out = {p: self._scratch[func][0]
+               for p,func in self.transform_functions.items()}
+        return self.format_output(maps, out)
+            
+    def jacobian(self, maps):
+        if self._jacobian is None:
+            raise NotImplementedError("no jacobian provided")
+        # copy values to scratch
+        self._copytoscratch(maps)
+        return self._scratch[self._jacobian][0]
+        
+    @classmethod
+    def from_config(cls, cp, section, outputs):
+        """Loads a CustomTransform from the given config file.
+
+        Example section:
+
+        .. code-block:: ini
+
+            [{section}-outvar1+outvar2]
+            name = custom
+            inputs = inputvar1, inputvar2
+            outvar1 = func1(inputs)
+            outvar2 = func2(inputs)
+            jacobian = func(inputs)
+        """
+        tag = outputs
+        outputs = set(outputs.split(VARARGS_DELIM))
+        inputs = map(str.strip,
+                     cp.get_opt_tag(section, 'inputs', tag).split(','))
+        # get the functions for each output
+        transform_functions = {}
+        for var in outputs:
+            # check if option can be cast as a float
+            func = cp.get_opt_tag(section, var, tag)
+            transform_functions[var] = func
+        s = '-'.join([section, tag])
+        if cp.has_option(s, 'jacobian'):
+            jacobian = cp.get_opt_tag(section, 'jacobian', tag)
+        else:
+            jacobian = None
+        return cls(inputs, outputs, transform_functions, jacobian=jacobian)
+
+
 #
 # =============================================================================
 #
@@ -1071,6 +1157,7 @@ Logit.inverse = Logistic
 
 # dictionary of all transforms
 transforms = {
+    CustomTransform.name : CustomTransform,
     MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
     Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
     SphericalSpin1ToCartesianSpin1.name : SphericalSpin1ToCartesianSpin1,

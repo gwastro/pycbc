@@ -203,6 +203,14 @@ with ctx:
     else:
         sampling_parameters = replace_parameters = sampling_transforms = None
 
+    # get waveform transformations
+    if any(cp.get_subsections('waveform_transforms')):
+        logging.info("Loading waveform transforms")
+        waveform_transforms = transforms.read_transforms_from_config(cp,
+            'waveform_transforms')
+    else:
+        waveform_transforms = None
+
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
         logging.info("Initializing calibration model")
@@ -233,7 +241,8 @@ with ctx:
                         psds=psd_dict, prior=prior_eval,
                         sampling_parameters=sampling_parameters,
                         replace_parameters=replace_parameters,
-                        sampling_transforms=sampling_transforms)
+                        sampling_transforms=sampling_transforms,
+                        waveform_transforms=waveform_transforms)
 
     burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
                                 min_iterations=opts.min_burn_in)

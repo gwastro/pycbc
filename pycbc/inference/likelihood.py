@@ -128,6 +128,9 @@ class BaseLikelihoodEvaluator(object):
     sampling_transforms : list, optional
         List of transforms to use to go between the variable args and the
         sampling parameters. Required if ``sampling_parameters`` is not None.
+    waveform_transforms : list, optional
+        List of transforms to use to go from the variable args to parameters
+        understood by the waveform generator.
 
     Attributes
     ----------
@@ -170,7 +173,7 @@ class BaseLikelihoodEvaluator(object):
 
     def __init__(self, waveform_generator, data, prior=None,
                  sampling_parameters=None, replace_parameters=None,
-                 sampling_transforms=None,
+                 sampling_transforms=None, waveform_transforms=None,
                  return_meta=True):
         self._waveform_generator = waveform_generator
         # we'll store a copy of the data which we'll later whiten in place
@@ -223,6 +226,7 @@ class BaseLikelihoodEvaluator(object):
         else:
             self._sampling_args = self._variable_args
             self._sampling_transforms = None
+        self._waveform_transforms = waveform_transforms
 
     @property
     def waveform_generator(self):
@@ -482,13 +486,20 @@ class BaseLikelihoodEvaluator(object):
         # apply inverse transforms to go from sampling parameters to
         # variable args
         params = self.apply_sampling_transforms(params, inverse=True)
+        # apply boundary conditions
+        params = self._prior.apply_boundary_conditions(**params)
+        # apply waveform transforms
+        if self._waveform_transforms is not None:
+            params = pycbc.transforms.apply_transforms(params,
+                                                 self._waveform_transforms,
+                                                 inverse=False)
         # apply any boundary conditions to the parameters before
         # generating/evaluating
         if callfunc is not None:
             f = getattr(self, callfunc)
         else:
             f = self._callfunc
-        return f(**self._prior.apply_boundary_conditions(**params))
+        return f(**params)
 
     __call__ = evaluate
 
@@ -574,6 +585,18 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         will be used.
     prior : callable
         A callable class or function that computes the prior.
+    sampling_parameters : list, optional
+        Replace one or more of the variable args with the given parameters
+        for sampling.
+    replace_parameters : list, optional
+        The variable args to replace with sampling parameters. Must be the
+        same length as ``sampling_parameters``.
+    sampling_transforms : list, optional
+        List of transforms to use to go between the variable args and the
+        sampling parameters. Required if ``sampling_parameters`` is not None.
+    waveform_transforms : list, optional
+        List of transforms to use to go from the variable args to parameters
+        understood by the waveform generator.
     return_meta : {True, bool}
         If True, ``logposterior`` and ``logplr`` will return the value of the
         prior and the loglikelihood ratio, along with the posterior/plr.
@@ -643,13 +666,16 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     def __init__(self, waveform_generator, data, f_lower, psds=None,
                  f_upper=None, norm=None, prior=None,
                  sampling_parameters=None, replace_parameters=None,
-                 sampling_transforms=None, return_meta=True):
+                 sampling_transforms=None, waveform_transforms=None,
+                 return_meta=True):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
             prior=prior, sampling_parameters=sampling_parameters,
             replace_parameters=replace_parameters,
-            sampling_transforms=sampling_transforms, return_meta=return_meta)
+            sampling_transforms=sampling_transforms,
+            waveform_transforms=waveform_transforms,
+            return_meta=return_meta)
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
