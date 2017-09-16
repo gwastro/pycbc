@@ -226,9 +226,9 @@ class TestDistributions(unittest.TestCase):
             # check random draws from polar angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.polar_angle]
             ang_2 = polar_dist.rvs(n_samples)["theta"]
-            kl_val = kl.kl(ang_1, ang_2, bins=polar_vals.size,
-                           hist_min=polar_vals.min(),
-                           hist_max=polar_vals.max())
+            kl_val = entropy.kl(ang_1, ang_2, bins=polar_vals.size,
+                                hist_min=polar_vals.min(),
+                                hist_max=polar_vals.max())
             if not (kl_val < threshold):
                 raise ValueError(
                           "Class {} KL divergence is {} which is "
