@@ -73,7 +73,7 @@ class TestDistributions(unittest.TestCase):
         for dname, dclass in distributions.distribs.iteritems():
             if (not numpy.any([isinstance(dist, dclass)
                                for dist in self.dists])
-                and dname not in EXCLUDE_DIST_NAMES):
+                    and dname not in EXCLUDE_DIST_NAMES):
                 raise ValueError("There is no test for {}".format(dname))
 
     def test_pdf_rvs(self):
@@ -115,8 +115,8 @@ class TestDistributions(unittest.TestCase):
                 if not (kl_val < threshold):
                     raise ValueError(
                               "Class {} KL divergence is {} which is "
-                               "greater than the threshold "
-                               "of {}".format(dist.name, kl_val, threshold))
+                              "greater than the threshold "
+                              "of {}".format(dist.name, kl_val, threshold))
 
     def test_pdf_logpdf(self):
         """ Checks that the probability density function (PDF) is within some
@@ -171,7 +171,7 @@ class TestDistributions(unittest.TestCase):
         # number of random draws for KL divergence test
         n_samples = int(1e6)
 
-        # create generic angular distributions for test 
+        # create generic angular distributions for test
         sin_dist = distributions.SinAngle(theta=(0, 1))
         cos_dist = distributions.CosAngle(theta=(-0.5, 0.5))
         ang_dist = distributions.UniformAngle(theta=(0, 2))
@@ -186,7 +186,6 @@ class TestDistributions(unittest.TestCase):
 
         # get Cartesian product to explore the two-dimensional space
         cart_sin = cartesian([polar_sin, azimuthal])
-        cart_cos = cartesian([polar_cos, azimuthal])
 
         # loop over distributions
         for dist in self.dists:
@@ -232,8 +231,8 @@ class TestDistributions(unittest.TestCase):
             if not (kl_val < threshold):
                 raise ValueError(
                           "Class {} KL divergence is {} which is "
-                           "greater than the threshold for polar angle"
-                           "of {}".format(dist.name, kl_val, threshold))
+                          "greater than the threshold for polar angle"
+                          "of {}".format(dist.name, kl_val, threshold))
 
             # check random draws from azimuthal angle equilvalent
             ang_1 = dist.rvs(n_samples)[dist.azimuthal_angle]
@@ -244,8 +243,8 @@ class TestDistributions(unittest.TestCase):
             if not (kl_val < threshold):
                 raise ValueError(
                           "Class {} KL divergence is {} which is "
-                           "greater than the threshold for azimuthal angle"
-                           "of {}".format(dist.name, kl_val, threshold))
+                          "greater than the threshold for azimuthal angle"
+                          "of {}".format(dist.name, kl_val, threshold))
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDistributions))
