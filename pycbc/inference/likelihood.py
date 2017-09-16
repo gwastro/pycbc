@@ -128,6 +128,9 @@ class BaseLikelihoodEvaluator(object):
     sampling_transforms : list, optional
         List of transforms to use to go between the variable args and the
         sampling parameters. Required if ``sampling_parameters`` is not None.
+    waveform_transforms : list, optional
+        List of transforms to use to go from the variable args to parameters
+        understood by the waveform generator.
 
     Attributes
     ----------
@@ -223,7 +226,7 @@ class BaseLikelihoodEvaluator(object):
         else:
             self._sampling_args = self._variable_args
             self._sampling_transforms = None
-        self._waveform_transforms = None
+        self._waveform_transforms = waveform_transforms
 
     @property
     def waveform_generator(self):
@@ -582,6 +585,18 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         will be used.
     prior : callable
         A callable class or function that computes the prior.
+    sampling_parameters : list, optional
+        Replace one or more of the variable args with the given parameters
+        for sampling.
+    replace_parameters : list, optional
+        The variable args to replace with sampling parameters. Must be the
+        same length as ``sampling_parameters``.
+    sampling_transforms : list, optional
+        List of transforms to use to go between the variable args and the
+        sampling parameters. Required if ``sampling_parameters`` is not None.
+    waveform_transforms : list, optional
+        List of transforms to use to go from the variable args to parameters
+        understood by the waveform generator.
     return_meta : {True, bool}
         If True, ``logposterior`` and ``logplr`` will return the value of the
         prior and the loglikelihood ratio, along with the posterior/plr.

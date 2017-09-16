@@ -204,7 +204,8 @@ with ctx:
         sampling_parameters = replace_parameters = sampling_transforms = None
 
     # get waveform transformations
-    if cp.has_section('waveform_transforms'):
+    if any(cp.get_subsections('waveform_transforms')):
+        logging.info("Loading waveform transforms")
         waveform_transforms = transforms.read_transforms_from_config(cp,
             'waveform_transforms')
     else:

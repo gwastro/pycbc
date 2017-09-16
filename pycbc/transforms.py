@@ -204,7 +204,7 @@ class CustomTransform(BaseTransform):
         # evaluate the functions
         out = {p: self._scratch[func][0]
                for p,func in self.transform_functions.items()}
-        return self.format_return(maps, out)
+        return self.format_output(maps, out)
             
     def jacobian(self, maps):
         if self._jacobian is None:
@@ -239,6 +239,8 @@ class CustomTransform(BaseTransform):
         s = '-'.join([section, tag])
         if cp.has_option(s, 'jacobian'):
             jacobian = cp.get_opt_tag(section, 'jacobian', tag)
+        else:
+            jacobian = None
         return cls(inputs, outputs, transform_functions, jacobian=jacobian)
 
 
@@ -1153,6 +1155,7 @@ Logit.inverse = Logistic
 
 # dictionary of all transforms
 transforms = {
+    CustomTransform.name : CustomTransform,
     MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
     Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
     SphericalSpin1ToCartesianSpin1.name : SphericalSpin1ToCartesianSpin1,
