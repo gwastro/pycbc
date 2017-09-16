@@ -172,21 +172,14 @@ class CustomTransform(BaseTransform):
     transform_functions : dict
         Dictionary mapping input args to a string giving a function call;
         e.g., ``{'q': 'q_from_mass1_mass2(mass1, mass2)'}``.
-    inverse_functions : dict
-        Dictionary mapping output args to a string giving a function call;
-        e.g., ``{'mass1': 'mass1_from_mchirp_q(mchirp, q)'}``.
-    jacobian : str
-        String giving a jacobian function. The `function must be in terms of
+    jacobian : str, optional
+        String giving a jacobian function. The function must be in terms of
         the input arguments.
-    inverse_jacobian : str
-        String giving an inverse jacobian function. The function must
-        be in terms of the output arguments.
     """
     name = "custom"
 
-    def __init__(self, input_args, output_args, transform_functions=None,
-                 inverse_functions=None, jacobian=None,
-                 inverse_jacobian=None):
+    def __init__(self, input_args, output_args, transform_functions,
+                 jacobian=None):
         if isinstance(input_args, str) or isinstance(input_args, unicode):
             input_args = [input_args]
         if isinstance(output_args, str) or isinstance(output_args, unicode):
@@ -194,57 +187,61 @@ class CustomTransform(BaseTransform):
         self.inputs = set(input_args)
         self.outputs = set(output_args)
         self.transform_functions = transform_functions
-        self.inverse_functions = inverse_functions
         self._jacobian = jacobian
-        self._inverse_jacobian = inverse_jacobian
         # we'll create a scratch FieldArray space to do transforms on
-        self._forscratch = record.FieldArray(1, dtype=[(p, float)
+        self._scratch = record.FieldArray(1, dtype=[(p, float)
             for p in self.inputs])
-        self._invscratch = record.FieldArray(1, dtype=[(p, float)
-            for p in self.outputs])
 
-    def _copytoscratch(self, maps, forward=True):
-        if forward:
-            for p in self.inputs:
-                self._forscratch[p][:] = maps[p]
-        else:
-            for p in self.outputs:
-                self._invscratch[p][:] = maps[p]
+    def _copytoscratch(self, maps):
+        for p in self.inputs:
+            self._scratch[p][:] = maps[p]
 
     def transform(self, maps):
         if self.transform_functions is None:
             raise NotImplementedError("no transform function(s) provided")
         # copy values to scratch
-        self._copytoscratch(maps, forward=True)
+        self._copytoscratch(maps)
         # evaluate the functions
-        out = {p: self._forscratch[func][0]
+        out = {p: self._scratch[func][0]
                for p,func in self.transform_functions.items()}
         return self.format_return(maps, out)
             
-    def inverse_transform(self, maps):
-        if self.inverse_functions is None:
-            raise NotImplementedError("no inverse function(s) provided")
-        # copy values to scratch
-        self._copytoscratch(maps, forward=False)
-        # evaluate the functions
-        out = {p: self._invscratch[func][0]
-               for p,func in self.inverse_functions.items()}
-        return self.format_return(maps, out)
-
     def jacobian(self, maps):
         if self._jacobian is None:
             raise NotImplementedError("no jacobian provided")
         # copy values to scratch
-        self._copytoscratch(maps, forward=True)
-        return self._forscratch[self._jacobian][0]
+        self._copytoscratch(maps)
+        return self._scratch[self._jacobian][0]
         
-    def inverse_jacobian(self, maps):
-        if self._inverse_jacobian is None:
-            raise NotImplementedError("no jacobian provided")
-        # copy values to scratch
-        self._copytoscratch(maps, forward=False)
-        return self._invscratch[self._invjacobian][0]
-        
+    @classmethod
+    def from_config(cls, cp, section, outputs):
+        """Loads a CustomTransform from the given config file.
+
+        Example:
+
+            [section-outputs]
+            name = custom
+            inputs = inputvar1, inputvar2
+            outvar1 = func1(inputs)
+            outvar2 = func2(inputs)
+            jacobian = func(inputs)
+        """
+        tag = outputs
+        outputs = set(outputs.split(VARARGS_DELIM))
+        inputs = map(str.strip,
+                     cp.get_opt_tag(section, 'inputs', tag).split(','))
+        # get the functions for each output
+        transform_functions = {}
+        for var in outputs:
+            # check if option can be cast as a float
+            func = cp.get_opt_tag(section, var, tag)
+            transform_functions[var] = func
+        s = '-'.join([section, tag])
+        if cp.has_option(s, 'jacobian'):
+            jacobian = cp.get_opt_tag(section, 'jacobian', tag)
+        return cls(inputs, outputs, transform_functions, jacobian=jacobian)
+
+
 #
 # =============================================================================
 #
