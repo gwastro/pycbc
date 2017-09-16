@@ -170,7 +170,7 @@ class BaseLikelihoodEvaluator(object):
 
     def __init__(self, waveform_generator, data, prior=None,
                  sampling_parameters=None, replace_parameters=None,
-                 sampling_transforms=None,
+                 sampling_transforms=None, waveform_transforms=None,
                  return_meta=True):
         self._waveform_generator = waveform_generator
         # we'll store a copy of the data which we'll later whiten in place
@@ -223,6 +223,7 @@ class BaseLikelihoodEvaluator(object):
         else:
             self._sampling_args = self._variable_args
             self._sampling_transforms = None
+        self._waveform_transforms = None
 
     @property
     def waveform_generator(self):
@@ -482,6 +483,13 @@ class BaseLikelihoodEvaluator(object):
         # apply inverse transforms to go from sampling parameters to
         # variable args
         params = self.apply_sampling_transforms(params, inverse=True)
+        # apply boundary conditions
+        params = self._prior.apply_boundary_conditions(**params)
+        # apply waveform transforms
+        if self._waveform_transforms is not None:
+            params = pycbc.transforms.apply_transforms(params,
+                                                 self._waveform_transforms,
+                                                 inverse=False)
         # apply any boundary conditions to the parameters before
         # generating/evaluating
         if callfunc is not None:
@@ -643,13 +651,16 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     def __init__(self, waveform_generator, data, f_lower, psds=None,
                  f_upper=None, norm=None, prior=None,
                  sampling_parameters=None, replace_parameters=None,
-                 sampling_transforms=None, return_meta=True):
+                 sampling_transforms=None, waveform_transforms=None,
+                 return_meta=True):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(GaussianLikelihood, self).__init__(waveform_generator, data,
             prior=prior, sampling_parameters=sampling_parameters,
             replace_parameters=replace_parameters,
-            sampling_transforms=sampling_transforms, return_meta=return_meta)
+            sampling_transforms=sampling_transforms,
+            waveform_transforms=waveform_transforms,
+            return_meta=return_meta)
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
