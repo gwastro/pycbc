@@ -552,7 +552,7 @@ def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     return chi_perp * numpy.sin(phi2)
     
 def quad_from_lambda(lambdav):
-    """Return the quadrupole moment of a neturon start given its lambda
+    """Return the quadrupole moment of a neutron star given its lambda
     
     We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf
     """
