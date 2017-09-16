@@ -550,6 +550,20 @@ def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     chi_perp = chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2)
     phi2 = phi2_from_phi_a_phi_s(phi_a, phi_s)
     return chi_perp * numpy.sin(phi2)
+    
+def quad_from_lambda(lambdav):
+    """Return the quadrupole moment of a neturon start given its lambda
+    
+    We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf
+    """
+    ll = numpy.log(lambdav)
+    ai = .194
+    bi = .0936
+    ci = 0.0474
+    di = -4.21 * 10**-3.0
+    ei = 1.23 * 10**-4.0
+    lny = ai + bi*ll + ci*ll**2.0 + di*ll**3.0 + ei*ll**4.0
+    return numpy.exp(lny)
 
 #
 # =============================================================================
@@ -631,7 +645,7 @@ def snr_from_loglr(loglr):
     return snrs
 
 
-__all__ = ['lambda_tilde', 'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
+__all__ = ['quad_from_lambda', 'lambda_tilde', 'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
            'eta_from_mass1_mass2', 'mchirp_from_mass1_mass2',
            'mass1_from_mtotal_q', 'mass2_from_mtotal_q',
