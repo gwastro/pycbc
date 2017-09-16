@@ -551,7 +551,7 @@ def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     phi2 = phi2_from_phi_a_phi_s(phi_a, phi_s)
     return chi_perp * numpy.sin(phi2)
     
-def dquad_from_lambda(lambdav):
+def dquadmon_from_lambda(lambdav):
     """Return the quadrupole moment of a neutron star given its lambda
     
     We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
@@ -646,7 +646,7 @@ def snr_from_loglr(loglr):
     return snrs
 
 
-__all__ = ['dquad_from_lambda', 'lambda_tilde', 'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
+__all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
            'eta_from_mass1_mass2', 'mchirp_from_mass1_mass2',
            'mass1_from_mtotal_q', 'mass2_from_mtotal_q',
