@@ -629,10 +629,8 @@ def get_zvalues(fp, opts):
     fp : InferenceFile
         An open inference file; needed to get the value of the log noise
         likelihood.
-    arg : str
-        The argument to plot; must be one of `loglr`, `snr`, `logplr`,
-        `logposterior`, or `prior`. If not one of these, a ValueError is
-        raised.
+    opts : ArgumentParser
+        The parsed arguments from the command line.
 
     Returns
     -------
@@ -641,8 +639,9 @@ def get_zvalues(fp, opts):
     zlbl : str
         The label to use for the values on a plot.
     """
-    arg = opts.z_arg
 
+    # read values from file
+    arg = opts.z_arg
     try:
         likelihood_stats = fp.read_likelihood_stats(
             parameters=[arg],
@@ -654,6 +653,7 @@ def get_zvalues(fp, opts):
             thin_start=opts.thin_start, thin_end=opts.thin_end,
             thin_interval=opts.thin_interval, iteration=opts.iteration)
 
+    # get any dervied values and labels
     if arg == 'loglr':
         zvals = likelihood_stats.loglr
         zlbl = r'$\log\mathcal{L}(\vec{\vartheta})$'
