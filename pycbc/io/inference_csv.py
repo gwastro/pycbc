@@ -25,6 +25,18 @@ COMMENT = ""
 DELIMITER = " "
 
 class InferenceCSVFile(object):
+    """ A class that has extra functions for handling reading the samples
+     from posterior-only CSV files.
+
+    Parameters
+    -----------
+    path : str
+        The path to the HDF file.
+    mode : {None, str}
+        The mode to open the file. Only accepts "r" or "rb" for reading.
+    delimiter : str
+        Delimiter to use for CSV file. Default is space-delimited.
+    """
 
     def __init__(self, path, mode=None, delimiter=DELIMITER):
         self.path = path
@@ -40,9 +52,30 @@ class InferenceCSVFile(object):
 
     @property
     def variable_args(self):
+        """ List of parameters from CSV file.
+        """
         return self._variable_args
 
     def read_label(self, parameter, error_on_none=False):
+        """Returns the label for the parameter.
+
+        Parameters
+        -----------
+        parameter : str
+            Name of parameter to get a label for. Will first try to retrieve
+            a label from this file's "label" attributes. If the parameter
+            is not found there, will look for a label from
+            pycbc.waveform.parameters.
+        error_on_none : {False, bool}
+            If True, will raise a ValueError if a label cannot be found, or if
+            the label is None. Otherwise, the parameter will just be returned
+            if no label can be found.
+
+        Returns
+        -------
+        label : str
+            A formatted string for the name of the paramter.
+        """
         try:
             label = getattr(wfparams, parameter).label
         except AttributeError:
@@ -54,6 +87,8 @@ class InferenceCSVFile(object):
         return label
 
     def read_samples(self, parameters, **kwargs):
+        """Reads posterior samples from a posterior-only CSV file.
+        """
         idxs = [self.variable_args.index(p) for p in parameters]
         samples = numpy.loadtxt(self.path, delimiter=self.delimiter,
                                 comments=COMMENT, skiprows=1, usecols=idxs)
@@ -68,8 +103,28 @@ class InferenceCSVFile(object):
         return rec_samples
 
     def read_likelihood_stats(self, parameters=None, **kwargs):
+        """Reads likelihood stats from self.
+
+        Parameters
+        -----------
+        parameters : list
+            A list of parameters to return. Default is `None` which returns all
+            `likelihood_stats` parameters.
+        \**kwargs :
+            The keyword args are passed to the `read_samples` method.
+
+        Returns
+        -------
+        stats : {FieldArray, None}
+            Likelihood stats in the file, as a FieldArray. The fields of the
+            array are the names of the stats that are in the `likelihood_stats`
+            group.
+        """
         parameters = self.variable_args if parameters is None else parameters
-        return self.read_samples(parameters)
+        return self.read_samples(parameters, **kwargs)
 
     def close(self):
+        """ A dummy function so that `InferenceCSVFile` has analogous method
+        as `InferenceFile`.
+        """
         pass
