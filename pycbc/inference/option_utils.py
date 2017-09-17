@@ -25,7 +25,8 @@ from pycbc import conversions
 from pycbc import transforms
 from pycbc.distributions import bounded
 from pycbc.distributions import constraints
-from pycbc.io import InferenceFile
+from pycbc.io.inference_csv import InferenceCSVFile
+from pycbc.io.inference_hdf import InferenceFile
 from pycbc.inference import likelihood
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.pool import choose_pool
@@ -564,7 +565,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
         logging.info("Reading input file %s", input_file)
 
         # read input file
-        fp = InferenceFile(input_file, "r")
+        fp = InferenceCSVFile(input_file, "r")
 
         # get parameters and a dict of labels for each parameter
         parameters = fp.variable_args if opts.parameters is None \
@@ -646,13 +647,17 @@ def get_zvalues(fp, arg, likelihood_stats):
         zvals = likelihood_stats.loglr
         zlbl = r'$\log\mathcal{L}(\vec{\vartheta})$'
     elif arg == 'snr':
-        zvals = conversions.snr_from_loglr(likelihood_stats.loglr)
+        zvals = likelihood_stats[arg] if arg in likelihood_stats.fields \
+                    else conversions.snr_from_loglr(likelihood_stats.loglr)
         zlbl = r'$\rho(\vec{\vartheta})$'
     elif arg == 'logplr':
-        zvals = likelihood_stats.loglr + likelihood_stats.prior
+        zvals = likelihood_stats[arg] if arg in likelihood_stats.fields \
+                    else likelihood_stats.loglr + likelihood_stats.prior
         zlbl = r'$\log[\mathcal{L}(\vec{\vartheta})p(\vec{\vartheta})]$'
     elif arg == 'logposterior':
-        zvals = likelihood_stats.loglr + likelihood_stats.prior + fp.lognl
+        zvals = likelihood_stats[arg] if arg in likelihood_stats.fields \
+                    else likelihood_stats.loglr + likelihood_stats.prior \
+                    + fp.lognl
         zlbl = r'$\log[p(d|\vec{\vartheta})p(\vec{\vartheta})]$'
     elif arg == 'prior':
         zvals = likelihood_stats.prior
@@ -660,7 +665,6 @@ def get_zvalues(fp, arg, likelihood_stats):
     else:
         raise ValueError("Unrecognized arg {}".format(arg))
     return zvals, zlbl
-
 
 def add_plot_posterior_option_group(parser):
     """Adds the options needed to configure plots of posterior results.
