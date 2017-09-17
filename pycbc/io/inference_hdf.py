@@ -276,6 +276,9 @@ class InferenceFile(h5py.File):
 
         Parameters
         -----------
+        parameters : list
+            A list of parameters to return. Default is `None` which returns all
+            `likelihood_stats` parameters.
         \**kwargs :
             The keyword args are passed to the sampler's `read_likelihood_stats`
             method.
