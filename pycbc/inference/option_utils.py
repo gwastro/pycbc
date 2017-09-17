@@ -565,7 +565,8 @@ def results_from_cli(opts, load_samples=True, **kwargs):
         logging.info("Reading input file %s", input_file)
 
         # read input file
-        fp = InferenceCSVFile(input_file, "r")
+        fp = InferenceFile(input_file, "r") if input_file.endswith(".hdf") \
+                 else InferenceCSVFile(input_file, "r")
 
         # get parameters and a dict of labels for each parameter
         parameters = fp.variable_args if opts.parameters is None \
@@ -620,7 +621,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
     return fp_all, parameters_all, labels_all, samples_all
 
 
-def get_zvalues(fp, arg, likelihood_stats):
+def get_zvalues(fp, opts):
     """Reads the data for the z-value of the plots from the inference file.
 
     Parameters
@@ -632,9 +633,6 @@ def get_zvalues(fp, arg, likelihood_stats):
         The argument to plot; must be one of `loglr`, `snr`, `logplr`,
         `logposterior`, or `prior`. If not one of these, a ValueError is
         raised.
-    likelihood_stats : FieldArray
-        The likelihood stats; the sort of thing returned by
-        `fp.read_likelihood_stats`.
 
     Returns
     -------
@@ -643,6 +641,19 @@ def get_zvalues(fp, arg, likelihood_stats):
     zlbl : str
         The label to use for the values on a plot.
     """
+    arg = opts.z_arg
+
+    try:
+        likelihood_stats = fp.read_likelihood_stats(
+            parameters=[arg],
+            thin_start=opts.thin_start, thin_end=opts.thin_end,
+            thin_interval=opts.thin_interval, iteration=opts.iteration)
+    except KeyError:
+        likelihood_stats = fp.read_likelihood_stats(
+            parameters=["loglr", "prior"],
+            thin_start=opts.thin_start, thin_end=opts.thin_end,
+            thin_interval=opts.thin_interval, iteration=opts.iteration)
+
     if arg == 'loglr':
         zvals = likelihood_stats.loglr
         zlbl = r'$\log\mathcal{L}(\vec{\vartheta})$'
@@ -662,6 +673,9 @@ def get_zvalues(fp, arg, likelihood_stats):
     elif arg == 'prior':
         zvals = likelihood_stats.prior
         zlbl = r'$\log p(\vec{\vartheta})$'
+    elif arg in likelihood_stats.fields:
+        zvals = likelihood_stats[arg]
+        zlbl = arg
     else:
         raise ValueError("Unrecognized arg {}".format(arg))
     return zvals, zlbl
@@ -790,8 +804,6 @@ def add_scatter_option_group(parser):
                                               "scatter plot.")
 
     scatter_group.add_argument('--z-arg', type=str, default=None,
-                    choices=['loglr', 'snr', 'logplr', 'logposterior',
-                             'prior'],
                     help='What to color the scatter points by. If not set, '
                          'all points will be the same color. Choices are: '
                          'loglr: the log likelihood ratio; snr: SNR; '

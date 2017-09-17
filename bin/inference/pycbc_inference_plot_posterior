@@ -86,11 +86,7 @@ if opts.z_arg is not None:
 
     # loop over each input file and append z-axis values and labels to lists
     for f in fp:
-        likelihood_stats = f.read_likelihood_stats(
-            thin_start=opts.thin_start, thin_end=opts.thin_end,
-            thin_interval=opts.thin_interval, iteration=opts.iteration)
-        f_zvals, f_zlbl = option_utils.get_zvalues(f, opts.z_arg,
-                                                   likelihood_stats)
+        f_zvals, f_zlbl = option_utils.get_zvalues(f, opts)
         zvals.append(f_zvals)
         zlbl.append(f_zlbl)
         f.close()

@@ -198,7 +198,7 @@ if opts.z_arg is not None:
     likelihood_stats = fp.read_likelihood_stats(thin_start=thin_start,
         thin_end=thin_end, thin_interval=thinint, iteration=itermask,
         flatten=False)
-    zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
+    zvals, zlbl = option_utils.get_zvalues(fp, opts)
     show_colorbar = True
     # Set common min and max for colorbar in all plots
     if opts.vmin is None:

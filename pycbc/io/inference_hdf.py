@@ -13,14 +13,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
 """This modules defines functions for reading and writing samples that the
 inference samplers generate.
 """
@@ -279,7 +271,7 @@ class InferenceFile(h5py.File):
                                                 samples_group=samples_group,
                                                 **kwargs)
 
-    def read_likelihood_stats(self, **kwargs):
+    def read_likelihood_stats(self, parameters=None, **kwargs):
         """Reads likelihood stats from self.
 
         Parameters
@@ -295,7 +287,11 @@ class InferenceFile(h5py.File):
             array are the names of the stats that are in the `likelihood_stats`
             group.
         """
-        parameters = self[self.stats_group].keys()
+        parameters = parameters if parameters \
+                         else self[self.stats_group].keys()
+        for p in parameters:
+            if p not in self[self.stats_group].keys():
+                raise KeyError("{} is not in likelihood_stats group".format(p))
         return self.read_samples(parameters, samples_group=self.stats_group,
                                  **kwargs)
 
