@@ -227,7 +227,7 @@ class KombineSampler(BaseMCMCSampler):
         except KeyError:
             # dataset doesn't exist yet
             fp.create_dataset(dataset_name, shape,
-                              maxshape=(self.nwalkers,
+                              maxshape=(self._sampler._kde_size,
                                         len(self.variable_args)),
                               dtype=float)
             fp[dataset_name][:] = kde.data
