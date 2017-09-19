@@ -559,8 +559,12 @@ def results_from_cli(opts, load_samples=True, **kwargs):
     labels_all = []
     samples_all = []
 
+    input_files = opts.input_file
+    if isinstance(input_files, str):
+        input_files = [input_files]
+
     # loop over all input files
-    for input_file in opts.input_file:
+    for input_file in input_files:
         logging.info("Reading input file %s", input_file)
 
         # read input file
@@ -603,7 +607,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
             samples = None
 
         # add results to lists from all input files
-        if len(opts.input_file) > 1:
+        if len(input_files) > 1:
             fp_all.append(fp)
             parameters_all.append(parameters)
             labels_all.append(labels)
