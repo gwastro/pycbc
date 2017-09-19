@@ -113,15 +113,12 @@ def _check_lal_pars(p):
     if p['mode_array']:
         try:
             ma = lalsimulation.SimInspiralCreateModeArray()
-            if p['mode_array']==-1:
-                lalsimulation.SimInspiralModeArrayActivateAllModes(ma)
-            else:
-                for l,m in p['mode_array']:
-                    lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
+            for l,m in p['mode_array']:
+                lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
             lalsimulation.SimInspiralWaveformParamsInsertModeArray(lal_pars, ma)
         except AttributeError:
-            print("AttributeError: SimInspiralCreateModeArray not found. "
-                  "lalsimulation version probably too old.")
+            pass
+
     return lal_pars
 
 def _lalsim_td_waveform(**p):

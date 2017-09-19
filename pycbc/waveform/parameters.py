@@ -390,11 +390,12 @@ side_bands = Parameter("side_bands",
                 dtype=int, default=0,
                 description="Flag for generating sidebands")
 mode_array = Parameter("mode_array",
-                dtype=int, default=-1,
+                dtype=int, default=None,
                 description="Choose which (l,m) modes to include when "
                             "generating a waveform. "
                             "Only if approximant supports this feature."
-                            "By default generate all available modes. "
+                            "By default pass None and let lalsimulation "
+                            "use it's default behaviour."
                             "Example: mode_array = [ [2,2], [2,-2] ]")
 #
 # =============================================================================
