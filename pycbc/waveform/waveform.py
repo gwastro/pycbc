@@ -122,6 +122,12 @@ def _check_lal_pars(p):
         lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
     if p['side_bands']:
         lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
+    if p['mode_array']:
+        ma = lalsimulation.SimInspiralCreateModeArray()
+        for l,m in p['mode_array']:
+            lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
+        lalsimulation.SimInspiralWaveformParamsInsertModeArray(lal_pars, ma)
+
     return lal_pars
 
 def _lalsim_td_waveform(**p):

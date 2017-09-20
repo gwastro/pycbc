@@ -430,7 +430,14 @@ modes_choice = Parameter("modes_choice",
 side_bands = Parameter("side_bands",
                 dtype=int, default=0,
                 description="Flag for generating sidebands")
-
+mode_array = Parameter("mode_array",
+                dtype=int, default=0,
+                description="Choose which (l,m) modes to include when "
+                            "generating a waveform. "
+                            "Only if approximant supports this feature."
+                            "By default pass None and let lalsimulation "
+                            "use it's default behaviour."
+                            "Example: mode_array = [ [2,2], [2,-2] ]")
 #
 # =============================================================================
 #
@@ -452,7 +459,7 @@ location_params = ParameterList([tc, ra, dec, polarization])
 orientation_params = ParameterList([distance, coa_phase, inclination, long_asc_nodes, mean_per_ano])
 
 # the extrinsic parameters of a waveform
-extrinsic_params = orientation_params + location_params 
+extrinsic_params = orientation_params + location_params
 
 # intrinsic parameters of a CBC waveform
 cbc_intrinsic_params = ParameterList([
@@ -476,7 +483,7 @@ common_generation_params = ParameterList([
 
 # Flags having discrete values, optional to generate either
 # a TD, FD, or frequency sequence waveform
-flags_generation_params = ParameterList([frame_axis, modes_choice, side_bands])
+flags_generation_params = ParameterList([frame_axis, modes_choice, side_bands, mode_array])
 
 # the following are parameters needed to generate an FD or TD waveform that
 # is equally sampled
