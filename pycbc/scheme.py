@@ -149,6 +149,7 @@ class MKLScheme(CPUScheme):
             raise RuntimeError("Can't find MKL libraries")
 
 class ShortFFTScheme(CPUScheme):
+    pass
 
 class DefaultScheme(CPUScheme):
     pass
