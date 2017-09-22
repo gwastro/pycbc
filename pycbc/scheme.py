@@ -148,6 +148,8 @@ class MKLScheme(CPUScheme):
         if not pycbc.HAVE_MKL:
             raise RuntimeError("Can't find MKL libraries")
 
+class ShortFFTScheme(CPUScheme):
+
 class DefaultScheme(CPUScheme):
     pass
 
@@ -156,6 +158,7 @@ mgr.state = default_context
 scheme_prefix = {CUDAScheme: "cuda",
                  CPUScheme: "cpu",
                  MKLScheme: "mkl",
+                 ShortFFTScheme: "numpy",
                  DefaultScheme: 'cpu'}
 
 def current_prefix():
