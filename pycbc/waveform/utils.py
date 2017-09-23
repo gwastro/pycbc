@@ -67,7 +67,9 @@ def coalign_waveforms(h1, h2, psd=None,
     h1.resize(mlen)
     h2.resize(mlen)
 
-    snr = matched_filter(h1, h2)
+    snr = matched_filter(h1, h2, psd=psd,
+                         low_frequency_cutoff=low_frequency_cutoff,
+                         high_frequency_cutoff=low_frequency_cutoff)
     _, l =  snr.abs_max_loc()
     rotation =  snr[l] / abs(snr[l])
     h1 = (h1.to_frequencyseries() * rotation).to_timeseries()
