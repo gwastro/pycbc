@@ -35,6 +35,47 @@ from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from weave import inline
 
+def coalign_waveforms(h1, h2, psd=None, 
+                      low_frequency_cutoff=None,
+                      high_frequency_cutoff=None):
+    """ Return two time series which are aligned in time and phase.
+    
+    The alignment is only to the nearest sample point and all changes to the
+    phase are made to the first input waveform.
+    
+    Parameters
+    ----------
+    h1: pycbc.types.TimeSeries
+        The first waveform to align.
+    h2: pycbc.types.TimeSeries
+        The second waveform to align.
+    psd: {None, pycbc.types.FrequencySeries}
+        A psd to weight the alignment
+    low_frequency_cutoff: {None, float}
+        The low frequency cutoff to weight the matching in Hz.
+    high_frequency_cutoff: {None, float}
+        The high frequency cutoff to weight the matching in Hz.
+        
+    Returns
+    -------
+    
+    """
+    from pycbc.filter import matched_filter
+    mlen = max(len(h1), len(h2))
+    h1 = h1.copy()
+    h2 = h2.copy()
+    h1.resize(mlen)
+    h2.resize(mlen)
+
+    snr = matched_filter(h1, h2)
+    _, l =  snr.abs_max_loc()
+    rotation =  snr[l] / abs(snr[l])
+    h1 = (h1.to_frequencyseries() * rotation).to_timeseries()
+    h1.roll(l)
+    
+    h1.start_time = h2.start_time
+    return h1, h2
+
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""
     signif,exponent = frexp(n)
