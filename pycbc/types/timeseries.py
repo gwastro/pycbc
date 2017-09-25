@@ -534,6 +534,73 @@ class TimeSeries(Array):
         freqs = _numpy.arange(int(q_frange[0]), int(q_frange[1]), delta_f)
         return times, freqs, q_plane
 
+    def lowpass_fir(self, frequency, order, beta=5.0, remove_corrupted=True):
+        """ Lowpass filter the time series using an FIR filtered generated from 
+        the ideal response passed through a kaiser window (beta = 5.0)
+
+        Parameters
+        ----------
+        Time Series: TimeSeries
+            The time series to be low-passed.
+        frequency: float
+            The frequency below which is suppressed. 
+        order: int
+            Number of corrupted samples on each side of the time series
+        beta: float
+            Beta parameter of the kaiser window that sets the side lobe attenuation.
+        remove_corrupted : {True, boolean}
+            If True, the region of the time series corrupted by the filtering
+            is excised before returning. If false, the corrupted regions
+            are not excised and the full time series is returned.
+        """
+        from pycbc.filter import lowpass_fir
+        ts = lowpass_fir(self, frequency, order, beta=beta)
+        if remove_corrupted:
+            ts = ts[order:len(ts)-order]
+        return ts
+
+    def highpass_fir(self, frequency, order, beta=5.0, remove_corrupted=True):
+        """ Highpass filter the time series using an FIR filtered generated from 
+        the ideal response passed through a kaiser window (beta = 5.0)
+
+        Parameters
+        ----------
+        Time Series: TimeSeries
+            The time series to be high-passed.
+        frequency: float
+            The frequency below which is suppressed. 
+        order: int
+            Number of corrupted samples on each side of the time series
+        beta: float
+            Beta parameter of the kaiser window that sets the side lobe attenuation.
+        remove_corrupted : {True, boolean}
+            If True, the region of the time series corrupted by the filtering
+            is excised before returning. If false, the corrupted regions
+            are not excised and the full time series is returned.
+        """
+        from pycbc.filter import highpass_fir
+        ts = highpass_fir(self, frequency, order, beta=beta)
+        if remove_corrupted:
+            ts = ts[order:len(ts)-order]
+        return ts
+
+    def fir_zero_filter(self, coeff):
+        """Filter the timeseries with a set of FIR coefficients
+        
+        Parameters
+        ----------
+        coeff: numpy.ndarray
+            FIR coefficients. Should be and odd length and symmetric.
+
+        Returns
+        -------
+        filtered_series: pycbc.types.TimeSeries
+            Return the filtered timeseries, which has been properly shifted to account
+        for the FIR filter delay and the corrupted regions zeroed out.
+        """
+        from pycbc.filter import fir_zero_filter
+        return self._return(fir_zero_filter(coeff, self))
+
     def save(self, path, group = None):
         """
         Save time series to a Numpy .npy, hdf, or text file. The first column
