@@ -35,6 +35,7 @@ import numpy
 import pycbc
 from pycbc.inference import option_utils
 from pycbc.io.inference_hdf import InferenceFile
+from pycbc.io.inference_txt import InferenceTXTFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 
@@ -52,9 +53,6 @@ parser.add_argument("--posterior-only", action="store_true", default=False,
                          "all walkers in {samples_group/{param}/. Default is "
                          "for the copied file to have the same structure "
                          "as the input file.")
-parser.add_argument("--csv", action="store_true",
-                    help="Save output file as a CSV file instead of "
-                         "an HDF file.")
 option_utils.add_inference_results_option_group(parser)
 parser.add_argument("--temperature", nargs="+", default=None,
                     help="For parallel-tempered samplers, which temperature "
@@ -84,21 +82,20 @@ if opts.temperature is not None:
         temps = map(int, temps)
     sampler_kwargs['temps'] = temps
 
-# save CSV file
-if opts.csv:
-    fp, parameters, labels, samples = option_utils.results_from_cli(
+# save TXT file
+if option_utils.get_file_type(opts.output_file) == InferenceTXTFile:
+    _, parameters, labels, samples = option_utils.results_from_cli(
                                                         opts, **sampler_kwargs)
-    COMMENTS = ""
-    DELIMITER = " "
-    header = DELIMITER.join(labels)
-    numpy.savetxt(opts.output_file, samples.to_array(fields=parameters).T,
-                  comments=COMMENTS, header=header, delimiter=DELIMITER)
+    InferenceTXTFile.write(opts.output_file,
+                           samples.to_array(fields=parameters).T, labels)
 
 # otherwise save HDF file
 else:
 
     # open the input and parse parameters
-    source = InferenceFile(opts.input_file)
+    if len(opts.input_file) > 1:
+        raise ValueError("Too many input files.")
+    source = InferenceFile(opts.input_file[0])
     parameters, pnames = option_utils.parse_parameters_opt(opts.parameters)
 
     # copy to output

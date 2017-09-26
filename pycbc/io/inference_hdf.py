@@ -104,6 +104,7 @@ class InferenceFile(h5py.File):
     mode : {None, str}
         The mode to open the file, eg. "w" for write and "r" for read.
     """
+    name = "hdf"
     samples_group = 'samples'
     stats_group = 'likelihood_stats'
     sampler_group = 'sampler_states'

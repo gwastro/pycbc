@@ -25,7 +25,8 @@ from pycbc import conversions
 from pycbc import transforms
 from pycbc.distributions import bounded
 from pycbc.distributions import constraints
-from pycbc.io import InferenceFile
+from pycbc.io.inference_hdf import InferenceFile
+from pycbc.io.inference_txt import InferenceTXTFile
 from pycbc.inference import likelihood
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.pool import choose_pool
@@ -436,7 +437,7 @@ def data_from_cli(opts):
 #
 #-----------------------------------------------------------------------------
 
-def add_inference_results_option_group(parser):
+def add_inference_results_option_group(parser, include_parameters_group=True):
     """Adds the options used to call pycbc.inference.results_from_cli function
     to an argument parser. These are options releated to loading the results
     from a run of pycbc_inference, for purposes of plotting and/or creating
@@ -446,6 +447,8 @@ def add_inference_results_option_group(parser):
     ----------
     parser : object
         ArgumentParser instance.
+    include_parameters_group : bool
+        If true then include `--parameters-group` option.
     """
 
     results_reading_group = parser.add_argument_group("Arguments for loading "
@@ -455,10 +458,6 @@ def add_inference_results_option_group(parser):
     results_reading_group.add_argument(
         "--input-file", type=str, required=True, nargs="+",
         help="Path to input HDF files.")
-    results_reading_group.add_argument(
-        "--parameters-group", type=str, default=InferenceFile.samples_group,
-        choices=[InferenceFile.samples_group, InferenceFile.stats_group],
-        help="Group in the HDF InferenceFile to look for parameters.")
     results_reading_group.add_argument("--parameters", type=str, nargs="+",
         metavar="PARAM[:LABEL]",
         help="Name of parameters to load. If none provided will load all of "
@@ -488,6 +487,12 @@ def add_inference_results_option_group(parser):
         help="Only retrieve the given iteration. To load the last n-th sampe "
              "use -n, e.g., -1 will load the last iteration. This overrides "
              "the thin-start/interval/end options.")
+    if include_parameters_group:
+        results_reading_group.add_argument(
+            "--parameters-group", type=str,
+            default=InferenceFile.samples_group,
+            choices=[InferenceFile.samples_group, InferenceFile.stats_group],
+            help="Group in the HDF InferenceFile to look for parameters.")
 
     return results_reading_group
 
@@ -624,6 +629,28 @@ def results_from_cli(opts, load_samples=True, **kwargs):
 
     return fp_all, parameters_all, labels_all, samples_all
 
+def get_file_type(filename):
+    """ Returns I/O object to use for file.
+
+    Parameters
+    ----------
+    filename : str
+        Name of file.
+
+    Returns
+    -------
+    file_type : {InferenceFile, InferenceTXTFile}
+        The type of inference file object to use.
+    """
+    txt_extensions = [".txt", ".dat", ".csv"]
+    hdf_extensions = [".hdf", ".h5"]
+    for ext in hdf_extensions:
+        if filename.endswith(ext):
+            return InferenceFile
+    for ext in txt_extensions:
+        if filename.endswith(ext):
+            return InferenceTXTFile
+    raise TypeError("Extension is not supported.")
 
 def get_zvalues(fp, arg, likelihood_stats):
     """Reads the data for the z-value of the plots from the inference file.
