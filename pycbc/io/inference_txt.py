@@ -19,48 +19,48 @@ inference samplers generate and are stored in an ASCII TXT file.
 import numpy
 
 class InferenceTXTFile(object):
-   """ A class that has extra functions for handling reading the samples
+    """ A class that has extra functions for handling reading the samples
     from posterior-only CSV files.
 
-   Parameters
-   -----------
-   path : str
-       The path to the TXT file.
-   mode : {None, str}
-       The mode to open the file. Only accepts "r" or "rb" for reading.
-   delimiter : str
-       Delimiter to use for TXT file. Default is space-delimited.
-   """
-   name = "txt"
-   comments = ""
-   delimiter = " "
+    Parameters
+    -----------
+    path : str
+        The path to the TXT file.
+    mode : {None, str}
+        The mode to open the file. Only accepts "r" or "rb" for reading.
+    delimiter : str
+        Delimiter to use for TXT file. Default is space-delimited.
+    """
+    name = "txt"
+    comments = ""
+    delimiter = " "
 
-   def __init__(self, path, mode=None, delimiter=None):
-       self.path = path
-       self.delimiter = delimiter if delimiter is not None else self.delimiter
-       if mode in ["r", "rb"]:
-           self.mode = mode
-       else:
-           raise ValueError("Mode for InferenceCSVFile must be 'r' or 'rb'.")
+    def __init__(self, path, mode=None, delimiter=None):
+        self.path = path
+        self.delimiter = delimiter if delimiter is not None else self.delimiter
+        if mode in ["r", "rb"]:
+            self.mode = mode
+        else:
+            raise ValueError("Mode for InferenceCSVFile must be 'r' or 'rb'.")
 
-   @classmethod
-   def write(cls, output_file, samples, labels, delimiter=None):
-       """ Writes a text file with samples.
+    @classmethod
+    def write(cls, output_file, samples, labels, delimiter=None):
+        """ Writes a text file with samples.
 
-       Parameters
-       -----------
-       output_file : str
-           The path of the file to write.
-       samples : FieldArray
-           Samples to write to file.
-       labels : list
-           A list of strings to include as header in TXT file.
-       delimiter : str
-           Delimiter to use in TXT file.
-       """
-       delimiter = delimiter if delimiter is not None else cls.delimiter
-       header = delimiter.join(labels)
-       numpy.savetxt(output_file, samples,
-                     comments=cls.comments, header=header,
-                     delimiter=delimiter)
+        Parameters
+        -----------
+        output_file : str
+            The path of the file to write.
+        samples : FieldArray
+            Samples to write to file.
+        labels : list
+            A list of strings to include as header in TXT file.
+        delimiter : str
+            Delimiter to use in TXT file.
+        """
+        delimiter = delimiter if delimiter is not None else cls.delimiter
+        header = delimiter.join(labels)
+        numpy.savetxt(output_file, samples,
+                      comments=cls.comments, header=header,
+                      delimiter=delimiter)
 
