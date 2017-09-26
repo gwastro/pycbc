@@ -461,7 +461,7 @@ def add_inference_results_option_group(parser):
         help="Group in the HDF InferenceFile to look for parameters.")
     results_reading_group.add_argument("--parameters", type=str, nargs="+",
         metavar="PARAM[:LABEL]",
-        help="Name of parameters to plot. If none provided will load all of "
+        help="Name of parameters to load. If none provided will load all of "
              "the variable args in the input-file. If provided, the "
              "parameters can be any of the variable args or posteriors in "
              "the input file, derived parameters from them, or any function "
