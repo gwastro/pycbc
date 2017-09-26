@@ -84,10 +84,19 @@ if opts.temperature is not None:
 
 # save TXT file
 if option_utils.get_file_type(opts.output_file) == InferenceTXTFile:
-    _, parameters, labels, samples = option_utils.results_from_cli(
+    fp, parameters, labels, samples = option_utils.results_from_cli(
                                                         opts, **sampler_kwargs)
-    InferenceTXTFile.write(opts.output_file,
-                           samples.to_array(fields=parameters).T, labels)
+    likelihood_stats = fp.read_likelihood_stats(
+                           thin_start=opts.thin_start,
+                           thin_end=opts.thin_end,
+                           thin_interval=opts.thin_interval,
+                           iteration=opts.iteration)
+    stat_names = fp[fp.stats_group].keys()
+    n_cols = len(parameters) + len(stat_names)
+    n_rows = samples.size
+    out = numpy.hstack([samples.to_array(fields=parameters).T,
+                        likelihood_stats.to_array(fields=stat_names).T])
+    InferenceTXTFile.write(opts.output_file, out, labels + stat_names)
 
 # otherwise save HDF file
 else:
