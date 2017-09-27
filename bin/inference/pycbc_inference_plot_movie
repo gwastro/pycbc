@@ -191,6 +191,10 @@ samples = fp.read_samples(file_parameters, thin_start=thin_start,
                           thin_interval=thinint, thin_end=thin_end,
                           iteration=itermask, flatten=False)
 samples = transforms.apply_transforms(samples, trans)
+if samples.ndim > 2:
+    # multi-tempered samplers will return a 3 dims, so flatten
+    _, ii, jj = samples.shape
+    samples = samples.reshape((ii, jj))
 
 # Get z-values
 if opts.z_arg is not None:
@@ -198,6 +202,9 @@ if opts.z_arg is not None:
     likelihood_stats = fp.read_likelihood_stats(thin_start=thin_start,
         thin_end=thin_end, thin_interval=thinint, iteration=itermask,
         flatten=False)
+    if likelihood_stats.ndim > 2:
+        _, ii, jj = likelihood_stats.shape
+        likelihood_stats = likelihood_stats.reshape((ii, jj))
     zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
     show_colorbar = True
     # Set common min and max for colorbar in all plots
