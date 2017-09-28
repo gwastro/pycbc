@@ -174,7 +174,7 @@ def _mass2_from_mchirp_mass1(mchirp, mass1):
 
     .. math::
         m_2^3 - a(m_2 + m_1) = 0,
- 
+
     where
 
     .. math::
@@ -284,7 +284,7 @@ def _a0(f_lower):
 def _a3(f_lower):
     """Another parameter used for chirp times"""
     return numpy.pi / (8. * (numpy.pi * f_lower)**(5./3.))
-  
+
 
 def tau0_from_mtotal_eta(mtotal, eta, f_lower):
     r"""Returns :math:`\tau_0` from the total mass, symmetric mass ratio, and
@@ -338,7 +338,7 @@ def eta_from_tau0_tau3(tau0, tau3, f_lower):
                                    in_seconds=True)
     eta = mtotal**(-2./3.) * (_a3(f_lower) / tau3)
     return eta
-    
+
 
 def mass1_from_tau0_tau3(tau0, tau3, f_lower):
     r"""Returns the primary mass from the given :math:`\tau_0, \tau_3`."""
@@ -355,8 +355,8 @@ def mass2_from_tau0_tau3(tau0, tau3, f_lower):
 
 def lambda_tilde(mass1, mass2, lambda1, lambda2):
     """ The effective lambda parameter
-    
-    The mass-weighted dominant effective lambda parameter defined in 
+
+    The mass-weighted dominant effective lambda parameter defined in
     https://journals.aps.org/prd/pdf/10.1103/PhysRevD.91.043002
     """
     m1 = _ensurearray(mass1)
@@ -550,10 +550,10 @@ def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     chi_perp = chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2)
     phi2 = phi2_from_phi_a_phi_s(phi_a, phi_s)
     return chi_perp * numpy.sin(phi2)
-    
+
 def dquadmon_from_lambda(lambdav):
     """Return the quadrupole moment of a neutron star given its lambda
-    
+
     We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
     Note that the convention we use is that dquad = q - 1.
     """
@@ -586,7 +586,7 @@ def distance_from_chirp_distance_mchirp(chirp_distance, mchirp, ref_mass=1.4):
 
 def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
     """Returns the coalescence time of a signal in the given detector.
-    
+
     Parameters
     ----------
     detector_name : string

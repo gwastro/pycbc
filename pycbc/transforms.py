@@ -205,14 +205,14 @@ class CustomTransform(BaseTransform):
         out = {p: self._scratch[func][0]
                for p,func in self.transform_functions.items()}
         return self.format_output(maps, out)
-            
+
     def jacobian(self, maps):
         if self._jacobian is None:
             raise NotImplementedError("no jacobian provided")
         # copy values to scratch
         self._copytoscratch(maps)
         return self._scratch[self._jacobian][0]
-        
+
     @classmethod
     def from_config(cls, cp, section, outputs):
         """Loads a CustomTransform from the given config file.
@@ -408,7 +408,7 @@ class ChirpDistanceToDistance(BaseTransform):
                  conversions.chirp_distance(maps[parameters.distance],
                                                      maps[parameters.mchirp])
         return self.format_output(maps, out)
-    
+
 
     def jacobian(self, maps):
         """Returns the Jacobian for transforming luminosity distance to
@@ -905,11 +905,11 @@ class Logit(BaseTransform):
 
     def jacobian(self, maps):
         r"""Computes the Jacobian of :math:`y = \mathrm{logit}(x; a,b)`.
-        
+
         This is:
 
         .. math::
-        
+
             \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{b -a}{(x-a)(b-x)},
 
         where :math:`x \in (a, b)`.
@@ -936,11 +936,11 @@ class Logit(BaseTransform):
 
     def inverse_jacobian(self, maps):
         r"""Computes the Jacobian of :math:`y = \mathrm{logistic}(x; a,b)`.
-        
+
         This is:
 
         .. math::
-        
+
             \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{e^x (b-a)}{(1+e^y)^2},
 
         where :math:`y \in (a, b)`.
