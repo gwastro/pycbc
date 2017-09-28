@@ -574,9 +574,14 @@ def dquadmon_from_lambda(lambdav):
 # =============================================================================
 #
 def chirp_distance(dist, mchirp, ref_mass=1.4):
-    """Returns the chirp distance given a distance and chirp mass.
+    """Returns the chirp distance given the luminosity distance and chirp mass.
     """
     return dist * (2.**(-1./5) * ref_mass / mchirp)**(5./6)
+
+def distance_from_chirp_distance_mchirp(chirp_distance, mchirp, ref_mass=1.4):
+    """Returns the luminosity distance given a chirp distance and chirp mass.
+    """
+    return chirp_distance * (2.**(-1./5) * ref_mass / mchirp)**(-5./6)
 
 
 def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
