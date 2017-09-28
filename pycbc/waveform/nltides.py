@@ -26,14 +26,14 @@ def nonlinear_phase_difference(f, f0, A, n, m1, m2):
     """
     x0 = f0 / 100.0
     x = f / 100.0
-    mc, et = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+    mc, _ = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
     dphi = 0.4 * (mc / 1.2) ** (-10.0 / 3) * A * 10**8
     dphi *= (x0**(n - 3.0) - x**(n - 3.0)) / (n - 3.0)
     return dphi
 
 def nonlinear_tidal_spa(**kwds):
     from . import waveform
-    from pycbc.types import zeros, Array
+    from pycbc.types import Array
 
     # We start with the standard TaylorF2 based waveform
     kwds.pop('approximant')
