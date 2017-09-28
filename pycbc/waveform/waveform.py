@@ -691,11 +691,15 @@ _filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
 _filter_time_lengths["SpinTaylorF2"] = spa_length_in_time
+_filter_time_lengths["TaylorF2NL"] = spa_length_in_time
 
 # Also add generators for switching between approximants
 apx_name = "SpinTaylorF2_SWAPPER"
 cpu_fd[apx_name] =  _spintaylor_aligned_prec_swapper
 _filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
+
+from . nltides import nonlinear_tidal_spa
+cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 
 # We can do interpolation for waveforms that have a time length
 for apx in copy.copy(_filter_time_lengths):
