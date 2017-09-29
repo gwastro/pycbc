@@ -552,10 +552,16 @@ def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     return chi_perp * numpy.sin(phi2)
 
 def dquadmon_from_lambda(lambdav):
-    """Return the quadrupole moment of a neutron star given its lambda
+    r"""Return the quadrupole moment of a neutron star given its lambda
 
     We use the relations defined here. https://arxiv.org/pdf/1302.4499.pdf.
-    Note that the convention we use is that dquad = q - 1.
+    Note that the convention we use is that:
+
+    .. math::
+
+        dquadmon = \bar{Q} - 1.
+
+    Where :math:`\bar{Q}` (dimensionless) is the reduced quadrupole moment.
     """
     ll = numpy.log(lambdav)
     ai = .194
@@ -563,8 +569,8 @@ def dquadmon_from_lambda(lambdav):
     ci = 0.0474
     di = -4.21 * 10**-3.0
     ei = 1.23 * 10**-4.0
-    lny = ai + bi*ll + ci*ll**2.0 + di*ll**3.0 + ei*ll**4.0
-    return numpy.exp(lny) - 1
+    ln_quad_moment = ai + bi*ll + ci*ll**2.0 + di*ll**3.0 + ei*ll**4.0
+    return numpy.exp(ln_quad_moment) - 1
 
 #
 # =============================================================================
