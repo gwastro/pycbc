@@ -22,7 +22,7 @@
 #
 # =============================================================================
 #
-""" This package provides information about LIGO/Virgo detections of 
+""" This package provides information about LIGO/Virgo detections of
 compact binary mergers
 """
 import numpy
@@ -32,10 +32,10 @@ class Merger(object):
     """Informaton about a specific compact binary merger"""
     def __init__(self, name):
         """ Return the information of a merger
-        
+
         Parameters
         ----------
-        name: str 
+        name: str
             The name (GW prefixed date) of the merger event.
         """
         self.data = catalog.data[name]
@@ -45,10 +45,10 @@ class Merger(object):
             setattr(self, key, self.data['median1d'][key][0])
 
         self.time = self.data['time']
-            
+
     def median1d(self, name, return_errors=False):
         """ Return median 1d marginalized parameters
-        
+
         Parameters
         ----------
         name: str
@@ -69,15 +69,15 @@ class Merger(object):
             
     def strain(self, ifo):
         """ Return strain around the event
-        
+
         Currently this will return the strain around the event in the smallest
         format available. Selection of other data is not yet available.
-        
+
         Parameters
         ----------
         ifo: str
             The name of the observatory you want strain for. Ex. H1, L1, V1
-        
+
         Returns
         -------
         strain: pycbc.types.TimeSeries
@@ -95,19 +95,31 @@ class Catalog(object):
     """Manage a set of binary mergers"""
     def __init__(self):
         """ Return the set of detected mergers
-        
+
         The set of detected mergers. At some point this may have some selection
         abilities.
         """
-        self.mergers = [Merger(name) for name in catalog.data]
-        self.names = catalog.data.keys()
-        
+        self.mergers = {name: Merger(name) for name in catalog.data}
+        self.names = self.mergers.keys()
+
     def __len__(self):
         return len(self.mergers)
-        
+
+    def __getitem__(self, key):
+        return self.mergers[key]
+
+    def __setitem__(self, key, value):
+        self.mergers[key] = value
+
+    def __delitem__(self, key):
+        del self.mergers[key]
+
+    def __iter__(self):
+        return iter(self.mergers)
+
     def median1d(self, param, return_errors=False):
         """ Return median 1d marginalized parameters
-        
+
         Parameters
         ----------
         name: str
@@ -115,13 +127,13 @@ class Catalog(object):
         return_errors: Optional, {bool, False}
             If true, return a second and third parameter that represents the
             lower and upper 90% error on the parameter.
-            
+
         Returns
         -------
         param: nump.ndarray or tuple
             The requested parameter
         """
-        v = [m.median1d(param, return_errors=return_errors) for m in self.mergers]  
+        v = [self.mergers[m].median1d(param, return_errors=return_errors) for m in self.mergers]
         if return_errors:
             value, merror, perror = zip(*v)
             return numpy.array(value), numpy.array(merror), numpy.array(perror)
