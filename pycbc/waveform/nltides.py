@@ -8,7 +8,7 @@ def nonlinear_phase_difference(f, f0, A, n, m1, m2):
 
     Implmenents the phase difference approximation of nonlinear
     tides in Essick, et al. https://arxiv.org/pdf/1609.06362v2.pdf
-    
+
     Parameters
     ----------
     f: numpy.ndarray
