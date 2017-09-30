@@ -35,14 +35,14 @@ from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from weave import inline
 
-def coalign_waveforms(h1, h2, psd=None, 
+def coalign_waveforms(h1, h2, psd=None,
                       low_frequency_cutoff=None,
                       high_frequency_cutoff=None):
     """ Return two time series which are aligned in time and phase.
-    
+
     The alignment is only to the nearest sample point and all changes to the
     phase are made to the first input waveform.
-    
+
     Parameters
     ----------
     h1: pycbc.types.TimeSeries
@@ -55,7 +55,7 @@ def coalign_waveforms(h1, h2, psd=None,
         The low frequency cutoff to weight the matching in Hz.
     high_frequency_cutoff: {None, float}
         The high frequency cutoff to weight the matching in Hz.
-        
+
     Returns
     -------
     
