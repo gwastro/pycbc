@@ -19,7 +19,6 @@ You can start up an interactive jupyter notebook with PyCBC using either of the 
 [![azure](https://img.shields.io/badge/azure-notebook-pi.svg)](https://notebooks.azure.com/nitz/libraries/pycbc)
 [![Binder](http://mybinder.org/badge.svg)](http://mybinder.org:/repo/ligo-cbc/binder)
 
-
 If you use any code from PyCBC in a scientific publication, then we ask that
 it is cited in the following way:
 
