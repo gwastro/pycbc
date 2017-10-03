@@ -37,7 +37,6 @@ A key for the latest release is available at:
 Please see our [citation guidelines](http://ligo-cbc.github.io/pycbc/latest/html/credit.html) for 
 more details.
 
-```
 [![PyPI version](https://badge.fury.io/py/PyCBC.svg)](https://badge.fury.io/py/PyCBC)
 [![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)
 [![Code Health](https://landscape.io/github/ligo-cbc/pycbc/master/landscape.svg?style=flat)](https://landscape.io/github/ligo-cbc/pycbc/master)
