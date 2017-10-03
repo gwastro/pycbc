@@ -44,6 +44,65 @@ def ceilpow2(n):
         exponent -= 1;
     return (1) << exponent;
 
+def coalign_waveforms(h1, h2, psd=None,
+                      low_frequency_cutoff=None,
+                      high_frequency_cutoff=None,
+                      resize=True):
+    """ Return two time series which are aligned in time and phase.
+
+    The alignment is only to the nearest sample point and all changes to the
+    phase are made to the first input waveform. Waveforms should not be split
+    accross the vector boundary. If it is, please use roll or cyclic time shift
+    to ensure that the entire signal is contiguous in the time series.
+
+    Parameters
+    ----------
+    h1: pycbc.types.TimeSeries
+        The first waveform to align.
+    h2: pycbc.types.TimeSeries
+        The second waveform to align.
+    psd: {None, pycbc.types.FrequencySeries}
+        A psd to weight the alignment
+    low_frequency_cutoff: {None, float}
+        The low frequency cutoff to weight the matching in Hz.
+    high_frequency_cutoff: {None, float}
+        The high frequency cutoff to weight the matching in Hz.
+    resize: Optional, {True, boolean}
+        If true, the vectors will be resized to match each other. If false,
+        they must be the same length and even in length
+
+    Returns
+    -------
+    h1: pycbc.types.TimeSeries
+        The shifted waveform to align with h2
+    h2: pycbc.type.TimeSeries
+        The resized (if necessary) waveform to align with h1.
+    """
+    from pycbc.filter import matched_filter
+    mlen = ceilpow2(max(len(h1), len(h2)))
+
+    h1 = h1.copy()
+    h2 = h2.copy()
+
+    if resize:
+        h1.resize(mlen)
+        h2.resize(mlen)
+    elif len(h1) != len(h2) or len(h2) % 2 != 0:
+        raise ValueError("Time series must be the same size and even if you do "
+                         "not allow resizing")
+
+    snr = matched_filter(h1, h2, psd=psd,
+                         low_frequency_cutoff=low_frequency_cutoff,
+                         high_frequency_cutoff=high_frequency_cutoff)
+
+    _, l =  snr.abs_max_loc()
+    rotation =  snr[l] / abs(snr[l])
+    h1 = (h1.to_frequencyseries() * rotation).to_timeseries()
+    h1.roll(l)
+
+    h1 = TimeSeries(h1, delta_t=h2.delta_t, epoch=h2.start_time)
+    return h1, h2
+
 def phase_from_frequencyseries(htilde, remove_start_phase=True):
     """Returns the phase from the given frequency-domain waveform. This assumes
     that the waveform has been sampled finely enough that the phase cannot
