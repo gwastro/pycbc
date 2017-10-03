@@ -46,11 +46,12 @@ def ceilpow2(n):
 
 def coalign_waveforms(h1, h2, psd=None,
                       low_frequency_cutoff=None,
-                      high_frequency_cutoff=None):
+                      high_frequency_cutoff=None,
+                      resize=True):
     """ Return two time series which are aligned in time and phase.
 
     The alignment is only to the nearest sample point and all changes to the
-    phase are made to the first input waveform. Waveforms should not be split 
+    phase are made to the first input waveform. Waveforms should not be split
     accross the vector boundary. If it is, please use roll or cyclic time shift
     to ensure that the entire signal is contiguous in the time series.
 
@@ -66,28 +67,40 @@ def coalign_waveforms(h1, h2, psd=None,
         The low frequency cutoff to weight the matching in Hz.
     high_frequency_cutoff: {None, float}
         The high frequency cutoff to weight the matching in Hz.
+    resize: Optional, {True, boolean}
+        If true, the vectors will be resized to match each other. If false,
+        they must be the same length and even in length
 
     Returns
     -------
-
+    h1: pycbc.types.TimeSeries
+        The shifted waveform to align with h2
+    h2: pycbc.type.TimeSeries
+        The shifted waveform to align with h1
     """
     from pycbc.filter import matched_filter
     mlen = ceilpow2(max(len(h1), len(h2)))
 
     h1 = h1.copy()
     h2 = h2.copy()
-    h1.resize(mlen)
-    h2.resize(mlen)
+
+    if resize:
+        h1.resize(mlen)
+        h2.resize(mlen)
+    elif len(h1) != len(h2) or len(h2) % 2 != 0:
+        raise ValueError("Time series must be the same size and even if you do "
+                         "not allow resizing")
 
     snr = matched_filter(h1, h2, psd=psd,
                          low_frequency_cutoff=low_frequency_cutoff,
                          high_frequency_cutoff=high_frequency_cutoff)
+
     _, l =  snr.abs_max_loc()
     rotation =  snr[l] / abs(snr[l])
     h1 = (h1.to_frequencyseries() * rotation).to_timeseries()
     h1.roll(l)
 
-    h1.start_time = h2.start_time
+    h1 = TimeSeries(h1, delta_t=h2.delta_t, epoch=h2.start_time)
     return h1, h2
 
 def phase_from_frequencyseries(htilde, remove_start_phase=True):
