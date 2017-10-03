@@ -577,10 +577,10 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
     FAPS = []
     for line in file:
         line = line.replace('\n','')
-        if float(line) == -2:
+        if line == "-2":
             FAPS.append('No event')
         else:
-            FAPS.append(float(line))
+            FAPS.append(line)
 
     file.close()
 
