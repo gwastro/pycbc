@@ -76,7 +76,7 @@ def coalign_waveforms(h1, h2, psd=None,
     h1: pycbc.types.TimeSeries
         The shifted waveform to align with h2
     h2: pycbc.type.TimeSeries
-        The shifted waveform to align with h1
+        The resized (if necessary) waveform to align with h1.
     """
     from pycbc.filter import matched_filter
     mlen = ceilpow2(max(len(h1), len(h2)))
