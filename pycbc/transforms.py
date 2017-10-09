@@ -361,7 +361,7 @@ class ChirpDistanceToDistance(BaseTransform):
         self.ref_mass = ref_mass
 
     def transform(self, maps):
-        """This function transforms from luminosity distance to chirp distance,
+        """This function transforms from chirp distance to luminosity distance,
         given the chirp mass.
         Parameters
         ----------
@@ -415,8 +415,8 @@ class ChirpDistanceToDistance(BaseTransform):
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
-        """Returns the Jacobian for transforming luminosity distance to
-        chirp distance, given the chirp mass.
+        """Returns the Jacobian for transforming chirp distance to
+        luminosity distance, given the chirp mass.
         """
         ref_mass=1.4
         mchirp = maps['mchirp']
