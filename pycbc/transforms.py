@@ -352,9 +352,8 @@ class ChirpDistanceToDistance(BaseTransform):
     """ Converts chirp distance to luminosity distance, given the chirp mass.
     """
     name = "chirp_distance_to_distance"
-    _inputs = [parameters.chirp_distance]
-    _outputs = [parameters.distance, parameters.mchirp]
-
+    _inputs = [parameters.chirp_distance, parameters.mchirp]
+    _outputs = [parameters.distance]
 
     def transform(self, maps):
         """This function transforms from luminosity distance to chirp distance,
@@ -1054,8 +1053,8 @@ class DistanceToChirpDistance(ChirpDistanceToDistance):
     """
     name = "distance_to_chirp_distance"
     inverse = ChirpDistanceToDistance
-    _inputs = inverse._outputs
-    _outputs = inverse._inputs
+    _inputs = [parameters.distance, parameters.mchirp]
+    _outputs = [parameters.chirp_distance]
     transform = inverse.inverse_transform
     inverse_transform = inverse.transform
     jacobian = inverse.inverse_jacobian
