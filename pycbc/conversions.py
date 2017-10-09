@@ -559,7 +559,7 @@ def dquadmon_from_lambda(lambdav):
 
     .. math::
 
-        dquadmon = \bar{Q} - 1.
+        \mathrm{dquadmon} = \bar{Q} - 1.
 
     Where :math:`\bar{Q}` (dimensionless) is the reduced quadrupole moment.
     """
