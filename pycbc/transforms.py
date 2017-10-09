@@ -355,6 +355,9 @@ class ChirpDistanceToDistance(BaseTransform):
     _inputs = [parameters.chirp_distance, parameters.mchirp]
     _outputs = [parameters.distance]
 
+    def __init__(self, ref_mass=1.4):
+        self.ref_mass = ref_mass
+
     def transform(self, maps):
         """This function transforms from luminosity distance to chirp distance,
         given the chirp mass.
@@ -377,10 +380,11 @@ class ChirpDistanceToDistance(BaseTransform):
         """
         out = {}
         out[parameters.distance] = \
-                 conversions.distance_from_chirp_distance_mchirp(maps[parameters.chirp_distance],
-                                                     maps[parameters.mchirp])
+                conversions.distance_from_chirp_distance_mchirp(
+                                                    maps[parameters.chirp_distance],
+                                                    maps[parameters.mchirp],
+                                                    ref_mass=self.ref_mass)
         return self.format_output(maps, out)
-
 
     def inverse_transform(self, maps):
         """This function transforms from luminosity distance to chirp distance,
@@ -405,9 +409,8 @@ class ChirpDistanceToDistance(BaseTransform):
         out = {}
         out[parameters.chirp_distance] = \
                  conversions.chirp_distance(maps[parameters.distance],
-                                                     maps[parameters.mchirp])
+                                            maps[parameters.mchirp], ref_mass=self.ref_mass)
         return self.format_output(maps, out)
-
 
     def jacobian(self, maps):
         """Returns the Jacobian for transforming luminosity distance to
@@ -415,8 +418,7 @@ class ChirpDistanceToDistance(BaseTransform):
         """
         ref_mass=1.4
         mchirp = maps['mchirp']
-        return (2.**(-1./5) * ref_mass / mchirp)**(-5./6)
-
+        return (2.**(-1./5) * self.ref_mass / mchirp)**(-5./6)
 
     def inverse_jacobian(self, maps):
         """Returns the Jacobian for transforming luminosity distance to
@@ -424,7 +426,7 @@ class ChirpDistanceToDistance(BaseTransform):
         """
         ref_mass=1.4
         mchirp = maps['mchirp']
-        return (2.**(-1./5) * ref_mass / mchirp)**(5./6)
+        return (2.**(-1./5) * self.ref_mass / mchirp)**(5./6)
 
 
 class SphericalSpin1ToCartesianSpin1(BaseTransform):
