@@ -356,6 +356,8 @@ class ChirpDistanceToDistance(BaseTransform):
     _outputs = [parameters.distance]
 
     def __init__(self, ref_mass=1.4):
+        self.inputs = set(self._inputs)
+        self.outputs = set(self._outputs)
         self.ref_mass = ref_mass
 
     def transform(self, maps):
