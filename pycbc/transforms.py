@@ -363,12 +363,15 @@ class ChirpDistanceToDistance(BaseTransform):
     def transform(self, maps):
         """This function transforms from chirp distance to luminosity distance,
         given the chirp mass.
+
         Parameters
         ----------
         maps : a mapping object
+
         Examples
         --------
         Convert a dict of numpy.array:
+
         >>> import numpy as np
         >>> from pycbc import transforms
         >>> t = transforms.ChirpDistanceToDistance()
@@ -391,17 +394,21 @@ class ChirpDistanceToDistance(BaseTransform):
     def inverse_transform(self, maps):
         """This function transforms from luminosity distance to chirp distance,
         given the chirp mass.
+
         Parameters
         ----------
         maps : a mapping object
+
         Examples
         --------
         Convert a dict of numpy.array:
+
         >>> import numpy as np
         >>> from pycbc import transforms
         >>> t = transforms.ChirpDistanceToDistance()
         >>> t.inverse_transform({'distance': np.array([40.]), 'mchirp': np.array([1.2])})
         {'distance': array([ 40.]), 'chirp_distance': array([ 40.52073522]), 'mchirp': array([ 1.2])}
+
         Returns
         -------
         out : dict
@@ -410,7 +417,7 @@ class ChirpDistanceToDistance(BaseTransform):
         """
         out = {}
         out[parameters.chirp_distance] = \
-                 conversions.chirp_distance(maps[parameters.distance],
+                conversions.chirp_distance(maps[parameters.distance],
                                             maps[parameters.mchirp], ref_mass=self.ref_mass)
         return self.format_output(maps, out)
 
