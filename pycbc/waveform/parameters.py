@@ -366,7 +366,7 @@ distance = Parameter("distance",
                 dtype=float, default=1., label=r"$d_L$ (Mpc)",
                 description="Luminosity distance to the binary (in Mpc).")
 chirp_distance = Parameter("chirp_distance",
-                dtype=float, default=1., label=r"$d_{chirp}$ (Mpc)",
+                dtype=float, default=1., label=r"$d_c$ (Mpc)",
                 description="Chirp distance to the binary (in Mpc).")
 coa_phase = Parameter("coa_phase",
                 dtype=float, default=0., label=r"$\phi_c$",
