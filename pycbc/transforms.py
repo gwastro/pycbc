@@ -205,14 +205,14 @@ class CustomTransform(BaseTransform):
         out = {p: self._scratch[func][0]
                for p,func in self.transform_functions.items()}
         return self.format_output(maps, out)
-            
+
     def jacobian(self, maps):
         if self._jacobian is None:
             raise NotImplementedError("no jacobian provided")
         # copy values to scratch
         self._copytoscratch(maps)
         return self._scratch[self._jacobian][0]
-        
+
     @classmethod
     def from_config(cls, cp, section, outputs):
         """Loads a CustomTransform from the given config file.
@@ -332,7 +332,7 @@ class MchirpQToMass1Mass2(BaseTransform):
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
-        """Returns the Jacobian for the transforming mchirp and q to mass1 and
+        """Returns the Jacobian for transforming mchirp and q to mass1 and
         mass2.
         """
         mchirp = maps['mchirp']
@@ -340,12 +340,103 @@ class MchirpQToMass1Mass2(BaseTransform):
         return mchirp * ((1.+q)/q**3.)**(2./5)
 
     def inverse_jacobian(self, maps):
-        """Returns the Jacobian for the transforming mass1 and mass2 to
+        """Returns the Jacobian for transforming mass1 and mass2 to
         mchirp and q.
         """
         m1 = conversions.primary_mass(maps['mass1'], maps['mass2'])
         m2 = conversions.secondary_mass(maps['mass1'], maps['mass2'])
         return conversions.mchirp_from_mass1_mass2(m1, m2)/m2**2.
+
+
+class ChirpDistanceToDistance(BaseTransform):
+    """ Converts chirp distance to luminosity distance, given the chirp mass.
+    """
+    name = "chirp_distance_to_distance"
+    _inputs = [parameters.chirp_distance, parameters.mchirp]
+    _outputs = [parameters.distance]
+
+    def __init__(self, ref_mass=1.4):
+        self.inputs = set(self._inputs)
+        self.outputs = set(self._outputs)
+        self.ref_mass = ref_mass
+
+    def transform(self, maps):
+        """This function transforms from chirp distance to luminosity distance,
+        given the chirp mass.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy as np
+        >>> from pycbc import transforms
+        >>> t = transforms.ChirpDistanceToDistance()
+        >>> t.transform({'chirp_distance': np.array([40.]), 'mchirp': np.array([1.2])})
+        {'mchirp': array([ 1.2]), 'chirp_distance': array([ 40.]), 'distance': array([ 39.48595679])}
+        
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[parameters.distance] = \
+                conversions.distance_from_chirp_distance_mchirp(
+                                                    maps[parameters.chirp_distance],
+                                                    maps[parameters.mchirp],
+                                                    ref_mass=self.ref_mass)
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        """This function transforms from luminosity distance to chirp distance,
+        given the chirp mass.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy as np
+        >>> from pycbc import transforms
+        >>> t = transforms.ChirpDistanceToDistance()
+        >>> t.inverse_transform({'distance': np.array([40.]), 'mchirp': np.array([1.2])})
+        {'distance': array([ 40.]), 'chirp_distance': array([ 40.52073522]), 'mchirp': array([ 1.2])}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[parameters.chirp_distance] = \
+                conversions.chirp_distance(maps[parameters.distance],
+                                            maps[parameters.mchirp], ref_mass=self.ref_mass)
+        return self.format_output(maps, out)
+
+    def jacobian(self, maps):
+        """Returns the Jacobian for transforming chirp distance to
+        luminosity distance, given the chirp mass.
+        """
+        ref_mass=1.4
+        mchirp = maps['mchirp']
+        return (2.**(-1./5) * self.ref_mass / mchirp)**(-5./6)
+
+    def inverse_jacobian(self, maps):
+        """Returns the Jacobian for transforming luminosity distance to
+        chirp distance, given the chirp mass.
+        """
+        ref_mass=1.4
+        mchirp = maps['mchirp']
+        return (2.**(-1./5) * self.ref_mass / mchirp)**(5./6)
 
 
 class SphericalSpin1ToCartesianSpin1(BaseTransform):
@@ -408,7 +499,7 @@ class SphericalSpin1ToCartesianSpin1(BaseTransform):
 
 class SphericalSpin2ToCartesianSpin2(SphericalSpin1ToCartesianSpin1):
     """ Converts spherical spin parameters (magnitude and two angles) to
-    catesian spin parameters. This class only transforms spsins for the second
+    cartesian spin parameters. This class only transforms spins for the second
     component mass.
     """
     name = "spherical_spin_2_to_cartesian_spin_2"
@@ -825,11 +916,11 @@ class Logit(BaseTransform):
 
     def jacobian(self, maps):
         r"""Computes the Jacobian of :math:`y = \mathrm{logit}(x; a,b)`.
-        
+
         This is:
 
         .. math::
-        
+
             \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{b -a}{(x-a)(b-x)},
 
         where :math:`x \in (a, b)`.
@@ -856,11 +947,11 @@ class Logit(BaseTransform):
 
     def inverse_jacobian(self, maps):
         r"""Computes the Jacobian of :math:`y = \mathrm{logistic}(x; a,b)`.
-        
+
         This is:
 
         .. math::
-        
+
             \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{e^x (b-a)}{(1+e^y)^2},
 
         where :math:`y \in (a, b)`.
@@ -963,6 +1054,19 @@ class Mass1Mass2ToMchirpQ(MchirpQToMass1Mass2):
     inverse = MchirpQToMass1Mass2
     _inputs = inverse._outputs
     _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+
+class DistanceToChirpDistance(ChirpDistanceToDistance):
+    """The inverse of ChirpDistanceToDistance.
+    """
+    name = "distance_to_chirp_distance"
+    inverse = ChirpDistanceToDistance
+    _inputs = [parameters.distance, parameters.mchirp]
+    _outputs = [parameters.chirp_distance]
     transform = inverse.inverse_transform
     inverse_transform = inverse.transform
     jacobian = inverse.inverse_jacobian
@@ -1139,6 +1243,7 @@ class Logistic(Logit):
 
 # set the inverse of the forward transforms to the inverse transforms
 MchirpQToMass1Mass2.inverse = Mass1Mass2ToMchirpQ
+ChirpDistanceToDistance.inverse = DistanceToChirpDistance
 SphericalSpin1ToCartesianSpin1.inverse = CartesianSpin1ToSphericalSpin1
 SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
 AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
@@ -1160,6 +1265,8 @@ transforms = {
     CustomTransform.name : CustomTransform,
     MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
     Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
+    ChirpDistanceToDistance.name : ChirpDistanceToDistance,
+    DistanceToChirpDistance.name : DistanceToChirpDistance,
     SphericalSpin1ToCartesianSpin1.name : SphericalSpin1ToCartesianSpin1,
     CartesianSpin1ToSphericalSpin1.name : CartesianSpin1ToSphericalSpin1,
     SphericalSpin2ToCartesianSpin2.name : SphericalSpin2ToCartesianSpin2,
@@ -1182,7 +1289,7 @@ common_cbc_forward_transforms = [
     MchirpQToMass1Mass2(), DistanceToRedshift(),
     SphericalSpin1ToCartesianSpin1(), SphericalSpin2ToCartesianSpin2(),
     AlignedMassSpinToCartesianSpin(), PrecessionMassSpinToCartesianSpin(),
-    ChiPToCartesianSpin(),
+    ChiPToCartesianSpin(), ChirpDistanceToDistance()
 ]
 common_cbc_inverse_transforms = [_t.inverse()
                                    for _t in common_cbc_forward_transforms
