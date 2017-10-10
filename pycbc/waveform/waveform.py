@@ -257,7 +257,6 @@ _cuda_td_approximants = {}
 _cuda_fd_approximants = {}
 
 if pycbc.HAVE_CUDA:
-    from pycbc.waveform.TaylorF2 import taylorf2 as cuda_taylorf2
     from pycbc.waveform.pycbc_phenomC_tmplt import imrphenomc_tmplt
     from pycbc.waveform.SpinTaylorF2 import spintaylorf2 as cuda_spintaylorf2
     _cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
