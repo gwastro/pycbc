@@ -83,13 +83,20 @@ class Merger(object):
         strain: pycbc.types.TimeSeries
             Strain around the event.
         """
-        import urllib
+        import tempfile, requests, shutil
         from pycbc.frame import read_frame
         
         channel = '%s:LOSC-STRAIN' % ifo
         url = self.data['frames'][ifo]
-        fname, _ = urllib.urlretrieve(url)
-        return read_frame(fname, channel)
+        f = tempfile.NamedTemporaryFile(suffix='.gwf')
+        r = requests.get(url, stream=True)
+
+        if r.status_code != 200:
+            raise ValueError("Could not download file, %s", r.status_code)
+
+        shutil.copyfileobj(r.raw, f)
+        f.flush()
+        return read_frame(f.name, channel)
 
 class Catalog(object):
     """Manage a set of binary mergers"""
