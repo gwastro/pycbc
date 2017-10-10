@@ -16,7 +16,6 @@
 """ Functions for applying gates to data.
 """
 
-import logging
 from pycbc import strain
 
 def _gates_from_cli(opts, gate_opt):
@@ -77,7 +76,6 @@ def apply_gates_to_td(strain_dict, gates):
     # copy data to new dictionary
     outdict = dict(strain_dict.items())
     for ifo in gates:
-        logging.info("Gating {} strain".format(ifo))
         outdict[ifo] = strain.gate_data(outdict[ifo], gates[ifo])
     return outdict
 
