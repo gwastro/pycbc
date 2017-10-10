@@ -95,7 +95,11 @@ d["redshift"] = (0.18, -0.07, +0.08)
 #https://dcc.ligo.org/LIGO-P170814/public/main
 event = "GW170814"
 data[event] = e = {}
-e['time'] = 1186741861
+e['time'] = 1186741861.53
+e['frames'] = {"H1":"https://dcc.ligo.org/public/0146/P1700341/001/H-H1_LOSC_CLN_4_V1-1186741845-32.gwf",
+               "L1":"https://dcc.ligo.org/public/0146/P1700341/001/L-L1_LOSC_CLN_4_V1-1186741845-32.gwf",
+               "V1":"https://dcc.ligo.org/public/0146/P1700341/001/V-V1_LOSC_CLN_4_V1-1186741845-32.gwf",
+              }
 e["median1d"] = d = {}
 d["mass1"] = (30.5, -3.0, +5.7)
 d["mass2"] = (25.3, -4.2, +2.8)
