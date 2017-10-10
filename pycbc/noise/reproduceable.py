@@ -103,10 +103,12 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
     """
-    psd = psd * 1
+    psd = psd.copy()
+
     flen = int(SAMPLE_RATE / psd.delta_f) / 2 + 1
     oldlen = len(psd)
     psd.resize(flen)
+
     # Want to avoid zeroes in PSD.
     max_val = psd.max()
     for i in xrange(len(psd)):
@@ -114,6 +116,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
             psd.data[i] = psd[oldlen - 2]
         if psd[i] == 0:
             psd.data[i] = max_val
+
     wn_dur = int(end_time - start_time) + 2*FILTER_LENGTH
     if psd.delta_f >= 1. / (2.*FILTER_LENGTH):
         # If the PSD is short enough, this method is less memory intensive than
@@ -126,7 +129,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
                                 FILTER_LENGTH * SAMPLE_RATE,
                                 low_frequency_cutoff=low_frequency_cutoff,
                                 trunc_method='hann')
-        psd = FrequencySeries(psd, dtype=complex_same_precision_as(psd))
+        psd = psd.astype(complex_same_precision_as(psd))
         # Zero-pad the time-domain PSD to desired length. Zeroes must be added
         # in the middle, so some rolling between a resize is used.
         psd = psd.to_timeseries()
@@ -137,16 +140,19 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
         # 0. But convert to real by using abs as in inverse_spectrum_truncate
         psd = psd.to_frequencyseries()
     else:
-        wn_dur = (end_time - start_time) + 2*FILTER_LENGTH
         psd = pycbc.psd.interpolate(psd, 1.0 / wn_dur)
         psd = 1. / pycbc.psd.inverse_spectrum_truncation(1./psd,
                                 FILTER_LENGTH * SAMPLE_RATE,
                                 low_frequency_cutoff=low_frequency_cutoff,
                                 trunc_method='hann')
+
+    kmin = int(low_frequency_cutoff / psd.delta_f)
+    psd[:kmin].clear()
     asd = (psd.real())**0.5
     del psd
+
     white_noise = normal(start_time - FILTER_LENGTH, end_time + FILTER_LENGTH,
-                          seed=seed)
+                         seed=seed)
     white_noise = white_noise.to_frequencyseries()
     # Here we color. Do not want to duplicate memory here though so use '*='
     white_noise *= asd
@@ -184,4 +190,4 @@ def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cuto
     psd = pycbc.psd.from_string(psd_name, flen, delta_f, low_frequency_cutoff)
     return colored_noise(psd, start_time, end_time,
                          seed=seed,
-                         low_frequency_cutoff=1.0)
+                         low_frequency_cutoff=low_frequency_cutoff)
