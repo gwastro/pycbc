@@ -31,6 +31,7 @@ import lal
 import copy
 import lalsimulation as sim
 import h5py
+from pycbc.window import laltaper_timeseries as taper_timeseries
 from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
 from pycbc_glue.ligolw import utils as ligolw_utils
@@ -419,8 +420,8 @@ class _XMLInjectionSet(object):
         hc._epoch += inj.get_time_geocent()
 
         # taper the polarizations
-        hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
-        hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
+        hp_tapered = taper_timeseries(hp, inj.taper)
+        hc_tapered = taper_timeseries(hc, inj.taper)
 
         # compute the detector response and add it to the strain
         signal = detector.project_wave(hp_tapered, hc_tapered,
@@ -555,7 +556,7 @@ class SGBurstInjectionSet(object):
 
             # compute the detector response, taper it if requested
             # and add it to the strain
-            strain = wfutils.taper_timeseries(strain, inj.taper)
+            strain = taper_timeseries(strain, inj.taper)
             signal_lal = hp.astype(strain.dtype).lal()
             add_injection(lalstrain, signal_lal, None)
 
