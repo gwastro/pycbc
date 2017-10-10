@@ -104,11 +104,11 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
         A TimeSeries containing gaussian noise colored by the given psd.
     """
     psd = psd.copy()
-    
+
     flen = int(SAMPLE_RATE / psd.delta_f) / 2 + 1
     oldlen = len(psd)
     psd.resize(flen)
-    
+
     # Want to avoid zeroes in PSD.
     max_val = psd.max()
     for i in xrange(len(psd)):
@@ -116,7 +116,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
             psd.data[i] = psd[oldlen - 2]
         if psd[i] == 0:
             psd.data[i] = max_val
-            
+
     wn_dur = int(end_time - start_time) + 2*FILTER_LENGTH
     if psd.delta_f >= 1. / (2.*FILTER_LENGTH):
         # If the PSD is short enough, this method is less memory intensive than
