@@ -20,7 +20,7 @@ import numpy
 
 class InferenceTXTFile(object):
     """ A class that has extra functions for handling reading the samples
-    from posterior-only CSV files.
+    from posterior-only TXT files.
 
     Parameters
     -----------
@@ -41,7 +41,7 @@ class InferenceTXTFile(object):
         if mode in ["r", "rb"]:
             self.mode = mode
         else:
-            raise ValueError("Mode for InferenceCSVFile must be 'r' or 'rb'.")
+            raise ValueError("Mode for InferenceTXTFile must be 'r' or 'rb'.")
 
     @classmethod
     def write(cls, output_file, samples, labels, delimiter=None):
