@@ -35,11 +35,10 @@ import numpy
 import pycbc
 from pycbc.inference import option_utils
 from pycbc.io.inference_hdf import InferenceFile
+from pycbc.io.inference_txt import InferenceTXTFile
 
 parser = argparse.ArgumentParser(description=__doc__)
 
-parser.add_argument("--input-file", type=str, required=True,
-    help="Path to input HDF file.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output file to create.")
 parser.add_argument("--force", action="store_true", default=False,
@@ -54,33 +53,8 @@ parser.add_argument("--posterior-only", action="store_true", default=False,
                          "all walkers in {samples_group/{param}/. Default is "
                          "for the copied file to have the same structure "
                          "as the input file.")
-# options for down selecting parameters
-parser.add_argument("--parameters", type=str, nargs="+",
-    metavar="PARAM[:NAME]",
-    help="Name of parameters to copy. If none provided will copy all of "
-         "the variable_args in the input file. If provided, the "
-         "parameters can be any of the variable args in "
-         "the input file, derived parameters from them, or any function "
-         "of them. Syntax for functions is python; any math functions in "
-         "the numpy libary may be used. Can optionally also specify a "
-         "name for each parameter, in which case the parameter will be "
-         "saved with the given name in the output file.")
-parser.add_argument("--thin-start", type=int, default=None,
-    help="Sample number to start collecting samples to plot. If none "
-         "provided, will start at the end of the burn-in.")
-parser.add_argument("--thin-interval", type=int,
-    default=None,
-    help="Interval to use for thinning samples. If none provided, will "
-         "use the auto-correlation length found in the file.")
-parser.add_argument("--thin-end", type=int, default=None,
-    help="Sample number to stop collecting samples to plot. If none "
-         "provided, will stop at the last sample from the sampler.")
-parser.add_argument("--iteration", type=int, default=None,
-    help="Only retrieve the given iteration. To load the last n-th sampe "
-         "use -n, e.g., -1 will load the last iteration. This overrides "
-         "the thin-start/interval/end options.")
-# add additional, sampler-specific options
-parser.add_argument("--temperature", nargs='+',
+option_utils.add_inference_results_option_group(parser)
+parser.add_argument("--temperature", nargs="+", default=None,
                     help="For parallel-tempered samplers, which temperature "
                          "chain(s) to extract. Options are 'all', or one or "
                          "more indices indicating the temperature chain "
@@ -108,17 +82,37 @@ if opts.temperature is not None:
         temps = map(int, temps)
     sampler_kwargs['temps'] = temps
 
-# open the input and parse parameters
-source = InferenceFile(opts.input_file)
-parameters, pnames = option_utils.parse_parameters_opt(opts.parameters)
+# save TXT file
+if option_utils.get_file_type(opts.output_file) == InferenceTXTFile:
+    fp, parameters, labels, samples = option_utils.results_from_cli(
+                                                        opts, **sampler_kwargs)
+    likelihood_stats = fp.read_likelihood_stats(
+                           thin_start=opts.thin_start,
+                           thin_end=opts.thin_end,
+                           thin_interval=opts.thin_interval,
+                           iteration=opts.iteration)
+    stat_names = fp[fp.stats_group].keys()
+    n_cols = len(parameters) + len(stat_names)
+    n_rows = samples.size
+    out = numpy.hstack([samples.to_array(fields=parameters).T,
+                        likelihood_stats.to_array(fields=stat_names).T])
+    InferenceTXTFile.write(opts.output_file, out, labels + stat_names)
 
-# copy to output
-target = source.copy(opts.output_file, parameters=parameters,
-                     parameter_names=pnames,
-                     posterior_only=opts.posterior_only,
-                     thin_start=opts.thin_start, thin_end=opts.thin_end,
-                     thin_interval=opts.thin_interval,
-                     iteration=opts.iteration,
-                     **sampler_kwargs) 
+# otherwise save HDF file
+else:
 
-target.close()
+    # open the input and parse parameters
+    if len(opts.input_file) > 1:
+        raise ValueError("Too many input files.")
+    source = InferenceFile(opts.input_file[0])
+    parameters, pnames = option_utils.parse_parameters_opt(opts.parameters)
+
+    # copy to output
+    target = source.copy(opts.output_file, parameters=parameters,
+                         parameter_names=pnames,
+                         posterior_only=opts.posterior_only,
+                         thin_start=opts.thin_start, thin_end=opts.thin_end,
+                         thin_interval=opts.thin_interval,
+                         iteration=opts.iteration,
+                         **sampler_kwargs)
+    target.close()
