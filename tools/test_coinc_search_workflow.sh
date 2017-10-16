@@ -102,6 +102,8 @@ pushd $WORKFLOW_NAME
 
 echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 
+set +e
+
 pycbc_make_coinc_search_workflow \
 --workflow-name ${WORKFLOW_NAME} --output-dir output \
 --config-files \
@@ -151,6 +153,11 @@ pycbc_make_coinc_search_workflow \
   "injections-imbheobnrv2hm_inj" \
   "inspiral:enable-bank-start-frequency"
 
+if [ -f /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.err ] ; then
+  cat /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.err
+  cat /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.out
+fi
+
 pushd output
 
 for workflow in *.dax
@@ -167,6 +174,8 @@ pycbc_submit_dax \
   --no-submit
 popd
 popd
+
+set -e 
 
 grid-proxy-destroy
 
