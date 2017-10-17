@@ -96,9 +96,9 @@ d["redshift"] = (0.18, -0.07, +0.08)
 event = "GW170814"
 data[event] = e = {}
 e['time'] = 1186741861.53
-e['frames'] = {"H1":"https://dcc.ligo.org/public/0146/P1700341/001/H-H1_LOSC_CLN_4_V1-1186741845-32.gwf",
-               "L1":"https://dcc.ligo.org/public/0146/P1700341/001/L-L1_LOSC_CLN_4_V1-1186741845-32.gwf",
-               "V1":"https://dcc.ligo.org/public/0146/P1700341/001/V-V1_LOSC_CLN_4_V1-1186741845-32.gwf",
+e['frames'] = {"H1":"https://losc.ligo.org/s/events/GW170814/H-H1_LOSC_CLN_4_V1-1186741845-32.gwf",
+               "L1":"https://losc.ligo.org/s/events/GW170814/L-L1_LOSC_CLN_4_V1-1186741845-32.gwf",
+               "V1":"https://losc.ligo.org/s/events/GW170814/V-V1_LOSC_CLN_4_V1-1186741845-32.gwf",
               }
 e["median1d"] = d = {}
 d["mass1"] = (30.5, -3.0, +5.7)
@@ -107,3 +107,22 @@ d["mchirp"] = (24.1, -1.1, +1.4)
 d["mtotal"] = (55.9, -2.7, +3.4)
 d["chi_eff"] = (0.06, -.12, +.12)
 d["redshift"] = (.11, -.04, +0.03)
+
+#https://journals.aps.org/prl/pdf/10.1103/PhysRevLett.119.161101
+# We use only the low spin prior, and the chi_eff distr is not right
+# Again, need to replace with posterior sample processing
+event = "GW170817"
+data[event] = e = {}
+e['time'] = 1187008882.43
+e['frames'] = {"H1":"https://losc.ligo.org/s/events/GW170817/H-H1_LOSC_CLN_4_V1-1187007040-2048.gwf",
+               "L1":"https://losc.ligo.org/s/events/GW170817/L-L1_LOSC_CLN_4_V1-1187007040-2048.gwf",
+               "V1":"https://losc.ligo.org/s/events/GW170817/V-V1_LOSC_CLN_4_V1-1187007040-2048.gwf",
+              }
+e["median1d"] = d = {}
+# uses low spin prior
+d["mass1"] = (1.36, 0, .24)
+d["mass2"] = (1.36, -.19, 0)
+d["mchirp"] = (1.188, -.002, +.004)
+d["mtotal"] = (2.74, -0.01, 0.04)
+d["chi_eff"] = (0, -.05, -.05) # no constraint, not quite right...
+d["redshift"] = (.008, -.003, +.002)
