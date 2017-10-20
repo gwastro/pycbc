@@ -456,6 +456,7 @@ class InjectionSet(object):
         ext = os.path.basename(sim_file)
         if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
             self._injhandler = _XMLInjectionSet(sim_file, **kwds)
+            self.indoc = self._injhandler.indoc
         elif ext.endswith(('hdf', '.h5')):
             self._injhandler = _HDFInjectionSet(sim_file, **kwds)
         else:
