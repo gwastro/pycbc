@@ -125,6 +125,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     apt-get -y install ligo-proxy-utils
     apt-get -y install ecp-cookie-init
     apt-get -y install uuid-runtime
+    apt-get -y install swig
   else
     echo -e "\\n>> [`date`] Unknown operating system for virtual environment build"
     exit 1
