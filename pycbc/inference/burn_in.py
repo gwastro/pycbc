@@ -249,7 +249,6 @@ class BurnIn(object):
             is_burned_in = numpy.zeros(fp.nwalkers, dtype=bool)
         if self.burn_in_functions != {}:
             newidx = []
-            is_burned_in = None
             for func in self.burn_in_functions.values():
                 idx, state = func(sampler, fp)
                 newidx.append(idx)
@@ -257,7 +256,7 @@ class BurnIn(object):
             newidx = numpy.vstack(newidx).max(axis=0)
             mask = burnidx < newidx
             burnidx[mask] = newidx[mask]
-        mask = burnidx < self.min_iterations
+        mask = burnidx <= self.min_iterations
         burnidx[mask] = self.min_iterations
         is_burned_in[mask] = self.min_iterations < fp.niterations
         return burnidx, is_burned_in
@@ -276,5 +275,5 @@ class BurnIn(object):
         """
         burnidx, is_burned_in = self.evaluate(sampler, fp)
         sampler.burn_in_iterations = burnidx
-        sampler.write_burn_in_iterations(fp, burnidx)
+        sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
 
