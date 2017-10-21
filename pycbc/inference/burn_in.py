@@ -42,8 +42,10 @@ def max_posterior(sampler, fp):
 
     Returns
     -------
-    array :
+    burn_in_idx : array
         Array of indices giving the burn-in index for each chain.
+    is_burned_in : array
+        Array of booleans indicating wether each chain is burned in.
     """
     # get the posteriors
     # Note: multi-tempered samplers should just return the coldest chain by
@@ -59,6 +61,7 @@ def max_posterior(sampler, fp):
     nwalkers = chain_posteriors.shape[-2]
     niterations = chain_posteriors.shape[-1]
     burn_in_idx = numpy.repeat(niterations, nwalkers).astype(int)
+    is_burned_in = numpy.zeros(nwalkers, dtype=bool)
     # find the first iteration in each chain where the logplr has exceeded
     # max_p - dim/2
     for ii in range(nwalkers):
@@ -70,7 +73,8 @@ def max_posterior(sampler, fp):
         idx = numpy.where(chain >= criteria)[-1]
         if idx.size != 0:
             burn_in_idx[ii] = idx[0]
-    return burn_in_idx
+            is_burned_in[ii] = True
+    return burn_in_idx, is_burned_in
 
 
 def posterior_step(sampler, fp):
@@ -87,8 +91,11 @@ def posterior_step(sampler, fp):
 
     Returns
     -------
-    array :
+    burn_in_idx : array
         Array of indices giving the burn-in index for each chain.
+    is_burned_in : array
+        Array of booleans indicating wether each chain is burned in.
+        By definition of this function, all values are set to True.
     """
     # get the posteriors
     # Note: multi-tempered samplers should just return the coldest chain by
@@ -109,7 +116,7 @@ def posterior_step(sampler, fp):
         idx = numpy.where(dp >= criteria)[-1]
         if idx.size != 0:
             burn_in_idx[ii] = idx[-1] + 1
-    return burn_in_idx
+    return burn_in_idx, numpy.ones(nwalkers, dtype=bool)
 
 
 def half_chain(sampler, fp):
@@ -126,12 +133,16 @@ def half_chain(sampler, fp):
 
     Returns
     -------
-    array :
+    burn_in_idx : array
         Array of indices giving the burn-in index for each chain.
+    is_burned_in : array
+        Array of booleans indicating wether each chain is burned in.
+        By definition of this function, all values are set to True.
     """ 
     nwalkers = sampler.nwalkers
     niterations = fp.niterations
-    return numpy.repeat(niterations/2, nwalkers).astype(int)
+    return numpy.repeat(niterations/2, nwalkers).astype(int), \
+           numpy.ones(nwalkers, dtype=bool)
 
 
 def use_sampler(sampler, fp=None):
@@ -148,11 +159,16 @@ def use_sampler(sampler, fp=None):
 
     Returns
     -------
-    array :
+    burn_in_idx : array
         Array of indices giving the burn-in index for each chain.
+    is_burned_in : array
+        Array of booleans indicating wether each chain is burned in.
+        Since the sampler's burn in function will run until all chains
+        are burned, all values are set to True.
     """
     sampler.burn_in()
-    return sampler.burn_in_iterations
+    return sampler.burn_in_iterations, \
+           numpy.ones(len(sampler.burn_in_iterations), dtype=bool)
 
 
 burn_in_functions = {
@@ -226,13 +242,25 @@ class BurnIn(object):
         except KeyError:
             # just use the minimum
             burnidx = numpy.repeat(self.min_iterations, fp.nwalkers)
+        try:
+            is_burned_in = fp['is_burned_in'][:]
+        except KeyError:
+            # assume false
+            is_burned_in = numpy.zeros(fp.nwalkers, dtype=bool)
         if self.burn_in_functions != {}:
-            newidx = numpy.vstack([func(sampler, fp)
-                for func in self.burn_in_functions.values()]).max(axis=0)
+            newidx = []
+            is_burned_in = None
+            for func in self.burn_in_functions.values():
+                idx, state = func(sampler, fp)
+                newidx.append(idx)
+                is_burned_in &= state
+            newidx = numpy.vstack(newidx).max(axis=0)
             mask = burnidx < newidx
             burnidx[mask] = newidx[mask]
-        burnidx[burnidx < self.min_iterations] = self.min_iterations
-        return burnidx
+        mask = burnidx < self.min_iterations
+        burnidx[mask] = self.min_iterations
+        is_burned_in[mask] = self.min_iterations < fp.niterations
+        return burnidx, is_burned_in
 
     def update(self, sampler, fp):
         """Evaluates burn in and saves the updated indices to the given file.
@@ -246,7 +274,7 @@ class BurnIn(object):
             Open inference hdf file containing the samples to load for
             determing burn in.
         """
-        burnidx = self.evaluate(sampler, fp)
+        burnidx, is_burned_in = self.evaluate(sampler, fp)
         sampler.burn_in_iterations = burnidx
         sampler.write_burn_in_iterations(fp, burnidx)
 
