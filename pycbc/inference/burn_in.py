@@ -235,6 +235,11 @@ class BurnIn(object):
         array :
             Array of indices giving the burn-in index for each chain.
         """
+        # if the number of iterations is < than the minimium desired,
+        # just return the number of iterations and all False
+        if fp.niterations < self.min_iterations:
+            return numpy.repeat(self.min_iterations, fp.nwalkers), \
+                   numpy.zeros(fp.nwalkers, dtype=bool)
         # if the file already has burn in iterations saved, use those as a
         # base
         try:
@@ -242,11 +247,9 @@ class BurnIn(object):
         except KeyError:
             # just use the minimum
             burnidx = numpy.repeat(self.min_iterations, fp.nwalkers)
-        try:
-            is_burned_in = fp['is_burned_in'][:]
-        except KeyError:
-            # assume false
-            is_burned_in = numpy.zeros(fp.nwalkers, dtype=bool)
+        # start by assuming is burned in; the &= below will make this false
+        # if any test yields false
+        is_burned_in = numpy.ones(fp.nwalkers, dtype=bool)
         if self.burn_in_functions != {}:
             newidx = []
             for func in self.burn_in_functions.values():
@@ -254,11 +257,12 @@ class BurnIn(object):
                 newidx.append(idx)
                 is_burned_in &= state
             newidx = numpy.vstack(newidx).max(axis=0)
+            # update the burn in idx if any test yields a larger iteration
             mask = burnidx < newidx
             burnidx[mask] = newidx[mask]
-        mask = burnidx <= self.min_iterations
-        burnidx[mask] = self.min_iterations
-        is_burned_in[mask] = self.min_iterations < fp.niterations
+        # if any burn-in idx are less than the min iterations, set to the
+        # min iterations
+        burnidx[burnidx < self.min_iterations] = self.min_iterations
         return burnidx, is_burned_in
 
     def update(self, sampler, fp):
