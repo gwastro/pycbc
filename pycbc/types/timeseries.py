@@ -558,6 +558,29 @@ class TimeSeries(Array):
 
         return times, freqs, q_plane
 
+    def notch_fir(self, f1, f2, order, beta=5.0, remove_corrupted=True):
+        """ notch filter the time series using an FIR filtered generated from 
+        the ideal response passed through a kaiser window (beta = 5.0)
+
+        Parameters
+        ----------
+        Time Series: TimeSeries
+            The time series to be low-passed.
+        f1: float
+            The start of the frequency suppression.
+        f2: float
+            The end of the frequency suppression.
+        order: int
+            Number of corrupted samples on each side of the time series
+        beta: float
+            Beta parameter of the kaiser window that sets the side lobe attenuation.
+        """
+        from pycbc.filter import notch_fir
+        ts = notch_fir(self, f1, f2, order, beta=beta)
+        if remove_corrupted:
+            ts = ts[order:len(ts)-order]
+        return ts
+
     def lowpass_fir(self, frequency, order, beta=5.0, remove_corrupted=True):
         """ Lowpass filter the time series using an FIR filtered generated from 
         the ideal response passed through a kaiser window (beta = 5.0)
