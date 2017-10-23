@@ -154,7 +154,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Installing scipy"
   pip install "scipy>=0.13.0" &>/dev/null
   echo -e "\\n>> [`date`] Installing M2Crypto"
-  SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install 'M2Crypto==0.21.1'
+  SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install 'M2Crypto==0.25.1'
 
   echo -e "\\n>> [`date`] Installing LAL"
   mkdir -p ${VIRTUAL_ENV}/src
