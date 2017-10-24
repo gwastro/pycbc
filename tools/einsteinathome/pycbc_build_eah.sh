@@ -120,6 +120,8 @@ elif test ".$1" = ".--force-debian4" ||
     link_gcc_version=4.8.5
     gcc_path="/usr/local/bin"
     build_ssl=true
+    pyssl_from="pip-install"
+    build_python=true
     pyinstaller_lsb="--no-lsb"
     $pyinstaller21_hacks || build_subprocess32=true
     build_onefile_bundles=true
@@ -469,11 +471,15 @@ else # if $BUILDDIRNAME-preinst.tgz
 
     # OpenSSL
     if $build_ssl; then
-    # p=openssl-1.0.2e # compile error on pyOpenSSL 0.13:
-    # pycbc/include/openssl/x509.h:751: note: previous declaration X509_REVOKED_ was here
-	p=openssl-1.0.1p
+        # use 1.0.1p for pyOpenSSL 0.13
+	if [ "$pyssl_from" = "tarball" ] ; then
+	    p=openssl-1.0.1p
+	else
+	    p=openssl-1.0.2l
+	fi
 	echo -e "\\n\\n>> [`date`] building $p" >&3
-	test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz
+	test -r $p.tar.gz || wget $wget_opts $aei/$p.tar.gz ||
+	    wget $wget_opts https://www.openssl.org/source/$p.tar.gz
 	rm -rf $p
 	tar -xzvf $p.tar.gz  &&
 	cd $p &&
@@ -498,12 +504,17 @@ else # if $BUILDDIRNAME-preinst.tgz
 	make install
 	cd ..
 	$cleanup && rm -rf $p
+	hash -r
 	python -m ensurepip
+	hash -r
 	echo -e "\\n\\n>> [`date`] pip install --upgrade pip" >&3
 	pip install --upgrade pip
 	echo -e "\\n\\n>> [`date`] pip install virtualenv" >&3
 	pip install virtualenv
     fi
+
+    echo -e "\\n\\n>> [`date`] make sure dbhash and shelve exist" >&3
+    python -c "import dbhash, shelve"
 
     # set up virtual environment
     unset PYTHONPATH
@@ -514,10 +525,7 @@ else # if $BUILDDIRNAME-preinst.tgz
     export PYTHONPATH="$PREFIX/lib/python2.7/site-packages:$PYTHONPATH"
 
     # pyOpenSSL-0.13
-    if [ "$pyssl_from" = "pip-install" ] ; then
-	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL==0.13" >&3
-	pip install pyOpenSSL==0.13
-    else
+    if [ "$pyssl_from" = "tarball" ] ; then
 	p=pyOpenSSL-0.13
 	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts "$pypi/source/p/pyOpenSSL/$p.tar.gz"
@@ -530,6 +538,9 @@ else # if $BUILDDIRNAME-preinst.tgz
 	python setup.py install --prefix="$PREFIX"
 	cd ..
 	$cleanup && rm -rf $p
+    else
+	echo -e "\\n\\n>> [`date`] pip install pyOpenSSL" >&3
+	pip install pyOpenSSL
     fi
 
     # LAPACK & BLAS
@@ -569,9 +580,6 @@ else # if $BUILDDIRNAME-preinst.tgz
 
     echo -e "\\n\\n>> [`date`] pip install nose, Cython-0.23.2" >&3
     pip install nose Cython==0.23.2
-
-    echo -e "\\n\\n>> [`date`] make sure dbhash and shelve exist" >&3
-    python -c "import dbhash, shelve"
 
     # SCIPY
     if [ "$scipy_from" = "pip-install" ] ; then
