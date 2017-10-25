@@ -303,8 +303,8 @@ with ctx:
         burn_in_eval.burn_in_functions.pop("use_sampler")
         with InferenceFile(opts.output_file, "a") as fp:
             logging.info("Running sampler's burn in function")
-            burnidx = burn_in.use_sampler(sampler, fp)
-            sampler.write_burn_in_iterations(fp, burnidx)
+            burnidx, is_burned_in = burn_in.use_sampler(sampler, fp)
+            sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
             # write the burn in results
             n_sampler_burn_in = burnidx.max()
             if max_iterations is not None:
@@ -373,7 +373,10 @@ with ctx:
             # update nsamples for next loop
             if opts.n_independent_samples is not None:
                 with InferenceFile(opts.output_file, 'r') as fp:
-                    nsamples = fp.n_independent_samples
+                    if fp.is_burned_in:
+                        nsamples = fp.n_independent_samples
+                    else:
+                        nsamples = 0
                 logging.info("Have {} independent samples".format(nsamples))
             else:
                 nsamples += interval

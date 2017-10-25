@@ -207,6 +207,12 @@ class InferenceFile(h5py.File):
         return self.attrs["burn_in_iterations"]
 
     @property
+    def is_burned_in(self):
+        """Returns whether or not the sampler is burned in.
+        """
+        return self.attrs["is_burned_in"]
+
+    @property
     def nwalkers(self):
         """Returns number of walkers used.
 

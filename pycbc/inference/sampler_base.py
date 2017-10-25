@@ -190,7 +190,7 @@ class _BaseSampler(object):
         fp.attrs['dlog_evidence'] = dlnz
 
     @staticmethod
-    def write_burn_in_iterations(fp, burn_in_iterations):
+    def write_burn_in_iterations(fp, burn_in_iterations, is_burned_in=None):
         """Writes the burn in iterations to the given file.
 
         Parameters
@@ -199,12 +199,20 @@ class _BaseSampler(object):
             A file handler to an open inference file.
         burn_in_iterations : array
             Array of values giving the iteration of the burn in of each walker.
+        is_burned_in : array
+            Array of booleans indicating which chains are burned in.
         """
         try:
             fp['burn_in_iterations'][:] = burn_in_iterations
         except KeyError:
             fp['burn_in_iterations'] = burn_in_iterations
         fp.attrs['burn_in_iterations'] = burn_in_iterations.max()
+        if is_burned_in is not None:
+            try:
+                fp['is_burned_in'][:] = is_burned_in
+            except KeyError:
+                fp['is_burned_in'] = is_burned_in
+            fp.attrs['is_burned_in'] = is_burned_in.all()
 
 class BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
