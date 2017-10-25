@@ -25,6 +25,7 @@ from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
 import pycbc.detector
 import numpy as np
+from pycbc.types import timeseries
 
 parser = argparse.ArgumentParser(usage='',
     description="Find multiple detector gravitational-wave triggers.")
@@ -92,9 +93,12 @@ fft.insert_fft_option_group(parser)
 For GRB we have sky position
 """
 longitude = 0.9999715 
-latitude = 1.051503
+latitude = 6.103652
 pol = 1.21771
-t_gps = 1169088610
+t_gps = 1169088610.0
+
+ra = longitude
+dec = latitude
 
 opt = parser.parse_args()
 
@@ -120,20 +124,42 @@ def dominant_polarization(f_sig):
     :param f_sig: sensitivity of detectors: sigma * (F+, Fx)
     """
     nifo = len(f_sig.keys())
-    m = np.zeros((nifo, 2))
+    m = np.zeros((2, 2))
     for ifo in f_sig.keys():
         m += np.outer(f_sig[ifo], f_sig[ifo])
     f_cross, f_plus = np.sort(np.sqrt(np.linalg.eig(m)[0])) #This returns eigenvalues of m 
     chi = 1./4 * np.arctan2(2 * m[0,1], m[0,0] - m[1,1])
     return f_plus, f_cross, chi
 
+import numpy
+def pad_timeseries_to_integer_length(input_array, sample_rate):
+    ''' This function zero pads a time series so that its length is an integer
+    multiple of the sampling rate.
+
+    Padding is adding symmetically to the start and end of the time series.
+    If the number of samples to pad is odd then the end zero padding will have
+    one more sample than the start zero padding.
+    '''
+    timeseries_ = timeseries.TimeSeries(input_array,delta_t=sample_rate)
+    # calculate how many sample points needed to pad to get
+    # integer second time series
+    remainder = sample_rate - len(timeseries_) % sample_rate
+    start_pad = int(remainder / 2)
+    end_pad = int(remainder - start_pad)
+
+    # make arrays of zeroes
+    start_array = numpy.zeros(start_pad)
+    end_array = numpy.zeros(end_pad)
+
+    # pad waveform with arrays of zeroes
+    initial_array = numpy.concatenate([start_array,timeseries_,end_array])
+    return TimeSeries(initial_array, delta_t=timeseries_.delta_t,
+                      epoch=timeseries_.start_time, dtype=timeseries_.dtype)
 
 strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments, 
                                          dyn_range_fac=DYN_RANGE_FAC)
 strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(opt, 
-                                                  strain_dict, opt.instruments)
-    
-
+  				         strain_dict, opt.instruments)
 with ctx:
     fft.from_cli(opt)
 
@@ -141,42 +167,42 @@ with ctx:
     flow = opt.low_frequency_cutoff
     flow_dict = defaultdict(lambda : flow)
     for count, ifo in enumerate(opt.instruments):
-        if count == 0:
-            sample_rate = strain_dict[ifo].sample_rate
-            sample_rate_dict = defaultdict(lambda : sample_rate)
-            flen = strain_segments_dict[ifo].freq_len
-            flen_dict = defaultdict(lambda : flen)
-            tlen = strain_segments_dict[ifo].time_len
-            tlen_dict = defaultdict(lambda : tlen)
-            delta_f = strain_segments_dict[ifo].delta_f
-            delta_f_dict = defaultdict(lambda : delta_f)            
-        else:
-            try:
-                assert(sample_rate == strain_dict[ifo].sample_rate)
-                assert(flen == strain_segments_dict[ifo].freq_len)
-                assert(tlen == strain_segments_dict[ifo].time_len)
-                assert(delta_f == strain_segments_dict[ifo].delta_f)
-            except:
-                err_msg = "Sample rate, frequency length and time length "
-                err_msg += "must all be consistent across ifos."
-                raise ValueError(err_msg)
+	if count == 0:
+	    sample_rate = strain_dict[ifo].sample_rate
+	    sample_rate_dict = defaultdict(lambda : sample_rate)
+	    flen = strain_segments_dict[ifo].freq_len
+	    flen_dict = defaultdict(lambda : flen)
+	    tlen = strain_segments_dict[ifo].time_len
+	    tlen_dict = defaultdict(lambda : tlen)
+	    delta_f = strain_segments_dict[ifo].delta_f
+	    delta_f_dict = defaultdict(lambda : delta_f)            
+	else:
+	    try:
+		assert(sample_rate == strain_dict[ifo].sample_rate)
+		assert(flen == strain_segments_dict[ifo].freq_len)
+		assert(tlen == strain_segments_dict[ifo].time_len)
+		assert(delta_f == strain_segments_dict[ifo].delta_f)
+	    except:
+		err_msg = "Sample rate, frequency length and time length "
+		err_msg += "must all be consistent across ifos."
+		raise ValueError(err_msg)
 
     logging.info("Making frequency-domain data segments")
     segments = {}
     for ifo in opt.instruments:
-        segments[ifo] = strain_segments_dict[ifo].fourier_segments()
-        del strain_segments_dict[ifo]
+	segments[ifo] = strain_segments_dict[ifo].fourier_segments()
+	del strain_segments_dict[ifo]
 
     logging.info("Computing noise PSD")
     psds = psd.from_cli_multi_ifos(opt, flen_dict, delta_f_dict, flow_dict,
-                                  opt.instruments, strain_dict=strain_dict, 
-                                  dyn_range_factor=DYN_RANGE_FAC)
+				  opt.instruments, strain_dict=strain_dict, 
+				  dyn_range_factor=DYN_RANGE_FAC)
     for ifo in opt.instruments:
-        psds[ifo] = psds[ifo].astype(float32)
+	psds[ifo] = psds[ifo].astype(float32)
 
     psd.associate_psds_to_multi_ifo_segments(opt, segments, strain_dict, flen,
-            delta_f, flow, opt.instruments, dyn_range_factor=DYN_RANGE_FAC,
-            precision='single')
+	    delta_f, flow, opt.instruments, dyn_range_factor=DYN_RANGE_FAC,
+	    precision='single')
 
     # Currently we are using the same matched-filter parameters for all ifos.
     # Therefore only one MatchedFilterControl needed. Maybe this can change if
@@ -184,20 +210,25 @@ with ctx:
     # ifos, so just send the first ifo
     template_mem = zeros(tlen, dtype=complex64)
     if opt.cluster_window == 0:
-        use_cluster = False
+	use_cluster = False
     else:
-        use_cluster = True
+	use_cluster = True
     
     matched_filter = {}
+    time_delay = {}
+    time_delay_idx = {}
     for ifo in opt.instruments:
-        matched_filter[ifo] = MatchedFilterControl(opt.low_frequency_cutoff, None,
-                                   opt.snr_threshold, tlen, delta_f, complex64,
-                                   segments[ifo], template_mem,
-                                   use_cluster,
-                                   downsample_factor=opt.downsample_factor,
-                                   upsample_threshold=opt.upsample_threshold,
-                                   upsample_method=opt.upsample_method,
-                                   cluster_function='symmetric')
+	time_delay[ifo] =  \
+	pycbc.detector.Detector(ifo).time_delay_from_earth_center(ra,dec,t_gps)
+	time_delay_idx[ifo] = int(time_delay[ifo]*sample_rate)
+	matched_filter[ifo] = MatchedFilterControl(opt.low_frequency_cutoff, None,
+				   opt.snr_threshold, tlen, delta_f, complex64,
+				   segments[ifo], template_mem,
+				   use_cluster,
+				   downsample_factor=opt.downsample_factor,
+				   upsample_threshold=opt.upsample_threshold,
+				   upsample_method=opt.upsample_method,
+				   cluster_function='symmetric')
 
     logging.info("Initializing signal-based vetoes.")
     # The existing SingleDetPowerChisq can calculate the single detector
@@ -206,192 +237,209 @@ with ctx:
     # The existing SingleDetBankVeto can calculate the single detector
     # bank veto for multiple ifos, so we just use it directly.
     bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file, flen,
-                                          delta_f, flow, complex64,
-                                          phase_order=opt.order,
-                                          approximant=opt.approximant)
+					  delta_f, flow, complex64,
+					  phase_order=opt.order,
+					  approximant=opt.approximant)
     # Same here
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
-                                         opt.autochi_number_points,
-                                         onesided=opt.autochi_onesided)
+					 opt.autochi_number_points,
+					 onesided=opt.autochi_onesided)
 
     logging.info("Overwhitening frequency-domain data segments")
     for ifo in opt.instruments:
-        for seg in segments[ifo]:
-            seg /= psds[ifo]
+	for seg in segments[ifo]:
+	    seg /= psds[ifo]
 
     out_types = {
-        'time_index'     : int,
-        'ifo'            : int, # IFO is stored as an int internally!
-        'snr'            : complex64,
-        'chisq'          : float32,
-        'chisq_dof'      : int,
-        'bank_chisq'     : float32,
-        'bank_chisq_dof' : int,
-        'cont_chisq'     : float32,
-                }
+	'time_index'     : int,
+	'ifo'            : int, # IFO is stored as an int internally!
+	'snr'            : complex64,
+	'chisq'          : float32,
+	'chisq_dof'      : int,
+	'bank_chisq'     : float32,
+	'bank_chisq_dof' : int,
+	'cont_chisq'     : float32,
+		}
     out_vals = {
-        'time_index'     : None,
-        'ifo'            : None,
-        'snr'            : None,
-        'chisq'          : None,
-        'chisq_dof'      : None,
-        'bank_chisq'     : None,
-        'bank_chisq_dof' : None,
-        'cont_chisq'     : None,
-               }
+	'time_index'     : None,
+	'ifo'            : None,
+	'snr'            : None,
+	'chisq'          : None,
+	'chisq_dof'      : None,
+	'bank_chisq'     : None,
+	'bank_chisq_dof' : None,
+	'cont_chisq'     : None,
+	       }
     names = sorted(out_vals.keys())
 
     event_mgr = events.EventManagerMultiDet(opt, opt.instruments, names,
-                                        [out_types[n] for n in names], psd=psds)
+					[out_types[n] for n in names], psd=psds)
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f, complex64,
-                               low_frequency_cutoff=flow, phase_order=opt.order,
-                               taper=opt.taper_template,
-                               approximant=opt.approximant, out=template_mem)
+			       low_frequency_cutoff=flow, phase_order=opt.order,
+			       taper=opt.taper_template,
+			       approximant=opt.approximant, out=template_mem)
     roh_coh_dict = {}
     roh_coinc_dict={}
     coinc_snrv_dict={}
     time=[]
     for t_num, template in enumerate(bank):
-        if t_num == 10: #use small sample set for development
-           break
-        """
-        Calculating f_p and f_c for each detector for use later in calculating the coherent snr
-        """
-        roh_coh_dict[t_num]={}
-        roh_coinc_dict[t_num]={}
-        coinc_snrv_dict[t_num]={}
-        Fp = {} #Antenna patterns
-        Fc = {}
-        sigmasq = {}
-        sigma = {}
-        f_sig = {}
-        for ifo in opt.instruments:
-            Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(longitude, latitude, pol, t_gps)
-            sigmasq[ifo] = template.sigmasq(psds[ifo])
-            sigma[ifo] = np.sqrt(sigmasq[ifo])
-            f_sig[ifo] = sigma[ifo]*np.array([Fp[ifo],Fc[ifo]])
-        chi_dp = dominant_polarization(f_sig)[2] #Dominant polarisation angle
-        #Change to dominant polarisation frame
-        Fp_dp={}
-        Fc_dp={}
-        for ifo in opt.instruments:
-            Fp_dp[ifo] = Fp[ifo]*np.cos(2*chi_dp) + Fc[ifo]*np.sin(2*chi_dp)       
-            Fc_dp[ifo] = -Fp[ifo]*np.sin(2*chi_dp) + Fc[ifo]*np.cos(2*chi_dp)       
-        #define the orthogonal unit vectors
-        fp_denominator = 0
-        fc_denominator = 0
-        for ifo in opt.instruments:
-            fp_denominator += (sigma[ifo]*Fp_dp[ifo])**2 
-            fc_denominator += (sigma[ifo]*Fc_dp[ifo])**2 
-        fp_denominator = np.sqrt(fp_denominator) 
-        fc_denominator = np.sqrt(fc_denominator) 
-        fp = {}
-        fc = {}
-        for ifo in opt.instruments:
-            fp[ifo] = sigma[ifo]*Fp_dp[ifo]/fp_denominator
-            fc[ifo] = sigma[ifo]*Fc_dp[ifo]/fc_denominator
-        
-        
+	if t_num == 1: #use small sample set for development
+	   break
+	"""
+	Calculating f_p and f_c for each detector for use later in calculating the coherent snr
+	"""
+	roh_coh_dict[t_num]={}
+	roh_coinc_dict[t_num]={}
+	coinc_snrv_dict[t_num]={}
+	Fp = {} #Antenna patterns
+	Fc = {}
+	sigmasq = {}
+	sigma = {}
+	f_sig = {}
+	for ifo in opt.instruments:
+	    Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(ra, dec, pol, t_gps)
+	    sigmasq[ifo] = template.sigmasq(psds[ifo])
+	    sigma[ifo] = np.sqrt(sigmasq[ifo])
+	    f_sig[ifo] = sigma[ifo]*np.array([Fp[ifo],Fc[ifo]])
+	chi_dp = dominant_polarization(f_sig)[2] #Dominant polarisation angle
+	#Change to dominant polarisation frame
+	Fp_dp={}
+	Fc_dp={}
+	for ifo in opt.instruments:
+	    Fp_dp[ifo] = Fp[ifo]*np.cos(2*chi_dp) + Fc[ifo]*np.sin(2*chi_dp)       
+	    Fc_dp[ifo] = -Fp[ifo]*np.sin(2*chi_dp) + Fc[ifo]*np.cos(2*chi_dp)       
+	#define the orthogonal unit vectors
+	fp_denominator = 0
+	fc_denominator = 0
+	for ifo in opt.instruments:
+	    fp_denominator += (sigma[ifo]*Fp_dp[ifo])**2 
+	    fc_denominator += (sigma[ifo]*Fc_dp[ifo])**2 
+	fp_denominator = np.sqrt(fp_denominator) 
+	fc_denominator = np.sqrt(fc_denominator) 
+	fp = {}
+	fc = {}
+	for ifo in opt.instruments:
+	    fp[ifo] = sigma[ifo]*Fp_dp[ifo]/fp_denominator
+	    fc[ifo] = sigma[ifo]*Fc_dp[ifo]/fc_denominator
+	
+	
 
 
-        event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
-        for ifo in opt.instruments:
-            if opt.cluster_method == "window":
-                cluster_window = int(opt.cluster_window * sample_rate)
-            elif opt.cluster_method == "template":
-                cluster_window = int(template.chirp_length * sample_rate)
-            elif opt.cluster_window == 0:
-                 cluster_window = int(0)
+	event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
+	for ifo in opt.instruments:
+	    if opt.cluster_method == "window":
+		cluster_window = int(opt.cluster_window * sample_rate)
+	    elif opt.cluster_method == "template":
+		cluster_window = int(template.chirp_length * sample_rate)
+	    elif opt.cluster_window == 0:
+		 cluster_window = int(0)
 
-        s = range(len(segments['L1'])) #find number of segments (same in both ifos)
-        for s_num in s: #for each segment loop over the ifos
-            snr={} 
-            norm_dict={}
-            snrv_dict={}
-            for ifo in opt.instruments:
-                #print "ifo=" + str(ifo)
-                stilde = segments[ifo][s_num]
-                #print "stilde="+str(stilde)
-                logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
-                             (t_num + 1, len(bank), ifo, s_num + 1,
-                              len(segments[ifo])))       
-                snr_ts, norm, corr, idx, snrv = \
-                        matched_filter[ifo].matched_filter_and_cluster(s_num,
-                            template.sigmasq(stilde.psd), window=cluster_window)
-                #This next line gets rid of the end data from the segment (which is corrupted)
-                snr[ifo] = snr_ts[matched_filter[ifo].segments[s_num].analyze]
-                norm_dict[ifo] = norm
-                #Adding print statement for test
-                #print "use_cluster=" + str(use_cluster) + " idx_length=" + str(len(idx))
-                #print "s_num=" + str(s_num) 
-                if len(idx) == 0:
-                    continue
+	s = range(len(segments[opt.instruments[0]])) #find number of segments (same in both ifos)
+	for s_num in s: #for each segment loop over the ifos
+	    if s_num==1:
+		break
+	    snr={} 
+	    norm_dict={}
+	    snrv_dict={}
+	    for ifo in opt.instruments:
+		#print "ifo=" + str(ifo)
+		stilde = segments[ifo][s_num]
+		#print "stilde="+str(stilde)
+		logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
+			     (t_num + 1, len(bank), ifo, s_num + 1,
+			      len(segments[ifo])))       
+		snr_ts, norm, corr, idx, snrv = \
+			matched_filter[ifo].matched_filter_and_cluster(s_num,
+			    template.sigmasq(stilde.psd), window=cluster_window)
+		#This next line gets rid of the end data from the segment (which is corrupted) and add time delay to the strain segments
+		analyse_data = matched_filter[ifo].segments[s_num].analyze
+		snr[ifo] = snr_ts[analyse_data]
+		snr_ts.roll(time_delay_idx[ifo])
+		norm_dict[ifo] = norm
+		if len(idx) == 0:
+		    continue
+		print ifo, t_num, s_num
+		print "maxsnr="
+		print (max(snr[ifo]*snr[ifo].conj())*norm_dict[ifo]**2)**0.5
+		#print "index of max="
+		#print np.argmax(snr[ifo]*snr[ifo].conj())
+		#print snr[ifo].abs_max_loc() 
+		print "maxsnrv="
+		print (max(snrv*snrv.conj())*norm**2)**0.5
+		#print max(abs(snrv) * norm)
+		#print idx
+		if max(snr[ifo]*snr[ifo].conj())*norm_dict[ifo]**2 !=\
+		     max(snrv*snrv.conj())*norm**2:
+		    print "PANIC!!"
 
-                print ifo
-                print "maxsnr="
-                print snr[ifo].abs_max_loc() 
-                print "maxsnrv="
-                print max(abs(snrv) * norm)
-                print idx
+		out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
+			bank_chisq.values(template, stilde.psd, stilde, snrv,
+					  norm, idx+stilde.analyze.start)
 
-                out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
-                        bank_chisq.values(template, stilde.psd, stilde, snrv,
-                                          norm, idx+stilde.analyze.start)
+		out_vals['chisq'], out_vals['chisq_dof'] =\
+			power_chisq.values(corr, snrv, norm, stilde.psd,
+					   idx+stilde.analyze.start, template)
 
-                out_vals['chisq'], out_vals['chisq_dof'] =\
-                        power_chisq.values(corr, snrv, norm, stilde.psd,
-                                           idx+stilde.analyze.start, template)
+		out_vals['cont_chisq'] = autochisq.values(snr,
+			idx+stilde.analyze.start, template, stilde.psd, norm,
+			stilde=stilde, low_frequency_cutoff=flow)
 
-                out_vals['cont_chisq'] = autochisq.values(snr,
-                        idx+stilde.analyze.start, template, stilde.psd, norm,
-                        stilde=stilde, low_frequency_cutoff=flow)
+		idx += stilde.cumulative_index
 
-                idx += stilde.cumulative_index
+		out_vals['time_index'] = idx
+		out_vals['snr'] = snrv * norm
+		snrv_dict[ifo]=snrv*norm
+		# IFO is stored as an int
+		out_vals['ifo'] = event_mgr.ifo_dict[ifo]
 
-                out_vals['time_index'] = idx
-                out_vals['snr'] = snrv * norm
-                snrv_dict[ifo]=snrv*norm
-                # IFO is stored as an int
-                out_vals['ifo'] = event_mgr.ifo_dict[ifo]
-
-                event_mgr.add_template_events_to_ifo(ifo, names,
-                        [out_vals[n] for n in names])
+		event_mgr.add_template_events_to_ifo(ifo, names,
+			[out_vals[n] for n in names])
 
 
-            #Calculate coherent snr roh_coh
-            run_flag=True
-            for ifo in opt.instruments:
-                if snr[ifo] == []: 
-                    run_flag = False
-                    break
-            #print "run_flag=" + str(run_flag)
-            if run_flag == True:
-                roh_coh2=0
-                roh_coinc2=0
-                coinc_snrv2=0
-                for ifo1 in opt.instruments:
-                    snr[ifo1]*=norm_dict[ifo1]
-                    #print "snr="+str(snr[ifo1])
-                    for ifo2 in opt.instruments:
-                        roh_coh2 += snr[ifo1].conj()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2]
-                    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
-                    coinc_snrv2 += max(snrv_dict[ifo1].conj()*snrv_dict[ifo1])
-                roh_coh_dict[t_num][s_num]=np.sqrt(roh_coh2)
-                roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
-                coinc_snrv_dict[t_num][s_num]=np.sqrt(coinc_snrv2)
-                time.append(idx)
+	    #Calculate coherent snr roh_coh
+	    #Check we have data before we try to compute the coherent snr
+	    run_flag=True
+	    for ifo in opt.instruments:
+		if snr[ifo] == []: 
+		    run_flag = False
+		    break
+	    print "run_flag=" + str(run_flag)
+	    #If we have data, calculate roh_coh
+	    if run_flag == True:
+		for ifo in opt.instruments:
+		    snr[ifo]*=norm_dict[ifo]
+		roh_coh2=0
+                roh_coh2_alt=0
+		roh_coinc2=0
+		coinc_snrv2=0
+		for ifo1 in opt.instruments:
+		    #print "snr="+str(snr[ifo1])
+		    for ifo2 in opt.instruments:
+			roh_coh2 += snr[ifo1].conj()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2]
+                        roh_coh2_alt+= snr[ifo1].real()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2].real()
+                        roh_coh2_alt+= snr[ifo1].imag()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2].imag()
+		    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
+		    #coinc_snrv2 += snrv_dict[ifo1].conj()*snrv_dict[ifo1]
+		roh_coh_dict[t_num][s_num]=np.sqrt(roh_coh2)
+		roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
+                roh_coh_alt = np.sqrt(roh_coh2_alt)
+		#coinc_snrv_dict[t_num][s_num]=np.sqrt(max(coinc_snrv2))
+		time.append(idx)
+	    	
+	    event_mgr.cluster_template_events_single_ifo("time_index",
+						    "snr", cluster_window, ifo)
 
-            event_mgr.cluster_template_events_single_ifo("time_index",
-                                                    "snr", cluster_window, ifo)
-        event_mgr.finalize_template_events()
 
+"""
+#FIXME This stuff doesn't work for more than 2 detectors.
+	event_mgr.finalize_template_events()
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
 if opt.chisq_threshold and opt.chisq_bins:
     logging.info("Removing triggers with poor chisq")
     event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
-                                   opt.chisq_delta)
+				   opt.chisq_delta)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
 if opt.newsnr_threshold and opt.chisq_bins:
@@ -406,5 +454,31 @@ if opt.fftw_output_float_wisdom_file:
 
 if opt.fftw_output_double_wisdom_file:
     fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
-
+"""
 logging.info("Finished")
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+plt.figure()
+plt.plot(roh_coinc_dict[0][0],'b.',label='coinc snr')
+plt.plot(roh_coh_dict[0][0],'rx',label='coh snr')
+plt.legend()
+plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
+
+plt.figure()
+for ifo in opt.instruments:
+    single_det_snr = snr[ifo]*snr[ifo].conj()**0.5
+    plt.plot(single_det_snr[np.argmax(single_det_snr)-50:np.argmax(single_det_snr)+50],'.',label=ifo)
+    plt.plot(np.argmax(single_det_snr[np.argmax(single_det_snr)-50:np.argmax(single_det_snr)+50]),max(single_det_snr[np.argmax(single_det_snr)-50:np.argmax(single_det_snr)+50]),'*',label=ifo)
+plt.legend()
+plt.savefig("/home/c1551011/public_html/single_det_snr.png")
+print t_gps
+print "max coherent snr"
+print max(roh_coh_dict[0][0])
+print "max roh coh alt"
+print max(roh_coh_alt)
+print "max coincident snr"
+print max(roh_coinc_dict[0][0])
+
+
