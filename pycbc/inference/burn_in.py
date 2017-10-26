@@ -70,8 +70,7 @@ def ks_test(sampler, fp):
         # read samples for the parameter from the iteration midway along the chain
         samples_chain_midpt = sampler.read_samples(fp, param, iteration=int(niterations/2),
                                                   flatten=True)[param]
-        samples_chain_midpt_sorted = numpy.sort(samples_chain_midpt)
-        _, p_value = ks_2samp(samples_last_iter, samples_chain_midpt_sorted)
+        _, p_value = ks_2samp(samples_last_iter, samples_chain_midpt)
         # check if p_value is within the desired range
         if p_value > 0.1 and p_value < 0.9 :
             is_burned_in_param[param] = True
