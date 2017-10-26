@@ -50,7 +50,6 @@ def ks_test(sampler, fp):
         Array of booleans indicating whether each chain is burned in.
     """
     from scipy.stats import ks_2samp
-    #from pycbc.io import FieldArray
     from scipy import interpolate
     nwalkers = fp.nwalkers
     niterations = fp.niterations
