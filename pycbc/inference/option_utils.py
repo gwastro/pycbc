@@ -29,6 +29,7 @@ from pycbc.io.inference_hdf import InferenceFile
 from pycbc.io.inference_txt import InferenceTXTFile
 from pycbc.inference import likelihood
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.workflow import ConfigParser
 from pycbc.pool import choose_pool
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
@@ -123,9 +124,12 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
         raise KeyError("You are missing a priors section in the config file.")
 
     # get parameters that do not change in sampler
-    static_args = dict([(key,cp.get_opt_tags(
-        "{}static_args".format(section_prefix), key, []))
-        for key in cp.options("{}static_args".format(section_prefix))])
+    try:
+        static_args = dict([(key,cp.get_opt_tags(
+            "{}static_args".format(section_prefix), key, []))
+            for key in cp.options("{}static_args".format(section_prefix))])
+    except ConfigParser.NoSectionError:
+        static_args = {}
     # try converting values to float
     for key,val in static_args.iteritems():
         try:
@@ -329,7 +333,7 @@ def add_low_frequency_cutoff_opt(parser):
     # FIXME: this just uses the same frequency cutoff for every instrument for
     # now. We should allow for different frequency cutoffs to be used; that
     # will require (minor) changes to the Likelihood class
-    parser.add_argument("--low-frequency-cutoff", type=float, required=True,
+    parser.add_argument("--low-frequency-cutoff", type=float,
                         help="Low frequency cutoff for each IFO.")
 
 
