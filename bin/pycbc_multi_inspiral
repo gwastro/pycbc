@@ -25,7 +25,6 @@ from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
 import pycbc.detector
 import numpy as np
-from pycbc.types import timeseries
 
 parser = argparse.ArgumentParser(usage='',
     description="Find multiple detector gravitational-wave triggers.")
@@ -130,31 +129,6 @@ def dominant_polarization(f_sig):
     f_cross, f_plus = np.sort(np.sqrt(np.linalg.eig(m)[0])) #This returns eigenvalues of m 
     chi = 1./4 * np.arctan2(2 * m[0,1], m[0,0] - m[1,1])
     return f_plus, f_cross, chi
-
-import numpy
-def pad_timeseries_to_integer_length(input_array, sample_rate):
-    ''' This function zero pads a time series so that its length is an integer
-    multiple of the sampling rate.
-
-    Padding is adding symmetically to the start and end of the time series.
-    If the number of samples to pad is odd then the end zero padding will have
-    one more sample than the start zero padding.
-    '''
-    timeseries_ = timeseries.TimeSeries(input_array,delta_t=sample_rate)
-    # calculate how many sample points needed to pad to get
-    # integer second time series
-    remainder = sample_rate - len(timeseries_) % sample_rate
-    start_pad = int(remainder / 2)
-    end_pad = int(remainder - start_pad)
-
-    # make arrays of zeroes
-    start_array = numpy.zeros(start_pad)
-    end_array = numpy.zeros(end_pad)
-
-    # pad waveform with arrays of zeroes
-    initial_array = numpy.concatenate([start_array,timeseries_,end_array])
-    return TimeSeries(initial_array, delta_t=timeseries_.delta_t,
-                      epoch=timeseries_.start_time, dtype=timeseries_.dtype)
 
 strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments, 
                                          dyn_range_fac=DYN_RANGE_FAC)
@@ -354,12 +328,22 @@ with ctx:
 			matched_filter[ifo].matched_filter_and_cluster(s_num,
 			    template.sigmasq(stilde.psd), window=cluster_window)
 		#This next line gets rid of the end data from the segment (which is corrupted) and add time delay to the strain segments
+		"""
+		analyse_data = slice(matched_filter[ifo].segments[s_num].analyze.start \
+		+ time_delay_idx[ifo], matched_filter[ifo].segments[s_num].analyze.stop  \
+		+ time_delay_idx[ifo], None)
+		"""
 		analyse_data = matched_filter[ifo].segments[s_num].analyze
 		snr[ifo] = snr_ts[analyse_data]
-		snr_ts.roll(time_delay_idx[ifo])
+		#snr[ifo].roll(-time_delay_idx[ifo])
+		#snr[ifo].roll(-np.argmax((snr[ifo]*snr[ifo].conj())[20400:20500]))
 		norm_dict[ifo] = norm
+		#Adding print statement for test
+		#print "use_cluster=" + str(use_cluster) + " idx_length=" + str(len(idx))
+		#print "s_num=" + str(s_num) 
 		if len(idx) == 0:
 		    continue
+
 		print ifo, t_num, s_num
 		print "maxsnr="
 		print (max(snr[ifo]*snr[ifo].conj())*norm_dict[ifo]**2)**0.5
@@ -411,20 +395,16 @@ with ctx:
 		for ifo in opt.instruments:
 		    snr[ifo]*=norm_dict[ifo]
 		roh_coh2=0
-                roh_coh2_alt=0
 		roh_coinc2=0
 		coinc_snrv2=0
 		for ifo1 in opt.instruments:
 		    #print "snr="+str(snr[ifo1])
 		    for ifo2 in opt.instruments:
 			roh_coh2 += snr[ifo1].conj()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2]
-                        roh_coh2_alt+= snr[ifo1].real()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2].real()
-                        roh_coh2_alt+= snr[ifo1].imag()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2].imag()
 		    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
 		    #coinc_snrv2 += snrv_dict[ifo1].conj()*snrv_dict[ifo1]
 		roh_coh_dict[t_num][s_num]=np.sqrt(roh_coh2)
 		roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
-                roh_coh_alt = np.sqrt(roh_coh2_alt)
 		#coinc_snrv_dict[t_num][s_num]=np.sqrt(max(coinc_snrv2))
 		time.append(idx)
 	    	
@@ -468,17 +448,46 @@ plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
 plt.figure()
 for ifo in opt.instruments:
+    print "Time delay for ifo:" + ifo
+    print time_delay[ifo]
+for ifo in opt.instruments:
+    print "Time difference to align peaks for ifo: " + ifo
+    print np.argmax((snr[ifo]*snr[ifo].conj())[20400:20500])/float(sample_rate)
+for ifo in opt.instruments:
+    print "time difference for ifo: " + ifo
+    print np.argmax((snr[ifo]*snr[ifo].conj())[20400:20500])/float(sample_rate) - time_delay[ifo]
+
+import lal
+for ifo in opt.instruments:
     single_det_snr = snr[ifo]*snr[ifo].conj()**0.5
-    plt.plot(single_det_snr[np.argmax(single_det_snr)-50:np.argmax(single_det_snr)+50],'.',label=ifo)
-    plt.plot(np.argmax(single_det_snr[np.argmax(single_det_snr)-50:np.argmax(single_det_snr)+50]),max(single_det_snr[np.argmax(single_det_snr)-50:np.argmax(single_det_snr)+50]),'*',label=ifo)
+    plt.plot(single_det_snr[20400:20500],'.',label=ifo)
+    plt.plot(np.argmax(single_det_snr[20400:20500]),max(single_det_snr[20400:20500]),'*',label=ifo)
 plt.legend()
 plt.savefig("/home/c1551011/public_html/single_det_snr.png")
 print t_gps
 print "max coherent snr"
 print max(roh_coh_dict[0][0])
-print "max roh coh alt"
-print max(roh_coh_alt)
 print "max coincident snr"
 print max(roh_coinc_dict[0][0])
+
+time_delay_between_ifos = {}
+time_delay_between_peaks = {}
+for ifo1 in opt.instruments:
+    time_delay_between_ifos[ifo1] ={} 
+    time_delay_between_peaks[ifo1] ={} 
+    for ifo2 in opt.instruments:
+        print "Time delay between detectors: " + ifo1 + " " + ifo2
+        time_delay_between_ifos[ifo1][ifo2] = pycbc.detector.Detector(ifo1).time_delay_from_detector(pycbc.detector.Detector(ifo2),ra,dec,t_gps)
+        print time_delay_between_ifos[ifo1][ifo2]
+	single_det_snr1 = snr[ifo1]*snr[ifo1].conj()**0.5
+	single_det_snr2 = snr[ifo2]*snr[ifo2].conj()**0.5
+	print "Time delay between peaks for detectors: " + ifo1 + " " + ifo2
+	time_delay_between_peaks[ifo1][ifo2] = float(np.argmax(single_det_snr1[20400:20500]) - np.argmax(single_det_snr2[20400:20500]))/sample_rate
+
+peak_time = {}
+for ifo in opt.instruments:
+    peak_time[ifo] = float(np.argmax(snr[ifo]*snr[ifo].conj()**0.5))/sample_rate
+    print "Time of peak in ifo: " + ifo
+    print peak_time[ifo]
 
 
