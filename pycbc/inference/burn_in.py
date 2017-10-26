@@ -52,10 +52,6 @@ def ks_test(sampler, fp):
     """
     nwalkers = fp.nwalkers
     niterations = fp.niterations
-    burn_in_idx = numpy.repeat((niterations-1), nwalkers).astype(int)
-    # The chains should not be burned in by default. So is_burned_in is assigned
-    # a False value for all the walkers by default.
-    is_burned_in = numpy.zeros(nwalkers, dtype=bool)
     # Create a dictionary which would have keys are the variable args and values
     # are booleans indicating whether the p-value for the parameters satisfies
     # the KS test
@@ -72,9 +68,14 @@ def ks_test(sampler, fp):
         # check if p_value is within the desired range
         is_burned_in_param[param] = 0.1 < p_value < 0.9
     # The chains are burned in if the p-value of the KS test lies in the range [0.1,0.9]
-    # for all the parameters
-    if numpy.all([is_burned_in_param[x] for x in is_burned_in_param]) :
-        is_burned_in =  numpy.ones(nwalkers, dtype=bool)
+    # for all the parameters. If the KS test is passed, the chains have burned in at their
+    # mid-way point. 
+    if all(is_burned_in_param.values()):
+        is_burned_in = numpy.ones(nwalkers, dtype=bool)
+        burn_in_idx = numpy.repeat(niterations/2, nwalkers).astype(int)
+    else:
+        is_burned_in = numpy.zeros(nwalkers, dtype=bool)
+        burn_in_idx = numpy.repeat(niterations, nwalkers).astype(int)
     return burn_in_idx, is_burned_in
 
 def max_posterior(sampler, fp):
