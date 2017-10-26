@@ -69,7 +69,7 @@ def _fftw_plan_with_nthreads(nthreads):
     global _fftw_current_nthreads
     if not HAVE_FFTW_THREADED:
         if (nthreads > 1):
-                raise ValueError("Threading is NOT enabled, but {0} > 1 threads specified".format(nthreads))
+            raise ValueError("Threading is NOT enabled, but {0} > 1 threads specified".format(nthreads))
         else:
             _pycbc_current_threads = nthreads
     else:
@@ -390,41 +390,41 @@ _plan_funcs_dict = { ('complex64', 'complex64') : plan_many_c2c_f,
 # classes.
 
 def _fftw_setup(fftobj):
-        n = _np.asarray([fftobj.size], dtype=_np.int32)
-        inembed = _np.asarray([len(fftobj.invec)], dtype=_np.int32)
-        onembed = _np.asarray([len(fftobj.outvec)], dtype=_np.int32)
-        nthreads = _scheme.mgr.state.num_threads
-        if not _fftw_threaded_set:
-            set_threads_backend()
-        if nthreads != _fftw_current_nthreads:
-            _fftw_plan_with_nthreads(nthreads)  
-        mlvl = get_measure_level()
-        aligned = fftobj.invec.data.isaligned and fftobj.outvec.data.isaligned
-        flags = get_flag(mlvl, aligned)
-        plan_func = _plan_funcs_dict[ (str(fftobj.invec.dtype), str(fftobj.outvec.dtype)) ]
-        tmpin = zeros(len(fftobj.invec), dtype = fftobj.invec.dtype)
-        tmpout = zeros(len(fftobj.outvec), dtype = fftobj.outvec.dtype)
-        # C2C, forward
-        if fftobj.forward and (fftobj.outvec.dtype in [complex64, complex128]):
-            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
-                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
-                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                             FFTW_FORWARD, flags)
-        # C2C, backward
-        elif not fftobj.forward and (fftobj.invec.dtype in [complex64, complex128]):
-            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
-                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
-                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                             FFTW_BACKWARD, flags)
-        # R2C or C2R (hence no direction argument for plan creation)
-        else:
-            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
-                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
-                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                             flags)
-        del tmpin
-        del tmpout
-        return plan
+    n = _np.asarray([fftobj.size], dtype=_np.int32)
+    inembed = _np.asarray([len(fftobj.invec)], dtype=_np.int32)
+    onembed = _np.asarray([len(fftobj.outvec)], dtype=_np.int32)
+    nthreads = _scheme.mgr.state.num_threads
+    if not _fftw_threaded_set:
+        set_threads_backend()
+    if nthreads != _fftw_current_nthreads:
+        _fftw_plan_with_nthreads(nthreads)  
+    mlvl = get_measure_level()
+    aligned = fftobj.invec.data.isaligned and fftobj.outvec.data.isaligned
+    flags = get_flag(mlvl, aligned)
+    plan_func = _plan_funcs_dict[ (str(fftobj.invec.dtype), str(fftobj.outvec.dtype)) ]
+    tmpin = zeros(len(fftobj.invec), dtype = fftobj.invec.dtype)
+    tmpout = zeros(len(fftobj.outvec), dtype = fftobj.outvec.dtype)
+    # C2C, forward
+    if fftobj.forward and (fftobj.outvec.dtype in [complex64, complex128]):
+        plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                         tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                         tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                         FFTW_FORWARD, flags)
+    # C2C, backward
+    elif not fftobj.forward and (fftobj.invec.dtype in [complex64, complex128]):
+        plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                         tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                         tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                         FFTW_BACKWARD, flags)
+    # R2C or C2R (hence no direction argument for plan creation)
+    else:
+        plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                         tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                         tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                         flags)
+    del tmpin
+    del tmpout
+    return plan
 
 class FFT(_BaseFFT):
     def __init__(self, invec, outvec, nbatch=1, size=None):
