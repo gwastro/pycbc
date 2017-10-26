@@ -173,7 +173,7 @@ def get_code_version_numbers(cp):
         _, exe_name = os.path.split(value)
         version_string = None
         if value.startswith('gsiftp://') or value.startswith('http://'):
-           code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
+            code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
         else:
             try:
                 if value.startswith('file://'):
