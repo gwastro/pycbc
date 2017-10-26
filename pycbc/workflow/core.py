@@ -206,11 +206,12 @@ class Executable(pegasus_workflow.Executable):
 
             if exe_url.scheme in ['', 'file']:
                 if exe_site is 'local':
-                # Check that executables at file urls on the local site exist
-                   if os.path.isfile(exe_url.path) is False:
-                       raise TypeError("Failed to find %s executable " 
-                                       "at %s on site %s" % (name, exe_path,
-                                       exe_site))
+                    # Check that executables at file urls
+                    #  on the local site exist
+                    if os.path.isfile(exe_url.path) is False:
+                        raise TypeError("Failed to find %s executable " 
+                                        "at %s on site %s" % (name, exe_path,
+                                        exe_site))
             else:
                 # Could be http, gsiftp, etc. so it needs fetching if run now
                 self.needs_fetching = True
@@ -1155,35 +1156,35 @@ class FileList(list):
         return outFile
 
     def find_output_at_time(self, ifo, time):
-       '''
-       Return File that covers the given time.
-
-       Parameters
-       -----------
-       ifo : string
-          Name of the ifo (or ifos) that the File should correspond to
-       time : int/float/LIGOGPStime
-          Return the Files that covers the supplied time. If no
-          File covers the time this will return None.
-
-       Returns
-       --------
-       list of File classes
-          The Files that corresponds to the time.
         '''
-       # Get list of Files that overlap time, for given ifo
-       outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list] 
-       if len(outFiles) == 0:
-           # No OutFile at this time
-           return None
-       elif len(outFiles) == 1:
-           # 1 OutFile at this time (good!)
-           return outFiles
-       else:
-           # Multiple output files. Currently this is valid, but we may want
-           # to demand exclusivity later, or in certain cases. Hence the
-           # separation.
-           return outFiles
+        Return File that covers the given time.
+
+        Parameters
+        -----------
+        ifo : string
+           Name of the ifo (or ifos) that the File should correspond to
+        time : int/float/LIGOGPStime
+           Return the Files that covers the supplied time. If no
+           File covers the time this will return None.
+
+        Returns
+        --------
+        list of File classes
+           The Files that corresponds to the time.
+         '''
+        # Get list of Files that overlap time, for given ifo
+        outFiles = [i for i in self if ifo in i.ifo_list and time in i.segment_list] 
+        if len(outFiles) == 0:
+            # No OutFile at this time
+            return None
+        elif len(outFiles) == 1:
+            # 1 OutFile at this time (good!)
+            return outFiles
+        else:
+            # Multiple output files. Currently this is valid, but we may want
+            # to demand exclusivity later, or in certain cases. Hence the
+            # separation.
+            return outFiles
 
     def find_outputs_in_range(self, ifo, current_segment, useSplitLists=False):
         """
@@ -1323,7 +1324,7 @@ class FileList(list):
         """
         # Enforce upper case
         tag = tag.upper()
-        return FileList([i for i in self if not tag in i.tags])
+        return FileList([i for i in self if tag not in i.tags])
 
     def find_output_with_ifo(self, ifo):
         """
