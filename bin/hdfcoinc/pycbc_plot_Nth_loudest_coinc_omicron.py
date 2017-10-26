@@ -12,12 +12,10 @@ import glob
 from pycbc_glue.ligolw import ligolw, lsctables, table, utils
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 import pycbc.pnutils
 import pycbc.events
 from pycbc.waveform import get_td_waveform, frequency_from_polarizations, amplitude_from_polarizations
-import lal
 
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
@@ -108,8 +106,8 @@ for era in eras:
             %(args.ifo,args.omicron_channel,era,args.ifo,args.omicron_channel.replace('-','_')))
     
     # Parse trigger files into SNR, time, and frequency for Omicron triggers
-    for file in file_list:
-        omicron_xml = utils.load_filename(file, contenthandler=DefaultContentHandler)
+    for file_name in file_list:
+        omicron_xml = utils.load_filename(file_name, contenthandler=DefaultContentHandler)
         snglburst_table = table.get_table(omicron_xml, lsctables.SnglBurstTable.tableName)
 
         for row in snglburst_table:
