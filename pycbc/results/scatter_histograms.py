@@ -36,7 +36,7 @@ import matplotlib
 # version dependenant. If this is a problem then remove this and control from
 # the executables directly.
 import sys
-if not 'matplotlib.backends' in sys.modules:
+if 'matplotlib.backends' not in sys.modules:
     matplotlib.use('agg')
 from matplotlib import offsetbox
 from matplotlib import pyplot
