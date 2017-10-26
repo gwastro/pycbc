@@ -77,7 +77,7 @@ def ks_test(sampler, fp):
             is_burned_in_param[param] = True
         else :
             is_burned_in_param[param] = False
-    # The chain is burned in if the p-value of the KS test lies in the range [0.1,0.9]
+    # The chains are burned in if the p-value of the KS test lies in the range [0.1,0.9]
     # for all the parameters
     if numpy.all([is_burned_in_param[x] for x in is_burned_in_param]) :
         is_burned_in =  numpy.ones(nwalkers, dtype=bool)
