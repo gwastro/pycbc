@@ -385,8 +385,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                 node.add_opt('--template-start-frequency',
                              "%.6f" % params['f_lower'])
                 # Is this precessing?
-                if params.has_key('u_vals') or \
-                                             params.has_key('u_vals_%s' % ifo):
+                if 'u_vals' in params or 'u_vals_%s' % ifo in params:
                     node.add_opt('--spin1x',"%.6f" % params['spin1x'])
                     node.add_opt('--spin1y',"%.6f" % params['spin1y'])
                     node.add_opt('--spin2x',"%.6f" % params['spin2x'])
@@ -453,7 +452,7 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
         node.add_opt('--mass2', "%.6f" % params['mass2'])
         node.add_opt('--spin1z',"%.6f" % params['spin1z'])
         node.add_opt('--spin2z',"%.6f" % params['spin2z'])
-        if params.has_key('u_vals'):
+        if 'u_vals' in params:
             # Precessing options
             node.add_opt('--spin1x',"%.6f" % params['spin1x'])
             node.add_opt('--spin2x',"%.6f" % params['spin2x'])
