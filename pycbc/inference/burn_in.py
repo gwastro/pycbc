@@ -28,6 +28,61 @@ have burned in.
 
 import numpy
 
+def ks_test(sampler, fp):
+    """Burn in based on whether the p-value of the KS test between the samples
+    at the last iteration and the samples midway along the chain for each
+    parameter is > 0.1 and < 0.9
+
+    Parameters
+    ----------
+    sampler : pycbc.inference.sampler
+        Sampler to determine burn in for. May be either an instance of a
+        `inference.sampler`, or the class itself.
+    fp : InferenceFile
+        Open inference hdf file containing the samples to load for determing
+        burn in.
+
+    Returns
+    -------
+    burn_in_idx : array
+        Array of indices giving the burn-in index for each chain.
+    is_burned_in : array
+        Array of booleans indicating whether each chain is burned in.
+    """
+    from scipy.stats import ks_2samp
+    #from pycbc.io import FieldArray
+    from scipy import interpolate
+    nwalkers = fp.nwalkers
+    niterations = fp.niterations
+    burn_in_idx = numpy.repeat((niterations-1), nwalkers).astype(int)
+    # The chains should not be burned in by default. So is_burned_in is assigned
+    # a False value for all the walkers by default.
+    is_burned_in = numpy.zeros(nwalkers, dtype=bool)
+    # Create a dictionary which would have keys are the variable args and values
+    # are booleans indicating whether the p-value for the parameters satisfies
+    # the KS test
+    is_burned_in_param = {}
+    # iterate over the parameters
+    for param in fp.variable_args:
+        # read samples for the parameter from the last iteration of the chain
+        samples_last_iter = sampler.read_samples(fp, param, iteration=-1,
+                                                 flatten=True)[param]
+        # read samples for the parameter from the iteration midway along the chain
+        samples_chain_midpt = sampler.read_samples(fp, param, iteration=int(niterations/2),
+                                                  flatten=True)[param]
+        samples_chain_midpt_sorted = numpy.sort(samples_chain_midpt)
+        _, p_value = ks_2samp(samples_last_iter, samples_chain_midpt_sorted)
+        # check if p_value is within the desired range
+        if p_value > 0.1 and p_value < 0.9 :
+            is_burned_in_param[param] = True
+        else :
+            is_burned_in_param[param] = False
+    # The chain is burned in if the p-value of the KS test lies in the range [0.1,0.9]
+    # for all the parameters
+    if numpy.all([is_burned_in_param[x] for x in is_burned_in_param]) :
+        is_burned_in =  numpy.ones(nwalkers, dtype=bool)
+    return burn_in_idx, is_burned_in
+
 def max_posterior(sampler, fp):
     """Burn in based on samples being within dim/2 of maximum posterior.
 
@@ -45,7 +100,7 @@ def max_posterior(sampler, fp):
     burn_in_idx : array
         Array of indices giving the burn-in index for each chain.
     is_burned_in : array
-        Array of booleans indicating wether each chain is burned in.
+        Array of booleans indicating whether each chain is burned in.
     """
     # get the posteriors
     # Note: multi-tempered samplers should just return the coldest chain by
@@ -94,7 +149,7 @@ def posterior_step(sampler, fp):
     burn_in_idx : array
         Array of indices giving the burn-in index for each chain.
     is_burned_in : array
-        Array of booleans indicating wether each chain is burned in.
+        Array of booleans indicating whether each chain is burned in.
         By definition of this function, all values are set to True.
     """
     # get the posteriors
@@ -136,9 +191,9 @@ def half_chain(sampler, fp):
     burn_in_idx : array
         Array of indices giving the burn-in index for each chain.
     is_burned_in : array
-        Array of booleans indicating wether each chain is burned in.
+        Array of booleans indicating whether each chain is burned in.
         By definition of this function, all values are set to True.
-    """ 
+    """
     nwalkers = sampler.nwalkers
     niterations = fp.niterations
     return numpy.repeat(niterations/2, nwalkers).astype(int), \
@@ -162,7 +217,7 @@ def use_sampler(sampler, fp=None):
     burn_in_idx : array
         Array of indices giving the burn-in index for each chain.
     is_burned_in : array
-        Array of booleans indicating wether each chain is burned in.
+        Array of booleans indicating whether each chain is burned in.
         Since the sampler's burn in function will run until all chains
         are burned, all values are set to True.
     """
@@ -172,6 +227,7 @@ def use_sampler(sampler, fp=None):
 
 
 burn_in_functions = {
+    'ks_test': ks_test,
     'max_posterior': max_posterior,
     'posterior_step': posterior_step,
     'half_chain': half_chain,
