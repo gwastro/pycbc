@@ -531,7 +531,9 @@ class TestNormal(BaseLikelihoodEvaluator):
         self.set_lognl(0.)
         # store the pdf
         if mean is None:
-            mean = [None]*len(variable_args) 
+            mean = [0.]*len(variable_args) 
+        if cov is None:
+            cov = [1.]*len(variable_args)
         self._dist = stats.multivariate_normal(mean=mean, cov=cov)
         # check that the dimension is correct
         if self._dist.dim != len(variable_args):
