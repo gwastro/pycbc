@@ -339,8 +339,8 @@ class EventManager(object):
         indices.append(0)
         for i in xrange(len(tvec)):
             if gps_sec[i] == gps_sec[indices[-1]] and  win[i] == win[indices[-1]]:
-                    if abs(cvec[i]) > abs(cvec[indices[-1]]):
-                        indices[-1] = i
+                if abs(cvec[i]) > abs(cvec[indices[-1]]):
+                    indices[-1] = i
             else:
                 indices.append(i)
 
