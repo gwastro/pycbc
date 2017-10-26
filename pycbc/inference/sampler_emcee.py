@@ -67,7 +67,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         if likelihood_call is None:
             likelihood_call = likelihood_evaluator
 
-        ndim = len(likelihood_evaluator.waveform_generator.variable_args)
+        ndim = len(likelihood_evaluator.variable_args)
         sampler = emcee.EnsembleSampler(nwalkers, ndim,
                                         likelihood_call,
                                         pool=pool)
@@ -191,7 +191,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         return fp[group][wmask]
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
-                      max_iterations=None):
+                      max_iterations=None, **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file. See the write function for each of those for
         details.
@@ -209,8 +209,10 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
             to. Only applies if the samples have not previously been written
             to file. The default (None) is to use the maximum size allowed by
             h5py.
+        \**metadata :
+            All other keyword arguments are passed to ``write_metadata``.
         """
-        self.write_metadata(fp)
+        self.write_metadata(fp, **metadata)
         self.write_chain(fp, start_iteration=start_iteration,
                          end_iteration=end_iteration,
                          max_iterations=max_iterations)
@@ -425,7 +427,7 @@ class EmceePTSampler(BaseMCMCSampler):
     # read/write functions
 
     # add ntemps and betas to metadata
-    def write_metadata(self, fp):
+    def write_metadata(self, fp, **kwargs):
         """Writes metadata about this sampler to the given file. Metadata is
         written to the file's `attrs`.
 
@@ -433,8 +435,13 @@ class EmceePTSampler(BaseMCMCSampler):
         ----------
         fp : InferenceFile
             A file handler to an open inference file.
+        \**kwargs :
+            All keyword arguments are saved as separate arguments in the
+            file attrs. If any keyword argument is a dictionary, the keyword
+            will point to the list of keys in the the file's ``attrs``. Each
+            key is then stored as a separate attr with its corresponding value.
         """
-        super(EmceePTSampler, self).write_metadata(fp)
+        super(EmceePTSampler, self).write_metadata(fp, **kwargs)
         fp.attrs["ntemps"] = self.ntemps
         fp.attrs["betas"] = self._sampler.betas
 
@@ -575,7 +582,8 @@ class EmceePTSampler(BaseMCMCSampler):
                         fp[dataset_name][fa:fb] = samples[param][tk, wi, ma:mb]
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
-                      max_iterations=None):
+                      max_iterations=None,
+                      **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file. See the write function for each of those for
         details.
@@ -593,8 +601,10 @@ class EmceePTSampler(BaseMCMCSampler):
             to. Only applies if the samples have not previously been written
             to file. The default (None) is to use the maximum size allowed by
             h5py.
+        \**metadata :
+            All other keyword arguments are passed to ``write_metadata``.
         """
-        self.write_metadata(fp)
+        self.write_metadata(fp, **metadata)
         self.write_chain(fp, start_iteration=start_iteration,
                          end_iteration=end_iteration,
                          max_iterations=max_iterations)
