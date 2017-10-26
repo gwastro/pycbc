@@ -70,10 +70,7 @@ def ks_test(sampler, fp):
                                                   flatten=True)[param]
         _, p_value = ks_2samp(samples_last_iter, samples_chain_midpt)
         # check if p_value is within the desired range
-        if p_value > 0.1 and p_value < 0.9 :
-            is_burned_in_param[param] = True
-        else :
-            is_burned_in_param[param] = False
+        is_burned_in_param[param] = 0.1 < p_value < 0.9
     # The chains are burned in if the p-value of the KS test lies in the range [0.1,0.9]
     # for all the parameters
     if numpy.all([is_burned_in_param[x] for x in is_burned_in_param]) :
