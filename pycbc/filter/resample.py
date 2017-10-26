@@ -179,13 +179,13 @@ _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
                  numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
 
 def notch_fir(timeseries, f1, f2, order, beta=5.0):
-    """ notch filter the time series using an FIR filtered generated from 
+    """ notch filter the time series using an FIR filtered generated from
     the ideal response passed through a kaiser window (beta = 5.0)
 
     Parameters
     ----------
     Time Series: TimeSeries
-        The time series to be low-passed.
+        The time series to be notched.
     f1: float
         The start of the frequency suppression.
     f2: float
@@ -199,7 +199,7 @@ def notch_fir(timeseries, f1, f2, order, beta=5.0):
     k2 = f2 / float((int(1.0 / timeseries.delta_t) / 2))
     coeff = scipy.signal.firwin(order * 2 + 1, [k1, k2], window=('kaiser', beta))
     data = fir_zero_filter(coeff, timeseries)
-    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t) 
+    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
 
 def lowpass_fir(timeseries, frequency, order, beta=5.0):
     """ Lowpass filter the time series using an FIR filtered generated from 
