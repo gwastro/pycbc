@@ -149,7 +149,7 @@ def ethinca_order_from_string(order):
     int
     """
     if order in get_ethinca_orders().keys():
-      return get_ethinca_orders()[order]
+        return get_ethinca_orders()[order]
     else: raise ValueError("Order "+str(order)+" is not valid for ethinca"
                            "calculation! Valid orders: "+
                            str(get_ethinca_orders().keys()))
