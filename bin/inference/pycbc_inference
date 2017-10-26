@@ -181,6 +181,7 @@ if 'data' in likelihood_class.required_kwargs:
     strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
     low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
     likelihood_args['f_lower'] = low_frequency_cutoff_dict.values()[0]
+    likelihood_args['psds'] = psd_dict
 else:
     strain_dict = stilde_dict = psd_dict = low_frequency_cutoff_dict = None
 
@@ -253,13 +254,13 @@ with ctx:
 
     # construct class that will return the natural logarithm of likelihood
     likelihood = likelihood_class(variable_args,
-                        waveform_generator=waveform_generator, data=stilde_dict,
-                        psds=psd_dict, prior=prior_eval,
-                        sampling_parameters=sampling_parameters,
-                        replace_parameters=replace_parameters,
-                        sampling_transforms=sampling_transforms,
-                        waveform_transforms=waveform_transforms,
-                        **likelihood_args)
+                                  waveform_generator=waveform_generator,
+                                  data=stilde_dict, prior=prior_eval,
+                                  sampling_parameters=sampling_parameters,
+                                  replace_parameters=replace_parameters,
+                                  sampling_transforms=sampling_transforms,
+                                  waveform_transforms=waveform_transforms,
+                                  **likelihood_args)
 
     burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
                                 min_iterations=opts.min_burn_in)
