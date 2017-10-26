@@ -1135,14 +1135,14 @@ class FieldArray(numpy.recarray):
             dtype = columns.items()
         # get the values
         if _default_types_status['ilwd_as_int']:
-            input_array = [tuple(
-                        getattr(row, col) if dt != 'ilwd:char' \
-                        else int(getattr(row, col)) \
-                    for col,dt in columns.items()) \
-                for row in table]
+            input_array = \
+                [tuple(getattr(row, col) if dt != 'ilwd:char'
+                       else int(getattr(row, col)) 
+                       for col,dt in columns.items())
+                 for row in table]
         else:
-            input_array = [tuple(getattr(row, col) for col in columns) \
-                for row in table]
+            input_array = \
+                [tuple(getattr(row, col) for col in columns) for row in table]
         # return the values as an instance of cls
         return cls.from_records(input_array, dtype=dtype,
             name=name)
