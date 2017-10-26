@@ -313,7 +313,7 @@ class TemplateBank(object):
         """
         fields = self.table.fieldnames
         if 'template_hash' in fields:
-             return
+            return
 
         # The fields to use in making a template hash
         hash_fields = ['mass1', 'mass2', 'inclination',
@@ -561,9 +561,9 @@ class LiveFilterBank(TemplateBank):
         # erased by the type conversion below.
         ttotal = template_duration = -1
         if hasattr(htilde, 'length_in_time'):
-                ttotal = htilde.length_in_time
+            ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
-                template_duration = htilde.chirp_length
+            template_duration = htilde.chirp_length
 
         self.table[index].template_duration = template_duration
 
@@ -732,9 +732,9 @@ class FilterBank(TemplateBank):
         # erased by the type conversion below.
         ttotal = template_duration = None
         if hasattr(htilde, 'length_in_time'):
-                ttotal = htilde.length_in_time
+            ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
-                template_duration = htilde.chirp_length
+            template_duration = htilde.chirp_length
 
         self.table[index].template_duration = template_duration
 
