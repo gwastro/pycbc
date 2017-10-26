@@ -136,7 +136,7 @@ class MultiDetOptionActionSpecial(MultiDetOptionAction):
             value_split = value.split(':')
             if len(value_split) == 2:
                 # "Normal" case, all ifos supplied independetly as "H1:VALUE"
-                if items.has_key(value_split[0]):
+                if value_split[0] in items:
                     err_msg += "Multiple values supplied for ifo %s.\n" \
                                %(value_split[0],)
                     err_msg += "Already have %s." %(items[value_split[0]])
@@ -148,7 +148,7 @@ class MultiDetOptionActionSpecial(MultiDetOptionAction):
                 # want to pretend H1 data is actually L1 (or similar). So if I
                 # supply --channel-name H1:L1:LDAS-STRAIN I can use L1 data and
                 # pretend it is H1 internally.
-                if items.has_key(value_split[0]):
+                if value_split[0] in items:
                     err_msg += "Multiple values supplied for ifo %s.\n" \
                                %(value_split[0],)
                     err_msg += "Already have %s." %(items[value_split[0]])
@@ -174,7 +174,7 @@ class MultiDetOptionAppendAction(MultiDetOptionAction):
             value = value.split(':')
             if len(value) == 2:
                 # "Normal" case, all ifos supplied independetly as "H1:VALUE"
-                if items.has_key(value[0]):
+                if value[0] in items:
                     items[value[0]].append(self.internal_type(value[1]))
                 else:
                     items[value[0]] = [self.internal_type(value[1])]
