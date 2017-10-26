@@ -559,13 +559,13 @@ class TimeSeries(Array):
         return times, freqs, q_plane
 
     def notch_fir(self, f1, f2, order, beta=5.0, remove_corrupted=True):
-        """ notch filter the time series using an FIR filtered generated from 
+        """ notch filter the time series using an FIR filtered generated from
         the ideal response passed through a kaiser window (beta = 5.0)
 
         Parameters
         ----------
         Time Series: TimeSeries
-            The time series to be low-passed.
+            The time series to be notched.
         f1: float
             The start of the frequency suppression.
         f2: float
