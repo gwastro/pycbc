@@ -1064,7 +1064,7 @@ class StrainSegments(object):
     @classmethod
     def insert_segment_option_group(cls, parser):
         segment_group = parser.add_argument_group(
-                                   "Options for segmenting the strain",
+                                  "Options for segmenting the strain",
                                   "These options are used to determine how to "
                                   "segment the strain into smaller chunks, "
                                   "and for determining the portion of each to "
@@ -1125,7 +1125,7 @@ class StrainSegments(object):
     @classmethod
     def insert_segment_option_group_multi_ifo(cls, parser):
         segment_group = parser.add_argument_group(
-                                   "Options for segmenting the strain",
+                                  "Options for segmenting the strain",
                                   "These options are used to determine how to "
                                   "segment the strain into smaller chunks, "
                                   "and for determining the portion of each to "
