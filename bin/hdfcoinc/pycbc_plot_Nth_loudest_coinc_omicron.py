@@ -28,28 +28,28 @@ lsctables.use_in(DefaultContentHandler)
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--coinc-file', type=str, required=True,
-        help='HDF file containing coincident CBC triggers')
+                    help='HDF file containing coincident CBC triggers')
 parser.add_argument('--single-ifo-trigs', type=str, required=True,
-		help='HDF file containing single IFO CBC triggers')
+                    help='HDF file containing single IFO CBC triggers')
 parser.add_argument('--ifo', type=str, required=True,
-        help='IFO, L1 or H1')    
+                    help='IFO, L1 or H1')    
 parser.add_argument('--tmpltbank-file', type=str, required=True,
-		help='HDF file containing template information for CBC search')
+                    help='HDF file containing template information for CBC search')
 parser.add_argument('--output-file', type=str, required=True,
-        help='Full path to output file')
+                    help='Full path to output file')
 parser.add_argument('--loudest-event-number', type=int, required=True, default=1,
-        help='Script will plot the Nth loudest coincident trigger')
+                    help='Script will plot the Nth loudest coincident trigger')
 parser.add_argument('--omicron-dir', type=str, required=True,
-        help='Directory containing Omicron triggers. Ex: /home/detchar/triggers/ER7/')
+                    help='Directory containing Omicron triggers. Ex: /home/detchar/triggers/ER7/')
 parser.add_argument('--omicron-snr-thresh', type=int, required=False, default=5,
-        help='SNR threshold for choosing which Omicron triggers to plot.')
+                    help='SNR threshold for choosing which Omicron triggers to plot.')
 parser.add_argument('--plot-window', type=float, required=False, default=32,
-        help='Time window to plot around CBC trigger')
+                    help='Time window to plot around CBC trigger')
 parser.add_argument('--omicron-channel',type=str, required=False, default='GDS-CALIB_STRAIN',
-        help='Channel to plot Omicron triggers for, do not include IFO')    
+                    help='Channel to plot Omicron triggers for, do not include IFO')    
 parser.add_argument('--analysis-level', type=str, required=False, default='foreground',
-        choices = ['foreground','background','background_exc'],
-        help='Designates which level of the analysis output to search')
+                    choices = ['foreground','background','background_exc'],
+                    help='Designates which level of the analysis output to search')
 args = parser.parse_args()
 
 logging.info('Reading HDF files')
