@@ -498,17 +498,20 @@ class TimeSeries(Array):
 
         return white
 
-    def qtransform(self, delta_t, delta_f,
-                  frange=(0,_numpy.inf), qrange=(4,64), mismatch=0.2):
+    def qtransform(self, delta_t=None, delta_f=None, logfsteps=None,
+                  frange=None, qrange=(4,64), mismatch=0.2):
         """ Return the interpolated 2d qtransform of this data
         
         Parameters
         ----------
-        delta_t : float
-            The time resolution
-        delta_f : float
-            The frequency resolution
-        frange : {(0, inf), tuple}
+        delta_t : {self.delta_t, float}
+            The time resolution to interpolate to
+        delta_f : float, Optional
+            The frequency resolution to interpolate to
+        logfsteps : int
+            Do a log interpolation (incompatible with delta_f option) and set
+            the number of steps to take.
+        frange : {(30, nyquist*0.8), tuple of ints}
             frequency range
         qrange : {(4, 64), tuple}
             q range
@@ -520,18 +523,39 @@ class TimeSeries(Array):
         times : numpy.ndarray
             The time that the qtransform is sampled.
         freqs : numpy.ndarray
-            The frequencies that the qtransform is samled.
+            The frequencies that the qtransform is sampled.
         qplane : numpy.ndarray (2d)
             The two dimensional interpolated qtransform of this time series.
         """
         from pycbc.filter.qtransform import qtiling, qplane
-        q_base, q_frange = qtiling(self, qrange, frange, mismatch)
-        q_plane, _ = qplane(q_base, self.to_frequencyseries(), q_frange,
-                            fres=delta_f, tres=delta_t)
-        times = _numpy.linspace(float(self.start_time),
-                                float(self.end_time),
-                                self.duration / delta_t)
-        freqs = _numpy.arange(int(q_frange[0]), int(q_frange[1]), delta_f)
+        from scipy.interpolate import interp2d       
+
+        if frange is None:
+            frange = (30, int(self.sample_rate / 2 * 8))
+        
+        q_base = qtiling(self, qrange, frange, mismatch)
+        q, times, freqs, q_plane = qplane(q_base, self.to_frequencyseries(), frange)
+
+        if logfsteps and delta_f:
+            raise ValueError("Provide only one (or none) of delta_f and logfsteps")
+
+        # Interpolate if requested
+        if delta_f or delta_t or logfsteps:
+            interp = interp2d(times, freqs, q_plane)
+            
+        if delta_t:
+            times = _numpy.arange(float(self.start_time),
+                                    float(self.end_time), delta_t)
+        if delta_f:
+            freqs = _numpy.arange(int(frange[0]), int(frange[1]), delta_f)
+        if logfsteps:
+            freqs = _numpy.logspace(_numpy.log10(frange[0]),
+                                    _numpy.log10(frange[1]),
+                                     logfsteps)
+
+        if delta_f or delta_t or logfsteps:
+            q_plane = interp(times, freqs)
+
         return times, freqs, q_plane
 
     def lowpass_fir(self, frequency, order, beta=5.0, remove_corrupted=True):
