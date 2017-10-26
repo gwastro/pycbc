@@ -27,6 +27,7 @@ have burned in.
 """
 
 import numpy
+from scipy.stats import ks_2samp
 
 def ks_test(sampler, fp):
     """Burn in based on whether the p-value of the KS test between the samples
@@ -49,8 +50,6 @@ def ks_test(sampler, fp):
     is_burned_in : array
         Array of booleans indicating whether each chain is burned in.
     """
-    from scipy.stats import ks_2samp
-    from scipy import interpolate
     nwalkers = fp.nwalkers
     niterations = fp.niterations
     burn_in_idx = numpy.repeat((niterations-1), nwalkers).astype(int)
