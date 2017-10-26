@@ -341,7 +341,7 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
     if tapermethod not in taper_map.keys():
         raise ValueError("Unknown tapering method %s, valid methods are %s" % \
                          (tapermethod, ", ".join(taper_map.keys())))
-    if not tsdata.dtype in (float32, float64):
+    if tsdata.dtype not in (float32, float64):
         raise TypeError("Strain dtype must be float32 or float64, not "
                     + str(tsdata.dtype))
     taper_func = taper_func_map[tsdata.dtype]
@@ -349,7 +349,7 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
     ts_lal = tsdata.astype(tsdata.dtype).lal()
     if taper_map[tapermethod] is not None:
         taper_func(ts_lal.data, taper_map[tapermethod])
-    if return_lal == True:
+    if return_lal:
         return ts_lal
     else:
         return TimeSeries(ts_lal.data.data[:], delta_t=ts_lal.deltaT,
