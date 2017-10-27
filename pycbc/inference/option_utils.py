@@ -119,9 +119,11 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
     variable_args = cp.options("{}variable_args".format(section_prefix))
     subsections = cp.get_subsections("{}{}".format(section_prefix,
                                                    prior_section))
-    tags = numpy.concatenate([tag.split("+") for tag in subsections])
-    if not any(param in tags for param in variable_args):
-        raise KeyError("You are missing a priors section in the config file.")
+    tags = set([p for tag in subsections for p in tag.split('+')])
+    missing_prior = set(variable_args) - tags
+    if any(missing_prior):
+        raise KeyError("You are missing a priors section in the config file "
+                       "for parameter(s): {}".format(', '.join(missing_prior)))
 
     # get parameters that do not change in sampler
     try:
