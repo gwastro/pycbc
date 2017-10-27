@@ -133,7 +133,7 @@ class TestSamplers(unittest.TestCase):
     def get_likelihood_evaluator(self, waveform_gen, data, prior_eval):
         """ Returns the likelihood evaluator class.
         """
-        likelihood_eval = likelihood.GaussianLikelihood(
+        likelihood_eval = likelihood.GaussianLikelihood(waveform_gen.variable_args,
                                              waveform_gen, data, self.fmin,
                                              psds=self.psds, prior=prior_eval,
                                              return_meta=False)

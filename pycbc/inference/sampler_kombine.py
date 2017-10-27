@@ -76,7 +76,7 @@ class KombineSampler(BaseMCMCSampler):
             likelihood_call = likelihood_evaluator
 
         # construct sampler for use in KombineSampler
-        ndim = len(likelihood_evaluator.waveform_generator.variable_args)
+        ndim = len(likelihood_evaluator.variable_args)
         count = 1 if pool is None else pool.count
         sampler = kombine.Sampler(nwalkers, ndim, likelihood_call,
                                   transd=transd, pool=pool,

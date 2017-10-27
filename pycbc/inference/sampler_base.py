@@ -61,11 +61,6 @@ class _BaseSampler(object):
         raise NotImplementedError("from_cli function not set")
 
     @property
-    def ifos(self):
-        """Returns the ifos that were sampled over."""
-        return self.likelihood_evaluator.waveform_generator.detector_names
-
-    @property
     def variable_args(self):
         """Returns the variable args used by the likelihood evaluator.
         """
@@ -150,7 +145,7 @@ class _BaseSampler(object):
                                   "calculation")
 
     # write and read functions
-    def write_metadata(self, fp):
+    def write_metadata(self, fp, **kwargs):
         """Writes metadata about this sampler to the given file. Metadata is
         written to the file's `attrs`.
 
@@ -158,18 +153,29 @@ class _BaseSampler(object):
         ----------
         fp : InferenceFile
             A file handler to an open inference file.
+        \**kwargs :
+            All keyword arguments are saved as separate arguments in the
+            file attrs. If any keyword argument is a dictionary, the keyword
+            will point to the list of keys in the the file's ``attrs``. Each
+            key is then stored as a separate attr with its corresponding value.
         """
         fp.attrs['sampler'] = self.name
         fp.attrs['likelihood_evaluator'] = self.likelihood_evaluator.name
-        fp.attrs['ifos'] = self.ifos
         fp.attrs['variable_args'] = list(self.variable_args)
         fp.attrs['sampling_args'] = list(self.sampling_args)
         fp.attrs["niterations"] = self.niterations
         fp.attrs["lognl"] = self.likelihood_evaluator.lognl
-        sargs = self.likelihood_evaluator.waveform_generator.static_args
-        fp.attrs["static_args"] = sargs.keys()
-        for arg, val in sargs.items():
-            fp.attrs[arg] = val
+        for arg, val in kwargs.items():
+            if val is None:
+                val = str(None)
+            if isinstance(val, dict):
+                fp.attrs[arg] = val.keys()
+                for key,item in val.items():
+                    if item is None:
+                        item = str(None)
+                    fp.attrs[key] = item
+            else:
+                fp.attrs[arg] = val
 
     @staticmethod
     def write_logevidence(fp, lnz, dlnz):
@@ -357,7 +363,7 @@ class BaseMCMCSampler(_BaseSampler):
         return FieldArray.from_kwargs(**arrays).transpose()
 
     # write and read functions
-    def write_metadata(self, fp):
+    def write_metadata(self, fp, **kwargs):
         """Writes metadata about this sampler to the given file. Metadata is
         written to the file's `attrs`.
 
@@ -365,8 +371,10 @@ class BaseMCMCSampler(_BaseSampler):
         ----------
         fp : InferenceFile
             A file handler to an open inference file.
+        \**kwargs :
+            All keyword args are written to the file's ``attrs``.
         """
-        super(BaseMCMCSampler, self).write_metadata(fp)
+        super(BaseMCMCSampler, self).write_metadata(fp, **kwargs)
         # add info about walkers, burn in
         fp.attrs["nwalkers"] = self.nwalkers
 
@@ -577,7 +585,7 @@ class BaseMCMCSampler(_BaseSampler):
                 acf[start_iteration:end_iteration]
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
-                      max_iterations=None):
+                      max_iterations=None, **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file. Also computes and writes the autocorrleation lengths
         of the chains. See the various write function for details.
@@ -595,8 +603,10 @@ class BaseMCMCSampler(_BaseSampler):
             to. Only applies if the acceptance fraction has not previously been
             written to the file. The default (None) is to use the maximum size
             allowed by h5py.
+        \**metadata :
+            All other keyword arguments are passed to ``write_metadata``.
         """
-        self.write_metadata(fp)
+        self.write_metadata(fp, **metadata)
         self.write_chain(fp, start_iteration=start_iteration,
                          end_iteration=end_iteration,
                          max_iterations=max_iterations)

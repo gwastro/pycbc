@@ -33,6 +33,7 @@ from pycbc.waveform import NoWaveformError
 from pycbc.types import Array
 from pycbc.io import FieldArray
 import numpy
+from scipy import stats
 
 # Used to manage a likelihood instance across multiple cores or MPI
 _global_instance = None
@@ -104,18 +105,14 @@ class BaseLikelihoodEvaluator(object):
 
     Parameters
     ----------
-    waveform_generator : generator class
-        A generator class that creates waveforms. This must have a ``generate``
-        function which takes parameter values as keyword arguments, a
-        detectors attribute which is a dictionary of detectors keyed by their
-        names, and an epoch which specifies the start time of the generated
-        waveform.
-    data : dict
+    variable_args : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    waveform_generator : generator class, optional
+        A generator class that creates waveforms.
+    data : dict, optional
         A dictionary of data, in which the keys are the detector names and the
-        values are the data (assumed to be unwhitened). The list of keys must
-        match the waveform generator's detectors keys, and the epoch of every
-        data set must be the same as the waveform generator's epoch.
-    prior : callable
+        values are the data.
+    prior : callable, optional
         A callable class or function that computes the log of the prior. If
         None provided, will use ``_noprior``, which returns 0 for all parameter
         values.
@@ -170,42 +167,36 @@ class BaseLikelihoodEvaluator(object):
         Set the function to use when the class is called as a function.
     """
     name = None
+    required_kwargs = []
 
-    def __init__(self, waveform_generator, data, prior=None,
+    def __init__(self, variable_args,
+                 waveform_generator=None, data=None, prior=None,
                  sampling_parameters=None, replace_parameters=None,
                  sampling_transforms=None, waveform_transforms=None,
                  return_meta=True):
+        if isinstance(variable_args, str) or isinstance(variable_args, unicode):
+            variable_args = (variable_args,)
+        if not isinstance(variable_args, tuple):
+            variable_args = tuple(variable_args)
+        self._variable_args = variable_args
+        # store data, waveform generator
         self._waveform_generator = waveform_generator
-        # we'll store a copy of the data which we'll later whiten in place
-        self._data = dict([[ifo, 1*data[ifo]] for ifo in data])
-        # check that the data and waveform generator have the same detectors
-        if sorted(waveform_generator.detectors.keys()) != \
-                sorted(self._data.keys()):
-            raise ValueError("waveform generator's detectors (%s) " %(
-                ','.join(sorted(waveform_generator.detector_names))) +
-                "does not match data (%s)" %(
-                ','.join(sorted(self._data.keys()))))
-        # check that the data and waveform generator have the same epoch
-        if any(waveform_generator.epoch != d.epoch
-               for d in self._data.values()):
-            raise ValueError("waveform generator does not have the same epoch "
-                "as all of the data sets.")
-        # check that the data sets all have the same lengths
-        dlens = numpy.array([len(d) for d in data.values()])
-        if not all(dlens == dlens[0]):
-            raise ValueError("all data must be of the same length")
+        # we'll store a copy of the data
+        if data is not None:
+            self._data = dict([[ifo, 1*data[ifo]] for ifo in data])
+        else:
+            self._data = None
         # store prior
         if prior is None:
             self._prior = _NoPrior()
         else:
             # check that the variable args of the prior evaluator is the same
             # as the waveform generator
-            if prior.variable_args != self._waveform_generator.variable_args:
+            if prior.variable_args != variable_args:
                 raise ValueError("variable args of prior and waveform "
                     "generator do not match")
             self._prior = prior
-        self._variable_args = self._waveform_generator.variable_args
-        # initialize the log nl to 0
+        # initialize the log nl to None
         self._lognl = None
         self.return_meta = return_meta
         # store sampling parameters and transforms
@@ -229,14 +220,19 @@ class BaseLikelihoodEvaluator(object):
         self._waveform_transforms = waveform_transforms
 
     @property
+    def variable_args(self):
+        """Returns the variable arguments."""
+        return self._variable_args
+
+    @property
     def waveform_generator(self):
         """Returns the waveform generator that was set."""
         return self._waveform_generator
 
     @property
-    def variable_args(self):
-        """Returns the variable arguments."""
-        return self._variable_args
+    def data(self):
+        """Returns the data that was set."""
+        return self._data
 
     @property
     def sampling_args(self):
@@ -271,11 +267,6 @@ class BaseLikelihoodEvaluator(object):
         return pycbc.transforms.apply_transforms(samples,
                                                  self._sampling_transforms,
                                                  inverse=inverse)
-
-    @property
-    def data(self):
-        """Returns the data that was set."""
-        return self._data
 
     @property
     def lognl(self):
@@ -377,8 +368,7 @@ class BaseLikelihoodEvaluator(object):
     def loglr(self, **params):
         """Returns the natural log of the likelihood ratio.
         """
-        raise NotImplementedError("Likelihood ratio function not set.")
-
+        return self.loglikelihood(**params) - self.lognl
 
     # the names and order of data returned by _formatreturn when
     # return_metadata is True
@@ -504,7 +494,66 @@ class BaseLikelihoodEvaluator(object):
     __call__ = evaluate
 
 
+#
+# =============================================================================
+#
+#                              Test distributions
+#
+# =============================================================================
+#
+class TestNormal(BaseLikelihoodEvaluator):
+    r"""The test distribution is an multi-variate normal distribution.
 
+    The number of dimensions is set by the number of ``variable_args`` that are
+    passed. For details on the distribution used, see
+    ``scipy.stats.multivariate_normal``.
+
+    Parameters
+    ----------
+    variable_args : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    mean : array-like, optional
+        The mean values of the parameters. If None provide, will use 0 for all
+        parameters.
+    cov : array-like, optional
+        The covariance matrix of the parameters. If None provided, will use
+        unit variance for all parameters, with cross-terms set to 0.
+    \**kwargs :
+        All other keyword arguments are passed to ``BaseLikelihoodEvaluator``.
+
+    """
+    name = "test_normal"
+
+    def __init__(self, variable_args, mean=None, cov=None, **kwargs):
+        # set up base likelihood parameters
+        super(TestNormal, self).__init__(variable_args, **kwargs)
+        # set the lognl to 0 since there is no data
+        self.set_lognl(0.)
+        # store the pdf
+        if mean is None:
+            mean = [0.]*len(variable_args)
+        if cov is None:
+            cov = [1.]*len(variable_args)
+        self._dist = stats.multivariate_normal(mean=mean, cov=cov)
+        # check that the dimension is correct
+        if self._dist.dim != len(variable_args):
+            raise ValueError("dimension mis-match between variable_args and "
+                             "mean and/or cov")
+
+    def loglikelihood(self, **params):
+        """Returns the log pdf of the multivariate normal.
+        """
+        return self._dist.logpdf([params[p] for p in self.variable_args])
+
+
+
+#
+# =============================================================================
+#
+#                              Data-based likelihoods
+#
+# =============================================================================
+#
 class GaussianLikelihood(BaseLikelihoodEvaluator):
     r"""Computes log likelihoods assuming the detectors' noise is Gaussian.
 
@@ -557,6 +606,8 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
 
     Parameters
     ----------
+    variable_args : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
     waveform_generator : generator class
         A generator class that creates waveforms. This must have a ``generate``
         function which takes parameter values as keyword arguments, a
@@ -583,23 +634,8 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         An extra normalization weight to apply to the inner products. Can be
         either a float or an array. If ``None``, ``4*data.values()[0].delta_f``
         will be used.
-    prior : callable
-        A callable class or function that computes the prior.
-    sampling_parameters : list, optional
-        Replace one or more of the variable args with the given parameters
-        for sampling.
-    replace_parameters : list, optional
-        The variable args to replace with sampling parameters. Must be the
-        same length as ``sampling_parameters``.
-    sampling_transforms : list, optional
-        List of transforms to use to go between the variable args and the
-        sampling parameters. Required if ``sampling_parameters`` is not None.
-    waveform_transforms : list, optional
-        List of transforms to use to go from the variable args to parameters
-        understood by the waveform generator.
-    return_meta : {True, bool}
-        If True, ``logposterior`` and ``logplr`` will return the value of the
-        prior and the loglikelihood ratio, along with the posterior/plr.
+    \**kwargs :
+        All other keyword arguments are passed to ``BaseLikelihoodEvaluator``.
 
     Examples
     --------
@@ -617,7 +653,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
-    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, fmin, psds=psds, return_meta=False)
+    >>> likelihood_eval = inference.GaussianLikelihood(['tc'], generator, signal, fmin, psds=psds, return_meta=False)
 
     Now compute the log likelihood ratio and prior-weighted likelihood ratio;
     since we have not provided a prior, these should be equal to each other:
@@ -662,20 +698,39 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
 
     """
     name = 'gaussian'
+    required_kwargs = ['waveform_generator', 'data', 'f_lower']
 
-    def __init__(self, waveform_generator, data, f_lower, psds=None,
-                 f_upper=None, norm=None, prior=None,
-                 sampling_parameters=None, replace_parameters=None,
-                 sampling_transforms=None, waveform_transforms=None,
-                 return_meta=True):
+    def __init__(self, variable_args, waveform_generator=None, data=None,
+                 f_lower=None, psds=None, f_upper=None, norm=None,
+                 **kwargs):
+        if waveform_generator is None:
+            raise ValueError("waveform_generator must be provided")
+        if data is None:
+            raise ValueError("data must be provided")
+        if f_lower is None:
+            raise ValueError("f_lower must be provided")
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
-        super(GaussianLikelihood, self).__init__(waveform_generator, data,
-            prior=prior, sampling_parameters=sampling_parameters,
-            replace_parameters=replace_parameters,
-            sampling_transforms=sampling_transforms,
-            waveform_transforms=waveform_transforms,
-            return_meta=return_meta)
+        super(GaussianLikelihood, self).__init__(
+            variable_args,
+            waveform_generator=waveform_generator, data=data,
+            **kwargs)
+        # check that the data and waveform generator have the same detectors
+        if sorted(waveform_generator.detectors.keys()) != \
+                sorted(self._data.keys()):
+            raise ValueError("waveform generator's detectors (%s) " %(
+                ','.join(sorted(waveform_generator.detector_names))) +
+                "does not match data (%s)" %(
+                ','.join(sorted(self._data.keys()))))
+        # check that the data and waveform generator have the same epoch
+        if any(waveform_generator.epoch != d.epoch
+               for d in self._data.values()):
+            raise ValueError("waveform generator does not have the same epoch "
+                "as all of the data sets.")
+        # check that the data sets all have the same lengths
+        dlens = numpy.array([len(d) for d in data.values()])
+        if not all(dlens == dlens[0]):
+            raise ValueError("all data must be of the same length")
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
@@ -705,10 +760,6 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
             for d in self._data.values()]))
         # set default call function to logplor
         self.set_callfunc('logplr')
-
-    @property
-    def lognl(self):
-        return self._lognl
 
     def loglr(self, **params):
         r"""Computes the log likelihood ratio,
@@ -805,7 +856,9 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         return self._formatreturn(logplr + self._lognl, prior=pr, loglr=lr,
                                   logjacobian=lj)
 
-likelihood_evaluators = {GaussianLikelihood.name: GaussianLikelihood}
 
-__all__ = ['BaseLikelihoodEvaluator', 'GaussianLikelihood',
+likelihood_evaluators = {TestNormal.name: TestNormal,
+                         GaussianLikelihood.name: GaussianLikelihood}
+
+__all__ = ['BaseLikelihoodEvaluator', 'TestNormal', 'GaussianLikelihood',
            'likelihood_evaluators']

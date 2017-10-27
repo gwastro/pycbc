@@ -47,7 +47,7 @@ parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
 
 # add data options
-parser.add_argument("--instruments", type=str, nargs="+", required=True,
+parser.add_argument("--instruments", type=str, nargs="+",
                     help="IFOs, eg. H1 L1.")
 option_utils.add_low_frequency_cutoff_opt(parser)
 parser.add_argument("--psd-start-time", type=float, default=None,
@@ -151,6 +151,10 @@ else:
 # setup log
 pycbc.init_logging(opts.verbose)
 
+# get likelihood class
+likelihood_class = inference.likelihood_evaluators[opts.likelihood_evaluator]
+likelihood_args = {}
+
 # warn user about options that will be removed
 if opts.skip_burn_in:
     logging.warning("DEPRECATION WARNING: Option --skip-burn-in has been "
@@ -172,9 +176,14 @@ ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
 # get the data and psd
-logging.info("Loading data")
-strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
-low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
+if 'data' in likelihood_class.required_kwargs:
+    logging.info("Loading data")
+    strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
+    low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
+    likelihood_args['f_lower'] = low_frequency_cutoff_dict.values()[0]
+    likelihood_args['psds'] = psd_dict
+else:
+    strain_dict = stilde_dict = psd_dict = low_frequency_cutoff_dict = None
 
 with ctx:
 
@@ -223,30 +232,35 @@ with ctx:
     # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
     logging.info("Setting up sampler")
-    generator_function = generator.select_waveform_generator(
-                                                    static_args["approximant"])
 
     # get gates for templates
     gates = gate.gates_from_cli(opts)
 
-    # construct class that will generate waveforms
-    generated_waveform = generator.FDomainDetFrameGenerator(
-                       generator_function, epoch=stilde_dict.values()[0].epoch,
-                       variable_args=variable_args, detectors=opts.instruments,
-                       delta_f=stilde_dict.values()[0].delta_f,
-                       delta_t=strain_dict.values()[0].delta_t,
-                       recalib=recalib, gates=gates,
-                       **static_args)
+    if 'waveform_generator' in likelihood_class.required_kwargs:
+        generator_function = generator.select_waveform_generator(
+                                                        static_args["approximant"])
+
+        # construct class that will generate waveforms
+        waveform_generator = generator.FDomainDetFrameGenerator(
+                           generator_function, epoch=stilde_dict.values()[0].epoch,
+                           variable_args=variable_args, detectors=opts.instruments,
+                           delta_f=stilde_dict.values()[0].delta_f,
+                           delta_t=strain_dict.values()[0].delta_t,
+                           recalib=recalib, gates=gates,
+                           **static_args)
+
+    else:
+        waveform_generator = None
 
     # construct class that will return the natural logarithm of likelihood
-    likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
-                        generated_waveform, stilde_dict,
-                        low_frequency_cutoff_dict.values()[0],
-                        psds=psd_dict, prior=prior_eval,
-                        sampling_parameters=sampling_parameters,
-                        replace_parameters=replace_parameters,
-                        sampling_transforms=sampling_transforms,
-                        waveform_transforms=waveform_transforms)
+    likelihood = likelihood_class(variable_args,
+                                  waveform_generator=waveform_generator,
+                                  data=stilde_dict, prior=prior_eval,
+                                  sampling_parameters=sampling_parameters,
+                                  replace_parameters=replace_parameters,
+                                  sampling_transforms=sampling_transforms,
+                                  waveform_transforms=waveform_transforms,
+                                  **likelihood_args)
 
     burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
                                 min_iterations=opts.min_burn_in)
@@ -310,7 +324,9 @@ with ctx:
             if max_iterations is not None:
                 max_iterations += n_sampler_burn_in
             logging.info("Writing burn in samples to file")
-            sampler.write_results(fp, max_iterations=max_iterations)
+            sampler.write_results(fp, max_iterations=max_iterations,
+                                  static_args=static_args,
+                                  ifos=opts.instruments)
             try:
                 sampler.write_state(fp)
             except NotImplementedError:
@@ -349,7 +365,9 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp, start_iteration=start,
                                   end_iteration=end,
-                                  max_iterations=max_iterations)
+                                  max_iterations=max_iterations,
+                                  static_args=static_args,
+                                  ifos=opts.instruments)
             logging.info("Writing state to file")
             fp.write_random_state()
 
