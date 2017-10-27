@@ -75,7 +75,7 @@ for i, arg in enumerate(parameters):
                                                  parameters, fp.variable_args)
         y = fp.read_samples(file_parameters, walkers=j,
                             thin_start=opts.thin_start,
-                            thin_interval=1,
+                            thin_interval=opts.thin_interval,
                             thin_end=opts.thin_end)
         y = transforms.apply_transforms(y, cs)
         x = range(opts.thin_start, opts.thin_end + 1)
@@ -84,6 +84,13 @@ for i, arg in enumerate(parameters):
 
         # y-axis label
         axs[i].set_ylabel(labels[i])
+
+# x-axis label
+if opts.thin_interval is not None:
+    axs[-1].set_xlabel("Intervals [%s iteration(s) per interval]" % opts.thin_interval)
+# Default to old behavior
+else :
+    axs[-1].set_xlabel("Autocorrelation Lengths [%s iteration(s) per interval]" % fp.attrs['acl'])
 
 # save figure with meta-data
 caption_kwargs = {
