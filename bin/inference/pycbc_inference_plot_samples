@@ -83,6 +83,13 @@ for i, arg in enumerate(parameters):
         # y-axis label
         axs[i].set_ylabel(labels[i])
 
+# x-axis label
+if opts.thin_interval is not None:
+    axs[-1].set_xlabel("Intervals (%s iterations per interval)" % opts.thin_interval)
+# Default to old behavior
+else :
+    axs[-1].set_xlabel("Autocorrelation Lengths [%s iteration(s) per interval]" % fp.attrs['acl'])
+
 # save figure with meta-data
 caption_kwargs = {
     "parameters" : ", ".join(labels),
