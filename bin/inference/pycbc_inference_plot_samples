@@ -78,7 +78,9 @@ for i, arg in enumerate(parameters):
                             thin_interval=1,
                             thin_end=opts.thin_end)
         y = transforms.apply_transforms(y, cs)
-        axs[i].plot(y[arg], alpha=0.25)
+        x = range(opts.thin_start, opts.thin_end + 1)
+
+        axs[i].plot(x, y[arg], alpha=0.25)
 
         # y-axis label
         axs[i].set_ylabel(labels[i])
