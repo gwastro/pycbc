@@ -324,6 +324,14 @@ def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
         A new array with all of the fields in all of the arrays merged into
         a single array.
     """
+    # make sure everything in merge_list is an array
+    for ii,arr in enumerate(merge_list):
+        if not isinstance(arr, numpy.ndarray):
+            arr = numpy.array(arr)
+            # make sure it is a length 1
+            if arr.shape == ():
+                arr = numpy.array([arr.item()])
+            merge_list[ii] = arr
     if not all(merge_list[0].shape == arr.shape for arr in merge_list):
         raise ValueError("all of the arrays in merge_list must have the " +
             "same shape")
@@ -382,6 +390,14 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
     """
     if not isinstance(arrays, list):
         arrays = [arrays]
+    # check that all arrays are arrays
+    for ii,arr in enumerate(arrays):
+        if not isinstance(arr, numpy.ndarray):
+            arr = numpy.array(arr)
+            # make sure it is a length 1
+            if arr.shape == ():
+                arr = numpy.array([arr.item()])
+            arrays[ii] = arr
     # set the names
     if names is not None:
         if isinstance(names, (str, unicode)):
