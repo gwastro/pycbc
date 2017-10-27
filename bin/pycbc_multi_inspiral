@@ -91,12 +91,12 @@ fft.insert_fft_option_group(parser)
 """
 For GRB we have sky position
 """
-longitude = 0.9999715 
-latitude = 6.103652
+longitude = 6.103652
+latitude = 0.9999715 
 pol = 1.21771
 t_gps = 1169088610.0
 
-ra = longitude
+ra = longitude 
 dec = latitude
 
 opt = parser.parse_args()
@@ -194,7 +194,7 @@ with ctx:
     for ifo in opt.instruments:
 	time_delay[ifo] =  \
 	pycbc.detector.Detector(ifo).time_delay_from_earth_center(ra,dec,t_gps)
-	time_delay_idx[ifo] = int(time_delay[ifo]*sample_rate)
+	time_delay_idx[ifo] = int(round(time_delay[ifo]*sample_rate))
 	matched_filter[ifo] = MatchedFilterControl(opt.low_frequency_cutoff, None,
 				   opt.snr_threshold, tlen, delta_f, complex64,
 				   segments[ifo], template_mem,
@@ -256,17 +256,14 @@ with ctx:
 			       approximant=opt.approximant, out=template_mem)
     roh_coh_dict = {}
     roh_coinc_dict={}
-    coinc_snrv_dict={}
-    time=[]
     for t_num, template in enumerate(bank):
-	if t_num == 1: #use small sample set for development
+	if t_num == 5: #use small sample set for development
 	   break
 	"""
 	Calculating f_p and f_c for each detector for use later in calculating the coherent snr
 	"""
 	roh_coh_dict[t_num]={}
 	roh_coinc_dict[t_num]={}
-	coinc_snrv_dict[t_num]={}
 	Fp = {} #Antenna patterns
 	Fc = {}
 	sigmasq = {}
@@ -297,11 +294,9 @@ with ctx:
 	for ifo in opt.instruments:
 	    fp[ifo] = sigma[ifo]*Fp_dp[ifo]/fp_denominator
 	    fc[ifo] = sigma[ifo]*Fc_dp[ifo]/fc_denominator
-	
-	
-
 
 	event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
+
 	for ifo in opt.instruments:
 	    if opt.cluster_method == "window":
 		cluster_window = int(opt.cluster_window * sample_rate)
@@ -312,52 +307,46 @@ with ctx:
 
 	s = range(len(segments[opt.instruments[0]])) #find number of segments (same in both ifos)
 	for s_num in s: #for each segment loop over the ifos
-	    if s_num==1:
+	    if s_num==5:
 		break
 	    snr={} 
 	    norm_dict={}
 	    snrv_dict={}
 	    for ifo in opt.instruments:
-		#print "ifo=" + str(ifo)
 		stilde = segments[ifo][s_num]
-		#print "stilde="+str(stilde)
 		logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
 			     (t_num + 1, len(bank), ifo, s_num + 1,
 			      len(segments[ifo])))       
 		snr_ts, norm, corr, idx, snrv = \
 			matched_filter[ifo].matched_filter_and_cluster(s_num,
 			    template.sigmasq(stilde.psd), window=cluster_window)
-		#This next line gets rid of the end data from the segment (which is corrupted) and add time delay to the strain segments
-		"""
-		analyse_data = slice(matched_filter[ifo].segments[s_num].analyze.start \
-		+ time_delay_idx[ifo], matched_filter[ifo].segments[s_num].analyze.stop  \
-		+ time_delay_idx[ifo], None)
-		"""
+                #Find the data we need to analyse
 		analyse_data = matched_filter[ifo].segments[s_num].analyze
+                #Restrict the snr timeseries to just this section
 		snr[ifo] = snr_ts[analyse_data]
-		#snr[ifo].roll(-time_delay_idx[ifo])
-		#snr[ifo].roll(-np.argmax((snr[ifo]*snr[ifo].conj())[20400:20500]))
 		norm_dict[ifo] = norm
-		#Adding print statement for test
-		#print "use_cluster=" + str(use_cluster) + " idx_length=" + str(len(idx))
-		#print "s_num=" + str(s_num) 
+                if snr[ifo] != []:
+		    print ifo, t_num, s_num
+		    print "maxsnr="
+		    print (max(snr[ifo]*snr[ifo].conj())*norm_dict[ifo]**2)**0.5
+                if idx != []:
+		    print "maxsnrv="
+		    print (max(snrv*snrv.conj())*norm**2)**0.5
+		    if max(snr[ifo]*snr[ifo].conj())*norm_dict[ifo]**2 !=\
+		                            max(snrv*snrv.conj())*norm**2:
+                        print "The loudest trigger should equal the loudest \
+                               part of the snr timeseries"
+            for ifo in opt.instruments:
+                # Move to next segment if this segment has no data
+                if snr[ifo] == []:
+                    break
+                #Apply time delay
+		snr[ifo].roll(-time_delay_idx[ifo])
+                #Make dictionary of normalisation constants for each ifo
+                """
 		if len(idx) == 0:
 		    continue
-
-		print ifo, t_num, s_num
-		print "maxsnr="
-		print (max(snr[ifo]*snr[ifo].conj())*norm_dict[ifo]**2)**0.5
-		#print "index of max="
-		#print np.argmax(snr[ifo]*snr[ifo].conj())
-		#print snr[ifo].abs_max_loc() 
-		print "maxsnrv="
-		print (max(snrv*snrv.conj())*norm**2)**0.5
-		#print max(abs(snrv) * norm)
-		#print idx
-		if max(snr[ifo]*snr[ifo].conj())*norm_dict[ifo]**2 !=\
-		     max(snrv*snrv.conj())*norm**2:
-		    print "PANIC!!"
-
+                """
 		out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
 			bank_chisq.values(template, stilde.psd, stilde, snrv,
 					  norm, idx+stilde.analyze.start)
@@ -384,30 +373,21 @@ with ctx:
 
 	    #Calculate coherent snr roh_coh
 	    #Check we have data before we try to compute the coherent snr
-	    run_flag=True
-	    for ifo in opt.instruments:
-		if snr[ifo] == []: 
-		    run_flag = False
-		    break
-	    print "run_flag=" + str(run_flag)
-	    #If we have data, calculate roh_coh
-	    if run_flag == True:
+            if snr[ifo] != []:
 		for ifo in opt.instruments:
 		    snr[ifo]*=norm_dict[ifo]
 		roh_coh2=0
 		roh_coinc2=0
-		coinc_snrv2=0
 		for ifo1 in opt.instruments:
-		    #print "snr="+str(snr[ifo1])
 		    for ifo2 in opt.instruments:
 			roh_coh2 += snr[ifo1].conj()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2]
 		    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
-		    #coinc_snrv2 += snrv_dict[ifo1].conj()*snrv_dict[ifo1]
 		roh_coh_dict[t_num][s_num]=np.sqrt(roh_coh2)
 		roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
-		#coinc_snrv_dict[t_num][s_num]=np.sqrt(max(coinc_snrv2))
-		time.append(idx)
-	    	
+                print "max coherent snr"
+                print max(roh_coh_dict[t_num][s_num])
+                print "max coincident snr"
+                print max(roh_coinc_dict[t_num][s_num])
 	    event_mgr.cluster_template_events_single_ifo("time_index",
 						    "snr", cluster_window, ifo)
 
@@ -437,6 +417,7 @@ if opt.fftw_output_double_wisdom_file:
 """
 logging.info("Finished")
 
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -447,6 +428,7 @@ plt.legend()
 plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
 plt.figure()
+"""
 for ifo in opt.instruments:
     print "Time delay for ifo:" + ifo
     print time_delay[ifo]
@@ -456,7 +438,7 @@ for ifo in opt.instruments:
 for ifo in opt.instruments:
     print "time difference for ifo: " + ifo
     print np.argmax((snr[ifo]*snr[ifo].conj())[20400:20500])/float(sample_rate) - time_delay[ifo]
-
+"""
 import lal
 for ifo in opt.instruments:
     single_det_snr = snr[ifo]*snr[ifo].conj()**0.5
@@ -465,11 +447,6 @@ for ifo in opt.instruments:
 plt.legend()
 plt.savefig("/home/c1551011/public_html/single_det_snr.png")
 print t_gps
-print "max coherent snr"
-print max(roh_coh_dict[0][0])
-print "max coincident snr"
-print max(roh_coinc_dict[0][0])
-
 time_delay_between_ifos = {}
 time_delay_between_peaks = {}
 for ifo1 in opt.instruments:
@@ -483,7 +460,8 @@ for ifo1 in opt.instruments:
 	single_det_snr2 = snr[ifo2]*snr[ifo2].conj()**0.5
 	print "Time delay between peaks for detectors: " + ifo1 + " " + ifo2
 	time_delay_between_peaks[ifo1][ifo2] = float(np.argmax(single_det_snr1[20400:20500]) - np.argmax(single_det_snr2[20400:20500]))/sample_rate
-
+        print time_delay_between_peaks[ifo1][ifo2]
+        print np.argmax(single_det_snr1[20400:20500]) - np.argmax(single_det_snr2[20400:20500])
 peak_time = {}
 for ifo in opt.instruments:
     peak_time[ifo] = float(np.argmax(snr[ifo]*snr[ifo].conj()**0.5))/sample_rate
