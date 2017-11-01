@@ -292,6 +292,14 @@ def combine_fields(dtypes):
     return new_dt
 
 
+def _ensure_array_list(arrays):
+    """Ensures that every element in a list is an instance of a numpy array."""
+    # Note: the isinstance test is needed below so that instances of FieldArrays
+    # are not converted to numpy arrays
+    return [numpy.array(arr, ndmin=1) if not isinstance(arr, numpy.ndarray)
+            else arr for arr in arrays]
+
+
 def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
     """Merges the given arrays into a single array. The arrays must all have
     the same shape. If one or more of the given arrays has multiple fields,
@@ -324,6 +332,8 @@ def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
         A new array with all of the fields in all of the arrays merged into
         a single array.
     """
+    # make sure everything in merge_list is an array
+    merge_list = _ensure_array_list(merge_list)
     if not all(merge_list[0].shape == arr.shape for arr in merge_list):
         raise ValueError("all of the arrays in merge_list must have the " +
             "same shape")
@@ -382,6 +392,8 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
     """
     if not isinstance(arrays, list):
         arrays = [arrays]
+    # ensure that all arrays in arrays are arrays
+    arrays = _ensure_array_list(arrays)
     # set the names
     if names is not None:
         if isinstance(names, (str, unicode)):
