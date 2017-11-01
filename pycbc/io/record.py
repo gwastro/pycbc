@@ -292,6 +292,11 @@ def combine_fields(dtypes):
     return new_dt
 
 
+def _ensure_array_list(arrays):
+    """Ensures that every element in a list is a numpy array."""
+    return [numpy.array(arr, ndmin=1) if not isinstance(arr, numpy.ndarray)
+            else arr for arr in arrays]
+
 def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
     """Merges the given arrays into a single array. The arrays must all have
     the same shape. If one or more of the given arrays has multiple fields,
@@ -325,13 +330,7 @@ def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
         a single array.
     """
     # make sure everything in merge_list is an array
-    for ii,arr in enumerate(merge_list):
-        if not isinstance(arr, numpy.ndarray):
-            arr = numpy.array(arr)
-            # make sure it is a length 1
-            if arr.shape == ():
-                arr = numpy.array([arr.item()])
-            merge_list[ii] = arr
+    merge_list = _ensure_array_list(merge_list)
     if not all(merge_list[0].shape == arr.shape for arr in merge_list):
         raise ValueError("all of the arrays in merge_list must have the " +
             "same shape")
@@ -390,14 +389,8 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
     """
     if not isinstance(arrays, list):
         arrays = [arrays]
-    # check that all arrays are arrays
-    for ii,arr in enumerate(arrays):
-        if not isinstance(arr, numpy.ndarray):
-            arr = numpy.array(arr)
-            # make sure it is a length 1
-            if arr.shape == ():
-                arr = numpy.array([arr.item()])
-            arrays[ii] = arr
+    # ensure that all arrays in arrays are arrays
+    arrays = _ensure_array_list(arrays)
     # set the names
     if names is not None:
         if isinstance(names, (str, unicode)):
