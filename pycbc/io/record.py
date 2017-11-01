@@ -294,8 +294,8 @@ def combine_fields(dtypes):
 
 def _ensure_array_list(arrays):
     """Ensures that every element in a list is a numpy array."""
-    return [numpy.array(arr, ndmin=1) if not isinstance(arr, numpy.ndarray)
-            else arr for arr in arrays]
+    return [numpy.array(arr, ndmin=1) for arr in arrays]
+
 
 def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
     """Merges the given arrays into a single array. The arrays must all have
