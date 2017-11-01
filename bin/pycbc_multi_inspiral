@@ -144,6 +144,26 @@ def rotate_to_dominant_polarisation_frame(Fp, Fc, chi_dp):
     Fc_dp = -Fp*np.sin(2*chi_dp) + Fc*np.cos(2*chi_dp)
     return Fp_dp, Fc_dp
 
+def get_dp_frame_basis(Fp_dp_dict,Fc_dp_dict,sigma_dict):
+    """
+    Output: fp,fc: Two dictionaries with the basis vectors for each ifo in dp frame
+    Input: Fp_dp_dict,Fc_dp_dict: Dictionaries of the plus and cross antenna patterns for each ifo in dp frame
+           sigma_dict: Sigma dictionary for each ifo (sensitivity of each ifo)
+    """
+    fp_denominator = 0
+    fc_denominator = 0
+    for ifo in opt.instruments:
+        fp_denominator += (sigma[ifo]*Fp_dp[ifo])**2 
+        fc_denominator += (sigma[ifo]*Fc_dp[ifo])**2 
+    fp_denominator = np.sqrt(fp_denominator) 
+    fc_denominator = np.sqrt(fc_denominator) 
+    fp = {}
+    fc = {}
+    for ifo in opt.instruments:
+        fp[ifo] = sigma[ifo]*Fp_dp[ifo]/fp_denominator
+        fc[ifo] = sigma[ifo]*Fc_dp[ifo]/fc_denominator
+    return fp,fc
+
 def coherent_snr(snr_dict,fp_dict,fc_dict):
     """
     Output: Returns an array of the coherent snr for the detector network
@@ -314,18 +334,7 @@ with ctx:
 	    Fp_dp[ifo], Fc_dp[ifo] = rotate_to_dominant_polarisation_frame\
                                                            (Fp[ifo], Fc[ifo], chi_dp) 
 	#define the orthogonal unit vectors
-	fp_denominator = 0
-	fc_denominator = 0
-	for ifo in opt.instruments:
-	    fp_denominator += (sigma[ifo]*Fp_dp[ifo])**2 
-	    fc_denominator += (sigma[ifo]*Fc_dp[ifo])**2 
-	fp_denominator = np.sqrt(fp_denominator) 
-	fc_denominator = np.sqrt(fc_denominator) 
-	fp = {}
-	fc = {}
-	for ifo in opt.instruments:
-	    fp[ifo] = sigma[ifo]*Fp_dp[ifo]/fp_denominator
-	    fc[ifo] = sigma[ifo]*Fc_dp[ifo]/fc_denominator
+        fp,fc = get_dp_frame_basis(Fp_dp,Fc_dp,sigma)
 
 	event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
 
