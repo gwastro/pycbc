@@ -180,12 +180,12 @@ _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
 
 def notch_fir(timeseries, f1, f2, order, beta=5.0):
     """ notch filter the time series using an FIR filtered generated from
-    the ideal response passed through a kaiser window (beta = 5.0)
+    the ideal response passed through a time-domain kaiser window (beta = 5.0)
 
     The suppression of the notch filter is related to the bandwidth and
     the number of samples in the filter length. For a few Hz bandwidth,
-    typically severall thousand or ten's of thousands of samples are
-    required to create significant downweigting.
+    a length corresponding to a few seconds is typically
+    required to create significant suppression in the notched band.
 
     Parameters
     ----------
