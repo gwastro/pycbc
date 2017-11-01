@@ -116,6 +116,10 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 ctx = scheme.from_cli(opt)
 
+def calculate_f_sig(Fp,Fc,sigma):
+    f_sig = sigma*np.array([Fp,Fc])
+    return f_sig
+
 def dominant_polarization(f_sig):
     """
     Given the detector responses, compute the dominant polarization F+, Fx and the
@@ -129,6 +133,34 @@ def dominant_polarization(f_sig):
     f_cross, f_plus = np.sort(np.sqrt(np.linalg.eig(m)[0])) #This returns eigenvalues of m 
     chi = 1./4 * np.arctan2(2 * m[0,1], m[0,0] - m[1,1])
     return f_plus, f_cross, chi
+
+def rotate_to_dominant_polarisation_frame(Fp, Fc, chi_dp):
+    """
+    Output: Fp_dp, Fc_dp: Dictionaries of the antenna response to the plus and cross polarisation of the GW for each ifo in the dominant polarisation frame.
+    Input:  Fp, Fc: Dictionaries of the antenna response to plus and cross polarisation
+                    of the GW  
+    """
+    Fp_dp = Fp*np.cos(2*chi_dp) + Fc*np.sin(2*chi_dp)
+    Fc_dp = -Fp*np.sin(2*chi_dp) + Fc*np.cos(2*chi_dp)
+    return Fp_dp, Fc_dp
+
+def coherent_snr(snr_dict,fp_dict,fc_dict):
+    """
+    Output: Returns an array of the coherent snr for the detector network
+    Inputs: snr_dict: is a dictionary of the normalised complex snr time series for 
+                      each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
+           fp_dict, fc_dict: These are dictionaries for the orthonormal unit vectors
+                             in detector space. The keys are the ifos.
+    """
+    roh_coh2=0
+    for ifo1 in opt.instruments:
+        for ifo2 in opt.instruments:
+            roh_coh2 += snr[ifo1].conj()*(fp[ifo1]*fp[ifo2]+\
+                                 fc[ifo1]*fc[ifo2])*snr[ifo2]
+    roh_coh = np.sqrt(roh_coh2)
+    return roh_coh
+
+
 
 strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments, 
                                          dyn_range_fac=DYN_RANGE_FAC)
@@ -273,14 +305,14 @@ with ctx:
 	    Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(ra, dec, pol, t_gps)
 	    sigmasq[ifo] = template.sigmasq(psds[ifo])
 	    sigma[ifo] = np.sqrt(sigmasq[ifo])
-	    f_sig[ifo] = sigma[ifo]*np.array([Fp[ifo],Fc[ifo]])
+            f_sig[ifo] = calculate_f_sig(Fp[ifo],Fc[ifo],sigma[ifo])
 	chi_dp = dominant_polarization(f_sig)[2] #Dominant polarisation angle
 	#Change to dominant polarisation frame
 	Fp_dp={}
 	Fc_dp={}
 	for ifo in opt.instruments:
-	    Fp_dp[ifo] = Fp[ifo]*np.cos(2*chi_dp) + Fc[ifo]*np.sin(2*chi_dp)       
-	    Fc_dp[ifo] = -Fp[ifo]*np.sin(2*chi_dp) + Fc[ifo]*np.cos(2*chi_dp)       
+	    Fp_dp[ifo], Fc_dp[ifo] = rotate_to_dominant_polarisation_frame\
+                                                           (Fp[ifo], Fc[ifo], chi_dp) 
 	#define the orthogonal unit vectors
 	fp_denominator = 0
 	fc_denominator = 0
@@ -307,7 +339,7 @@ with ctx:
 
 	s = range(len(segments[opt.instruments[0]])) #find number of segments (same in both ifos)
 	for s_num in s: #for each segment loop over the ifos
-	    if s_num==5:
+	    if s_num==10:
 		break
 	    snr={} 
 	    norm_dict={}
@@ -376,13 +408,10 @@ with ctx:
             if snr[ifo] != []:
 		for ifo in opt.instruments:
 		    snr[ifo]*=norm_dict[ifo]
-		roh_coh2=0
 		roh_coinc2=0
 		for ifo1 in opt.instruments:
-		    for ifo2 in opt.instruments:
-			roh_coh2 += snr[ifo1].conj()*(fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2])*snr[ifo2]
 		    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
-		roh_coh_dict[t_num][s_num]=np.sqrt(roh_coh2)
+		roh_coh_dict[t_num][s_num]=coherent_snr(snr,fp,fc)
 		roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
                 print "max coherent snr"
                 print max(roh_coh_dict[t_num][s_num])
@@ -428,6 +457,10 @@ plt.legend()
 plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
 plt.figure()
+
+np.save('roh_coh.npy',roh_coh_dict)
+np.save('roh_coinc.npy',roh_coinc_dict)
+
 """
 for ifo in opt.instruments:
     print "Time delay for ifo:" + ifo
@@ -439,7 +472,8 @@ for ifo in opt.instruments:
     print "time difference for ifo: " + ifo
     print np.argmax((snr[ifo]*snr[ifo].conj())[20400:20500])/float(sample_rate) - time_delay[ifo]
 """
-import lal
+"""
+#import lal
 for ifo in opt.instruments:
     single_det_snr = snr[ifo]*snr[ifo].conj()**0.5
     plt.plot(single_det_snr[20400:20500],'.',label=ifo)
@@ -468,4 +502,4 @@ for ifo in opt.instruments:
     print "Time of peak in ifo: " + ifo
     print peak_time[ifo]
 
-
+"""
