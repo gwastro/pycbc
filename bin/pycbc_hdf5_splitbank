@@ -83,13 +83,6 @@ tmplt_bank = bank.TemplateBank(args.bank_file)
 
 templates = tmplt_bank.table
 
-# If an array of filenames
-if args.output_filenames:
-    args.number_of_banks = len(args.output_filenames)
-
-# The indices for the array of templates are shuffled and the shuffled
-# array of indices are used to rearrange the elements of the templates
-# array
 if args.random_sort:
     if args.random_seed is not None:
         random.seed(args.random_seed)
