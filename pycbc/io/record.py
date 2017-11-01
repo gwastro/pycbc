@@ -293,8 +293,11 @@ def combine_fields(dtypes):
 
 
 def _ensure_array_list(arrays):
-    """Ensures that every element in a list is a numpy array."""
-    return [numpy.array(arr, ndmin=1) for arr in arrays]
+    """Ensures that every element in a list is an instance of a numpy array."""
+    # Note: the isinstance test is needed below so that instances of FieldArrays
+    # are not converted to numpy arrays
+    return [numpy.array(arr, ndmin=1) if not isinstance(arr, numpy.ndarray)
+            else arr for arr in arrays]
 
 
 def merge_arrays(merge_list, names=None, flatten=True, outtype=None):
