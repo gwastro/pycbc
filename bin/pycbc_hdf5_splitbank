@@ -36,32 +36,28 @@ parser.add_argument("--version", action="version",
                   version=pycbc.version.git_verbose_msg)
 parser.add_argument("--bank-file", type=str,
                     help="Bank hdf file to load.")
-parser.add_argument('--templates-per-bank', type=int,
-                    help="This specifies the number of templates in "
-                    "each of the output sub-banks. Either specify this "
-                    "or --number-of-banks, do not supply both.")
-outbanks = parser.add_mutually_exclusive_group()
+outbanks = parser.add_mutually_exclusive_group(required=True)
+outbanks.add_argument("--templates-per-bank", type=int,
+                      help="Number of templates in each output sub-banks. "
+                      "Either specify this or --number-of-banks, not both.")
 outbanks.add_argument("--number-of-banks", type=int,
-                    help="This specifies the number of output sub-banks. "
-                    "Either specify this or --templates-per-bank, do not "
-                    "supply both.")
+                      help="Number of output sub-banks. Either specify this "
+                      "or --templates-per-bank, not both.")
 outbanks.add_argument("--output-filenames", nargs='*', default=None,
-                    action="store",
-                    help="Directly specify the names of the output files. "
-                    "The bank will be split equally between all specified "
-                    "files.")
+                      action="store",
+                      help="Directly specify the names of the output files. "
+                      "The bank will be split equally between files.")
 parser.add_argument("--output-prefix", default=None,
                     help="Prefix to add to the output template bank names, "
-                    "for example 'sub-bank'. The output file names would "
-                    "become args.output_prefix.hdf")
+                    "for example 'H1L1-BANK'. Output file names would then be "
+                    "'H1L1-BANK{x}.hdf' where {x} is 1,2,...")
 sortopt = parser.add_mutually_exclusive_group()
+sortopt.add_argument("--mchirp-sort", action="store_true", default=False,
+                    help="Sort templates by chirp mass before splitting")
 sortopt.add_argument("--random-sort", action="store_true", default=False,
                     help="Sort templates randomly before splitting")
 parser.add_argument("--random-seed", type=int,
-                    help="Random seed to use when sorting randomly the "
-                    "indices of array of templates")
-sortopt.add_argument("--mchirp-sort", action="store_true", default=False,
-                    help="")
+                    help="Random seed for --random-sort")
 parser.add_argument("--force", action="store_true", default=False,
                     help="Overwrite the given hdf file if it exists. "
                          "Otherwise, an error is raised.")
@@ -70,26 +66,22 @@ parser.add_argument("--verbose", action="store_true", default=False)
 
 args = parser.parse_args()
 
-pycbc.init_logging(args.verbose)
+# input checks
+if args.mchirp_sort and (args.random_seed is not None):
+    raise RuntimeError("Can't supply a random seed if not sorting randomly!")
 
-logging.info("loading bank")
+if args.output_filenames is None and args.output_prefix is None:
+    raise RuntimeError("Must specify either output filenames or a prefix!")
+
+if args.output_filenames and args.output_prefix:
+    raise RuntimeError("Can't specify both output filenames and a prefix")
+
+pycbc.init_logging(args.verbose)
+logging.info("Loading bank")
 
 tmplt_bank = bank.TemplateBank(args.bank_file)
 
 templates = tmplt_bank.table
-
-if args.output_filenames and args.output_prefix:
-    errMsg="""Either supply specific filenames for all output files via
-    args.output_filenames or supply a common prefix for all output files
-    via args.output_prefix. Cannot supply both."""
-    parser.error(errMsg)
-
-if args.templates_per_bank and (args.number_of_banks or args.output_filenames):
-    errMsg="""Either request --templates-per-bank (used to calculate the 
-    number of sub-banks to be generated), or request --number-of-banks or
-    --output-filenames (used to calculate the number of templates in each
-    sub-bank). Cannot supply both!"""
-    parser.error(errMsg)
 
 # If an array of filenames
 if args.output_filenames:
@@ -114,6 +106,10 @@ if args.mchirp_sort:
 
 # Split the templates in the bank taken as input into the smaller banks
 
+# If an array of filenames
+if args.output_filenames:
+    args.number_of_banks = len(args.output_filenames)
+
 # If the number of output banks is taken as input calculate the number
 # of templates to be stored per bank
 if args.number_of_banks:
@@ -125,12 +121,6 @@ if args.number_of_banks:
 elif args.templates_per_bank:
     num_per_file = args.templates_per_bank
     num_files = int(templates[:].size / num_per_file)
-
-else:
-    errMsg = """Either one of the options --templates-per-bank or
-    --number-of-banks should be requested to generate the output
-    sub-banks."""
-    parser.error(errMsg)
 
 # Generate sub-banks
 logging.info("Generating the output sub-banks")
@@ -151,10 +141,9 @@ for ii in range(num_files):
     elif args.output_prefix:
         outname = args.output_prefix + str(ii) + '.hdf'
     else:
-        errMsg = """Cannot resolve the process of assigning names to
-                output files. --output-filenames or --output-prefix
-                should be taken as input."""
-        raise ValueError(errMsg)
+        raise RuntimeError("I shouldn't be able to reach this point. One out "
+                           "of --output-filenames and --output-prefix must "
+                           "have been supplied!")
 
     # Generate the hdf5 output file for the ii'th sub-bank, which would
     # be a slice of the input template bank having a start index and
