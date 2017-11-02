@@ -499,7 +499,7 @@ class TimeSeries(Array):
         return white
 
     def qtransform(self, delta_t=None, delta_f=None, logfsteps=None,
-                  frange=None, qrange=(4,64), mismatch=0.2, return_raw=False):
+                  frange=None, qrange=(4,64), mismatch=0.2, return_complex=False):
         """ Return the interpolated 2d qtransform of this data
         
         Parameters
@@ -517,7 +517,7 @@ class TimeSeries(Array):
             q range
         mismatch : float
             Mismatch between frequency tiles
-        return_raw: {False, bool}
+        return_complex: {False, bool}
             return the raw complex series instead of the normalized power.
          
         Returns
@@ -537,13 +537,13 @@ class TimeSeries(Array):
         
         q_base = qtiling(self, qrange, frange, mismatch)
         q, times, freqs, q_plane = qplane(q_base, self.to_frequencyseries(),
-                                          frange, return_raw=return_raw)
+                                          frange, return_complex=return_complex)
         if logfsteps and delta_f:
             raise ValueError("Provide only one (or none) of delta_f and logfsteps")
 
         # Interpolate if requested
         if delta_f or delta_t or logfsteps:
-            if return_raw:
+            if return_complex:
                 interp_amp = interp2d(times, freqs, abs(q_plane))   
                 interp_phase = interp2d(times, freqs, _numpy.angle(q_plane))             
             else:
@@ -560,7 +560,7 @@ class TimeSeries(Array):
                                      logfsteps)
 
         if delta_f or delta_t or logfsteps:
-            if return_raw:
+            if return_complex:
                 q_plane = _numpy.exp(1.0j * interp_phase(times, freqs))
                 q_plane *= interp_amp(times, freqs)
             else:

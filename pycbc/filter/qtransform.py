@@ -35,7 +35,7 @@ from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from pycbc.fft import ifft
 from pycbc.types import zeros
 
-def qplane(qplane_tile_dict, fseries, frange, return_raw=False):
+def qplane(qplane_tile_dict, fseries, frange, return_complex=False):
     """Performs q-transform on each tile for each q-plane and selects
        tile with the maximum energy. Q-transform can then
        be interpolated to a desired frequency and time resolution.
@@ -48,7 +48,7 @@ def qplane(qplane_tile_dict, fseries, frange, return_raw=False):
         frequency-series data set
     frange:
         upper and lower bounds on frequency range
-    return_raw: {False, bool}
+    return_complex: {False, bool}
         Return the raw complex series instead of the normalized power.
 
     Returns
@@ -68,7 +68,7 @@ def qplane(qplane_tile_dict, fseries, frange, return_raw=False):
     for i, q in enumerate(qplane_tile_dict):
         energies = []
         for f0 in qplane_tile_dict[q]:
-            energy = qseries(fseries, q, f0, return_raw=return_raw)
+            energy = qseries(fseries, q, f0, return_complex=return_complex)
             menergy = abs(energy).max()
             energies.append(energy)
 
@@ -182,7 +182,7 @@ def _iter_frequencies(q, frange, mismatch, dur):
                fstepmin * fstepmin)
     raise StopIteration()
 
-def qseries(fseries, Q, f0, return_raw=False):
+def qseries(fseries, Q, f0, return_complex=False):
     """Calculate the energy 'TimeSeries' for the given fseries
 
     Parameters
@@ -193,7 +193,7 @@ def qseries(fseries, Q, f0, return_raw=False):
         q value
     f0:
         central frequency
-    return_raw: {False, bool}
+    return_complex: {False, bool}
         Return the raw complex series instead of the normalized power.
 
     Returns
@@ -216,16 +216,16 @@ def qseries(fseries, Q, f0, return_raw=False):
 
     tlen = (len(fseries)-1) * 2
     windowed.resize(tlen)
-    wenergy = numpy.roll(windowed, -center)
+    windowed = numpy.roll(windowed, -center)
 
     # calculate the time series for this q -value
-    wenergy = FrequencySeries(wenergy, delta_f=fseries.delta_f,
+    windowed = FrequencySeries(windowed, delta_f=fseries.delta_f,
                             epoch=fseries.start_time)
     cenergy = TimeSeries(zeros(tlen, dtype=numpy.complex128),
                             delta_t=fseries.delta_t)
-    ifft(wenergy, cenergy)
+    ifft(windowed, cenergy)
 
-    if return_raw:
+    if return_complex:
         return cenergy
     else:
         energy = cenergy.squared_norm()
