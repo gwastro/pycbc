@@ -407,13 +407,13 @@ def phi_a(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
                                 primary_spin(mass1, mass2, spin1y, spin2y))
     phi2 = phi_from_spinx_spiny(secondary_spin(mass1, mass2, spin1x, spin2x),
                                 secondary_spin(mass1, mass2, spin1y, spin2y))
-    return phi1 - phi2
+    return (phi1 - phi2) % (2 * numpy.pi)
 
 def phi_s(spin1x, spin1y, spin2x, spin2y):
     """ Returns the sum of the in-plane perpendicular spins."""
     phi1 = phi_from_spinx_spiny(spin1x, spin1y)
     phi2 = phi_from_spinx_spiny(spin2x, spin2y)
-    return phi1 + phi2
+    return (phi1 + phi2) % (2 * numpy.pi)
 
 def primary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the primary mass."""
@@ -513,17 +513,18 @@ def phi2_from_phi_a_phi_s(phi_a, phi_s):
 def phi_from_spinx_spiny(spinx, spiny):
     """Returns the angle between the x-component axis and the in-plane spin.
     """
-    return numpy.arctan(spiny / spinx)
+    phi = numpy.arctan2(spiny, spinx)
+    return phi % (2 * numpy.pi)
 
 def spin1z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin1z.
     """
-    return (mass1 + mass2) / (2 * mass1) * (chi_eff - chi_a)
+    return (mass1 + mass2) / (2.0 * mass1) * (chi_eff - chi_a)
 
 def spin2z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin2z.
     """
-    return (mass1 + mass2) / (2 * mass2) * (chi_eff + chi_a)
+    return (mass1 + mass2) / (2.0 * mass2) * (chi_eff + chi_a)
 
 def spin1x_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
     """Returns x-component spin for primary mass.

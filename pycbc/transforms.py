@@ -715,12 +715,14 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
             A dict with key as parameter name and value as numpy.array or float
             of transformed values.
         """
+
+        # convert
         out = {}
-        out["xi1"] = conversions.primary_xi(
+        xi1 = conversions.primary_xi(
                              maps[parameters.mass1], maps[parameters.mass2],
                              maps[parameters.spin1x], maps[parameters.spin1y],
                              maps[parameters.spin2x], maps[parameters.spin2y])
-        out["xi2"] = conversions.secondary_xi(
+        xi2 = conversions.secondary_xi(
                              maps[parameters.mass1], maps[parameters.mass2],
                              maps[parameters.spin1x], maps[parameters.spin1y],
                              maps[parameters.spin2x], maps[parameters.spin2y])
@@ -731,6 +733,26 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
         out["phi_s"] = conversions.phi_s(
                              maps[parameters.spin1x], maps[parameters.spin1y],
                              maps[parameters.spin2x], maps[parameters.spin2y])
+
+        # map parameters from primary/secondary to indices
+        if isinstance(xi1, numpy.ndarray):
+            mass1, mass2 = map(numpy.array, [maps[parameters.mass1],
+                                             maps[parameters.mass2]])
+            mask_mass1_gte_mass2 = mass1 >= mass2
+            mask_mass1_lt_mass2 = mass1 < mass2
+            out["xi1"] = numpy.concatenate((
+                                        xi1[mask_mass1_gte_mass2],
+                                        xi2[mask_mass1_lt_mass2]))
+            out["xi2"] = numpy.concatenate((
+                                        xi1[mask_mass1_gte_mass2],
+                                        xi2[mask_mass1_lt_mass2]))
+        elif maps["mass1"] > maps["mass2"]:
+            out["xi1"] = xi1
+            out["xi2"] = xi2
+        else:
+            out["xi1"] = xi2
+            out["xi2"] = xi1
+
         return self.format_output(maps, out)
 
 

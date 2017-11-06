@@ -22,9 +22,8 @@ from utils import parse_args_cpu_only
 from utils import simple_exit
 
 # list of transforms without an inverse function and to ignore
-NO_INVERSE = ["distance_to_redshift", "chi_p_to_cartesian_spin"]
-IGNORE = NO_INVERSE + ["aligned_mass_spin_to_cartesian_spin",
-                       "precession_mass_spin_to_cartesian_spin"]
+IGNORE = [t.name for t in transforms.common_cbc_transforms
+          if t.inverse == None]
 
 # ranges to draw random numbers for each parameter
 RANGES = {
