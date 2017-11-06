@@ -715,16 +715,16 @@ class PrecessionMassSpinToCartesianSpin(BaseTransform):
         return self.format_output(maps, out)
 
 
-class ChiPToCartesianSpin(BaseTransform):
-    """Converts chi_p to cartesian spins.
+class CartesianSpinToChiP(BaseTransform):
+    """Converts cartesian spins to `chi_p`.
     """
-    name = "chi_p_to_cartesian_spin"
-    _inputs = ["chi_p"]
-    _outputs = [parameters.mass1, parameters.mass2,
+    name = "cartesian_spin_to_chi_p"
+    _inputs = [parameters.mass1, parameters.mass2,
                 parameters.spin1x, parameters.spin1y,
                 parameters.spin2x, parameters.spin2y]
+    _outputs = ["chi_p"]
 
-    def inverse_transform(self, maps):
+    def transform(self, maps):
         """ This function transforms from component masses and caretsian spins
         to chi_p.
 
@@ -735,13 +735,6 @@ class ChiPToCartesianSpin(BaseTransform):
         Examples
         --------
         Convert a dict of numpy.array:
-
-        >>> import numpy
-        >>> from pycbc import transforms
-        >>> from pycbc.waveform import parameters
-        >>> cl = transforms.DistanceToRedshift()
-        >>> cl.transform({parameters.distance : numpy.array([1000])})
-            {'distance': array([1000]), 'redshift': 0.19650987609144363}
 
         Returns
         -------
@@ -1154,11 +1147,11 @@ class CartesianSpinToPrecessionMassSpin(PrecessionMassSpinToCartesianSpin):
     inverse_jacobian = inverse.jacobian
 
 
-class CartesianSpinToChiP(ChiPToCartesianSpin):
-    """The inverse of ChiPToCartesianSpin.
+class ChiPToCartesianSpin(CartesianSpinToChiP):
+    """The inverse of `CartesianSpinToChiP`.
     """
     name = "cartesian_spin_to_chi_p"
-    inverse = ChiPToCartesianSpin
+    inverse = CartesianSpinToChiP
     _inputs = inverse._outputs
     _outputs = inverse._inputs
     transform = inverse.inverse_transform
