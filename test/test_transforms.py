@@ -44,6 +44,7 @@ RANGES = {
     "phi_a" : (0.0, 2 * numpy.pi),
     "xi1" : (0.0, 1.0),
     "xi2" : (0.0, 1.0),
+    "chirp_distance" : (2.0, 10.0),
 }
 
 # tests only need to happen on the CPU
