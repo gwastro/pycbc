@@ -56,14 +56,9 @@ def cartesian_to_spherical_azimuthal(x, y):
     phi : {numpy.array, float}
         The azimuthal angle.
     """
-    if type(y) is int:
-        y = float(y)
+    y = float(y) if type(y) is int else y
     phi = numpy.arctan2(y, x)
-    if phi < 0:
-        phi = 2 * numpy.pi - abs(phi)
-    elif phi > 2 * numpy.pi:
-        phi = phi - 2 * numpy.pi
-    return phi
+    return phi % (2 * numpy.pi)
 
 def cartesian_to_spherical_polar(x, y, z):
     """ Calculates the polar angle in spherical coordinates from Cartesian
