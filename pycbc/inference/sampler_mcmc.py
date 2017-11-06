@@ -28,6 +28,7 @@ for parameter estimation.
 
 import numpy
 from pycbc.inference.sampler_base import _BaseSampler
+from pycbc.io import FieldArray
 
 #
 # =============================================================================
@@ -44,20 +45,14 @@ class MCMCSampler(_BaseSampler):
     ----------
     likelihood_evaluator : LikelihoodEvaluator
         An instance of a pycbc.inference.likelihood evaluator.
-    niterations : int
-        Number of iterations to use in sampler.
     """
     name = "mcmc"
 
-    def __init__(self, likelihood_evaluator, niterations):
+    def __init__(self, likelihood_evaluator):
         self.likelihood_evaluator = likelihood_evaluator
-        self._niterations = niterations
-        sampling_args=likelihood_evaluator.sampling_args
-        ndim = len(sampling_args)
-        dtype=numpy.dtype([(name, None) for name in
-                            ['lnpost','lnlike']+sampling_args])
-        self.samples_chain = numpy.full([niterations,ndim+2],
-                                        numpy.nan,dtype=dtype)
+        self._lastclear = 0
+        self.last_sample = []
+        self.samples_chain = []
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
@@ -76,7 +71,7 @@ class MCMCSampler(_BaseSampler):
         MCMCSampler
             A MCMC sampler initialized based on the given arguments.
         """
-        return cls(likelihood_evaluator, opts.niterations)
+        return cls(likelihood_evaluator)
 
     @property
     def ifos(self):
@@ -103,34 +98,45 @@ class MCMCSampler(_BaseSampler):
         additional dimensions are any additional dimensions used by the
         sampler (e.g, walkers, temperatures).
         """
-        return self.samples_chain[:self.niterations]
+        return self.samples_chain
 
     @property
     def samples(self):
-        """This function should return the past samples as a [additional
-        dimensions x] niterations field array, where the fields are union
-        of the sampling args and the variable args.
-        """
-        return self.samples_chain[:self.niterations]
+        """Returns the samples in the chain as a FieldArray.
 
-    @property
+        If the sampling args are not the same as the variable args, the
+        returned samples will have both the sampling and the variable args.
+
+        The returned FieldArray has dimension [additional dimensions x]
+        nwalkers x niterations.
+        """
+        # chain is a [additional dimensions x] niterations x ndim array
+        samples = self.chain
+        sampling_args = self.sampling_args
+        # convert to dictionary to apply boundary conditions
+        samples = {param: samples[param] for param in sampling_args}
+        samples = self.likelihood_evaluator._prior.apply_boundary_conditions(
+            **samples)
+        # now convert to field array
+        samples = FieldArray.from_arrays([samples[param]
+                                          for param in sampling_args],
+                                         names=sampling_args)
+        # apply transforms to go to variable args space
+        return self.likelihood_evaluator.apply_sampling_transforms(samples,
+            inverse=True)
+
     def clear_chain(self):
         """This function should clear the current chain of samples from memory.
         """
-        del self.samples_chain
-        return None
+        # store the iteration that the clear is occuring on
+        self._lastclear = self.niterations
+        self.last_sample = self.samples_chain[-1]
+        self.samples_chain = []
 
     @property
     def niterations(self):
         """Get the current number of iterations."""
-        return len(numpy.where(self.samples_chain[0]!=numpy.nan)[0])
-
-    @property
-    def acceptance_fraction(self):
-        """This function should return the fraction of walkers that accepted
-        each step as an array.
-        """
-        return NotImplementedError("acceptance_fraction function not set.")
+        return len(self.samples_chain)+self._lastclear
 
     @property
     def lnpost(self):
@@ -138,21 +144,7 @@ class MCMCSampler(_BaseSampler):
         function used by the sampler as an
         [additional dimensions] x niterations array.
         """
-        return self.samples_chain[:self.niterations]['lnpost']
-
-    @property
-    def likelihood_stats(self):
-        """This function should return the prior and likelihood ratio of
-        samples as an [additional dimensions] x niterations
-        array. If the likelihood evaluator did not return that info to the
-        sampler, it should return None.
-        """
-        return NotImplementedError("likelihood stats not set")
-
-    def burn_in(self, initial_values):
-        """This function should burn in the sampler.
-        """
-        raise NotImplementedError("This sampler has no burn_in function.")
+        return self.samples_chain['lnpost']
 
     def set_p0(self, samples=None, prior=None):
         """Sets the initial position of the MCMC.
@@ -172,10 +164,6 @@ class MCMCSampler(_BaseSampler):
         p0 : array
             An ndim array of the initial positions that were set.
         """
-        # create a (nwalker, ndim) array for initial positions
-
-        ndim = len(self.variable_args)
-        p0 = numpy.ones(ndim)
         # if samples are given then use those as initial positions
         if samples is not None:
             # transform to sampling parameter space
@@ -184,11 +172,9 @@ class MCMCSampler(_BaseSampler):
         # draw random samples if samples are not provided
         else:
             samples = self.likelihood_evaluator.prior_rvs(size=1,prior=prior)
-        # convert to 1D array
-        for i, param in enumerate(self.sampling_args):
-            p0[i] = samples[param]
-        self._p0 = p0
-        return p0
+
+        self._p0 = samples
+        return samples
 
     @property
     def p0(self):
@@ -199,26 +185,69 @@ class MCMCSampler(_BaseSampler):
     def run(self, niterations):
         """This function should run the sampler.
         """
+
         if self.niterations == 0:
             # first time running, use the initial positions
             samples = self.p0
-            loglr = self.likelihood_evaluator.loglr(p0)
-            logplr = self.likelihood_evaluator.prior(p0) + loglr
-            self.samples_chain[0]=numpy.insert(samples,0,[logplr,loglr])
-            self.niterations=1
 
-        for i in range(niterations):
+            # Need to convert the sampling parameters to a list
+            samples_list = [samples[param] for param in self.sampling_args]
 
-            logplr_old,loglr_old = self.samples_chain[i][:2]
-            samples = self.samples_chain[i][2:]
-            samples_prop = samples + numpy.random.normal(loc=0.0, scale=0.1,
-                                                        size=len(samples))
-            loglr_prop = self.likelihood_evaluator.loglr(samples_prop)
-            logplr_prop = self.likelihood_evaluator.prior(samples_prop) \
-                        + loglr_prop
-            if logplr_prop / logplr_old > numpy.random.uniform():
+            # The Jacobian is unused, is there a way to not compute it?
+            logplr, (prior, loglr, logjacobian) = \
+                                        self.likelihood_evaluator(samples_list)
+
+            logplr = logplr if isinstance(logplr, numpy.float64) else logplr[0]
+            prior = prior if isinstance(prior, numpy.float64) else prior[0]
+            loglr = loglr if isinstance(loglr, numpy.float64) else loglr[0]
+
+            start_sample=numpy.insert(samples_list,0,[logplr,loglr])
+        else:
+            start_sample=self.last_sample
+
+        dtype=numpy.dtype([(name, None) for name in
+                                    ['lnpost','lnlike']+self.sampling_args])
+        self.samples_chain = numpy.empty(niterations,dtype=dtype)
+        self.samples_chain[0] = start_sample
+
+        for i in range(niterations-1):
+
+            logplr_old,loglr_old = self.samples_chain[['lnpost','lnlike']][i]
+            samples = self.samples_chain[self.sampling_args][i]
+
+            # Dummy proposal
+            samples_prop = [sample + numpy.random.normal(loc=0.0, scale=0.1)
+                            for sample in samples]
+
+            # The Jacobian is unused, is there a way to not compute it?
+            logplr_prop, (prior_prop, loglr_prop, logjacobian) = \
+                                        self.likelihood_evaluator(samples_prop)
+
+            # There has to be a better way than the multiple if statements below
+            if isinstance(prior_prop,numpy.float64):
+                prior_prop = prior_prop
+            elif prior_prop: # Because sometimes the likelihood returns None
+                prior_prop = prior_prop[0]
+            else:
+                prior_prop = -numpy.inf
+
+            if isinstance(logplr_prop,numpy.float64):
+                logplr_prop = logplr_prop
+            elif logplr_prop: # Because sometimes the likelihood returns None
+                logplr_prop = logplr_prop[0]
+            else:
+                logplr_prop = -numpy.inf
+
+            if isinstance(loglr_prop,numpy.float64):
+                loglr_prop = loglr_prop
+            elif loglr_prop: # Because sometimes the likelihood returns None
+                loglr_prop = loglr_prop[0]
+            else:
+                loglr_prop = -numpy.inf
+
+            if logplr_prop - logplr_old > numpy.random.uniform():
                 self.samples_chain[i+1]=numpy.insert(samples_prop,0,
-                                        [logplr_prop,loglr_prop])
+                                                    [logplr_prop,loglr_prop])
             else:
                 self.samples_chain[i+1]=self.samples_chain[i]
 
@@ -233,8 +262,145 @@ class MCMCSampler(_BaseSampler):
         raise NotImplementedError("this sampler does not support evidence "
                                   "calculation")
 
-    # write and read functions
-    def write_metadata(self, fp):
+    def write_results(self, fp, start_iteration=0, end_iteration=None,
+                      max_iterations=None, **metadata):
+        """Writes metadata and samples to the given file.
+        See the various write function for details.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the acceptance fraction has not previously been
+            written to the file. The default (None) is to use the maximum size
+            allowed by h5py.
+        \**metadata :
+            All other keyword arguments are passed to ``write_metadata``.
+        """
+        self.write_metadata(fp, **metadata)
+        self.write_chain(fp, start_iteration=start_iteration,
+                         end_iteration=end_iteration,
+                         max_iterations=max_iterations)
+
+    @staticmethod
+    def write_samples_group(fp, samples_group, parameters, samples,
+                            start_iteration=0, end_iteration=None,
+                            index_offset=0, max_iterations=None):
+        """Writes samples to the given file.
+
+        Results are written to:
+
+            `fp[samples_group/{vararg}]`,
+
+        where `{vararg}` is the name of a variable arg.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        samples_group : str
+            Name of samples group to write.
+        parameters : list
+            The parameters to write to the file.
+        samples : FieldArray
+            The samples to write. Should be a FieldArray with fields containing
+            the samples to write and shape nwalkers x niterations.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
+        index_offset : int, optional
+            Write the samples to the arrays on disk starting at
+            `start_iteration` + `index_offset`. For example, if
+            `start_iteration=0`, `end_iteration=1000` and `index_offset=500`,
+            then `samples[0:1000]` will be written to indices `500:1500` in the
+            arrays on disk. This is needed if you are adding new samples to
+            a chain that was previously written to file, and you want to
+            preserve the history (e.g., after a checkpoint). Default is 0.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the samples have not previously been written
+            to file. The default (None) is to use the maximum size allowed by
+            h5py.
+        """
+        # due to clearing memory, there can be a difference between indices in
+        # memory and on disk
+        niterations = len(samples)
+        niterations += index_offset
+        fa = start_iteration # file start index
+        if end_iteration is None:
+            end_iteration = niterations
+        fb = end_iteration # file end index
+        ma = fa - index_offset # memory start index
+        mb = fb - index_offset # memory end index
+
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+
+        group = samples_group + '/{name}'
+
+        # loop over number of dimensions
+        for param in parameters:
+            dataset_name = group.format(name=param)
+            try:
+                if fb > fp[dataset_name].size:
+                    # resize the dataset
+                    fp[dataset_name].resize(fb, axis=0)
+                fp[dataset_name][fa:fb] = samples[param][ma:mb]
+            except KeyError:
+                # dataset doesn't exist yet
+                fp.create_dataset(dataset_name, (fb,),
+                                  maxshape=(max_iterations,),
+                                  dtype=samples[param].dtype)
+                fp[dataset_name][fa:fb] = samples[param][ma:mb]
+
+    def write_chain(self, fp, start_iteration=0, end_iteration=None,
+                    max_iterations=None):
+        """Writes the samples from the current chain to the given file.
+
+        Results are written to:
+
+            `fp[fp.samples_group/{field}]`,
+
+        where `{field}` is the name of each field returned by
+        `likelihood_stats`.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        start_iteration : {0, int}
+            Write results starting from the given iteration.
+        end_iteration : {None, int}
+            Write results up to the given iteration.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the samples have not previously been written
+            to file. The default (None) is to use the maximum size allowed by
+            h5py.
+        samples_group : str
+            Name of samples group to write.
+        """
+        # samples is a nwalkers x niterations field array
+        samples = self.samples
+        parameters = self.variable_args
+        samples_group = fp.samples_group
+        # write data
+        self.write_samples_group(
+                         fp, samples_group, parameters, samples,
+                         start_iteration=start_iteration,
+                         end_iteration=end_iteration,
+                         index_offset=self._lastclear,
+                         max_iterations=max_iterations)
+
+    def write_metadata(self, fp, **kwargs):
         """Writes metadata about this sampler to the given file. Metadata is
         written to the file's `attrs`.
 
@@ -242,50 +408,133 @@ class MCMCSampler(_BaseSampler):
         ----------
         fp : InferenceFile
             A file handler to an open inference file.
+        \**kwargs :
+            All keyword args are written to the file's ``attrs``.
         """
-        fp.attrs['sampler'] = self.name
-        fp.attrs['likelihood_evaluator'] = self.likelihood_evaluator.name
-        fp.attrs['ifos'] = self.ifos
-        fp.attrs['variable_args'] = list(self.variable_args)
-        fp.attrs['sampling_args'] = list(self.sampling_args)
-        fp.attrs["niterations"] = self.niterations
-        fp.attrs["lognl"] = self.likelihood_evaluator.lognl
-        sargs = self.likelihood_evaluator.waveform_generator.static_args
-        fp.attrs["static_args"] = sargs.keys()
-        for arg, val in sargs.items():
-            fp.attrs[arg] = val
+        super(MCMCSampler, self).write_metadata(fp, **kwargs)
+        # line 375 of pycbc_inference requires nwalkers:
+        #             burn_in_eval.update(sampler, fp)
+        fp.attrs["nwalkers"] = 1
 
-    @staticmethod
-    def write_logevidence(fp, lnz, dlnz):
-        """Writes the given log evidence and its error to the given file.
-        Results are saved to the file's 'log_evidence' and 'dlog_evidence'
-        attributes.
+    def write_state(self, fp):
+        """ Saves the state of the sampler in a file.
+        """
+        raise NotImplementedError("Writing state to file not implemented.")
+
+    @classmethod
+    def read_samples(cls, fp, parameters,
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None,
+                     samples_group=None, array_class=None):
+        """Reads samples for the given parameter(s).
 
         Parameters
-        ----------
+        -----------
         fp : InferenceFile
-            A file handler to an open inference file.
-        lnz : float
-            The log of the evidence.
-        dlnz : float
-            The error in the estimate of the log evidence.
+            An open file handler to read the samples from.
+        parameters : (list of) strings
+            The parameter(s) to retrieve. A parameter can be the name of any
+            field in `fp[fp.samples_group]`, a virtual field or method of
+            `FieldArray` (as long as the file contains the necessary fields
+            to derive the virtual field or method), and/or a function of
+            these.
+        thin_start : int
+            Index of the sample to begin returning samples. Default is to read
+            samples after burn in. To start from the beginning set thin_start
+            to 0.
+        thin_interval : int
+            Interval to accept every i-th sample. Default is to use the
+            `fp.acl`. If `fp.acl` is not set, then use all samples
+            (set thin_interval to 1).
+        thin_end : int
+            Index of the last sample to read. If not given then
+            `fp.niterations` is used.
+        iteration : int
+            Get a single iteration. If provided, will override the
+            `thin_{start/interval/end}` arguments.
+        samples_group : {None, str}
+            The group in `fp` from which to retrieve the parameter fields. If
+            None, searches in `fp.samples_group`.
+        array_class : {None, array class}
+            The type of array to return. The class must have a `from_kwargs`
+            class method and a `parse_parameters` method. If None, will return
+            a FieldArray.
+
+        Returns
+        -------
+        array_class
+            Samples for the given parameters, as an instance of a the given
+            `array_class` (`FieldArray` if `array_class` is None).
         """
-        fp.attrs['log_evidence'] = lnz
-        fp.attrs['dlog_evidence'] = dlnz
+        # get the group to load from
+        if samples_group is None:
+            samples_group = fp.samples_group
+        # get the type of array class to use
+        if array_class is None:
+            array_class = FieldArray
+        # get the names of fields needed for the given parameters
+        possible_fields = fp[samples_group].keys()
+        loadfields = array_class.parse_parameters(parameters, possible_fields)
+        return cls._read_fields(fp, samples_group, loadfields, array_class,
+                                thin_start=thin_start,
+                                thin_interval=thin_interval, thin_end=thin_end,
+                                iteration=iteration)
 
     @staticmethod
-    def write_burn_in_iterations(fp, burn_in_iterations):
-        """Writes the burn in iterations to the given file.
+    def _read_fields(fp, fields_group, fields, array_class,
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None):
+        """Base function for reading samples and likelihood stats. See
+        `read_samples` and `read_likelihood_stats` for details.
 
         Parameters
-        ----------
+        -----------
         fp : InferenceFile
-            A file handler to an open inference file.
-        burn_in_iterations : array
-            Array of values giving the iteration of the burn in of each walker.
+            An open file handler to read the samples from.
+        fields_group : str
+            The name of the group to retrieve the desired fields.
+        fields : list
+            The list of field names to retrieve. Must be names of groups in
+            `fp[fields_group/]`.
+        array_class : FieldArray or similar
+            The type of array to return. Must have a `from_kwargs` attribute.
+
+        For other details on keyword arguments, see `read_samples` and
+        `read_likelihood_stats`.
+
+        Returns
+        -------
+        array_class
+            An instance of the given array class populated with values
+            retrieved from the fields.
         """
-        try:
-            fp['burn_in_iterations'][:] = burn_in_iterations
-        except KeyError:
-            fp['burn_in_iterations'] = burn_in_iterations
-        fp.attrs['burn_in_iterations'] = burn_in_iterations.max()
+
+        # get the slice to use
+        if iteration is not None:
+            get_index = iteration
+        else:
+            if thin_end is None:
+                # use the number of current iterations
+                thin_end = fp.niterations
+            get_index = fp.get_slice(thin_start=thin_start, thin_end=thin_end,
+                                     thin_interval=thin_interval)
+
+        # load
+        arrays = {}
+        group = fields_group + '/{name}'
+        for name in fields:
+            these_arrays = fp[group.format(name=name)][get_index]
+            arrays[name] = numpy.vstack(these_arrays)
+        return array_class.from_kwargs(**arrays)
+
+
+    @staticmethod
+    def write_acls(fp, acls):
+        # Dummy method as required by line 389 of pycbc_inference
+        #                sampler.write_acls(fp, sampler.compute_acls(fp))
+        return None
+    @classmethod
+    def compute_acls(cls, fp, start_index=None, end_index=None):
+        # Dummy method as required by line 389 of pycbc_inference
+        #                sampler.write_acls(fp, sampler.compute_acls(fp))
+        return None
