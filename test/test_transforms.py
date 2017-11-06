@@ -16,14 +16,13 @@
 
 import numpy
 import unittest
-from pycbc import conversions
 from pycbc import transforms
 from utils import parse_args_cpu_only
 from utils import simple_exit
 
 # list of transforms without an inverse function and to ignore
 IGNORE = [t.name for t in transforms.common_cbc_transforms
-          if t.inverse == None]
+          if t.inverse is None]
 
 # ranges to draw random numbers for each parameter
 RANGES = {
