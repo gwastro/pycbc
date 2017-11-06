@@ -1080,23 +1080,53 @@ class CartesianSpin1ToSphericalSpin1(SphericalSpin1ToCartesianSpin1):
     inverse = SphericalSpin1ToCartesianSpin1
     _inputs = inverse._outputs
     _outputs = inverse._inputs
-    transform = inverse.inverse_transform
-    inverse_transform = inverse.transform
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
 
+    def transform(self, maps):
+        """ This function transforms from cartesian to spherical spins.
 
-class CartesianSpin2ToSphericalSpin2(SphericalSpin2ToCartesianSpin2):
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        sx, sy, sz = self._inputs
+        data = coordinates.cartesian_to_spherical(maps[sx], maps[sy], maps[sz])
+        out = {param : val for param, val in zip(self._outputs, data)}
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        """ This function transforms from spherical to cartesian spins.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        a, az, po = self._outputs
+        data = coordinates.spherical_to_cartesian(maps[a], maps[az], maps[po])
+        out = {param : val for param, val in zip(self._outputs, data)}
+        return self.format_output(maps, out)
+
+
+class CartesianSpin2ToSphericalSpin2(CartesianSpin1ToSphericalSpin1):
     """The inverse of SphericalSpin2ToCartesianSpin2.
     """
     name = "cartesian_spin_2_to_spherical_spin_2"
     inverse = SphericalSpin2ToCartesianSpin2
     _inputs = inverse._outputs
     _outputs = inverse._inputs
-    transform = inverse.inverse_transform
-    inverse_transform = inverse.transform
-    jacobian = inverse.inverse_jacobian
-    inverse_jacobian = inverse.jacobian
 
 
 class CartesianSpinToAlignedMassSpin(AlignedMassSpinToCartesianSpin):
