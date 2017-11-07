@@ -185,7 +185,9 @@ def notch_fir(timeseries, f1, f2, order, beta=5.0):
     The suppression of the notch filter is related to the bandwidth and
     the number of samples in the filter length. For a few Hz bandwidth,
     a length corresponding to a few seconds is typically
-    required to create significant suppression in the notched band.
+    required to create significant suppression in the notched band. 
+    To achieve frequency resolution df at sampling frequency fs, 
+    order should be at least fs/df.
 
     Parameters
     ----------
@@ -196,7 +198,8 @@ def notch_fir(timeseries, f1, f2, order, beta=5.0):
     f2: float
         The end of the frequency suppression.
     order: int
-        Number of corrupted samples on each side of the time series
+        Number of corrupted samples on each side of the time series 
+        (Extent of the filter on either side of zero)
     beta: float
         Beta parameter of the kaiser window that sets the side lobe attenuation.
     """
