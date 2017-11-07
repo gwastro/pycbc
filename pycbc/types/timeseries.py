@@ -499,7 +499,7 @@ class TimeSeries(Array):
         return white
 
     def qtransform(self, delta_t=None, delta_f=None, logfsteps=None,
-                  frange=None, qrange=(4,64), mismatch=0.2):
+                  frange=None, qrange=(4,64), mismatch=0.2, return_complex=False):
         """ Return the interpolated 2d qtransform of this data
         
         Parameters
@@ -517,6 +517,8 @@ class TimeSeries(Array):
             q range
         mismatch : float
             Mismatch between frequency tiles
+        return_complex: {False, bool}
+            return the raw complex series instead of the normalized power.
          
         Returns
         -------
@@ -534,14 +536,18 @@ class TimeSeries(Array):
             frange = (30, int(self.sample_rate / 2 * 8))
         
         q_base = qtiling(self, qrange, frange, mismatch)
-        q, times, freqs, q_plane = qplane(q_base, self.to_frequencyseries(), frange)
-
+        q, times, freqs, q_plane = qplane(q_base, self.to_frequencyseries(),
+                                          frange, return_complex=return_complex)
         if logfsteps and delta_f:
             raise ValueError("Provide only one (or none) of delta_f and logfsteps")
 
         # Interpolate if requested
         if delta_f or delta_t or logfsteps:
-            interp = interp2d(times, freqs, q_plane)
+            if return_complex:
+                interp_amp = interp2d(times, freqs, abs(q_plane))   
+                interp_phase = interp2d(times, freqs, _numpy.angle(q_plane))             
+            else:
+                interp = interp2d(times, freqs, q_plane)
             
         if delta_t:
             times = _numpy.arange(float(self.start_time),
@@ -554,7 +560,11 @@ class TimeSeries(Array):
                                      logfsteps)
 
         if delta_f or delta_t or logfsteps:
-            q_plane = interp(times, freqs)
+            if return_complex:
+                q_plane = _numpy.exp(1.0j * interp_phase(times, freqs))
+                q_plane *= interp_amp(times, freqs)
+            else:
+                q_plane = interp(times, freqs)
 
         return times, freqs, q_plane
 
