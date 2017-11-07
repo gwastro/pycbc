@@ -221,13 +221,13 @@ def qseries(fseries, Q, f0, return_complex=False):
     # calculate the time series for this q -value
     windowed = FrequencySeries(windowed, delta_f=fseries.delta_f,
                             epoch=fseries.start_time)
-    cenergy = TimeSeries(zeros(tlen, dtype=numpy.complex128),
+    ctseries = TimeSeries(zeros(tlen, dtype=numpy.complex128),
                             delta_t=fseries.delta_t)
-    ifft(windowed, cenergy)
+    ifft(windowed, ctseries)
 
     if return_complex:
-        return cenergy
+        return ctseries
     else:
-        energy = cenergy.squared_norm()
+        energy = ctseries.squared_norm()
         medianenergy = numpy.median(energy.numpy())
         return  energy / float(medianenergy)
