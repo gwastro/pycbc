@@ -49,9 +49,8 @@ class MCMCSampler(_BaseSampler):
     """
     name = "mcmc"
 
-    def __init__(self, likelihood_evaluator,verbose=False):
+    def __init__(self, likelihood_evaluator):
         self.likelihood_evaluator = likelihood_evaluator
-        self.verbose = verbose
         self._lastclear = 0
         self.last_sample = []
         self.samples_chain = []
@@ -73,7 +72,7 @@ class MCMCSampler(_BaseSampler):
         MCMCSampler
             A MCMC sampler initialized based on the given arguments.
         """
-        return cls(likelihood_evaluator,verbose=opts.verbose)
+        return cls(likelihood_evaluator)
 
     @property
     def ifos(self):
