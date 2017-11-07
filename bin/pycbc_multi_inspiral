@@ -16,6 +16,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import time
+
+time_init = time.time()
+
 import logging
 from collections import defaultdict
 import argparse
@@ -92,7 +96,7 @@ fft.insert_fft_option_group(parser)
 For GRB we have sky position
 """
 longitude = 6.103652
-latitude = 0.9999715 
+latitude = 0.9999715
 pol = 1.21771
 t_gps = 1169088610.0
 
@@ -173,10 +177,10 @@ def coherent_snr(snr_dict,fp_dict,fc_dict):
                              in detector space. The keys are the ifos.
     """
     roh_coh2=0
-    for ifo1 in opt.instruments:
-        for ifo2 in opt.instruments:
-            roh_coh2 += snr[ifo1].conj()*(fp[ifo1]*fp[ifo2]+\
-                                 fc[ifo1]*fc[ifo2])*snr[ifo2]
+    for ifo1 in snr_dict.keys():
+        for ifo2 in snr_dict.keys():
+            roh_coh2 += snr_dict[ifo1].conj()*(fp_dict[ifo1]*fp_dict[ifo2]+\
+                                 fc_dict[ifo1]*fc_dict[ifo2])*snr_dict[ifo2]
     roh_coh = np.sqrt(roh_coh2)
     return roh_coh
 
@@ -308,6 +312,11 @@ with ctx:
 			       approximant=opt.approximant, out=template_mem)
     roh_coh_dict = {}
     roh_coinc_dict={}
+    null_dict = {}
+    Fp = {} #Antenna patterns
+    Fc = {}
+    for ifo in opt.instruments:
+        Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(ra, dec, pol, t_gps)
     for t_num, template in enumerate(bank):
 	if t_num == 5: #use small sample set for development
 	   break
@@ -316,17 +325,17 @@ with ctx:
 	"""
 	roh_coh_dict[t_num]={}
 	roh_coinc_dict[t_num]={}
-	Fp = {} #Antenna patterns
-	Fc = {}
+        null_dict[t_num]={}
 	sigmasq = {}
 	sigma = {}
 	f_sig = {}
 	for ifo in opt.instruments:
-	    Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(ra, dec, pol, t_gps)
 	    sigmasq[ifo] = template.sigmasq(psds[ifo])
 	    sigma[ifo] = np.sqrt(sigmasq[ifo])
             f_sig[ifo] = calculate_f_sig(Fp[ifo],Fc[ifo],sigma[ifo])
+        time1=time.time()
 	chi_dp = dominant_polarization(f_sig)[2] #Dominant polarisation angle
+        print "Time to find chi_dp: " + str(time.time()-time1)
 	#Change to dominant polarisation frame
 	Fp_dp={}
 	Fc_dp={}
@@ -422,6 +431,8 @@ with ctx:
 		    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
 		roh_coh_dict[t_num][s_num]=coherent_snr(snr,fp,fc)
 		roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
+                null_dict[t_num][s_num] = roh_coinc_dict[t_num][s_num] \
+                                        - roh_coh_dict[t_num][s_num]
                 print "max coherent snr"
                 print max(roh_coh_dict[t_num][s_num])
                 print "max coincident snr"
@@ -430,6 +441,7 @@ with ctx:
 						    "snr", cluster_window, ifo)
 
 
+print "Time to complete analysis: " + str(time.time() - time_init)
 """
 #FIXME This stuff doesn't work for more than 2 detectors.
 	event_mgr.finalize_template_events()
@@ -462,6 +474,7 @@ import matplotlib.pyplot as plt
 plt.figure()
 plt.plot(roh_coinc_dict[0][0],'b.',label='coinc snr')
 plt.plot(roh_coh_dict[0][0],'rx',label='coh snr')
+plt.plot(null_dict[0][0],'mx',label='null snr')
 plt.legend()
 plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
