@@ -27,6 +27,7 @@ for parameter estimation.
 """
 
 import numpy
+import logging
 from pycbc.inference.sampler_base import _BaseSampler
 from pycbc.io import FieldArray
 
@@ -48,8 +49,9 @@ class MCMCSampler(_BaseSampler):
     """
     name = "mcmc"
 
-    def __init__(self, likelihood_evaluator):
+    def __init__(self, likelihood_evaluator,verbose=False):
         self.likelihood_evaluator = likelihood_evaluator
+        self.verbose = verbose
         self._lastclear = 0
         self.last_sample = []
         self.samples_chain = []
@@ -71,7 +73,7 @@ class MCMCSampler(_BaseSampler):
         MCMCSampler
             A MCMC sampler initialized based on the given arguments.
         """
-        return cls(likelihood_evaluator)
+        return cls(likelihood_evaluator,verbose=opts.verbose)
 
     @property
     def ifos(self):
@@ -88,7 +90,9 @@ class MCMCSampler(_BaseSampler):
     def sampling_args(self):
         """Returns the sampling args used by the likelihood evaluator.
         """
-        return self.likelihood_evaluator.sampling_args
+        # Need to convert self.likelihood_evaluator.sampling_args to a list
+        # as it is sometimes a tuple
+        return [s for s in self.likelihood_evaluator.sampling_args]
 
     @property
     def chain(self):
@@ -245,11 +249,18 @@ class MCMCSampler(_BaseSampler):
             else:
                 loglr_prop = -numpy.inf
 
-            if logplr_prop - logplr_old > numpy.random.uniform():
+            acceptance_ratio=numpy.exp(logplr_prop - logplr_old)
+            u=numpy.random.uniform()
+            if acceptance_ratio >= u:
                 self.samples_chain[i+1]=numpy.insert(samples_prop,0,
                                                     [logplr_prop,loglr_prop])
+                logging.info("Step %i, acceptance ratio %f >= %f, accepted",
+                                        i+1, acceptance_ratio, u)
             else:
                 self.samples_chain[i+1]=self.samples_chain[i]
+                logging.info("Step %i, acceptance ratio %f < %f, rejected",
+                                        i+1, acceptance_ratio, u)
+
 
         return samples_prop, logplr_prop, loglr_prop
 
