@@ -220,6 +220,19 @@ class _BaseSampler(object):
                 fp['is_burned_in'] = is_burned_in
             fp.attrs['is_burned_in'] = is_burned_in.all()
 
+    @staticmethod
+    def write_state(fp):
+        """Saves the state of the sampler in a file.
+        """
+        fp.write_random_state()
+
+    @staticmethod
+    def set_state_from_file(fp):
+        """Sets the state of the sampler back to the instance saved in a file.
+        """
+        numpy.random.set_state(fp.read_random_state())
+
+
 class BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
     packages.
@@ -954,13 +967,3 @@ class BaseMCMCSampler(_BaseSampler):
         group = fp.samples_group + '/{param}'
         return {param: fp[group.format(param=param)]
                 for param in fp.variable_args}
-
-    def write_state(self, fp):
-        """ Saves the state of the sampler in a file.
-        """
-        raise NotImplementedError("Writing state to file not implemented.")
-
-    def set_state_from_file(self, fp):
-        """ Sets the state of the sampler back to the instance saved in a file.
-        """
-        raise NotImplementedError("Reading state from file not implemented.")
