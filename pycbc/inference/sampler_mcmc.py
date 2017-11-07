@@ -220,7 +220,7 @@ class MCMCSampler(_BaseSampler):
             samples = self.samples_chain[self.sampling_args][i]
 
             # Dummy proposal
-            samples_prop = [sample + numpy.random.normal(loc=0.0, scale=0.1)
+            samples_prop = [sample + numpy.random.normal(loc=0.0, scale=1.0)
                             for sample in samples]
 
             # The Jacobian is unused, is there a way to not compute it?
@@ -436,7 +436,11 @@ class MCMCSampler(_BaseSampler):
     def read_samples(cls, fp, parameters,
                      thin_start=None, thin_interval=None, thin_end=None,
                      iteration=None,
-                     samples_group=None, array_class=None):
+                     samples_group=None, array_class=None,
+                     walkers=None, flatten=None):
+                     # Needed to add walkers option for
+                     # pycbc_inference_plot_samples
+                     # and flatten option for pycbc_inference_plot_movie
         """Reads samples for the given parameter(s).
 
         Parameters

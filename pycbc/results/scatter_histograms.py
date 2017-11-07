@@ -332,7 +332,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     else:
         orientation = 'vertical'
     ax.hist(values, bins=50, histtype=htype, orientation=orientation,
-            facecolor=fillcolor, edgecolor=color, lw=2)
+            facecolor=fillcolor, edgecolor=color, lw=2, normed=True)
     if percentiles is None:
         percentiles = [5., 50., 95.]
     values = numpy.percentile(values, percentiles)
