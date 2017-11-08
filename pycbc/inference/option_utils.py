@@ -714,7 +714,7 @@ def add_plot_posterior_option_group(parser):
     pgroup.add_argument('--plot-marginal', action='store_true', default=False,
                         help="Plot 1D marginalized distributions on the "
                              "diagonal axes.")
-    pgroup.add_argument('--marg-percentiles', nargs='+', default=None,
+    pgroup.add_argument('--marginal-percentiles', nargs='+', default=None,
                         type=float,
                         help="Percentiles to draw lines at on the 1D "
                              "histograms.")

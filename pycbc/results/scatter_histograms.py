@@ -471,7 +471,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                 mins=None, maxs=None, expected_parameters=None,
                 expected_parameters_color='r',
                 plot_marginal=True, plot_scatter=True,
-                marg_percentiles=None, contour_percentiles=None,
+                marginal_percentiles=None, contour_percentiles=None,
                 zvals=None, show_colorbar=True, cbar_label=None,
                 vmin=None, vmax=None, scatter_cmap='plasma',
                 plot_density=False, plot_contours=True,
@@ -508,7 +508,7 @@ def create_multidim_plot(parameters, samples, labels=None,
         diagonal axes will be turned off.
     plot_scatter : {True, bool}
         Plot each sample point as a scatter plot.
-    marg_percentiles : {None, array}
+    marginal_percentiles : {None, array}
         What percentiles to draw lines at on the 1D histograms.
         If None, will draw lines at `[5, 50, 95]` (i.e., the bounds on the
         upper 90th percentile and the median).
@@ -637,7 +637,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                 title=True, expected_value=expected_value,
                 expected_color=expected_parameters_color,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param],
-                percentiles=marg_percentiles)
+                percentiles=marginal_percentiles)
 
     # Off-diagonals...
     for px, py in axis_dict:

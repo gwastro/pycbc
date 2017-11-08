@@ -163,7 +163,7 @@ for i, (p, l, s) in enumerate(zip(parameters, labels, samples)):
     fig, axis_dict = create_multidim_plot(
                     p, s, labels=l, fig=fig, axis_dict=axis_dict,
                     plot_marginal=opts.plot_marginal,
-                    marg_percentiles=opts.marg_percentiles,
+                    marginal_percentiles=opts.marginal_percentiles,
                     plot_scatter=opts.plot_scatter,
                     zvals=zvals[i] if zvals is not None else None,
                     show_colorbar=show_colorbar,
