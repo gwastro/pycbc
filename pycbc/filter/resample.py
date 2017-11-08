@@ -178,6 +178,37 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
                  numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
 
+def notch_fir(timeseries, f1, f2, order, beta=5.0):
+    """ notch filter the time series using an FIR filtered generated from
+    the ideal response passed through a time-domain kaiser window (beta = 5.0)
+
+    The suppression of the notch filter is related to the bandwidth and
+    the number of samples in the filter length. For a few Hz bandwidth,
+    a length corresponding to a few seconds is typically
+    required to create significant suppression in the notched band.
+    To achieve frequency resolution df at sampling frequency fs,
+    order should be at least fs/df.
+
+    Parameters
+    ----------
+    Time Series: TimeSeries
+        The time series to be notched.
+    f1: float
+        The start of the frequency suppression.
+    f2: float
+        The end of the frequency suppression.
+    order: int
+        Number of corrupted samples on each side of the time series
+        (Extent of the filter on either side of zero)
+    beta: float
+        Beta parameter of the kaiser window that sets the side lobe attenuation.
+    """
+    k1 = f1 / float((int(1.0 / timeseries.delta_t) / 2))
+    k2 = f2 / float((int(1.0 / timeseries.delta_t) / 2))
+    coeff = scipy.signal.firwin(order * 2 + 1, [k1, k2], window=('kaiser', beta))
+    data = fir_zero_filter(coeff, timeseries)
+    return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
+
 def lowpass_fir(timeseries, frequency, order, beta=5.0):
     """ Lowpass filter the time series using an FIR filtered generated from 
     the ideal response passed through a kaiser window (beta = 5.0)
@@ -193,7 +224,6 @@ def lowpass_fir(timeseries, frequency, order, beta=5.0):
     beta: float
         Beta parameter of the kaiser window that sets the side lobe attenuation.
     """
-    data = timeseries.numpy()
     k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
     coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', beta))
     data = fir_zero_filter(coeff, timeseries)
@@ -214,7 +244,6 @@ def highpass_fir(timeseries, frequency, order, beta=5.0):
     beta: float
         Beta parameter of the kaiser window that sets the side lobe attenuation.
     """
-    data = timeseries.numpy()
     k = frequency / float((int(1.0 / timeseries.delta_t) / 2))
     coeff = scipy.signal.firwin(order * 2 + 1, k, window=('kaiser', beta), pass_zero=False)
     data = fir_zero_filter(coeff, timeseries)
@@ -307,5 +336,5 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
 
     return out_series
 
-__all__ = ['resample_to_delta_t', 'highpass', 'interpolate_complex_frequency', 'highpass_fir', 'lowpass_fir', 'fir_zero_filter']
+__all__ = ['resample_to_delta_t', 'highpass', 'interpolate_complex_frequency', 'highpass_fir', 'lowpass_fir', 'notch_fir', 'fir_zero_filter']
 
