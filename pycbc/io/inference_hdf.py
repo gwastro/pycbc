@@ -507,17 +507,22 @@ class InferenceFile(h5py.File):
         """
         self.attrs["cmd"] = " ".join(sys.argv)
 
-    def write_random_state(self, group=None):
+    def write_random_state(self, group=None, state=None):
         """ Writes the state of the random number generator from the file.
 
         Parameters
         ----------
         group : str
             Name of group to read random state to.
+        state : tuple, optional
+            Specify the random state to write. If None, will use
+            ``numpy.random.get_state()``.
         """
         group = self.sampler_group if group is None else group
         dataset_name = "/".join([group, "random_state"])
-        s, arr, pos, has_gauss, cached_gauss = numpy.random.get_state()
+        if state is None:
+            state = numpy.random.get_state()
+        s, arr, pos, has_gauss, cached_gauss = state
         if group in self:
             self[dataset_name][:] = arr
         else:
