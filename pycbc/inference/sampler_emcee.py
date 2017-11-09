@@ -544,8 +544,7 @@ class EmceePTSampler(BaseMCMCSampler):
 
     @staticmethod
     def write_samples_group(fp, samples_group, parameters, samples,
-                             start_iteration=0, end_iteration=None,
-                             index_offset=0, max_iterations=None):
+                             start_iteration=None, max_iterations=None):
         """Writes samples to the given file.
 
         Results are written to:
@@ -567,18 +566,10 @@ class EmceePTSampler(BaseMCMCSampler):
         samples : FieldArray
             The samples to write. Should be a FieldArray with fields containing
             the samples to write and shape nwalkers x niterations.
-        start_iteration : {0, int}
-            Write results starting from the given iteration.
-        end_iteration : {None, int}
-            Write results up to the given iteration.
-        index_offset : int, optional
-            Write the samples to the arrays on disk starting at
-            `start_iteration` + `index_offset`. For example, if
-            `start_iteration=0`, `end_iteration=1000` and `index_offset=500`,
-            then `samples[0:1000]` will be written to indices `500:1500` in the
-            arrays on disk. This is needed if you are adding new samples to
-            a chain that was previously written to file, and you want to
-            preserve the history (e.g., after a checkpoint). Default is 0.
+        start_iteration : int, optional
+            Write results to the file's datasets starting at the given
+            iteration. Default is to append after the last iteration in the
+            file. 
         max_iterations : int, optional
             Set the maximum size that the arrays in the hdf file may be resized
             to. Only applies if the samples have not previously been written
@@ -586,26 +577,13 @@ class EmceePTSampler(BaseMCMCSampler):
             h5py.
         """
         ntemps, nwalkers, niterations = samples.shape
-        # due to clearing memory, there can be a difference between indices in
-        # memory and on disk
-        niterations += index_offset
-        fa = start_iteration # file start index
-        if end_iteration is None:
-            end_iteration = niterations
-        fb = end_iteration # file end index
-        ma = fa - index_offset # memory start index
-        mb = fb - index_offset # memory end index
-
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
-
         group = samples_group + '/{name}/temp{tk}/walker{wi}'
-
         # create indices for faster sub-looping
         widx = numpy.arange(nwalkers)
         tidx = numpy.arange(ntemps)
-
         # loop over number of dimensions
         for param in parameters:
             # loop over number of temps
@@ -613,17 +591,29 @@ class EmceePTSampler(BaseMCMCSampler):
                 # loop over number of walkers
                 for wi in widx:
                     dataset_name = group.format(name=param, tk=tk, wi=wi)
+                    istart = start_iteration
                     try:
-                        if fb > fp[dataset_name].size:
+                        if istart is None:
+                            istart = fp[dataset_name].size
+                        istop = istart + niterations
+                        if istop > fp[dataset_name].size:
                             # resize the dataset
-                            fp[dataset_name].resize(fb, axis=0)
-                        fp[dataset_name][fa:fb] = samples[param][tk, wi, ma:mb]
+                            fp[dataset_name].resize(istop, axis=0)
+                        fp[dataset_name][istart:istop] = \
+                            samples[param][tk, wi, :]
                     except KeyError:
                         # dataset doesn't exist yet
-                        fp.create_dataset(dataset_name, (fb,),
+                        if istart is not None or istart != 0:
+                            raise ValueError("non-zero start_iteration "
+                                             "provided, but dataset doesn't "
+                                             "exist yet")
+                        istart = 0
+                        istop = istart + niterations
+                        fp.create_dataset(dataset_name, (istop,),
                                           maxshape=(max_iterations,),
                                           dtype=float)
-                        fp[dataset_name][fa:fb] = samples[param][tk, wi, ma:mb]
+                        fp[dataset_name][istart:istop] = \
+                            samples[param][tk, wi, :]
 
     def write_results(self, fp, start_iteration=0, end_iteration=None,
                       max_iterations=None,
