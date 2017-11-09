@@ -299,7 +299,7 @@ class BaseMCMCSampler(_BaseSampler):
         p0 = numpy.ones((nwalkers, ndim))
         # if samples are given then use those as initial positions
         if samples_file is not None:
-            samples = self.read_samples(fp, self.variable_args,
+            samples = self.read_samples(samples_file, self.variable_args,
                 iteration=-1)
             # transform to sampling parameter space
             samples = self.likelihood_evaluator.apply_sampling_transforms(
