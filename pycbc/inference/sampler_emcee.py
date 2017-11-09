@@ -233,7 +233,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
             wmask[walkers] = True
         return fp[group][wmask]
 
-    def write_results(self, fp, start_iteration=0, end_iteration=None,
+    def write_results(self, fp, start_iteration=None,
                       max_iterations=None, **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file. See the write function for each of those for
@@ -243,10 +243,10 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
-        start_iteration : {0, int}
-            Write results starting from the given iteration.
-        end_iteration : {None, int}
-            Write results up to the given iteration.
+        start_iteration : int, optional
+            Write results to the file's datasets starting at the given
+            iteration. Default is to append after the last iteration in the
+            file.
         max_iterations : int, optional
             Set the maximum size that the arrays in the hdf file may be resized
             to. Only applies if the samples have not previously been written
@@ -257,10 +257,8 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         """
         self.write_metadata(fp, **metadata)
         self.write_chain(fp, start_iteration=start_iteration,
-                         end_iteration=end_iteration,
                          max_iterations=max_iterations)
         self.write_likelihood_stats(fp, start_iteration=start_iteration,
-                                    end_iteration=end_iteration,
                                     max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
 
@@ -569,7 +567,7 @@ class EmceePTSampler(BaseMCMCSampler):
         start_iteration : int, optional
             Write results to the file's datasets starting at the given
             iteration. Default is to append after the last iteration in the
-            file. 
+            file.
         max_iterations : int, optional
             Set the maximum size that the arrays in the hdf file may be resized
             to. Only applies if the samples have not previously been written
@@ -603,7 +601,7 @@ class EmceePTSampler(BaseMCMCSampler):
                             samples[param][tk, wi, :]
                     except KeyError:
                         # dataset doesn't exist yet
-                        if istart is not None or istart != 0:
+                        if istart is not None and istart != 0:
                             raise ValueError("non-zero start_iteration "
                                              "provided, but dataset doesn't "
                                              "exist yet")
@@ -615,8 +613,7 @@ class EmceePTSampler(BaseMCMCSampler):
                         fp[dataset_name][istart:istop] = \
                             samples[param][tk, wi, :]
 
-    def write_results(self, fp, start_iteration=0, end_iteration=None,
-                      max_iterations=None,
+    def write_results(self, fp, start_iteration=None, max_iterations=None,
                       **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file. See the write function for each of those for
@@ -626,10 +623,10 @@ class EmceePTSampler(BaseMCMCSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
-        start_iteration : {0, int}
-            Write results starting from the given iteration.
-        end_iteration : {None, int}
-            Write results up to the given iteration.
+        start_iteration : int, optional
+            Write results to the file's datasets starting at the given
+            iteration. Default is to append after the last iteration in the
+            file.
         max_iterations : int, optional
             Set the maximum size that the arrays in the hdf file may be resized
             to. Only applies if the samples have not previously been written
@@ -640,10 +637,8 @@ class EmceePTSampler(BaseMCMCSampler):
         """
         self.write_metadata(fp, **metadata)
         self.write_chain(fp, start_iteration=start_iteration,
-                         end_iteration=end_iteration,
                          max_iterations=max_iterations)
         self.write_likelihood_stats(fp, start_iteration=start_iteration,
-                                    end_iteration=end_iteration,
                                     max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
 

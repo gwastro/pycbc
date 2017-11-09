@@ -446,7 +446,7 @@ class BaseMCMCSampler(_BaseSampler):
                     fp[dataset_name][istart:istop] = samples[param][wi, :]
                 except KeyError:
                     # dataset doesn't exist yet
-                    if istart is not None or istart != 0:
+                    if istart is not None and istart != 0:
                         raise ValueError("non-zero start_iteration provided, "
                                          "but dataset doesn't exist yet")
                     istart = 0
@@ -574,7 +574,7 @@ class BaseMCMCSampler(_BaseSampler):
             fp[dataset_name][istart:istop] = acf
         except KeyError:
             # dataset doesn't exist yet
-            if istart is not None or istart != 0:
+            if istart is not None and istart != 0:
                 raise ValueError("non-zero start_iteration provided, "
                                  "but dataset doesn't exist yet")
             istart = 0
@@ -611,8 +611,8 @@ class BaseMCMCSampler(_BaseSampler):
                          max_iterations=max_iterations)
         self.write_likelihood_stats(fp, start_iteration=start_iteration,
                                     max_iterations=max_iterations)
-        self.write_acceptance_fraction(fp, start_iteration=start_iteration,
-                                    max_iterations=max_iterations)
+        self.write_acceptance_fraction(fp, start_iteration=0,
+                                       max_iterations=max_iterations)
 
 
     @staticmethod
