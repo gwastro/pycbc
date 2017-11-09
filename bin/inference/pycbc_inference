@@ -351,9 +351,7 @@ with ctx:
         with InferenceFile(opts.output_file, "a") as fp:
 
             logging.info("Writing results to file")
-            sampler.write_results(fp, start_iteration=start,
-                                  end_iteration=end,
-                                  max_iterations=max_iterations,
+            sampler.write_results(fp, max_iterations=max_iterations,
                                   static_args=static_args,
                                   ifos=opts.instruments)
             logging.info("Writing state to file")
