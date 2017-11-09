@@ -281,29 +281,26 @@ with ctx:
     # or a specific initial distribution listed in the configuration file
     # or else use the prior distributions to set initial positions
     logging.info("Setting walkers initial conditions for varying parameters")
-    if opts.samples_file:
-        with InferenceFile(opts.samples_file, "r") as fp:
-            iteration = fp.niterations - 1
-            logging.info("Initial positions taken from iteration %i in %s",
-                         iteration, opts.samples_file)
-            p0 = fp.read_samples(sampler.variable_args, iteration=iteration)
+    samples_file = opts.samples_file
+    if samples_file is not None:
+        logging.info("Initial positions taken from last iteration in %s",
+                     samples_file)
+        samples_file = InferenceFile(samples_file, "r")
         init_prior = None
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
         init_prior = prior.PriorEvaluator(variable_args, *initial_dists,
                                           **{"constraints" : constraints})
-        p0 = None
     else:
         init_prior = None
-        p0 = None
-    sampler.set_p0(samples=p0, prior=init_prior)
+    sampler.set_p0(samples_file=samples_file, prior=init_prior)
 
     # if getting samples from file then put sampler and random number generator
     # back in its former state
-    if opts.samples_file:
-        with InferenceFile(opts.samples_file, "r") as fp:
-            sampler.set_state_from_file(fp)
+    if samples_file is not None:
+        sampler.set_state_from_file(samples_file)
+        samples_file.close()
 
     # run sampler's burn in if it is in the list of burn in functions
     n_sampler_burn_in = 0
