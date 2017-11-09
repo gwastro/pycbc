@@ -417,7 +417,7 @@ class BaseMCMCSampler(_BaseSampler):
         start_iteration : int, optional
             Write results to the file's datasets starting at the given
             iteration. Default is to append after the last iteration in the
-            file. 
+            file.
         max_iterations : int, optional
             Set the maximum size that the arrays in the hdf file may be resized
             to. Only applies if the samples have not previously been written
