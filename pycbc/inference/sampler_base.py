@@ -38,7 +38,8 @@ def _check_fileformat(read_function):
     """Decorator function for determing which read function to call."""
     def read_wrapper(cls, fp, *args, **kwargs):
         # check for old style
-        if not isinstance(fp[fields_group][fields[0]], h5py.Dataset)):
+        check_group = '{}/{}'.format(fp.samples_group, fp.variable_args[0])
+        if not isinstance(fp[check_group], h5py.Dataset):
             convert_cmd = ("pycbc_inference_extract_sampes --input-file {} "
                            "--thin-start 0 --thin-interval 1 --output-file "
                            "FILE.hdf".format(fp.filename))
@@ -740,10 +741,10 @@ class BaseMCMCSampler(_BaseSampler):
         """
         # walkers to load
         if walkers is not None:
-            wmask = numpy.zeros(fp.nwalkers, dtype=bool)
-            wmask[walkers] = True
+            widx = numpy.zeros(fp.nwalkers, dtype=bool)
+            widx[walkers] = True
         else:
-            wmask = None
+            widx = slice(0, None)
         # get the slice to use
         if iteration is not None:
             get_index = iteration
@@ -757,7 +758,7 @@ class BaseMCMCSampler(_BaseSampler):
         arrays = {}
         group = fields_group + '/{name}'
         for name in fields:
-            arr = fp[group.format(name=name)][wmask, get_index]
+            arr = fp[group.format(name=name)][widx, get_index]
             if flatten:
                 arr = arr.flatten()
             arrays[name] = arr

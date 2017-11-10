@@ -731,20 +731,20 @@ class EmceePTSampler(BaseMCMCSampler):
         """
         # walkers to load
         if walkers is not None:
-            wmask = numpy.zeros(fp.nwalkers, dtype=bool)
-            wmask[walkers] = True
+            widx = numpy.zeros(fp.nwalkers, dtype=bool)
+            widx[walkers] = True
         else:
-            wmask = None
+            widx = slice(None, None)
         # temperatures to load
         if temps is None:
-            tmask = 0
+            tidx = 0
         elif temps == 'all':
-            tmask = None
+            tidx = slice(None, None)
         elif isinstance(temps, int):
-            tmask = temps
+            tidx = temps
         else:
-            tmask = numpy.zeros(fp.ntemps, dtype=bool)
-            tmask[temps] = True
+            tidx = numpy.zeros(fp.ntemps, dtype=bool)
+            tmask[tidx] = True
         # get the slice to use
         if iteration is not None:
             get_index = [iteration]
@@ -758,7 +758,7 @@ class EmceePTSampler(BaseMCMCSampler):
         arrays = {}
         group = fields_group + '/{name}'
         for name in fields:
-            arr = fp[group.format(name=name)][tmask, wmask, get_index]
+            arr = fp[group.format(name=name)][tidx, widx, get_index]
             if flatten:
                 arr = arr.flatten()
             arrays[name] = arr
