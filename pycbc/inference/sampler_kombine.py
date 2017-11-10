@@ -109,7 +109,8 @@ class KombineSampler(BaseMCMCSampler):
 
     @property
     def acceptance_fraction(self):
-        """Get the fraction of walkers that accepted each step as an array.
+        """An niterations-length array giving the fraction of walkers that
+        accepted each step.
         """
         return self._sampler.acceptance_fraction
 
