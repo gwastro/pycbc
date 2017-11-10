@@ -71,6 +71,10 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         sampler = emcee.EnsembleSampler(nwalkers, ndim,
                                         likelihood_call,
                                         pool=pool)
+        # emcee uses it's own internal random number generator; we'll set it
+        # to have the same state as the numpy generator
+        rstate = numpy.random.get_state()
+        sampler.random_state = rstate
         # initialize
         super(EmceeEnsembleSampler, self).__init__(
               sampler, likelihood_evaluator)
@@ -119,6 +123,45 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         # now clear the chain
         self._sampler.reset()
         self._sampler.clear_blobs()
+
+    def set_p0(self, samples_file=None, prior=None):
+        """Sets the initial position of the walkers.
+
+        Parameters
+        ----------
+        samples_file : InferenceFile, optional
+            If provided, use the last iteration in the given file for the
+            starting positions.
+        prior : PriorEvaluator, optional
+            Use the given prior to set the initial positions rather than
+            `likelihood_evaultor`'s prior.
+
+        Returns
+        -------
+        p0 : array
+            An nwalkers x ndim array of the initial positions that were set.
+        """
+        # we define set_p0 here to ensure that emcee's internal random number
+        # generator is set to numpy's after the distributions' rvs functions
+        # are called
+        super(EmceeEnsembleSampler, self).set_p0(samples_file=samples_file,
+            prior=prior)
+        # update the random state
+        self._sampler.random_state = numpy.random.get_state()
+
+    def write_state(self, fp):
+        """Saves the state of the sampler in a file.
+        """
+        fp.write_random_state(state=self._sampler.random_state)
+
+    def set_state_from_file(self, fp):
+        """Sets the state of the sampler back to the instance saved in a file.
+        """
+        rstate = fp.read_random_state()
+        # set the numpy random state
+        numpy.random.set_state(rstate)
+        # set emcee's generator to the same state
+        self._sampler.random_state = rstate
 
     def run(self, niterations, **kwargs):
         """Advance the ensemble for a number of samples.
@@ -358,15 +401,14 @@ class EmceePTSampler(BaseMCMCSampler):
         # emcee returns ntemps x nwalkers x niterations
         return self._sampler.lnprobability
 
-    def set_p0(self, samples=None, prior=None):
+    def set_p0(self, samples_file=None, prior=None):
         """Sets the initial position of the walkers.
 
         Parameters
         ----------
-        samples : FieldArray, optional
-            Use the given samples to set the initial positions. The samples
-            will be transformed to the likelihood evaluator's `sampling_args`
-            space.
+        samples_file : InferenceFile, optional
+            If provided, use the last iteration in the given file for the
+            starting positions.
         prior : PriorEvaluator, optional
             Use the given prior to set the initial positions rather than
             `likelihood_evaultor`'s prior.
@@ -382,8 +424,10 @@ class EmceePTSampler(BaseMCMCSampler):
         nwalkers = self.nwalkers
         ndim = len(self.variable_args)
         p0 = numpy.ones((ntemps, nwalkers, ndim))
-        # if samples are given then use those as initial poistions
-        if samples is not None:
+        # if samples are given then use those as initial positions
+        if samples_file is not None:
+            samples = self.read_samples(samples_file, self.variable_args,
+                iteration=-1, temps='all', flatten=False)[..., 0]
             # transform to sampling parameter space
             samples = self.likelihood_evaluator.apply_sampling_transforms(
                 samples)

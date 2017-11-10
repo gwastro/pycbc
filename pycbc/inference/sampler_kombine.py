@@ -233,13 +233,18 @@ class KombineSampler(BaseMCMCSampler):
             fp[dataset_name][:] = kde.data
 
     def write_state(self, fp):
-        """ Saves the state of the sampler in a file.
+        """Saves the state of the sampler in a file.
+
+        In addition to the numpy random state, the current KDE used for the
+        jump proposals is saved.
 
         Parameters
         ----------
         fp : InferenceFile
             File to store sampler state.
         """
+        # save the numpy random state
+        super(KombineSampler, self).write_state(fp)
 
         # save clustered KDE data
         subgroup = "clustered_kde"
@@ -258,19 +263,25 @@ class KombineSampler(BaseMCMCSampler):
             dataset_name = "/".join([fp.sampler_group, "kde" + str(i)])
             self._write_kde(fp, dataset_name, kde)
 
+
     def set_state_from_file(self, fp):
-        """ Sets the state of the sampler back to the instance saved in a file.
+        """Sets the state of the sampler back to the instance saved in a file.
+
+        In addition to the numpy random state, the current KDE used for the
+        jump proposals is loaded.
 
         Parameters
         ----------
         fp : InferenceFile
             File with sampler state stored.
         """
-
         try:
             import kombine
         except ImportError:
             raise ImportError("kombine is not installed.")
+
+        # set the numpy random state
+        super(KombineSampler, self).set_state_from_file(fp)
 
         # create a ClusteredKDE
         dataset_name = "/".join([fp.sampler_group, "clustered_kde"])

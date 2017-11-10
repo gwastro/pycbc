@@ -220,6 +220,19 @@ class _BaseSampler(object):
                 fp['is_burned_in'] = is_burned_in
             fp.attrs['is_burned_in'] = is_burned_in.all()
 
+    @staticmethod
+    def write_state(fp):
+        """Saves the state of the sampler in a file.
+        """
+        fp.write_random_state()
+
+    @staticmethod
+    def set_state_from_file(fp):
+        """Sets the state of the sampler back to the instance saved in a file.
+        """
+        numpy.random.set_state(fp.read_random_state())
+
+
 class BaseMCMCSampler(_BaseSampler):
     """This class is used to construct the MCMC sampler from the kombine-like
     packages.
@@ -263,16 +276,14 @@ class BaseMCMCSampler(_BaseSampler):
     def pos(self):
         return self._pos
 
-    def set_p0(self, samples=None, prior=None):
-        """Sets the initial position of the walkers. Must be supplied a
-        FieldArray of values or a list of Distributions or a PriorEvaluator.
+    def set_p0(self, samples_file=None, prior=None):
+        """Sets the initial position of the walkers.
 
         Parameters
         ----------
-        samples : FieldArray, optional
-            Use the given samples to set the initial positions. The samples
-            will be transformed to the likelihood evaluator's `sampling_args`
-            space.
+        samples_file : InferenceFile, optional
+            If provided, use the last iteration in the given file for the
+            starting positions.
         prior : PriorEvaluator, optional
             Use the given prior to set the initial positions rather than
             `likelihood_evaultor`'s prior.
@@ -287,7 +298,9 @@ class BaseMCMCSampler(_BaseSampler):
         ndim = len(self.variable_args)
         p0 = numpy.ones((nwalkers, ndim))
         # if samples are given then use those as initial positions
-        if samples is not None:
+        if samples_file is not None:
+            samples = self.read_samples(samples_file, self.variable_args,
+                iteration=-1)
             # transform to sampling parameter space
             samples = self.likelihood_evaluator.apply_sampling_transforms(
                 samples)
@@ -954,13 +967,3 @@ class BaseMCMCSampler(_BaseSampler):
         group = fp.samples_group + '/{param}'
         return {param: fp[group.format(param=param)]
                 for param in fp.variable_args}
-
-    def write_state(self, fp):
-        """ Saves the state of the sampler in a file.
-        """
-        raise NotImplementedError("Writing state to file not implemented.")
-
-    def set_state_from_file(self, fp):
-        """ Sets the state of the sampler back to the instance saved in a file.
-        """
-        raise NotImplementedError("Reading state from file not implemented.")

@@ -281,34 +281,26 @@ with ctx:
     # or a specific initial distribution listed in the configuration file
     # or else use the prior distributions to set initial positions
     logging.info("Setting walkers initial conditions for varying parameters")
-    if opts.samples_file:
-        with InferenceFile(opts.samples_file, "r") as fp:
-            iteration = fp.niterations - 1
-            logging.info("Initial positions taken from iteration %i in %s",
-                         iteration, opts.samples_file)
-            p0 = fp.read_samples(sampler.variable_args, iteration=iteration)
+    samples_file = opts.samples_file
+    if samples_file is not None:
+        logging.info("Initial positions taken from last iteration in %s",
+                     samples_file)
+        samples_file = InferenceFile(samples_file, "r")
         init_prior = None
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
         init_prior = prior.PriorEvaluator(variable_args, *initial_dists,
                                           **{"constraints" : constraints})
-        p0 = None
     else:
         init_prior = None
-        p0 = None
-    sampler.set_p0(samples=p0, prior=init_prior)
+    sampler.set_p0(samples_file=samples_file, prior=init_prior)
 
     # if getting samples from file then put sampler and random number generator
     # back in its former state
-    if opts.samples_file:
-        with InferenceFile(opts.samples_file, "r") as fp:
-            try:
-                sampler.set_state_from_file(fp)
-                numpy.random.set_state(fp.read_random_state())
-            except NotImplementedError:
-                logging.warning("Sampler does not support setting a random "
-                                "state. Just setting initial positions.")
+    if samples_file is not None:
+        sampler.set_state_from_file(samples_file)
+        samples_file.close()
 
     # run sampler's burn in if it is in the list of burn in functions
     n_sampler_burn_in = 0
@@ -327,12 +319,8 @@ with ctx:
             sampler.write_results(fp, max_iterations=max_iterations,
                                   static_args=static_args,
                                   ifos=opts.instruments)
-            try:
-                sampler.write_state(fp)
-            except NotImplementedError:
-                logging.warn("Writing state is not implemented for %s",
-                             sampler.name)
-            # increase the number of iterations
+            logging.info("Writing state to file")
+            sampler.write_state(fp)
 
     # run sampler until we have the desired number of samples
     nsamples = 0
@@ -369,18 +357,10 @@ with ctx:
                                   static_args=static_args,
                                   ifos=opts.instruments)
             logging.info("Writing state to file")
-            fp.write_random_state()
+            sampler.write_state(fp)
 
             logging.info("Updating burn in")
             burn_in_eval.update(sampler, fp)
-
-            # include a try-except statement because all samples might not
-            # have this implemented
-            try:
-                sampler.write_state(fp)
-            except NotImplementedError:
-                logging.warn("Writing state is not implemented for %s",
-                             sampler.name)
 
             # compute the acls and write
             if opts.n_independent_samples is not None or end >= get_nsamples \
