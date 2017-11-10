@@ -27,7 +27,7 @@ packages for parameter estimation.
 """
 
 import numpy
-from pycbc.inference.sampler_base import BaseMCMCSampler
+from pycbc.inference.sampler_base import BaseMCMCSampler, _check_fileformat
 from pycbc.io import FieldArray
 from pycbc.filter import autocorrelation
 
@@ -547,11 +547,10 @@ class EmceePTSampler(BaseMCMCSampler):
 
         Results are written to:
 
-            `fp[samples_group/{vararg}/temp{k}/walker{i}]`,
+            ``fp[samples_group/{vararg}]``,
             
-        where
-        `{vararg}` is the name of a variable arg, `{i}` is the index of
-        a walker, and `{k}` is the temperature.
+        where ``{vararg}`` is the name of a variable arg. The samples are
+        written as an ``ntemps x nwalkers x niterations`` array.
 
         Parameters
         -----------
@@ -578,40 +577,30 @@ class EmceePTSampler(BaseMCMCSampler):
         if max_iterations is not None and max_iterations < niterations:
             raise IndexError("The provided max size is less than the "
                              "number of iterations")
-        group = samples_group + '/{name}/temp{tk}/walker{wi}'
-        # create indices for faster sub-looping
-        widx = numpy.arange(nwalkers)
-        tidx = numpy.arange(ntemps)
+        group = samples_group + '/{name}'
         # loop over number of dimensions
         for param in parameters:
-            # loop over number of temps
-            for tk in tidx:
-                # loop over number of walkers
-                for wi in widx:
-                    dataset_name = group.format(name=param, tk=tk, wi=wi)
-                    istart = start_iteration
-                    try:
-                        if istart is None:
-                            istart = fp[dataset_name].size
-                        istop = istart + niterations
-                        if istop > fp[dataset_name].size:
-                            # resize the dataset
-                            fp[dataset_name].resize(istop, axis=0)
-                        fp[dataset_name][istart:istop] = \
-                            samples[param][tk, wi, :]
-                    except KeyError:
-                        # dataset doesn't exist yet
-                        if istart is not None and istart != 0:
-                            raise ValueError("non-zero start_iteration "
-                                             "provided, but dataset doesn't "
-                                             "exist yet")
-                        istart = 0
-                        istop = istart + niterations
-                        fp.create_dataset(dataset_name, (istop,),
-                                          maxshape=(max_iterations,),
-                                          dtype=float)
-                        fp[dataset_name][istart:istop] = \
-                            samples[param][tk, wi, :]
+            dataset_name = group.format(name=param)
+            istart = start_iteration
+            try:
+                fp_ntemps, fp_nwalkers, fp_niterations = fp[dataset_name].shape
+                if istart is None:
+                    istart = fp_niterations
+                istop = istart + niterations
+                if istop > fp_niterations:
+                    # resize the dataset
+                    fp[dataset_name].resize(istop, axis=2)
+            except KeyError:
+                # dataset doesn't exist yet
+                if istart is not None and istart != 0:
+                    raise ValueError("non-zero start_iteration provided, but "
+                                     "dataset doesn't exist yet")
+                istart = 0
+                istop = istart + niterations
+                fp.create_dataset(dataset_name, (ntemps, nwalkers, istop),
+                                  maxshape=(ntemps, nwalkers, max_iterations),
+                                  dtype=float)
+            fp[dataset_name][:,:,istart:istop] = samples[param]
 
     def write_results(self, fp, start_iteration=None, max_iterations=None,
                       **metadata):
@@ -644,11 +633,14 @@ class EmceePTSampler(BaseMCMCSampler):
 
 
     @staticmethod
-    def _read_fields(fp, fields_group, fields, array_class,
+    def _read_oldstyle_fields(fp, fields_group, fields, array_class,
                      thin_start=None, thin_interval=None, thin_end=None,
                      iteration=None, temps=None, walkers=None, flatten=True):
         """Base function for reading samples and likelihood stats. See
         `read_samples` and `read_likelihood_stats` for details.
+
+        This function is to provide backward compatability with older files.
+        This will be removed in a future update.
 
         Parameters
         -----------
@@ -708,7 +700,72 @@ class EmceePTSampler(BaseMCMCSampler):
             arrays[name] = these_arrays
         return array_class.from_kwargs(**arrays)
 
+
+    @staticmethod
+    def _read_fields(fp, fields_group, fields, array_class,
+                     thin_start=None, thin_interval=None, thin_end=None,
+                     iteration=None, temps=None, walkers=None, flatten=True):
+        """Base function for reading samples and likelihood stats. See
+        `read_samples` and `read_likelihood_stats` for details.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        fields_group : str
+            The name of the group to retrieve the desired fields.
+        fields : list
+            The list of field names to retrieve. Must be names of groups in
+            `fp[fields_group/]`.
+        array_class : FieldArray or similar
+            The type of array to return. Must have a `from_kwargs` attribute.
+
+        For other details on keyword arguments, see `read_samples` and
+        `read_likelihood_stats`.
+
+        Returns
+        -------
+        array_class
+            An instance of the given array class populated with values
+            retrieved from the fields.
+        """
+        # walkers to load
+        if walkers is not None:
+            wmask = numpy.zeros(fp.nwalkers, dtype=bool)
+            wmask[walkers] = True
+        else:
+            wmask = None
+        # temperatures to load
+        if temps is None:
+            tmask = 0
+        elif temps == 'all':
+            tmask = None
+        elif isinstance(temps, int):
+            tmask = temps
+        else:
+            tmask = numpy.zeros(fp.ntemps, dtype=bool)
+            tmask[temps] = True
+        # get the slice to use
+        if iteration is not None:
+            get_index = [iteration]
+        else:
+            if thin_end is None:
+                # use the number of current iterations
+                thin_end = fp.niterations
+            get_index = fp.get_slice(thin_start=thin_start, thin_end=thin_end,
+                                     thin_interval=thin_interval)
+        # load
+        arrays = {}
+        group = fields_group + '/{name}'
+        for name in fields:
+            arr = fp[group.format(name=name)][tmask, wmask, get_index]
+            if flatten:
+                arr = arr.flatten()
+            arrays[name] = arr
+        return array_class.from_kwargs(**arrays)
+
     @classmethod
+    @_check_fileformat
     def read_samples(cls, fp, parameters,
                      thin_start=None, thin_interval=None, thin_end=None,
                      iteration=None, temps=0, walkers=None, flatten=True,
