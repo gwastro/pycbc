@@ -714,6 +714,10 @@ def add_plot_posterior_option_group(parser):
     pgroup.add_argument('--plot-marginal', action='store_true', default=False,
                         help="Plot 1D marginalized distributions on the "
                              "diagonal axes.")
+    pgroup.add_argument('--marginal-percentiles', nargs='+', default=None,
+                        type=float,
+                        help="Percentiles to draw lines at on the 1D "
+                             "histograms.")
     pgroup.add_argument("--plot-scatter", action='store_true', default=False,
                         help="Plot each sample point as a scatter plot.")
     pgroup.add_argument("--plot-density", action="store_true", default=False,
@@ -721,6 +725,10 @@ def add_plot_posterior_option_group(parser):
     pgroup.add_argument("--plot-contours", action="store_true", default=False,
                         help="Draw contours showing the 50th and 90th "
                              "percentile confidence regions.")
+    pgroup.add_argument('--contour-percentiles', nargs='+', default=None,
+                        type=float,
+                        help="Percentiles to draw contours if different "
+                             "than 50th and 90th.")
     # add mins, maxs options
     pgroup.add_argument('--mins', nargs='+', metavar='PARAM:VAL', default=[],
                         help="Specify minimum parameter values to plot. This "

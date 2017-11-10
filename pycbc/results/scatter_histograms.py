@@ -214,7 +214,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
     """
     if percentiles is None:
         percentiles = numpy.array([50., 90.])
-    percentiles = 100. - percentiles
+    percentiles = 100. - numpy.array(percentiles)
     percentiles.sort()
 
     if ax is None and fig is None:
@@ -471,6 +471,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                 mins=None, maxs=None, expected_parameters=None,
                 expected_parameters_color='r',
                 plot_marginal=True, plot_scatter=True,
+                marginal_percentiles=None, contour_percentiles=None,
                 zvals=None, show_colorbar=True, cbar_label=None,
                 vmin=None, vmax=None, scatter_cmap='plasma',
                 plot_density=False, plot_contours=True,
@@ -507,6 +508,13 @@ def create_multidim_plot(parameters, samples, labels=None,
         diagonal axes will be turned off.
     plot_scatter : {True, bool}
         Plot each sample point as a scatter plot.
+    marginal_percentiles : {None, array}
+        What percentiles to draw lines at on the 1D histograms.
+        If None, will draw lines at `[5, 50, 95]` (i.e., the bounds on the
+        upper 90th percentile and the median).
+    contour_percentiles : {None, array}
+        What percentile contours to draw on the scatter plots. If None,
+        will plot the 50th and 90th percentiles.
     zvals : {None, array}
         An array to use for coloring the scatter plots. If None, scatter points
         will be the same color.
@@ -628,7 +636,8 @@ def create_multidim_plot(parameters, samples, labels=None,
                 color=hist_color, fillcolor=fill_color, linecolor=line_color,
                 title=True, expected_value=expected_value,
                 expected_color=expected_parameters_color,
-                rotated=rotated, plot_min=mins[param], plot_max=maxs[param])
+                rotated=rotated, plot_min=mins[param], plot_max=maxs[param],
+                percentiles=marginal_percentiles)
 
     # Off-diagonals...
     for px, py in axis_dict:
@@ -654,6 +663,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                 exclude_region = None
             create_density_plot(px, py, samples, plot_density=plot_density,
                     plot_contours=plot_contours, cmap=density_cmap,
+                    percentiles=contour_percentiles,
                     contour_color=contour_color, xmin=mins[px], xmax=maxs[px],
                     ymin=mins[py], ymax=maxs[py],
                     exclude_region=exclude_region, ax=ax,

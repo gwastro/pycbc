@@ -163,6 +163,7 @@ for i, (p, l, s) in enumerate(zip(parameters, labels, samples)):
     fig, axis_dict = create_multidim_plot(
                     p, s, labels=l, fig=fig, axis_dict=axis_dict,
                     plot_marginal=opts.plot_marginal,
+                    marginal_percentiles=opts.marginal_percentiles,
                     plot_scatter=opts.plot_scatter,
                     zvals=zvals[i] if zvals is not None else None,
                     show_colorbar=show_colorbar,
@@ -171,6 +172,7 @@ for i, (p, l, s) in enumerate(zip(parameters, labels, samples)):
                     scatter_cmap=opts.scatter_cmap,
                     plot_density=opts.plot_density,
                     plot_contours=opts.plot_contours,
+                    contour_percentiles=opts.contour_percentiles,
                     density_cmap=opts.density_cmap,
                     contour_color=contour_color,
                     hist_color=hist_color,
