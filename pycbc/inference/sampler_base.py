@@ -72,8 +72,9 @@ def _check_fileformat(read_function):
 
 def _check_aclfileformat(read_function):
     """Decorator function for determing which read acl function to call."""
-    def read_wrapper(cls, fp):
+    def read_wrapper(fp):
         # check for old style
+        check_group = '{}/{}'.format(fp.samples_group, fp.variable_args[0])
         if 'acls' not in fp.keys() and not isinstance(fp[check_group],
                                                       h5py.Dataset):
             convert_cmd = ("pycbc_inference_extract_samples --input-file {} "
@@ -90,7 +91,7 @@ def _check_aclfileformat(read_function):
                             "doing that now.)\n\n".format(fp.filename,
                             convert_cmd))
             # call oldstyle function instead
-            return cls._oldstyle_read_acls(fp)
+            return fp.sampler_class._oldstyle_read_acls(fp)
         else:
             return read_function(fp)
     return read_wrapper
@@ -500,7 +501,7 @@ class BaseMCMCSampler(_BaseSampler):
             dataset_name = group.format(name=param)
             istart = start_iteration
             try:
-                fp_nwalkers, fp_niterations = fp[dataset_name].shape
+                fp_niterations = fp[dataset_name].shape[-1]
                 if istart is None:
                     istart = fp_niterations
                 istop = istart + niterations

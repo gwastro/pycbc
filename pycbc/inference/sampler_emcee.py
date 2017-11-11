@@ -583,7 +583,7 @@ class EmceePTSampler(BaseMCMCSampler):
             dataset_name = group.format(name=param)
             istart = start_iteration
             try:
-                fp_ntemps, fp_nwalkers, fp_niterations = fp[dataset_name].shape
+                fp_niterations = fp[dataset_name].shape[-1]
                 if istart is None:
                     istart = fp_niterations
                 istop = istart + niterations
@@ -747,7 +747,7 @@ class EmceePTSampler(BaseMCMCSampler):
             tidx = [temps]
         else:
             tidx = numpy.zeros(fp.ntemps, dtype=bool)
-            tmask[tidx] = True
+            tidx[tidx] = True
         # get the slice to use
         if iteration is not None:
             # If a single walker is specified, we encase in a list to
@@ -989,6 +989,7 @@ class EmceePTSampler(BaseMCMCSampler):
             acls[param] = these_acls
         return acls
 
+    @staticmethod
     def _oldstyle_read_acls(fp):
         """Deprecated: reads acls from older style files.
 
