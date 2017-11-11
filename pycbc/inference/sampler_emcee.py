@@ -736,17 +736,23 @@ class EmceePTSampler(BaseMCMCSampler):
         else:
             widx = slice(None, None)
         # temperatures to load
+        # Note: if a single temperature is specified, we encase in a list to
+        # ensure that a 1 x nwalkers x niterations array is returned if
+        # flatten is False
         if temps is None:
-            tidx = 0
+            tidx = [0]
         elif temps == 'all':
             tidx = slice(None, None)
         elif isinstance(temps, int):
-            tidx = temps
+            tidx = [temps]
         else:
             tidx = numpy.zeros(fp.ntemps, dtype=bool)
             tmask[tidx] = True
         # get the slice to use
         if iteration is not None:
+            # If a single walker is specified, we encase in a list to
+            # ensure that a ntemps x 1 x niterations array is returned if
+            # flatten is False
             get_index = [iteration]
         else:
             if thin_end is None:
@@ -960,10 +966,8 @@ class EmceePTSampler(BaseMCMCSampler):
 
         Returns
         -------
-        FieldArray
-            An ntemps-long `FieldArray` containing the ACL for each temperature
-            and for each variable argument, with the variable arguments as
-            fields.
+        dict
+            A dictionary of ntemps-long arrays of the ACLs of each parameter.
         """
         acls = {}
         if end_index is None:
@@ -983,51 +987,10 @@ class EmceePTSampler(BaseMCMCSampler):
                     acl = samples.size
                 these_acls[tk] = acl
             acls[param] = these_acls
-        return FieldArray.from_kwargs(**acls)
+        return acls
 
-    @staticmethod
-    def write_acls(fp, acls):
-        """Writes the given autocorrelation lengths to the given file.
-        
-        The acl of each parameter at each temperature is saved to
-        ``fp[fp.samples_group/{param}/temp{k}].attrs['acl']``; the maximum over
-        all temperatures is saved to
-        ``fp[fp.samples_group/{param}].attrs['acl']``; the maximum over all the
-        parameters and temperatures is saved to the file's 'acl' attribute.
-
-        Parameters
-        ----------
-        fp : InferenceFile
-            An open file handler to write the samples to.
-        acls : FieldArray
-            An array of autocorrelation lengths (the sort of thing returned by
-            `compute_acls`).
-
-        Returns
-        -------
-        acl
-            The maximum of the acls that was written to the file.
-        """
-        # write the individual acls
-        pgroup = fp.samples_group + '/{param}'
-        tgroup = pgroup + '/temp{tk}'
-        tidx = numpy.arange(fp.ntemps)
-        overall_max = 0
-        param_acls = {}
-        for param in acls.fieldnames:
-            max_acls = []
-            aclp = acls[param]
-            for tk in tidx:
-                # write the acl for this temperature
-                fp[tgroup.format(param=param, tk=tk)].attrs['acl'] = aclp[tidx]
-            # save the maximum
-            param_acls[param] = aclp.max()
-        # use the parent class to write the acls overs the temps
-        return super(EmceePTSampler, EmceePTSampler).write_acls(fp, param_acls)
-
-    @staticmethod
-    def read_acls(fp):
-        """Reads the acls of all the walker chains saved in the given file.
+    def _oldstyle_read_acls(fp):
+        """Deprecated: reads acls from older style files.
 
         Parameters
         ----------

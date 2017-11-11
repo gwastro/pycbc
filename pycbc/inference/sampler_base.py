@@ -1029,9 +1029,9 @@ class BaseMCMCSampler(_BaseSampler):
     def write_acls(fp, acls):
         """Writes the given autocorrelation lengths to the given file.
         
-        The ACL of each parameter is saved to ``fp['acls']``; the order of
-        the acls is in the same order as ``fp.variable_args``. The maximum
-        over all the parameters is saved to the file's 'acl' attribute.
+        The ACL of each parameter is saved to ``fp['acls/{param}']``.
+        The maximum over all the parameters is saved to the file's 'acl'
+        attribute.
 
         Parameters
         ----------
@@ -1045,11 +1045,16 @@ class BaseMCMCSampler(_BaseSampler):
         ACL
             The maximum of the acls that was written to the file.
         """
+        group = 'acls/{}'
         # write the individual acls
-        arr = numpy.array([acls[param] for param in fp.variable_args])
-        fp['acls'] = arr
+        for param in acls:
+            try:
+                fp[group.format(param)] = acls[param]
+            except RuntimeError:
+                # dataset is not scalar and it already exists
+                fp[group.format(param)][:] = acls[param]
         # write the maximum over all params
-        fp.attrs['acl'] = arr.max()
+        fp.attrs['acl'] = numpy.array(acls.values()).max()
         return fp.attrs['acl']
 
     @staticmethod
@@ -1085,5 +1090,5 @@ class BaseMCMCSampler(_BaseSampler):
         dict
             A dictionary of the ACLs, keyed by the parameter name.
         """
-        acls = fp['acls'].value
-        return {param: acls[ii] for ii,param in enumerate(fp.variable_args)}
+        group = fp['acls']
+        return {param: group[param].value for param in group.keys()}
