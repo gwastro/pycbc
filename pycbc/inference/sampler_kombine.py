@@ -334,11 +334,11 @@ class KombineSampler(BaseMCMCSampler):
                       max_iterations=None, **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
         to the given file.
-        
+
         See the various write functions for details.
 
         Parameters
-        -----------
+        ----------
         fp : InferenceFile
             A file handler to an open inference file.
         start_iteration : int, optional
