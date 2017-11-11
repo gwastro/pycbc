@@ -46,7 +46,8 @@ def _check_fileformat(read_function):
             logging.warning("DEPRECATION WARNING: The file {} appears to have "
                             "been written using an older style file format. "
                             "Support for this format will be removed in a "
-                            "future update. To convert this file, run {}, "
+                            "future update. To convert this file, run: "
+                            "\n\n{}\n\n"
                             "where FILE.hdf is the name of the file to "
                             "convert to. (Ignore this warning if you are "
                             "doing that now.)".format(fp.filename,
@@ -66,6 +67,31 @@ def _check_fileformat(read_function):
             except AttributeError:
                 pass
         return read_function(cls, fp, *args, **kwargs)
+    return read_wrapper
+
+
+def _check_aclfileformat(read_function):
+    """Decorator function for determing which read acl function to call."""
+    def read_wrapper(cls, fp):
+        # check for old style
+        if 'acls' not in fp.keys() and not isinstance(fp[check_group],
+                                                      h5py.Dataset):
+            convert_cmd = ("pycbc_inference_extract_sampes --input-file {} "
+                           "--thin-start 0 --thin-interval 1 --output-file "
+                           "FILE.hdf".format(fp.filename))
+            logging.warning("DEPRECATION WARNING: The acls in file {} appear "
+                            "to have been written using an older style file "
+                            "format. Support for this format will be removed "
+                            "in a future update. To convert this file, run: "
+                            "\n\n{}\n\n"
+                            "where FILE.hdf is the name of the file to "
+                            "convert to. (Ignore this warning if you are "
+                            "doing that now.)".format(fp.filename,
+                            convert_cmd))
+            # call oldstyle function instead
+            return cls._oldstyle_read_acls(fp)
+        else:
+            return read_function(fp)
     return read_wrapper
 
 
@@ -1003,9 +1029,9 @@ class BaseMCMCSampler(_BaseSampler):
     def write_acls(fp, acls):
         """Writes the given autocorrelation lengths to the given file.
         
-        The ACL of each parameter is saved to
-        `fp[fp.samples_group/{param}].attrs['acl']`; the maximum over all the
-        parameters is saved to the file's 'acl' attribute.
+        The ACL of each parameter is saved to ``fp['acls']``; the order of
+        the acls is in the same order as ``fp.variable_args``. The maximum
+        over all the parameters is saved to the file's 'acl' attribute.
 
         Parameters
         ----------
@@ -1020,15 +1046,14 @@ class BaseMCMCSampler(_BaseSampler):
             The maximum of the acls that was written to the file.
         """
         # write the individual acls
-        pgroup = fp.samples_group + '/{param}'
-        for param in acls:
-            fp[pgroup.format(param=param)].attrs['acl'] = acls[param]
+        arr = numpy.array([acls[param] for param in fp.variable_args])
+        fp['acls'] = arr
         # write the maximum over all params
-        fp.attrs['acl'] = max(acls.values())
+        fp.attrs['acl'] = arr.max()
         return fp.attrs['acl']
 
     @staticmethod
-    def read_acls(fp):
+    def _oldstyle_read_acls(fp):
         """Reads the acls of all the parameters in the given file.
 
         Parameters
@@ -1044,3 +1069,21 @@ class BaseMCMCSampler(_BaseSampler):
         group = fp.samples_group + '/{param}'
         return {param: fp[group.format(param=param)]
                 for param in fp.variable_args}
+
+    @staticmethod
+    @_check_aclfileformat
+    def read_acls(fp):
+        """Reads the acls of all the parameters in the given file.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            An open file handler to read the acls from.
+
+        Returns
+        -------
+        dict
+            A dictionary of the ACLs, keyed by the parameter name.
+        """
+        acls = fp['acls'].value
+        return {param: acls[ii] for ii,param in enumerate(fp.variable_args)}
