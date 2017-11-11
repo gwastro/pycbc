@@ -40,17 +40,17 @@ def _check_fileformat(read_function):
         # check for old style
         check_group = '{}/{}'.format(fp.samples_group, fp.variable_args[0])
         if not isinstance(fp[check_group], h5py.Dataset):
-            convert_cmd = ("pycbc_inference_extract_sampes --input-file {} "
+            convert_cmd = ("pycbc_inference_extract_samples --input-file {} "
                            "--thin-start 0 --thin-interval 1 --output-file "
                            "FILE.hdf".format(fp.filename))
-            logging.warning("DEPRECATION WARNING: The file {} appears to have "
-                            "been written using an older style file format. "
-                            "Support for this format will be removed in a "
-                            "future update. To convert this file, run: "
+            logging.warning("\n\nDEPRECATION WARNING: The file {} appears to  "
+                            "have been written using an older style file "
+                            "format. Support for this format will be removed "
+                            "in a future update. To convert this file, run: "
                             "\n\n{}\n\n"
                             "where FILE.hdf is the name of the file to "
                             "convert to. (Ignore this warning if you are "
-                            "doing that now.)".format(fp.filename,
+                            "doing that now.)\n\n".format(fp.filename,
                             convert_cmd))
             # we'll replace cls._read_fields with _read_oldstyle_fields, so
             # that when the read_function calls cls._read_fields, it points
@@ -76,17 +76,18 @@ def _check_aclfileformat(read_function):
         # check for old style
         if 'acls' not in fp.keys() and not isinstance(fp[check_group],
                                                       h5py.Dataset):
-            convert_cmd = ("pycbc_inference_extract_sampes --input-file {} "
+            convert_cmd = ("pycbc_inference_extract_samples --input-file {} "
                            "--thin-start 0 --thin-interval 1 --output-file "
                            "FILE.hdf".format(fp.filename))
-            logging.warning("DEPRECATION WARNING: The acls in file {} appear "
+            logging.warning("\n\n"
+                            "DEPRECATION WARNING: The acls in file {} appear "
                             "to have been written using an older style file "
                             "format. Support for this format will be removed "
                             "in a future update. To convert this file, run: "
                             "\n\n{}\n\n"
                             "where FILE.hdf is the name of the file to "
                             "convert to. (Ignore this warning if you are "
-                            "doing that now.)".format(fp.filename,
+                            "doing that now.)\n\n".format(fp.filename,
                             convert_cmd))
             # call oldstyle function instead
             return cls._oldstyle_read_acls(fp)
@@ -1049,10 +1050,12 @@ class BaseMCMCSampler(_BaseSampler):
         # write the individual acls
         for param in acls:
             try:
+                # we need to use the write_direct function because it's
+                # apparently the only way to update scalars in h5py
+                fp[group.format(param)].write_direct(numpy.array(acls[param]))
+            except KeyError:
+                # dataset doesn't exist yet
                 fp[group.format(param)] = acls[param]
-            except RuntimeError:
-                # dataset is not scalar and it already exists
-                fp[group.format(param)][:] = acls[param]
         # write the maximum over all params
         fp.attrs['acl'] = numpy.array(acls.values()).max()
         return fp.attrs['acl']
