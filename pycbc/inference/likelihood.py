@@ -547,7 +547,10 @@ class TestNormal(BaseLikelihoodEvaluator):
 
 class TestEggbox(BaseLikelihoodEvaluator):
     r"""The test distribution is an 'eggbox' function:
-    $$f(\Theta)=-\left[2+\prod_{i=1}^{n}\cos\left(\frac{\theta_{i}}{2}\right)\right]^{5}$$
+
+    .. math::
+
+        \log \mathcal{L}(\Theta) = \left[2+\prod_{i=1}^{n}\cos\left(\frac{\theta_{i}}{2}\right)\right]^{5}
 
     The number of dimensions is set by the number of ``variable_args`` that are
     passed.
@@ -571,8 +574,8 @@ class TestEggbox(BaseLikelihoodEvaluator):
     def loglikelihood(self, **params):
         """Returns the log pdf of the eggbox function.
         """
-        l = (2 + numpy.prod([numpy.cos(p/2.) for p in params.values()])) ** 5
-        return l
+        return (2 + numpy.prod(numpy.cos([params[p]/2. for p in
+                                          self.variable_args])))**5
 
 
 #
