@@ -16,7 +16,7 @@
 from __future__ import absolute_import
 from pycbc import WEAVE_FLAGS
 from pycbc.types import zeros, complex64, float32
-from weave import inline
+from pycbc.weave import inline
 import numpy as _np
 import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags

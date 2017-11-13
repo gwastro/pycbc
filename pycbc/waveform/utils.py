@@ -33,7 +33,7 @@ import numpy
 import copy
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
-from weave import inline
+from pycbc.weave import inline
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""

@@ -24,7 +24,7 @@
 from __future__ import absolute_import
 import numpy, pycbc
 from pycbc.types import real_same_precision_as
-from weave import inline
+from pycbc.weave import inline
 from pycbc import WEAVE_FLAGS
 
 if pycbc.HAVE_OMP:

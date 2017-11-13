@@ -28,7 +28,7 @@ import numpy as _np
 from pycbc.types.array import common_kind, complex128, float64
 from . import aligned as _algn
 from scipy.linalg import blas
-from weave import inline
+from pycbc.weave import inline
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from pycbc.types import real_same_precision_as
