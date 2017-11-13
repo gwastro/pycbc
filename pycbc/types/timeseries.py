@@ -807,6 +807,22 @@ class TimeSeries(Array):
                      low_frequency_cutoff=low_frequency_cutoff,
                      high_frequency_cutoff=high_frequency_cutoff)
 
+    def detrend(self, type='linear'):
+        """ Remove linear trend from the data
+
+        Remove a linear trend from the data to improve the approximation that
+        the data is circularly convolved, this helps reduce the size of filter
+        transients from a circular convolution / filter.
+
+        Parameters
+        ----------
+        type: str
+            The choice of detrending. The default ('linear') removes a linear
+        least squares fit. 'constant' removes only the mean of the data.
+        """
+        from scipy.signal import detrend
+        return self._return(detrend(self.numpy(), type=type))
+
 def load_timeseries(path, group=None):
     """
     Load a TimeSeries from a .hdf, .txt or .npy file. The
