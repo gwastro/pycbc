@@ -545,6 +545,38 @@ class TestNormal(BaseLikelihoodEvaluator):
         """
         return self._dist.logpdf([params[p] for p in self.variable_args])
 
+class TestEggbox(BaseLikelihoodEvaluator):
+    r"""The test distribution is an 'eggbox' function:
+
+    .. math::
+
+        \log \mathcal{L}(\Theta) = \left[2+\prod_{i=1}^{n}\cos\left(\frac{\theta_{i}}{2}\right)\right]^{5}
+
+    The number of dimensions is set by the number of ``variable_args`` that are
+    passed.
+
+    Parameters
+    ----------
+    variable_args : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    \**kwargs :
+        All other keyword arguments are passed to ``BaseLikelihoodEvaluator``.
+
+    """
+    name = "test_eggbox"
+
+    def __init__(self, variable_args, **kwargs):
+        # set up base likelihood parameters
+        super(TestEggbox, self).__init__(variable_args, **kwargs)
+
+        # set the lognl to 0 since there is no data
+        self.set_lognl(0.)
+
+    def loglikelihood(self, **params):
+        """Returns the log pdf of the eggbox function.
+        """
+        return (2 + numpy.prod(numpy.cos([params[p]/2. for p in
+                                          self.variable_args])))**5
 
 
 #
@@ -857,8 +889,9 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
                                   logjacobian=lj)
 
 
-likelihood_evaluators = {TestNormal.name: TestNormal,
+likelihood_evaluators = {TestEggbox.name: TestEggbox,
+                         TestNormal.name: TestNormal,
                          GaussianLikelihood.name: GaussianLikelihood}
 
-__all__ = ['BaseLikelihoodEvaluator', 'TestNormal', 'GaussianLikelihood',
-           'likelihood_evaluators']
+__all__ = ['BaseLikelihoodEvaluator', 'TestNormal', 'TestEggbox',
+           'GaussianLikelihood', 'likelihood_evaluators']
