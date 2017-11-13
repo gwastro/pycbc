@@ -568,6 +568,7 @@ class TestEggbox(BaseLikelihoodEvaluator):
     def __init__(self, variable_args, **kwargs):
         # set up base likelihood parameters
         super(TestEggbox, self).__init__(variable_args, **kwargs)
+
         # set the lognl to 0 since there is no data
         self.set_lognl(0.)
 
