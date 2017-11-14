@@ -299,7 +299,7 @@ def frame_paths(frame_type, start_time, end_time, server=None):
     return paths    
     
 def query_and_read_frame(frame_type, channels, start_time, end_time,
-                         sieve=None):
+                         sieve=None, check_integrity=False):
     """Read time series from frame data.
 
     Query for the locatin of physical frames matching the frame type. Return
@@ -320,6 +320,8 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     sieve : string, optional
         Selects only frames where the frame URL matches the regular
         expression sieve
+    check_integrity : boolean
+        Do an expensive checksum of the file before returning.
 
     Returns
     -------
@@ -344,7 +346,8 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
     return read_frame(paths, channels, 
                       start_time=start_time, 
                       end_time=end_time,
-                      sieve=sieve)
+                      sieve=sieve,
+                      check_integrity=check_integrity)
     
 __all__ = ['read_frame', 'frame_paths', 
            'datafind_connection', 
