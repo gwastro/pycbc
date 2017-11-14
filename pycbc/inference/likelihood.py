@@ -578,6 +578,41 @@ class TestEggbox(BaseLikelihoodEvaluator):
         return (2 + numpy.prod(numpy.cos([params[p]/2. for p in
                                           self.variable_args])))**5
 
+class TestRosenbrock(BaseLikelihoodEvaluator):
+    r"""The test distribution is the Rosenbrock function:
+
+    .. math::
+
+        \log \mathcal{L}(\Theta) = -\sum_{i=1}^{n-1}[(1-\theta_{i})^{2}+100(\theta_{i+1} - \theta_{i}^{2})^{2}]
+
+    The number of dimensions is set by the number of ``variable_args`` that are
+    passed.
+
+    Parameters
+    ----------
+    variable_args : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    \**kwargs :
+        All other keyword arguments are passed to ``BaseLikelihoodEvaluator``.
+
+    """
+    name = "test_rosenbrock"
+
+    def __init__(self, variable_args, **kwargs):
+        # set up base likelihood parameters
+        super(TestRosenbrock, self).__init__(variable_args, **kwargs)
+
+        # set the lognl to 0 since there is no data
+        self.set_lognl(0.)
+
+    def loglikelihood(self, **params):
+        """Returns the log pdf of the Rosenbrock function.
+        """
+        l = 0
+        p = [params[p] for p in self.variable_args]
+        for i in range(len(p) - 1):
+            l -= ((1 - p[i])**2 + 100 * (p[i+1] - p[i]**2)**2)
+        return l
 
 #
 # =============================================================================
@@ -891,7 +926,8 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
 
 likelihood_evaluators = {TestEggbox.name: TestEggbox,
                          TestNormal.name: TestNormal,
+                         TestRosenbrock.name: TestRosenbrock,
                          GaussianLikelihood.name: GaussianLikelihood}
 
 __all__ = ['BaseLikelihoodEvaluator', 'TestNormal', 'TestEggbox',
-           'GaussianLikelihood', 'likelihood_evaluators']
+           'TestRosenbrock', 'GaussianLikelihood', 'likelihood_evaluators']
