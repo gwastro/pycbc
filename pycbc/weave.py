@@ -62,6 +62,7 @@ def pycbc_compile_function(code,arg_names,local_dict,global_dict,
     return func
 
 inline_tools.compile_function = pycbc_compile_function
+from weave import inline
 
 def insert_weave_option_group(parser):
     """
