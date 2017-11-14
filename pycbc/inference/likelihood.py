@@ -579,7 +579,7 @@ class TestEggbox(BaseLikelihoodEvaluator):
                                           self.variable_args])))**5
 
 class TestRosenbrock(BaseLikelihoodEvaluator):
-    r"""The test distribution is an 'eggbox' function:
+    r"""The test distribution is the Rosenbrock function:
 
     .. math::
 
