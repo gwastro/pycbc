@@ -472,6 +472,7 @@ setup (
                'bin/workflows/pycbc_make_coinc_search_workflow',
                'bin/workflows/pycbc_make_psd_estimation_workflow',
                'bin/workflows/pycbc_create_bank_verifier_workflow',
+               'bin/workflows/pycbc_make_crosstalk_cleaning_workflow',
                'bin/pycbc_compress_bank',
                'bin/pycbc_ringinj',
                'tools/einsteinathome/pycbc_build_eah.sh'
