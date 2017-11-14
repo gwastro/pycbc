@@ -317,7 +317,7 @@ ifos, followup_ifos = list(ifos), list(followup_ifos)
 advancing_ifos = (ifos + followup_ifos) if evnt.rank == 0 else ifos
 
 # make sure we can talk to GraceDB
-if evnt.rank == 0:
+if evnt.rank == 0 and args.enable_gracedb_upload:
     logging.info('Testing access to GraceDB')
     from ligo.gracedb.rest import GraceDb
     gdb_client = GraceDb(args.gracedb_server) if args.gracedb_server else GraceDb()
