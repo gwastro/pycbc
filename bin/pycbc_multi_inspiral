@@ -97,8 +97,15 @@ For GRB we have sky position
 """
 longitude = 6.103652
 latitude = 0.9999715
-pol = 1.21771
 t_gps = 1169088610.0
+pol = 1.21771
+"""
+pol = 1.21771
+longitude = 197.448775
+latitude = -23.38383056
+t_gps = 1187002884 - 100
+"""
+
 
 ra = longitude 
 dec = latitude
@@ -397,6 +404,7 @@ with ctx:
 		if len(idx) == 0:
 		    continue
                 """
+                """
 		out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
 			bank_chisq.values(template, stilde.psd, stilde, snrv,
 					  norm, idx+stilde.analyze.start)
@@ -419,20 +427,28 @@ with ctx:
 
 		event_mgr.add_template_events_to_ifo(ifo, names,
 			[out_vals[n] for n in names])
-
+                """
 
 	    #Calculate coherent snr roh_coh
 	    #Check we have data before we try to compute the coherent snr
-            if snr[ifo] != []:
-		for ifo in opt.instruments:
-		    snr[ifo]*=norm_dict[ifo]
+            have_all_ifo_data = True
+            for ifo in opt.instruments:
+                if snr[ifo] == []:
+		    have_all_ifo_data = False    
+            if have_all_ifo_data == True:
+                for ifo in opt.instruments:
+                    snr[ifo]*=norm_dict[ifo]
 		roh_coinc2=0
 		for ifo1 in opt.instruments:
 		    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
 		roh_coh_dict[t_num][s_num]=coherent_snr(snr,fp,fc)
 		roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
-                null_dict[t_num][s_num] = roh_coinc_dict[t_num][s_num] \
-                                        - roh_coh_dict[t_num][s_num]
+                null2 = (roh_coinc_dict[t_num][s_num]**2 \
+                                        - roh_coh_dict[t_num][s_num]**2)
+                #Numerical errors may make this negative and break the sqrt
+                null2[null2<0] = 0 
+                null_dict[t_num][s_num] = null2**0.5
+                
                 print "max coherent snr"
                 print max(roh_coh_dict[t_num][s_num])
                 print "max coincident snr"
@@ -475,7 +491,8 @@ plt.figure()
 plt.plot(roh_coinc_dict[0][0],'b.',label='coinc snr')
 plt.plot(roh_coh_dict[0][0],'rx',label='coh snr')
 plt.plot(null_dict[0][0],'mx',label='null snr')
-plt.legend()
+#plt.xlim(0,409600)
+plt.legend(loc="best")
 plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
 plt.figure()
