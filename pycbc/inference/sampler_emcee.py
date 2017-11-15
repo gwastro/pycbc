@@ -102,6 +102,13 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
                    pool=pool, likelihood_call=likelihood_call)
 
     @property
+    def acceptance_fraction(self):
+        """An nwalkers-length array of the fraction of steps accepted for
+        each walker.
+        """
+        return self._sampler.acceptance_fraction
+
+    @property
     def lnpost(self):
         """Get the natural logarithm of the likelihood as an
         nwalkers x niterations array.
@@ -236,8 +243,9 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
     def write_results(self, fp, start_iteration=None,
                       max_iterations=None, **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
-        to the given file. See the write function for each of those for
-        details.
+        to the given file.
+        
+        See the write function for each of those for details.
 
         Parameters
         -----------
@@ -248,18 +256,16 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
             iteration. Default is to append after the last iteration in the
             file.
         max_iterations : int, optional
-            Set the maximum size that the arrays in the hdf file may be resized
-            to. Only applies if the samples have not previously been written
-            to file. The default (None) is to use the maximum size allowed by
-            h5py.
+            Set the maximum size that the arrays in the hdf file may be
+            resized to. Only applies if data have not previously been written
+            to the file. The default (None) is to use the maximum size allowed
+            by h5py.
         \**metadata :
             All other keyword arguments are passed to ``write_metadata``.
         """
-        self.write_metadata(fp, **metadata)
-        self.write_chain(fp, start_iteration=start_iteration,
-                         max_iterations=max_iterations)
-        self.write_likelihood_stats(fp, start_iteration=start_iteration,
-                                    max_iterations=max_iterations)
+        super(EmceeEnsembleSampler, self).write_results(fp,
+            start_iteration=start_iteration, max_iterations=max_iterations,
+            **metadata)
         self.write_acceptance_fraction(fp)
 
 # This is needed for two reason
@@ -353,6 +359,13 @@ class EmceePTSampler(BaseMCMCSampler):
     @property
     def ntemps(self):
         return self._ntemps
+
+    @property
+    def acceptance_fraction(self):
+        """Array of shape ntemps x nwalkers giving the fraction of steps
+        accepted for each walker.
+        """
+        return self._sampler.acceptance_fraction
 
     @property
     def chain(self):
@@ -605,8 +618,9 @@ class EmceePTSampler(BaseMCMCSampler):
     def write_results(self, fp, start_iteration=None, max_iterations=None,
                       **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
-        to the given file. See the write function for each of those for
-        details.
+        to the given file.
+        
+        See the various write functions for details.
 
         Parameters
         -----------
@@ -617,18 +631,16 @@ class EmceePTSampler(BaseMCMCSampler):
             iteration. Default is to append after the last iteration in the
             file.
         max_iterations : int, optional
-            Set the maximum size that the arrays in the hdf file may be resized
-            to. Only applies if the samples have not previously been written
-            to file. The default (None) is to use the maximum size allowed by
-            h5py.
+            Set the maximum size that the arrays in the hdf file may be
+            resized to. Only applies if data have not previously been written
+            to the file. The default (None) is to use the maximum size allowed
+            by h5py.
         \**metadata :
             All other keyword arguments are passed to ``write_metadata``.
         """
-        self.write_metadata(fp, **metadata)
-        self.write_chain(fp, start_iteration=start_iteration,
-                         max_iterations=max_iterations)
-        self.write_likelihood_stats(fp, start_iteration=start_iteration,
-                                    max_iterations=max_iterations)
+        super(EmceePTSampler, self).write_results(fp,
+            start_iteration=start_iteration, max_iterations=max_iterations,
+            **metadata)
         self.write_acceptance_fraction(fp)
 
 

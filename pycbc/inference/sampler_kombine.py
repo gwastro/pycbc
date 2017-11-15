@@ -107,6 +107,13 @@ class KombineSampler(BaseMCMCSampler):
                    likelihood_call=likelihood_call,
                    pool=pool, update_interval=opts.update_interval)
 
+    @property
+    def acceptance_fraction(self):
+        """An niterations-length array giving the fraction of walkers that
+        accepted each step.
+        """
+        return self._sampler.acceptance_fraction
+
     def run(self, niterations, **kwargs):
         """Advance the sampler for a number of samples.
 
@@ -180,6 +187,52 @@ class KombineSampler(BaseMCMCSampler):
         # clear the blobs
         self._sampler._blobs = []
 
+    @staticmethod
+    def read_acceptance_fraction(fp, thin_start=None, thin_interval=None,
+                                 thin_end=None, iteration=None):
+        """Reads the acceptance fraction from the given file.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            An open file handler to read the samples from.
+        walkers : {None, (list of) int}
+            The walker index (or a list of indices) to retrieve. If None,
+            samples from all walkers will be obtained.
+        thin_start : int
+            Index of the sample to begin returning samples. Default is to read
+            samples after burn in. To start from the beginning set thin_start
+            to 0.
+        thin_interval : int
+            Interval to accept every i-th sample. Default is to use the
+            `fp.acl`. If `fp.acl` is not set, then use all samples
+            (set thin_interval to 1).
+        thin_end : int
+            Index of the last sample to read. If not given then
+            `fp.niterations` is used.
+        iteration : int
+            Get a single iteration. If provided, will override the
+            `thin_{start/interval/end}` arguments.
+
+        Returns
+        -------
+        array
+            Array of acceptance fractions with shape (requested iterations,).
+        """
+        # get the slice to use
+        if iteration is not None:
+            get_index = iteration
+        else:
+            if thin_end is None:
+                # use the number of current iterations
+                thin_end = fp.niterations
+            get_index = fp.get_slice(thin_start=thin_start, thin_end=thin_end,
+                                     thin_interval=thin_interval)
+        acfs = fp['acceptance_fraction'][get_index]
+        if iteration is not None:
+            acfs = numpy.array([acfs])
+        return acfs
+
     def burn_in(self):
         """Use kombine's `burnin` routine to advance the sampler.
 
@@ -231,6 +284,80 @@ class KombineSampler(BaseMCMCSampler):
                                         len(self.variable_args)),
                               dtype=float)
             fp[dataset_name][:] = kde.data
+
+    def write_acceptance_fraction(self, fp, start_iteration=None,
+                                  max_iterations=None):
+        """Write acceptance_fraction data to file. Results are written to
+        `fp[acceptance_fraction]`.
+
+        Parameters
+        -----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        start_iteration : int, optional
+            Write results to the file's datasets starting at the given
+            iteration. Default is to append after the last iteration in the
+            file.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be resized
+            to. Only applies if the acceptance fraction has not previously been
+            written to the file. The default (None) is to use the maximum size
+            allowed by h5py.
+        """
+        dataset_name = "acceptance_fraction"
+        acf = self.acceptance_fraction
+        if max_iterations is not None and max_iterations < acf.size:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
+        istart = start_iteration
+        try:
+            if istart is None:
+                istart = fp[dataset_name].size
+            istop = istart + acf.size
+            if istop > fp[dataset_name].size:
+                # resize the dataset
+                fp[dataset_name].resize(istop, axis=0)
+            fp[dataset_name][istart:istop] = acf
+        except KeyError:
+            # dataset doesn't exist yet
+            if istart is not None and istart != 0:
+                raise ValueError("non-zero start_iteration provided, "
+                                 "but dataset doesn't exist yet")
+            istart = 0
+            istop = istart + acf.size
+            fp.create_dataset(dataset_name, (istop,),
+                              maxshape=(max_iterations,),
+                              dtype=acf.dtype)
+            fp[dataset_name][istart:istop] = acf
+
+    def write_results(self, fp, start_iteration=None,
+                      max_iterations=None, **metadata):
+        """Writes metadata, samples, likelihood stats, and acceptance fraction
+        to the given file.
+
+        See the various write functions for details.
+
+        Parameters
+        ----------
+        fp : InferenceFile
+            A file handler to an open inference file.
+        start_iteration : int, optional
+            Write results to the file's datasets starting at the given
+            iteration. Default is to append after the last iteration in the
+            file.
+        max_iterations : int, optional
+            Set the maximum size that the arrays in the hdf file may be
+            resized to. Only applies if data has not previously been written
+            to the file. The default (None) is to use the maximum size allowed
+            by h5py.
+        \**metadata :
+            All other keyword arguments are passed to ``write_metadata``.
+        """
+        super(KombineSampler, self).write_results(fp,
+            start_iteration=start_iteration, max_iterations=max_iterations,
+            **metadata)
+        self.write_acceptance_fraction(fp, start_iteration=0,
+                                       max_iterations=max_iterations)
 
     def write_state(self, fp):
         """Saves the state of the sampler in a file.

@@ -169,13 +169,6 @@ class _BaseSampler(object):
         return self.chain.shape[-2] + self._lastclear
 
     @property
-    def acceptance_fraction(self):
-        """This function should return the fraction of walkers that accepted
-        each step as an array.
-        """
-        return NotImplementedError("acceptance_fraction function not set.")
-
-    @property
     def lnpost(self):
         """This function should return the natural logarithm of the likelihood
         function used by the sampler as an
@@ -393,12 +386,6 @@ class BaseMCMCSampler(_BaseSampler):
         return self._nwalkers
 
     @property
-    def acceptance_fraction(self):
-        """Get the fraction of walkers that accepted each step as an array.
-        """
-        return self._sampler.acceptance_fraction
-
-    @property
     def samples(self):
         """Returns the samples in the chain as a FieldArray.
 
@@ -603,56 +590,9 @@ class BaseMCMCSampler(_BaseSampler):
                                  max_iterations=max_iterations)
         return samples
 
-    def write_acceptance_fraction(self, fp, start_iteration=None,
-                                  max_iterations=None):
-        """Write acceptance_fraction data to file. Results are written to
-        `fp[acceptance_fraction]`.
-
-        Parameters
-        -----------
-        fp : InferenceFile
-            A file handler to an open inference file.
-        start_iteration : int, optional
-            Write results to the file's datasets starting at the given
-            iteration. Default is to append after the last iteration in the
-            file.
-        max_iterations : int, optional
-            Set the maximum size that the arrays in the hdf file may be resized
-            to. Only applies if the acceptance fraction has not previously been
-            written to the file. The default (None) is to use the maximum size
-            allowed by h5py.
-        """
-        dataset_name = "acceptance_fraction"
-        acf = self.acceptance_fraction
-        if max_iterations is not None and max_iterations < acf.size:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
-        istart = start_iteration
-        try:
-            if istart is None:
-                istart = fp[dataset_name].size
-            istop = istart + acf.size
-            if istop > fp[dataset_name].size:
-                # resize the dataset
-                fp[dataset_name].resize(istop, axis=0)
-            fp[dataset_name][istart:istop] = acf
-        except KeyError:
-            # dataset doesn't exist yet
-            if istart is not None and istart != 0:
-                raise ValueError("non-zero start_iteration provided, "
-                                 "but dataset doesn't exist yet")
-            istart = 0
-            istop = istart + acf.size
-            fp.create_dataset(dataset_name, (istop,),
-                              maxshape=(max_iterations,),
-                              dtype=acf.dtype)
-            fp[dataset_name][istart:istop] = acf
-
     def write_results(self, fp, start_iteration=None,
                       max_iterations=None, **metadata):
-        """Writes metadata, samples, likelihood stats, and acceptance fraction
-        to the given file. Also computes and writes the autocorrleation lengths
-        of the chains. See the various write function for details.
+        """Writes metadata, samples, and likelihood stats to the given file.
 
         Parameters
         -----------
@@ -663,10 +603,10 @@ class BaseMCMCSampler(_BaseSampler):
             iteration. Default is to append after the last iteration in the
             file.
         max_iterations : int, optional
-            Set the maximum size that the arrays in the hdf file may be resized
-            to. Only applies if the acceptance fraction has not previously been
-            written to the file. The default (None) is to use the maximum size
-            allowed by h5py.
+            Set the maximum size that the arrays in the hdf file may be
+            resized to. Only applies if data have not previously been written
+            to the file. The default (None) is to use the maximum size allowed
+            by h5py.
         \**metadata :
             All other keyword arguments are passed to ``write_metadata``.
         """
@@ -675,9 +615,6 @@ class BaseMCMCSampler(_BaseSampler):
                          max_iterations=max_iterations)
         self.write_likelihood_stats(fp, start_iteration=start_iteration,
                                     max_iterations=max_iterations)
-        self.write_acceptance_fraction(fp, start_iteration=0,
-                                       max_iterations=max_iterations)
-
 
     @staticmethod
     def _read_oldstyle_fields(fp, fields_group, fields, array_class,
@@ -878,52 +815,6 @@ class BaseMCMCSampler(_BaseSampler):
         # we'll just read a single parameter from the file
         samples = cls.read_samples(fp, fp.variable_args[0])
         return samples.size
-
-    @staticmethod
-    def read_acceptance_fraction(fp, thin_start=None, thin_interval=None,
-                                 thin_end=None, iteration=None):
-        """Reads the acceptance fraction from the given file.
-
-        Parameters
-        -----------
-        fp : InferenceFile
-            An open file handler to read the samples from.
-        walkers : {None, (list of) int}
-            The walker index (or a list of indices) to retrieve. If None,
-            samples from all walkers will be obtained.
-        thin_start : int
-            Index of the sample to begin returning samples. Default is to read
-            samples after burn in. To start from the beginning set thin_start
-            to 0.
-        thin_interval : int
-            Interval to accept every i-th sample. Default is to use the
-            `fp.acl`. If `fp.acl` is not set, then use all samples
-            (set thin_interval to 1).
-        thin_end : int
-            Index of the last sample to read. If not given then
-            `fp.niterations` is used.
-        iteration : int
-            Get a single iteration. If provided, will override the
-            `thin_{start/interval/end}` arguments.
-
-        Returns
-        -------
-        array
-            Array of acceptance fractions with shape (requested iterations,).
-        """
-        # get the slice to use
-        if iteration is not None:
-            get_index = iteration
-        else:
-            if thin_end is None:
-                # use the number of current iterations
-                thin_end = fp.niterations
-            get_index = fp.get_slice(thin_start=thin_start, thin_end=thin_end,
-                                     thin_interval=thin_interval)
-        acfs = fp['acceptance_fraction'][get_index]
-        if iteration is not None:
-            acfs = numpy.array([acfs])
-        return acfs
 
     @classmethod
     def compute_acfs(cls, fp, start_index=None, end_index=None,
