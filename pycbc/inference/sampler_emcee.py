@@ -733,40 +733,55 @@ class EmceePTSampler(BaseMCMCSampler):
         if walkers is not None:
             widx = numpy.zeros(fp.nwalkers, dtype=bool)
             widx[walkers] = True
+            nwalkers = widx.sum()
         else:
             widx = slice(None, None)
+            nwalkers = fp.nwalkers
         # temperatures to load
-        # Note: if a single temperature is specified, we encase in a list to
-        # ensure that a 1 x nwalkers x niterations array is returned if
-        # flatten is False
+        selecttemps = False
         if temps is None:
-            tidx = [0]
-        elif temps == 'all':
-            tidx = slice(None, None)
+            tidx = 0
+            ntemps = 1
         elif isinstance(temps, int):
-            tidx = [temps]
+            tidx = temps
+            ntemps = 1
         else:
-            tidx = numpy.zeros(fp.ntemps, dtype=bool)
-            tidx[tidx] = True
+            # temps is either 'all' or a list of temperatures;
+            # in either case, we'll get all of the temperatures from the file;
+            # if not 'all', then we'll pull out the ones we want
+            tidx = slice(None, None)
+            selecttemps = temps != 'all'
+            if selecttemps:
+                ntemps = len(temps)
+            else:
+                ntemps = fp.ntemps
         # get the slice to use
         if iteration is not None:
-            # If a single walker is specified, we encase in a list to
-            # ensure that a ntemps x 1 x niterations array is returned if
-            # flatten is False
-            get_index = [iteration]
+            get_index = iteration
+            niterations = 1
         else:
             if thin_end is None:
                 # use the number of current iterations
                 thin_end = fp.niterations
             get_index = fp.get_slice(thin_start=thin_start, thin_end=thin_end,
                                      thin_interval=thin_interval)
+            # we'll just get the number of iterations from the returned shape
+            niterations = None
         # load
         arrays = {}
         group = fields_group + '/{name}'
         for name in fields:
             arr = fp[group.format(name=name)][tidx, widx, get_index]
+            if niterations is None:
+                niterations = arr.shape[-1]
+            # pull out the temperatures we need
+            if selecttemps:
+                arr = arr[temps, ...]
             if flatten:
                 arr = arr.flatten()
+            else:
+                # ensure that the returned array is 3D
+                arr = arr.reshape((ntemps, nwalkers, niterations))
             arrays[name] = arr
         return array_class.from_kwargs(**arrays)
 
