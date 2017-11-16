@@ -155,6 +155,30 @@ def rotate_to_dominant_polarisation_frame(Fp, Fc, chi_dp):
     Fc_dp = -Fp*np.sin(2*chi_dp) + Fc*np.cos(2*chi_dp)
     return Fp_dp, Fc_dp
 
+def get_projection_matrix(Fp_dp_dict,Fc_dp_dict,sigma_dict):
+    """
+    Output: fp,fc: Two dictionaries with the basis vectors for each ifo in dp frame
+    Input: Fp_dp_dict,Fc_dp_dict: Dictionaries of the plus and cross antenna patterns for each ifo in dp frame
+           sigma_dict: Sigma dictionary for each ifo (sensitivity of each ifo)
+    """
+    fp_denominator = 0
+    fc_denominator = 0
+    for ifo in opt.instruments:
+        fp_denominator += (sigma[ifo]*Fp_dp[ifo])**2
+        fc_denominator += (sigma[ifo]*Fc_dp[ifo])**2
+    fp_denominator = np.sqrt(fp_denominator)
+    fc_denominator = np.sqrt(fc_denominator)
+    fp = {}
+    fc = {}
+    for ifo in opt.instruments:
+        fp[ifo] = sigma[ifo]*Fp_dp[ifo]/fp_denominator
+        fc[ifo] = sigma[ifo]*Fc_dp[ifo]/fc_denominator
+    projection_matrix = np.zeros((len(opt.instruments),len(opt.instruments)))
+    for i, ifo1 in enumerate(opt.instruments): 
+        for j,ifo2 in enumerate(opt.instruments):
+            projection_matrix[i][j] += fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2]
+    return projection_matrix
+
 def get_dp_frame_basis(Fp_dp_dict,Fc_dp_dict,sigma_dict):
     """
     Output: fp,fc: Two dictionaries with the basis vectors for each ifo in dp frame
@@ -173,7 +197,7 @@ def get_dp_frame_basis(Fp_dp_dict,Fc_dp_dict,sigma_dict):
     for ifo in opt.instruments:
         fp[ifo] = sigma[ifo]*Fp_dp[ifo]/fp_denominator
         fc[ifo] = sigma[ifo]*Fc_dp[ifo]/fc_denominator
-    return fp,fc
+    return fp, fc
 
 def coherent_snr(snr_dict,fp_dict,fc_dict):
     """
@@ -191,6 +215,24 @@ def coherent_snr(snr_dict,fp_dict,fc_dict):
     roh_coh = np.sqrt(roh_coh2)
     return roh_coh
 
+def coherent_snr_with_array(snr_dict,projection_matrix):
+    """
+    Output: Returns an array of the coherent snr for the detector network
+    Inputs: snr_dict: is a dictionary of the normalised complex snr time series for 
+                      each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
+           fp_dict, fc_dict: These are dictionaries for the orthonormal unit vectors
+                             in detector space. The keys are the ifos.
+    """
+    """for ifo in opt.instruments:
+         if ifo == opt.instruments[0]:
+             snr_array = [snr[ifo]]
+         else:
+             snr_array = np.vstack((snr_array,[snr[ifo]]))"""
+    snr_array = np.array([snr[ifo].numpy() for ifo in opt.instruments])
+    x = np.inner(snr_array.conj().transpose(),projection_matrix)
+    roh_coh2 = sum(x.transpose()*snr_array)
+    roh_coh = np.sqrt(roh_coh2)
+    return roh_coh
 
 
 strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments, 
@@ -325,7 +367,7 @@ with ctx:
     for ifo in opt.instruments:
         Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(ra, dec, pol, t_gps)
     for t_num, template in enumerate(bank):
-	if t_num == 5: #use small sample set for development
+	if t_num == 1: #use small sample set for development
 	   break
 	"""
 	Calculating f_p and f_c for each detector for use later in calculating the coherent snr
@@ -364,7 +406,7 @@ with ctx:
 
 	s = range(len(segments[opt.instruments[0]])) #find number of segments (same in both ifos)
 	for s_num in s: #for each segment loop over the ifos
-	    if s_num==10:
+	    if s_num==1:
 		break
 	    snr={} 
 	    norm_dict={}
@@ -441,7 +483,10 @@ with ctx:
 		roh_coinc2=0
 		for ifo1 in opt.instruments:
 		    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
+                roh_coh_time1 = time.time()
 		roh_coh_dict[t_num][s_num]=coherent_snr(snr,fp,fc)
+                print "OLD TIME"
+                print time.time() - roh_coh_time1
 		roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
                 null2 = (roh_coinc_dict[t_num][s_num]**2 \
                                         - roh_coh_dict[t_num][s_num]**2)
@@ -542,3 +587,10 @@ for ifo in opt.instruments:
     print peak_time[ifo]
 
 """
+
+projection_matrix = get_projection_matrix(Fp_dp,Fc_dp,sigma)
+roh_coh_time2 = time.time()
+roh_coh_with_array = coherent_snr_with_array(snr,projection_matrix)
+print "NEW TIME"
+print time.time() - roh_coh_time2
+
