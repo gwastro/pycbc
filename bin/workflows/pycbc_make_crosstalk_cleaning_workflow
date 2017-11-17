@@ -19,6 +19,7 @@
 """Program for setting up a workflow which estimates the average PSD of a given
 portion of strain data."""
 
+import socket
 import pycbc
 import pycbc.version
 import pycbc.workflow
@@ -28,7 +29,7 @@ import logging
 import pycbc_glue.segments
 import datetime
 import lal, sys
-from pycbc.results import save_fig_with_metadata, two_column_layout
+from pycbc.results import create_versioning_page, save_fig_with_metadata, two_column_layout, layout
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -42,12 +43,34 @@ parser.add_argument("-d", "--output-dir", required=True,
 pycbc.workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
+pycbc.workflow.makedir(args.output_dir)
+
 container = pycbc.workflow.Workflow(args, args.workflow_name)
 workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-main')
 finalize_workflow = pycbc.workflow.Workflow(args, args.workflow_name + '-finalization')
 
-pycbc.workflow.makedir(args.output_dir)
 os.chdir(args.output_dir)
+
+rdir = layout.SectionNumber('results', ['analysis_time', 'workflow'])
+
+pycbc.workflow.makedir(rdir.base)
+pycbc.workflow.makedir(rdir['workflow'])
+
+wf_log_file = pycbc.workflow.File(workflow.ifos, 'workflow-log', workflow.analysis_time,
+                      extension='.txt',
+                      directory=rdir['workflow'])
+
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+                    filename=wf_log_file.storage_path,
+                    level=logging.INFO,
+                    filemode='w')
+
+logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
+logfile.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
+logfile.setFormatter(formatter)
+logging.getLogger('').addHandler(logfile)
+logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # layout list
 result_plots = []
@@ -60,8 +83,8 @@ e_utc = str(datetime.datetime(*lal.GPSToUTC(e)[0:6]))
 time_str = '<center><p><b>GPS Interval [%s,%s). UTC Interval %s - %s. Interval duration = %.3f days.</b></p></center>' % (s, e, s_utc, e_utc, float(e-s)/86400.0)
 time_file = pycbc.workflow.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
-                                           directory='plots')
-pycbc.workflow.makedir('plots')
+                                           directory=rdir.base)
+
 kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
         'caption' : "Wall clock start and end times for this invocation of the workflow. "
                     " The command line button shows the arguments used to invoke the workflow "
@@ -71,7 +94,8 @@ save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 result_plots += [(time_file,)]
 
 # Get segments and find where the data is
-seg_dir = 'segments'
+seg_dir = 'analysis_time/segment_data'
+pycbc.workflow.makedir(rdir[seg_dir])
 
 veto_cat_files = pycbc.workflow.get_files_for_vetoes(
         workflow, seg_dir, runtime_names=['segments-science-veto'])
@@ -102,7 +126,7 @@ for ifo, segments in analyzable_segs.items():
 
 pycbc.workflow.make_segments_plot(workflow,
                                   pycbc.workflow.FileList([science_seg_file]),
-                                  'plots', tags=['SCIENCE_MINUS_CAT1'])
+                                  seg_dir, tags=['SCIENCE_MINUS_CAT1'])
 
 # get data segments to write to segment summary XML file
 seg_summ_names    = ['DATA', 'SCIENCE_OK', 'ANALYZABLE_DATA']
@@ -124,16 +148,40 @@ seg_summ_file = pycbc.workflow.SegFile.from_multi_segment_list(
 
 # make segment table for summary page
 seg_summ_table = pycbc.workflow.make_seg_table(workflow, [seg_summ_file],
-        seg_summ_names, 'plots', ['SUMMARY'],
+        seg_summ_names, seg_dir, ['SUMMARY'],
         title_text='Input and output time',
         description='This shows the total amount of input data, analyzable data, and the time for which transfer functions are produced.')
 result_plots += [(seg_summ_table,)]
 
-two_column_layout('plots', result_plots)
+two_column_layout(seg_dir, result_plots)
+
+# Create versioning information
+create_versioning_page(rdir['workflow/version'], container.cp)
+
+# Create the final log file
+log_file_html = pycbc.workflow.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
+                                           extension='.html',
+                                           directory=rdir['workflow'])
+
+# Create a page to contain a dashboard link
+dashboard_file = pycbc.workflow.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
+                                           extension='.html',
+                                           directory=rdir['workflow'])
+dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
+kwds = { 'title' : 'Pegasus Dashboard',
+         'caption' : "Link to Pegasus Dashboard",
+         'cmd' : "PYCBC_SUBMIT_DAX_ARGV", }
+save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
+
+# Create pages for the submission script to write data
+pycbc.workflow.makedir(rdir['workflow/dax'])
+pycbc.workflow.makedir(rdir['workflow/input_map'])
+pycbc.workflow.makedir(rdir['workflow/output_map'])
+pycbc.workflow.makedir(rdir['workflow/planning'])
 
 pycbc.workflow.make_results_web_page(finalize_workflow,
                                      os.path.join(os.getcwd(),
-                                     'plots'))
+                                     rdir.base))
 
 container += workflow
 container += finalize_workflow
@@ -144,4 +192,21 @@ container._adag.addDependency(dep)
 
 container.save()
 
-logging.info("Done")
+logging.info("Written dax.")
+
+# Close the log and flush to the html file
+logging.shutdown()
+with open (wf_log_file.storage_path, "r") as logfile:
+    logdata=logfile.read()
+log_str = """
+<p>Workflow generation script created workflow in output directory: %s</p>
+<p>Workflow name is: %s</p>
+<p>Workflow generation script run on host: %s</p>
+<pre>%s</pre>
+""" % (os.getcwd(), args.workflow_name, socket.gethostname(), logdata)
+kwds = { 'title' : 'Workflow Generation Log',
+         'caption' : "Log of the workflow script %s" % sys.argv[0],
+         'cmd' :' '.join(sys.argv), }
+save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+layout.single_layout(rdir['workflow'], ([dashboard_file,log_file_html]))
+
