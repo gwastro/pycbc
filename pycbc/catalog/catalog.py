@@ -126,3 +126,19 @@ d["mchirp"] = (1.188, -.002, +.004)
 d["mtotal"] = (2.74, -0.01, 0.04)
 d["chi_eff"] = (0, -.05, -.05) # no constraint, not quite right...
 d["redshift"] = (.008, -.003, +.002)
+
+#http://ligo.org/detections/GW170608/paper/GW170608_submitted.pdf
+event = "GW170608"
+data[event] = e = {}
+e['time'] = 1180922494.49 
+e['frames'] = {"H1":"https://losc.ligo.org/s/events/GW170608/H-H1_LOSC_CLN_4_V1-1180922478-32.gwf",
+               "L1":"https://losc.ligo.org/s/events/GW170608/L-L1_LOSC_CLN_4_V1-1180922478-32.gwf",
+             }
+e["median1d"] = d = {}
+# uses low spin prior
+d["mass1"] = (12 -2, +7)
+d["mass2"] = (7, -2, +2)
+d["mchirp"] = (7.9, -.2, +0.2)
+d["mtotal"] = (19, -1, +5)
+d["chi_eff"] = (0.07, -0.09, 0.23)
+d["redshift"] = (0.07, -0.03, 0.03)
