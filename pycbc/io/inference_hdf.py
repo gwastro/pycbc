@@ -496,20 +496,26 @@ class InferenceFile(h5py.File):
         if strain_dict is not None:
             self.write_strain(strain_dict, group=group)
 
-    def write_inj_params(self, injvalues):
-        """Write injection parameters to file.
+    def write_injections(self, injection_file, ifo):
+        """ Writes injection parameters for an IFO to file.
 
         Parameters
         ----------
-        injvalues : A dictionary of injection parameters.
+        injection_file : str
+            Path to HDF injection file.
+        ifo : str
+            IFO name.
         """
-        group = "injection_parameters"
-        self.create_group(group)
-        for param in injvalues :
-            try:
-                self[group][param][:] = injvalues[param]
-            except:
-                self[group][param] = injvalues[param]
+        subgroup = "{ifo}/injections"
+        self.create_group(subgroup.format(ifo=ifo))
+        try:
+            with h5py.File(injection_file, "r") as fp:
+                for param in fp.keys():
+                    self[subgroup.format(ifo=ifo)][param] = fp[param][:]
+                for key in fp.attrs.keys():
+                    self[subgroup.format(ifo=ifo)].attrs[key] = fp.attrs[key]
+        except IOError:
+            logging.warn("Could not read %s as an HDF file", injection_file)
 
     def write_command_line(self):
         """Writes command line to attributes.
