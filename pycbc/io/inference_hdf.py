@@ -399,7 +399,7 @@ class InferenceFile(h5py.File):
         """
         subgroup = "{ifo}/strain"
         if group is None:
-            group = subgroup 
+            group = subgroup
         else:
             group = '/'.join([group, subgroup])
         for ifo,strain in strain_dict.items():
@@ -421,7 +421,7 @@ class InferenceFile(h5py.File):
         """
         subgroup = "{ifo}/stilde"
         if group is None:
-            group = subgroup 
+            group = subgroup
         else:
             group = '/'.join([group, subgroup])
         for ifo,stilde in stilde_dict.items():
@@ -445,7 +445,7 @@ class InferenceFile(h5py.File):
         """
         subgroup = "{ifo}/psds/0"
         if group is None:
-            group = subgroup 
+            group = subgroup
         else:
             group = '/'.join([group, subgroup])
         self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
@@ -465,7 +465,7 @@ class InferenceFile(h5py.File):
         stilde_dict : {None, dict}
             A dictionary of stilde. If None, no stilde will be written.
         psd_dict : {None, dict}
-            A dictionary of psds. If None, psds will be written.
+            A dictionary of psds. If None, no psds will be written.
         low_freuency_cutoff_dict : {None, dict}
             A dictionary of low frequency cutoffs used for each detector in
             `psd_dict`; must be provided if `psd_dict` is not None.
@@ -496,6 +496,20 @@ class InferenceFile(h5py.File):
         if strain_dict is not None:
             self.write_strain(strain_dict, group=group)
 
+    def write_inj_params(self, injvalues):
+        """Write injection parameters to file.
+
+        Parameters
+        ----------
+        injvalues : A dictionary of injection parameters.
+        """
+        group = "injection_parameters"
+        self.create_group(group)
+        for param in injvalues :
+            try:
+                self[group][param][:] = injvalues[param]
+            except:
+                self[group][param] = injvalues[param]
 
     def write_command_line(self):
         """Writes command line to attributes.
@@ -578,7 +592,7 @@ class InferenceFile(h5py.File):
 
     def copy_metadata(self, other):
         """Copies all metadata from this file to the other file.
-        
+
         Metadata is defined as all data that is not in either the samples or
         stats group.
 

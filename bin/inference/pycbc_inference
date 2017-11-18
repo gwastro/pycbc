@@ -41,6 +41,7 @@ from pycbc.inference import option_utils
 from pycbc.inference import prior
 from pycbc.inference import burn_in
 from pycbc import gate
+import h5py
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -185,6 +186,28 @@ if 'data' in likelihood_class.required_kwargs:
 else:
     strain_dict = stilde_dict = psd_dict = low_frequency_cutoff_dict = None
 
+# Get injection parameters if reading an injection file
+if opts.injection_file:
+    # Check if it's an hdf file
+    filename = opts.injection_file.values()[0]
+    if filename.endswith('.hdf') or filename.endswith('.h5'):
+        injfile = h5py.File(filename, 'r')
+        injparams = injfile.keys()
+        injvalues = {param: injfile[param][:] for param in injparams}
+        num_of_injs = len(injvalues.values()[0])
+        # Check if there are any static args in file
+        try :
+            static_args = injfile.attrs['static_args']
+        except KeyError:
+            static_args = []
+        injparams.extend(static_args)
+        # Read any static args in injection file
+        # The static args would be the same for all the injections
+        for x in static_args:
+            injvalues[x] = numpy.repeat(injfile.attrs[x], num_of_injs)
+    else :
+        injvalues = None
+
 with ctx:
 
     # read configuration file
@@ -276,6 +299,9 @@ with ctx:
                       stilde_dict=stilde_dict if opts.save_stilde else None,
                       psd_dict=psd_dict if opts.save_psd else None,
                       low_frequency_cutoff_dict=low_frequency_cutoff_dict)
+        if injvalues is not None :
+            logging.info("Writing injection parameters to output file")
+            fp.write_inj_params(injvalues)
 
     # set the walkers initial positions from a pre-existing InferenceFile
     # or a specific initial distribution listed in the configuration file
