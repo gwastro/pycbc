@@ -268,14 +268,30 @@ with ctx:
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
 
-    # save command line and data, if desired
+    # save information about this data and settings
     with InferenceFile(opts.output_file, "w") as fp:
+
+        # save command line and data
         logging.info("Writing command line and data to output file")
         fp.write_command_line()
         fp.write_data(strain_dict=strain_dict if opts.save_strain else None,
                       stilde_dict=stilde_dict if opts.save_stilde else None,
                       psd_dict=psd_dict if opts.save_psd else None,
                       low_frequency_cutoff_dict=low_frequency_cutoff_dict)
+
+        # save injection parameters
+        if opts.injection_file:
+            for ifo in opts.instruments:
+                logging.info("Writing %s injections to output file", ifo)
+                if ifo in opts.injection_file.keys():
+                    inj_file = opts.injection_file[ifo]
+                elif len(opts.injection_file) == 1:
+                    inj_file = opts.injection_file.values()[0]
+                else:
+                    logging.warn("Could not find injections for %s", ifo)
+                    continue
+                fp.write_injections(opts.injection_file.values()[0], ifo)
+
 
     # set the walkers initial positions from a pre-existing InferenceFile
     # or a specific initial distribution listed in the configuration file
