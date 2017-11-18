@@ -41,7 +41,6 @@ from pycbc.inference import option_utils
 from pycbc.inference import prior
 from pycbc.inference import burn_in
 from pycbc import gate
-#import h5py
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
