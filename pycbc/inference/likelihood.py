@@ -614,6 +614,44 @@ class TestRosenbrock(BaseLikelihoodEvaluator):
             l -= ((1 - p[i])**2 + 100 * (p[i+1] - p[i]**2)**2)
         return l
 
+class TestVolcano(BaseLikelihoodEvaluator):
+    r"""The test distribution is a two-dimensional 'volcano' function:
+
+    .. math::
+        \Theta = \sqrt{\theta_{1}^{2} + \theta_{2}^{2}}
+        \log \mathcal{L}(\Theta) = 5(e^{-\Theta} + \frac{50}{2\sqrt{2\pi}} e^{-\frac{(\Theta-5)^{2}}{8}})
+
+    Parameters
+    ----------
+    variable_args : (tuple of) string(s)
+        A tuple of parameter names that will be varied. Must have length 2.
+    \**kwargs :
+        All other keyword arguments are passed to ``BaseLikelihoodEvaluator``.
+
+    """
+    name = "test_volcano"
+
+    def __init__(self, variable_args, **kwargs):
+        # set up base likelihood parameters
+        super(TestVolcano, self).__init__(variable_args, **kwargs)
+
+        # make sure there are exactly two variable args
+        if len(self.variable_args) != 2:
+            raise ValueError("TestVolcano distribution requires exactly "
+                             "two variable args")
+
+        # set the lognl to 0 since there is no data
+        self.set_lognl(0.)
+
+    def loglikelihood(self, **params):
+        """Returns the log pdf of the 2D volcano function.
+        """
+        p = [params[p] for p in self.variable_args]
+        r = numpy.sqrt(p[0]**2 + p[1]**2)
+        mu, sigma = 5.0, 2.0
+        return 5 * (numpy.exp(-r) + 50. / (sigma * numpy.sqrt(2 * numpy.pi)) * \
+                   numpy.exp(-0.5 * ((r - mu) / sigma) ** 2))
+
 #
 # =============================================================================
 #
@@ -927,7 +965,8 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
 likelihood_evaluators = {TestEggbox.name: TestEggbox,
                          TestNormal.name: TestNormal,
                          TestRosenbrock.name: TestRosenbrock,
+                         TestVolcano.name: TestVolcano,
                          GaussianLikelihood.name: GaussianLikelihood}
 
-__all__ = ['BaseLikelihoodEvaluator', 'TestNormal', 'TestEggbox',
+__all__ = ['BaseLikelihoodEvaluator', 'TestNormal', 'TestEggbox', 'TestVolcano',
            'TestRosenbrock', 'GaussianLikelihood', 'likelihood_evaluators']
