@@ -619,7 +619,7 @@ class TestVolcano(BaseLikelihoodEvaluator):
 
     .. math::
         \Theta = \sqrt{\theta_{1}^{2} + \theta_{2}^{2}}
-        \log \mathcal{L}(\Theta) = 5(e^{-\Theta} + \frac{50}{2\sqrt{2\pi}} e^{-\frac{(\Theta-5)^{2}}{8}}
+        \log \mathcal{L}(\Theta) = 5(e^{-\Theta} + \frac{50}{2\sqrt{2\pi}} e^{-\frac{(\Theta-5)^{2}}{8}})
 
     Parameters
     ----------
