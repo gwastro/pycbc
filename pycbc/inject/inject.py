@@ -85,14 +85,15 @@ class _HDFInjectionSet(object):
     extra_args
     """
 
-    def __init__(self, sim_file, **kwds):
+    def __init__(self, sim_file, hdf_group=None, **kwds):
         # open the file
         fp = h5py.File(sim_file, 'r')
+        group = fp if hdf_group is None else fp[hdf_group]
         self.filehandler = fp
         # get parameters
-        parameters = fp.keys()
+        parameters = group.keys()
         # get all injection parameter values
-        injvals = {param: fp[param][:] for param in parameters}
+        injvals = {param: group[param][:] for param in parameters}
         # if there were no variable args, then we only have a single injection
         if len(parameters) == 0:
             numinj = 1
@@ -100,14 +101,14 @@ class _HDFInjectionSet(object):
             numinj = injvals.values()[0].size
         # add any static args in the file
         try:
-            self.static_args = fp.attrs['static_args']
+            self.static_args = group.attrs['static_args']
         except KeyError:
             self.static_args = []
         parameters.extend(self.static_args)
         # we'll expand the static args to be arrays with the same size as
         # the other values
         for param in self.static_args:
-            injvals[param] = np.repeat(fp.attrs[param], numinj)
+            injvals[param] = np.repeat(group.attrs[param], numinj)
         # make sure a coalescence time is specified for injections
         if 'tc' not in injvals:
             raise ValueError("no tc found in the given injection file; "
