@@ -113,7 +113,7 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
 
     # plot a point for each injection
     if len(injected_vals) > 1:
-        logging.warn("One than one injection in file %s", input_file)
+        logging.warn("Mrne than one injection in file %s", input_file)
     ax.errorbar([injected_vals],
                 [med],
                 yerr=[[med - low], [high - med]],
