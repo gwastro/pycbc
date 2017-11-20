@@ -458,6 +458,7 @@ setup (
                'bin/inference/pycbc_inference_plot_acl',
                'bin/inference/pycbc_inference_plot_geweke',
                'bin/inference/pycbc_inference_plot_gelman_rubin',
+               'bin/inference/pycbc_inference_plot_inj_recovery',
                'bin/inference/pycbc_inference_plot_movie',
                'bin/inference/pycbc_inference_plot_posterior',
                'bin/inference/pycbc_inference_plot_prior',
