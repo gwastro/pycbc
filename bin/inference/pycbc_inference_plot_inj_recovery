@@ -22,7 +22,8 @@ parser.add_argument("--output-file", required=True, type=str,
                     help="Path to save output plot.")
 parser.add_argument("--verbose", action="store_true",
                     help="Allows print statements.")
-parser.add_argument("--quantiles", nargs="+", type=float, default=[0.05, 0.95])
+parser.add_argument("--quantiles", nargs=2, type=float, default=[0.05, 0.95],
+                    help="Quantiles to use as limits.")
 parser.add_argument("--injection-hdf-group", default="H1/injections",
                     help="HDF group that contains injection values.")
 option_utils.add_inference_results_option_group(parser)
