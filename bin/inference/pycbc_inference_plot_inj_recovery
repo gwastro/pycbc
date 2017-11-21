@@ -101,9 +101,9 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
                              for q in opts.quantiles])
 
     # get median and lowest and highest quntiles for plotting
-    med = numpy.median(sampled_vals)
-    high = quantiles.max()
-    low = quantiles.min()
+    med = numpy.median(sampled_vals) - injected_vals
+    high = quantiles.max() - injected_vals
+    low = quantiles.min() - injected_vals
 
     # get color
     if opts.z_arg:
