@@ -133,7 +133,7 @@ ax.set_xlabel(r"Injected " + r"{}".format(label))
 ax.grid()
 
 # add 1:1 line to plot
-ax.axhline(1, linestyle="dashed", color="gray", zorder=9)
+ax.axhline(0, linestyle="dashed", color="gray", zorder=9)
 
 # save plot
 plt.savefig(opts.output_file)
