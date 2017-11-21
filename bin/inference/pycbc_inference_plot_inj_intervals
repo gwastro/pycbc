@@ -42,18 +42,18 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 
 # typecast to list for iteratation
-parameter = [parameters] if not isinstance(parameters, list) else parameters
+parameters = [parameters] if not isinstance(samples, list) else parameters
 label = [labels] if not isinstance(labels, list) else labels
 samples = [samples] if not isinstance(samples, list) else samples
 
 # dict to hold counts of injections parameters recovered in or out interval
-inj_inside = {p : opts.quantile.size * [0] for p in parameters[0]}
-inj_outside = {p : opts.quantile.size * [0] for p in parameters[0]}
+inj_inside = {p : opts.quantiles.size * [0] for p in parameters[0]}
+inj_outside = {p : opts.quantiles.size * [0] for p in parameters[0]}
 
 # loop over input files and its samples
 logging.info("Plotting")
-for input_file, input_parameters, input_samples in enumerate(
-                                    zip(opts.input_file, parameters, samples)):
+for input_file, input_parameters, input_samples in zip(
+                                        opts.input_file, parameters, samples):
 
     # read injections from HDF input file
     injs = inject.InjectionSet(input_file, hdf_group=opts.injection_hdf_group)
@@ -65,10 +65,6 @@ for input_file, input_parameters, input_samples in enumerate(
     # add parameters not included in injection file
     inj_parameters = transforms.apply_transforms(injs.table, ts)
 
-    # get paramter values
-    sampled_vals = input_samples[parameter]
-    injected_vals = inj_parameters[parameter]
-
     # loop over parameters and quantiles
     for p in input_parameters:
         for i, q in enumerate(opts.quantiles):
@@ -77,10 +73,11 @@ for input_file, input_parameters, input_samples in enumerate(
             q *= 100
             low = 50 - q / 2.0
             high = 50 + q / 2.0
-            low_val, high_val = numpy.array([numpy.percentile(sampled_vals, q)
+            low_val, high_val = numpy.array([numpy.percentile(input_samples[p], q)
                                              for q in [low, high]])
 
             # determine if inside or outside interval
+            injected_vals = inj_parameters[p]
             for inj_val in injected_vals:
                 if inj_val > low_val and inj_val < high_val:
                     inj_inside[p][i] += 1
@@ -88,14 +85,15 @@ for input_file, input_parameters, input_samples in enumerate(
                     inj_outside[p][i] += 1
 
 # determine the fraction found within each credible interval
-fractions = {p : numpy.zeros(opts.quantiles.size for p in inj_inside.keys()}
+fractions = {p : numpy.zeros(opts.quantiles.size) for p in inj_inside.keys()}
 for p in fractions.keys():
-    for i, q in enumerate(quantiles):
-        fractions[p][i] = inj_inside[p][i] / inj_outside[p][i]
+    for i, q in enumerate(opts.quantiles):
+        fractions[p][i] = inj_inside[p][i] / \
+                                 (inj_outside[p][i] + inj_inside[p][i])
 
     # plot parameter
     j = parameters[0].index(p)
-    ax.plot(opts.quantiles, fractions[p], label=l[j])
+    ax.plot(opts.quantiles, fractions[p], label=labels[j])
 
 # set legend
 ax.legend()
