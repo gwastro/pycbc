@@ -41,7 +41,7 @@ _, parameters, labels, samples = option_utils.results_from_cli(opts)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
-# typecast to list for iteratation
+# typecast to list for iteration
 parameters = [parameters] if not isinstance(samples, list) else parameters
 label = [labels] if not isinstance(labels, list) else labels
 samples = [samples] if not isinstance(samples, list) else samples
