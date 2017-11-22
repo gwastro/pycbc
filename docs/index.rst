@@ -61,12 +61,23 @@ Getting Started
 Manual Installation
 =====================
 
-Full installation instructions for users who want to install and develop PyCBC are available at:
+Note, if you are a LIGO / Virgo member with access to LDG resources, PyCBC is *already*
+installed on your cluster through CVMFS! Instructions to source any release of PyCBC
+is available from the `releases page <https://github.com/ligo-cbc/pycbc/releases>`_. 
+
+
+Full installation instructions for users who want to use and develop PyCBC are available at:
 
 .. toctree::
    :maxdepth: 1
 
    install
+
+If you already have lalsuite installed, you may also install PyCBC directly with pip.
+
+.. code-block:: bash
+
+   pip install pycbc
 
 =======================
 Documentation for Users
