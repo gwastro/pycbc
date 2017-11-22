@@ -460,6 +460,7 @@ setup (
                'bin/inference/pycbc_inference_plot_gelman_rubin',
                'bin/inference/pycbc_inference_plot_inj_recovery',
                'bin/inference/pycbc_inference_plot_movie',
+               'bin/inference/pycbc_inference_plot_inj_intervals',
                'bin/inference/pycbc_inference_plot_posterior',
                'bin/inference/pycbc_inference_plot_prior',
                'bin/inference/pycbc_inference_plot_samples',
