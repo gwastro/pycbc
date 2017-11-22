@@ -127,6 +127,7 @@ In addition we have some examples below.
 .. toctree::
    :maxdepth: 2
 
+   catalog
    gw150914
    frame
    psd
