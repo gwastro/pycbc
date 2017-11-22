@@ -229,7 +229,7 @@ class KombineSampler(BaseMCMCSampler):
             fp.create_dataset(dataset_name, shape,
                               maxshape=(self._sampler._kde_size,
                                         len(self.variable_args)),
-                              dtype=float)
+                              dtype=float, fletcher32=True)
             fp[dataset_name][:] = kde.data
 
     def write_state(self, fp):

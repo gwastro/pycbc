@@ -517,7 +517,7 @@ class BaseMCMCSampler(_BaseSampler):
                 istop = istart + niterations
                 fp.create_dataset(dataset_name, (nwalkers, istop),
                                   maxshape=(nwalkers, max_iterations),
-                                  dtype=float)
+                                  dtype=float, fletcher32=True)
             fp[dataset_name][:,istart:istop] = samples[param]
 
     def write_chain(self, fp, start_iteration=None, max_iterations=None):
@@ -645,7 +645,7 @@ class BaseMCMCSampler(_BaseSampler):
             istop = istart + acf.size
             fp.create_dataset(dataset_name, (istop,),
                               maxshape=(max_iterations,),
-                              dtype=acf.dtype)
+                              dtype=acf.dtype, fletcher32=True)
             fp[dataset_name][istart:istop] = acf
 
     def write_results(self, fp, start_iteration=None,

@@ -546,7 +546,8 @@ class InferenceFile(h5py.File):
         if group in self:
             self[dataset_name][:] = arr
         else:
-            self[dataset_name] = arr
+            self.create_dataset(dataset_name, arr.shape, fletcher32=True)
+            self[dataset_name][:] = arr
         self[dataset_name].attrs["s"] = s
         self[dataset_name].attrs["pos"] = pos
         self[dataset_name].attrs["has_gauss"] = has_gauss
