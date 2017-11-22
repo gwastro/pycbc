@@ -147,7 +147,7 @@ def dominant_polarization(f_sig):
 
 def rotate_to_dominant_polarisation_frame(Fp, Fc, chi_dp):
     """
-    Output: Fp_dp, Fc_dp: Dictionaries of the antenna response to the plus and cross polarisation of the GW for each ifo in the dominant polarisation frame.
+    Output: Fp_dp, Fc_dp: The antenna response to the plus and cross polarisation of the GW for each ifo in the dominant polarisation frame.
     Input:  Fp, Fc: Dictionaries of the antenna response to plus and cross polarisation
                     of the GW  
     """
@@ -164,19 +164,19 @@ def get_projection_matrix(Fp_dp_dict,Fc_dp_dict,sigma_dict):
     fp_denominator = 0
     fc_denominator = 0
     for ifo in opt.instruments:
-        fp_denominator += (sigma[ifo]*Fp_dp_dict[ifo])**2
-        fc_denominator += (sigma[ifo]*Fc_dp_dict[ifo])**2
+        fp_denominator += (sigma_dict[ifo]*Fp_dp_dict[ifo])**2
+        fc_denominator += (sigma_dict[ifo]*Fc_dp_dict[ifo])**2
     fp_denominator = np.sqrt(fp_denominator)
     fc_denominator = np.sqrt(fc_denominator)
     fp = {}
     fc = {}
     for ifo in opt.instruments:
-        fp[ifo] = sigma[ifo]*Fp_dp_dict[ifo]/fp_denominator
-        fc[ifo] = sigma[ifo]*Fc_dp_dict[ifo]/fc_denominator
+        fp[ifo] = sigma_dict[ifo]*Fp_dp_dict[ifo]/fp_denominator
+        fc[ifo] = sigma_dict[ifo]*Fc_dp_dict[ifo]/fc_denominator
     projection_matrix = np.zeros((len(opt.instruments),len(opt.instruments)))
     for i, ifo1 in enumerate(opt.instruments): 
         for j,ifo2 in enumerate(opt.instruments):
-            projection_matrix[i][j] += fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2]
+            projection_matrix[i][j] = fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2]
     return projection_matrix
 
 def get_dp_frame_basis(Fp_dp_dict,Fc_dp_dict,sigma_dict):
@@ -188,15 +188,15 @@ def get_dp_frame_basis(Fp_dp_dict,Fc_dp_dict,sigma_dict):
     fp_denominator = 0
     fc_denominator = 0
     for ifo in opt.instruments:
-        fp_denominator += (sigma[ifo]*Fp_dp_dict[ifo])**2 
-        fc_denominator += (sigma[ifo]*Fc_dp_dict[ifo])**2 
+        fp_denominator += (sigma_dict[ifo]*Fp_dp_dict[ifo])**2 
+        fc_denominator += (sigma_dict[ifo]*Fc_dp_dict[ifo])**2 
     fp_denominator = np.sqrt(fp_denominator) 
     fc_denominator = np.sqrt(fc_denominator) 
     fp = {}
     fc = {}
     for ifo in opt.instruments:
-        fp[ifo] = sigma[ifo]*Fp_dp_dict[ifo]/fp_denominator
-        fc[ifo] = sigma[ifo]*Fc_dp_dict[ifo]/fc_denominator
+        fp[ifo] = sigma_dict[ifo]*Fp_dp_dict[ifo]/fp_denominator
+        fc[ifo] = sigma_dict[ifo]*Fc_dp_dict[ifo]/fc_denominator
     return fp, fc
 
 def coherent_snr(snr_dict,fp_dict,fc_dict):
@@ -215,7 +215,7 @@ def coherent_snr(snr_dict,fp_dict,fc_dict):
     roh_coh = np.sqrt(roh_coh2)
     return roh_coh
 
-def coherent_snr_with_array(snr_dict,projection_matrix):
+def coherent_snr_with_array_timeseries(snr_dict,projection_matrix):
     """
     Output: Returns an array of the coherent snr for the detector network
     Inputs: snr_dict: is a dictionary of the normalised complex snr time series for 
@@ -228,6 +228,19 @@ def coherent_snr_with_array(snr_dict,projection_matrix):
     roh_coh = np.sqrt(roh_coh2)
     return roh_coh
 
+
+def coherent_snr_with_array(snr_dict,projection_matrix):
+    """
+    Output: Returns an array of the coherent snr for the detector network
+    Inputs: snr_dict: is a dictionary of the normalised complex snr time series for 
+                      each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
+            projection_matrix 
+    """
+    snr_array = np.array([snr_dict[ifo] for ifo in opt.instruments])
+    x = np.inner(snr_array.conj().transpose(),projection_matrix)
+    roh_coh2 = sum(x.transpose()*snr_array)
+    roh_coh = np.sqrt(roh_coh2)
+    return roh_coh
 
 strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments, 
                                          dyn_range_fac=DYN_RANGE_FAC)
@@ -360,6 +373,7 @@ with ctx:
     roh_coh_dict = {}
     roh_coinc_dict={}
     null_dict = {}
+    triggers = {}
     Fp = {} #Antenna patterns
     Fc = {}
     for ifo in opt.instruments:
@@ -411,7 +425,8 @@ with ctx:
 	    if s_num==1:
 		break
 	    snr={} 
-	    snrv_dict={}
+	    idx_dict={}
+            interesting_idx = np.array([])
 	    for ifo in opt.instruments:
 		stilde = segments[ifo][s_num]
 		logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
@@ -420,10 +435,18 @@ with ctx:
 		snr_ts, norm, corr, idx, snrv = \
 			matched_filter[ifo].matched_filter_and_cluster(s_num,
 			    template.sigmasq(stilde.psd), window=cluster_window)
+
                 #Find the data we need to analyse
 		analyse_data = matched_filter[ifo].segments[s_num].analyze
+
                 #Restrict the snr timeseries to just this section
 		snr[ifo] = snr_ts[analyse_data] * norm
+                
+                #Save the snr triggers and indexes
+                triggers[ifo] = snrv
+                idx_dict[ifo] = idx
+               
+ 
                 if snr[ifo] != []:
 		    print ifo, t_num, s_num
 		    print "maxsnr="
@@ -435,12 +458,27 @@ with ctx:
 		                            int(max(snrv*snrv.conj()).real*norm**2):
                         print "The loudest trigger should equal the loudest \
                                part of the snr timeseries"
+             
+            #This section narrows down the list of triggers we are interested in
+            #by getting rid of any that are not loud in at least 2 detectors
+            idx_list = np.array([],dtype=int)
+            for ifo in opt.instruments:
+                #Create list of indexes above threshold in single detector in 
+                #geocent time. Can then search for triggers that appear in multiple 
+                #detectors later.
+                idx_list = np.hstack([idx_list,idx_dict[ifo] - time_delay_idx[ifo]])
+            #Search through interesting_idx for repeated indexes. These must have
+            #been loud in at least 2 detectors.
+            interesting_idx = np.unique(idx_list,return_counts=True)[0][np.unique(idx_list,return_counts=True)[1]>2]
+            
             for ifo in opt.instruments:
                 # Move to next segment if this segment has no data
                 if snr[ifo] == []:
                     break
                 #Apply time delay
 		snr[ifo].roll(-time_delay_idx[ifo])
+                #Restrict the snr timeseries to just the interesting points
+                snr[ifo] = snr[ifo][interesting_idx]
                 #Make dictionary of normalisation constants for each ifo
                 """
 		if len(idx) == 0:
@@ -534,22 +572,23 @@ print "roh_coh_with_array = " + str(max(roh_coh_with_array))
 print "NEW TIME"
 print time.time() - roh_coh_time2
 
-
-projection_matrix = get_projection_matrix(Fp_dp,Fc_dp,sigma)
+"""
+projection_matrix = get_projection_matrix(Fp,Fc,sigma)
 roh_coh_time2 = time.time()
 roh_coh_with_array = coherent_snr_with_array(snr,projection_matrix)
 print "roh_coh_with_array not in dp frame = " + str(max(roh_coh_with_array))
 print "NEW TIME"
 print time.time() - roh_coh_time2
+"""
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.figure()
-plt.plot(roh_coinc_dict[0][0],'b.',label='coinc snr')
-plt.plot(roh_coh_dict[0][0],'rx',label='coh snr')
-plt.plot(roh_coh_with_array,'gx',label='new coh snr')
-plt.plot(null_dict[0][0],'mx',label='null snr')
+plt.plot(interesting_idx,roh_coinc_dict[0][0],'b.',label='coinc snr')
+plt.plot(interesting_idx,roh_coh_dict[0][0],'rx',label='coh snr')
+plt.plot(interesting_idx,roh_coh_with_array,'gx',label='new coh snr')
+plt.plot(interesting_idx,null_dict[0][0],'mx',label='null snr')
 #plt.xlim(0,409600)
 plt.legend(loc="best")
 plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
@@ -560,18 +599,19 @@ np.save('roh_coh.npy',roh_coh_dict)
 np.save('roh_coinc.npy',roh_coinc_dict)
 
 
-plt.hist(roh_coh_with_array.real,bins=100)
+"""
+plt.hist(roh_coh_with_array.real**2,bins=100)
 plt.title("roh_coh")
 plt.savefig("/home/c1551011/public_html/coh_snr_histogram.png")
 
 for ifo in opt.instruments:
-    data = ((snr[ifo].conj()*snr[ifo]).data)**0.5
+    #data = ((snr[ifo].conj()*snr[ifo]).data)**0.5
+    data = ((snr[ifo].conj()*snr[ifo]))**0.5
     plt.figure()
     plt.hist(data.real,bins=100)
     plt.title(ifo)
     plt.savefig("/home/c1551011/public_html/" + ifo + "_snr_histogram.png")
 
-"""
 for ifo in opt.instruments:
     print "Time delay for ifo:" + ifo
     print time_delay[ifo]
