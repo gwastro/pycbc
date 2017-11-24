@@ -83,7 +83,7 @@ logging.info("Plotting")
 for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
                                                               fp, samples)):
 
-    # Injection file tag 
+    # Injection file tag
     injs_tag = input_fp[opts.injection_hdf_group].keys()
     injection_hdf_group = opts.injection_hdf_group + '/' + injs_tag[0]
 
