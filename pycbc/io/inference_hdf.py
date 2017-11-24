@@ -506,14 +506,20 @@ class InferenceFile(h5py.File):
         ifo : str
             IFO name.
         """
-        subgroup = "{ifo}/injections"
-        self.create_group(subgroup.format(ifo=ifo))
+        injection_file_tag = "inj_file0"
+        injection_file_name = injection_file.rsplit('/',1)[-1]
         try:
             with h5py.File(injection_file, "r") as fp:
+                if fp.attrs["tag"]:
+                    injection_file_tag = fp.attrs["tag"]
+                subgroup = "{ifo}/injections/{injection_file_tag}"
+                self.create_group(subgroup.format(
+                              ifo=ifo, injection_file_tag=injection_file_tag))
                 for param in fp.keys():
-                    self[subgroup.format(ifo=ifo)][param] = fp[param][:]
+                    self[subgroup.format(ifo=ifo, injection_file_tag=injection_file_tag)][param] = fp[param][:]
                 for key in fp.attrs.keys():
-                    self[subgroup.format(ifo=ifo)].attrs[key] = fp.attrs[key]
+                    self[subgroup.format(ifo=ifo, injection_file_tag=injection_file_tag)].attrs[key] = fp.attrs[key]
+                self[subgroup.format(ifo=ifo, injection_file_tag=injection_file_tag)].attrs["injection_file_name"] = injection_file_name
         except IOError:
             logging.warn("Could not read %s as an HDF file", injection_file)
 
