@@ -290,7 +290,7 @@ with ctx:
                 else:
                     logging.warn("Could not find injections for %s", ifo)
                     continue
-                fp.write_injections(opts.injection_file.values()[0], ifo)
+                fp.write_injections(inj_file, ifo)
 
 
     # set the walkers initial positions from a pre-existing InferenceFile
