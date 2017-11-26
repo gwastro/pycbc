@@ -99,6 +99,7 @@ longitude = 6.103652
 latitude = 0.9999715
 t_gps = 1169088610.0
 pol = 1.21771
+coinc_threshold = 11.0
 """
 pol = 1.21771
 longitude = 197.448775
@@ -460,18 +461,22 @@ with ctx:
             #If we have any coinc triggers, find coinc snr
             if len(coinc_idx[t_num][s_num]) != 0:
                 roh_coinc_dict[t_num][s_num]=coincident_snr(coinc_triggers)
+                print "max coincident snr"
+                print max(roh_coinc_dict[t_num][s_num])
+                #Get rid of coinc triggers not above coinc threshold
+                coinc_idx[t_num][s_num] = coinc_idx[t_num][s_num][\
+                    roh_coinc_dict[t_num][s_num] > coinc_threshold]
+            if len(coinc_idx[t_num][s_num]) != 0:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
                 projection_matrix = get_projection_matrix(wp,wc)
                 roh_coh_dict[t_num][s_num] = coherent_snr(\
-                                                 coinc_triggers,projection_matrix)
+                                 coinc_triggers,projection_matrix)
+                print "max coherent snr"
+                print max(roh_coh_dict[t_num][s_num])
                 #Find the null snr
                 null_dict[t_num][s_num] = null_snr(roh_coh_dict[t_num][s_num],\
                                                  roh_coinc_dict[t_num][s_num])
                 
-                print "max coherent snr"
-                print max(roh_coh_dict[t_num][s_num])
-                print "max coincident snr"
-                print max(roh_coinc_dict[t_num][s_num])
 	    event_mgr.cluster_template_events_single_ifo("time_index",
 						    "snr", cluster_window, ifo)
 
