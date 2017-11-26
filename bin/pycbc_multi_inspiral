@@ -198,10 +198,10 @@ def null_snr(roh_coh,roh_coinc):
     null_snr = null2**0.5
     return null_snr
 
-def get_coinc_triggers(idx_dict):
+def get_coinc_indexes(idx_dict):
     """
-    Output: coinc_idx: list of indexes for triggers in geocent time that appear in\
-                             multiple detectors 
+    Output: coinc_idx: list of indexes for triggers in geocent time that\
+                       appear in multiple detectors 
     Input: idx_dict: Dictionary of indexes of triggers above threshold in each detector
     """
     coinc_list = np.array([],dtype=int)
@@ -214,7 +214,7 @@ def get_coinc_triggers(idx_dict):
     #Search through coinc_idx for repeated indexes. These must have
     #been loud in at least 2 detectors.
     coinc_idx = np.unique(coinc_list,return_counts=True)[0]\
-                   [np.unique(coinc_list,return_counts=True)[1]>2]
+                   [np.unique(coinc_list,return_counts=True)[1]>1]
     return coinc_idx
 
 
@@ -405,9 +405,13 @@ with ctx:
                 triggers[ifo] = snrv
                 idx_dict[ifo] = idx
 
-                #If we have no data, move onto next ifo.
+                #If we have no data, move onto next ifo and note the
+                # number of ifos with data that we have
+                nifo = len(opt.instruments)
                 if len(snr_ts) == 0:
                     snr[ifo] = []
+                    nifo -= 1
+                    print "nifo = " + str(nifo)
                     continue
 
                 #Find the data we need to analyse
@@ -417,10 +421,10 @@ with ctx:
 		snr[ifo] = snr_ts[analyse_data] * norm
                
             #Find triggers that are coincident (in geocent time) in multiple ifos
-            coinc_idx[t_num][s_num] = get_coinc_triggers(idx_dict)
+            coinc_idx[t_num][s_num] = get_coinc_indexes(idx_dict)
             
             for ifo in opt.instruments:
-                # Move to next segment if this segment has no data
+                # Move to next segment if this segment has no data 
                 if snr[ifo] == []:
                     break
                 #Apply time delay
@@ -458,15 +462,19 @@ with ctx:
             #FIXME - If have only two ifo's data, then just use coinc snr
             #NOTE - That is if we have ANY data, not just trigger
             #NOTE - Only find coherent snr if have >3 ifos
-            #If we have any coinc triggers, find coinc snr
-            if len(coinc_idx[t_num][s_num]) != 0:
+            #If we have any coinc triggers and >1 ifos, find coinc snr
+            if len(coinc_idx[t_num][s_num]) != 0 and nifo > 1:
                 roh_coinc_dict[t_num][s_num]=coincident_snr(coinc_triggers)
                 print "max coincident snr"
                 print max(roh_coinc_dict[t_num][s_num])
                 #Get rid of coinc triggers not above coinc threshold
                 coinc_idx[t_num][s_num] = coinc_idx[t_num][s_num][\
                     roh_coinc_dict[t_num][s_num] > coinc_threshold]
-            if len(coinc_idx[t_num][s_num]) != 0:
+                for ifo in opt.instruments:
+                    coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
+            #If we have triggers above coinc threshold and more than 2 ifos 
+            # then calculate the coherent statistics 
+            if len(coinc_idx[t_num][s_num]) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
                 projection_matrix = get_projection_matrix(wp,wc)
                 roh_coh_dict[t_num][s_num] = coherent_snr(\
@@ -475,7 +483,8 @@ with ctx:
                 print max(roh_coh_dict[t_num][s_num])
                 #Find the null snr
                 null_dict[t_num][s_num] = null_snr(roh_coh_dict[t_num][s_num],\
-                                                 roh_coinc_dict[t_num][s_num])
+                     roh_coinc_dict[t_num][s_num][roh_coinc_dict[t_num][s_num]\
+                                                              >coinc_threshold])
                 
 	    event_mgr.cluster_template_events_single_ifo("time_index",
 						    "snr", cluster_window, ifo)
@@ -521,7 +530,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.figure()
-plt.plot(coinc_idx[0][0],roh_coinc_dict[0][0],'b.',label='coinc snr')
+plt.plot(coinc_idx[0][0],roh_coinc_dict[0][0][roh_coinc_dict[0][0]>coinc_threshold],'b.',label='coinc snr')
 plt.plot(coinc_idx[0][0],roh_coh_dict[0][0],'rx',label='coh snr')
 plt.plot(coinc_idx[0][0],null_dict[0][0],'mx',label='null snr')
 #plt.xlim(0,409600)
