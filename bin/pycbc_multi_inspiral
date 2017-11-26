@@ -127,77 +127,36 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 ctx = scheme.from_cli(opt)
 
-def calculate_f_sig(Fp,Fc,sigma):
-    f_sig = sigma*np.array([Fp,Fc])
-    return f_sig
 
-def dominant_polarization(f_sig):
+def get_weighted_antenna_patterns(Fp_dict,Fc_dict,sigma_dict):
     """
-    Given the detector responses, compute the dominant polarization F+, Fx and the
-    angle that we have to rotate through to get to D.P.
-    :param f_sig: sensitivity of detectors: sigma * (F+, Fx)
-    """
-    nifo = len(f_sig.keys())
-    m = np.zeros((2, 2))
-    for ifo in f_sig.keys():
-        m += np.outer(f_sig[ifo], f_sig[ifo])
-    f_cross, f_plus = np.sort(np.sqrt(np.linalg.eig(m)[0])) #This returns eigenvalues of m 
-    chi = 1./4 * np.arctan2(2 * m[0,1], m[0,0] - m[1,1])
-    return f_plus, f_cross, chi
-
-def rotate_to_dominant_polarisation_frame(Fp, Fc, chi_dp):
-    """
-    Output: Fp_dp, Fc_dp: The antenna response to the plus and cross polarisation of the GW for each ifo in the dominant polarisation frame.
-    Input:  Fp, Fc: Dictionaries of the antenna response to plus and cross polarisation
-                    of the GW  
-    """
-    Fp_dp = Fp*np.cos(2*chi_dp) + Fc*np.sin(2*chi_dp)
-    Fc_dp = -Fp*np.sin(2*chi_dp) + Fc*np.cos(2*chi_dp)
-    return Fp_dp, Fc_dp
-
-def get_projection_matrix(Fp_dp_dict,Fc_dp_dict,sigma_dict):
-    """
-    Output: fp,fc: Two dictionaries with the basis vectors for each ifo in dp frame
-    Input: Fp_dp_dict,Fc_dp_dict: Dictionaries of the plus and cross antenna patterns for each ifo in dp frame
+    Output: wp: 1 x nifo of the weighted antenna response fuctions to plus polarisation\
+                 for each ifo
+            wc: 1 x nifo of the weighted antenna response fuctions to cross polarisation\
+                 for each ifo
+    Input:  Fp_dict: Dictionary of the antenna response fuctions to plus polarisation\
+                     for each ifo
+            Fc_dict: Dictionary of the antenna response fuctions to cross polarisation\
+                     for each ifo
            sigma_dict: Sigma dictionary for each ifo (sensitivity of each ifo)
     """
-    fp_denominator = 0
-    fc_denominator = 0
-    for ifo in opt.instruments:
-        fp_denominator += (sigma_dict[ifo]*Fp_dp_dict[ifo])**2
-        fc_denominator += (sigma_dict[ifo]*Fc_dp_dict[ifo])**2
-    fp_denominator = np.sqrt(fp_denominator)
-    fc_denominator = np.sqrt(fc_denominator)
-    fp = {}
-    fc = {}
-    for ifo in opt.instruments:
-        fp[ifo] = sigma_dict[ifo]*Fp_dp_dict[ifo]/fp_denominator
-        fc[ifo] = sigma_dict[ifo]*Fc_dp_dict[ifo]/fc_denominator
-    projection_matrix = np.zeros((len(opt.instruments),len(opt.instruments)))
-    for i, ifo1 in enumerate(opt.instruments): 
-        for j,ifo2 in enumerate(opt.instruments):
-            projection_matrix[i][j] = fp[ifo1]*fp[ifo2]+fc[ifo1]*fc[ifo2]
+    wp = np.zeros(len(opt.instruments))
+    wc = np.zeros(len(opt.instruments))
+    for i,ifo in enumerate(opt.instruments):
+        wp[i] = sigma_dict[ifo]*Fp_dict[ifo]
+        wc[i] = sigma_dict[ifo]*Fc_dict[ifo]
+    return wp,wc
+
+def get_projection_matrix(wp,wc):
+    """
+    Output: projection_matrix: Projects the data onto the signal space
+    Input:  wp,wc: The weighted antenna response fuctions to plus and cross\
+                   polarisations respectively
+    """
+    denominator = np.dot(wp,wp) * np.dot(wc,wc) - np.dot(wp,wc)**2
+    projection_matrix = (np.dot(wc,wc)*np.outer(wp,wp)+ np.dot(wp,wp)*np.outer(wc,wc)\
+                    - np.dot(wp,wc)*(np.outer(wp,wc) + np.outer(wc,wp))) / denominator
     return projection_matrix
-
-def get_dp_frame_basis(Fp_dp_dict,Fc_dp_dict,sigma_dict):
-    """
-    Output: fp,fc: Two dictionaries with the basis vectors for each ifo in dp frame
-    Input: Fp_dp_dict,Fc_dp_dict: Dictionaries of the plus and cross antenna patterns for each ifo in dp frame
-           sigma_dict: Sigma dictionary for each ifo (sensitivity of each ifo)
-    """
-    fp_denominator = 0
-    fc_denominator = 0
-    for ifo in opt.instruments:
-        fp_denominator += (sigma_dict[ifo]*Fp_dp_dict[ifo])**2 
-        fc_denominator += (sigma_dict[ifo]*Fc_dp_dict[ifo])**2 
-    fp_denominator = np.sqrt(fp_denominator) 
-    fc_denominator = np.sqrt(fc_denominator) 
-    fp = {}
-    fc = {}
-    for ifo in opt.instruments:
-        fp[ifo] = sigma_dict[ifo]*Fp_dp_dict[ifo]/fp_denominator
-        fc[ifo] = sigma_dict[ifo]*Fc_dp_dict[ifo]/fc_denominator
-    return fp, fc
 
 def coherent_snr_for_timeseries(snr_dict,projection_matrix):
     """
@@ -213,18 +172,50 @@ def coherent_snr_for_timeseries(snr_dict,projection_matrix):
     return roh_coh
 
 
-def coherent_snr(snr_dict,projection_matrix):
+def coherent_snr(coinc_triggers_dict,projection_matrix):
     """
     Output: Returns an array of the coherent snr for the detector network
-    Inputs: snr_dict: is a dictionary of the normalised complex snr time series for 
+    Inputs: coinc_triggers_dict: is a dictionary of the normalised complex snr time series for 
                       each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
             projection_matrix 
     """
-    snr_array = np.array([snr_dict[ifo] for ifo in opt.instruments])
+    snr_array = np.array([coinc_triggers_dict[ifo] for ifo in opt.instruments])
     x = np.inner(snr_array.conj().transpose(),projection_matrix)
     roh_coh2 = sum(x.transpose()*snr_array)
     roh_coh = np.sqrt(roh_coh2)
     return roh_coh
+
+def coincident_snr(coinc_triggers_dict):
+    snr_array = np.array([coinc_triggers_dict[ifo] for ifo in opt.instruments])
+    roh_coinc = np.sqrt(np.sum(snr_array*snr_array.conj(),axis=0))
+    return roh_coinc
+
+def null_snr(roh_coh,roh_coinc):
+    null2 = roh_coinc**2 - roh_coh**2
+    #Numerical errors may make this negative and break the sqrt
+    null2[null2<0] = 0 
+    null_snr = null2**0.5
+    return null_snr
+
+def get_coinc_triggers(idx_dict):
+    """
+    Output: coinc_idx: list of indexes for triggers in geocent time that appear in\
+                             multiple detectors 
+    Input: idx_dict: Dictionary of indexes of triggers above threshold in each detector
+    """
+    coinc_list = np.array([],dtype=int)
+    for ifo in opt.instruments:
+        #Create list of indexes above threshold in single detector in 
+        #geocent time. Can then search for triggers that appear in multiple 
+        #detectors later.
+        if len(idx_dict[ifo]) != 0:
+             coinc_list = np.hstack([coinc_list,idx_dict[ifo] - time_delay_idx[ifo]])
+    #Search through coinc_idx for repeated indexes. These must have
+    #been loud in at least 2 detectors.
+    coinc_idx = np.unique(coinc_list,return_counts=True)[0]\
+                   [np.unique(coinc_list,return_counts=True)[1]>2]
+    return coinc_idx
+
 
 strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments, 
                                          dyn_range_fac=DYN_RANGE_FAC)
@@ -358,7 +349,7 @@ with ctx:
     roh_coinc_dict={}
     null_dict = {}
     triggers = {}
-    interesting_idx = {}
+    coinc_idx = {}
     Fp = {} #Antenna patterns
     Fc = {}
     for ifo in opt.instruments:
@@ -373,30 +364,13 @@ with ctx:
 	roh_coh_dict[t_num] = {}
 	roh_coinc_dict[t_num] = {}
         null_dict[t_num] = {}
-        interesting_idx[t_num] = {}
-        #Find detector sensitivities (sigma) and make array of normalised \
-        # response functions (f_sig)
+        coinc_idx[t_num] = {}
+        #Find detector sensitivities (sigma) and make array of normalised 
 	sigmasq = {}
 	sigma = {}
-	f_sig = {}
 	for ifo in opt.instruments:
 	    sigmasq[ifo] = template.sigmasq(psds[ifo])
 	    sigma[ifo] = np.sqrt(sigmasq[ifo])
-            f_sig[ifo] = calculate_f_sig(Fp[ifo],Fc[ifo],sigma[ifo])
-	chi_dp = dominant_polarization(f_sig)[2] #Dominant polarisation angle
-	#Rotate to dominant polarisation frame
-	Fp_dp={}
-	Fc_dp={}
-        """
-        Fp_dp = Fp
-        Fc_dp = Fc
-        """
-	for ifo in opt.instruments:
-	    Fp_dp[ifo], Fc_dp[ifo] = rotate_to_dominant_polarisation_frame\
-                                                  (Fp[ifo], Fc[ifo], chi_dp) 
-	#define the orthogonal unit vectors
-        fp,fc = get_dp_frame_basis(Fp_dp,Fc_dp,sigma)
-
 	event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
 
 	for ifo in opt.instruments:
@@ -406,16 +380,16 @@ with ctx:
 		cluster_window = int(template.chirp_length * sample_rate)
 	    elif opt.cluster_window == 0:
 		 cluster_window = int(0)
-        #FIXME - Use ennumerate here
-	s = range(len(segments[opt.instruments[0]])) #find number of segments (same in both ifos)
-	for s_num in s: #for each segment loop over the ifos
+
+	for s_num,stilde in enumerate(segments[opt.instruments[0]]): #Loop over segments
             """
 	    if s_num==1:
 		break
             """
 	    snr={} 
 	    idx_dict={}
-            interesting_idx[t_num][s_num] = np.array([])
+            coinc_idx[t_num][s_num] = np.array([])
+            coinc_triggers = {}
 	    for ifo in opt.instruments:
 		stilde = segments[ifo][s_num]
 		logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
@@ -431,7 +405,7 @@ with ctx:
                 idx_dict[ifo] = idx
 
                 #If we have no data, move onto next ifo.
-                if snr_ts.__len__() == 0:
+                if len(snr_ts) == 0:
                     snr[ifo] = []
                     continue
 
@@ -441,20 +415,8 @@ with ctx:
                 #Restrict the snr timeseries to just this section
 		snr[ifo] = snr_ts[analyse_data] * norm
                
-            #FIXME - Make this a function to find the interesting triggeres
-            #This section narrows down the list of triggers we are interested in
-            #by getting rid of any that are not loud in at least 2 detectors
-            idx_list = np.array([],dtype=int)
-            for ifo in opt.instruments:
-                #Create list of indexes above threshold in single detector in 
-                #geocent time. Can then search for triggers that appear in multiple 
-                #detectors later.
-                if idx_dict[ifo].__len__() != 0:
-                     idx_list = np.hstack([idx_list,idx_dict[ifo] - time_delay_idx[ifo]])
-            #Search through interesting_idx for repeated indexes. These must have
-            #been loud in at least 2 detectors.
-            interesting_idx[t_num][s_num] = np.unique(idx_list,return_counts=True)[0]\
-                           [np.unique(idx_list,return_counts=True)[1]>2]
+            #Find triggers that are coincident (in geocent time) in multiple ifos
+            coinc_idx[t_num][s_num] = get_coinc_triggers(idx_dict)
             
             for ifo in opt.instruments:
                 # Move to next segment if this segment has no data
@@ -463,7 +425,7 @@ with ctx:
                 #Apply time delay
 		snr[ifo].roll(-time_delay_idx[ifo])
                 #Restrict the snr timeseries to just the interesting points
-                snr[ifo] = snr[ifo][interesting_idx[t_num][s_num]]
+                coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
                 #Make dictionary of normalisation constants for each ifo
                 """
 		out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
@@ -495,30 +457,16 @@ with ctx:
             #FIXME - If have only two ifo's data, then just use coinc snr
             #NOTE - That is if we have ANY data, not just trigger
             #NOTE - Only find coherent snr if have >3 ifos
-            have_all_ifo_data = True
-            for ifo in opt.instruments:
-                if snr[ifo].__len__() == 0:
-		    have_all_ifo_data = False    
-            if have_all_ifo_data == True:
-                roh_coinc_time1 = time.time()
-		roh_coinc2=0
-		for ifo1 in opt.instruments:
-		    roh_coinc2 += snr[ifo1].conj()*snr[ifo1]
-		roh_coinc_dict[t_num][s_num]=np.sqrt(roh_coinc2)
-                print "Time to calculate coinc snr:"
-                print time.time() - roh_coinc_time1
-                roh_coh_time1 = time.time()
-                projection_matrix = get_projection_matrix(Fp_dp,Fc_dp,sigma)
+            #If we have any coinc triggers, find coinc snr
+            if len(coinc_idx[t_num][s_num]) != 0:
+                roh_coinc_dict[t_num][s_num]=coincident_snr(coinc_triggers)
+                wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
+                projection_matrix = get_projection_matrix(wp,wc)
                 roh_coh_dict[t_num][s_num] = coherent_snr(\
-                                                 snr,projection_matrix)
-                print "Time to calculate coherent snr:"
-                print time.time() - roh_coh_time1
-                #FIXME - Make function for finding null snr
-                null2 = (roh_coinc_dict[t_num][s_num]**2 \
-                                        - roh_coh_dict[t_num][s_num]**2)
-                #Numerical errors may make this negative and break the sqrt
-                null2[null2<0] = 0 
-                null_dict[t_num][s_num] = null2**0.5
+                                                 coinc_triggers,projection_matrix)
+                #Find the null snr
+                null_dict[t_num][s_num] = null_snr(roh_coh_dict[t_num][s_num],\
+                                                 roh_coinc_dict[t_num][s_num])
                 
                 print "max coherent snr"
                 print max(roh_coh_dict[t_num][s_num])
@@ -568,9 +516,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 plt.figure()
-plt.plot(interesting_idx[0][0],roh_coinc_dict[0][0],'b.',label='coinc snr')
-plt.plot(interesting_idx[0][0],roh_coh_dict[0][0],'rx',label='coh snr')
-plt.plot(interesting_idx[0][0],null_dict[0][0],'mx',label='null snr')
+plt.plot(coinc_idx[0][0],roh_coinc_dict[0][0],'b.',label='coinc snr')
+plt.plot(coinc_idx[0][0],roh_coh_dict[0][0],'rx',label='coh snr')
+plt.plot(coinc_idx[0][0],null_dict[0][0],'mx',label='null snr')
 #plt.xlim(0,409600)
 plt.legend(loc="best")
 plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
