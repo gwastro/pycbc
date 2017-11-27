@@ -683,7 +683,7 @@ def insert_strain_option_group_multi_ifo(parser):
 
     #optional
     data_reading_group_multi.add_argument("--injection-file", type=str,
-                            nargs="+", action=MultiDetOptionAction,
+                            nargs="+", action=MultiDetOptionAppendAction,
                             metavar='IFO:FILE',
                             help="(optional) Injection file used to add "
                             "waveforms into the strain")
