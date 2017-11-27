@@ -30,6 +30,15 @@ import pycbc_glue.segments
 import datetime
 import lal, sys
 from pycbc.results import create_versioning_page, save_fig_with_metadata, two_column_layout, layout
+from pycbc.workflow.crosstalk_clean import CrosstalkTransferFunctionExecutable
+from pycbc.workflow.core import Executable, File, FileList, Node
+
+class CrosstalkTransferFunctionExecutable(Executable):
+      current_retention_level = Executable.FINAL_RESULT
+
+class CrosstalkCleanStrainExecutable(Executable):
+      current_retention_level = Executable.FINAL_RESULT
+
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
@@ -112,17 +121,29 @@ datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
                                                'datafind',
                                                seg_file=science_seg_file)
 
+ctc_tf_exe = CrosstalkTransferFunctionExecutable(
+    workflow.cp, 'crosstalk_transfer_funcion',
+    ifos='H1', out_dir='tf_files',
+    tags='CROSSTALK_TF')
+
 # calculate transfer functions and clean data over available segments
 for ifo, segments in analyzable_segs.items():
     for seg in segments:
-      start_time = seg[0]
-      end_time = seg[1]
 
       logging.info(
           'Computing transfer functions for [{},{})'.format(
-              start_time, end_time))
-      #ifo_transfer_file = pycbc.workflow.make_crosstalk_tf_file(
-      #    workflow, start_time, end_time, 'tf_files', tags='CTTF')
+              seg[0], seg[1]))
+
+      node = ctc_tf_exe.create_node()
+      node.add_opt('--gps-start-time', int_gps_time_to_str(segment[0]))
+      node.add_opt('--gps-end-time', int_gps_time_to_str(segment[1]))
+
+      node.new_output_file_opt(segment, '.hdf', '--output', tags='CTC_TF',
+                               store_file=node.retain_files, use_tmp_subdirs=True)
+
+      hdf_tf_file = node.output_files[0]
+      workflow += node
+      logging.info('Created {}'.format(hdf_tf_file))
 
 pycbc.workflow.make_segments_plot(workflow,
                                   pycbc.workflow.FileList([science_seg_file]),
