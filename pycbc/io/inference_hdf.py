@@ -509,9 +509,7 @@ class InferenceFile(h5py.File):
         """
         if not isinstance(injection_files, list):
             injection_files = [injection_files]
-            print(injection_files)
         for i, injection_file in enumerate(injection_files):
-            #injection_file_name = injection_file.rsplit('/',1)[-1]
             try:
                 with h5py.File(injection_file, "r") as fp:
                     injection_file_name = os.path.basename(injection_file)
