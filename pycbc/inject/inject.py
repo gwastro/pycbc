@@ -79,41 +79,54 @@ class _HDFInjectionSet(object):
 
     Attributes
     ----------
-    filehandler
     table
     static_args
     extra_args
     """
 
     def __init__(self, sim_file, hdf_group=None, **kwds):
-        # open the file
-        fp = h5py.File(sim_file, 'r')
-        group = fp if hdf_group is None else fp[hdf_group]
-        self.filehandler = fp
-        # get parameters
-        parameters = group.keys()
-        # get all injection parameter values
-        injvals = {param: group[param][:] for param in parameters}
-        # if there were no variable args, then we only have a single injection
-        if len(parameters) == 0:
-            numinj = 1
-        else:
-            numinj = injvals.values()[0].size
-        # add any static args in the file
-        try:
-            self.static_args = group.attrs['static_args']
-        except KeyError:
-            self.static_args = []
-        parameters.extend(self.static_args)
-        # we'll expand the static args to be arrays with the same size as
-        # the other values
-        for param in self.static_args:
-            injvals[param] = np.repeat(group.attrs[param], numinj)
-        # make sure a coalescence time is specified for injections
-        if 'tc' not in injvals:
-            raise ValueError("no tc found in the given injection file; "
-                             "this is needed to determine where to place the "
-                             "injection")
+        # Create a dictionary to store parameters from all the files
+        injvals = {}
+        for file_location in sim_file:
+            # open the file
+            fp = h5py.File(file_location, 'r')
+            group = fp if hdf_group is None else fp[hdf_group]
+            # get parameters
+            parameters = group.keys()
+            # get all injection parameter values
+            for param in parameters:
+                # If a key corresponding to param exists in injvals, append
+                # the values of param from fp to the existing set of values
+                # of param in injvals else create the key param in injvals
+                # with its values from fp
+                try:
+                    injvals[param] = np.append(injvals[param], group[param])
+                except KeyError:
+                    injvals[param] = group[param][:]
+            # if there were no variable args, then we only have a single injection
+            if len(parameters) == 0:
+                numinj = 1
+            else:
+                numinj = group.values()[0].size
+            # add any static args in the file
+            if not hasattr(self, 'static_args') :
+                try:
+                    self.static_args = group.attrs['static_args']
+                except KeyError:
+                    self.static_args = []
+                parameters.extend(self.static_args)
+            # we'll expand the static args to be arrays with the same size as
+            # the other values
+            for param in self.static_args:
+                try:
+                    injvals[param] = np.append(injvals[param], np.repeat(group.attrs[param], numinj))
+                except KeyError:
+                    injvals[param] = np.repeat(group.attrs[param], numinj)
+            # make sure a coalescence time is specified for injections
+            if 'tc' not in injvals:
+                raise ValueError("no tc found in the given injection file; "
+                                 "this is needed to determine where to place the "
+                                 "injection")
         # initialize the table
         self.table = pycbc.io.WaveformArray.from_kwargs(**injvals)
         # save the extra arguments
@@ -281,6 +294,8 @@ class _XMLInjectionSet(object):
     """
 
     def __init__(self, sim_file, **kwds):
+        if len(sim_file) > 0 :
+            raise NotImplementedError("Using multiple .xml injection files for single IFO not supported.")
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
         self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
@@ -454,15 +469,19 @@ class InjectionSet(object):
     """
 
     def __init__(self, sim_file, **kwds):
-        ext = os.path.basename(sim_file)
-        if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
-            self._injhandler = _XMLInjectionSet(sim_file, **kwds)
-            self.indoc = self._injhandler.indoc
-        elif ext.endswith(('hdf', '.h5')):
-            self._injhandler = _HDFInjectionSet(sim_file, **kwds)
-        else:
-            raise ValueError("Unsupported template bank file extension "
-                             "{}".format(ext))
+        filenames = [os.path.basename(x) for x in sim_file]
+        exts = [x.rsplit('.',1)[1] for x in filenames]
+        if all([ext == exts[0] for ext in exts]):
+            if all([ext in ('xml', 'xml.gz', 'xmlgz') for ext in exts]):
+                self._injhandler = _XMLInjectionSet(sim_file, **kwds)
+                self.indoc = self._injhandler.indoc
+            elif all([ext in ('hdf', 'h5') for ext in exts]):
+                self._injhandler = _HDFInjectionSet(sim_file, **kwds)
+            else:
+                raise ValueError("Unsupported template bank file extension "
+                                 "{}".format(filenames))
+        else :
+            raise ValueError("All injections files should be in the same format ")
         self.table = self._injhandler.table
         self.extra_args = self._injhandler.extra_args
         self.apply = self._injhandler.apply
