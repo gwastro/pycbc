@@ -270,7 +270,8 @@ def make_inference_posterior_plot(
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-    node.add_opt("--parameters", " ".join(parameters))
+    if parameters is not None:
+        node.add_opt("--parameters", " ".join(parameters))
 
     # add node to workflow
     workflow += node
