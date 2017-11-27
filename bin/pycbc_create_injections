@@ -179,7 +179,7 @@ def write_to_xml(filename, samples, write_args, static_args=None):
                                            gz=filename.endswith('gz'))
 
 
-def write_to_hdf(filename, samples, write_args, static_args=None, tag=None):
+def write_to_hdf(filename, samples, write_args, static_args=None):
     """Writes the injection samples to the given hdf file.
     """
     fp = h5py.File(filename, 'w')
@@ -192,8 +192,6 @@ def write_to_hdf(filename, samples, write_args, static_args=None, tag=None):
         fp.attrs[arg] = val
     for field in write_args:
         fp[field] = samples[field]
-    if tag is not None:
-        fp.attrs["tag"] = tag
     return fp
 
 
@@ -213,8 +211,6 @@ parser.add_argument('--output-file', required=True,
                          'injections will be written to a sim_inspiral table '
                          'in an xml file. Otherwise, results will be written '
                          'to an hdf file.')
-parser.add_argument('--injection-file-tag', type=str, default=None,
-                    help="A tag for the injection output file. Eg.: inj_file0")
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an OSError is raised.")
@@ -269,4 +265,4 @@ logging.info("Writing results")
 if opts.output_file.endswith('.xml') or opts.output_file.endswith('.xml.gz'):
     write_to_xml(opts.output_file, samples, write_args, static_args)
 else:
-    write_to_hdf(opts.output_file, samples, write_args, static_args, opts.injection_file_tag)
+    write_to_hdf(opts.output_file, samples, write_args, static_args)
