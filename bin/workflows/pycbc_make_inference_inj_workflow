@@ -35,6 +35,8 @@ from pycbc import results
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.types import MultiDetOptionAppendAction
+from pycbc.workflow import core
+from pycbc.workflow import plotting
 from pycbc.workflow import WorkflowConfigParser
 
 def to_file(path, ifo=None):
@@ -197,20 +199,42 @@ for i in range(n_injections):
 
 layout.single_layout(rdir["posteriors"], post_files)
 
+def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
+                             name="inference_recovery",
+                             analysis_seg=None, tags=None):
 
-#def make_inference_inj_plot():
-#    pass
+    # default values
+    tags = [] if tags is None else tags
+    analysis_seg = workflow.analysis_time \
+                       if analysis_seg is None else analysis_seg
+    output_files = core.FileList([])
 
-# construct Executable for creating injections
-#injection_recovery_exe = wf.Executable(workflow.cp, "injection_recovery",
-#                                       ifos=workflow.ifos,
-#                                       out_dir=opts.output_dir)
+    # make the directory that will contain the output files
+    core.makedir(output_dir)
 
+    # make Executable for plotting the recovery plot
+    plot_exe = plotting.PlotExecutable(
+                      workflow.cp, name, ifos=workflow.ifos,
+                      out_dir=output_dir, universe="local",
+                      tags=tags)
 
+    # add command line options
+    for param in cp.options("variable_args"):
+        node = plot_exe.create_node()
+        node.add_input_list_opt("--input-file", inference_files)
+        node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+        node.add_opt("--parameters", param)
+        workflow += node
+        output_files += node.output_files
 
+    return output_files
 
 # read inference configuration file
 cp = WorkflowConfigParser([opts.inference_config_file])
+
+inj_plots = make_inference_inj_plots(workflow, cp, inference_files, rdir.base)
+
+layout.single_layout(rdir.base, inj_plots)
 
 # create versioning HTML pages
 results.create_versioning_page(rdir["workflow/version"], container.cp)
