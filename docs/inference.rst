@@ -111,7 +111,73 @@ The component spin parameters ``spin1x``, ``spin1y``, and ``spin1z`` can be subs
 
 If any calibration parameters are used (prefix ``calib_``), a ``[calibration]`` section must be included. This section must have a ``name`` option that identifies what calibration model to use. The models are described in :py:mod:`pycbc.calibration`. The ``[calibration]`` section must also include reference values ``fc0``, ``fs0``, and ``qinv0``, as well as paths to ASCII transfer function files for the test mass actuation, penultimate mass actuation, sensing function, and digital filter for each IFO being used in the analysis. E.g. for an analysis using H1 only, the required options would be ``h1-fc0``, ``h1-fs0``, ``h1-qinv0``, ``h1-transfer-function-a-tst``, ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``, ``h1-transfer-function-d``.
 
-A simple example is given in the subsection below.
+Simple examples are given in the subsections below.
+
+-----------------------------------
+Running on an analytic distribution
+-----------------------------------
+
+Several analytic distributions are available to run tests on. These can be run quickly on a laptop to check that a sampler is working properly.
+
+This example demonstrates how to sample a 2D normal distribution with the ``emcee`` sampler. First, create the following configuration file (named ``normal2d.ini``)::
+
+    [variable_args]
+    x =
+    y =
+
+    [prior-x]
+    name = uniform
+    min-x = -10
+    max-x = 10
+
+    [prior-y]
+    name = uniform
+    min-y = -10
+    max-y = 10
+
+Then run::
+
+    pycbc_inference --verbose \
+        --config-files normal2d.ini \
+        --output-file normal2d.hdf \
+        --sampler emcee \
+        --niterations 100 \
+        --nwalkers 5000 \
+        --likelihood-evaluator test_normal
+
+This will run the ``emcee`` sampler on the 2D analytic normal distribution with 5000 walkers for 100 iterations. It should finish in about a minute (on a 2014 MacBook Pro).
+
+To plot the posterior distribution after the last iteration, run::
+
+    pycbc_inference_plot_posterior --verbose \
+        --input-file normal2d.hdf \
+        --output-file posterior-normal2d.png \
+        --plot-scatter \
+        --plot-contours \
+        --plot-marginal \
+        --z-arg loglr \
+        --iteration -1
+
+This will plot each walker's position as a single point colored by the log likelihood ratio at that point, with the 50th and 90th percentile contours drawn. See below for more information about using ``pycbc_inference_plot_posterior``.
+
+To make a movie showing how the walkers evolved, run::
+
+    pycbc_inference_plot_movie --verbose \
+        --input-file normal2d.hdf \
+        --output-prefix frames-normal2d \
+        --movie-file normal2d_mcmc_evolution.mp4 \
+        --cleanup \
+        --plot-scatter \
+        --plot-contours \
+        --plot-marginal \
+        --z-arg loglr \
+        --frame-step 1
+
+Note: you need ``ffmpeg`` installed for the mp4 to be created. See below for more information on using ``pycbc_inference_plot_movie``.
+
+The number of dimensions of the distribution is set by the number of ``variable_args`` in the configuration file. The names of the ``variable_args`` (in this example, ``x`` and ``y``) do not matter; only that the prior sections use the same names. A higher (or lower) dimensional distribution can be tested by simply adding more (or less) ``variable_args``.
+
+Which analytic distribution is used is set by the ``--likelihood-evaluator`` option. By setting to ``test_normal`` we used :py:class:`pycbc.inference.likelihood.TestNormal`. To see the list of available likelihood classes run ``pycbc_inference --help``; any class starting with ``test_`` is analytic. The other analytic distributions available are: :py:class:`pycbc.inference.likelihood.TestEggbox`, :py:class:`pycbc.inference.likelihood.TestRosenbrock`, and :py:class:`pycbc.inference.likelihood.TestVolcano`. As with ``test_normal``, the dimensionality of these test distributions is set by the number of ``variable_args`` in the configuration file. The ``test_volcano`` distribution must be two dimensional, but all of the other distributions can have any number of dimensions. The configuration file syntax for the other test distributions is the same as in this example. Indeed, with this configuration file one only needs to change the ``--likelihood-evaluator`` argument to try the other distributions.
 
 ------------------------------
 BBH software injection example
