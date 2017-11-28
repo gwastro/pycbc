@@ -513,7 +513,7 @@ class InferenceFile(h5py.File):
             try:
                 with h5py.File(injection_file, "r") as fp:
                     injection_file_name = os.path.basename(injection_file)
-                    injection_file_tag = "inj_file" + str(i)
+                    injection_file_tag = "inj_file_" + str(i)
                     subgroup = "{ifo}/injections/{injection_file_tag}"
                     self.create_group(subgroup.format(
                             ifo=ifo, injection_file_tag=injection_file_tag))
