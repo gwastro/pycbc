@@ -470,13 +470,12 @@ class InjectionSet(object):
 
     def __init__(self, sim_file, **kwds):
         filenames = [os.path.basename(x) for x in sim_file]
-        exts = [os.path.splitext(x)[0] for x in sim_file]
-        print(exts)
+        exts = [os.path.splitext(x)[1] for x in sim_file]
         if all([ext == exts[0] for ext in exts]):
-            if all([ext in ('xml', 'xml.gz', 'xmlgz') for ext in exts]):
+            if all([ext in ('.xml', '.xml.gz', '.xmlgz') for ext in exts]):
                 self._injhandler = _XMLInjectionSet(sim_file, **kwds)
                 self.indoc = self._injhandler.indoc
-            elif all([ext in ('hdf', 'h5') for ext in exts]):
+            elif all([ext in ('.hdf', '.h5') for ext in exts]):
                 self._injhandler = _HDFInjectionSet(sim_file, **kwds)
             else:
                 raise ValueError("Unsupported template bank file extension "
