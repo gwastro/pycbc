@@ -470,7 +470,8 @@ class InjectionSet(object):
 
     def __init__(self, sim_file, **kwds):
         filenames = [os.path.basename(x) for x in sim_file]
-        exts = [x.rsplit('.',1)[1] for x in filenames]
+        exts = [os.path.splitext(x)[0] for x in sim_file]
+        print(exts)
         if all([ext == exts[0] for ext in exts]):
             if all([ext in ('xml', 'xml.gz', 'xmlgz') for ext in exts]):
                 self._injhandler = _XMLInjectionSet(sim_file, **kwds)
