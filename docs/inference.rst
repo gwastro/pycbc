@@ -396,7 +396,6 @@ An example of running ``pycbc_inference`` to analyze the injection in fake data:
         --nwalkers ${N_WALKERS} \
         --n-independent-samples ${N_SAMPLES} \
         --checkpoint-interval ${N_CHECKPOINT} \
-        --checkpoint-fast \
         --nprocesses ${NPROCS} \
         --save-strain \
         --save-psd \
@@ -467,6 +466,7 @@ Now run::
     F_MIN=20
     N_UPDATE=500
     N_WALKERS=5000
+    N_SAMPLES=5000
     N_CHECKPOINT=1000
     PROCESSING_SCHEME=cpu
 
@@ -516,9 +516,7 @@ Now run::
         --update-interval ${N_UPDATE} \
         --likelihood-evaluator gaussian \
         --n-independent-samples ${N_SAMPLES} \
-        --niterations ${N_ITERATIONS} \
         --checkpoint-interval ${N_CHECKPOINT} \
-        --checkpoint-fast \
         --nprocesses ${NPROCS} \
         --save-strain \
         --save-psd \
