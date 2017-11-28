@@ -469,6 +469,7 @@ class InjectionSet(object):
     """
 
     def __init__(self, sim_file, **kwds):
+        sim_file = [sim_file] if not isinstance(sim_file, list) else sim_file
         exts = [os.path.splitext(x)[1] for x in sim_file]
         if all([ext == exts[0] for ext in exts]):
             if all([ext in ('.xml', '.xml.gz', '.xmlgz') for ext in exts]):
