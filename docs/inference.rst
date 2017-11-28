@@ -42,12 +42,12 @@ For a full listing of all options run ``pycbc_inference --help``. In this subsec
 The user specifies the sampler on the command line with the ``--sampler`` option.
 A complete list of samplers is given in ``pycbc_inference --help``.
 These samplers are described in :py:class:`pycbc.inference.sampler_kombine.KombineSampler`, :py:class:`pycbc.inference.sampler_emcee.EmceeEnsembleSampler`, and :py:class:`pycbc.inference.sampler_emcee.EmceePTSampler`.
-In addition to ``--sampler`` the user will need to specify the number of walkers to use ``--nwalkers``, and for parallel-tempered samplers the number of temperatures ``--ntemps``. You also need to either specify the number of iterations to run for using ``--niterations`` **or** the number of independent samples to collect using ``--n-independent-samples``. For the former, a burn-in function must be specified using ``--burn-in-function``. In this case, the program will run until the sampler has burned in, at which point the number of independent samples equals the number of walkers. If the number of independent samples desired is greater than the number of walkers, the program will continue to run until it has collected the specified number of independent samples after burn in (for this, an autocorrelation length is computed after burn in to determine how many samples need to be skipped to obtain independent samples).
+In addition to ``--sampler`` the user will need to specify the number of walkers to use ``--nwalkers``, and for parallel-tempered samplers the number of temperatures ``--ntemps``. You also need to either specify the number of iterations to run for using ``--niterations`` **or** the number of independent samples to collect using ``--n-independent-samples``. For the latter, a burn-in function must be specified using ``--burn-in-function``. In this case, the program will run until the sampler has burned in, at which point the number of independent samples equals the number of walkers. If the number of independent samples desired is greater than the number of walkers, the program will continue to run until it has collected the specified number of independent samples (to do this, an autocorrelation length is computed at each checkpoint to determine how many iterations need to be skipped to obtain independent samples).
 
 The user specifies the likelihood model on the command line with the ``--likelihood-evaluator`` option. Any choice that starts with ``test_`` is an analytic test distribution that requires no data or waveform generation; see the section below on running on an analytic distribution for more details. For running on real data, use ``--likelihood-evaluator gaussian``; this uses :py:class:`pycbc.inference.likelihood.GaussianLikelihood` for evaluating posteriors. Examples of using this on a BBH injection and on GW150914 are given below.
 
 The user specifies a configuration file that defines the priors with the ``--config-files`` option.
-The syntax of the configuration file is described in the subsection below.
+The syntax of the configuration file is described in the following subsection.
 
 -------------------------
 Configuration file syntax
@@ -55,7 +55,7 @@ Configuration file syntax
 
 Configuration files follow the ``ConfigParser`` syntax.
 There are two required sections.
-One is a ``[variable_args]`` section that contains a list of varying parameters and the other is ``[static_args]`` section that contains a list of parameters that do not vary.
+One is a ``[variable_args]`` section that contains a list of parameters that we will vary to obtain a posterior distribution and the other is ``[static_args]`` section that contains a list of parameters are held fixed through out the run.
 
 Each parameter in ``[variable_args]`` must have a subsection in ``[prior]``.
 To create a subsection use the ``-`` char, e.g. for one of the mass parameters do ``[prior-mass1]``.
@@ -67,7 +67,7 @@ A list of all distributions that can be used is found with
 .. literalinclude:: ../examples/distributions/list_distributions.py
 .. command-output:: python ../examples/distributions/list_distributions.py
 
-One or more of the ``variable_args`` may be transformed to a different parameter space for purposes of sampling. This is done by specifying a ``[sampling_parameters]`` section. This section specifies which variable args to replace with which parameters for sampling. This must be followed by one or more ``[sampling_transforms-{sampling_params}]`` sections that gives the transform function to use. For example, the following would cause the sampler to sample in chirp mass (``mchirp``) and mass ratio (``q``) instead of mass1 and mass2::
+One or more of the ``variable_args`` may be transformed to a different parameter space for purposes of sampling. This is done by specifying a ``[sampling_parameters]`` section. This section specifies which ``variable_args`` to replace with which parameters for sampling. This must be followed by one or more ``[sampling_transforms-{sampling_params}]`` sections that provide the transform class to use. For example, the following would cause the sampler to sample in chirp mass (``mchirp``) and mass ratio (``q``) instead of ``mass1`` and ``mass2``::
 
     [sampling_parameters]
     mass1, mass2: mchirp, q
@@ -77,7 +77,7 @@ One or more of the ``variable_args`` may be transformed to a different parameter
 
 For a list of all possible transforms see :py:mod:`pycbc.transforms`.
 
-There can be any number of ``variable_args`` with any name; no parameter name is special (with the exception of parameters that start with ``calib_``, see below). However, in order to generate waveforms, certain parameters names must be used for waveform generation. If you would like to specify a ``variable_arg`` that is not one of these parameters, then you must provide a ``[waveforms_transforms-{param}]`` section that provides a transform from the arbitrary ``variable_args`` to the needed waveform parameter(s) ``{param}``. For example, in the following we provide a prior on chirp distance ``chirp_distance``; since ``distance``, not ``chirp_distance``, is recognized by the CBC waveforms module, we provide a transform to go from ``chirp_distance`` to ``distance``::
+There can be any number of ``variable_args`` with any name. No parameter name is special (with the exception of parameters that start with ``calib_``; see below). However, in order to generate waveforms, certain parameters must be provided for waveform generation. If you would like to specify a ``variable_arg`` that is not one of these parameters, then you must provide a ``[waveforms_transforms-{param}]`` section that provides a transform from the arbitrary ``variable_args`` to the needed waveform parameter(s) ``{param}``. For example, in the following we provide a prior on ``chirp_distance``. Since ``distance``, not ``chirp_distance``, is recognized by the CBC waveforms module, we provide a transform to go from ``chirp_distance`` to ``distance``::
 
     [variable_args]
     chirp_distance =
@@ -90,7 +90,7 @@ There can be any number of ``variable_args`` with any name; no parameter name is
     [waveform_transforms-distance]
     name = chirp_distance_to_distance
 
-Any class in the transforms module may be used. A useful transform for these purposes is the :py:class:`pycbc.transforms.CustomTransform`, which allows for arbitrary transforms using any function in the :py:mod:`pycbc.conversions`, :py:mod:`pycbc.coordinates`, or :py:mod:`pycbc.cosmology` modules, along with numpy math functions. For example, the following would use the I-Love-Q relationship :py:function:`pycbc.conversions.dquadmon_from_lambda` to relate the quadrupole moment of a neutron star to its tidal deformation ``lambda1``::
+Any class in the transforms module may be used. A useful transform for these purposes is the :py:class:`pycbc.transforms.CustomTransform`, which allows for arbitrary transforms using any function in the :py:mod:`pycbc.conversions`, :py:mod:`pycbc.coordinates`, or :py:mod:`pycbc.cosmology` modules, along with numpy math functions. For example, the following would use the I-Love-Q relationship :py:meth:`pycbc.conversions.dquadmon_from_lambda` to relate the quadrupole moment of a neutron star ``dquad_mon1`` to its tidal deformation ``lambda1``::
 
     [variable_args]
     lambda1 =
@@ -105,8 +105,8 @@ A list of all parameters that are understood by the CBC waveform generator can b
 .. literalinclude:: ../examples/inference/list_parameters.py
 .. command-output:: python ../examples/inference/list_parameters.py
 
-Some common transforms are pre-defined in the code. These are: the mass parameters ``mass1`` and ``mass2`` can be substituted for ``mchirp`` and ``eta``, or ``mchirp`` and ``q``.
-The component spin parameters ``spin1x``, ``spin1y``, and ``spin1z`` can be substituted for polar coordinates ``spin1_a``, ``spin1_azimuthal``, and ``spin1_polar``.
+Some common transforms are pre-defined in the code. These are: the mass parameters ``mass1`` and ``mass2`` can be substituted with ``mchirp`` and ``eta`` or ``mchirp`` and ``q``.
+The component spin parameters ``spin1x``, ``spin1y``, and ``spin1z`` can be substituted for polar coordinates ``spin1_a``, ``spin1_azimuthal``, and ``spin1_polar`` (ditto for ``spin2``).
 
 If any calibration parameters are used (prefix ``calib_``), a ``[calibration]`` section must be included. This section must have a ``name`` option that identifies what calibration model to use. The models are described in :py:mod:`pycbc.calibration`. The ``[calibration]`` section must also include reference values ``fc0``, ``fs0``, and ``qinv0``, as well as paths to ASCII transfer function files for the test mass actuation, penultimate mass actuation, sensing function, and digital filter for each IFO being used in the analysis. E.g. for an analysis using H1 only, the required options would be ``h1-fc0``, ``h1-fs0``, ``h1-qinv0``, ``h1-transfer-function-a-tst``, ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``, ``h1-transfer-function-d``.
 
@@ -144,7 +144,7 @@ Then run::
         --nwalkers 5000 \
         --likelihood-evaluator test_normal
 
-This will run the ``emcee`` sampler on the 2D analytic normal distribution with 5000 walkers for 100 iterations. It should finish in about a minute (on a 2014 MacBook Pro).
+This will run the ``emcee`` sampler on the 2D analytic normal distribution with 5000 walkers for 100 iterations.
 
 To plot the posterior distribution after the last iteration, run::
 
@@ -172,11 +172,11 @@ To make a movie showing how the walkers evolved, run::
         --z-arg loglr \
         --frame-step 1
 
-Note: you need ``ffmpeg`` installed for the mp4 to be created. See below for more information on using ``pycbc_inference_plot_movie``.
+**Note:** you need ``ffmpeg`` installed for the mp4 to be created. See below for more information on using ``pycbc_inference_plot_movie``.
 
-The number of dimensions of the distribution is set by the number of ``variable_args`` in the configuration file. The names of the ``variable_args`` (in this example, ``x`` and ``y``) do not matter; only that the prior sections use the same names. A higher (or lower) dimensional distribution can be tested by simply adding more (or less) ``variable_args``.
+The number of dimensions of the distribution is set by the number of ``variable_args`` in the configuration file. The names of the ``variable_args`` do not matter, just that the prior sections use the same names (in this example ``x`` and ``y`` were used, but ``foo`` and ``bar`` would be equally valid). A higher (or lower) dimensional distribution can be tested by simply adding more (or less) ``variable_args``.
 
-Which analytic distribution is used is set by the ``--likelihood-evaluator`` option. By setting to ``test_normal`` we used :py:class:`pycbc.inference.likelihood.TestNormal`. To see the list of available likelihood classes run ``pycbc_inference --help``; any class starting with ``test_`` is analytic. The other analytic distributions available are: :py:class:`pycbc.inference.likelihood.TestEggbox`, :py:class:`pycbc.inference.likelihood.TestRosenbrock`, and :py:class:`pycbc.inference.likelihood.TestVolcano`. As with ``test_normal``, the dimensionality of these test distributions is set by the number of ``variable_args`` in the configuration file. The ``test_volcano`` distribution must be two dimensional, but all of the other distributions can have any number of dimensions. The configuration file syntax for the other test distributions is the same as in this example. Indeed, with this configuration file one only needs to change the ``--likelihood-evaluator`` argument to try the other distributions.
+Which analytic distribution is used is set by the ``--likelihood-evaluator`` option. By setting to ``test_normal`` we used :py:class:`pycbc.inference.likelihood.TestNormal`. To see the list of available likelihood classes run ``pycbc_inference --help``; any choice for ``--likelihood-evaluator`` that starts with ``test_`` is analytic. The other analytic distributions available are: :py:class:`pycbc.inference.likelihood.TestEggbox`, :py:class:`pycbc.inference.likelihood.TestRosenbrock`, and :py:class:`pycbc.inference.likelihood.TestVolcano`. As with ``test_normal``, the dimensionality of these test distributions is set by the number of ``variable_args`` in the configuration file. The ``test_volcano`` distribution must be two dimensional, but all of the other distributions can have any number of dimensions. The configuration file syntax for the other test distributions is the same as in this example. Indeed, with this configuration file one only needs to change the ``--likelihood-evaluator`` argument to try (2D versions of) the other distributions.
 
 ------------------------------
 BBH software injection example
