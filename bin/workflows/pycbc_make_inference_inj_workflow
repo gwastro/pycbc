@@ -144,6 +144,7 @@ inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
 
 gps_start_time = 0
 gps_end_time = 100
+cbc = False
 
 seconds_before_time = int(workflow.cp.get_opt_tags(
                                         "workflow-inference",
@@ -168,13 +169,14 @@ post_files = wf.FileList([])
 for i in range(n_injections):
 
     # make node for creating injections
-#    node = create_injections_exe.create_node()
-#    node.add_input_opt("--config-file", config_file)
-#    analysis_time = segments.segment(gps_start_time, gps_end_time)
-#    injection_file = node.new_output_file_opt(analysis_time, ".hdf",
-#                                              "--output-file",
-#                                              tags=[str(i)])
-#    workflow += node
+    if cbc:
+        node = create_injections_exe.create_node()
+        node.add_input_opt("--config-file", config_file)
+        analysis_time = segments.segment(gps_start_time, gps_end_time)
+        injection_file = node.new_output_file_opt(analysis_time, ".hdf",
+                                                  "--output-file",
+                                                  tags=[str(i)])
+        workflow += node
 
     # make node for running sampler
     node = inference_exe.create_node()
@@ -184,6 +186,8 @@ for i in range(n_injections):
     node.add_opt("--gps-end-time", gps_end_time)
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
+    if cbc:
+        node.add_input_opt("--injection-file", injection_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
     inference_file = node.new_output_file_opt(analysis_time, ".hdf",
                                               "--output-file",
@@ -232,9 +236,10 @@ def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
 # read inference configuration file
 cp = WorkflowConfigParser([opts.inference_config_file])
 
-inj_plots = make_inference_inj_plots(workflow, cp, inference_files, rdir.base)
-
-layout.single_layout(rdir.base, inj_plots)
+if cbc:
+    inj_plots = make_inference_inj_plots(workflow, cp,
+                                         inference_files, rdir.base)
+    layout.single_layout(rdir.base, inj_plots)
 
 # create versioning HTML pages
 results.create_versioning_page(rdir["workflow/version"], container.cp)
