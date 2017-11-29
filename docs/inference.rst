@@ -44,7 +44,7 @@ A complete list of samplers is given in ``pycbc_inference --help``.
 These samplers are described in :py:class:`pycbc.inference.sampler_kombine.KombineSampler`, :py:class:`pycbc.inference.sampler_emcee.EmceeEnsembleSampler`, and :py:class:`pycbc.inference.sampler_emcee.EmceePTSampler`.
 In addition to ``--sampler`` the user will need to specify the number of walkers to use ``--nwalkers``, and for parallel-tempered samplers the number of temperatures ``--ntemps``. You also need to either specify the number of iterations to run for using ``--niterations`` **or** the number of independent samples to collect using ``--n-independent-samples``. For the latter, a burn-in function must be specified using ``--burn-in-function``. In this case, the program will run until the sampler has burned in, at which point the number of independent samples equals the number of walkers. If the number of independent samples desired is greater than the number of walkers, the program will continue to run until it has collected the specified number of independent samples (to do this, an autocorrelation length is computed at each checkpoint to determine how many iterations need to be skipped to obtain independent samples).
 
-The user specifies the likelihood model on the command line with the ``--likelihood-evaluator`` option. Any choice that starts with ``test_`` is an analytic test distribution that requires no data or waveform generation; see the section below on running on an analytic distribution for more details. For running on real data, use ``--likelihood-evaluator gaussian``; this uses :py:class:`pycbc.inference.likelihood.GaussianLikelihood` for evaluating posteriors. Examples of using this on a BBH injection and on GW150914 are given below.
+The user specifies the likelihood model on the command line with the ``--likelihood-evaluator`` option. Any choice that starts with ``test_`` is an analytic test distribution that requires no data or waveform generation; see the section below on running on an analytic distribution for more details. For running on data, use ``--likelihood-evaluator gaussian``; this uses :py:class:`pycbc.inference.likelihood.GaussianLikelihood` for evaluating posteriors. Examples of using this on a BBH injection and on GW150914 are given below.
 
 The user specifies a configuration file that defines the priors with the ``--config-files`` option.
 The syntax of the configuration file is described in the following subsection.
@@ -515,6 +515,7 @@ Now run::
         --burn-in-function max_posterior \
         --update-interval ${N_UPDATE} \
         --likelihood-evaluator gaussian \
+        --nwalkers ${N_WALKERS} \
         --n-independent-samples ${N_SAMPLES} \
         --checkpoint-interval ${N_CHECKPOINT} \
         --nprocesses ${NPROCS} \
