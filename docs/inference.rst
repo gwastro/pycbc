@@ -482,8 +482,8 @@ Now run::
     GPS_END_TIME=$((${TRIGGER_TIME_INT} + ${SEARCH_AFTER} + ${PSD_INVLEN}))
 
     # start and end time of data to read in for PSD estimation
-    PSD_START_TIME=$((${GPS_START_TIME} - ${PSD_DATA_LEN}/2))
-    PSD_END_TIME=$((${GPS_END_TIME} + ${PSD_DATA_LEN}/2))
+    PSD_START_TIME=$((${TRIGGER_TIME_INT} - ${PSD_DATA_LEN}/2))
+    PSD_END_TIME=$((${TRIGGER_TIME_INT} + ${PSD_DATA_LEN}/2))
 
     # run sampler
     # specifies the number of threads for OpenMP
