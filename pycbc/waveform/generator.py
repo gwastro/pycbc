@@ -36,6 +36,7 @@ from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
 from pycbc.detector import Detector
 import lal as _lal
 from pycbc import gate
+import logging
 
 #
 #   Generator for CBC waveforms
@@ -179,8 +180,9 @@ class BaseCBCGenerator(BaseGenerator):
         unused_args = all_args.difference(params_used) \
                               .difference(self.possible_args)
         if len(unused_args):
-            raise ValueError("The following args are not being used: "
-                             "{opts}".format(opts=unused_args))
+            logging.warning("WARNING: The following args are not being used "
+                            "for waveform generation: {opts}".format(
+                            opts=', '.join(unused_args)))
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
