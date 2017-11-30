@@ -180,9 +180,9 @@ class BaseCBCGenerator(BaseGenerator):
         unused_args = all_args.difference(params_used) \
                               .difference(self.possible_args)
         if len(unused_args):
-            logging.warning("The following args are not being used for "
-                         "waveform generation: {opts}".format(
-                         opts=unused_args))
+            logging.warning("WARNING: The following args are not being used "
+                            "for waveform generation: {opts}".format(
+                            opts=', '.join(unused_args)))
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
