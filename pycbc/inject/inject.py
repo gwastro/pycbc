@@ -87,14 +87,15 @@ class _HDFInjectionSet(object):
     extra_args
     """
 
-    def __init__(self, sim_file, **kwds):
+    def __init__(self, sim_file, hdf_group=None, **kwds):
         # open the file
         fp = h5py.File(sim_file, 'r')
+        group = fp if hdf_group is None else fp[hdf_group]
         self.filehandler = fp
         # get parameters
-        parameters = fp.keys()
+        parameters = group.keys()
         # get all injection parameter values
-        injvals = {param: fp[param][:] for param in parameters}
+        injvals = {param: group[param][:] for param in parameters}
         # if there were no variable args, then we only have a single injection
         if len(parameters) == 0:
             numinj = 1
@@ -102,14 +103,14 @@ class _HDFInjectionSet(object):
             numinj = injvals.values()[0].size
         # add any static args in the file
         try:
-            self.static_args = fp.attrs['static_args']
+            self.static_args = group.attrs['static_args']
         except KeyError:
             self.static_args = []
         parameters.extend(self.static_args)
         # we'll expand the static args to be arrays with the same size as
         # the other values
         for param in self.static_args:
-            injvals[param] = np.repeat(fp.attrs[param], numinj)
+            injvals[param] = np.repeat(group.attrs[param], numinj)
         # make sure a coalescence time is specified for injections
         if 'tc' not in injvals:
             raise ValueError("no tc found in the given injection file; "
@@ -457,12 +458,11 @@ class InjectionSet(object):
     def __init__(self, sim_file, **kwds):
         ext = os.path.basename(sim_file)
         if ext.endswith(('.xml', '.xml.gz')):
-            self._injhandler = _XMLInjectionSet(sim_file, **kwds) #for generation of time series wavefrom for ascii waveform comment this out 
+            self._injhandler = _XMLInjectionSet(sim_file, **kwds) 
             self.indoc = self._injhandler.indoc
-            #self._injhandler = _AXMLInjectionSet(sim_file, **kwds) #for ascii file injection for generating waveforms comment this out 
         elif ext.endswith(('hdf', '.h5')):
             self._injhandler = _HDFInjectionSet(sim_file, **kwds)
-        elif ext.endswith(('.xmlgz')):
+        elif ext.endswith(('.xmlgz')): ## If the injection is based on ASCII file and uses the distribution of the inspinj, please use this extention (sorry for this terrible way)
             self._injhandler = _AXMLInjectionSet(sim_file, **kwds)
             self.indoc = self._injhandler.indoc 
         else:
