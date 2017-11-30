@@ -38,6 +38,8 @@ from pycbc_glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import pycbc.io
+from pycbc.waveform import get_waveform_from_ascii ## for ascii file injections 
+
 
 injection_func_map = {
     np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
@@ -85,15 +87,14 @@ class _HDFInjectionSet(object):
     extra_args
     """
 
-    def __init__(self, sim_file, hdf_group=None, **kwds):
+    def __init__(self, sim_file, **kwds):
         # open the file
         fp = h5py.File(sim_file, 'r')
-        group = fp if hdf_group is None else fp[hdf_group]
         self.filehandler = fp
         # get parameters
-        parameters = group.keys()
+        parameters = fp.keys()
         # get all injection parameter values
-        injvals = {param: group[param][:] for param in parameters}
+        injvals = {param: fp[param][:] for param in parameters}
         # if there were no variable args, then we only have a single injection
         if len(parameters) == 0:
             numinj = 1
@@ -101,14 +102,14 @@ class _HDFInjectionSet(object):
             numinj = injvals.values()[0].size
         # add any static args in the file
         try:
-            self.static_args = group.attrs['static_args']
+            self.static_args = fp.attrs['static_args']
         except KeyError:
             self.static_args = []
         parameters.extend(self.static_args)
         # we'll expand the static args to be arrays with the same size as
         # the other values
         for param in self.static_args:
-            injvals[param] = np.repeat(group.attrs[param], numinj)
+            injvals[param] = np.repeat(fp.attrs[param], numinj)
         # make sure a coalescence time is specified for injections
         if 'tc' not in injvals:
             raise ValueError("no tc found in the given injection file; "
@@ -455,11 +456,15 @@ class InjectionSet(object):
 
     def __init__(self, sim_file, **kwds):
         ext = os.path.basename(sim_file)
-        if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
-            self._injhandler = _XMLInjectionSet(sim_file, **kwds)
+        if ext.endswith(('.xml', '.xml.gz')):
+            self._injhandler = _XMLInjectionSet(sim_file, **kwds) #for generation of time series wavefrom for ascii waveform comment this out 
             self.indoc = self._injhandler.indoc
+            #self._injhandler = _AXMLInjectionSet(sim_file, **kwds) #for ascii file injection for generating waveforms comment this out 
         elif ext.endswith(('hdf', '.h5')):
             self._injhandler = _HDFInjectionSet(sim_file, **kwds)
+        elif ext.endswith(('.xmlgz')):
+            self._injhandler = _AXMLInjectionSet(sim_file, **kwds)
+            self.indoc = self._injhandler.indoc 
         else:
             raise ValueError("Unsupported template bank file extension "
                              "{}".format(ext))
@@ -657,3 +662,164 @@ class RingdownInjectionSet(object):
                              inj['ra'], inj['dec'], inj['polarization'])
 
         return signal
+
+class _AXMLInjectionSet(object):
+
+    """Manages sets of injections: reads injections from LIGOLW XML files
+    and injects them into time series. But this is used for the ASCII file injections, 
+    the approximant should be the path to the file name with time, h+,hx
+    Parameters
+    ----------
+    sim_file : string
+        Path to a LIGOLW XML file containing a SimInspiralTable
+        with injection definitions.
+    Attributes
+    ----------
+    indoc
+    table
+    """
+
+    def __init__(self, sim_file, **kwds):
+        self.indoc = ligolw_utils.load_filename(
+            sim_file, False, contenthandler=LIGOLWContentHandler)
+        self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
+        self.extra_args = kwds
+
+    def apply(self, strain, detector_name, f_lower=None, distance_scale=1,
+              simulation_ids=None, inj_filter_rejector=None):
+        """Add injections (as seen by a particular detector) to a time series.
+        Parameters
+        ----------
+        strain : TimeSeries
+            Time series to inject signals into, of type float32 or float64.
+        detector_name : string
+            Name of the detector used for projecting injections.
+        f_lower : {None, float}, optional
+            Low-frequency cutoff for injected signals. If None, use value
+            provided by each injection.
+        distance_scale: {1, float}, optional
+            Factor to scale the distance of an injection with. The default is 
+            no scaling. 
+        simulation_ids: iterable, optional
+            If given, only inject signals with the given simulation IDs.
+        inj_filter_rejector: InjFilterRejector instance; optional, default=None
+            If given send each injected waveform to the InjFilterRejector
+            instance so that it can store a reduced representation of that
+            injection if necessary.
+        Returns
+        -------
+        None
+        Raises
+        ------
+        TypeError
+            For invalid types of `strain`.
+        """
+        if strain.dtype not in (float32, float64):
+            raise TypeError("Strain dtype must be float32 or float64, not " \
+                    + str(strain.dtype))
+
+        lalstrain = strain.lal()    
+        earth_travel_time = lal.REARTH_SI / lal.C_SI
+        t0 = float(strain.start_time) - earth_travel_time
+        t1 = float(strain.end_time) + earth_travel_time
+
+        # pick lalsimulation injection function
+        add_injection = injection_func_map[strain.dtype]
+
+        injections = self.table
+        if simulation_ids:
+            injections = [inj for inj in injections \
+                          if inj.simulation_id in simulation_ids]
+        injection_parameters = []
+        for inj in injections:
+            if f_lower is None:
+                f_l = inj.f_lower
+            else:
+                f_l = f_lower
+            # roughly estimate if the injection may overlap with the segment
+            # Add 2s to end_time to account for ringdown and light-travel delay
+            end_time = inj.get_time_geocent() + 2
+            inj_length = sim.SimInspiralTaylorLength(
+                strain.delta_t, inj.mass1 * lal.MSUN_SI,
+                inj.mass2 * lal.MSUN_SI, f_l, 0)
+            # Start time is taken as twice approx waveform length with a 1s
+            # safety buffer
+            start_time = inj.get_time_geocent() - 2 * (inj_length+1)
+            if end_time < t0 or start_time > t1:
+                continue
+            signal = self.make_strain_from_inj_object(inj, strain.delta_t,
+                     detector_name, f_lower=f_l, distance_scale=distance_scale)
+            if float(signal.start_time) > t1:
+                continue
+            
+            signal = signal.astype(strain.dtype)
+            signal_lal = signal.lal()
+            add_injection(lalstrain, signal_lal, None)
+            injection_parameters.append(inj)                            
+            if inj_filter_rejector is not None:
+                sid = inj.simulation_id
+                inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
+
+        strain.data[:] = lalstrain.data.data[:]
+
+        injected = copy.copy(self)
+        injected.table = lsctables.SimInspiralTable()
+        injected.table += injection_parameters
+        if inj_filter_rejector is not None:
+            inj_filter_rejector.injection_params = injected
+        return injected
+       
+    def make_strain_from_inj_object(self, inj, delta_t, detector_name,
+                                    f_lower=None, distance_scale=1):
+        """Make a h(t) strain time-series from an injection object as read from
+        a sim_inspiral table, for example.
+        Parameters
+        -----------
+        inj : injection object
+            The injection object to turn into a strain h(t).
+        delta_t : float
+            Sample rate to make injection at.
+        detector_name : string
+            Name of the detector used for projecting injections.
+        f_lower : {None, float}, optional
+            Low-frequency cutoff for injected signals. If None, use value
+            provided by each injection.
+        distance_scale: {1, float}, optional
+            Factor to scale the distance of an injection with. The default is 
+            no scaling. 
+        Returns
+        --------
+        signal : float
+            h(t) corresponding to the injection.
+        """
+        detector = Detector(detector_name)
+        if f_lower is None:
+            f_l = inj.f_lower
+        else:
+            f_l = f_lower
+
+        #name, phase_order = legacy_approximant_name(inj.waveform)
+
+        # compute the waveform time series
+        hp, hc = get_waveform_from_ascii(inj.waveform,delta_t)
+
+        hp = (hp/inj.distance)*100000 ## assuming the waveform in the ASCII file is at 100 Mpc 
+        hc = (hc/inj.distance)*100000
+
+        hp._epoch += inj.get_time_geocent()
+        hc._epoch += inj.get_time_geocent()
+        distance_scale = 1 
+        # taper the polarizations
+        hp_tapered = wfutils.taper_timeseries(hp, inj.taper)
+        hc_tapered = wfutils.taper_timeseries(hc, inj.taper)
+
+        # compute the detector response and add it to the strain
+        signal = detector.project_wave(hp_tapered, hc_tapered,
+                             inj.longitude, inj.latitude, inj.polarization)
+
+        return signal
+        
+    def end_times(self):
+        """Return the end times of all injections"""
+        return [inj.get_time_geocent() for inj in self.table]      
+

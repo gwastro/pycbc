@@ -927,6 +927,37 @@ def get_waveform_filter_length_in_time(approximant, template=None, **kwargs):
     else:
         return None
 
+def get_waveform_from_ascii(waveform, deltaT, epoch=0.0):
+    """Return the plus and cross polarizations of a time domain waveform.
+    Parameters
+    ----------
+    waveform: Path of the ASCII file containing time, hp, hc
+    reference_distance in Mpc of the generate waveform
+
+    Returns
+    -------
+    hplus: TimeSeries
+        The plus polarization of the waveform at distance and incliation
+    hcross: TimeSeries
+        The cross polarization of the waveform at distance and inclination
+    """
+    infile = '/home/shubhanshu.tiwari/cWB_Sergey_Shubhanshu_Vaibhav/cWB_share_m1-1.0000000e+01_m2-1.0000000e+01_ecc-3.0000000e-01.dat' 
+    N = 5.9029581035870565e+20 ## at 100 Mpc change for other waveforms
+    data = numpy.loadtxt(infile)
+    t = data[:,0]
+    hp1 = data[:,1]
+    hc1 = data[:,2]
+    #D = distance
+    #i = inclination
+    hp_ref = hp1/N
+    hc_ref = hc1/N
+    #hp_out = ((hp_ref*reference_distance)/D) * (1 + numpy.cos(i)**2)/2
+    #hc_out = ((hc_ref*reference_distance)/D) * numpy.cos(i)
+    hp = TimeSeries(hp_ref, delta_t=deltaT, epoch=epoch)
+    hc = TimeSeries(hc_ref, delta_t=deltaT, epoch=epoch)
+    return hp, hc
+
+
 __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "print_td_approximants", "print_fd_approximants",
            "td_approximants", "fd_approximants",
@@ -936,4 +967,4 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
-           "NoWaveformError"]
+           "NoWaveformError","get_waveform_from_ascii"]
