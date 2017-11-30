@@ -85,10 +85,10 @@ parser.add_argument("--prior-section", type=str, default="prior",
                     help="Name of the section in inference configuration file "
                          "that contains priors.")
 
-# input frame files
-parser.add_argument("--frame-files", nargs="+", default=None,
-                    action=MultiDetOptionAppendAction,
-                    help="GWF frame files to use.")
+# input data options
+parser.add_argument("--data-type",
+                    choices=["analytical", "simulated_data"],
+                    default="simulated_data")
 
 # add option groups
 wf.add_workflow_command_line_group(parser)
@@ -144,7 +144,6 @@ inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
 
 gps_start_time = 0
 gps_end_time = 100
-cbc = False
 
 seconds_before_time = int(workflow.cp.get_opt_tags(
                                         "workflow-inference",
@@ -169,7 +168,7 @@ post_files = wf.FileList([])
 for i in range(n_injections):
 
     # make node for creating injections
-    if cbc:
+    if opts.data_type is not "analytical":
         node = create_injections_exe.create_node()
         node.add_input_opt("--config-file", config_file)
         analysis_time = segments.segment(gps_start_time, gps_end_time)
@@ -186,7 +185,7 @@ for i in range(n_injections):
     node.add_opt("--gps-end-time", gps_end_time)
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
-    if cbc:
+    if opts.data_type is not "analytical":
         node.add_input_opt("--injection-file", injection_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
     inference_file = node.new_output_file_opt(analysis_time, ".hdf",
@@ -236,7 +235,7 @@ def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
 # read inference configuration file
 cp = WorkflowConfigParser([opts.inference_config_file])
 
-if cbc:
+if opts.data_type is not "analytical":
     inj_plots = make_inference_inj_plots(workflow, cp,
                                          inference_files, rdir.base)
     layout.single_layout(rdir.base, inj_plots)
