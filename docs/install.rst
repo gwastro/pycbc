@@ -31,7 +31,6 @@ These instructions walk you through the process of
         * `Installing source from GitHub for development`_.
     * Optional additional installation steps
         * `Building and Installing Documentation`_.
-        * `Modifying pycbc-glue`_.
         * `Use of Intel MKL Optimized FFT libraries`_.
         * `Graphics Processing Unit support with CUDA`_
 
@@ -329,32 +328,6 @@ For more details on building and maintaining the documentation under GitHub proj
     :maxdepth: 1
 
     build_gh_pages
-
-
-====================
-Modifying pycbc-glue
-====================
-
-PyCBC depends on the package pycbc-glue which is a fork of the lalsuite packages. The correct version is automatically installed by pip as part of the main PyCBC install. If you are developing code in pycbc-glue, then you can clone them from GitHib into your virtual environment's source directory and build and install them from there.
-
-.. note::
-
-    If you want to develop pycbc-glue, you should follow the instructions to `fork a repository <https://help.github.com/articles/fork-a-repo/>`_ to fork the `ligo-cbc/pycbc-glue <https://github.com/ligo-cbc/pycbc-glue>`_ repository into your own account.
-
-You can obtain these repositories in the standard way using git, replacing ``ligo-cbc`` with your GitHub user account name
-
-.. code-block:: bash
-
-    cd ${VIRTUAL_ENV}/src
-    git clone git@github.com:ligo-cbc/pycbc-glue.git
-
-Once you have the source code cloned, you can run 
-
-.. code-block:: bash
-
-    python setup.py install
-
-to install pycbc-glue into your virtual environment.
 
 ========================================
 Use of Intel MKL Optimized FFT libraries
