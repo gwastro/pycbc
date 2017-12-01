@@ -38,7 +38,6 @@ from pycbc import types
 from pycbc.io.inference_hdf import InferenceFile
 from pycbc.waveform import generator
 from pycbc.inference import option_utils
-from pycbc.inference import prior
 from pycbc.inference import burn_in
 from pycbc import gate
 
