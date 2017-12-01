@@ -667,4 +667,5 @@ class RingdownInjectionSet(object):
 
         # compute the detector response and add it to the strain
         signal = detector.project_wave(hp, hc,
-                             inj['ra'], inj['dec'], inj['polarization'])
+                             inj['ra'], inj['dec'], inj['polarization']) 
+	return signal
