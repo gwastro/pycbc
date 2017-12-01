@@ -60,6 +60,9 @@ do
     fi
 done
 
+# Run Inference Scripts
+RESULT=`./inference_test.sh`
+
 echo -e "\\n>> [`date`] Building documentation"
 
 python setup.py build_gh_pages &> $LOG_FILE
