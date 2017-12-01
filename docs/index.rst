@@ -58,7 +58,7 @@ Getting Started
    `Give it a try <https://notebooks.azure.com/nitz/libraries/pycbc>`_
 
 =====================
-Manual Installation
+Installation
 =====================
 
 Note, if you are a LIGO / Virgo member with access to LDG resources, PyCBC is *already*
@@ -66,7 +66,7 @@ installed on your cluster through CVMFS! Instructions to source any release of P
 is available from the `releases page <https://github.com/ligo-cbc/pycbc/releases>`_. 
 
 
-Full installation instructions for users who want to use and develop PyCBC are available at:
+Full manual installation instructions for users who want to use and develop PyCBC are available at:
 
 .. toctree::
    :maxdepth: 1
@@ -97,9 +97,9 @@ Users who want to create and run parameter estimation workflows should read the
 documentation at:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   workflow/pycbc_make_inference_workflow
+   inference
 
 Users who are interested in tools that PyCBC provides for various other
 analysis tasks (e.g. template bank generation, hardware injections, and testing
@@ -109,7 +109,6 @@ template banks) should read the documentation at:
    :maxdepth: 1
 
    tmpltbank
-   inference
    hwinj
    banksim
    faithsim

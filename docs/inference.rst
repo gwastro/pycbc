@@ -666,3 +666,12 @@ Making a movie (``pycbc_inference_plot_movie``)
             
 This will create a 24-second movie for a selection of parameters. The option ``--cleanup`` deletes the individual frame files prefixed as specified by the variable ``OUTPUT_PREFIX``. This is optional. 
 For a list of options use ``pycbc_inference_plot_movie --help``.
+
+===============================================
+Workflows (``pycbc_make_inference_workflow``)
+=============================================== 
+
+.. toctree::
+   :maxdepth: 1
+
+   workflow/pycbc_make_inference_workflow
