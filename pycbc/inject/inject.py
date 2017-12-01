@@ -38,7 +38,7 @@ from pycbc_glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import pycbc.io
-from pycbc.waveform import get_waveform_from_ascii ## for ascii file injections 
+from pycbc.waveform import get_waveform_from_ascii 
 
 
 injection_func_map = {
@@ -405,19 +405,14 @@ class _XMLInjectionSet(object):
             f_l = inj.f_lower
         else:
             f_l = f_lower
-
-	if inj.waveform == 'ascii': 
-		
-		hp, hc, delta_t_ascii = get_waveform_from_ascii(inj.waveform,0.0) 
+	if inj.waveform == 'ascii':
+		hp, hc, delta_t_ascii = get_waveform_from_ascii(inj.waveform,0.0)
 		if delta_t != delta_t_ascii:
-			raise ValueError("Sample rate of the ascii and the ini are different") 
- 
-		hp = (hp/inj.distance)*100000 
-		hc = (hc/inj.distance)*100000 	
-
-        else: 
+			raise ValueError("Sample rate of the ascii and the ini are different")
+		hp = (hp/inj.distance)*100000
+		hc = (hc/inj.distance)*100000
+        else:
         	name, phase_order = legacy_approximant_name(inj.waveform)
-
         	# compute the waveform time series
         	hp, hc = get_td_waveform(
             	inj, approximant=name, delta_t=delta_t,
@@ -468,7 +463,7 @@ class InjectionSet(object):
     def __init__(self, sim_file, **kwds):
         ext = os.path.basename(sim_file)
         if ext.endswith(('.xml', '.xml.gz','.xmlgz')):
-            self._injhandler = _XMLInjectionSet(sim_file, **kwds) 
+            self._injhandler = _XMLInjectionSet(sim_file, **kwds)
             self.indoc = self._injhandler.indoc
         elif ext.endswith(('hdf', '.h5')):
             self._injhandler = _HDFInjectionSet(sim_file, **kwds)
@@ -666,6 +661,6 @@ class RingdownInjectionSet(object):
 
         # compute the detector response and add it to the strain
         signal = detector.project_wave(hp, hc,
-                             inj['ra'], inj['dec'], inj['polarization']) 
+                             inj['ra'], inj['dec'], inj['polarization'])
 
 	return signal
