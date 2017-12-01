@@ -61,7 +61,7 @@ do
 done
 
 # Run Inference Scripts
-RESULT=`./inference_test.sh`
+RESULT=`./tools/inference_test.sh`
 
 echo -e "\\n>> [`date`] Building documentation"
 
