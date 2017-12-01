@@ -339,7 +339,7 @@ class BaseLikelihoodEvaluator(object):
         ----------
         size : int, optional
             Number of random values to return for each parameter. Default is 1.
-        prior : PriorEvaluator, optional
+        prior : JointDistribution, optional
             Use the given prior to draw values rather than the saved prior.
 
         Returns
@@ -796,7 +796,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
 
     >>> from pycbc import distributions
     >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
-    >>> prior_eval = inference.PriorEvaluator(['tc'], uniform_prior)
+    >>> prior_eval = inference.JointDistribution(['tc'], uniform_prior)
     >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds, prior=prior_eval, return_meta=False)
     >>> likelihood_eval.logplr([tsig]), likelihood_eval.logposterior([tsig])
         (ArrayWithAligned(278.84574353071264), ArrayWithAligned(0.9162907318741418))

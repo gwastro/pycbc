@@ -351,7 +351,7 @@ class BaseMCMCSampler(_BaseSampler):
         samples_file : InferenceFile, optional
             If provided, use the last iteration in the given file for the
             starting positions.
-        prior : PriorEvaluator, optional
+        prior : JointDistribution, optional
             Use the given prior to set the initial positions rather than
             `likelihood_evaultor`'s prior.
 

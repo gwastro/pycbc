@@ -94,7 +94,7 @@ variable_args = sorted(variable_args)
 ndim = len(variable_args)
 
 # construct class that will return draws from the prior
-prior = inference.PriorEvaluator(variable_args, *dists)
+prior = distributions.JointDistribution(variable_args, *dists)
 
 # get all points in space to calculate PDF
 logging.info("Getting grid of points")

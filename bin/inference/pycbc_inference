@@ -199,7 +199,7 @@ with ctx:
     dists = distributions.read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
-    prior_eval = prior.PriorEvaluator(variable_args, *dists,
+    prior_eval = distributions.JointDistribution(variable_args, *dists,
                                       **{"constraints" : constraints})
 
     # get sampling transformations
@@ -306,7 +306,7 @@ with ctx:
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
                                                          cp, section="initial")
-        init_prior = prior.PriorEvaluator(variable_args, *initial_dists,
+        init_prior = distributions.JointDistribution(variable_args, *initial_dists,
                                           **{"constraints" : constraints})
     else:
         init_prior = None

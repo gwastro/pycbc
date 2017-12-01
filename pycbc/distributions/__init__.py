@@ -73,9 +73,10 @@ def read_distributions_from_config(cp, section="prior"):
             raise ValueError("Same parameter in more than one distribution.")
     return dists
 
-class PriorEvaluator(object):
+class JointDistribution(object):
     """
-    Callable class that calculates the prior.
+    Callable class that calculates the joint distribution built from a set of
+    distributions.
 
     Parameters
     ----------
@@ -84,7 +85,8 @@ class PriorEvaluator(object):
         the order they are expected when the class is called.
     \*distributions :
         The rest of the arguments must be instances of distributions describing
-        the priors on the variable parameters. A single distribution may contain
+        the individual distributions on the variable parameters. 
+        A single distribution may contain
         multiple parameters. The set of all params across the distributions
         (retrieved from the distributions' params attribute) must be the same
         as the set of variable_args provided.
@@ -107,16 +109,15 @@ class PriorEvaluator(object):
 
     Examples
     --------
-    An example of creating a prior with constraint that total mass must
+    An example of creating a joint distribution with constraint that total mass must
     be below 30.
 
-    >>> from pycbc import distributions
-    >>> from pycbc.inference import prior
+    >>> from pycbc.distributions import uniform, JointDistribution
     >>> def mtotal_lt_30(params):
         ...    return True if params["mass1"] + params["mass2"] < 30 else False
     >>> mass_lim = (2, 50)
-    >>> uniform_prior = distributions.Uniform(mass1=mass_lim, mass2=mass_lim)
-    >>> prior_eval = PriorEvaluator(["mass1", "mass2"], uniform_prior,
+    >>> uniform_prior = Uniform(mass1=mass_lim, mass2=mass_lim)
+    >>> prior_eval = JointDistribution(["mass1", "mass2"], uniform_prior,
         ...                               constraints=[mtotal_lt_30])
     >>> print prior_eval([20, 1])
 
@@ -157,7 +158,7 @@ class PriorEvaluator(object):
         n_test_samples = kwargs["n_test_samples"] \
                              if "n_test_samples" in kwargs else int(1e6)
         if self._constraints:
-            logging.info("Renormalizing prior for constraints")
+            logging.info("Renormalizing distribution for constraints")
 
             # draw samples
             samples = {}
@@ -203,7 +204,7 @@ class PriorEvaluator(object):
         return params
 
     def __call__(self, **params):
-        """Evalualate prior for parameters.
+        """Evalualate joint distribution for parameters.
         """
         for constraint in self._constraints:
             if not constraint(params):
@@ -212,7 +213,7 @@ class PriorEvaluator(object):
                     for d in self.distributions]) - self._logpdf_scale
 
     def rvs(self, size=1):
-        """ Rejection samples the prior parameter space.
+        """ Rejection samples the parameter space.
         """
 
         # create output FieldArray
