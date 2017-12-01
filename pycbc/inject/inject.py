@@ -410,8 +410,8 @@ class _XMLInjectionSet(object):
 		if delta_t != delta_t_ascii:
 			raise ValueError("Sample rate of the ascii and the ini are different")
 		else:
-		hp = (hp/inj.distance)*100000 #reference distance for ASCII waveform is 100Mpc
-		hc = (hc/inj.distance)*100000
+			hp = (hp/inj.distance)*100000 #reference distance for ASCII waveform is 100Mpc
+			hc = (hc/inj.distance)*100000
 	else:
         	name, phase_order = legacy_approximant_name(inj.waveform)
         	# compute the waveform time series
