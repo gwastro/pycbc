@@ -85,7 +85,7 @@ class JointDistribution(object):
         the order they are expected when the class is called.
     \*distributions :
         The rest of the arguments must be instances of distributions describing
-        the individual distributions on the variable parameters. 
+        the individual distributions on the variable parameters.
         A single distribution may contain
         multiple parameters. The set of all params across the distributions
         (retrieved from the distributions' params attribute) must be the same
@@ -139,7 +139,9 @@ class JointDistribution(object):
         # check that all of the supplied parameters are described by the given
         # distributions
         distparams = set()
-        [distparams.update(set(dist.params)) for dist in distributions]
+        for dist in distributions:
+            distparams.update(set(dist.params))
+
         varset = set(self.variable_args)
         missing_params = distparams - varset
         if missing_params:
