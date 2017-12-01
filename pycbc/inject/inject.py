@@ -38,8 +38,7 @@ from pycbc_glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import pycbc.io
-from pycbc.waveform import get_waveform_from_ascii 
-
+from pycbc.waveform import get_waveform_from_ascii
 
 injection_func_map = {
     np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
@@ -405,13 +404,14 @@ class _XMLInjectionSet(object):
             f_l = inj.f_lower
         else:
             f_l = f_lower
-	if inj.waveform == 'ascii':
+	approx_name=inj.waveform #put the path to the ASCII file as approximant
+	if aprrox_name.endwith(('.txt', '.dat')):
 		hp, hc, delta_t_ascii = get_waveform_from_ascii(inj.waveform,0.0)
 		if delta_t != delta_t_ascii:
 			raise ValueError("Sample rate of the ascii and the ini are different")
 		hp = (hp/inj.distance)*100000
 		hc = (hc/inj.distance)*100000
-        else:
+	else:
         	name, phase_order = legacy_approximant_name(inj.waveform)
         	# compute the waveform time series
         	hp, hc = get_td_waveform(

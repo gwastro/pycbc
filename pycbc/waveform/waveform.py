@@ -927,7 +927,7 @@ def get_waveform_filter_length_in_time(approximant, template=None, **kwargs):
     else:
         return None
 
-def get_waveform_from_ascii(waveform,epoch=0.0):
+def get_waveform_from_ascii(waveform,epoch=0.0,Norm=5.9029581035870565e+20):
     """Return the plus and cross polarizations of a time domain waveform.
     Parameters
     ----------
@@ -942,8 +942,9 @@ def get_waveform_from_ascii(waveform,epoch=0.0):
         The cross polarization of the waveform at distance and inclination
     sample rate : retunrs the sample rate of the wavefom in the txt file 
     """
-    infile='/home/shubhanshu.tiwari/cWB_Sergey_Shubhanshu_Vaibhav/cWB_share_m1-1.0000000e+01_m2-1.0000000e+01_ecc-3.0000000e-01.dat'
-    N=5.9029581035870565e+20 ## at 100 Mpc change for other waveforms
+    infile=waveform
+    #'/home/shubhanshu.tiwari/cWB_Sergey_Shubhanshu_Vaibhav/cWB_share_m1-1.0000000e+01_m2-1.0000000e+01_ecc-3.0000000e-01.dat'
+    N=Norm # 5.9029581035870565e+20 ## at 100 Mpc change for other waveforms
     data=numpy.loadtxt(infile)
     t=data[:,0]
     hp1=data[:,1]
