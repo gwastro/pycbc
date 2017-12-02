@@ -60,6 +60,17 @@ do
     fi
 done
 
+# Run Inference Scripts
+./tools/inference_test.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    RESULT=0
+    echo -e "    Pass."
+fi
+
 echo -e "\\n>> [`date`] Building documentation"
 
 python setup.py build_gh_pages &> $LOG_FILE
