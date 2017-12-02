@@ -25,12 +25,4 @@ RESULT=`pycbc_inference --verbose \
     --nwalkers 500 \
     --likelihood-evaluator test_normal`
 
-if test $? -ne 0 ; then
-    RESULT=1
-    echo -e "    FAILED!"
-    echo -e "---------------------------------------------------------"
-else
-    echo -e "    Pass."
-fi
-
 exit ${RESULT}

@@ -61,7 +61,15 @@ do
 done
 
 # Run Inference Scripts
-RESULT=`./tools/inference_test.sh`
+./tools/inference_test.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    RESULT=0
+    echo -e "    Pass."
+fi
 
 echo -e "\\n>> [`date`] Building documentation"
 
