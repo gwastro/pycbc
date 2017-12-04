@@ -23,7 +23,12 @@ from __future__ import print_function
 
 import os, fnmatch, sys, subprocess, shutil
 
-from trace import fullmodname
+# FIXME: trace.fullmodname was undocumented in Python 2 and actually became an
+# internal function in Python 3. We should not depend on it.
+try:
+    from trace import fullmodname
+except ImportError:
+    from trace import _fullmodname as fullmodname
 
 try:
     from setuptools.command.install import install as _install
