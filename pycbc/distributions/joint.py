@@ -14,6 +14,9 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ This module provides classes to describe joint distributions
 """
+import logging
+import numpy
+from pycbc.io import record
 
 class JointDistribution(object):
     """
