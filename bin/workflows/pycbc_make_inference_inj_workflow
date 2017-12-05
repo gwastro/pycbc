@@ -142,9 +142,7 @@ create_injections_exe = wf.Executable(workflow.cp, "create_injections",
 inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
                               out_dir=opts.output_dir)
 
-gps_start_time = 0
-gps_end_time = 100
-
+# time before and after to search
 seconds_before_time = int(workflow.cp.get_opt_tags(
                                         "workflow-inference",
                                         "data-seconds-before-trigger", ""))
@@ -168,12 +166,11 @@ post_files = wf.FileList([])
 for i in range(n_injections):
 
     # make node for creating injections
-    if opts.data_type is not "analytical":
+    if not opts.data_type == "analytical":
         node = create_injections_exe.create_node()
         node.add_input_opt("--config-file", config_file)
-        analysis_time = segments.segment(gps_start_time, gps_end_time)
-        injection_file = node.new_output_file_opt(analysis_time, ".hdf",
-                                                  "--output-file",
+        injection_file = node.new_output_file_opt(workflow.analysis_time,
+                                                  ".hdf", "--output-file",
                                                   tags=[str(i)])
         workflow += node
 
@@ -181,15 +178,14 @@ for i in range(n_injections):
     node = inference_exe.create_node()
     node.add_opt("--seed", i)
     node.add_opt("--instruments", " ".join(workflow.ifos))
-    node.add_opt("--gps-start-time", gps_start_time)
-    node.add_opt("--gps-end-time", gps_end_time)
+    node.add_opt("--gps-start-time", workflow.analysis_time[0])
+    node.add_opt("--gps-end-time", workflow.analysis_time[1])
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
-    if opts.data_type is not "analytical":
+    if not opts.data_type == "analytical":
         node.add_input_opt("--injection-file", injection_file)
-    analysis_time = segments.segment(gps_start_time, gps_end_time)
-    inference_file = node.new_output_file_opt(analysis_time, ".hdf",
-                                              "--output-file",
+    inference_file = node.new_output_file_opt(workflow.analysis_time,
+                                              ".hdf", "--output-file",
                                               tags=[str(i)])
     inference_files.append(inference_file)
     workflow += node
@@ -197,7 +193,7 @@ for i in range(n_injections):
     # make nodes for plotting posteriors
     post_files += inffu.make_inference_posterior_plot(
                           workflow, inference_file, rdir["posteriors"],
-                          analysis_seg=analysis_time,
+                          analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
 
 layout.single_layout(rdir["posteriors"], post_files)
@@ -235,7 +231,8 @@ def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
 # read inference configuration file
 cp = WorkflowConfigParser([opts.inference_config_file])
 
-if opts.data_type is not "analytical":
+# add injection recovery plots
+if not opts.data_type == "analytical":
     inj_plots = make_inference_inj_plots(workflow, cp,
                                          inference_files, rdir.base)
     layout.single_layout(rdir.base, inj_plots)
