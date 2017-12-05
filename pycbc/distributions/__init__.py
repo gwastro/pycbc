@@ -16,9 +16,6 @@
 This modules provides classes and functions for drawing and calculating the
 probability density function of distributions.
 """
-import logging
-import numpy
-from pycbc.io import record
 from pycbc.distributions.angular import *
 from pycbc.distributions.arbitrary import *
 from pycbc.distributions.gaussian import *
