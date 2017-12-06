@@ -67,7 +67,6 @@ if test $? -ne 0 ; then
     echo -e "    FAILED!"
     echo -e "---------------------------------------------------------"
 else
-    RESULT=0
     echo -e "    Pass."
 fi
 
