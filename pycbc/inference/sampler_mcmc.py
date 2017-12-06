@@ -29,7 +29,6 @@ for parameter estimation.
 import numpy
 import logging
 from pycbc.inference.sampler_base import BaseMCMCSampler
-from pycbc.io import FieldArray
 
 #
 # =============================================================================
