@@ -354,10 +354,8 @@ class MatchedFilterControl(object):
         self.ifft.execute()
         snrv, idx = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
                                           self.snr_threshold / norm)
-
         if len(idx) == 0:
             return [], [], [], [], []
-
         logging.info("%s points above threshold" % str(len(idx)))
 
         snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
