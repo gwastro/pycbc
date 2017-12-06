@@ -93,13 +93,15 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 
 """
-For GRB we have sky position
+These need to be added as arguments 
 """
 longitude = 6.103652
 latitude = 0.9999715
 t_gps = 1169088610.0
 pol = 1.21771
 coinc_threshold = 11.0
+generate_histograms = True
+generate_snr_plots = True
 """
 pol = 1.21771
 longitude = 197.448775
@@ -277,12 +279,10 @@ with ctx:
 	use_cluster = True
     
     #Calculate time delay to each detector
-    time_delay = {}
     time_delay_idx = {}
     for ifo in opt.instruments:
-	time_delay[ifo] =  \
-	pycbc.detector.Detector(ifo).time_delay_from_earth_center(ra,dec,t_gps)
-	time_delay_idx[ifo] = int(round(time_delay[ifo]*sample_rate))
+	time_delay_idx[ifo] =  int(round(pycbc.detector.Detector(ifo).\
+             time_delay_from_earth_center(ra,dec,t_gps) * sample_rate))
     
     #Matched filter each ifo
     matched_filter = {}
@@ -357,11 +357,9 @@ with ctx:
         Fp[ifo], Fc[ifo] = pycbc.detector.Detector(ifo).antenna_pattern(\
                                                      ra, dec, pol, t_gps)
     for t_num, template in enumerate(bank):
-	if t_num == 10: #use small sample set for development
+	if t_num == 1: #use small sample set for development
 	   break
-	"""
-	Calculating f_p and f_c for each detector for use later in calculating the coherent snr
-	"""
+
 	roh_coh_dict[t_num] = {}
 	roh_coinc_dict[t_num] = {}
         null_dict[t_num] = {}
@@ -383,10 +381,10 @@ with ctx:
 		 cluster_window = int(0)
 
 	for s_num,stilde in enumerate(segments[opt.instruments[0]]): #Loop over segments
-            """
+            
 	    if s_num==1:
 		break
-            """
+            
 	    snr={} 
 	    idx_dict={}
             coinc_idx[t_num][s_num] = np.array([])
@@ -402,7 +400,6 @@ with ctx:
 
                 #Save the snr triggers and indexes (if we have any)
                 #Even if we have none, need to keep an empty dictionary.
-                triggers[ifo] = snrv
                 idx_dict[ifo] = idx
 
                 #If we have no data, move onto next ifo and note the
@@ -459,10 +456,6 @@ with ctx:
 
 	    #Calculate coherent snr roh_coh
 	    #Check we have data before we try to compute the coherent snr
-            #FIXME - If have only two ifo's data, then just use coinc snr
-            #NOTE - That is if we have ANY data, not just trigger
-            #NOTE - Only find coherent snr if have >3 ifos
-            #If we have any coinc triggers and >1 ifos, find coinc snr
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 1:
                 roh_coinc_dict[t_num][s_num]=coincident_snr(coinc_triggers)
                 print "max coincident snr"
@@ -487,18 +480,17 @@ with ctx:
                                                               >coinc_threshold])
                 
 	    event_mgr.cluster_template_events_single_ifo("time_index",
-						    "snr", cluster_window, ifo)
+           					    "snr", cluster_window, ifo)
 
 
 print "Time to complete analysis: " + str(time.time() - time_init)
 """
 #FIXME This stuff doesn't work for more than 2 detectors.
-	event_mgr.finalize_template_events()
+event_mgr.finalize_template_events()
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
 if opt.chisq_threshold and opt.chisq_bins:
     logging.info("Removing triggers with poor chisq")
-    event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
-				   opt.chisq_delta)
+    event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,opt.chisq_delta)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
 if opt.newsnr_threshold and opt.chisq_bins:
@@ -514,86 +506,62 @@ if opt.fftw_output_float_wisdom_file:
 if opt.fftw_output_double_wisdom_file:
     fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 """
-logging.info("Finished")
-
-
-"""
-projection_matrix = get_projection_matrix(Fp,Fc,sigma)
-roh_coh_time2 = time.time()
-roh_coh_with_array = coherent_snr_with_array(snr,projection_matrix)
-print "roh_coh_with_array not in dp frame = " + str(max(roh_coh_with_array))
-print "NEW TIME"
-print time.time() - roh_coh_time2
-"""
-
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-plt.figure()
-plt.plot(coinc_idx[0][0],roh_coinc_dict[0][0][roh_coinc_dict[0][0]>coinc_threshold],'b.',label='coinc snr')
-plt.plot(coinc_idx[0][0],roh_coh_dict[0][0],'rx',label='coh snr')
-plt.plot(coinc_idx[0][0],null_dict[0][0],'mx',label='null snr')
-#plt.xlim(0,409600)
-plt.legend(loc="best")
-plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
-
-plt.figure()
-
 np.save('roh_coh.npy',roh_coh_dict)
 np.save('roh_coinc.npy',roh_coinc_dict)
 
+logging.info("Finished")
 
-"""
-plt.hist(roh_coh_with_array.real**2,bins=100)
-plt.title("roh_coh")
-plt.savefig("/home/c1551011/public_html/coh_snr_histogram.png")
 
-for ifo in opt.instruments:
-    #data = ((snr[ifo].conj()*snr[ifo]).data)**0.5
-    data = ((snr[ifo].conj()*snr[ifo]))**0.5
+if generate_snr_plots == True or generate_histograms == True:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+
+if generate_snr_plots == True:
+    print "Generating network SNR plots..."
     plt.figure()
-    plt.hist(data.real,bins=100)
-    plt.title(ifo)
-    plt.savefig("/home/c1551011/public_html/" + ifo + "_snr_histogram.png")
+    plt.plot(coinc_idx[0][0],roh_coinc_dict[0][0][roh_coinc_dict[0][0]\
+                               >coinc_threshold],'b.',label='coinc snr')
+    plt.plot(coinc_idx[0][0],roh_coh_dict[0][0],'rx',label='coh snr')
+    plt.plot(coinc_idx[0][0],null_dict[0][0],'mx',label='null snr')
+    #plt.xlim(0,409600)
+    plt.legend(loc="best")
+    plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
-for ifo in opt.instruments:
-    print "Time delay for ifo:" + ifo
-    print time_delay[ifo]
-for ifo in opt.instruments:
-    print "Time difference to align peaks for ifo: " + ifo
-    print np.argmax((snr[ifo]*snr[ifo].conj())[20400:20500])/float(sample_rate)
-for ifo in opt.instruments:
-    print "time difference for ifo: " + ifo
-    print np.argmax((snr[ifo]*snr[ifo].conj())[20400:20500])/float(sample_rate) - time_delay[ifo]
-"""
-"""
-#import lal
-for ifo in opt.instruments:
-    single_det_snr = snr[ifo]*snr[ifo].conj()**0.5
-    plt.plot(single_det_snr[20400:20500],'.',label=ifo)
-    plt.plot(np.argmax(single_det_snr[20400:20500]),max(single_det_snr[20400:20500]),'*',label=ifo)
-plt.legend()
-plt.savefig("/home/c1551011/public_html/single_det_snr.png")
-print t_gps
-time_delay_between_ifos = {}
-time_delay_between_peaks = {}
-for ifo1 in opt.instruments:
-    time_delay_between_ifos[ifo1] ={} 
-    time_delay_between_peaks[ifo1] ={} 
-    for ifo2 in opt.instruments:
-        print "Time delay between detectors: " + ifo1 + " " + ifo2
-        time_delay_between_ifos[ifo1][ifo2] = pycbc.detector.Detector(ifo1).time_delay_from_detector(pycbc.detector.Detector(ifo2),ra,dec,t_gps)
-        print time_delay_between_ifos[ifo1][ifo2]
-	single_det_snr1 = snr[ifo1]*snr[ifo1].conj()**0.5
-	single_det_snr2 = snr[ifo2]*snr[ifo2].conj()**0.5
-	print "Time delay between peaks for detectors: " + ifo1 + " " + ifo2
-	time_delay_between_peaks[ifo1][ifo2] = float(np.argmax(single_det_snr1[20400:20500]) - np.argmax(single_det_snr2[20400:20500]))/sample_rate
-        print time_delay_between_peaks[ifo1][ifo2]
-        print np.argmax(single_det_snr1[20400:20500]) - np.argmax(single_det_snr2[20400:20500])
-peak_time = {}
-for ifo in opt.instruments:
-    peak_time[ifo] = float(np.argmax(snr[ifo]*snr[ifo].conj()**0.5))/sample_rate
-    print "Time of peak in ifo: " + ifo
-    print peak_time[ifo]
+    print "Generating network SNR plots..."
+    plt.figure()
+    coinc_snr = coincident_snr(snr)
+    plt.plot(coinc_snr,'b.',label='coinc snr')
+    roh_coh = coherent_snr(snr,projection_matrix)
+    plt.plot(roh_coh,'rx',label='coh snr')
+    plt.plot((coinc_snr**2-roh_coh**2)**0.5,'mx',label='null snr')
+    #plt.xlim(0,409600)
+    plt.legend(loc="best")
+    plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr_whole_segment.png")
+    print "Done"
 
-"""
+
+
+if generate_histograms == True:
+    print "Generating Historgrams..."
+    from scipy.stats import chi2
+    plt.figure()
+    x = np.linspace(0, 20, 100)
+    df = 4
+    y = chi2.pdf(x, df)
+    plt.plot(x,y,'r')
+    roh_coh_for_hist = coherent_snr(snr,projection_matrix)
+    plt.hist(roh_coh_for_hist.real**2,bins=100,normed=True)
+    plt.title("roh_coh2")
+    plt.savefig("/home/c1551011/public_html/coh_snr2_histogram.png")
+    for ifo in opt.instruments:
+        plt.figure()
+        x = np.linspace(0, 20, 100)
+        df = 2
+        y = chi2.pdf(x, df)
+        plt.plot(x,y,'r')
+        data = (snr[ifo].conj()*snr[ifo]).data
+        plt.hist(data.real,bins=100,normed=True)
+        plt.title(ifo + " snr2")
+        plt.savefig("/home/c1551011/public_html/" + ifo + "_snr2_histogram.png")
+    print "Done"
