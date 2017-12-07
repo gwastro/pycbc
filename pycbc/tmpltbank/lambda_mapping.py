@@ -16,7 +16,7 @@
 from __future__ import division
 import re
 import numpy
-from lal import MTSUN_SI, GAMMA, PI, CreateDict, CreateREAL8Vector
+from lal import MTSUN_SI, PI, CreateREAL8Vector
 import lalsimulation
 from pycbc import pnutils
 
