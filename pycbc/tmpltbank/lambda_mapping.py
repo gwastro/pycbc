@@ -212,9 +212,9 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
         num_points = 1
 
     if quadparam1 is None:
-        quadparam1 = numpy.zeros(len(mass1), dtype=float)
+        quadparam1 = numpy.ones(len(mass1), dtype=float)
     if quadparam2 is None:
-        quadparam2 = numpy.zeros(len(mass1), dtype=float)
+        quadparam2 = numpy.ones(len(mass1), dtype=float)
     if lambda1 is None:
         lambda1 = numpy.zeros(len(mass1), dtype=float)
     if lambda2 is None:
