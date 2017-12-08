@@ -1626,7 +1626,7 @@ class PycbcCreateInjectionsExecutable(Executable):
         super(PycbcCreateInjectionsExecutable, self).__init__(
                                cp, exe_name, universe, ifo, out_dir, tags)
 
-    def create_node(self, config_file_file=None, tags=None):
+    def create_node(self, config_file=None, tags=None):
         """ ...
         """
 

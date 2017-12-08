@@ -397,10 +397,10 @@ def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
     tags = [] if tags is None else tags
     analysis_seg = workflow.analysis_time \
                        if analysis_seg is None else analysis_seg
-    output_files = core.FileList([])
+    output_files = FileList([])
 
     # make the directory that will contain the output files
-    core.makedir(output_dir)
+    makedir(output_dir)
 
     # make Executable for plotting the recovery plot
     plot_exe = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
