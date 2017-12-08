@@ -319,13 +319,13 @@ class InferenceFile(h5py.File):
         numpy.array
             The acceptance fraction.
         """
-        return self.sampler.read_acceptance_fraction(self, **kwargs)
+        return self.sampler_class.read_acceptance_fraction(self, **kwargs)
 
     def read_acls(self):
         """Returns all of the individual chains' acls. See the `read_acls`
         function of this file's sampler for more details.
         """
-        return self.sampler.read_acls(self)
+        return self.sampler_class.read_acls(self)
 
     def read_label(self, parameter, error_on_none=False):
         """Returns the label for the parameter.
