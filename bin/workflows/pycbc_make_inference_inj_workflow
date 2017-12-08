@@ -97,7 +97,7 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
-                            ["posteriors", "workflow"])
+                            ["posteriors", "samples", "workflow"])
 
 # make data output directory
 core.makedir(opts.output_dir)
@@ -152,7 +152,7 @@ for option in workflow.cp.options("workflow-inference"):
         group = option.replace("plot-group-", "").replace("-", "_")
         plot_groups[group] = workflow.cp.get_opt_tag(
                                 "workflow", option, "inference").split(" ")
-all_plot_parameters = [param for group in plot_parameters.values()
+all_plot_parameters = [param for group in plot_groups.values()
                        for param in group]
 
 # loop over number of injections
@@ -187,12 +187,12 @@ for i in range(n_injections):
                           tags=[str(i)])
 
     # make nodes for plotting grouped-parameters posteriors
-    groups = plot_parameters.keys()
+    groups = plot_groups.keys()
     groups.sort()
     for group in groups:
-        parameters = plot_parameters[group]
+        parameters = plot_groups[group]
         output_dir = "posteriors/{}_posteriors".format(group)
-        post_group_files = inffu.make_inference_posterior_plot(
+        post_group_files = inference_followups.make_inference_posterior_plot(
                           workflow, inference_file, rdir[output_dir],
                           parameters=parameters,
                           analysis_seg=workflow.analysis_time,
