@@ -70,9 +70,15 @@ parser.add_argument(
 # input data for workflow options
 parser.add_argument(
     "--data-type",
-    choices=["analytical", "simulated_data"], default="simulated_data",
+    choices=["analytical", "simulated_data", "detector_data"],
+    default="detector_data",
     help="Set to 'analytical' to use test likelihood or set to "
          "'simulated_data' to use simulated detector data.")
+parser.add_argument(
+    "--gps-end-time",
+    type=float, nargs="+", default=None,
+    help="Trigger time to analyze. You only need to use this option "
+         "with ``--data-type detector_data``.")
 
 # add option groups
 configuration.add_workflow_command_line_group(parser)
@@ -139,6 +145,16 @@ for ifo in workflow.ifos:
 channel_names_arg = " ".join([key + ":" + val for key, val in \
                               channel_names.iteritems()])
 
+# figure out what parameters user wants to plot from workflow configuration
+plot_groups = {}
+for option in workflow.cp.options("workflow-inference"):
+    if option.startswith("plot-group-"):
+        group = option.replace("plot-group-", "").replace("-", "_")
+        plot_groups[group] = workflow.cp.get_opt_tag(
+                                "workflow", option, "inference").split(" ")
+all_plot_parameters = [param for group in plot_parameters.values()
+                       for param in group]
+
 # loop over number of injections
 n_injections = int(workflow.cp.get_opt_tags(
                                 "workflow-inference", "num-injections", ""))
@@ -162,11 +178,36 @@ for i in range(n_injections):
     inference_files.append(inference_file)
     workflow += node
 
-    # make nodes for plotting posteriors
+    # make node for writing HTML table of parameters
+
+    # make node for plotting all parameters posteriors
     post_files += inference_followups.make_inference_posterior_plot(
                           workflow, inference_file, rdir["posteriors"],
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
+
+    # make nodes for plotting grouped-parameters posteriors
+    groups = plot_parameters.keys()
+    groups.sort()
+    for group in groups:
+        parameters = plot_parameters[group]
+        output_dir = "posteriors/{}_posteriors".format(group)
+        post_group_files = inffu.make_inference_posterior_plot(
+                          workflow, inference_file, rdir[output_dir],
+                          parameters=parameters,
+                          analysis_seg=workflow.analysis_time,
+                          tags=[str(i), group])
+        layout.group_layout(rdir[output_dir], post_group_files)
+
+    # make nodes for plotting sample as function of sampler iterations
+    for parameter in all_plot_parameters:
+        output_dir = "samples/{}".format(parameter)
+        samples_files = inference_followups.make_inference_samples_plot(
+                          workflow, inference_file, rdir[output_dir],
+                          parameters=[parameter],
+                          analysis_seg=workflow.analysis_time,
+                          tags=[str(i), parameter])
+        layout.group_layout(rdir[output_dir], samples_files)
 
 # add all posteriors to HTML page
 layout.single_layout(rdir["posteriors"], post_files)
