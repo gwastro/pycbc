@@ -69,7 +69,8 @@ else:
     log_level = logging.WARN
 logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
-# if using a parallel-tempered sampler, add the temperature arguments if it is specified
+# if using a parallel-tempered sampler, then
+# add the temperature arguments if it is specified
 additional_args = {}
 if opts.temps is not None:
     additional_args['temps'] = opts.temps
