@@ -1615,3 +1615,82 @@ class PycbcConditionStrainExecutable(Executable):
 
         return node, out_file
 
+class PycbcInferenceExecutable(Executable):
+    """ The class responsible for creating jobs
+    for ``pycbc_create_injections``.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+                 universe=None, tags=None):
+        super(PycbcInferenceExecutable, self).__init__(cp, exe_name, universe,
+                                                       ifo, out_dir, tags)
+
+    def create_node(self, config_file_file=None, tags=None):
+        """ ...
+        """
+
+        # default for tags is empty list
+        tags = [] if tags is None else tags
+
+        # get analysis start and end time
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        analysis_time = segments.segment(int(start_time), int(end_time))
+
+        # make node for running executable
+        node = create_injections_exe.create_node()
+        node.add_input_opt("--config-file", config_file)
+        injection_file = node.new_output_file_opt(analysis_time,
+                                                  ".hdf", "--output-file",
+                                                  tags=tags)
+
+        return node, injection_file
+
+class PycbcInferenceExecutable(Executable):
+    """ The class responsible for creating jobs for ``pycbc_inference``.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+                 universe=None, tags=None):
+        super(PycbcInferenceExecutable, self).__init__(cp, exe_name, universe,
+                                                       ifo, out_dir, tags)
+
+    def create_node(self, channel_names, injection_file=None,
+                    seed=None, tags=None):
+        """ ...
+        """
+
+        # default for tags is empty list
+        tags = [] if tags is None else tags
+
+        # get time to search before and after event
+        seconds_before_time = int(workflow.cp.get_opt_tags(
+                                        "workflow-inference",
+                                        "data-seconds-before-trigger", ""))
+        seconds_after_time = int(workflow.cp.get_opt_tags(
+                                        "workflow-inference",
+                                        "data-seconds-after-trigger", ""))
+
+        # get analysis start and end time
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        analysis_time = segments.segment(int(start_time), int(end_time))
+
+        # make node for running executable
+        node = inference_exe.create_node()
+        node.add_opt("--instruments", " ".join(self.ifo))
+        node.add_opt("--gps-start-time", start_time)
+        node.add_opt("--gps-end-time", end_time)
+        node.add_opt("--channel-name", channel_names)
+        node.add_input_opt("--config-file", config_file)
+        if injection_file:
+            node.add_input_opt("--injection-file", injection_file)
+        if seed:
+            node.add_opt("--seed", seed)
+        inference_file = node.new_output_file_opt(analysis_time,
+                                                  ".hdf", "--output-file",
+                                                  tags=tags)
+
+        return node, inference_file

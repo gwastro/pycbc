@@ -30,10 +30,11 @@ from pycbc.results import metadata
 from pycbc.results import versioning
 from pycbc.workflow import configuration
 from pycbc.workflow import core
+from pycbc.workflow import jobsetup
 from pycbc.workflow import inference_followups
 from pycbc.workflow import plotting
 
-# command line parser
+# set command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
 # version option
@@ -50,7 +51,7 @@ parser.add_argument(
 parser.add_argument(
     "--output-dir",
     default=None,
-    help="Path to output directory.")
+    help="Path that will contain output data files from the workflow.")
 parser.add_argument(
     "--output-map",
     default="output.map",
@@ -60,16 +61,11 @@ parser.add_argument(
     required=True,
     help="Path to DAX file.")
 
-# input configuration file options
+# inference options
 parser.add_argument(
     "--inference-config-file",
     type=str, required=True,
     help="WorkflowConfigParser parsable file with proir information.")
-parser.add_argument(
-    "--prior-section",
-    type=str, default="prior",
-    help="Name of the section in inference configuration file that "
-         "contains priors.")
 
 # input data for workflow options
 parser.add_argument(
@@ -84,7 +80,7 @@ configuration.add_workflow_command_line_group(parser)
 # parser command line
 opts = parser.parse_args()
 
-# log to terminal until we know where the path to log output file
+# log to stdout until we know where the path to log output file
 log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
@@ -95,7 +91,7 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
-                            ["posteriors", "priors", "workflow"])
+                            ["posteriors", "workflow"])
 
 # make data output directory
 core.makedir(opts.output_dir)
@@ -126,28 +122,21 @@ logging.info("Created log file {}".format(log_file_txt.storage_path))
 config_file = core.File.from_path(opts.inference_config_file)
 
 # construct Executable for creating injections
-create_injections_exe = core.Executable(workflow.cp, "create_injections",
-                                        ifos=workflow.ifos,
-                                        out_dir=opts.output_dir)
+create_injections_exe = jobsetup.PycbcCreateInjectionsExecutable(
+                                 workflow.cp, "create_injections",
+                                 ifos=workflow.ifos, out_dir=opts.output_dir)
 
 # construct Executable for running sampler
-inference_exe = core.Executable(workflow.cp, "inference", ifos=workflow.ifos,
-                                out_dir=opts.output_dir)
-
-# get time to search before and after from workflow configuration file
-seconds_before_time = int(workflow.cp.get_opt_tags(
-                                        "workflow-inference",
-                                        "data-seconds-before-trigger", ""))
-seconds_after_time = int(workflow.cp.get_opt_tags(
-                                        "workflow-inference",
-                                        "data-seconds-after-trigger", ""))
+inference_exe = jobsetup.PycbcInferenceExecutable(
+                                workflow.cp, "inference",
+                                ifos=workflow.ifos, out_dir=opts.output_dir)
 
 # get channel names from workflow configuration file
 channel_names = {}
 for ifo in workflow.ifos:
     channel_names[ifo] = workflow.cp.get_opt_tags(
                                "workflow", "%s-channel-name" % ifo.lower(), "")
-channel_names_str = " ".join([key + ":" + val for key, val in \
+channel_names_arg = " ".join([key + ":" + val for key, val in \
                               channel_names.iteritems()])
 
 # loop over number of injections
@@ -157,28 +146,17 @@ inference_files = core.FileList([])
 post_files = core.FileList([])
 for i in range(n_injections):
 
-    # make node for creating injections
+    # make node for drawing injection parameter values
     if not opts.data_type == "analytical":
-        node = create_injections_exe.create_node()
-        node.add_input_opt("--config-file", config_file)
-        injection_file = node.new_output_file_opt(workflow.analysis_time,
-                                                  ".hdf", "--output-file",
-                                                  tags=[str(i)])
+        node, injection_file = create_injections_exe.create_node(config_file)
         workflow += node
 
     # make node for running sampler
-    node = inference_exe.create_node()
-    node.add_opt("--seed", i)
-    node.add_opt("--instruments", " ".join(workflow.ifos))
-    node.add_opt("--gps-start-time", workflow.analysis_time[0])
-    node.add_opt("--gps-end-time", workflow.analysis_time[1])
-    node.add_opt("--channel-name", channel_names_str)
-    node.add_input_opt("--config-file", config_file)
-    if not opts.data_type == "analytical":
-        node.add_input_opt("--injection-file", injection_file)
-    inference_file = node.new_output_file_opt(workflow.analysis_time,
-                                              ".hdf", "--output-file",
-                                              tags=[str(i)])
+    node, inference_files = inference_exe.create_node(
+                                     channel_names_arg,
+                                     config_file,
+                                     injection_file=injection_file,
+                                     seed=i, tags=[str(i)])
     inference_files.append(inference_file)
     workflow += node
 
@@ -191,42 +169,13 @@ for i in range(n_injections):
 # add all posteriors to HTML page
 layout.single_layout(rdir["posteriors"], post_files)
 
-def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
-                             name="inference_recovery",
-                             analysis_seg=None, tags=None):
-
-    # default values
-    tags = [] if tags is None else tags
-    analysis_seg = workflow.analysis_time \
-                       if analysis_seg is None else analysis_seg
-    output_files = core.FileList([])
-
-    # make the directory that will contain the output files
-    core.makedir(output_dir)
-
-    # make Executable for plotting the recovery plot
-    plot_exe = plotting.PlotExecutable(
-                      workflow.cp, name, ifos=workflow.ifos,
-                      out_dir=output_dir, universe="local",
-                      tags=tags)
-
-    # add command line options
-    for param in cp.options("variable_args"):
-        node = plot_exe.create_node()
-        node.add_input_list_opt("--input-file", inference_files)
-        node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-        node.add_opt("--parameters", param)
-        workflow += node
-        output_files += node.output_files
-
-    return output_files
-
 # read inference configuration file
 cp = configuration.WorkflowConfigParser([opts.inference_config_file])
 
 # add injection recovery plots
 if not opts.data_type == "analytical":
-    inj_plots = make_inference_inj_plots(workflow, cp,
+    inj_plots = inference_followups.make_inference_inj_plots(
+                                         workflow, cp,
                                          inference_files, rdir.base)
     layout.single_layout(rdir.base, inj_plots)
 
@@ -249,15 +198,15 @@ container._adag.addDependency(dep)
 container.save(filename=opts.output_file, output_map_path=opts.output_map)
 
 # save workflow configuration file
-base = rdir["workflow/configuration"]
+base = rdir["workflow/workflow_configuration"]
 core.makedir(base)
 workflow_ini = workflow.save_config("workflow.ini", base, container.cp)
 layout.single_layout(base, workflow_ini)
 
 # save inference configuration file
-base = rdir["priors/configuration"]
+base = rdir["workflow/inference_configuration"]
 core.makedir(base)
-prior_ini = workflow.save_config("priors.ini", base, cp)
+prior_ini = workflow.save_config("inference.ini", base, cp)
 layout.single_layout(base, prior_ini)
 
 # close the log and flush to the html file

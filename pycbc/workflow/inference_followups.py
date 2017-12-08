@@ -365,3 +365,54 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
 
     return node.output_files
 
+def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
+                             name="inference_recovery",
+                             analysis_seg=None, tags=None):
+    """ Sets up the recovered versus injected parameter plot in the workflow.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    inference_files: pycbc.workflow.FileList
+        The files with posterior samples.
+    output_dir: str
+        The directory to store result plots and files.
+    name: str
+        The name in the [executables] section of the configuration file
+        to use.
+    analysis_segs: {None, glue.segments.Segment}
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: {None, optional}
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of result and output files. 
+    """
+
+    # default values
+    tags = [] if tags is None else tags
+    analysis_seg = workflow.analysis_time \
+                       if analysis_seg is None else analysis_seg
+    output_files = core.FileList([])
+
+    # make the directory that will contain the output files
+    core.makedir(output_dir)
+
+    # make Executable for plotting the recovery plot
+    plot_exe = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                              out_dir=output_dir, tags=tags)
+
+    # add command line options
+    for param in cp.options("variable_args"):
+        node = plot_exe.create_node()
+        node.add_input_list_opt("--input-file", inference_files)
+        node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+        node.add_opt("--parameters", param)
+        workflow += node
+        output_files += node.output_files
+
+    return output_files
