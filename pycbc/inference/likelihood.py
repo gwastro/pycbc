@@ -649,8 +649,8 @@ class TestVolcano(BaseLikelihoodEvaluator):
         p = [params[p] for p in self.variable_args]
         r = numpy.sqrt(p[0]**2 + p[1]**2)
         mu, sigma = 5.0, 2.0
-        return 5 * (numpy.exp(-r) + 50. / (sigma * numpy.sqrt(2 * numpy.pi)) * \
-                   numpy.exp(-0.5 * ((r - mu) / sigma) ** 2))
+        return 25 * (numpy.exp(-r/35) + 1 / (sigma * numpy.sqrt(2 * numpy.pi)) \
+                     * numpy.exp(-0.5 * ((r - mu) / sigma) ** 2))
 
 #
 # =============================================================================
