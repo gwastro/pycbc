@@ -19,21 +19,16 @@
 """
 
 import argparse
-import h5py
 import logging
 import os
 import Pegasus.DAX3 as dax
 import pycbc.workflow.inference_followups as inffu
-import pycbc.workflow.minifollowups as mini
-import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
 import socket
 import sys
-from pycbc_glue import segments
-from pycbc import results
 from pycbc.results import layout
-from pycbc.types import MultiDetOptionAction
-from pycbc.types import MultiDetOptionAppendAction
+from pycbc.results import metadata
+from pycbc.results import versioning
 from pycbc.workflow import configuration
 from pycbc.workflow import core
 from pycbc.workflow import plotting
@@ -220,7 +215,7 @@ if not opts.data_type == "analytical":
     layout.single_layout(rdir.base, inj_plots)
 
 # create versioning HTML pages
-results.create_versioning_page(rdir["workflow/version"], container.cp)
+versioning.create_versioning_page(rdir["workflow/version"], container.cp)
 
 # create node for making HTML pages
 plotting.make_results_web_page(finalize_workflow,
@@ -262,4 +257,4 @@ log_str = """
 kwds = {"title" : "Workflow Generation Log",
         "caption" : "Log of the workflow script %s" % sys.argv[0],
         "cmd" : " ".join(sys.argv)}
-results.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwdscorelayout.single_layout(rdir["workflow"], ([log_file_html]))
+metadata.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwdscorelayout.single_layout(rdir["workflow"], ([log_file_html]))
