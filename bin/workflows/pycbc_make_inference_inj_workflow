@@ -45,7 +45,7 @@ parser.add_argument
 # workflow options
 parser.add_argument(
     "--workflow-name",
-    default="my_unamed_inference_run",
+    default="inference_injection_run",
     help="Name of the workflow to append in various places.")
 parser.add_argument(
     "--output-dir",
