@@ -97,20 +97,22 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 rdir = layout.SectionNumber("results",
                             ["posteriors", "priors", "workflow"])
 
-# make data output and results directories
+# make data output directory
 core.makedir(opts.output_dir)
+
+# make results directories
 core.makedir(rdir.base)
 core.makedir(rdir["workflow"])
 
-# create files for workflow log
-log_file_txt = core.File(workflow.ifos, "workflow-log",
+# create files to store workflow log
+log_file_txt = core.File(workflow.ifos, "WORKFLOW-LOG",
                          workflow.analysis_time,
                          extension=".txt", directory=rdir["workflow"])
 log_file_html = core.File(workflow.ifos, "WORKFLOW-LOG",
                           workflow.analysis_time,
                           extension=".html", directory=rdir["workflow"])
 
-# switch saving log to file
+# switch saving log from stdout to file
 logging.basicConfig(format=log_format, level=logging.INFO,
                     filename=log_file_txt.storage_path, filemode="w")
 log_file = logging.FileHandler(filename=log_file_txt.storage_path, mode="w")
@@ -118,7 +120,7 @@ log_file.setLevel(logging.INFO)
 formatter = logging.Formatter(log_format)
 log_file.setFormatter(formatter)
 logging.getLogger("").addHandler(log_file)
-logging.info("Created log file %s" % log_file_txt.storage_path)
+logging.info("Created log file {}".format(log_file_txt.storage_path))
 
 # typecast str from command line to File instances
 config_file = core.File.from_path(opts.inference_config_file)
@@ -132,7 +134,7 @@ create_injections_exe = core.Executable(workflow.cp, "create_injections",
 inference_exe = core.Executable(workflow.cp, "inference", ifos=workflow.ifos,
                                 out_dir=opts.output_dir)
 
-# time before and after to search
+# get time to search before and after from workflow configuration file
 seconds_before_time = int(workflow.cp.get_opt_tags(
                                         "workflow-inference",
                                         "data-seconds-before-trigger", ""))
@@ -140,7 +142,7 @@ seconds_after_time = int(workflow.cp.get_opt_tags(
                                         "workflow-inference",
                                         "data-seconds-after-trigger", ""))
 
-# get channel names
+# get channel names from workflow configuration file
 channel_names = {}
 for ifo in workflow.ifos:
     channel_names[ifo] = workflow.cp.get_opt_tags(
@@ -186,6 +188,7 @@ for i in range(n_injections):
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
 
+# add all posteriors to HTML page
 layout.single_layout(rdir["posteriors"], post_files)
 
 def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
@@ -234,7 +237,7 @@ versioning.create_versioning_page(rdir["workflow/version"], container.cp)
 plotting.make_results_web_page(finalize_workflow,
                                os.path.join(os.getcwd(), rdir.base))
 
-# add sub-workflows to workflow
+# add sub-workflows to super-workflow
 container += workflow
 container += finalize_workflow
 
@@ -251,7 +254,7 @@ core.makedir(base)
 workflow_ini = workflow.save_config("workflow.ini", base, container.cp)
 layout.single_layout(base, workflow_ini)
 
-# save prior configuration file
+# save inference configuration file
 base = rdir["priors/configuration"]
 core.makedir(base)
 prior_ini = workflow.save_config("priors.ini", base, cp)
@@ -270,4 +273,6 @@ log_str = """
 kwds = {"title" : "Workflow Generation Log",
         "caption" : "Log of the workflow script %s" % sys.argv[0],
         "cmd" : " ".join(sys.argv)}
-metadata.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwdscorelayout.single_layout(rdir["workflow"], ([log_file_html]))
+metadata.save_fig_with_metadata(
+    log_str, log_file_html.storage_path,
+    **kwdscorelayout.single_layout(rdir["workflow"], ([log_file_html]))
