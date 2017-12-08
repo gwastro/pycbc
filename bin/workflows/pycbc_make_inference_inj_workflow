@@ -155,6 +155,10 @@ for option in workflow.cp.options("workflow-inference"):
 all_plot_parameters = [param for group in plot_groups.values()
                        for param in group]
 
+# formatted strings for output dirs
+post_group_fmt = "posteriors/{}_posteriors"
+sample_fmt = "samples/{}"
+
 # loop over number of injections
 n_injections = int(workflow.cp.get_opt_tags(
                                 "workflow-inference", "num-injections", ""))
@@ -204,37 +208,32 @@ for i in range(n_injections):
     # make nodes for plotting grouped-parameters posteriors
     for group in plot_groups.keys():
         parameters = plot_groups[group]
-        output_dir = "posteriors/{}_posteriors".format(group)
         post_group_files[group] += \
                 inference_followups.make_inference_posterior_plot(
-                          workflow, inference_file, rdir[output_dir],
+                          workflow, inference_file,
+                          rdir[post_group_fmt.format(group)],
                           parameters=parameters,
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i), group])
 
     # make nodes for plotting sample as function of sampler iterations
     for parameter in all_plot_parameters:
-        output_dir = "samples/{}".format(parameter)
         samples_files[parameter] += \
                 inference_followups.make_inference_samples_plot(
-                          workflow, inference_file, rdir[output_dir],
+                          workflow, inference_file,
+                          rdir[sample_fmt.format(parameter)],
                           parameters=[parameter],
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i), parameter])
 
 # add plots to HTML pages
-post_summ_files = [x for x in itertools.chain.from_iterable(
-                       itertools.izip_longest(post_table_files, post_files))]
-layout.single_layout(rdir["posteriors"], post_summ_files)
+layout.single_layout(rdir["posteriors"],
+                     sum(zip(post_table_files, post_files), ()))
 layout.single_layout(rdir["samples"], accept_files)
-groups = plot_groups.keys()
-groups.sort()
-for group in groups:
-    output_dir = "posteriors/{}_posteriors".format(group)
-    layout.single_layout(rdir[output_dir], sample_files)
+for group in sorted(plot_groups.keys()):
+    layout.single_layout(rdir[post_group_fmt.format(group)], sample_files)
 for parameter in all_plot_parameters:
-    output_dir = "samples/{}".format(parameter)
-    layout.single_layout(rdir[output_dir], sample_files)
+    layout.single_layout(rdir[sample_fmt.format(parameter)], sample_files)
 
 # read inference configuration file
 cp = configuration.WorkflowConfigParser([opts.inference_config_file])
