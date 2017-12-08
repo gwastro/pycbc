@@ -23,7 +23,6 @@ import h5py
 import logging
 import os
 import Pegasus.DAX3 as dax
-import pycbc.workflow as wf
 import pycbc.workflow.inference_followups as inffu
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
@@ -35,29 +34,10 @@ from pycbc import results
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.types import MultiDetOptionAppendAction
+from pycbc.workflow import configuration
 from pycbc.workflow import core
 from pycbc.workflow import plotting
 from pycbc.workflow import WorkflowConfigParser
-
-def to_file(path, ifo=None):
-    """ Takes a str and returns a pycbc.workflow.pegasus_workflow.File
-    instance.
-    """
-    fil = wdax.File(os.path.basename(path))
-    fil.ifo = ifo
-    path = os.path.abspath(path)
-    fil.PFN(path, "local")
-    return fil
-
-def symlink_path(f, path):
-    """ Symlinks a path.
-    """
-    if f is None:
-        return
-    try:
-        os.symlink(f.storage_path, os.path.join(path, f.name))
-    except OSError:
-        pass
 
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -91,7 +71,7 @@ parser.add_argument("--data-type",
                     default="simulated_data")
 
 # add option groups
-wf.add_workflow_command_line_group(parser)
+configuration.add_workflow_command_line_group(parser)
 
 # parser command line
 opts = parser.parse_args()
@@ -101,24 +81,26 @@ log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
-container = wf.Workflow(opts, opts.workflow_name)
-workflow = wf.Workflow(opts, opts.workflow_name + "-main")
-finalize_workflow = wf.Workflow(opts, opts.workflow_name + "-finalization")
+container = core.Workflow(opts, opts.workflow_name)
+workflow = core.Workflow(opts, opts.workflow_name + "-main")
+finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
                             ["posteriors", "priors", "workflow"])
 
 # make data output and results directories
-wf.makedir(opts.output_dir)
-wf.makedir(rdir.base)
-wf.makedir(rdir["workflow"])
+core.makedir(opts.output_dir)
+core.makedir(rdir.base)
+core.makedir(rdir["workflow"])
 
 # create files for workflow log
-log_file_txt = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
-                      extension=".txt", directory=rdir["workflow"])
-log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
-                        extension=".html", directory=rdir["workflow"])
+log_file_txt = core.File(workflow.ifos, "workflow-log",
+                         workflow.analysis_time,
+                         extension=".txt", directory=rdir["workflow"])
+log_file_html = core.File(workflow.ifos, "WORKFLOW-LOG",
+                          workflow.analysis_time,
+                          extension=".html", directory=rdir["workflow"])
 
 # switch saving log to file
 logging.basicConfig(format=log_format, level=logging.INFO,
@@ -131,16 +113,16 @@ logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
 
 # typecast str from command line to File instances
-config_file = to_file(opts.inference_config_file)
+config_file = core.File.from_path(opts.inference_config_file)
 
 # construct Executable for creating injections
-create_injections_exe = wf.Executable(workflow.cp, "create_injections",
-                                      ifos=workflow.ifos,
-                                      out_dir=opts.output_dir)
+create_injections_exe = core.Executable(workflow.cp, "create_injections",
+                                        ifos=workflow.ifos,
+                                        out_dir=opts.output_dir)
 
 # construct Executable for running sampler
-inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
-                              out_dir=opts.output_dir)
+inference_exe = core.Executable(workflow.cp, "inference", ifos=workflow.ifos,
+                                out_dir=opts.output_dir)
 
 # time before and after to search
 seconds_before_time = int(workflow.cp.get_opt_tags(
@@ -161,8 +143,8 @@ channel_names_str = " ".join([key + ":" + val for key, val in \
 # loop over number of injections
 n_injections = int(workflow.cp.get_opt_tags(
                                 "workflow-inference", "num-injections", ""))
-inference_files = wf.FileList([])
-post_files = wf.FileList([])
+inference_files = core.FileList([])
+post_files = core.FileList([])
 for i in range(n_injections):
 
     # make node for creating injections
@@ -241,8 +223,8 @@ if not opts.data_type == "analytical":
 results.create_versioning_page(rdir["workflow/version"], container.cp)
 
 # create node for making HTML pages
-wf.make_results_web_page(finalize_workflow,
-                         os.path.join(os.getcwd(), rdir.base))
+plotting.make_results_web_page(finalize_workflow,
+                               os.path.join(os.getcwd(), rdir.base))
 
 # add sub-workflows to workflow
 container += workflow
@@ -257,13 +239,13 @@ container.save(filename=opts.output_file, output_map_path=opts.output_map)
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]
-wf.makedir(base)
-wf_ini = workflow.save_config("workflow.ini", base, container.cp)
-layout.single_layout(base, wf_ini)
+core.makedir(base)
+workflow_ini = workflow.save_config("workflow.ini", base, container.cp)
+layout.single_layout(base, workflow_ini)
 
 # save prior configuration file
 base = rdir["priors/configuration"]
-wf.makedir(base)
+core.makedir(base)
 prior_ini = workflow.save_config("priors.ini", base, cp)
 layout.single_layout(base, prior_ini)
 
@@ -280,5 +262,4 @@ log_str = """
 kwds = {"title" : "Workflow Generation Log",
         "caption" : "Log of the workflow script %s" % sys.argv[0],
         "cmd" : " ".join(sys.argv)}
-results.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
-layout.single_layout(rdir["workflow"], ([log_file_html]))
+results.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwdscorelayout.single_layout(rdir["workflow"], ([log_file_html]))
