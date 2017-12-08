@@ -1615,7 +1615,7 @@ class PycbcConditionStrainExecutable(Executable):
 
         return node, out_file
 
-class PycbcInferenceExecutable(Executable):
+class PycbcCreateInjectionsExecutable(Executable):
     """ The class responsible for creating jobs
     for ``pycbc_create_injections``.
     """
@@ -1623,8 +1623,8 @@ class PycbcInferenceExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
     def __init__(self, cp, exe_name, ifo=None, out_dir=None,
                  universe=None, tags=None):
-        super(PycbcInferenceExecutable, self).__init__(cp, exe_name, universe,
-                                                       ifo, out_dir, tags)
+        super(PycbcCreateInjectionsExecutable, self).__init__(
+                               cp, exe_name, universe, ifo, out_dir, tags)
 
     def create_node(self, config_file_file=None, tags=None):
         """ ...
@@ -1639,7 +1639,7 @@ class PycbcInferenceExecutable(Executable):
         analysis_time = segments.segment(int(start_time), int(end_time))
 
         # make node for running executable
-        node = create_injections_exe.create_node()
+        node = Node(self)
         node.add_input_opt("--config-file", config_file)
         injection_file = node.new_output_file_opt(analysis_time,
                                                   ".hdf", "--output-file",
@@ -1657,7 +1657,7 @@ class PycbcInferenceExecutable(Executable):
         super(PycbcInferenceExecutable, self).__init__(cp, exe_name, universe,
                                                        ifo, out_dir, tags)
 
-    def create_node(self, channel_names, injection_file=None,
+    def create_node(self, channel_names, config_file, injection_file=None,
                     seed=None, tags=None):
         """ ...
         """
@@ -1666,10 +1666,10 @@ class PycbcInferenceExecutable(Executable):
         tags = [] if tags is None else tags
 
         # get time to search before and after event
-        seconds_before_time = int(workflow.cp.get_opt_tags(
+        seconds_before_time = int(self.cp.get_opt_tags(
                                         "workflow-inference",
                                         "data-seconds-before-trigger", ""))
-        seconds_after_time = int(workflow.cp.get_opt_tags(
+        seconds_after_time = int(self.cp.get_opt_tags(
                                         "workflow-inference",
                                         "data-seconds-after-trigger", ""))
 
@@ -1679,7 +1679,7 @@ class PycbcInferenceExecutable(Executable):
         analysis_time = segments.segment(int(start_time), int(end_time))
 
         # make node for running executable
-        node = inference_exe.create_node()
+        node = Node(self)
         node.add_opt("--instruments", " ".join(self.ifo))
         node.add_opt("--gps-start-time", start_time)
         node.add_opt("--gps-end-time", end_time)

@@ -38,7 +38,7 @@ from pycbc.workflow import plotting
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
 # version option
-parser.add_argument
+parser.add_argument(
     "--version", action="version",
     version=pycbc.version.git_verbose_msg, 
     help="Prints version information.")
@@ -123,13 +123,13 @@ config_file = core.File.from_path(opts.inference_config_file)
 
 # construct Executable for creating injections
 create_injections_exe = jobsetup.PycbcCreateInjectionsExecutable(
-                                 workflow.cp, "create_injections",
-                                 ifos=workflow.ifos, out_dir=opts.output_dir)
+                           workflow.cp, "create_injections",
+                           ifo="".join(workflow.ifos), out_dir=opts.output_dir)
 
 # construct Executable for running sampler
 inference_exe = jobsetup.PycbcInferenceExecutable(
-                                workflow.cp, "inference",
-                                ifos=workflow.ifos, out_dir=opts.output_dir)
+                           workflow.cp, "inference",
+                           ifo="".join(workflow.ifos), out_dir=opts.output_dir)
 
 # get channel names from workflow configuration file
 channel_names = {}
@@ -150,9 +150,11 @@ for i in range(n_injections):
     if not opts.data_type == "analytical":
         node, injection_file = create_injections_exe.create_node(config_file)
         workflow += node
+    else:
+        injection_file = None
 
     # make node for running sampler
-    node, inference_files = inference_exe.create_node(
+    node, inference_file = inference_exe.create_node(
                                      channel_names_arg,
                                      config_file,
                                      injection_file=injection_file,
@@ -222,6 +224,5 @@ log_str = """
 kwds = {"title" : "Workflow Generation Log",
         "caption" : "Log of the workflow script %s" % sys.argv[0],
         "cmd" : " ".join(sys.argv)}
-metadata.save_fig_with_metadata(
-    log_str, log_file_html.storage_path,
-    **kwdscorelayout.single_layout(rdir["workflow"], ([log_file_html]))
+metadata.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+layout.single_layout(rdir["workflow"], ([log_file_html]))
