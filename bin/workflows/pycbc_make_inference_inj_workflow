@@ -152,8 +152,9 @@ for option in workflow.cp.options("workflow-inference"):
         group = option.replace("plot-group-", "").replace("-", "_")
         plot_groups[group] = workflow.cp.get_opt_tag(
                                 "workflow", option, "inference").split(" ")
-all_plot_parameters = [param for group in plot_groups.values()
-                       for param in group]
+all_plot_parameters = sorted([param for group in plot_groups.values()
+                              for param in group])
+unique_plot_parameters = set(all_plot_parameters)
 
 # formatted strings for output dirs
 post_group_fmt = "posteriors/{}_posteriors"
@@ -189,13 +190,14 @@ for i in range(n_injections):
     # make node for writing HTML table of parameters
     post_table_files += inference_followups.make_inference_summary_table(
                           workflow, inference_file, rdir["posteriors"],
-                          variable_args=all_plot_parameters,
+                          variable_args=unique_plot_parameters,
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
 
     # make node for plotting all parameters posteriors
     post_files += inference_followups.make_inference_posterior_plot(
                           workflow, inference_file, rdir["posteriors"],
+                          parameters=unique_plot_parameters,
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
 
