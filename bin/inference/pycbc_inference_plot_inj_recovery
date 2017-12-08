@@ -10,6 +10,7 @@ import matplotlib.colorbar as cbar
 import matplotlib.pyplot as plt
 import numpy
 import pycbc
+import pycbc.version
 from matplotlib import cm
 from pycbc import inject
 from pycbc import transforms
@@ -18,6 +19,9 @@ from pycbc.inference import option_utils
 # parse command line
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg,
+                    help="Prints version information.")
 parser.add_argument("--output-file", required=True, type=str,
                     help="Path to save output plot.")
 parser.add_argument("--verbose", action="store_true",

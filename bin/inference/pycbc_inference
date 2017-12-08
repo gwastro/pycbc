@@ -25,6 +25,7 @@ import numpy
 import pycbc
 import pycbc.opt
 import pycbc.weave
+import pycbc.version
 from pycbc import calibration
 from pycbc import distributions
 from pycbc import transforms
@@ -44,6 +45,11 @@ from pycbc import gate
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
+
+# version option
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg,
+                    help="Prints version information.")
 
 # add data options
 parser.add_argument("--instruments", type=str, nargs="+",
