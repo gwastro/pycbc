@@ -37,32 +37,46 @@ from pycbc.workflow import plotting
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
 # version option
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg, 
-                    help="Prints version information.")
+parser.add_argument
+    "--version", action="version",
+    version=pycbc.version.git_verbose_msg, 
+    help="Prints version information.")
 
 # workflow options
-parser.add_argument("--workflow-name", default="my_unamed_inference_run",
-                    help="Name of the workflow to append in various places.")
-parser.add_argument("--output-dir", default=None,
-                    help="Path to output directory.")
-parser.add_argument("--output-map", default="output.map",
-                    help="Path to output map file.")
-parser.add_argument("--output-file", required=True,
-                    help="Path to DAX file.")
+parser.add_argument(
+    "--workflow-name",
+    default="my_unamed_inference_run",
+    help="Name of the workflow to append in various places.")
+parser.add_argument(
+    "--output-dir",
+    default=None,
+    help="Path to output directory.")
+parser.add_argument(
+    "--output-map",
+    default="output.map",
+    help="Path to output map file.")
+parser.add_argument(
+    "--output-file",
+    required=True,
+    help="Path to DAX file.")
 
 # input configuration file options
-parser.add_argument("--inference-config-file", type=str, required=True,
-                    help="WorkflowConfigParser parsable file with "
-                         "proir information.")
-parser.add_argument("--prior-section", type=str, default="prior",
-                    help="Name of the section in inference configuration file "
-                         "that contains priors.")
+parser.add_argument(
+    "--inference-config-file",
+    type=str, required=True,
+    help="WorkflowConfigParser parsable file with proir information.")
+parser.add_argument(
+    "--prior-section",
+    type=str, default="prior",
+    help="Name of the section in inference configuration file that "
+         "contains priors.")
 
-# input data options
-parser.add_argument("--data-type",
-                    choices=["analytical", "simulated_data"],
-                    default="simulated_data")
+# input data for workflow options
+parser.add_argument(
+    "--data-type",
+    choices=["analytical", "simulated_data"], default="simulated_data",
+    help="Set to 'analytical' to use test likelihood or set to "
+         "'simulated_data' to use simulated detector data.")
 
 # add option groups
 configuration.add_workflow_command_line_group(parser)
