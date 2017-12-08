@@ -1,4 +1,4 @@
-#!/bin/env python
+#! /usr/bin/env python
 
 # Copyright (C) 2017 Christopher M. Biwer, Alexander Harvey Nitz
 #
@@ -22,7 +22,6 @@ import argparse
 import logging
 import os
 import Pegasus.DAX3 as dax
-import pycbc.workflow.inference_followups as inffu
 import pycbc.version
 import socket
 import sys
@@ -31,8 +30,8 @@ from pycbc.results import metadata
 from pycbc.results import versioning
 from pycbc.workflow import configuration
 from pycbc.workflow import core
+from pycbc.workflow import inference_followups
 from pycbc.workflow import plotting
-from pycbc.workflow import WorkflowConfigParser
 
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -54,7 +53,7 @@ parser.add_argument("--output-file", required=True,
 
 # input configuration file options
 parser.add_argument("--inference-config-file", type=str, required=True,
-                    help="workflow.WorkflowConfigParser parsable file with "
+                    help="WorkflowConfigParser parsable file with "
                          "proir information.")
 parser.add_argument("--prior-section", type=str, default="prior",
                     help="Name of the section in inference configuration file "
@@ -168,7 +167,7 @@ for i in range(n_injections):
     workflow += node
 
     # make nodes for plotting posteriors
-    post_files += inffu.make_inference_posterior_plot(
+    post_files += inference_followups.make_inference_posterior_plot(
                           workflow, inference_file, rdir["posteriors"],
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
@@ -206,7 +205,7 @@ def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
     return output_files
 
 # read inference configuration file
-cp = WorkflowConfigParser([opts.inference_config_file])
+cp = configuration.WorkflowConfigParser([opts.inference_config_file])
 
 # add injection recovery plots
 if not opts.data_type == "analytical":
