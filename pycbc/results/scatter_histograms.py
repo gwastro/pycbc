@@ -567,6 +567,9 @@ def create_multidim_plot(parameters, samples, labels=None,
     else:
         width_ratios = height_ratios = None
 
+    # only plot scatter if more than one parameter
+    plot_scatter = plot_scatter and nparams > 1
+
     # Sort zvals to get higher values on top in scatter plots
     if plot_scatter:
         if zvals is not None:
@@ -644,7 +647,7 @@ def create_multidim_plot(parameters, samples, labels=None,
         if px == py:
             continue
         ax, _, _ = axis_dict[px, py]
-        if plot_scatter and nparams > 1:
+        if plot_scatter:
             if plot_density:
                 alpha = 0.3
             else:
@@ -691,7 +694,7 @@ def create_multidim_plot(parameters, samples, labels=None,
             ax.set_xticks(reduce_ticks(ax, 'x', maxticks=3))
             ax.set_yticks(reduce_ticks(ax, 'y', maxticks=3))
 
-    if plot_scatter and show_colorbar and nparams > 1:
+    if plot_scatter and show_colorbar:
         # compute font size based on fig size
         scale_fac = get_scale_fac(fig)
         fig.subplots_adjust(right=0.85, wspace=0.03)
