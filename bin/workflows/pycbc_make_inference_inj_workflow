@@ -140,10 +140,8 @@ inference_exe = jobsetup.PycbcInferenceExecutable(
 # get channel names from workflow configuration file
 channel_names = {}
 for ifo in workflow.ifos:
-    channel_names[ifo] = workflow.cp.get_opt_tags(
+    channel_names[ifo] = ifo + ":" + workflow.cp.get_opt_tags(
                                "workflow", "%s-channel-name" % ifo.lower(), "")
-channel_names_arg = " ".join([key + ":" + val for key, val in \
-                              channel_names.iteritems()])
 
 # figure out what parameters user wants to plot from workflow configuration
 plot_groups = {}
@@ -180,7 +178,7 @@ for i in range(n_injections):
 
     # make node for running sampler
     node, inference_file = inference_exe.create_node(
-                                     channel_names_arg,
+                                     channel_names,
                                      config_file,
                                      injection_file=injection_file,
                                      seed=i, tags=[str(i)])

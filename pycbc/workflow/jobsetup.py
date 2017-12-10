@@ -1627,7 +1627,20 @@ class PycbcCreateInjectionsExecutable(Executable):
                                cp, exe_name, universe, ifo, out_dir, tags)
 
     def create_node(self, config_file=None, tags=None):
-        """ ...
+        """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
+
+        Parameters
+        ----------
+        config_file : File
+            A ``File`` for inference configuration file to be used
+            with ``--config-files`` option.
+        tags : list
+            A list of tags to include in filenames.
+
+        Returns
+        --------
+        node : pycbc.workflow.core.Node
+            The node to run the job.
         """
 
         # default for tags is empty list
@@ -1659,7 +1672,27 @@ class PycbcInferenceExecutable(Executable):
 
     def create_node(self, channel_names, config_file, injection_file=None,
                     seed=None, tags=None):
-        """ ...
+        """ Set up a CondorDagmanNode class to run ``pycbc_inference``.
+
+        Parameters
+        ----------
+        channel_names : dict
+            A ``dict`` of ``str`` to use for ``--channel-name`` option.
+        config_file : File
+            A ``File`` for inference configuration file to be used
+            with ``--config-files`` option.
+        injection_file : File
+            A ``File`` for injection file to be used with ``--injection-file``
+            option.
+        seed : int
+            An ``int`` to be used with ``--seed`` option.
+        tags : list
+            A list of tags to include in filenames.
+
+        Returns
+        --------
+        node : pycbc.workflow.core.Node
+            The node to run the job.
         """
 
         # default for tags is empty list
