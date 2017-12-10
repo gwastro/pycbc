@@ -1680,7 +1680,7 @@ class PycbcInferenceExecutable(Executable):
 
         # make node for running executable
         node = Node(self)
-        node.add_opt("--instruments", " ".join(self.ifo))
+        node.add_opt("--instruments", " ".join(self.ifo_list))
         node.add_opt("--gps-start-time", start_time)
         node.add_opt("--gps-end-time", end_time)
         node.add_opt("--channel-name", channel_names)

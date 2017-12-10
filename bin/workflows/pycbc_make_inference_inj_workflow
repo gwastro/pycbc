@@ -130,12 +130,12 @@ config_file = core.File.from_path(opts.inference_config_file)
 # construct Executable for creating injections
 create_injections_exe = jobsetup.PycbcCreateInjectionsExecutable(
                            workflow.cp, "create_injections",
-                           ifo="".join(workflow.ifos), out_dir=opts.output_dir)
+                           ifo=workflow.ifos, out_dir=opts.output_dir)
 
 # construct Executable for running sampler
 inference_exe = jobsetup.PycbcInferenceExecutable(
                            workflow.cp, "inference",
-                           ifo="".join(workflow.ifos), out_dir=opts.output_dir)
+                           ifo=workflow.ifos, out_dir=opts.output_dir)
 
 # get channel names from workflow configuration file
 channel_names = {}
