@@ -98,13 +98,8 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
     inj_parameters = transforms.apply_transforms(injs.table, ts)
 
     # get paramter values
-    sampled_vals = input_samples[parameter]
-    injected_vals = inj_parameters[parameter]
-#    sampled_vals = [e[0] for e in input_samples[parameter]]
-#    injected_vals = [e[0] for e in inj_parameters[parameter]]
-
-    print sampled_vals
-    print injected_vals
+    sampled_vals = input_samples[parameter].to_array()
+    injected_vals = [e[0] for e in inj_parameters[parameter]]
 
     # compute quantiles of sampled results
     quantiles = numpy.array([numpy.percentile(sampled_vals, 100 * q)
