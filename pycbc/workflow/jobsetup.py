@@ -1698,25 +1698,21 @@ class PycbcInferenceExecutable(Executable):
         # default for tags is empty list
         tags = [] if tags is None else tags
 
-        # get time to search before and after event
-        seconds_before_time = int(self.cp.get_opt_tags(
-                                        "workflow-inference",
-                                        "data-seconds-before-trigger", ""))
-        seconds_after_time = int(self.cp.get_opt_tags(
-                                        "workflow-inference",
-                                        "data-seconds-after-trigger", ""))
-
         # get analysis start and end time
         start_time = self.cp.get("workflow", "start-time")
         end_time = self.cp.get("workflow", "end-time")
         analysis_time = segments.segment(int(start_time), int(end_time))
+
+        # get options for channel names
+        channel_names_opt = " ".join(["{}:{}".format(k, v)
+                                      for k, v in channel_names.iteritems()])
 
         # make node for running executable
         node = Node(self)
         node.add_opt("--instruments", " ".join(self.ifo_list))
         node.add_opt("--gps-start-time", start_time)
         node.add_opt("--gps-end-time", end_time)
-        node.add_opt("--channel-name", channel_names)
+        node.add_opt("--channel-name", channel_names_opt)
         node.add_input_opt("--config-file", config_file)
         if injection_file:
             node.add_input_opt("--injection-file", injection_file)

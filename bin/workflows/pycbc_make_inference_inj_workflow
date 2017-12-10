@@ -140,7 +140,7 @@ inference_exe = jobsetup.PycbcInferenceExecutable(
 # get channel names from workflow configuration file
 channel_names = {}
 for ifo in workflow.ifos:
-    channel_names[ifo] = ifo + ":" + workflow.cp.get_opt_tags(
+    channel_names[ifo] = workflow.cp.get_opt_tags(
                                "workflow", "%s-channel-name" % ifo.lower(), "")
 
 # figure out what parameters user wants to plot from workflow configuration
