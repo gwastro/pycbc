@@ -34,8 +34,10 @@ matplotlib.use('agg')
 from matplotlib import patches
 from matplotlib import pyplot
 import pycbc
+import sys
 from pycbc.inference import option_utils, likelihood
 from pycbc.io.inference_hdf import InferenceFile
+from pycbc.results import metadata
 from pycbc.results.scatter_histograms import create_multidim_plot
 
 # add options to command line
@@ -191,6 +193,18 @@ if opts.input_file_labels:
     fig.legend(loc="upper right", handles=handles,
                labels=opts.input_file_labels)
 
+# set DPI
+fig.set_dpi(200)
+
+# set tight layout
+fig.set_tight_layout(True)
+
 # save
-fig.savefig(opts.output_file, bbox_inches='tight', dpi=200)
+metadata.save_fig_with_metadata(
+                 fig, opts.output_file, {},
+                 cmd=" ".join(sys.argv),
+                 title="Posteriors",
+                 caption="Posterior probability density functions.")
+
+# finish
 logging.info("Done")
