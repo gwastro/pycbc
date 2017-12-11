@@ -90,7 +90,7 @@ fractions = {p : numpy.zeros(opts.quantiles.size) for p in inj_inside.keys()}
 for p in fractions.keys():
     for i, q in enumerate(opts.quantiles):
         fractions[p][i] = inj_inside[p][i] / \
-                                 (inj_outside[p][i] + inj_inside[p][i])
+                                 float(inj_outside[p][i] + inj_inside[p][i])
 
     # plot parameter
     j = parameters[0].index(p)

@@ -121,8 +121,7 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
         logging.warn("More than one injection in file %s", input_file)
     ax.errorbar([injected_vals],
                 [med - injected_vals],
-                yerr=[[med - injected_vals - (med - low)],
-                      [med - injected_vals + (high - med)]],
+                yerr=[[(med - low)], [(high - med)]],
                 ecolor=color, linestyle="None", zorder=10)
 
 # create a colorbar
