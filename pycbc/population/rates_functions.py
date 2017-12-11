@@ -2,14 +2,12 @@
 A set of helper functions for evaluating rates.
 """
 
-import sys, glob
-
 from scipy import integrate, optimize
 from scipy.special import erf
 import numpy as np, h5py
 import scipy.stats as ss
 
-import bisect 
+import bisect
 
 def process_full_data(hdffile, rhomin, mass1, mass2, min_bh_mass):
     """
@@ -19,7 +17,7 @@ def process_full_data(hdffile, rhomin, mass1, mass2, min_bh_mass):
         
         tmplt_bkg = bulk['background_exc/template_id'][:]
         tmplt_fg = bulk['foreground/template_id'][:]
-        
+
         idx_bkg = np.where( (mass1[tmplt_bkg] > 5.) & (mass2[tmplt_bkg] > min_bh_mass) )
         idx_fg = np.where( (mass1[tmplt_fg] > 5.) & (mass2[tmplt_fg] > min_bh_mass) )
                                                   
@@ -47,7 +45,7 @@ def save_bkg_falloff(folder_name_statmap, folder_name_bank, path, rhomin, min_bh
     ''' Read the STATMAP files to derive snr falloff for background events. 
         Bank file is also provided to restrict triggers to BBH templates (component mass > 5 M).
     '''
-    
+
     full_data = {}
     statmap_files = glob.glob(folder_name_statmap)
     bank_files = glob.glob(folder_name_bank)
@@ -101,7 +99,7 @@ def log_rho_bg(trigs, bins, counts):
     # If there is no counts for a foreground trigger put a fictious count in the background bin
     if np.any(trigs >= np.max(bins)):
         N = N + 1
-        log_plimit = -np.log(N) - np.log(np.max(trigs) - bins[-1]) 
+        #log_plimit = -np.log(N) - np.log(np.max(trigs) - bins[-1])  NEEDS CHECKING
     
     log_rhos = []
     for t in trigs:
@@ -116,8 +114,8 @@ def log_rho_bg(trigs, bins, counts):
     return np.array(log_rhos)
 
 
-def log_rho_fg_analytic(t):
-    return np.log(3.0) + 3.0*np.log(rhomin) - 4.0*np.log(t)
+#def log_rho_fg_analytic(t):
+#    return np.log(3.0) + 3.0*np.log(rhomin) - 4.0*np.log(t)
 
 
 def log_rho_fg_mc(t, injstats, bins):
