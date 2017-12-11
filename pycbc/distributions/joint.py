@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Christopher M. Biwer, Collin Capano
+# Copyright (C)  2017 Collin Capano, Christopher M. Biwer, Alex Nitz
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -12,27 +12,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
+""" This module provides classes to describe joint distributions
 """
-This modules provides classes and functions for evaluating the prior
-for parameter estimation.
-"""
-
 import logging
 import numpy
 from pycbc.io import record
 
-class PriorEvaluator(object):
+class JointDistribution(object):
     """
-    Callable class that calculates the prior.
+    Callable class that calculates the joint distribution built from a set of
+    distributions.
 
     Parameters
     ----------
@@ -41,7 +30,8 @@ class PriorEvaluator(object):
         the order they are expected when the class is called.
     \*distributions :
         The rest of the arguments must be instances of distributions describing
-        the priors on the variable parameters. A single distribution may contain
+        the individual distributions on the variable parameters.
+        A single distribution may contain
         multiple parameters. The set of all params across the distributions
         (retrieved from the distributions' params attribute) must be the same
         as the set of variable_args provided.
@@ -64,20 +54,20 @@ class PriorEvaluator(object):
 
     Examples
     --------
-    An example of creating a prior with constraint that total mass must
+    An example of creating a joint distribution with constraint that total mass must
     be below 30.
 
-    >>> from pycbc.inference import distributions
-    >>> from pycbc.inference import prior
+    >>> from pycbc.distributions import uniform, JointDistribution
     >>> def mtotal_lt_30(params):
         ...    return True if params["mass1"] + params["mass2"] < 30 else False
     >>> mass_lim = (2, 50)
-    >>> uniform_prior = distributions.Uniform(mass1=mass_lim, mass2=mass_lim)
-    >>> prior_eval = prior.PriorEvaluator(["mass1", "mass2"], uniform_prior,
+    >>> uniform_prior = Uniform(mass1=mass_lim, mass2=mass_lim)
+    >>> prior_eval = JointDistribution(["mass1", "mass2"], uniform_prior,
         ...                               constraints=[mtotal_lt_30])
-    >>> print prior_eval([20, 1])
+    >>> print prior_eval(mass1=20, mass2=1)
 
     """
+    name = 'joint'    
 
     def __init__(self, variable_args, *distributions, **kwargs):
 
@@ -95,7 +85,9 @@ class PriorEvaluator(object):
         # check that all of the supplied parameters are described by the given
         # distributions
         distparams = set()
-        [distparams.update(set(dist.params)) for dist in distributions]
+        for dist in distributions:
+            distparams.update(set(dist.params))
+
         varset = set(self.variable_args)
         missing_params = distparams - varset
         if missing_params:
@@ -114,7 +106,7 @@ class PriorEvaluator(object):
         n_test_samples = kwargs["n_test_samples"] \
                              if "n_test_samples" in kwargs else int(1e6)
         if self._constraints:
-            logging.info("Renormalizing prior for constraints")
+            logging.info("Renormalizing distribution for constraints")
 
             # draw samples
             samples = {}
@@ -160,7 +152,7 @@ class PriorEvaluator(object):
         return params
 
     def __call__(self, **params):
-        """Evalualate prior for parameters.
+        """Evalualate joint distribution for parameters.
         """
         for constraint in self._constraints:
             if not constraint(params):
@@ -169,7 +161,7 @@ class PriorEvaluator(object):
                     for d in self.distributions]) - self._logpdf_scale
 
     def rvs(self, size=1):
-        """ Rejection samples the prior parameter space.
+        """ Rejection samples the parameter space.
         """
 
         # create output FieldArray

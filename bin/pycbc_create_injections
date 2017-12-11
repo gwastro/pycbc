@@ -121,7 +121,7 @@ import pycbc
 from pycbc import distributions
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
-from pycbc.inference.prior import PriorEvaluator
+from pycbc.distributions import JointDistribution
 from pycbc.waveform import parameters
 from pycbc import transforms
 import h5py
@@ -250,7 +250,7 @@ logging.info("Reading distributions")
 dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
 # construct class that will draw the samples
-randomsampler = PriorEvaluator(variable_args, *dists,
+randomsampler = JointDistribution(variable_args, *dists,
                                **{"constraints" : constraints})
 
 logging.info("Drawing samples")

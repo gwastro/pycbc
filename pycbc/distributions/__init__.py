@@ -1,4 +1,4 @@
-# Copyright (C)  2016 Collin Capano, Christopher M. Biwer
+# Copyright (C)  2016 Collin Capano, Christopher M. Biwer, Alex Nitz
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -16,7 +16,6 @@
 This modules provides classes and functions for drawing and calculating the
 probability density function of distributions.
 """
-
 from pycbc.distributions.angular import *
 from pycbc.distributions.arbitrary import *
 from pycbc.distributions.gaussian import *
@@ -25,6 +24,7 @@ from pycbc.distributions.sky_location import *
 from pycbc.distributions.uniform import *
 from pycbc.distributions import uniform_log
 from pycbc.distributions.spins import IndependentChiPChiEff
+from pycbc.distributions.joint import JointDistribution
 
 # a dict of all available distributions
 distribs = {
