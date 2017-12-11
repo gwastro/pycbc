@@ -30,7 +30,6 @@ import unittest
 import numpy
 from pycbc import distributions
 from pycbc.inference import likelihood
-from pycbc.distributions import JointDistribution
 from pycbc.inference import sampler
 from pycbc.psd import analytical
 from pycbc.waveform import generator
@@ -128,7 +127,7 @@ class TestSamplers(unittest.TestCase):
             else:
                 raise KeyError("Do not recognize parameter %s" % param)
             prior_dists.append(dist)
-        return JointDistribution(parameters, *prior_dists)
+        return distributions.JointDistribution(parameters, *prior_dists)
 
     def get_likelihood_evaluator(self, waveform_gen, data, prior_eval):
         """ Returns the likelihood evaluator class.
