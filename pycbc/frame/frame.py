@@ -266,7 +266,7 @@ def datafind_connection(server=None):
                 host=server, port=port)
     return connection
     
-def frame_paths(frame_type, start_time, end_time, server=None, url_type=None):
+def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     """Return the paths to a span of frame files
     
     Parameters
