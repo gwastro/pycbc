@@ -37,8 +37,8 @@ import h5py
 import pystan
 import numpy as np
 import scipy.stats as ss
-import scale_injections as si
-from rates_functions import *
+from pycbc.population import scale_injections as si
+from pycbc.population import rates_functions as rf
 import matplotlib.pyplot as plt
 
 import seaborn as sns
@@ -76,11 +76,11 @@ injections = si.read_injections(opts.sim_folder)
 # Read the chirp-mass samples -- Imported from rates_function
 mchirp_sampler, prob, label = {}, {}, {}
 distrs = ['lnm', 'imf']
-mchirp_sampler['lnm'] = mchirp_sampler_lnm
-mchirp_sampler['imf'] = mchirp_sampler_imf
+mchirp_sampler['lnm'] = rf.mchirp_sampler_lnm
+mchirp_sampler['imf'] = rf.mchirp_sampler_imf
 
-prob['lnm'] = prob_lnm
-prob['imf'] = prob_imf
+prob['lnm'] = rf.prob_lnm
+prob['imf'] = rf.prob_imf
 label['lnm'] = 'Flat in log'
 label['imf'] = 'Power-law'
 
@@ -101,7 +101,7 @@ for dist in distrs:
 
 
 #Sabe background data and coincidences
-save_bkg_falloff(opts.statmap_folder, opts.bank_folder, path, opts.min_snr, 5.0)
+rf.save_bkg_falloff(opts.statmap_folder, opts.bank_folder, path, opts.min_snr, 5.0)
 
 #Load background data and coincidences/ make some plots
 coincs = np.loadtxt(path + "/coincs.txt")
@@ -114,8 +114,8 @@ fg_stats = fg_stats[fg_stats > opts.min_snr]
 
 ts = np.linspace(opts.min_snr, 11.0, 1000)
 plt.figure()
-plt.plot(ts, np.exp(log_rho_bg(ts, bg_bins, bg_counts)), label=r'$p_0$')
-plt.plot(ts, np.exp(log_rho_fg_mc(ts, fg_stats, fg_bins)), label=r'$p_1$')
+plt.plot(ts, np.exp(rf.log_rho_bg(ts, bg_bins, bg_counts)), label=r'$p_0$')
+plt.plot(ts, np.exp(rf.log_rho_fg_mc(ts, fg_stats, fg_bins)), label=r'$p_1$')
 plt.yscale('log')
 plt.xlabel(r"$x'$")
 plt.ylabel(r"$p(x')$")
@@ -130,14 +130,14 @@ with h5py.File(opts.prior_samples, "r") as f:
     Rpl = np.array(f['power-law/Rf'])
     
 alpha, mu, sigma = {}, {}, {}
-alpha['lnm'], mu['lnm'], sigma['lnm'] = fit(Rfl)
-alpha['imf'], mu['imf'], sigma['imf'] = fit(Rpl)
+alpha['lnm'], mu['lnm'], sigma['lnm'] = rf.fit(Rfl)
+alpha['imf'], mu['imf'], sigma['imf'] = rf.fit(Rpl)
 
 #Estimate rates
 rate_data = {}
 rate_samples = {}
-stan_file = '/home/vaibhav/software/my_svn/rates_related/scale_injections/log_dist/bkg_and_rates_prior/rate-single.stan'
-log_fg_ratios = log_rho_fg_mc(coincs, fg_stats, fg_bins) - log_rho_bg(coincs, bg_bins, bg_counts)
+
+log_fg_ratios = rf.log_rho_fg_mc(coincs, fg_stats, fg_bins) - rf.log_rho_bg(coincs, bg_bins, bg_counts)
 for dist in distrs:
     rate_data[dist] = {'Ncoincs': len(log_fg_ratios),
            'log_fg_ratios': log_fg_ratios,
@@ -146,7 +146,7 @@ for dist in distrs:
            'alpha': alpha[dist],
            'mu': mu[dist],
            'sigma': sigma[dist]}
-    rate_fit = pystan.stan(file=stan_file, data=rate_data[dist], iter=20000)
+    rate_fit = pystan.stan(file=opts.stan_file, data=rate_data[dist], iter=20000)
     rate_samples[dist] = rate_fit.extract(permuted=True)
     rate_fit
 
@@ -171,8 +171,8 @@ with h5py.File(path+'/rate-posterior.hdf5', 'w') as out:
 
 # Make prior/posterior plot
 post_alpha, post_mu, post_sigma = {}, {}, {}
-post_alpha['lnm'], post_mu['lnm'], post_sigma['lnm'] = fit(rate_samples['lnm']['Rf'])
-post_alpha['imf'], post_mu['imf'], post_sigma['imf'] = fit(rate_samples['imf']['Rf'])
+post_alpha['lnm'], post_mu['lnm'], post_sigma['lnm'] = rf.fit(rate_samples['lnm']['Rf'])
+post_alpha['imf'], post_mu['imf'], post_sigma['imf'] = rf.fit(rate_samples['imf']['Rf'])
 
 plt.figure()
 log_R = np.log(Rfl)
@@ -213,4 +213,4 @@ plt.savefig(path+'/p_astro.png')
 
 p_astro = [1 + expm1(np.sort(log_pastros_imf)[::-1]), 1 + expm1(np.sort(log_pastros_lnm)[::-1])]
    
-return p_astro 
+print p_astro 
