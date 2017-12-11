@@ -94,7 +94,7 @@ for p in fractions.keys():
 
     # plot parameter
     j = parameters[0].index(p)
-    ax.plot(opts.quantiles, fractions[p], label=labels[j])
+    ax.plot(opts.quantiles, fractions[p], label=r"{}".format(labels[j][0]))
 
 # set legend
 ax.legend()
