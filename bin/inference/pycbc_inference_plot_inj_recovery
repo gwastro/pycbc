@@ -101,6 +101,8 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
     sampled_vals = input_samples[parameter].to_array()
     injected_vals = [e[0] for e in inj_parameters[parameter]]
 
+    print injected_vals
+
     # compute quantiles of sampled results
     quantiles = numpy.array([numpy.percentile(sampled_vals, 100 * q)
                              for q in opts.quantiles])

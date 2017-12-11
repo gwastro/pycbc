@@ -1626,7 +1626,7 @@ class PycbcCreateInjectionsExecutable(Executable):
         super(PycbcCreateInjectionsExecutable, self).__init__(
                                cp, exe_name, universe, ifo, out_dir, tags)
 
-    def create_node(self, config_file=None, tags=None):
+    def create_node(self, config_file=None, seed=None, tags=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
 
         Parameters
@@ -1634,6 +1634,8 @@ class PycbcCreateInjectionsExecutable(Executable):
         config_file : File
             A ``File`` for inference configuration file to be used
             with ``--config-files`` option.
+        seed : int
+            Seed to use for generating injections.
         tags : list
             A list of tags to include in filenames.
 
@@ -1654,6 +1656,8 @@ class PycbcCreateInjectionsExecutable(Executable):
         # make node for running executable
         node = Node(self)
         node.add_input_opt("--config-file", config_file)
+        if seed:
+            node.add_opt("--seed", seed)
         injection_file = node.new_output_file_opt(analysis_time,
                                                   ".hdf", "--output-file",
                                                   tags=tags)

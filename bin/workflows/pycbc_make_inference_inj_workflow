@@ -171,7 +171,9 @@ for i in range(n_injections):
 
     # make node for drawing injection parameter values
     if not opts.data_type == "analytical":
-        node, injection_file = create_injections_exe.create_node(config_file)
+        node, injection_file = create_injections_exe.create_node(config_file,
+                                                                 seed=i,
+                                                                 tags=[str(i)])
         workflow += node
     else:
         injection_file = None

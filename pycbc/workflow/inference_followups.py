@@ -404,12 +404,10 @@ def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
     # make the directory that will contain the output files
     makedir(output_dir)
 
-    # make Executable for plotting the recovery plot
-    plot_exe = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                              out_dir=output_dir, tags=tags)
-
     # add command line options
     for param in parameters:
+        plot_exe = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                                  out_dir=output_dir, tags=tags + [param])
         node = plot_exe.create_node()
         node.add_input_list_opt("--input-file", inference_files)
         node.new_output_file_opt(analysis_seg, ".png", "--output-file")
