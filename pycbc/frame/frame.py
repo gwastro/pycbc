@@ -266,7 +266,7 @@ def datafind_connection(server=None):
                 host=server, port=port)
     return connection
     
-def frame_paths(frame_type, start_time, end_time, server=None):
+def frame_paths(frame_type, start_time, end_time, server=None, url_type=None):
     """Return the paths to a span of frame files
     
     Parameters
@@ -280,7 +280,10 @@ def frame_paths(frame_type, start_time, end_time, server=None):
     server : {None, SERVER:PORT string}, optional
         Optional string to specify the datafind server to use. By default an
         attempt is made to use a local datafind server.
-        
+    url_type : string
+        Returns only frame URLs with a particular scheme or head such
+        as "file" or "gsiftp". Default is "file", which queries locally 
+        stored frames. Option can be disabled if set to None. 
     Returns
     -------
     paths : list of paths
@@ -292,11 +295,11 @@ def frame_paths(frame_type, start_time, end_time, server=None):
     """
     site = frame_type[0]
     connection = datafind_connection(server)
-    connection.find_times(site, frame_type, 
+    connection.find_times(site, frame_type,
                           gpsstart=start_time, gpsend=end_time)
-    cache = connection.find_frame_urls(site, frame_type, start_time, end_time)
+    cache = connection.find_frame_urls(site, frame_type, start_time, end_time,urltype=url_type)
     paths = [entry.path for entry in cache]
-    return paths    
+    return paths
     
 def query_and_read_frame(frame_type, channels, start_time, end_time,
                          sieve=None, check_integrity=False):
