@@ -1671,7 +1671,7 @@ class PycbcInferenceExecutable(Executable):
                                                        ifo, out_dir, tags)
 
     def create_node(self, channel_names, config_file, injection_file=None,
-                    seed=None, tags=None):
+                    seed=None, fake_strain_seed=None, tags=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_inference``.
 
         Parameters
@@ -1686,6 +1686,8 @@ class PycbcInferenceExecutable(Executable):
             option.
         seed : int
             An ``int`` to be used with ``--seed`` option.
+        fake_strain_seed : dict
+            An ``int`` to be used with ``--fake-strain-seed`` option.
         tags : list
             A list of tags to include in filenames.
 
@@ -1703,9 +1705,13 @@ class PycbcInferenceExecutable(Executable):
         end_time = self.cp.get("workflow", "end-time")
         analysis_time = segments.segment(int(start_time), int(end_time))
 
-        # get options for channel names
+        # get multi-IFO opts
         channel_names_opt = " ".join(["{}:{}".format(k, v)
                                       for k, v in channel_names.iteritems()])
+        if fake_strain_seed is not None:
+            fake_strain_seed_opt = " ".join([
+                                    "{}:{}".format(k, v)
+                                    for k, v in fake_strain_seed.iteritems()])
 
         # make node for running executable
         node = Node(self)
@@ -1714,6 +1720,8 @@ class PycbcInferenceExecutable(Executable):
         node.add_opt("--gps-end-time", end_time)
         node.add_opt("--channel-name", channel_names_opt)
         node.add_input_opt("--config-file", config_file)
+        if fake_strain_seed is not None:
+            node.add_opt("--fake-strain-seed", fake_strain_seed_opt)
         if injection_file:
             node.add_input_opt("--injection-file", injection_file)
         if seed:

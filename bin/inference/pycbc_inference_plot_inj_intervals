@@ -5,7 +5,7 @@ within a credible interval versus credible interval.
 
 import argparse
 import logging
-import matplotlib as mpl
+import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.colorbar as cbar
 import matplotlib.pyplot as plt
 import numpy
@@ -73,8 +73,9 @@ for input_file, input_parameters, input_samples in zip(
             q *= 100
             low = 50 - q / 2.0
             high = 50 + q / 2.0
-            low_val, high_val = numpy.array([numpy.percentile(input_samples[p], q)
-                                             for q in [low, high]])
+            low_val, high_val = numpy.array([
+                                         numpy.percentile(input_samples[p], q)
+                                         for q in [low, high]])
 
             # determine if inside or outside interval
             injected_vals = inj_parameters[p]

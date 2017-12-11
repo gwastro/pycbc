@@ -366,7 +366,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
     return node.output_files
 
 def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
-                             name="inference_recovery",
+                             parameters, name="inference_recovery",
                              analysis_seg=None, tags=None):
     """ Sets up the recovered versus injected parameter plot in the workflow.
 
@@ -378,6 +378,8 @@ def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
         The files with posterior samples.
     output_dir: str
         The directory to store result plots and files.
+    parameters : list
+        A ``list`` of parameters. Each parameter gets its own plot.
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -407,7 +409,7 @@ def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
                               out_dir=output_dir, tags=tags)
 
     # add command line options
-    for param in cp.options("variable_args"):
+    for param in parameters:
         node = plot_exe.create_node()
         node.add_input_list_opt("--input-file", inference_files)
         node.new_output_file_opt(analysis_seg, ".png", "--output-file")

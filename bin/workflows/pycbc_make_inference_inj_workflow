@@ -176,12 +176,20 @@ for i in range(n_injections):
     else:
         injection_file = None
 
+    # set fake strain seed
+    if opts.data_type == "simulated_data":
+        fake_strain_seed = {ifo : j + i * len(workflow.ifos)
+                            for j, ifo in enumerate(workflow.ifos)}
+    else:
+        None
+
     # make node for running sampler
     node, inference_file = inference_exe.create_node(
                                      channel_names,
                                      config_file,
                                      injection_file=injection_file,
-                                     seed=i, tags=[str(i)])
+                                     seed=i, fake_strain_seed=fake_strain_seed,
+                                     tags=[str(i)])
     inference_files.append(inference_file)
     workflow += node
 
@@ -243,10 +251,19 @@ cp = configuration.WorkflowConfigParser([opts.inference_config_file])
 
 # add injection recovery plots
 if not opts.data_type == "analytical":
-    inj_plots = inference_followups.make_inference_inj_plots(
+    inj_int_files = inference_followups.make_inference_inj_plots(
                                          workflow, cp,
-                                         inference_files, rdir.base)
-    layout.single_layout(rdir.base, inj_plots)
+                                         inference_files, rdir.base,
+                                         cp.options("variable_args"),
+                                         name="inference_intervals")
+    inj_rec_files = inference_followups.make_inference_inj_plots(
+                                         workflow, cp,
+                                         inference_files, rdir.base,
+                                         cp.options("variable_args"),
+                                         name="inference_recovery")
+    layout.two_column_layout(rdir.base,
+                             [(a, b)
+                              for a, b in zip(inj_int_files, inj_rec_files)])
 
 # create versioning HTML pages
 versioning.create_versioning_page(rdir["workflow/version"], container.cp)
