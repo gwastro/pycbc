@@ -1,7 +1,5 @@
-import copy
 import numpy as np
-import glob, sys, h5py
-import astropy.units as unt
+import glob, sys, copy, h5py
 from scipy import interpolate
 from scipy.integrate import quad
 from scipy.stats import kstest, ks_2samp
@@ -12,7 +10,7 @@ _redshifts, _d_lum, _I = np.arange(0., 5., 0.01), [], []
 _save_params = ['mass1', 'mass2', 'spin1z', 'spin2z', 'spin1y', 'spin2y', 'spin1x', 'spin2x', 'distance', 'end_time']
 
 for zz in _redshifts:
-    _d_lum.append(cosmo.luminosity_distance(zz)/unt.Mpc)
+    _d_lum.append(cosmo.luminosity_distance(zz).value)
 _dlum_interp = interpolate.interp1d(_d_lum, _redshifts)
 
 def read_injections(folder_name):
@@ -41,13 +39,13 @@ def read_injections(folder_name):
      
         # Identify the mass distribution
     
-        def cdf_componentMass(xx):
+        def cdf_componentMass(xx): #Assumes both the masses have the same distribution
             return (xx - min_m2)/(max_m2 - min_m2)
 
         def cdf_totalMass(xx):
             return (xx - min_totM)/(max_totM - min_totM)
-        read_injections
-        def cdf_log(xx):
+ 
+        def cdf_log(xx): #Assumes both the masses have the same distribution
             return (np.log(xx) - np.log(min_m2))/(np.log(max_m2) - np.log(min_m2))        
     
         p_thr = 0.0001
@@ -168,13 +166,13 @@ def read_injections(folder_name):
                 for data_key in injections[key_files_1].keys():
                     if data_key == 'gps':
                         continue
-                    chunk_data[key][data_key].append(injections[key_files_2][data_key])  
-                    
+                    chunk_data[key][data_key].append(injections[key_files_2][data_key])
+
     chunk_data['z_range'] = [round(10*dlum_to_z(min_d) - 0.5)/10., round(10*dlum_to_z(max_d) + 0.5)/10.]
                     
     return chunk_data
 
-def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val = [8.]):
+def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val = [8.]): #Need to make this flexible to include ifar threshold
     '''
     Based on injection strategy and the desired astro model estimate the injected volume. Scale injections and estimate
     sensitive volume.
@@ -204,8 +202,8 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
             continue        
         
         z_astro = astro_redshifts(min_z, max_z, nsamples)
-        astro_lum_dist = cosmo.luminosity_distance(z_astro)/unt.Mpc
-        V = quad(lambda z: cosmo.differential_comoving_volume(z)*unt.sr/unt.Mpc**3/(1+z), 0., max_z)[0]
+        astro_lum_dist = cosmo.luminosity_distance(z_astro).value
+        V = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., max_z)[0]
         
         bound, mch_astro_det = [], np.array(mchirp_sampler(nsamples)) * (1. + z_astro)
         
@@ -246,16 +244,16 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
         
             unique_distr_2 = np.unique(inj_distr_2, axis = 0)   
             
-            if np.array_equal(unique_distr, unique_distr_2) == True:
+            if np.array_equal(unique_distr, unique_distr_2):
                 injection_chunks[kee]['inj_astro_vol'] = inj_V0               
                 
     # Estimate the sensitive volume
     z_range = injection_chunks['z_range']
-    V_min = quad(lambda z: cosmo.differential_comoving_volume(z)*unt.sr/unt.Mpc**3/(1+z), 0., z_range[0])[0]
-    V_max = quad(lambda z: cosmo.differential_comoving_volume(z)*unt.sr/unt.Mpc**3/(1+z), 0., z_range[1])[0]
+    V_min = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., z_range[0])[0]
+    V_max = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., z_range[1])[0]
     def pdf_z_astro(z):
         ''' Get the probability density for the rate of events at a redshift assuming standard cosmology''' 
-        return cosmo.differential_comoving_volume(z)*unt.sr/unt.Mpc**3/(1+z)/(V_max - V_min)    
+        return cosmo.differential_comoving_volume(z).value/(1+z)/(V_max - V_min)    
     
     for key in injection_chunks.keys():    
         
@@ -298,7 +296,7 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
             p_out = model_pdf(m1_sc, m2_sc, spin1z, spin2z) * pdf_z_astro(z_inj)
         
             p_in = 0
-            J = abs(cosmo.luminosity_distance(z_inj + 0.0005) - cosmo.luminosity_distance(z_inj - 0.0005))/0.001/unt.Mpc
+            J = abs(cosmo.luminosity_distance(z_inj + 0.0005).value - cosmo.luminosity_distance(z_inj - 0.0005).value)/0.001
             for ii in range(narrays):
                 inj_d = inj_distr[ii]
                 hspin1, hspin2 = data['s1_range'][ii][1], data['s2_range'][ii][1]
@@ -390,13 +388,13 @@ def mcheta_to_m1m2(mch, eta):
         
     return m1, m2
 
-def jacobian_m1m2_to_mcheta(mch, eta):
+def jacobian_m1m2_to_mcheta(mch, eta, minm1, maxm1):
     '''
     Estimate the Jacobian to scale a PDF from chirp mass-eta to m1-m2 space. P(m1, m2) = J P(mch, eta)
     '''
     m1, m2 = mcheta_to_m1m2(mch, eta)
     
-    bound = np.sign(m1 - minm1d) + np.sign(m2 - minm2d) + np.sign(maxm1d - m1) + np.sign(maxm2d - m2) 
+    bound = np.sign(m1 - minm1) + np.sign(m2 - minm2) + np.sign(maxm1 - m1) + np.sign(maxm2 - m2) 
     
     if bound < 4.:
         return 0
@@ -419,11 +417,11 @@ def astro_redshifts(min_z, max_z, nsamples):
     ''' Sample the redshifts for sources, with redshift independent rate, using standard cosmology'''
     
     dz, fac = 0.001, 3.0 # use interpolation instead of directly estimating all the pdfz for rndz
-    V = quad(lambda z: cosmo.differential_comoving_volume(z)*unt.sr/unt.Mpc**3/(1+z), 0., max_z)[0]
+    V = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., max_z)[0]
     zs = np.arange(min_z, max_z + dz/2., dz)
     zbins = np.arange(min_z, max_z + dz/2., dz)
     zcenter = (zbins[:-1] + zbins[1:]) / 2
-    pdfz = cosmo.differential_comoving_volume(zcenter)*unt.sr/unt.Mpc**3/(1+zcenter)/V
+    pdfz = cosmo.differential_comoving_volume(zcenter).value/(1+zcenter)/V
 
     int_pdf = interpolate.interp1d(zcenter, pdfz, bounds_error=False, fill_value=0)
 
@@ -469,21 +467,21 @@ def get_accumulated_falloff(dictionary):
         
     return np.hstack(np.array(snrs).flat)
 
-def apply_cal_uncert(injection_chunks, cal_uncert):
+def apply_cal_uncert(inj_chunks, cal_uncert):
     """
     Apply calibration uncertainity to the VT estimates. The number of chunks in the dictionary and size of cal_uncert 
     must be equal
     """
     injection_chunks = copy.deepcopy(inj_chunks)
     
-    for key, uncert in zip(dictionary.keys(), cal_uncert):
+    for key, uncert in zip(injection_chunks.keys(), cal_uncert):
         
         if key == 'z_range':
             continue    
         
         vt = injection_chunks[key]['VT']
         sigma_vt_sys = 3.0 * uncert * vt
-        sigma_vt = np.sqrt(sigma_vt_stat**2 + injection_chunks[key]['VT_err']**2)
+        sigma_vt = np.sqrt(sigma_vt_sys**2 + injection_chunks[key]['VT_err']**2)
         injection_chunks[key]['VT_err'] = sigma_vt
         injection_chunks[key]['cal_uncert'] = cal_uncert
         
