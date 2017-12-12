@@ -2,6 +2,7 @@
 A set of helper functions for evaluating rates.
 """
 
+import glob
 from scipy import integrate, optimize
 from scipy.special import erf
 import numpy as np, h5py
@@ -10,8 +11,25 @@ import scipy.stats as ss
 import bisect
 
 def process_full_data(hdffile, rhomin, mass1, mass2, min_bh_mass):
-    """
-    Code to read the zero-lag triggers.
+    """Read the zero and time-lagged triggers identified by BBH templates.
+
+       Parameters
+       ----------
+       hdfile: 
+              File that stores all the triggers
+       rhomin: float 
+              Minimum value of SNR threhold (will need including ifar)
+       mass1: array
+              First mass of the waveform in the template bank
+       mass2: array
+              Second mass of the waveform in the template bank
+       min_bh_mass: float
+              Minimimum mass for the black hole
+
+       Returns
+       -------
+       dictionary
+              containing foreground triggers and background information
     """
     with h5py.File(hdffile, 'r') as bulk:
         
@@ -31,8 +49,16 @@ def process_full_data(hdffile, rhomin, mass1, mass2, min_bh_mass):
 
 
 def merge_full_data(all_bkg):
-    """
-    Merge zero lag triggers across chunks.
+    """Merge triggers over all chunks
+
+       Parameters
+       ----------
+       all_bkg: dictionary
+
+       Returns
+       -------
+       dictionary
+              merged dictionaries
     """
     
     merged_bkg = {}
@@ -42,8 +68,22 @@ def merge_full_data(all_bkg):
     return merged_bkg
 
 def save_bkg_falloff(folder_name_statmap, folder_name_bank, path, rhomin, min_bh_mass = 5.):
-    ''' Read the STATMAP files to derive snr falloff for background events. 
-        Bank file is also provided to restrict triggers to BBH templates (component mass > 5 M).
+    ''' Read the STATMAP files to derive snr falloff for the background events. 
+        Save the output to a txt file
+        Bank file is also provided to restrict triggers to BBH templates.
+
+        Parameters
+        ----------
+        folder_name_statmap: string
+               Folder name where STATMAP files are located
+        folder_name_bank: string
+               Folder name where the bank files are located
+        path: string
+               Destination where txt file is saved
+        rhomin: float
+               Minimum value of SNR threhold (will need including ifar)
+        min_bh_mass: float
+              Minimimum mass for the black hole
     '''
 
     full_data = {}
@@ -86,6 +126,22 @@ def save_bkg_falloff(folder_name_statmap, folder_name_bank, path, rhomin, min_bh
     np.savetxt(path+"/coincs.txt", coincs, fmt='%.4e', header="coincs above threshold %.2f" % rhomin)
 
 def log_rho_bg(trigs, bins, counts):
+    ''' Calculate the log of background fall-off
+
+        Parameters
+        ----------
+        trigs: array
+               SNR values of all the triggers
+        bins: string
+               bins for histogrammed triggers
+        path: string
+               counts for histogrammed triggers   
+
+        Returns
+        -------
+        array
+    '''
+
     trigs = np.atleast_1d(trigs)
     
     N = sum(counts)
@@ -133,6 +189,20 @@ def log_rho_fg_mc(t, injstats, bins):
     
 def fit(R):
     ''' Fit skew - lognormal to the rate samples achived from a prior analysis
+
+        Parameters
+        ----------
+        R: array
+           Rate samples
+
+        Returns
+        -------
+        ff[0]: float
+            The skewness
+        ff[1]: float
+            The mean
+        ff[2]: float
+            The standard deviation 
     '''
     
     def pdf(x):
@@ -164,6 +234,26 @@ def fit(R):
 
 # PDF for the two caninical models
 def prob_lnm(m1, m2, s1z, s2z, **kwargs):
+    ''' Return probability density for uniform in log
+
+        Parameters
+        ----------
+        m1: array
+            Component masses 1
+        m2: array
+            Component masses 2
+        s1z: array
+            Aligned spin 1(Not in use currently)
+        s2z:
+            Aligned spin 2(Not in use currently)
+        **kwargs: string
+            Keyword arguments as model parameters
+
+        Returns
+        -------
+        p_m1_m2: array
+            The probability density for m1, m2 pair
+    '''
 
     min_mass = kwargs.get('min_mass', 5.)
     max_mass = kwargs.get('max_mass', 95.)
@@ -185,7 +275,26 @@ def prob_lnm(m1, m2, s1z, s2z, **kwargs):
     return p_m1_m2
 
 def prob_imf(m1, m2, s1z, s2z, **kwargs): 
-    
+    ''' Return probability density for power-law
+
+        Parameters
+        ----------
+        m1: array
+            Component masses 1
+        m2: array
+            Component masses 2
+        s1z: array
+            Aligned spin 1(Not in use currently)
+        s2z:
+            Aligned spin 2(Not in use currently)
+        **kwargs: string
+            Keyword arguments as model parameters
+ 
+        Returns
+        -------
+        p_m1_m2: array
+           the probability density for m1, m2 pair
+    '''    
     min_mass = kwargs.get('min_mass', 5.)
     max_mass = kwargs.get('max_mass', 95.)
     alpha = kwargs.get('alpha', -2.35)
@@ -210,12 +319,19 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
 
 # Functions to generate samples for the two canonical models
 def draw_imf_samples(**kwargs):
-    '''
-    Yields random masses, with the first component drawn from
-    the Salpeter initial mass function distribution and the
-    second mass drawn uniformly between min_mass and the mass of
-    the first component.
-    ver: version: 1 - uniform chi distribution, 2 - uniform component spin(z) distribution
+    ''' Draw samples for power-law model
+
+        Parameters
+        ----------
+        **kwargs: string
+           Keyword arguments as model parameters and number of samples
+
+        Returns
+        -------
+        array
+           The first mass
+        array
+           The second mass
     '''
  
     alpha_salpeter = kwargs.get('alpha', -2.35)
@@ -237,11 +353,21 @@ def draw_imf_samples(**kwargs):
     return np.resize(m1, nsamples), np.resize(m2, nsamples)    
 
 def draw_lnm_samples(**kwargs):
+    ''' Draw samples for uniform-in-log model
+
+        Parameters
+        ----------
+        **kwargs: string
+           Keyword arguments as model parameters and number of samples
+
+        Returns
+        -------
+        array
+           The first mass
+        array
+           The second mass
     '''
-    Yields random masses drawn uniformly-in-log between min_mass
-    and max_mass, discarding those with a total mass exceeding
-    max_mtotal.
-    '''
+
     #PDF doesnt match with sampler
     nsamples = kwargs.get('nsamples', 1)
     min_mass = kwargs.get('min_mass', 5.)
@@ -260,19 +386,58 @@ def draw_lnm_samples(**kwargs):
     return np.resize(m1, nsamples), np.resize(m2, nsamples)
 
 def m1m2_to_mcheta(m1, m2):
-    ''' Get chirp mass and eta for m1 and m2'''
+    ''' Get chirp mass and eta for m1 and m2
+
+        Parameters
+        ----------
+        m1: array
+            Component masses 1
+        m2: array
+            Component masses 2
+
+        Returns
+        -------
+        array
+           Chirp mass
+        array
+           Symmetric mass ratio 
+    '''
     m1, m2 = np.array(m1), np.array(m2)
     return (m1*m2)**.6/(m1+m2)**.2, m1*m2/(m1+m2)**2
 
 # Functions to generate chirp mass samples for the two canonical models
-def mchirp_sampler_lnm(nsamples):
-    m1, m2 = draw_lnm_samples(nsamples = nsamples)
+def mchirp_sampler_lnm(**kwargs):
+    ''' Draw chirp mass samples for uniform-in-log model
+
+        Parameters
+        ----------
+        **kwargs: string
+           Keyword arguments as model parameters and number of samples
+
+        Returns
+        -------
+        mchirp-astro: array
+           The chirp mass samples for the population
+    '''
+    m1, m2 = draw_lnm_samples(**kwargs)
     mchirp_astro, junk = m1m2_to_mcheta(m1, m2)
     
     return mchirp_astro
 
-def mchirp_sampler_imf(nsamples):
-    m1, m2 = draw_imf_samples(nsamples = nsamples)
+def mchirp_sampler_imf(**kwargs):
+    ''' Draw chirp mass samples for power-law model
+
+        Parameters
+        ----------
+        **kwargs: string
+           Keyword arguments as model parameters and number of samples
+
+        Returns
+        -------
+        mchirp-astro: array
+           The chirp mass samples for the population
+    '''
+    m1, m2 = draw_imf_samples(**kwargs)
     mchirp_astro, junk = m1m2_to_mcheta(m1, m2)
     
     return mchirp_astro
