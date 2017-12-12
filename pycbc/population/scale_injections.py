@@ -14,10 +14,21 @@ for zz in _redshifts:
 _dlum_interp = interpolate.interp1d(_d_lum, _redshifts)
 
 def read_injections(folder_name):
-    ''' 
-    Read all the injections from the files in the provided folder. The files must belong to individual set i.e. no files 
-    that combine all the injections in a run. Identify injection strategies and finds parameter boundaries. Collect 
-    injection according to GPS.
+    ''' Read all the injections from the files in the provided folder.
+        The files must belong to individual set i.e. no files that combine 
+        all the injections in a run.
+        Identify injection strategies and finds parameter boundaries.
+        Collect injection according to GPS.
+
+        Parameters
+        ----------
+        folder_name: string
+           Location of folder containing simulation files
+
+        Returns
+        -------
+        chunk_data: dictionary
+           Contains the organized information about the injections
     '''
     
     injections = {}
@@ -173,14 +184,26 @@ def read_injections(folder_name):
     return chunk_data
 
 def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val = [8.]): #Need to make this flexible to include ifar threshold
-    '''
-    Based on injection strategy and the desired astro model estimate the injected volume. Scale injections and estimate
-    sensitive volume.
-    inj_chunks: dictionary obtained after reading injections using function read_injections 
-    mchirp_sampler: Sampler for producing chirp mass samples for the astro model.
-    model_pdf: The PDF for astro model in mass1-mass2-spin1z-spin2z space. This is easily extendible to include precession
-    thr_var: Variable used to apply the threshold, e.g. stat(SNR), ifar, far.
-    thr_val: Array containing values of thresholds at which VT is to be calculated.
+    '''Based on injection strategy and the desired astro model estimate the injected volume. 
+       Scale injections and estimate sensitive volume.
+
+       Parameters
+       ----------       
+       inj_chunks: dictionary 
+            Dictionary obtained after reading injections using function read_injections 
+       mchirp_sampler: function
+            Sampler for producing chirp mass samples for the astro model.
+       model_pdf: function
+            The PDF for astro model in mass1-mass2-spin1z-spin2z space. This is easily extendible to include precession
+       thr_var: string 
+            Variable used to apply the threshold, e.g. stat(SNR), ifar, far.
+       thr_val: float
+            Array containing values of thresholds at which VT is to be calculated.
+
+       Returns
+       -------
+       injection_chunks: dictionary
+            The input dictionary with VT and VT error included for each chunk
     '''
     
     injection_chunks = copy.deepcopy(inj_chunks)
@@ -205,7 +228,7 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
         astro_lum_dist = cosmo.luminosity_distance(z_astro).value
         V = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., max_z)[0]
         
-        bound, mch_astro_det = [], np.array(mchirp_sampler(nsamples)) * (1. + z_astro)
+        bound, mch_astro_det = [], np.array(mchirp_sampler(nsamples = nsamples)) * (1. + z_astro)
         
         for uu in unique_distr:
             if uu[4][0] == 'totalMass':
@@ -329,8 +352,17 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
     return injection_chunks
 
 def process_injections(hdffile, inj_type = 'pipeline'):
-    """
-    Function to read in the injection file and extract the found injections and all injections
+    """Function to read in the injection file and extract the found injections and all injections
+
+       Parameters
+       ----------
+       hdffile: hdf file
+           File for which injections are to be processed
+
+       Returns
+       -------
+       data: dictionary
+           Dictionary containing injection read from the input file
     """
     data = {}
     
@@ -353,8 +385,17 @@ def process_injections(hdffile, inj_type = 'pipeline'):
     return data
 
 def merge_injections(all_inj):
-    """
-    Merge injections across chunks.
+    """Merge injections across chunks.
+
+       Parameters
+       ----------
+       all_inj: dictionary
+           dictionary containing injections for various chunks
+
+       Returns
+       -------
+       data: dictionary
+           Dictionary containing the merged injections
     """
     injs = {}
     for data in np.append(_save_params, 'found'):
@@ -363,20 +404,62 @@ def merge_injections(all_inj):
     return injs
         
 def m1m2_to_mcheta(m1, m2):
-    ''' Get chirp mass and eta for m1 and m2'''
+    ''' Get chirp mass and eta for m1 and m2
+
+       Parameters
+       ----------
+       m1: array/float
+           First mass of the binary
+       m2: array/float
+           Second mass of the binary
+
+       Returns
+       -------
+       array/float
+           Chirp mass for the m1, m2 pair
+       array/float
+           Symmetric mass ratio for the m1, m2 pair
+    '''
     m1, m2 = np.array(m1), np.array(m2)
     return (m1*m2)**.6/(m1+m2)**.2, m1*m2/(m1+m2)**2  
 
 def Mmch_to_m1m2(M, mch):
-    ''' Get component masses from chirp and total mass'''
+    '''Get component masses from chirp and total mass
+
+       Parameters
+       ----------
+       M: array/float
+           Total mass of the binary
+       mch: array/float
+           Chirp mass of the binary
+
+       Returns
+       -------
+       array/float
+           First mass of the binary
+       array/float
+           Second mass of the binary
+    '''
     M, mch = np.array(M), np.array(mch)
     b = (mch**5 * M)**(1./3)
     m1 = (M - np.sqrt(M**2 - 4*b))/2 
     return m1, M - m1
 
 def mcheta_to_m1m2(mch, eta):
-    '''
-    Get component masses from chirp mass and mass ratio
+    '''Get component masses from chirp mass and mass ratio
+
+       Parameters
+       ----------
+       mch: array/float
+           Chirp mass of the binary
+       eta: array/float
+
+       Returns
+       -------
+       aarray/float
+           First mass of the binary
+       array/float
+           Second mass of the binary
     '''    
     mch, eta = np.array(mch), np.array(eta)
     idx = np.where(eta > 0.24999)
@@ -409,12 +492,38 @@ def jacobian_m1m2_to_mcheta(mch, eta, minm1, maxm1):
     return detJ
                                                       
 def dlum_to_z(dl):
-    ''' Get the redshift for a luminosity distance'''
+    ''' Get the redshift for a luminosity distance
+
+        Parameters
+        ----------
+        dl: array
+           The array of luminosity distances
+
+        Returns
+        -------
+        array
+           The redshift values corresponding to the luminosity distances
+    '''
     
     return _dlum_interp(dl)           
 
 def astro_redshifts(min_z, max_z, nsamples):
-    ''' Sample the redshifts for sources, with redshift independent rate, using standard cosmology'''
+    '''Sample the redshifts for sources, with redshift independent rate, using standard cosmology
+
+       Parameters
+       ----------
+       min_z: float
+            Minimum redshift
+       max_z: float
+            Maximum redshift
+       nsamples: int
+            Number of samples
+
+       Returns
+       -------
+       z_astro: array
+            nsamples of redshift, between min_z, max_z, confirming standard cosmology
+    '''
     
     dz, fac = 0.001, 3.0 # use interpolation instead of directly estimating all the pdfz for rndz
     V = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., max_z)[0]
@@ -439,8 +548,19 @@ def astro_redshifts(min_z, max_z, nsamples):
     return z_astro
 
 def get_summed_vt(dictionary):
-    '''
-    Read the VT results produced from estimate_vt and combine them.
+    '''Read the VT results produced from estimate_vt and combine them.
+
+       Parameters
+       ----------
+       dictionary: dictionary
+             Dictionary obtained from estimate_vt function
+
+       Returns
+       -------
+       sum_vt: float
+          Sum of VTs for all the chunks in the dictionary
+       float
+          Error on summed VT estimated by propogating error
     '''
     sum_vt, sum_vt_err = 0, 0
     for key in dictionary.keys():
@@ -454,8 +574,17 @@ def get_summed_vt(dictionary):
     return sum_vt, np.sqrt(sum_vt_err) 
 
 def get_accumulated_falloff(dictionary):
-    '''
-    collect SNRs from all chunks to get collected fall off.
+    '''collect SNRs from all chunks to get collected fall off.
+
+       Parameters
+       ----------
+       dictionary: dictionary
+             Dictionary obtained from estimate_vt function
+
+       Returns
+       -------
+       float
+          array contaning all the SNRs over the chunks
     '''
     
     snrs = []
@@ -469,8 +598,20 @@ def get_accumulated_falloff(dictionary):
 
 def apply_cal_uncert(inj_chunks, cal_uncert):
     """
-    Apply calibration uncertainity to the VT estimates. The number of chunks in the dictionary and size of cal_uncert 
-    must be equal
+    Apply calibration uncertainity to the VT estimates. 
+    The number of chunks in the dictionary and size of cal_uncert must be equal
+
+       Parameters
+       ----------
+       dictionary: inj_chunks
+             Dictionary obtained from estimate_vt function
+       cal_uncert: array
+             Array containing calibration uncertainity for all the chunks
+
+       Returns
+       -------
+       injection_chunks: dictionary
+             Dictionary with calibration uncertainity included in the VT values
     """
     injection_chunks = copy.deepcopy(inj_chunks)
     
@@ -491,14 +632,38 @@ def apply_cal_uncert(inj_chunks, cal_uncert):
 
 def inj_mass_pdf(key, mass1, mass2, low_mass, high_mass, low_mass_2 = 0, high_mass_2 = 0):
     
+    '''Estimate the probability density based on the injection strategy
+
+       Parameters
+       ----------
+       key: string
+          Injection strategy
+       mass1: array
+          First mass of the injections
+       mass2: array
+          Second mass of the injections
+       low_mass: float
+          Lower value of the mass distributions 
+       high_mass: float
+          higher value of the mass distribution
+
+       Returns
+       -------
+       pdf: array
+          Probability density of the injections 
+    '''
+
     mass1, mass2 = np.array(mass1), np.array(mass2)
     
     if key == 'totalMass':
-        ''' Returns the PDF of mass when total mass is uniformly distributed. Both the component masses 
-            have the same distribution for this case.
+        ''' Returns the PDF of mass when total mass is uniformly distributed. 
+            Both the component masses have the same distribution for this case.
+
+            Parameters
+            ----------
             low_mass: lower component mass
             high_mass: higher component mass
-            mass1, mass2: Array of component masses'''
+        '''
         
         bound = np.sign((low_mass + high_mass) - (mass1 + mass2)) 
         bound += np.sign((high_mass - mass1)*(mass1 - low_mass)) + np.sign((high_mass - mass2)*(mass2 - low_mass))
@@ -509,11 +674,14 @@ def inj_mass_pdf(key, mass1, mass2, low_mass, high_mass, low_mass_2 = 0, high_ma
         return pdf
     
     if key == 'componentMass':
-        ''' Returns the PDF of mass when component mass is uniformly distributed. Component masses are independent 
-            for this case.
+        ''' Returns the PDF of mass when component mass is uniformly distributed. 
+            Component masses are independent for this case.
+
+            Parameters
+            ----------
             low_mass: lower component mass
             high_mass: higher component mass
-            mass1, mass2: Array of component masses'''  
+         '''
         
         bound = np.sign((high_mass - mass1)*(mass1 - low_mass)) + np.sign((high_mass_2 - mass2)*(mass2 - low_mass_2))
         idx = np.where(bound != 2)
@@ -523,10 +691,14 @@ def inj_mass_pdf(key, mass1, mass2, low_mass, high_mass, low_mass_2 = 0, high_ma
         return pdf
     
     if key == 'log':
-        ''' Returns the PDF of mass when component mass is uniform in log. Component masses are independent for this case.
+        ''' Returns the PDF of mass when component mass is uniform in log. 
+            Component masses are independent for this case.
+
+            Parameters
+            ----------
             low_mass: lower component mass
             high_mass: higher component mass
-            mass1, mass2: Array of component masses'''  
+         '''  
         
         bound = np.sign((high_mass - mass1)*(mass1 - low_mass)) + np.sign((high_mass_2 - mass2)*(mass2 - low_mass_2))
         idx = np.where(bound != 2)
@@ -536,6 +708,17 @@ def inj_mass_pdf(key, mass1, mass2, low_mass, high_mass, low_mass_2 = 0, high_ma
         return pdf   
     
 def inj_spin_pdf(key, high_spin, spinz):
+    ''' Estimate the probability density of the injections for the spin distribution.
+
+        Parameters
+        ----------
+        key: string
+          Injections strategy
+        high_spin: float
+          Maximum spin used in the strategy
+        spinz: array
+          Spin of the injections (for one component)
+    '''
     
     # If the data comes from disable_spin simulation
     if spinz[0] == 0:
@@ -547,10 +730,10 @@ def inj_spin_pdf(key, high_spin, spinz):
     bound += np.sign(1 - np.absolute(spinz))
     
     if key == 'precessing':
-        ''' Returns the PDF of spins when total spin is isotropically distributed. Both the component masses 
-            have the same distribution for this case.
-            high_mass: Maximum magnitude of the spin
-            spin1, spin2: Array of component spins (aligned)'''
+        ''' Returns the PDF of spins when total spin is isotropically distributed. 
+            Both the component masses have the same distribution for this case.
+         '''
+
         pdf = (np.log(high_spin - np.log(abs(spinz)))/high_spin/2)
         idx = np.where(bound != 2)
         pdf[idx] = 0
@@ -558,10 +741,10 @@ def inj_spin_pdf(key, high_spin, spinz):
         return pdf
     
     if key == 'aligned':
-        ''' Returns the PDF of mass when spins are aligned and uniformly distributed. Component spins are independent 
-            for this case.
-            high_spin: Maximum magnitude of the spin
-            spin1z, spin2z: Array of component spins (aligned)'''    
+        ''' Returns the PDF of mass when spins are aligned and uniformly distributed. 
+            Component spins are independent for this case.
+        '''
+
         pdf = (np.ones_like(spinz) / 2 / high_spin)
         idx = np.where(bound != 2)
         pdf[idx] = 0
@@ -575,14 +758,25 @@ def inj_spin_pdf(key, high_spin, spinz):
         return pdf    
     
 def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp = 1):
+    ''' Estimate the probability density of the injections for the distance distribution.
+
+        Parameters
+        ----------
+        key: string
+          Injections strategy
+        distance: array
+          Array of distances
+        low_dist: float
+          Lower value of distance used in the injection strategy
+        high_dist: float
+          Higher value of distance used in the injection strategy
+    '''
+
     distance = np.array(distance)
     
     if key == 'uniform':
-        ''' Returns the PDF at a distance when distance is uniformly distributed. If distribution is dchirp, distance
-        is scaled before invoking this function.
-        low_dist: lower distance
-        high_dist: higher distance
-        distance: Array of distances'''
+        ''' Returns the PDF at a distance when distance is uniformly distributed.
+        '''
 
         pdf = np.ones_like(distance)/(high_dist - low_dist)
         bound = np.sign((high_dist - distance)*(distance - low_dist)) 
@@ -592,9 +786,7 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp = 1):
 
     if key == 'dchirp':
         ''' Returns the PDF at a distance when distance is uniformly distributed but scaled by the chirp mass
-        low_dist: lower distance
-        high_dist: higher distance
-        distance: Array of distances'''
+        '''
       
         weight = (mchirp/_mch_BNS)**(5./6)
         pdf = np.ones_like(distance) / weight / (high_dist - low_dist)
