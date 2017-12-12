@@ -215,20 +215,6 @@ if __name__ == '__main__':
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
 
-    # KLUDGE! Loop through the injections until we find one that 
-    # will be processed, in order to populate the weave cache.
-    # This is a short-term fix until the issues with
-    # https://github.com/ligo-cbc/pycbc/issues/501
-    # can be resolved.  This will wastefully run the first injection
-    # twice which could be avoided, but since this is a short-term
-    # kludge anyway I'd prefer to be minimally invasive.
-    # TODO: Remove this when 501 is resolved.
-    # FIXME: https://www.youtube.com/watch?v=DtRNg5uSKQ0
-    for inj in inj_table:
-        ignore, found = compute_optimal_snr(inj, True)
-        if found:
-            break
-
     logging.info('Starting workers')
     pool = multiprocessing.Pool(processes=opts.cores)
 
