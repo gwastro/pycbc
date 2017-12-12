@@ -126,6 +126,15 @@ class MCMCSampler(BaseMCMCSampler):
         """
         return self._chain['lnpost']
 
+    @property
+    def p0(self):
+        """Since this is just a single chain, forces p0 to have shape (nparams,).
+        """
+        p0 = super(MCMCSampler, self).p0
+        if p0.ndim == 2:
+            p0 = p0.flatten()
+        return p0
+
     def run(self, niterations):
         """This function should run the sampler.
         """
@@ -133,7 +142,13 @@ class MCMCSampler(BaseMCMCSampler):
         if self.niterations == 0:
             # first time running, use the initial positions
             # set_p0() was called in pycbc_inference, so self.p0 is set
-            logplr, blob = self.likelihood_evaluator(self.p0)
+            result = self.likelihood_evaluator(self.p0)
+            try:
+                logplr, blob = result
+            except TypeError:
+                # likelihood evaluator doesn't return blobs
+                logplr = result
+                blob = None
 
             logging.info("Starting logplr value %f", logplr)
 
@@ -162,7 +177,13 @@ class MCMCSampler(BaseMCMCSampler):
             samples_prop = [sample + numpy.random.normal(loc=0.0, scale=1.0)
                             for sample in samples]
 
-            logplr_prop, blob = self.likelihood_evaluator(samples_prop)
+            result = self.likelihood_evaluator(samples_prop)
+            try:
+                logplr_prop, blob = result
+            except TypeError:
+                # likelihood evaluator doesn't return blobs
+                logplr_prop = result
+                blob = None
 
             acceptance_ratio=numpy.exp(logplr_prop - logplr_old)
             u=numpy.random.uniform()
