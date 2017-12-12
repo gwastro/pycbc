@@ -64,7 +64,7 @@ class KombineSampler(BaseMCMCSampler):
     name = "kombine"
 
     def __init__(self, likelihood_evaluator, nwalkers, transd=False,
-                 pool=None, likelihood_call=None,  
+                 pool=None, likelihood_call=None,
                  update_interval=None):
 
         try:
