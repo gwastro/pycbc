@@ -24,6 +24,7 @@ store the result in selectable columns of the same table.
 import logging
 import argparse
 import multiprocessing
+import random
 import numpy as np
 import h5py
 import pycbc
@@ -210,7 +211,7 @@ if __name__ == '__main__':
 
     logging.info("Loading injections")
     injections = pycbc.inject.InjectionSet(opts.inj_xml)
-    inj_table = sorted(injections.table, key=lambda x: x.geocent_end_time)
+    inj_table = sorted(injections.table, key=lambda x: random.random())
 
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
@@ -221,6 +222,9 @@ if __name__ == '__main__':
     proc_injs = pool.map(compute_optimal_snr, inj_table)
     for inj in proc_injs:
         out_sim_inspiral.append(inj)
+
+    out_sim_inspiral = sorted(out_sim_inspiral,
+                              key=lambda x: x.geocent_end_time)
 
     logging.info('Writing output')
     llw_doc = injections.indoc
