@@ -19,7 +19,7 @@ from the command line.
 
 import h5py
 import numpy
-from pycbc import types, pnutils
+from pycbc import types, conversions
 from pycbc.events import coinc
 from pycbc.io import hdf
 import pycbc.detector
@@ -272,11 +272,11 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo):
         b = bankfile
         found_param_dict = {
           "mtotal" : (b['mass1'][:] + b['mass2'][:])[foundtmp],
-          "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
-                     b['mass2'][:])[0][foundtmp],
-          "eta"    : pnutils.mass1_mass2_to_mchirp_eta(b['mass1'][:],
-                     b['mass2'][:])[1][foundtmp],
-          "effective_spin" : pnutils.phenomb_chi(b['mass1'][:],
+          "mchirp" : conversions.mchirp_from_mass1_mass2(b['mass1'][:],
+                     b['mass2'][:])[foundtmp],
+          "eta"    : conversions.eta_from_mass1_mass2(b['mass1'][:],
+                     b['mass2'][:])[foundtmp],
+          "effective_spin" : conversions.chi_eff(b['mass1'][:],
                                                  b['mass2'][:],
                                                  b['spin1z'][:],
                                                  b['spin2z'][:])[foundtmp]
@@ -312,11 +312,11 @@ def get_inj_param(injfile, param, ifo):
         return inj["injections/"+param]
     inj_param_dict = {
         "mtotal" : inj['mass1'][:] + inj['mass2'][:],
-        "mchirp" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
-                                                     inj['mass2'][:])[0],
-        "eta" : pnutils.mass1_mass2_to_mchirp_eta(inj['mass1'][:],
-                                                  inj['mass2'][:])[1],
-        "effective_spin" : pnutils.phenomb_chi(inj['mass1'][:],
+        "mchirp" : conversions.mchirp_from_mass1_mass2(inj['mass1'][:],
+                                                     inj['mass2'][:]),
+        "eta" : conversions.eta_from_mass1_mass2(inj['mass1'][:],
+                                                  inj['mass2'][:]),
+        "effective_spin" : conversions.chi_eff(inj['mass1'][:],
                                                inj['mass2'][:],
                                                inj['spin1z'][:],
                                                inj['spin2z'][:]),
