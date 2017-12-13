@@ -24,7 +24,6 @@ store the result in selectable columns of the same table.
 import logging
 import argparse
 import multiprocessing
-import random
 import numpy as np
 import h5py
 import pycbc
@@ -211,7 +210,8 @@ if __name__ == '__main__':
 
     logging.info("Loading injections")
     injections = pycbc.inject.InjectionSet(opts.inj_xml)
-    inj_table = sorted(injections.table, key=lambda x: random.random())
+    np.random.seed(100)
+    inj_table = sorted(injections.table, key=lambda x: np.random.random())
 
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
