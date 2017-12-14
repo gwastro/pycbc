@@ -136,7 +136,7 @@ e['frames'] = {"H1":"https://losc.ligo.org/s/events/GW170608/H-H1_LOSC_CLN_4_V1-
              }
 e["median1d"] = d = {}
 # uses low spin prior
-d["mass1"] = (12 -2, +7)
+d["mass1"] = (12, -2, +7)
 d["mass2"] = (7, -2, +2)
 d["mchirp"] = (7.9, -.2, +0.2)
 d["mtotal"] = (19, -1, +5)
