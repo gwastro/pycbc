@@ -707,7 +707,7 @@ def check_integrity(filename):
     """Checks the integrity of an InferenceFile.
 
     Checks done are:
-    
+
         * can the file open?
         * do all of the datasets in the samples group have the same shape?
         * can the first and last sample in all of the datasets in the samples
@@ -748,5 +748,5 @@ def check_integrity(filename):
         firstidx = tuple([0]*len(ref_shape))
         lastidx = tuple([-1]*len(ref_shape))
         for param in parameters:
-            fp[group.format(param)][firstidx]
-            fp[group.format(param)][lastidx]
+            _ = fp[group.format(param)][firstidx]
+            _ = fp[group.format(param)][lastidx]
