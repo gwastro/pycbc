@@ -6,7 +6,7 @@ from matplotlib import colors
 matplotlib.use('Agg')
 import pylab, pycbc.results
 from pycbc.io import get_chisq_from_file_choice, chisq_choices
-from pycbc import pnutils
+from pycbc import conversions
 import pycbc.version
 
 def snr_from_chisq(chisq, newsnr, q=6.):
@@ -77,8 +77,9 @@ inj_idx = f['found_after_vetoes/injection_index'][:]
 eff_dist = f['injections'][eff_map[ifo]][:][inj_idx]
 m1, m2 = f['injections/mass1'][:][inj_idx], f['injections/mass2'][:][inj_idx]
 s1, s2 = f['injections/spin1z'][:][inj_idx], f['injections/spin2z'][:][inj_idx]
-mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-weighted_spin = pnutils.phenomb_chi(m1, m2, s1, s2)
+mchirp = conversions.mchirp_from_mass1_mass2(m1, m2)
+eta = conversions.eta_from_mass1_mass2(m1, m2)
+weighted_spin = conversions.chi_eff(m1, m2, s1, s2)
 redshift = f['injections/redshift'][:][inj_idx] if args.colorbar_choice == \
                                                            'redshift' else None
 

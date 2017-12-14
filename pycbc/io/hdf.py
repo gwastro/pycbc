@@ -19,7 +19,7 @@ from pycbc_glue.ligolw.utils import process as ligolw_process
 from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
-from pycbc import events, pnutils
+from pycbc import events, conversions, pnutils
 
 class HFile(h5py.File):   
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -504,20 +504,16 @@ class SingleDetTriggers(object):
 
     @property
     def mchirp(self):
-        mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
-            self.mass1, self.mass2)
-        return mchirp
+        return conversions.mchirp_from_mass1_mass2(self.mass1, self.mass2)
 
     @property
     def eta(self):
-        _, eta = pnutils.mass1_mass2_to_mchirp_eta(
-            self.mass1, self.mass2)
-        return eta
+        return conversions.eta_from_mass1_mass2(self.mass1, self.mass2)
 
     @property
     def effective_spin(self):
         # FIXME assumes aligned spins
-        return pnutils.phenomb_chi(self.mass1, self.mass2,
+        return conversions.chi_eff(self.mass1, self.mass2,
                                    self.spin1z, self.spin2z)
 
     # IMPROVEME: would like to have a way to access all get_freq and/or
