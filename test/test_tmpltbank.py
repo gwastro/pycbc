@@ -141,7 +141,7 @@ class TmpltbankTestClass(unittest.TestCase):
                 self.psdSize, self.deltaF, self.f_low, is_asd_file=True)
         match_psd_size = int(256 * self.sampleRate / 2.) + 1
         self.psd_for_match = pycbc.psd.from_txt\
-            ('%sZERO_DET_high_P.txt' %(self.dataDir), match_psd_size, 
+            ('%sZERO_DET_high_P.txt' %(self.dataDir), match_psd_size,
              1./256., self.f_low, is_asd_file=True)
 
         metricParams = pycbc.tmpltbank.metricParameters(self.pnOrder,\
@@ -364,7 +364,7 @@ class TmpltbankTestClass(unittest.TestCase):
         for idx in range(10):
             masses1 = [mass1a[idx], mass2a[idx], spin1za[idx], spin2za[idx]]
             masses2 = [mass1b[idx], mass2b[idx], spin1zb[idx], spin2zb[idx]]
-            dist, xis1, xis2 = pycbc.tmpltbank.get_point_distance \
+            dist, _, _ = pycbc.tmpltbank.get_point_distance \
                 (masses1,  masses2, self.metricParams, self.f_upper)
             opt_dist = 0.02
             while dist > opt_dist * 1.01  or dist < opt_dist * 0.99:
@@ -374,10 +374,10 @@ class TmpltbankTestClass(unittest.TestCase):
                     dist_fac = 0.01
                 if dist_fac > 2:
                     dist_fac = 2
-                for i in range(len(masses2)):
-                    masses2[i] = masses1[i] + \
-                        (masses2[i] - masses1[i]) * dist_fac
-                dist, xis1, xis2 = pycbc.tmpltbank.get_point_distance \
+                for idx, curr_mass2 in enumerate(masses2):
+                    masses2[idx] = masses1[idx] + \
+                        (curr_mass2 - masses1[idx]) * dist_fac
+                dist, _, _ = pycbc.tmpltbank.get_point_distance \
                     (masses1,  masses2, self.metricParams, self.f_upper)
             self.assertFalse(numpy.isnan(dist))
 
