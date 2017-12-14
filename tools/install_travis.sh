@@ -62,7 +62,7 @@ if [ -n "`which pg_config`" ]
 then
     echo -e "...still here:"
     which pg_config
-    rm -f `which pg_config`
+    sudo rm -f `which pg_config`
 else
     echo -e "...seems gone"
 fi
