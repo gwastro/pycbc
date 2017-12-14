@@ -62,8 +62,7 @@ if [ -n "`which pg_config`" ]
 then
     echo -e "...still here:"
     which pg_config
-    pg_config --version
-    dpkg -S `which pg_config`
+    rm -f `which pg_config`
 else
     echo -e "...seems gone"
 fi
