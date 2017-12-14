@@ -837,7 +837,7 @@ else
     # LALSUITE
     if [ ".$no_lalsuite_update" != "." ]; then
         echo -e "\\n\\n>> [`date`] Not updating lalsuite" >&3
-	cd lalsuite
+        cd lalsuite
     elif test -d lalsuite/.git; then
         echo -e "\\n\\n>> [`date`] Updating lalsuite" >&3
         cd lalsuite
@@ -855,7 +855,7 @@ else
         fi
     else
         echo -e "\\n\\n>> [`date`] Cloning lalsuite" >&3
-        git clone git://versions.ligo.org/lalsuite.git
+        git clone https://git.ligo.org/lscsoft/lalsuite-archive.git
         cd lalsuite
         git remote add gitlab $gitlab/lalsuite.git
         if [ ".$lalsuite_branch" != "." ]; then
