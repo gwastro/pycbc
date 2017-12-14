@@ -52,6 +52,11 @@ pip install 'setuptools==18.2' --upgrade
 export BOTO_CONFIG=/dev/null
 
 # install pegasus
+
+# FIXME this is a workaround for a bug in psycopg2 2.6 (required by pegasus)
+# see e.g. https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
+sudo apt-get -y purge libpq-dev
+
 pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
 
 # install M2Crypto
