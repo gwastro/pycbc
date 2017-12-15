@@ -291,7 +291,9 @@ def get_random_mass(numPoints, massRangeParams):
 
     return mass1, mass2, spin1z, spin2z
 
-def get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
+def get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                   lambda1=None, lambda2=None, quadparam1=None,
+                   quadparam2=None):
     """
     Function to convert between masses and spins and locations in the xi
     parameter space. Xi = Cartesian metric and rotated to principal components.
@@ -324,12 +326,16 @@ def get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
     """
 
     # Do this by doing masses - > lambdas -> mus
-    mus = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper)
+    mus = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                          lambda1=lambda1, lambda2=lambda2,
+                          quadparam1=quadparam1, quadparam2=quadparam2)
     # and then mus -> xis
     xis = get_covaried_params(mus, metricParams.evecsCV[fUpper])
     return xis
 
-def get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
+def get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                    lambda1=None, lambda2=None, quadparam1=None,
+                    quadparam2=None):
     """
     Function to convert between masses and spins and locations in the mu
     parameter space. Mu = Cartesian metric, but not principal components.
@@ -362,7 +368,9 @@ def get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
 
     # Do this by masses -> lambdas
     lambdas = get_chirp_params(mass1, mass2, spin1z, spin2z,
-                               metricParams.f0, metricParams.pnOrder)
+                               metricParams.f0, metricParams.pnOrder,
+                               lambda1=lambda1, lambda2=lambda2,
+                               quadparam1=quadparam1, quadparam2=quadparam2)
     # and lambdas -> mus
     mus = get_mu_params(lambdas, metricParams, fUpper)
     return mus

@@ -97,7 +97,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
     for item in list:
         # Here we convert the moments into a form easier to use here
         Js = {}
-        for i in xrange(-1,18):
+        for i in xrange(-7,18):
             Js[i] = metricParams.moments['J%d'%(i)][item]
 
         logJs = {}
@@ -226,7 +226,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
     new_f, new_amp = interpolate_psd(psd_f, psd_amp, metricParams.deltaF)
 
     # Need I7 first as this is the normalization factor
-    funct = lambda x: 1
+    funct = lambda x,f0: 1
     I7 = calculate_moment(new_f, new_amp, metricParams.fLow, \
                           metricParams.fUpper, metricParams.f0, funct,\
                           vary_fmax=vary_fmax, vary_density=vary_density)
@@ -234,8 +234,8 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
     # Do all the J moments
     moments = {}
     moments['I7'] = I7
-    for i in xrange(-1,18):
-        funct = lambda x: x**((-i+7)/3.)
+    for i in xrange(-7,18):
+        funct = lambda x,f0: x**((-i+7)/3.)
         moments['J%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
@@ -243,7 +243,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
 
     # Do the logx multiplied by some power terms
     for i in xrange(-1,18):
-        funct = lambda x: (numpy.log(x**(1./3.))) * x**((-i+7)/3.)
+        funct = lambda x,f0: (numpy.log((x*f0)**(1./3.))) * x**((-i+7)/3.)
         moments['log%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
@@ -251,7 +251,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
 
     # Do the loglog term
     for i in xrange(-1,18):
-        funct = lambda x: (numpy.log(x**(1./3.)))**2 * x**((-i+7)/3.)
+        funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**2 * x**((-i+7)/3.)
         moments['loglog%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
@@ -259,7 +259,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
 
     # Do the logloglog term
     for i in xrange(-1,18):
-        funct = lambda x: (numpy.log(x**(1./3.)))**3 * x**((-i+7)/3.)
+        funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**3 * x**((-i+7)/3.)
         moments['logloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
@@ -267,7 +267,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
 
     # Do the logloglog term
     for i in xrange(-1,18):
-        funct = lambda x: (numpy.log(x**(1./3.)))**4 * x**((-i+7)/3.)
+        funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**4 * x**((-i+7)/3.)
         moments['loglogloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
                                 metricParams.f0, funct, norm=I7, \
@@ -381,7 +381,7 @@ def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct,
 
     mask = numpy.logical_and(psd_f > fmin, psd_f < fmax)
     psdf_red = psd_f[mask]
-    comps_red = psd_x[mask] ** (-7./3.) * funct(psd_x[mask]) * deltax / \
+    comps_red = psd_x[mask] ** (-7./3.) * funct(psd_x[mask], f0) * deltax / \
                 psd_amp[mask]
     moment = {}
     moment[fmax] = comps_red.sum()

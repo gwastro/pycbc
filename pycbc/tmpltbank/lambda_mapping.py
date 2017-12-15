@@ -16,7 +16,7 @@
 from __future__ import division
 import re
 import numpy
-from lal import MTSUN_SI, GAMMA, PI, CreateDict
+from lal import MTSUN_SI, PI, CreateREAL8Vector
 import lalsimulation
 from pycbc import pnutils
 
@@ -79,6 +79,12 @@ def generate_mapping(order):
     mapping['Lambda7'] = 7
     if order == 'threePointFivePN':
         return mapping
+    # For some as-of-yet unknown reason, the tidal terms are not giving correct
+    # match estimates when enabled. So, for now, this order is commented out.
+    #if order == 'tidalTesting':
+    #    mapping['Lambda10'] = 8
+    #    mapping['Lambda12'] = 9
+    #    return mapping
     raise ValueError("Order %s is not understood." %(order))
 
 # Override doc so the PN orders are added automatically to online docs
@@ -148,7 +154,9 @@ def ethinca_order_from_string(order):
                            "calculation! Valid orders: "+
                            str(get_ethinca_orders().keys()))
 
-def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
+def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
+                     quadparam1=None, quadparam2=None, lambda1=None,
+                     lambda2=None):
     """
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
@@ -193,43 +201,90 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
         mass2 = numpy.array([mass2])
         spin1z = numpy.array([spin1z])
         spin2z = numpy.array([spin2z])
+        if quadparam1 is not None:
+            quadparam1 = numpy.array([quadparam1])
+        if quadparam2 is not None:
+            quadparam2 = numpy.array([quadparam2])
+        if lambda1 is not None:
+            lambda1 = numpy.array([lambda1])
+        if lambda2 is not None:
+            lambda2 = numpy.array([lambda2])
         num_points = 1
-    lal_pars = CreateDict()
-    phasing_vs = numpy.zeros([num_points, 13])
-    phasing_vlogvs = numpy.zeros([num_points, 13])
-    phasing_vlogvsqs = numpy.zeros([num_points, 13])
-    for i in xrange(num_points):
-        phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
-                            mass1[i], mass2[i], spin1z[i], spin2z[i], lal_pars)
-        phasing_vs[i] = phasing.v
-        phasing_vlogvs[i] = phasing.vlogv
-        phasing_vlogvsqs[i] = phasing.vlogvsq
 
-    pmf = PI * (mass1 + mass2)*MTSUN_SI * f0
+    if quadparam1 is None:
+        quadparam1 = numpy.ones(len(mass1), dtype=float)
+    if quadparam2 is None:
+        quadparam2 = numpy.ones(len(mass1), dtype=float)
+    if lambda1 is None:
+        lambda1 = numpy.zeros(len(mass1), dtype=float)
+    if lambda2 is None:
+        lambda2 = numpy.zeros(len(mass1), dtype=float)
+
+    mass1_v = CreateREAL8Vector(len(mass1))
+    mass1_v.data[:] = mass1[:]
+    mass2_v = CreateREAL8Vector(len(mass1))
+    mass2_v.data[:] = mass2[:]
+    spin1z_v = CreateREAL8Vector(len(mass1))
+    spin1z_v.data[:] = spin1z[:]
+    spin2z_v = CreateREAL8Vector(len(mass1))
+    spin2z_v.data[:] = spin2z[:]
+    lambda1_v = CreateREAL8Vector(len(mass1))
+    lambda1_v.data[:] = lambda1[:]
+    lambda2_v = CreateREAL8Vector(len(mass1))
+    lambda2_v.data[:] = lambda2[:]
+    dquadparam1_v = CreateREAL8Vector(len(mass1))
+    dquadparam1_v.data[:] = quadparam1[:] - 1.
+    dquadparam2_v = CreateREAL8Vector(len(mass1))
+    dquadparam2_v.data[:] = quadparam2[:] - 1.
+
+    phasing_arr = lalsimulation.SimInspiralTaylorF2AlignedPhasingArray\
+        (mass1_v, mass2_v, spin1z_v, spin2z_v, lambda1_v, lambda2_v,
+         dquadparam1_v, dquadparam2_v)
+ 
+    vec_len = lalsimulation.PN_PHASING_SERIES_MAX_ORDER + 1;
+    phasing_vs = numpy.zeros([num_points, vec_len])
+    phasing_vlogvs = numpy.zeros([num_points, vec_len])
+    phasing_vlogvsqs = numpy.zeros([num_points, vec_len])
+
+    lng = len(mass1)
+    jmp = lng * vec_len
+    for idx in range(vec_len):
+        phasing_vs[:,idx] = phasing_arr.data[lng*idx : lng*(idx+1)]
+        phasing_vlogvs[:,idx] = \
+            phasing_arr.data[jmp + lng*idx : jmp + lng*(idx+1)]
+        phasing_vlogvsqs[:,idx] = \
+            phasing_arr.data[2*jmp + lng*idx : 2*jmp + lng*(idx+1)]
+
+    pim = PI * (mass1 + mass2)*MTSUN_SI
+    pmf = pim * f0
     pmf13 = pmf**(1./3.)
+    logpim13 = numpy.log((pim)**(1./3.))
 
     mapping = generate_inverse_mapping(order)
     lambdas = []
     lambda_str = '^Lambda([0-9]+)'
     loglambda_str = '^LogLambda([0-9]+)'
-    logloglambda_str = '^LogLogLambda([0-9]+'
+    logloglambda_str = '^LogLogLambda([0-9]+)'
     for idx in xrange(len(mapping.keys())):
         # RE magic engage!
         rematch = re.match(lambda_str, mapping[idx])
         if rematch:
             pn_order = int(rematch.groups()[0])
-            lambdas.append(phasing_vs[:,pn_order] * pmf13**(-5+pn_order))
+            term = phasing_vs[:,pn_order]
+            term = term + logpim13 * phasing_vlogvs[:,pn_order]
+            lambdas.append(term * pmf13**(-5+pn_order))
             continue
         rematch = re.match(loglambda_str, mapping[idx])
         if rematch:
             pn_order = int(rematch.groups()[0])
-            lambdas.append(phasing_vlogvs[:,pn_order] * pmf13**(-5+pn_order))
+            lambdas.append((phasing_vlogvs[:,pn_order]) * pmf13**(-5+pn_order))
             continue
         rematch = re.match(logloglambda_str, mapping[idx])
         if rematch:
-            pn_order = int(rematch.groups()[0])
-            lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
-            continue
+            raise ValueError("LOGLOG terms are not implemented")
+            #pn_order = int(rematch.groups()[0])
+            #lambdas.append(phasing_vlogvsqs[:,pn_order] * pmf13**(-5+pn_order))
+            #continue
         err_msg = "Failed to parse " +  mapping[idx]
         raise ValueError(err_msg)
 
@@ -238,101 +293,5 @@ def get_chirp_params_new(mass1, mass2, spin1z, spin2z, f0, order):
     else:
         return lambdas
 
-get_chirp_params_new.__doc__ = \
-    get_chirp_params_new.__doc__.format(pycbcValidOrdersHelpDescriptions)
-
-def get_chirp_params_old(mass1, mass2, spin1z, spin2z, f0, order):
-    """
-    Take a set of masses and spins and convert to the various lambda
-    coordinates that describe the orbital phase. Accepted PN orders are:
-    {}
- 
-    Parameters
-    ----------
-    mass1 : float or array
-        Mass1 of input(s).
-    mass2 : float or array
-        Mass2 of input(s).
-    spin1z : float or array
-        Parallel spin component(s) of body 1.
-    spin2z : float or array
-        Parallel spin component(s) of body 2.
-    f0 : float
-        This is an arbitrary scaling factor introduced to avoid the potential
-        for numerical overflow when calculating this. Generally the default
-        value (70) is safe here. **IMPORTANT, if you want to calculate the
-        ethinca metric components later this MUST be set equal to f_low.**
-        This value must also be used consistently (ie. don't change its value
-        when calling different functions!).
-    order : string
-        The Post-Newtonian order that is used to translate from masses and
-        spins to the lambda_i coordinate system. Valid orders given above.
-
-    Returns
-    --------
-    lambdas : list of floats or numpy.arrays
-        The lambda coordinates for the input system(s)
-    """
-
-    totmass, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
-    beta, sigma, gamma = pnutils.get_beta_sigma_from_aligned_spins(\
-               eta, spin1z, spin2z)
-
-    # Convert mass to seconds
-    totmass = totmass * MTSUN_SI
-    pi = numpy.pi
-    mapping = generate_inverse_mapping(order)
-    lambdas = []
-
-    for idx in xrange(len(mapping.keys())):
-        if mapping[idx] == 'Lambda0':
-            lambda0 = 3. / (128. * eta * (pi * totmass * f0)**(5./3.))
-            lambdas.append(lambda0)
-        elif mapping[idx] == 'Lambda2':
-            lambda2 = 5. / (96. * pi * eta * totmass * f0) \
-                      * (743./336. + 11./4. * eta)
-            lambdas.append(lambda2)
-        elif mapping[idx] == 'Lambda3':
-            lambda3 = (-3. * pi**(1./3.))/(8. * eta * (totmass*f0)**(2./3.)) \
-                      * (1. - beta/ (4. * pi))
-            lambdas.append(lambda3)
-        elif mapping[idx] == 'Lambda4':
-            lambda4 = 15. / (64. * eta * (pi * totmass * f0)**(1./3.)) * \
-                  (3058673./1016064. + 5429./1008. * eta + 617./144. * \
-                   eta**2 - sigma)
-            lambdas.append(lambda4)
-        # No Lambda5 term is present as that would be equivalent to a constant
-        # phase offset, and thus completely degenerate with the initial orbital
-        # phase.
-        elif mapping[idx] == 'LogLambda5':
-            loglambda5 = 3. * (38645.*pi/756. - 65.*pi*eta/9. - gamma)
-            loglambda5 = loglambda5 * (3./(128.*eta))
-            lambdas.append(loglambda5)
-        elif mapping[idx] == 'Lambda6':
-            lambda6 = 11583231236531./4694215680. - (640.*pi*pi)/3.\
-                      - (6848.*GAMMA)/21.
-            lambda6 -= (6848./21.) * numpy.log(4 * (pi*totmass*f0)**(1./3.))
-            lambda6 += (-15737765635/3048192. + 2255.*pi*pi/12.)*eta
-            lambda6 += (76055.*eta*eta)/1728. - (127825.*eta*eta*eta)/1296.
-            lambda6 = lambda6 * 3./(128.*eta) * (pi * totmass * f0)**(1/3.)
-            lambdas.append(lambda6)
-        elif mapping[idx] == 'LogLambda6':
-            loglambda6 =  -( 6848./21) 
-            loglambda6 = loglambda6 * 3./(128.*eta)\
-                         * (pi * totmass * f0)**(1/3.)
-            lambdas.append(loglambda6)
-        elif mapping[idx] == 'Lambda7':
-            lambda7 = (77096675.*pi)/254016. + (378515.*pi*eta)/1512. \
-                      - (74045.*pi*eta*eta)/756.
-            lambda7 = lambda7 * 3./(128.*eta) * (pi * totmass * f0)**(2/3.)
-            lambdas.append(lambda7)
-        else:
-            err_msg = "Do not understand term {}.".format(mapping[idx])
-            raise ValueError(err_msg)
-                 
-    return lambdas
-
-get_chirp_params_old.__doc__ = \
-    get_chirp_params_old.__doc__.format(pycbcValidOrdersHelpDescriptions)
-
-get_chirp_params = get_chirp_params_old
+get_chirp_params.__doc__ = \
+    get_chirp_params.__doc__.format(pycbcValidOrdersHelpDescriptions)

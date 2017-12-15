@@ -33,6 +33,8 @@ import pycbc.psd
 import pycbc.pnutils
 from pycbc import pnutils
 from pycbc.types import Array
+from pycbc.filter import match
+from pycbc.waveform import get_fd_waveform
 import difflib
 import sys
 import matplotlib
@@ -137,6 +139,10 @@ class TmpltbankTestClass(unittest.TestCase):
 
         self.psd = pycbc.psd.from_txt('%sZERO_DET_high_P.txt' %(self.dataDir),\
                 self.psdSize, self.deltaF, self.f_low, is_asd_file=True)
+        match_psd_size = int(256 * self.sampleRate / 2.) + 1
+        self.psd_for_match = pycbc.psd.from_txt\
+            ('%sZERO_DET_high_P.txt' %(self.dataDir), match_psd_size,
+             1./256., self.f_low, is_asd_file=True)
 
         metricParams = pycbc.tmpltbank.metricParameters(self.pnOrder,\
                          self.f_low, self.f_upper, self.deltaF, self.f0)
@@ -195,6 +201,8 @@ class TmpltbankTestClass(unittest.TestCase):
         maxEval = max(evalsStock)
         evalsCurr = Array(self.metricParams.evals[self.f_upper])
         evecsCurr = Array(self.metricParams.evecs[self.f_upper])
+        numpy.savetxt('newEvals.dat', evalsCurr)
+        numpy.savetxt('newEvecs.dat', evecsCurr)
         errMsg = "pycbc.tmpltbank.determine_eigen_directions has failed "
         errMsg += "sanity check."
         evalsDiff = abs(evalsCurr - evalsStock)/maxEval
@@ -340,14 +348,6 @@ class TmpltbankTestClass(unittest.TestCase):
                 self.assertTrue((abs(bhSpin1) > 0.5).any(), msg=errMsg)
             if len(bhSpin2):
                 self.assertTrue((abs(bhSpin2) > 0.5).any(), msg=errMsg)
-            # This can be used to test the boundaries are all applied visually
-            # FIXME: This would need to be updated for all of the mass limits
-            #pylab.plot(mass1, mass2, 'b.')
-            #pylab.plot([3.0,5.0],[3.0,1.0],'r-')
-            #pylab.plot([1.7216566400945545,1.9921146662296347,3.4433132801891091,4.01175560949798],[1.1477710933963694,1.0066274466204264,2.2955421867927388,1.002938902374495],'mx')
-            #pylab.ylim([0.8,3.0])
-            #pylab.xlim([1.5,5.0])
-            #pylab.savefig("masses_%d.png" %(idx,))
 
             # Check nsbh flag
             mass1, mass2, spin1z, spin2z = \
@@ -356,13 +356,51 @@ class TmpltbankTestClass(unittest.TestCase):
             self.assertTrue(not (abs(spin2z) > 0.5).any(), msg=errMsg)
             self.assertTrue((abs(spin1z) > 0.5).any(), msg=errMsg)
 
+    def test_metric_match_prediction(self):
+        mass1a, mass2a, spin1za, spin2za = \
+                 pycbc.tmpltbank.get_random_mass(10, self.massRangeParams)
+        mass1b, mass2b, spin1zb, spin2zb = \
+                 pycbc.tmpltbank.get_random_mass(10, self.massRangeParams)
+        for idx in range(10):
+            masses1 = [mass1a[idx], mass2a[idx], spin1za[idx], spin2za[idx]]
+            masses2 = [mass1b[idx], mass2b[idx], spin1zb[idx], spin2zb[idx]]
+            dist, _, _ = pycbc.tmpltbank.get_point_distance \
+                (masses1,  masses2, self.metricParams, self.f_upper)
+            opt_dist = 0.02
+            while dist > opt_dist * 1.01  or dist < opt_dist * 0.99:
+                dist_fac = opt_dist / dist
+                dist_fac = dist_fac**0.5
+                if dist_fac < 0.01:
+                    dist_fac = 0.01
+                if dist_fac > 2:
+                    dist_fac = 2
+                for idx, curr_mass2 in enumerate(masses2):
+                    masses2[idx] = masses1[idx] + \
+                        (curr_mass2 - masses1[idx]) * dist_fac
+                dist, _, _ = pycbc.tmpltbank.get_point_distance \
+                    (masses1,  masses2, self.metricParams, self.f_upper)
+            self.assertFalse(numpy.isnan(dist))
+
+            htilde1, _ = get_fd_waveform\
+                (approximant='TaylorF2', mass1=masses1[0], mass2=masses1[1],
+                 spin1z=masses1[2], spin2z=masses1[3], delta_f=1.0/256,
+                 f_lower=15, f_final=2000)
+            htilde2, _ = get_fd_waveform\
+                (approximant='TaylorF2', mass1=masses2[0], mass2=masses2[1],
+                 spin1z=masses2[2], spin2z=masses2[3], delta_f=1.0/256,
+                 f_lower=15, f_final=2000)
+            overlap, _ = match(htilde1, htilde2, psd=self.psd_for_match,
+                            low_frequency_cutoff=15)
+            self.assertTrue(overlap > 0.97 and overlap < 0.985)
+
+
     def test_chirp_params(self):
         chirps=pycbc.tmpltbank.get_chirp_params(2.2, 1.8, 0.2, 0.3,
                               self.metricParams.f0, self.metricParams.pnOrder)
         stockChirps = numpy.loadtxt('%sstockChirps.dat'%(self.dataDir))
         diff = (chirps - stockChirps) / stockChirps
         errMsg = "Calculated chirp params differ from that expected."
-        self.assertTrue( not (diff > 1E-4).any(), msg=errMsg)
+        self.assertTrue( not (abs(diff) > 1E-4).any(), msg=errMsg)
 
     def test_hexagonal_placement(self):
         arrz = pycbc.tmpltbank.generate_hexagonal_lattice(10, 0, 10, 0, 0.03)
@@ -473,7 +511,7 @@ class TmpltbankTestClass(unittest.TestCase):
         masses2 = [2.02,1.97,0.41,0.59]
         dist, xis1, xis2 = pycbc.tmpltbank.get_point_distance(masses1, \
                              masses2, self.metricParams, self.f_upper)
-        diff = abs((dist - 23.3560790221) / dist)
+        diff = abs((dist - 23.3681922039) / dist)
   
         errMsg = "Obtained distance does not agree with expected value."
         self.assertTrue( diff < 1E-5, msg=errMsg)
