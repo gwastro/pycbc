@@ -119,7 +119,7 @@ double value = 0;
 
 #pragma omp parallel for reduction(+:value)
 for (int i=0; i<N; i++){
-    float val = x[i] * y[i];
+    double val = x[i] * y[i];
     value += val;
 }
 total[0] = value;
