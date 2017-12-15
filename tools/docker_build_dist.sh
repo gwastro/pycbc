@@ -181,8 +181,12 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
   make -j 2 2>&1 | grep Entering
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
-  make lalapps_inspinj
-  cp lalapps_inspinj $VIRTUAL_ENV/bin
+  for lalscript in lalapps_inspinj lalapps_cbc_sbank lalapps_cbc_sbank_hdf5_choose_mchirp_boundaries lalapps_cbc_sbank_hdf5_bankcombiner
+  do
+    echo $lalscript
+    make $lalscript
+    cp $lalscript $VIRTUAL_ENV/bin
+  done
 
   echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
   pip install 'matplotlib==1.5.3'
