@@ -230,7 +230,7 @@ class Array(object):
                 other = force_precision_to_match(other, self.precision)
                 nargs +=(other,)
             elif isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
+                if len(other._data) != len(self._data):
                     raise ValueError('lengths do not match')
                 if other.precision == self.precision:
                     _convert_to_scheme(other)
@@ -248,7 +248,7 @@ class Array(object):
         for other in args:
             self._typecheck(other)  
             if isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
+                if len(other._data) != len(self._data):
                     raise ValueError('lengths do not match')
                 if other.precision == self.precision:
                     _convert_to_scheme(other)
@@ -261,11 +261,11 @@ class Array(object):
         return fn(self,*nargs) # pylint:disable=not-callable
         
     @decorator  
-    def _vrcheckother(fn, self,*args):
+    def _vrcheckother(fn, self, *args):
         nargs = ()
         for other in args:
-            if isinstance(other, type(self)) or type(other) is Array:
-                if len(other) != len(self):
+            if isinstance(other, Array):
+                if len(other._data) != len(self._data):
                     raise ValueError('lengths do not match')
                 if other.precision == self.precision:
                     _convert_to_scheme(other)

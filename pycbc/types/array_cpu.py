@@ -32,6 +32,7 @@ from pycbc.weave import inline
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from pycbc.types import real_same_precision_as
+from . import carray
 
 def zeros(length, dtype=_np.float64):
     return _algn.zeros(length, dtype=dtype)
@@ -113,28 +114,6 @@ def weighted_inner(self, other, weight):
 
     return _np.sum(self.data.conj() * other / weight, dtype=acum_dtype)
 
-
-inner_code = """
-double value = 0;
-
-#pragma omp parallel for reduction(+:value)
-for (int i=0; i<N; i++){
-    double val = x[i] * y[i];
-    value += val;
-}
-total[0] = value;
-"""
-
-
-def inner_inline_real(self, other):
-    x = _np.array(self._data, copy=False) # pylint:disable=unused-variable
-    y = _np.array(other, copy=False) # pylint:disable=unused-variable
-    total = _np.array([0.], dtype=float64)
-    N = len(self) # pylint:disable=unused-variable
-    inline(inner_code, ['x', 'y', 'total', 'N'], libraries=omp_libs,
-           extra_compile_args=code_flags)
-    return total[0]
-
 def inner(self, other):
     """ Return the inner product of the array with complex conjugation.
     """
@@ -142,7 +121,7 @@ def inner(self, other):
     if cdtype.kind == 'c':
         return _np.sum(self.data.conj() * other, dtype=complex128)
     else:
-        return inner_inline_real(self, other)
+        return carray.inner_real(self._data, other)
 
 def vdot(self, other):
     """ Return the inner product of the array with complex conjugation.

@@ -22,6 +22,17 @@ setup.py file for PyCBC package
 from __future__ import print_function
 
 import os, fnmatch, sys, subprocess, shutil
+from Cython.Build import cythonize
+
+try:
+    from setuptools import Extension
+    from setuptools.command.install import install as _install
+    from setuptools.command.install_egg_info import install_egg_info as egg_info
+    USE_SETUPTOOLS = True
+except:
+    from distutils.command.install import install as _install
+    from distutils.core import Extension
+    USE_SETUPTOOLS = False
 
 # FIXME: trace.fullmodname was undocumented in Python 2 and actually became an
 # internal function in Python 3. We should not depend on it.
@@ -30,16 +41,8 @@ try:
 except ImportError:
     from trace import _fullmodname as fullmodname
 
-try:
-    from setuptools.command.install import install as _install
-    from setuptools.command.install_egg_info import install_egg_info as egg_info
-    USE_SETUPTOOLS = True
-except:
-    from distutils.command.install import install as _install
-    USE_SETUPTOOLS = False
-
 from distutils.errors import DistutilsError
-from distutils.core import setup, Command, Extension
+from distutils.core import setup, Command
 from distutils.command.clean import clean as _clean
 from distutils.file_util import write_file
 from distutils.version import LooseVersion
@@ -345,6 +348,31 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 # do the actual work of building the package
 VERSION = get_version_info()
 
+extensions = [
+    Extension("pycbc.types.carray", ["pycbc/types/carray.pyx"],
+             extra_compile_args=[ '-O3', '-march=native', '-w',
+                   '-fopt-info-vec-all', '-ffast-math', '-ffinite-math-only']),
+]
+ext = cythonize(extensions)
+
+ext += Extension(
+            "pycbc.ligolw.tokenizer",
+            [
+                "pycbc/ligolw/tokenizer.c",
+                "pycbc/ligolw/tokenizer.Tokenizer.c",
+                "pycbc/ligolw/tokenizer.RowBuilder.c",
+                "pycbc/ligolw/tokenizer.RowDumper.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        ),
+        Extension(
+            "pycbc.ligolw._ilwd",
+            [
+                "pycbc/ligolw/ilwd.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        )
+
 setup (
     name = 'PyCBC',
     version = VERSION,
@@ -511,27 +539,11 @@ setup (
                'pycbc.ligolw',
                'pycbc.ligolw.utils',
                ],
-    package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
-                    'pycbc.results': find_package_data('pycbc/results'),
-                    'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
-    ext_modules = [
-        Extension(
-            "pycbc.ligolw.tokenizer",
-            [
-                "pycbc/ligolw/tokenizer.c",
-                "pycbc/ligolw/tokenizer.Tokenizer.c",
-                "pycbc/ligolw/tokenizer.RowBuilder.c",
-                "pycbc/ligolw/tokenizer.RowDumper.c"
-            ],
-            include_dirs = [ "pycbc/ligolw" ]
-        ),
-        Extension(
-            "pycbc.ligolw._ilwd",
-            [
-                "pycbc/ligolw/ilwd.c"
-            ],
-            include_dirs = [ "pycbc/ligolw" ]
-        )
-    ],
+     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
+	             'pycbc.results': find_package_data('pycbc/results'),
+                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank'),
+                    },
+     ext_modules = ext,
+
 )
 
