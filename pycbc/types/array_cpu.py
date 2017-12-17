@@ -28,7 +28,6 @@ import numpy as _np
 from pycbc.types.array import common_kind, complex128, float64
 from . import aligned as _algn
 from scipy.linalg import blas
-from pycbc.weave import inline
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from pycbc.types import real_same_precision_as
@@ -48,21 +47,6 @@ def dot(self, other):
 
 def min(self):
     return self.data.min()
-
-code_abs_arg_max = """
-float val = 0;
-int l = 0;
-for (int i=0; i<N; i++){
-    float mag = data[i*2] * data[i*2] + data[i*2+1] * data[i*2+1];
-    if ( mag > val){
-        l = i;
-        val = mag;
-    }
-}
-loc[0] = l;
-"""
-code_flags = [WEAVE_FLAGS] + omp_flags
-
 
 def abs_arg_max(self):
     if self.kind == 'real':
