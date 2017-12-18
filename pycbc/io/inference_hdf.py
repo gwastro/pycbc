@@ -25,6 +25,7 @@
 inference samplers generate.
 """
 
+import os
 import sys
 import h5py
 import numpy
@@ -546,7 +547,8 @@ class InferenceFile(h5py.File):
         if group in self:
             self[dataset_name][:] = arr
         else:
-            self[dataset_name] = arr
+            self.create_dataset(dataset_name, arr.shape, fletcher32=True)
+            self[dataset_name][:] = arr
         self[dataset_name].attrs["s"] = s
         self[dataset_name].attrs["pos"] = pos
         self[dataset_name].attrs["has_gauss"] = has_gauss
@@ -699,3 +701,52 @@ class InferenceFile(h5py.File):
             other.attrs['burn_in_iterations'] = 0
             other.attrs['niterations'] = samples.shape[-1]
         return other
+
+
+def check_integrity(filename):
+    """Checks the integrity of an InferenceFile.
+
+    Checks done are:
+
+        * can the file open?
+        * do all of the datasets in the samples group have the same shape?
+        * can the first and last sample in all of the datasets in the samples
+          group be read?
+
+    If any of these checks fail, an IOError is raised.
+
+    Parameters
+    ----------
+    filename: str
+        Name of an InferenceFile to check.
+
+    Raises
+    ------
+    ValueError
+        If the given file does not exist.
+    KeyError
+        If the samples group does not exist.
+    IOError
+        If any of the checks fail.
+    """
+    # check that the file exists
+    if not os.path.exists(filename):
+        raise ValueError("file {} does not exist".format(filename))
+    # if the file is corrupted such that it cannot be opened, the next line
+    # will raise an IOError
+    with InferenceFile(filename, 'r') as fp:
+        # check that all datasets in samples have the same shape
+        parameters = fp[fp.samples_group].keys()
+        group = fp.samples_group + '/{}'
+        # use the first parameter as a reference shape
+        ref_shape = fp[group.format(parameters[0])].shape
+        if not all(fp[group.format(param)].shape == ref_shape
+                   for param in parameters):
+            raise IOError("not all datasets in the samples group have the same "
+                          "shape")
+        # check that we can read the first/last sample
+        firstidx = tuple([0]*len(ref_shape))
+        lastidx = tuple([-1]*len(ref_shape))
+        for param in parameters:
+            _ = fp[group.format(param)][firstidx]
+            _ = fp[group.format(param)][lastidx]

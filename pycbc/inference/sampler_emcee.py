@@ -599,7 +599,7 @@ class EmceePTSampler(BaseMCMCSampler):
                 istop = istart + niterations
                 fp.create_dataset(dataset_name, (ntemps, nwalkers, istop),
                                   maxshape=(ntemps, nwalkers, max_iterations),
-                                  dtype=float)
+                                  dtype=float, fletcher32=True)
             fp[dataset_name][:,:,istart:istop] = samples[param]
 
     def write_results(self, fp, start_iteration=None, max_iterations=None,
