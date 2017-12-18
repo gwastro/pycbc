@@ -405,13 +405,11 @@ class _XMLInjectionSet(object):
         else:
             f_l = f_lower
 	approx_name=inj.waveform #put the path to the ASCII file as approximant
-	if approx_name.endwith(('.txt', '.dat')):
-		hp, hc, delta_t_ascii = get_waveform_from_ascii(inj.waveform)
-		if delta_t != delta_t_ascii:
-			raise ValueError("Sample rate of the ascii and the ini are different")
-		else:
-			hp = (hp/inj.distance)*100000 #reference distance for ASCII waveform is 100Mpc
-			hc = (hc/inj.distance)*100000
+
+	if approx_name.endswith(('.txt', '.dat')):
+		hp, hc = get_waveform_from_ascii(inj.waveform)
+		hp = (hp/inj.distance)*100000 #reference distance for ASCII waveform is 100Mpc
+		hc = (hc/inj.distance)*100000
 	else:
         	name, phase_order = legacy_approximant_name(inj.waveform)
         	# compute the waveform time series

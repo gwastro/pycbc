@@ -927,7 +927,7 @@ def get_waveform_filter_length_in_time(approximant, template=None, **kwargs):
     else:
         return None
 
-def get_waveform_from_ascii(waveform,epoch=0.0,Norm=5.9029581035870565e+20):
+def get_waveform_from_ascii(waveform, epoch=0.0, norm=5.9029581035870565e+20):
     """Return the plus and cross polarizations of a time domain waveform.
     Parameters
     ----------
@@ -944,17 +944,17 @@ def get_waveform_from_ascii(waveform,epoch=0.0,Norm=5.9029581035870565e+20):
     """
     infile=waveform
     #'/home/shubhanshu.tiwari/cWB_Sergey_Shubhanshu_Vaibhav/cWB_share_m1-1.0000000e+01_m2-1.0000000e+01_ecc-3.0000000e-01.dat'
-    N=Norm # 5.9029581035870565e+20 ## at 100 Mpc change for other waveforms
+    n=norm # 5.9029581035870565e+20 ## at 100 Mpc change for other waveforms
     data=numpy.loadtxt(infile)
     t=data[:,0]
     hp1=data[:,1]
     hc1=data[:,2]
     deltaT=(t[3]-t[2])
-    hp_ref=hp1/N
-    hc_ref=hc1/N
+    hp_ref=hp1/n
+    hc_ref=hc1/n
     hp=TimeSeries(hp_ref, delta_t=deltaT, epoch=epoch)
     hc=TimeSeries(hc_ref, delta_t=deltaT, epoch=epoch)
-    return hp, hc, 1./deltaT
+    return hp, hc
 
 
 __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
