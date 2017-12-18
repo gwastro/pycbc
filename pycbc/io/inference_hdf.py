@@ -719,7 +719,7 @@ def check_integrity(filename):
     ----------
     filename: str
         Name of an InferenceFile to check.
-    
+
     Raises
     ------
     ValueError
