@@ -567,6 +567,9 @@ def create_multidim_plot(parameters, samples, labels=None,
     else:
         width_ratios = height_ratios = None
 
+    # only plot scatter if more than one parameter
+    plot_scatter = plot_scatter and nparams > 1
+
     # Sort zvals to get higher values on top in scatter plots
     if plot_scatter:
         if zvals is not None:
