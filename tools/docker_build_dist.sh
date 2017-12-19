@@ -160,7 +160,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Installing LAL"
   mkdir -p ${VIRTUAL_ENV}/src
   cd ${VIRTUAL_ENV}/src
-  git clone https://git.ligo.org/lscsoft/lalsuite-archive.git lalsuite
+  git clone --depth 1 https://git.ligo.org/lscsoft/lalsuite-archive.git lalsuite
   cd ${VIRTUAL_ENV}/src/lalsuite
   git checkout ${LALSUITE_HASH}
   ./00boot
@@ -181,8 +181,8 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
   make -j 2 2>&1 | grep Entering
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
-  make lalapps_inspinj
-  cp lalapps_inspinj $VIRTUAL_ENV/bin
+  make -j 2 2>&1 | grep Entering
+  make install 2>&1 | grep Entering
 
   echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
   pip install 'matplotlib==1.5.3'
