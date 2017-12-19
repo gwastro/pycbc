@@ -352,6 +352,9 @@ extensions = [
     Extension("pycbc.types.array_cpu", ["pycbc/types/array_cpu.pyx"],
              extra_compile_args=[ '-O3', '-w',
                                   '-ffast-math', '-ffinite-math-only']),
+    Extension("pycbc.filter.matchedfilter_cpu", ["pycbc/filter/matchedfilter_cpu.pyx"],
+             extra_compile_args=[ '-O3', '-w',
+                                  '-ffast-math', '-ffinite-math-only']),
 ]
 ext = cythonize(extensions)
 
