@@ -176,7 +176,12 @@ def schemed(prefix):
                 try:
                     backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                     schemed_fn = getattr(backend, fn.__name__)
-                    schemed_fn.__doc__ = fn.__doc__
+
+                    try:
+                        schemed_fn.__doc__ = fn.__doc__
+                    except:
+                        pass
+
                 except (ImportError, AttributeError):
                     continue
 

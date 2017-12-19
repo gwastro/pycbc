@@ -349,9 +349,9 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 VERSION = get_version_info()
 
 extensions = [
-    Extension("pycbc.types.carray", ["pycbc/types/carray.pyx"],
-             extra_compile_args=[ '-O3', '-march=native', '-w',
-                   '-fopt-info-vec-all', '-ffast-math', '-ffinite-math-only']),
+    Extension("pycbc.types.array_cpu", ["pycbc/types/array_cpu.pyx"],
+             extra_compile_args=[ '-O3', '-w',
+                                  '-ffast-math', '-ffinite-math-only']),
 ]
 ext = cythonize(extensions)
 

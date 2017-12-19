@@ -800,6 +800,7 @@ class array_base(object):
             c = self.a.inner(self.b)
             self.assertEqual(self.a,acopy)
             self.assertEqual(self.b,bcopy)
+
             # Hand calculate the relative tolerance for a scalar answer
             self.assertTrue(abs(c-self.inner)<=self.tol*abs(self.inner))
 
