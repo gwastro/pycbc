@@ -62,8 +62,22 @@ parser.add_argument('--prior-samples', dest='prior_samples', required=True,
                   help="File storing samples of prior for the analysis - posterior from the previous analysis")
 parser.add_argument('--output-folder', dest='output_folder', required=True,
                   help="Output folder where files are to be saved.")
-parser.add_argument('--min-snr', dest='min_snr', required=False, default = 8.0, 
-                  help="Minimum SNR value at which rates are to be calculated")
+parser.add_argument('--thr-var', dest='thr_var', required=False, default = 'stat', 
+                  help="Variable used to define threshold.")
+parser.add_argument('--thr-val', dest='thr_val', type = float, required=False, default = 8.0,
+                  help="Value of threshold.")
+parser.add_argument('--min-mass', dest='min_mass', type = float, required=True,
+                  help="Minimum mass of the compact object.")
+parser.add_argument('--max-mass', dest='max_mass', type = float, required=True,
+                  help="Maximum mass of the compact object.")
+parser.add_argument('--max-mtotal', dest='max_mtotal', type = float, required=True,
+                  help="Maximum total mass of the binary.")
+parser.add_argument('--min-tmplt-mass', dest='min_tmplt_mass', type = float, required=True,
+                  help="Minimum mass in the template considered for trigger identification.")
+parser.add_argument('--max-tmplt-mass', dest='max_tmplt_mass', type = float, required=True,
+                  help="Maximum mass in the template considered for trigger identification.")
+parser.add_argument('--calibration-error', dest='cal_err', type=float, required=False, default = 5.0,
+                  help="Percentage calibration errors in measurement of distance.")
     
 opts = parser.parse_args()
 path = opts.output_folder + '/astro_output'
@@ -85,12 +99,18 @@ label['lnm'] = 'Flat in log'
 label['imf'] = 'Power-law'
 
 # Estimate the rates and make supporting plots
-vt, vol_time, sig_vt, snr_falloff = {}, {}, {}, {}
+vt, vol_time, sig_vt, inj_falloff = {}, {}, {}, {}
 for dist in distrs:
-    vt[dist] = si.estimate_vt(injections, mchirp_sampler[dist], prob[dist])
+    vt[dist] = si.estimate_vt(injections, mchirp_sampler[dist], prob[dist], thr_var = opts.thr_var, thr_val = opts.thr_val, min_mass = opts.min_mass, max_mass = opts.max_mass, max_mtotal = opts.max_mtotal)
     
     vol_time[dist], sig_vt[dist] = si.get_summed_vt(vt[dist])
-    snr_falloff[dist] = si.get_accumulated_falloff(vt[dist])
+    inj_falloff[dist] = si.get_accumulated_falloff(vt[dist])
+
+#Include the calibration uncertainity
+vt_err_w_cal_uncrt = {}
+for dist in distrs:
+
+    vt_err_w_cal_uncrt[dist] = np.sqrt((vol_time[dist]*3*opts.cal_err/100.)**2 + sig_vt[dist]**2)
     
 #for dist in distrs:
 #    hist4, bins= np.histogram(snr_falloff[dist], bins = 30, density=True) 
@@ -101,18 +121,19 @@ for dist in distrs:
 
 
 #Sabe background data and coincidences
-rf.save_bkg_falloff(opts.statmap_folder, opts.bank_folder, path, opts.min_snr, 5.0)
+print opts.statmap_folder, opts.bank_folder, path, opts.thr_val, opts.min_tmplt_mass
+rf.save_bkg_falloff(opts.statmap_folder, opts.bank_folder, path, 8.0, 5.0)
 
 #Load background data and coincidences/ make some plots
 coincs = np.loadtxt(path + "/coincs.txt")
 bg_l, bg_h, bg_counts = np.loadtxt(path + "/background_bins.txt", unpack=True)
 bg_bins = np.append(bg_l, bg_h[-1])
 
-fg_stats = np.concatenate([snr_falloff[dist] for dist in distrs])
-fg_bins = np.logspace(np.log10(opts.min_snr), np.log10(np.max(fg_stats)), 101)
-fg_stats = fg_stats[fg_stats > opts.min_snr]
+fg_stats = np.concatenate([inj_falloff[dist] for dist in distrs])
+fg_bins = np.logspace(np.log10(opts.thr_val), np.log10(np.max(fg_stats)), 101)
+fg_stats = fg_stats[fg_stats > opts.thr_val]
 
-ts = np.linspace(opts.min_snr, 11.0, 1000)
+ts = np.linspace(opts.thr_val, 11.0, 1000)
 plt.figure()
 plt.plot(ts, np.exp(rf.log_rho_bg(ts, bg_bins, bg_counts)), label=r'$p_0$')
 plt.plot(ts, np.exp(rf.log_rho_fg_mc(ts, fg_stats, fg_bins)), label=r'$p_1$')
@@ -141,11 +162,11 @@ log_fg_ratios = rf.log_rho_fg_mc(coincs, fg_stats, fg_bins) - rf.log_rho_bg(coin
 for dist in distrs:
     rate_data[dist] = {'Ncoincs': len(log_fg_ratios),
            'log_fg_ratios': log_fg_ratios,
-           'mu_vt': vol_time[dist][0]/1e9,
-           'sigma_vt': sig_vt[dist][0]/1e9,
+           'mu_vt': vol_time[dist]/1e9,
+           'sigma_vt': sig_vt[dist]/1e9,
            'alpha': alpha[dist],
            'mu': mu[dist],
-           'sigma': sigma[dist]}
+           'sigma': vt_err_w_cal_uncrt[dist]}
     rate_fit = pystan.stan(file=opts.stan_file, data=rate_data[dist], iter=20000)
     rate_samples[dist] = rate_fit.extract(permuted=True)
     rate_fit
