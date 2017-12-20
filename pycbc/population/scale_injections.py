@@ -5,6 +5,8 @@ from scipy.integrate import quad
 from scipy.stats import kstest, ks_2samp
 from astropy.cosmology import WMAP9 as cosmo
 
+from pycbc.conversions import mchirp_from_mass1_mass2
+
 _mch_BNS = 1.4/2**.2
 _redshifts, _d_lum, _I = np.arange(0., 5., 0.01), [], []
 _save_params = ['mass1', 'mass2', 'spin1z', 'spin2z', 'spin1y', 'spin2y', 'spin1x', 'spin2x', 'distance', 'end_time']
@@ -40,7 +42,7 @@ def read_injections(folder_name):
         injections[str(i)]['file_name'] = all_files[i]
         
         mass1, mass2 = injections[str(i)]['mass1'], injections[str(i)]['mass2']   
-        mchirp, eta = m1m2_to_mcheta(mass1, mass2)
+        mchirp = mchirp_from_mass1_mass2(mass1, mass2)
         injections[str(i)]['chirp_mass'] = mchirp
         injections[str(i)]['total_mass'] = mass1 + mass2
     
@@ -183,7 +185,7 @@ def read_injections(folder_name):
                     
     return chunk_data
 
-def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val = [8.]): #Need to make this flexible to include ifar threshold
+def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make this flexible to include ifar threshold
     '''Based on injection strategy and the desired astro model estimate the injected volume. 
        Scale injections and estimate sensitive volume.
 
@@ -195,10 +197,8 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
             Sampler for producing chirp mass samples for the astro model.
        model_pdf: function
             The PDF for astro model in mass1-mass2-spin1z-spin2z space. This is easily extendible to include precession
-       thr_var: string 
-            Variable used to apply the threshold, e.g. stat(SNR), ifar, far.
-       thr_val: float
-            Array containing values of thresholds at which VT is to be calculated.
+       kwargs: key words
+            Inputs for thresholds and astrophysical models
 
        Returns
        -------
@@ -206,6 +206,12 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
             The input dictionary with VT and VT error included for each chunk
     '''
     
+    min_mass = kwargs.get('min_mass', 5.)
+    max_mass = kwargs.get('max_mass', 95.)
+    max_mtotal = kwargs.get('max_mtotal', min_mass + max_mass)
+    thr_var = kwargs.get('thr_var')
+    thr_val = kwargs.get('thr_val')
+
     injection_chunks = copy.deepcopy(inj_chunks)
     nsamples, min_z, max_z = 1000000, injection_chunks['z_range'][0], injection_chunks['z_range'][1]
     for key in injection_chunks.keys():
@@ -228,15 +234,15 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
         astro_lum_dist = cosmo.luminosity_distance(z_astro).value
         V = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., max_z)[0]
         
-        bound, mch_astro_det = [], np.array(mchirp_sampler(nsamples = nsamples)) * (1. + z_astro)
+        bound, mch_astro_det = [], np.array(mchirp_sampler(nsamples = nsamples, **kwargs)) * (1. + z_astro)
         
         for uu in unique_distr:
             if uu[4][0] == 'totalMass':
-                min_mchirp = m1m2_to_mcheta(float(uu[1][0]), float(uu[1][0]))[0]
-                max_mchirp = m1m2_to_mcheta(float(uu[0][1])/2., float(uu[0][1])/2.)[0]
+                min_mchirp = mchirp_from_mass1_mass2(float(uu[1][0]), float(uu[1][0]))
+                max_mchirp = mchirp_from_mass1_mass2(float(uu[0][1])/2., float(uu[0][1])/2.)
             if uu[4][0] == 'componentMass' or uu[4][0] == 'log':
-                min_mchirp = m1m2_to_mcheta(float(uu[1][0]), float(uu[2][0]))[0]
-                max_mchirp = m1m2_to_mcheta(float(uu[1][1]), float(uu[2][1]))[0]         
+                min_mchirp = mchirp_from_mass1_mass2(float(uu[1][0]), float(uu[2][0]))
+                max_mchirp = mchirp_from_mass1_mass2(float(uu[1][1]), float(uu[2][1]))         
             if uu[4][1] == 'uniform':
                 i_dmin, i_dmax = float(uu[3][0]) * np.ones_like(mch_astro_det), float(uu[3][1]) * np.ones_like(mch_astro_det)
             if uu[4][1] == 'dchirp':
@@ -275,7 +281,7 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
     V_min = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., z_range[0])[0]
     V_max = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., z_range[1])[0]
     def pdf_z_astro(z):
-        ''' Get the probability density for the rate of events at a redshift assuming standard cosmology''' 
+        ''' Get the probability density for the rate of events at a redshift assuming standard cosmology'''
         return cosmo.differential_comoving_volume(z).value/(1+z)/(V_max - V_min)    
     
     for key in injection_chunks.keys():    
@@ -284,7 +290,7 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
             continue
             
         data = injection_chunks[key]
-        i_det, i_inj, i_det_sq, snr_falloff = 0, 0, 0, []
+        i_det, i_inj, i_det_sq, thr_falloff = 0, 0, 0, []
         narrays = len(data['distance'])
         for i in range(narrays):
             mchirp, mass1, mass2 = data['chirp_mass'][i], data['mass1'][i], data['mass2'][i]
@@ -331,23 +337,23 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, thr_var = 'stat', thr_val
     
             p_out_in = p_out/p_in
             i_inj += np.sum(p_out_in)
-            i_det += np.array([np.sum((p_out_in)[np.where(data[thr_var][i] > thr)]) for thr in thr_val])
-            i_det_sq += np.array([np.sum((p_out_in)[np.where(data[thr_var][i] > thr)]**2) for thr in thr_val])
+            i_det += np.sum((p_out_in)[data[thr_var][i] > thr_val])
+            i_det_sq += np.sum((p_out_in)[data[thr_var][i] > thr_val]**2)
             
-            idx_snr = np.where(data['stat'][i] > 8.0)
-            snrs = data['stat'][i][idx_snr]
-            ratios = p_out_in[idx_snr]/max(p_out_in[idx_snr])  
+            idx_thr = np.where(data[thr_var][i] > thr_val)
+            thrs = data[thr_var][i][idx_thr]
+            ratios = p_out_in[idx_thr]/max(p_out_in[idx_thr])  
             rndn = np.random.uniform(0, 1, len(ratios))
             idx_ratio = np.where(ratios > rndn)                              
-            snr_falloff.append(snrs[idx_ratio])
+            thr_falloff.append(thrs[idx_ratio])
             
         inj_V0 = injection_chunks[key]['inj_astro_vol']
         injection_chunks[key]['ninj'] = i_inj
         injection_chunks[key]['ndet'] = i_det
         injection_chunks[key]['ndetsq'] = i_det_sq
         injection_chunks[key]['VT'] = ((inj_V0*i_det/i_inj) * (data['gps'][1] - data['gps'][0])/31557600)
-        injection_chunks[key]['VT_err'] = np.sqrt(i_det_sq)/i_det
-        injection_chunks[key]['snr_falloff'] = np.hstack(np.array(snr_falloff).flat)
+        injection_chunks[key]['VT_err'] = injection_chunks[key]['VT'] * np.sqrt(i_det_sq)/i_det
+        injection_chunks[key]['thr_falloff'] = np.hstack(np.array(thr_falloff).flat)
     
     return injection_chunks
 
@@ -403,94 +409,6 @@ def merge_injections(all_inj):
    
     return injs
         
-def m1m2_to_mcheta(m1, m2):
-    ''' Get chirp mass and eta for m1 and m2
-
-       Parameters
-       ----------
-       m1: array/float
-           First mass of the binary
-       m2: array/float
-           Second mass of the binary
-
-       Returns
-       -------
-       array/float
-           Chirp mass for the m1, m2 pair
-       array/float
-           Symmetric mass ratio for the m1, m2 pair
-    '''
-    m1, m2 = np.array(m1), np.array(m2)
-    return (m1*m2)**.6/(m1+m2)**.2, m1*m2/(m1+m2)**2  
-
-def Mmch_to_m1m2(M, mch):
-    '''Get component masses from chirp and total mass
-
-       Parameters
-       ----------
-       M: array/float
-           Total mass of the binary
-       mch: array/float
-           Chirp mass of the binary
-
-       Returns
-       -------
-       array/float
-           First mass of the binary
-       array/float
-           Second mass of the binary
-    '''
-    M, mch = np.array(M), np.array(mch)
-    b = (mch**5 * M)**(1./3)
-    m1 = (M - np.sqrt(M**2 - 4*b))/2 
-    return m1, M - m1
-
-def mcheta_to_m1m2(mch, eta):
-    '''Get component masses from chirp mass and mass ratio
-
-       Parameters
-       ----------
-       mch: array/float
-           Chirp mass of the binary
-       eta: array/float
-
-       Returns
-       -------
-       aarray/float
-           First mass of the binary
-       array/float
-           Second mass of the binary
-    '''    
-    mch, eta = np.array(mch), np.array(eta)
-    idx = np.where(eta > 0.24999)
-    
-    a, b = mch**2/eta**.2, mch/eta**.6
-    m2 = (b - np.sqrt(b**2 - 4*a))/2
-    m1 = a/m2
-    m1[idx] = m2[idx] = mch[idx]*(2**.2)
-        
-    return m1, m2
-
-def jacobian_m1m2_to_mcheta(mch, eta, minm1, maxm1):
-    '''
-    Estimate the Jacobian to scale a PDF from chirp mass-eta to m1-m2 space. P(m1, m2) = J P(mch, eta)
-    '''
-    m1, m2 = mcheta_to_m1m2(mch, eta)
-    
-    bound = np.sign(m1 - minm1) + np.sign(m2 - minm2) + np.sign(maxm1 - m1) + np.sign(maxm2 - m2) 
-    
-    if bound < 4.:
-        return 0
-    
-    J11, J12 = mch*(.6/m1 - .2/(m1+m2)), mch*(.6/m2 - .2/(m1+m2))
-    J21, J22 = eta*(1./m1 - 2./(m1+m2)), eta*(1./m2 - 2./(m1+m2))
-    detJ = abs(J11*J22 - J12*J21)
-    
-    if detJ == 0:
-        return 0
-
-    return detJ
-                                                      
 def dlum_to_z(dl):
     ''' Get the redshift for a luminosity distance
 
@@ -569,7 +487,7 @@ def get_summed_vt(dictionary):
             continue
     
         sum_vt += dictionary[key]['VT']
-        sum_vt_err += (dictionary[key]['VT']*dictionary[key]['VT_err'])**2
+        sum_vt_err += dictionary[key]['VT_err']**2
     
     return sum_vt, np.sqrt(sum_vt_err) 
 
@@ -587,46 +505,14 @@ def get_accumulated_falloff(dictionary):
           array contaning all the SNRs over the chunks
     '''
     
-    snrs = []
+    thrs = []
     for key in dictionary.keys():
         
         if key == 'z_range':
             continue
-        snrs.append(dictionary[key]['snr_falloff'])
+        thrs.append(dictionary[key]['thr_falloff'])
         
-    return np.hstack(np.array(snrs).flat)
-
-def apply_cal_uncert(inj_chunks, cal_uncert):
-    """
-    Apply calibration uncertainity to the VT estimates. 
-    The number of chunks in the dictionary and size of cal_uncert must be equal
-
-       Parameters
-       ----------
-       dictionary: inj_chunks
-             Dictionary obtained from estimate_vt function
-       cal_uncert: array
-             Array containing calibration uncertainity for all the chunks
-
-       Returns
-       -------
-       injection_chunks: dictionary
-             Dictionary with calibration uncertainity included in the VT values
-    """
-    injection_chunks = copy.deepcopy(inj_chunks)
-    
-    for key, uncert in zip(injection_chunks.keys(), cal_uncert):
-        
-        if key == 'z_range':
-            continue    
-        
-        vt = injection_chunks[key]['VT']
-        sigma_vt_sys = 3.0 * uncert * vt
-        sigma_vt = np.sqrt(sigma_vt_sys**2 + injection_chunks[key]['VT_err']**2)
-        injection_chunks[key]['VT_err'] = sigma_vt
-        injection_chunks[key]['cal_uncert'] = cal_uncert
-        
-    return injection_chunks
+    return np.hstack(np.array(thrs).flat)
 
 ########## Defining current standard strategies used for making injections ##########
 

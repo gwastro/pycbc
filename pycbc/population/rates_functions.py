@@ -9,6 +9,7 @@ import numpy as np, h5py
 import scipy.stats as ss
 
 import bisect
+from pycbc.conversions import mchirp_from_mass1_mass2
 
 def process_full_data(hdffile, rhomin, mass1, mass2, min_bh_mass):
     """Read the zero and time-lagged triggers identified by BBH templates.
@@ -385,26 +386,6 @@ def draw_lnm_samples(**kwargs):
     
     return np.resize(m1, nsamples), np.resize(m2, nsamples)
 
-def m1m2_to_mcheta(m1, m2):
-    ''' Get chirp mass and eta for m1 and m2
-
-        Parameters
-        ----------
-        m1: array
-            Component masses 1
-        m2: array
-            Component masses 2
-
-        Returns
-        -------
-        array
-           Chirp mass
-        array
-           Symmetric mass ratio 
-    '''
-    m1, m2 = np.array(m1), np.array(m2)
-    return (m1*m2)**.6/(m1+m2)**.2, m1*m2/(m1+m2)**2
-
 # Functions to generate chirp mass samples for the two canonical models
 def mchirp_sampler_lnm(**kwargs):
     ''' Draw chirp mass samples for uniform-in-log model
@@ -420,7 +401,7 @@ def mchirp_sampler_lnm(**kwargs):
            The chirp mass samples for the population
     '''
     m1, m2 = draw_lnm_samples(**kwargs)
-    mchirp_astro, junk = m1m2_to_mcheta(m1, m2)
+    mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
     
     return mchirp_astro
 
@@ -438,6 +419,6 @@ def mchirp_sampler_imf(**kwargs):
            The chirp mass samples for the population
     '''
     m1, m2 = draw_imf_samples(**kwargs)
-    mchirp_astro, junk = m1m2_to_mcheta(m1, m2)
+    mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
     
     return mchirp_astro
