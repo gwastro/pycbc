@@ -19,7 +19,7 @@ To download and install PyCBC follow the instructions at
 You can start up an interactive jupyter notebook with PyCBC using either of the links below.
 
 [![azure](https://img.shields.io/badge/azure-notebook-pi.svg)](https://notebooks.azure.com/nitz/libraries/pycbc)
-[![Binder](http://mybinder.org/badge.svg)](http://mybinder.org:/repo/ligo-cbc/binder)
+[![Binder](http://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/ligo-cbc/binder/master?filepath=index.ipynb)
 
 If you use any code from PyCBC in a scientific publication, then we ask that
 it is cited in the following way:
