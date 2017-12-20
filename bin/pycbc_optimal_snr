@@ -223,8 +223,7 @@ if __name__ == '__main__':
     for inj in proc_injs:
         out_sim_inspiral.append(inj)
 
-    out_sim_inspiral = sorted(out_sim_inspiral,
-                              key=lambda x: x.geocent_end_time)
+    out_sim_inspiral.sort(key=lambda x: x.geocent_end_time)
 
     logging.info('Writing output')
     llw_doc = injections.indoc
