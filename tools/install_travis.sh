@@ -26,10 +26,7 @@ export XDG_CACHE_HOME=${BUILD}/.cache
 
 # update setuptools
 pip install --upgrade pip setuptools
-
-# needed by mock 
-pip install 'setuptools==18.2' --upgrade
-pip install -r requirements.txt
+pip install numpy
 
 # run the einstein at home build and test script
 pushd ${BUILD}
