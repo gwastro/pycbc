@@ -24,6 +24,13 @@ mkdir -p ${BUILD}
 export PYTHONUSERBASE=${BUILD}/.local
 export XDG_CACHE_HOME=${BUILD}/.cache
 
+# update setuptools
+pip install --upgrade pip setuptools
+
+# needed by mock 
+pip install 'setuptools==18.2' --upgrade
+pip install -r requirements.txt
+
 # run the einstein at home build and test script
 pushd ${BUILD}
 ${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh ${LALSUITE_CODE} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/710a51f4770cbba77f61dfb798472bebe6c43d38/travis
@@ -40,12 +47,6 @@ export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:/usr/local/li
 export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
 source ${BUILD}/pycbc-build/environment/bin/activate
-
-# update setuptools
-pip install --upgrade pip setuptools
-
-# needed by mock 
-pip install 'setuptools==18.2' --upgrade
 
 # FIXME this is a fix for https://github.com/travis-ci/travis-ci/issues/7940
 # as Pegasus pulls in boto which hits this issue
