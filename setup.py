@@ -355,6 +355,9 @@ extensions = [
     Extension("pycbc.filter.matchedfilter_cpu", ["pycbc/filter/matchedfilter_cpu.pyx"],
              extra_compile_args=[ '-O3', '-w',
                                   '-ffast-math', '-ffinite-math-only']),
+    Extension("pycbc.events.threshold_cpu", ["pycbc/events/threshold_cpu.pyx"],
+             extra_compile_args=[ '-O3', '-w',
+                                  '-ffast-math', '-ffinite-math-only'])
 ]
 ext = cythonize(extensions)
 

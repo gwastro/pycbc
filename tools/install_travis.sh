@@ -91,5 +91,10 @@ cp -v $p $PREFIX/lib/$p
 chmod +x $PREFIX/lib/$p
 popd
 
+# force reinstall of numpy to link with OpenBLAS if it exists
+# this is needed for test_inference.py
+pip uninstall -y numpy
+pip install -r requirements.txt
+
 # re-install pycbc
 python setup.py install
