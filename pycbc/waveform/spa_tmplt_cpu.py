@@ -183,10 +183,6 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                 cosp = .225 * (cosp * cosp - cosp) + cosp;
         }
            
-            
-        
-        //printf("%f %f %f \\n", sinp, sin(phasing), phasing);
-        
         htilde[i] = std::complex<float>(cosp, - sinp) * amp;
     }
     """
