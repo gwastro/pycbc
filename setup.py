@@ -48,18 +48,12 @@ from distutils.file_util import write_file
 from distutils.version import LooseVersion
 
 try:
-    import numpy.version
-    if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
-        print(" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
-              " We found version %s already installed. Please update \n"
-              " to a more recent version and then retry PyCBC  \n"
-              " installation. \n"
-              " \n"
-              " Using pip: [pip install 'numpy>=1.6.4' --upgrade --user] \n"
-              "" % numpy.version.version)
-        exit(1)
+    import numpy
 except ImportError:
-    pass
+    print(" Numpy >= 1.9.0 is required for pycbc. \n"
+          " Using pip: [pip install 'numpy>=1.9.0' --upgrade --user] \n"
+          "")
+    exit(1)
 
 requires = ['lal.lal', 'lalsimulation.lalsimulation']
 setup_requires = []
@@ -84,17 +78,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       ]
-
-#FIXME Remove me when we bump to h5py > 2.5
-try:
-    import h5py
-except ImportError:
-    setup_requires.append('cython')
-else:
-    import h5py.version
-    if h5py.version.version < '2.5':
-        setup_requires.append('cython')
-
 
 def find_package_data(dirname):
     def find_paths(dirname):
@@ -351,13 +334,19 @@ VERSION = get_version_info()
 extensions = [
     Extension("pycbc.types.array_cpu", ["pycbc/types/array_cpu.pyx"],
              extra_compile_args=[ '-O3', '-w',
-                                  '-ffast-math', '-ffinite-math-only']),
+                                  '-ffast-math', '-ffinite-math-only'],
+             include_dirs=[numpy.get_include()]
+             ),
     Extension("pycbc.filter.matchedfilter_cpu", ["pycbc/filter/matchedfilter_cpu.pyx"],
              extra_compile_args=[ '-O3', '-w',
-                                  '-ffast-math', '-ffinite-math-only']),
+                                  '-ffast-math', '-ffinite-math-only'],
+             include_dirs=[numpy.get_include()]
+             ),
     Extension("pycbc.events.threshold_cpu", ["pycbc/events/threshold_cpu.pyx"],
              extra_compile_args=[ '-O3', '-w',
-                                  '-ffast-math', '-ffinite-math-only'])
+                                  '-ffast-math', '-ffinite-math-only'],
+             include_dirs=[numpy.get_include()]
+             )
 ]
 ext = cythonize(extensions)
 
