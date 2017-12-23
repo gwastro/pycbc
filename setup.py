@@ -337,8 +337,7 @@ extensions = ['types.array',
               'waveform.spa_tmplt']
 ext = cythonize([
     Extension("pycbc.%s_cpu" % name, ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
-             extra_compile_args=[ '-O3', '-w', '-msse', '-msse2', '-march=native', 
-                                '-ftree-vectorize', '-fopt-info-vec-all',
+             extra_compile_args=[ '-O3', '-w', '-march=native', '-fopt-info-vec-all',
                                   '-ffast-math', '-ffinite-math-only'],
              include_dirs=[numpy.get_include()]
              ) for name in extensions

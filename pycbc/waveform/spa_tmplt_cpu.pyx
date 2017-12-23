@@ -20,7 +20,7 @@ import lal
 import pycbc
 from pycbc.types import Array, float32, FrequencySeries
 from pycbc.waveform.spa_tmplt import spa_tmplt_precondition
-from libc.math cimport cbrt, log, M_PI, M_PI_2, M_PI_4, floor
+from libc.math cimport cbrt, log, M_PI, M_PI_2, M_PI_4, floor, fabs
 
 # Precompute cbrt(f) ###########################################################
 
@@ -69,71 +69,46 @@ cdef spa_tmplt_inline(float piM, float pfaN,
     cdef float logpiM13 = log(piM13)
     cdef float log4 = log(4.)
     cdef float two_pi = 2 * M_PI
-    cdef float v, logv, v5, cosp, sinp, phasing
+    cdef float v, logv, v5, phasing, amp
     
-    cdef float* htilde = <float*>&_htilde[0]
+    cdef float complex* htilde = &_htilde[0]
     cdef float* kfac = &_kfac[0]
     cdef float* cbrt_vec = &_cbrt_vec[kmin]
     cdef float* logv_vec = &_logv_vec[kmin]
-    cdef unsigned int xmax = _htilde.shape[0]
-    cdef unsigned int i
-    cdef float amp
+    cdef unsigned int i, xmax = _htilde.shape[0]
 
     for i in range(xmax):
-        v =  piM13 * cbrt_vec[i]
+        v = piM13 * cbrt_vec[i]
         logv = logv_vec[i] * 1.0/3.0 + logpiM13
+        amp = ampc * kfac[i]
         v5 = v * v * v * v * v
-        
+          
         phasing = pfa7 * v
         phasing = (phasing + pfa6 + pfl6 * (logv + log4) ) * v
-        phasing = (phasing + pfa5 + pfl5 * (logv) ) * v
+        phasing = (phasing + pfa5 + pfl5 * logv) * v
         phasing = (phasing + pfa4) * v
         phasing = (phasing + pfa3) * v
         phasing = (phasing + pfa2) * v * v + 1
 
         phasing = phasing * pfaN / v5 - M_PI_4
         phasing -= <int>(phasing / two_pi) * two_pi
-         
+        
         if (phasing < -M_PI):
             phasing += two_pi
-        elif (phasing > M_PI):
+        if (phasing > M_PI):
             phasing -= two_pi
+       
+        sinp = 1.273239545 * phasing - .405284735 * phasing * fabs(phasing)
+        sinp = .225 * (sinp * fabs(sinp) - sinp) + sinp  
         
-        # compute sine
-        if (phasing < 0):
-            sinp = 1.27323954 * phasing + .405284735 * phasing * phasing       
-            if (sinp < 0):
-                sinp = .225 * (sinp *-sinp - sinp) + sinp
-            else:
-                sinp = .225 * (sinp * sinp - sinp) + sinp
-        else:
-            sinp = 1.27323954 * phasing - 0.405284735 * phasing * phasing          
-            if (sinp < 0):
-                sinp = .225 * (sinp *-sinp - sinp) + sinp
-            else:
-                sinp = .225 * (sinp * sinp - sinp) + sinp
-        
-        # compute cosine
         phasing += M_PI_2
-        if (phasing >  M_PI):
+        if phasing > M_PI:
             phasing -= two_pi
 
-        if (phasing < 0):
-            cosp = 1.27323954 * phasing + .405284735 * phasing * phasing                   
-            if (cosp < 0):
-                cosp = .225 * (cosp *-cosp - cosp) + cosp
-            else:
-                cosp = .225 * (cosp * cosp - cosp) + cosp
-        else:
-            cosp = 1.27323954 * phasing - 0.405284735 * phasing * phasing          
-            if (cosp < 0):
-                cosp = .225 * (cosp *-cosp - cosp) + cosp
-            else:
-                cosp = .225 * (cosp * cosp - cosp) + cosp
+        cosp = 1.273239545 * phasing - .405284735 * phasing * fabs(phasing)
+        cosp = .225 * (cosp * fabs(cosp) - cosp) + cosp         
 
-        amp = ampc * kfac[i]
-        htilde[i*2] = cosp * amp
-        htilde[i*2+1] = -sinp * amp
+        htilde[i] = (cosp - sinp * 1j) * amp
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
@@ -147,6 +122,3 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                       pfa6, pfl6, pfa7, amp_factor,
                       kmin, logv_vec, cbrt_vec, kfac, htilde.data,
                       )
-     
-
-
