@@ -1683,11 +1683,11 @@ class PycbcInferenceExecutable(Executable):
         channel_names : dict
             A ``dict`` of ``str`` to use for ``--channel-name`` option.
         config_file : File
-            A ``File`` for inference configuration file to be used
-            with ``--config-files`` option.
+            A ``pycbc.workflow.core.File`` for inference configuration file
+            to be used with ``--config-files`` option.
         injection_file : File
-            A ``File`` for injection file to be used with ``--injection-file``
-            option.
+            A ``pycbc.workflow.core.File`` for injection file to be used
+            with ``--injection-file`` option.
         seed : int
             An ``int`` to be used with ``--seed`` option.
         fake_strain_seed : dict
