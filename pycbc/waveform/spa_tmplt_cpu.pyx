@@ -71,29 +71,32 @@ cdef spa_tmplt_inline(float piM, float pfaN,
     cdef float two_pi = 2 * M_PI
     cdef float v, logv, v5, cosp, sinp, phasing
     
-    cdef float complex* htilde = &_htilde[0]
+    cdef float* htilde = <float*>&_htilde[0]
     cdef float* kfac = &_kfac[0]
-    cdef float* cbrt_vec = &_cbrt_vec[0]
-    cdef float* logv_vec = &_logv_vec[0]
+    cdef float* cbrt_vec = &_cbrt_vec[kmin]
+    cdef float* logv_vec = &_logv_vec[kmin]
     cdef unsigned int xmax = _htilde.shape[0]
     cdef unsigned int i
+    cdef float amp
 
     for i in range(xmax):
-        v =  piM13 * cbrt_vec[i + kmin]
-        logv = logv_vec[i + kmin] * 1.0/3.0 + logpiM13
+        v =  piM13 * cbrt_vec[i]
+        logv = logv_vec[i] * 1.0/3.0 + logpiM13
         v5 = v * v * v * v * v
         
-        phasing = (((pfa7 * v + pfa6 + pfl6 * (logv + log4) ) * v +
-                     pfa5 + pfl5 * (logv) ) * v + pfa4) * v
-        phasing = ((phasing + pfa3) * v + pfa2) * v * v + 1
+        phasing = pfa7 * v
+        phasing = (phasing + pfa6 + pfl6 * (logv + log4) ) * v
+        phasing = (phasing + pfa5 + pfl5 * (logv) ) * v
+        phasing = (phasing + pfa4) * v
+        phasing = (phasing + pfa3) * v
+        phasing = (phasing + pfa2) * v * v + 1
 
         phasing = phasing * pfaN / v5 - M_PI_4
         phasing -= <int>(phasing / two_pi) * two_pi
          
-        while(phasing < -M_PI):
+        if (phasing < -M_PI):
             phasing += two_pi
-
-        while (phasing > M_PI):
+        elif (phasing > M_PI):
             phasing -= two_pi
         
         # compute sine
@@ -128,7 +131,9 @@ cdef spa_tmplt_inline(float piM, float pfaN,
             else:
                 cosp = .225 * (cosp * cosp - cosp) + cosp
 
-        htilde[i] = (cosp - sinp*1j) * ampc * kfac[i]
+        amp = ampc * kfac[i]
+        htilde[i*2] = cosp * amp
+        htilde[i*2+1] = -sinp * amp
 
 def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
