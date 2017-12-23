@@ -331,24 +331,18 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 # do the actual work of building the package
 VERSION = get_version_info()
 
-extensions = [
-    Extension("pycbc.types.array_cpu", ["pycbc/types/array_cpu.pyx"],
-             extra_compile_args=[ '-O3', '-w',
+extensions = ['types.array',
+              'filter.matchedfilter', 
+              'events.threshold',
+              'waveform.spa_tmplt']
+ext = cythonize([
+    Extension("pycbc.%s_cpu" % name, ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
+             extra_compile_args=[ '-O3', '-w', '-msse', '-msse2',
                                   '-ffast-math', '-ffinite-math-only'],
              include_dirs=[numpy.get_include()]
-             ),
-    Extension("pycbc.filter.matchedfilter_cpu", ["pycbc/filter/matchedfilter_cpu.pyx"],
-             extra_compile_args=[ '-O3', '-w',
-                                  '-ffast-math', '-ffinite-math-only'],
-             include_dirs=[numpy.get_include()]
-             ),
-    Extension("pycbc.events.threshold_cpu", ["pycbc/events/threshold_cpu.pyx"],
-             extra_compile_args=[ '-O3', '-w',
-                                  '-ffast-math', '-ffinite-math-only'],
-             include_dirs=[numpy.get_include()]
-             )
-]
-ext = cythonize(extensions)
+             ) for name in extensions
+             ])
+
 
 ext += Extension(
             "pycbc.ligolw.tokenizer",
