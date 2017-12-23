@@ -183,7 +183,7 @@ for i in range(n_injections):
         fake_strain_seed = {ifo : j + i * len(workflow.ifos)
                             for j, ifo in enumerate(workflow.ifos)}
     else:
-        None
+        fake_strain_seed = None
 
     # make node for running sampler
     node, inference_file = inference_exe.create_node(
