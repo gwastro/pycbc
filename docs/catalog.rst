@@ -1,5 +1,5 @@
 ###################################################
-Catalog of LIGO/Virgo Gravitational-wave Mergers
+Catalog of Observed Gravitational-wave Mergers
 ###################################################
 
 Information about the growing catalog of gravitational-wave mergers can be 
