@@ -37,7 +37,7 @@ __program__ = "pycbc_splitbank"
 
 import time
 import argparse
-from pycbc_glue import gpstime
+from glue import gpstime
 from pycbc_glue.ligolw import ligolw
 from pycbc_glue.ligolw import table
 from pycbc_glue.ligolw import lsctables

@@ -21,6 +21,7 @@ import lalframe, logging
 import lal
 import numpy
 import os.path, glob, time
+import glue.datafind
 from pycbc.types import TimeSeries, zeros
 
 
@@ -230,9 +231,6 @@ def datafind_connection(server=None):
     connection
         The open connection to the datafind server.
     """
-    # import inside function to avoid adding M2Crypto
-    # as a general PyCBC requirement
-    import pycbc_glue.datafind
 
     if server:
         datafind_server = server
@@ -248,7 +246,7 @@ def datafind_connection(server=None):
 
     # verify authentication options
     if not datafind_server.endswith("80"):
-        cert_file, key_file = pycbc_glue.datafind.find_credential()
+        cert_file, key_file = glue.datafind.find_credential()
     else:
         cert_file, key_file = None, None
 
@@ -259,10 +257,10 @@ def datafind_connection(server=None):
 
     # Open connection to the datafind server
     if cert_file and key_file:
-        connection = pycbc_glue.datafind.GWDataFindHTTPSConnection(
+        connection = glue.datafind.GWDataFindHTTPSConnection(
                 host=server, port=port, cert_file=cert_file, key_file=key_file)
     else:
-        connection = pycbc_glue.datafind.GWDataFindHTTPConnection(
+        connection = glue.datafind.GWDataFindHTTPConnection(
                 host=server, port=port)
     return connection
     

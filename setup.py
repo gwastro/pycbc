@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 
-requires = ['lal.lal', 'lalsimulation.lalsimulation', 'glue']
+requires = ['lal.lal', 'lalsimulation.lalsimulation']
 setup_requires = []
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
@@ -74,7 +74,8 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'astropy==2.0.3',
                       'mpld3>=0.3',
                       'pyRXP>=2.1.0',
-                      'pycbc-glue-obsolete==1.1.0',
+                      'pycbc-glue-obsolete>=1.1.0',
+                      'lscsoft-glue>=1.56.0',
                       'kombine>=0.8.2',
                       'emcee==2.2.1',
                       'corner>=2.0.1',
@@ -451,7 +452,6 @@ setup (
                'bin/hwinj/pycbc_plot_hwinj',
                'bin/hwinj/pycbc_insert_frame_hwinj',
                'bin/pycbc_submit_dax',
-               'bin/mvsc/pycbc_mvsc_get_features',
                'bin/pycbc_coinc_time',
                'bin/pygrb/pycbc_make_offline_grb_workflow',
                'bin/pygrb/pycbc_make_grb_summary_page',

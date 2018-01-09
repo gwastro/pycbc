@@ -34,7 +34,7 @@ from pycbc_glue.ligolw import table
 from pycbc_glue.ligolw import lsctables
 from pycbc_glue.ligolw import utils as ligolw_utils
 from pycbc_glue.ligolw.utils import process as ligolw_process
-from pycbc_glue.segments import segment, segmentlist
+from glue.segments import segment, segmentlist
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass

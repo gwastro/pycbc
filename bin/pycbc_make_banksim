@@ -7,7 +7,7 @@ import subprocess
 import glob
 import tempfile
 from optparse import OptionParser
-from pycbc_glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
+from glue.pipeline import CondorDAGJob, CondorDAGNode, CondorDAG, CondorJob
 
 
 class BaseJob(CondorDAGJob, CondorJob):

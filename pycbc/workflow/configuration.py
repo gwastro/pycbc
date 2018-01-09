@@ -39,7 +39,7 @@ import requests
 import distutils.spawn
 import ConfigParser
 import itertools
-import pycbc_glue.pipeline
+import glue.pipeline
 
 from cookielib import (_warn_unhandled_exception, LoadError, Cookie)
 from bs4 import BeautifulSoup
@@ -296,7 +296,7 @@ def add_workflow_command_line_group(parser):
                            "section.")
 
 
-class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
+class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     """
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
@@ -333,7 +333,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             overrideTuples = []
         if deleteTuples is None:
             deleteTuples = []
-        pycbc_glue.pipeline.DeepCopyableConfigParser.__init__(self)
+        glue.pipeline.DeepCopyableConfigParser.__init__(self)
         
         # Enable case sensitive options
         self.optionxform = str

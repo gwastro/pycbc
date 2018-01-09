@@ -22,7 +22,7 @@ import logging
 import numpy
 import pycbc.results
 import sys
-from pycbc_glue import segments
+from glue import segments
 from pycbc_glue.ligolw import ligolw
 from pycbc_glue.ligolw import lsctables
 from pycbc_glue.ligolw import table

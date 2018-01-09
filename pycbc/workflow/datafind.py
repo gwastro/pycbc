@@ -33,7 +33,7 @@ from __future__ import print_function
 import os, copy
 import urlparse
 import logging
-from pycbc_glue import segments, lal
+from glue import segments, lal
 from pycbc_glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
