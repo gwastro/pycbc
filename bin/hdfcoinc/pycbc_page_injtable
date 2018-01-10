@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """ Make a table of found injection information
 """
 import argparse, h5py, numpy, pycbc.results, pycbc.detector, sys

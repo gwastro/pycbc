@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """ Plot found and missed injections.
 """
 import h5py, numpy, logging, os.path, argparse, sys, matplotlib
@@ -131,6 +131,8 @@ else:
     fvals = fvals[csort]
     fdval = fdvals[csort]
     color = color[csort]
+    if len(color) < 2:
+        color=None
 
     mpoints = plot.scatter(vals[args.axis_type][missed], mdvals,
                            marker='x', color='red', label='missed', zorder=zmissed)
@@ -144,7 +146,7 @@ else:
     try:
         c = plot.colorbar()
         c.set_label('False Alarm Rate $(yr^{-1})$, %s' % far_title)
-    except TypeError:
+    except (TypeError, ZeroDivisionError):
         # Can't make colorbar if no quiet found injections
         if len(fvals):
             raise
@@ -162,16 +164,17 @@ plot.grid()
 if args.log_x:
     # log x axis may fail for some choices, eg effective spin
     ax.set_xscale('log')
-    xmax = 1.4 * max(vals[args.axis_type][missed].max(),
-                     vals[args.axis_type][found].max())
-    xmin = 0.7 * min(vals[args.axis_type][missed].min(),
-                     vals[args.axis_type][found].min())
+    tmpxvals = list(vals[args.axis_type][missed])
+    tmpxvals += list(vals[args.axis_type][found])
+    xmax = 1.4 * max(tmpxvals)
+    xmin = 0.7 * min(tmpxvals)
     plot.xlim(xmin, xmax)
 if args.log_distance:
     ax.set_yscale('log')
 
-ymax = 1.2 * max(fdvals.max(), mdvals.max())
-ymin = 0.9 * min(fdvals.min(), mdvals.min())
+tmpyvals = list(fdvals) + list(mdvals)
+ymax = 1.2 * max(tmpyvals)
+ymin = 0.9 * min(tmpyvals)
 if args.plot_all_distance:
     # note: ymin=0 will clash with args.log_distance
     # in that case it *should* throw an error!
@@ -196,9 +199,8 @@ if ('.html' in args.output_file):
                                                     alpha_unsel=0.1)
     mpld3.plugins.connect(fig, legend)
 
-pycbc.results.save_fig_with_metadata(fig, args.output_file,
-                     fig_kwds=fig_kwds,
-                     title='%s: %s vs %s' % (fig_title, args.axis_type, args.distance_type),
-                     cmd=' '.join(sys.argv),
-                     caption=caption)
+pycbc.results.save_fig_with_metadata\
+    (fig, args.output_file, fig_kwds=fig_kwds,
+     title='%s: %s vs %s' % (fig_title, args.axis_type, args.distance_type),
+     cmd=' '.join(sys.argv), caption=caption)
 
