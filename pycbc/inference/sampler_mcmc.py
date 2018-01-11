@@ -161,7 +161,8 @@ class MCMCSampler(BaseMCMCSampler):
             blob = self._lastblob
 
         self._chain = numpy.empty(niterations,dtype=self.dtype)
-        self._chain[start] = start_sample
+        # numpy >=1.14 only accepts tuples
+        self._chain[start] = tuple(start_sample)
         self._blobs = [None]*niterations
         self._blobs[start] = blob
 

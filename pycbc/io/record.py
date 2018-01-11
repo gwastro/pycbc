@@ -811,6 +811,9 @@ class FieldArray(numpy.recarray):
         """Wrap's recarray's setitem to allow attribute-like indexing when
         setting values.
         """
+        if type(item) is int and type(values) is numpy.ndarray:
+            # numpy >=1.14 only accepts tuples
+            values = tuple(values)
         try:
             return super(FieldArray, self).__setitem__(item, values)
         except ValueError:
