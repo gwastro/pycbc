@@ -109,7 +109,7 @@ script:
     sudo chown -R $UID . ;
     sudo chown -R $UID ~/.ssh ;
   else
-    ./tools/docker_build_and_test.sh ;
+    travis_wait 60 ./tools/docker_build_and_test.sh ;
   fi
 after_success:
   - if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] && [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
