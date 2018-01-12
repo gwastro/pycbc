@@ -471,6 +471,7 @@ setup (
                'bin/inference/pycbc_inference_plot_samples',
                'bin/inference/pycbc_inference_table_summary',
                'bin/plotting/pycbc_plot_waveform',
+               'bin/plotting/pycbc_plot_qscan',
                'bin/plotting/pycbc_banksim_plot_eff_fitting_factor',
                'bin/plotting/pycbc_banksim_table_point_injs',
                'bin/plotting/pycbc_banksim_plot_fitting_factors',
