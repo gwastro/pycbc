@@ -190,7 +190,7 @@ def newsnr(snr, reduced_x2, q=6., n=2.):
     ind = numpy.where(reduced_x2 > 1.)[0]
     newsnr[ind] *= ( 0.5 * (1. + reduced_x2[ind] ** (q/n)) ) ** (-1./q)
 
-    # If input was floats, return a float. Otherwise return numpy array.
+    # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
         return newsnr
     else:
@@ -206,7 +206,7 @@ def newsnr_sgveto(snr, bchisq, sgchisq):
     if len(t) > 0:
         nsnr[t] = nsnr[t] / (sgchisq[t] / 4.0) ** 0.5
 
-    # If input was floats, return a float. Otherwise return numpy array.
+    # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
         return nsnr
     else:
@@ -220,7 +220,7 @@ def effsnr(snr, reduced_x2, fac=250.):
     rchisq = numpy.array(reduced_x2, ndmin=1, dtype=numpy.float64)
     effsnr = snr / (1 + snr ** 2 / fac) ** 0.25 / rchisq ** 0.25
 
-    # If input was floats, return a float. Otherwise return numpy array.
+    # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
         return effsnr
     else:

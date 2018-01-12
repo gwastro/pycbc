@@ -109,7 +109,7 @@ else:
     inj_chisq = numpy.array([])
 
 # Catch not enough found injections case
-if len(coloring[args.colorbar_choice][0]) < 2:
+if len(coloring[args.colorbar_choice][0]) == 0:
     coloring[args.colorbar_choice] = (None, None, None)
 
 pylab.scatter(inj_snr, inj_chisq, c=coloring[args.colorbar_choice][0],
