@@ -44,9 +44,9 @@ class LiveSingleFarThreshold(object):
         nsnr = newsnr(triggers['snr'][i], rchisq)
         dur = triggers['template_duration'][i]
 
-        if (nsnr > self.newsnr_threshold and
-           rchisq < self.reduced_chisq_threshold and
-            dur > self.duration_threshold):
+        if nsnr > self.newsnr_threshold and \
+                rchisq < self.reduced_chisq_threshold and \
+                dur > self.duration_threshold:
             d = {key: triggers[key][i] for key in triggers}
             d['stat'] = nsnr
             d['ifar'] = self.fixed_ifar

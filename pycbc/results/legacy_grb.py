@@ -32,7 +32,7 @@ import matplotlib
 # version dependenant. If this is a problem then remove this and control from
 # the executables directly.
 import sys
-if not 'matplotlib.backends' in sys.modules:
+if 'matplotlib.backends' not in sys.modules:
     matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from pycbc_glue import markup, segments
@@ -270,7 +270,7 @@ def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
 #    th2 = ['Response Diagram']
 #    td2 = [plot() ]
 
-        # FIXME: Add these in!!
+# FIXME: Add these in!!
 #    plot = markup.page()
 #    p = "ALL_TIMES/plots_clustered/GRB%s_search.png"\
 #        % args.grb_name

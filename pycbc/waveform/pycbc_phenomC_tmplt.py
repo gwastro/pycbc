@@ -131,28 +131,28 @@ phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin,
 
 
 def FinalSpin( Xi, eta ):
-  """Computes the spin of the final BH that gets formed after merger. This is done usingn Eq 5-6 of arXiv:0710.3345"""
-  s4 = -0.129
-  s5 = -0.384
-  t0 = -2.686
-  t2 = -3.454
-  t3 = 2.353
-  etaXi = eta * Xi
-  eta2 = eta*eta
-  finspin = (Xi + s4*Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
-  if finspin > 1.0:
-    raise ValueError("Value of final spin > 1.0. Aborting")
-  else:
-    return finspin
+    """Computes the spin of the final BH that gets formed after merger. This is done usingn Eq 5-6 of arXiv:0710.3345"""
+    s4 = -0.129
+    s5 = -0.384
+    t0 = -2.686
+    t2 = -3.454
+    t3 = 2.353
+    etaXi = eta * Xi
+    eta2 = eta*eta
+    finspin = (Xi + s4*Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
+    if finspin > 1.0:
+        raise ValueError("Value of final spin > 1.0. Aborting")
+    else:
+        return finspin
 
 def fRD( a, M):
-  """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
-  f = (lal.C_SI**3.0 / (2.0*lal.PI*lal.G_SI*M*lal.MSUN_SI)) * (1.5251 - 1.1568*(1.0-a)**0.1292)
-  return f
+    """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
+    f = (lal.C_SI**3.0 / (2.0*lal.PI*lal.G_SI*M*lal.MSUN_SI)) * (1.5251 - 1.1568*(1.0-a)**0.1292)
+    return f
 
 def Qa( a ):
-  """Calculate the quality factor of ring-down, using Eq 5.6 of Main paper"""
-  return (0.7 + 1.4187*(1.0-a)**-0.4990)
+    """Calculate the quality factor of ring-down, using Eq 5.6 of Main paper"""
+    return (0.7 + 1.4187*(1.0-a)**-0.4990)
 
 #Functions to calculate the Tanh window, defined in Eq 5.8 of the main paper
 def imrphenomc_tmplt(**kwds):
@@ -193,7 +193,7 @@ def imrphenomc_tmplt(**kwds):
     # from Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and 
     # Table I of http://arxiv.org/pdf/0712.0343
     if not f_max:
-      f_max = (1.7086 * eta * eta - 0.26592 * eta + 0.28236) / piM
+        f_max = (1.7086 * eta * eta - 0.26592 * eta + 0.28236) / piM
 
     # Transform the eta, chi to Lambda parameters, using Eq 5.14, Table II of Main
     # paper.

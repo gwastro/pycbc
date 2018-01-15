@@ -481,7 +481,7 @@ def get_fd_qnm(template=None, **kwargs):
     if f_final is None:
         f_final = qnm_freq_decay(f_0, tau, 1./1000)
     if f_final > max_freq:
-            f_final = max_freq
+        f_final = max_freq
     kmax = int(f_final / delta_f) + 1
 
     freqs = numpy.arange(kmin, kmax)*delta_f

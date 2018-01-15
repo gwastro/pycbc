@@ -39,7 +39,7 @@ from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
-        pass
+    pass
 
 lsctables.use_in(ContentHandler)
 
@@ -195,7 +195,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
                 msg += "times."
                 logging.warning(msg)
                 continue
-            if not newScienceSegs.has_key(ifo):
+            if ifo not in newScienceSegs:
                 msg = "No data frames were found corresponding to the science "
                 msg += "segments for ifo %s" %(ifo)
                 logging.error(msg)
@@ -747,7 +747,7 @@ def get_science_segs_from_datafind_outs(datafindcaches):
         if len(cache) > 0:
             groupSegs = segments.segmentlist(e.segment for e in cache).coalesce()
             ifo = cache.ifo
-            if not newScienceSegs.has_key(ifo):
+            if ifo not in newScienceSegs:
                 newScienceSegs[ifo] = groupSegs
             else:
                 newScienceSegs[ifo].extend(groupSegs)
@@ -787,7 +787,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
             missingSegs = segments.segmentlist(e.segment \
                                          for e in currMissingFrames).coalesce()
             ifo = cache.ifo
-            if not missingFrameSegs.has_key(ifo):
+            if ifo not in missingFrameSegs:
                 missingFrameSegs[ifo] = missingSegs
                 missingFrames[ifo] = lal.Cache(currMissingFrames)
             else:

@@ -767,7 +767,7 @@ def energy(v, mass1, mass2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     amp = - (1.0/2.0) * eta
     e = 0.0
     for i in numpy.arange(0, len(ecof), 1):
-            e += v**(i+2.0) * ecof[i]  
+        e += v**(i+2.0) * ecof[i]  
             
     return e * amp
     

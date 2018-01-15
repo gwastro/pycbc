@@ -43,7 +43,11 @@ def findchirp_chirptime(m1, m2, fLower, porder):
         c7T = lal.PI * (14809.0 * eta * eta / 378.0 - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0)
 
     if porder >= 6:
-        c6T = lal.GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 + lal.PI * lal.PI * 128.0 / 3.0 + eta * (3147553127.0 / 3048192.0 - lal.PI * lal.PI * 451.0 / 12.0) - eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 + numpy.log(4.0) * 6848.0 / 105.0
+        c6T = lal.GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 +\
+            lal.PI * lal.PI * 128.0 / 3.0 + \
+            eta * (3147553127.0 / 3048192.0 - lal.PI * lal.PI * 451.0 / 12.0) -\
+            eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 +\
+            eta * eta * eta * 25565.0 / 1296.0 + numpy.log(4.0) * 6848.0 / 105.0
         c6LogT = 6848.0 / 105.0
 
     if porder >= 5:

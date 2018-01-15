@@ -130,8 +130,8 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
         # Numerical error can lead to small negative eigenvalues.
         for i in xrange(len(evals[item])):
             if evals[item][i] < 0:
-#                print "WARNING: Negative eigenvalue %e. Setting as positive." \
-#                      %(evals[item][i])
+                # Due to numerical imprecision the very small eigenvalues can
+                # be negative. Make these positive.
                 evals[item][i] = -evals[item][i]
             if evecs[item][i,i] < 0:
                 # We demand a convention that all diagonal terms in the matrix
@@ -453,7 +453,7 @@ def calculate_metric_comp(gs, unmax_metric, i, j, Js, logJs, loglogJs,
     unmax_metric[-1,-1] = (Js[1] - Js[4]*Js[4])
 
     # Normal terms
-    if mapping.has_key('Lambda%d'%i) and mapping.has_key('Lambda%d'%j):
+    if 'Lambda%d'%i in mapping and 'Lambda%d'%j in mapping:
         gammaij = Js[17-i-j] - Js[12-i]*Js[12-j]
         gamma0i = (Js[9-i] - Js[4]*Js[12-i])
         gamma0j = (Js[9-j] - Js[4] * Js[12-j])
@@ -463,7 +463,7 @@ def calculate_metric_comp(gs, unmax_metric, i, j, Js, logJs, loglogJs,
         unmax_metric[-1, mapping['Lambda%d'%j]] = gamma0j
         unmax_metric[mapping['Lambda%d'%i],mapping['Lambda%d'%j]] = gammaij
     # Normal,log cross terms
-    if mapping.has_key('Lambda%d'%i) and mapping.has_key('LogLambda%d'%j):
+    if 'Lambda%d'%i in mapping and 'LogLambda%d'%j in mapping:
         gammaij = logJs[17-i-j] - logJs[12-j] * Js[12-i]
         gamma0i = (Js[9-i] - Js[4] * Js[12-i])
         gamma0j = logJs[9-j] - logJs[12-j] * Js[4]
@@ -477,7 +477,7 @@ def calculate_metric_comp(gs, unmax_metric, i, j, Js, logJs, loglogJs,
         unmax_metric[mapping['Lambda%d'%i],mapping['LogLambda%d'%j]] = gammaij
         unmax_metric[mapping['LogLambda%d'%j],mapping['Lambda%d'%i]] = gammaij
     # Log,log terms
-    if mapping.has_key('LogLambda%d'%i) and mapping.has_key('LogLambda%d'%j):
+    if 'LogLambda%d'%i in mapping and 'LogLambda%d'%j in mapping:
         gammaij = loglogJs[17-i-j] - logJs[12-j] * logJs[12-i]
         gamma0i = (logJs[9-i] - Js[4] * logJs[12-i])
         gamma0j = logJs[9-j] - logJs[12-j] * Js[4]
@@ -489,7 +489,7 @@ def calculate_metric_comp(gs, unmax_metric, i, j, Js, logJs, loglogJs,
             gammaij
 
     # Normal,loglog cross terms
-    if mapping.has_key('Lambda%d'%i) and mapping.has_key('LogLogLambda%d'%j):
+    if 'Lambda%d'%i in mapping and 'LogLogLambda%d'%j in mapping:
         gammaij = loglogJs[17-i-j] - loglogJs[12-j] * Js[12-i]
         gamma0i = (Js[9-i] - Js[4] * Js[12-i])
         gamma0j = loglogJs[9-j] - loglogJs[12-j] * Js[4]
@@ -506,7 +506,7 @@ def calculate_metric_comp(gs, unmax_metric, i, j, Js, logJs, loglogJs,
             gammaij
 
     # log,loglog cross terms
-    if mapping.has_key('LogLambda%d'%i) and mapping.has_key('LogLogLambda%d'%j):
+    if 'LogLambda%d'%i in mapping and 'LogLogLambda%d'%j in mapping:
         gammaij = logloglogJs[17-i-j] - loglogJs[12-j] * logJs[12-i]
         gamma0i = (logJs[9-i] - Js[4] * logJs[12-i])
         gamma0j = loglogJs[9-j] - loglogJs[12-j] * Js[4]
@@ -523,7 +523,7 @@ def calculate_metric_comp(gs, unmax_metric, i, j, Js, logJs, loglogJs,
             gammaij
 
     # Loglog,loglog terms
-    if mapping.has_key('LogLogLambda%d'%i) and mapping.has_key('LogLogLambda%d'%j):
+    if 'LogLogLambda%d'%i in mapping and 'LogLogLambda%d'%j in mapping:
         gammaij = loglogloglogJs[17-i-j] - loglogJs[12-j] * loglogJs[12-i]
         gamma0i = (loglogJs[9-i] - Js[4] * loglogJs[12-i])
         gamma0j = loglogJs[9-j] - loglogJs[12-j] * Js[4]

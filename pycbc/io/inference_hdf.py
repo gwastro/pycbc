@@ -483,8 +483,8 @@ class InferenceFile(h5py.File):
             # plotting code expects it
             psd_dyn_dict = {}
             for key,val in psd_dict.iteritems():
-                 psd_dyn_dict[key] = FrequencySeries(val*DYN_RANGE_FAC**2,
-                                                     delta_f=val.delta_f)
+                psd_dyn_dict[key] = FrequencySeries(val*DYN_RANGE_FAC**2,
+                                                    delta_f=val.delta_f)
             self.write_psd(psds=psd_dyn_dict,
                            low_frequency_cutoff=low_frequency_cutoff_dict,
                            group=group)

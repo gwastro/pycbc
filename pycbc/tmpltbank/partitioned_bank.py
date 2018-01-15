@@ -220,12 +220,12 @@ class PartitionedTmpltbank(object):
              (chi2_bin > self.max_chi2_bin-bin_range_check) ):
             for temp_chi1 in xrange(chi1_bin-bin_range_check,
                                                    chi1_bin+bin_range_check+1):
-                if not self.massbank.has_key(temp_chi1):
+                if temp_chi1 not in self.massbank:
                     self.massbank[temp_chi1] = {}
                     self.bank[temp_chi1] = {}
                 for temp_chi2 in xrange(chi2_bin-bin_range_check, 
                                                    chi2_bin+bin_range_check+1):
-                    if not self.massbank[temp_chi1].has_key(temp_chi2):
+                    if temp_chi2 not in self.massbank[temp_chi1]:
                         self.massbank[temp_chi1][temp_chi2] = {}
                         self.massbank[temp_chi1][temp_chi2]['mass1s'] =\
                                                                 numpy.array([])

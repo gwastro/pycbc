@@ -18,7 +18,6 @@ import re
 import numpy
 from lal import MTSUN_SI, PI, CreateREAL8Vector
 import lalsimulation
-from pycbc import pnutils
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
 pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\
@@ -149,7 +148,7 @@ def ethinca_order_from_string(order):
     int
     """
     if order in get_ethinca_orders().keys():
-      return get_ethinca_orders()[order]
+        return get_ethinca_orders()[order]
     else: raise ValueError("Order "+str(order)+" is not valid for ethinca"
                            "calculation! Valid orders: "+
                            str(get_ethinca_orders().keys()))

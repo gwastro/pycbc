@@ -73,13 +73,13 @@ def call_prepare(self, sz, allocator):
 
 class LowerLatencyReductionKernel(ReductionKernel):
     def __init__(self, dtype_out,
-            neutral, reduce_expr, map_expr=None, arguments=None,
-            name="reduce_kernel", keep=False, options=None, preamble=""):
-            ReductionKernel.__init__(self, dtype_out,
-                neutral, reduce_expr, map_expr, arguments,
-                name, keep, options, preamble)
+                 neutral, reduce_expr, map_expr=None, arguments=None,
+                 name="reduce_kernel", keep=False, options=None, preamble=""):
+        ReductionKernel.__init__(self, dtype_out,
+                                 neutral, reduce_expr, map_expr, arguments,
+                                 name, keep, options, preamble)
 
-            self.shared_size=self.block_size*self.dtype_out.itemsize
+        self.shared_size=self.block_size*self.dtype_out.itemsize
 
 
     def __call__(self, *args, **kwargs):

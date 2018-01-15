@@ -90,9 +90,9 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
     }
 
     # sanity checks
-    if not window in window_map:
+    if window not in window_map:
         raise ValueError('Invalid window')
-    if not avg_method in ('mean', 'median', 'median-mean'):
+    if avg_method not in ('mean', 'median', 'median-mean'):
         raise ValueError('Invalid averaging method')
     if type(seg_len) is not int or type(seg_stride) is not int \
         or seg_len <= 0 or seg_stride <= 0:
