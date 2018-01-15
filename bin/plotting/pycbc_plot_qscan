@@ -108,9 +108,9 @@ for curr_idx in range(len(wins)):
     curr_win = wins[curr_idx]
     # Catch the case that not enough data is available.
     if opts.center_time - curr_win[0] < strain.start_time:
-        curr_win[0] = opts.center_time - strain.start_time - 0.01
+        curr_win[0] = float(opts.center_time - strain.start_time - 0.01)
     if opts.center_time + curr_win[1] > strain.end_time:
-        curr_win[1] = strain.end_time - opts.center_time - 0.01
+        curr_win[1] = float(strain.end_time - opts.center_time - 0.01)
     strain_zoom = strain.time_slice(opts.center_time - curr_win[0],
                                     opts.center_time + curr_win[1])
 
