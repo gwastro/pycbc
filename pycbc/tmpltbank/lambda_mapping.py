@@ -18,7 +18,6 @@ import re
 import numpy
 from lal import MTSUN_SI, PI, CreateREAL8Vector
 import lalsimulation
-from pycbc import pnutils
 
 # PLEASE ENSURE THESE ARE KEPT UP TO DATE WITH THE REST OF THIS FILE
 pycbcValidTmpltbankOrders = ['zeroPN','onePN','onePointFivePN','twoPN',\
