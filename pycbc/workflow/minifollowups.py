@@ -632,12 +632,11 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
 
     node.add_opt('--gps-start-time', int(start))
     node.add_opt('--gps-end-time', int(end))
-    node.add_opt('--center-time', int(trig_time))
+    node.add_opt('--center-time', trig_time)
 
     if injection_file is not None:
         node.add_input_opt('--injection-file', injection_file)
 
-    node.add_opt('--detector', single.ifo)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files
@@ -733,7 +732,7 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
 
     node.add_opt('--gps-start-time', int(start))
     node.add_opt('--gps-end-time', int(end))
-    node.add_opt('--center-time', int(trig_time))
+    node.add_opt('--center-time', trig_time)
     
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
