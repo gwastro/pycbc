@@ -536,8 +536,8 @@ class TimeSeries(Array):
             frange = (30, int(self.sample_rate / 2 * 8))
         
         q_base = qtiling(self, qrange, frange, mismatch)
-        q, times, freqs, q_plane = qplane(q_base, self.to_frequencyseries(),
-                                          frange, return_complex=return_complex)
+        _, times, freqs, q_plane = qplane(q_base, self.to_frequencyseries(),
+                                          return_complex=return_complex)
         if logfsteps and delta_f:
             raise ValueError("Provide only one (or none) of delta_f and logfsteps")
 

@@ -18,7 +18,6 @@
 """
 
 import logging
-import numpy
 import pycbc.inference.sampler
 from pycbc.inference import burn_in
 from pycbc import conversions

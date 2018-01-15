@@ -30,12 +30,12 @@ the q-transform of that time series
 """
 
 import numpy
-from numpy import pi, ceil, log, exp
+from numpy import ceil, log, exp
 from pycbc.types.timeseries import FrequencySeries, TimeSeries
 from pycbc.fft import ifft
 from pycbc.types import zeros
 
-def qplane(qplane_tile_dict, fseries, frange, return_complex=False):
+def qplane(qplane_tile_dict, fseries, return_complex=False):
     """Performs q-transform on each tile for each q-plane and selects
        tile with the maximum energy. Q-transform can then
        be interpolated to a desired frequency and time resolution.
@@ -46,8 +46,6 @@ def qplane(qplane_tile_dict, fseries, frange, return_complex=False):
         Dictionary containing a list of q-tile tupples for each q-plane
     fseries: 'pycbc FrequencySeries'
         frequency-series data set
-    frange:
-        upper and lower bounds on frequency range
     return_complex: {False, bool}
         Return the raw complex series instead of the normalized power.
 
