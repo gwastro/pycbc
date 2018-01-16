@@ -304,6 +304,13 @@ class SingleTimeFreqExecutable(PlotExecutable):
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
+
+class PlotQScanExecutable(PlotExecutable):
+    """Class to be used for to create workflow.Executable instances for the
+    pycbc_plot_qscan executable. Basically inherits directly from
+    PlotExecutable but adds the file_input_options.
+    """
+    file_input_options = ['--gating-file']
     
 
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
@@ -549,7 +556,90 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
         files += node.output_files
     return files
 
-    
+def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
+                    data_segments=None, time_window=100, tags=None):
+    """ Generate a make_qscan node and add it to workflow.
+
+    This function generates a single node of the singles_timefreq executable
+    and adds it to the current workflow. Parent/child relationships are set by
+    the input/output files automatically.
+
+    Parameters
+    -----------
+    workflow: pycbc.workflow.core.Workflow
+        The workflow class that stores the jobs that will be run.
+    ifo: str
+        Which interferometer are we using?
+    trig_time: int
+        The time of the trigger being followed up.
+    out_dir: str
+        Location of directory to output to
+    injection_file: pycbc.workflow.File (optional, default=None)
+        If given, add the injections in the file to strain before making the
+        plot.
+    data_segments: glue.segments.segmentlist (optional, default=None)
+        The list of segments for which data exists and can be read in. If given
+        the start/end times given to singles_timefreq will be adjusted if
+        [trig_time - time_window, trig_time + time_window] does not completely
+        lie within a valid data segment. A ValueError will be raised if the
+        trig_time is not within a valid segment, or if it is not possible to
+        find 2*time_window (plus the padding) of continuous data around the
+        trigger. This **must** be coalesced.
+    time_window: int (optional, default=None)
+        The amount of data (not including padding) that will be read in by the
+        singles_timefreq job. The default value of 100s should be fine for most
+        cases.
+    tags: list (optional, default=None)
+        List of tags to add to the created nodes, which determine file naming.
+    """
+    tags = [] if tags is None else tags
+    makedir(out_dir)
+    name = 'plot_qscan'
+
+    curr_exe = PlotQScanExecutable(workflow.cp, name, ifos=[ifo],
+                          out_dir=out_dir, tags=tags)
+    node = curr_exe.create_node()
+
+    # Determine start/end times, using data segments if needed.
+    # Begin by choosing "optimal" times
+    start = trig_time - time_window
+    end = trig_time + time_window
+    # Then if data_segments is available, check against that, and move if
+    # needed
+    if data_segments is not None:
+        # Assumes coalesced, so trig_time can only be within one segment
+        for seg in data_segments:
+            if trig_time in seg:
+                data_seg = seg
+                break
+        else:
+            err_msg = "Trig time {} ".format(trig_time)
+            err_msg += "does not seem to lie within any data segments. "
+            err_msg += "This shouldn't be possible, please ask for help!"
+            raise ValueError(err_msg)
+        # Check for pad-data
+        if curr_exe.has_opt('pad-data'):
+            pad_data = int(curr_exe.get_opt('pad-data'))
+        else:
+            pad_data = 0
+        # We only read data that's available. The code must handle the case
+        # of not much data being available.
+        if end > (data_seg[1] - pad_data):
+            end = data_seg[1] - pad_data
+        if start < (data_seg[0] + pad_data):
+            start = data_seg[0] + pad_data
+
+    node.add_opt('--gps-start-time', int(start))
+    node.add_opt('--gps-end-time', int(end))
+    node.add_opt('--center-time', trig_time)
+
+    if injection_file is not None:
+        node.add_input_opt('--injection-file', injection_file)
+
+    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+    workflow += node
+    return node.output_files
+
 def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
                           veto_file=None, time_window=10, data_segments=None,
                           tags=None):
@@ -641,7 +731,7 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
 
     node.add_opt('--gps-start-time', int(start))
     node.add_opt('--gps-end-time', int(end))
-    node.add_opt('--center-time', int(trig_time))
+    node.add_opt('--center-time', trig_time)
     
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
