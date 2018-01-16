@@ -46,7 +46,7 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--output-file', required=True, help='Output plot')
-parser.add_argument('--center-time', type=float,
+parser.add_argument('--center-time', type=float, required=True,
                     help='Center plot on the given GPS time')
 parser.add_argument('--time-windows', required=True, type=t_window,
                     nargs='+',
@@ -72,7 +72,7 @@ parser.add_argument('--qtransform-qrange-lower', default=4, type=float,
                          'default=4')
 parser.add_argument('--qtransform-qrange-upper', default=64, type=float,
                     help='Upper limit of the range of q to consider, '
-                         'default=4')
+                         'default=64')
 parser.add_argument('--qtransform-mismatch', default=0.2, type=float,
                     help='Mismatch between frequency tiles, default=0.2')
 
@@ -162,15 +162,15 @@ fig.add_subplot(111, frameon=False)
 plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
                 right='off')
 plt.grid(False)
-plt.xlabel('Time from {} (s)'.format(opts.center_time))
+plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
 plt.ylabel('Frequency (Hz)')
 
 # https://stackoverflow.com/questions/13784201/matplotlib-2-subplots-1-colorbar
 cb = fig.colorbar(im, ax=axes.ravel().tolist())
-cb.set_label('What should this say?')
+cb.set_label('Normalized power')
 
 if opts.plot_title is None:
-    opts.plot_title = 'Q-transform plot'
+    opts.plot_title = 'Q-transform plot around {:.3f}'.format(opts.center_time)
 if opts.plot_caption is None:
     # FIXME: Someone please improve!
     opts.plot_caption = ("This shows the Q-transform as a function of time and "
