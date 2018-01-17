@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Calculate the SNR and CHISQ timeseries for either a chosen template, or 
+""" Calculate the SNR and CHISQ timeseries for either a chosen template, or
 a specific Nth loudest coincident event.
 """
 import sys, logging, argparse, numpy, pycbc, h5py
@@ -29,8 +29,8 @@ import pycbc.version
 
 def subtract_template(stilde, template, snr, trigger_time, flow):
     idx = int((trigger_time - snr.start_time) / snr.delta_t)
-    if idx >= 0 and idx < len(snr):                
-        sig = filter.sigma(template, psd=stilde.psd, low_frequency_cutoff=flow) 
+    if idx >= 0 and idx < len(snr):
+        sig = filter.sigma(template, psd=stilde.psd, low_frequency_cutoff=flow)
         inverse = template * snr[idx] / sig
         dt = trigger_time - snr.start_time
         stilde -= pycbc.waveform.utils.apply_fseries_time_shift(inverse, dt)
@@ -44,7 +44,7 @@ def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
     s = numpy.array([t[0] for t in anal_segs])
     e = numpy.array([t[1] for t in anal_segs])
     #ensure sorted
-    sorting = s.argsort()    
+    sorting = s.argsort()
     s = s[sorting]
     e = e[sorting]
     idx = numpy.searchsorted(s, time) - 1
@@ -85,10 +85,10 @@ def select_segments(fname, anal_name, data_name, ifo, time, pad_data):
 
 parser = argparse.ArgumentParser(usage='',
     description="Single template gravitational-wave followup")
-parser.add_argument('--version', action=pycbc.version.Version) 
+parser.add_argument('--version', action=pycbc.version.Version)
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--subtract-template', action='store_true')
-parser.add_argument("-V", "--verbose", action="store_true", 
+parser.add_argument("-V", "--verbose", action="store_true",
                   help="print extra debugging information", default=False )
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
@@ -96,8 +96,11 @@ parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
 parser.add_argument("--minimum-chisq-bins", default=0, type=int, help=
                     "If the chisq bin formula fails, default to this number.")
-parser.add_argument("--trigger-time", type=float, default=0,
-                  help="The central time of the trigger to use.")
+# flag for trigger time not being entered
+stupid_time = -999999999.
+parser.add_argument("--trigger-time", type=float, default=stupid_time,
+                  help="Time used as centre point for the time series "
+                       "calculated. Required with --window option")
 parser.add_argument("--use-params-of-closest-injection", action="store_true",
                   default=False,
                   help="If given, use the injection with end_time closest to "
@@ -109,7 +112,7 @@ parser.add_argument("--use-params-of-closest-injection", action="store_true",
 waveform.bank.add_approximant_arg(parser,
                   help="The name of the approximant to use for filtering. "
                       "Do not use if using --use-params-of-closest-injection.")
-parser.add_argument("--mass1", type=float, 
+parser.add_argument("--mass1", type=float,
                   help="The mass of the first component object. "
                       "Do not use if using --use-params-of-closest-injection.")
 parser.add_argument("--mass2", type=float,
@@ -128,29 +131,29 @@ parser.add_argument("--template-start-frequency", type=float, default=None,
 # Optional arguments for precessing templates
 parser.add_argument("--spin1x", type=float, default=0,
                   help="The non-aligned spin of the first component object. "
-                    "Default = 0.")
+                    "Default = 0")
 parser.add_argument("--spin2x", type=float, default=0,
                   help="The non-aligned spin of the second component object. "
-                    "Default = 0.")
+                    "Default = 0")
 parser.add_argument("--spin1y", type=float, default=0,
                   help="The non-aligned spin of the first component object. "
-                    "Default = 0.")
+                    "Default = 0")
 parser.add_argument("--spin2y", type=float, default=0,
                   help="The non-aligned spin of the second component object. "
-                    "Default = 0.")
+                    "Default = 0")
 parser.add_argument("--inclination", type=float, default=0,
                   help="The inclination of the source w.r.t the observer. "
-                    "Default = 0.")
+                    "Default = 0")
 parser.add_argument("--u-val", type=float, default=None,
                   help="The ratio between hplus and hcross to use in the "
                     "template, according to h(t) = hplus * u_val + hcross. "
                     "If not given only hplus is used.")
-parser.add_argument("--window", type=float, 
-                  help="Time to save around the trigger time (if given)")
+parser.add_argument("--window", type=float,
+                  help="Time to save on each side of the given trigger time")
 parser.add_argument("--order", type=int,
                   help="The integer half-PN order at which to generate"
                        " the approximant. Default is -1 which indicates to use"
-                       " approximant defined default.", default=-1, 
+                       " approximant defined default.", default=-1,
                        choices = numpy.arange(-1, 9, 1))
 parser.add_argument("--taper-template", choices=["start","end","startend"],
                     help="For time-domain approximants, taper the start and/or"
@@ -175,7 +178,11 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 opt = parser.parse_args()
 
-f = h5py.File(opt.output_file, 'w')          
+# Exclude invalid options
+if opt.window and (opt.trigger_time == stupid_time):
+    raise RuntimeError("Can't use --window option without a valid trigger time!")
+
+f = h5py.File(opt.output_file, 'w')
 ifo = opt.channel_name[0:2]
 
 # If we are choosing start/end times from XML file ############################
@@ -190,7 +197,6 @@ if opt.inspiral_segments:
     opt.trig_end_time = anal_seg[1]
     opt.gps_start_time = data_seg[0] + opt.pad_data
     opt.gps_end_time = data_seg[1] - opt.pad_data
-    f.attrs['event_time'] = opt.trigger_time
 
 ###############################################################################
 
@@ -227,7 +233,7 @@ with ctx:
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
-    
+
     logging.info("Calculating the PSDs")
     psd.associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f,
                              flow, dyn_range_factor=pycbc.DYN_RANGE_FAC,
@@ -270,7 +276,7 @@ with ctx:
         template = waveform.td_waveform_to_fd_waveform(td_template, length=flen)
         template = template.astype(complex_same_precision_as(segments[0]))
     else:
-        approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0] 
+        approximant = waveform.bank.parse_approximant_arg(opt.approximant, row)[0]
         logging.info("Making template: %s" % opt.approximant)
         if opt.u_val is None:
             template = waveform.get_waveform_filter(
@@ -278,7 +284,7 @@ with ctx:
                                     approximant=approximant,
                                     template=row[0],
                                     inclination=opt.inclination,
-                                    taper=opt.taper_template, 
+                                    taper=opt.taper_template,
                                     f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t,
                                     distance = 1.0/pycbc.DYN_RANGE_FAC)
@@ -304,22 +310,23 @@ with ctx:
 
     chisq_bins_float = vetoes.SingleDetPowerChisq.parse_option(parse_row,
         opt.chisq_bins)
-    if numpy.isnan(chisq_bins_float) or (int(chisq_bins_float) < 
-                                    opt.minimum_chisq_bins): 
+    if numpy.isnan(chisq_bins_float) or \
+                              (int(chisq_bins_float) < opt.minimum_chisq_bins):
         if opt.minimum_chisq_bins:
             chisq_bins = opt.minimum_chisq_bins
-            logging.warning( "Number of chisq bins is less than minimum or is NaN."
-                            + (" Using %d bins." % opt.minimum_chisq_bins) )
+            logging.warning("Number of chisq bins is less than requested "
+                            "minimum or is NaN. Using %d bins." %
+                            (opt.minimum_chisq_bins))
         else:
             raise ValueError(
                 "Chisq bins is NaN or negative and no minimum is set.")
     else:
         chisq_bins = int(chisq_bins_float)
 
-    f['template'] = template.numpy()                  
-    snrs, chisqs = [], []  
+    f['template'] = template.numpy()
+    snrs, chisqs = [], []
     raw_bins = [[] for b in range(chisq_bins)]
-    
+
     if opt.trig_start_time:
         start_time = opt.trig_start_time
         end_time = opt.trig_end_time
@@ -334,42 +341,42 @@ with ctx:
         end_time_wind = opt.trigger_time + opt.window
         if end_time_wind < end_time:
             end_time = end_time_wind
-                        
-    for s_num, stilde in enumerate(segments):    
+
+    for s_num, stilde in enumerate(segments):
         start = stilde.epoch + stilde.analyze.start / float(opt.sample_rate)
         end = stilde.epoch + stilde.analyze.stop / float(opt.sample_rate)
-        
+
         if end < start_time:
             continue
-            
+
         if start > end_time:
             break
-    
+
         logging.info("Filtering segment %s" % s_num)
-        snr, corr, norm = filter.matched_filter_core(template, stilde, 
+        snr, corr, norm = filter.matched_filter_core(template, stilde,
                                     psd=stilde.psd,
                                     low_frequency_cutoff=flow)
-        snr *= norm 
-                                    
+        snr *= norm
+
         if opt.subtract_template:
             stilde = subtract_template(stilde, template,
                                        snr, opt.trigger_time, flow)
-            snr, corr, norm = filter.matched_filter_core(template, stilde, 
+            snr, corr, norm = filter.matched_filter_core(template, stilde,
                                 psd=stilde.psd,
                                 low_frequency_cutoff=flow)
-        
+
         logging.info("calculating chisq")
-        chisq, raw_bin = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd, 
-                                    low_frequency_cutoff=flow, 
+        chisq, raw_bin = vetoes.power_chisq(template, stilde, chisq_bins, stilde.psd,
+                                    low_frequency_cutoff=flow,
                                     return_bins=True)
         chisq /= chisq_bins * 2 - 2
-     
+
         snrs.append(snr[stilde.analyze])
         chisqs.append(chisq[stilde.analyze])
-        
+
         for i in range(chisq_bins):
             raw_bins[i].append(raw_bin[i][stilde.analyze].numpy())
-    
+
     sidx = int((start_time - snrs[0].start_time) / snr.delta_t)
     eidx = int((end_time - start_time) / snr.delta_t) + sidx
 
@@ -386,18 +393,20 @@ with ctx:
         f[key].attrs['delta_t'] = snr.delta_t
 
     f['chisq_boundaries'] = numpy.array(vetoes.power_chisq_bins(template, chisq_bins, stilde.psd,
-                                    low_frequency_cutoff=flow)) * template.delta_f 
-        
+                                    low_frequency_cutoff=flow)) * template.delta_f
+
     f['snr'] = numpy.concatenate([snr.numpy() for snr in snrs])[sidx:eidx]
     f['snr'].attrs['start_time'] = start_time
     f['snr'].attrs['delta_t'] = snr.delta_t
-    
+
     f['chisq'] = numpy.concatenate([chisq.numpy() for chisq in chisqs])[sidx:eidx]
     f['chisq'].attrs['start_time'] = start_time
-    f['chisq'].attrs['delta_t'] = snr.delta_t 
+    f['chisq'].attrs['delta_t'] = snr.delta_t
+    if not (opt.trigger_time == stupid_time):
+        f.attrs['event_time'] = opt.trigger_time
     f.attrs['approximant'] = approximant
     f.attrs['ifo'] = ifo
     f.attrs['command_line'] = ' '.join(sys.argv)
-    
+
 logging.info("Finished")
 
