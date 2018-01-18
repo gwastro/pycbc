@@ -151,14 +151,14 @@ In some cases you may want to build *only* these two programs as static binaries
 Additional data files from lalsuite-extra
 =========================================
 
-In addition to lalsuite, the generation of certain template waveforms (e.g. the reduced order model implementations of SEOBNRv2 and SEOBNRv4) requires data files from the `lalsuite-extra repository <https://svn.ligo.caltech.edu/svn/lalsuite-extra/>`_. These data can either be obtained by downloading and installing lalsuite-extra into your virtual environment or using a copy of the data from the CERN virtual filesystem.
+In addition to lalsuite, the generation of certain template waveforms (e.g. the reduced order model implementations of SEOBNRv2 and SEOBNRv4) requires data files from the `lalsuite-extra repository <https://git.ligo.org/lscsoft/lalsuite-extra/>`_. These data can either be obtained by downloading and installing lalsuite-extra into your virtual environment or using a copy of the data from the CERN virtual filesystem.
 
 To install the data into your virtual environment, run the commands
 
 .. code-block:: bash
 
     cd ${VIRTUAL_ENV}/src
-    svn co https://svn.ligo.caltech.edu/svn/lalsuite-extra/
+    git clone https://git.ligo.org/lscsoft/lalsuite-extra.git
     cd lalsuite-extra
     ./00boot
     ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite-extra
