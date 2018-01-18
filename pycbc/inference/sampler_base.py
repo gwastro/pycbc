@@ -156,7 +156,7 @@ class _BaseSampler(object):
         of the sampling args and the variable args.
         """
         return NotImplementedError("samples function not set.")
- 
+
     @property
     def clear_chain(self):
         """This function should clear the current chain of samples from memory.
@@ -170,7 +170,7 @@ class _BaseSampler(object):
 
     @property
     def acceptance_fraction(self):
-        """This function should return the fraction of steps accepted by each 
+        """This function should return the fraction of steps accepted by each
         walker as an array.
         """
         return NotImplementedError("acceptance_fraction function not set.")
@@ -464,9 +464,9 @@ class BaseMCMCSampler(_BaseSampler):
         """Writes samples to the given file.
 
         Results are written to:
-        
+
             ``fp[samples_group/{vararg}]``,
-            
+
         where ``{vararg}`` is the name of a variable arg. The samples are
         written as an ``nwalkers x niterations`` array.
 
@@ -522,11 +522,11 @@ class BaseMCMCSampler(_BaseSampler):
 
     def write_chain(self, fp, start_iteration=None, max_iterations=None):
         """Writes the samples from the current chain to the given file.
-        
+
         Results are written to:
-        
+
             `fp[fp.samples_group/{field}/(temp{k}/)walker{i}]`,
-        
+
         where `{i}` is the index of a walker, `{field}` is the name of each
         field returned by `likelihood_stats`, and, if the sampler is
         multitempered, `{k}` is the temperature.
@@ -559,11 +559,11 @@ class BaseMCMCSampler(_BaseSampler):
     def write_likelihood_stats(self, fp, start_iteration=None,
                                max_iterations=None):
         """Writes the `likelihood_stats` to the given file.
-        
+
         Results are written to:
-        
+
             `fp[fp.stats_group/{field}/(temp{k}/)walker{i}]`,
-        
+
         where `{i}` is the index of a walker, `{field}` is the name of each
         field returned by `likelihood_stats`, and, if the sampler is
         multitempered, `{k}` is the temperature.  If nothing is returned by
@@ -979,7 +979,7 @@ class BaseMCMCSampler(_BaseSampler):
     @staticmethod
     def write_acls(fp, acls):
         """Writes the given autocorrelation lengths to the given file.
-        
+
         The ACL of each parameter is saved to ``fp['acls/{param}']``.
         The maximum over all the parameters is saved to the file's 'acl'
         attribute.

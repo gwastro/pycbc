@@ -221,7 +221,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
 
 # This is needed for two reason
 # 1) pools freeze state when created and so classes *cannot be updated*
-# 2) methods cannot be pickled. 
+# 2) methods cannot be pickled.
 class _callprior(object):
     """Calls the likelihood function's prior function, and ensures that no
     metadata is returned."""
@@ -505,7 +505,7 @@ class EmceePTSampler(BaseMCMCSampler):
         Results are written to:
 
             ``fp[samples_group/{vararg}]``,
-            
+
         where ``{vararg}`` is the name of a variable arg. The samples are
         written as an ``ntemps x nwalkers x niterations`` array.
 
@@ -918,7 +918,7 @@ class EmceePTSampler(BaseMCMCSampler):
     def compute_acls(cls, fp, start_index=None, end_index=None):
         """Computes the autocorrleation length for all variable args and
         temperatures in the given file.
-        
+
         Parameter values are averaged over all walkers at each iteration and
         temperature.  The ACL is then calculated over the averaged chain. If
         the returned ACL is `inf`,  will default to the number of current
