@@ -96,9 +96,7 @@ parser.add_argument("--chisq-bins", default="0", type=str, help=
                     "Number of frequency bins to use for power chisq.")
 parser.add_argument("--minimum-chisq-bins", default=0, type=int, help=
                     "If the chisq bin formula fails, default to this number.")
-# flag for trigger time not being entered
-stupid_time = -999999999.
-parser.add_argument("--trigger-time", type=float, default=stupid_time,
+parser.add_argument("--trigger-time", type=float, default=None,
                   help="Time used as centre point for the time series "
                        "calculated. Required with --window option")
 parser.add_argument("--use-params-of-closest-injection", action="store_true",
@@ -179,7 +177,7 @@ fft.insert_fft_option_group(parser)
 opt = parser.parse_args()
 
 # Exclude invalid options
-if opt.window and (opt.trigger_time == stupid_time):
+if opt.window and opt.trigger_time is None:
     raise RuntimeError("Can't use --window option without a valid trigger time!")
 
 f = h5py.File(opt.output_file, 'w')
@@ -402,7 +400,7 @@ with ctx:
     f['chisq'] = numpy.concatenate([chisq.numpy() for chisq in chisqs])[sidx:eidx]
     f['chisq'].attrs['start_time'] = start_time
     f['chisq'].attrs['delta_t'] = snr.delta_t
-    if not (opt.trigger_time == stupid_time):
+    if opt.trigger_time is not None:
         f.attrs['event_time'] = opt.trigger_time
     f.attrs['approximant'] = approximant
     f.attrs['ifo'] = ifo
