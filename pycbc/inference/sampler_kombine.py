@@ -86,6 +86,13 @@ class KombineSampler(BaseMCMCSampler):
         self._nwalkers = nwalkers
         self.update_interval = update_interval
 
+    @property
+    def acceptance_fraction(self):
+        """Get the fraction of steps accepted by each walker as an array.
+        """
+        # acceptance returned by kombine has shape iterations x nwalkers
+        return numpy.mean(self._sampler.acceptance, axis=0)
+
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
         """Create an instance of this sampler from the given command-line
