@@ -126,10 +126,6 @@ Building and installing lalapps_inspinj and lalapps_coh_PTF_inspiral with static
 
 In some cases you may want to build *only* these two programs as static binaries and install them.  To do this, run the commands:
 
-.. note::
-
-    On the AEI atlas cluster, the HDF5 libraries are installed in a non-standard location so you will need to add ``-L/usr/lib/x86_64-linux-gnu/hdf5/serial`` to the ``LIBS`` variable before configuring lalapps.
-
 .. code-block:: bash
 
     cd $VIRTUAL_ENV/src/lalsuite/lalapps
