@@ -24,7 +24,7 @@ _backend_list = ['fftw','mkl','numpy']
 
 _alist, _adict = _list_available(_backend_list, _backend_dict)
 
-cpu_backend = 'fftw'
+cpu_backend = None
 
 def set_backend(backend_list):
     global cpu_backend
@@ -35,4 +35,6 @@ def set_backend(backend_list):
 
 def get_backend():
     return _adict[cpu_backend]
+
+set_backend(_backend_list)
 

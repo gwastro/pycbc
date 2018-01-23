@@ -27,9 +27,8 @@ _adict = {}
 
 if pycbc.HAVE_CUDA:
     _alist, _adict = _list_available(_backend_list,_backend_dict)
-    cuda_backend = 'cuda'
-else:
-    cuda_backend = None
+
+cuda_backend = None
 
 def set_backend(backend_list):
     global cuda_backend
@@ -40,3 +39,5 @@ def set_backend(backend_list):
 
 def get_backend():
     return _adict[cuda_backend]
+
+set_backend(_backend_list)
