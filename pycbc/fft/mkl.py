@@ -3,17 +3,6 @@ from pycbc.types import zeros
 from .core import _BaseFFT, _BaseIFFT
 import pycbc.scheme as _scheme
 
-def memoize(obj):
-    cache = obj.cache = {}
-
-    @functools.wraps(obj)
-    def memoizer(*args, **kwargs):
-        key = str(args) + str(kwargs)
-        if key not in cache:
-            cache[key] = obj(*args, **kwargs)
-        return cache[key]
-    return memoizer
-
 lib = pycbc.libutils.get_ctypes_library('mkl_rt', [])
 if lib is None:
     raise ImportError
@@ -84,7 +73,6 @@ def check_status(status):
         msg = ctypes.c_char_p(msg).value
         raise RuntimeError(msg)
    
-@memoize     
 def create_descriptor(size, idtype, odtype, inplace):
     invec = zeros(1, dtype=idtype)
     outvec = zeros(1, dtype=odtype)

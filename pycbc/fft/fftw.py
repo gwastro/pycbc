@@ -12,17 +12,6 @@ from .core import _BaseFFT, _BaseIFFT
 # to set the threading backend, it is ESSENTIAL that simply loading this
 # module should not actually *call* ANY functions.
 
-def memoize(obj):
-    cache = obj.cache = {}
-
-    @functools.wraps(obj)
-    def memoizer(*args, **kwargs):
-        key = str(args) + str(kwargs)
-        if key not in cache:
-            cache[key] = obj(*args, **kwargs)
-        return cache[key]
-    return memoizer
-
 #FFTW constants, these are pulled from fftw3.h
 FFTW_FORWARD = -1
 FFTW_BACKWARD = 1
@@ -246,7 +235,6 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                                    'complex128': double_lib.fftw_execute_dft}
                    }
 
-@memoize
 def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     if not _fftw_threaded_set:
         set_threads_backend()
