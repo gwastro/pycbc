@@ -190,49 +190,6 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         self._pos = p
         return p, lnpost, rstate
 
-    # Emcee defines acceptance fraction differently, so have to override
-    # write functions
-    def write_acceptance_fraction(self, fp):
-        """Write acceptance_fraction data to file. Results are written to
-        `fp[acceptance_fraction]`.
-
-        Parameters
-        -----------
-        fp : InferenceFile
-            A file handler to an open inference file.
-        """
-        dataset_name = "acceptance_fraction"
-        try:
-            fp[dataset_name][:] = self.acceptance_fraction
-        except KeyError:
-            # dataset doesn't exist yet, create it
-            fp[dataset_name] = self.acceptance_fraction
-
-    @staticmethod
-    def read_acceptance_fraction(fp, walkers=None):
-        """Reads the acceptance fraction from the given file.
-
-        Parameters
-        -----------
-        fp : InferenceFile
-            An open file handler to read the samples from.
-        walkers : {None, (list of) int}
-            The walker index (or a list of indices) to retrieve. If None,
-            samples from all walkers will be obtained.
-
-        Returns
-        -------
-        array
-            Array of acceptance fractions with shape (requested walkers,).
-        """
-        group = 'acceptance_fraction'
-        if walkers is None:
-            wmask = numpy.ones(fp.nwalkers, dtype=bool)
-        else:
-            wmask = numpy.zeros(fp.nwalkers, dtype=bool)
-            wmask[walkers] = True
-        return fp[group][wmask]
-
     def write_results(self, fp, start_iteration=None,
                       max_iterations=None, **metadata):
         """Writes metadata, samples, likelihood stats, and acceptance fraction
@@ -264,7 +221,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
 
 # This is needed for two reason
 # 1) pools freeze state when created and so classes *cannot be updated*
-# 2) methods cannot be pickled. 
+# 2) methods cannot be pickled.
 class _callprior(object):
     """Calls the likelihood function's prior function, and ensures that no
     metadata is returned."""
@@ -537,8 +494,8 @@ class EmceePTSampler(BaseMCMCSampler):
             wmask[walkers] = True
         arrays = []
         for tk in temps:
-            arrays.append(fp[group.format(tk=tk)][wmask])
-        return numpy.vstack(arrays)
+            arrays.extend(fp[group.format(tk=tk)][wmask])
+        return arrays
 
     @staticmethod
     def write_samples_group(fp, samples_group, parameters, samples,
@@ -548,7 +505,7 @@ class EmceePTSampler(BaseMCMCSampler):
         Results are written to:
 
             ``fp[samples_group/{vararg}]``,
-            
+
         where ``{vararg}`` is the name of a variable arg. The samples are
         written as an ``ntemps x nwalkers x niterations`` array.
 
@@ -961,7 +918,7 @@ class EmceePTSampler(BaseMCMCSampler):
     def compute_acls(cls, fp, start_index=None, end_index=None):
         """Computes the autocorrleation length for all variable args and
         temperatures in the given file.
-        
+
         Parameter values are averaged over all walkers at each iteration and
         temperature.  The ACL is then calculated over the averaged chain. If
         the returned ACL is `inf`,  will default to the number of current

@@ -156,7 +156,7 @@ class _BaseSampler(object):
         of the sampling args and the variable args.
         """
         return NotImplementedError("samples function not set.")
- 
+
     @property
     def clear_chain(self):
         """This function should clear the current chain of samples from memory.
@@ -170,8 +170,8 @@ class _BaseSampler(object):
 
     @property
     def acceptance_fraction(self):
-        """This function should return the fraction of walkers that accepted
-        each step as an array.
+        """This function should return the fraction of steps accepted by each
+        walker as an array.
         """
         return NotImplementedError("acceptance_fraction function not set.")
 
@@ -394,7 +394,7 @@ class BaseMCMCSampler(_BaseSampler):
 
     @property
     def acceptance_fraction(self):
-        """Get the fraction of walkers that accepted each step as an array.
+        """Get the fraction of steps accepted by each walker as an array.
         """
         return self._sampler.acceptance_fraction
 
@@ -464,9 +464,9 @@ class BaseMCMCSampler(_BaseSampler):
         """Writes samples to the given file.
 
         Results are written to:
-        
+
             ``fp[samples_group/{vararg}]``,
-            
+
         where ``{vararg}`` is the name of a variable arg. The samples are
         written as an ``nwalkers x niterations`` array.
 
@@ -522,11 +522,11 @@ class BaseMCMCSampler(_BaseSampler):
 
     def write_chain(self, fp, start_iteration=None, max_iterations=None):
         """Writes the samples from the current chain to the given file.
-        
+
         Results are written to:
-        
+
             `fp[fp.samples_group/{field}/(temp{k}/)walker{i}]`,
-        
+
         where `{i}` is the index of a walker, `{field}` is the name of each
         field returned by `likelihood_stats`, and, if the sampler is
         multitempered, `{k}` is the temperature.
@@ -559,11 +559,11 @@ class BaseMCMCSampler(_BaseSampler):
     def write_likelihood_stats(self, fp, start_iteration=None,
                                max_iterations=None):
         """Writes the `likelihood_stats` to the given file.
-        
+
         Results are written to:
-        
+
             `fp[fp.stats_group/{field}/(temp{k}/)walker{i}]`,
-        
+
         where `{i}` is the index of a walker, `{field}` is the name of each
         field returned by `likelihood_stats`, and, if the sampler is
         multitempered, `{k}` is the temperature.  If nothing is returned by
@@ -603,8 +603,7 @@ class BaseMCMCSampler(_BaseSampler):
                                  max_iterations=max_iterations)
         return samples
 
-    def write_acceptance_fraction(self, fp, start_iteration=None,
-                                  max_iterations=None):
+    def write_acceptance_fraction(self, fp):
         """Write acceptance_fraction data to file. Results are written to
         `fp[acceptance_fraction]`.
 
@@ -612,41 +611,13 @@ class BaseMCMCSampler(_BaseSampler):
         -----------
         fp : InferenceFile
             A file handler to an open inference file.
-        start_iteration : int, optional
-            Write results to the file's datasets starting at the given
-            iteration. Default is to append after the last iteration in the
-            file.
-        max_iterations : int, optional
-            Set the maximum size that the arrays in the hdf file may be resized
-            to. Only applies if the acceptance fraction has not previously been
-            written to the file. The default (None) is to use the maximum size
-            allowed by h5py.
         """
         dataset_name = "acceptance_fraction"
-        acf = self.acceptance_fraction
-        if max_iterations is not None and max_iterations < acf.size:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
-        istart = start_iteration
         try:
-            if istart is None:
-                istart = fp[dataset_name].size
-            istop = istart + acf.size
-            if istop > fp[dataset_name].size:
-                # resize the dataset
-                fp[dataset_name].resize(istop, axis=0)
-            fp[dataset_name][istart:istop] = acf
+            fp[dataset_name][:] = self.acceptance_fraction
         except KeyError:
-            # dataset doesn't exist yet
-            if istart is not None and istart != 0:
-                raise ValueError("non-zero start_iteration provided, "
-                                 "but dataset doesn't exist yet")
-            istart = 0
-            istop = istart + acf.size
-            fp.create_dataset(dataset_name, (istop,),
-                              maxshape=(max_iterations,),
-                              dtype=acf.dtype, fletcher32=True)
-            fp[dataset_name][istart:istop] = acf
+            # dataset doesn't exist yet, create it
+            fp[dataset_name] = self.acceptance_fraction
 
     def write_results(self, fp, start_iteration=None,
                       max_iterations=None, **metadata):
@@ -675,8 +646,7 @@ class BaseMCMCSampler(_BaseSampler):
                          max_iterations=max_iterations)
         self.write_likelihood_stats(fp, start_iteration=start_iteration,
                                     max_iterations=max_iterations)
-        self.write_acceptance_fraction(fp, start_iteration=0,
-                                       max_iterations=max_iterations)
+        self.write_acceptance_fraction(fp)
 
 
     @staticmethod
@@ -880,8 +850,7 @@ class BaseMCMCSampler(_BaseSampler):
         return samples.size
 
     @staticmethod
-    def read_acceptance_fraction(fp, thin_start=None, thin_interval=None,
-                                 thin_end=None, iteration=None):
+    def read_acceptance_fraction(fp, walkers=None):
         """Reads the acceptance fraction from the given file.
 
         Parameters
@@ -891,39 +860,19 @@ class BaseMCMCSampler(_BaseSampler):
         walkers : {None, (list of) int}
             The walker index (or a list of indices) to retrieve. If None,
             samples from all walkers will be obtained.
-        thin_start : int
-            Index of the sample to begin returning samples. Default is to read
-            samples after burn in. To start from the beginning set thin_start
-            to 0.
-        thin_interval : int
-            Interval to accept every i-th sample. Default is to use the
-            `fp.acl`. If `fp.acl` is not set, then use all samples
-            (set thin_interval to 1).
-        thin_end : int
-            Index of the last sample to read. If not given then
-            `fp.niterations` is used.
-        iteration : int
-            Get a single iteration. If provided, will override the
-            `thin_{start/interval/end}` arguments.
 
         Returns
         -------
         array
-            Array of acceptance fractions with shape (requested iterations,).
+            Array of acceptance fractions with shape (requested walkers,).
         """
-        # get the slice to use
-        if iteration is not None:
-            get_index = iteration
+        group = 'acceptance_fraction'
+        if walkers is None:
+            wmask = numpy.ones(fp.nwalkers, dtype=bool)
         else:
-            if thin_end is None:
-                # use the number of current iterations
-                thin_end = fp.niterations
-            get_index = fp.get_slice(thin_start=thin_start, thin_end=thin_end,
-                                     thin_interval=thin_interval)
-        acfs = fp['acceptance_fraction'][get_index]
-        if iteration is not None:
-            acfs = numpy.array([acfs])
-        return acfs
+            wmask = numpy.zeros(fp.nwalkers, dtype=bool)
+            wmask[walkers] = True
+        return fp[group][wmask]
 
     @classmethod
     def compute_acfs(cls, fp, start_index=None, end_index=None,
@@ -1030,7 +979,7 @@ class BaseMCMCSampler(_BaseSampler):
     @staticmethod
     def write_acls(fp, acls):
         """Writes the given autocorrelation lengths to the given file.
-        
+
         The ACL of each parameter is saved to ``fp['acls/{param}']``.
         The maximum over all the parameters is saved to the file's 'acl'
         attribute.
