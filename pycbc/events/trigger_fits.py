@@ -49,6 +49,7 @@ from __future__ import division
 import numpy
 from scipy.stats import kstest
 from pycbc import pnutils
+from pycbc import conversions
 
 fitalpha_dict = {
     'exponential' : lambda vals, thresh : 1. / (numpy.mean(vals) - thresh),
@@ -258,6 +259,8 @@ def get_param(par, args, m1, m2, s1z, s2z):
         parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
     elif par == 'mtotal':
         parvals = m1 + m2
+    elif par == 'chi_eff':
+        parvals = conversions.chi_eff(m1, m2, s1z, s2z)
     elif par == 'template_duration':
         # default to SEOBNRv4 duration function
         parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower,
