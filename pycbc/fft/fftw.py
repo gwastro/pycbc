@@ -499,16 +499,5 @@ def from_cli(opt):
     # appropriate:
     set_threads_backend(opt.fftw_threads_backend)
 
-    # Import system wisdom.  Should really add error checking and logging to that...
-    if opt.fftw_import_system_wisdom:
-        import_sys_wisdom()
-
-    # Read specified user-provided wisdom files
-    if opt.fftw_input_float_wisdom_file is not None:
-        import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)        
-
-    if opt.fftw_input_double_wisdom_file is not None:
-        import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)        
-
     # Set the user-provided measure level
     set_measure_level(opt.fftw_measure_level)
