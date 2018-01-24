@@ -1682,7 +1682,7 @@ class PycbcInferenceExecutable(Executable):
         ----------
         channel_names : dict
             A ``dict`` of ``str`` to use for ``--channel-name`` option.
-        config_file : File
+        config_file : pycbc.workflow.core.File
             A ``pycbc.workflow.core.File`` for inference configuration file
             to be used with ``--config-files`` option.
         injection_file : File
