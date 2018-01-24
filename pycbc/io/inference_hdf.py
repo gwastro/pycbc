@@ -30,6 +30,7 @@ import sys
 import h5py
 import numpy
 import logging
+import os
 from pycbc import DYN_RANGE_FAC
 from pycbc.types import FrequencySeries
 from pycbc.waveform import parameters as wfparams
@@ -497,26 +498,42 @@ class InferenceFile(h5py.File):
         if strain_dict is not None:
             self.write_strain(strain_dict, group=group)
 
-    def write_injections(self, injection_file, ifo):
+    def write_injections(self, injection_files, ifo):
         """ Writes injection parameters for an IFO to file.
 
         Parameters
         ----------
-        injection_file : str
+        injection_files : str
             Path to HDF injection file.
         ifo : str
             IFO name.
         """
-        subgroup = "{ifo}/injections"
-        self.create_group(subgroup.format(ifo=ifo))
-        try:
-            with h5py.File(injection_file, "r") as fp:
-                for param in fp.keys():
-                    self[subgroup.format(ifo=ifo)][param] = fp[param][:]
-                for key in fp.attrs.keys():
-                    self[subgroup.format(ifo=ifo)].attrs[key] = fp.attrs[key]
-        except IOError:
-            logging.warn("Could not read %s as an HDF file", injection_file)
+        if not isinstance(injection_files, list):
+            injection_files = [injection_files]
+        for i, injection_file in enumerate(injection_files):
+            try:
+                with h5py.File(injection_file, "r") as fp:
+                    injection_file_name = os.path.basename(injection_file)
+                    injection_file_tag = "inj_file_" + str(i)
+                    subgroup = "{ifo}/injections/{injection_file_tag}"
+                    self.create_group(subgroup.format(
+                            ifo=ifo, injection_file_tag=injection_file_tag))
+                    for param in fp.keys():
+                        self[subgroup.format(
+                                ifo=ifo,
+                                injection_file_tag=injection_file_tag
+                                )][param] = fp[param][:]
+                    for key in fp.attrs.keys():
+                        self[subgroup.format(
+                                ifo=ifo,
+                                injection_file_tag=injection_file_tag
+                                )].attrs[key] = fp.attrs[key]
+                    self[subgroup.format(
+                            ifo=ifo,
+                            injection_file_tag=injection_file_tag
+                            )].attrs["injection_file_name"] = injection_file_name
+            except IOError:
+                logging.warn("Could not read %s as an HDF file", injection_file)
 
     def write_command_line(self):
         """Writes command line to attributes.

@@ -281,16 +281,13 @@ with ctx:
         # save injection parameters
         if opts.injection_file:
             for ifo in opts.instruments:
-                logging.info("Writing %s injections to output file", ifo)
                 if ifo in opts.injection_file.keys():
-                    inj_file = opts.injection_file[ifo]
-                elif len(opts.injection_file) == 1:
-                    inj_file = opts.injection_file.values()[0]
+                    logging.info("Writing %s injections to output file", ifo)
+                    inj_files = opts.injection_file[ifo]
+                    fp.write_injections(inj_files, ifo)
                 else:
                     logging.warn("Could not find injections for %s", ifo)
                     continue
-                fp.write_injections(opts.injection_file.values()[0], ifo)
-
 
     # set the walkers initial positions from a pre-existing InferenceFile
     # or a specific initial distribution listed in the configuration file

@@ -63,7 +63,7 @@ def legacy_approximant_name(apx):
         order = -1
     name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
     return name, order
-    
+
 
 class _HDFInjectionSet(object):
     """Manages sets of injections: reads injections from hdf files
@@ -79,41 +79,54 @@ class _HDFInjectionSet(object):
 
     Attributes
     ----------
-    filehandler
     table
     static_args
     extra_args
     """
 
     def __init__(self, sim_file, hdf_group=None, **kwds):
-        # open the file
-        fp = h5py.File(sim_file, 'r')
-        group = fp if hdf_group is None else fp[hdf_group]
-        self.filehandler = fp
-        # get parameters
-        parameters = group.keys()
-        # get all injection parameter values
-        injvals = {param: group[param][:] for param in parameters}
-        # if there were no variable args, then we only have a single injection
-        if len(parameters) == 0:
-            numinj = 1
-        else:
-            numinj = injvals.values()[0].size
-        # add any static args in the file
-        try:
-            self.static_args = group.attrs['static_args']
-        except KeyError:
-            self.static_args = []
-        parameters.extend(self.static_args)
-        # we'll expand the static args to be arrays with the same size as
-        # the other values
-        for param in self.static_args:
-            injvals[param] = np.repeat(group.attrs[param], numinj)
-        # make sure a coalescence time is specified for injections
-        if 'tc' not in injvals:
-            raise ValueError("no tc found in the given injection file; "
-                             "this is needed to determine where to place the "
-                             "injection")
+        # Create a dictionary to store parameters from all the files
+        injvals = {}
+        for file_location in sim_file:
+            # open the file
+            fp = h5py.File(file_location, 'r')
+            group = fp if hdf_group is None else fp[hdf_group]
+            # get parameters
+            parameters = group.keys()
+            # get all injection parameter values
+            for param in parameters:
+                # If a key corresponding to param exists in injvals, append
+                # the values of param from fp to the existing set of values
+                # of param in injvals else create the key param in injvals
+                # with its values from fp
+                try:
+                    injvals[param] = np.append(injvals[param], group[param])
+                except KeyError:
+                    injvals[param] = group[param][:]
+            # if there were no variable args, then we only have a single injection
+            if len(parameters) == 0:
+                numinj = 1
+            else:
+                numinj = group.values()[0].size
+            # add any static args in the file
+            if not hasattr(self, 'static_args') :
+                try:
+                    self.static_args = group.attrs['static_args']
+                except KeyError:
+                    self.static_args = []
+                parameters.extend(self.static_args)
+            # we'll expand the static args to be arrays with the same size as
+            # the other values
+            for param in self.static_args:
+                try:
+                    injvals[param] = np.append(injvals[param], np.repeat(group.attrs[param], numinj))
+                except KeyError:
+                    injvals[param] = np.repeat(group.attrs[param], numinj)
+            # make sure a coalescence time is specified for injections
+            if 'tc' not in injvals:
+                raise ValueError("no tc found in the given injection file; "
+                                 "this is needed to determine where to place the "
+                                 "injection")
         # initialize the table
         self.table = pycbc.io.WaveformArray.from_kwargs(**injvals)
         # save the extra arguments
@@ -133,8 +146,8 @@ class _HDFInjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
         inj_filter_rejector: InjFilterRejector instance; optional, default=None
@@ -155,7 +168,7 @@ class _HDFInjectionSet(object):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
-        lalstrain = strain.lal()    
+        lalstrain = strain.lal()
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
@@ -187,7 +200,7 @@ class _HDFInjectionSet(object):
                      detector_name, f_lower=f_l, distance_scale=distance_scale)
             if float(signal.start_time) > t1:
                 continue
-            
+
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
@@ -201,7 +214,7 @@ class _HDFInjectionSet(object):
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
         return injected
-       
+
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     f_lower=None, distance_scale=1):
         """Make a h(t) strain time-series from an injection object.
@@ -220,8 +233,8 @@ class _HDFInjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
 
         Returns
         --------
@@ -257,7 +270,7 @@ class _HDFInjectionSet(object):
                              inj.ra, inj.dec, inj.polarization)
 
         return signal
-        
+
     def end_times(self):
         """Return the end times of all injections"""
         return self.table.tc
@@ -281,6 +294,8 @@ class _XMLInjectionSet(object):
     """
 
     def __init__(self, sim_file, **kwds):
+        if len(sim_file) > 0 :
+            raise NotImplementedError("Using multiple .xml injection files for single IFO not supported.")
         self.indoc = ligolw_utils.load_filename(
             sim_file, False, contenthandler=LIGOLWContentHandler)
         self.table = table.get_table(self.indoc, lsctables.SimInspiralTable.tableName)
@@ -300,8 +315,8 @@ class _XMLInjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
         inj_filter_rejector: InjFilterRejector instance; optional, default=None
@@ -322,7 +337,7 @@ class _XMLInjectionSet(object):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
-        lalstrain = strain.lal()    
+        lalstrain = strain.lal()
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
@@ -355,11 +370,11 @@ class _XMLInjectionSet(object):
                      detector_name, f_lower=f_l, distance_scale=distance_scale)
             if float(signal.start_time) > t1:
                 continue
-            
+
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
-            injection_parameters.append(inj)                            
+            injection_parameters.append(inj)
             if inj_filter_rejector is not None:
                 sid = inj.simulation_id
                 inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
@@ -372,7 +387,7 @@ class _XMLInjectionSet(object):
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
         return injected
-       
+
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     f_lower=None, distance_scale=1):
         """Make a h(t) strain time-series from an injection object as read from
@@ -390,8 +405,8 @@ class _XMLInjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
 
         Returns
         --------
@@ -428,15 +443,15 @@ class _XMLInjectionSet(object):
                              inj.longitude, inj.latitude, inj.polarization)
 
         return signal
-        
+
     def end_times(self):
         """Return the end times of all injections"""
-        return [inj.get_time_geocent() for inj in self.table]      
+        return [inj.get_time_geocent() for inj in self.table]
 
 
 class InjectionSet(object):
     """Manages sets of injections and injects them into time series.
-    
+
     Injections are read from either LIGOLW XML files or HDF files.
 
     Parameters
@@ -454,15 +469,19 @@ class InjectionSet(object):
     """
 
     def __init__(self, sim_file, **kwds):
-        ext = os.path.basename(sim_file)
-        if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
-            self._injhandler = _XMLInjectionSet(sim_file, **kwds)
-            self.indoc = self._injhandler.indoc
-        elif ext.endswith(('hdf', '.h5')):
-            self._injhandler = _HDFInjectionSet(sim_file, **kwds)
-        else:
-            raise ValueError("Unsupported template bank file extension "
-                             "{}".format(ext))
+        sim_file = [sim_file] if not isinstance(sim_file, list) else sim_file
+        exts = [os.path.splitext(x)[1] for x in sim_file]
+        if all([ext == exts[0] for ext in exts]):
+            if all([ext in ('.xml', '.xml.gz', '.xmlgz') for ext in exts]):
+                self._injhandler = _XMLInjectionSet(sim_file, **kwds)
+                self.indoc = self._injhandler.indoc
+            elif all([ext in ('.hdf', '.h5') for ext in exts]):
+                self._injhandler = _HDFInjectionSet(sim_file, **kwds)
+            else:
+                raise ValueError("Unsupported template bank file extension "
+                                 "{}".format(exts[0]))
+        else :
+            raise ValueError("All injections files should be in the same format ")
         self.table = self._injhandler.table
         self.extra_args = self._injhandler.extra_args
         self.apply = self._injhandler.apply
