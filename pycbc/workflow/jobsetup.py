@@ -1685,7 +1685,7 @@ class PycbcInferenceExecutable(Executable):
         config_file : pycbc.workflow.core.File
             A ``pycbc.workflow.core.File`` for inference configuration file
             to be used with ``--config-files`` option.
-        injection_file : File
+        injection_file : pycbc.workflow.core.File
             A ``pycbc.workflow.core.File`` for injection file to be used
             with ``--injection-file`` option.
         seed : int
