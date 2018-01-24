@@ -196,6 +196,7 @@ pycbc.weave.verify_weave_options(opt, parser)
 
 pycbc.init_logging(opt.verbose)
 
+fft.from_cli(opt)
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli(opt)
 ctx = scheme.from_cli(opt)
 gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
@@ -204,7 +205,19 @@ strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
 
 with ctx:
-    fft.from_cli(opt)
+    # The following FFTW specific options needed to wait until
+    # we were inside the scheme context
+
+    # Import system wisdom.
+    if opt.fftw_import_system_wisdom:
+        import_sys_wisdom()
+
+    # Read specified user-provided wisdom files
+    if opt.fftw_input_float_wisdom_file is not None:
+        import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)        
+
+    if opt.fftw_input_double_wisdom_file is not None:
+        import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)    
 
     flow = opt.low_frequency_cutoff
     flen = strain_segments.freq_len
