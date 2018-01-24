@@ -118,6 +118,7 @@ import argparse
 import logging
 import numpy
 import pycbc
+import pycbc.version
 from pycbc import distributions
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
@@ -198,6 +199,9 @@ def write_to_hdf(filename, samples, write_args, static_args=None):
 parser = argparse.ArgumentParser(description=__doc__,
             formatter_class=argparse.RawDescriptionHelpFormatter)
 option_utils.add_config_opts_to_parser(parser)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg,
+                    help='Prints version information.')
 parser.add_argument('--ninjections', required=True, type=int,
                     help='Number of injections to create.')
 parser.add_argument('--seed', type=int, default=0,

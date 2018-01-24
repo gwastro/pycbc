@@ -5,11 +5,12 @@ of injections.
 
 import argparse
 import logging
-import matplotlib as mpl
+import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.colorbar as cbar
 import matplotlib.pyplot as plt
 import numpy
 import pycbc
+import pycbc.version
 from matplotlib import cm
 from pycbc import inject
 from pycbc import transforms
@@ -18,6 +19,9 @@ from pycbc.inference import option_utils
 # parse command line
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg,
+                    help="Prints version information.")
 parser.add_argument("--output-file", required=True, type=str,
                     help="Path to save output plot.")
 parser.add_argument("--verbose", action="store_true",
@@ -39,7 +43,7 @@ fp, parameters, labels, samples = option_utils.results_from_cli(opts)
 # only plot one parameter
 assert(len(opts.parameters) == 1)
 parameter = parameters[0] if isinstance(parameters, list) else parameters
-label = labels[0] if isinstance(labels, list) else labels
+label = labels[0][0] if isinstance(labels, list) else labels
 
 # create figure
 fig = plt.figure()
@@ -94,17 +98,17 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
     inj_parameters = transforms.apply_transforms(injs.table, ts)
 
     # get paramter values
-    sampled_vals = input_samples[parameter]
-    injected_vals = inj_parameters[parameter]
+    sampled_vals = input_samples[parameter].to_array()
+    injected_vals = [e[0] for e in inj_parameters[parameter]]
 
     # compute quantiles of sampled results
     quantiles = numpy.array([numpy.percentile(sampled_vals, 100 * q)
                              for q in opts.quantiles])
 
     # get median and lowest and highest quntiles for plotting
-    med = numpy.median(sampled_vals) - injected_vals
-    high = quantiles.max() - injected_vals
-    low = quantiles.min() - injected_vals
+    med = numpy.median(sampled_vals)
+    high = quantiles.max()
+    low = quantiles.min()
 
     # get color
     if opts.z_arg:
@@ -116,8 +120,8 @@ for i, (input_file, input_fp, input_samples) in enumerate(zip(opts.input_file,
     if len(injected_vals) > 1:
         logging.warn("More than one injection in file %s", input_file)
     ax.errorbar([injected_vals],
-                [med],
-                yerr=[[med - low], [high - med]],
+                [med - injected_vals],
+                yerr=[[(med - low)], [(high - med)]],
                 ecolor=color, linestyle="None", zorder=10)
 
 # create a colorbar

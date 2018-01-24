@@ -29,12 +29,12 @@ import argparse
 import itertools
 import logging
 import numpy
-import matplotlib
-matplotlib.use('agg')
+import matplotlib; matplotlib.use("agg")
+import pycbc
+import pycbc.version
+import sys
 from matplotlib import patches
 from matplotlib import pyplot
-import pycbc
-import sys
 from pycbc.inference import option_utils, likelihood
 from pycbc.io.inference_hdf import InferenceFile
 from pycbc.results import metadata
@@ -42,6 +42,9 @@ from pycbc.results.scatter_histograms import create_multidim_plot
 
 # add options to command line
 parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg,
+                    help="Prints version information.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
 parser.add_argument("--verbose", action="store_true", default=False,

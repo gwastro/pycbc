@@ -240,7 +240,7 @@ class UniformPowerLaw(bounded.BoundedDist):
 
 class UniformRadius(UniformPowerLaw):
     """ For a uniform distribution in volume using spherical coordinates, this
--   is the distriubtion to use for the radius.
+    is the distriubtion to use for the radius.
 
     For more details see UniformPowerLaw.
     """

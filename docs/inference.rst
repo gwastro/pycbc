@@ -566,10 +566,11 @@ Visualizing the Posteriors
    inference/viz.rst
 
 ===============================================
-Workflows (``pycbc_make_inference_workflow``)
+Workflows
 =============================================== 
 
 .. toctree::
    :maxdepth: 1
 
    workflow/pycbc_make_inference_workflow
+   workflow/pycbc_make_inference_inj_workflow

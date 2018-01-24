@@ -1615,3 +1615,123 @@ class PycbcConditionStrainExecutable(Executable):
 
         return node, out_file
 
+class PycbcCreateInjectionsExecutable(Executable):
+    """ The class responsible for creating jobs
+    for ``pycbc_create_injections``.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+                 universe=None, tags=None):
+        super(PycbcCreateInjectionsExecutable, self).__init__(
+                               cp, exe_name, universe, ifo, out_dir, tags)
+
+    def create_node(self, config_file=None, seed=None, tags=None):
+        """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
+
+        Parameters
+        ----------
+        config_file : pycbc.workflow.core.File
+            A ``pycbc.workflow.core.File`` for inference configuration file
+            to be used with ``--config-files`` option.
+        seed : int
+            Seed to use for generating injections.
+        tags : list
+            A list of tags to include in filenames.
+
+        Returns
+        --------
+        node : pycbc.workflow.core.Node
+            The node to run the job.
+        """
+
+        # default for tags is empty list
+        tags = [] if tags is None else tags
+
+        # get analysis start and end time
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        analysis_time = segments.segment(int(start_time), int(end_time))
+
+        # make node for running executable
+        node = Node(self)
+        node.add_input_opt("--config-file", config_file)
+        if seed:
+            node.add_opt("--seed", seed)
+        injection_file = node.new_output_file_opt(analysis_time,
+                                                  ".hdf", "--output-file",
+                                                  tags=tags)
+
+        return node, injection_file
+
+class PycbcInferenceExecutable(Executable):
+    """ The class responsible for creating jobs for ``pycbc_inference``.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+                 universe=None, tags=None):
+        super(PycbcInferenceExecutable, self).__init__(cp, exe_name, universe,
+                                                       ifo, out_dir, tags)
+
+    def create_node(self, channel_names, config_file, injection_file=None,
+                    seed=None, fake_strain_seed=None, tags=None):
+        """ Set up a CondorDagmanNode class to run ``pycbc_inference``.
+
+        Parameters
+        ----------
+        channel_names : dict
+            A ``dict`` of ``str`` to use for ``--channel-name`` option.
+        config_file : pycbc.workflow.core.File
+            A ``pycbc.workflow.core.File`` for inference configuration file
+            to be used with ``--config-files`` option.
+        injection_file : pycbc.workflow.core.File
+            A ``pycbc.workflow.core.File`` for injection file to be used
+            with ``--injection-file`` option.
+        seed : int
+            An ``int`` to be used with ``--seed`` option.
+        fake_strain_seed : dict
+            An ``int`` to be used with ``--fake-strain-seed`` option.
+        tags : list
+            A list of tags to include in filenames.
+
+        Returns
+        --------
+        node : pycbc.workflow.core.Node
+            The node to run the job.
+        """
+
+        # default for tags is empty list
+        tags = [] if tags is None else tags
+
+        # get analysis start and end time
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        analysis_time = segments.segment(int(start_time), int(end_time))
+
+        # get multi-IFO opts
+        channel_names_opt = " ".join(["{}:{}".format(k, v)
+                                      for k, v in channel_names.iteritems()])
+        if fake_strain_seed is not None:
+            fake_strain_seed_opt = " ".join([
+                                    "{}:{}".format(k, v)
+                                    for k, v in fake_strain_seed.iteritems()])
+
+        # make node for running executable
+        node = Node(self)
+        node.add_opt("--instruments", " ".join(self.ifo_list))
+        node.add_opt("--gps-start-time", start_time)
+        node.add_opt("--gps-end-time", end_time)
+        node.add_opt("--channel-name", channel_names_opt)
+        node.add_input_opt("--config-file", config_file)
+        if fake_strain_seed is not None:
+            node.add_opt("--fake-strain-seed", fake_strain_seed_opt)
+        if injection_file:
+            node.add_input_opt("--injection-file", injection_file)
+        if seed:
+            node.add_opt("--seed", seed)
+        inference_file = node.new_output_file_opt(analysis_time,
+                                                  ".hdf", "--output-file",
+                                                  tags=tags)
+
+        return node, inference_file
