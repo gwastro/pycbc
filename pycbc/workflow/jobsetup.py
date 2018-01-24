@@ -1632,8 +1632,8 @@ class PycbcCreateInjectionsExecutable(Executable):
         Parameters
         ----------
         config_file : File
-            A ``File`` for inference configuration file to be used
-            with ``--config-files`` option.
+            A ``pycbc.workflow.core.File`` for inference configuration file
+            to be used with ``--config-files`` option.
         seed : int
             Seed to use for generating injections.
         tags : list
