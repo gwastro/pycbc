@@ -1,19 +1,21 @@
 import numpy as np
+from numpy import log, any, all
 import glob, sys, copy, h5py
-from scipy import interpolate
+from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.stats import kstest, ks_2samp
 from astropy.cosmology import WMAP9 as cosmo
 
-from pycbc.conversions import mchirp_from_mass1_mass2
+from pycbc.conversions import mchirp_from_mass1_mass2 as m1m2tomch
 
 _mch_BNS = 1.4/2**.2
 _redshifts, _d_lum, _I = np.arange(0., 5., 0.01), [], []
-_save_params = ['mass1', 'mass2', 'spin1z', 'spin2z', 'spin1y', 'spin2y', 'spin1x', 'spin2x', 'distance', 'end_time']
+_save_params = ['mass1', 'mass2', 'spin1z', 'spin2z', 'spin1y', 'spin2y', 
+                                'spin1x', 'spin2x', 'distance', 'end_time']
 
 for zz in _redshifts:
     _d_lum.append(cosmo.luminosity_distance(zz).value)
-_dlum_interp = interpolate.interp1d(_d_lum, _redshifts)
+_dlum_interp = interp1d(_d_lum, _redshifts)
 
 def read_injections(folder_name):
     ''' Read all the injections from the files in the provided folder.
@@ -38,13 +40,15 @@ def read_injections(folder_name):
     
     nf, min_d, max_d = len(all_files), 1e12, 0
     for i in range(nf):
-        injections[str(i)] = process_injections(all_files[i])
-        injections[str(i)]['file_name'] = all_files[i]
+
+        key = str(i)
+        injections[key] = process_injections(all_files[i])
+        injections[key]['file_name'] = all_files[i]
         
-        mass1, mass2 = injections[str(i)]['mass1'], injections[str(i)]['mass2']
-        mchirp = mchirp_from_mass1_mass2(mass1, mass2)
-        injections[str(i)]['chirp_mass'] = mchirp
-        injections[str(i)]['total_mass'] = mass1 + mass2
+        mass1, mass2 = injections[key]['mass1'], injections[key]['mass2']
+        mchirp = m1m2tomch(mass1, mass2)
+        injections[key]['chirp_mass'] = mchirp
+        injections[key]['total_mass'] = mass1 + mass2
     
         max_m1 = max(mass1)
         min_m2, max_m2 = min(mass2), max(mass2)
@@ -52,34 +56,35 @@ def read_injections(folder_name):
      
         # Identify the mass distribution
     
-        def cdf_componentMass(xx): #Assumes both the masses have the same distribution
+        def cdf_componentMass(xx): #Assumes same distribution for the masses
             return (xx - min_m2)/(max_m2 - min_m2)
 
         def cdf_totalMass(xx):
             return (xx - min_totM)/(max_totM - min_totM)
  
         def cdf_log(xx): #Assumes both the masses have the same distribution
-            return (np.log(xx) - np.log(min_m2))/(np.log(max_m2) - np.log(min_m2))
+            return (log(xx) - log(min_m2))/(log(max_m2) - log(min_m2))
     
         p_thr = 0.0001
         pvalue = kstest(mass1, cdf_componentMass)[1]
         if p_thr < pvalue:
-            injections[str(i)]['m_dist'] = 'componentMass'
+            injections[key]['m_dist'] = 'componentMass'
         
         stat, pvalue = kstest(mass1 + mass2, cdf_totalMass)
         if p_thr < pvalue:
-            injections[str(i)]['m_dist'] = 'totalMass'
+            injections[key]['m_dist'] = 'totalMass'
             
         stat, pvalue = kstest(mass1, cdf_log)
         if p_thr < pvalue:
-            injections[str(i)]['m_dist'] = 'log'
+            injections[key]['m_dist'] = 'log'
         
-        spin1z, spin2z = injections[str(i)]['spin1z'], injections[str(i)]['spin2z']
-        spin1y, spin2y = injections[str(i)]['spin1y'], injections[str(i)]['spin2y']
-        spin1x, spin2x = injections[str(i)]['spin1x'], injections[str(i)]['spin2x']
-        spin1, spin2 = np.sqrt(spin1z**2 + spin1y**2 + spin1x**2), np.sqrt(spin2z**2 + spin2y**2 + spin2x**2)
-        injections[str(i)]['spin1'] = spin1
-        injections[str(i)]['spin2'] = spin2
+        spin1z, spin2z = injections[key]['spin1z'], injections[key]['spin2z']
+        spin1y, spin2y = injections[key]['spin1y'], injections[key]['spin2y']
+        spin1x, spin2x = injections[key]['spin1x'], injections[key]['spin2x']
+        spin1 = np.sqrt(spin1z**2 + spin1y**2 + spin1x**2)
+        spin2 = np.sqrt(spin2z**2 + spin2y**2 + spin2x**2)
+        injections[key]['spin1'] = spin1
+        injections[key]['spin2'] = spin2
     
         #min_s1z, max_s1z = min(spin1z), max(spin1z)
         #min_s2z, max_s2z = min(spin2z), max(spin2z)
@@ -87,38 +92,39 @@ def read_injections(folder_name):
         max_totS = max(spin2)
         
         # Identify the spin distribution
-        if spin1[0] == 0 and spin1z[0] == 0:
-            injections[str(i)]['s_dist'] = 'disable_spin'
+        if not(all(spin1)) and not(all(spin1z)):
+            injections[key]['s_dist'] = 'disable_spin'
 
-        if spin1y[0] == 0 and spin2y[0] == 0 and spin1x[0] == 0 and spin2x[0] == 0 and max_totS > 0.:
-            injections[str(i)]['s_dist'] = 'aligned'
+        if not(all(spin1y*spin2y)) and not(all(spin1x*spin2x)) and max_totS>0:
+            injections[key]['s_dist'] = 'aligned'
 
-        if spin1y[0] != 0 or spin2y[0] != 0 or spin1x[0] != 0 and spin2x[0] != 0:
-            injections[str(i)]['s_dist'] = 'precessing'
+        if any(spin1y*spin2y) and any(spin1x*spin2x):
+            injections[key]['s_dist'] = 'precessing'
 
         # Identify the distance distribution
-        distance = injections[str(i)]['distance']
+        distance = injections[key]['distance']
         fiducial_distance = distance / (mchirp/_mch_BNS)**(5/6.)
-        injections[str(i)]['fiducial_distance'] = fiducial_distance
+        injections[key]['fiducial_distance'] = fiducial_distance
         min_dist, max_dist = min(distance), max(distance)
-        min_fid_dist, max_fid_dist = min(fiducial_distance), max(fiducial_distance)
+        min_fdist, max_fdist = min(fiducial_distance), max(fiducial_distance)
 
         def cdf_distance(xx):
             return (xx - min_dist)/(max_dist - min_dist)
 
         def cdf_fid_distance(xx):
-            return (xx - min_fid_dist)/(max_fid_dist - min_fid_dist)
+            return (xx - min_fdist)/(max_fdist - min_fdist)
 
         stat, pvalue = kstest(distance, cdf_distance)
         if p_thr < pvalue:
-            injections[str(i)]['d_dist'] = 'uniform'   
+            injections[key]['d_dist'] = 'uniform'   
 
         stat, pvalue = kstest(fiducial_distance, cdf_fid_distance)
         if p_thr < pvalue:
-            injections[str(i)]['d_dist'] = 'dchirp'
+            injections[key]['d_dist'] = 'dchirp'
 
-        if not(set(['m_dist', 's_dist', 'd_dist']) < set(injections[str(i)].keys())):
-            sys.exit("Couldn't indentify the Mass, Spin or Distance distribution at the given threshold!")
+        set_all_dist = set(['m_dist', 's_dist', 'd_dist'])
+        if not(set_all_dist < set(injections[key].keys())):
+            sys.exit("Can't indentify the Mass, Spin or Distance distribution!")
 
             
         d1, d2 = min(distance), max(distance)
@@ -144,10 +150,10 @@ def read_injections(folder_name):
 
                     if pvalue > thr:
                         bins.append(j)
-                        min_value, max_value = min(min_value, min(value_2)), max(max_value, max(value_2))
+                        min_value = min(min_value, min(value_2))
+                        max_value = max(max_value, max(value_2))
             for j in bins:
                 if key not in ['s1z_range', 's2z_range']:
-                    #low, high = 10**(2 - round(np.log10(min_value))), 10**(2 - round(np.log10(max_value)))
                     injections[str(j)][key] = [round(min_value - 0.5), round(max_value + 0.5)]
                 else:
                     injections[str(j)][key] = [min_value, max_value]
@@ -182,22 +188,24 @@ def read_injections(folder_name):
                         continue
                     chunk_data[key][data_key].append(injections[key_files_2][data_key])
 
-    chunk_data['z_range'] = [round(10*dlum_to_z(min_d) - 0.5)/10., round(10*dlum_to_z(max_d) + 0.5)/10.]
+    chunk_data['z_range'] = [round(10*dlum_to_z(min_d) -0.5)/10., round(10*dlum_to_z(max_d) +0.5)/10.]
 
     return chunk_data
 
-def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make this flexible to include ifar threshold
+def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): 
+    #Try including ifar threshold
     '''Based on injection strategy and the desired astro model estimate the injected volume.
        Scale injections and estimate sensitive volume.
-
+a
        Parameters
        ----------
        inj_chunks: dictionary
-            Dictionary obtained after reading injections using function read_injections
+            Dictionary obtained after reading injections from read_injections
        mchirp_sampler: function
             Sampler for producing chirp mass samples for the astro model.
        model_pdf: function
-            The PDF for astro model in mass1-mass2-spin1z-spin2z space. This is easily extendible to include precession
+            The PDF for astro model in mass1-mass2-spin1z-spin2z space. 
+            This is easily extendible to include precession
        kwargs: key words
             Inputs for thresholds and astrophysical models
 
@@ -210,16 +218,18 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make 
     thr_var = kwargs.get('thr_var')
     thr_val = kwargs.get('thr_val')
 
+    nsamples = 1000000 #Used to calculate injected astro volume
     injection_chunks = copy.deepcopy(inj_chunks)
-    nsamples, min_z, max_z = 1000000, injection_chunks['z_range'][0], injection_chunks['z_range'][1]
+    min_z, max_z = injection_chunks['z_range']
     for key in injection_chunks.keys():
 
-        if key == 'z_range': # This is repeated down again and is sort of hard-coded
+        if key == 'z_range': 
+            # This is repeated down again and is sort of hard-coded
             continue
 
         data = injection_chunks[key]
-        inj_distr = zip(data['mtot_range'], data['m1_range'], data['m2_range'], #Hard coded
-                             data['d_range'], zip(data['m_dist'], data['d_dist']))
+        inj_distr = zip(data['mtot_range'], data['m1_range'], data['m2_range'],
+                        data['d_range'], zip(data['m_dist'], data['d_dist']))
 
         unique_distr = np.unique(inj_distr, axis = 0)
         injection_chunks[key]['inj_distr'] = inj_distr
@@ -230,25 +240,30 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make 
 
         z_astro = astro_redshifts(min_z, max_z, nsamples)
         astro_lum_dist = cosmo.luminosity_distance(z_astro).value
-        V = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., max_z)[0]
+        V = quad(contracted_dVdc, 0., max_z)[0]
 
-        bound, mch_astro_det = [], np.array(mchirp_sampler(nsamples = nsamples, **kwargs)) * (1. + z_astro)
+        mch_astro = np.array(mchirp_sampler(nsamples = nsamples, **kwargs))
+        mch_astro_det = mch_astro * (1. + z_astro)
 
+        bound = []
         for uu in unique_distr:
             if uu[4][0] == 'totalMass':
-                min_mchirp = mchirp_from_mass1_mass2(float(uu[1][0]), float(uu[1][0]))
-                max_mchirp = mchirp_from_mass1_mass2(float(uu[0][1])/2., float(uu[0][1])/2.)
+                min_mchirp = m1m2tomch(float(uu[1][0]), float(uu[1][0]))
+                max_mchirp = m1m2tomch(float(uu[0][1])/2., float(uu[0][1])/2.)
             if uu[4][0] == 'componentMass' or uu[4][0] == 'log':
-                min_mchirp = mchirp_from_mass1_mass2(float(uu[1][0]), float(uu[2][0]))
-                max_mchirp = mchirp_from_mass1_mass2(float(uu[1][1]), float(uu[2][1]))
+                min_mchirp = m1m2tomch(float(uu[1][0]), float(uu[2][0]))
+                max_mchirp = m1m2tomch(float(uu[1][1]), float(uu[2][1]))
             if uu[4][1] == 'uniform':
-                i_dmin, i_dmax = float(uu[3][0]) * np.ones_like(mch_astro_det), float(uu[3][1]) * np.ones_like(mch_astro_det)
+                i_dmin = float(uu[3][0]) * np.ones_like(mch_astro_det)
+                i_dmax = float(uu[3][1]) * np.ones_like(mch_astro_det)
             if uu[4][1] == 'dchirp':
                 factor = (mch_astro_det/_mch_BNS)**(5./6)
-                i_dmin, i_dmax = float(uu[3][0]) * factor, float(uu[3][1]) * factor
+                i_dmin = float(uu[3][0]) * factor
+                i_dmax = float(uu[3][1]) * factor
 
-            bb = np.sign((max_mchirp - mch_astro_det) * (mch_astro_det - min_mchirp))
-            bb += np.sign((i_dmin - astro_lum_dist) * (astro_lum_dist - i_dmax))
+            bb = np.sign(max_mchirp - mch_astro_det)
+            bb *= np.sign(mch_astro_det - min_mchirp)
+            bb += np.sign((i_dmin - astro_lum_dist)*(astro_lum_dist - i_dmax))
 
             bound.append(bb)
 
@@ -265,9 +280,12 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make 
             if 'inj_astro_vol' in injection_chunks[kee].keys():
                 continue
 
-            inj_distr_2 = zip(injection_chunks[kee]['mtot_range'], injection_chunks[kee]['m1_range'],
-                              injection_chunks[kee]['m2_range'], injection_chunks[kee]['d_range'],
-                                  zip(injection_chunks[kee]['m_dist'], injection_chunks[kee]['d_dist']))
+            inj_distr_2 = zip(injection_chunks[kee]['mtot_range'],
+                                injection_chunks[kee]['m1_range'],
+                                injection_chunks[kee]['m2_range'], 
+                                 injection_chunks[kee]['d_range'],
+                              zip(injection_chunks[kee]['m_dist'], 
+                                  injection_chunks[kee]['d_dist']))
 
             unique_distr_2 = np.unique(inj_distr_2, axis = 0)
 
@@ -276,11 +294,13 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make 
 
     # Estimate the sensitive volume
     z_range = injection_chunks['z_range']
-    V_min = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., z_range[0])[0]
-    V_max = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., z_range[1])[0]
+    V_min = quad(contracted_dVdc, 0., z_range[0])[0]
+    V_max = quad(contracted_dVdc, 0., z_range[1])[0]
     def pdf_z_astro(z):
-        ''' Get the probability density for the rate of events at a redshift assuming standard cosmology'''
-        return cosmo.differential_comoving_volume(z).value/(1+z)/(V_max - V_min)
+        ''' Get the probability density for the rate of events 
+            at a redshift assuming standard cosmology
+        '''
+        return contracted_dVdc(z)/(V_max - V_min)
     
     for key in injection_chunks.keys():
 
@@ -291,8 +311,9 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make 
         i_det, i_inj, i_det_sq, thr_falloff = 0, 0, 0, []
         narrays = len(data['distance'])
         for i in range(narrays):
-            mchirp, mass1, mass2 = data['chirp_mass'][i], data['mass1'][i], data['mass2'][i]
-            distance, spin1z, spin2z = data['distance'][i], data['spin1z'][i], data['spin2z'][i]
+            mchirp, distance = data['chirp_mass'][i], data['distance'][i]
+            mass1, mass2 = data['mass1'][i], data['mass2'][i]
+            spin1z, spin2z = data['spin1z'][i], data['spin2z'][i]
 
             inj_distr = data['inj_distr']
             unique_distr = data['unique_distr']
@@ -300,19 +321,21 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make 
 
             for uu in unique_distr:
 
-                'Get probability density for injections in mass-distance space'
+                #Get probability density for injections in mass-distance space
                 if uu[4][0] == 'totalMass':
-                    low_mass = .5*float(uu[0][0])
-                    high_mass = float(uu[0][1]) - low_mass
-                    low_mass_2, high_mass_2 = low_mass, high_mass
+                    lomass = .5*float(uu[0][0])
+                    himass = float(uu[0][1]) - lomass
+                    lomass_2, himass_2 = lomass, himass
                 if uu[4][0] == 'componentMass' or uu[4][0] == 'log':
-                    low_mass, high_mass = float(uu[1][0]), float(uu[1][1])
-                    low_mass_2, high_mass_2 = float(uu[2][0]), float(uu[2][1])
+                    lomass, himass = float(uu[1][0]), float(uu[1][1])
+                    lomass_2, himass_2 = float(uu[2][0]), float(uu[2][1])
 
-                mm = inj_mass_pdf(uu[4][0], mass1, mass2, low_mass, high_mass, low_mass_2, high_mass_2)
+                mm = inj_mass_pdf(uu[4][0], mass1, mass2, lomass, himass, lomass_2, himass_2)
 
                 prob_mass.append(mm)
-                dd = inj_distance_pdf(uu[4][1], distance, float(uu[3][0]), float(uu[3][1]), mchirp)
+                d_dist = uu[4][1]
+                l_dist, h_dist = float(uu[3][0]), float(uu[3][1])
+                dd = inj_distance_pdf(d_dist, distance, l_dist, h_dist, mchirp)
                 prob_dist.append(dd)
 
             prob_mass = np.array(prob_mass)
@@ -323,14 +346,17 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make 
             p_out = model_pdf(m1_sc, m2_sc, spin1z, spin2z) * pdf_z_astro(z_inj)
 
             p_in = 0
-            J = abs(cosmo.luminosity_distance(z_inj + 0.0005).value - cosmo.luminosity_distance(z_inj - 0.0005).value)/0.001
+            J = cosmo.luminosity_distance(z_inj + 0.0005).value 
+            J -= cosmo.luminosity_distance(z_inj - 0.0005).value
+            J = abs(J)/0.001
             for ii in range(narrays):
                 inj_d = inj_distr[ii]
                 hspin1, hspin2 = data['s1_range'][ii][1], data['s2_range'][ii][1]
-                prob_spin = inj_spin_pdf(data['s_dist'][ii], hspin1, spin1z) * inj_spin_pdf(data['s_dist'][ii], hspin2, spin2z)
+                prob_spin = inj_spin_pdf(data['s_dist'][ii], hspin1, spin1z) 
+                prob_spin *= inj_spin_pdf(data['s_dist'][ii], hspin2, spin2z)
 
-                all_idx = np.array([np.array_equal(inj_d, uu) for uu in unique_distr]).astype(float)
-                idx = np.where(all_idx == 1)[0][0]
+                all_idx = np.array([np.array_equal(inj_d, uu) for uu in unique_distr])
+                idx = np.where(all_idx.astype(float) == 1)[0][0]
                 p_in += prob_mass[idx] * prob_dist[idx] * prob_spin * J * (1 + z_inj)**2
 
             p_out_in = p_out/p_in
@@ -356,7 +382,8 @@ def estimate_vt(inj_chunks, mchirp_sampler, model_pdf, **kwargs): #Need to make 
     return injection_chunks
 
 def process_injections(hdffile, inj_type = 'pipeline'):
-    """Function to read in the injection file and extract the found injections and all injections
+    """Function to read in the injection file and 
+       extract the found injections and all injections
 
        Parameters
        ----------
@@ -424,7 +451,8 @@ def dlum_to_z(dl):
     return _dlum_interp(dl)
 
 def astro_redshifts(min_z, max_z, nsamples):
-    '''Sample the redshifts for sources, with redshift independent rate, using standard cosmology
+    '''Sample the redshifts for sources, with redshift 
+            independent rate, using standard cosmology
 
        Parameters
        ----------
@@ -438,17 +466,18 @@ def astro_redshifts(min_z, max_z, nsamples):
        Returns
        -------
        z_astro: array
-            nsamples of redshift, between min_z, max_z, confirming standard cosmology
+            nsamples of redshift, between min_z, max_z, by standard cosmology
     '''
     
-    dz, fac = 0.001, 3.0 # use interpolation instead of directly estimating all the pdfz for rndz
-    V = quad(lambda z: cosmo.differential_comoving_volume(z).value/(1+z), 0., max_z)[0]
+    dz, fac = 0.001, 3.0 
+    # use interpolation instead of directly estimating all the pdfz for rndz
+    V = quad(contracted_dVdc, 0., max_z)[0]
     zs = np.arange(min_z, max_z + dz/2., dz)
     zbins = np.arange(min_z, max_z + dz/2., dz)
     zcenter = (zbins[:-1] + zbins[1:]) / 2
     pdfz = cosmo.differential_comoving_volume(zcenter).value/(1+zcenter)/V
 
-    int_pdf = interpolate.interp1d(zcenter, pdfz, bounds_error=False, fill_value=0)
+    int_pdf = interp1d(zcenter, pdfz, bounds_error=False, fill_value=0)
 
     rndz = np.random.uniform(min_z, max_z, int(fac*nsamples))
     pdf_zs = int_pdf(rndz)
@@ -512,9 +541,13 @@ def get_accumulated_falloff(dictionary):
 
     return np.hstack(np.array(thrs).flat)
 
-########## Defining current standard strategies used for making injections ##########
+def contracted_dVdc(z):
+    #Return the time-dilated differential comoving volume
+    return cosmo.differential_comoving_volume(z).value/(1+z)
 
-def inj_mass_pdf(key, mass1, mass2, low_mass, high_mass, low_mass_2 = 0, high_mass_2 = 0):
+##### Defining current standard strategies used for making injections #####
+
+def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
 
     '''Estimate the probability density based on the injection strategy
 
@@ -526,9 +559,9 @@ def inj_mass_pdf(key, mass1, mass2, low_mass, high_mass, low_mass_2 = 0, high_ma
           First mass of the injections
        mass2: array
           Second mass of the injections
-       low_mass: float
+       lomass: float
           Lower value of the mass distributions 
-       high_mass: float
+       himass: float
           higher value of the mass distribution
 
        Returns
@@ -545,31 +578,33 @@ def inj_mass_pdf(key, mass1, mass2, low_mass, high_mass, low_mass_2 = 0, high_ma
 
             Parameters
             ----------
-            low_mass: lower component mass
-            high_mass: higher component mass
+            lomass: lower component mass
+            himass: higher component mass
         '''
         
-        bound = np.sign((low_mass + high_mass) - (mass1 + mass2)) 
-        bound += np.sign((high_mass - mass1)*(mass1 - low_mass)) + np.sign((high_mass - mass2)*(mass2 - low_mass))
+        bound = np.sign((lomass + himass) - (mass1 + mass2)) 
+        bound += np.sign((himass - mass1)*(mass1 - lomass)) 
+        bound += np.sign((himass - mass2)*(mass2 - lomass))
         idx = np.where(bound != 3)
-        pdf = 1./(high_mass - low_mass)/(mass1 + mass2 - 2 * low_mass)
+        pdf = 1./(himass - lomass)/(mass1 + mass2 - 2 * lomass)
         pdf[idx] = 0
 
         return pdf
 
     if key == 'componentMass':
-        ''' Returns the PDF of mass when component mass is uniformly distributed.
-            Component masses are independent for this case.
+        ''' Returns the PDF of mass when component mass is uniformly 
+            distributed. Component masses are independent for this case.
 
             Parameters
             ----------
-            low_mass: lower component mass
-            high_mass: higher component mass
+            lomass: lower component mass
+            himass: higher component mass
          '''
         
-        bound = np.sign((high_mass - mass1)*(mass1 - low_mass)) + np.sign((high_mass_2 - mass2)*(mass2 - low_mass_2))
+        bound = np.sign((himass - mass1)*(mass1 - lomass)) 
+        bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
         idx = np.where(bound != 2)
-        pdf = np.ones_like(mass1) / (high_mass - low_mass) / (high_mass_2 - low_mass_2)
+        pdf = np.ones_like(mass1) / (himass - lomass) / (himass_2 - lomass_2)
         pdf[idx] = 0
 
         return pdf
@@ -580,19 +615,22 @@ def inj_mass_pdf(key, mass1, mass2, low_mass, high_mass, low_mass_2 = 0, high_ma
 
             Parameters
             ----------
-            low_mass: lower component mass
-            high_mass: higher component mass
+            lomass: lower component mass
+            himass: higher component mass
          '''  
         
-        bound = np.sign((high_mass - mass1)*(mass1 - low_mass)) + np.sign((high_mass_2 - mass2)*(mass2 - low_mass_2))
+        bound = np.sign((himass - mass1)*(mass1 - lomass)) 
+        bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
         idx = np.where(bound != 2)
-        pdf = 1 / (np.log(high_mass) - np.log(low_mass)) / (np.log(high_mass_2) - np.log(low_mass_2)) / mass1 / mass2
+        pdf = 1 / (log(himass) - log(lomass)) / (log(himass_2) - log(lomass_2)) 
+        pdf /= (mass1 * mass2)
         pdf[idx] = 0
 
         return pdf
 
 def inj_spin_pdf(key, high_spin, spinz):
-    ''' Estimate the probability density of the injections for the spin distribution.
+    ''' Estimate the probability density of the 
+           injections for the spin distribution.
 
         Parameters
         ----------
@@ -614,8 +652,9 @@ def inj_spin_pdf(key, high_spin, spinz):
     bound += np.sign(1 - np.absolute(spinz))
 
     if key == 'precessing':
-        ''' Returns the PDF of spins when total spin is isotropically distributed.
-            Both the component masses have the same distribution for this case.
+        ''' Returns the PDF of spins when total spin is 
+            isotropically distributed. Both the component 
+            masses have the same distribution for this case.
          '''
 
         pdf = (np.log(high_spin - np.log(abs(spinz)))/high_spin/2)
@@ -625,8 +664,8 @@ def inj_spin_pdf(key, high_spin, spinz):
         return pdf
 
     if key == 'aligned':
-        ''' Returns the PDF of mass when spins are aligned and uniformly distributed.
-            Component spins are independent for this case.
+        ''' Returns the PDF of mass when spins are aligned and uniformly 
+            distributed. Component spins are independent for this case.
         '''
 
         pdf = (np.ones_like(spinz) / 2 / high_spin)
@@ -642,7 +681,8 @@ def inj_spin_pdf(key, high_spin, spinz):
         return pdf
 
 def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp = 1):
-    ''' Estimate the probability density of the injections for the distance distribution.
+    ''' Estimate the probability density of the 
+        injections for the distance distribution.
 
         Parameters
         ----------
@@ -659,7 +699,8 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp = 1):
     distance = np.array(distance)
 
     if key == 'uniform':
-        ''' Returns the PDF at a distance when distance is uniformly distributed.
+        ''' Returns the PDF at a distance when 
+            distance is uniformly distributed.
         '''
 
         pdf = np.ones_like(distance)/(high_dist - low_dist)
@@ -669,7 +710,8 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp = 1):
         return pdf
 
     if key == 'dchirp':
-        ''' Returns the PDF at a distance when distance is uniformly distributed but scaled by the chirp mass
+        ''' Returns the PDF at a distance when distance is uniformly 
+            distributed but scaled by the chirp mass
         '''
 
         weight = (mchirp/_mch_BNS)**(5./6)

@@ -6,12 +6,13 @@ import glob
 from scipy import integrate, optimize
 from scipy.special import erf
 import numpy as np, h5py
+from numpy import log
 import scipy.stats as ss
 
 import bisect
 from pycbc.conversions import mchirp_from_mass1_mass2
 
-def process_full_data(hdffile, rhomin, mass1, mass2, min_tmplt_mass, max_tmplt_mass):
+def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
     """Read the zero and time-lagged triggers identified by BBH templates.
 
        Parameters
@@ -32,14 +33,16 @@ def process_full_data(hdffile, rhomin, mass1, mass2, min_tmplt_mass, max_tmplt_m
        dictionary
               containing foreground triggers and background information
     """
-    with h5py.File(hdffile, 'r') as bulk:
+    with h5py.File(fname, 'r') as bulk:
 
-        tmplt_bkg = bulk['background_exc/template_id'][:]
-        tmplt_fg = bulk['foreground/template_id'][:]
+        id_bkg = bulk['background_exc/template_id'][:]
+        id_fg = bulk['foreground/template_id'][:]
 
-        bound = np.sign(mass1[tmplt_bkg] - min_tmplt_mass) * np.sign(max_tmplt_mass - mass1[tmplt_bkg]) + np.sign(mass2[tmplt_bkg] - min_tmplt_mass) * np.sign(max_tmplt_mass - mass2[tmplt_bkg])
+        bound = np.sign((mass1[id_bkg] - lo_tlt_mass) * (hi_tlt_mass - mass1[id_bkg]))
+        bound += np.sign((mass2[id_bkg] - lo_tlt_mass) * (hi_tlt_mass - mass2[id_bkg]))
         idx_bkg = np.where(bound == 2)
-        bound = np.sign(mass1[tmplt_fg] - min_tmplt_mass) * np.sign(max_tmplt_mass - mass1[tmplt_fg]) + np.sign(mass2[tmplt_fg] - min_tmplt_mass) * np.sign(max_tmplt_mass - mass2[tmplt_fg])
+        bound = np.sign((mass1[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass1[id_fg]))
+        bound += np.sign((mass2[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass2[id_fg]))
         idx_fg = np.where(bound == 2)
 
                                                   
@@ -71,7 +74,7 @@ def merge_full_data(all_bkg):
 
     return merged_bkg
 
-def save_bkg_falloff(folder_name_statmap, folder_name_bank, path, rhomin, min_tmplt_mass, max_tmplt_mass):
+def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tlt_mass):
     ''' Read the STATMAP files to derive snr falloff for the background events. 
         Save the output to a txt file
         Bank file is also provided to restrict triggers to BBH templates.
@@ -86,21 +89,21 @@ def save_bkg_falloff(folder_name_statmap, folder_name_bank, path, rhomin, min_tm
                Destination where txt file is saved
         rhomin: float
                Minimum value of SNR threhold (will need including ifar)
-        min_tmplt_mass: float
-              Minimum mass for template for trigger to be considered
-        max_tmplt_mass: float
-              Maximum mass for template for trigger to be considered
+        lo_tlt_mass: float
+               Low mass for template for trigger to be considered
+        hi_tlt_mass: float
+               High mass for template for trigger to be considered
     '''
 
     full_data = {}
-    statmap_files = glob.glob(folder_name_statmap)
-    bank_files = glob.glob(folder_name_bank)
+    statmap_files = glob.glob(fname_statmap)
+    bank_files = glob.glob(fname_bank)
  
     i = 0
     for sfile in statmap_files:
         for bfile in bank_files:
             
-            if  sfile[-22:] == bfile[-22:]: # check if the encoded GPS match (better FIXME ?)
+            if  sfile[-22:] == bfile[-22:]: # (FIXME)
                 with h5py.File(bfile, 'r') as bulk:
                     
                     print "Loading zero-lag results from file: %s" % sfile
@@ -108,7 +111,8 @@ def save_bkg_falloff(folder_name_statmap, folder_name_bank, path, rhomin, min_tm
         
                     mass1_bank = bulk['mass1'][:]
                     mass2_bank = bulk['mass2'][:]
-                    full_data[str(i)] = process_full_data(sfile, rhomin, mass1_bank, mass2_bank, min_tmplt_mass, max_tmplt_mass)
+                    full_data[str(i)] = process_full_data(sfile, rhomin, 
+                           mass1_bank, mass2_bank, lo_tlt_mass, hi_tlt_mass)
                     i += 1
                 break
                        
@@ -119,13 +123,19 @@ def save_bkg_falloff(folder_name_statmap, folder_name_bank, path, rhomin, min_tm
 
     max_bg_stat = np.max(full_data['cstat_back_exc'])
     bg_bins = np.linspace(rhomin, max_bg_stat, 76)
-    bg_counts = np.histogram(full_data['cstat_back_exc'], weights=full_data['dec_factors'], bins=bg_bins)[0]
+    bg_counts = np.histogram(full_data['cstat_back_exc'], 
+                         weights=full_data['dec_factors'], bins=bg_bins)[0]
 
     zerolagstat = full_data['zerolagstat']
     coincs = zerolagstat[zerolagstat >= rhomin]
 
-    np.savetxt(path+"/background_bins.txt", np.column_stack([bg_bins[:-1], bg_bins[1:], bg_counts]), fmt='%.4e', header="bin min, bin max, count")
-    np.savetxt(path+"/coincs.txt", coincs, fmt='%.4e', header="coincs above threshold %.2f" % rhomin)
+    np.savetxt(path+"/background_bins.txt", 
+               np.column_stack([bg_bins[:-1], 
+               bg_bins[1:], bg_counts]), fmt='%.4e', 
+               header="bin min, bin max, count")
+
+    np.savetxt(path+"/coincs.txt", coincs, 
+               fmt='%.4e', header="coincs above threshold %.2f" % rhomin)
 
 def log_rho_bg(trigs, bins, counts):
     ''' Calculate the log of background fall-off
@@ -148,29 +158,29 @@ def log_rho_bg(trigs, bins, counts):
     
     N = sum(counts)
     
-    assert np.all(trigs >= np.min(bins)), 'cannot have triggers smaller than bin lower limit'
+    assert np.all(trigs >= np.min(bins)), 'triggers can not besmaller than bin lower limit'
 
     # If there are any triggers that are louder than the max bin, put one
-    # fictituous count in a bin that extends from the limits of the slide triggers
-    # out to the loudest trigger.
+    # fictituous count in a bin that extends from the limits of the slide 
+    # triggers out to the loudest trigger.
 
-    # If there is no counts for a foreground trigger put a fictious count in the background bin
+    # If there is no counts for a foreground trigger put a fictious count
+    # in the background bin
     if np.any(trigs >= np.max(bins)):
         N = N + 1
-        #log_plimit = -np.log(N) - np.log(np.max(trigs) - bins[-1])  NEEDS CHECKING
+        #log_plimit = -np.log(N) - np.log(np.max(trigs) - bins[-1]) CHECK IT
     
     log_rhos = []
     for t in trigs:
         if t >= np.max(bins):
-            log_rhos.append(-np.log(N)-np.log(np.max(trigs) - bins[-1]))
+            log_rhos.append(-log(N)-log(np.max(trigs) - bins[-1]))
         else:
             i = bisect.bisect(bins, t) - 1
 
             if counts[i] == 0:
                 counts[i] = 1
-            log_rhos.append(np.log(counts[i]) - np.log(bins[i+1] - bins[i]) - np.log(N))
+            log_rhos.append(log(counts[i]) - log(bins[i+1] - bins[i]) - log(N))
     return np.array(log_rhos)
-
 
 def log_rho_fg_mc(t, injstats, bins):
     counts, bins = np.histogram(injstats, bins)
@@ -183,7 +193,7 @@ def log_rho_fg_mc(t, injstats, bins):
     
     tinds = np.searchsorted(bins, t) - 1
     
-    return np.log(dens[tinds])
+    return log(dens[tinds])
 
 def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
     ''' 
@@ -192,7 +202,8 @@ def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
 
     def log_sum_exp(u, v):
 
-        lse = np.maximum(u, v) + np.log(np.exp(u - np.maximum(u, v)) + np.exp(v - np.maximum(u, v)))
+        lse = log(np.exp(u - np.maximum(u, v)) + np.exp(v - np.maximum(u, v)))
+        lse += np.maximum(u, v)
 
         return lse
 
@@ -208,7 +219,7 @@ def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
    
         Lf = Rf_sel * vt
 
-        log_Lf, log_Lb = np.log(Lf), np.log(Lb)
+        log_Lf, log_Lb = log(Lf), log(Lb)
     
         plR = 0
         for lfr in log_fg_ratios:
@@ -258,7 +269,7 @@ def fit(R):
             alpha, mu, sigma = l
             return kde(x)- skew(x, alpha, mu, sigma)
     
-    R = np.log(R)
+    R = log(R)
     xs = np.linspace(min(R), max(R), 200)
     
     mu_norm, sigma_norm = np.mean(R), np.std(R)
@@ -287,7 +298,7 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
             Large number of samples (may need fixing)
     '''
     
-    nsamp = 10000000
+    nsamp = 100000000
     lRu = np.random.uniform(minrp, maxrp, nsamp)
     plRu = ss.skewnorm.pdf(lRu, alpha, mu, sigma)
     rndn = np.random.random(nsamp)
@@ -329,13 +340,14 @@ def prob_lnm(m1, m2, s1z, s2z, **kwargs):
     max_mtotal = min_mass + max_mass
     m1, m2 = np.array(m1), np.array(m2)
     
-    C_lnm = integrate.quad(lambda x: (np.log(max_mtotal - x) - np.log(min_mass))/x, min_mass, max_mass)[0]
+    C_lnm = integrate.quad(lambda x: (log(max_mtotal - x) - log(min_mass))/x, min_mass, max_mass)[0]
     
     xx = np.minimum(m1, m2)
     m1 = np.maximum(m1, m2)
     m2 = xx
     
-    bound =np.sign(max_mtotal - m1 - m2) + np.sign(max_mass - m1) * np.sign(m2 - min_mass)
+    bound = np.sign(max_mtotal - m1 - m2) 
+    bound += np.sign(max_mass - m1) * np.sign(m2 - min_mass)
     idx = np.where(bound != 2)
     
     p_m1_m2 = (1/C_lnm)*(1./m1)*(1./m2)
@@ -370,18 +382,22 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
     max_mtotal = min_mass + max_mass    
     m1, m2 = np.array(m1), np.array(m2)
     
-    C_imf = max_mass**(alpha + 1)/(alpha + 1) - min_mass**(alpha + 1)/(alpha + 1)
+    C_imf = max_mass**(alpha + 1)/(alpha + 1) 
+    C_imf -= min_mass**(alpha + 1)/(alpha + 1)
     
     xx = np.minimum(m1, m2)
     m1 = np.maximum(m1, m2)
     m2 = xx    
     
-    bound = np.sign(max_mtotal - m1 - m2) + np.sign(max_mass - m1) * np.sign(m2 - min_mass)
+    bound = np.sign(max_mtotal - m1 - m2) 
+    bound += np.sign(max_mass - m1) * np.sign(m2 - min_mass)
     idx = np.where(bound != 2)
     
     p_m1_m2 = np.zeros_like(m1)
-    p_m1_m2[m1 <= max_mtotal/2.] = (1./C_imf) * m1[m1 <= max_mtotal/2.]**alpha /(m1[m1 <= max_mtotal/2.] - min_mass)
-    p_m1_m2[m1 > max_mtotal/2.] = (1./C_imf) * m1[m1 > max_mtotal/2.]**alpha /(max_mass - m1[m1 > max_mtotal/2.])
+    idx = np.where(m1 <= max_mtotal/2.)
+    p_m1_m2[idx] = (1./C_imf) * m1[idx]**alpha /(m1[idx] - min_mass)
+    idx = np.where(m1 > max_mtotal/2.)
+    p_m1_m2[idx] = (1./C_imf) * m1[idx]**alpha /(max_mass - m1[idx])
     p_m1_m2[idx] = 0
     
     return p_m1_m2/2.
@@ -412,7 +428,7 @@ def draw_imf_samples(**kwargs):
     a = (max_mass/min_mass)**(alpha_salpeter + 1.0) - 1.0
     beta = 1.0 / (alpha_salpeter + 1.0)
     
-    k = nsamples * int(1.5 + np.log(1 + 100./nsamples))
+    k = nsamples * int(1.5 + log(1 + 100./nsamples))
     aa = min_mass * (1.0 + a * np.random.random(k))**beta
     bb = np.random.uniform(min_mass, aa, k)
     
@@ -442,10 +458,10 @@ def draw_lnm_samples(**kwargs):
     min_mass = kwargs.get('min_mass', 5.)
     max_mass = kwargs.get('max_mass', 95.)
     max_mtotal = min_mass + max_mass    
-    lnmmin = np.log(min_mass)
-    lnmmax = np.log(max_mass)
+    lnmmin = log(min_mass)
+    lnmmax = log(max_mass)
     
-    k = nsamples * int(1.5 + np.log(1 + 100./nsamples))
+    k = nsamples * int(1.5 + log(1 + 100./nsamples))
     aa = np.exp(np.random.uniform(lnmmin, lnmmax, k))
     bb = np.exp(np.random.uniform(lnmmin, lnmmax, k))
   
