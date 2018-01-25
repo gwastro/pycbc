@@ -34,12 +34,13 @@ import pycbc.version
 
 import os
 import h5py
-import pystan
 import numpy as np
 import scipy.stats as ss
 from pycbc.population import scale_injections as si
 from pycbc.population import rates_functions as rf
 import matplotlib.pyplot as plt
+
+from numpy import logaddexp, log, newaxis, expm1
 
 import seaborn as sns
 import matplotlib as mpl
@@ -107,22 +108,14 @@ for dist in distrs:
     inj_falloff[dist] = si.get_accumulated_falloff(vt[dist])
 
 #Include the calibration uncertainity
-vt_err_w_cal_uncrt = {}
+sig_vt_w_cal_uncrt = {}
 for dist in distrs:
 
-    vt_err_w_cal_uncrt[dist] = np.sqrt((vol_time[dist]*3*opts.cal_err/100.)**2 + sig_vt[dist]**2)
-    
-#for dist in distrs:
-#    hist4, bins= np.histogram(snr_falloff[dist], bins = 30, density=True) 
-#    width, center = (bins[1] - bins[0]), (bins[:-1] + bins[1:]) / 2
-#    plt.bar(center, hist4, align='center', width=width, alpha = 0.8, label = label[dist])
-#    plt.legend(loc = 'best')
-#plt.title('SNR Fall Off') 
-
+    sig_vt_w_cal_uncrt[dist] = np.sqrt((vol_time[dist]*3*opts.cal_err/100.)**2 + sig_vt[dist]**2)
 
 #Sabe background data and coincidences
-print opts.statmap_folder, opts.bank_folder, path, opts.thr_val, opts.min_tmplt_mass
-rf.save_bkg_falloff(opts.statmap_folder, opts.bank_folder, path, 8.0, 5.0)
+#print opts.statmap_folder, opts.bank_folder, path, opts.thr_val, opts.min_tmplt_mass, opts.max_tmplt_mass
+rf.save_bkg_falloff(opts.statmap_folder, opts.bank_folder, path, opts.thr_val, opts.min_tmplt_mass, opts.max_tmplt_mass)
 
 #Load background data and coincidences/ make some plots
 coincs = np.loadtxt(path + "/coincs.txt")
@@ -133,43 +126,30 @@ fg_stats = np.concatenate([inj_falloff[dist] for dist in distrs])
 fg_bins = np.logspace(np.log10(opts.thr_val), np.log10(np.max(fg_stats)), 101)
 fg_stats = fg_stats[fg_stats > opts.thr_val]
 
-ts = np.linspace(opts.thr_val, 11.0, 1000)
-plt.figure()
-plt.plot(ts, np.exp(rf.log_rho_bg(ts, bg_bins, bg_counts)), label=r'$p_0$')
-plt.plot(ts, np.exp(rf.log_rho_fg_mc(ts, fg_stats, fg_bins)), label=r'$p_1$')
-plt.yscale('log')
-plt.xlabel(r"$x'$")
-plt.ylabel(r"$p(x')$")
-plt.legend(loc='lower left')
-plt.axis(ymin=1e-3)
-plt.tight_layout()
-plt.savefig(path+'/fg-bg.png')
+log_fg_ratios = rf.log_rho_fg_mc(coincs, fg_stats, fg_bins) - rf.log_rho_bg(coincs, bg_bins, bg_counts)
 
 #Load prior samples and fit a skew-log-normal to it
 with h5py.File(opts.prior_samples, "r") as f:
     Rfl = np.array(f['flat/Rf'])
     Rpl = np.array(f['power-law/Rf'])
     
-alpha, mu, sigma = {}, {}, {}
+prior, alpha, mu, sigma, minrp, maxrp = {}, {}, {}, {}, {}, {}
+prior['lnm'], prior['imf'] = Rfl, Rpl
 alpha['lnm'], mu['lnm'], sigma['lnm'] = rf.fit(Rfl)
 alpha['imf'], mu['imf'], sigma['imf'] = rf.fit(Rpl)
+minrp['lnm'], maxrp['lnm'] = min(Rfl), max(Rfl)
+minrp['imf'], maxrp['imf'] = min(Rpl), max(Rpl)
 
 #Estimate rates
-rate_data = {}
 rate_samples = {}
 
-log_fg_ratios = rf.log_rho_fg_mc(coincs, fg_stats, fg_bins) - rf.log_rho_bg(coincs, bg_bins, bg_counts)
 for dist in distrs:
-    rate_data[dist] = {'Ncoincs': len(log_fg_ratios),
-           'log_fg_ratios': log_fg_ratios,
-           'mu_vt': vol_time[dist]/1e9,
-           'sigma_vt': sig_vt[dist]/1e9,
-           'alpha': alpha[dist],
-           'mu': mu[dist],
-           'sigma': vt_err_w_cal_uncrt[dist]}
-    rate_fit = pystan.stan(file=opts.stan_file, data=rate_data[dist], iter=20000)
-    rate_samples[dist] = rate_fit.extract(permuted=True)
-    rate_fit
+    
+    rate_samples[dist] = {}
+    mu_log_vt = np.log(vol_time[dist]/1e9)
+    sigma_log_vt = sig_vt_w_cal_uncrt[dist]/vol_time[dist]
+    Rf_samp = rf.skew_lognormal_samples(alpha[dist], mu[dist], sigma[dist], minrp[dist], maxrp[dist])
+    rate_samples[dist]['Rf'], rate_samples[dist]['Lf'], rate_samples[dist]['Lb'] = rf.fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf_samp, max(fg_stats))
 
 r50, r95, r05 = {}, {}, {}    
 for dist in distrs:
@@ -191,47 +171,35 @@ with h5py.File(path+'/rate-posterior.hdf5', 'w') as out:
     d.create_dataset('newsnr', data=coincs, compression='gzip')
 
 # Make prior/posterior plot
-post_alpha, post_mu, post_sigma = {}, {}, {}
-post_alpha['lnm'], post_mu['lnm'], post_sigma['lnm'] = rf.fit(rate_samples['lnm']['Rf'])
-post_alpha['imf'], post_mu['imf'], post_sigma['imf'] = rf.fit(rate_samples['imf']['Rf'])
-
 plt.figure()
-log_R = np.log(Rfl)
-xs = np.linspace(min(log_R), max(log_R), 200)
-plt.plot(xs, ss.skewnorm.pdf(xs, alpha['lnm'], mu['lnm'], sigma['lnm']), '--', label='Flat Prior', color=sns.color_palette()[0])
+for ii, dist in enumerate(distrs):
+    post_alpha, post_mu, post_sigma = rf.fit(rate_samples[dist]['Rf'])
 
-log_R = np.log(Rpl)
-xs = np.linspace(min(log_R), max(log_R), 200)
-plt.plot(xs, ss.skewnorm.pdf(xs, alpha['imf'], mu['imf'], sigma['imf']), '--', label='Power Prior', color=sns.color_palette()[1])
+    log_R = np.log(prior[dist])
+    xs = np.linspace(min(log_R), max(log_R), 200)
+    plt.plot(xs, ss.skewnorm.pdf(xs, alpha[dist], mu[dist], sigma[dist]), '--', label=label[dist] + ' Prior', color=sns.color_palette()[ii])
+    plt.plot(xs, ss.skewnorm.pdf(xs, post_alpha, post_mu, post_sigma), label=label[dist] + ' Posterior', color=sns.color_palette()[ii])
 
-log_R = np.log(Rfl)
-xs = np.linspace(min(log_R), max(log_R), 200)
-plt.plot(xs, ss.skewnorm.pdf(xs, post_alpha['lnm'], mu['lnm'], post_sigma['lnm']), label='Flat Posterior', color=sns.color_palette()[0])
-
-log_R = np.log(Rpl)
-xs = np.linspace(min(log_R), max(log_R), 200)
-plt.plot(xs, ss.skewnorm.pdf(xs, post_alpha['imf'], post_mu['imf'], post_sigma['imf']), label='Power Posterior', color=sns.color_palette()[1])
 
 plt.xlabel(r'$log(R)$ ($\mathrm{Gpc}^{-3} \, \mathrm{yr}^{-1}$)')
-plt.ylabel(r'$R p(R)$')
+plt.ylabel(r'$p(R)$')
 
 plt.legend(loc='best')
 plt.savefig(path+'/rate_prior_posterior.png')
 
 #Estimate p_astro for top 5 events
-
-from numpy import logaddexp, log, newaxis, expm1
-log_pastros_imf = logaddexp.reduce(log(rate_samples['imf']['Lf'][:, newaxis]) + log_fg_ratios[newaxis,:] - logaddexp(log(rate_samples['imf']['Lf'][:, newaxis]) + log_fg_ratios[newaxis,:], log(rate_samples['imf']['Lb'][:, newaxis])), axis=0) - log(rate_samples['imf']['Lf'].shape[0])
-log_pastros_lnm = logaddexp.reduce(log(rate_samples['lnm']['Lf'][:, newaxis]) + log_fg_ratios[newaxis,:] - logaddexp(log(rate_samples['lnm']['Lf'][:, newaxis]) + log_fg_ratios[newaxis,:], log(rate_samples['lnm']['Lb'][:, newaxis])), axis=0) - log(rate_samples['lnm']['Lf'].shape[0])
+p_astro = []
 plt.figure()
-plt.plot(log_fg_ratios, -expm1(log_pastros_imf), '.', label='IMF')
-plt.plot(log_fg_ratios, -expm1(log_pastros_lnm), '.', label='LNM')
+for ii, dist in enumerate(distrs):
+    log_pastros = logaddexp.reduce(log(rate_samples[dist]['Lf'][:, newaxis]) + log_fg_ratios[newaxis,:] - logaddexp(log(rate_samples[dist]['Lf'][:, newaxis]) + log_fg_ratios[newaxis,:], log(rate_samples[dist]['Lb'][:, newaxis])), axis=0) - log(rate_samples[dist]['Lf'].shape[0])
+    p_astro.append(1 + expm1(np.sort(log_pastros)[::-1]))
+
+    plt.plot(log_fg_ratios, -expm1(log_pastros), '.', label=label[dist], color=sns.color_palette()[ii])
+
 plt.xlabel(r'$\log p(x\mid f)/p(x\mid b)$')
 plt.ylabel(r'$1-p_\mathrm{astro}$')
 plt.legend(loc='best')
 plt.yscale('log')
 plt.savefig(path+'/p_astro.png')
-
-p_astro = [1 + expm1(np.sort(log_pastros_imf)[::-1]), 1 + expm1(np.sort(log_pastros_lnm)[::-1])]
    
 print p_astro 
