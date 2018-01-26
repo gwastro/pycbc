@@ -44,8 +44,7 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
         bound = np.sign((mass1[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass1[id_fg]))
         bound += np.sign((mass2[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass2[id_fg]))
         idx_fg = np.where(bound == 2)
-
-                                                  
+                                                 
         zerolagstat = bulk['foreground/stat'][:][idx_fg]
         cstat_back_exc = bulk['background_exc/stat'][:][idx_bkg]
         dec_factors = bulk['background_exc/decimation_factor'][:][idx_bkg]
@@ -236,15 +235,18 @@ def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
 
     return Rf_sel[idx], Lf[idx], Lb
 
-    
+def _optm(x, alpha, mu, sigma):
+    '''Return probability density of skew-lognormal
+       See scipy.optimize.curve_fit
+    '''
+    return ss.skewnorm.pdf(x, alpha, mu, sigma)
+
 def fit(R):
     ''' Fit skew - lognormal to the rate samples achived from a prior analysis
-
         Parameters
         ----------
         R: array
            Rate samples
-
         Returns
         -------
         ff[0]: float
@@ -254,35 +256,21 @@ def fit(R):
         ff[2]: float
             The standard deviation
     '''
-    
-    def pdf(x):
-        return 1/np.sqrt(2*np.pi) * np.exp(-x**2/2)
 
-    def cdf(x):
-        return (1 + erf(x/np.sqrt(2))) / 2
-
-    def skew(x, alpha, mu, sigma):
-        t = (x - mu) / sigma
-        return 2 / sigma * pdf(t) * cdf(alpha*t)
-
-    def optm(l, y, x):
-            alpha, mu, sigma = l
-            return kde(x)- skew(x, alpha, mu, sigma)
-    
-    R = log(R)
-    xs = np.linspace(min(R), max(R), 200)
-    
+    R = np.log(R)
     mu_norm, sigma_norm = np.mean(R), np.std(R)
     
+    xs = np.linspace(min(R), max(R), 200)    
     kde = ss.gaussian_kde(R)
-    p_xs = kde(xs)
-    
-    ff = optimize.leastsq(optm, [0.1, mu_norm, sigma_norm], args=(p_xs, xs))[0]
+    pxs = kde(xs)
+
+    # Initial guess has been taken as the mean and std-dev of the data
+    # And a guess assuming small skewness
+    ff = optimize.curve_fit(_optm, xs, pxs, p0 = [0.1, mu_norm, sigma_norm])[0]
     return ff[0], ff[1], ff[2]
 
 def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
     ''' Returns a large number of Skew lognormal samples
-
         Parameters
         ----------
         alpha: float
@@ -295,7 +283,6 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
            Minimum value for the samples
         maxrp: float
            Maximum value for the samples
-
         Returns
         -------
         Rfs: array
@@ -312,7 +299,6 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
     Rfs = np.exp(log_Rf)
     
     return Rfs
-
 
 # The flat in log and power-law mass distribution models  #
 
@@ -393,7 +379,7 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
     m1 = np.maximum(m1, m2)
     m2 = xx
     
-    bound = np.sign(max_mtotal - m1 - m2) 
+    bound = np.sign(max_mtotal - m1 - m2)
     bound += np.sign(max_mass - m1) * np.sign(m2 - min_mass)
     idx = np.where(bound != 2)
     
@@ -461,7 +447,7 @@ def draw_lnm_samples(**kwargs):
     nsamples = kwargs.get('nsamples', 1)
     min_mass = kwargs.get('min_mass', 5.)
     max_mass = kwargs.get('max_mass', 95.)
-    max_mtotal = min_mass + max_mass    
+    max_mtotal = min_mass + max_mass
     lnmmin = log(min_mass)
     lnmmax = log(max_mass)
     
