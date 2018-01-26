@@ -510,7 +510,7 @@ common_gen_equal_sampled_params = ParameterList([f_lower]) + \
 # the following are parameters needed to generate an FD waveform
 fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
     common_gen_equal_sampled_params + ParameterList([f_final, f_final_func])
-fd_waveform_params_full = fd_waveform_params + cbc_optional_params 
+fd_waveform_params_full = fd_waveform_params + cbc_optional_params
 
 # the following are parameters needed to generate a TD waveform
 td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
