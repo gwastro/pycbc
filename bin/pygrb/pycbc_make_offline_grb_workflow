@@ -167,7 +167,8 @@ else:
     datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow,
             sciSegs, dfDir, segsFileList)
 
-ifos = sciSegs.keys()
+ifos = sorted(sciSegs.keys())
+ifo = ifos[0]
 wflow.ifos = ifos
 datafind_veto_files = _workflow.FileList([])
 
@@ -206,9 +207,9 @@ if wflow.cp.has_option("workflow-condition_strain", "do-autogating"):
         datafind_files.extend(_workflow.FileList([gated_cache]))
 
 datafind_veto_files.extend(datafind_files)
-ifo = sciSegs.keys()[0]
-ifo_list = sciSegs.keys()
-ifos = ''.join(sciSegs.keys())
+ifo_list = sorted(sciSegs.keys())
+ifo = ifo_list[0]
+ifos = ''.join(ifo_list)
 wflow.ifos = ifos
 
 # Is this an IPN GRB?

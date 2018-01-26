@@ -285,7 +285,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     # will require a bit of effort here ....
 
     cp = workflow.cp
-    ifos = science_segs.keys()
+    ifos = sorted(science_segs.keys())
     match_fltr_exe = os.path.basename(cp.get('executables','inspiral'))
 
     # List for holding the output
@@ -295,16 +295,13 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
         from pylal.legacy_ihope import select_legacy_matchedfilter_class
+        from pycbc.workflow.grb_utils import get_fermi_grid_scale
         exe_class = select_legacy_matchedfilter_class(match_fltr_exe)
         cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
         cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
-        if cp.has_option('jitter_skyloc', 'apply-fermi-error'):
-            from pycbc.workflow.grb_utils import get_fermi_grid_scale
-            cp.set('inspiral', 'sky-error',
-                   str(get_fermi_grid_scale(float(cp.get('workflow',
-                                                         'sky-error')))))
-        else:
-            cp.set('inspiral', 'sky-error', cp.get('workflow', 'sky-error'))
+        cp.set('inspiral', 'sky-error',
+               str(get_fermi_grid_scale(float(cp.get('workflow',
+                                                     'sky-error')))))
         cp.set('inspiral', 'trigger-time', cp.get('workflow', 'trigger-time'))
         cp.set('inspiral', 'block-duration',
                str(abs(science_segs[ifos[0]][0]) - \
@@ -318,10 +315,9 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
             slide_num = int(tags[-1].replace("slide", ""))
             logging.info("Setting up matched-filtering for slide {}"
                          .format(slide_num))
-            num_ifos = range(len(ifos))
             slide_shift = int(cp.get("inspiral", "segment-duration"))
-            time_slide_dict = {ifo: (slide_num + 1) * num_ifos.pop() *
-                               slide_shift for ifo in ifos}
+            time_slide_dict = {ifo: (slide_num + 1) * ix * 256
+                               for ix, ifo in enumerate(ifos)}
             multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
                                          science_segs, datafind_outs,
                                          output_dir, parents=tmplt_banks,
