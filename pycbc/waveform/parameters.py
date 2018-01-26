@@ -465,14 +465,16 @@ location_params = ParameterList([tc, ra, dec, polarization])
 # parameters describing the orientation of a binary w.r.t. the radiation
 # frame. Note: we include distance here, as it is typically used for generating
 # waveforms.
-orientation_params = ParameterList([distance, coa_phase, inclination, long_asc_nodes, mean_per_ano])
+orientation_params = ParameterList\
+    ([distance, coa_phase, inclination, long_asc_nodes, mean_per_ano])
 
 # the extrinsic parameters of a waveform
 extrinsic_params = orientation_params + location_params
 
 # intrinsic parameters of a CBC waveform, required by waveform generation
 cbc_intrinsic_params = ParameterList\
-    ([mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z])
+    ([mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+      eccentricity])
 
 # intrinsic parameters of a CBC waveform, optional for waveform generation
 # if not given, the waveform generator will choose a default value according
