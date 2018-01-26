@@ -470,15 +470,21 @@ orientation_params = ParameterList([distance, coa_phase, inclination, long_asc_n
 # the extrinsic parameters of a waveform
 extrinsic_params = orientation_params + location_params
 
-# intrinsic parameters of a CBC waveform
-cbc_intrinsic_params = ParameterList([
-    mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-    eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2,
-    lambda_octu1, lambda_octu2, quadfmode1, quadfmode2,
-    octufmode1, octufmode2])
+# intrinsic parameters of a CBC waveform, required by waveform generation
+cbc_intrinsic_params = ParameterList\
+    ([mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z])
+
+# intrinsic parameters of a CBC waveform, optional for waveform generation
+# if not given, the waveform generator will choose a default value according
+# to its own documentation, or does not use the term.
+cbc_optional_params = ParameterList\
+    ([lambda1, lambda2, dquad_mon1, dquad_mon2, lambda_octu1, lambda_octu2,
+      quadfmode1, quadfmode2, octufmode1, octufmode2])
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params
+cbc_rframe_params_full = cbc_intrinsic_params + orientation_params + \
+    cbc_optional_params
 
 # calibration parameters
 calibration_params = ParameterList([
@@ -502,13 +508,17 @@ common_gen_equal_sampled_params = ParameterList([f_lower]) + \
 # the following are parameters needed to generate an FD waveform
 fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
     common_gen_equal_sampled_params + ParameterList([f_final, f_final_func])
+fd_waveform_params_full = fd_waveform_params + cbc_optional_params 
 
 # the following are parameters needed to generate a TD waveform
 td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
     common_gen_equal_sampled_params + ParameterList([numrel_data]) + \
     flags_generation_params
+td_waveform_params_full = td_waveform_params + cbc_optional_params
 
 # the following are parameters needed to generate a frequency series waveform
 fd_waveform_sequence_params = cbc_rframe_params + \
     ParameterList([sample_points]) + common_generation_params + \
     flags_generation_params
+fd_waveform_sequence_params_full = fd_waveform_sequence_params + \
+    cbc_optional_params
