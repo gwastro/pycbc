@@ -57,9 +57,6 @@ parser.add_argument('--bank-folder', dest='bank_folder', required=True,
 parser.add_argument('--statmap-folder', dest='statmap_folder', required=True,
                   help="Folder containing the STATMAP files (files that save"
                             " background and foregound trigger information.")
-parser.add_argument('--stan-file', dest='stan_file', required=True,
-                  help="Stan file to perform the fit over simulation and "
-                                                        "background events.")
 parser.add_argument('--prior-samples', dest='prior_samples', required=True,
                   help="File storing samples of prior for the analysis - "
                                       "posterior from the previous analysis")
@@ -82,7 +79,7 @@ parser.add_argument('--max-tmplt-mass', dest='max_tmplt_mass', type = float,
                  required=True, help="Maximum mass in the template considered"
                                               " for trigger identification.")
 parser.add_argument('--calibration-error', dest='cal_err', type=float, 
-                 required=False, default = 5.0, help="Percentage calibration"
+                 required=False, default = 3.0, help="Percentage calibration"
                                        " errors in measurement of distance.")
     
 opts = parser.parse_args()
@@ -118,10 +115,10 @@ for dist in distrs:
     inj_falloff[dist] = si.get_accumulated_falloff(vt[dist])
 
 #Include the calibration uncertainity
-sig_vt_w_cal_uncrt = {}
+sigma_w_cal_uncrt = {}
 for dist in distrs:
-    vol, vol_err, cal_err = vol_time[dist], vol_time[dist], opts.cal_err
-    sig_vt_w_cal_uncrt[dist] = np.sqrt((vol*3*cal_err/100.)**2 + vol_err**2)
+    vol, vol_err, cal_err = vol_time[dist], sig_vt[dist], opts.cal_err
+    sigma_w_cal_uncrt[dist] = np.sqrt((3*cal_err/100.)**2 + (vol_err/vol)**2)
 
 #Sabe background data and coincidences
 #print opts.statmap_folder, opts.bank_folder, path, opts.thr_val
@@ -150,19 +147,17 @@ prior, alpha, mu, sigma, minrp, maxrp = {}, {}, {}, {}, {}, {}
 prior['lnm'], prior['imf'] = Rfl, Rpl
 alpha['lnm'], mu['lnm'], sigma['lnm'] = rf.fit(Rfl)
 alpha['imf'], mu['imf'], sigma['imf'] = rf.fit(Rpl)
-minrp['lnm'], maxrp['lnm'] = min(Rfl), max(Rfl)
-minrp['imf'], maxrp['imf'] = min(Rpl), max(Rpl)
 
 #Estimate rates
 rate_samples = {}
 
 for dist in distrs:
     
-    rate_samples[dist] = {}
+    rate_samples[dist], log_R = {}, log(prior[dist])
     mu_log_vt = np.log(vol_time[dist]/1e9)
-    sigma_log_vt = sig_vt_w_cal_uncrt[dist]/vol_time[dist]
+    sigma_log_vt = sigma_w_cal_uncrt[dist]
     Rf_samp = rf.skew_lognormal_samples(alpha[dist], mu[dist], 
-                        sigma[dist], minrp[dist], maxrp[dist])
+                        sigma[dist], min(log_R), max(log_R))
     rate_samples[dist]['Rf'], rate_samples[dist]['Lf'], rate_samples[dist]['Lb'] = \
     rf.fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf_samp, max(fg_stats))
 
