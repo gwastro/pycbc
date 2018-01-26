@@ -44,7 +44,7 @@ def read_injections(folder_name):
         key = str(i)
         injections[key] = process_injections(all_files[i])
         injections[key]['file_name'] = all_files[i]
-        
+
         mass1, mass2 = injections[key]['mass1'], injections[key]['mass2']
         mchirp = m1m2tomch(mass1, mass2)
         injections[key]['chirp_mass'] = mchirp
@@ -73,7 +73,7 @@ def read_injections(folder_name):
         if p_thr < pvalue:
             injections[key]['m_dist'] = 'totalMass'
             
-        stat, pvalue = kstest(mass1, cdf_log)
+        pvalue = kstest(mass1, cdf_log)[1]
         if p_thr < pvalue:
             injections[key]['m_dist'] = 'log'
         
@@ -617,7 +617,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
             himass: higher component mass
          '''
         
-        bound = np.sign((himass - mass1)*(mass1 - lomass)) 
+        bound = np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
         idx = np.where(bound != 2)
         pdf = 1 / (log(himass) - log(lomass)) / (log(himass_2) - log(lomass_2))
