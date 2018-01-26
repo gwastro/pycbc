@@ -54,8 +54,8 @@ class NoWaveformError(Exception):
 fail_tolerant_waveform_generation = True
 
 default_args = \
-    (parameters.fd_waveform_params.default_dict(include_nulls=True) +
-     parameters.td_waveform_params).default_dict(include_nulls=True)
+    (parameters.fd_waveform_params_full.default_dict(include_nulls=True) +
+     parameters.td_waveform_params_full).default_dict(include_nulls=True)
 
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
 
