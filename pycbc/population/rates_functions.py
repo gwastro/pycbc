@@ -75,7 +75,7 @@ def merge_full_data(all_bkg):
     return merged_bkg
 
 def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tlt_mass):
-    ''' Read the STATMAP files to derive snr falloff for the background events. 
+    ''' Read the STATMAP files to derive snr falloff for the background events.
         Save the output to a txt file
         Bank file is also provided to restrict triggers to BBH templates.
 
@@ -111,7 +111,7 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tl
         
                     mass1_bank = bulk['mass1'][:]
                     mass2_bank = bulk['mass2'][:]
-                    full_data[str(i)] = process_full_data(sfile, rhomin, 
+                    full_data[str(i)] = process_full_data(sfile, rhomin,
                            mass1_bank, mass2_bank, lo_tlt_mass, hi_tlt_mass)
                     i += 1
                 break
@@ -123,18 +123,18 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tl
 
     max_bg_stat = np.max(full_data['cstat_back_exc'])
     bg_bins = np.linspace(rhomin, max_bg_stat, 76)
-    bg_counts = np.histogram(full_data['cstat_back_exc'], 
+    bg_counts = np.histogram(full_data['cstat_back_exc'],
                          weights=full_data['dec_factors'], bins=bg_bins)[0]
 
     zerolagstat = full_data['zerolagstat']
     coincs = zerolagstat[zerolagstat >= rhomin]
 
-    np.savetxt(path+"/background_bins.txt", 
-               np.column_stack([bg_bins[:-1], 
-               bg_bins[1:], bg_counts]), fmt='%.4e', 
+    np.savetxt(path+"/background_bins.txt",
+               np.column_stack([bg_bins[:-1],
+               bg_bins[1:], bg_counts]), fmt='%.4e',
                header="bin min, bin max, count")
 
-    np.savetxt(path+"/coincs.txt", coincs, 
+    np.savetxt(path+"/coincs.txt", coincs,
                fmt='%.4e', header="coincs above threshold %.2f" % rhomin)
 
 def log_rho_bg(trigs, bins, counts):
@@ -161,7 +161,7 @@ def log_rho_bg(trigs, bins, counts):
     assert np.all(trigs >= np.min(bins)), 'triggers can not besmaller than bin lower limit'
 
     # If there are any triggers that are louder than the max bin, put one
-    # fictituous count in a bin that extends from the limits of the slide 
+    # fictituous count in a bin that extends from the limits of the slide
     # triggers out to the loudest trigger.
 
     # If there is no counts for a foreground trigger put a fictious count
@@ -196,7 +196,7 @@ def log_rho_fg_mc(t, injstats, bins):
     return log(dens[tinds])
 
 def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
-    ''' 
+    '''
     Function to fit the likelihood Fixme
     '''
 
@@ -252,7 +252,7 @@ def fit(R):
         ff[1]: float
             The mean
         ff[2]: float
-            The standard deviation 
+            The standard deviation
     '''
     
     def pdf(x):
@@ -291,6 +291,10 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
            Mean of the distribution
         sigma: float
            Scale of the distribution
+        minrp: float
+           Minimum value for the samples
+        maxrp: float
+           Maximum value for the samples
 
         Returns
         -------
@@ -346,7 +350,7 @@ def prob_lnm(m1, m2, s1z, s2z, **kwargs):
     m1 = np.maximum(m1, m2)
     m2 = xx
     
-    bound = np.sign(max_mtotal - m1 - m2) 
+    bound = np.sign(max_mtotal - m1 - m2)
     bound += np.sign(max_mass - m1) * np.sign(m2 - min_mass)
     idx = np.where(bound != 2)
     
@@ -379,15 +383,15 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
     min_mass = kwargs.get('min_mass', 5.)
     max_mass = kwargs.get('max_mass', 95.)
     alpha = kwargs.get('alpha', -2.35)
-    max_mtotal = min_mass + max_mass    
+    max_mtotal = min_mass + max_mass
     m1, m2 = np.array(m1), np.array(m2)
     
-    C_imf = max_mass**(alpha + 1)/(alpha + 1) 
+    C_imf = max_mass**(alpha + 1)/(alpha + 1)
     C_imf -= min_mass**(alpha + 1)/(alpha + 1)
     
     xx = np.minimum(m1, m2)
     m1 = np.maximum(m1, m2)
-    m2 = xx    
+    m2 = xx
     
     bound = np.sign(max_mtotal - m1 - m2) 
     bound += np.sign(max_mass - m1) * np.sign(m2 - min_mass)
