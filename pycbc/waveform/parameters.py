@@ -244,35 +244,41 @@ spin_sz = Parameter("spin_sz",
                 description="The z component of the dimensionless spin of the "
                             "secondary object.")
 lambda1 = Parameter("lambda1",
-                dtype=float, default=0., label=r"$\lambda_1$",
+                dtype=float, default=None, label=r"$\lambda_1$",
                 description="The tidal deformability parameter of object 1.")
 lambda2 = Parameter("lambda2",
-                dtype=float, default=0., label=r"$\lambda_2$",
+                dtype=float, default=None, label=r"$\lambda_2$",
                 description="The tidal deformability parameter of object 2.")
 dquad_mon1 = Parameter("dquad_mon1",
-                dtype=float, default=0., label=r"$qm_1$",
+                dtype=float, default=None, label=r"$qm_1$",
                 description="Quadrupole-monopole parameter / m_1^5 -1.")
 dquad_mon2 = Parameter("dquad_mon2",
-                dtype=float, default=0., label=r"$qm_2$",
+                dtype=float, default=None, label=r"$qm_2$",
                 description="Quadrupole-monopole parameter / m_2^5 -1.")
 lambda_octu1 = Parameter("lambda_octu1",
-                dtype=float, default=0., label=r"$\Lambda_3^{(1)}$",
-                description="The octupolar tidal deformability parameter of object 1.")
+                dtype=float, default=None, label=r"$\Lambda_3^{(1)}$",
+                description="The octupolar tidal deformability parameter of "
+                            "object 1.")
 lambda_octu2 = Parameter("lambda_octu2",
-                dtype=float, default=0., label=r"$\Lambda_3^{(2)}$",
-                description="The octupolar tidal deformability parameter of object 2.")
+                dtype=float, default=None, label=r"$\Lambda_3^{(2)}$",
+                description="The octupolar tidal deformability parameter of "
+                            "object 2.")
 quadfmode1 = Parameter("quadfmode1",
-                dtype=float, default=0., label=r"$m_1 \omega_{02}^{(1)}$",
-                description="The quadrupolar f-mode angular frequency of object 1.")
+                dtype=float, default=None, label=r"$m_1 \omega_{02}^{(1)}$",
+                description="The quadrupolar f-mode angular frequency of "
+                            "object 1.")
 quadfmode2 = Parameter("quadfmode2",
-                dtype=float, default=0., label=r"$m_ \omega_{02}^{(2)}$",
-                description="The quadrupolar f-mode angular frequency of object 2.")
+                dtype=float, default=None, label=r"$m_ \omega_{02}^{(2)}$",
+                description="The quadrupolar f-mode angular frequency of "
+                            "object 2.")
 octufmode1 = Parameter("octufmode1",
-                dtype=float, default=0., label=r"$m_1 \omega_{03}^{(1)}$",
-                description="The octupolar f-mode angular frequency of object 1.")
+                dtype=float, default=None, label=r"$m_1 \omega_{03}^{(1)}$",
+                description="The octupolar f-mode angular frequency of "
+                            "object 1.")
 octufmode2 = Parameter("octufmode2",
-                dtype=float, default=0., label=r"$m_ \omega_{03}^{(2)}$",
-                description="The octupolar f-mode angular frequency of object 2.")
+                dtype=float, default=None, label=r"$m_ \omega_{03}^{(2)}$",
+                description="The octupolar f-mode angular frequency of "
+                            "object 2.")
 
 # derived parameters for component spin magnitude and angles
 spin1_a = Parameter("spin1_a",
