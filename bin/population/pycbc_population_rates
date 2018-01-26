@@ -17,10 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 """
-Given an xml(.gz) table with CBC injections, this script separates them into:
-(1) (potentially) found injections
-(2) injections that we expect to miss
-The two sets are stored into two separate output files. 
+This script estimates black hole merger rates for two astro-physical models:
+1) Uniform in log of the compoment mass
+2) Power-law distribution of the masses
+
+It performs weighted MonteCarlo integration to calculate the sensitive volume.
 """
 
 __author__ = "Vaibhav Tiwari"
