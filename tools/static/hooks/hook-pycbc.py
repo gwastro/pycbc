@@ -57,7 +57,9 @@ hiddenimports = ['pycbc.fft.fft_cpu',
                  'h5py._conv',
                  'h5py._stub',
                  'mpld3',
-                 'M2Crypto'
+                 'M2Crypto',
+                 'lal',
+                 'lal.utils'
                  ]
 
 datas = []
