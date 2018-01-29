@@ -118,6 +118,7 @@ insp_segs = to_file(args.inspiral_segments)
 insp_data_seglists = select_segments_by_definer\
         (args.inspiral_segments, segment_name=args.inspiral_data_read_name,
          ifo=args.instrument)
+insp_data_seglists.coalesce()
 
 num_events = int(workflow.cp.get_opt_tags('workflow-sngl_minifollowups',
                  'num-sngl-events', ''))
