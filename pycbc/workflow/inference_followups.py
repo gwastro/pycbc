@@ -365,7 +365,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
 
     return node.output_files
 
-def make_inference_inj_plots(workflow, cp, inference_files, output_dir,
+def make_inference_inj_plots(workflow, inference_files, output_dir,
                              parameters, name="inference_recovery",
                              analysis_seg=None, tags=None):
     """ Sets up the recovered versus injected parameter plot in the workflow.

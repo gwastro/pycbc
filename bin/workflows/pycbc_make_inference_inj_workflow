@@ -254,12 +254,12 @@ cp = configuration.WorkflowConfigParser([opts.inference_config_file])
 # add injection recovery plots
 if not opts.data_type == "analytical":
     inj_int_files = inference_followups.make_inference_inj_plots(
-                                         workflow, cp,
+                                         workflow,
                                          inference_files, rdir.base,
                                          cp.options("variable_args"),
                                          name="inference_intervals")
     inj_rec_files = inference_followups.make_inference_inj_plots(
-                                         workflow, cp,
+                                         workflow,
                                          inference_files, rdir.base,
                                          cp.options("variable_args"),
                                          name="inference_recovery")

@@ -1,7 +1,6 @@
 from pycbc.types import zeros, complex64, complex128
 import numpy as _np
 import ctypes
-import functools
 import pycbc.scheme as _scheme
 from pycbc.libutils import get_ctypes_library
 from .core import _BaseFFT, _BaseIFFT
