@@ -1218,7 +1218,7 @@ if $use_pycbc_pyinstaller_hooks; then
 else
     # find hidden imports (pycbc CPU modules)
     hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
-    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
+    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import lal --hidden-import lal.utils --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
 fi
 # patch spec file to add "-v" to python interpreter options
 if $verbose_pyinstalled_python; then
