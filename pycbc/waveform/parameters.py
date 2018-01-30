@@ -519,4 +519,3 @@ cbc_fd_required = ParameterList([mass1, mass2, delta_f, approximant])
 fd_waveform_sequence_params = cbc_rframe_params + \
     ParameterList([sample_points]) + common_generation_params + \
     flags_generation_params
-    cbc_optional_params
