@@ -1,4 +1,4 @@
-import ctypes, functools, pycbc.libutils
+import ctypes, pycbc.libutils
 from pycbc.types import zeros
 from .core import _BaseFFT, _BaseIFFT
 import pycbc.scheme as _scheme
