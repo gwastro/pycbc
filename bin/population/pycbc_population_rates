@@ -49,15 +49,13 @@ import matplotlib as mpl
 # Parse command line
 parser = argparse.ArgumentParser(description = "Estimate rates for flat in "
                                       "log and power-law mass distribution.")
-parser.add_argument('--sim-folder', dest='sim_folder', required=True, 
-                  help="Folder containing simulation files - delimiters can"
-                                                                 " be used.")
-parser.add_argument('--bank-folder', dest='bank_folder', required=True, 
-                  help="Folder containing simulation files - delimiters can"
-                                                                 " be used.")
-parser.add_argument('--statmap-folder', dest='statmap_folder', required=True,
-                  help="Folder containing the STATMAP files (files that save"
-                            " background and foregound trigger information.")
+parser.add_argument('--sim-files', dest='sim_files', nargs='+', required=True, 
+                  help="List of simulation files to estimate the sensitive "
+                                                                    "volume")
+parser.add_argument('--bank-file', dest='bank_file', required=True, 
+                  help="File containing template bank used in the search.")
+parser.add_argument('--statmap-file', dest='statmap_file', required=True,
+                  help="File containing trigger information")
 parser.add_argument('--prior-samples', dest='prior_samples', required=True,
                   help="File storing samples of prior for the analysis - "
                                       "posterior from the previous analysis")
@@ -89,7 +87,7 @@ if path is not None and not os.path.exists(path):
     os.makedirs(path)
 
 # Read the simulation files
-injections = si.read_injections(opts.sim_folder)
+injections = si.read_injections(opts.sim_files)
 
 # Read the chirp-mass samples -- Imported from rates_function
 mchirp_sampler, prob, label = {}, {}, {}
@@ -122,8 +120,7 @@ for dist in distrs:
     sigma_w_cal_uncrt[dist] = np.sqrt((3*cal_err/100.)**2 + (vol_err/vol)**2)
 
 #Sabe background data and coincidences
-#print opts.statmap_folder, opts.bank_folder, path, opts.thr_val
-rf.save_bkg_falloff(opts.statmap_folder, opts.bank_folder,
+rf.save_bkg_falloff(opts.statmap_file, opts.bank_file,
                     path, opts.thr_val, opts.min_tmplt_mass, 
                     opts.max_tmplt_mass)
 

@@ -1,6 +1,6 @@
 import numpy as np
-from numpy import log, any, all
-import glob, sys, copy, h5py
+from numpy import log
+import copy, h5py
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from scipy.stats import kstest, ks_2samp
@@ -17,7 +17,7 @@ for zz in _redshifts:
     _d_lum.append(cosmo.luminosity_distance(zz).value)
 _dlum_interp = interp1d(_d_lum, _redshifts)
 
-def read_injections(folder_name):
+def read_injections(sim_files):
     ''' Read all the injections from the files in the provided folder.
         The files must belong to individual set i.e. no files that combine
         all the injections in a run.
@@ -26,8 +26,8 @@ def read_injections(folder_name):
 
         Parameters
         ----------
-        folder_name: string
-           Location of folder containing simulation files
+        sim_files: list
+           List containign names of the simulation files
 
         Returns
         -------
@@ -36,14 +36,13 @@ def read_injections(folder_name):
     '''
 
     injections = {}
-    all_files = glob.glob(folder_name)
-
-    nf, min_d, max_d = len(all_files), 1e12, 0
+    min_d, max_d = 1e12, 0
+    nf = len(sim_files)
     for i in range(nf):
 
         key = str(i)
-        injections[key] = process_injections(all_files[i])
-        injections[key]['file_name'] = all_files[i]
+        injections[key] = process_injections(sim_files[i])
+        injections[key]['file_name'] = sim_files[i]
 
         mass1, mass2 = injections[key]['mass1'], injections[key]['mass2']
         mchirp = m1m2tomch(mass1, mass2)
@@ -52,7 +51,7 @@ def read_injections(folder_name):
 
         min_m2, max_m2 = min(mass2), max(mass2)
         min_totM, max_totM = min(mass1+mass2), max(mass1+mass2)
-     
+    
         # Identify the mass distribution
     
         def cdf_componentMass(xx): #Assumes same distribution for the masses
@@ -85,19 +84,16 @@ def read_injections(folder_name):
         injections[key]['spin1'] = spin1
         injections[key]['spin2'] = spin2
     
-        #min_s1z, max_s1z = min(spin1z), max(spin1z)
-        #min_s2z, max_s2z = min(spin2z), max(spin2z)
-        #min_totS, max_totS = min(spin1), max(spin2)
         max_totS = max(spin2)
         
         # Identify the spin distribution
-        if not(all(spin1)) and not(all(spin1z)):
+        if not(np.all(spin1)) and not(np.all(spin1z)):
             injections[key]['s_dist'] = 'disable_spin'
 
-        if not(all(spin1y*spin2y)) and not(all(spin1x*spin2x)) and max_totS>0:
+        if not(np.all(spin1y*spin2y)) and not(np.all(spin1x*spin2x)) and max_totS>0:
             injections[key]['s_dist'] = 'aligned'
 
-        if any(spin1y*spin2y) and any(spin1x*spin2x):
+        if np.any(spin1y*spin2y) and np.any(spin1x*spin2x):
             injections[key]['s_dist'] = 'precessing'
 
         # Identify the distance distribution
@@ -117,7 +113,7 @@ def read_injections(folder_name):
         if p_thr < pvalue:
             injections[key]['d_dist'] = 'uniform'
 
-        stat, pvalue = kstest(fiducial_distance, cdf_fid_distance)
+        pvalue = kstest(fiducial_distance, cdf_fid_distance)[1]
         if p_thr < pvalue:
             injections[key]['d_dist'] = 'dchirp'
 
