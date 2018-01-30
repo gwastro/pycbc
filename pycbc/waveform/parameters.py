@@ -86,20 +86,17 @@ class ParameterList(UserList):
         """Returns a dictionary of the parameters keyed by the parameters."""
         return dict([[x, x] for x in self])
 
-    def defaults(self, include_nulls=False):
+    def defaults(self):
         """Returns a list of the name and default value of each parameter,
-        as tuples. If include_nulls is False, only parameters that do not
-        have None as a default are returnted. Otherwise, all parameters
-        are returned.
+        as tuples.
         """
-        return [(x, x.default) for x in self
-                    if include_nulls or x.default is not None]
+        return [(x, x.default) for x in self]
 
-    def default_dict(self, include_nulls=False):
+    def default_dict(self):
         """Returns a dictionary of the name and default value of each
         parameter.
         """
-        return dict(self.defaults(include_nulls=include_nulls))
+        return dict(self.defaults())
 
     @property
     def nodefaults(self):
@@ -471,22 +468,15 @@ orientation_params = ParameterList\
 # the extrinsic parameters of a waveform
 extrinsic_params = orientation_params + location_params
 
-# intrinsic parameters of a CBC waveform, required by waveform generation
+# intrinsic parameters of a CBC waveform. Some of these are not recognized
+# by every waveform model
 cbc_intrinsic_params = ParameterList\
     ([mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-      eccentricity])
-
-# intrinsic parameters of a CBC waveform, optional for waveform generation
-# if not given, the waveform generator will choose a default value according
-# to its own documentation, or does not use the term.
-cbc_optional_params = ParameterList\
-    ([lambda1, lambda2, dquad_mon1, dquad_mon2, lambda_octu1, lambda_octu2,
-      quadfmode1, quadfmode2, octufmode1, octufmode2])
+      eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2, lambda_octu1,
+      lambda_octu2, quadfmode1, quadfmode2, octufmode1, octufmode2])
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params
-cbc_rframe_params_full = cbc_intrinsic_params + orientation_params + \
-    cbc_optional_params
 
 # calibration parameters
 calibration_params = ParameterList([
@@ -507,20 +497,26 @@ flags_generation_params = ParameterList([frame_axis, modes_choice, side_bands, m
 common_gen_equal_sampled_params = ParameterList([f_lower]) + \
     common_generation_params + flags_generation_params
 
-# the following are parameters needed to generate an FD waveform
+# the following are parameters that can be used to generate an FD waveform
 fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
     common_gen_equal_sampled_params + ParameterList([f_final, f_final_func])
-fd_waveform_params_full = fd_waveform_params + cbc_optional_params
 
-# the following are parameters needed to generate a TD waveform
+# the following are parameters that can be used to generate a TD waveform
 td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
     common_gen_equal_sampled_params + ParameterList([numrel_data]) + \
     flags_generation_params
-td_waveform_params_full = td_waveform_params + cbc_optional_params
 
-# the following are parameters needed to generate a frequency series waveform
+# The following are the minimum set of parameters that are required to
+# generate a FD or TD waveform. All other parameters have some default value as
+# defined above. Defaults of None simply mean that the value is not passed into
+# the lal_dict structure and the waveform generator will take whatever default
+# behaviour
+cbc_td_required = ParameterList([mass1, mass2, delta_t, approximant])
+cbc_fd_required = ParameterList([mass1, mass2, delta_f, approximant])
+
+# the following are parameters that can be used to generate a
+# frequency series waveform
 fd_waveform_sequence_params = cbc_rframe_params + \
     ParameterList([sample_points]) + common_generation_params + \
     flags_generation_params
-fd_waveform_sequence_params_full = fd_waveform_sequence_params + \
     cbc_optional_params

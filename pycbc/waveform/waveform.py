@@ -54,13 +54,13 @@ class NoWaveformError(Exception):
 fail_tolerant_waveform_generation = True
 
 default_args = \
-    (parameters.fd_waveform_params_full.default_dict(include_nulls=True) +
-     parameters.td_waveform_params_full).default_dict(include_nulls=True)
+    (parameters.fd_waveform_params_full.default_dict() +
+     parameters.td_waveform_params_full).default_dict()
 
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
 
-td_required_args = parameters.td_waveform_params.nodefaults.aslist
-fd_required_args = parameters.fd_waveform_params.nodefaults.aslist
+td_required_args = parameters.cbc_td_required
+fd_required_args = parameters.cbc_fd_required
 sgburst_required_args = ['q','frequency','hrss']
 
 # td, fd, filter waveforms generated on the CPU
