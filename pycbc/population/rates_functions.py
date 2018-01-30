@@ -4,7 +4,6 @@ A set of helper functions for evaluating rates.
 
 import glob
 from scipy import integrate, optimize
-from scipy.special import erf
 import numpy as np, h5py
 from numpy import log
 import scipy.stats as ss
@@ -44,7 +43,7 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
         bound = np.sign((mass1[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass1[id_fg]))
         bound += np.sign((mass2[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass2[id_fg]))
         idx_fg = np.where(bound == 2)
-                                                 
+                                                
         zerolagstat = bulk['foreground/stat'][:][idx_fg]
         cstat_back_exc = bulk['background_exc/stat'][:][idx_bkg]
         dec_factors = bulk['background_exc/decimation_factor'][:][idx_bkg]
@@ -80,10 +79,10 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tl
 
         Parameters
         ----------
-        folder_name_statmap: string
-               Folder name where STATMAP files are located
-        folder_name_bank: string
-               Folder name where the bank files are located
+        fname_statmap: string
+               STATMAP file containing trigger information
+        fname_bank: string
+               File name of the template bank
         path: string
                Destination where txt file is saved
         rhomin: float
@@ -94,31 +93,14 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tl
                High mass for template for trigger to be considered
     '''
 
-    full_data = {}
-    statmap_files = glob.glob(fname_statmap)
-    bank_files = glob.glob(fname_bank)
- 
-    i = 0
-    for sfile in statmap_files:
-        for bfile in bank_files:
-            
-            if  sfile[-22:] == bfile[-22:]: # (FIXME)
-                with h5py.File(bfile, 'r') as bulk:
-                    
-                    print "Loading zero-lag results from file: %s" % sfile
-                    print "Bank file is: %s" % bfile
-        
-                    mass1_bank = bulk['mass1'][:]
-                    mass2_bank = bulk['mass2'][:]
-                    full_data[str(i)] = process_full_data(sfile, rhomin,
+    print "Loading zero-lag results from file: %s" % fname_statmap
+    print "Bank file is: %s" % fname_bank
+    
+    with h5py.File(fname_bank, 'r') as bulk:
+        mass1_bank = bulk['mass1'][:]
+        mass2_bank = bulk['mass2'][:]
+        full_data = process_full_data(fname_statmap, rhomin,
                            mass1_bank, mass2_bank, lo_tlt_mass, hi_tlt_mass)
-                    i += 1
-                break
-                       
-    if len(statmap_files) > len(full_data.keys()):
-        raise Exception('Missing bank file!')
-             
-    full_data = merge_full_data(full_data)
 
     max_bg_stat = np.max(full_data['cstat_back_exc'])
     bg_bins = np.linspace(rhomin, max_bg_stat, 76)
@@ -260,7 +242,7 @@ def fit(R):
     R = np.log(R)
     mu_norm, sigma_norm = np.mean(R), np.std(R)
     
-    xs = np.linspace(min(R), max(R), 200)    
+    xs = np.linspace(min(R), max(R), 200)
     kde = ss.gaussian_kde(R)
     pxs = kde(xs)
 
@@ -305,7 +287,6 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
 # PDF for the two caninical models
 def prob_lnm(m1, m2, s1z, s2z, **kwargs):
     ''' Return probability density for uniform in log
-
         Parameters
         ----------
         m1: array
@@ -318,7 +299,6 @@ def prob_lnm(m1, m2, s1z, s2z, **kwargs):
             Aligned spin 2(Not in use currently)
         **kwargs: string
             Keyword arguments as model parameters
-
         Returns
         -------
         p_m1_m2: array
@@ -347,7 +327,6 @@ def prob_lnm(m1, m2, s1z, s2z, **kwargs):
 
 def prob_imf(m1, m2, s1z, s2z, **kwargs):
     ''' Return probability density for power-law
-
         Parameters
         ----------
         m1: array
@@ -366,6 +345,7 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
         p_m1_m2: array
            the probability density for m1, m2 pair
     '''
+
     min_mass = kwargs.get('min_mass', 5.)
     max_mass = kwargs.get('max_mass', 95.)
     alpha = kwargs.get('alpha', -2.35)
