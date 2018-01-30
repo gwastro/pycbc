@@ -79,7 +79,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'corner>=2.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
-                      'astropy>=2.0.1'
                       ]
 
 #FIXME Remove me when we bump to h5py > 2.5
