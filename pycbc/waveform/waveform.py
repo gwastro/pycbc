@@ -53,13 +53,14 @@ class NoWaveformError(Exception):
 # If this is set to False waveform failures will always raise exceptions
 fail_tolerant_waveform_generation = True
 
-default_args = (parameters.fd_waveform_params.default_dict() + \
-    parameters.td_waveform_params).default_dict()
+default_args = \
+    (parameters.fd_waveform_params.default_dict() +
+     parameters.td_waveform_params).default_dict()
 
 default_sgburst_args = {'eccentricity':0, 'polarization':0}
 
-td_required_args = parameters.td_waveform_params.nodefaults.aslist
-fd_required_args = parameters.fd_waveform_params.nodefaults.aslist
+td_required_args = parameters.cbc_td_required
+fd_required_args = parameters.cbc_fd_required
 sgburst_required_args = ['q','frequency','hrss']
 
 # td, fd, filter waveforms generated on the CPU
@@ -94,25 +95,25 @@ def _check_lal_pars(p):
         lalsimulation.SimInspiralWaveformParamsInsertPNTidalOrder(lal_pars, p['tidal_order'])
     if p['eccentricity_order']!=-1:
         lalsimulation.SimInspiralWaveformParamsInsertPNEccentricityOrder(lal_pars, p['eccentricity_order'])
-    if p['lambda1']:
+    if p['lambda1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(lal_pars, p['lambda1'])
-    if p['lambda2']:
+    if p['lambda2'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalLambda2(lal_pars, p['lambda2'])
-    if p['lambda_octu1'] != parameters.lambda_octu1.default:
+    if p['lambda_octu1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarLambda1(lal_pars, p['lambda_octu1'])
-    if p['lambda_octu2'] != parameters.lambda_octu2.default:
+    if p['lambda_octu2'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarLambda2(lal_pars, p['lambda_octu2'])
-    if p['quadfmode1'] != parameters.quadfmode1.default:
+    if p['quadfmode1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(lal_pars, p['quadfmode1'])
-    if p['quadfmode2'] != parameters.quadfmode2.default:
+    if p['quadfmode2'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(lal_pars, p['lambda_octu2'])
-    if p['octufmode1'] != parameters.octufmode1.default:
+    if p['octufmode1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarFMode1(lal_pars, p['octufmode1'])
-    if p['octufmode2'] != parameters.octufmode2.default:
+    if p['octufmode2'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarFMode2(lal_pars, p['octufmode2'])
-    if p['dquad_mon1']:
+    if p['dquad_mon1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertdQuadMon1(lal_pars, p['dquad_mon1'])
-    if p['dquad_mon2']:
+    if p['dquad_mon2'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertdQuadMon2(lal_pars, p['dquad_mon2'])
     if p['numrel_data']:
         lalsimulation.SimInspiralWaveformParamsInsertNumRelData(lal_pars, str(p['numrel_data']))
