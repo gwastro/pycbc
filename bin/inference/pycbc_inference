@@ -22,6 +22,7 @@ import os
 import argparse
 import logging
 import numpy
+import shutil
 import pycbc
 import pycbc.opt
 import pycbc.weave
@@ -36,9 +37,10 @@ from pycbc import psd
 from pycbc import scheme
 from pycbc import strain
 from pycbc import types
-from pycbc.io.inference_hdf import InferenceFile
+from pycbc.io.inference_hdf import InferenceFile, check_integrity
 from pycbc.waveform import generator
 from pycbc.inference import option_utils
+from pycbc.inference.option_utils import validate_checkpoint_files
 from pycbc.inference import burn_in
 from pycbc import gate
 
@@ -103,6 +105,10 @@ parser.add_argument("--checkpoint-interval", type=int, default=None,
                     help="Number of iterations to take before saving new "
                          "samples to file, calculating ACL, and updating "
                          "burn-in estimate.")
+parser.add_argument("--resume-from-checkpoint", action="store_true",
+                    default=False,
+                    help="Automatically load results from checkpoint/backup "
+                         "file.")
 parser.add_argument("--checkpoint-fast", action="store_true",
                     help="Do not calculate ACL after each checkpoint, only at "
                          "the end. Not applicable if n-independent-samples "
@@ -124,6 +130,9 @@ gate.add_gate_option_group(parser)
 # parse command line
 opts = parser.parse_args()
 
+# setup log
+pycbc.init_logging(opts.verbose)
+
 # verify options are sane
 fft.verify_fft_options(opts, parser)
 pycbc.opt.verify_optimization_options(opts, parser)
@@ -136,6 +145,20 @@ pycbc.weave.verify_weave_options(opts, parser)
 if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
+
+# check for backup file(s)
+checkpoint_file = opts.output_file + '.checkpoint'
+backup_file = opts.output_file + '.bkup'
+checkpoint_valid, backup_valid = validate_checkpoint_files(checkpoint_file,
+                                                           backup_file)
+
+# determine what to do with checkpoints
+if checkpoint_valid and not opts.resume_from_checkpoint and not opts.force:
+    raise OSError("valid checkpoint file {} found, but "
+                  "resume-from-checkpoint not on. If you wish to overwrite "
+                  "use --force; otherwise, use --resume-from-checkpoint")
+if not opts.resume_from_checkpoint and opts.force:
+    checkpoint_valid = backup_valid = False
 
 # check for how many iterations to run
 max_iterations = opts.niterations
@@ -153,8 +176,6 @@ else:
     raise ValueError("Must specify niterations or n-independent-samples; "
                      "see --help")
 
-# setup log
-pycbc.init_logging(opts.verbose)
 
 # get likelihood class
 likelihood_class = inference.likelihood_evaluators[opts.likelihood_evaluator]
@@ -243,16 +264,16 @@ with ctx:
 
     if 'waveform_generator' in likelihood_class.required_kwargs:
         generator_function = generator.select_waveform_generator(
-                                                        static_args["approximant"])
+            static_args["approximant"])
 
         # construct class that will generate waveforms
         waveform_generator = generator.FDomainDetFrameGenerator(
-                           generator_function, epoch=stilde_dict.values()[0].epoch,
-                           variable_args=variable_args, detectors=opts.instruments,
-                           delta_f=stilde_dict.values()[0].delta_f,
-                           delta_t=strain_dict.values()[0].delta_t,
-                           recalib=recalib, gates=gates,
-                           **static_args)
+            generator_function, epoch=stilde_dict.values()[0].epoch,
+            variable_args=variable_args, detectors=opts.instruments,
+            delta_f=stilde_dict.values()[0].delta_f,
+            delta_t=strain_dict.values()[0].delta_t,
+            recalib=recalib, gates=gates,
+            **static_args)
 
     else:
         waveform_generator = None
@@ -274,35 +295,40 @@ with ctx:
     sampler = option_utils.sampler_from_cli(opts, likelihood)
 
     # save information about this data and settings
-    with InferenceFile(opts.output_file, "w") as fp:
+    if not checkpoint_valid:
+        with InferenceFile(checkpoint_file, "w") as fp:
+            # save command line and data
+            logging.info("Writing command line and data to output file")
+            fp.write_command_line()
+            fp.write_data(
+                strain_dict=strain_dict if opts.save_strain else None,
+                stilde_dict=stilde_dict if opts.save_stilde else None,
+                psd_dict=psd_dict if opts.save_psd else None,
+                low_frequency_cutoff_dict=low_frequency_cutoff_dict)
 
-        # save command line and data
-        logging.info("Writing command line and data to output file")
-        fp.write_command_line()
-        fp.write_data(strain_dict=strain_dict if opts.save_strain else None,
-                      stilde_dict=stilde_dict if opts.save_stilde else None,
-                      psd_dict=psd_dict if opts.save_psd else None,
-                      low_frequency_cutoff_dict=low_frequency_cutoff_dict)
-
-        # save injection parameters
-        if opts.injection_file:
-            for ifo in opts.instruments:
-                logging.info("Writing %s injections to output file", ifo)
-                if ifo in opts.injection_file.keys():
-                    inj_file = opts.injection_file[ifo]
-                elif len(opts.injection_file) == 1:
-                    inj_file = opts.injection_file.values()[0]
-                else:
-                    logging.warn("Could not find injections for %s", ifo)
-                    continue
-                fp.write_injections(opts.injection_file.values()[0], ifo)
-
+            # save injection parameters
+            if opts.injection_file:
+                for ifo in opts.instruments:
+                    logging.info("Writing %s injections to output file", ifo)
+                    if ifo in opts.injection_file.keys():
+                        inj_file = opts.injection_file[ifo]
+                    elif len(opts.injection_file) == 1:
+                        inj_file = opts.injection_file.values()[0]
+                    else:
+                        logging.warn("Could not find injections for %s", ifo)
+                        continue
+                    fp.write_injections(opts.injection_file.values()[0], ifo)
+        # copy to backup
+        shutil.copy(checkpoint_file, backup_file)
 
     # set the walkers initial positions from a pre-existing InferenceFile
     # or a specific initial distribution listed in the configuration file
     # or else use the prior distributions to set initial positions
     logging.info("Setting walkers initial conditions for varying parameters")
     samples_file = opts.samples_file
+    # use the checkpoint file instead if resume from checkpoint
+    if opts.resume_from_checkpoint and checkpoint_valid:
+        samples_file = checkpoint_file
     if samples_file is not None:
         logging.info("Initial positions taken from last iteration in %s",
                      samples_file)
@@ -310,9 +336,9 @@ with ctx:
         init_prior = None
     elif len(cp.get_subsections("initial")):
         initial_dists = distributions.read_distributions_from_config(
-                                                         cp, section="initial")
-        init_prior = distributions.JointDistribution(variable_args, *initial_dists,
-                                          **{"constraints" : constraints})
+            cp, section="initial")
+        init_prior = distributions.JointDistribution(variable_args,
+            *initial_dists, **{"constraints" : constraints})
     else:
         init_prior = None
     sampler.set_p0(samples_file=samples_file, prior=init_prior)
@@ -324,35 +350,56 @@ with ctx:
         samples_file.close()
 
     # run sampler's burn in if it is in the list of burn in functions
-    n_sampler_burn_in = 0
     if "use_sampler" in burn_in_eval.burn_in_functions:
         # remove the sampler's burn in so we don't run more than once
         burn_in_eval.burn_in_functions.pop("use_sampler")
-        with InferenceFile(opts.output_file, "a") as fp:
-            logging.info("Running sampler's burn in function")
-            burnidx, is_burned_in = burn_in.use_sampler(sampler, fp)
-            sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
-            # write the burn in results
-            n_sampler_burn_in = burnidx.max()
-            if max_iterations is not None:
-                max_iterations += n_sampler_burn_in
-            logging.info("Writing burn in samples to file")
-            sampler.write_results(fp, max_iterations=max_iterations,
-                                  static_args=static_args,
-                                  ifos=opts.instruments)
-            logging.info("Writing state to file")
-            sampler.write_state(fp)
+        # we'll only do this if we don't have a valid checkpoint: since the
+        # checkpoint happens after the sampler's burn in, the sampler's burn in
+        # must have already run if we have a valid checkpoint file
+        if not checkpoint_valid:
+            with InferenceFile(checkpoint_file, "a") as fp:
+                logging.info("Running sampler's burn in function")
+                burnidx, is_burned_in = burn_in.use_sampler(sampler, fp)
+                sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+                # write the burn in results
+                logging.info("Writing burn in samples to file")
+                sampler.write_results(fp, static_args=static_args,
+                                      ifos=opts.instruments)
+            # write to backup file
+            with InferenceFile(backup_file, "a") as fp:
+                sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+                sampler.write_results(fp, static_args=static_args,
+                                      ifos=opts.instruments)
 
-    # run sampler until we have the desired number of samples
-    nsamples = 0
+
+    # get the starting number of samples:
+    # nsamples keeps track of the number of samples we've obtained (if
+    # --n-independent-samples is used, this is the number of independent
+    # samples; otherwise, this is the number of iterations);
+    # start is the number of iterations that the file already contains (either
+    # due to sampler burn-in, or a previous checkpoint)
+    try:
+        with InferenceFile(checkpoint_file, "r") as fp:
+            start = fp.niterations
+    except KeyError:
+        start = 0
+    if opts.n_independent_samples is not None:
+        try:
+            with InferenceFile(checkpoint_file, "r") as fp:
+                nsamples = fp.n_independent_samples
+        except AttributeError:
+            nsamples = start
+    else:
+        nsamples = start
+    # to ensure iterations are counted properly, he sampler's lastclear should
+    # be the same as start
+    sampler.lastclear = start
+
     interval = opts.checkpoint_interval
     if interval is None:
         interval = get_nsamples
-    # start keeps track of the number of iterations we have advances (which
-    # may not be the same as the number of samples, if we are using
-    # n-independent-samples)
-    start = n_sampler_burn_in
 
+    # run sampler until we have the desired number of samples
     while nsamples < get_nsamples:
 
         end = start + interval
@@ -369,43 +416,58 @@ with ctx:
         sampler.run(interval)
 
         # write new samples
-        with InferenceFile(opts.output_file, "a") as fp:
+        with InferenceFile(checkpoint_file, "a") as fp:
 
             logging.info("Writing results to file")
-            sampler.write_results(fp, max_iterations=max_iterations,
-                                  static_args=static_args,
+            sampler.write_results(fp,static_args=static_args,
                                   ifos=opts.instruments)
-            logging.info("Writing state to file")
-            sampler.write_state(fp)
-
             logging.info("Updating burn in")
-            burn_in_eval.update(sampler, fp)
+            burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
 
             # compute the acls and write
+            acls = None
             if opts.n_independent_samples is not None or end >= get_nsamples \
                     or not opts.checkpoint_fast:
                 logging.info("Computing acls")
-                sampler.write_acls(fp, sampler.compute_acls(fp))
+                acls = sampler.compute_acls(fp)
+                sampler.write_acls(fp, acls)
 
-            # update nsamples for next loop
-            if opts.n_independent_samples is not None:
-                with InferenceFile(opts.output_file, 'r') as fp:
-                    if fp.is_burned_in:
-                        nsamples = fp.n_independent_samples
-                    else:
-                        nsamples = 0
-                logging.info("Have {} independent samples".format(nsamples))
-            else:
-                nsamples += interval
+        # write to backup
+        with InferenceFile(backup_file, "a") as fp:
 
-            # clear the in-memory chain to save memory
-            logging.info("Clearing chain")
-            sampler.clear_chain()
+            logging.info("Writing to backup file")
+            sampler.write_results(fp,static_args=static_args,
+                                  ifos=opts.instruments)
+            sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+            if acls is not None:
+                sampler.write_acls(fp, acls)
 
-            start = end
+        # check validity
+        checkpoint_valid, backup_valid = validate_checkpoint_files(
+            checkpoint_file, backup_file)
+        if not checkpoint_valid:
+            raise IOError("error writing to checkpoint file")
+
+        # update nsamples for next loop
+        if opts.n_independent_samples is not None:
+            with InferenceFile(checkpoint_file, 'r') as fp:
+                if fp.is_burned_in:
+                    nsamples = fp.n_independent_samples
+                else:
+                    nsamples = 0
+            logging.info("Have {} independent samples".format(nsamples))
+        else:
+            nsamples += interval
+
+
+        # clear the in-memory chain to save memory
+        logging.info("Clearing chain")
+        sampler.clear_chain()
+
+        start = end
 
     # compute evidence, if supported
-    with InferenceFile(opts.output_file, 'a') as fp:
+    with InferenceFile(checkpoint_file, 'a') as fp:
         try:
             lnz, dlnz = sampler.calculate_logevidence(fp)
             logging.info("Saving evidence")
@@ -413,6 +475,11 @@ with ctx:
         except NotImplementedError:
             pass
 
+# rename checkpoint to output and delete backup
+logging.info("Moving checkpoint to output")
+os.rename(checkpoint_file, opts.output_file)
+logging.info("Deleting backup file")
+os.remove(backup_file)
 
 # exit
 logging.info("Done")

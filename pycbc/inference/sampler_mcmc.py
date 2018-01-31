@@ -109,14 +109,14 @@ class MCMCSampler(BaseMCMCSampler):
         """This function should clear the current chain of samples from memory.
         """
         # store the iteration that the clear is occuring on
-        self._lastclear = self.niterations
+        self.lastclear = self.niterations
         self._chain = []
         self._blobs = []
 
     @property
     def niterations(self):
         """Get the current number of iterations."""
-        return len(self._chain)+self._lastclear
+        return len(self._chain)+self.lastclear
 
     @property
     def lnpost(self):

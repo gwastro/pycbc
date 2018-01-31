@@ -283,8 +283,10 @@ class BurnIn(object):
 
         Returns
         -------
-        array :
+        burnidx : array
             Array of indices giving the burn-in index for each chain.
+        is_burned_in : array
+            Array of booleans indicating whether each chain is burned in.
         """
         # if the number of iterations is < than the minimium desired,
         # just return the number of iterations and all False
@@ -327,8 +329,15 @@ class BurnIn(object):
         fp : InferenceFile
             Open inference hdf file containing the samples to load for
             determing burn in.
+
+        Returns
+        -------
+        burnidx : array
+            Array of indices giving the burn-in index for each chain.
+        is_burned_in : array
+            Array of booleans indicating whether each chain is burned in.
         """
         burnidx, is_burned_in = self.evaluate(sampler, fp)
         sampler.burn_in_iterations = burnidx
         sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
-
+        return burnidx, is_burned_in
