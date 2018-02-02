@@ -19,7 +19,6 @@
 
 import logging
 import shutil
-import numpy
 import pycbc.inference.sampler
 from pycbc.inference import burn_in
 from pycbc import conversions
@@ -407,7 +406,7 @@ def validate_checkpoint_files(checkpoint_file, backup_file):
     elif backup_valid and not checkpoint_valid:
         logging.info("Checkpoint invalid; copying backup file")
         # copy the backup to the checkpoint
-        shutils.copy(backup_file, checkpoint_file)
+        shutil.copy(backup_file, checkpoint_file)
         checkpoint_valid = True
     return checkpoint_valid, backup_valid
 
