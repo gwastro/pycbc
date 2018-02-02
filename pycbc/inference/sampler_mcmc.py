@@ -139,7 +139,7 @@ class MCMCSampler(BaseMCMCSampler):
         """This function should run the sampler.
         """
 
-        if self.niterations == 0:
+        if not self._lastsample:
             # first time running, use the initial positions
             # set_p0() was called in pycbc_inference, so self.p0 is set
             result = self.likelihood_evaluator(self.p0)
