@@ -259,6 +259,8 @@ def get_param(par, args, m1, m2, s1z, s2z):
         parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
     elif par == 'mtotal':
         parvals = m1 + m2
+    elif par =='eta':
+        parvals = conversions.eta_from_mass1_mass2(m1, m2)
     elif par == 'chi_eff':
         parvals = conversions.chi_eff(m1, m2, s1z, s2z)
     elif par == 'template_duration':
