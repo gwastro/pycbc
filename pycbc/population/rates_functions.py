@@ -92,9 +92,6 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tl
         hi_tlt_mass: float
                High mass for template for trigger to be considered
     '''
-
-    print "Loading zero-lag results from file: %s" % fname_statmap
-    print "Bank file is: %s" % fname_bank
     
     with h5py.File(fname_bank, 'r') as bulk:
         mass1_bank = bulk['mass1'][:]
