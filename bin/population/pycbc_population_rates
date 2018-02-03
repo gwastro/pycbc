@@ -48,10 +48,17 @@ import matplotlib as mpl
 
 # Parse command line
 parser = argparse.ArgumentParser(description = "Estimate rates for flat in "
-                                      "log and power-law mass distribution.")
+                                     "log and power-law mass distribution.")
 parser.add_argument('--sim-files', dest='sim_files', nargs='+', required=True, 
                   help="List of simulation files to estimate the sensitive "
-                                                                    "volume")
+                                                                   "volume")
+parser.add_argument('--m_dist', dest = 'm_dist', nargs = '+', required=True,
+                  help="Specify the mass distribution for the simulations")
+parser.add_argument('--s_dist', dest = 's_dist', nargs = '+',required=True,
+                  help="Specify the spin distribution for the simulations")
+parser.add_argument('--d_dist', dest = 'd_dist', nargs = '+', required=True,
+                  help="Specify the distance distribution for the "
+                                                              "simulations")
 parser.add_argument('--bank-file', dest='bank_file', required=True, 
                   help="File containing template bank used in the search.")
 parser.add_argument('--statmap-file', dest='statmap_file', required=True,
@@ -87,7 +94,8 @@ if path is not None and not os.path.exists(path):
     os.makedirs(path)
 
 # Read the simulation files
-injections = si.read_injections(opts.sim_files)
+injections = si.read_injections(opts.sim_files,
+          opts.m_dist, opts.s_dist, opts.d_dist)
 
 # Read the chirp-mass samples -- Imported from rates_function
 mchirp_sampler, prob, label = {}, {}, {}
@@ -110,8 +118,8 @@ for dist in distrs:
                               max_mass = opts.max_mass, 
                               max_mtotal = opts.max_mtotal)
     
-    vol_time[dist], sig_vt[dist] = si.get_summed_vt(vt[dist])
-    inj_falloff[dist] = si.get_accumulated_falloff(vt[dist])
+    vol_time[dist], sig_vt[dist] = vt[dist]['VT'], vt[dist]['VT_err']
+    inj_falloff[dist] = vt[dist]['thr_falloff']
 
 #Include the calibration uncertainity
 sigma_w_cal_uncrt = {}
