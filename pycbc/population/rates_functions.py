@@ -2,7 +2,6 @@
 A set of helper functions for evaluating rates.
 """
 
-import glob
 from scipy import integrate, optimize
 import numpy as np, h5py
 from numpy import log
@@ -43,7 +42,7 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
         bound = np.sign((mass1[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass1[id_fg]))
         bound += np.sign((mass2[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass2[id_fg]))
         idx_fg = np.where(bound == 2)
-                                                
+
         zerolagstat = bulk['foreground/stat'][:][idx_fg]
         cstat_back_exc = bulk['background_exc/stat'][:][idx_bkg]
         dec_factors = bulk['background_exc/decimation_factor'][:][idx_bkg]
