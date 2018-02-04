@@ -153,7 +153,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
         distance = data['distance']
         mass1, mass2 = data['mass1'], data['mass2']
         spin1z, spin2z = data['spin1z'], data['spin2z']
-        mchirp, mtotal = data['chirp_mass'], data['total_mass']
+        mchirp = data['chirp_mass']
         gps_min = min(gps_min, min(data['end_time']))
         gps_max = max(gps_max, max(data['end_time']))
 
@@ -432,14 +432,13 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
     mass1, mass2 = np.array(mass1), np.array(mass2)
     
     if key == 'totalMass':
-        ''' Returns the PDF of mass when total mass is uniformly distributed.
-            Both the component masses have the same distribution for this case.
+        # Returns the PDF of mass when total mass is uniformly distributed.
+        # Both the component masses have the same distribution for this case.
 
-            Parameters
-            ----------
-            lomass: lower component mass
-            himass: higher component mass
-        '''
+        # Parameters
+        # ----------
+        # lomass: lower component mass
+        # himass: higher component mass
         
         bound = np.sign((lomass + himass) - (mass1 + mass2))
         bound += np.sign((himass - mass1)*(mass1 - lomass))
@@ -451,14 +450,13 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
         return pdf
 
     if key == 'componentMass':
-        ''' Returns the PDF of mass when component mass is uniformly
-            distributed. Component masses are independent for this case.
+        # Returns the PDF of mass when component mass is uniformly
+        # distributed. Component masses are independent for this case.
 
-            Parameters
-            ----------
-            lomass: lower component mass
-            himass: higher component mass
-         '''
+        # Parameters
+        # ----------
+        # lomass: lower component mass
+        # himass: higher component mass
         
         bound = np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
@@ -469,14 +467,13 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
         return pdf
 
     if key == 'log':
-        ''' Returns the PDF of mass when component mass is uniform in log.
-            Component masses are independent for this case.
+        # Returns the PDF of mass when component mass is uniform in log.
+        # Component masses are independent for this case.
 
-            Parameters
-            ----------
-            lomass: lower component mass
-            himass: higher component mass
-         '''
+        # Parameters
+        # ----------
+        # lomass: lower component mass
+        # himass: higher component mass
         
         bound = np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
@@ -511,10 +508,9 @@ def inj_spin_pdf(key, high_spin, spinz):
     bound += np.sign(1 - np.absolute(spinz))
 
     if key == 'precessing':
-        ''' Returns the PDF of spins when total spin is
-            isotropically distributed. Both the component
-            masses have the same distribution for this case.
-         '''
+        # Returns the PDF of spins when total spin is
+        # isotropically distributed. Both the component
+        # masses have the same distribution for this case.
 
         pdf = (np.log(high_spin - np.log(abs(spinz)))/high_spin/2)
         idx = np.where(bound != 2)
@@ -523,9 +519,8 @@ def inj_spin_pdf(key, high_spin, spinz):
         return pdf
 
     if key == 'aligned':
-        ''' Returns the PDF of mass when spins are aligned and uniformly
-            distributed. Component spins are independent for this case.
-        '''
+        # Returns the PDF of mass when spins are aligned and uniformly
+        # distributed. Component spins are independent for this case.
 
         pdf = (np.ones_like(spinz) / 2 / high_spin)
         idx = np.where(bound != 2)
@@ -534,8 +529,8 @@ def inj_spin_pdf(key, high_spin, spinz):
         return pdf
 
     if key == 'disable_spin':
-        ''' Returns unit array 
-        '''
+        # Returns unit array
+
         pdf = np.ones_like(spinz)
 
         return pdf
@@ -559,9 +554,8 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp = 1):
     distance = np.array(distance)
 
     if key == 'uniform':
-        ''' Returns the PDF at a distance when
-            distance is uniformly distributed.
-        '''
+        # Returns the PDF at a distance when
+        # distance is uniformly distributed.
 
         pdf = np.ones_like(distance)/(high_dist - low_dist)
         bound = np.sign((high_dist - distance)*(distance - low_dist))
@@ -570,9 +564,8 @@ def inj_distance_pdf(key, distance, low_dist, high_dist, mchirp = 1):
         return pdf
 
     if key == 'dchirp':
-        ''' Returns the PDF at a distance when distance is uniformly
-            distributed but scaled by the chirp mass
-        '''
+        # Returns the PDF at a distance when distance is uniformly
+        # distributed but scaled by the chirp mass
 
         weight = (mchirp/_mch_BNS)**(5./6)
         pdf = np.ones_like(distance) / weight / (high_dist - low_dist)

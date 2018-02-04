@@ -64,7 +64,7 @@ def merge_full_data(all_bkg):
        dictionary
               merged dictionaries
     """
-    
+   
     merged_bkg = {}
     for data in ['zerolagstat', 'dec_factors', 'cstat_back_exc']:
         merged_bkg[data] = np.concatenate([all_bkg[c][data] for c in all_bkg.keys()])
