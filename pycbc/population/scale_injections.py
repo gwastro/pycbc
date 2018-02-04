@@ -3,7 +3,6 @@ from numpy import log
 import copy, h5py
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
-from scipy.stats import kstest, ks_2samp
 from astropy.cosmology import WMAP9 as cosmo
 
 from pycbc.conversions import mchirp_from_mass1_mass2 as m1m2tomch
@@ -93,7 +92,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
        injection_chunks: dictionary
         The input dictionary with VT and VT error included with the injections
     '''
-    
+
     thr_var = kwargs.get('thr_var')
     thr_val = kwargs.get('thr_val')
 
@@ -120,7 +119,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
         distance = injections[key]['distance']
      
         if injections[key]['d_dist'] == 'uniform':
-            d_min, d_max = min(distance), max(distance) 
+            d_min, d_max = min(distance), max(distance)
         elif injections[key]['d_dist'] == 'dchirp':
             d_fid_min = min(distance / (mchirp/_mch_BNS)**(5/6.))
             d_fid_max = max(distance / (mchirp/_mch_BNS)**(5/6.))
@@ -145,16 +144,16 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
     thr_falloff, i_inj, i_det, i_det_sq = [], 0, 0, 0
     gps_min, gps_max = 1e15, 0
     keys = injections.keys()
-    for key in ['1']:#keys:
+    for key in keys:
 
         if key == 'z_range' or key == 'inj_astro_vol':
             continue
     
-        data = injections[key]   
+        data = injections[key]
         distance = data['distance']
         mass1, mass2 = data['mass1'], data['mass2']
         spin1z, spin2z = data['spin1z'], data['spin2z']
-        chirp, mtotal = data['chirp_mass'], data['total_mass']
+        mchirp, mtotal = data['chirp_mass'], data['total_mass']
         gps_min = min(gps_min, min(data['end_time']))
         gps_max = max(gps_max, max(data['end_time']))
 
@@ -169,7 +168,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
         J = abs(J)/0.001 # A quick way to get dD_l/dz
 
         # Sum probability of injections from j-th set for all the strategies
-        for key2 in ['1']:#keys:
+        for key2 in keys:
 
             if key2 == 'z_range' or key2 == 'inj_astro_vol':
                 continue
@@ -182,7 +181,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
             s1z_2, s2z_2 = dt_j['spin1z'], dt_j['spin2z']
             s1 = np.sqrt(s1x_2**2 + s1y_2**2 + s1z_2**2)
             s2 = np.sqrt(s2x_2**2 + s2y_2**2 + s2z_2**2)
-            mch_j, mtot_j = dt_j['chirp_mass'], dt_j['total_mass']
+            mch_j = dt_j['chirp_mass']
 
         #Get probability density for injections in mass-distance space
             if dt_j['m_dist'] == 'totalMass':
@@ -199,11 +198,11 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
                 l_dist, h_dist = min(dist_j), max(dist_j)
     
             mdist = dt_j['m_dist']
-            prob_mass = inj_mass_pdf(mdist, mass1, mass2, 
+            prob_mass = inj_mass_pdf(mdist, mass1, mass2,
                                           lomass, himass, lomass_2, himass_2)
               
             ddist = dt_j['d_dist']
-            prob_dist = inj_distance_pdf(ddist, distance, l_dist, 
+            prob_dist = inj_distance_pdf(ddist, distance, l_dist,
                                                               h_dist, mchirp)
 
             hspin1, hspin2 = max(s1), max(s2)
@@ -535,7 +534,8 @@ def inj_spin_pdf(key, high_spin, spinz):
         return pdf
 
     if key == 'disable_spin':
-        ''' Returns unit array '''
+        ''' Returns unit array 
+        '''
         pdf = np.ones_like(spinz)
 
         return pdf
