@@ -830,13 +830,19 @@ class FieldArray(numpy.recarray):
     def __getbaseitem__(self, item):
         """Gets an item assuming item is either an index or a fieldname.
         """
-        # We cast to ndarray to avoid calling array_finalize, which can be slow
+        # We cast to a ndarray to avoid calling array_finalize, which can be
+        # slow
         out = self.view(numpy.ndarray)[item]
-        # cast back to an instance of self if there are more than one field and
-        # element
-        if out.size > 1 and out.dtype.fields is not None:
-            out = out.view(type(self))
-        return out
+        # if there are no fields, then we can just return
+        if out.dtype.fields is None:
+            return out
+        # if there are fields, but only a single entry, we'd just get a
+        # record by casting to self, so just cast immediately to recarray
+        elif out.ndim == 0:
+            return out.view(numpy.recarray)
+        # otherwise, cast back to an instance of self
+        else:
+            return out.view(type(self))
 
     def __getsubitem__(self, item):
         """Gets a subfield using `field.subfield` notation.
