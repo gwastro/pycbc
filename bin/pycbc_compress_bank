@@ -129,7 +129,8 @@ dtype = numpy.complex128
 
 bank = waveform.FilterBank(args.bank_file, N/2+1, df, dtype,
                            low_frequency_cutoff=args.low_frequency_cutoff,
-                           approximant=args.approximant)
+                           approximant=args.approximant,
+                           enable_compressed_waveforms=False)
 templates = bank.table
 if args.tmplt_index is not None:
     imin, imax = args.tmplt_index
