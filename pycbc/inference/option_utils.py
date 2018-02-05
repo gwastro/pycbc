@@ -342,7 +342,7 @@ def validate_checkpoint_files(checkpoint_file, backup_file):
     The same applies to the backup file. The backup file must also have the
     same number of samples as the checkpoint file, otherwise, the backup is
     considered invalid.
-    
+
     If the checkpoint (backup) file is found to be valid, but the backup
     (checkpoint) file is not valid, then the checkpoint (backup) is copied to
     the backup (checkpoint).
