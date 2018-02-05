@@ -139,7 +139,8 @@ if args.tmplt_index is not None:
 
 # generate output file
 logging.info("writing template info to output")
-output = bank.write_to_hdf(args.output, force=args.force)
+output = bank.write_to_hdf(args.output, force=args.force,
+                           write_compressed_waveforms=False)
 
 # get the psd
 logging.info("getting psd")
