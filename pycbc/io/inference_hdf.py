@@ -550,10 +550,12 @@ class InferenceFile(h5py.File):
         """
         cmd = [" ".join(sys.argv)]
         try:
-            previous = self.attrs["cmd"].tolist()
+            previous = self.attrs["cmd"]
             if isinstance(previous, str):
                 # convert to list
                 previous = [previous]
+            elif isinstance(previous, numpy.ndarray):
+                previous = previous.tolist()
         except KeyError:
             previous = []
         self.attrs["cmd"] = cmd + previous
