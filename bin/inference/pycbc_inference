@@ -298,8 +298,7 @@ with ctx:
     if not checkpoint_valid:
         with InferenceFile(checkpoint_file, "w") as fp:
             # save command line and data
-            logging.info("Writing command line and data to output file")
-            fp.write_command_line()
+            logging.info("Creating and writing data to output file")
             fp.write_data(
                 strain_dict=strain_dict if opts.save_strain else None,
                 stilde_dict=stilde_dict if opts.save_stilde else None,
@@ -320,6 +319,13 @@ with ctx:
                     fp.write_injections(opts.injection_file.values()[0], ifo)
         # copy to backup
         shutil.copy(checkpoint_file, backup_file)
+
+    # write the command line, resume point
+    with InferenceFile(checkpoint_file, "a") as fp:
+        logging.info("Writing command line to file")
+        fp.write_command_line()
+        if checkpoint_valid:
+            fp.write_resume_point()
 
     # set the walkers initial positions from a pre-existing InferenceFile
     # or a specific initial distribution listed in the configuration file
