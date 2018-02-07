@@ -351,7 +351,7 @@ setup (
     long_description = open('descr.rst').read(),
     author = 'Ligo Virgo Collaboration - PyCBC team',
     author_email = 'alex.nitz@ligo.org',
-    url = 'https://ligo-cbc.github.io',
+    url = 'http://www.pycbc.org/',
     download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
     keywords = ['ligo', 'physics', 'gravity', 'signal processing', 'gravitational waves'],
     cmdclass = cmdclass,
