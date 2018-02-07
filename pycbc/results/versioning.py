@@ -21,7 +21,7 @@ import os
 import subprocess
 from pycbc.results import save_fig_with_metadata, html_escape
 
-import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
+import lal, lalframe, lalsimulation
 import pycbc_glue.git_version, pycbc.version
 
 def get_library_version_info():
@@ -70,36 +70,6 @@ def get_library_version_info():
     except AttributeError:
         add_info_new_version(lalframeinfo, lalframe, 'Frame')
     library_list.append(lalframeinfo)
-
-    lalmetaioinfo = {}
-    lalmetaioinfo['Name'] = 'LALMetaIO'
-    try:
-        lalmetaioinfo['ID'] = lalmetaio.MetaIOVCSId
-        lalmetaioinfo['Status'] = lalmetaio.MetaIOVCSStatus
-        lalmetaioinfo['Version'] = lalmetaio.MetaIOVCSVersion
-        lalmetaioinfo['Tag'] = lalmetaio.MetaIOVCSTag
-        lalmetaioinfo['Author'] = lalmetaio.MetaIOVCSAuthor
-        lalmetaioinfo['Branch'] = lalmetaio.MetaIOVCSBranch
-        lalmetaioinfo['Committer'] = lalmetaio.MetaIOVCSCommitter
-        lalmetaioinfo['Date'] = lalmetaio.MetaIOVCSDate
-    except AttributeError:
-        add_info_new_version(lalmetaioinfo, lalmetaio, 'MetaIO')
-    library_list.append(lalmetaioinfo)
-
-    lalinspiralinfo = {}
-    lalinspiralinfo['Name'] = 'LALInspiral'
-    try:
-        lalinspiralinfo['ID'] = lalinspiral.InspiralVCSId
-        lalinspiralinfo['Status'] = lalinspiral.InspiralVCSStatus
-        lalinspiralinfo['Version'] = lalinspiral.InspiralVCSVersion
-        lalinspiralinfo['Tag'] = lalinspiral.InspiralVCSTag
-        lalinspiralinfo['Author'] = lalinspiral.InspiralVCSAuthor
-        lalinspiralinfo['Branch'] = lalinspiral.InspiralVCSBranch
-        lalinspiralinfo['Committer'] = lalinspiral.InspiralVCSCommitter
-        lalinspiralinfo['Date'] = lalinspiral.InspiralVCSDate
-    except AttributeError:
-        add_info_new_version(lalinspiralinfo, lalinspiral, 'Inspiral')
-    library_list.append(lalinspiralinfo)
 
     lalsimulationinfo = {}
     lalsimulationinfo['Name'] = 'LALSimulation'
