@@ -6,12 +6,13 @@ matplotlib.use('Agg')
 from matplotlib.pyplot import cm
 import pylab, pycbc.pnutils, pycbc.results, pycbc, pycbc.version
 from pycbc import sensitivity
+from lal import YRJUL_SI as lal_YRJUL_SI
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='count')
-parser.add_argument('--injection-file', required=True,
-                    help="Required. HDF format injection result file.")
+parser.add_argument('--injection-files', nargs='+',
+                    help="Required. HDF format injection result file(s).")
 parser.add_argument('--output-file', required=True,
                     help='Destination file for the plot')
 parser.add_argument('--bin-type', choices=['spin', 'mchirp', 'total_mass',
@@ -87,88 +88,139 @@ if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 logging.info('Read in the data')
-f = h5py.File(args.injection_file, 'r')
 
-time = f['injections/end_time'][:]
+def get_spin(frame, inc, m1, m2, s1x, s1z, s2x, s2z):
+    # 'spin' means effective spin along orbital angular momentum
+    if frame == 'line-of-sight':
+        s1 = s1x * numpy.sin(inc) + s1z * numpy.cos(inc)
+        s2 = s2x * numpy.sin(inc) + s2z * numpy.cos(inc)
+    elif frame == 'orbit':
+        s1, s2 = s1z, s2z
+    else:
+        raise RuntimeError('Unknown spin frame!')
+    return (m1 * s1 + m2 * s2) / (m1 + m2)
 
-# Get the found (at any FAR)/missed injection indices
-found = f['found_after_vetoes/injection_index'][:]
-missed = f['missed/after_vetoes'][:]
+# initialize injection arrays and duration
+# mchirp is required for Monte-Carlo method for dchirp distributed inj
+missed = {
+    'dist'  : numpy.array([]),
+    'param' : numpy.array([]),
+    'mchirp': numpy.array([]),
+}
+found = {
+    'dist'  : numpy.array([]),
+    'param' : numpy.array([]),
+    'mchirp': numpy.array([]),
+    'sig'   : numpy.array([]),
+    'sig_exc' : numpy.array([]),
+}
+t = 0.
 
-# retrieve injection parameters so we can bin based on them
-dist = f['injections/distance'][:]
-m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
-s1z, s2z = f['injections/spin1z'][:], f['injections/spin2z'][:]
-s1x, s2x = f['injections/spin1x'][:], f['injections/spin2x'][:]
-s1y, s2y = f['injections/spin1y'][:], f['injections/spin2y'][:]
-inc = f['injections/inclination'][:]
-mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-if args.bin_type == 'template_duration':
-    duration = pycbc.pnutils.get_imr_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
-else:
-    duration = None
+for fi in args.injection_files:
+    with h5py.File(fi, 'r') as f:
 
-# Dict to hold possible bin types
-values = {}
-values['mchirp'] = mchirp
-values['eta'] = eta
-values['total_mass'] = m1 + m2
-values['max_mass'] = numpy.maximum(m1, m2)
-values['template_duration'] = duration
+        # Get the found (at any FAR)/missed injection indices
+        foundi = f['found_after_vetoes/injection_index'][:]
+        missedi = f['missed/after_vetoes'][:]
 
-if args.spin_frame == 'line-of-sight':
-    s1 = s1x * numpy.sin(inc) + s1z * numpy.cos(inc)
-    s2 = s2x * numpy.sin(inc) + s2z * numpy.cos(inc)
-elif args.spin_frame == 'orbit':
-    s1, s2 = s1z, s2z
-values['spin'] = (m1 * s1 + m2 * s2) / (m1 + m2)
+        # retrieve injection parameters
+        dist = f['injections/distance'][:]
+        m1, m2 = f['injections/mass1'][:], f['injections/mass2'][:]
+        s1x, s2x = f['injections/spin1x'][:], f['injections/spin2x'][:]
+        s1z, s2z = f['injections/spin1z'][:], f['injections/spin2z'][:]
+        # y-components not used but read them in for symmetry
+        s1y, s2y = f['injections/spin1y'][:], f['injections/spin2y'][:]
+        inc = f['injections/inclination'][:]
 
-# Legend labels for the binning
-labels = {}
-labels['mchirp'] = "$ M_{\\rm chirp} \in [%5.2f, %5.2f] M_\odot $"
-labels['total_mass'] = "$ M_{\\rm total} \in [%5.2f, %5.2f] M_\odot $"
-labels['max_mass'] = "$ {\\rm max}(m_1, m_2) \in [%5.2f, %5.2f] M_\odot $"
-labels['spin'] = "$\\chi^{\\parallel}_{\\rm eff} \in [%5.2f, %5.2f] $"
-labels['template_duration'] = "$t_{\\rm template} \in [%5.2f, %5.2f] s$"
+        mchirp = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)[0]
+        if args.bin_type == 'mchirp':
+            pvals = mchirp
+        elif args.bin_type == 'eta':
+            pvals = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)[1]
+        elif args.bin_type == 'total_mass':
+            pvals = m1 + m2
+        elif args.bin_type == 'max_mass':
+            pvals = numpy.maximum(m1, m2)
+        elif args.bin_type == 'spin':
+            pvals = get_spin(args.spin_frame, inc,
+                             m1, m2, s1x, s1z, s2x, s2z)
+        elif args.bin_type == 'template_duration':
+            # Will default to SEOBNRv4 approximant value
+            # Only valid/useful for non-spin or aligned-spin signals
+            pvals = pycbc.pnutils.get_imr_duration(m1, m2, s1z, s2z,
+                                                   f_low=args.f_lower)
+        else:
+            raise RuntimeError('Unrecognized --bin-type value!')
+
+        if args.sig_type == 'stat':
+            sig = f['found_after_vetoes/stat'][:]
+            sig_exc = None
+        elif args.sig_type == 'ifar':
+            sig = f['found_after_vetoes/ifar'][:]
+            sig_exc = f['found_after_vetoes/ifar_exc'][:]
+        elif args.sig_type == 'fap':
+            sig = f['found_after_vetoes/fap'][:]
+            sig_exc = f['found_after_vetoes/fap_exc'][:]
+        else:
+            raise RuntimeError('Unrecognized --sig-type value!')
+
+        # Add the current values to the arrays
+        missed['dist']  = numpy.append(missed['dist'], dist[missedi])
+        missed['param'] = numpy.append(missed['param'], pvals[missedi])
+        missed['mchirp']= numpy.append(missed['mchirp'], mchirp[missedi])
+        found['dist']   = numpy.append(found['dist'], dist[foundi])       
+        found['param']  = numpy.append(found['param'], pvals[foundi])
+        found['mchirp'] = numpy.append(found['mchirp'], mchirp[foundi])
+        found['sig']    = numpy.append(found['sig'], sig)
+        found['sig_exc']= numpy.append(found['sig_exc'], sig_exc)
+
+        # Time in years
+        t += f.attrs['foreground_time_exc'] / lal_YRJUL_SI
+
+# Parameter bin legend labels
+labels = {
+    'mchirp'     : "$ M_{\\rm chirp} \in [%5.2f, %5.2f] M_\odot $",
+    'eta'        : "$ \\eta $",
+    'total_mass' : "$ M_{\\rm total} \in [%5.2f, %5.2f] M_\odot $",
+    'max_mass'   : "$ {\\rm max}(m_1, m_2) \in [%5.2f, %5.2f] M_\odot $",
+    'spin'       : "$ \\chi_{\\rm eff} \in [%5.2f, %5.2f] $",
+    'template_duration' : "$ \\tau \in [%5.2f, %5.2f] s $"
+}
 
 ylabel = xlabel = ""
 
+# Set up significance values for x-axis
 if args.sig_type == 'stat':
-    sig = f['found_after_vetoes/stat'][:]
-    sig_exc = None
     xlabel = 'Ranking Statistic Value'
     if args.sig_bins:
         x_values = [float(v) for v in args.sig_bins]
     else:
         x_values = numpy.arange(9, 14, .05)
 elif args.sig_type == 'ifar':
-    sig = f['found_after_vetoes/ifar'][:]
-    sig_exc = f['found_after_vetoes/ifar_exc'][:]
     xlabel = 'Inverse False Alarm Rate (years)'
     if args.sig_bins:
         x_values = [float(v) for v in args.sig_bins]
     else:
-        x_values = 10 ** (numpy.arange(0, 4, .05))
+        x_values = 10. ** (numpy.arange(0, 4, .05))
 elif args.sig_type == 'fap':
-    sig = f['found_after_vetoes/fap'][:]
-    sig_exc = f['found_after_vetoes/fap_exc'][:]
     xlabel = 'False Alarm Probability'
     if args.sig_bins:
         x_values = [float(v) for v in args.sig_bins]
     else:
-        x_values = 10.0 ** -numpy.arange(1, 7)
-
-color=iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
-fvalues = [sig, sig_exc]
-do_labels = [True, False]
-alphas = [.8, .3]
+        x_values = 10. ** -numpy.arange(1, 7)
 
 if args.hdf_out:
     plotdict = {}
     plotdict['xvals'] = x_values
 
+# Switches for plotting both inclusive/exclusive significance
+color=iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
+fvalues = [found['sig'], found['sig_exc']]
+do_labels = [True, False]
+alphas = [.8, .3]
+
 fig = pylab.figure()
-# Plot each injection parameter bin
+# Cycle over parameter bins plotting each in turn
 for j in range(len(args.bins)-1):
     c = next(color)
 
@@ -179,37 +231,41 @@ for j in range(len(args.bins)-1):
 
         left  = float(args.bins[j])
         right = float(args.bins[j+1])
-        binval = values[args.bin_type]
 
         # Get distance of missed injections within parameter bin
-        mbm = numpy.logical_and(binval[missed] > left, binval[missed] < right)
-        m_dist = dist[missed][mbm]
+        binm = numpy.logical_and(missed['param'] >= left,
+                                 missed['param'] < right)
+        m_dist = missed['dist'][binm]
 
-        #Abort if the bin has too few triggers to calculate
+        # Abort if the bin has too few triggers
         if len(m_dist) < 2:
             continue
 
         vols, vol_errors = [], []
 
+        # Slice up found injections in parameter bin
+        binf = numpy.logical_and(found['param'] >= left,
+                                 found['param'] < right)
+        binfsig  = sig_val[binf]
+
         # Calculate each sensitive distance at a given significance threshold
         for x_val in x_values:
+            # Count found inj towards sensitivity if IFAR/stat exceeds threshold
+            # or if FAP value is less than threshold
             if args.sig_type == 'ifar' or args.sig_type == 'stat':
-                foundg = found[sig_val >= x_val]
-                foundm = found[sig_val < x_val]
+                loud = binfsig >= x_val
+                quiet = binfsig < x_val
             elif args.sig_type == 'fap':
-                foundg = found[sig_val <= x_val]
-                foundm = found[sig_val > x_val]
+                loud = binfsig <= x_val
+                quiet = binfsig > x_val
 
-            # get distances that are found within the bin and above the threshold
-            mbf = numpy.logical_and(binval[foundg] > left, binval[foundg] < right)
-            f_dist = dist[foundg][mbf]
+            # Distances of inj found above threshold
+            f_dist = found['dist'][binf][loud]
+            # Distances of inj found below threshold
+            fm_dist = found['dist'][binf][quiet]
 
-            # get the distances of inj that are below the threshold
-            mbfm = numpy.logical_and(binval[foundm] > left, binval[foundm] < right)
-            f_distm = dist[foundm][mbfm]
-
-            # add distances of found injections to the missed list
-            m_dist_full = numpy.append(m_dist, f_distm)
+            # Add distances of 'quiet' found injections to the missed list
+            m_dist_full = numpy.append(m_dist, fm_dist)
 
             # Choose the volume estimation method
             if args.integration_method == 'shell':
@@ -218,8 +274,9 @@ for j in range(len(args.bins)-1):
                 vol, vol_err = sensitivity.volume_binned_pylal(f_dist,
                                              m_dist_full, bins=args.dist_bins)
             elif args.integration_method == 'mc':
-                found_mchirp = mchirp[foundg][mbf]
-                missed_mchirp = numpy.append(mchirp[missed][mbm], mchirp[foundm][mbfm])
+                found_mchirp = found['mchirp'][binf][loud]
+                missed_mchirp = numpy.append(missed['mchirp'][binm],
+                                             found['mchirp'][binf][quiet])
 
                 vol, vol_err = sensitivity.volume_montecarlo(f_dist, m_dist_full,
                       found_mchirp, missed_mchirp, args.distance_param,
@@ -241,8 +298,7 @@ for j in range(len(args.bins)-1):
         elif args.dist_type == 'vt':
             ylabel = "Volume $\\times$ Time (yr Mpc$^3$)"
             pylab.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-            # Hard-coded Julian Year
-            t = f.attrs['foreground_time_exc'] / (365.25 * 24 * 3600)
+
             reach, ehigh, elow = vols * t, vol_errors * t, vol_errors * t
 
         label = labels[args.bin_type] % (left, right) if do_label else None
@@ -258,7 +314,7 @@ for j in range(len(args.bins)-1):
 if args.hdf_out:
     outfile = h5py.File(args.hdf_out,'w')
     for key in plotdict.keys():
-        outfile.create_dataset(key,data=plotdict[key])
+        outfile.create_dataset(key, data=plotdict[key])
 
 ax = pylab.gca()
 
