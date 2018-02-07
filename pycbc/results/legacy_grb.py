@@ -36,7 +36,6 @@ if 'matplotlib.backends' not in sys.modules:
     matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from pycbc_glue import markup, segments
-from lal.gpstime import gps_to_utc, LIGOTimeGPS
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 from matplotlib.ticker import ScalarFormatter
@@ -132,6 +131,7 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
         Write summary of information to markup.page object page
     """
     from pylal import antenna
+    from lal.gpstime import gps_to_utc, LIGOTimeGPS
 
     gps = args.start_time
     grbdate = gps_to_utc(LIGOTimeGPS(gps))\
