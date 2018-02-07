@@ -117,7 +117,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
         mchirp = injections[key]['chirp_mass']
         min_mchirp, max_mchirp = min(mchirp),  max(mchirp)
         distance = injections[key]['distance']
-     
+
         if injections[key]['d_dist'] == 'uniform':
             d_min, d_max = min(distance), max(distance)
         elif injections[key]['d_dist'] == 'dchirp':
@@ -235,7 +235,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
 
     return injections
 
-def process_injections(hdffile, inj_type = 'pipeline'):
+def process_injections(hdffile):
     """Function to read in the injection file and
        extract the found injections and all injections
 
@@ -268,25 +268,6 @@ def process_injections(hdffile, inj_type = 'pipeline'):
         data['stat'] = stat
 
     return data
-
-def merge_injections(all_inj):
-    """Merge injections across chunks.
-
-       Parameters
-       ----------
-       all_inj: dictionary
-           dictionary containing injections for various chunks
-
-       Returns
-       -------
-       data: dictionary
-           Dictionary containing the merged injections
-    """
-    injs = {}
-    for data in np.append(_save_params, 'found'):
-        injs[data] = np.concatenate([inj[data] for inj in tuple(all_inj.values())])
-
-    return injs
 
 def dlum_to_z(dl):
     ''' Get the redshift for a luminosity distance
@@ -350,55 +331,6 @@ def pdf_z_astro(z, V_min, V_max):
         at a redshift assuming standard cosmology
     '''
     return contracted_dVdc(z)/(V_max - V_min)
-
-def get_summed_vt(dictionary):
-    '''Read the VT results produced from estimate_vt and combine them.
-
-       Parameters
-       ----------
-       dictionary: dictionary
-             Dictionary obtained from estimate_vt function
-
-       Returns
-       -------
-       sum_vt: float
-          Sum of VTs for all the chunks in the dictionary
-       float
-          Error on summed VT estimated by propogating error
-    '''
-    sum_vt, sum_vt_err = 0, 0
-    for key in dictionary.keys():
-
-        if key == 'z_range':
-            continue
-
-        sum_vt += dictionary[key]['VT']
-        sum_vt_err += dictionary[key]['VT_err']**2
-
-    return sum_vt, np.sqrt(sum_vt_err)
-
-def get_accumulated_falloff(dictionary):
-    '''collect SNRs from all chunks to get collected fall off.
-
-       Parameters
-       ----------
-       dictionary: dictionary
-             Dictionary obtained from estimate_vt function
-
-       Returns
-       -------
-       float
-          array contaning all the SNRs over the chunks
-    '''
-    
-    thrs = []
-    for key in dictionary.keys():
-
-        if key == 'z_range':
-            continue
-        thrs.append(dictionary[key]['thr_falloff'])
-
-    return np.hstack(np.array(thrs).flat)
 
 def contracted_dVdc(z):
     #Return the time-dilated differential comoving volume
