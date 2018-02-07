@@ -11,8 +11,9 @@ from lal import YRJUL_SI as lal_YRJUL_SI
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='count')
-parser.add_argument('--injection-files', nargs='+',
-                    help="Required. HDF format injection result file(s).")
+parser.add_argument('--injection-file', nargs='+',
+                    help="Required. HDF format injection result file or space "
+                    "separated list of files")
 parser.add_argument('--output-file', required=True,
                     help='Destination file for the plot')
 parser.add_argument('--bin-type', choices=['spin', 'mchirp', 'total_mass',
@@ -180,7 +181,7 @@ for fi in args.injection_files:
 # Parameter bin legend labels
 labels = {
     'mchirp'     : "$ M_{\\rm chirp} \in [%5.2f, %5.2f] M_\odot $",
-    'eta'        : "$ \\eta $",
+    'eta'        : "$ \\eta \in [%5.2f, %5.2f] $",
     'total_mass' : "$ M_{\\rm total} \in [%5.2f, %5.2f] M_\odot $",
     'max_mass'   : "$ {\\rm max}(m_1, m_2) \in [%5.2f, %5.2f] M_\odot $",
     'spin'       : "$ \\chi_{\\rm eff} \in [%5.2f, %5.2f] $",
@@ -226,11 +227,14 @@ for j in range(len(args.bins)-1):
 
     # Plot both the inclusive and exclusive significance
     for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
-        if sig_val is None:
+        if sig_val[0] is None:
+            logging.info('Skipping exclusive significance')
             continue
 
         left  = float(args.bins[j])
         right = float(args.bins[j+1])
+        logging.info('Injections between param values %5.2f and %5.2f' %
+                     (left, right))
 
         # Get distance of missed injections within parameter bin
         binm = numpy.logical_and(missed['param'] >= left,
@@ -250,6 +254,7 @@ for j in range(len(args.bins)-1):
 
         # Calculate each sensitive distance at a given significance threshold
         for x_val in x_values:
+            logging.info('Thresholding on significance at %5.2f' % x_val)
             # Count found inj towards sensitivity if IFAR/stat exceeds threshold
             # or if FAP value is less than threshold
             if args.sig_type == 'ifar' or args.sig_type == 'stat':
