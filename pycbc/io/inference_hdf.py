@@ -255,12 +255,12 @@ class InferenceFile(h5py.File):
         cmd = self.attrs["cmd"]
         if isinstance(cmd, numpy.ndarray):
             cmd = cmd[-1]
-        return cmd 
+        return cmd
 
     @property
     def resume_points(self):
         """The iterations at which a run was resumed from checkpoint.
-        
+
         Returns
         -------
         resume_points : array or None
