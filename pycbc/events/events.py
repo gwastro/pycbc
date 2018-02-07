@@ -510,6 +510,7 @@ class EventManager(object):
                 numpy.array([filters_per_core / float(self.run_time)])
             f['search/setup_time_fraction'] = \
                 numpy.array([float(self.setup_time) / float(self.run_time)])
+            f['search/run_time'] = numpy.array([float(self.run_time)])
 
         if 'q_trans' in self.global_params:
             qtrans = self.global_params['q_trans']
