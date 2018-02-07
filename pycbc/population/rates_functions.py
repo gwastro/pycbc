@@ -51,26 +51,6 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
            'dec_factors': dec_factors[cstat_back_exc > rhomin],
            'cstat_back_exc': cstat_back_exc[cstat_back_exc > rhomin]}
 
-
-def merge_full_data(all_bkg):
-    """Merge triggers over all chunks
-
-       Parameters
-       ----------
-       all_bkg: dictionary
-
-       Returns
-       -------
-       dictionary
-              merged dictionaries
-    """
-   
-    merged_bkg = {}
-    for data in ['zerolagstat', 'dec_factors', 'cstat_back_exc']:
-        merged_bkg[data] = np.concatenate([all_bkg[c][data] for c in all_bkg.keys()])
-
-    return merged_bkg
-
 def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tlt_mass):
     ''' Read the STATMAP files to derive snr falloff for the background events.
         Save the output to a txt file
