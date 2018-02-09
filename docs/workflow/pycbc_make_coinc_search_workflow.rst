@@ -946,14 +946,14 @@ Make sure this executable is build following the instructions on the page :ref:`
 
 Add the following to the list of ``--config-overrides`` when running ``pycbc_make_coinc_search_workflow`` to tell Pegasus to run the inspiral code on the OSG::
      
-    'pegasus_profile-inspiral:pycbc|site:osg'
-    'pegasus_profile-inspiral:hints|execution.site:osg'
-    'pegasus_profile-inspiral:pycbc|installed:False'
-    'inspiral:fixed-weave-cache'
+    "pegasus_profile-inspiral:pycbc|site:osg"
+    "pegasus_profile-inspiral:hints|execution.site:osg"
+    "pegasus_profile-inspiral:pycbc|installed:False"
+    "inspiral:fixed-weave-cache"
 
 You also need a ``--config-overrides`` to ``pycbc_make_coinc_search_workflow`` that sets the staging site for the main workflow to the local site. To do this, add the following argument, replacing ``${WORKFLOW_NAME}`` with the string that is given as the argument to the option ``--workflow-name``::
 
-    'workflow-${WORKFLOW_NAME}-main:staging-site:osg=local'
+    "workflow-${WORKFLOW_NAME}-main:staging-site:osg=local"
 
 Optionally, you can add a configuration that will check that your grid proxy
 is valid locally before submitting the job. This means that if your grid proxy
@@ -961,7 +961,7 @@ expires before the workflow is complete, the failure will be on the local site
 before the job is actually submitted, and not on the remote site once the job
 has been scheduled and matched::
 
-    'pegasus_profile-inspiral:dagman|pre:/usr/bin/grid-proxy-info'
+    "pegasus_profile-inspiral:dagman|pre:/usr/bin/grid-proxy-info"
 
 Another useful enhancement for OSG running is to add profiles to your inspiral
 job that will tell Condor to put it on hold if it has been running for more
@@ -986,3 +986,4 @@ Add the following arguments to ``pycbc_submit_dax``::
 
 ``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed. The remote-staging-site is the intermediary computer than can pass files between the submitting computer and the computers doing the work.  ``hostname -f`` returns the full name of the computer. The full name of the computer that ``hostname -f`` has to be one that is accessible to both the submit machine and the workers. 
 
+Shared file system can not be used with OSG, so make sure that the ``--enable-shared-filesystem`` argument is not added to ``pycbc_submit_dax``.
