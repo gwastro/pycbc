@@ -117,7 +117,7 @@ found = {
 }
 t = 0.
 
-for fi in args.injection_files:
+for fi in args.injection_file:
     with h5py.File(fi, 'r') as f:
 
         # Get the found (at any FAR)/missed injection indices
