@@ -239,15 +239,19 @@ variable_args, static_args, constraints = \
                                      prior_section=opts.dist_section)
 
 if cp.has_section('replace_parameters'):
-    replace_args, out_args = option_utils.read_sampling_args_from_config(cp,
+    replace_args, replace_out_args = option_utils.read_sampling_args_from_config(cp,
                                section='replace_parameters')
     write_transforms = transforms.read_transforms_from_config(cp, 'transform')
     write_args = [arg for arg in variable_args if arg not in replace_args]
-    write_args += out_args
+    write_args += replace_out_args
 else:
     write_args = variable_args
     write_transforms = None
 
+if any(cp.get_subsections('waveform_transforms')):
+    waveform_transforms = transforms.read_transforms_from_config(cp, 'waveform_transforms')
+else:
+    waveform_transforms = None
 
 # get prior distribution for each variable parameter
 logging.info("Reading distributions")
@@ -261,8 +265,15 @@ logging.info("Drawing samples")
 samples = randomsampler.rvs(size=opts.ninjections)
 
 if write_transforms is not None:
-    logging.info("Transforming to output variables")
+    logging.info("Transforming to replace parameters")
     samples = transforms.apply_transforms(samples, write_transforms)
+
+if waveform_transforms is not None:
+    logging.info("Transforming to waveform transform parameters")
+    pre_wf_transform_keys = samples.fieldnames
+    samples = transforms.apply_transforms(samples, waveform_transforms)
+    waveform_transform_out_args = [arg for arg in samples.fieldnames if arg not in pre_wf_transform_keys]
+    write_args += waveform_transform_out_args
 
 # write results
 logging.info("Writing results")
