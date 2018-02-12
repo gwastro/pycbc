@@ -345,7 +345,8 @@ def validate_checkpoint_files(checkpoint_file, backup_file):
 
     If the checkpoint (backup) file is found to be valid, but the backup
     (checkpoint) file is not valid, then the checkpoint (backup) is copied to
-    the backup (checkpoint).
+    the backup (checkpoint). Thus, this function ensures that checkpoint and
+    backup files are either both valid or both invalid.
 
     Parameters
     ----------
@@ -357,9 +358,8 @@ def validate_checkpoint_files(checkpoint_file, backup_file):
     Returns
     -------
     checkpoint_valid : bool
-        Whether or not the checkpoint file may be used for loading samples.
-    backup_valid : bool
-        Whether or not the backup file may be used for loading samples.
+        Whether or not the checkpoint (and backup) file may be used for loading
+        samples.
     """
     # check if checkpoint file exists and is valid
     logging.info("Validating checkpoint and backup files")
@@ -408,7 +408,7 @@ def validate_checkpoint_files(checkpoint_file, backup_file):
         # copy the backup to the checkpoint
         shutil.copy(backup_file, checkpoint_file)
         checkpoint_valid = True
-    return checkpoint_valid, backup_valid
+    return checkpoint_valid
 
 
 def add_low_frequency_cutoff_opt(parser):

@@ -149,8 +149,7 @@ if os.path.exists(opts.output_file) and not opts.force:
 # check for backup file(s)
 checkpoint_file = opts.output_file + '.checkpoint'
 backup_file = opts.output_file + '.bkup'
-checkpoint_valid, backup_valid = validate_checkpoint_files(checkpoint_file,
-                                                           backup_file)
+checkpoint_valid = validate_checkpoint_files(checkpoint_file, backup_file)
 
 # determine what to do with checkpoints
 if checkpoint_valid and not opts.resume_from_checkpoint and not opts.force:
@@ -158,7 +157,7 @@ if checkpoint_valid and not opts.resume_from_checkpoint and not opts.force:
                   "resume-from-checkpoint not on. If you wish to overwrite "
                   "use --force; otherwise, use --resume-from-checkpoint")
 if not opts.resume_from_checkpoint and opts.force:
-    checkpoint_valid = backup_valid = False
+    checkpoint_valid = False
 
 # check for how many iterations to run
 max_iterations = opts.niterations
@@ -321,11 +320,11 @@ with ctx:
         shutil.copy(checkpoint_file, backup_file)
 
     # write the command line, resume point
-    with InferenceFile(checkpoint_file, "a") as fp:
-        logging.info("Writing command line to file")
-        fp.write_command_line()
-        if checkpoint_valid:
-            fp.write_resume_point()
+    for fn in [checkpoint_file, backup_file]:
+        with InferenceFile(fn, "a") as fp:
+            fp.write_command_line()
+            if checkpoint_valid:
+                fp.write_resume_point()
 
     # set the walkers initial positions from a pre-existing InferenceFile
     # or a specific initial distribution listed in the configuration file
@@ -449,8 +448,8 @@ with ctx:
                 sampler.write_acls(fp, acls)
 
         # check validity
-        checkpoint_valid, backup_valid = validate_checkpoint_files(
-            checkpoint_file, backup_file)
+        checkpoint_valid = validate_checkpoint_files(checkpoint_file,
+                                                     backup_file)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
 
