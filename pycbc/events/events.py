@@ -35,6 +35,7 @@ from pycbc.detector import Detector
 
 from . import coinc
 
+
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
     """Return list of values and indices values over threshold in series.
@@ -69,7 +70,7 @@ class ThresholdCluster(object):
     """Create a threshold and cluster engine
 
     Parameters
-    ----------
+    -----------
     series : complex64
       Input pycbc.types.Array (or subclass); it will be searched for
       points above threshold that are then clustered
@@ -92,7 +93,7 @@ class _BaseThresholdCluster(object):
         Threshold and cluster the memory specified at instantiation with the
         threshold specified at creation and the window size specified at creation.
 
-        Parameters:
+        Parameters
         -----------
         threshold : float32
           The minimum absolute value of the series given at object initialization
