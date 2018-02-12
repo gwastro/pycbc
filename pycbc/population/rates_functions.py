@@ -71,7 +71,7 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tl
         hi_tlt_mass: float
                High mass for template for trigger to be considered
     '''
-    
+
     with h5py.File(fname_bank, 'r') as bulk:
         mass1_bank = bulk['mass1'][:]
         mass2_bank = bulk['mass2'][:]
@@ -157,13 +157,6 @@ def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
     Function to fit the likelihood Fixme
     '''
 
-    def log_sum_exp(u, v):
-
-        lse = log(np.exp(u - np.maximum(u, v)) + np.exp(v - np.maximum(u, v)))
-        lse += np.maximum(u, v)
-
-        return lse
-
     Lb = np.random.uniform(0., maxfg, len(Rf))
     pquit = 0
 
@@ -181,7 +174,8 @@ def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
         plR = 0
         for lfr in log_fg_ratios:
     
-            plR += log_sum_exp(lfr + log_Lf, log_Lb)
+            plR += np.logaddexp(lfr + log_Lf, log_Lb)
+
         plR -= (Lf + Lb)
 
         plRn = plR - max(plR)
