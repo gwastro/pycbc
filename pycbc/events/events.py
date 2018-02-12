@@ -35,6 +35,7 @@ from pycbc.detector import Detector
 
 from . import coinc
 
+
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
     """Return list of values and indices values over threshold in series.
