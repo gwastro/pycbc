@@ -316,10 +316,10 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     expected_value : {None, float}
         Plot the expected value of the parameter.
     expected_value_min : {None, float}
-        Plot the minimum expected value of the parameter, if parameter is 
+        Plot the minimum expected value of the parameter, if parameter is
         expected to lie within a range.
     expected_value_max : {None, float}
-        Plot the maximum expected value of the parameter, if parameter is 
+        Plot the maximum expected value of the parameter, if parameter is
         expected to lie within a range.
     rotated : {False, bool}
         Plot the histogram on the y-axis instead of the x. Default is False.
@@ -727,7 +727,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                            color=expected_parameters_color, zorder=5)
             except KeyError:
                 pass
-    
+
         if expected_parameters_min is not None:
             try:
                 ax.axvline(expected_parameters_min[px], ls='dashdot', lw=1.5,
