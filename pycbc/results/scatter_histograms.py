@@ -285,7 +285,8 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
 def create_marginalized_hist(ax, values, label, percentiles=None,
         color='k', fillcolor='gray', linecolor='navy',
-        title=True, expected_value=None, expected_color='red',
+        title=True, expected_value=None, expected_value_min=None,
+        expected_value_max=None, expected_color='red',
         rotated=False, plot_min=None, plot_max=None):
     """Plots a 1D marginalized histogram of the given param from the given
     samples.
@@ -312,6 +313,14 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     title : {True, bool}
         Add a title with the median value +/- uncertainty, with the
         max(min) `percentile` used for the +(-) uncertainty.
+    expected_value : {None, float}
+        Plot the expected value of the parameter.
+    expected_value_min : {None, float}
+        Plot the minimum expected value of the parameter, if parameter is 
+        expected to lie within a range.
+    expected_value_max : {None, float}
+        Plot the maximum expected value of the parameter, if parameter is 
+        expected to lie within a range.
     rotated : {False, bool}
         Plot the histogram on the y-axis instead of the x. Default is False.
     plot_min : {None, float}
@@ -347,6 +356,16 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             ax.axhline(expected_value, color=expected_color, lw=1.5, zorder=2)
         else:
             ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
+    if expected_value_min is not None:
+        if rotated:
+            ax.axhline(expected_value_min, color=expected_color, ls='dashdot', lw=1.5, zorder=2)
+        else:
+            ax.axvline(expected_value_min, color=expected_color, ls='dashdot', lw=1.5, zorder=2)
+    if expected_value_max is not None:
+        if rotated:
+            ax.axhline(expected_value_max, color=expected_color, ls='dashdot', lw=1.5, zorder=2)
+        else:
+            ax.axvline(expected_value_max, color=expected_color, ls='dashdot', lw=1.5, zorder=2)
     if title:
         values_med = numpy.median(values)
         values_min = values.min()
@@ -469,6 +488,7 @@ def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
 
 def create_multidim_plot(parameters, samples, labels=None,
                 mins=None, maxs=None, expected_parameters=None,
+                expected_parameters_min=None, expected_parameters_max=None,
                 expected_parameters_color='r',
                 plot_marginal=True, plot_scatter=True,
                 marginal_percentiles=None, contour_percentiles=None,
@@ -499,6 +519,14 @@ def create_multidim_plot(parameters, samples, labels=None,
         `samples`.
     expected_parameters : {None, dict}, optional
         Expected values of `parameters`, as a dictionary mapping parameter
+        names -> values. A cross will be plotted at the location of the
+        expected parameters on axes that plot any of the expected parameters.
+    expected_parameters_min : {None, dict}, optional
+        Expected minimum values of `parameters`, as a dictionary mapping parameter
+        names -> values. A cross will be plotted at the location of the
+        expected parameters on axes that plot any of the expected parameters.
+    expected_parameters_max : {None, dict}, optional
+        Expected maximum values of `parameters`, as a dictionary mapping parameter
         names -> values. A cross will be plotted at the location of the
         expected parameters on axes that plot any of the expected parameters.
     expected_parameters_color : {'r', string}, optional
@@ -635,9 +663,25 @@ def create_multidim_plot(parameters, samples, labels=None,
                     expected_value = None
             else:
                 expected_value = None
+            if expected_parameters_min is not None:
+                try:
+                    expected_value_min = expected_parameters_min[param]
+                except KeyError:
+                    expected_value_min = None
+            else:
+                expected_value_min = None
+            if expected_parameters_max is not None:
+                try:
+                    expected_value_max = expected_parameters_max[param]
+                except KeyError:
+                    expected_value_max = None
+            else:
+                expected_value_max = None
             create_marginalized_hist(ax, samples[param], label=labels[param],
                 color=hist_color, fillcolor=fill_color, linecolor=line_color,
                 title=True, expected_value=expected_value,
+                expected_value_min=expected_value_min,
+                expected_value_max=expected_value_max,
                 expected_color=expected_parameters_color,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param],
                 percentiles=marginal_percentiles)
@@ -680,6 +724,30 @@ def create_multidim_plot(parameters, samples, labels=None,
                 pass
             try:
                 ax.axhline(expected_parameters[py], lw=1.5,
+                           color=expected_parameters_color, zorder=5)
+            except KeyError:
+                pass
+    
+        if expected_parameters_min is not None:
+            try:
+                ax.axvline(expected_parameters_min[px], ls='dashdot', lw=1.5,
+                           color=expected_parameters_color, zorder=5)
+            except KeyError:
+                pass
+            try:
+                ax.axhline(expected_parameters_min[py], ls='dashdot', lw=1.5,
+                           color=expected_parameters_color, zorder=5)
+            except KeyError:
+                pass
+
+        if expected_parameters_max is not None:
+            try:
+                ax.axvline(expected_parameters_max[px], ls='dashdot', lw=1.5,
+                           color=expected_parameters_color, zorder=5)
+            except KeyError:
+                pass
+            try:
+                ax.axhline(expected_parameters_max[py], ls='dashdot', lw=1.5,
                            color=expected_parameters_color, zorder=5)
             except KeyError:
                 pass

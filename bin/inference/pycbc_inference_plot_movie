@@ -225,7 +225,9 @@ else:
 fp.close()
 
 # get expected parameters
-expected_parameters = option_utils.expected_parameters_from_cli(opts)
+expected_parameters = option_utils.expected_parameters_from_cli(opts.expected_parameters)
+expected_parameters_min = option_utils.expected_parameters_from_cli(opts.expected_parameters_min)
+expected_parameters_max = option_utils.expected_parameters_from_cli(opts.expected_parameters_max)
 expected_parameters_color = opts.expected_parameters_color
 
 logging.info('Choosing common characteristics for all figures')
@@ -269,6 +271,8 @@ def _make_frame(frame):
                             contour_color=opts.contour_color,
                             use_kombine=opts.use_kombine_kde,
                         expected_parameters=expected_parameters,
+                        expected_parameters_min=expected_parameters_min,
+                        expected_parameters_max=expected_parameters_max,
                         expected_parameters_color=expected_parameters_color)
 
     # Write sample number

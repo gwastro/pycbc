@@ -753,6 +753,16 @@ def add_plot_posterior_option_group(parser):
                              "(or, if no parameters are provided, the same as "
                              "the parameter name specified in the variable "
                              "args in the input file.")
+    pgroup.add_argument('--expected-parameters-min', nargs='+', metavar='PARAM:VAL',
+                        default=[],
+                        help="Works like expected-parameters. If the parameter "
+                             "value is expected to lie within a range, this "
+                             "option can be used to plot the minimum value for "
+                             "that range. ")
+    pgroup.add_argument('--expected-parameters-max', nargs='+', metavar='PARAM:VAL',
+                        default=[],
+                        help="Same as expected-parameters-min. Plots the maximum of "
+                             "the expected range. ")
     pgroup.add_argument('--expected-parameters-color', default='r',
                         help="What to color the expected-parameters cross. "
                              "Default is red.")
@@ -794,27 +804,28 @@ def plot_ranges_from_cli(opts):
     return mins, maxs
 
 
-def expected_parameters_from_cli(opts):
-    """Parses the --expected-parameters arguments from the `plot_posterior`
-    option group.
+def expected_parameters_from_cli(expected_parameters):
+    """Parses the expected parameters arguments.
 
     Parameters
     ----------
-    opts : ArgumentParser
+    expected_parameters : ArgumentParser
         The parsed arguments from the command line.
 
     Returns
     -------
     dict
         Dictionary of parameter name -> expected value. Only parameters that
-        were specified in the --expected-parameters option will be included; if
+        were specified in the expected parameters option will be included; if
         no parameters were provided, will return an empty dictionary.
     """
     expected = {}
-    for x in opts.expected_parameters:
+    for x in expected_parameters:
         x = x.split(':')
         if len(x) != 2:
-            raise ValueError("option --expected-paramters not specified "
+            raise ValueError("--expected-parameters or "
+                             "--expected-parameters-min or "
+                             "--expected-parameters-max not specified "
                              "correctly; see help")
         expected[x[0]] = float(x[1])
     return expected
