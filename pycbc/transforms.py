@@ -208,7 +208,6 @@ class CustomTransform(BaseTransform):
         # we'll create a scratch FieldArray space to do transforms on
         # we'll default to length 1; this will be changed if a map is passed
         # with more than one value in it
-        self.scratch = None
         self._createscratch()
 
     def _createscratch(self, shape=1):
