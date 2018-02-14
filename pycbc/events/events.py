@@ -447,6 +447,8 @@ class EventManager(object):
             f['bank_chisq_dof'] = self.events['bank_chisq_dof']
             f['cont_chisq'] = self.events['cont_chisq']
             f['end_time'] = self.events['time_index'] / float(self.opt.sample_rate) + self.opt.gps_start_time
+            if opt.psdvar_short_segment is not None:
+                f['psd_var_val'] = self.events['psd_var_val']
             try:
                 # Precessing
                 template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t in self.template_params], dtype=numpy.float32)
@@ -672,6 +674,8 @@ class EventManagerMultiDet(EventManager):
                 f['end_time'] = ifo_events['time_index'] / \
                         float(self.opt.sample_rate[ifo_str]) + \
                         self.opt.gps_start_time[ifo_str]
+                if opt.psdvar_short_segment is not None:
+                    f['psd_var_val'] = ifo_events['psd_var_val']
                 try:
                     # Precessing
                     template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t \

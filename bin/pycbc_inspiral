@@ -20,7 +20,7 @@ import sys
 import logging, argparse, numpy, itertools
 import pycbc
 import pycbc.version
-from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
+from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events, psd_variation
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
@@ -199,10 +199,13 @@ pycbc.init_logging(opt.verbose)
 fft.from_cli(opt)
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli(opt)
 ctx = scheme.from_cli(opt)
-#gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
-#                           inj_filter_rejector=inj_filter_rejector)
-gwstrain, psd_variation = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
-                                  inj_filter_rejector=inj_filter_rejector)
+
+if opt.psdvar_short_segment is None:
+    gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
+                               inj_filter_rejector=inj_filter_rejector)
+else:
+    gwstrain, psd_var = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
+                                        inj_filter_rejector=inj_filter_rejector)
 
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
@@ -400,7 +403,9 @@ with ctx:
             out_vals['time_index'] = idx
             out_vals['snr'] = snrv * norm
 
-            out_vals['psd_var_val'] = find_trigger_values(psd_variation, 
+            if opt.psdvar_short_segment is not None:
+                out_vals['psd_var_val'] = \
+                            psd_variation.find_trigger_value(psd_var, 
                                           out_vals['time_index'], 
                                           opt.gps_start_time, opt.sample_rate)
 
