@@ -199,8 +199,11 @@ pycbc.init_logging(opt.verbose)
 fft.from_cli(opt)
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli(opt)
 ctx = scheme.from_cli(opt)
-gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
-                           inj_filter_rejector=inj_filter_rejector)
+#gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
+#                           inj_filter_rejector=inj_filter_rejector)
+gwstrain, psd_variation = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
+                                  inj_filter_rejector=inj_filter_rejector)
+
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
 
@@ -239,6 +242,7 @@ with ctx:
         'bank_chisq'     : float32,
         'bank_chisq_dof' : int,
         'cont_chisq'     : float32,
+        'psd_var_val'    : float32,
                 }
     out_types.update(SingleDetSGChisq.returns)
     out_vals = {key: None for key in out_types}
@@ -395,6 +399,10 @@ with ctx:
 
             out_vals['time_index'] = idx
             out_vals['snr'] = snrv * norm
+
+            out_vals['psd_var_val'] = find_trigger_values(psd_variation, 
+                                          out_vals['time_index'], 
+                                          opt.gps_start_time, opt.sample_rate)
 
             event_mgr.add_template_events(names, [out_vals[n] for n in names])
 
