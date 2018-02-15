@@ -316,11 +316,11 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     expected_value : {None, float}
         Plot the expected value of the parameter.
     expected_value_min : {None, float}
-        Plot the minimum expected value of the parameter, if parameter is
-        expected to lie within a range.
+        Specify the expected lower boundary value of the range in which the 
+        parameter is expected to lie. The expected region will be shaded in the plot.
     expected_value_max : {None, float}
-        Plot the maximum expected value of the parameter, if parameter is
-        expected to lie within a range.
+        Specify the expected upper boundary value of the range in which the 
+        parameter is expected to lie. The expected region will be shaded in the plot.
     rotated : {False, bool}
         Plot the histogram on the y-axis instead of the x. Default is False.
     plot_min : {None, float}
@@ -342,6 +342,56 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         orientation = 'vertical'
     ax.hist(values, bins=50, histtype=htype, orientation=orientation,
             facecolor=fillcolor, edgecolor=color, lw=2, normed=True)
+    if rotated:
+        # Remove x-ticks
+        ax.set_xticks([])
+        # turn off x-labels
+        ax.set_xlabel('')
+        # set limits
+        ymin, ymax = ax.get_ylim()
+        if plot_min is not None:
+            ymin = plot_min
+        if plot_max is not None:
+            ymax = plot_max
+        ax.set_ylim(ymin, ymax)
+        # Plot expected
+        if expected_value is not None:
+            ax.axhline(expected_value, color=expected_color, lw=1.5, zorder=2)
+        elif (expected_value_min and expected_value_max) is not None:
+            ax.axhspan(expected_value_min, expected_value_max, alpha=0.5,
+                       color=expected_color)
+        elif expected_value_min is not None and expected_value_max is None:
+            ax.axhspan(expected_value_min, plot_max, alpha=0.5,
+                       color=expected_color)
+        elif expected_value_max is not None and expected_value_min is None:
+            ax.axhspan(plot_min, expected_value_max, alpha=0.5,
+                       color=expected_color)
+    else:
+        # Remove y-ticks
+        ax.set_yticks([])
+        # turn off y-label
+        ax.set_ylabel('')
+        # set limits
+        xmin, xmax = ax.get_xlim()
+        if plot_min is not None:
+            xmin = plot_min
+        if plot_max is not None:
+            xmax = plot_max
+        ax.set_xlim(xmin, xmax)
+        # Plot expected
+        if expected_value is not None:
+            ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
+        if (expected_value_min and expected_value_max) is not None:
+            ax.axvspan(expected_value_min, expected_value_max, alpha=0.5,
+                       color=expected_color)
+        elif expected_value_min is not None and expected_value_max is None:
+            ax.axvspan(expected_value_min, plot_max, alpha=0.5,
+                       color=expected_color)
+        elif expected_value_max is not None and expected_value_min is None:
+            ax.axvspan(plot_min, expected_value_max, alpha=0.5,
+                       color=expected_color)
+
+
     if percentiles is None:
         percentiles = [5., 50., 95.]
     values = numpy.percentile(values, percentiles)
@@ -350,22 +400,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             ax.axhline(y=val, ls='dashed', color=linecolor, lw=2, zorder=3)
         else:
             ax.axvline(x=val, ls='dashed', color=linecolor, lw=2, zorder=3)
-    # plot expected
-    if expected_value is not None:
-        if rotated:
-            ax.axhline(expected_value, color=expected_color, lw=1.5, zorder=2)
-        else:
-            ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
-    if expected_value_min is not None:
-        if rotated:
-            ax.axhline(expected_value_min, color=expected_color, ls='dashdot', lw=1.5, zorder=2)
-        else:
-            ax.axvline(expected_value_min, color=expected_color, ls='dashdot', lw=1.5, zorder=2)
-    if expected_value_max is not None:
-        if rotated:
-            ax.axhline(expected_value_max, color=expected_color, ls='dashdot', lw=1.5, zorder=2)
-        else:
-            ax.axvline(expected_value_max, color=expected_color, ls='dashdot', lw=1.5, zorder=2)
+
     if title:
         values_med = numpy.median(values)
         values_min = values.min()
@@ -381,35 +416,10 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             # sets colored title for marginal histogram
             set_marginal_histogram_title(ax, fmt, color,
                                          label=label, rotated=rotated)
-
-            # Remove x-ticks
-            ax.set_xticks([])
-            # turn off x-labels
-            ax.set_xlabel('')
-            # set limits
-            ymin, ymax = ax.get_ylim()
-            if plot_min is not None:
-                ymin = plot_min
-            if plot_max is not None:
-                ymax = plot_max
-            ax.set_ylim(ymin, ymax)
-
         else:
 
             # sets colored title for marginal histogram
             set_marginal_histogram_title(ax, fmt, color, label=label)
-
-            # Remove y-ticks
-            ax.set_yticks([])
-            # turn off y-label
-            ax.set_ylabel('')
-            # set limits
-            xmin, xmax = ax.get_xlim()
-            if plot_min is not None:
-                xmin = plot_min
-            if plot_max is not None:
-                xmax = plot_max
-            ax.set_xlim(xmin, xmax)
 
 
 def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
@@ -523,12 +533,10 @@ def create_multidim_plot(parameters, samples, labels=None,
         expected parameters on axes that plot any of the expected parameters.
     expected_parameters_min : {None, dict}, optional
         Expected minimum values of `parameters`, as a dictionary mapping parameter
-        names -> values. A cross will be plotted at the location of the
-        expected parameters on axes that plot any of the expected parameters.
+        names -> values.
     expected_parameters_max : {None, dict}, optional
         Expected maximum values of `parameters`, as a dictionary mapping parameter
-        names -> values. A cross will be plotted at the location of the
-        expected parameters on axes that plot any of the expected parameters.
+        names -> values.
     expected_parameters_color : {'r', string}, optional
         What color to make the expected parameters cross.
     plot_marginal : {True, bool}
@@ -724,30 +732,6 @@ def create_multidim_plot(parameters, samples, labels=None,
                 pass
             try:
                 ax.axhline(expected_parameters[py], lw=1.5,
-                           color=expected_parameters_color, zorder=5)
-            except KeyError:
-                pass
-
-        if expected_parameters_min is not None:
-            try:
-                ax.axvline(expected_parameters_min[px], ls='dashdot', lw=1.5,
-                           color=expected_parameters_color, zorder=5)
-            except KeyError:
-                pass
-            try:
-                ax.axhline(expected_parameters_min[py], ls='dashdot', lw=1.5,
-                           color=expected_parameters_color, zorder=5)
-            except KeyError:
-                pass
-
-        if expected_parameters_max is not None:
-            try:
-                ax.axvline(expected_parameters_max[px], ls='dashdot', lw=1.5,
-                           color=expected_parameters_color, zorder=5)
-            except KeyError:
-                pass
-            try:
-                ax.axhline(expected_parameters_max[py], ls='dashdot', lw=1.5,
                            color=expected_parameters_color, zorder=5)
             except KeyError:
                 pass

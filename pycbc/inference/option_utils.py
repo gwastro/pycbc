@@ -755,14 +755,20 @@ def add_plot_posterior_option_group(parser):
                              "args in the input file.")
     pgroup.add_argument('--expected-parameters-min', nargs='+', metavar='PARAM:VAL',
                         default=[],
-                        help="Works like expected-parameters. If the parameter "
-                             "value is expected to lie within a range, this "
-                             "option can be used to plot the minimum value for "
-                             "that range. ")
+                        help="Specify the expected minimum boundary over of "
+                             "the range in which the parameter could lie. "
+                             "The expected region will be shaded in the 1D "
+                             "marginalized histogram plot for the parameter. "
+                             "Both this and --expected-parameters cannot be "
+                             "provided for a parameter.")
     pgroup.add_argument('--expected-parameters-max', nargs='+', metavar='PARAM:VAL',
                         default=[],
-                        help="Same as expected-parameters-min. Plots the maximum of "
-                             "the expected range. ")
+                        help="Specify the expected maximum boundary over of "
+                             "the range in which the parameter could lie. "
+                             "The expected region will be shaded in the 1D "
+                             "marginalized histogram plot for the parameter. "
+                             "Both this and --expected-parameters cannot be "
+                             "provided for a parameter.")
     pgroup.add_argument('--expected-parameters-color', default='r',
                         help="What to color the expected-parameters cross. "
                              "Default is red.")

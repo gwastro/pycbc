@@ -146,6 +146,15 @@ expected_parameters_min = option_utils.expected_parameters_from_cli(
 expected_parameters_max = option_utils.expected_parameters_from_cli(
                                                 opts.expected_parameters_max)
 
+# Check if expected parameters options if any, are provided properly
+for x in expected_parameters:
+    if x in expected_parameters_min:
+        raise RuntimeError("Can't specify both --expected-parameters and "
+                           "--expected-parameters-min for {0}".format(x))
+    if x in expected_parameters_max:
+        raise RuntimeError("Can't specify both --expected-parameters and "
+                           "--expected-parameters-max for {0}".format(x))
+
 # assign some colors
 colors = itertools.cycle(["black"] + ["C{}".format(i) for i in range(10)])
 
