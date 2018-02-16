@@ -224,12 +224,6 @@ else:
 
 fp.close()
 
-# Check if expected parameters options if any, are provided properly
-if (opts.expected_parameters and opts.expected_parameters_min) is not None or
-    (opts.expected_parameters and opts.expected_parameters_max) is not None:
-    raise RuntimeError("Can't specify both --expected-parameters and
-    --expected-parameters-min or --expected-parameters-max!")
-
 # get expected parameters
 expected_parameters = option_utils.expected_parameters_from_cli(opts.expected_parameters)
 expected_parameters_min = option_utils.expected_parameters_from_cli(opts.expected_parameters_min)
