@@ -316,11 +316,11 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     expected_value : {None, float}
         Plot the expected value of the parameter.
     expected_value_min : {None, float}
-        Specify the expected lower boundary value of the range in which the 
-        parameter is expected to lie. The expected region will be shaded in the plot.
+        Specify the expected lower boundary value of the range in which the parameter
+        is expected to lie. The expected region will be shaded in the plot.
     expected_value_max : {None, float}
-        Specify the expected upper boundary value of the range in which the 
-        parameter is expected to lie. The expected region will be shaded in the plot.
+        Specify the expected upper boundary value of the range in which the parameter
+        is expected to lie. The expected region will be shaded in the plot.
     rotated : {False, bool}
         Plot the histogram on the y-axis instead of the x. Default is False.
     plot_min : {None, float}
