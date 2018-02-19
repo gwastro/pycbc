@@ -64,7 +64,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
         Segment length in samples.
     seg_stride : int
         Separation between consecutive segments, in samples.
-    window : {'hann'}
+    window : {'hann', numpy.ndarray}
         Function used to window segments before Fourier transforming, or
         a `numpy.ndarray` that specifies the window.
     avg_method : {'median', 'mean', 'median-mean'}
