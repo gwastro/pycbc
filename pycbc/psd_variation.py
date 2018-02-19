@@ -5,9 +5,8 @@ import logging
 
 from pycbc.types import TimeSeries, zeros
 
-def calc_psd_variation(strain, psd_short_segment=4., 
-                       psd_long_segment=512., overlap=0.5, low_freq=20., 
-                       high_freq=512.):
+def calc_psd_variation(strain, psd_short_segment, psd_long_segment, 
+                       overlap, low_freq, high_freq):
     """Calculates time series of PSD variability
 
     This function first splits the segment up in to 512 second chunks. It 

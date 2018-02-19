@@ -593,22 +593,22 @@ def insert_strain_option_group(parser, gps_times=True):
 
     # Options for PSD variation
     data_reading_group.add_argument('--psdvar_short_segment', type=float,
-                                    metavar='SECONDS', default=4.,
+                                    metavar='SECONDS',
                                     help='Length of short segment when '
                                          'calculating the PSD variability.')
     data_reading_group.add_argument('--psdvar_long_segment', type=float,
-                                    metavar='SECONDS', default=512.,
+                                    metavar='SECONDS',
                                     help='Length of long segment when '
                                          'calculating the PSD variability.')
     data_reading_group.add_argument('--psdvar_overlap', type=float,
-                                    metavar='SECONDS', default=0.5,
+                                    metavar='SECONDS',
                                     help='Sample length of the PSD.')
     data_reading_group.add_argument('--psdvar_low_freq', type=float,
-                                    metavar='HERTZ', default=20.,
+                                    metavar='HERTZ', 
                                     help='Minimum frequency to consider in '
                                          'PSD comparison.')
     data_reading_group.add_argument('--psdvar_high_freq', type=float,
-                                    metavar='HERTZ', default=512.,
+                                    metavar='HERTZ', 
                                     help='Maximum frequency to consider in '
                                          'PSD comparison.')
     return data_reading_group
