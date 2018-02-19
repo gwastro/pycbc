@@ -750,6 +750,34 @@ class TimeSeries(Array):
         fft(tmp, f)
         return f
 
+    def add_common(self, other):
+        """Return the sum of the two time series.
+
+        For timeseries with the same start time, this is the same as the standard
+        add method. If they do not have the same start time, then the
+        intersection is used between the two.
+        """
+        if self.delta_t != other.delta_t:
+            raise ValueError('The sample rate must be identical')
+
+        dstart = other.start_time - self.start_time
+        dend = other.end_time - self.end_time
+
+        ts1 = self
+        ts2 = other
+
+        if dstart > 0:
+            ts1 = ts1.crop(dstart, 0)
+        else:
+            ts2 = ts2.crop(-dstart, 0)
+
+        if dend > 0:
+            ts2 = ts2.crop(0, dend)
+        else:
+            ts1 = ts1.crop(0, -dend)
+
+        return ts1 + ts2
+
     @_nocomplex
     def cyclic_time_shift(self, dt):
         """Shift the data and timestamps by a given number of seconds
