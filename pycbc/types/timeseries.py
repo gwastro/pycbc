@@ -750,12 +750,15 @@ class TimeSeries(Array):
         fft(tmp, f)
         return f
 
-    def add_common(self, other):
-        """Return the sum of the two time series.
+    def common(self, other):
+        """Return the intersection of this time series and another
 
-        For timeseries with the same start time, this is the same as the standard
-        add method. If they do not have the same start time, then the
-        intersection is used between the two.
+        Returns
+        -------
+        ts1: pycbc.types.TimeSeries
+            The intersecting portion of the first vector
+        ts2: pycbc.types.TimeSeries
+            The intersecting portion of the second time series
         """
         if self.delta_t != other.delta_t:
             raise ValueError('The sample rate must be identical')
@@ -776,6 +779,16 @@ class TimeSeries(Array):
         else:
             ts1 = ts1.crop(0, -dend)
 
+        return ts1, ts2
+
+    def add_common(self, other):
+        """Return the sum of the two time series.
+
+        For timeseries with the same start time, this is the same as the standard
+        add method. If they do not have the same start time, then the
+        intersection is used between the two.
+        """
+        ts1, ts2 = self.common(other)
         return ts1 + ts2
 
     @_nocomplex
