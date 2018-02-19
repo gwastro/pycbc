@@ -65,7 +65,8 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
     seg_stride : int
         Separation between consecutive segments, in samples.
     window : {'hann'}
-        Function used to window segments before Fourier transforming.
+        Function used to window segments before Fourier transforming, or
+        a `numpy.ndarray` that specifies the window.
     avg_method : {'median', 'mean', 'median-mean'}
         Method used for averaging individual segment PSDs.
 
@@ -90,8 +91,10 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
     }
 
     # sanity checks
-    if window not in window_map:
-        raise ValueError('Invalid window')
+    if isinstance(window, numpy.ndarray) and window.size != seg_len:
+        raise ValueError('Invalid window: incorrect window length')
+    if not isinstance(window, numpy.ndarray) and window not in window_map:
+        raise ValueError('Invalid window: unknown window {!r}'.format(window))
     if avg_method not in ('mean', 'median', 'median-mean'):
         raise ValueError('Invalid averaging method')
     if type(seg_len) is not int or type(seg_stride) is not int \
@@ -132,7 +135,9 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
         raise ValueError('Incorrect choice of segmentation parameters')
         
-    w = Array(window_map[window](seg_len).astype(timeseries.dtype))
+    if not isinstance(window, numpy.ndarray):
+        window = window_map[window](seg_len)
+    w = Array(window.astype(timeseries.dtype))
 
     # calculate psd of each segment
     delta_f = 1. / timeseries.delta_t / seg_len
