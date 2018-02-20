@@ -38,7 +38,6 @@ import pycbc.events
 import pycbc.frame
 import pycbc.filter
 from scipy.signal import kaiserord
-from pycbc import psd_variation
 
 def next_power_of_2(n):
     """Return the smallest integer power of 2 larger than the argument.
@@ -282,7 +281,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
         if opt.psdvar_short_segment is not None:
             logging.info("Calculating PSD variation")
-            psd_var = psd_variation.calc_psd_variation(strain, 
+            psd_var = pycbc.psd.calc_psd_variation(strain, 
                     opt.psdvar_short_segment, opt.psdvar_long_segment, 
                     opt.psdvar_overlap, opt.psdvar_low_freq, 
                     opt.psdvar_high_freq)

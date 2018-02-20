@@ -20,7 +20,7 @@ import sys
 import logging, argparse, numpy, itertools
 import pycbc
 import pycbc.version
-from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events, psd_variation
+from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
@@ -405,7 +405,7 @@ with ctx:
 
             if opt.psdvar_short_segment is not None:
                 out_vals['psd_var_val'] = \
-                            psd_variation.find_trigger_value(psd_var, 
+                            pycbc.psd.find_trigger_value(psd_var, 
                                           out_vals['time_index'], 
                                           opt.gps_start_time, opt.sample_rate)
 
