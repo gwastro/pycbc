@@ -750,46 +750,35 @@ class TimeSeries(Array):
         fft(tmp, f)
         return f
 
-    def common(self, other):
-        """Return the intersection of this time series and another
+    def add_into(self, other):
+        """Return the sum of the two time series accounting for the time stamp.
 
-        Returns
-        -------
-        ts1: pycbc.types.TimeSeries
-            The intersecting portion of the first vector
-        ts2: pycbc.types.TimeSeries
-            The intersecting portion of the second time series
+        The other vector will be resized and time shifted wiht sub-sample
+        precision before adding. This assumes that one can assume zeros
+        outside of the original vector range.
         """
-        if self.delta_t != other.delta_t:
-            raise ValueError('The sample rate must be identical')
+        # only handle equal sample rate for now.
+        if self.sample_rate != other.sample_rate:
+            raise ValueError('Sample rate must be the same')
 
-        dstart = other.start_time - self.start_time
-        dend = other.end_time - self.end_time
+        # Other is disjoint
+        if ((other.start_time > self.end_time) or 
+           (self.start_time > other.end_time)):
+            return self.copy()
 
-        ts1 = self
-        ts2 = other
+        other = other.copy()
+        dt = float((other.start_time - self.start_time) * self.sample_rate)
+        if not dt.is_integer():
+            diff = (dt - _numpy.floor(dt))
+            other.resize(len(other) + (len(other) + 1) % 2 + 1)
+            other = other.cyclic_time_shift(diff)
 
-        if dstart > 0:
-            ts1 = ts1.crop(dstart, 0)
-        else:
-            ts2 = ts2.crop(-dstart, 0)
-
-        if dend > 0:
-            ts2 = ts2.crop(0, dend)
-        else:
-            ts1 = ts1.crop(0, -dend)
-
-        return ts1, ts2
-
-    def add_common(self, other):
-        """Return the sum of the two time series.
-
-        For timeseries with the same start time, this is the same as the standard
-        add method. If they do not have the same start time, then the
-        intersection is used between the two.
-        """
-        ts1, ts2 = self.common(other)
-        return ts1 + ts2
+        ts = self.copy()
+        start = max(other.start_time, self.start_time)
+        end = min(other.end_time, self.end_time)
+        part = ts.time_slice(start, end)
+        part += other.time_slice(start, end)
+        return ts      
 
     @_nocomplex
     def cyclic_time_shift(self, dt):
