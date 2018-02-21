@@ -762,7 +762,7 @@ class TimeSeries(Array):
             raise ValueError('Sample rate must be the same')
 
         # Other is disjoint
-        if ((other.start_time > self.end_time) or 
+        if ((other.start_time > self.end_time) or
            (self.start_time > other.end_time)):
             return self.copy()
 
@@ -778,7 +778,7 @@ class TimeSeries(Array):
         end = min(other.end_time, self.end_time)
         part = ts.time_slice(start, end)
         part += other.time_slice(start, end)
-        return ts      
+        return ts
 
     @_nocomplex
     def cyclic_time_shift(self, dt):
