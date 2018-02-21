@@ -18,13 +18,14 @@
 """
 
 import logging
+import shutil
 import pycbc.inference.sampler
 from pycbc.inference import burn_in
 from pycbc import conversions
 from pycbc import transforms
 from pycbc.distributions import bounded
 from pycbc.distributions import constraints
-from pycbc.io.inference_hdf import InferenceFile
+from pycbc.io.inference_hdf import InferenceFile, check_integrity
 from pycbc.io.inference_txt import InferenceTXTFile
 from pycbc.inference import likelihood
 from pycbc.workflow import WorkflowConfigParser
@@ -328,6 +329,87 @@ def sampler_from_cli(opts, likelihood_evaluator, pool=None):
 #                       Utilities for loading data
 #
 #-----------------------------------------------------------------------------
+
+def validate_checkpoint_files(checkpoint_file, backup_file):
+    """Checks if the given checkpoint and/or backup files are valid.
+
+    The checkpoint file is considered valid if:
+
+        * it passes all tests run by ``InferenceFile.check_integrity``;
+        * it has at least one sample written to it (indicating at least one
+          checkpoint has happened).
+
+    The same applies to the backup file. The backup file must also have the
+    same number of samples as the checkpoint file, otherwise, the backup is
+    considered invalid.
+
+    If the checkpoint (backup) file is found to be valid, but the backup
+    (checkpoint) file is not valid, then the checkpoint (backup) is copied to
+    the backup (checkpoint). Thus, this function ensures that checkpoint and
+    backup files are either both valid or both invalid.
+
+    Parameters
+    ----------
+    checkpoint_file : string
+        Name of the checkpoint file.
+    backup_file : string
+        Name of the backup file.
+
+    Returns
+    -------
+    checkpoint_valid : bool
+        Whether or not the checkpoint (and backup) file may be used for loading
+        samples.
+    """
+    # check if checkpoint file exists and is valid
+    logging.info("Validating checkpoint and backup files")
+    try:
+        check_integrity(checkpoint_file)
+        checkpoint_valid = True
+    except (ValueError, KeyError, IOError):
+        checkpoint_valid = False
+    # backup file
+    try:
+        check_integrity(backup_file)
+        backup_valid = True
+    except (ValueError, KeyError, IOError):
+        backup_valid = False
+    # check if there are any samples in the file; if not, we'll just start from
+    # scratch
+    if checkpoint_valid:
+        with InferenceFile(checkpoint_file, 'r') as fp:
+            try:
+                group = '{}/{}'.format(fp.samples_group, fp.variable_args[0])
+                nsamples = fp[group].size
+                checkpoint_valid = nsamples != 0
+            except KeyError:
+                checkpoint_valid = False
+    # check if there are any samples in the backup file
+    if backup_valid:
+        with InferenceFile(backup_file, 'r') as fp:
+            try:
+                group = '{}/{}'.format(fp.samples_group, fp.variable_args[0])
+                backup_nsamples = fp[group].size
+                backup_valid = backup_nsamples != 0
+            except KeyError:
+                backup_valid = False
+    # check that the checkpoint and backup have the same number of samples;
+    # if not, assume the checkpoint has the correct number
+    if checkpoint_valid and backup_valid:
+        backup_valid = nsamples == backup_nsamples
+    # decide what to do based on the files' statuses
+    if checkpoint_valid and not backup_valid:
+        # copy the checkpoint to the backup
+        logging.info("Backup invalid; copying checkpoint file")
+        shutil.copy(checkpoint_file, backup_file)
+        backup_valid = True
+    elif backup_valid and not checkpoint_valid:
+        logging.info("Checkpoint invalid; copying backup file")
+        # copy the backup to the checkpoint
+        shutil.copy(backup_file, checkpoint_file)
+        checkpoint_valid = True
+    return checkpoint_valid
+
 
 def add_low_frequency_cutoff_opt(parser):
     """Adds the low-frequency-cutoff option to the given parser."""

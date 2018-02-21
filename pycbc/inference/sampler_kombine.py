@@ -133,17 +133,16 @@ class KombineSampler(BaseMCMCSampler):
             The list of log proposal densities for the walkers at positions p,
             with shape (nwalkers, ndim).
         """
-        blob0 = None
-        if self.niterations == 0:
-            # first time running, use the initial positions
+        # get starting point from pos; if it is None, means that sampler
+        # hasn't run yet, so we get starting point from p0
+        p0 = self._pos
+        if p0 is None:
             p0 = self.p0
-            if self.likelihood_evaluator.return_meta:
-                blob0 = [self.likelihood_evaluator(p0[wi, :])[1]
-                         for wi in range(self.nwalkers)]
-        else:
-            p0 = None
-            # kombine requires blob data to be specified
-            blob0 = self._currentblob
+        # do the same for starting blob
+        blob0 = self._currentblob
+        if blob0 is None and self.likelihood_evaluator.return_meta:
+            blob0 = [self.likelihood_evaluator(p0[wi, :])[1]
+                     for wi in range(self.nwalkers)]
         kwargs['blob0'] = blob0
         if 'update_interval' not in kwargs:
             # use the internal update interval
@@ -174,7 +173,7 @@ class KombineSampler(BaseMCMCSampler):
         """Clears the chain and blobs from memory.
         """
         # store the iteration that the clear is occuring on
-        self._lastclear = self.niterations
+        self.lastclear = self.niterations
         # kombine stores its chain as niterations x nwalkers x ndim
         current_shape = self._sampler._chain.shape
         new_shape = (0, current_shape[1], current_shape[2])

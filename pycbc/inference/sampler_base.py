@@ -118,10 +118,11 @@ class _BaseSampler(object):
 
     def __init__(self, likelihood_evaluator):
         self.likelihood_evaluator = likelihood_evaluator
-        self._lastclear = 0
+        self.lastclear = 0
 
     @classmethod
-    def from_cli(cls, opts, likelihood_evaluator, pool=None, likelihood_call=None):
+    def from_cli(cls, opts, likelihood_evaluator, pool=None,
+                 likelihood_call=None):
         """This function create an instance of this sampler from the given
         command-line options.
         """
@@ -166,7 +167,7 @@ class _BaseSampler(object):
     @property
     def niterations(self):
         """Get the current number of iterations."""
-        return self.chain.shape[-2] + self._lastclear
+        return self.chain.shape[-2] + self.lastclear
 
     @property
     def acceptance_fraction(self):
@@ -330,7 +331,7 @@ class BaseMCMCSampler(_BaseSampler):
         self._p0 = None
         self._currentblob = None
         self._nwalkers = None
-        self._lastclear = 0
+        self.lastclear = 0
         self.burn_in_iterations = None
         # initialize
         super(BaseMCMCSampler, self).__init__(likelihood_evaluator)
@@ -647,7 +648,7 @@ class BaseMCMCSampler(_BaseSampler):
         self.write_likelihood_stats(fp, start_iteration=start_iteration,
                                     max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
-
+        self.write_state(fp)
 
     @staticmethod
     def _read_oldstyle_fields(fp, fields_group, fields, array_class,
