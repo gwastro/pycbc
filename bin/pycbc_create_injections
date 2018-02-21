@@ -22,8 +22,7 @@ Config file syntax
 ------------------
 The configuration file should have a [variable_args], a [static_args],
 and one or more [distribution] sections. Multiple [constraint] sections and
-a [replace_parameters] and one or more [transform] sections may also be
-provided. An example:
+one or more [waveform_transforms] sections may also be provided. An example:
 
     [variable_args]
     mass1 =
@@ -60,11 +59,7 @@ provided. An example:
     polar-angle = spin1_polar
     azimuthal-angle = spin1_azimuthal
 
-    [replace_parameters]
-    ; replace parameters on the right with parameters on the left
-    spin1x, spin1y, spin1z : spin1_a, spin1_azimuthal, spin1_polar
-
-    [transform-spin1x+spin1y+spin1z]
+    [waveform_transforms-spin1x+spin1y+spin1z]
     name = spherical_spin_1_to_cartesian_spin_1
 
 This config file would generate injections uniform in mass1 and mass2, with a
@@ -89,11 +84,10 @@ arguments to initialize that distribution; see the distributions module for
 details.
 
 The variable_args need not be parameters understood by the waveform module.  In
-that case, a [replace_parameters] section and corresponding [transform]
-sections must be provided that map variable_args not understood by the waveform
-module to parameters that are understood. In the above example, spin1_a,
-spin1_azimuthal, and spin1_polar are converted to spin1x, spin1y, and spin1z
-before being written out. Any transform in the transforms module may be used to
+that case, a [waveform_transforms] sections must be provided that map variable_args
+not understood by the waveform module to parameters that are understood. In the above
+example, spin1_a, spin1_azimuthal, and spin1_polar are converted to spin1x, spin1y,
+and spin1z before being written out. Any transform in the transforms module may be used to
 do this; see that module for details. No attempt is made to check that provided
 parameter names are sensible. It is up to the user to ensure that written
 parameters are understood by the waveform approximant that will be used.
@@ -120,11 +114,12 @@ import numpy
 import pycbc
 import pycbc.version
 from pycbc import distributions
-from pycbc.workflow import WorkflowConfigParser
-from pycbc.inference import option_utils
-from pycbc.distributions import JointDistribution
-from pycbc.waveform import parameters
 from pycbc import transforms
+from pycbc.distributions import JointDistribution
+from pycbc.inference import option_utils
+from pycbc.io import record
+from pycbc.waveform import parameters
+from pycbc.workflow import WorkflowConfigParser
 import h5py
 
 # stuff for writing xml files... remove this when we drop xml
@@ -238,16 +233,11 @@ variable_args, static_args, constraints = \
                                      option_utils.read_args_from_config(cp,
                                      prior_section=opts.dist_section)
 
-if cp.has_section('replace_parameters'):
-    replace_args, out_args = option_utils.read_sampling_args_from_config(cp,
-                               section='replace_parameters')
-    write_transforms = transforms.read_transforms_from_config(cp, 'transform')
-    write_args = [arg for arg in variable_args if arg not in replace_args]
-    write_args += out_args
+if any(cp.get_subsections('waveform_transforms')):
+    waveform_transforms = transforms.read_transforms_from_config(cp, 'waveform_transforms')
 else:
+    waveform_transforms = None
     write_args = variable_args
-    write_transforms = None
-
 
 # get prior distribution for each variable parameter
 logging.info("Reading distributions")
@@ -260,9 +250,16 @@ randomsampler = JointDistribution(variable_args, *dists,
 logging.info("Drawing samples")
 samples = randomsampler.rvs(size=opts.ninjections)
 
-if write_transforms is not None:
-    logging.info("Transforming to output variables")
-    samples = transforms.apply_transforms(samples, write_transforms)
+if waveform_transforms is not None:
+    logging.info("Transforming to waveform transform parameters")
+    for t in waveform_transforms:
+        if not set(t.inputs).isdisjoint(set(static_args.keys())):
+            for item in list(set(t.inputs) & set(static_args.keys())):
+                samples = samples.add_fields([numpy.repeat(static_args[item],
+                                             opts.ninjections).astype(float)],
+                                             [item])
+    samples = transforms.apply_transforms(samples, waveform_transforms)
+    write_args = [arg for arg in samples.fieldnames if arg not in static_args.keys()]
 
 # write results
 logging.info("Writing results")
