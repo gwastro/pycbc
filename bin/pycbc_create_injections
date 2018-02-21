@@ -22,7 +22,7 @@ Config file syntax
 ------------------
 The configuration file should have a [variable_args], a [static_args],
 and one or more [distribution] sections. Multiple [constraint] sections and
-one or more [waveforms_transforms] sections may also be provided. An example:
+one or more [waveform_transforms] sections may also be provided. An example:
 
     [variable_args]
     mass1 =
@@ -84,7 +84,7 @@ arguments to initialize that distribution; see the distributions module for
 details.
 
 The variable_args need not be parameters understood by the waveform module.  In
-that case, a [waveforms_transforms] sections must be provided that map variable_args
+that case, a [waveform_transforms] sections must be provided that map variable_args
 not understood by the waveform module to parameters that are understood. In the above
 example, spin1_a, spin1_azimuthal, and spin1_polar are converted to spin1x, spin1y,
 and spin1z before being written out. Any transform in the transforms module may be used to
