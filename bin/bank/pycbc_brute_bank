@@ -2,7 +2,8 @@
 """Generate a bank of templates using a brute force stochastic method.
 """
 import numpy, h5py, logging, argparse, numpy.random, sys
-import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.pnutils
+import pycbc.waveform, pycbc.filter, pycbc.types, pycbc.psd, pycbc.fft, pycbc.conversions
+from scipy.stats import gaussian_kde
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--verbose', action='store_true')
@@ -102,7 +103,7 @@ class TriangleBank(object):
 
         #Apply tua0 threshold
         if args.tau0_threshold:
-            hp.tau0, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(
+            hp.tau0 = pycbc.conversions.tau0_from_mass1_mass2(
                                             hp.params['mass1'], 
                                             hp.params['mass2'], 15.0)
             r = r[abs(self.tau0()[r] - hp.tau0) < args.tau0_threshold]
@@ -115,9 +116,9 @@ class TriangleBank(object):
             if j is None:
                 hp.matches = matches[r]
                 hp.indices = r
-                logging.info("Template is Added MaxMatch:%0.3f BankSize:%i "
-                             "AfterSigma:%i AfterTau0:%i Matches:%i"
-                              % (mmax, len(self), msig, mtau, mnum))
+                #logging.info("Template is Added MaxMatch:%0.3f BankSize:%i "
+                #             "AfterSigma:%i AfterTau0:%i Matches:%i"
+                #              % (mmax, len(self), msig, mtau, mnum))
                 return False
 
             hc = self[j]
@@ -222,6 +223,7 @@ if args.input_file:
     bank, _ = bank.check_params(gen, params, args.minimal_match)
 
 while conv > tolerance:
+    # Standard Round
     r += 1
     params = {}
     for name, pmin, pmax in zip(args.params, args.min, args.max):
@@ -235,9 +237,57 @@ while conv > tolerance:
             params[k] = params[k][l]
 
     blen = len(bank)
-    bank, conv = bank.check_params(gen, params, args.minimal_match)
-    logging.info("Round: %s Size: %s conv: %s added: %s",
-                 r, len(bank), conv, len(bank) - blen)
+    bank, uconv = bank.check_params(gen, params, args.minimal_match)
+    logging.info("Uniform Round: %s Size: %s conv: %s added: %s",
+                 r, len(bank), uconv, len(bank) - blen)
+
+    kloop = 0
+    while (kloop == 0) or (kconv / okconv) > .5:
+        r += 1
+        kloop += 1
+        # Kde round
+        trail = 300
+        if kloop == 1:
+            trail = len(bank)
+
+        p = params.keys()
+        p.remove('approximant')
+        bdata = numpy.array([bank.key(k)[-trail:] for k in p])
+
+        kde = gaussian_kde(bdata)
+        points = kde.resample(size=size)
+        for k, v in zip(p, points):
+            params[k] = v
+        params['approximant'] = numpy.array([args.approximant]*size)
+
+
+        # Filter out stuff
+        l = None
+        for name, pmin, pmax in zip(args.params, args.min, args.max):
+            nl = (params[name] < pmax) & (params[name] > pmin)
+            l = (nl & l) if l is not None else nl
+
+        for k in params:
+            params[k] = params[k][l]
+
+        if args.max_mtotal:
+            l = params['mass1'] + params['mass2'] < args.max_mtotal
+            for k in params:
+                params[k] = params[k][l]
+
+        blen = len(bank)
+        bank, kconv = bank.check_params(gen, params, args.minimal_match)
+        logging.info("KDE Round %s: %s Size: %s conv: %s added: %s",
+                     kloop, r, len(bank), kconv, len(bank) - blen)
+        if uconv:
+            logging.info('Ratio of convergences: %2.3f' % (kconv / (uconv)))
+
+        if kloop == 1:
+            okconv = kconv
+        
+        if kconv <= tolerance:
+            conv = kconv
+            break
 
 o = h5py.File(args.output_file, 'w')
 for k in params:
