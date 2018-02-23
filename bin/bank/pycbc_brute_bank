@@ -54,12 +54,19 @@ class TriangleBank(object):
     """
     def __init__(self, p=None):
         self.waveforms = p if p is not None else []
+        self.tbins = {}
 
     def __len__(self):
         return len(self.waveforms)
 
     def insert(self, hp):
         self.waveforms.append(hp)
+
+        for b in [hp.tbin - 1, hp.tbin, hp.tbin + 1]:
+            if b in self.tbins:
+                self.tbins[b].append(len(self)-1)
+            else:
+                self.tbins[b] = [len(self)-1]
 
     def __getitem__(self, index):
         return self.waveforms[index]
@@ -106,7 +113,13 @@ class TriangleBank(object):
             hp.tau0 = pycbc.conversions.tau0_from_mass1_mass2(
                                             hp.params['mass1'], 
                                             hp.params['mass2'], 15.0)
-            r = r[abs(self.tau0()[r] - hp.tau0) < args.tau0_threshold]
+            hp.tbin = int(hp.tau0 / args.tau0_threshold)
+
+            if hp.tbin in self.tbins:
+                r = numpy.array(self.tbins[hp.tbin])
+            else:
+                r = r[:0]
+
         mtau = len(r)
 
         # Try to do some actual matches
