@@ -1,18 +1,17 @@
 """ PSD Variation """
 
 import numpy
-import logging
 
 from pycbc.types import TimeSeries, zeros
 
-def calc_psd_variation(strain, psd_short_segment, psd_long_segment, 
+def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
                        overlap, low_freq, high_freq):
     """Calculates time series of PSD variability
 
-    This function first splits the segment up in to 512 second chunks. It 
-    then calculates the PSD over this 512 second period as well as in 4 
-    second chunks throughout each 512 second period. Next the function 
-    estimates how different the 4 second PSD is to the 512 second PSD and 
+    This function first splits the segment up in to 512 second chunks. It
+    then calculates the PSD over this 512 second period as well as in 4
+    second chunks throughout each 512 second period. Next the function
+    estimates how different the 4 second PSD is to the 512 second PSD and
     produces a timeseries of this variability.
 
     Parameters
@@ -37,12 +36,12 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
     """
 
     # Find the times of the long segments
-    times_long = numpy.arange(float(strain.start_time), 
+    times_long = numpy.arange(float(strain.start_time),
                               float(strain.end_time), psd_long_segment)
 
     # Set up the empty time series for the PSD variation estimate
-    psd_var = TimeSeries(zeros(int((strain.end_time - strain.start_time) / 
-                  psd_short_segment)), delta_t=psd_short_segment, 
+    psd_var = TimeSeries(zeros(int((strain.end_time - strain.start_time) /
+                  psd_short_segment)), delta_t=psd_short_segment,
                   copy=False, epoch=strain.start_time)
 
     ind = 0
@@ -56,7 +55,7 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
                                        psd_short_segment)
         else:
             psd_long = strain.time_slice(float(strain.end_time) -
-                           psd_long_segment, 
+                           psd_long_segment,
                            float(strain.end_time)).psd(overlap)
             times_short = numpy.arange(tlong, float(strain.end_time),
                                        psd_short_segment)
@@ -75,7 +74,7 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
         kmin = int(low_freq / psd_long.delta_f)
         kmax = int(high_freq / psd_long.delta_f)
         # Comapre the PSD of the short segment to the long segment
-        #diff = numpy.array([numpy.std((p_short[kmin:kmax] / 
+        #diff = numpy.array([numpy.std((p_short[kmin:kmax] /
         #           psd_long[kmin:kmax])) for p_short in psd_short])
         diff = numpy.array([(p_short[kmin:kmax] / psd_long[kmin:kmax]).sum()
                            for p_short in psd_short])
@@ -97,7 +96,7 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
     psd_var : TimeSeries
         Time series of the varaibility in the PSD estimation
     idx : numpy.ndarray
-        Time indices of the triggers 
+        Time indices of the triggers
     start : float
         GPS start time
     sample_rate : float

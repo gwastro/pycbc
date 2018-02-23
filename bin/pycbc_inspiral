@@ -405,8 +405,8 @@ with ctx:
 
             if opt.psdvar_short_segment is not None:
                 out_vals['psd_var_val'] = \
-                            pycbc.psd.find_trigger_value(psd_var, 
-                                          out_vals['time_index'], 
+                            pycbc.psd.find_trigger_value(psd_var,
+                                          out_vals['time_index'],
                                           opt.gps_start_time, opt.sample_rate)
 
             event_mgr.add_template_events(names, [out_vals[n] for n in names])

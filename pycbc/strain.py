@@ -281,9 +281,9 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
         if opt.psdvar_short_segment is not None:
             logging.info("Calculating PSD variation")
-            psd_var = pycbc.psd.calc_psd_variation(strain, 
-                    opt.psdvar_short_segment, opt.psdvar_long_segment, 
-                    opt.psdvar_overlap, opt.psdvar_low_freq, 
+            psd_var = pycbc.psd.calc_psd_variation(strain,
+                    opt.psdvar_short_segment, opt.psdvar_long_segment,
+                    opt.psdvar_overlap, opt.psdvar_low_freq,
                     opt.psdvar_high_freq)
 
         if opt.gating_file is not None:
@@ -603,11 +603,11 @@ def insert_strain_option_group(parser, gps_times=True):
                                     metavar='SECONDS',
                                     help='Sample length of the PSD.')
     data_reading_group.add_argument('--psdvar_low_freq', type=float,
-                                    metavar='HERTZ', 
+                                    metavar='HERTZ',
                                     help='Minimum frequency to consider in '
                                          'PSD comparison.')
     data_reading_group.add_argument('--psdvar_high_freq', type=float,
-                                    metavar='HERTZ', 
+                                    metavar='HERTZ',
                                     help='Maximum frequency to consider in '
                                          'PSD comparison.')
     return data_reading_group
