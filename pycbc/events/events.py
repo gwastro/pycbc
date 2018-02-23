@@ -486,6 +486,9 @@ class EventManager(object):
             if 'sg_chisq' in self.events.dtype.names:
                 f['sg_chisq'] = self.events['sg_chisq']
 
+            if self.opt.psdvar_short_segment is not None:
+                f['psd_var_val'] = self.events['psd_var_val']
+
         if self.opt.trig_start_time:
             f['search/start_time'] = numpy.array([self.opt.trig_start_time])
             search_start_time = float(self.opt.trig_start_time)
@@ -713,6 +716,9 @@ class EventManagerMultiDet(EventManager):
                     f['chisq_dof'] = numpy.zeros(len(ifo_events))
 
                 f['template_hash'] = th[tid]
+
+                if self.opt.psdvar_short_segment is not None:
+                    f['psd_var_val'] = ifo_events['psd_var_val']
 
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([\
