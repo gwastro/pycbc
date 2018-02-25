@@ -230,15 +230,6 @@ expected_parameters_min = option_utils.expected_parameters_from_cli(opts.expecte
 expected_parameters_max = option_utils.expected_parameters_from_cli(opts.expected_parameters_max)
 expected_parameters_color = opts.expected_parameters_color
 
-# Check if expected parameters options if any, are provided properly
-for x in expected_parameters:
-    if x in expected_parameters_min:
-        raise RuntimeError("Can't specify both --expected-parameters and "
-                           "--expected-parameters-min for {0}".format(x))
-    if x in expected_parameters_max:
-        raise RuntimeError("Can't specify both --expected-parameters and "
-                           "--expected-parameters-max for {0}".format(x))
-
 logging.info('Choosing common characteristics for all figures')
 # Set common min and max for axis in all plots
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
