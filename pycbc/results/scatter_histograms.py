@@ -341,7 +341,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     else:
         orientation = 'vertical'
     ax.hist(values, bins=50, histtype=htype, orientation=orientation,
-            facecolor=fillcolor, edgecolor=color, lw=2, normed=True)
+            facecolor=fillcolor, alpha=0.85, edgecolor=color, lw=2, normed=True)
     if rotated:
         # Remove x-ticks
         ax.set_xticks([])
@@ -359,13 +359,13 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             ax.axhline(expected_value, color=expected_color, lw=1.5, zorder=2)
         elif (expected_value_min and expected_value_max) is not None:
             ax.axhspan(expected_value_min, expected_value_max, alpha=0.5,
-                       color=expected_color)
+                       color=expected_color, zorder=-1)
         elif expected_value_min is not None and expected_value_max is None:
             ax.axhspan(expected_value_min, plot_max, alpha=0.5,
-                       color=expected_color)
+                       color=expected_color, zorder=-1)
         elif expected_value_max is not None and expected_value_min is None:
             ax.axhspan(plot_min, expected_value_max, alpha=0.5,
-                       color=expected_color)
+                       color=expected_color, zorder=-1)
     else:
         # Remove y-ticks
         ax.set_yticks([])
@@ -383,14 +383,13 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
         if (expected_value_min and expected_value_max) is not None:
             ax.axvspan(expected_value_min, expected_value_max, alpha=0.5,
-                       color=expected_color)
+                       color=expected_color, zorder=-1)
         elif expected_value_min is not None and expected_value_max is None:
             ax.axvspan(expected_value_min, plot_max, alpha=0.5,
-                       color=expected_color)
+                       color=expected_color, zorder=-1)
         elif expected_value_max is not None and expected_value_min is None:
             ax.axvspan(plot_min, expected_value_max, alpha=0.5,
-                       color=expected_color)
-
+                       color=expected_color, zorder=-1)
 
     if percentiles is None:
         percentiles = [5., 50., 95.]
