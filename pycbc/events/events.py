@@ -69,7 +69,7 @@ class ThresholdCluster(object):
     """Create a threshold and cluster engine
 
     Parameters
-    ----------
+    -----------
     series : complex64
       Input pycbc.types.Array (or subclass); it will be searched for
       points above threshold that are then clustered
@@ -92,7 +92,7 @@ class _BaseThresholdCluster(object):
         Threshold and cluster the memory specified at instantiation with the
         threshold specified at creation and the window size specified at creation.
 
-        Parameters:
+        Parameters
         -----------
         threshold : float32
           The minimum absolute value of the series given at object initialization
@@ -513,6 +513,7 @@ class EventManager(object):
                 numpy.array([filters_per_core / float(self.run_time)])
             f['search/setup_time_fraction'] = \
                 numpy.array([float(self.setup_time) / float(self.run_time)])
+            f['search/run_time'] = numpy.array([float(self.run_time)])
 
         if 'q_trans' in self.global_params:
             qtrans = self.global_params['q_trans']

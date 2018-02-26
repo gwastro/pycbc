@@ -511,8 +511,8 @@ td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
 # defined above. Defaults of None simply mean that the value is not passed into
 # the lal_dict structure and the waveform generator will take whatever default
 # behaviour
-cbc_td_required = ParameterList([mass1, mass2, delta_t, approximant])
-cbc_fd_required = ParameterList([mass1, mass2, delta_f, approximant])
+cbc_td_required = ParameterList([mass1, mass2, f_lower, delta_t, approximant])
+cbc_fd_required = ParameterList([mass1, mass2, f_lower, delta_f, approximant])
 
 # the following are parameters that can be used to generate a
 # frequency series waveform

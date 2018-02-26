@@ -175,6 +175,23 @@ class CustomTransform(BaseTransform):
     jacobian : str, optional
         String giving a jacobian function. The function must be in terms of
         the input arguments.
+
+    Examples
+    --------
+    Create a custom transform that converts mass1, mass2 to mtotal, q:
+
+    >>> t = transforms.CustomTransform(['mass1', 'mass2'], ['mtotal', 'q'], {'mtotal': 'mass1+mass2', 'q': 'mass1/mass2'}, '(mass1 + mass2) / mass2**2')
+
+    Evaluate a pair of masses:
+
+    >>> t.transform({'mass1': 10., 'mass2': 5.})
+    {'mass1': 10.0, 'mass2': 5.0, 'mtotal': 15.0, 'q': 2.0}
+
+    The Jacobian for the same pair of masses:
+
+    >>> t.jacobian({'mass1': 10., 'mass2': 5.})
+    0.59999999999999998
+
     """
     name = "custom"
 
@@ -189,20 +206,68 @@ class CustomTransform(BaseTransform):
         self.transform_functions = transform_functions
         self._jacobian = jacobian
         # we'll create a scratch FieldArray space to do transforms on
-        self._scratch = record.FieldArray(1, dtype=[(p, float)
+        # we'll default to length 1; this will be changed if a map is passed
+        # with more than one value in it
+        self._createscratch()
+
+    def _createscratch(self, shape=1):
+        """Creates a scratch FieldArray to use for transforms."""
+        self._scratch = record.FieldArray(shape, dtype=[(p, float)
             for p in self.inputs])
 
     def _copytoscratch(self, maps):
-        for p in self.inputs:
-            self._scratch[p][:] = maps[p]
+        """Copies the data in maps to the scratch space.
+
+        If the maps contain arrays that are not the same shape as the scratch
+        space, a new scratch space will be created.
+        """
+        try:
+            for p in self.inputs:
+                self._scratch[p][:] = maps[p]
+        except ValueError:
+            # we'll get a ValueError if the scratch space isn't the same size
+            # as the maps; in that case, re-create the scratch space with the
+            # appropriate size and try again
+            invals = maps[list(self.inputs)[0]]
+            if isinstance(invals, numpy.ndarray):
+                shape = invals.shape
+            else:
+                shape = len(invals)
+            self._createscratch(shape)
+            for p in self.inputs:
+                self._scratch[p][:] = maps[p]
+
+    def _getslice(self, maps):
+        """Determines how to slice the scratch for returning values."""
+        invals =  maps[list(self.inputs)[0]]
+        if not isinstance(invals, (numpy.ndarray, list)):
+            getslice = 0
+        else:
+            getslice = slice(None, None)
+        return getslice
 
     def transform(self, maps):
+        """Applies the transform functions to the given maps object.
+
+        Parameters
+        ----------
+        maps : dict, or FieldArray
+
+        Returns
+        -------
+        dict or FieldArray
+            A map object containing the transformed variables, along with the
+            original variables. The type of the output will be the same as the
+            input.
+        """
         if self.transform_functions is None:
             raise NotImplementedError("no transform function(s) provided")
         # copy values to scratch
         self._copytoscratch(maps)
+        # ensure that we return the same data type in each dict
+        getslice = self._getslice(maps)
         # evaluate the functions
-        out = {p: self._scratch[func][0]
+        out = {p: self._scratch[func][getslice]
                for p,func in self.transform_functions.items()}
         return self.format_output(maps, out)
 
@@ -211,7 +276,10 @@ class CustomTransform(BaseTransform):
             raise NotImplementedError("no jacobian provided")
         # copy values to scratch
         self._copytoscratch(maps)
-        return self._scratch[self._jacobian][0]
+        out = self._scratch[self._jacobian]
+        if isinstance(out, numpy.ndarray):
+            out = out[self._getslice(maps)]
+        return out
 
     @classmethod
     def from_config(cls, cp, section, outputs):

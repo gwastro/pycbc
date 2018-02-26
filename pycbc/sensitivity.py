@@ -153,6 +153,8 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
             # use largest actually injected mchirp for conversion
             max_distance = max_param * \
                                   (max_mchirp / mchirp_standard_bns)**(5. / 6.)
+        else:
+            max_distance = max(found_d.max(), missed_d.max())
     elif limits_param == 'distance':
         if max_param is not None:
             max_distance = max_param

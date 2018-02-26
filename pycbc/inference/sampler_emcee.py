@@ -119,7 +119,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         """Clears the chain and blobs from memory.
         """
         # store the iteration that the clear is occuring on
-        self._lastclear = self.niterations
+        self.lastclear = self.niterations
         # now clear the chain
         self._sampler.reset()
         self._sampler.clear_blobs()
@@ -218,6 +218,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         self.write_likelihood_stats(fp, start_iteration=start_iteration,
                                     max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
+        self.write_state(fp)
 
 # This is needed for two reason
 # 1) pools freeze state when created and so classes *cannot be updated*
@@ -323,7 +324,7 @@ class EmceePTSampler(BaseMCMCSampler):
         """Clears the chain and blobs from memory.
         """
         # store the iteration that the clear is occuring on
-        self._lastclear = self.niterations
+        self.lastclear = self.niterations
         # now clear the chain
         self._sampler.reset()
 
@@ -587,7 +588,7 @@ class EmceePTSampler(BaseMCMCSampler):
         self.write_likelihood_stats(fp, start_iteration=start_iteration,
                                     max_iterations=max_iterations)
         self.write_acceptance_fraction(fp)
-
+        self.write_state(fp)
 
     @staticmethod
     def _read_oldstyle_fields(fp, fields_group, fields, array_class,

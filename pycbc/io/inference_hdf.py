@@ -242,14 +242,36 @@ class InferenceFile(h5py.File):
 
     @property
     def cmd(self):
-        """ Returns the saved command line.
+        """Returns the (last) saved command line.
+
+        If the file was created from a run that resumed from a checkpoint, only
+        the last command line used is returned.
 
         Returns
         -------
-        cmd : {str}
+        cmd : string
             The command line that created this InferenceFile.
         """
-        return self.attrs["cmd"]
+        cmd = self.attrs["cmd"]
+        if isinstance(cmd, numpy.ndarray):
+            cmd = cmd[-1]
+        return cmd
+
+    @property
+    def resume_points(self):
+        """The iterations at which a run was resumed from checkpoint.
+
+        Returns
+        -------
+        resume_points : array or None
+            An array of integers giving the points at which the run resumed.
+
+        Raises
+        ------
+        KeyError
+            If the run never resumed from a checkpoint.
+        """
+        return self.attrs['resume_points']
 
     @property
     def log_evidence(self):
@@ -521,12 +543,36 @@ class InferenceFile(h5py.File):
     def write_command_line(self):
         """Writes command line to attributes.
 
-        Parameters
-        ----------
-        opts : argparse.ArgumentParser
-            The parsed command line instance.
+        The command line is written to the file's ``attrs['cmd']``. If this
+        attribute already exists in the file (this can happen when resuming
+        from a checkpoint), ``attrs['cmd']`` will be a list storing the current
+        command line and all previous command lines.
         """
-        self.attrs["cmd"] = " ".join(sys.argv)
+        cmd = [" ".join(sys.argv)]
+        try:
+            previous = self.attrs["cmd"]
+            if isinstance(previous, str):
+                # convert to list
+                previous = [previous]
+            elif isinstance(previous, numpy.ndarray):
+                previous = previous.tolist()
+        except KeyError:
+            previous = []
+        self.attrs["cmd"] = cmd + previous
+
+    def write_resume_point(self):
+        """Keeps a list of the number of iterations that were in a file when a
+        run was resumed from a checkpoint."""
+        try:
+            resume_pts = self.attrs["resume_points"].tolist()
+        except KeyError:
+            resume_pts = []
+        try:
+            niterations = self.niterations
+        except KeyError:
+            niterations = 0
+        resume_pts.append(niterations)
+        self.attrs["resume_points"] = resume_pts
 
     def write_random_state(self, group=None, state=None):
         """ Writes the state of the random number generator from the file.
@@ -547,7 +593,8 @@ class InferenceFile(h5py.File):
         if group in self:
             self[dataset_name][:] = arr
         else:
-            self.create_dataset(dataset_name, arr.shape, fletcher32=True)
+            self.create_dataset(dataset_name, arr.shape, fletcher32=True,
+                                dtype=arr.dtype)
             self[dataset_name][:] = arr
         self[dataset_name].attrs["s"] = s
         self[dataset_name].attrs["pos"] = pos

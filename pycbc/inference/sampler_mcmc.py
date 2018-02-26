@@ -109,14 +109,14 @@ class MCMCSampler(BaseMCMCSampler):
         """This function should clear the current chain of samples from memory.
         """
         # store the iteration that the clear is occuring on
-        self._lastclear = self.niterations
+        self.lastclear = self.niterations
         self._chain = []
         self._blobs = []
 
     @property
     def niterations(self):
         """Get the current number of iterations."""
-        return len(self._chain)+self._lastclear
+        return len(self._chain)+self.lastclear
 
     @property
     def lnpost(self):
@@ -139,7 +139,7 @@ class MCMCSampler(BaseMCMCSampler):
         """This function should run the sampler.
         """
 
-        if self.niterations == 0:
+        if not self._lastsample:
             # first time running, use the initial positions
             # set_p0() was called in pycbc_inference, so self.p0 is set
             result = self.likelihood_evaluator(self.p0)

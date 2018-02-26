@@ -30,6 +30,7 @@ one parameter given a set of inputs.
 import copy
 import numpy
 import lal
+import lalsimulation as lalsim
 from pycbc.detector import Detector
 
 #
@@ -657,6 +658,30 @@ def snr_from_loglr(loglr):
         snrs = snrs[0]
     return snrs
 
+#
+# =============================================================================
+#
+#                         BH Ringdown functions
+#
+# =============================================================================
+#
+def get_lm_f0tau(mass, spin, l, m, nmodes):
+    """Return the f_0 and the tau of each overtone for a given lm mode 
+    """
+    qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
+    lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(qnmfreq, float(mass), float(spin), l, m, nmodes)
+
+    f_0 = [qnmfreq.data[n].real / (2 * numpy.pi) for n in range(nmodes)]
+    tau = [1. / qnmfreq.data[n].imag for n in range(nmodes)]
+
+    return f_0, tau
+
+def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
+    return get_lm_f0tau(final_mass, final_spin, l, m, 1)[0][0]
+
+def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
+    return get_lm_f0tau(final_mass, final_spin, l, m, 1)[1][0]
+
 
 __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
@@ -684,4 +709,5 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass', 'secondary_ma
            'spin2x_from_mass1_mass2_xi2_phi_a_phi_s',
            'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
+           'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
           ]

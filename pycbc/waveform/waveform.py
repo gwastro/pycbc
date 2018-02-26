@@ -343,17 +343,22 @@ def get_obj_attrs(obj):
 
     return pr
 
-def props(obj, **kwargs):
+def props(obj, required_args=[], **kwargs):
     """ Return a dictionary built from the combination of defaults, kwargs,
     and the attributes of the given object.
     """
     pr = get_obj_attrs(obj)
+    pr.update(kwargs)
+
+    # check that required args are given
+    missing = set(required_args) - set(pr.keys())
+    if any(missing):
+        raise ValueError("Please provide {}".format(', '.join(missing)))
 
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
     input_params = default_args.copy()
     input_params.update(pr)
-    input_params.update(kwargs)
 
     return input_params
 
@@ -401,7 +406,7 @@ def get_fd_waveform_sequence(template=None, **kwds):
     """
     kwds['delta_f'] = -1
     kwds['f_lower'] = -1
-    p = props(template, **kwds)
+    p = props(template, required_args=fd_required_args, **kwds)
     lal_pars = _check_lal_pars(p)
     flags = lalsimulation.SimInspiralCreateWaveformFlags()
     lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
@@ -441,19 +446,11 @@ def get_td_waveform(template=None, **kwargs):
     hcross: TimeSeries
         The cross polarization of the waveform.
     """
-    input_params = props(template,**kwargs)
+    input_params = props(template, required_args=td_required_args, **kwargs)
     wav_gen = td_wav[type(_scheme.mgr.state)]
-
-    if 'approximant' not in input_params or input_params['approximant'] is None:
-        raise ValueError("Please provide an approximant name")
-    elif input_params['approximant'] not in wav_gen:
+    if input_params['approximant'] not in wav_gen:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
-
-    for arg in td_required_args:
-        if arg not in input_params:
-            raise ValueError("Please provide " + str(arg) )
-
     return wav_gen[input_params['approximant']](**input_params)
 
 get_td_waveform.__doc__ = get_td_waveform.__doc__.format(
@@ -478,19 +475,11 @@ def get_fd_waveform(template=None, **kwargs):
         The cross phase of the waveform in frequency domain.
     """
 
-    input_params = props(template,**kwargs)
+    input_params = props(template, required_args=fd_required_args, **kwargs)
     wav_gen = fd_wav[type(_scheme.mgr.state)]
-
-    if 'approximant' not in input_params:
-        raise ValueError("Please provide an approximant name")
-    elif input_params['approximant'] not in wav_gen:
+    if input_params['approximant'] not in wav_gen:
         raise ValueError("Approximant %s not available" %
                             (input_params['approximant']))
-
-    for arg in fd_required_args:
-        if arg not in input_params:
-            raise ValueError("Please provide " + str(arg) )
-
     try:
         ffunc = input_params.pop('f_final_func')
         if ffunc != '':

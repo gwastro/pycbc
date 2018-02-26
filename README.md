@@ -6,15 +6,15 @@ from compact binary coalescences (CBCs).
 
 The PyCBC home page is located on github at
 
- * https://ligo-cbc.github.io/
+ * http://www.pycbc.org/
 
 Documentation is automatically built nightly and available from
 
- * http://ligo-cbc.github.io/pycbc/latest/html/
+ * http://pycbc.org/pycbc/latest/html/
 
 To download and install PyCBC follow the instructions at
 
-  * http://ligo-cbc.github.io/pycbc/latest/html/install.html
+  * http://pycbc.org/pycbc/latest/html/install.html
   
 You can start up an interactive jupyter notebook with PyCBC using either of the links below.
 
