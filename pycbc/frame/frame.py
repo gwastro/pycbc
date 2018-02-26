@@ -344,7 +344,7 @@ def query_and_read_frame(frame_type, channels, start_time, end_time,
         return read_frame_losc(channels, start_time, end_time)
     
     logging.info('querying datafind server')
-    paths = frame_paths(frame_type, int(start_time), int(end_time))
+    paths = frame_paths(frame_type, int(start_time), int(numpy.ceil(end_time)))
     logging.info('found files: %s' % (' '.join(paths)))
     return read_frame(paths, channels, 
                       start_time=start_time, 
