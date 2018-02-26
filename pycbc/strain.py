@@ -793,6 +793,29 @@ def insert_strain_option_group_multi_ifo(parser):
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
                          "Transfer function gain")
 
+    # Options for PSD variation
+    data_reading_group_multi.add_argument('--psdvar_short_segment', type=float,
+                                          metavar='SECONDS',
+                                          help='Length of short segment when '
+                                               'calculating the PSD '
+                                               'variability.')
+    data_reading_group_multi.add_argument('--psdvar_long_segment', type=float,
+                                          metavar='SECONDS',
+                                          help='Length of long segment when '
+                                               'calculating the PSD '
+                                               'variability.')
+    data_reading_group_multi.add_argument('--psdvar_overlap', type=float,
+                                          metavar='SECONDS',
+                                          help='Sample length of the PSD.')
+    data_reading_group_multi.add_argument('--psdvar_low_freq', type=float,
+                                          metavar='HERTZ',
+                                          help='Minimum frequency to consider '
+                                               'in PSD comparison.')
+    data_reading_group_mutli.add_argument('--psdvar_high_freq', type=float,
+                                          metavar='HERTZ',
+                                          help='Maximum frequency to consider '
+                                               'in PSD comparison.')
+
     return data_reading_group_multi
 
 
