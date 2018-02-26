@@ -129,9 +129,9 @@ class TriangleBank(object):
             if j is None:
                 hp.matches = matches[r]
                 hp.indices = r
-                #logging.info("Template is Added MaxMatch:%0.3f BankSize:%i "
-                #             "AfterSigma:%i AfterTau0:%i Matches:%i"
-                #              % (mmax, len(self), msig, mtau, mnum))
+                logging.info("Template is Added MaxMatch:%0.3f BankSize:%i "
+                             "AfterSigma:%i AfterTau0:%i Matches:%i"
+                              % (mmax, len(self), msig, mtau, mnum))
                 return False
 
             hc = self[j]
