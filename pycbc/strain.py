@@ -182,6 +182,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
              for idx in indices[cluster_idx]]
     return times
 
+
 def from_cli(opt, dyn_range_fac=1, precision='single',
              inj_filter_rejector=None):
     """Parses the CLI options related to strain data reading and conditioning.
@@ -278,13 +279,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
         else:
             raise ValueError("Unrecognized precision {}".format(precision))
-
-        if opt.psdvar_short_segment is not None:
-            logging.info("Calculating PSD variation")
-            psd_var = pycbc.psd.calc_psd_variation(strain,
-                    opt.psdvar_short_segment, opt.psdvar_long_segment,
-                    opt.psdvar_overlap, opt.psdvar_low_freq,
-                    opt.psdvar_high_freq)
 
         if opt.gating_file is not None:
             logging.info("Gating glitches")
@@ -422,10 +416,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         strain.injections = injections
     strain.gating_info = gating_info
 
-    if opt.psdvar_short_segment is not None:
-        return strain, psd_var
-    else:
-        return strain  
+    return strain  
 
 def from_cli_single_ifo(opt, ifo, **kwargs):
     """
@@ -590,26 +581,6 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--witness-filter-length", type=float,
                     help="filter length in seconds for the transfer function")
 
-    # Options for PSD variation
-    data_reading_group.add_argument('--psdvar_short_segment', type=float,
-                                    metavar='SECONDS',
-                                    help='Length of short segment when '
-                                         'calculating the PSD variability.')
-    data_reading_group.add_argument('--psdvar_long_segment', type=float,
-                                    metavar='SECONDS',
-                                    help='Length of long segment when '
-                                         'calculating the PSD variability.')
-    data_reading_group.add_argument('--psdvar_overlap', type=float,
-                                    metavar='SECONDS',
-                                    help='Sample length of the PSD.')
-    data_reading_group.add_argument('--psdvar_low_freq', type=float,
-                                    metavar='HERTZ',
-                                    help='Minimum frequency to consider in '
-                                         'PSD comparison.')
-    data_reading_group.add_argument('--psdvar_high_freq', type=float,
-                                    metavar='HERTZ',
-                                    help='Maximum frequency to consider in '
-                                         'PSD comparison.')
     return data_reading_group
 
 # FIXME: This repeats almost all of the options above. Any nice way of reducing
