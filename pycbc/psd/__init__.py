@@ -175,6 +175,19 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="(Optional) The maximum length of the "
                              "impulse response of the overwhitening "
                              "filter (s)")
+    # Options for PSD variation
+    psd_options.add_argument("--psdvar_short_segment", type=float,
+                             metavar="SECONDS", help="Length of short segment "
+                             "when calculating the PSD variability.")
+    psd_options.add_argument("--psdvar_long_segment", type=float,
+                             metavar="SECONDS", help="Length of long segment "
+                             "when calculating the PSD variability.")
+    psd_options.add_argument("--psdvar_overlap", type=float, metavar="SECONDS",                              help="Sample length of the PSD.")
+    psd_options.add_argument("--psdvar_low_freq", type=float, metavar="HERTZ",                               help="Minimum frequency to consider in PSD "
+                             "comparison.")
+    psd_options.add_argument("--psdvar_high_freq", type=float, metavar="HERTZ",                              help="Maximum frequency to consider in PSD "
+                             "comparison.")
+
     if include_data_options :
         psd_options.add_argument("--psd-estimation",
                                  help="Measure PSD from the data, using "
@@ -257,6 +270,19 @@ def insert_psd_option_group_multi_ifo(parser):
     psd_options.add_argument("--psd-output", nargs="+",
                           action=MultiDetOptionAction, metavar='IFO:FILE',
                           help="(Optional) Write PSD to specified file")
+
+    # Options for PSD variation
+    psd_options.add_argument("--psdvar_short_segment", type=float,
+                             metavar="SECONDS", help="Length of short segment "
+                             "when calculating the PSD variability.")
+    psd_options.add_argument("--psdvar_long_segment", type=float,
+                             metavar="SECONDS", help="Length of long segment "
+                             "when calculating the PSD variability.")
+    psd_options.add_argument("--psdvar_overlap", type=float, metavar="SECONDS",                              help="Sample length of the PSD.")
+    psd_options.add_argument("--psdvar_low_freq", type=float, metavar="HERTZ",                               help="Minimum frequency to consider in PSD "
+                             "comparison.")
+    psd_options.add_argument("--psdvar_high_freq", type=float, metavar="HERTZ",                              help="Maximum frequency to consider in PSD "
+                             "comparison.")
 
     return psd_options
 
