@@ -79,10 +79,10 @@ m1, m2, s1z, s2z = trstats.get_masses(bank, tid)
 parvals = []
 for param, slog in zip(args.fit_param, args.log_param):
     data = trstats.get_param(param, args, m1, m2, s1z, s2z)
-    if slog == 'false':
+    if slog in ['false', 'False', 'FALSE']:
         logging.info('Using param: %s', param)
         parvals.append(data)
-    elif slog == 'true':
+    elif slog in ['true', 'True', 'TRUE']:
         logging.info('Using log param: %s', param)
         parvals.append(numpy.log(data))
     else:
