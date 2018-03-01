@@ -399,6 +399,7 @@ with ctx:
 	    sigma = {}
             snrv_dict = {}
             norm_dict = {}
+            corr_dict = {}
 	    for ifo in opt.instruments:
 	        sigmasq[ifo] = template.sigmasq(segments[ifo][0].psd)
 	        sigma[ifo] = np.sqrt(sigmasq[ifo])
@@ -423,11 +424,12 @@ with ctx:
                     snr[ifo] = []
                     idx_dict[ifo] = []
                     norm_dict[ifo] = []
+                    corr_dict = []
                     nifo -= 1
                     continue
                 #Save norm values to dict
                 norm_dict[ifo] = norm
-
+                corr_dict[ifo] = corr
 
                 #Find the data we need to analyse
 		analyse_data = matched_filter[ifo].segments[s_num].analyze
@@ -453,14 +455,16 @@ with ctx:
 		snr[ifo].roll(-time_delay_idx[ifo])
                 #Restrict the snr timeseries to just the interesting points
                 coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
-                #Make dictionary of normalisation constants for each ifo
+         
                 
+                
+                #This is the original chi2 tests. 
 		out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
 			bank_chisq.values(template, stilde.psd, stilde, snrv_dict[ifo],
 					  norm_dict[ifo], idx_dict[ifo]+stilde.analyze.start)
 
 		out_vals['chisq'], out_vals['chisq_dof'] =\
-			power_chisq.values(corr, snrv_dict[ifo], norm_dict[ifo], stilde.psd,
+			power_chisq.values(corr_dict[ifo], snrv_dict[ifo], norm_dict[ifo], stilde.psd,
 					   idx_dict[ifo]+stilde.analyze.start, template)
 
 		out_vals['cont_chisq'] = autochisq.values(snr,
@@ -477,6 +481,7 @@ with ctx:
 
 		event_mgr.add_template_events_to_ifo(ifo, names,
 			[out_vals[n] for n in names])
+               
                 
 
 	    #Calculate coherent snr roh_coh
