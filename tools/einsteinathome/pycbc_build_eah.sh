@@ -325,6 +325,15 @@ wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
 export GIT_SSL_NO_VERIFY=true
 export PIP_TRUSTED_HOST="pypi.python.org github.com"
 
+function wwwget {
+  # use curl when available, else wget
+  if curl --version >/dev/null; then
+    curl -L "$@"
+  else
+    wget $wget_opts -O- "$@"
+  fi
+}
+
 # handle command-line arguments, possibly overriding above settings
 for i in $*; do
     case $i in
@@ -343,8 +352,8 @@ for i in $*; do
         --clean) rm -rf "$HOME/.cache" "$HOME/Library/Caches/pip" "$SOURCE/$BUILDDIRNAME-preinst.tgz" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz" "$PYCBC";;
         --clean-lalsuite) rm -rf "$SOURCE/lalsuite" "$SOURCE/$BUILDDIRNAME-preinst-lalsuite.tgz";;
         --lalsuite-commit=*) lalsuite_branch="`echo $i|sed 's/^--lalsuite-commit=//'`";;
-        --blessed-lalsuite) lalsuite_branch=`wget $wget_opts -O- https://github.com/ligo-cbc/pycbc/releases/latest |
-            awk -F'>' '(p==0) && /This release has been tested against LALSuite with the hash:/ {p=1}; (p==1) && /<code>[0-9a-f]*$/{print $NF; p=2}'`;
+        --blessed-lalsuite) lalsuite_branch=$( wwwget https://github.com/ligo-cbc/pycbc/releases/latest |
+            awk -F'>' '(p==0) && /This release has been tested against LALSuite with the hash:/ {p=1}; (p==1) && /<code>[0-9a-f]*$/{print $NF; p=2}' );
             if ! echo "0$lalsuite_branch"|egrep '^[0-9a-f]*$' >/dev/null; then
                 echo "ERROR: blessed LALSuite version couldn't be determined" >&2
                 exit 1;
