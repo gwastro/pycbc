@@ -44,16 +44,17 @@ def _ensurearray(arg):
     """Ensures that the given argument is a numpy array. If it is not, the
     argument is converted to an array.
     """
-    if not isinstance(arg, numpy.ndarray):
+    input_is_array = isinstance(arg, numpy.ndarray)
+    if not input_is_array:
         arr = numpy.array(arg)
         arg = arr
-    return arg
+    return arg, input_is_array
 
 
-def _formatreturn(arg):
+def _formatreturn(arg, input_is_array=False):
     """If the given argument is a numpy array with shape (1,), just returns
     that value."""
-    if arg.size == 1:
+    if not input_is_array and arg.size == 1:
         arg = arg.item()
     return arg
 
@@ -66,26 +67,28 @@ def _formatreturn(arg):
 #
 def primary_mass(mass1, mass2):
     """Returns the larger of mass1 and mass2 (p = primary)."""
-    mass1 = _ensurearray(mass1)
-    mass2 = _ensurearray(mass2)
+    mass1, ia1 = _ensurearray(mass1)
+    mass2, ia2 = _ensurearray(mass2)
+    input_is_array = ia1 or ia2
     if mass1.shape != mass2.shape:
         raise ValueError("mass1 and mass2 must have same shape")
     mp = copy.copy(mass1)
     mask = mass1 < mass2
     mp[mask] = mass2[mask]
-    return _formatreturn(mp)
+    return _formatreturn(mp, input_is_array)
 
 
 def secondary_mass(mass1, mass2):
     """Returns the smaller of mass1 and mass2 (s = secondary)."""
-    mass1 = _ensurearray(mass1)
-    mass2 = _ensurearray(mass2)
+    mass1, ia1 = _ensurearray(mass1)
+    mass2, ia2 = _ensurearray(mass2)
+    input_is_array = ia1 or ia2
     if mass1.shape != mass2.shape:
         raise ValueError("mass1 and mass2 must have same shape")
     ms = copy.copy(mass2)
     mask = mass1 < mass2
     ms[mask] = mass1[mask]
-    return _formatreturn(ms)
+    return _formatreturn(ms, input_is_array)
 
 
 def mtotal_from_mass1_mass2(mass1, mass2):
@@ -360,18 +363,17 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     The mass-weighted dominant effective lambda parameter defined in
     https://journals.aps.org/prd/pdf/10.1103/PhysRevD.91.043002
     """
-    m1 = _ensurearray(mass1)
-    m2 = _ensurearray(mass2)
-
-    lsum = _ensurearray(lambda1 + lambda2)
-    ldiff = _ensurearray(lambda1 - lambda2)
+    m1, ia1 = _ensurearray(mass1)
+    m2, ia2 = _ensurearray(mass2)
+    lsum, ia3 = _ensurearray(lambda1 + lambda2)
+    ldiff, ia4 = _ensurearray(lambda1 - lambda2)
+    input_is_array = any([ia1, ia2, ia3, ia4])
     mask = m1 < m2
     ldiff[mask] = -ldiff[mask]
-
     eta = eta_from_mass1_mass2(m1, m2)
     p1 = (lsum) * (1 + 7. * eta - 31 * eta ** 2.0)
     p2 = (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta ** 2.0) * (ldiff)
-    return _formatreturn(8.0 / 13.0 * (p1 + p2))
+    return _formatreturn(8.0 / 13.0 * (p1 + p2), input_is_array)
 
 #
 # =============================================================================
@@ -418,31 +420,33 @@ def phi_s(spin1x, spin1y, spin2x, spin2y):
 
 def primary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the primary mass."""
-    mass1 = _ensurearray(mass1)
-    mass2 = _ensurearray(mass2)
-    spin1 = _ensurearray(spin1)
-    spin2 = _ensurearray(spin2)
+    mass1, ia1 = _ensurearray(mass1)
+    mass2, ia2 = _ensurearray(mass2)
+    spin1, ia3 = _ensurearray(spin1)
+    spin2, ia4 = _ensurearray(spin2)
+    input_is_array = any([ia1, ia2, ia3, ia4])
     if (mass1.shape != mass2.shape) or (mass1.shape != spin1.shape) or (
         mass1.shape != spin2.shape):
         raise ValueError("mass1, mass2, spin1, spin2 must have same shape")
     sp = copy.copy(spin1)
     mask = mass1 < mass2
     sp[mask] = spin2[mask]
-    return _formatreturn(sp)
+    return _formatreturn(sp, input_is_array)
 
 def secondary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the secondary mass."""
-    mass1 = _ensurearray(mass1)
-    mass2 = _ensurearray(mass2)
-    spin1 = _ensurearray(spin1)
-    spin2 = _ensurearray(spin2)
+    mass1, ia1 = _ensurearray(mass1)
+    mass2, ia2 = _ensurearray(mass2)
+    spin1, ia3 = _ensurearray(spin1)
+    spin2, ia4 = _ensurearray(spin2)
+    input_is_array = any([ia1, ia2, ia3, ia4])
     if (mass1.shape != mass2.shape) or (mass1.shape != spin1.shape) or (
         mass1.shape != spin2.shape):
         raise ValueError("mass1, mass2, spin1, spin2 must have same shape")
     ss = copy.copy(spin2)
     mask = mass1 < mass2
     ss[mask] = spin1[mask]
-    return _formatreturn(ss)
+    return _formatreturn(ss, input_is_array)
 
 def primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin argument for the larger mass.
@@ -490,14 +494,15 @@ def chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2):
 def chi_p_from_xi1_xi2(xi1, xi2):
     """Returns effective precession spin from xi1 and xi2.
     """
-    xi1 = _ensurearray(xi1)
-    xi2 = _ensurearray(xi2)
+    xi1, ia1 = _ensurearray(xi1)
+    xi2, ia2 = _ensurearray(xi2)
+    input_is_array = ia1 or ia2
     if xi1.shape != xi2.shape:
         raise ValueError("xi1, xi2 must have same shape")
     chi_p = copy.copy(xi1)
     mask = xi1 < xi2
     chi_p[mask] = xi2[mask]
-    return _formatreturn(chi_p)
+    return _formatreturn(chi_p, input_is_array)
 
 def phi1_from_phi_a_phi_s(phi_a, phi_s):
     """Returns the angle between the x-component axis and the in-plane
