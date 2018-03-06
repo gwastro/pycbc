@@ -68,7 +68,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   popd
   
   yum install -y bzip2-devel
-  which python
   python -c "import bz2; print bz2.__doc__"
 
   # run the einstein at home build and test script
