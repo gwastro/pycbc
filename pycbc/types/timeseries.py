@@ -750,6 +750,36 @@ class TimeSeries(Array):
         fft(tmp, f)
         return f
 
+    def add_into(self, other):
+        """Return the sum of the two time series accounting for the time stamp.
+
+        The other vector will be resized and time shifted wiht sub-sample
+        precision before adding. This assumes that one can assume zeros
+        outside of the original vector range.
+        """
+        # only handle equal sample rate for now.
+        if self.sample_rate != other.sample_rate:
+            raise ValueError('Sample rate must be the same')
+
+        # Other is disjoint
+        if ((other.start_time > self.end_time) or
+           (self.start_time > other.end_time)):
+            return self.copy()
+
+        other = other.copy()
+        dt = float((other.start_time - self.start_time) * self.sample_rate)
+        if not dt.is_integer():
+            diff = (dt - _numpy.floor(dt))
+            other.resize(len(other) + (len(other) + 1) % 2 + 1)
+            other = other.cyclic_time_shift(diff)
+
+        ts = self.copy()
+        start = max(other.start_time, self.start_time)
+        end = min(other.end_time, self.end_time)
+        part = ts.time_slice(start, end)
+        part += other.time_slice(start, end)
+        return ts
+
     @_nocomplex
     def cyclic_time_shift(self, dt):
         """Shift the data and timestamps by a given number of seconds
