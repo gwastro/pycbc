@@ -1,0 +1,3 @@
+# other tools which may be useful
+astropy>=2.0.1
+gwpy>=0.8.1

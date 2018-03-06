@@ -15,7 +15,6 @@ pycbc-glue-obsolete==1.1.0
 weave>=0.16.0
 requests>=1.2.1
 beautifulsoup4>=4.6.0
-astropy>=2.0.1
 
 # Ensure pyOpenSSL is recent enough
 pyOpenSSL==17.2.0

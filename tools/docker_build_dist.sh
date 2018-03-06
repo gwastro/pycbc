@@ -190,6 +190,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
   pip install -r requirements.txt
+  pip install -r companion.txt
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
   python setup.py install
