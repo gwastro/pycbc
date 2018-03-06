@@ -66,6 +66,8 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
     test -r `basename $p` || wget $wget_opts ${secondary_url}/${p}
   done
   popd
+  
+  yum install -y bzip2-devel
 
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
