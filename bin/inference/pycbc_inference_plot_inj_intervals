@@ -3,6 +3,7 @@
 within a credible interval versus credible interval.
 """
 
+import sys
 import argparse
 import logging
 import matplotlib as mpl; mpl.use("Agg")
@@ -14,6 +15,7 @@ from scipy import stats
 from matplotlib import cm
 from pycbc import inject
 from pycbc import transforms
+from pycbc.results import save_fig_with_metadata
 from pycbc.inference import option_utils
 from pycbc.io.record import FieldArray
 
@@ -84,7 +86,7 @@ for param,label in zip(input_parameters, labels):
     # perform ks test
     ks, p = stats.kstest(meas/100., 'uniform')
     ax.plot(meas/100., expected/100.,
-                label='{} p-value: {:.3f}'.format(label, p))
+                label='{} $D_{{KS}}$: {:.3f} p-value: {:.3f}'.format(label, ks, p))
 
 # set legend
 ax.legend()
@@ -100,7 +102,20 @@ ax.grid()
 ax.plot([0, 1], [0, 1], linestyle="dashed", color="gray", zorder=9)
 
 # save plot
-plt.savefig(opts.output_file)
+caption = ('Percentile-percentile plot. The value of the KS statistic '
+           '$D_{KS}$ is given in the legend. This gives the maximum distance '
+           'between the observed line and the expected (dashed) line; i.e., '
+           'it gives the maximum distance between the measured CDF and the '
+           'expected (uniform) CDF. The associated two-tailed p-value gives '
+           'the probability of getting a maximum distance (either above '
+           'or below the expected line) larger than the observed $D_{KS}$ '
+           'assuming that the measured CDF is the same as the expected. '
+           'In other words, the larger (smaller) the p-value ($D_{KS}$), the '
+           'more likely the measured distribution is the same as the '
+           'expected.')
+save_fig_with_metadata(fig, opts.output_file,
+    caption=caption,
+    cmd=' '.join(sys.argv))
 
 # done
 logging.info("Done")
