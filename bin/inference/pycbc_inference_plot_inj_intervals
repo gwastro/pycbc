@@ -10,6 +10,7 @@ import matplotlib.colorbar as cbar
 import matplotlib.pyplot as plt
 import numpy
 import pycbc
+from scipy import stats
 from matplotlib import cm
 from pycbc import inject
 from pycbc import transforms
@@ -23,9 +24,6 @@ parser.add_argument("--output-file", required=True, type=str,
                     help="Path to save output plot.")
 parser.add_argument("--verbose", action="store_true",
                     help="Allows print statements.")
-parser.add_argument("--quantiles", nargs="+", type=float,
-                    default=numpy.arange(0.05, 1.05, 0.05),
-                    help="List of quantiles to plot.")
 parser.add_argument("--injection-hdf-group", default="H1/injections",
                     help="HDF group that contains injection values.")
 option_utils.add_inference_results_option_group(parser)
@@ -37,22 +35,16 @@ pycbc.init_logging(opts.verbose)
 
 # read results
 _, parameters, labels, samples = option_utils.results_from_cli(opts)
-
-# create figure
-fig = plt.figure()
-ax = fig.add_subplot(111)
+labels = labels[0]
 
 # typecast to list for iteration
 parameters = [parameters] if not isinstance(samples, list) else parameters
-label = [labels] if not isinstance(labels, list) else labels
+labels = [labels] if not isinstance(labels, list) else labels
 samples = [samples] if not isinstance(samples, list) else samples
-
-# dict to hold counts of injections parameters recovered in or out interval
-inj_inside = {p : opts.quantiles.size * [0] for p in parameters[0]}
-inj_outside = {p : opts.quantiles.size * [0] for p in parameters[0]}
 
 # loop over input files and its samples
 logging.info("Plotting")
+measured_percentiles = {}
 for input_file, input_parameters, input_samples in zip(
                                         opts.input_file, parameters, samples):
 
@@ -67,36 +59,32 @@ for input_file, input_parameters, input_samples in zip(
     # add parameters not included in injection file
     inj_parameters = transforms.apply_transforms(injs.table, ts)
 
-    # loop over parameters and quantiles
     for p in input_parameters:
-        for i, q in enumerate(opts.quantiles):
 
-            # compute quantiles of sampled results
-            q *= 100
-            low = 50 - q / 2.0
-            high = 50 + q / 2.0
-            low_val, high_val = numpy.array([
-                                         numpy.percentile(input_samples[p], q)
-                                         for q in [low, high]])
+        inj_val = inj_parameters[p]
+        sample_vals = input_samples[p]
+        measured = stats.percentileofscore(sample_vals, inj_val)
+        try:
+            measured_percentiles[p].append(measured)
+        except KeyError:
+            measured_percentiles[p] = []
+            measured_percentiles[p].append(measured)
 
-            # determine if inside or outside interval
-            injected_vals = inj_parameters[p]
-            for inj_val in injected_vals:
-                if inj_val > low_val and inj_val < high_val:
-                    inj_inside[p][i] += 1
-                else:
-                    inj_outside[p][i] += 1
+# create figure for plotting
+fig = plt.figure()
+ax = fig.add_subplot(111)
 
-# determine the fraction found within each credible interval
-fractions = {p : numpy.zeros(opts.quantiles.size) for p in inj_inside.keys()}
-for p in fractions.keys():
-    for i, q in enumerate(opts.quantiles):
-        fractions[p][i] = inj_inside[p][i] / \
-                                 float(inj_outside[p][i] + inj_inside[p][i])
-
-    # plot parameter
-    j = parameters[0].index(p)
-    ax.plot(opts.quantiles, fractions[p], label=r"{}".format(labels[j][0]))
+# calculate the expected percentile for each injection and plot
+for param,label in zip(input_parameters, labels):
+    # calculate expected
+    meas = numpy.array(measured_percentiles[param])
+    meas.sort()
+    expected = numpy.array([stats.percentileofscore(meas, x)
+                            for x in meas])
+    # perform ks test
+    ks, p = stats.kstest(meas/100., 'uniform')
+    ax.plot(meas/100., expected/100.,
+                label='{} p-value: {:.3f}'.format(label, p))
 
 # set legend
 ax.legend()
