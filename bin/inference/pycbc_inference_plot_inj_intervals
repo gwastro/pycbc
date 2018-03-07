@@ -63,7 +63,7 @@ for input_file, input_parameters, input_samples in zip(
 
         inj_val = inj_parameters[p]
         sample_vals = input_samples[p]
-        measured = stats.percentileofscore(sample_vals, inj_val)
+        measured = stats.percentileofscore(sample_vals, inj_val, kind='weak')
         try:
             measured_percentiles[p].append(measured)
         except KeyError:
@@ -79,7 +79,7 @@ for param,label in zip(input_parameters, labels):
     # calculate expected
     meas = numpy.array(measured_percentiles[param])
     meas.sort()
-    expected = numpy.array([stats.percentileofscore(meas, x)
+    expected = numpy.array([stats.percentileofscore(meas, x, kind='weak')
                             for x in meas])
     # perform ks test
     ks, p = stats.kstest(meas/100., 'uniform')
