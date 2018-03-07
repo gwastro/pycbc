@@ -29,7 +29,7 @@ redshift.
 import numpy
 import lal
 from scipy import interpolate
-from pycbc.conversions import _ensurearray, _formatreturn
+from pycbc.conversions import ensurearray, formatreturn
 
 class _DistToZ(object):
     """Class to convert luminosity distance to redshift using the given
@@ -113,7 +113,7 @@ class _DistToZ(object):
     def get_redshift(self, dist):
         """Returns the redshift for the given distance.
         """
-        dist = _ensurearray(dist)
+        dist, input_is_array = ensurearray(dist)
         zs = self.nearby_d2z(dist)
         # if any points had red shifts beyond the nearby, will have nans;
         # replace using the faraway interpolation
@@ -138,7 +138,7 @@ class _DistToZ(object):
                     replacemask = numpy.isnan(zs)
                     minz = maxz - 1
                     maxz = minz + 5
-        return _formatreturn(zs)
+        return formatreturn(zs, input_is_array)
 
     def __call__(self, dist):
         return self.get_redshift(dist)
