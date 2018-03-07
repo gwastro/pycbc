@@ -79,3 +79,15 @@ And then you can connect to it with the command::
     ssh -Y pycbc@127.0.0.1 -p `docker port pycbc 22 | awk -F: '{print $NF}'`
 
 
+-------------------------------------
+Using jupyter-notebook within docker
+-------------------------------------
+
+One can start a jupyter notebook within docker and then port forward to your
+computer environment.::
+
+    docker run -it -p 8888:8888 --name pycbc_test pycbc/pycbc-el7:latest /bin/bash -l
+
+Within the docker environment::
+
+    jupyter notebook --ip 0.0.0.0
