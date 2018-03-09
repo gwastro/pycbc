@@ -200,12 +200,8 @@ fft.from_cli(opt)
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli(opt)
 ctx = scheme.from_cli(opt)
 
-if opt.psdvar_short_segment is None:
-    gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
-                               inj_filter_rejector=inj_filter_rejector)
-else:
-    gwstrain, psd_var = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
-                                        inj_filter_rejector=inj_filter_rejector)
+gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
+                           inj_filter_rejector=inj_filter_rejector)
 
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
@@ -260,6 +256,13 @@ with ctx:
         event_mgr.write_events(opt.output)
         logging.info("Finished")
         sys.exit(0)
+
+    if opt.psdvar_short_segment is not None:
+        logging.info("Calculating PSD variation")
+        psd_var = pycbc.psd.calc_psd_variation(gwstrain,
+                opt.psdvar_short_segment, opt.psdvar_long_segment,
+                opt.psdvar_overlap, opt.psdvar_low_freq,
+                opt.psdvar_high_freq)
 
     if opt.enable_q_transform:
         logging.info("Performing q-transform on analysis segments")
