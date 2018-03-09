@@ -43,7 +43,7 @@ parser.add_argument("--fit-param", nargs='+',
                          "fit coefficients. Required. Either read from "
                          "template fit file or choose from mchirp, mtotal, "
                          "chi_eff, eta template_duration, a frequency cutoff "
-                         "in pnutils or a frequency function in LALSimulation.
+                         "in pnutils or a frequency function in LALSimulation. "
                          "If the background is regressed over multiple "
                          "parameters, one can simply provide them as a list.")
 parser.add_argument("--approximant", default="SEOBNRv4",
