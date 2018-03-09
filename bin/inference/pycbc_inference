@@ -109,6 +109,9 @@ parser.add_argument("--resume-from-checkpoint", action="store_true",
                     default=False,
                     help="Automatically load results from checkpoint/backup "
                          "file.")
+parser.add_argument("--delete-backup", action="store_true",
+                    default=False,
+                    help="Delete the backup file after the run has completed.")
 parser.add_argument("--checkpoint-fast", action="store_true",
                     help="Do not calculate ACL after each checkpoint, only at "
                          "the end. Not applicable if n-independent-samples "
@@ -483,8 +486,9 @@ with ctx:
 # rename checkpoint to output and delete backup
 logging.info("Moving checkpoint to output")
 os.rename(checkpoint_file, opts.output_file)
-logging.info("Deleting backup file")
-os.remove(backup_file)
+if opts.delete_backup:
+    logging.info("Deleting backup file")
+    os.remove(backup_file)
 
 # exit
 logging.info("Done")
