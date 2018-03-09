@@ -127,6 +127,7 @@ deploy:
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
   local_dir: _gh-pages
+  keep-history: true
   on:
     branch: master
     condition: $PYCBC_CONTAINER = build_and_test
