@@ -20,6 +20,8 @@
 import logging
 import shutil
 import pycbc.inference.sampler
+from pycbc import inject
+from pycbc.io.record import FieldArray
 from pycbc.inference import burn_in
 from pycbc import conversions
 from pycbc import transforms
@@ -656,8 +658,6 @@ def results_from_cli(opts, load_samples=True, **kwargs):
         input_files = [input_files]
 
     # loop over all input files
-    input_files = [opts.input_file] if isinstance(opts.input_file, str) \
-                                                           else opts.input_file
     for input_file in input_files:
         logging.info("Reading input file %s", input_file)
 
@@ -838,6 +838,16 @@ def add_plot_posterior_option_group(parser):
     pgroup.add_argument('--expected-parameters-color', default='r',
                         help="What to color the expected-parameters cross. "
                              "Default is red.")
+    pgroup.add_argument('--plot-injection-parameters', action='store_true',
+                        default=False,
+                        help="Get the expected parameters from the injection "
+                             "in the input file. There must be only a single "
+                             "injection in the file to work. Any values "
+                             "specified by expected-parameters will override "
+                             "the values obtained for the injection.")
+    # FIXME: the following should be made an attribute of the results file
+    pgroup.add_argument("--injection-hdf-group", default="H1/injections",
+                        help="HDF group that contains injection values."))
     return pgroup
 
 
@@ -874,6 +884,31 @@ def plot_ranges_from_cli(opts):
             raise ValueError("option --maxs not specified correctly; see help")
         maxs[x[0]] = float(x[1])
     return mins, maxs
+
+
+def injections_from_cli(opts):
+    """Gets injection parameters from the list of files.
+    """
+    input_files = opts.input_file
+    if isinstance(input_files, str):
+        input_files = [input_files]
+    parameters, _ = parse_parameters_opt(parameters)
+    injections = None
+    # loop over all input files getting the injection files
+    for input_file in input_files:
+        # read injections from HDF input file as FieldArray
+        these_injs = inject.InjectionSet(input_file,
+            hdf_group=opts.injection_hdf_group).table.view(FieldArray)
+        if injections is None:
+            injections = these_injs
+        else:
+            injections = injections.append(these_injs)
+    # check if need extra parameters than parameters stored in injection file
+    _, ts = transforms.get_common_cbc_transforms(parameters,
+                                                 injections.fieldnames)
+    # add parameters not included in injection file
+    injections = transforms.apply_transforms(injections, ts)
+    return injections
 
 
 def expected_parameters_from_cli(opts):
