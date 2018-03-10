@@ -460,10 +460,7 @@ with ctx:
         # update nsamples for next loop
         if opts.n_independent_samples is not None:
             with InferenceFile(checkpoint_file, 'r') as fp:
-                if fp.is_burned_in:
-                    nsamples = fp.n_independent_samples
-                else:
-                    nsamples = 0
+                nsamples = fp.n_independent_samples
             logging.info("Have {} independent samples".format(nsamples))
         else:
             nsamples += interval

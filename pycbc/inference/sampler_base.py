@@ -836,6 +836,9 @@ class BaseMCMCSampler(_BaseSampler):
     def n_independent_samples(cls, fp):
         """Returns the number of independent samples stored in a file.
 
+        The number of independent samples are counted starting from after
+        burn-in. If the sampler hasn't burned in yet, then 0 is returned.
+
         Parameters
         -----------
         fp : InferenceFile
@@ -846,6 +849,9 @@ class BaseMCMCSampler(_BaseSampler):
         int
             The number of independent samples.
         """
+        # check if burned in
+        if not fp.is_burned_in:
+            return 0
         # we'll just read a single parameter from the file
         samples = cls.read_samples(fp, fp.variable_args[0])
         return samples.size
