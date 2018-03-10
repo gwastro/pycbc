@@ -138,7 +138,7 @@ for p in parameters[0]:
 expected_parameters = {}
 if opts.plot_injection_parameters:
     injections = option_utils.injections_from_cli(opts)
-    for p in parameters:
+    for p in parameters[0]:
         # check that all of the injections are the same
         unique_vals = numpy.unique(injections[p])
         if unique_vals.size != 1:

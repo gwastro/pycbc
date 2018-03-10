@@ -847,7 +847,7 @@ def add_plot_posterior_option_group(parser):
                              "the values obtained for the injection.")
     # FIXME: the following should be made an attribute of the results file
     pgroup.add_argument("--injection-hdf-group", default="H1/injections",
-                        help="HDF group that contains injection values."))
+                        help="HDF group that contains injection values.")
     return pgroup
 
 
@@ -892,7 +892,10 @@ def injections_from_cli(opts):
     input_files = opts.input_file
     if isinstance(input_files, str):
         input_files = [input_files]
-    parameters, _ = parse_parameters_opt(parameters)
+    parameters, _ = parse_parameters_opt(opts.parameters)
+    if parameters is None:
+        with InferenceFile(input_files[0], 'r') as fp:
+            parameters = fp.variable_args
     injections = None
     # loop over all input files getting the injection files
     for input_file in input_files:
