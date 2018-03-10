@@ -887,7 +887,18 @@ def plot_ranges_from_cli(opts):
 
 
 def injections_from_cli(opts):
-    """Gets injection parameters from the list of files.
+    """Gets injection parameters from the inference file(s).
+
+    Parameters
+    ----------
+    opts : argparser
+        Argparser object that has the command-line objects to parse.
+
+    Returns
+    -------
+    FieldArray
+        Array of the injection parameters from all of the input files given
+        by ``opts.input_file``.
     """
     input_files = opts.input_file
     if isinstance(input_files, str):
