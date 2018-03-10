@@ -611,6 +611,12 @@ def create_multidim_plot(parameters, samples, labels=None,
             samples[param] = values
             mins[param] = mins[param] - float(offset)
             maxs[param] = maxs[param] - float(offset)
+        # also remove from expected parameters, if they were provided
+        if expected_parameters is not None:
+            try:
+                expected_parameters[param] -= offset
+            except KeyError:
+                pass
 
     # create the axis grid
     if fig is None and axis_dict is None:
