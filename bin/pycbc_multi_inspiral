@@ -113,7 +113,9 @@ pol = 1.21771
 
 
 
-coinc_threshold = 11.0
+coinc_threshold = 7.0
+coh_threshold = 7.0
+null_fraction = 0.3 #Triggers with null_snr/coinc_snr>null_fraction are cut
 generate_histograms = False
 generate_snr_plots = True
 pol = 1.21771
@@ -199,10 +201,29 @@ def coherent_snr(coinc_triggers_dict,projection_matrix):
     roh_coh = np.sqrt(roh_coh2)
     return roh_coh
 
-def coincident_snr(coinc_triggers_dict):
-    snr_array = np.array([coinc_triggers_dict[ifo] for ifo in coinc_triggers_dict.keys()])
+def coincident_snr(snr_dict,index,threshold):
+    """
+    Output: roh_coinc: Coincident snr triggers
+            index    : The subset of input index that survive the cuts
+            coinc_triggers: Dictionary of individual detector SNRs at
+                            indexes that survive cuts
+    Input: snr_dict: Dictionary of individual detector SNRs in geocent time
+           index   : Geocent indexes you want to find coinc SNR for
+           threshold: Indexes with coinc SNR below this threshold are cut
+    """
+    #Restrict the snr timeseries to just the interesting points
+    coinc_triggers = {}
+    for ifo in opt.instruments:
+        coinc_triggers[ifo] = snr[ifo][index]
+    #Calculate the coincident snr
+    snr_array = np.array([coinc_triggers[ifo] for ifo in coinc_triggers.keys()])
     roh_coinc = np.sqrt(np.sum(snr_array*snr_array.conj(),axis=0))
-    return roh_coinc
+    #Apply threshold
+    roh_coinc = roh_coinc[roh_coinc>threshold]
+    index = index[roh_coinc>coinc_threshold]
+    for ifo in opt.instruments:
+        coinc_triggers[ifo] = snr[ifo][index]
+    return roh_coinc, index, coinc_triggers
 
 def null_snr(roh_coh,roh_coinc):
     null2 = roh_coinc**2 - roh_coh**2
@@ -407,7 +428,6 @@ with ctx:
 	    snr={} 
 	    idx_dict={}
             coinc_idx[t_num][s_num] = np.array([])
-            coinc_triggers = {}
             stilde = {}
 	    for ifo in opt.instruments:
 		stilde[ifo] = segments[ifo][s_num]
@@ -455,8 +475,6 @@ with ctx:
                     continue
                 #Apply time delay
 		snr[ifo].roll(-time_delay_idx[ifo])
-                #Restrict the snr timeseries to just the interesting points
-                coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
        
             """ 
                 #This is the original chi2 tests. 
@@ -488,9 +506,11 @@ with ctx:
 	    #Calculate coherent snr roh_coh
 	    #Check we have data before we try to compute the coherent snr
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 1:
-                #Find coinc snr at trigger times
-                roh_coinc_dict[t_num][s_num]=coincident_snr(coinc_triggers)
+                #Find coinc snr at trigger times and apply coinc snr threshold 
+                roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num], coinc_triggers =\
+                                           coincident_snr(snr,coinc_idx[t_num][s_num],coinc_threshold)
                 print "max coincident snr" + str(max(roh_coinc_dict[t_num][s_num]))
+                """
                 #Get rid of coinc triggers not above coinc threshold
                 coinc_idx[t_num][s_num] = coinc_idx[t_num][s_num][\
                     roh_coinc_dict[t_num][s_num] > coinc_threshold]
@@ -499,6 +519,7 @@ with ctx:
                         if snr[ifo] == []:
                             break
                         coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
+                """
             #If we have triggers above coinc threshold and more than 2 ifos 
             # then calculate the coherent statistics 
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 2:
@@ -509,6 +530,10 @@ with ctx:
                 print "max coherent snr" + str(max(roh_coh_dict[t_num][s_num]))
                 
                 coh_snr_list.append(max(roh_coh_dict[t_num][s_num]))
+                #Cut on coherent snr
+                coinc_idx[t_num][s_num] = coinc_idx[t_num][s_num][\
+                         roh_coh_dict[t_num][s_num] > coh_threshold]
+                coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
                 #Find the null snr
                 null_dict[t_num][s_num] = null_snr(roh_coh_dict[t_num][s_num],\
                      roh_coinc_dict[t_num][s_num][roh_coinc_dict[t_num][s_num]\
@@ -569,14 +594,13 @@ if generate_snr_plots == True:
     except KeyError:
         print "Key Error when calculating coherent statistics.\n \
                   This is normal if using less than 3 detector"
-    #plt.xlim(0,409600)
     plt.legend(loc="best")
     plt.xlabel("Trigger idx")
     plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
     print "Generating network SNR plots..."
     plt.figure()
-    coinc_snr = coincident_snr(snr)
+    coinc_snr,_,_ = coincident_snr(snr,np.arange(len(snr[ifo])),0)
     plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),coinc_snr,'b.',label='coinc snr')
     try:
         roh_coh = coherent_snr(snr,projection_matrix)
