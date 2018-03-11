@@ -408,14 +408,16 @@ with ctx:
 	    idx_dict={}
             coinc_idx[t_num][s_num] = np.array([])
             coinc_triggers = {}
+            stilde = {}
 	    for ifo in opt.instruments:
-		stilde = segments[ifo][s_num]
+		stilde[ifo] = segments[ifo][s_num]
 		logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
 			     (t_num + 1, len(bank), ifo, s_num + 1,
 			      len(segments[ifo])))       
+                #The correlation vector is the FFT of the snr (so inverse FFT it to get the snr)
 		snr_ts, norm, corr, idx, snrv_dict[ifo] = \
 			matched_filter[ifo].matched_filter_and_cluster(s_num,
-			    template.sigmasq(stilde.psd), window=cluster_window)
+			    template.sigmasq(stilde[ifo].psd), window=cluster_window)
 
                 #If we have no data, move onto next ifo and note the
                 # number of ifos with data that we have
@@ -455,16 +457,15 @@ with ctx:
 		snr[ifo].roll(-time_delay_idx[ifo])
                 #Restrict the snr timeseries to just the interesting points
                 coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
-         
-                
-                
+       
+            """ 
                 #This is the original chi2 tests. 
 		out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
 			bank_chisq.values(template, stilde.psd, stilde, snrv_dict[ifo],
 					  norm_dict[ifo], idx_dict[ifo]+stilde.analyze.start)
 
 		out_vals['chisq'], out_vals['chisq_dof'] =\
-			power_chisq.values(corr_dict[ifo], snrv_dict[ifo], norm_dict[ifo], stilde.psd,
+			power_chisq.values(corr_dict[ifo], snrv_dict[ifo], norm_dict[ifo], stilde[ifo].psd,
 					   idx_dict[ifo]+stilde.analyze.start, template)
 
 		out_vals['cont_chisq'] = autochisq.values(snr,
@@ -481,7 +482,7 @@ with ctx:
 
 		event_mgr.add_template_events_to_ifo(ifo, names,
 			[out_vals[n] for n in names])
-               
+            """
                 
 
 	    #Calculate coherent snr roh_coh
@@ -570,21 +571,22 @@ if generate_snr_plots == True:
                   This is normal if using less than 3 detector"
     #plt.xlim(0,409600)
     plt.legend(loc="best")
+    plt.xlabel("Trigger idx")
     plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
     print "Generating network SNR plots..."
     plt.figure()
     coinc_snr = coincident_snr(snr)
-    plt.plot(coinc_snr,'b.',label='coinc snr')
+    plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),coinc_snr,'b.',label='coinc snr')
     try:
         roh_coh = coherent_snr(snr,projection_matrix)
-        plt.plot(roh_coh,'rx',label='coh snr')
-        plt.plot((coinc_snr**2-roh_coh**2)**0.5,'mx',label='null snr')
+        plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),roh_coh,'rx',label='coh snr')
+        plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),(coinc_snr**2-roh_coh**2)**0.5,'mx',label='null snr')
     except NameError:
         print "Name Error when calculating coherent statistics.\n \
                   This is normal if using less than 3 detector"
-    #plt.xlim(0,409600)
     plt.legend(loc="best")
+    plt.xlabel("Time (seconds)")
     plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr_whole_segment.png")
     print "Done"
 
@@ -597,6 +599,7 @@ if generate_snr_plots == True:
     try:
         plt.figure()
         plt.plot(roh_coh[np.argmax(roh_coh)-200:np.argmax(roh_coh)+200],'rx',label='coh snr')
+        plt.xlabel("Trigger Index")
         plt.savefig("/home/c1551011/public_html/roh_coh_max.png")
     except NameError:
         print "Could not generate coherent snr plot"
@@ -636,3 +639,41 @@ if generate_histograms == True:
         plt.title(ifo + " snr2")
         plt.savefig("/home/c1551011/public_html/" + ifo + "_snr2_histogram.png")
     print "Done"
+
+
+
+coinc_chisq = {}
+coinc_chisq_dof = {}
+#calculate the power chi2 values for the coinc indexes (this uses the snr time series before the time delay, so we need to undo it. Same for normalisation)
+#FIXME Come up with a better way of not doing time delay for chi2 and normalisation 
+for ifo in opt.instruments:
+    coinc_chisq[ifo],coinc_chisq_dof[ifo] = power_chisq.values(corr_dict[ifo], snr[ifo][coinc_idx[t_num][s_num]]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,coinc_idx[t_num][s_num]+time_delay_idx[ifo]+stilde[ifo].analyze.start, template)
+"""
+#Original chi2 test for comparison 
+idx_gc = idx - time_delay_idx[ifo]
+snrv = []
+for i in range(len(idx_gc)):
+    if idx_gc[i] in coinc_idx[0][0]:
+        snrv.append(snrv_dict[ifo][i])
+snrv = np.array(snrv)
+out_vals['chisq'], out_vals['chisq_dof'] =\
+power_chisq.values(corr_dict[ifo], snrv, norm_dict[ifo], stilde[ifo].psd, coinc_idx[0][0]+time_delay_idx[ifo]+stilde[ifo].analyze.start, template)
+"""
+#Plot the chi2                
+for ifo in opt.instruments:
+    plt.figure()
+    plt.plot(coinc_idx[0][0],coinc_chisq[ifo]/coinc_chisq_dof[ifo])
+    plt.xlabel("Trigger idx")
+    plt.ylabel("chi2 per DOF")
+    plt.savefig("/home/c1551011/public_html/"+ifo+"chi2.png")
+
+"""
+plt.figure()
+plt.plot(out_vals['chisq'])
+plt.savefig("/home/c1551011/public_html/old_chi2.png")
+
+plt.figure()
+plt.plot(snr[ifo][coinc_idx[t_num][s_num]]/norm_dict[ifo])
+plt.plot(snrv)
+plt.savefig("/home/c1551011/public_html/snrv_vs_snr.png")
+"""
