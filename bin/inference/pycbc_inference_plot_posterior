@@ -134,8 +134,23 @@ for p in parameters[0]:
     if p not in maxs:
         maxs[p] = numpy.array([s[p].max() for s in samples]).max()
 
+# get injection values if desired
+expected_parameters = {}
+if opts.plot_injection_parameters:
+    injections = option_utils.injections_from_cli(opts)
+    for p in parameters[0]:
+        # check that all of the injections are the same
+        unique_vals = numpy.unique(injections[p])
+        if unique_vals.size != 1:
+            raise ValueError("More than one injection found! To use "
+                "plot-injection-parameters, there must be a single unique "
+                "injection in all input files. Use the expected-parameters "
+                "option to specify an expected parameter instead.")
+        # passed: use the value for the expected
+        expected_parameters[p] = unique_vals[0]
+
 # get expected parameter values from command line
-expected_parameters = option_utils.expected_parameters_from_cli(opts)
+expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
 
 # assign some colors
 colors = itertools.cycle(["black"] + ["C{}".format(i) for i in range(10)])
