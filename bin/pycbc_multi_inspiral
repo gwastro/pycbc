@@ -193,11 +193,11 @@ def coherent_snr(snr_triggers,index,threshold,projection_matrix):
     roh_coh2 = sum(x.transpose()*snr_array)
     roh_coh = np.sqrt(roh_coh2)
     #Apply thresholds
-    roh_coh = roh_coh[roh_coh>threshold]
     index = index[roh_coh>threshold]
     snrv = {}
     for ifo in opt.instruments:
         snrv[ifo] = snr_triggers[ifo][roh_coh>threshold]
+    roh_coh = roh_coh[roh_coh>threshold]
     return roh_coh,index,snrv
 
 def coincident_snr(snr_dict,index,threshold):
@@ -224,12 +224,21 @@ def coincident_snr(snr_dict,index,threshold):
         coinc_triggers[ifo] = snr[ifo][index]
     return roh_coinc, index, coinc_triggers
 
-def null_snr(roh_coh,roh_coinc):
+def null_snr(roh_coh,roh_coinc,null_fraction,snrv,index):
     null2 = roh_coinc**2 - roh_coh**2
     #Numerical errors may make this negative and break the sqrt, so set negaitive values to 0
     null2[null2<0] = 0 
-    null_snr = null2**0.5
-    return null_snr
+    null = null2**0.5
+    index = index[(null/roh_coinc)<null_fraction]
+    roh_coh  = roh_coh[(null/roh_coinc)<null_fraction] 
+    #Still need roh coinc, so create temporary array with triggers 
+    #below threshold removed
+    roh_coinc_temp = roh_coinc[(null/roh_coinc)<null_fraction] 
+    for ifo in opt.instruments:
+        snrv[ifo] = snrv[ifo][(null/roh_coinc)>null_fraction]
+    null = null[(null/roh_coinc)<null_fraction]
+    roh_coinc = roh_coinc_temp
+    return null, roh_coh, roh_coinc, index, snrv
 
 def get_coinc_indexes(idx_dict,time_delay_idx):
     """
@@ -421,7 +430,7 @@ with ctx:
             norm_dict = {}
             corr_dict = {}
 	    for ifo in opt.instruments:
-	        sigmasq[ifo] = template.sigmasq(segments[ifo][0].psd)
+	        sigmasq[ifo] = template.sigmasq(segments[ifo][s_num].psd)
 	        sigma[ifo] = np.sqrt(sigmasq[ifo])
 	    event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
 	    snr={} 
@@ -530,16 +539,13 @@ with ctx:
                 print "max coherent snr" + str(max(roh_coh_dict[t_num][s_num]))
                 
                 coh_snr_list.append(max(roh_coh_dict[t_num][s_num]))
-                """
-                #Cut on coherent snr
-                coinc_idx[t_num][s_num] = coinc_idx[t_num][s_num][\
-                         roh_coh_dict[t_num][s_num] > coh_threshold]
-                coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
-                """
+ 
                 #Find the null snr
-                null_dict[t_num][s_num] = null_snr(roh_coh_dict[t_num][s_num],\
-                     roh_coinc_dict[t_num][s_num][roh_coinc_dict[t_num][s_num]\
-                                                              >coinc_threshold])
+                null_dict[t_num][s_num],roh_coh_dict[t_num][s_num],\
+                    roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num],\
+                     coinc_triggers = null_snr(roh_coh_dict[t_num][s_num],\
+                     roh_coinc_dict[t_num][s_num],null_fraction,coinc_triggers,\
+                                                        coinc_idx[t_num][s_num])
                 
 	    event_mgr.cluster_template_events_single_ifo("time_index",
            					    "snr", cluster_window, ifo)
@@ -622,13 +628,6 @@ if generate_snr_plots == True:
         plt.plot(np.argmax((snr[ifo]*snr[ifo].conj())**0.5),max((snr[ifo]*snr[ifo].conj())**0.5),'*',label=ifo)
     plt.legend()
     plt.savefig("/home/c1551011/public_html/ifo_snr.png")
-    try:
-        plt.figure()
-        plt.plot(roh_coh[np.argmax(roh_coh)-200:np.argmax(roh_coh)+200],'rx',label='coh snr')
-        plt.xlabel("Trigger Index")
-        plt.savefig("/home/c1551011/public_html/roh_coh_max.png")
-    except NameError:
-        print "Could not generate coherent snr plot"
    
     plt.figure()
     snr2={} 
