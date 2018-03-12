@@ -174,32 +174,31 @@ def get_projection_matrix(wp,wc):
                     - np.dot(wp,wc)*(np.outer(wp,wc) + np.outer(wc,wp))) / denominator
     return projection_matrix
 
-def coherent_snr_for_timeseries(snr_dict,projection_matrix):
+
+def coherent_snr(snr_triggers,index,threshold,projection_matrix):
     """
-    Output: Returns an array of the coherent snr for the detector network
-    Inputs: snr_dict: is a dictionary of the normalised complex snr time series for 
+    Output: roh_coh: an array of the coherent snr for the detector network
+            index  : Indexes that survive cuts
+            snrv   : Dictionary of individual ifo triggers that survive cuts
+    Inputs: snr_triggers: is a dictionary of the normalised complex snr time series for 
                       each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
+            index  : An array of the indexes you want to analyse. Not used for 
+                     calculations, just for book keeping
+            threshold: Triggers with roh_coh<threshold are cut
             projection_matrix 
     """
-    snr_array = np.array([snr_dict[ifo].numpy() for ifo in opt.instruments])
+    #Calculate roh_roh
+    snr_array = np.array([snr_triggers[ifo] for ifo in opt.instruments])
     x = np.inner(snr_array.conj().transpose(),projection_matrix)
     roh_coh2 = sum(x.transpose()*snr_array)
     roh_coh = np.sqrt(roh_coh2)
-    return roh_coh
-
-
-def coherent_snr(coinc_triggers_dict,projection_matrix):
-    """
-    Output: Returns an array of the coherent snr for the detector network
-    Inputs: coinc_triggers_dict: is a dictionary of the normalised complex snr time series for 
-                      each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
-            projection_matrix 
-    """
-    snr_array = np.array([coinc_triggers_dict[ifo] for ifo in opt.instruments])
-    x = np.inner(snr_array.conj().transpose(),projection_matrix)
-    roh_coh2 = sum(x.transpose()*snr_array)
-    roh_coh = np.sqrt(roh_coh2)
-    return roh_coh
+    #Apply thresholds
+    roh_coh = roh_coh[roh_coh>threshold]
+    index = index[roh_coh>threshold]
+    snrv = {}
+    for ifo in opt.instruments:
+        snrv[ifo] = snr_triggers[ifo][roh_coh>threshold]
+    return roh_coh,index,snrv
 
 def coincident_snr(snr_dict,index,threshold):
     """
@@ -525,15 +524,18 @@ with ctx:
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
                 projection_matrix = get_projection_matrix(wp,wc)
-                roh_coh_dict[t_num][s_num] = coherent_snr(\
-                                 coinc_triggers,projection_matrix)
+                roh_coh_dict[t_num][s_num],coinc_idx[t_num][s_num],coinc_triggers =\
+                                coherent_snr(coinc_triggers,coinc_idx[t_num][s_num],\
+                                                     coh_threshold,projection_matrix)
                 print "max coherent snr" + str(max(roh_coh_dict[t_num][s_num]))
                 
                 coh_snr_list.append(max(roh_coh_dict[t_num][s_num]))
+                """
                 #Cut on coherent snr
                 coinc_idx[t_num][s_num] = coinc_idx[t_num][s_num][\
                          roh_coh_dict[t_num][s_num] > coh_threshold]
                 coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
+                """
                 #Find the null snr
                 null_dict[t_num][s_num] = null_snr(roh_coh_dict[t_num][s_num],\
                      roh_coinc_dict[t_num][s_num][roh_coinc_dict[t_num][s_num]\
@@ -603,7 +605,7 @@ if generate_snr_plots == True:
     coinc_snr,_,_ = coincident_snr(snr,np.arange(len(snr[ifo])),0)
     plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),coinc_snr,'b.',label='coinc snr')
     try:
-        roh_coh = coherent_snr(snr,projection_matrix)
+        roh_coh,_,_ = coherent_snr(snr,np.arange(len(snr[ifo])),0,projection_matrix)
         plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),roh_coh,'rx',label='coh snr')
         plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),(coinc_snr**2-roh_coh**2)**0.5,'mx',label='null snr')
     except NameError:
@@ -646,7 +648,7 @@ if generate_histograms == True:
     df = 4
     y = chi2.pdf(x, df)
     plt.plot(x,y,'r')
-    roh_coh_for_hist = coherent_snr(snr,projection_matrix)
+    roh_coh_for_hist = coherent_snr(snr,np.arange(len(snr[ifo])),0,projection_matrix)
     plt.hist(roh_coh_for_hist.real**2,bins=100,normed=True)
     plt.title("roh_coh2")
     plt.savefig("/home/c1551011/public_html/coh_snr2_histogram.png")
