@@ -343,12 +343,15 @@ def get_obj_attrs(obj):
 
     return pr
 
-def props(obj, required_args=[], **kwargs):
+def props(obj, required_args=None, **kwargs):
     """ Return a dictionary built from the combination of defaults, kwargs,
     and the attributes of the given object.
     """
     pr = get_obj_attrs(obj)
     pr.update(kwargs)
+
+    if required_args is None:
+        required_args = []
 
     # check that required args are given
     missing = set(required_args) - set(pr.keys())
