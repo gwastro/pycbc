@@ -115,9 +115,10 @@ pol = 1.21771
 
 coinc_threshold = 7.0
 coh_threshold = 7.0
-null_fraction = 0.3 #Triggers with null_snr/coinc_snr>null_fraction are cut
+null_fraction = 0.2 #Triggers with null_snr/coinc_snr>null_fraction are cut
 generate_histograms = False
 generate_snr_plots = True
+generate_chi2_plots = True
 pol = 1.21771
 longitude = 3.446131227771
 latitude = -0.40812483499946
@@ -218,10 +219,10 @@ def coincident_snr(snr_dict,index,threshold):
     snr_array = np.array([coinc_triggers[ifo] for ifo in coinc_triggers.keys()])
     roh_coinc = np.sqrt(np.sum(snr_array*snr_array.conj(),axis=0))
     #Apply threshold
-    roh_coinc = roh_coinc[roh_coinc>threshold]
     index = index[roh_coinc>coinc_threshold]
     for ifo in opt.instruments:
         coinc_triggers[ifo] = snr[ifo][index]
+    roh_coinc = roh_coinc[roh_coinc>threshold]
     return roh_coinc, index, coinc_triggers
 
 def null_snr(roh_coh,roh_coinc,null_fraction,snrv,index):
@@ -235,7 +236,7 @@ def null_snr(roh_coh,roh_coinc,null_fraction,snrv,index):
     #below threshold removed
     roh_coinc_temp = roh_coinc[(null/roh_coinc)<null_fraction] 
     for ifo in opt.instruments:
-        snrv[ifo] = snrv[ifo][(null/roh_coinc)>null_fraction]
+        snrv[ifo] = snrv[ifo][(null/roh_coinc)<null_fraction]
     null = null[(null/roh_coinc)<null_fraction]
     roh_coinc = roh_coinc_temp
     return null, roh_coh, roh_coinc, index, snrv
@@ -324,8 +325,6 @@ with ctx:
     for ifo in opt.instruments:
 	time_delay_idx[ifo] =  int(round(pycbc.detector.Detector(ifo).\
              time_delay_from_earth_center(ra,dec,t_gps) * sample_rate))
-        ### DELETE THIS LINE ###
-        #time_delay_idx[ifo] = 0 
     
     #Matched filter each ifo
     matched_filter = {}
@@ -467,7 +466,7 @@ with ctx:
                 #Restrict the snr timeseries to just this section
 		snr[ifo] = snr_ts[analyse_data] * norm_dict[ifo]
                
-                #Save the snr triggers and indexes (if we have any)
+                #Save the indexes of triggers (if we have any)
                 #Even if we have none, need to keep an empty dictionary.
                 #Only do this is idx doesn't get time shifted out of the time
                 #we are looking at.
@@ -518,16 +517,6 @@ with ctx:
                 roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num], coinc_triggers =\
                                            coincident_snr(snr,coinc_idx[t_num][s_num],coinc_threshold)
                 print "max coincident snr" + str(max(roh_coinc_dict[t_num][s_num]))
-                """
-                #Get rid of coinc triggers not above coinc threshold
-                coinc_idx[t_num][s_num] = coinc_idx[t_num][s_num][\
-                    roh_coinc_dict[t_num][s_num] > coinc_threshold]
-                if len(coinc_idx[t_num][s_num])>0:
-                    for ifo in opt.instruments:
-                        if snr[ifo] == []:
-                            break
-                        coinc_triggers[ifo] = snr[ifo][coinc_idx[t_num][s_num]]
-                """
             #If we have triggers above coinc threshold and more than 2 ifos 
             # then calculate the coherent statistics 
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 2:
@@ -546,6 +535,20 @@ with ctx:
                      coinc_triggers = null_snr(roh_coh_dict[t_num][s_num],\
                      roh_coinc_dict[t_num][s_num],null_fraction,coinc_triggers,\
                                                         coinc_idx[t_num][s_num])
+            
+
+            #We are now going to find the individual detector chi2 values. To do this it
+            #is useful to find the indexes of coinc triggers in the detector frame.
+            #We do this by overwriting the dictionary of all single detector triggers
+            #with just those of coinc triggers
+            for ifo in opt.instruments:
+                idx_dict[ifo] = coinc_idx[t_num][s_num] + time_delay_idx[ifo]
+            #calculate the power chi2 values for the coinc indexes (this uses the snr time series before the time delay, so we need to undo it. Same for normalisation)
+            #FIXME Come up with a better way of not doing time delay for chi2 and normalisation 
+            power_chisq_ts = {}
+            power_chisq_dof = {}
+            for ifo in opt.instruments:
+                power_chisq_ts[ifo],power_chisq_dof[ifo] = power_chisq.values(corr_dict[ifo], coinc_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
                 
 	    event_mgr.cluster_template_events_single_ifo("time_index",
            					    "snr", cluster_window, ifo)
@@ -667,12 +670,6 @@ if generate_histograms == True:
 
 
 
-coinc_chisq = {}
-coinc_chisq_dof = {}
-#calculate the power chi2 values for the coinc indexes (this uses the snr time series before the time delay, so we need to undo it. Same for normalisation)
-#FIXME Come up with a better way of not doing time delay for chi2 and normalisation 
-for ifo in opt.instruments:
-    coinc_chisq[ifo],coinc_chisq_dof[ifo] = power_chisq.values(corr_dict[ifo], snr[ifo][coinc_idx[t_num][s_num]]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,coinc_idx[t_num][s_num]+time_delay_idx[ifo]+stilde[ifo].analyze.start, template)
 """
 #Original chi2 test for comparison 
 idx_gc = idx - time_delay_idx[ifo]
@@ -684,13 +681,14 @@ snrv = np.array(snrv)
 out_vals['chisq'], out_vals['chisq_dof'] =\
 power_chisq.values(corr_dict[ifo], snrv, norm_dict[ifo], stilde[ifo].psd, coinc_idx[0][0]+time_delay_idx[ifo]+stilde[ifo].analyze.start, template)
 """
-#Plot the chi2                
-for ifo in opt.instruments:
-    plt.figure()
-    plt.plot(coinc_idx[0][0],coinc_chisq[ifo]/coinc_chisq_dof[ifo])
-    plt.xlabel("Trigger idx")
-    plt.ylabel("chi2 per DOF")
-    plt.savefig("/home/c1551011/public_html/"+ifo+"chi2.png")
+if generate_chi2_plots == True:
+    #Plot the chi2                
+    for ifo in opt.instruments:
+        plt.figure()
+        plt.plot(coinc_idx[0][0],power_chisq_ts[ifo]/power_chisq_dof[ifo])
+        plt.xlabel("Trigger idx")
+        plt.ylabel("chi2 per DOF")
+        plt.savefig("/home/c1551011/public_html/"+ifo+"chi2.png")
 
 """
 plt.figure()
