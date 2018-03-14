@@ -220,6 +220,18 @@ def newsnr_sgveto(snr, bchisq, sgchisq):
     else:
         return nsnr[0]
 
+def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
+    """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD 
+    variation statistic """
+    nsnr = newsnr_sgveto(snr, bchisq, sgchisq)
+    nsnr_psd = nsnr / numpy.sqrt(psd_var_val)
+
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
+        return nsnr_psd
+    else:
+        return nsnr_psd[0]
+
 def effsnr(snr, reduced_x2, fac=250.):
     """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
     Previous implementation in glue/ligolw/lsctables.py
@@ -734,7 +746,7 @@ class EventManagerMultiDet(EventManager):
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
 __all__ = ['threshold_and_cluster', 'newsnr', 'effsnr', 'newsnr_sgveto',
-           'findchirp_cluster_over_window',
+           'newsnr_sgveto_psdvar', 'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
            'threshold_real_numpy', 'threshold_only',
            'EventManager', 'EventManagerMultiDet']

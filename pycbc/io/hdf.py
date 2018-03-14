@@ -450,6 +450,12 @@ class SingleDetTriggers(object):
             self.stat_name = "Reweighted SNR"
         elif ranking_statistic == "newsnr_sgveto":
             self.stat_name = "Reweighted SNR (+sgveto)"
+        elif ranking_statistic == "newsnr_sgveto_psdvar":
+            stat = self.newsnr_sgveto_psdvar
+            # newsnr doesn't return an array if len(stat) == 1
+            if len(self.snr) == 1:
+                stat = np.array([stat])
+            self.stat_name = "Reweighted SNR (+sgveto+psdvar)"
         elif ranking_statistic == "snr":
             self.stat_name = "SNR"
         else:
@@ -590,12 +596,20 @@ class SingleDetTriggers(object):
             / (np.array(self.trigs['chisq_dof'])[self.mask] * 2 - 2)
 
     @property
+    def psd_var_val(self):
+        return np.array(self.trigs['psd_var_val'])[self.mask]
+
+    @property
     def newsnr(self):
         return events.newsnr(self.snr, self.rchisq)
 
     @property
     def newsnr_sgveto(self):
         return events.newsnr_sgveto(self.snr, self.rchisq, self.sgchisq)
+
+    @property
+    def newsnr_sgveto_psdvar(self):
+        return events.newsnr_sgveto_psdvar(self.snr, self.rchisq, self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):
         if hasattr(self, cname):
