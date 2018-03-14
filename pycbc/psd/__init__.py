@@ -187,6 +187,8 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              "comparison.")
     psd_options.add_argument("--psdvar_high_freq", type=float, metavar="HERTZ",                              help="Maximum frequency to consider in PSD "
                              "comparison.")
+    psd_options.add_argument("--psdvar_f_weight", type=str, help="Consider "
+                              "frequency weighting in PSD variation estimation")
 
     if include_data_options :
         psd_options.add_argument("--psd-estimation",
@@ -283,6 +285,8 @@ def insert_psd_option_group_multi_ifo(parser):
                              "comparison.")
     psd_options.add_argument("--psdvar_high_freq", type=float, metavar="HERTZ",                              help="Maximum frequency to consider in PSD "
                              "comparison.")
+    psd_options.add_argument("--psdvar_f_weight", type=str, help="Consider "
+                              "frequency weighting in PSD variation estimation")
 
     return psd_options
 
