@@ -382,6 +382,7 @@ An example of running ``pycbc_inference`` to analyze the injection in fake data:
         --psd-inverse-length ${PSD_INVERSE_LENGTH} \
         --fake-strain ${STRAIN} \
         --fake-strain-seed 44 \
+        --strain-high-pass ${F_MIN} \
         --sample-rate ${SAMPLE_RATE} \
         --low-frequency-cutoff ${F_MIN} \
         --channel-name H1:FOOBAR L1:FOOBAR \
