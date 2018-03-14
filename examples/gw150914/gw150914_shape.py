@@ -17,7 +17,7 @@ for ifo in ['H1', 'L1']:
     psd = interpolate(welch(h1), 1.0 / 32)
 
     # whiten
-    white_strain = (h1.to_frequencyseries() / psd ** 0.5 * psd.delta_f).to_timeseries()
+    white_strain = (h1.to_frequencyseries() / psd ** 0.5).to_timeseries()
 
     # remove some of the high and low
     smooth = highpass_fir(white_strain, 35, 8)
