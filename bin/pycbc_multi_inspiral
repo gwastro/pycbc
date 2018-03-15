@@ -120,10 +120,17 @@ generate_histograms = False
 generate_snr_plots = True
 generate_chi2_plots = True
 pol = 1.21771
+#bns options
 longitude = 3.446131227771
 latitude = -0.40812483499946
 t_gps = 1187008884
+"""
 
+#glitch options
+longitude = 3.446131227771
+latitude = -0.40812483499946
+t_gps = 1185938872
+"""
 ra = longitude 
 dec = latitude
 
@@ -176,17 +183,19 @@ def get_projection_matrix(wp,wc):
     return projection_matrix
 
 
-def coherent_snr(snr_triggers,index,threshold,projection_matrix):
+def coherent_snr(snr_triggers,index,threshold,projection_matrix,coinc_snr=[]):
     """
     Output: roh_coh: an array of the coherent snr for the detector network
             index  : Indexes that survive cuts
             snrv   : Dictionary of individual ifo triggers that survive cuts
+            coinc_snr: The coincicedent snr value for triggers surviving the coherent cut
     Inputs: snr_triggers: is a dictionary of the normalised complex snr time series for 
                       each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
             index  : An array of the indexes you want to analyse. Not used for 
                      calculations, just for book keeping
             threshold: Triggers with roh_coh<threshold are cut
             projection_matrix 
+            coinc_snr: Optional- The coincident snr for each trigger. 
     """
     #Calculate roh_roh
     snr_array = np.array([snr_triggers[ifo] for ifo in opt.instruments])
@@ -195,11 +204,13 @@ def coherent_snr(snr_triggers,index,threshold,projection_matrix):
     roh_coh = np.sqrt(roh_coh2)
     #Apply thresholds
     index = index[roh_coh>threshold]
+    if len(coinc_snr)!=0:
+        coinc_snr = coinc_snr[roh_coh>threshold]
     snrv = {}
     for ifo in opt.instruments:
         snrv[ifo] = snr_triggers[ifo][roh_coh>threshold]
     roh_coh = roh_coh[roh_coh>threshold]
-    return roh_coh,index,snrv
+    return roh_coh,index,snrv,coinc_snr
 
 def coincident_snr(snr_dict,index,threshold):
     """
@@ -475,6 +486,7 @@ with ctx:
 
             #Find triggers that are coincident (in geocent time) in multiple ifos
             coinc_idx[t_num][s_num] = get_coinc_indexes(idx_dict,time_delay_idx)
+            print "Number of coincident indexes: " + str(len(coinc_idx[t_num][s_num]))
             
             for ifo in opt.instruments:
                 # Move to next segment if this segment has no data 
@@ -516,39 +528,47 @@ with ctx:
                 #Find coinc snr at trigger times and apply coinc snr threshold 
                 roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num], coinc_triggers =\
                                            coincident_snr(snr,coinc_idx[t_num][s_num],coinc_threshold)
-                print "max coincident snr" + str(max(roh_coinc_dict[t_num][s_num]))
+                print "Points above threshold: " + str(len(coinc_idx[t_num][s_num]))
+                if len(coinc_idx[t_num][s_num]) != 0:
+                    print "max coincident snr" + str(max(roh_coinc_dict[t_num][s_num]))
             #If we have triggers above coinc threshold and more than 2 ifos 
             # then calculate the coherent statistics 
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 2:
                 wp,wc=get_weighted_antenna_patterns(Fp,Fc,sigma)
                 projection_matrix = get_projection_matrix(wp,wc)
-                roh_coh_dict[t_num][s_num],coinc_idx[t_num][s_num],coinc_triggers =\
-                                coherent_snr(coinc_triggers,coinc_idx[t_num][s_num],\
-                                                     coh_threshold,projection_matrix)
-                print "max coherent snr" + str(max(roh_coh_dict[t_num][s_num]))
+                roh_coh_dict[t_num][s_num],coinc_idx[t_num][s_num],coinc_triggers,\
+                        roh_coinc_dict[t_num][s_num] = coherent_snr(coinc_triggers,\
+                          coinc_idx[t_num][s_num],coh_threshold,projection_matrix,\
+                                                      roh_coinc_dict[t_num][s_num])
+                if len(coinc_idx[t_num][s_num]) != 0:
+                    print "max coherent snr" + str(max(roh_coh_dict[t_num][s_num]))
                 
-                coh_snr_list.append(max(roh_coh_dict[t_num][s_num]))
+                    coh_snr_list.append(max(roh_coh_dict[t_num][s_num]))
  
-                #Find the null snr
-                null_dict[t_num][s_num],roh_coh_dict[t_num][s_num],\
-                    roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num],\
-                     coinc_triggers = null_snr(roh_coh_dict[t_num][s_num],\
-                     roh_coinc_dict[t_num][s_num],null_fraction,coinc_triggers,\
-                                                        coinc_idx[t_num][s_num])
-            
-
+                    #Find the null snr
+                    null_dict[t_num][s_num],roh_coh_dict[t_num][s_num],\
+                        roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num],\
+                         coinc_triggers = null_snr(roh_coh_dict[t_num][s_num],\
+                         roh_coinc_dict[t_num][s_num],null_fraction,coinc_triggers,\
+                                                            coinc_idx[t_num][s_num])
             #We are now going to find the individual detector chi2 values. To do this it
             #is useful to find the indexes of coinc triggers in the detector frame.
             #We do this by overwriting the dictionary of all single detector triggers
             #with just those of coinc triggers
-            for ifo in opt.instruments:
-                idx_dict[ifo] = coinc_idx[t_num][s_num] + time_delay_idx[ifo]
-            #calculate the power chi2 values for the coinc indexes (this uses the snr time series before the time delay, so we need to undo it. Same for normalisation)
-            #FIXME Come up with a better way of not doing time delay for chi2 and normalisation 
-            power_chisq_ts = {}
-            power_chisq_dof = {}
-            for ifo in opt.instruments:
-                power_chisq_ts[ifo],power_chisq_dof[ifo] = power_chisq.values(corr_dict[ifo], coinc_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
+            if len(coinc_idx[t_num][s_num]) != 0:
+                for ifo in opt.instruments:
+                    idx_dict[ifo] = coinc_idx[t_num][s_num] + time_delay_idx[ifo]
+                #calculate the power and auto chi2 values for the coinc indexes (this uses the snr time series before the time delay, so we need to undo it. Same for normalisation)
+                power_chisq_ts = {}
+                power_chisq_dof = {}
+                auto_chisq = {} 
+                bank_chisq_ts = {}
+                bank_chisq_dof = {}
+                for ifo in opt.instruments:
+		    bank_chisq_ts[ifo], bank_chisq_dof[ifo] = \
+			bank_chisq.values(template, stilde[ifo].psd, stilde[ifo], snrv_dict[ifo],norm_dict[ifo], idx_dict[ifo]+stilde[ifo].analyze.start)
+                    power_chisq_ts[ifo],power_chisq_dof[ifo] = power_chisq.values(corr_dict[ifo], coinc_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
+                    auto_chisq[ifo] = autochisq.values(snr[ifo],idx_dict[ifo]+stilde[ifo].analyze.start, template, stilde[ifo].psd, norm_dict[ifo],stilde=stilde[ifo], low_frequency_cutoff=flow)
                 
 	    event_mgr.cluster_template_events_single_ifo("time_index",
            					    "snr", cluster_window, ifo)
