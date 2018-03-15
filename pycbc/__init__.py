@@ -32,8 +32,8 @@ import signal
 try:
     # This will fail when pycbc is imported during the build process,
     # before version.py has been generated.
-    from version import git_hash
-    from version import version as pycbc_version
+    from .version import git_hash
+    from .version import version as pycbc_version
 except:
     git_hash = 'none'
     pycbc_version = 'none'
