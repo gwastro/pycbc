@@ -135,10 +135,9 @@ os.environ['PYTHONCOMPILED'] = _cache_dir_path
 try:
     import pycbc.fft.mkl
     HAVE_MKL=True
-except ImportError as e:
-    print(e)
+except ImportError:
     HAVE_MKL=False
-    
+
 
 # Check for site-local flags to pass to gcc
 WEAVE_FLAGS = '-march=native -O3 -w '
