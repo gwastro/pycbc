@@ -38,6 +38,9 @@ except:
     git_hash = 'none'
     pycbc_version = 'none'
 
+__version__ = pycbc_version
+
+
 def init_logging(verbose=False, format='%(asctime)s %(message)s'):
     """ Common utility for setting up logging in PyCBC.
 
