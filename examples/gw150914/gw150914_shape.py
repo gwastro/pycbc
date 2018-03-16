@@ -34,7 +34,6 @@ pylab.legend()
 pylab.xlim(1126259462.21, 1126259462.45)
 pylab.ylabel('Smoothed-Whitened Strain')
 pylab.grid()
-pylab.ylim(-5, 5)
 pylab.xlabel('GPS Time (s)')
 pylab.show()
 
