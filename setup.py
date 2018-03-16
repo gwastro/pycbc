@@ -457,6 +457,7 @@ setup (
                'bin/pygrb/pycbc_make_grb_summary_page',
                'bin/pycbc_condition_strain',
                'bin/inference/pycbc_inference',
+               'bin/inference/run_pycbc_inference',
                'bin/inference/pycbc_inference_extract_samples',
                'bin/inference/pycbc_inference_plot_acceptance_rate',
                'bin/inference/pycbc_inference_plot_acf',
