@@ -32,11 +32,14 @@ import signal
 try:
     # This will fail when pycbc is imported during the build process,
     # before version.py has been generated.
-    from version import git_hash
-    from version import version as pycbc_version
+    from .version import git_hash
+    from .version import version as pycbc_version
 except:
     git_hash = 'none'
     pycbc_version = 'none'
+
+__version__ = pycbc_version
+
 
 def init_logging(verbose=False, format='%(asctime)s %(message)s'):
     """ Common utility for setting up logging in PyCBC.
@@ -135,10 +138,9 @@ os.environ['PYTHONCOMPILED'] = _cache_dir_path
 try:
     import pycbc.fft.mkl
     HAVE_MKL=True
-except ImportError as e:
-    print(e)
+except ImportError:
     HAVE_MKL=False
-    
+
 
 # Check for site-local flags to pass to gcc
 WEAVE_FLAGS = '-march=native -O3 -w '
