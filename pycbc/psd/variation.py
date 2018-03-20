@@ -1,6 +1,6 @@
 """ PSD Variation """
 
-import numpy
+import math, numpy
 
 from pycbc.types import TimeSeries, FrequencySeries, zeros
 
@@ -40,18 +40,19 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
     if f_weight == 'True':
         # Calculate strain precision
         if strain.precision == 'single':
-            fs_dtype = numpy.complex64
+            fs_dtype = numpy.float32
         elif strain.precision == 'double':
-            fs_dtype = numpy.complex128
+            fs_dtype = numpy.float64
 
     # Find the times of the long segments
     times_long = numpy.arange(float(strain.start_time),
                               float(strain.end_time), psd_long_segment)
 
     # Set up the empty time series for the PSD variation estimate
-    psd_var = TimeSeries(zeros(int((strain.end_time - strain.start_time) /
-                  psd_short_segment)), delta_t=psd_short_segment,
-                  copy=False, epoch=strain.start_time)
+    psd_var = TimeSeries(zeros(int(math.ceil((strain.end_time -
+                                   strain.start_time) / psd_short_segment))),
+                         delta_t=psd_short_segment, copy=False,
+                         epoch=strain.start_time)
 
     ind = 0
     for tlong in times_long:
@@ -68,7 +69,6 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
                            float(strain.end_time)).psd(overlap)
             times_short = numpy.arange(tlong, float(strain.end_time),
                                        psd_short_segment)
-
         # Caculate the PSD of the shorter segments
         psd_short = []
         for tshort in times_short:
