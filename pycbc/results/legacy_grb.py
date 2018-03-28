@@ -329,10 +329,16 @@ def write_offsource(page, args, grbtag, onsource=False):
 
     th = ['Re-weighted SNR', 'Coherent SNR']
 
-    if onsource:
-        dir = 'ALL_TIMES'
+    if args.time_slides:
+        if onsource:
+            dir = 'ZEROLAG_ALL'
+        else:
+            dir = 'ZEROLAG_OFF'
     else:
-        dir = 'OFFSOURCE'
+        if onsource:
+            dir = 'ALL_TIMES'
+        else:
+            dir = 'OFFSOURCE'
 
     plot = markup.page()
     p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (dir, grbtag)

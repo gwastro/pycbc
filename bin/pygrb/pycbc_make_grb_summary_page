@@ -79,6 +79,9 @@ def parse_command_line():
     parser.add_argument("-O", "--open-box", action="store_true",
                         help ="Use to show onsource results")
 
+    parser.add_argument("-S", "--time-slides", action="store_true",
+                        help ="If run featured time slides")
+
     parser.add_argument("-G", "--sky-grid", default=False,
                         help="Include sky grid information")
 
