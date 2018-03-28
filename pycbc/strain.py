@@ -280,7 +280,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             raise ValueError("Unrecognized precision {}".format(precision))
 
         if opt.gating_file is not None:
-            logging.info("Gating glitches")
+            logging.info("Gating times contained in gating file")
             gate_params = numpy.loadtxt(opt.gating_file)
             if len(gate_params.shape) == 1:
                 gate_params = [gate_params]
