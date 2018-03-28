@@ -295,13 +295,19 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
         from pylal.legacy_ihope import select_legacy_matchedfilter_class
-        from pycbc.workflow.grb_utils import get_fermi_grid_scale
+        from pycbc.workflow.grb_utils import get_sky_grid_scale
         exe_class = select_legacy_matchedfilter_class(match_fltr_exe)
         cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
         cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
-        cp.set('inspiral', 'sky-error',
-               str(get_fermi_grid_scale(float(cp.get('workflow',
-                                                     'sky-error')))))
+        if cp.has_option("jitter_skyloc", "apply-fermi-error"):
+            cp.set('inspiral', 'sky-error',
+                   str(get_sky_grid_scale(float(cp.get('workflow',
+                                                       'sky-error')))))
+        else:
+            cp.set('inspiral', 'sky-error',
+                   str(get_sky_grid_scale(float(cp.get('workflow',
+                                                       'sky-error')),
+                                          sigma_sys=0.0)))
         cp.set('inspiral', 'trigger-time', cp.get('workflow', 'trigger-time'))
         cp.set('inspiral', 'block-duration',
                str(abs(science_segs[ifos[0]][0]) - \
