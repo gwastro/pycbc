@@ -372,10 +372,13 @@ inspiral_cache_entries.tofile(open(inspiral_cache.storage_path, "w"))
 long_slides = True if wflow.cp.has_option("workflow", "do-long-slides") else False
 if long_slides:
     tsDir = os.path.join(currDir, "timeslides")
-    num_slides = int((int(wflow.cp.get("workflow", "end-time")) - \
-                      int(wflow.cp.get("workflow", "start-time"))) / \
-                     float(int(wflow.cp.get("inspiral", "segment-duration")) * \
-                           (len(ifo_list) - 1)))
+    if wflow.cp.has_option("workflow", "num-long-slides"):
+        num_slides = int(wflow.cp.get("workflow", "num-long-slides"))
+    else:
+        num_slides = int((int(wflow.cp.get("workflow", "end-time")) - \
+                         int(wflow.cp.get("workflow", "start-time"))) / \
+                         float(int(wflow.cp.get("inspiral", "segment-duration")) * \
+                               (len(ifo_list) - 1)))
     logging.info("Doing {} long slides".format(num_slides))
     inspiral_ts_files = _workflow.FileList([])
     for slide in range(num_slides):
