@@ -316,7 +316,7 @@ _linear_decompress_code = r"""
     //      the length of h
     // start_index: int
     //      the index to start the waveform in the output
-    //      frequency series; i.e., floor(f_lower*df)
+    //      frequency series; i.e., ceil(f_lower/df)
     // sample_frequencies: array of real doubles
     //      the frequencies at which the compressed waveform is sampled
     // amp: array of real doubles
@@ -518,8 +518,11 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     else:
         if f_lower >= sample_frequencies.max():
             raise ValueError("f_lower is > than the maximum sample frequency")
-        imin = int(numpy.searchsorted(sample_frequencies, f_lower)) # pylint:disable=unused-variable
-    start_index = int(numpy.floor(f_lower/df))
+        if f_lower < sample_frequencies.min():
+            raise ValueError("f_lower is < than the minimum sample frequency")
+        imin = int(numpy.searchsorted(sample_frequencies, f_lower,
+            side='right')) - 1 # pylint:disable=unused-variable
+    start_index = int(numpy.ceil(f_lower/df))
     if start_index >= hlen:
         raise ValueError('requested f_lower >= largest frequency in out')
     # interpolate the amplitude and the phase
