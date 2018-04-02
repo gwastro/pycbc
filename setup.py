@@ -74,7 +74,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'astropy==2.0.3',
                       'mpld3>=0.3',
                       'pyRXP>=2.1.0',
-                      'pycbc-glue-obsolete>=1.1.0',
                       'lscsoft-glue>=1.56.0',
                       'kombine>=0.8.2',
                       'emcee==2.2.1',
@@ -509,9 +508,30 @@ setup (
                'pycbc.inject',
                'pycbc.frame',
                'pycbc.catalog',
+               'pycbc.ligolw',
+               'pycbc.ligolw.utils',
                ],
      package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
 	             'pycbc.results': find_package_data('pycbc/results'),
                      'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
+    ext_modules = [
+        Extension(
+            "pycbc.ligolw.tokenizer",
+            [ 
+                "pycbc/ligolw/tokenizer.c",
+                "pycbc/ligolw/tokenizer.Tokenizer.c",
+                "pycbc/ligolw/tokenizer.RowBuilder.c",
+                "pycbc/ligolw/tokenizer.RowDumper.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        ),
+        Extension(
+            "pycbc.ligolw._ilwd",
+            [
+                "pycbc/ligolw/ilwd.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        )
+    ],
 )
 

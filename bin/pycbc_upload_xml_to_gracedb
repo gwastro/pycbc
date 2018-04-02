@@ -29,11 +29,11 @@ import h5py
 import pycbc
 import lal
 import lal.series
-from pycbc_glue.ligolw import ligolw
-from pycbc_glue.ligolw import table
-from pycbc_glue.ligolw import lsctables
-from pycbc_glue.ligolw import utils as ligolw_utils
-from pycbc_glue.ligolw.utils import process as ligolw_process
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import table
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import process as ligolw_process
 from glue.segments import segment, segmentlist
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):

@@ -35,10 +35,10 @@ import lal
 import Pegasus.DAX3
 from glue import lal as gluelal
 from glue import segments
-from pycbc_glue.ligolw import table, lsctables, ligolw
-from pycbc_glue.ligolw import utils as ligolw_utils
-from pycbc_glue.ligolw.utils import segments as ligolw_segments
-from pycbc_glue.ligolw.utils import process as ligolw_process
+from pycbc.ligolw import table, lsctables, ligolw
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import segments as ligolw_segments
+from pycbc.ligolw.utils import process as ligolw_process
 from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
 from pycbc.workflow import pegasus_workflow
 

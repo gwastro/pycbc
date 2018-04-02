@@ -31,7 +31,7 @@ __program__ = "get_data_example"
 import os, sys
 import argparse
 import logging
-from pycbc_glue import segments
+from glue import segments
 import pycbc.workflow as _workflow
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 

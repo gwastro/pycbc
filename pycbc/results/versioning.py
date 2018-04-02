@@ -22,7 +22,7 @@ import subprocess
 from pycbc.results import save_fig_with_metadata, html_escape
 
 import lal, lalframe, lalsimulation
-import pycbc_glue.git_version, pycbc.version, glue.git_version
+import pycbc.version, glue.git_version
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -98,19 +98,6 @@ def get_library_version_info():
     glueinfo['Committer'] = glue.git_version.committer
     glueinfo['Date'] = glue.git_version.date
     library_list.append(glueinfo)
-
-    pglueinfo = {}
-    pglueinfo['Name'] = 'PyCBC-Glue'
-    pglueinfo['ID'] = pycbc_glue.git_version.id
-    pglueinfo['Status'] = pycbc_glue.git_version.status
-    pglueinfo['Version'] = pycbc_glue.git_version.version
-    pglueinfo['Tag'] = pycbc_glue.git_version.tag
-    pglueinfo['Author'] = pycbc_glue.git_version.author
-    pglueinfo['Builder'] = pycbc_glue.git_version.builder
-    pglueinfo['Branch'] = pycbc_glue.git_version.branch
-    pglueinfo['Committer'] = pycbc_glue.git_version.committer
-    pglueinfo['Date'] = pycbc_glue.git_version.date
-    library_list.append(pglueinfo)
 
     pycbcinfo = {}
     pycbcinfo['Name'] = 'PyCBC'

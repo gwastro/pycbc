@@ -91,13 +91,13 @@ def mkdir(dir_name):
         pass
         
 def mc_min_max_from_sorted_file(fname):
-    from pycbc_glue.ligolw import lsctables
-    from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler
+    from pycbc.ligolw import lsctables
+    from pycbc.ligolw.ligolw import LIGOLWContentHandler
     class mycontenthandler(LIGOLWContentHandler):
         pass
     lsctables.use_in(mycontenthandler)
-    from pycbc_glue.ligolw.utils import load_filename
-    from pycbc_glue.ligolw.table import get_table
+    from pycbc.ligolw.utils import load_filename
+    from pycbc.ligolw.table import get_table
     from pycbc.pnutils import mass1_mass2_to_mchirp_eta
     try:
         t = get_table(load_filename(fname, False, contenthandler=mycontenthandler), "sngl_inspiral")
@@ -291,11 +291,11 @@ f = open("scripts/pycbc_banksim_collect_results", "w")
 f.write("""#!/usr/bin/env python
 from os.path import isfile
 from numpy import *
-from pycbc_glue.ligolw import utils, table
+from pycbc.ligolw import utils, table
 import glob
 
-from pycbc_glue.ligolw.ligolw import LIGOLWContentHandler
-from pycbc_glue.ligolw import lsctables
+from pycbc.ligolw.ligolw import LIGOLWContentHandler
+from pycbc.ligolw import lsctables
 class mycontenthandler(LIGOLWContentHandler):
     pass
 lsctables.use_in(mycontenthandler)

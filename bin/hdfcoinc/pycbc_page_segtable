@@ -23,10 +23,10 @@ import numpy
 import pycbc.results
 import sys
 from glue import segments
-from pycbc_glue.ligolw import ligolw
-from pycbc_glue.ligolw import lsctables
-from pycbc_glue.ligolw import table
-from pycbc_glue.ligolw import utils
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import table
+from pycbc.ligolw import utils
 from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import SegFile

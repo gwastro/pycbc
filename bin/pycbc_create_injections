@@ -123,9 +123,7 @@ from pycbc.workflow import WorkflowConfigParser
 import h5py
 
 # stuff for writing xml files... remove this when we drop xml
-import pycbc_glue.ligolw.utils
-import pycbc_glue.ligolw.table
-from pycbc_glue.ligolw import ligolw, lsctables
+from pycbc.ligolw import ligolw, lsctables, table, utils as ligolw_utils
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -171,7 +169,7 @@ def write_to_xml(filename, samples, write_args, static_args=None):
         [set_sim_data(sim, field, value)
          for field,value in static_args.items()]
         simtable.append(sim)
-    pycbc_glue.ligolw.utils.write_filename(xmldoc, filename,
+    ligolw_utils.write_filename(xmldoc, filename,
                                            gz=filename.endswith('gz'))
 
 
