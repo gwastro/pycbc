@@ -384,7 +384,7 @@ _linear_decompress_code = r"""
 
         // cycle over the interpolated points between this and the next
         // compressed sample
-        while (findex < next_sfindex){
+        while (findex <= next_sfindex){
             // for the first step, compute the value of h from the interpolated
             // amplitude and phase
             f = findex*df;
