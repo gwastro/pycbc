@@ -10,9 +10,7 @@ import inspect
 from lal import LIGOTimeGPS, YRJUL_SI
 
 from pycbc.ligolw import ligolw
-from pycbc.ligolw import table
 from pycbc.ligolw import lsctables
-from pycbc.ligolw import ilwd
 from pycbc.ligolw import utils as ligolw_utils
 from pycbc.ligolw.utils import process as ligolw_process
 
