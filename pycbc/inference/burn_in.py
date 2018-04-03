@@ -29,10 +29,10 @@ have burned in.
 import numpy
 from scipy.stats import ks_2samp
 
-def ks_test(sampler, fp):
+def ks_test(sampler, fp, threshold=0.9):
     """Burn in based on whether the p-value of the KS test between the samples
     at the last iteration and the samples midway along the chain for each
-    parameter is > 0.9.
+    parameter is > ``threshold``.
 
     Parameters
     ----------
@@ -42,6 +42,8 @@ def ks_test(sampler, fp):
     fp : InferenceFile
         Open inference hdf file containing the samples to load for determing
         burn in.
+    threshold : float
+        The thershold to use for the p-value. Default is 0.9.
 
     Returns
     -------
@@ -65,8 +67,8 @@ def ks_test(sampler, fp):
         samples_chain_midpt = sampler.read_samples(fp, param, iteration=int(niterations/2),
                                                   flatten=True)[param]
         _, p_value = ks_2samp(samples_last_iter, samples_chain_midpt)
-        # check if p_value is within the desired range
-        is_burned_in_param[param] = p_value < 0.9
+        # check if p_value is > than the desired range
+        is_burned_in_param[param] = p_value > threshold
     # The chains are burned in if the p-value of the KS test lies in the range [0.1,0.9]
     # for all the parameters. If the KS test is passed, the chains have burned in at their
     # mid-way point. 
