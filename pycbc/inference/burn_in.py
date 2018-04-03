@@ -32,7 +32,7 @@ from scipy.stats import ks_2samp
 def ks_test(sampler, fp):
     """Burn in based on whether the p-value of the KS test between the samples
     at the last iteration and the samples midway along the chain for each
-    parameter is > 0.1 and < 0.9
+    parameter is > 0.9.
 
     Parameters
     ----------
@@ -66,7 +66,7 @@ def ks_test(sampler, fp):
                                                   flatten=True)[param]
         _, p_value = ks_2samp(samples_last_iter, samples_chain_midpt)
         # check if p_value is within the desired range
-        is_burned_in_param[param] = 0.1 < p_value < 0.9
+        is_burned_in_param[param] = p_value < 0.9
     # The chains are burned in if the p-value of the KS test lies in the range [0.1,0.9]
     # for all the parameters. If the KS test is passed, the chains have burned in at their
     # mid-way point. 
@@ -77,6 +77,47 @@ def ks_test(sampler, fp):
         is_burned_in = numpy.zeros(nwalkers, dtype=bool)
         burn_in_idx = numpy.repeat(niterations, nwalkers).astype(int)
     return burn_in_idx, is_burned_in
+
+
+def n_acl(sampler, fp, nacls=10):
+    """Burn in based on ACL.
+
+    The sampler is considered burned in if the number of itertions is >=
+    ``nacls`` times the maximum ACL over all parameters, as measured from the
+    first iteration.
+
+    Parameters
+    ----------
+    sampler : pycbc.inference.sampler
+        Sampler to determine burn in for. May be either an instance of a
+        `inference.sampler`, or the class itself.
+    fp : InferenceFile
+        Open inference hdf file containing the samples to load for determing
+        burn in.
+    nacls : int
+        Number of ACLs to use for burn in. Default is 10.
+
+    Returns
+    -------
+    burn_in_idx : array
+        Array of indices giving the burn-in index for each chain. By definition
+        of this function, all chains reach burn in at the same iteration. Thus
+        the returned array is the burn-in index repeated by the number of
+        chains.
+    is_burned_in : array
+        Array of booleans indicating whether each chain is burned in. Since
+        all chains obtain burn in at the same time, this is either an array
+        of all False or True.
+    """
+    acl = max(sampler.compute_acls(fp, start_index=0).values())
+    burn_idx = nacls * acl
+    is_burned_in = burn_idx < fp.niterations
+    if not is_burned_in:
+        burn_idx = fp.niterations
+    nwalkers = fp.nwalkers
+    return numpy.repeat(burn_idx, nwalkers).astype(int), \
+           numpy.repeat(is_burned_in, nwalkers).astype(bool)
+
 
 def max_posterior(sampler, fp):
     """Burn in based on samples being within dim/2 of maximum posterior.
@@ -104,7 +145,7 @@ def max_posterior(sampler, fp):
         samples_group=fp.stats_group, thin_interval=1, thin_start=0,
         thin_end=None, flatten=False)
     chain_posteriors = chain_stats['loglr'] + chain_stats['prior']
-    dim = len(fp.variable_args)
+    dim = float(len(fp.variable_args))
     # find the posterior to compare against
     max_p = chain_posteriors.max()
     criteria = max_p - dim/2
@@ -155,7 +196,7 @@ def posterior_step(sampler, fp):
         thin_end=None, flatten=False)
     chain_posteriors = chain_stats['loglr'] + chain_stats['prior']
     nwalkers = chain_posteriors.shape[-2]
-    dim = len(fp.variable_args)
+    dim = float(len(fp.variable_args))
     burn_in_idx = numpy.zeros(nwalkers).astype(int)
     criteria = dim/2.
     # find the last iteration in each chain where the logplr has
@@ -175,8 +216,8 @@ def half_chain(sampler, fp):
     Parameters
     ----------
     sampler : pycbc.inference.sampler
-        Sampler to determine burn in for. May be either an instance of a
-        `inference.sampler`, or the class itself.
+        This option is not used; it is just here give consistent API as the
+        other burn in functions.
     fp : InferenceFile
         Open inference hdf file containing the samples to load for determing
         burn in.
@@ -189,7 +230,7 @@ def half_chain(sampler, fp):
         Array of booleans indicating whether each chain is burned in.
         By definition of this function, all values are set to True.
     """
-    nwalkers = sampler.nwalkers
+    nwalkers = fp.nwalkers
     niterations = fp.niterations
     return numpy.repeat(niterations/2, nwalkers).astype(int), \
            numpy.ones(nwalkers, dtype=bool)
@@ -223,6 +264,7 @@ def use_sampler(sampler, fp=None):
 
 burn_in_functions = {
     'ks_test': ks_test,
+    'n_acl': n_acl,
     'max_posterior': max_posterior,
     'posterior_step': posterior_step,
     'half_chain': half_chain,
