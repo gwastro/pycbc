@@ -23,11 +23,13 @@ from pycbc.distributions.power_law import *
 from pycbc.distributions.sky_location import *
 from pycbc.distributions.uniform import *
 from pycbc.distributions import uniform_log
+from pycbc.distributions.masses import UniformComponentMasses
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.joint import JointDistribution
 
 # a dict of all available distributions
 distribs = {
+    UniformComponentMasses.name : UniformComponentMasses,
     IndependentChiPChiEff.name : IndependentChiPChiEff,
     Arbitrary.name : Arbitrary,
     FromFile.name : FromFile,
