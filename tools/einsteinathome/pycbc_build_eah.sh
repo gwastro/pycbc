@@ -1096,7 +1096,7 @@ mkdir -p "$ENVIRONMENT/dist"
 # if the build machine has dbhash & shelve, scipy weave will use bsddb
 # make sure these exist and get added to the bundle(s)
 python -c "import dbhash, shelve"
-hidden_imports="--hidden-import=dbhash --hidden-import=shelve --hidden-import=lal --hidden-import=lal.utils"
+hidden_imports="--hidden-import=dbhash --hidden-import=shelve
 
 # PyInstaller
 if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
@@ -1218,7 +1218,7 @@ if $use_pycbc_pyinstaller_hooks; then
 else
     # find hidden imports (pycbc CPU modules)
     hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
-    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import lal --hidden-import lal.utils --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
+    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
 fi
 # patch spec file to add "-v" to python interpreter options
 if $verbose_pyinstalled_python; then
