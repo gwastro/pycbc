@@ -32,6 +32,7 @@ parser.add_argument('--permissive', action='store_true',
 parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--tolerance', type=float)
 parser.add_argument('--max-mtotal', type=float)
+parser.add_argument('--max-q', type=float)
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -246,6 +247,13 @@ while conv > tolerance:
     # Filter out stuff
     if args.max_mtotal:
         l = params['mass1'] + params['mass2'] < args.max_mtotal
+        for k in params:
+            params[k] = params[k][l]
+
+    # Filter out stuff
+    if args.max_q:
+        q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
+        l = q < args.max_q
         for k in params:
             params[k] = params[k][l]
 
