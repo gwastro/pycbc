@@ -167,6 +167,23 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   ./configure --prefix=${VIRTUAL_ENV} --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps 2>&1 | grep -v checking
   make -j 2 2>&1 | grep Entering
   make install 2>&1 | grep Entering
+
+  # write PKG_CONFIG_PATH to activate
+  sed -in "s/# unset PYTHONHOME/_OLD_PKG_CONFIG_PATH=\"\${PKG_CONFIG_PATH}\"\\
+PKG_CONFIG_PATH=\"\${VIRTUAL_ENV}\/lib\/pkgconfig:\${PKG_CONFIG_PATH}\"\\
+export PKG_CONFIG_PATH\\
+\\
+# unset PYTHONHOME/" ${VIRTUAL_ENV}/bin/activate
+
+  # unset PKG_CONFIG_PATH in deactivate
+  sed -in "s/declared at all/declared at all\\
+
+    if ! [ -z \"\${_OLD_PKG_CONFIG_PATH+_}\" ]; then\\
+        PKG_CONFIG_PATH=\"\$_OLD_PKG_CONFIG_PATH\"\\
+        export PKG_CONFIG_PATH\\
+        unset _OLD_PKG_CONFIG_PATH\\
+    fi/" ${VIRTUAL_ENV}/bin/activate
+
   deactivate
 
   echo -e "\\n>> [`date`] Installing LALApps"
