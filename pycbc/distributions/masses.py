@@ -16,7 +16,6 @@
 This modules provides mass distributions of CBCs.
 """
 
-import numpy
 from pycbc import conversions
 from pycbc.distributions.uniform import Uniform
 
