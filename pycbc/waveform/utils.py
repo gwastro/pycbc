@@ -501,7 +501,7 @@ def fd_taper(out, start, end, beta=8, side='left'):
     return out
 
 
-def fd2td(htilde, delta_t=None, left_window=None, right_window=None,
+def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
           left_beta=8, right_beta=8):
     """Converts a FD waveform to TD.
 
