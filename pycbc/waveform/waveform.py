@@ -512,7 +512,8 @@ def get_td_waveform_from_fd(**params):
     Paramaters
     ----------
     params: dict
-        The parameters defining the waveform to generator. See `get_fd_waveform`.
+        The parameters defining the waveform to generator.
+        See `get_fd_waveform`.
 
     Returns
     -------
@@ -538,7 +539,8 @@ def get_td_waveform_from_fd(**params):
     # factor to ensure the vectors are all large enough. We don't need to
     # completely trust our duration estimator in this case, at a small
     # increase in computational cost
-    fudge_duration = (max(0, full_duration) + .1) * 1.5
+    rwrap = 0.2
+    fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
     nparams['delta_f'] = 1.0 / fudge_duration
     hp, hc = get_fd_waveform(**nparams)
 
@@ -548,16 +550,15 @@ def get_td_waveform_from_fd(**params):
     hp.resize(fsize)
     hc.resize(fsize)
 
-    # apply kaiser window
-    kstart = int(nparams['f_lower'] / nparams['delta_f'])
-    kend = int(params['f_lower'] / nparams['delta_f'])
-    nsamples = (kend - kstart) * 2
-    win = Array(numpy.kaiser(nsamples, beta=8)[:int(nsamples/2)])
+    # avoid wraparound
+    hp = hp.cyclic_time_shift(-rwrap)
+    hc = hc.cyclic_time_shift(-rwrap)
 
-    hp[kstart:kend] *= win
-    hc[kstart:kend] *= win
-
-    return hp.to_timeseries(), hc.to_timeseries()
+    hp = wfutils.fd_to_td(hp, left_window=(nparams['f_lower'],
+                                           params['f_lower']))
+    hc = wfutils.fd_to_td(hc, left_window=(nparams['f_lower'],
+                                           params['f_lower']))
+    return hp, hc
 
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):
