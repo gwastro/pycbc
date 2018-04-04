@@ -503,6 +503,62 @@ get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
            include_label=False).lstrip(' '))
 
+def get_td_waveform_from_fd(**params):
+    """ Return time domain version of fourier domain approximant.
+
+    This returns a time domain version of a fourier domain approximant, with
+    padding and tapering at the start of the waveform.
+
+    Paramaters
+    ----------
+    params: dict
+        The parameters defining the waveform to generator. See `get_fd_waveform`.
+
+    Returns
+    -------
+    hp: pycbc.types.TimeSeries
+        Plus polarization time series
+    hc: pycbc.types.TimeSeries
+        Cross polarization time series
+    """
+
+    # determine the duration to use
+    full_duration = duration = get_waveform_filter_length_in_time(**params)
+    nparams = params.copy()
+    if '_FD' in nparams['approximant']:
+        nparams['approximant'] = nparams['approximant'][:-3]
+
+    while full_duration < duration * 1.5:
+        full_duration = get_waveform_filter_length_in_time(**nparams)
+        nparams['f_lower'] -= 1
+
+    if 'f_fref' not in nparams:
+        nparams['f_ref'] = params['f_lower']
+
+    # factor to ensure the vectors are all large enough. We don't need to
+    # completely trust our duration estimator in this case, at a small
+    # increase in computational cost
+    fudge_duration = (max(0, full_duration) + .1) * 1.5
+    nparams['delta_f'] = 1.0 / fudge_duration
+    hp, hc = get_fd_waveform(**nparams)
+
+    # Resize to the right sample rate
+    tsize = int(1.0 / params['delta_t'] /  nparams['delta_f'])
+    fsize = tsize / 2 + 1
+    hp.resize(fsize)
+    hc.resize(fsize)
+
+    # apply kaiser window
+    kstart = int(nparams['f_lower'] / nparams['delta_f'])
+    kend = int(params['f_lower'] / nparams['delta_f'])
+    nsamples = (kend - kstart) * 2
+    win = Array(numpy.kaiser(nsamples, beta=8)[:int(nsamples/2)])
+
+    hp[kstart:kend] *= win
+    hc[kstart:kend] *= win
+
+    return hp.to_timeseries(), hc.to_timeseries()
+
 def get_interpolated_fd_waveform(dtype=numpy.complex64, return_hc=True,
                                  **params):
     """ Return a fourier domain waveform approximant, using interpolation
@@ -693,11 +749,16 @@ _filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
 from . nltides import nonlinear_tidal_spa
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 
-# We can do interpolation for waveforms that have a time length
 for apx in copy.copy(_filter_time_lengths):
     if apx in cpu_fd:
+        # We can do interpolation for waveforms that have a time length
         apx_int = apx + '_INTERP'
         cpu_fd[apx_int] = get_interpolated_fd_waveform
+        _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
+
+        # We can also make a td version of this
+        apx_int = apx + '_FD'
+        cpu_td[apx_int] = get_td_waveform_from_fd
         _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
 
 td_wav = _scheme.ChooseBySchemeDict()
@@ -928,4 +989,4 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
-           "NoWaveformError"]
+           "NoWaveformError", "get_td_waveform_from_fd"]
