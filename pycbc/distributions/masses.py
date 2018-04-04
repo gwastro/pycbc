@@ -73,15 +73,17 @@ class UniformComponentMasses(Uniform):
             raise ValueError("must provide limits for mass2")
         super(UniformComponentMasses, self).__init__(mass1=mass2, mass2=mass2)
 
-    def rvs(self, size=1):
+    def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
 
         In the returned set, mass2 <= mass1.
 
         Parameters
         ----------
-        size : {1, int}
+        size : int
             The number of values to generate; default is 1.
+        param : str, optional
+            If provided, will just return values for the given parameter.
 
         Returns
         -------
@@ -94,4 +96,6 @@ class UniformComponentMasses(Uniform):
         m2 = conversions.secondary_mass(arr['mass1'], arr['mass2'])
         arr['mass1'][:] = m1
         arr['mass2'][:] = m2
+        if param is not None:
+            arr = arr[param]
         return arr
