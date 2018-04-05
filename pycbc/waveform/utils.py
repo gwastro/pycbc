@@ -460,7 +460,7 @@ def apply_fd_time_shift(htilde, shifttime, kmin=0, fseries=None, copy=True):
 
 def fd_taper(out, start, end, beta=8, side='left'):
     """Applies a taper to the given FrequencySeries.
-    
+
     A half-kaiser window is used for the roll-off.
 
     Parameters
