@@ -32,7 +32,8 @@ from utils import simple_exit
 # some of these distributons have their own specific unit test
 EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
                       "uniform_solidangle", "uniform_sky",
-                      "independent_chip_chieff"]
+                      "independent_chip_chieff",
+                      "uniform_component_masses"]
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
