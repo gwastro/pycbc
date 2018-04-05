@@ -27,11 +27,13 @@ class UniformComponentMasses(Uniform):
     masses must be specified. Random samples drawn from this distribution
     always have ``mass1 >= mass2``.
 
-    .. note:: The ranges of mass1 and mass2 may cover the same range; for
-    instance, in the examples below, both mass1 and mass2 have ranges
-    ``[10, 80)``. Likewise, the ``(log)pdf`` function does not require that
-    ``mass1 >= mass2``. It is only in the ``rvs`` function that this convention
-    is enforced.
+    .. note::
+
+        The ranges of mass1 and mass2 may cover the same range; for instance,
+        in the examples below, both mass1 and mass2 have ranges ``[10, 80)``.
+        Likewise, the ``(log)pdf`` function does not require that ``mass1 >=
+        mass2``. It is only in the ``rvs`` function that this convention is
+        enforced.
 
     Parameters
     ----------
