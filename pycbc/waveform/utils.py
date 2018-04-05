@@ -34,6 +34,7 @@ import copy
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from pycbc.weave import inline
+from scipy import signal
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""
@@ -43,6 +44,7 @@ def ceilpow2(n):
     if (signif == 0.5):
         exponent -= 1;
     return (1) << exponent;
+
 
 def coalign_waveforms(h1, h2, psd=None,
                       low_frequency_cutoff=None,
@@ -454,3 +456,85 @@ def apply_fd_time_shift(htilde, shifttime, kmin=0, fseries=None, copy=True):
             htilde = 1. * htilde
         htilde *= shift
     return htilde
+
+
+def fd_taper(out, start, end, beta=8, side='left'):
+    """Applies a taper to the given FrequencySeries.
+
+    A half-kaiser window is used for the roll-off.
+
+    Parameters
+    ----------
+    out : FrequencySeries, optional
+        The ``FrequencySeries`` to taper.
+    start : float
+        The frequency (in Hz) to start the taper window.
+    end : float
+        The frequency (in Hz) to end the taper window.
+    beta : int, optional
+        The beta parameter to use for the Kaiser window. See
+        ``scipy.signal.kaiser`` for details. Default is 8.
+    side : {'left', 'right'}
+        The side to apply the taper to. If ``'left'`` (``'right'``), the taper
+        will roll up (down) between ``start`` and ``end``, with all values
+        before ``start`` (after ``end``) set to zero. Default is ``'left'``.
+
+    Returns
+    -------
+    FrequencySeries
+        The tapered frequency series.
+    """
+    out = out.copy()
+    width = end - start
+    winlen = 2 * int(width / out.delta_f)
+    window = Array(signal.get_window(('kaiser', beta), winlen))
+    kmin = int(start / out.delta_f)
+    kmax = kmin + winlen/2
+    if side == 'left':
+        out[kmin:kmax] *= window[:winlen/2]
+        out[:kmin] *= 0.
+    elif side == 'right':
+        out[kmin:kmax] *= window[winlen/2:]
+        out[kmax:] *= 0.
+    else:
+        raise ValueError("unrecognized side argument {}".format(side))
+    return out
+
+
+def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
+          left_beta=8, right_beta=8):
+    """Converts a FD waveform to TD.
+
+    A window can optionally be applied using ``fd_taper`` to the left or right
+    side of the waveform before being converted to the time domain.
+
+    Parameters
+    ----------
+    htilde : FrequencySeries
+        The waveform to convert.
+    delta_t : float, optional
+        Make the returned time series have the given ``delta_t``.
+    left_window : tuple of float, optional
+        A tuple giving the start and end frequency of the FD taper to apply
+        on the left side. If None, no taper will be applied on the left.
+    right_window : tuple of float, optional
+        A tuple giving the start and end frequency of the FD taper to apply
+        on the right side. If None, no taper will be applied on the right.
+    left_beta : int, optional
+        The beta parameter to use for the left taper. See ``fd_taper`` for
+        details. Default is 8.
+    right_beta : int, optional
+        The beta parameter to use for the right taper. Default is 8.
+
+    Returns
+    -------
+    TimeSeries
+        The time-series representation of ``htilde``.
+    """
+    if left_window is not None:
+        start, end = left_window
+        htilde = fd_taper(htilde, start, end, side='left', beta=left_beta)
+    if right_window is not None:
+        start, end = right_window
+        htilde = fd_taper(htilde, start, end, side='right', beta=right_beta)
+    return htilde.to_timeseries(delta_t=delta_t)
