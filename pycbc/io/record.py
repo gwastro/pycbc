@@ -29,7 +29,7 @@ waves.
 """
 
 import os, sys, types, re, copy, numpy, inspect
-from pycbc_glue.ligolw import types as ligolw_types
+from pycbc.ligolw import types as ligolw_types
 from pycbc import coordinates, conversions, cosmology
 from pycbc.detector import Detector
 from pycbc.waveform import parameters

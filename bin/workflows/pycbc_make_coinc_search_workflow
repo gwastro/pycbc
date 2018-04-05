@@ -29,7 +29,8 @@ __program__ = "pycbc_make_coinc_search_workflow"
 import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging, pycbc_glue.segments
+import os, argparse, ConfigParser, logging
+from glue import segments
 import numpy, lal, datetime
 from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
@@ -377,19 +378,18 @@ trig_generated_name = 'TRIGGERS_GENERATED'
 trig_generated_segs = {}
 data_analysed_name = 'DATA_ANALYSED'
 data_analysed_segs = {}
-insp_files_seg_dict = pycbc_glue.segments.segmentlistdict()
+insp_files_seg_dict = segments.segmentlistdict()
 
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
-    trig_generated_segs[ifo] = pycbc_glue.segments.segmentlist([\
-                                                     f.segment for f in files])
-    data_analysed_segs[ifo] = pycbc_glue.segments.segmentlist([\
-                                        f.metadata['data_seg'] for f in files])
+    trig_generated_segs[ifo] = segments.segmentlist([f.segment for f in files])
+    data_analysed_segs[ifo] = \
+        segments.segmentlist([f.metadata['data_seg'] for f in files])
 
     # Remove duplicates from splitbank
-    trig_generated_segs[ifo] = pycbc_glue.segments.segmentlist(
-                                                 set(trig_generated_segs[ifo]))
-    data_analysed_segs[ifo] = pycbc_glue.segments.segmentlist(
-                                                  set(data_analysed_segs[ifo]))
+    trig_generated_segs[ifo] = \
+        segments.segmentlist(set(trig_generated_segs[ifo]))
+    data_analysed_segs[ifo] = \
+        segments.segmentlist(set(data_analysed_segs[ifo]))
 
     insp_files_seg_dict[ifo + ":" + trig_generated_name] = \
                                                        trig_generated_segs[ifo]

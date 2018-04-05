@@ -35,7 +35,7 @@ import sys
 if 'matplotlib.backends' not in sys.modules:
     matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from pycbc_glue import markup, segments
+from glue import markup, segments
 from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 from matplotlib.ticker import ScalarFormatter

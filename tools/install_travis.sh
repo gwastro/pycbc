@@ -69,9 +69,6 @@ fi
 
 pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
 
-# install M2Crypto
-SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
-
 # install the segment database tools
 pip install dqsegdb
 

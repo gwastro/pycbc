@@ -396,7 +396,7 @@ class FrequencySeries(Array):
             _numpy.savetxt(path, output)
         elif ext == '.xml' or path.endswith('.xml.gz'):
             from pycbc.io.live import make_psd_xmldoc
-            from pycbc_glue.ligolw import utils
+            from pycbc.ligolw import utils
 
             if self.kind != 'real':
                 raise ValueError('XML only supports real frequency series')

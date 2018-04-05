@@ -9,6 +9,7 @@ ignore-patterns:
     - build/*
     - dist/*
     - PyCBC.egg-info/*
+    - pycbc/ligolw/*
 
 pylint:
   disable:

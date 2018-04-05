@@ -33,8 +33,8 @@ import lalsimulation as sim
 import h5py
 from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
-from pycbc_glue.ligolw import utils as ligolw_utils
-from pycbc_glue.ligolw import ligolw, table, lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import pycbc.io

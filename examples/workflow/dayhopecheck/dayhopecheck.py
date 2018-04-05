@@ -47,16 +47,16 @@ import os
 import copy
 import logging
 import argparse
-from pycbc_glue import segments
+from glue import segments
 import pycbc.workflow as _workflow
 
-from pycbc_glue.ligolw import ligolw
-from pycbc_glue.ligolw import lsctables
-from pycbc_glue.ligolw import utils as ligolw_utils
-from pycbc_glue.ligolw.utils import segments as ligolw_segments
-from pycbc_glue.ligolw.utils import process as ligolw_process
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import segments as ligolw_segments
+from pycbc.ligolw.utils import process as ligolw_process
 
-from pycbc_glue.segmentdb import segmentdb_utils
+from glue.segmentdb import segmentdb_utils
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')

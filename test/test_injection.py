@@ -27,9 +27,9 @@ from pycbc.inject import InjectionSet
 import unittest
 import numpy
 import itertools
-from pycbc_glue.ligolw import ligolw
-from pycbc_glue.ligolw import lsctables
-from pycbc_glue.ligolw import utils
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils as ligolw_utils
 from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU
@@ -124,7 +124,7 @@ class TestInjection(unittest.TestCase):
 
         # write document to temp file
         self.inj_file = tempfile.NamedTemporaryFile(suffix='.xml')
-        utils.write_fileobj(xmldoc, self.inj_file)
+        ligolw_utils.write_fileobj(xmldoc, self.inj_file)
 
     def test_injection_presence(self):
         """Verify presence of signals at expected times"""

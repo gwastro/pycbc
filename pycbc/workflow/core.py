@@ -31,13 +31,15 @@ import ConfigParser, copy
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
-import lal as lalswig
+import lal
+import lal.utils
 import Pegasus.DAX3
-from pycbc_glue import lal, segments
-from pycbc_glue.ligolw import table, lsctables, ligolw
-from pycbc_glue.ligolw import utils as ligolw_utils
-from pycbc_glue.ligolw.utils import segments as ligolw_segments
-from pycbc_glue.ligolw.utils import process as ligolw_process
+from glue import lal as gluelal
+from glue import segments
+from pycbc.ligolw import table, lsctables, ligolw
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import segments as ligolw_segments
+from pycbc.ligolw.utils import process as ligolw_process
 from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
 from pycbc.workflow import pegasus_workflow
 
@@ -45,10 +47,6 @@ class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
 
 lsctables.use_in(ContentHandler)
-
-# workflow should never be using the glue LIGOTimeGPS class, override this with
-# the nice SWIG-wrapped class in lal
-lal.LIGOTimeGPS = lalswig.LIGOTimeGPS
 
 #REMOVE THESE FUNCTIONS  FOR PYTHON >= 2.7 ####################################
 def check_output_error_and_retcode(*popenargs, **kwargs):
@@ -1050,7 +1048,7 @@ class File(pegasus_workflow.File):
             
         file_url = urlparse.urlunparse(['file', 'localhost', self.storage_path, None,
                                             None, None])
-        cache_entry = lal.CacheEntry(self.ifo_string,
+        cache_entry = lal.utils.CacheEntry(self.ifo_string,
                    self.tagged_description, self.segment_list.extent(), file_url)
         cache_entry.workflow_file = self
         return cache_entry
@@ -1344,9 +1342,9 @@ class FileList(list):
 
     def convert_to_lal_cache(self):
         """
-        Return all files in this object as a lal.Cache object
+        Return all files in this object as a glue.lal.Cache object
         """
-        lal_cache = lal.Cache([])
+        lal_cache = gluelal.Cache([])
         for entry in self:
             try:
                 lal_cache.append(entry.cache_entry)
@@ -1723,14 +1721,16 @@ class SegFile(File):
         for key, seglist in self.segment_dict.items():
             ifo, name = self.parse_segdict_key(key)
             # Ensure we have LIGOTimeGPS
-            fsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
-                     for seg in seglist]
+            fsegs = [(lal.LIGOTimeGPS(seg[0]),
+                      lal.LIGOTimeGPS(seg[1])) for seg in seglist]
 
             if self.seg_summ_dict is None:
-                vsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+                vsegs = [(lal.LIGOTimeGPS(seg[0]),
+                          lal.LIGOTimeGPS(seg[1])) \
                          for seg in self.valid_segments]
             else:
-                vsegs = [(lal.LIGOTimeGPS(seg[0]), lal.LIGOTimeGPS(seg[1])) \
+                vsegs = [(lal.LIGOTimeGPS(seg[0]),
+                          lal.LIGOTimeGPS(seg[1])) \
                          for seg in self.seg_summ_dict[key]]
 
             # Add using glue library to set all segment tables
