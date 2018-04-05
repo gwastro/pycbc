@@ -162,19 +162,34 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   cd ${VIRTUAL_ENV}/src/lalsuite
   git checkout ${LALSUITE_HASH}
   ./00boot
-  ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps 2>&1 | grep -v checking
+  ./configure --prefix=${VIRTUAL_ENV} --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps 2>&1 | grep -v checking
   make -j 2 2>&1 | grep Entering
   make install 2>&1 | grep Entering
-  echo 'source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh' >> ${VIRTUAL_ENV}/bin/activate
+
+  # write PKG_CONFIG_PATH to activate
+  sed -in "s/# unset PYTHONHOME/_OLD_PKG_CONFIG_PATH=\"\${PKG_CONFIG_PATH}\"\\
+PKG_CONFIG_PATH=\"\${VIRTUAL_ENV}\/lib\/pkgconfig:\${PKG_CONFIG_PATH}\"\\
+export PKG_CONFIG_PATH\\
+\\
+# unset PYTHONHOME/" ${VIRTUAL_ENV}/bin/activate
+
+  # unset PKG_CONFIG_PATH in deactivate
+  sed -in "s/unset _OLD_VIRTUAL_PYTHONHOME/unset _OLD_VIRTUAL_PYTHONHOME\\
+    fi\\
+    if ! [ -z \"\${_OLD_PKG_CONFIG_PATH+_}\" ]; then\\
+        PKG_CONFIG_PATH=\"\$_OLD_PKG_CONFIG_PATH\"\\
+        export PKG_CONFIG_PATH\\
+        unset _OLD_PKG_CONFIG_PATH/" ${VIRTUAL_ENV}/bin/activate
+
   deactivate
 
   echo -e "\\n>> [`date`] Installing LALApps"
   source ${VENV_PATH}/bin/activate
   cd $VIRTUAL_ENV/src/lalsuite/lalapps
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
-    LIBS="-lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+    LIBS="-lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV} --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
-    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
+    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV} --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
   fi
   cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
   make -j 2 2>&1 | grep Entering
