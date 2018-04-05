@@ -541,6 +541,10 @@ def get_td_waveform_from_fd(**params):
     # increase in computational cost
     rwrap = 0.2
     fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
+    fsamples = int(fudge_duration / params['delta_t'])
+    N = pnutils.nearest_larger_binary_number(fsamples)
+    fudge_duration = N * params['delta_t']
+
     nparams['delta_f'] = 1.0 / fudge_duration
     hp, hc = get_fd_waveform(**nparams)
 
