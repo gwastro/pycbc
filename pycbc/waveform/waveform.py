@@ -509,7 +509,7 @@ def get_td_waveform_from_fd(**params):
     This returns a time domain version of a fourier domain approximant, with
     padding and tapering at the start of the waveform.
 
-    Paramaters
+    Parameters
     ----------
     params: dict
         The parameters defining the waveform to generator.
