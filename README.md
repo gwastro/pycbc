@@ -36,7 +36,7 @@ A key for the latest release is available at:
 
 [![DOI](https://zenodo.org/badge/31596861.svg)](https://zenodo.org/badge/latestdoi/31596861)
 
-Please see our [citation guidelines](http://ligo-cbc.github.io/pycbc/latest/html/credit.html) for 
+Please see our [citation guidelines](http://pycbc.org/pycbc/latest/html/credit.html) for 
 more details.
 
 [![PyPI version](https://badge.fury.io/py/PyCBC.svg)](https://badge.fury.io/py/PyCBC)
