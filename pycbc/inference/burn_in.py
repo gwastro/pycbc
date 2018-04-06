@@ -111,7 +111,7 @@ def n_acl(sampler, fp, nacls=10):
         all chains obtain burn in at the same time, this is either an array
         of all False or True.
     """
-    acl = max(sampler.compute_acls(fp, start_index=0).values())
+    acl = numpy.array(sampler.compute_acls(fp, start_index=0).values()).max()
     burn_idx = nacls * acl
     is_burned_in = burn_idx < fp.niterations
     if not is_burned_in:
