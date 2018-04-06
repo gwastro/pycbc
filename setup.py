@@ -344,7 +344,7 @@ ext = cythonize([
              ])
 
 
-ext += Extension(
+ext += [Extension(
             "pycbc.ligolw.tokenizer",
             [
                 "pycbc/ligolw/tokenizer.c",
@@ -360,7 +360,7 @@ ext += Extension(
                 "pycbc/ligolw/ilwd.c"
             ],
             include_dirs = [ "pycbc/ligolw" ]
-        )
+        )]
 
 setup (
     name = 'PyCBC',
