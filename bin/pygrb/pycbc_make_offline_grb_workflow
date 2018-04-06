@@ -149,7 +149,7 @@ ext_file = None
 
 # DATAFIND
 dfDir = os.path.join(currDir, "datafind")
-if wflow.cp.has_option("workflow-condition_strain", "do-autogating"):
+if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     gating_pad = int(wflow.cp.get("condition_strain", "pad-data"))
     gatSegs = segmentlistdict({key: segmentlist([\
             segment(int(sciSegs[key][0][0] - gating_pad),
@@ -173,22 +173,22 @@ wflow.ifos = ifos
 datafind_veto_files = _workflow.FileList([])
 
 # GATING
-if wflow.cp.has_option("workflow-condition_strain", "do-autogating"):
-    logging.info("Creating autogating jobs.")
+if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
+    logging.info("Creating gating jobs.")
     wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
                                            int(sciSegs[ifo][0][1]))
     gating_nodes, gated_files = _workflow.make_gating_node(wflow,
             datafind_files, outdir=dfDir)
     gating_method = wflow.cp.get("workflow-condition_strain",
-                                 "autogating-method")
+                                 "gating-method")
     for gating_node in gating_nodes:
         if gating_method == "IN_WORKFLOW":
             wflow.add_node(gating_node)
         elif gating_method == "AT_RUNTIME":
-            logging.info("Executing autogating node...")
+            logging.info("Executing gating node...")
             wflow.execute_node(gating_node)
         else:
-            msg = "[workflow-condition_strain] option 'autogating-method' can "
+            msg = "[workflow-condition_strain] option 'gating-method' can "
             msg += "only have one of the values 'IN_WORKFLOW' or 'AT_RUNTIME'. "
             msg += "You have provided the value %s." % gating_method
             logging.error(msg)
