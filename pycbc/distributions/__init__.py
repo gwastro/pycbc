@@ -26,6 +26,7 @@ from pycbc.distributions import uniform_log
 from pycbc.distributions.masses import UniformComponentMasses
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.joint import JointDistribution
+from pycbc.workflow import ConfigParser as _ConfigParser
 
 # a dict of all available distributions
 distribs = {
@@ -74,6 +75,22 @@ def read_distributions_from_config(cp, section="prior"):
     return dists
 
 
+def _convert_liststring_to_list(lstring):
+    """Checks if an argument of the configuration file is a string of a list
+    and returns the corresponding list (of strings).
+
+    The argument is considered to be a list if it starts with '[' and ends
+    with ']'. List elements should be comma separated. For example, passing
+    `'[foo bar, cat]'` will result in `['foo bar', 'cat']` being returned. If
+    the argument does not start and end with '[' and ']', the argument will
+    just be returned as is.
+    """
+    if lstring[0]=='[' and lstring[-1]==']':
+        lstring = [str(lstring[1:-1].split(',')[n].strip().strip("'"))
+                      for n in range(len(lstring[1:-1].split(',')))]
+    return lstring
+
+
 def read_args_from_config(cp, section_group=None, prior_section='prior'):
     """Loads static and variable arguments from a configuration file.
 
@@ -97,7 +114,6 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
     static_args : dict
         Dictionary of names -> values giving the parameters to keep fixed.
     """
-    logging.info("Loading arguments")
     if section_group is not None:
         section_prefix = '{}_'.format(section_group)
     else:
@@ -118,7 +134,7 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
         static_args = dict([(key,cp.get_opt_tags(
             "{}static_args".format(section_prefix), key, []))
             for key in cp.options("{}static_args".format(section_prefix))])
-    except ConfigParser.NoSectionError:
+    except _ConfigParser.NoSectionError:
         static_args = {}
     # try converting values to float
     for key,val in static_args.iteritems():
@@ -129,7 +145,7 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
         except ValueError:
             # try converting to a list of strings; this function will just
             # return val if it does not begin (end) with [ (])
-            static_args[key] = convert_liststring_to_list(val) 
+            static_args[key] = _convert_liststring_to_list(val) 
 
     # get additional constraints to apply in prior
     cons = []

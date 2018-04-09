@@ -30,8 +30,6 @@ from pycbc.distributions import constraints
 from pycbc.io.inference_hdf import InferenceFile, check_integrity
 from pycbc.io.inference_txt import InferenceTXTFile
 from pycbc.inference import likelihood
-from pycbc.workflow import WorkflowConfigParser
-from pycbc.workflow import ConfigParser
 from pycbc.pool import choose_pool
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
@@ -44,22 +42,6 @@ from pycbc.gate import gates_from_cli, psd_gates_from_cli, apply_gates_to_td, \
 #                   Utilities for loading config files
 #
 #-----------------------------------------------------------------------------
-
-def convert_liststring_to_list(lstring):
-    """Checks if an argument of the configuration file is a string of a list
-    and returns the corresponding list (of strings).
-
-    The argument is considered to be a list if it starts with '[' and ends
-    with ']'. List elements should be comma separated. For example, passing
-    `'[foo bar, cat]'` will result in `['foo bar', 'cat']` being returned. If
-    the argument does not start and end with '[' and ']', the argument will
-    just be returned as is.
-    """
-    if lstring[0]=='[' and lstring[-1]==']':
-        lstring = [str(lstring[1:-1].split(',')[n].strip().strip("'"))
-                      for n in range(len(lstring[1:-1].split(',')))]
-    return lstring
-
 
 def read_sampling_args_from_config(cp, section_group=None,
                                    section='sampling_parameters'):
