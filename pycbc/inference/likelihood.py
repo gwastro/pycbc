@@ -1075,4 +1075,5 @@ likelihood_evaluators = {TestEggbox.name: TestEggbox,
                             MarginalizedPhaseGaussianLikelihood}
 
 __all__ = ['BaseLikelihoodEvaluator', 'TestNormal', 'TestEggbox', 'TestVolcano',
-           'TestRosenbrock', 'GaussianLikelihood', 'likelihood_evaluators']
+           'TestRosenbrock', 'GaussianLikelihood',
+           'MarginalizedPhaseGaussianLikelihood', 'likelihood_evaluators']
