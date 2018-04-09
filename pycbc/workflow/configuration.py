@@ -971,3 +971,30 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             return True
         except ConfigParser.Error:
             return False
+
+
+    @staticmethod
+    def add_config_opts_to_parser(parser):
+        """Adds options for configuration files to the given parser."""
+        parser.add_argument("--config-files", type=str, nargs="+",
+                            required=True,
+                            help="A file parsable by "
+                                 "pycbc.workflow.WorkflowConfigParser.")
+        parser.add_argument("--config-overrides", type=str, nargs="+",
+                            default=None, metavar="SECTION:OPTION:VALUE",
+                            help="List of section:option:value combinations "
+                                 "to add into the configuration file.")
+
+
+    @classmethod
+    def from_cli(cls, opts):
+        """Loads a config file from the given options, with overrides applied.
+        """
+        # read configuration file
+        logging.info("Reading configuration file")
+        if opts.config_overrides is not None:
+            overrides = [override.split(":")
+                         for override in opts.config_overrides]
+        else:
+            overrides = None
+        return cls(opts.config_files, overrides)
