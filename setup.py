@@ -22,6 +22,17 @@ setup.py file for PyCBC package
 from __future__ import print_function
 
 import os, fnmatch, sys, subprocess, shutil
+from Cython.Build import cythonize
+
+try:
+    from setuptools import Extension
+    from setuptools.command.install import install as _install
+    from setuptools.command.install_egg_info import install_egg_info as egg_info
+    USE_SETUPTOOLS = True
+except:
+    from distutils.command.install import install as _install
+    from distutils.core import Extension
+    USE_SETUPTOOLS = False
 
 # FIXME: trace.fullmodname was undocumented in Python 2 and actually became an
 # internal function in Python 3. We should not depend on it.
@@ -30,33 +41,19 @@ try:
 except ImportError:
     from trace import _fullmodname as fullmodname
 
-try:
-    from setuptools.command.install import install as _install
-    from setuptools.command.install_egg_info import install_egg_info as egg_info
-    USE_SETUPTOOLS = True
-except:
-    from distutils.command.install import install as _install
-    USE_SETUPTOOLS = False
-
 from distutils.errors import DistutilsError
-from distutils.core import setup, Command, Extension
+from distutils.core import setup, Command
 from distutils.command.clean import clean as _clean
 from distutils.file_util import write_file
 from distutils.version import LooseVersion
 
 try:
-    import numpy.version
-    if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
-        print(" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
-              " We found version %s already installed. Please update \n"
-              " to a more recent version and then retry PyCBC  \n"
-              " installation. \n"
-              " \n"
-              " Using pip: [pip install 'numpy>=1.6.4' --upgrade --user] \n"
-              "" % numpy.version.version)
-        exit(1)
+    import numpy
 except ImportError:
-    pass
+    print(" Numpy >= 1.9.0 is required for pycbc. \n"
+          " Using pip: [pip install 'numpy>=1.9.0' --upgrade --user] \n"
+          "")
+    exit(1)
 
 requires = ['lal.lal', 'lalsimulation.lalsimulation']
 setup_requires = []
@@ -81,17 +78,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       ]
-
-#FIXME Remove me when we bump to h5py > 2.5
-try:
-    import h5py
-except ImportError:
-    setup_requires.append('cython')
-else:
-    import h5py.version
-    if h5py.version.version < '2.5':
-        setup_requires.append('cython')
-
 
 def find_package_data(dirname):
     def find_paths(dirname):
@@ -345,6 +331,37 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 # do the actual work of building the package
 VERSION = get_version_info()
 
+extensions = ['types.array',
+              'filter.matchedfilter', 
+              'events.threshold',
+              'waveform.spa_tmplt']
+ext = cythonize([
+    Extension("pycbc.%s_cpu" % name, ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
+             extra_compile_args=[ '-O3', '-w', '-msse4.2',
+                                  '-ffast-math', '-ffinite-math-only'],
+             include_dirs=[numpy.get_include()]
+             ) for name in extensions
+             ])
+
+
+ext += [Extension(
+            "pycbc.ligolw.tokenizer",
+            [
+                "pycbc/ligolw/tokenizer.c",
+                "pycbc/ligolw/tokenizer.Tokenizer.c",
+                "pycbc/ligolw/tokenizer.RowBuilder.c",
+                "pycbc/ligolw/tokenizer.RowDumper.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        ),
+        Extension(
+            "pycbc.ligolw._ilwd",
+            [
+                "pycbc/ligolw/ilwd.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        )]
+
 setup (
     name = 'PyCBC',
     version = VERSION,
@@ -511,27 +528,11 @@ setup (
                'pycbc.ligolw',
                'pycbc.ligolw.utils',
                ],
-    package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
-                    'pycbc.results': find_package_data('pycbc/results'),
-                    'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
-    ext_modules = [
-        Extension(
-            "pycbc.ligolw.tokenizer",
-            [
-                "pycbc/ligolw/tokenizer.c",
-                "pycbc/ligolw/tokenizer.Tokenizer.c",
-                "pycbc/ligolw/tokenizer.RowBuilder.c",
-                "pycbc/ligolw/tokenizer.RowDumper.c"
-            ],
-            include_dirs = [ "pycbc/ligolw" ]
-        ),
-        Extension(
-            "pycbc.ligolw._ilwd",
-            [
-                "pycbc/ligolw/ilwd.c"
-            ],
-            include_dirs = [ "pycbc/ligolw" ]
-        )
-    ],
+     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
+	             'pycbc.results': find_package_data('pycbc/results'),
+                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank'),
+                    },
+     ext_modules = ext,
+
 )
 

@@ -198,10 +198,8 @@ def spa_tmplt(**kwds):
     pfa5 = phasing.v[5] / pfaN
     pfa6 = (phasing.v[6] - phasing.vlogv[6] * log(4)) / pfaN
     pfa7 = phasing.v[7] / pfaN
-    
     pfl5 = phasing.vlogv[5] / pfaN
     pfl6 = phasing.vlogv[6] / pfaN
-
     piM = lal.PI * (mass1 + mass2) * lal.MTSUN_SI
 
     kmin = int(f_lower / float(delta_f))
