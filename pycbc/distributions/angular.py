@@ -21,7 +21,7 @@ try:
     from ConfigParser import Error
 except ImportError:
     from configparser import Error
-from pycbc.distributions import boundaries
+from pycbc import boundaries
 from pycbc.distributions import bounded
 from pycbc.distributions import uniform
 
