@@ -19,12 +19,12 @@ probability density function of distributions.
 # imports needed for functions below
 from pycbc.workflow import ConfigParser as _ConfigParser
 from pycbc.distributions import constraints
+from pycbc import VARARGS_DELIM as _VARARGS_DELIM
 
 # Promote some classes/functions to the distributions name space
 from pycbc.distributions.angular import UniformAngle, SinAngle, CosAngle, \
                                         UniformSolidAngle
 from pycbc.distributions.arbitrary import Arbitrary, FromFile
-from pycbc.distributions.bounded import VARARGS_DELIM
 from pycbc.distributions.gaussian import Gaussian
 from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
 from pycbc.distributions.sky_location import UniformSky
@@ -165,7 +165,7 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
                 continue
             val = cp.get_opt_tag(section, key, subsection)
             if key == "required_parameters":
-                kwargs["required_parameters"] = val.split(VARARGS_DELIM)
+                kwargs["required_parameters"] = val.split(_VARARGS_DELIM)
                 continue
             try:
                 val = float(val)

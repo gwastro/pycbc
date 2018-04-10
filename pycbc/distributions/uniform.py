@@ -175,7 +175,7 @@ class Uniform(bounded.BoundedDist):
             Name of the section in the configuration file.
         variable_args : str
             The names of the parameters for this distribution, separated by
-            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            ``VARARGS_DELIM``. These must appear in the "tag" part
             of the section header.
 
         Returns

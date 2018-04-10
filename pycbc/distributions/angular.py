@@ -21,6 +21,7 @@ try:
     from ConfigParser import Error
 except ImportError:
     from configparser import Error
+from pycbc import VARARGS_DELIM 
 from pycbc import boundaries
 from pycbc.distributions import bounded
 from pycbc.distributions import uniform
@@ -161,7 +162,7 @@ class UniformAngle(uniform.Uniform):
             Name of the section in the configuration file.
         variable_args : str
             The names of the parameters for this distribution, separated by
-            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            ``VARARGS_DELIM``. These must appear in the "tag" part
             of the section header.
 
         Returns
@@ -544,7 +545,7 @@ class UniformSolidAngle(bounded.BoundedDist):
             The name of the section.
         variable_args : str
             The names of the parameters for this distribution, separated by
-            `prior.VARARGS_DELIM`. These must appear in the "tag" part
+            ``VARARGS_DELIM``. These must appear in the "tag" part
             of the section header.
 
         Returns
@@ -553,7 +554,7 @@ class UniformSolidAngle(bounded.BoundedDist):
             A distribution instance from the pycbc.inference.prior module.
         """
         tag = variable_args
-        variable_args = variable_args.split(bounded.VARARGS_DELIM)
+        variable_args = variable_args.split(VARARGS_DELIM)
 
         # get the variables that correspond to the polar/azimuthal angles
         try:
