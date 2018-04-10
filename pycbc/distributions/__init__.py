@@ -16,17 +16,23 @@
 This modules provides classes and functions for drawing and calculating the
 probability density function of distributions.
 """
-from pycbc.distributions.angular import *
-from pycbc.distributions.arbitrary import *
-from pycbc.distributions.gaussian import *
-from pycbc.distributions.power_law import *
-from pycbc.distributions.sky_location import *
-from pycbc.distributions.uniform import *
-from pycbc.distributions import uniform_log
+# imports needed for functions below
+from pycbc.workflow import ConfigParser as _ConfigParser
+from pycbc.distributions import constraints
+
+# Promote some classes/functions to the distributions name space
+from pycbc.distributions.angular import UniformAngle, SinAngle, CosAngle, \
+                                        UniformSolidAngle
+from pycbc.distributions.arbitrary import Arbitrary, FromFile
+from pycbc.distributions.bounded import VARARGS_DELIM
+from pycbc.distributions.gaussian import Gaussian
+from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
+from pycbc.distributions.sky_location import UniformSky
+from pycbc.distributions.uniform import Uniform
+from pycbc.distributions.uniform_log import UniformLog10
 from pycbc.distributions.masses import UniformComponentMasses
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.joint import JointDistribution
-from pycbc.workflow import ConfigParser as _ConfigParser
 
 # a dict of all available distributions
 distribs = {
@@ -43,7 +49,7 @@ distribs = {
     SinAngle.name : SinAngle,
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
-    uniform_log.UniformLog10.name : uniform_log.UniformLog10,
+    UniformLog10.name : uniform_log.UniformLog10,
 }
 
 def read_distributions_from_config(cp, section="prior"):
@@ -145,7 +151,7 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
         except ValueError:
             # try converting to a list of strings; this function will just
             # return val if it does not begin (end) with [ (])
-            static_args[key] = _convert_liststring_to_list(val) 
+            static_args[key] = _convert_liststring_to_list(val)
 
     # get additional constraints to apply in prior
     cons = []
@@ -159,8 +165,7 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
                 continue
             val = cp.get_opt_tag(section, key, subsection)
             if key == "required_parameters":
-                kwargs["required_parameters"] = val.split(
-                                                        bounded.VARARGS_DELIM)
+                kwargs["required_parameters"] = val.split(VARARGS_DELIM)
                 continue
             try:
                 val = float(val)
