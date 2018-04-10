@@ -49,7 +49,7 @@ distribs = {
     SinAngle.name : SinAngle,
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
-    UniformLog10.name : uniform_log.UniformLog10,
+    UniformLog10.name : UniformLog10,
 }
 
 def read_distributions_from_config(cp, section="prior"):
