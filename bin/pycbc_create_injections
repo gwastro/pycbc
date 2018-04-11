@@ -84,13 +84,14 @@ arguments to initialize that distribution; see the distributions module for
 details.
 
 The variable_args need not be parameters understood by the waveform module.  In
-that case, a [waveform_transforms] sections must be provided that map variable_args
-not understood by the waveform module to parameters that are understood. In the above
-example, spin1_a, spin1_azimuthal, and spin1_polar are converted to spin1x, spin1y,
-and spin1z before being written out. Any transform in the transforms module may be used to
-do this; see that module for details. No attempt is made to check that provided
-parameter names are sensible. It is up to the user to ensure that written
-parameters are understood by the waveform approximant that will be used.
+that case, a [waveform_transforms] sections must be provided that map
+variable_args not understood by the waveform module to parameters that are
+understood. In the above example, spin1_a, spin1_azimuthal, and spin1_polar are
+converted to spin1x, spin1y, and spin1z before being written out. Any transform
+in the transforms module may be used to do this; see that module for details.
+No attempt is made to check that provided parameter names are sensible. It is
+up to the user to ensure that written parameters are understood by the waveform
+approximant that will be used.
 
 One or more constraints may be applied to the distributions; these are
 specified by the [constraint] section(s). Additional constraints may be
@@ -116,7 +117,6 @@ import pycbc.version
 from pycbc import distributions
 from pycbc import transforms
 from pycbc.distributions import JointDistribution
-from pycbc.inference import option_utils
 from pycbc.io import record
 from pycbc.waveform import parameters
 from pycbc.workflow import WorkflowConfigParser
@@ -191,7 +191,7 @@ def write_to_hdf(filename, samples, write_args, static_args=None):
 
 parser = argparse.ArgumentParser(description=__doc__,
             formatter_class=argparse.RawDescriptionHelpFormatter)
-option_utils.add_config_opts_to_parser(parser)
+WorkflowConfigParser.add_config_opts_to_parser(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg,
                     help='Prints version information.')
@@ -224,15 +224,15 @@ if os.path.exists(opts.output_file) and not opts.force:
 numpy.random.seed(opts.seed)
 
 logging.info("Loading config file")
-cp = option_utils.config_parser_from_cli(opts)
+cp = WorkflowConfigParser.from_cli(opts)
 
 # get the vairable and static arguments from the config file
 variable_args, static_args, constraints = \
-                                     option_utils.read_args_from_config(cp,
-                                     prior_section=opts.dist_section)
+    distributions.read_args_from_config(cp, prior_section=opts.dist_section)
 
 if any(cp.get_subsections('waveform_transforms')):
-    waveform_transforms = transforms.read_transforms_from_config(cp, 'waveform_transforms')
+    waveform_transforms = transforms.read_transforms_from_config(cp,
+        'waveform_transforms')
 else:
     waveform_transforms = None
     write_args = variable_args
@@ -257,7 +257,8 @@ if waveform_transforms is not None:
                                              opts.ninjections).astype(float)],
                                              [item])
     samples = transforms.apply_transforms(samples, waveform_transforms)
-    write_args = [arg for arg in samples.fieldnames if arg not in static_args.keys()]
+    write_args = [arg for arg in samples.fieldnames
+                  if arg not in static_args.keys()]
 
 # write results
 logging.info("Writing results")

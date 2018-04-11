@@ -24,8 +24,8 @@ from pycbc import coordinates
 from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
-from pycbc.distributions.boundaries import Bounds
-from pycbc.distributions.bounded import VARARGS_DELIM
+from pycbc.boundaries import Bounds
+from pycbc import VARARGS_DELIM
 
 class BaseTransform(object):
     """A base class for transforming between two sets of parameters.

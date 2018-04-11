@@ -106,6 +106,10 @@ PYCBC_ALIGNMENT = 32
 
 DYN_RANGE_FAC =  5.9029581035870565e+20
 
+# String used to separate parameters in configuration file section headers.
+# This is used by the distributions and transforms modules
+VARARGS_DELIM = '+'
+
 if os.environ.get("INITIAL_LOG_LEVEL", None):
     logging.basicConfig(format='%(asctime)s %(message)s',
                         level=int(os.environ["INITIAL_LOG_LEVEL"]))
