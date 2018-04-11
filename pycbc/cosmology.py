@@ -95,7 +95,7 @@ class _DistToZ(object):
         else:
             self.omega = default_omega
         self.default_maxz = default_maxz
-        self.numpoints = numpoints
+        self.numpoints = int(numpoints)
         self.z2d = numpy.vectorize(lal.LuminosityDistance)
         # for computing nearby (z < 1) redshifts
         zs = numpy.linspace(0., 1., num=self.numpoints)
