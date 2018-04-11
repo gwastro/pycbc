@@ -31,6 +31,7 @@ import ConfigParser, copy
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
+from six import string_types
 import lal
 import lal.utils
 import Pegasus.DAX3
@@ -155,7 +156,7 @@ class Executable(pegasus_workflow.Executable):
         tags : list of strings
             A list of strings that is used to identify this job.
         """
-        if isinstance(ifos, (str, unicode)):
+        if isinstance(ifos, string_types):
             self.ifo_list = [ifos]
         else:
             self.ifo_list = ifos
@@ -938,7 +939,7 @@ class File(pegasus_workflow.File):
         self.metadata = {}
         
         # Set the science metadata on the file
-        if isinstance(ifos, (str, unicode)):
+        if isinstance(ifos, string_types):
             self.ifo_list = [ifos]
         else:
             self.ifo_list = ifos

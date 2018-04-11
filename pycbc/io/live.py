@@ -3,6 +3,7 @@ import os
 import pycbc
 import numpy
 import lal
+from six import u as unicode
 from pycbc.ligolw import ligolw
 from pycbc.ligolw import lsctables
 from pycbc.ligolw import utils as ligolw_utils

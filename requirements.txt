@@ -16,6 +16,7 @@ lscsoft-glue>=1.58.2
 weave>=0.16.0
 requests>=1.2.1
 beautifulsoup4>=4.6.0
+six
 
 # Ensure pyOpenSSL is recent enough
 pyOpenSSL==17.2.0

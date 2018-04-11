@@ -26,6 +26,8 @@ This modules provides classes and functions for evaluating the log likelihood
 for parameter estimation.
 """
 
+from six import string_types
+
 from pycbc import conversions
 from pycbc import filter
 import pycbc.transforms
@@ -175,7 +177,7 @@ class BaseLikelihoodEvaluator(object):
                  sampling_parameters=None, replace_parameters=None,
                  sampling_transforms=None, waveform_transforms=None,
                  return_meta=True):
-        if isinstance(variable_args, str) or isinstance(variable_args, unicode):
+        if isinstance(variable_args, string_types):
             variable_args = (variable_args,)
         if not isinstance(variable_args, tuple):
             variable_args = tuple(variable_args)

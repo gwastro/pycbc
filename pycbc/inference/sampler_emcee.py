@@ -26,6 +26,8 @@ This modules provides classes and functions for using the emcee sampler
 packages for parameter estimation.
 """
 
+from six import string_types
+
 import numpy
 from pycbc.inference.sampler_base import BaseMCMCSampler, _check_fileformat
 from pycbc.io import FieldArray
@@ -865,7 +867,7 @@ class EmceePTSampler(BaseMCMCSampler):
         acfs = {}
         if parameters is None:
             parameters = fp.variable_args
-        if isinstance(parameters, str) or isinstance(parameters, unicode):
+        if isinstance(parameters, string_types):
             parameters = [parameters]
         if isinstance(temps, int):
             temps = [temps]

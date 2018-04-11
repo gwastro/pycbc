@@ -26,6 +26,8 @@ This modules provides classes and functions for using different sampler
 packages for parameter estimation.
 """
 
+from six import string_types
+
 import numpy
 from pycbc.io import FieldArray
 from pycbc.filter import autocorrelation
@@ -921,7 +923,7 @@ class BaseMCMCSampler(_BaseSampler):
         acfs = {}
         if parameters is None:
             parameters = fp.variable_args
-        if isinstance(parameters, str) or isinstance(parameters, unicode):
+        if isinstance(parameters, string_types):
             parameters = [parameters]
         for param in parameters:
             if per_walker:
