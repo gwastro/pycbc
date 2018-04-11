@@ -425,7 +425,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # take reference slope as the harmonic mean of individual ifo slopes
         inv_alphas = [1./self.alphamax[i] for i in self.ifos]
         self.alpharef = (sum(inv_alphas)/len(inv_alphas))**-1
-        print self.alpharef
+        print(self.alpharef)
 
     def single(self, trigs):
         logr_n = self.lognoiserate(trigs)
