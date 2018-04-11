@@ -25,6 +25,7 @@
 """Classes to define common parameters used for waveform generation.
 """
 
+from collections import OrderedDict
 try:
     from collections import UserList
 except ImportError:
@@ -96,7 +97,7 @@ class ParameterList(UserList):
         """Returns a dictionary of the name and default value of each
         parameter.
         """
-        return dict(self.defaults())
+        return OrderedDict(self.defaults())
 
     @property
     def nodefaults(self):
@@ -115,7 +116,7 @@ class ParameterList(UserList):
     @property
     def dtype_dict(self):
         """Returns a dictionary of the name and dtype of each parameter."""
-        return dict(self.dtypes)
+        return OrderedDict(self.dtypes)
 
     @property
     def descriptions(self):
@@ -128,7 +129,7 @@ class ParameterList(UserList):
     def description_dict(self):
         """Return a dictionary of the name and description of each parameter.
         """
-        return dict(self.descriptions)
+        return OrderedDict(self.descriptions)
 
     @property
     def labels(self):
@@ -139,7 +140,7 @@ class ParameterList(UserList):
     def label_dict(self):
         """Return a dictionary of the name and label of each parameter.
         """
-        return dict(self.labels)
+        return OrderedDict(self.labels)
 
     def docstr(self, prefix='', include_label=True):
         """Returns the ``docstr`` of each parameter joined together."""
