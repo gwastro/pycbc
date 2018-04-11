@@ -551,11 +551,11 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // Signed versions of all our array length inputs, so loop
   // logic and calls to other functions are safe.
 
-  s_segsize = (int64_t) segsize; 
+  s_segsize = (int64_t) segsize;
   s_arrlen = (int64_t) arrlen;
   s_winsize = (int64_t) winsize;
 
-  // If the length of a window is less than the length of a segment, then the 
+  // If the length of a window is less than the length of a segment, then the
   // number of windows per segment is segsize/winsize (which rounds *down* if
   // it does not divide evenly). If not, then the number of windows per segment
   // is one, since we will then always give a window-sized chunks to each core,
@@ -658,7 +658,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       cnt++;
       values[cnt-1] = cvals[i];
       locs[cnt-1] = (uint32_t) mlocs[i];
-    }    
+    }
   }
 
   // Finally, handle the last element. We test for whether

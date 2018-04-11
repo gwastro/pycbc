@@ -115,7 +115,7 @@ spintaylorf2_text = """
     const double gamma03 = gamma02 *gamma0;
 
     const double alpha = prec_fac0*(  logfac2 *( dtdv2*gamma0 + dtdv3*kappa -
-        dtdv5*kappa/(2.*gamma02) + dtdv4/(2.*gamma0) - 
+        dtdv5*kappa/(2.*gamma02) + dtdv4/(2.*gamma0) -
         dtdv4*kappa2/(2.*gamma0) + (dtdv5*kappa3)/(2.*gamma02) )  +
         logfac1*( - dtdv2*gamma0*kappa - dtdv3 + kappa*gamma03/2. -
         gamma03*kappa3/2. ) + logv *( dtdv2*gamma0*kappa + dtdv3 -

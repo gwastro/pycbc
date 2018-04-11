@@ -47,7 +47,7 @@ class TestSPAtmplt(unittest.TestCase):
                 for s1 in  [-2, -1, -0.5, 0, 0.5, 1, 2]:
                     for s2 in [-2, -1, -0.5, 0, 0.5, 1, 2]:
                         # Generate TaylorF2 from lalsimulation, restricting to the capabilities of spatmplt
-                        hpr,_ = get_fd_waveform( mass1=m1, mass2=m2, spin1z=s1, spin2z=s2, 
+                        hpr,_ = get_fd_waveform( mass1=m1, mass2=m2, spin1z=s1, spin2z=s2,
                                                  delta_f=delta_f, f_lower=fl,
                                                  approximant="TaylorF2", amplitude_order=0,
                                                  spin_order=-1, phase_order=-1)
@@ -57,7 +57,7 @@ class TestSPAtmplt(unittest.TestCase):
                             # Generate the spatmplt waveform
                             out = zeros(len(hpr), dtype=complex64)
                             hp = get_waveform_filter(out, mass1=m1, mass2=m2, spin1z=s1, spin2z=s2,
-                                                     delta_f=delta_f, f_lower=fl, approximant="SPAtmplt", 
+                                                     delta_f=delta_f, f_lower=fl, approximant="SPAtmplt",
                                                      amplitude_order=0, spin_order=-1, phase_order=-1)
 
                             # Check the diff is sane

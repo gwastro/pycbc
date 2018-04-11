@@ -125,7 +125,7 @@ def phase_from_frequencyseries(htilde, remove_start_phase=True):
     p = numpy.unwrap(numpy.angle(htilde.data)).astype(
             real_same_precision_as(htilde))
     if remove_start_phase:
-        p += -p[0]    
+        p += -p[0]
     return FrequencySeries(p, delta_f=htilde.delta_f, epoch=htilde.epoch,
         copy=False)
 
@@ -202,7 +202,7 @@ def time_from_frequencyseries(htilde, sample_frequencies=None,
 def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     """Return gravitational wave phase
 
-    Return the gravitation-wave phase from the h_plus and h_cross 
+    Return the gravitation-wave phase from the h_plus and h_cross
     polarizations of the waveform. The returned phase is always
     positive and increasing with an initial phase of 0.
 
@@ -223,7 +223,7 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     Examples
     --------s
     >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
-    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10,
                          f_lower=30, delta_t=1.0/4096)
     >>> phase = phase_from_polarizations(hp, hc)
 
@@ -231,15 +231,15 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     p = numpy.unwrap(numpy.arctan2(h_cross.data, h_plus.data)).astype(
         real_same_precision_as(h_plus))
     if remove_start_phase:
-        p += -p[0]    
+        p += -p[0]
     return TimeSeries(p, delta_t=h_plus.delta_t, epoch=h_plus.start_time,
         copy=False)
 
 def amplitude_from_polarizations(h_plus, h_cross):
     """Return gravitational wave amplitude
 
-    Return the gravitation-wave amplitude from the h_plus and h_cross 
-    polarizations of the waveform. 
+    Return the gravitation-wave amplitude from the h_plus and h_cross
+    polarizations of the waveform.
 
     Parameters
     ----------
@@ -258,7 +258,7 @@ def amplitude_from_polarizations(h_plus, h_cross):
     Examples
     --------
     >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
-    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10,
                          f_lower=30, delta_t=1.0/4096)
     >>> amp = amplitude_from_polarizations(hp, hc)
 
@@ -270,7 +270,7 @@ def frequency_from_polarizations(h_plus, h_cross):
     """Return gravitational wave frequency
 
     Return the gravitation-wave frequency as a function of time
-    from the h_plus and h_cross polarizations of the waveform. 
+    from the h_plus and h_cross polarizations of the waveform.
     It is 1 bin shorter than the input vectors and the sample times
     are advanced half a bin.
 
@@ -287,12 +287,12 @@ def frequency_from_polarizations(h_plus, h_cross):
     -------
     GWFrequency : TimeSeries
         A TimeSeries containing the gravitational wave frequency as a function
-        of time. 
+        of time.
 
     Examples
     --------
     >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
-    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10,
                          f_lower=30, delta_t=1.0/4096)
     >>> freq = frequency_from_polarizations(hp, hc)
 
@@ -303,7 +303,7 @@ def frequency_from_polarizations(h_plus, h_cross):
     return TimeSeries(freq.astype(real_same_precision_as(h_plus)),
         delta_t=phase.delta_t, epoch=start_time)
 
-# map between tapering string in sim_inspiral table or inspiral 
+# map between tapering string in sim_inspiral table or inspiral
 # code option and lalsimulation constants
 taper_map = {
     'TAPER_NONE'    : None,
@@ -322,7 +322,7 @@ taper_func_map = {
 
 def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
     """
-    Taper either or both ends of a time series using wrapped 
+    Taper either or both ends of a time series using wrapped
     LALSimulation functions
 
     Parameters
@@ -334,7 +334,7 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
         'TAPER_STARTEND', 'start', 'end', 'startend') - NB 'TAPER_NONE' will
         not change the series!
     return_lal : Boolean
-        If True, return a wrapped LAL time series object, else return a 
+        If True, return a wrapped LAL time series object, else return a
         PyCBC time series.
     """
     if tapermethod is None:
@@ -450,7 +450,7 @@ def apply_fd_time_shift(htilde, shifttime, kmin=0, fseries=None, copy=True):
     else:
         if fseries is None:
             fseries = htilde.sample_frequencies.numpy()
-        shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries), 
+        shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries),
                     dtype=complex_same_precision_as(htilde))
         if copy:
             htilde = 1. * htilde

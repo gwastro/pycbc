@@ -36,8 +36,8 @@ def get_accum_diff_sq_kernel(dtype_x, dtype_z):
                 "tp_c": dtype_to_ctype(dtype_z),
                 },
             "x[i] += norm(z[i]) ",
-            "chisq_accum")    
-             
+            "chisq_accum")
+
 def chisq_accum_bin(chisq, q):
     krnl = get_accum_diff_sq_kernel(chisq.dtype, q.dtype)
     krnl(chisq.data, q.data)
@@ -56,46 +56,46 @@ __global__ void power_chisq_at_points_${NP}(
                                       %for p in range(NP):
                                         float phase${p},
                                       %endfor
-                                      unsigned int* kmin, 
+                                      unsigned int* kmin,
                                       unsigned int* kmax,
-                                      unsigned int* bv, 
+                                      unsigned int* bv,
                                       unsigned int nbins){
     __shared__ unsigned int s;
     __shared__ unsigned int e;
     __shared__ float2 chisq[${NT} * ${NP}];
-    
+
     // load integration boundaries (might not be bin boundaries if bin is large)
     if (threadIdx.x == 0){
         s = kmin[blockIdx.x];
         e = kmax[blockIdx.x];
     }
-    
+
     % for p in range(NP):
         chisq[threadIdx.x + ${NT*p}].x = 0;
         chisq[threadIdx.x + ${NT*p}].y = 0;
-    % endfor   
+    % endfor
     __syncthreads();
 
     // calculate the chisq integral for each thread
     // sliding reduction for each thread from s, e
     for (int i = threadIdx.x + s; i < e; i += blockDim.x){
         float re, im;
-        
+
         %if fuse:
             float2 qt, st, ht;
             st = stilde[i];
             ht = htilde[i];
             qt.x = ht.x * st.x + ht.y * st.y;
-            qt.y = ht.x * st.y - ht.y * st.x;            
+            qt.y = ht.x * st.y - ht.y * st.x;
         %else:
             float2 qt = corr[i];
         %endif
-        
+
         %for p in range(NP):
             __sincosf(phase${p} * i, &im, &re);
             chisq[threadIdx.x + ${NT*p}].x += re * qt.x - im * qt.y;
             chisq[threadIdx.x + ${NT*p}].y += im * qt.x + re * qt.y;
-        %endfor   
+        %endfor
     }
 
     float x, y, x2, y2;
@@ -112,9 +112,9 @@ __global__ void power_chisq_at_points_${NP}(
                 chisq[threadIdx.x + ${NT*p}].x = x + x2;
                 chisq[threadIdx.x + ${NT*p}].y = y + y2;
             %endfor
-        }            
+        }
     }
-  
+
     if (threadIdx.x == 0){
         % for p in range(NP):
             atomicAdd(&outc[bv[blockIdx.x] + nbins * ${p}].x, chisq[0 + ${NT*p}].x);
@@ -134,7 +134,7 @@ def get_pchisq_fn(np, fuse_correlate=False):
         if fuse_correlate:
             fn.prepare("PPPI" + "f" * np + "PPPI")
         else:
-            fn.prepare("PPI" + "f" * np + "PPPI") 
+            fn.prepare("PPI" + "f" * np + "PPPI")
         _pchisq_cache[np] = (fn, nt)
     return _pchisq_cache[np]
 
@@ -157,28 +157,28 @@ def get_cached_bin_layout(bins):
                 kmin += k
                 kmax += k[1:] + [e]
                 bv += [i]*len(k)
-        bv = pycuda.gpuarray.to_gpu_async(numpy.array(bv, dtype=numpy.uint32)) 
+        bv = pycuda.gpuarray.to_gpu_async(numpy.array(bv, dtype=numpy.uint32))
         kmin = pycuda.gpuarray.to_gpu_async(numpy.array(kmin, dtype=numpy.uint32))
-        kmax = pycuda.gpuarray.to_gpu_async(numpy.array(kmax, dtype=numpy.uint32))  
-        _bcache[key] = (kmin, kmax, bv) 
+        kmax = pycuda.gpuarray.to_gpu_async(numpy.array(kmax, dtype=numpy.uint32))
+        _bcache[key] = (kmin, kmax, bv)
     return _bcache[key]
 
 def shift_sum_points(num, arg_tuple):
     corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
     #fuse = 'fuse' in corr.gpu_callback_method
     fuse = False
-    
-    fn, nt = get_pchisq_fn(num, fuse_correlate = fuse)   
-    args = [(nb, 1), (nt, 1, 1)] 
-    
+
+    fn, nt = get_pchisq_fn(num, fuse_correlate = fuse)
+    args = [(nb, 1), (nt, 1, 1)]
+
     if fuse:
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
-    else:   
+    else:
         args += [corr.data.gpudata]
-        
+
     args +=[outp.gpudata, N] + phase[0:num] + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
     fn.prepared_call(*args)
-       
+
     outp = outp[num*nbins:]
     phase = phase[num:]
     np -= num
@@ -196,7 +196,7 @@ def shift_sum(corr, points, bins):
 
     while np > 0:
         cargs = (corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins)
-    
+
         if np >= 4:
             outp, phase, np = shift_sum_points(4, cargs)
         elif np >= 3:
@@ -205,9 +205,9 @@ def shift_sum(corr, points, bins):
             outp, phase, np = shift_sum_points(2, cargs)
         elif np == 1:
             outp, phase, np = shift_sum_points(1, cargs)
-             
+
     o = outc.get()
     return (o.conj() * o).sum(axis=1).real
-      
-    
-    
+
+
+

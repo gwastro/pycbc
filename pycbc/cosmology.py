@@ -48,7 +48,7 @@ class _DistToZ(object):
     a redshift greater than `default_maxz`, a new set of grid points is
     created from `0.1*default_maxz` to `1e5*default_maxz` and re-interpolated.
     This continues until a redshift can be found.
-    
+
     Instances of this class can be called like a function on luminosity
     distances, which will return the corresponding redshifts.
 

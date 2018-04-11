@@ -1,5 +1,5 @@
 # convenience classes for accessing hdf5 trigger files
-# the 'get_column()' method is implemented parallel to 
+# the 'get_column()' method is implemented parallel to
 # the existing pylal.SnglInspiralUtils functions
 
 import h5py
@@ -19,7 +19,7 @@ from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
 
-class HFile(h5py.File):   
+class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
 
@@ -99,8 +99,8 @@ class HFile(h5py.File):
 
 
 class DictArray(object):
-    """ Utility for organizing sets of arrays of equal length. 
-    
+    """ Utility for organizing sets of arrays of equal length.
+
     Manages a dictionary of arrays of equal length. This can also
     be instantiated with a set of hdf5 files and the key values. The full
     data is always in memory and all operations create new instances of the
@@ -108,7 +108,7 @@ class DictArray(object):
     """
     def __init__(self, data=None, files=None, groups=None):
         """ Create a DictArray
-        
+
         Parameters
         ----------
         data: dict, optional
@@ -119,19 +119,19 @@ class DictArray(object):
             List of keys into each file. Required by the files options.
         """
         self.data = data
-        
+
         if files:
             self.data = {}
             for g in groups:
                 self.data[g] = []
-            
+
             for f in files:
                 d = HFile(f)
                 for g in groups:
                     if g in d:
                         self.data[g].append(d[g][:])
                 d.close()
-                    
+
             for k in self.data:
                 if not len(self.data[k]) == 0:
                     self.data[k] = np.concatenate(self.data[k])
@@ -158,7 +158,7 @@ class DictArray(object):
         for k in self.data:
             data[k] = self.data[k][idx]
         return self._return(data=data)
-   
+
     def remove(self, idx):
         """ Return a new DictArray that does not contain the indexed values
         """
@@ -171,10 +171,10 @@ class DictArray(object):
 class StatmapData(DictArray):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None):
-        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
+        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2',
                'template_id', 'decimation_factor', 'timeslide_id']
         super(StatmapData, self).__init__(data=data, files=files, groups=groups)
-        
+
         if data:
             self.seg=seg
             self.attrs=attrs
@@ -197,19 +197,19 @@ class StatmapData(DictArray):
         interval = self.attrs['timeslide_interval']
         cid = cluster_coincs(self.stat, self.time1, self.time2,
                                  self.timeslide_id, interval, window)
-        return self.select(cid) 
+        return self.select(cid)
 
     def save(self, outname):
         f = HFile(outname, "w")
         for k in self.attrs:
             f.attrs[k] = self.attrs[k]
-            
+
         for k in self.data:
-            f.create_dataset(k, data=self.data[k], 
+            f.create_dataset(k, data=self.data[k],
                       compression='gzip',
                       compression_opts=9,
                       shuffle=True)
-            
+
 
         for key in self.seg.keys():
             f['segments/%s/start' % key] = self.seg[key]['start'][:]
@@ -225,8 +225,8 @@ class FileData(object):
         group : string
             Name of group to be read from the file
         columnlist : list of strings
-            Names of columns to be read; if None, use all existing columns 
-        filter_func : string 
+            Names of columns to be read; if None, use all existing columns
+        filter_func : string
             String should evaluate to a Boolean expression using attributes
             of the class instance derived from columns: ex. 'self.snr < 6.5'
         """
@@ -347,7 +347,7 @@ class SingleDetTriggers(object):
         if veto_file:
             logging.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
-            # giving the surviving triggers 
+            # giving the surviving triggers
             logging.info('%i triggers before vetoes',
                           len(self.trigs['end_time'][:]))
             self.veto_mask, _ = events.veto.indices_outside_segments(
@@ -383,7 +383,7 @@ class SingleDetTriggers(object):
 
     def checkbank(self, param):
         if self.bank == {}:
-            return RuntimeError("Can't get %s values without a bank file" 
+            return RuntimeError("Can't get %s values without a bank file"
                                                                        % param)
 
     @classmethod
@@ -423,7 +423,7 @@ class SingleDetTriggers(object):
         new_times = []
         new_index = []
         for curr_idx in index:
-            curr_time = times[curr_idx] 
+            curr_time = times[curr_idx]
             for time in new_times:
                 if abs(curr_time - time) < cluster_window:
                     break

@@ -70,19 +70,19 @@ class Uniform(bounded.BoundedDist):
     >>> dist.rvs(size=3)
         array([(36.90885758394699, 51.294212757995254),
                (39.109058546060346, 13.36220145743631),
-               (34.49594465315212, 47.531953033719454)], 
+               (34.49594465315212, 47.531953033719454)],
               dtype=[('mass1', '<f8'), ('mass2', '<f8')])
-    
+
     Initialize a uniform distribution using a boundaries.Bounds instance,
     with cyclic bounds:
 
     >>> dist = distributions.Uniform(phi=Bounds(10, 50, cyclic=True))
-    
+
     Apply boundary conditions to a value:
 
     >>> dist.apply_boundary_conditions(phi=60.)
         {'mass1': array(20.0)}
-    
+
     The boundary conditions are applied to the value before evaluating the pdf;
     note that the following returns a non-zero pdf. If the bounds were not
     cyclic, the following would return 0:

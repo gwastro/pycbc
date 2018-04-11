@@ -293,7 +293,7 @@ class TDomainCBCGenerator(BaseCBCGenerator):
 class FDomainMassSpinRingdownGenerator(BaseGenerator):
     """Uses ringdown.get_fd_from_final_mass_spin as a generator function to
     create frequency-domain ringdown waveforms with higher modes in the
-    radiation frame; i.e., with no detector response function applied. 
+    radiation frame; i.e., with no detector response function applied.
     For more details, see BaseGenerator.
 
     Examples
@@ -318,7 +318,7 @@ class FDomainMassSpinRingdownGenerator(BaseGenerator):
             variable_args=variable_args, **frozen_params)
 
 class FDomainFreqTauRingdownGenerator(BaseGenerator):
-    """Uses ringdown.get_fd_from_freqtau as a generator function to 
+    """Uses ringdown.get_fd_from_freqtau as a generator function to
     create frequency-domain ringdown waveforms with higher modes in the
     radiation frame; i.e., with no detector response function applied.
     For more details, see BaseGenerator.

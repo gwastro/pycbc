@@ -21,7 +21,7 @@ try:
     from ConfigParser import Error
 except ImportError:
     from configparser import Error
-from pycbc import VARARGS_DELIM 
+from pycbc import VARARGS_DELIM
 from pycbc import boundaries
 from pycbc.distributions import bounded
 from pycbc.distributions import uniform
@@ -30,7 +30,7 @@ from pycbc.distributions import uniform
 class UniformAngle(uniform.Uniform):
     """A uniform distribution in which the dependent variable is between
     `[0,2pi)`.
-    
+
     The domain of the distribution may optionally be made cyclic using the
     `cyclic_domain` parameter.
 
@@ -371,7 +371,7 @@ class UniformSolidAngle(bounded.BoundedDist):
         if azimuthal_angle is None:
             azimuthal_angle = self._default_azimuthal_angle
         self._polardist = self._polardistcls(**{
-            polar_angle: polar_bounds}) 
+            polar_angle: polar_bounds})
         self._azimuthaldist = self._azimuthaldistcls(**{
             azimuthal_angle: azimuthal_bounds,
             'cyclic_domain': azimuthal_cyclic_domain})
@@ -395,7 +395,7 @@ class UniformSolidAngle(bounded.BoundedDist):
     def apply_boundary_conditions(self, **kwargs):
         """Maps the given values to be within the domain of the azimuthal and
         polar angles, before applying any other boundary conditions.
-        
+
         Parameters
         ----------
         \**kwargs :
@@ -438,7 +438,7 @@ class UniformSolidAngle(bounded.BoundedDist):
         """
         return self._polardist._pdf(**kwargs) * \
             self._azimuthaldist._pdf(**kwargs)
-        
+
 
     def _logpdf(self, **kwargs):
         """
@@ -508,7 +508,7 @@ class UniformSolidAngle(bounded.BoundedDist):
         If nothing else is provided, the default names and bounds of the polar
         and azimuthal angles will be used. To specify a different name for
         each angle, set the `polar-angle` and `azimuthal-angle` attributes. For
-        example: 
+        example:
 
         .. code-block:: ini
 
@@ -516,7 +516,7 @@ class UniformSolidAngle(bounded.BoundedDist):
             name = uniform_solidangle
             polar-angle = foo
             azimuthal-angle = bar
-        
+
         Note that the names of the variable args in the tag part of the section
         name must match the names of the polar and azimuthal angles.
 

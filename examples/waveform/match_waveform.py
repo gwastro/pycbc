@@ -11,12 +11,12 @@ hp, hc = get_td_waveform(approximant="EOBNRv2",
                          mass2=10,
                          f_lower=f_low,
                          delta_t=1.0/sample_rate)
-                         
+
 sp, sc = get_td_waveform(approximant="TaylorT4",
                          mass1=10,
                          mass2=10,
-                         f_lower=f_low, 
-                         delta_t=1.0/sample_rate)                       
+                         f_lower=f_low,
+                         delta_t=1.0/sample_rate)
 
 # Resize the waveforms to the same length
 tlen = max(len(sp), len(hp))
@@ -26,7 +26,7 @@ hp.resize(tlen)
 # Generate the aLIGO ZDHP PSD
 delta_f = 1.0 / sp.duration
 flen = tlen/2 + 1
-psd = aLIGOZeroDetHighPower(flen, delta_f, f_low) 
+psd = aLIGOZeroDetHighPower(flen, delta_f, f_low)
 
 # Note: This takes a while the first time as an FFT plan is generated
 # subsequent calls are much faster.

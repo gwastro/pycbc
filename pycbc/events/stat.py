@@ -293,7 +293,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         s1v[s1v >= len(self.sbins) - 1] = len(self.sbins) - 2
         rv[rv < 0] = 0
         rv[rv >= len(self.rbins) - 1] = len(self.rbins) - 2
-        
+
         return self.hist[tv, pv, s0v, s1v, rv]
 
     def coinc(self, s0, s1, slide, step):

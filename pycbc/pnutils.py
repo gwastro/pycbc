@@ -69,9 +69,9 @@ def mchirp_mass1_to_mass2(mchirp, mass1):
     Basically it can be shown that:
 
     m2^3 - a(m2 + m1) = 0
- 
+
     where
-  
+
     a = Mc^5 / m1^3
 
     this has 3 solutions but only one will be real.
@@ -118,7 +118,7 @@ def A0(f_lower):
 def A3(f_lower):
     """another parameter used for chirp times"""
     return conversions._a3(f_lower)
-  
+
 def mass1_mass2_to_tau0_tau3(mass1, mass2, f_lower):
     tau0 = conversions.tau0_from_mass1_mass2(mass1, mass2, f_lower)
     tau3 = conversions.tau3_from_mass1_mass2(mass1, mass2, f_lower)
@@ -190,7 +190,7 @@ def parsecs_to_meters(distance):
     return distance * lal.PC_SI
 
 def megaparsecs_to_meters(distance):
-    return parsecs_to_meters(distance) * 1e6   
+    return parsecs_to_meters(distance) * 1e6
 
 def velocity_to_frequency(v, M):
     return v**(3.0) / (M * lal.MTSUN_SI * lal.PI)
@@ -200,7 +200,7 @@ def frequency_to_velocity(f, M):
 
 def f_SchwarzISCO(M):
     """
-    Innermost stable circular orbit (ISCO) for a test particle 
+    Innermost stable circular orbit (ISCO) for a test particle
     orbiting a Schwarzschild black hole
 
     Parameters
@@ -217,8 +217,8 @@ def f_SchwarzISCO(M):
 
 def f_BKLISCO(m1, m2):
     """
-    Mass ratio dependent ISCO derived from estimates of the final spin 
-    of a merged black hole in a paper by Buonanno, Kidder, Lehner 
+    Mass ratio dependent ISCO derived from estimates of the final spin
+    of a merged black hole in a paper by Buonanno, Kidder, Lehner
     (arXiv:0709.3839).  See also arxiv:0801.4297v2 eq.(5)
 
     Parameters
@@ -256,8 +256,8 @@ def f_LightRing(M):
 
 def f_ERD(M):
     """
-    Effective RingDown frequency studied in Pan et al. (arXiv:0704.1964) 
-    found to give good fit between stationary-phase templates and 
+    Effective RingDown frequency studied in Pan et al. (arXiv:0704.1964)
+    found to give good fit between stationary-phase templates and
     numerical relativity waveforms [NB equal-mass & nonspinning!]
     Equal to 1.07*omega_220/2*pi
 
@@ -275,9 +275,9 @@ def f_ERD(M):
 
 def f_FRD(m1, m2):
     """
-    Fundamental RingDown frequency calculated from the Berti, Cardoso and 
-    Will (gr-qc/0512160) value for the omega_220 QNM frequency using 
-    mass-ratio dependent fits to the final BH mass and spin from Buonanno 
+    Fundamental RingDown frequency calculated from the Berti, Cardoso and
+    Will (gr-qc/0512160) value for the omega_220 QNM frequency using
+    mass-ratio dependent fits to the final BH mass and spin from Buonanno
     et al. (arXiv:0706.3732) : see also InspiralBankGeneration.c
 
     Parameters
@@ -299,7 +299,7 @@ def f_FRD(m1, m2):
 
 def f_LRD(m1, m2):
     """
-    Lorentzian RingDown frequency = 1.2*FRD which captures part of 
+    Lorentzian RingDown frequency = 1.2*FRD which captures part of
     the Lorentzian tail from the decay of the QNMs
 
     Parameters
@@ -323,7 +323,7 @@ def _get_freq(freqfunc, m1, m2, s1z, s2z):
 
     Parameters
     ----------
-    freqfunc : lalsimulation FrequencyFunction wrapped object e.g. 
+    freqfunc : lalsimulation FrequencyFunction wrapped object e.g.
         lalsimulation.fEOBNRv2RD
     m1 : float-ish, i.e. castable to float
         First component mass in solar masses
@@ -381,7 +381,7 @@ def _get_final_freq(approx, m1, m2, s1z, s2z):
 
     Parameters
     ----------
-    approx : lalsimulation approximant wrapped object e.g. 
+    approx : lalsimulation approximant wrapped object e.g.
         lalsimulation.EOBNRv2
     m1 : float-ish, i.e. castable to float
         First component mass in solar masses
@@ -409,8 +409,8 @@ _vec_get_final_freq = numpy.vectorize(_get_final_freq)
 def get_final_freq(approx, m1, m2, s1z, s2z):
     """
     Returns the LALSimulation function which evaluates the final
-    (highest) frequency for a given approximant using given template 
-    parameters. 
+    (highest) frequency for a given approximant using given template
+    parameters.
     NOTE: TaylorTx and TaylorFx are currently all given an ISCO cutoff !!
 
     Parameters
@@ -434,7 +434,7 @@ def get_final_freq(approx, m1, m2, s1z, s2z):
     lalsim_approx = lalsimulation.GetApproximantFromString(approx)
     return _vec_get_final_freq(lalsim_approx, m1, m2, s1z, s2z)
 
-# Dictionary of functions with uniform API taking a 
+# Dictionary of functions with uniform API taking a
 # parameter dict indexed on mass1, mass2, spin1z, spin2z
 named_frequency_cutoffs = {
     # functions depending on the total mass alone
@@ -554,7 +554,7 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
         f_high = f_SchwarzISCO(mass1 + mass2)
         track_f = numpy.logspace(numpy.log10(f_low), numpy.log10(f_high),
                                  n_points)
-        track_t = numpy.array([findchirp_chirptime(float(mass1), float(mass2), 
+        track_t = numpy.array([findchirp_chirptime(float(mass1), float(mass2),
                                         float(f), pn_2order) for f in track_f])
     elif approximant in ['SEOBNRv2', 'SEOBNRv2_ROM_DoubleSpin',
                          'SEOBNRv2_ROM_DoubleSpin_HI']:
@@ -585,7 +585,7 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
 
 def _energy_coeffs(m1, m2, chi1, chi2):
     """ Return the center-of-mass energy coefficients up to 3.0pN (2.5pN spin)
-    """ 
+    """
     mtot = m1 + m2
     eta = m1*m2 / (mtot*mtot)
     chi = (m1*chi1 + m2*chi2) / mtot
@@ -604,7 +604,7 @@ def _energy_coeffs(m1, m2, chi1, chi2):
                 + eta*(59.80034722222222 - (205*pow(lal.PI,2))/96.)
 
     energy3 += (32*beta)/113. + (52*chisym*eta)/113.
-    
+
     energy4 += (-16*sigma12)/79. - (16*sigmaqm)/81.
     energy5 += (96*beta)/113. + ((-124*beta)/339. - (522*chisym)/113.)*eta \
                 - (710*chisym*pow(eta,2))/339.
@@ -612,7 +612,7 @@ def _energy_coeffs(m1, m2, chi1, chi2):
     return (energy0, energy2, energy3, energy4, energy5, energy6)
 
 def meco_velocity(m1, m2, chi1, chi2):
-    """ 
+    """
     Returns the velocity of the minimum energy cutoff for 3.5pN (2.5pN spin)
 
     Parameters
@@ -661,13 +661,13 @@ def _dtdv_coeffs(m1, m2, chi1, chi2):
     dtdv0 = 1. # FIXME: Wrong but doesn't matter for now.
     dtdv2 = (1./336.) * (743. + 924.*eta)
     dtdv3 = -4. * lal.PI + beta
-    dtdv4 = (3058673. + 5472432.*eta + 4353552.*eta*eta)/1016064. - sigma12 - sigmaqm 
+    dtdv4 = (3058673. + 5472432.*eta + 4353552.*eta*eta)/1016064. - sigma12 - sigmaqm
     dtdv5 = (1./672.) * lal.PI * (-7729. + 1092.*eta) + (146597.*beta/18984. + 42.*beta*eta/113. - 417307.*chisym*eta/18984. - 1389.*chisym*eta*eta/226.)
     dtdv6 = 22.065 + 165.416*eta - 2.20067*eta*eta + 4.93152*eta*eta*eta
     dtdv6log = 1712./315.
     dtdv7 = (lal.PI/1016064.) * (-15419335. - 12718104.*eta + 4975824.*eta*eta)
 
-    return (dtdv0, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7)    
+    return (dtdv0, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7)
 
 def _dtdv_cutoff_velocity(m1, m2, chi1, chi2):
     _, dtdv2, dtdv3, dtdv4, dtdv5, dtdv6, dtdv6log, dtdv7 = _dtdv_coeffs(m1, m2, chi1, chi2)
@@ -685,9 +685,9 @@ def _dtdv_cutoff_velocity(m1, m2, chi1, chi2):
         return bisect(dtdv_func, 0.05, 1.0)
     else:
         return 1.0
-        
+
 def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
-    """ Return the energy coefficients. This assumes that the system has aligned spins only. 
+    """ Return the energy coefficients. This assumes that the system has aligned spins only.
     """
     implemented_phase_order = 7
     implemented_spin_order = 7
@@ -695,23 +695,23 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
         raise ValueError("pN coeffiecients of that order have not been implemented")
     elif phase_order == -1:
         phase_order = implemented_phase_order
-        
+
     if spin_order > implemented_spin_order:
         raise ValueError("pN coeffiecients of that order have not been implemented")
     elif spin_order == -1:
         spin_order = implemented_spin_order
 
     qmdef1 = 1.0
-    qmdef2 = 1.0  
-    
+    qmdef2 = 1.0
+
     M = m1 + m2
     dm = (m1-m2)/M
     m1M = m1 / M
     m2M = m2 / M
-    
+
     s1z = s1z * m1M * m1M
     s2z = s2z * m2M * m2M
-      
+
     _, eta = mass1_mass2_to_mchirp_eta(m1, m2)
 
     ecof = numpy.zeros(phase_order+1)
@@ -733,60 +733,60 @@ def energy_coefficients(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
               - 205.0/96.0 * lal.PI * lal.PI ) * eta  \
               - (155.0/96.0) *eta * eta - 35.0/5184.0 * eta * eta
     # Spin terms
- 
+
     ESO15s1 = 8.0/3.0 + 2.0*m2/m1
     ESO15s2 = 8.0/3.0 + 2.0*m1/m2
-    
+
     ESS2 = 1.0 / eta
     EQM2s1 = qmdef1/2.0/m1M/m1M
     EQM2s1L = -qmdef1*3.0/2.0/m1M/m1M
     #EQM2s2 = qmdef2/2.0/m2M/m2M
     EQM2s2L = -qmdef2*3.0/2.0/m2M/m2M
-    
+
     ESO25s1 = 11.0 - 61.0*eta/9.0 + (dm/m1M) * (-3.0 + 10.*eta/3.0)
     ESO25s2 = 11.0 - 61.0*eta/9.0 + (dm/m2M) * (3.0 - 10.*eta/3.0)
-    
+
     ESO35s1 = 135.0/4.0 - 367.0*eta/4.0 + 29.0*eta*eta/12.0 + (dm/m1M) * (-27.0/4.0 + 39.0*eta - 5.0*eta*eta/4.0)
     ESO35s2 = 135.0/4.0 - 367.0*eta/4.0 + 29.0*eta*eta/12.0 - (dm/m2M) * (-27.0/4.0 + 39.0*eta - 5.0*eta*eta/4.0)
-    
+
     if spin_order >=3:
-        ecof[3] += ESO15s1 * s1z + ESO15s2 * s2z 
-    if spin_order >=4:   
+        ecof[3] += ESO15s1 * s1z + ESO15s2 * s2z
+    if spin_order >=4:
         ecof[4] += ESS2 * (s1z*s2z - 3.0*s1z*s2z)
         ecof[4] += EQM2s1*s1z*s1z + EQM2s1*s2z*s2z + EQM2s1L*s1z*s1z + EQM2s2L*s2z*s2z
     if spin_order >=5:
         ecof[5] = ESO25s1*s1z + ESO25s2*s2z
     if spin_order >=7:
-        ecof[7] += ESO35s1*s1z + ESO35s2*s2z 
-        
+        ecof[7] += ESO35s1*s1z + ESO35s2*s2z
+
     return ecof
-    
+
 def energy(v, mass1, mass2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     ecof = energy_coefficients(mass1, mass2, s1z, s2z, phase_order, spin_order)
     _, eta = mass1_mass2_to_mchirp_eta(mass1, mass2)
     amp = - (1.0/2.0) * eta
     e = 0.0
     for i in numpy.arange(0, len(ecof), 1):
-        e += v**(i+2.0) * ecof[i]  
-            
+        e += v**(i+2.0) * ecof[i]
+
     return e * amp
-    
+
 def meco2(m1, m2, s1z=0, s2z=0, phase_order=-1, spin_order=-1):
     ecof = energy_coefficients(m1, m2, s1z, s2z, phase_order, spin_order)
-    
+
     def test(v):
         de = 0
         for i in numpy.arange(0, len(ecof), 1):
-            de += v**(i+1.0)* ecof[i] * (i + 2)  
- 
+            de += v**(i+1.0)* ecof[i] * (i + 2)
+
         return de
 
     return bisect(test, 0.001, 1.0)
-    
+
 
 def t2_cutoff_velocity(m1, m2, chi1, chi2):
     return min(meco_velocity(m1,m2,chi1,chi2), _dtdv_cutoff_velocity(m1,m2,chi1,chi2))
-    
+
 def t2_cutoff_frequency(m1, m2, chi1, chi2):
     return velocity_to_frequency(t2_cutoff_velocity(m1, m2, chi1, chi2), m1 + m2)
 
@@ -813,7 +813,7 @@ def kerr_lightring_velocity(chi):
 
 def hybridEnergy(v, m1, m2, chi1, chi2, qm1, qm2):
     """Return hybrid MECO energy.
-    
+
     Return the hybrid energy [eq. (6)] whose minimum defines the hybrid MECO
     up to 3.5PN (including the 3PN spin-spin)
 

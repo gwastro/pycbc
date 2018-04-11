@@ -9,17 +9,17 @@ import pycbc.waveform
 from pycbc.waveform import *
 from pycbc.vetoes import *
 import numpy as np
-from math import cos, sin, sqrt, pi, atan2, exp 
+from math import cos, sin, sqrt, pi, atan2, exp
 import unittest
 from utils import parse_args_all_schemes, simple_exit
-import time 
+import time
 
 _scheme, _context = parse_args_all_schemes("Auto Chi-squared Veto")
 
 
 class TestAutochisquare(unittest.TestCase):
     def setUp(self):
-        
+
         self.Msun = 4.92549095e-6
         self.sample_rate = 4096
         self.segment_length = 256
@@ -61,38 +61,38 @@ class TestAutochisquare(unittest.TestCase):
 
         hp, hc = get_td_waveform(approximant="TaylorT2", mass1=self.m1, mass2=self.m2, \
 			delta_t=self.del_t, f_lower=self.low_frequency_cutoff, distance=self.Dl, \
-			inclination=self.iota, coa_phase=self.phi_c) 
-        
+			inclination=self.iota, coa_phase=self.phi_c)
+
 	# signal which is a noiseless data
 	thp = np.zeros(self.seg_len_idx)
-        thp[self.tc_indx:len(hp)+self.tc_indx] = hp  
+        thp[self.tc_indx:len(hp)+self.tc_indx] = hp
         thc = np.zeros(self.seg_len_idx)
         thc[self.tc_indx:len(hc)+self.tc_indx] = hc
 
         fct = 10.0/15.21377
-        self.sig1 = fct*(self.Fp*thp + self.Fc*thc) 
+        self.sig1 = fct*(self.Fp*thp + self.Fc*thc)
 
         #### template
-        h = np.zeros(self.seg_len_idx)     
-        h[0:len(hp)] = hp                  
+        h = np.zeros(self.seg_len_idx)
+        h[0:len(hp)] = hp
         hpt = TimeSeries(h, self.del_t)
         self.htilde = make_frequency_series(hpt)
-       
-       
+
+
         # generate sin-gaussian signal
         time = np.arange(0, len(hp))*self.del_t
         Nby2 = len(hp)/2
-        sngt = np.zeros(len(hp))  
+        sngt = np.zeros(len(hp))
         for i in xrange(len(hp)):
             sngt[i] = 9.0e-21*exp(-(time[i]-time[Nby2])**2/self.Q)*sin(self.om*time[i])
-        
+
         self.sig2 = np.zeros(self.seg_len_idx)
         self.sig2[self.tc_indx:len(sngt)+self.tc_indx] = sngt
-        
+
 
     def test_chirp(self):
 	### use a chirp as a signal
-        
+
 
         sigt = TimeSeries(self.sig1, self.del_t)
         sig_tilde = make_frequency_series(sigt)
@@ -100,27 +100,27 @@ class TestAutochisquare(unittest.TestCase):
         del_f = sig_tilde.get_delta_f()
         psd = FrequencySeries(self.Psd, del_f)
         flow = self.low_frequency_cutoff
-  
-        with _context: 
+
+        with _context:
             hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
             hautocor = hautocor * float(np.real(1./hautocor[0]))
 
             snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
-  
+
         hacor = Array(hautocor, copy=True)
 
         indx = np.array([352250, 352256, 352260])
 
         snr = snr*nrm
-        
+
 
         with _context:
            dof, achisq, indices= \
                autochisq_from_precomputed(snr, snr, hacor, indx, stride=3,
                                           num_points=20)
-         
+
         obt_snr = abs(snr[indices[1]])
         obt_ach = achisq[1]
         self.assertTrue(obt_snr > 10.0 and obt_snr < 12.0)
@@ -128,7 +128,7 @@ class TestAutochisquare(unittest.TestCase):
         self.assertTrue(achisq[0] > 20.0)
         self.assertTrue(achisq[2] > 20.0)
 
-        
+
 	#with _context:
     #       dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
 	# 	 low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
@@ -141,25 +141,25 @@ class TestAutochisquare(unittest.TestCase):
 
     def test_sg(self):
         ### use a sin-gaussian as a signal
- 
+
         sigt = TimeSeries(self.sig2, self.del_t)
         sig_tilde = make_frequency_series(sigt)
 
         del_f = sig_tilde.get_delta_f()
         psd = FrequencySeries(self.Psd, del_f)
 	flow = self.low_frequency_cutoff
-   
-        with _context: 
+
+        with _context:
             hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
             hautocor = hautocor * float(np.real(1./hautocor[0]))
 
- 
+
             snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
 			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
-        
 
-  
+
+
         hacor = Array(hautocor.real(), copy=True)
 
         indx = np.array([301440, 301450, 301460])
@@ -182,20 +182,20 @@ class TestAutochisquare(unittest.TestCase):
     #    with _context:
 	#    dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
 	# 	 low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
-	
+
 	#self.assertTrue(obt_snr == achi_list[0, 1])
 	#self.assertTrue(obt_ach == achi_list[0, 2])
 
     #    for i in xrange(1, len(achi_list)):
 	#   self.assertTrue(achi_list[i,2] > 2.e3)
- 
 
-         
+
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestAutochisquare))
 
 if __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
-    simple_exit(results) 
+    simple_exit(results)
 
 

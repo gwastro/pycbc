@@ -400,7 +400,7 @@ class ArrayTestBase(array_base,unittest.TestCase):
 
             else:
                 self.assertRaises(TypeError, Array,[5+0j, 3+0j, 1+0j],dtype=self.dtype)
-                
+
             #Also, when it is unspecified
             out3 = Array([5.0,3,1])
 

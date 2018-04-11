@@ -39,7 +39,7 @@ class Merger(object):
             The name (GW prefixed date) of the merger event.
         """
         self.data = catalog.data[name]
-        
+
         # Set some basic params from the dataset
         for key in self.data['median1d']:
             setattr(self, key, self.data['median1d'][key][0])
@@ -56,7 +56,7 @@ class Merger(object):
         return_errors: Optional, {bool, False}
             If true, return a second and third parameter that represents the
             lower and upper 90% error on the parameter.
-            
+
         Returns
         -------
         param: float or tuple
@@ -66,7 +66,7 @@ class Merger(object):
             return self.data['median1d'][name]
         else:
             return self.data['median1d'][name][0]
-            
+
     def strain(self, ifo):
         """ Return strain around the event
 
@@ -85,7 +85,7 @@ class Merger(object):
         """
         import tempfile, requests, shutil
         from pycbc.frame import read_frame
-        
+
         channel = '%s:LOSC-STRAIN' % ifo
         url = self.data['frames'][ifo]
         f = tempfile.NamedTemporaryFile(suffix='.gwf')

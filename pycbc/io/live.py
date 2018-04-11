@@ -366,4 +366,4 @@ class SingleForGraceDB(SingleCoincForGraceDB):
         if hardware_injection:
             fake_coinc['HWINJ'] = True
         SingleCoincForGraceDB.__init__(self, [ifo], fake_coinc, **kwds)
- 
+

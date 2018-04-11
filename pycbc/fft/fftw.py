@@ -241,7 +241,7 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
         _fftw_plan_with_nthreads(nthreads)
     # Convert a measure-level to flags
     flags = get_flag(mlvl,aligned)
-    
+
     # We make our arrays of the necessary type and size.  Things can be
     # tricky, especially for in-place transforms with one of input or
     # output real.
@@ -384,7 +384,7 @@ def _fftw_setup(fftobj):
     if not _fftw_threaded_set:
         set_threads_backend()
     if nthreads != _fftw_current_nthreads:
-        _fftw_plan_with_nthreads(nthreads)  
+        _fftw_plan_with_nthreads(nthreads)
     mlvl = get_measure_level()
     aligned = fftobj.invec.data.isaligned and fftobj.outvec.data.isaligned
     flags = get_flag(mlvl, aligned)
@@ -484,7 +484,7 @@ def verify_fft_options(opt,parser):
     if opt.fftw_measure_level not in [0,1,2,3]:
         parser.error("{0} is not a valid FFTW measure level.".format(opt.fftw_measure_level))
 
-    if opt.fftw_import_system_wisdom and ((opt.fftw_input_float_wisdom_file is not None) 
+    if opt.fftw_import_system_wisdom and ((opt.fftw_input_float_wisdom_file is not None)
                                           or (opt.fftw_input_double_wisdom_file is not None)):
         parser.error("If --fftw-import-system-wisdom is given, then you cannot give"
                      " either of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file")

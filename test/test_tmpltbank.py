@@ -93,7 +93,7 @@ def update_mass_parameters(tmpltbank_class):
         tmpltbank_class.max_eta = max_eta[eta_idx]
         tmpltbank_class.min_eta = min_eta[eta_idx]
         yield idx
-   
+
     return
 
 class TmpltbankTestClass(unittest.TestCase):
@@ -147,7 +147,7 @@ class TmpltbankTestClass(unittest.TestCase):
         metricParams = pycbc.tmpltbank.metricParameters(self.pnOrder,\
                          self.f_low, self.f_upper, self.deltaF, self.f0)
         metricParams.psd = self.psd
-        
+
         massRangeParams = pycbc.tmpltbank.massRangeParameters(self.min_mass1,\
                             self.max_mass1, self.min_mass2, self.max_mass2,\
                             maxNSSpinMag=self.max_ns_spin_mag,\
@@ -158,7 +158,7 @@ class TmpltbankTestClass(unittest.TestCase):
                             min_chirp_mass=self.min_chirp_mass,\
                             maxEta=self.max_eta,\
                             minEta=self.min_eta,\
-                            ns_bh_boundary_mass=self.ns_bh_boundary_mass) 
+                            ns_bh_boundary_mass=self.ns_bh_boundary_mass)
 
         # And again with the nsbh flag
         massRangeParams2 = pycbc.tmpltbank.massRangeParameters(self.min_mass1,\
@@ -340,7 +340,7 @@ class TmpltbankTestClass(unittest.TestCase):
             bhSpin1 = spin1z[mass1 > self.ns_bh_boundary_mass]
             bhSpin2 = spin2z[mass2 > self.ns_bh_boundary_mass]
             self.assertTrue(not (abs(nsSpin1) > 0.5).any(), msg=errMsg)
-            self.assertTrue(not (abs(nsSpin2) > 0.5).any(), msg=errMsg) 
+            self.assertTrue(not (abs(nsSpin2) > 0.5).any(), msg=errMsg)
             self.assertTrue(not (abs(bhSpin1) > 0.9).any(), msg=errMsg)
             self.assertTrue(not (abs(bhSpin2) > 0.9).any(), msg=errMsg)
             # Check that *some* spins are bigger than 0.5
@@ -512,7 +512,7 @@ class TmpltbankTestClass(unittest.TestCase):
         dist, xis1, xis2 = pycbc.tmpltbank.get_point_distance(masses1, \
                              masses2, self.metricParams, self.f_upper)
         diff = abs((dist - 23.3681922039) / dist)
-  
+
         errMsg = "Obtained distance does not agree with expected value."
         self.assertTrue( diff < 1E-5, msg=errMsg)
 
@@ -539,7 +539,7 @@ class TmpltbankTestClass(unittest.TestCase):
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TmpltbankTestClass))
- 
+
 if  __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

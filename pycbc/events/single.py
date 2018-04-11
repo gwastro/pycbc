@@ -4,7 +4,7 @@ from pycbc.events import newsnr
 from pycbc.io.live import SingleForGraceDB
 
 class LiveSingleFarThreshold(object):
-    def __init__(self, ifo, 
+    def __init__(self, ifo,
                  newsnr_threshold=10.0,
                  reduced_chisq_threshold=5,
                  duration_threshold=0,
@@ -31,15 +31,15 @@ class LiveSingleFarThreshold(object):
                    )
 
     def check(self, triggers, data_reader, **kwds):
-        """ Look for a single detector trigger that passes the thresholds in 
+        """ Look for a single detector trigger that passes the thresholds in
         the current data.
         """
         if len(triggers['snr']) == 0:
-            return None 
+            return None
 
         i = triggers['snr'].argmax()
-        # This uses the pycbc live convention of chisq always meaning the 
-        # reduced chisq. 
+        # This uses the pycbc live convention of chisq always meaning the
+        # reduced chisq.
         rchisq = triggers['chisq'][i]
         nsnr = newsnr(triggers['snr'][i], rchisq)
         dur = triggers['template_duration'][i]
@@ -50,8 +50,8 @@ class LiveSingleFarThreshold(object):
             d = {key: triggers[key][i] for key in triggers}
             d['stat'] = nsnr
             d['ifar'] = self.fixed_ifar
-            return SingleForGraceDB(self.ifo, d, 
-                                    hardware_injection=data_reader.near_hwinj(), 
+            return SingleForGraceDB(self.ifo, d,
+                                    hardware_injection=data_reader.near_hwinj(),
                                     **kwds)
         else:
-            return None        
+            return None
