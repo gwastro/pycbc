@@ -98,12 +98,12 @@ class _DistToZ(object):
         self.numpoints = numpoints
         self.z2d = numpy.vectorize(lal.LuminosityDistance)
         # for computing nearby (z < 1) redshifts
-        zs = numpy.linspace(0., 1., num=numpoints)
+        zs = numpy.linspace(0., 1., num=self.numpoints)
         ds = self.z2d(self.omega, zs)
         self.nearby_d2z = interpolate.interp1d(ds, zs, kind='linear',
                                                 bounds_error=False)
         # for computing far away (z > 1) redshifts
-        zs = numpy.logspace(0, numpy.log10(default_maxz), num=numpoints)
+        zs = numpy.logspace(0, numpy.log10(default_maxz), num=self.numpoints)
         ds = self.z2d(self.omega, zs)
         self.faraway_d2z = interpolate.interp1d(ds, zs, kind='linear',
                                                  bounds_error=False)
