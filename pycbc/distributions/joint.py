@@ -64,7 +64,7 @@ class JointDistribution(object):
     >>> uniform_prior = Uniform(mass1=mass_lim, mass2=mass_lim)
     >>> prior_eval = JointDistribution(["mass1", "mass2"], uniform_prior,
         ...                               constraints=[mtotal_lt_30])
-    >>> print prior_eval(mass1=20, mass2=1)
+    >>> print(prior_eval(mass1=20, mass2=1))
 
     """
     name = 'joint'    
