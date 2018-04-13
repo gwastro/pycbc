@@ -32,6 +32,8 @@ parser.add_argument('--permissive', action='store_true',
 parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--tolerance', type=float)
 parser.add_argument('--max-mtotal', type=float)
+parser.add_argument('--min-mchirp', type=float)
+parser.add_argument('--max-mchirp', type=float)
 parser.add_argument('--max-q', type=float)
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
@@ -172,6 +174,7 @@ class TriangleBank(object):
                 num_added += 1
                 self.insert(hp)
 
+        print len(params.values()[0])
         return bank, num_added / float(num_tried)
 
 class GenUniformWaveform(object):
@@ -245,15 +248,31 @@ while conv > tolerance:
     params['approximant'] = numpy.array([args.approximant]*len(params[name]))
 
     # Filter out stuff
+    if args.max_q:
+        q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
+        l = q < args.max_q
+        for k in params:
+            params[k] = params[k][l]
+
     if args.max_mtotal:
         l = params['mass1'] + params['mass2'] < args.max_mtotal
         for k in params:
             params[k] = params[k][l]
 
-    # Filter out stuff
-    if args.max_q:
-        q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
-        l = q < args.max_q
+    if args.max_mchirp:
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
+
+        l = mc < args.max_mchirp
+
+        for k in params:
+            params[k] = params[k][l]
+
+    if args.min_mchirp:
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
+        
+        l = mc > args.min_mchirp
         for k in params:
             params[k] = params[k][l]
 
@@ -288,11 +307,34 @@ while conv > tolerance:
             nl = (params[name] < pmax) & (params[name] > pmin)
             l = (nl & l) if l is not None else nl
 
+
         for k in params:
             params[k] = params[k][l]
 
+        if args.max_q:
+            q =  numpy.maximum(params['mass1'] / params['mass2'], params['mass2'] / params['mass1'])
+            l = q < args.max_q
+            for k in params:
+                params[k] = params[k][l]
+
         if args.max_mtotal:
             l = params['mass1'] + params['mass2'] < args.max_mtotal
+            for k in params:
+                params[k] = params[k][l]
+
+        if args.max_mchirp:
+            from pycbc.conversions import mchirp_from_mass1_mass2
+            mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
+            
+            l = mc < args.max_mchirp
+            for k in params:
+                params[k] = params[k][l]
+
+        if args.min_mchirp:
+            from pycbc.conversions import mchirp_from_mass1_mass2
+            mc = mchirp_from_mass1_mass2(params['mass1'], params['mass2'])
+            
+            l = mc > args.min_mchirp
             for k in params:
                 params[k] = params[k][l]
 
