@@ -38,7 +38,7 @@ from pycbc.workflow.jobsetup import (LalappsInspinjExecutable,
 def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None):
     tags = [] if tags is None else tags
     make_analysis_dir(out_dir)
-    
+
     node = Executable(workflow.cp, 'strip_injections', ifos=workflow.ifos,
                           out_dir=out_dir, tags=tags).create_node()
     node.add_opt('--segment-name', veto_name)
@@ -47,7 +47,7 @@ def veto_injections(workflow, inj_file, veto_file, veto_name, out_dir, tags=None
     node.add_opt('--ifos', ' '.join(workflow.ifos))
     node.new_output_file_opt(workflow.analysis_time, '.xml', '--output-file')
     workflow += node
-    return node.output_files[0]  
+    return node.output_files[0]
 
 def compute_inj_optimal_snr(workflow, inj_file, precalc_psd_files, out_dir,
                             tags=None):
@@ -83,7 +83,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     workflow. It should be possible for this function to support a number
     of different ways/codes that could be used for doing this, however as this
     will presumably stay as a single call to a single code (which need not be
-    inspinj) there are currently no subfunctions in this moudle. 
+    inspinj) there are currently no subfunctions in this moudle.
 
     Parameters
     -----------
@@ -113,7 +113,7 @@ def setup_injection_workflow(workflow, output_dir=None,
         tags = []
     logging.info("Entering injection module.")
     make_analysis_dir(output_dir)
-    
+
     # Get full analysis segment for output file naming
     full_segment = workflow.analysis_time
     ifos = workflow.ifos
@@ -121,7 +121,7 @@ def setup_injection_workflow(workflow, output_dir=None,
     # Identify which injections to do by presence of sub-sections in
     # the configuration file
     inj_tags = []
-    inj_files = FileList([])  
+    inj_files = FileList([])
 
     for section in  workflow.cp.get_subsections(inj_section_name):
         inj_tag = section.upper()
@@ -136,7 +136,7 @@ def setup_injection_workflow(workflow, output_dir=None,
             raise ValueError(err_msg)
 
         # Parse for options in ini file
-        injection_method = workflow.cp.get_opt_tags("workflow-injections", 
+        injection_method = workflow.cp.get_opt_tags("workflow-injections",
                                                     "injections-method",
                                                     curr_tags)
 
@@ -187,11 +187,11 @@ def setup_injection_workflow(workflow, output_dir=None,
                     workflow.execute_node(node)
                 else:
                     workflow.add_node(node)
-                inj_file = node.output_files[0] 
+                inj_file = node.output_files[0]
 
             if workflow.cp.has_option("workflow-injections",
                                       "do-jitter-skyloc"):
-                jitter_job = LigolwCBCJitterSkylocExecutable(workflow.cp, 
+                jitter_job = LigolwCBCJitterSkylocExecutable(workflow.cp,
                                                              'jitter_skyloc',
                                                              tags=curr_tags,
                                                              out_dir=output_dir,
@@ -202,20 +202,20 @@ def setup_injection_workflow(workflow, output_dir=None,
                 else:
                     workflow.add_node(node)
                 inj_file = node.output_files[0]
-            
+
             if workflow.cp.has_option("workflow-injections",
                                       "do-align-total-spin"):
                 align_job = LigolwCBCAlignTotalSpinExecutable(workflow.cp,
                         'align_total_spin', tags=curr_tags, out_dir=output_dir,
                         ifos=ifos)
                 node = align_job.create_node(inj_file, full_segment, curr_tags)
-                
+
                 if injection_method == "AT_COH_PTF_RUNTIME":
                     workflow.execute_node(node)
                 else:
                     workflow.add_node(node)
                 inj_file = node.output_files[0]
-            
+
             inj_files.append(inj_file)
         else:
             err = "Injection method must be one of IN_WORKFLOW, "
@@ -223,7 +223,7 @@ def setup_injection_workflow(workflow, output_dir=None,
             raise ValueError(err)
 
         inj_tags.append(inj_tag)
-        
+
     logging.info("Leaving injection module.")
     return inj_files, inj_tags
 

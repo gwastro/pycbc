@@ -24,7 +24,7 @@
 
 """
 This module is responsible for setting up the psd files used by CBC
-workflows. 
+workflows.
 """
 
 from __future__ import division
@@ -47,11 +47,11 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
         An instanced class that manages the constructed workflow.
     science_segs : Keyed dictionary of glue.segmentlist objects
         scienceSegs[ifo] holds the science segments to be analysed for each
-        ifo. 
+        ifo.
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.
     output_dir : path string
-        The directory where data products will be placed. 
+        The directory where data products will be placed.
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
@@ -66,8 +66,8 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
     logging.info("Entering static psd module.")
     make_analysis_dir(output_dir)
     cp = workflow.cp
-    
-    # Parse for options in ini file.  
+
+    # Parse for options in ini file.
     try:
         psdMethod = cp.get_opt_tags("workflow-psd", "psd-method",
                                      tags)
@@ -83,7 +83,7 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
         errMsg = "PSD method not recognized. Only "
         errMsg += "PREGENERATED_FILE is currently supported."
         raise ValueError(errMsg)
-    
+
     logging.info("Leaving psd module.")
     return psd_files
 
@@ -91,7 +91,7 @@ def setup_psd_workflow(workflow, science_segs, datafind_outs,
 def setup_psd_pregenerated(workflow, tags=None):
     '''
     Setup CBC workflow to use pregenerated psd files.
-    The file given in cp.get('workflow','pregenerated-psd-file-(ifo)') will 
+    The file given in cp.get('workflow','pregenerated-psd-file-(ifo)') will
     be used as the --psd-file argument to geom_nonspinbank, geom_aligned_bank
     and pycbc_plot_psd_file.
 
@@ -147,6 +147,6 @@ def setup_psd_pregenerated(workflow, tags=None):
                 # will have pregenerated PSDs
                 logging.warn("No psd file specified for IFO %s." % (ifo,))
                 pass
-            
+
     return psd_files
 

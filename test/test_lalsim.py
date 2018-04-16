@@ -47,37 +47,37 @@ parser.add_option('--scheme','-s', action='callback', type = 'choice',
 parser.add_option('--device-num','-d', action='store', type = 'int',
                    dest = 'devicenum', default=0,
                    help = optparse.SUPPRESS_HELP)
-                   
+
 parser.add_option('--show-plots', action='store_true',
                    help = 'show the plots generated in this test suite')
 parser.add_option('--save-plots', action='store_true',
-                   help = 'save the plots generated in this test suite')  
- 
+                   help = 'save the plots generated in this test suite')
+
 parser.add_option('--approximant', type = 'choice', choices = td_approximants() + fd_approximants(),
-                  help = "Choices are %s" % str(td_approximants() + fd_approximants()))      
-                                   
-parser.add_option('--mass1', type = float, default=10, help = "[default: %default]")    
+                  help = "Choices are %s" % str(td_approximants() + fd_approximants()))
+
+parser.add_option('--mass1', type = float, default=10, help = "[default: %default]")
 parser.add_option('--mass2', type = float, default=9, help = "[default: %default]")
-parser.add_option('--spin1x', type = float, default=0, help = "[default: %default]")   
-parser.add_option('--spin1y', type = float, default=0, help = "[default: %default]")   
-parser.add_option('--spin1z', type = float, default=0, help = "[default: %default]")   
-parser.add_option('--spin2x', type = float, default=0, help = "[default: %default]")   
-parser.add_option('--spin2y', type = float, default=0, help = "[default: %default]")   
-parser.add_option('--spin2z', type = float, default=0, help = "[default: %default]")  
-parser.add_option('--lambda1', type = float, default=0, help = "[default: %default]")   
-parser.add_option('--lambda2', type = float, default=0, help = "[default: %default]")   
-parser.add_option('--coa-phase', type = float, default=0, help = "[default: %default]") 
-parser.add_option('--inclination', type = float, default=0, help = "[default: %default]") 
+parser.add_option('--spin1x', type = float, default=0, help = "[default: %default]")
+parser.add_option('--spin1y', type = float, default=0, help = "[default: %default]")
+parser.add_option('--spin1z', type = float, default=0, help = "[default: %default]")
+parser.add_option('--spin2x', type = float, default=0, help = "[default: %default]")
+parser.add_option('--spin2y', type = float, default=0, help = "[default: %default]")
+parser.add_option('--spin2z', type = float, default=0, help = "[default: %default]")
+parser.add_option('--lambda1', type = float, default=0, help = "[default: %default]")
+parser.add_option('--lambda2', type = float, default=0, help = "[default: %default]")
+parser.add_option('--coa-phase', type = float, default=0, help = "[default: %default]")
+parser.add_option('--inclination', type = float, default=0, help = "[default: %default]")
 
 parser.add_option('--delta-t', type = float, default=1.0/8192,  help = "[default: %default]")
-parser.add_option('--delta-f', type = float, default=1.0/256,  help = "[default: %default]")  
-parser.add_option('--f-lower', type = float, default=30, help = "[default: %default]")   
+parser.add_option('--delta-f', type = float, default=1.0/256,  help = "[default: %default]")
+parser.add_option('--f-lower', type = float, default=30, help = "[default: %default]")
 
-parser.add_option('--phase-order', type = int, default=-1, help = "[default: %default]") 
-parser.add_option('--amplitude-order', type = int, default=-1, help = "[default: %default]") 
-parser.add_option('--spin-order', type = int, default=-1, help = "[default: %default]") 
-parser.add_option('--tidal-order', type = int, default=-1, help = "[default: %default]")  
-                
+parser.add_option('--phase-order', type = int, default=-1, help = "[default: %default]")
+parser.add_option('--amplitude-order', type = int, default=-1, help = "[default: %default]")
+parser.add_option('--spin-order', type = int, default=-1, help = "[default: %default]")
+parser.add_option('--tidal-order', type = int, default=-1, help = "[default: %default]")
+
 (opt, args) = parser.parse_args()
 
 print(72*'=')
@@ -106,71 +106,71 @@ class TestLALSimulation(unittest.TestCase):
         self.save_plots = opt.save_plots
         self.show_plots = opt.show_plots
         self.plot_dir = "."
-        
+
         class params(object):
             pass
-        
+
         self.p = params()
-      
+
         # Overide my parameters with the program input arguments
         self.p.__dict__.update(vars(opt))
-        
+
         if 'approximant' in self.kwds:
             self.p.approximant = self.kwds['approximant']
-        
+
         from pycbc import version
         self.version_txt = "pycbc: %s  %s\n" % (version.git_hash, version.date) + \
                            "lalsimulation: %s  %s" % (lalsimulation.SimulationVCSIdentInfo.vcsId, lalsimulation.SimulationVCSIdentInfo.vcsDate)
-      
-        
+
+
     def test_varying_orbital_phase(self):
         #"""Check that the waveform is consistent under phase changes
         #"""
-        
+
         if self.p.approximant in td_approximants():
             sample_attr = 'sample_times'
         else:
-            sample_attr = 'sample_frequencies'   
-            
+            sample_attr = 'sample_frequencies'
+
         f = pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])
         hp_ref, hc_ref = get_waveform(self.p, coa_phase=0)
         pylab.plot(getattr(hp_ref, sample_attr), hp_ref.real(), label="phiref")
-       
+
         hp, hc = get_waveform(self.p, coa_phase=lal.PI/4)
         m, i = match(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=2)
         o = overlap(hp_ref, hp)
         pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi/4$")
-        
+
         hp, hc = get_waveform(self.p, coa_phase=lal.PI/2)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(-1, o, places=7)
         pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi/2$")
-        
+
         hp, hc = get_waveform(self.p, coa_phase=lal.PI)
         m, i = match(hp_ref, hp)
         o = overlap(hp_ref, hp)
         self.assertAlmostEqual(1, m, places=7)
         self.assertAlmostEqual(1, o, places=7)
         pylab.plot(getattr(hp, sample_attr), hp.real(), label="$phiref \pi$")
-        
+
         pylab.xlim(min(getattr(hp, sample_attr)), max(getattr(hp, sample_attr)))
         pylab.title("Vary %s oribital phiref, h+" % self.p.approximant)
-        
+
         if self.p.approximant in td_approximants():
             pylab.xlabel("Time to coalescence (s)")
         else:
-            pylab.xlabel("GW Frequency (Hz)") 
+            pylab.xlabel("GW Frequency (Hz)")
 
         pylab.ylabel("GW Strain (real part)")
         pylab.legend(loc="upper left")
-        
+
         info = self.version_txt
         pylab.figtext(0.05, 0.05, info)
-        
+
         if self.save_plots:
             pname = self.plot_dir + "/%s-vary-phase.png" % self.p.approximant
             pylab.savefig(pname)
@@ -179,42 +179,42 @@ class TestLALSimulation(unittest.TestCase):
         else:
             pylab.close(f)
 
-        
-    def test_distance_scaling(self):   
+
+    def test_distance_scaling(self):
         #""" Check that the waveform is consistent under distance changes
-        #"""     
+        #"""
         distance = 1e6
         tolerance = 1e-5
         fac = 10
-    
+
         hpc, hcc = get_waveform(self.p, distance=distance)
         hpm, hcm = get_waveform(self.p, distance=distance*fac)
         hpf, hcf = get_waveform(self.p, distance=distance*fac*fac)
         hpn, hcn = get_waveform(self.p, distance=distance/fac)
-        
+
         f = pylab.figure()
         pylab.axes([.1, .2, 0.8, 0.70])
         htilde = make_frequency_series(hpc)
         pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D")
-        
+
         htilde = make_frequency_series(hpm)
         pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D * %s" %fac)
-       
+
         htilde = make_frequency_series(hpf)
         pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D * %s" %(fac*fac))
-        
+
         htilde = make_frequency_series(hpn)
         pylab.loglog(htilde.sample_frequencies, abs(htilde), label="D / %s" %fac)
-            
+
         pylab.title("Vary %s distance, $\\tilde{h}$+" % self.p.approximant)
         pylab.xlabel("GW Frequency (Hz)")
         pylab.ylabel("GW Strain")
         pylab.legend()
         pylab.xlim(xmin=self.p.f_lower)
-        
+
         info = self.version_txt
         pylab.figtext(0.05, .05, info)
-        
+
         if self.save_plots:
             pname = self.plot_dir + "/%s-distance-scaling.png" % self.p.approximant
             pylab.savefig(pname)
@@ -223,17 +223,17 @@ class TestLALSimulation(unittest.TestCase):
             pylab.show()
         else:
             pylab.close(f)
-            
+
         self.assertTrue(hpc.almost_equal_elem(hpm * fac, tolerance, relative=True))
         self.assertTrue(hpc.almost_equal_elem(hpf * fac * fac, tolerance, relative=True))
         self.assertTrue(hpc.almost_equal_elem(hpn / fac, tolerance, relative=True))
-            
+
     def test_nearby_waveform_agreement(self):
         #""" Check that the overlaps are consistent for nearby waveforms
         #"""
         def nearby(params):
             tol = 1e-7
-            
+
             from numpy.random import uniform
             nearby_params = copy.copy(params)
             nearby_params.mass1 *= uniform(low=1-tol, high=1+tol)
@@ -247,13 +247,13 @@ class TestLALSimulation(unittest.TestCase):
             nearby_params.inclination *= uniform(low=1-tol, high=1+tol)
             nearby_params.coa_phase *= uniform(low=1-tol, high=1+tol)
             return nearby_params
-            
-        hp, hc = get_waveform(self.p)    
-        
+
+        hp, hc = get_waveform(self.p)
+
         for i in range(10):
             p_near = nearby(self.p)
             hpn, hcn = get_waveform(p_near)
-            
+
             maxlen = max(len(hpn), len(hp))
             hp.resize(maxlen)
             hpn.resize(maxlen)
@@ -285,7 +285,7 @@ class TestLALSimulation(unittest.TestCase):
             p_near = nearby(self.p)
             hpn, hcn = get_waveform(p_near)
 
-            
+
     def test_varying_inclination(self):
         #""" Test that the waveform is consistent for changes in inclination
         #"""
@@ -296,19 +296,19 @@ class TestLALSimulation(unittest.TestCase):
             # WARNING: This does not properly handle the case of SpinTaylor*
             # where the spin orientation is not relative to the inclination
             hp, hc = get_waveform(self.p, inclination=inc)
-            s = sigma(hp, low_frequency_cutoff=self.p.f_lower)        
+            s = sigma(hp, low_frequency_cutoff=self.p.f_lower)
             sigmas.append(s)
-         
+
         f = pylab.figure()
-        pylab.axes([.1, .2, 0.8, 0.70])   
+        pylab.axes([.1, .2, 0.8, 0.70])
         pylab.plot(incs, sigmas)
         pylab.title("Vary %s inclination, $\\tilde{h}$+" % self.p.approximant)
         pylab.xlabel("Inclination (radians)")
         pylab.ylabel("sigma (flat PSD)")
-        
+
         info = self.version_txt
         pylab.figtext(0.05, 0.05, info)
-        
+
         if self.save_plots:
             pname = self.plot_dir + "/%s-vary-inclination.png" % self.p.approximant
             pylab.savefig(pname)
@@ -383,11 +383,11 @@ def test_maker(class_name, name, **kwds):
         def __init__(self, *args):
             self.kwds = kwds
             class_name.__init__(self, *args)
-        
-    Test.__name__ = "Test %s" % name    
+
+    Test.__name__ = "Test %s" % name
     return Test
- 
-suite = unittest.TestSuite()   
+
+suite = unittest.TestSuite()
 
 if opt.approximant:
     apxs = [opt.approximant]

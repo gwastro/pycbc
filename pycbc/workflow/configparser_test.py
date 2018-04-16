@@ -14,12 +14,12 @@ def parse_workflow_ini_file(cpFile,parsed_filepath=None):
     cpFile : The path to a .ini file to be read in
     parsed_filepath: Boolean, optional
         If provided, the .ini file, after parsing, will be written to this
-        location   
+        location
 
     Returns
     -------
     cp: The parsed ConfigParser class containing the read in .ini file
-    """    
+    """
     # First read the .ini file
     cp = read_ini_file(cpFile)
     print(cp.sections())
@@ -61,7 +61,7 @@ def read_ini_file(cpFile):
     Returns
     -------
     cp: The ConfigParser class containing the read in .ini file
-    """    
+    """
 
     # Initialise ConfigParser class
     cp = ConfigParser.ConfigParser(\
@@ -73,7 +73,7 @@ def read_ini_file(cpFile):
     return cp
 
 def perform_extended_interpolation(cp,preserve_orig_file=False):
-    """Filter through an ini file and replace all examples of 
+    """Filter through an ini file and replace all examples of
     ExtendedInterpolation formatting with the exact value. For values like
     ${example} this is replaced with the value that corresponds to the option
     called example ***in the same section***
@@ -115,10 +115,10 @@ def perform_extended_interpolation(cp,preserve_orig_file=False):
                  cp.set(section,option,newStr)
 
     return cp
-        
+
 def interpolate_string(testString,cp,section):
     """Take a string and replace all example of ExtendedInterpolation formatting
-    within the string with the exact value. 
+    within the string with the exact value.
 
     For values like ${example} this is replaced with the value that corresponds
     to the option called example ***in the same section***
@@ -167,9 +167,9 @@ def split_multi_sections(cp,preserve_orig_file=False):
     """Parse through a supplied ConfigParser object and splits any sections
     labelled with an "&" sign (for e.g. [inspiral&tmpltbank]) into [inspiral]
     and [tmpltbank] sections. If these individual sections already exist they
-    will be appended to. If an option exists in both the [inspiral] and 
+    will be appended to. If an option exists in both the [inspiral] and
     [inspiral&tmpltbank] sections an error will be thrown
-   
+
     Parameters
     ----------
     cp: The ConfigParser class
@@ -180,7 +180,7 @@ def split_multi_sections(cp,preserve_orig_file=False):
 
     Returns
     ----------
-    cp: The ConfigParser class 
+    cp: The ConfigParser class
     """
     # Deepcopy the cp object if needed
     if preserve_orig_file:
@@ -203,7 +203,7 @@ def split_multi_sections(cp,preserve_orig_file=False):
 
 def sanity_check_subsections(cp):
     """This function goes through the ConfigParset and checks that any options
-    given in the [SECTION_NAME] section are not also given in any 
+    given in the [SECTION_NAME] section are not also given in any
     [SECTION_NAME-SUBSECTION] sections.
 
     Parameters
@@ -246,10 +246,10 @@ def add_options_to_section(cp,section,items,preserve_orig_file=False,\
         both the original section in the ConfigParser *and* in the provided
         items. This will override so that the options+values given in items
         will replace the original values if the value is set to True.
-        Default = True 
+        Default = True
     Returns
     ----------
-    cp: The ConfigParser class 
+    cp: The ConfigParser class
     """
     # Sanity checking
     if not cp.has_section(section):
@@ -272,7 +272,7 @@ def add_options_to_section(cp,section,items,preserve_orig_file=False,\
 def check_duplicate_options(cp,section1,section2,raise_error=False):
     """Check for duplicate options in two sections, section1 and section2.
     Will return True if there are duplicate options and False if not
-    
+
 
     Parameters
     ----------
@@ -306,5 +306,5 @@ def check_duplicate_options(cp,section1,section2,raise_error=False):
         raise ValueError('The following options appear in both section ' +\
                          '%s and %s: %s' \
                          %(section1,section2,duplicates.join(' ')))
-    
+
     return duplicates

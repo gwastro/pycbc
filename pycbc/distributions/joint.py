@@ -67,7 +67,7 @@ class JointDistribution(object):
     >>> print(prior_eval(mass1=20, mass2=1))
 
     """
-    name = 'joint'    
+    name = 'joint'
 
     def __init__(self, variable_args, *distributions, **kwargs):
 

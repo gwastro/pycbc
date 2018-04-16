@@ -58,7 +58,7 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
 
     logging.info("Entering inference module")
 
-    # check if configuration file has inference section    
+    # check if configuration file has inference section
     if not workflow.cp.has_section("workflow-inference"):
         logging.info("There is no [workflow-inference] section in configuration file")
         logging.info("Leaving inference module")
@@ -69,7 +69,7 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
 
     # make the directory that will contain the dax file
     makedir(dax_output)
-    
+
     # turn the config file into a File class
     config_path = os.path.abspath(dax_output + "/" + "_".join(tags) \
                                         + "foreground_inference.ini")
@@ -145,7 +145,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     Returns
     -------
     pycbc.workflow.FileList
-        A list of result and output files. 
+        A list of result and output files.
     """
 
     # default values
@@ -199,7 +199,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
     Returns
     -------
     pycbc.workflow.FileList
-        A list of result and output files. 
+        A list of result and output files.
     """
 
     # default values
@@ -251,7 +251,7 @@ def make_inference_posterior_plot(
     Returns
     -------
     pycbc.workflow.FileList
-        A list of result and output files. 
+        A list of result and output files.
     """
 
     # default values
@@ -341,7 +341,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
     Returns
     -------
     pycbc.workflow.FileList
-        A list of result and output files. 
+        A list of result and output files.
     """
 
     # default values
@@ -392,7 +392,7 @@ def make_inference_inj_plots(workflow, inference_files, output_dir,
     Returns
     -------
     pycbc.workflow.FileList
-        A list of result and output files. 
+        A list of result and output files.
     """
 
     # default values

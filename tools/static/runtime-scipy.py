@@ -1,5 +1,5 @@
 import os, distutils.sysconfig, sys, os.path
-import scipy.misc 
+import scipy.misc
 import scipy, fnmatch
 
 def find(pattern, path):

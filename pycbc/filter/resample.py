@@ -33,7 +33,7 @@ _resample_func = {numpy.dtype('float32'): lal.ResampleREAL4TimeSeries,
 
 def lfilter(coefficients, timeseries):
     """ Apply filter coefficients to a time series
-    
+
     Parameters
     ----------
     coefficients: numpy.ndarray
@@ -72,14 +72,14 @@ def lfilter(coefficients, timeseries):
         cout = zeros(flen, ftype)
         out = zeros(len(timeseries), dtype=timeseries)
 
-        correlate(cfreq, tfreq, cout)   
+        correlate(cfreq, tfreq, cout)
         ifft(cout, out)
 
         return out.numpy()  / len(out)
 
 def fir_zero_filter(coeff, timeseries):
     """Filter the timeseries with a set of FIR coefficients
-    
+
     Parameters
     ----------
     coeff: numpy.ndarray
@@ -95,7 +95,7 @@ def fir_zero_filter(coeff, timeseries):
     """
     # apply the filter
     series = lfilter(coeff, timeseries.numpy())
-    
+
     # reverse the time shift caused by the filter,
     # corruption regions contain zeros
     # If the number of filter coefficients is odd, the central point *should*
@@ -107,8 +107,8 @@ def fir_zero_filter(coeff, timeseries):
 def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     """Resmple the time_series to delta_t
 
-    Resamples the TimeSeries instance time_series to the given time step, 
-    delta_t. Only powers of two and real valued time series are supported 
+    Resamples the TimeSeries instance time_series to the given time step,
+    delta_t. Only powers of two and real valued time series are supported
     at this time. Additional restrictions may apply to particular filter
     methods.
 
@@ -117,7 +117,7 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     time_series: TimeSeries
         The time series to be resampled
     delta_t: float
-        The desired time step 
+        The desired time step
 
     Returns
     -------
@@ -126,9 +126,9 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
 
     Raises
     ------
-    TypeError: 
+    TypeError:
         time_series is not an instance of TimeSeries.
-    TypeError: 
+    TypeError:
         time_series is not real valued
 
     Examples
@@ -148,32 +148,32 @@ def resample_to_delta_t(timeseries, delta_t, method='butterworth'):
     if method == 'butterworth':
         lal_data = timeseries.lal()
         _resample_func[timeseries.dtype](lal_data, delta_t)
-        data = lal_data.data.data 
-        
-    elif method == 'ldas':  
+        data = lal_data.data.data
+
+    elif method == 'ldas':
         factor = int(delta_t / timeseries.delta_t)
         numtaps = factor * 20 + 1
 
         # The kaiser window has been testing using the LDAS implementation
         # and is in the same configuration as used in the original lalinspiral
         filter_coefficients = scipy.signal.firwin(numtaps, 1.0 / factor,
-                                                  window=('kaiser', 5))             
+                                                  window=('kaiser', 5))
 
         # apply the filter and decimate
         data = fir_zero_filter(filter_coefficients, timeseries)[::factor]
-        
+
     else:
         raise ValueError('Invalid resampling method: %s' % method)
-        
+
     ts = TimeSeries(data, delta_t = delta_t,
-                      dtype=timeseries.dtype, 
+                      dtype=timeseries.dtype,
                       epoch=timeseries._epoch)
-                      
+
     # From the construction of the LDAS FIR filter there will be 10 corrupted samples
     # explanation here http://software.ligo.org/docs/lalsuite/lal/group___resample_time_series__c.html
     ts.corrupted_samples = 10
     return ts
-       
+
 
 _highpass_func = {numpy.dtype('float32'): lal.HighPassREAL4TimeSeries,
                  numpy.dtype('float64'): lal.HighPassREAL8TimeSeries}
@@ -210,7 +210,7 @@ def notch_fir(timeseries, f1, f2, order, beta=5.0):
     return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
 
 def lowpass_fir(timeseries, frequency, order, beta=5.0):
-    """ Lowpass filter the time series using an FIR filtered generated from 
+    """ Lowpass filter the time series using an FIR filtered generated from
     the ideal response passed through a kaiser window (beta = 5.0)
 
     Parameters
@@ -218,7 +218,7 @@ def lowpass_fir(timeseries, frequency, order, beta=5.0):
     Time Series: TimeSeries
         The time series to be low-passed.
     frequency: float
-        The frequency below which is suppressed. 
+        The frequency below which is suppressed.
     order: int
         Number of corrupted samples on each side of the time series
     beta: float
@@ -230,7 +230,7 @@ def lowpass_fir(timeseries, frequency, order, beta=5.0):
     return TimeSeries(data, epoch=timeseries.start_time, delta_t=timeseries.delta_t)
 
 def highpass_fir(timeseries, frequency, order, beta=5.0):
-    """ Highpass filter the time series using an FIR filtered generated from 
+    """ Highpass filter the time series using an FIR filtered generated from
     the ideal response passed through a kaiser window (beta = 5.0)
 
     Parameters
@@ -238,7 +238,7 @@ def highpass_fir(timeseries, frequency, order, beta=5.0):
     Time Series: TimeSeries
         The time series to be high-passed.
     frequency: float
-        The frequency below which is suppressed. 
+        The frequency below which is suppressed.
     order: int
         Number of corrupted samples on each side of the time series
     beta: float
@@ -252,29 +252,29 @@ def highpass_fir(timeseries, frequency, order, beta=5.0):
 def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
     """Return a new timeseries that is highpassed.
 
-    Return a new time series that is highpassed above the `frequency`. 
+    Return a new time series that is highpassed above the `frequency`.
 
     Parameters
     ----------
     Time Series: TimeSeries
         The time series to be high-passed.
     frequency: float
-        The frequency below which is suppressed. 
+        The frequency below which is suppressed.
     filter_order: {8, int}, optional
         The order of the filter to use when high-passing the time series.
     attenuation: {0.1, float}, optional
-        The attenuation of the filter. 
+        The attenuation of the filter.
 
     Returns
     -------
     Time Series: TimeSeries
-        A  new TimeSeries that has been high-passed. 
+        A  new TimeSeries that has been high-passed.
 
     Raises
     ------
-    TypeError: 
+    TypeError:
         time_series is not an instance of TimeSeries.
-    TypeError: 
+    TypeError:
         time_series is not real valued
 
     """
@@ -286,7 +286,7 @@ def highpass(timeseries, frequency, filter_order=8, attenuation=0.1):
         raise TypeError("Time series must be real")
 
     lal_data = timeseries.lal()
-    _highpass_func[timeseries.dtype](lal_data, frequency, 
+    _highpass_func[timeseries.dtype](lal_data, frequency,
                                      1-attenuation, filter_order)
 
     return TimeSeries(lal_data.data.data, delta_t = lal_data.deltaT,
@@ -308,7 +308,7 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
         Number of sample to delay the start of the zero padding
     side : optional, {'right', str}
         The side of the vector to zero pad
-        
+
     Returns
     -------
     interpolated series : FrequencySeries
@@ -319,12 +319,12 @@ def interpolate_complex_frequency(series, delta_f, zeros_offset=0, side='right')
     new_N = int( (new_n - 1) * 2 )
     time_series = TimeSeries(zeros(old_N), delta_t =1.0/(series.delta_f*old_N),
                              dtype=real_same_precision_as(series))
-                             
+
     ifft(series, time_series)
 
     time_series.roll(-zeros_offset)
     time_series.resize(new_N)
-    
+
     if side == 'left':
         time_series.roll(zeros_offset + new_N - old_N)
     elif side == 'right':

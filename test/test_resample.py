@@ -72,7 +72,7 @@ class TestUtils(unittest.TestCase):
         "Check our hand written lfilter"
         c = uniform(-10, 10, size=1024)
         ts = uniform(-1, 1, size=4323)
-        
+
         ref = scipy.signal.lfilter(c, 1.0, ts)
         test = lfilter(c, ts)
 
@@ -82,7 +82,7 @@ class TestUtils(unittest.TestCase):
         test = test[len(c):]
 
         maxreldiff =  ((ref - test) / ref).max()
-        
+
         self.assertTrue(maxreldiff < 1e-7)
 
 suite = unittest.TestSuite()

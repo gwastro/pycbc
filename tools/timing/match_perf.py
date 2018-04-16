@@ -13,22 +13,22 @@ from math import sin
 import gc
 parser = OptionParser()
 
-import logging 
+import logging
 logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
 
-parser.add_option('--scheme','-s',  type = 'choice', 
-                    choices = ('cpu','cuda','opencl'), 
-                    default = 'cpu', dest = 'scheme', 
+parser.add_option('--scheme','-s',  type = 'choice',
+                    choices = ('cpu','cuda','opencl'),
+                    default = 'cpu', dest = 'scheme',
                     help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
 
-parser.add_option('--device-num','-d', action='store', type = 'int', 
+parser.add_option('--device-num','-d', action='store', type = 'int',
                     dest = 'devicenum', default=0,
                     help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
 
 parser.add_option('--size', type=int, help='fft size in log2')
 parser.add_option('--iterations', type=int, help='Number of iterations to perform')
-          
-(options, args) = parser.parse_args()   
+
+(options, args) = parser.parse_args()
 
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(options)
@@ -59,9 +59,9 @@ a = numpy.zeros(N) + 1000
 noise = numpy.random.normal(a).astype(numpy.float32)
 
 with ctx:
-    nplus2 = TimeSeries(noise,delta_t=1.0/4096,dtype=float32) 
+    nplus2 = TimeSeries(noise,delta_t=1.0/4096,dtype=float32)
     ntilde2 = make_frequency_series(nplus2)
-    psd2 = ntilde2.squared_norm()    
+    psd2 = ntilde2.squared_norm()
     o = match(ntilde2,ntilde2,psd=psd2)
     o = match(ntilde2,ntilde2,psd=None, v1_norm=1, v2_norm=1)
     o = matched_filter_core(ntilde2, ntilde2)

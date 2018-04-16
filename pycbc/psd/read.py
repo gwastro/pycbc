@@ -62,23 +62,23 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
 
     freq_data = file_data[:, 0]
     noise_data = file_data[:, 1]
-    
+
     # Only include points above the low frequency cutoff
     if freq_data[0] > low_freq_cutoff:
         raise ValueError('Lowest frequency in input file ' + filename + \
           ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
-    
-    kmin = int(low_freq_cutoff / delta_f)    
-    flow = kmin * delta_f  
-          
+
+    kmin = int(low_freq_cutoff / delta_f)
+    flow = kmin * delta_f
+
     data_start = (0 if freq_data[0]==low_freq_cutoff else numpy.searchsorted(freq_data, flow) - 1)
-    
+
     # If the cutoff is exactly in the file, start there
     if freq_data[data_start+1] == low_freq_cutoff:
         data_start += 1
-    
+
     freq_data = freq_data[data_start:]
-    noise_data = noise_data[data_start:]    
+    noise_data = noise_data[data_start:]
 
     flog = numpy.log(freq_data)
     if is_asd_file:
@@ -91,7 +91,7 @@ def from_txt(filename, length, delta_f, low_freq_cutoff, is_asd_file=True):
     kmin = int(low_freq_cutoff / delta_f)
     psd = numpy.zeros(length, dtype=numpy.float64)
 
-    vals = numpy.log(numpy.arange(kmin, length) * delta_f) 
+    vals = numpy.log(numpy.arange(kmin, length) * delta_f)
     psd[kmin:] =  numpy.exp(psd_interp(vals))
 
     return FrequencySeries(psd, delta_f=delta_f)

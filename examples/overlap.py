@@ -3,7 +3,7 @@ from pycbc.filter import match, overlap
 from pycbc.psd import aLIGOZeroDetHighPower
 
 # Buffer size in seconds. This is presumed to be
-# longer than the longest waveform. 
+# longer than the longest waveform.
 time_buffer = 4
 
 f_low = 30
@@ -28,9 +28,9 @@ print "Generating waveform 2"
 sp, sc = get_td_waveform(approximant="TaylorT4",
                          mass1=10,
                          mass2=10,
-                         f_lower=f_low, 
+                         f_lower=f_low,
                          delta_t=1.0/4096)
-                         
+
 print "waveform is %s seconds long" % sp.duration
 
 # Ensure that the waveforms are resized to the same length
@@ -38,7 +38,7 @@ sp.resize(tlen)
 hp.resize(tlen)
 
 print "Calculating analytic PSD"
-psd = aLIGOZeroDetHighPower(flen, delta_f, f_low) 
+psd = aLIGOZeroDetHighPower(flen, delta_f, f_low)
 
 print "Calculating match and overlap"
 # Note: This takes a while the first time as an FFT plan is generated

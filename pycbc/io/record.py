@@ -53,7 +53,7 @@ numpy.typeDict.update(ligolw_types.ToNumPyType)
 # the equivalent of None. This can be problematic for fields that store ids:
 # if an array has an id field with value 0, it isn't clear if this is because
 # the id is the first element, or if no id was set. To clear up the ambiguity,
-# we define here an integer to indicate 'id not set'. 
+# we define here an integer to indicate 'id not set'.
 ID_NOT_SET = -1
 EMPTY_OBJECT = None
 VIRTUALFIELD_DTYPE = 'VIRTUAL'
@@ -109,13 +109,13 @@ def lstring_as_obj(true_or_false=None):
         True
     >>> FieldArrays.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
     FieldArray([(0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,),
-           (0.0,), (0.0,)], 
+           (0.0,), (0.0,)],
           dtype=[('foo', 'O')])
     >>> FieldArrays.lstring_as_obj(False)
         False
     >>> FieldArrays.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
     FieldArray([('0.0',), ('0.0',), ('0.0',), ('0.0',), ('0.0',), ('0.0',),
-           ('0.0',), ('0.0',), ('0.0',), ('0.0',)], 
+           ('0.0',), ('0.0',), ('0.0',), ('0.0',)],
           dtype=[('foo', 'S50')])
     """
     if true_or_false is not None:
@@ -156,7 +156,7 @@ ilwd_as_int(True)
 #
 # =============================================================================
 #
-#                           Helper functions 
+#                           Helper functions
 #
 # =============================================================================
 #
@@ -221,7 +221,7 @@ def get_needed_fieldnames(arr, names):
         The set of the fields needed to evaluate the names.
     """
     fieldnames = set([])
-    # we'll need the class that the array is an instance of to evaluate some 
+    # we'll need the class that the array is an instance of to evaluate some
     # things
     cls = arr.__class__
     if isinstance(names, string_types):
@@ -439,7 +439,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
                 names=group_name, assubarray=True)
             # set the subarray names
             input_array[group_name].dtype.names = thisdict.keys()
-        # remove the subarray names from names 
+        # remove the subarray names from names
         keep_idx = [ii for ii,name in enumerate(names) \
             if name not in subarray_names]
         names = [names[ii] for ii in keep_idx]
@@ -447,7 +447,7 @@ def add_fields(input_array, arrays, names=None, assubarray=False):
         if names == []:
             return input_array
         # also remove the subarray arrays
-        arrays = [arrays[ii] for ii in keep_idx] 
+        arrays = [arrays[ii] for ii in keep_idx]
     if assubarray:
         # merge all of the arrays into a single array
         if len(arrays) > 1:
@@ -491,7 +491,7 @@ class FieldArray(numpy.recarray):
     array, whereas here the default is to zero all of the elements (see
     ``default_zero`` for definition of zero for different data types). If you
     prefer an empty array, set ``zero=False`` when initializing.
-    
+
     You cannot pass an array or sequence as input as you do with numpy.array.
     To initialize an FieldArray from an already existing arrays, use the
     ``FieldArray.from_arrays`` class method. To initialize from a list of
@@ -580,7 +580,7 @@ class FieldArray(numpy.recarray):
     The fields property returns the names of both fields and virtual fields.
 
     .. note::
-    
+
         It can happen that a field, virtual field, or function in the
         functionlib have that same name. In that case, precedence is: field,
         virtual field, function. For example, if a function called 'foo' is in
@@ -608,7 +608,7 @@ class FieldArray(numpy.recarray):
     Examples
     --------
     .. note:: For some predefined arrays with default fields, see the other
-        array classes defined below. 
+        array classes defined below.
 
     Create an empty array with four rows and two fields called `foo` and
     `bar`, both of which are floats:
@@ -620,13 +620,13 @@ class FieldArray(numpy.recarray):
     >>> x['foo'] = [1.,2.,3.,4.]
     >>> x['bar'] = [5.,6.,7.,8.]
     >>> x
-    FieldArray([(1.0, 5.0), (2.0, 6.0), (3.0, 7.0), (4.0, 8.0)], 
+    FieldArray([(1.0, 5.0), (2.0, 6.0), (3.0, 7.0), (4.0, 8.0)],
           dtype=[('foo', '<f8'), ('bar', '<f8')])
     >>> x.foo
         array([ 1.,  2.,  3.,  4.])
     >>> x['bar']
         array([ 5.,  6.,  7.,  8.])
-    
+
     Get the names of the fields:
 
     >>> x.fieldnames
@@ -681,7 +681,7 @@ class FieldArray(numpy.recarray):
            (2.9999985694885254, 1.0578444004058838), ...,
            (1.6748870611190796, 1.1758257150650024),
            (1.0053188800811768, 1.0020891427993774),
-           (2.111064910888672, 1.0143394470214844)], 
+           (2.111064910888672, 1.0143394470214844)],
           dtype=[('mass1', '<f4'), ('mass2', '<f4')])
     >>> templates.sort(order='mass1')
     >>> templates[['mass1', 'mass2']]
@@ -689,7 +689,7 @@ class FieldArray(numpy.recarray):
            (1.0002814531326294, 1.0002814531326294),
            (1.0005437135696411, 1.0005437135696411), ...,
            (2.999999523162842, 1.371169090270996),
-           (2.999999523162842, 1.4072519540786743), (3.0, 1.4617927074432373)], 
+           (2.999999523162842, 1.4072519540786743), (3.0, 1.4617927074432373)],
           dtype=[('mass1', '<f4'), ('mass2', '<f4')])
 
     Convert a LIGOLW xml table:
@@ -703,7 +703,7 @@ class FieldArray(numpy.recarray):
     >>> sim_array.waveform
     array([u'SpinTaylorT2', u'SpinTaylorT2', u'SpinTaylorT2', ...,
            u'SpinTaylorT2', u'SpinTaylorT2', u'SpinTaylorT2'], dtype=object)
-    
+
     >>> sim_array = FieldArray.from_ligolw_table(sim_table, columns=['simulation_id', 'mass1', 'mass2'])
     >>> sim_array
     FieldArray([(0, 2.274406909942627, 2.6340370178222656),
@@ -711,7 +711,7 @@ class FieldArray(numpy.recarray):
            (2, 1.6150710582733154, 2.2336490154266357), ...,
            (11607, 2.0504961013793945, 2.6019821166992188),
            (11608, 2.3355419635772705, 1.2164380550384521),
-           (11609, 2.0273220539093018, 2.2453839778900146)], 
+           (11609, 2.0273220539093018, 2.2453839778900146)],
           dtype=[('simulation_id', '<i8'), ('mass1', '<f4'), ('mass2', '<f4')])
 
     Add a field to the array:
@@ -729,7 +729,7 @@ class FieldArray(numpy.recarray):
     variable-length strings, there are two options: 1. set the data type to
     object, or 2. set the data type to a string with a fixed length larger
     than the longest string in the input array.
-    
+
     The first option, using objects, essentially causes the array to store a
     pointer to the string.  This is the most flexible option, as it allows
     strings in the array to be updated to any length. However, operations on
@@ -737,7 +737,7 @@ class FieldArray(numpy.recarray):
     memory striding abilities (see `this question/answer on stackoverflow
     <http://stackoverflow.com/a/14639568/1366472>`_ for details). Also,
     numpy's support of object arrays is more limited.  In particular, prior
-    to version 1.9.2, you cannot create a view of an array that changes the 
+    to version 1.9.2, you cannot create a view of an array that changes the
     dtype if the array has any fields that are objects, even if the view does
     not affect the object fields. (This has since been relaxed.)
 
@@ -894,7 +894,7 @@ class FieldArray(numpy.recarray):
         return field in self.fields
 
     def sort(self, axis=-1, kind='quicksort', order=None):
-        """Sort an array, in-place. 
+        """Sort an array, in-place.
 
         This function extends the standard numpy record array in-place sort
         to allow the basic use of Field array virtual fields. Only a single
@@ -939,7 +939,7 @@ class FieldArray(numpy.recarray):
             methods = [methods]
         for name,method in zip(names, methods):
             setattr(self, name, types.MethodType(method, self))
-        
+
     def add_properties(self, names, methods):
         """Returns a view of self with the given methods added as properties.
 
@@ -1144,7 +1144,7 @@ class FieldArray(numpy.recarray):
         if _default_types_status['ilwd_as_int']:
             input_array = \
                 [tuple(getattr(row, col) if dt != 'ilwd:char'
-                       else int(getattr(row, col)) 
+                       else int(getattr(row, col))
                        for col,dt in columns.items())
                  for row in table]
         else:
@@ -1169,7 +1169,7 @@ class FieldArray(numpy.recarray):
             returned array will have shape `(k,l,m,n)` if `axis=0`, `(l,k,m,n)`
             if `axis=1`, etc. Setting `axis=-1` will put the fields in the
             last dimension. Default is 0.
-        
+
         Returns
         -------
         numpy.ndarray
@@ -1229,7 +1229,7 @@ class FieldArray(numpy.recarray):
         """
         Adds the given arrays as new fields to self.  Returns a new instance
         with the new fields added. Note: this array does not change; the
-        returned array is a new copy. 
+        returned array is a new copy.
 
         Parameters
         ----------
@@ -1261,7 +1261,7 @@ class FieldArray(numpy.recarray):
     def parse_boolargs(self, args):
         """Returns an array populated by given values, with the indices of
         those values dependent on given boolen tests on self.
-        
+
         The given `args` should be a list of tuples, with the first element the
         return value and the second argument a string that evaluates to either
         True or False for each element in self.
@@ -1272,11 +1272,11 @@ class FieldArray(numpy.recarray):
         then the returned array will have `1`s at the indices for
         which `foo.bar < 10`, `2`s where `foo.bar < 20 and not foo.bar < 10`,
         and `3`s where `foo.bar < 30 and not (foo.bar < 10 or foo.bar < 20)`.
-        
+
         The last argument in the list may have "else", an empty string, None,
         or simply list a return value. In any of these cases, any element not
         yet populated will be assigned the last return value.
-        
+
         Parameters
         ----------
         args : {(list of) tuples, value}
@@ -1306,7 +1306,7 @@ class FieldArray(numpy.recarray):
         elements 1 and 4 are leftover):
 
         >>> arr.parse_boolargs(('TaylorF2', 'mtotal<4'))
-            (array(['TaylorF2', '', 'TaylorF2', 'TaylorF2', ''], 
+            (array(['TaylorF2', '', 'TaylorF2', 'TaylorF2', ''],
             dtype='|S8'),
             array([1, 4]))
 
@@ -1315,10 +1315,10 @@ class FieldArray(numpy.recarray):
 
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin', 'else')])
             (array(['TaylorF2', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
-            'SEOBNRv2_ROM_DoubleSpin'], 
+            'SEOBNRv2_ROM_DoubleSpin'],
             dtype='|S23'),
             array([], dtype=int64))
-        
+
         The following will also return the same:
 
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<4'), ('SEOBNRv2_ROM_DoubleSpin',)])
@@ -1331,14 +1331,14 @@ class FieldArray(numpy.recarray):
 
         >>> arr.parse_boolargs([('TaylorF2', 'mtotal<3'), ('IMRPhenomD', 'mtotal<4'), 'SEOBNRv2_ROM_DoubleSpin'])
             (array(['IMRPhenomD', 'SEOBNRv2_ROM_DoubleSpin', 'TaylorF2', 'TaylorF2',
-            'SEOBNRv2_ROM_DoubleSpin'], 
+            'SEOBNRv2_ROM_DoubleSpin'],
             dtype='|S23'),
             array([], dtype=int64))
 
         Just return `"TaylorF2"` for all elements:
 
         >>> arr.parse_boolargs('TaylorF2')
-            (array(['TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2'], 
+            (array(['TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2', 'TaylorF2'],
             dtype='|S8'),
             array([], dtype=int64))
 
@@ -1367,13 +1367,13 @@ class FieldArray(numpy.recarray):
         mask = numpy.zeros(self.size, dtype=bool)
         leftovers = numpy.ones(self.size, dtype=bool)
         for ii,(boolarg,val) in enumerate(zip(bool_args, return_vals)):
-            if boolarg is None or boolarg == '' or boolarg.lower() == 'else': 
+            if boolarg is None or boolarg == '' or boolarg.lower() == 'else':
                 if ii+1 != len(bool_args):
                     raise ValueError("only the last item may not provide "
                         "any boolean arguments")
                 mask = leftovers
             else:
-                mask = leftovers & self[boolarg] 
+                mask = leftovers & self[boolarg]
             out[mask] = val
             leftovers &= ~mask
         return out, numpy.where(leftovers)[0]
@@ -1565,7 +1565,7 @@ class _FieldArrayWithDefaults(FieldArray):
             add_fields.update(dict([[name, VIRTUALFIELD_DTYPE]
                 for name in cls._virtualfields]))
         return dict(cls._staticfields.items() + add_fields.items())
-        
+
 
     def __new__(cls, shape, name=None, additional_fields=None,
                 field_kwargs=None, **kwargs):
@@ -1593,7 +1593,7 @@ class _FieldArrayWithDefaults(FieldArray):
             names = list(get_needed_fieldnames(arr, names))
             names.sort(key=lambda x: sortdict[x] if x in sortdict
                 else len(names))
-            # add the fields as the dtype argument for initializing 
+            # add the fields as the dtype argument for initializing
             kwargs['dtype'] = [(fld, default_fields[fld]) for fld in names]
         if 'dtype' not in kwargs:
             kwargs['dtype'] = default_fields.items()
@@ -1616,7 +1616,7 @@ class _FieldArrayWithDefaults(FieldArray):
         names : (list of) string(s)
             The names of the fields to add. Must be a field in self's default
             fields.
-        
+
         Other keyword args are any arguments passed to self's default fields.
 
         Returns
@@ -1638,7 +1638,7 @@ class _FieldArrayWithDefaults(FieldArray):
         arrays = []
         names = []
         for name,dt in fields:
-            arrays.append(default_empty(self.size, dtype=[(name, dt)])) 
+            arrays.append(default_empty(self.size, dtype=[(name, dt)]))
             names.append(name)
         return self.add_fields(arrays, names)
 
@@ -1684,7 +1684,7 @@ class WaveformArray(_FieldArrayWithDefaults):
     """
     A FieldArray with some default fields and properties commonly used
     by CBC waveforms. This may be initialized in one of 3 ways:
-    
+
     1. With just the size of the array. In this case, the returned array will
     have all of the default field names. Example:
 
@@ -1728,7 +1728,7 @@ class WaveformArray(_FieldArrayWithDefaults):
 
     >>> warr = WaveformArray(10, dtype=[('foo', float)])
     >>> warr.fieldnames
-        ('foo',)    
+        ('foo',)
 
     Additional fields can also be specified using the additional_fields
     keyword argument. Example:

@@ -78,7 +78,7 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
         errMsg = "Gating method not recognized. Only "
         errMsg += "PREGENERATED_FILE is currently supported."
         raise ValueError(errMsg)
-    
+
     logging.info("Leaving gating module.")
     return gate_files
 
@@ -94,7 +94,7 @@ def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
     workflow: pycbc.workflow.core.Workflow
         An instanced class that manages the constructed workflow.
     output_dir : path string
-       The directory where data products will be placed. 
+       The directory where data products will be placed.
     tags : list of strings
         If given these tags are used to uniquely name and identify output files
         that would be produced in multiple calls to this function.
@@ -130,6 +130,6 @@ def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
 
         except ConfigParser.Error:
             logging.info("No gating file specified for %s", ifo)
-        
+
     return gate_files
 

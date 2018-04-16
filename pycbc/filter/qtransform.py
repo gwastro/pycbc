@@ -77,7 +77,7 @@ def qplane(qplane_tile_dict, fseries, return_complex=False):
         qplanes[q] = energies
 
     # record q-transform output for peak q
-    plane = qplanes[max_key] 
+    plane = qplanes[max_key]
     frequencies = qplane_tile_dict[max_key]
     times = plane[0].sample_times.numpy()
     plane = numpy.array([v.numpy() for v in plane])
@@ -107,7 +107,7 @@ def qtiling(fseries, qrange, frange, mismatch=0.2):
     for q in qs:
         qtilefreq = _iter_frequencies(q, frange, mismatch, fseries.duration)
         qplane_tile_dict[q] = numpy.array(list(qtilefreq))
-        
+
     return qplane_tile_dict
 
 def deltam_f(mismatch):
@@ -126,7 +126,7 @@ def deltam_f(mismatch):
 
 def _iter_qs(qrange, deltam):
     """Iterate over the Q values
-   
+
     Parameters
     ----------
     qrange:

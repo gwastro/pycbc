@@ -70,9 +70,9 @@ def get_embedded_config(filename):
         cp = pycbc.results.load_metadata_from_file(filename)
     except TypeError:
         cp = ConfigParser()
-        
+
     cp.check_option = types.MethodType(check_option, cp)
- 
+
     return cp
 
 def setup_template_render(path, config_path):

@@ -322,7 +322,7 @@ class LigolwSegments(set):
 			if valid is None:
 				curr_valid = ()
 			else:
-				curr_valid = valid[instrument]		
+				curr_valid = valid[instrument]
 			self.add(LigolwSegmentList(active = segments, instruments = set([instrument]), name = name, version = version, comment = comment, valid = curr_valid))
 
 

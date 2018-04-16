@@ -1,6 +1,6 @@
 from pycbc.frame import read_frame
 from pycbc.filter import highpass_fir, matched_filter
-from pycbc.waveform import get_fd_waveform 
+from pycbc.waveform import get_fd_waveform
 from pycbc.psd import welch, interpolate
 import urllib
 
@@ -15,14 +15,14 @@ h1 = highpass_fir(h1, 15, 8)
 psd = interpolate(welch(h1), 1.0 / 32)
 
 # Generate a template to filter with
-hp, hc = get_fd_waveform(approximant="IMRPhenomD", mass1=40, mass2=32, 
+hp, hc = get_fd_waveform(approximant="IMRPhenomD", mass1=40, mass2=32,
                          f_lower=20, delta_f=1.0/32)
 hp.resize(len(h1) / 2 + 1)
 
 # Calculate the complex (two-phase SNR)
 snr = matched_filter(hp, h1, psd=psd, low_frequency_cutoff=20.0)
 
-# Remove regions corrupted by filter wraparound 
+# Remove regions corrupted by filter wraparound
 snr = snr[len(snr) / 4: len(snr) * 3 / 4]
 
 import pylab

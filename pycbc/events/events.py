@@ -40,7 +40,7 @@ def threshold(series, value):
     """Return list of values and indices values over threshold in series.
     """
     return None, None
-    
+
 @schemed("pycbc.events.threshold_")
 def threshold_only(series, value):
     """Return list of values and indices whose values in series are
@@ -272,12 +272,12 @@ class EventManager(object):
         remove = [i for i, e in enumerate(self.events) if \
             newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof']) < threshold]
         self.events = numpy.delete(self.events, remove)
-        
+
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times
         if len(self.events) == 0:
             return
-        
+
         inj_time = numpy.array(injections.end_times())
         gpstime = self.events['time_index'].astype(numpy.float64)
         gpstime = gpstime / self.opt.sample_rate + self.opt.gps_start_time
@@ -287,14 +287,14 @@ class EventManager(object):
     def keep_loudest_in_interval(self, window, num_keep):
         if len(self.events) == 0:
             return
-        
+
         e = self.events
         stat = newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
         time = e['time_index']
-        
+
         wtime = (time / window).astype(numpy.int32)
         bins = numpy.unique(wtime)
-        
+
         keep = []
         for b in bins:
             bloc = numpy.where((wtime == b))[0]
@@ -631,7 +631,7 @@ class EventManagerMultiDet(EventManager):
         """ Write the found events to a sngl inspiral table
         """
         self.make_output_dir(outname)
- 
+
         if '.hdf' in outname:
             self.write_to_hdf(outname)
         else:

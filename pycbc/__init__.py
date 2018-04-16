@@ -82,12 +82,12 @@ try:
     # Check that pycuda is installed and can talk to the driver
     import pycuda.driver as _pycudadrv
 
-    HAVE_CUDA=True 
+    HAVE_CUDA=True
 except ImportError:
     HAVE_CUDA=False
-    
-# Check for openmp suppport, currently we pressume it exists, unless on 
-# platforms (mac) that are silly and don't use the standard gcc. 
+
+# Check for openmp suppport, currently we pressume it exists, unless on
+# platforms (mac) that are silly and don't use the standard gcc.
 if sys.platform == 'darwin':
     HAVE_OMP = False
 else:
@@ -119,7 +119,7 @@ _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
 _cache_dir_name = repr(os.getuid()) + '_' + _python_name
 _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
-# Append the git hash to the cache path.  This will ensure that cached 
+# Append the git hash to the cache path.  This will ensure that cached
 # files are correct even in cases where weave currently doesn't realize
 # that a recompile is needed.
 # FIXME: It would be better to find a way to trigger a recompile off

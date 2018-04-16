@@ -240,7 +240,7 @@ def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
                                                dectKeys[detectors]][elements]
             for key in newDict.keys():
                 th.append(key)
-            td.append(newDict.values())        
+            td.append(newDict.values())
         page = write_table(page, list(set(th)), td)
     for ifo in ifos:
         _, _, _, f_q = antenna.response(args.start_time, args.ra, args.dec,
@@ -390,7 +390,7 @@ def write_chisq(page, injList, grbtag):
             plot.img(src=p)
             plot.a.close()
             d.append(plot())
-  
+
         td.append(d)
 
     page = write_table(page, th, td)
@@ -593,7 +593,7 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
     page.a.close()
 
     if reduced or not injList:
-        return page  
+        return page
 
     page.h3()
     page.add('Detection efficiency plots - injections louder than loudest '
@@ -657,7 +657,7 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
 
 def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
                            out_dir, coherent_seg=None, fail_criterion=None):
-    
+
     ifos = wkflow.ifos
     if len(science_segs.keys()) == 0:
         extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
@@ -732,7 +732,7 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
     fig.axes[0].set_title('Science Segments for GRB%s' % trigger_name)
     plt.tight_layout()
     fig.subplots_adjust(hspace=0)
-    
+
     plot_name = 'GRB%s_segments.png' % trigger_name
     plot_url = 'file://localhost%s/%s' % (out_dir, plot_name)
     fig.savefig('%s/%s' % (out_dir, plot_name))

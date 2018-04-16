@@ -163,7 +163,7 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return
     """
     # Get workspace memory
     global _q_l, _qtilde_l, _chisq_l
-    
+
     bin_snrs = []
 
     if _q_l is None or len(_q_l) != len(snr):

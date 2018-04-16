@@ -20,7 +20,7 @@ from itertools import izip_longest
 
 def two_column_layout(path, cols, **kwargs):
     """ Make a well layout in a two column format
-    
+
     Parameters
     ----------
     path: str
@@ -36,7 +36,7 @@ def two_column_layout(path, cols, **kwargs):
 
 def single_layout(path, files, **kwargs):
     """ Make a well layout in  single column format
-    
+
     path: str
         Location to make the well html file
     files: list of pycbc.workflow.core.Files
@@ -49,10 +49,10 @@ def grouper(iterable, n, fillvalue=None):
     """
     args = [iter(iterable)] * n
     return izip_longest(*args, fillvalue=fillvalue)
-    
+
 def group_layout(path, files, **kwargs):
     """ Make a well layout in chunks of two from a list of files
-    
+
     path: str
         Location to make the well html file
     files: list of pycbc.workflow.core.Files
@@ -60,32 +60,32 @@ def group_layout(path, files, **kwargs):
         Every two are placed on the same row.
     """
     if len(files) > 0:
-        two_column_layout(path, list(grouper(files, 2)), **kwargs)      
- 
+        two_column_layout(path, list(grouper(files, 2)), **kwargs)
+
 class SectionNumber(object):
     """ Class to help with numbering sections in an output page.
     """
     def __init__(self, base, secs):
         """ Create section numbering instance
-        
+
         Parameters
         ----------
         base: path
             The path of the of output html results directory
         secs: list of strings
-            List of the subsections of the output html page        
+            List of the subsections of the output html page
         """
         self.base = base
         self.secs = secs
         self.name = {}
         self.count = {}
         self.num = {}
-        
+
         for num, sec in enumerate(secs):
-            self.name[sec] = '%s._%s' % (num + 1, sec)  
+            self.name[sec] = '%s._%s' % (num + 1, sec)
             self.num[sec] = num
             self.count[sec] = 1
-    
+
     def __getitem__ (self, path):
         """ Return the path to use for the given subsection with numbering
         included. The numbering increments for each new subsection request. If

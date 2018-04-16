@@ -148,7 +148,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
 
         if key == 'z_range' or key == 'inj_astro_vol':
             continue
-    
+
         data = injections[key]
         distance = data['distance']
         mass1, mass2 = data['mass1'], data['mass2']
@@ -196,11 +196,11 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
                 h_dist = max(dist_j / (mch_j/_mch_BNS)**(5/6.))
             elif dt_j['d_dist'] == 'uniform':
                 l_dist, h_dist = min(dist_j), max(dist_j)
-    
+
             mdist = dt_j['m_dist']
             prob_mass = inj_mass_pdf(mdist, mass1, mass2,
                                           lomass, himass, lomass_2, himass_2)
-              
+
             ddist = dt_j['d_dist']
             prob_dist = inj_distance_pdf(ddist, distance, l_dist,
                                                               h_dist, mchirp)
@@ -213,7 +213,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
 
         p_in[p_in == 0] = 1e12
         p_out_in = p_out/p_in
-      
+
         i_inj += np.sum(p_out_in)
         i_det += np.sum((p_out_in)[data[thr_var] > thr_val])
         i_det_sq += np.sum((p_out_in)[data[thr_var] > thr_val]**2)
@@ -303,7 +303,7 @@ def astro_redshifts(min_z, max_z, nsamples):
        z_astro: array
             nsamples of redshift, between min_z, max_z, by standard cosmology
     '''
-    
+
     dz, fac = 0.001, 3.0
     # use interpolation instead of directly estimating all the pdfz for rndz
     V = quad(contracted_dVdc, 0., max_z)[0]
@@ -362,7 +362,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
     '''
 
     mass1, mass2 = np.array(mass1), np.array(mass2)
-    
+
     if key == 'totalMass':
         # Returns the PDF of mass when total mass is uniformly distributed.
         # Both the component masses have the same distribution for this case.
@@ -371,7 +371,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
         # ----------
         # lomass: lower component mass
         # himass: higher component mass
-        
+
         bound = np.sign((lomass + himass) - (mass1 + mass2))
         bound += np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass - mass2)*(mass2 - lomass))
@@ -389,7 +389,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
         # ----------
         # lomass: lower component mass
         # himass: higher component mass
-        
+
         bound = np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
         idx = np.where(bound != 2)
@@ -406,7 +406,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
         # ----------
         # lomass: lower component mass
         # himass: higher component mass
-        
+
         bound = np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
         idx = np.where(bound != 2)

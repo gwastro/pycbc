@@ -39,29 +39,29 @@ else:
 def cbrt_lookup(vmax, delta):
     vec = numpy.arange(0, vmax*1.2, delta)
     return FrequencySeries(vec**(1.0/3.0), delta_f=delta).astype(float32)
-    
+
 _cbrt_vec = None
-    
+
 def get_cbrt(vmax, delta):
     global _cbrt_vec
     if _cbrt_vec is None or (_cbrt_vec.delta_f != delta) or (len(_cbrt_vec) < int(vmax/delta)):
         _cbrt_vec = cbrt_lookup(vmax, delta)
-    return _cbrt_vec   
-    
+    return _cbrt_vec
+
 # Precompute log(v) ############################################################
-    
+
 def logv_lookup(vmax, delta):
     vec = numpy.arange(0, vmax*1.2, delta)
     vec[1:len(vec)] = numpy.log(vec[1:len(vec)])
     return FrequencySeries(vec, delta_f=delta).astype(float32)
-    
+
 _logv_vec = None
-    
+
 def get_log(vmax, delta):
     global _logv_vec
     if _logv_vec is None or (_logv_vec.delta_f != delta) or (len(_logv_vec) < int(vmax/delta)):
         _logv_vec = logv_lookup(vmax, delta)
-    return _logv_vec   
+    return _logv_vec
 
 # Precompute the sine function #################################################
 def sin_cos_lookup():
@@ -69,18 +69,18 @@ def sin_cos_lookup():
     return Array(numpy.sin(vec)).astype(float32)
 sin_cos = Array([], dtype=float32)
 
-def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
+def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
                     pfa6,  pfl6,  pfa7, amp_factor):
-    """ Calculate the spa tmplt phase 
+    """ Calculate the spa tmplt phase
     """
     kfac = numpy.array(spa_tmplt_precondition(len(htilde), delta_f, kmin).data, copy=False) # pylint:disable=unused-variable
     htilde = numpy.array(htilde.data, copy=False)
     cbrt_vec = numpy.array(get_cbrt(len(htilde)*delta_f + kmin, delta_f).data, copy=False) # pylint:disable=unused-variable
     logv_vec = numpy.array(get_log(len(htilde)*delta_f + kmin, delta_f).data, copy=False) # pylint:disable=unused-variable
     length = len(htilde) # pylint:disable=unused-variable
-    
-    code = """ 
+
+    code = """
     float piM13 = cbrtf(piM);
     float logpiM13 = log(piM13);
     float log4 = log(4.);
@@ -96,7 +96,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
     const float ampc = amp_factor;
     const float two_pi = 2 * M_PI;
     const float inv_two_pi = 1 / (2 * M_PI);
-    
+
     #pragma omp parallel for schedule(dynamic, 1024)
     for (unsigned int i=0; i<length; i++){
         int index = i + kmin;
@@ -107,7 +107,7 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         float sinp, cosp;
 
         switch (phase_order)
-        {   
+        {
             case -1:
             case 7:
                 phasing = _pfa7 * v;
@@ -130,21 +130,21 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         float amp = ampc * kfac[i];
         phasing *= _pfaN / v5;
         phasing -= M_PI_4;
-        
+
         phasing -= int(phasing / two_pi) * two_pi;
-         
+
         while (phasing < -M_PI){
             phasing += two_pi;
         }
         while (phasing > M_PI){
             phasing -= two_pi;
         }
-        
+
         // compute sine
         if (phasing < 0)
         {
             sinp = 1.27323954 * phasing + .405284735 * phasing * phasing;
-            
+
             if (sinp < 0)
                 sinp = .225 * (sinp *-sinp - sinp) + sinp;
             else
@@ -152,23 +152,23 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         }
         else
         {
-            sinp = 1.27323954 * phasing - 0.405284735 * phasing * phasing;          
+            sinp = 1.27323954 * phasing - 0.405284735 * phasing * phasing;
             if (sinp < 0)
                 sinp = .225 * (sinp *-sinp - sinp) + sinp;
             else
                 sinp = .225 * (sinp * sinp - sinp) + sinp;
         }
-        
-        
+
+
         //compute cosine
-        
+
         phasing += M_PI_2;
         if (phasing >  M_PI)
             phasing -= two_pi;
         if (phasing < 0)
         {
             cosp = 1.27323954 * phasing + .405284735 * phasing * phasing;
-                     
+
             if (cosp < 0)
                 cosp = .225 * (cosp *-cosp - cosp) + cosp;
             else
@@ -176,21 +176,21 @@ def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
         }
         else
         {
-            cosp = 1.27323954 * phasing - 0.405284735 * phasing * phasing;          
+            cosp = 1.27323954 * phasing - 0.405284735 * phasing * phasing;
             if (cosp < 0)
                 cosp = .225 * (cosp *-cosp - cosp) + cosp;
             else
                 cosp = .225 * (cosp * cosp - cosp) + cosp;
         }
-           
-            
-        
+
+
+
         //printf("%f %f %f \\n", sinp, sin(phasing), phasing);
-        
+
         htilde[i] = std::complex<float>(cosp, - sinp) * amp;
     }
     """
-    inline(code, ['htilde', 'cbrt_vec', 'logv_vec', 'kmin', 'phase_order', 
+    inline(code, ['htilde', 'cbrt_vec', 'logv_vec', 'kmin', 'phase_order',
                    'piM',  'pfaN', 'amp_factor', 'kfac',
                    'pfa2',  'pfa3',  'pfa4',  'pfa5',  'pfl5',
                    'pfa6',  'pfl6',  'pfa7', 'length'],

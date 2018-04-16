@@ -33,7 +33,7 @@ def filter_zpk(timeseries, z, p, k):
     The transfer function in the s-domain looks like:
     .. math::
     \\frac{H(s) = (s - s_1) * (s - s_3) * ... * (s - s_n)}{(s - s_2) * (s - s_4) * ... * (s - s_m)}, m >= n
-          
+
     The zeroes, and poles entered in Hz are converted to angular frequency,
     along the imaginary axis in the s-domain s=i*omega.  Then the zeroes, and
     poles are bilinearly transformed via:
@@ -43,7 +43,7 @@ def filter_zpk(timeseries, z, p, k):
     Where z is the z-domain value, s is the s-domain value, and T is the
     sampling period.  After the poles and zeroes have been bilinearly
     transformed, then the second-order sections are found and filter the data
-    using scipy. 
+    using scipy.
 
     Parameters
     ----------
@@ -62,7 +62,7 @@ def filter_zpk(timeseries, z, p, k):
     Returns
     -------
     Time Series: TimeSeries
-        A  new TimeSeries that has been filtered. 
+        A  new TimeSeries that has been filtered.
 
     Examples
     --------

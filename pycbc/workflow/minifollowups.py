@@ -34,12 +34,12 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
                        insp_anal_name, dax_output, out_dir, tags=None):
     """ Create plots that followup the Nth loudest coincident injection
     from a statmap produced HDF file.
-    
+
     Parameters
     ----------
     workflow: pycbc.workflow.Workflow
         The core workflow instance we are populating
-    coinc_file: 
+    coinc_file:
     single_triggers: list of pycbc.workflow.File
         A list cointaining the file objects associated with the merged
         single detector trigger files for each ifo.
@@ -56,32 +56,32 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
         The directory to store minifollowups result plots and files
     tags: {None, optional}
         Tags to add to the minifollowups executables
-    
+
     Returns
     -------
     layout: list
-        A list of tuples which specify the displayed file layout for the 
+        A list of tuples which specify the displayed file layout for the
         minifollops plots.
     """
     logging.info('Entering minifollowups module')
-    
+
     if not workflow.cp.has_section('workflow-minifollowups'):
         logging.info('There is no [workflow-minifollowups] section in configuration file')
         logging.info('Leaving minifollowups')
         return
-    
+
     tags = [] if tags is None else tags
     makedir(dax_output)
-    
+
     # turn the config file into a File class
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'foreground_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
-    
+
     config_file = wdax.File(os.path.basename(config_path))
     config_file.PFN(config_path, 'local')
-    
+
     exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
-    
+
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--bank-file', tmpltbank_file)
@@ -98,12 +98,12 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    
+
     workflow += node
-    
+
     # execute this in a sub-workflow
     fil = node.output_files[0]
-    
+
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_file)
@@ -118,7 +118,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
                                   veto_segment_name=None, tags=None):
     """ Create plots that followup the Nth loudest clustered single detector
     triggers from a merged single detector trigger HDF file.
-    
+
     Parameters
     ----------
     workflow: pycbc.workflow.Workflow
@@ -136,11 +136,11 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     out_dir: path
         The directory to store minifollowups result plots and files
     tags: {None, optional}
-        Tags to add to the minifollowups executables    
+        Tags to add to the minifollowups executables
     Returns
     -------
     layout: list
-        A list of tuples which specify the displayed file layout for the 
+        A list of tuples which specify the displayed file layout for the
         minifollops plots.
     """
     logging.info('Entering minifollowups module')
@@ -211,12 +211,12 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
                                   insp_segs, insp_data_name, insp_anal_name,
                                   dax_output, out_dir, tags=None):
     """ Create plots that followup the closest missed injections
-    
+
     Parameters
     ----------
     workflow: pycbc.workflow.Workflow
         The core workflow instance we are populating
-    coinc_file: 
+    coinc_file:
     single_triggers: list of pycbc.workflow.File
         A list cointaining the file objects associated with the merged
         single detector trigger files for each ifo.
@@ -232,32 +232,32 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
         The directory to store minifollowups result plots and files
     tags: {None, optional}
         Tags to add to the minifollowups executables
-    
+
     Returns
     -------
     layout: list
-        A list of tuples which specify the displayed file layout for the 
+        A list of tuples which specify the displayed file layout for the
         minifollops plots.
     """
     logging.info('Entering injection minifollowups module')
-    
+
     if not workflow.cp.has_section('workflow-injection_minifollowups'):
         logging.info('There is no [workflow-injection_minifollowups] section in configuration file')
         logging.info('Leaving minifollowups')
         return
-    
+
     tags = [] if tags is None else tags
     makedir(dax_output)
-    
+
     # turn the config file into a File class
     config_path = os.path.abspath(dax_output + '/' + '_'.join(tags) + 'injection_minifollowup.ini')
     workflow.cp.write(open(config_path, 'w'))
-    
+
     config_file = wdax.File(os.path.basename(config_path))
     config_file.PFN(config_path, 'local')
-    
+
     exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
-    
+
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
     node.add_input_opt('--bank-file', tmpltbank_file)
@@ -272,15 +272,15 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
-    
+
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
-    
+
     workflow += node
-    
+
     # execute this in a sub-workflow
     fil = node.output_files[0]
-    
+
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
     Workflow.set_job_properties(job, map_file)
@@ -311,7 +311,7 @@ class PlotQScanExecutable(PlotExecutable):
     PlotExecutable but adds the file_input_options.
     """
     file_input_options = ['--gating-file']
-    
+
 
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                                   params, out_dir, inj_file=None, exclude=None,
@@ -422,7 +422,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
             node.add_input_opt('--single-template-file', data)
             node.new_output_file_opt(workflow.analysis_time, '.png',
                                      '--output-file')
-            title="'%s SNR and chi^2 timeseries" %(ifo) 
+            title="'%s SNR and chi^2 timeseries" %(ifo)
             if params_str is not None:
                 title+= " using %s" %(params_str)
             title+="'"
@@ -539,7 +539,7 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'plot_trigger_timeseries'
-    secs = requirestr(workflow.cp.get_subsections(name), require)  
+    secs = requirestr(workflow.cp.get_subsections(name), require)
     secs = excludestr(secs, exclude)
     files = FileList([])
     for tag in secs:
@@ -548,10 +548,10 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
         node.add_multiifo_input_list_opt('--single-trigger-files', singles)
         node.add_opt('--times', ifo_times)
         node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
-        
+
         if special_tids is not None:
             node.add_opt('--special-trigger-ids', special_tids)
-        
+
         workflow += node
         files += node.output_files
     return files
@@ -732,10 +732,10 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
     node.add_opt('--gps-start-time', int(start))
     node.add_opt('--gps-end-time', int(end))
     node.add_opt('--center-time', trig_time)
-    
+
     if veto_file:
         node.add_input_opt('--veto-file', veto_file)
-        
+
     node.add_opt('--detector', single.ifo)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
