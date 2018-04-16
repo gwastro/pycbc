@@ -464,7 +464,7 @@ def td_taper(out, start, end, beta=8, side='left'):
 
     Parameters
     ----------
-    out : TimeSeriesSeries
+    out : TimeSeries
         The ``TimeSeries`` to taper.
     start : float
         The time (in s) to start the taper window.
@@ -482,7 +482,7 @@ def td_taper(out, start, end, beta=8, side='left'):
     Returns
     -------
     TimeSeries
-        The tapered frequency series.
+        The tapered time series.
     """
     out = out.copy()
     width = end - start
