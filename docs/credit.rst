@@ -19,7 +19,9 @@ A key for the latest release is available at:
    :target: https://zenodo.org/badge/latestdoi/31596861
 
 Bibtex keys for the citations ``Canton:2014ena``, ``Usman:2015kfa`` and
-``Nitz:2017svb`` are::
+``Nitz:2017svb`` are:
+
+.. code-block:: bib
 
     @article{Canton:2014ena,
       author         = "Dal Canton, Tito and others",
