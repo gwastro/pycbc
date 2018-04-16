@@ -457,6 +457,50 @@ def apply_fd_time_shift(htilde, shifttime, kmin=0, fseries=None, copy=True):
         htilde *= shift
     return htilde
 
+def td_taper(out, start, end, beta=8, side='left'):
+    """Applies a taper to the given TimeSeries.
+
+    A half-kaiser window is used for the roll-off.
+
+    Parameters
+    ----------
+    out : TimeSeriesSeries
+        The ``TimeSeries`` to taper.
+    start : float
+        The time (in s) to start the taper window.
+
+    end : float
+        The time (in s) to end the taper window.
+    beta : int, optional
+        The beta parameter to use for the Kaiser window. See
+        ``scipy.signal.kaiser`` for details. Default is 8.
+    side : {'left', 'right'}
+        The side to apply the taper to. If ``'left'`` (``'right'``), the taper
+        will roll up (down) between ``start`` and ``end``, with all values
+        before ``start`` (after ``end``) set to zero. Default is ``'left'``.
+
+    Returns
+    -------
+    TimeSeries
+        The tapered frequency series.
+    """
+    out = out.copy()
+    width = end - start
+    winlen = 2 * int(width / out.delta_t)
+    window = Array(signal.get_window(('kaiser', beta), winlen))
+    xmin = int((start - out.start_time) / out.delta_t)
+    xmax = xmin + winlen/2
+    if side == 'left':
+        out[xmin:xmax] *= window[:winlen/2]
+        if xmin > 0:
+            out[:xmin].clear()
+    elif side == 'right':
+        out[xmin:xmax] *= window[winlen/2:]
+        if xmax < len(out):
+            out[xmax:].clear()
+    else:
+        raise ValueError("unrecognized side argument {}".format(side))
+    return out
 
 def fd_taper(out, start, end, beta=8, side='left'):
     """Applies a taper to the given FrequencySeries.
@@ -465,7 +509,7 @@ def fd_taper(out, start, end, beta=8, side='left'):
 
     Parameters
     ----------
-    out : FrequencySeries, optional
+    out : FrequencySeries
         The ``FrequencySeries`` to taper.
     start : float
         The frequency (in Hz) to start the taper window.
