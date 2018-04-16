@@ -526,8 +526,6 @@ def get_td_waveform_from_fd(**params):
     # determine the duration to use
     full_duration = duration = get_waveform_filter_length_in_time(**params)
     nparams = params.copy()
-    if '_FD' in nparams['approximant']:
-        nparams['approximant'] = nparams['approximant'][:-3]
 
     while full_duration < duration * 1.5:
         full_duration = get_waveform_filter_length_in_time(**nparams)
@@ -762,9 +760,9 @@ for apx in copy.copy(_filter_time_lengths):
         _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
 
         # We can also make a td version of this
-        apx_int = apx + '_FD'
-        cpu_td[apx_int] = get_td_waveform_from_fd
-        _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
+        # This will override any existing approximants with the same name
+        # (ex. IMRPhenomXX)
+        cpu_td[apx] = get_td_waveform_from_fd
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
