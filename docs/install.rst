@@ -157,18 +157,6 @@ Install unittest2, python-cjson, and numpy with the command:
 
     pip install "numpy>=1.6.4" unittest2 python-cjson Cython decorator
 
-To authenticate with LIGO Data Grid services, you need M2Crypto which you should install with 
-
-.. code-block:: bash
-
-    SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
-
-On MacOS using homebrew to install openssl you may need to set the following extra environment variables to install M2Crypto:
-
-.. code-block:: bash
-
-   CFLAGS="-I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib" SWIG_FEATURES="-cpperraswarn -includeall -I/usr/local/opt/openssl/include/" pip install M2Crypto
-
 Once you have these packages installed, you can now install lalsuite following the instructions at:
 
 .. toctree::
@@ -292,7 +280,7 @@ To build the documentation from your virtual environment, first make sure that y
 
     pip install "Sphinx>=1.5.0"
     pip install sphinx-rtd-theme
-    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
+    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git
     
 To generate the documentation and push it to your personal GitHub pages, first create a branch names ``gh-pages``, if you do not already have one. Follow the `GitHub branch <https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/>`_ instructions to do this.
 
