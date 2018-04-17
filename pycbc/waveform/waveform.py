@@ -565,8 +565,8 @@ def get_fd_waveform_from_td(**params):
     hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
 
     # avoid wraparound
-    hp = hp.to_frequencyseries().cyclic_time_shift(-hp.start_time)
-    hc = hc.to_frequencyseries().cyclic_time_shift(-hc.start_time)
+    hp = hp.to_frequencyseries().cyclic_time_shift(hp.start_time)
+    hc = hc.to_frequencyseries().cyclic_time_shift(hc.start_time)
     return hp, hc
 
 def get_td_waveform_from_fd(**params):
