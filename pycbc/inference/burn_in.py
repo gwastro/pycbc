@@ -170,6 +170,15 @@ def max_posterior(sampler, fp):
     return burn_in_idx, is_burned_in
 
 
+def acl_or_max_posterior(sampler, fp):
+    """Burn in that uses the minimum of `n_acl` and `max_posteior`.
+    """
+    acl_bidx, acl_ibi = n_acl(sampler, fp)
+    maxp_bidx, maxp_ibi = max_poseterior(sampler, fp)
+    burn_in_idx = numpy.min([acl_bidx, maxp_bidx], axis=0)
+    is_burned_in = acl_ibi | maxp_ibi
+    return burn_in_idx, is_burned_in
+
 def posterior_step(sampler, fp):
     """Burn in based on the last time a chain made a jump > dim/2.
 
@@ -268,6 +277,7 @@ burn_in_functions = {
     'ks_test': ks_test,
     'n_acl': n_acl,
     'max_posterior': max_posterior,
+    'acl_or_max_posterior': acl_or_max_posterior,
     'posterior_step': posterior_step,
     'half_chain': half_chain,
     'use_sampler': use_sampler,
