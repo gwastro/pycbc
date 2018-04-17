@@ -33,4 +33,4 @@ http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
 # For building documentation
 Sphinx>=1.5.0
 sphinx-rtd-theme
-git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git
+sphinxcontrib-programoutput>=0.11

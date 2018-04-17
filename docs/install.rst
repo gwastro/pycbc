@@ -280,7 +280,7 @@ To build the documentation from your virtual environment, first make sure that y
 
     pip install "Sphinx>=1.5.0"
     pip install sphinx-rtd-theme
-    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git
+    pip install sphinxcontrib-programoutput
     
 To generate the documentation and push it to your personal GitHub pages, first create a branch names ``gh-pages``, if you do not already have one. Follow the `GitHub branch <https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/>`_ instructions to do this.
 

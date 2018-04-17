@@ -211,7 +211,7 @@ export PKG_CONFIG_PATH\\
   echo -e "\\n>> [`date`] Installing modules needed to build documentation"
   pip install "Sphinx>=1.5.0"
   pip install sphinx-rtd-theme
-  pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git
+  pip install sphinxcontrib-programoutput
 
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install ipython
