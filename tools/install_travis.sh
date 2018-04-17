@@ -75,7 +75,7 @@ pip install dqsegdb
 # install the packges needed to build the documentation
 pip install "Sphinx>=1.5.0"
 pip install sphinx-rtd-theme
-pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git
+pip install sphinxcontrib-programoutput
 
 # get library needed to build documentation
 wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
