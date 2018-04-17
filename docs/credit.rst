@@ -8,7 +8,7 @@ it is cited in the following way:
 ::
 
     These results were generating using the PyCBC software package
-    \cite{Canton:2014ena,Usman:2015kfa,pycbc-software}
+    \cite{Canton:2014ena,Usman:2015kfa,Nitz:2017svb,pycbc-software}
 
 For the citation ``pycbc-software``,  please use a bibtex entry and DOI for the
 appropriate release of the PyCBC software (or the latest available release).
@@ -18,7 +18,10 @@ A key for the latest release is available at:
 .. image:: https://zenodo.org/badge/31596861.svg
    :target: https://zenodo.org/badge/latestdoi/31596861
 
-Bibtex keys for the citations ``Canton:2014ena`` and ``Usman:2015kfa`` are::
+Bibtex keys for the citations ``Canton:2014ena``, ``Usman:2015kfa`` and
+``Nitz:2017svb`` are:
+
+.. code-block:: bib
 
     @article{Canton:2014ena,
       author         = "Dal Canton, Tito and others",
@@ -53,5 +56,24 @@ Bibtex keys for the citations ``Canton:2014ena`` and ``Usman:2015kfa`` are::
       primaryClass   = "gr-qc",
       reportNumber   = "LIGO-P1500086",
       SLACcitation   = "%%CITATION = ARXIV:1508.02357;%%"
+    }
+
+    @article{Nitz:2017svb,
+      author         = "Nitz, Alexander H. and Dent, Thomas and Dal Canton, Tito
+                        and Fairhurst, Stephen and Brown, Duncan A.",
+      title          = "{Detecting binary compact-object mergers with
+                        gravitational waves: Understanding and Improving the
+                        sensitivity of the PyCBC search}",
+      journal        = "Astrophys. J.",
+      volume         = "849",
+      year           = "2017",
+      number         = "2",
+      pages          = "118",
+      doi            = "10.3847/1538-4357/aa8f50",
+      eprint         = "1705.01513",
+      archivePrefix  = "arXiv",
+      primaryClass   = "gr-qc",
+      reportNumber   = "LIGO-P1700088-V4",
+      SLACcitation   = "%%CITATION = ARXIV:1705.01513;%%"
     }
 
