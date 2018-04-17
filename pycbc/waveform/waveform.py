@@ -820,7 +820,14 @@ from . nltides import nonlinear_tidal_spa
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 
 for apx in copy.copy(_filter_time_lengths):
-    if apx in cpu_fd:
+    fd_apx = cpu_fd.keys()
+    td_apx = cpu_td.keys()
+
+    if (apx in td_apx) and (apx not in fd_apx):
+        # We can make a fd version of td approximants
+        cpu_fd[apx] = get_fd_waveform_from_td
+
+    if apx in fd_apx:
         # We can do interpolation for waveforms that have a time length
         apx_int = apx + '_INTERP'
         cpu_fd[apx_int] = get_interpolated_fd_waveform
@@ -830,6 +837,7 @@ for apx in copy.copy(_filter_time_lengths):
         # This will override any existing approximants with the same name
         # (ex. IMRPhenomXX)
         cpu_td[apx] = get_td_waveform_from_fd
+
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
