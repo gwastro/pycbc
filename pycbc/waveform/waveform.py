@@ -534,8 +534,8 @@ def get_fd_waveform_from_td(**params):
     if 'f_fref' not in nparams:
         nparams['f_ref'] = params['f_lower']
 
-    # We'll try to do the right thing and figure out what the frequency 
-    # end is. Otherwise, we'll just assume 2048 Hz. 
+    # We'll try to do the right thing and figure out what the frequency
+    # end is. Otherwise, we'll just assume 2048 Hz.
     # (consider removing as we hopefully have better estimates for more
     # approximants
     try:
@@ -558,7 +558,7 @@ def get_fd_waveform_from_td(**params):
     hp.resize(tsamples)
     hc.resize(tsamples)
 
-    # apply the tapering, we will use a safety factor here to allow for 
+    # apply the tapering, we will use a safety factor here to allow for
     # somewhat innacurate duration difference estimation.
     window = (full_duration - duration) * 0.8
     hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
