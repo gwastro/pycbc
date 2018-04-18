@@ -79,7 +79,7 @@ def normal(start, end, seed=0):
     ts = TimeSeries(data, delta_t=1.0 / SAMPLE_RATE, epoch=start)
     return ts.time_slice(start, end)
 
-def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
+def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=10.0):
     """ Create noise from a PSD
 
     Return noise from the chosen PSD. Note that if unique noise is desired
