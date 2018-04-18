@@ -369,7 +369,7 @@ class MchirpQToMass1Mass2(BaseTransform):
             m1 = primary
             m2 = secondary
         out[parameters.mass1] = m1
-        out[parameters.mass2] = m2 
+        out[parameters.mass2] = m2
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
