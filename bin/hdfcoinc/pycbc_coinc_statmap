@@ -432,6 +432,16 @@ while numpy.any(louder_foreground == 0):
         f['foreground_h%s/time1' % h_iterations] = all_trigs.time1[fore_locs]
         f['foreground_h%s/time2' % h_iterations] = all_trigs.time2[fore_locs]
 
+    else :
+        f['foreground_h%s/stat' % h_iterations] = numpy.array([])
+        f['foreground_h%s/ifar' % h_iterations] = numpy.array([])
+        f['foreground_h%s/fap' % h_iterations] = numpy.array([])
+        f['foreground_h%s/trigger_id1' % h_iterations] = numpy.array([])
+        f['foreground_h%s/trigger_id2' % h_iterations] = numpy.array([])
+        f['foreground_h%s/template_id' % h_iterations] = numpy.array([])
+        f['foreground_h%s/time1' % h_iterations] = numpy.array([])
+        f['foreground_h%s/time2' % h_iterations] = numpy.array([])
+
 # Write to file how many hierarchical removals were implemented.
 f.attrs['hierarchical_removal_iterations'] = h_iterations
 
