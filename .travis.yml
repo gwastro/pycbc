@@ -77,8 +77,9 @@ install:
     echo -e "Host sugwg-condor.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
     echo -e "Host oasis-login.opensciencegrid.org\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
     echo -e "Host code.pycbc.phy.syr.edu\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config ;
-    echo $LDG_USER > ~/.ssh/ldg_user ;
-    echo $LDG_TOKEN > ~/.ssh/ldg_token ;
+    echo $LDG_KEYTAB_USER > ~/.ssh/ldg_user ;
+    echo $LDG_KEYTAB > ~/.ssh/ldg_token_munged;
+    base64 -d ~/.ssh/ldg_token_munged > ~/.ssh/ldg_token;
     chmod 600 ~/.ssh/id_rsa ~/.ssh/config ~/.ssh/ldg_user ~/.ssh/ldg_token ;
   fi
 script:
