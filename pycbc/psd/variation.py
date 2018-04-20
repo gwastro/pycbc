@@ -54,7 +54,7 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
     ind = 0
     for tlong in times_long:
         # Calculate PSD for long segment and separate the long segment in to
-        # Overlapping shorter segments
+        # overlapping shorter segments
         if tlong + psd_long_segment <= float(strain.end_time):
             psd_long = strain.time_slice(tlong,
                           tlong + psd_long_segment).psd(overlap)
@@ -80,9 +80,14 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
         kmin = int(low_freq / psd_long.delta_f)
         kmax = int(high_freq / psd_long.delta_f)
         # Comapre the PSD of the short segment to the long segment
+        # The weight factor gives the rough response of a cbc template across
+        # the defined frequency range given the expected PSD (i.e. long PSD)
+        # Then integrate the weighted ratio of the actual PSD (i.e. short PSD)
+        # with the expected PSD (i.e. long PSD) over the specified frequency
+        # range
         freqs = FrequencySeries(psd_long.sample_frequencies,
-                                delta_f = psd_long.delta_f,
-                                epoch = psd_long.epoch, dtype = fs_dtype)
+                                delta_f=psd_long.delta_f,
+                                epoch=psd_long.epoch, dtype=fs_dtype)
         weight = numpy.array(
                      freqs[kmin:kmax]**(-7./3.) / psd_long[kmin:kmax])
         weight /= weight.sum()
