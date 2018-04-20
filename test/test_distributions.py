@@ -24,15 +24,16 @@ import os
 import unittest
 from pycbc import distributions
 from pycbc.inference import entropy
-from pycbc.inference import option_utils
 from utils import parse_args_cpu_only
 from utils import simple_exit
+from pycbc.workflow import WorkflowConfigParser
 
 # distributions to exclude from one-dimensional distribution unit tests
 # some of these distributons have their own specific unit test
 EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
                       "uniform_solidangle", "uniform_sky",
-                      "independent_chip_chieff"]
+                      "independent_chip_chieff",
+                      "uniform_component_masses"]
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
@@ -62,8 +63,8 @@ class TestDistributions(unittest.TestCase):
         self.opts = Arguments()
 
         # read configuration files
-        self.cp = option_utils.config_parser_from_cli(self.opts)
-        args = option_utils.read_args_from_config(self.cp)
+        self.cp = WorkflowConfigParser.from_cli(self.opts)
+        args = distributions.read_args_from_config(self.cp)
         self.variable_args, self.static_args, self.contraints = args
 
         # read distributions

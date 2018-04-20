@@ -31,7 +31,7 @@ import os.path
 import h5py
 from copy import copy
 import numpy as np
-from pycbc_glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from pycbc.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
@@ -284,7 +284,7 @@ class TemplateBank(object):
             for key in data:
                 self.table[key] = data[key]
             # add the compressed waveforms, if they exist
-            self.has_compressed_waveforms = 'compressed_waveforms' in f 
+            self.has_compressed_waveforms = 'compressed_waveforms' in f
         else:
             raise ValueError("Unsupported template bank file extension %s" %(
                 ext))

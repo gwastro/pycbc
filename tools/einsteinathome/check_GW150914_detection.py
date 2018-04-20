@@ -25,7 +25,7 @@ mask = np.logical_and.reduce([abs(end_times - gw150914_time) < 0.1,
                               snrs < 1.2 * gw150914_snr[detector],
                               chi2rs > 0.8 * gw150914_chi2r[detector],
                               chi2rs < 1.2 * gw150914_chi2r[detector]])
-                      
+
 if mask.any():
     print('Pass: %d GW150914-like triggers' % sum(mask))
     print('end_time snr reduced_chi2')

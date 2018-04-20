@@ -48,7 +48,7 @@ class _DistToZ(object):
     a redshift greater than `default_maxz`, a new set of grid points is
     created from `0.1*default_maxz` to `1e5*default_maxz` and re-interpolated.
     This continues until a redshift can be found.
-    
+
     Instances of this class can be called like a function on luminosity
     distances, which will return the corresponding redshifts.
 
@@ -95,15 +95,15 @@ class _DistToZ(object):
         else:
             self.omega = default_omega
         self.default_maxz = default_maxz
-        self.numpoints = numpoints
+        self.numpoints = int(numpoints)
         self.z2d = numpy.vectorize(lal.LuminosityDistance)
         # for computing nearby (z < 1) redshifts
-        zs = numpy.linspace(0., 1., num=numpoints)
+        zs = numpy.linspace(0., 1., num=self.numpoints)
         ds = self.z2d(self.omega, zs)
         self.nearby_d2z = interpolate.interp1d(ds, zs, kind='linear',
                                                 bounds_error=False)
         # for computing far away (z > 1) redshifts
-        zs = numpy.logspace(0, numpy.log10(default_maxz), num=numpoints)
+        zs = numpy.logspace(0, numpy.log10(default_maxz), num=self.numpoints)
         ds = self.z2d(self.omega, zs)
         self.faraway_d2z = interpolate.interp1d(ds, zs, kind='linear',
                                                  bounds_error=False)

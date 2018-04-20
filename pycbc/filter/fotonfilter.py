@@ -35,7 +35,7 @@ def get_swstat_bits(frame_filenames, swstat_channel_name, start_time, end_time):
     Bit 10 = Filter module input switch on/off
     Bit 11 = Filter module offset switch on/off
     Bit 12 = Filter module output switch on/off
-    Bit 13 = Filter module limit switch on/off 
+    Bit 13 = Filter module limit switch on/off
     Bit 14 = Filter module history reset momentary switch
     '''
 

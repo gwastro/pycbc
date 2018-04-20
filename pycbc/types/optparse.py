@@ -62,7 +62,7 @@ class MultiDetOptionAction(argparse.Action):
                              'strings are not supplying the value to append, '
                              'the append const action may be more appropriate')
         if const is not None and nargs != argparse.OPTIONAL:
-            raise ValueError('nargs must be %r to supply const' 
+            raise ValueError('nargs must be %r to supply const'
                              % argparse.OPTIONAL)
         super(MultiDetOptionAction, self).__init__(
             option_strings=option_strings,
@@ -188,8 +188,8 @@ class MultiDetOptionAppendAction(MultiDetOptionAction):
         setattr(namespace, self.dest, items)
 
 def required_opts(opt, parser, opt_list, required_by=None):
-    """Check that all the opts are defined 
-    
+    """Check that all the opts are defined
+
     Parameters
     ----------
     opt : object
@@ -209,8 +209,8 @@ def required_opts(opt, parser, opt_list, required_by=None):
             parser.error(err_str)
 
 def required_opts_multi_ifo(opt, parser, ifo, opt_list, required_by=None):
-    """Check that all the opts are defined 
-    
+    """Check that all the opts are defined
+
     Parameters
     ----------
     opt : object
@@ -235,7 +235,7 @@ def required_opts_multi_ifo(opt, parser, ifo, opt_list, required_by=None):
 
 def ensure_one_opt(opt, parser, opt_list):
     """  Check that one and only one in the opt_list is defined in opt
-    
+
     Parameters
     ----------
     opt : object
@@ -261,7 +261,7 @@ def ensure_one_opt(opt, parser, opt_list):
 
 def ensure_one_opt_multi_ifo(opt, parser, ifo, opt_list):
     """  Check that one and only one in the opt_list is defined in opt
-    
+
     Parameters
     ----------
     opt : object

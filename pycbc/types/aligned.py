@@ -37,7 +37,7 @@ class ArrayWithAligned(_np.ndarray):
     def __new__(cls, input_array):
         obj = _np.asarray(input_array).view(cls)
         return obj
-    
+
     @property
     def isaligned(self):
         return check_aligned(self)

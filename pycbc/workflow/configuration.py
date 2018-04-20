@@ -39,7 +39,7 @@ import requests
 import distutils.spawn
 import ConfigParser
 import itertools
-import pycbc_glue.pipeline
+import glue.pipeline
 
 from cookielib import (_warn_unhandled_exception, LoadError, Cookie)
 from bs4 import BeautifulSoup
@@ -167,7 +167,7 @@ def resolve_url(url, directory=None, permissions=None):
 
     elif u.scheme == 'http' or u.scheme == 'https':
         s = requests.Session()
-        s.mount(str(u.scheme)+'://', 
+        s.mount(str(u.scheme)+'://',
             requests.adapters.HTTPAdapter(max_retries=5))
 
         # look for an ecp cookie file and load the cookies
@@ -179,7 +179,7 @@ def resolve_url(url, directory=None, permissions=None):
         else:
             cj = []
 
-        for c in cj: 
+        for c in cj:
             if c.domain == u.netloc:
                 # load cookies for this server
                 cookie_dict[c.name] = c.value
@@ -211,7 +211,7 @@ def resolve_url(url, directory=None, permissions=None):
         # TODO: We could support other schemes such as gsiftp by
         # calling out to globus-url-copy
         errmsg  = "Unknown URL scheme: %s\n" % (u.scheme)
-        errmsg += "Currently supported are: file, http, and https." 
+        errmsg += "Currently supported are: file, http, and https."
         raise ValueError(errmsg)
 
     if not os.path.isfile(filename):
@@ -296,7 +296,7 @@ def add_workflow_command_line_group(parser):
                            "section.")
 
 
-class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
+class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
     """
     This is a sub-class of glue.pipeline.DeepCopyableConfigParser, which lets
     us add a few additional helper features that are useful in workflows.
@@ -306,7 +306,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
         Initialize an WorkflowConfigParser. This reads the input configuration
         files, overrides values if necessary and performs the interpolation.
         See https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.html
-        
+
         Parameters
         -----------
         configFiles : Path to .ini file, or list of paths
@@ -333,8 +333,8 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             overrideTuples = []
         if deleteTuples is None:
             deleteTuples = []
-        pycbc_glue.pipeline.DeepCopyableConfigParser.__init__(self)
-        
+        glue.pipeline.DeepCopyableConfigParser.__init__(self)
+
         # Enable case sensitive options
         self.optionxform = str
 
@@ -346,7 +346,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
         self.perform_exe_expansion()
 
         # Split sections like [inspiral&tmplt] into [inspiral] and [tmplt]
-        self.split_multi_sections() 
+        self.split_multi_sections()
 
         # Populate shared options from the [sharedoptions] section
         self.populate_shared_sections()
@@ -442,7 +442,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
                     "or section. Cannot parse %s." % str(delete))
             else:
                 parsedDeletes.append(tuple(splitDelete))
-        
+
         # Identify the overrides
         confOverrides = args.config_overrides or []
         # and parse them
@@ -493,7 +493,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
         This function will look through the executables section of the
         ConfigParser object and replace any values using macros with full paths.
 
-        For any values that look like 
+        For any values that look like
 
         ${which:lalapps_tmpltbank}
 
@@ -517,7 +517,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
         If this looks like
 
         ${which:lalapps_tmpltbank}
- 
+
         it will return the equivalent of which(lalapps_tmpltbank)
 
         Otherwise it will return an unchanged string.
@@ -562,7 +562,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
         """
         # Keep only subsection names
         subsections = [sec[len(section_name)+1:] for sec in self.sections()\
-                       if sec.startswith(section_name + '-')]   
+                       if sec.startswith(section_name + '-')]
 
         for sec in subsections:
             sp = sec.split('-')
@@ -574,13 +574,13 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
                 raise ValueError( "Workflow uses the '-' as a delimiter so "
                     "this is interpreted as section-subsection-tag. "
                     "While checking section %s, no section with "
-                    "name %s-%s was found. " 
+                    "name %s-%s was found. "
                     "If you did not intend to use tags in an "
                     "'advanced user' manner, or do not understand what "
                     "this means, don't use dashes in section "
                     "names. So [injection-nsbhinj] is good. "
                     "[injection-nsbh-inj] is not." % (sec, sp[0], sp[1]))
-        
+
         if len(subsections) > 0:
             return [sec.split('-')[0] for sec in subsections]
         elif self.has_section(section_name):
@@ -590,7 +590,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
 
     def perform_extended_interpolation(self):
         """
-        Filter through an ini file and replace all examples of 
+        Filter through an ini file and replace all examples of
         ExtendedInterpolation formatting with the exact value. For values like
         ${example} this is replaced with the value that corresponds to the
         option called example ***in the same section***
@@ -620,7 +620,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
     def interpolate_string(self, testString, section):
         """
         Take a string and replace all example of ExtendedInterpolation
-        formatting within the string with the exact value. 
+        formatting within the string with the exact value.
 
         For values like ${example} this is replaced with the value that
         corresponds to the option called example ***in the same section***
@@ -747,7 +747,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             provided items.
             This will override so that the options+values given in items
             will replace the original values if the value is set to True.
-            Default = True 
+            Default = True
         """
         # Sanity checking
         if not self.has_section(section):
@@ -767,7 +767,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
     def sanity_check_subsections(self):
         """
         This function goes through the ConfigParset and checks that any options
-        given in the [SECTION_NAME] section are not also given in any 
+        given in the [SECTION_NAME] section are not also given in any
         [SECTION_NAME-SUBSECTION] sections.
 
         """
@@ -791,7 +791,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
         """
         Check for duplicate options in two sections, section1 and section2.
         Will return a list of the duplicate options.
-    
+
         Parameters
         ----------
         section1 : string
@@ -830,7 +830,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
 
     def get_opt_tag(self, section, option, tag):
         """
-        Convenience function accessing get_opt_tags() for a single tag: see 
+        Convenience function accessing get_opt_tags() for a single tag: see
         documentation for that function.
         NB calling get_opt_tags() directly is preferred for simplicity.
 
@@ -845,7 +845,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             The ConfigParser option to look for
         tag : string
             The name of the subsection to look in, if not found in [section]
- 
+
         Returns
         --------
         string
@@ -872,7 +872,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             The ConfigParser option to look for
         tags : list of strings
             The name of subsections to look in, if not found in [section]
- 
+
         Returns
         --------
         string
@@ -933,7 +933,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             The ConfigParser option to look for
         tag : string
             The name of the subsection to look in, if not found in [section]
- 
+
         Returns
         --------
         Boolean
@@ -960,7 +960,7 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             The ConfigParser option to look for
         tags : list of strings
             The names of the subsection to look in, if not found in [section]
- 
+
         Returns
         --------
         Boolean
@@ -971,3 +971,30 @@ class WorkflowConfigParser(pycbc_glue.pipeline.DeepCopyableConfigParser):
             return True
         except ConfigParser.Error:
             return False
+
+
+    @staticmethod
+    def add_config_opts_to_parser(parser):
+        """Adds options for configuration files to the given parser."""
+        parser.add_argument("--config-files", type=str, nargs="+",
+                            required=True,
+                            help="A file parsable by "
+                                 "pycbc.workflow.WorkflowConfigParser.")
+        parser.add_argument("--config-overrides", type=str, nargs="+",
+                            default=None, metavar="SECTION:OPTION:VALUE",
+                            help="List of section:option:value combinations "
+                                 "to add into the configuration file.")
+
+
+    @classmethod
+    def from_cli(cls, opts):
+        """Loads a config file from the given options, with overrides applied.
+        """
+        # read configuration file
+        logging.info("Reading configuration file")
+        if opts.config_overrides is not None:
+            overrides = [override.split(":")
+                         for override in opts.config_overrides]
+        else:
+            overrides = None
+        return cls(opts.config_files, overrides)

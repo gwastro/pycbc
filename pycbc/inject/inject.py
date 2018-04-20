@@ -33,8 +33,8 @@ import lalsimulation as sim
 import h5py
 from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
-from pycbc_glue.ligolw import utils as ligolw_utils
-from pycbc_glue.ligolw import ligolw, table, lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import pycbc.io
@@ -63,7 +63,7 @@ def legacy_approximant_name(apx):
         order = -1
     name = sim.GetStringFromApproximant(sim.GetApproximantFromString(apx))
     return name, order
-    
+
 
 class _HDFInjectionSet(object):
     """Manages sets of injections: reads injections from hdf files
@@ -133,8 +133,8 @@ class _HDFInjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
         inj_filter_rejector: InjFilterRejector instance; optional, default=None
@@ -155,7 +155,7 @@ class _HDFInjectionSet(object):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
-        lalstrain = strain.lal()    
+        lalstrain = strain.lal()
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
@@ -187,7 +187,7 @@ class _HDFInjectionSet(object):
                      detector_name, f_lower=f_l, distance_scale=distance_scale)
             if float(signal.start_time) > t1:
                 continue
-            
+
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
@@ -201,7 +201,7 @@ class _HDFInjectionSet(object):
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
         return injected
-       
+
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     f_lower=None, distance_scale=1):
         """Make a h(t) strain time-series from an injection object.
@@ -220,8 +220,8 @@ class _HDFInjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
 
         Returns
         --------
@@ -257,7 +257,7 @@ class _HDFInjectionSet(object):
                              inj.ra, inj.dec, inj.polarization)
 
         return signal
-        
+
     def end_times(self):
         """Return the end times of all injections"""
         return self.table.tc
@@ -300,8 +300,8 @@ class _XMLInjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
         inj_filter_rejector: InjFilterRejector instance; optional, default=None
@@ -322,7 +322,7 @@ class _XMLInjectionSet(object):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
 
-        lalstrain = strain.lal()    
+        lalstrain = strain.lal()
         earth_travel_time = lal.REARTH_SI / lal.C_SI
         t0 = float(strain.start_time) - earth_travel_time
         t1 = float(strain.end_time) + earth_travel_time
@@ -355,11 +355,11 @@ class _XMLInjectionSet(object):
                      detector_name, f_lower=f_l, distance_scale=distance_scale)
             if float(signal.start_time) > t1:
                 continue
-            
+
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
-            injection_parameters.append(inj)                            
+            injection_parameters.append(inj)
             if inj_filter_rejector is not None:
                 sid = inj.simulation_id
                 inj_filter_rejector.generate_short_inj_from_inj(signal, sid)
@@ -372,7 +372,7 @@ class _XMLInjectionSet(object):
         if inj_filter_rejector is not None:
             inj_filter_rejector.injection_params = injected
         return injected
-       
+
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
                                     f_lower=None, distance_scale=1):
         """Make a h(t) strain time-series from an injection object as read from
@@ -390,8 +390,8 @@ class _XMLInjectionSet(object):
             Low-frequency cutoff for injected signals. If None, use value
             provided by each injection.
         distance_scale: {1, float}, optional
-            Factor to scale the distance of an injection with. The default is 
-            no scaling. 
+            Factor to scale the distance of an injection with. The default is
+            no scaling.
 
         Returns
         --------
@@ -428,15 +428,15 @@ class _XMLInjectionSet(object):
                              inj.longitude, inj.latitude, inj.polarization)
 
         return signal
-        
+
     def end_times(self):
         """Return the end times of all injections"""
-        return [inj.get_time_geocent() for inj in self.table]      
+        return [inj.get_time_geocent() for inj in self.table]
 
 
 class InjectionSet(object):
     """Manages sets of injections and injects them into time series.
-    
+
     Injections are read from either LIGOLW XML files or HDF files.
 
     Parameters

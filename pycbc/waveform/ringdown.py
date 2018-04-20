@@ -65,12 +65,12 @@ def props(obj, required, **kwargs):
     return input_params
 
 def lm_amps_phases(**kwargs):
-    """ Take input_params and return dictionaries with amplitudes and phases 
+    """ Take input_params and return dictionaries with amplitudes and phases
     of each overtone of a specific lm mode, checking that all of them are given.
     """
     l, m = kwargs['l'], kwargs['m']
     amps, phis = {}, {}
-    # amp220 is always required, because the amplitudes of subdominant modes 
+    # amp220 is always required, because the amplitudes of subdominant modes
     # are given as fractions of amp220.
     try:
         amps['220'] = kwargs['amp220']
@@ -117,7 +117,7 @@ def lm_freqs_taus(**kwargs):
 # Functions to obtain f_0 and tau from mass and spin #########################
 
 def get_lm_f0tau(mass, spin, l, m, nmodes):
-    """Return the f_0 and the tau of each overtone for a given lm mode 
+    """Return the f_0 and the tau of each overtone for a given lm mode
     """
     qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
     lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(qnmfreq, mass, spin, l, m, nmodes)
@@ -145,7 +145,7 @@ def get_lm_f0tau_allmodes(mass, spin, modes):
 # Functions to obtain t_final and f_final #####################################
 
 def qnm_time_decay(tau, decay):
-    """Return the time at which the amplitude of the 
+    """Return the time at which the amplitude of the
     ringdown falls to decay of the peak amplitude.
 
     Parameters
@@ -165,7 +165,7 @@ def qnm_time_decay(tau, decay):
     return - tau * numpy.log(decay)
 
 def qnm_freq_decay(f_0, tau, decay):
-    """Return the frequency at which the amplitude of the 
+    """Return the frequency at which the amplitude of the
     ringdown falls to decay of the peak amplitude.
 
     Parameters
@@ -241,7 +241,7 @@ def lm_ffinal(freqs, damping_times, modes):
     f_final = max(f_max.values())
     if f_final > max_freq:
         f_final = max_freq
-    
+
     return f_final
 
 def lm_deltaf(damping_times, modes):
@@ -344,7 +344,7 @@ def get_td_qnm(template=None, taper=None, **kwargs):
         amplitude is 1/1000 of the peak amplitude.
     t_final : {None, float}, optional
         The ending time of the output time series.
-        If None, it will be set to the time at which the amplitude is 
+        If None, it will be set to the time at which the amplitude is
         1/1000 of the peak amplitude.
 
     Returns
@@ -356,7 +356,7 @@ def get_td_qnm(template=None, taper=None, **kwargs):
     """
 
     input_params = props(template, qnm_required_args, **kwargs)
-    
+
     f_0 = input_params.pop('f_0')
     tau = input_params.pop('tau')
     amp = input_params.pop('amp')
@@ -444,7 +444,7 @@ def get_fd_qnm(template=None, **kwargs):
         If None, it will be set to delta_f.
     f_final : {None, float}, optional
         The ending frequency of the output frequency series.
-        If None, it will be set to the frequency at which the amplitude is 
+        If None, it will be set to the frequency at which the amplitude is
         1/1000 of the peak amplitude.
 
     Returns
@@ -490,7 +490,7 @@ def get_fd_qnm(template=None, **kwargs):
     denominator = 1 + (4j * pi * freqs * tau) - (4 * pi_sq * ( freqs*freqs - f_0*f_0) * tau*tau)
     norm = amp * tau / denominator
     if t_0 != 0:
-        time_shift = numpy.exp(-1j * two_pi * freqs * t_0) 
+        time_shift = numpy.exp(-1j * two_pi * freqs * t_0)
         norm *= time_shift
 
     # Analytical expression for the Fourier transform of the ringdown (damped sinusoid)
@@ -529,7 +529,7 @@ def get_td_lm(template=None, taper=None, **kwargs):
         final taper being the superposition of all the tapers.
     freqs : dict
         {lmn:f_lmn} Dictionary of the central frequencies for each overtone,
-        as many as number of modes. 
+        as many as number of modes.
     taus : dict
         {lmn:tau_lmn} Dictionary of the damping times for each overtone,
         as many as number of modes.
@@ -542,7 +542,7 @@ def get_td_lm(template=None, taper=None, **kwargs):
     amp220 : float
         Amplitude of the fundamental 220 mode, needed for any lm.
     amplmn : float
-        Fraction of the amplitude of the lmn overtone relative to the 
+        Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, as many as the number of subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of modes. Should also
@@ -555,7 +555,7 @@ def get_td_lm(template=None, taper=None, **kwargs):
         amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
     t_final : {None, float}, optional
         The ending time of the output time series.
-        If None, it will be set to the time at which the amplitude is 
+        If None, it will be set to the time at which the amplitude is
         1/1000 of the peak amplitude (the maximum of all modes).
 
     Returns
@@ -583,7 +583,7 @@ def get_td_lm(template=None, taper=None, **kwargs):
     t_final = input_params.pop('t_final', None)
 
     if delta_t is None:
-        delta_t = lm_deltat(f_0, tau, ['%d%d%d' %(l,m,nmodes)]) 
+        delta_t = lm_deltat(f_0, tau, ['%d%d%d' %(l,m,nmodes)])
     if t_final is None:
         t_final = lm_tfinal(tau, ['%d%d%d' %(l, m, nmodes)])
 
@@ -692,7 +692,7 @@ def get_fd_lm(template=None, **kwargs):
 
     for n in range(nmodes):
         hplus, hcross = get_fd_qnm(template=None, f_0=f_0['%d%d%d' %(l,m,n)],
-                            tau=tau['%d%d%d' %(l,m,n)], 
+                            tau=tau['%d%d%d' %(l,m,n)],
                             amp=amps['%d%d%d' %(l,m,n)],
                             phi=phis['%d%d%d' %(l,m,n)],
                             inclination=inc, l=l, m=m, delta_f=delta_f,
@@ -735,7 +735,7 @@ def get_td_from_final_mass_spin(template=None, taper=None, **kwargs):
     amp220 : float
         Amplitude of the fundamental 220 mode.
     amplmn : float
-        Fraction of the amplitude of the lmn overtone relative to the 
+        Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, as many as the number of subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of modes. Should also
@@ -831,7 +831,7 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
     amp220 : float
         Amplitude of the fundamental 220 mode.
     amplmn : float
-        Fraction of the amplitude of the lmn overtone relative to the 
+        Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, as many as the number of subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of modes. Should also
@@ -928,7 +928,7 @@ def get_td_from_freqtau(template=None, taper=None, **kwargs):
     amp220 : float
         Amplitude of the fundamental 220 mode.
     amplmn : float
-        Fraction of the amplitude of the lmn overtone relative to the 
+        Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, as many as the number of subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of modes. Should also
@@ -1020,7 +1020,7 @@ def get_fd_from_freqtau(template=None, **kwargs):
     amp220 : float
         Amplitude of the fundamental 220 mode.
     amplmn : float
-        Fraction of the amplitude of the lmn overtone relative to the 
+        Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, as many as the number of subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of modes. Should also

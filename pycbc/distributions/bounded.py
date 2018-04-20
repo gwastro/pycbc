@@ -21,9 +21,8 @@ try:
     from ConfigParser import Error
 except ImportError:
     from configparser import Error
-from pycbc.distributions import boundaries
-
-VARARGS_DELIM = '+'
+from pycbc import boundaries
+from pycbc import VARARGS_DELIM
 
 #
 #   Distributions for priors

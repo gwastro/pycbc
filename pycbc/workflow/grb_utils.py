@@ -25,7 +25,7 @@
 """
 This library code contains functions and classes that are used in the
 generation of pygrb workflows. For details about pycbc.workflow see here:
-http://ligo-cbc.github.io/pycbc/latest/html/workflow.html
+http://pycbc.org/pycbc/latest/html/workflow.html
 """
 
 from __future__ import print_function
@@ -33,8 +33,8 @@ import sys
 import os
 import shutil
 import urlparse, urllib
-from pycbc_glue import segments
-from pycbc_glue.ligolw import ligolw, lsctables, utils, ilwd
+from glue import segments
+from pycbc.ligolw import ligolw, lsctables, utils, ilwd
 from pycbc.workflow.core import File, FileList, resolve_url
 from pycbc.workflow.jobsetup import select_generic_executable
 
@@ -53,7 +53,7 @@ def set_grb_start_end(cp, start, end):
 
     end : int
     The end of the workflow analysis time.
-    
+
     Returns
     --------
     cp : pycbc.workflow.configuration.WorkflowConfigParser object
@@ -149,7 +149,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
 
     sci_seg : glue.segments.segment
     The science segment for the analysis run.
-    
+
     out_dir : str
     The output directory, destination for xml file.
 
@@ -164,9 +164,9 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
     xmldoc.appendChild(ligolw.LIGO_LW())
     tbl = lsctables.New(lsctables.ExtTriggersTable)
     cols = tbl.validcolumns
-    xmldoc.childNodes[-1].appendChild(tbl)    
+    xmldoc.childNodes[-1].appendChild(tbl)
     row = tbl.appendRow()
-    
+
     # Add known attributes for this GRB
     setattr(row, "event_ra", float(cp.get("workflow", "ra")))
     setattr(row, "event_dec", float(cp.get("workflow", "dec")))
@@ -198,7 +198,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
     xml_file_url = urlparse.urljoin("file:", urllib.pathname2url(xml_file_path))
     xml_file = File(ifos, xml_file_name, sci_seg, file_url=xml_file_url)
     xml_file.PFN(xml_file_url, site="local")
-    
+
     return xml_file
 
 
@@ -261,7 +261,7 @@ def make_gating_node(workflow, datafind_files, outdir=None, tags=None):
     cp = workflow.cp
     if tags is None:
         tags = []
-    
+
     condition_strain_class = select_generic_executable(workflow,
                                                        "condition_strain")
     condition_strain_nodes = []

@@ -60,11 +60,11 @@ class TestWaveform(unittest.TestCase):
 
 
     def test_spintaylorf2GPU(self):
-    
+
         print(type(self.context))
         if isinstance(self.context, CPUScheme):
             return
-            
+
         fl = 25
         delta_f = 1.0 / 256
 
@@ -119,7 +119,7 @@ class TestWaveform(unittest.TestCase):
         self.assertRaises(ValueError,func,approximant="SpinTaylorF2",mass1=3,mass2=3,phase_order=7)
         self.assertRaises(ValueError,func,approximant="SpinTaylorF2",mass1=3,mass2=3,phase_order=7)
         self.assertRaises(ValueError,func,approximant="SpinTaylorF2",mass1=3)
- 
+
         func = get_fd_waveform
         self.assertRaises(ValueError,func,approximant="BLAH")
         self.assertRaises(ValueError,func,approximant="TaylorF2",mass1=3)

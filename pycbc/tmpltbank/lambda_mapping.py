@@ -97,7 +97,7 @@ def generate_inverse_mapping(order):
     generate_mapping gives dict[key] = item this will give
     dict[item] = key. Valid PN orders are:
     {}
-    
+
     Parameters
     ----------
     order : string
@@ -121,7 +121,7 @@ generate_inverse_mapping.__doc__ = \
 
 def get_ethinca_orders():
     """
-    Returns the dictionary mapping TaylorF2 PN order names to twice-PN 
+    Returns the dictionary mapping TaylorF2 PN order names to twice-PN
     orders (powers of v/c)
     """
     ethinca_orders = {"zeroPN"           : 0,
@@ -136,13 +136,13 @@ def get_ethinca_orders():
 
 def ethinca_order_from_string(order):
     """
-    Returns the integer giving twice the post-Newtonian order 
+    Returns the integer giving twice the post-Newtonian order
     used by the ethinca calculation. Currently valid only for TaylorF2 metric
 
     Parameters
     ----------
     order : string
-    
+
     Returns
     -------
     int
@@ -160,7 +160,7 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
     Take a set of masses and spins and convert to the various lambda
     coordinates that describe the orbital phase. Accepted PN orders are:
     {}
- 
+
     Parameters
     ----------
     mass1 : float or array
@@ -239,7 +239,7 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
     phasing_arr = lalsimulation.SimInspiralTaylorF2AlignedPhasingArray\
         (mass1_v, mass2_v, spin1z_v, spin2z_v, lambda1_v, lambda2_v,
          dquadparam1_v, dquadparam2_v)
- 
+
     vec_len = lalsimulation.PN_PHASING_SERIES_MAX_ORDER + 1;
     phasing_vs = numpy.zeros([num_points, vec_len])
     phasing_vlogvs = numpy.zeros([num_points, vec_len])

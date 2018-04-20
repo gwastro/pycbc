@@ -34,6 +34,7 @@ import copy
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from pycbc.weave import inline
+from scipy import signal
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""
@@ -43,6 +44,7 @@ def ceilpow2(n):
     if (signif == 0.5):
         exponent -= 1;
     return (1) << exponent;
+
 
 def coalign_waveforms(h1, h2, psd=None,
                       low_frequency_cutoff=None,
@@ -123,7 +125,7 @@ def phase_from_frequencyseries(htilde, remove_start_phase=True):
     p = numpy.unwrap(numpy.angle(htilde.data)).astype(
             real_same_precision_as(htilde))
     if remove_start_phase:
-        p += -p[0]    
+        p += -p[0]
     return FrequencySeries(p, delta_f=htilde.delta_f, epoch=htilde.epoch,
         copy=False)
 
@@ -200,7 +202,7 @@ def time_from_frequencyseries(htilde, sample_frequencies=None,
 def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     """Return gravitational wave phase
 
-    Return the gravitation-wave phase from the h_plus and h_cross 
+    Return the gravitation-wave phase from the h_plus and h_cross
     polarizations of the waveform. The returned phase is always
     positive and increasing with an initial phase of 0.
 
@@ -221,7 +223,7 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     Examples
     --------s
     >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
-    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10,
                          f_lower=30, delta_t=1.0/4096)
     >>> phase = phase_from_polarizations(hp, hc)
 
@@ -229,15 +231,15 @@ def phase_from_polarizations(h_plus, h_cross, remove_start_phase=True):
     p = numpy.unwrap(numpy.arctan2(h_cross.data, h_plus.data)).astype(
         real_same_precision_as(h_plus))
     if remove_start_phase:
-        p += -p[0]    
+        p += -p[0]
     return TimeSeries(p, delta_t=h_plus.delta_t, epoch=h_plus.start_time,
         copy=False)
 
 def amplitude_from_polarizations(h_plus, h_cross):
     """Return gravitational wave amplitude
 
-    Return the gravitation-wave amplitude from the h_plus and h_cross 
-    polarizations of the waveform. 
+    Return the gravitation-wave amplitude from the h_plus and h_cross
+    polarizations of the waveform.
 
     Parameters
     ----------
@@ -256,7 +258,7 @@ def amplitude_from_polarizations(h_plus, h_cross):
     Examples
     --------
     >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
-    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10,
                          f_lower=30, delta_t=1.0/4096)
     >>> amp = amplitude_from_polarizations(hp, hc)
 
@@ -268,7 +270,7 @@ def frequency_from_polarizations(h_plus, h_cross):
     """Return gravitational wave frequency
 
     Return the gravitation-wave frequency as a function of time
-    from the h_plus and h_cross polarizations of the waveform. 
+    from the h_plus and h_cross polarizations of the waveform.
     It is 1 bin shorter than the input vectors and the sample times
     are advanced half a bin.
 
@@ -285,12 +287,12 @@ def frequency_from_polarizations(h_plus, h_cross):
     -------
     GWFrequency : TimeSeries
         A TimeSeries containing the gravitational wave frequency as a function
-        of time. 
+        of time.
 
     Examples
     --------
     >>> from pycbc.waveform import get_td_waveform, phase_from_polarizations
-    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10, 
+    >>> hp, hc = get_td_waveform(approximant="TaylorT4", mass1=10, mass2=10,
                          f_lower=30, delta_t=1.0/4096)
     >>> freq = frequency_from_polarizations(hp, hc)
 
@@ -301,7 +303,7 @@ def frequency_from_polarizations(h_plus, h_cross):
     return TimeSeries(freq.astype(real_same_precision_as(h_plus)),
         delta_t=phase.delta_t, epoch=start_time)
 
-# map between tapering string in sim_inspiral table or inspiral 
+# map between tapering string in sim_inspiral table or inspiral
 # code option and lalsimulation constants
 taper_map = {
     'TAPER_NONE'    : None,
@@ -320,7 +322,7 @@ taper_func_map = {
 
 def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
     """
-    Taper either or both ends of a time series using wrapped 
+    Taper either or both ends of a time series using wrapped
     LALSimulation functions
 
     Parameters
@@ -332,7 +334,7 @@ def taper_timeseries(tsdata, tapermethod=None, return_lal=False):
         'TAPER_STARTEND', 'start', 'end', 'startend') - NB 'TAPER_NONE' will
         not change the series!
     return_lal : Boolean
-        If True, return a wrapped LAL time series object, else return a 
+        If True, return a wrapped LAL time series object, else return a
         PyCBC time series.
     """
     if tapermethod is None:
@@ -448,9 +450,91 @@ def apply_fd_time_shift(htilde, shifttime, kmin=0, fseries=None, copy=True):
     else:
         if fseries is None:
             fseries = htilde.sample_frequencies.numpy()
-        shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries), 
+        shift = Array(numpy.exp(-2j*numpy.pi*dt*fseries),
                     dtype=complex_same_precision_as(htilde))
         if copy:
             htilde = 1. * htilde
         htilde *= shift
     return htilde
+
+
+def fd_taper(out, start, end, beta=8, side='left'):
+    """Applies a taper to the given FrequencySeries.
+
+    A half-kaiser window is used for the roll-off.
+
+    Parameters
+    ----------
+    out : FrequencySeries, optional
+        The ``FrequencySeries`` to taper.
+    start : float
+        The frequency (in Hz) to start the taper window.
+    end : float
+        The frequency (in Hz) to end the taper window.
+    beta : int, optional
+        The beta parameter to use for the Kaiser window. See
+        ``scipy.signal.kaiser`` for details. Default is 8.
+    side : {'left', 'right'}
+        The side to apply the taper to. If ``'left'`` (``'right'``), the taper
+        will roll up (down) between ``start`` and ``end``, with all values
+        before ``start`` (after ``end``) set to zero. Default is ``'left'``.
+
+    Returns
+    -------
+    FrequencySeries
+        The tapered frequency series.
+    """
+    out = out.copy()
+    width = end - start
+    winlen = 2 * int(width / out.delta_f)
+    window = Array(signal.get_window(('kaiser', beta), winlen))
+    kmin = int(start / out.delta_f)
+    kmax = kmin + winlen/2
+    if side == 'left':
+        out[kmin:kmax] *= window[:winlen/2]
+        out[:kmin] *= 0.
+    elif side == 'right':
+        out[kmin:kmax] *= window[winlen/2:]
+        out[kmax:] *= 0.
+    else:
+        raise ValueError("unrecognized side argument {}".format(side))
+    return out
+
+
+def fd_to_td(htilde, delta_t=None, left_window=None, right_window=None,
+          left_beta=8, right_beta=8):
+    """Converts a FD waveform to TD.
+
+    A window can optionally be applied using ``fd_taper`` to the left or right
+    side of the waveform before being converted to the time domain.
+
+    Parameters
+    ----------
+    htilde : FrequencySeries
+        The waveform to convert.
+    delta_t : float, optional
+        Make the returned time series have the given ``delta_t``.
+    left_window : tuple of float, optional
+        A tuple giving the start and end frequency of the FD taper to apply
+        on the left side. If None, no taper will be applied on the left.
+    right_window : tuple of float, optional
+        A tuple giving the start and end frequency of the FD taper to apply
+        on the right side. If None, no taper will be applied on the right.
+    left_beta : int, optional
+        The beta parameter to use for the left taper. See ``fd_taper`` for
+        details. Default is 8.
+    right_beta : int, optional
+        The beta parameter to use for the right taper. Default is 8.
+
+    Returns
+    -------
+    TimeSeries
+        The time-series representation of ``htilde``.
+    """
+    if left_window is not None:
+        start, end = left_window
+        htilde = fd_taper(htilde, start, end, side='left', beta=left_beta)
+    if right_window is not None:
+        start, end = right_window
+        htilde = fd_taper(htilde, start, end, side='right', beta=right_beta)
+    return htilde.to_timeseries(delta_t=delta_t)

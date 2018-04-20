@@ -31,7 +31,7 @@ def find_lib_path(libname, packages):
         pass
 
     path = get_libpath_from_dirlist(libname, libdirs)
-    
+
     if path is not None:
         return [(path, '')]
     else:
@@ -56,8 +56,7 @@ hiddenimports = ['pycbc.fft.fft_cpu',
                  'h5py',
                  'h5py._conv',
                  'h5py._stub',
-                 'mpld3',
-                 'M2Crypto'
+                 'mpld3'
                  ]
 
 datas = []

@@ -3,11 +3,12 @@ import os
 import pycbc
 import numpy
 import lal
-from pycbc_glue.ligolw import ligolw
-from pycbc_glue.ligolw import lsctables
-from pycbc_glue.ligolw import utils as ligolw_utils
-from pycbc_glue.ligolw.utils import process as ligolw_process
-from pycbc_glue.ligolw import param as ligolw_param
+from six import u as unicode
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import process as ligolw_process
+from pycbc.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
@@ -16,7 +17,7 @@ from pycbc.filter import compute_followup_snr_series
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    from pycbc_glue.ligolw import array as ligolw_array
+    from pycbc.ligolw import array as ligolw_array
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     elem = ligolw.LIGO_LW(Attributes({u"Name": unicode(series.__class__.__name__)}))
     if comment is not None:
@@ -366,4 +367,4 @@ class SingleForGraceDB(SingleCoincForGraceDB):
         if hardware_injection:
             fake_coinc['HWINJ'] = True
         SingleCoincForGraceDB.__init__(self, [ifo], fake_coinc, **kwds)
- 
+

@@ -95,7 +95,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
         End time in GPS seconds to generate nosie
     seed : {None, int}
         The seed to generate the noise.
-    low_frequency_cutof : {10.0, float}
+    low_frequency_cutof : {1.0, float}
         The low frequency cutoff to pass to the PSD generation.
 
     Returns
@@ -184,7 +184,7 @@ def noise_from_string(psd_name, start_time, end_time, seed=0, low_frequency_cuto
     --------
     noise : TimeSeries
         A TimeSeries containing gaussian noise colored by the given psd.
-    """   
+    """
     delta_f = 1.0 / FILTER_LENGTH
     flen = int(SAMPLE_RATE / delta_f) / 2 + 1
     psd = pycbc.psd.from_string(psd_name, flen, delta_f, low_frequency_cutoff)

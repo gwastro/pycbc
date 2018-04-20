@@ -15,15 +15,15 @@ def _noint(init, *args):
     if init is not None:
         return init(*args)
 
-_process_lock = None    
-_numdone = None    
+_process_lock = None
+_numdone = None
 def _lockstep_fcn(values):
     """ Wrapper to ensure that all processes execute together """
     numrequired, fcn, args = values
     with _process_lock:
         _numdone.value += 1
     # yep this is an ugly busy loop, do something better please
-    # when we care about the performance of this call and not just the 
+    # when we care about the performance of this call and not just the
     # guarantee it provides (ok... maybe never)
     while 1:
         if _numdone.value == numrequired:
@@ -44,7 +44,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
         noint = functools.partial(_noint, initializer)
         super(BroadcastPool, self).__init__(processes, noint, initargs, **kwds)
         atexit.register(_shutdown_pool, self)
-        
+
     def __len__(self):
         return len(self._pool)
 
@@ -86,7 +86,7 @@ class BroadcastPool(multiprocessing.pool.Pool):
                 raise KeyboardInterrupt
 
 def _dummy_broadcast(self, f, args):
-    self.map(f, [args] * self.size)    
+    self.map(f, [args] * self.size)
 
 class SinglePool(object):
     def broadcast(self, fcn, args):

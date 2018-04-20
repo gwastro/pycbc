@@ -174,7 +174,7 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     value = abs(value)
     minus_err = abs(error)
     if plus_error is None:
-        plus_err = minus_err 
+        plus_err = minus_err
     else:
         plus_err = abs(plus_error)
     error = min(minus_err, plus_err)
@@ -210,7 +210,7 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
                 # after the decimal until it gets to the first non-zero value
                 relative_err = get_signum(relative_err, 1.)
                 txt = r'%s %s \pm%s\%%' %(valtxt, powfactor, relative_err)
-            else: 
+            else:
                 txt = r'%s \pm %s%s' %(valtxt, errtxt, powfactor)
         else:
             plus_err = plus_err * 10**(-conversion_factor)
@@ -230,4 +230,4 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
                     minus_err_txt, powfactor)
     else:
         txt = r'%s%s' %(valtxt, powfactor)
-    return txt 
+    return txt

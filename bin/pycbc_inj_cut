@@ -31,9 +31,9 @@ import logging
 import numpy
 import pycbc
 import pycbc.inject
-import pycbc_glue.ligolw.utils
+from pycbc.ligolw import utils as ligolw_utils
 from pycbc.types import MultiDetOptionAction
-from pycbc_glue.ligolw import lsctables
+from pycbc.ligolw import lsctables
 import pycbc.version
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -98,7 +98,7 @@ llw_doc = injections.indoc
 llw_root = llw_doc.childNodes[0]
 llw_root.removeChild(injections.table)
 llw_root.appendChild(out_sim_inspiral_inject)
-pycbc_glue.ligolw.utils.write_filename(llw_doc, output_inject,
+ligolw_utils.write_filename(llw_doc, output_inject,
                                        gz=output_inject.endswith('gz'))
 
 if opts.output_missed:
@@ -110,7 +110,7 @@ if opts.output_missed:
     llw_root.appendChild(out_sim_inspiral_missed)
     logging.info('Storing them to %s.', output_missed)
 
-    pycbc_glue.ligolw.utils.write_filename(llw_doc, output_missed,
+    ligolw_utils.write_filename(llw_doc, output_missed,
                                            gz=output_missed.endswith('gz'))
 
 logging.info('Done')

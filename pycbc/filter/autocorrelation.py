@@ -40,7 +40,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
 
     .. math::
 
-        \hat{R}(k) = \frac{1}{n \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
+        \hat{R}(k) = \frac{1}{n \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right)
 
     Where :math:`\hat{R}(k)` is the ACF, :math:`X_{t}` is the data series at
     time t, :math:`\mu` is the mean of :math:`X_{t}`, and :math:`\sigma^{2}` is
@@ -79,8 +79,8 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     while npad < 2*ny_orig:
         npad = npad << 1
     ypad = numpy.zeros(npad)
-    ypad[:ny_orig] = y    
-        
+    ypad[:ny_orig] = y
+
     # FFT data minus the mean
     fdata = TimeSeries(ypad, delta_t=delta_t).to_frequencyseries()
 

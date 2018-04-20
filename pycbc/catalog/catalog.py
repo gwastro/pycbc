@@ -130,7 +130,7 @@ d["redshift"] = (.008, -.003, +.002)
 #http://ligo.org/detections/GW170608/paper/GW170608_submitted.pdf
 event = "GW170608"
 data[event] = e = {}
-e['time'] = 1180922494.49 
+e['time'] = 1180922494.49
 e['frames'] = {"H1":"https://losc.ligo.org/s/events/GW170608/H-H1_LOSC_CLN_4_V1-1180922478-32.gwf",
                "L1":"https://losc.ligo.org/s/events/GW170608/L-L1_LOSC_CLN_4_V1-1180922478-32.gwf",
              }

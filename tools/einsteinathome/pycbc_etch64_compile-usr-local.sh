@@ -15,7 +15,7 @@ apt-get -y install libpcre3-dev libfreetype6-dev libjpeg-dev libpng-dev libmysql
 # make sure these libraries aren't on the system
 apt-get -y remove lapack3-dev atlas3-base atlas3-headers refblas3
 # further necessary / useful tools
-apt-get -y install openssh-server ntpdate zip gettext curl libcurl3-openssl-dev wget bzip2 screen emacs
+apt-get -y install openssh-server ntpdate zip gettext curl libcurl3-openssl-dev wget bzip2 libbz2-dev screen emacs
 
 test ".$PREFIX" = "." &&
   PREFIX=/usr/local

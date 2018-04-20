@@ -293,7 +293,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         s1v[s1v >= len(self.sbins) - 1] = len(self.sbins) - 2
         rv[rv < 0] = 0
         rv[rv >= len(self.rbins) - 1] = len(self.rbins) - 2
-        
+
         return self.hist[tv, pv, s0v, s1v, rv]
 
     def coinc(self, s0, s1, slide, step):
@@ -425,7 +425,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # take reference slope as the harmonic mean of individual ifo slopes
         inv_alphas = [1./self.alphamax[i] for i in self.ifos]
         self.alpharef = (sum(inv_alphas)/len(inv_alphas))**-1
-        print self.alpharef
+        print(self.alpharef)
 
     def single(self, trigs):
         logr_n = self.lognoiserate(trigs)

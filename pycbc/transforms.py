@@ -19,13 +19,14 @@ This modules provides classes and functions for transforming parameters.
 import copy
 import logging
 import numpy
+from six import string_types
 from pycbc import conversions
 from pycbc import coordinates
 from pycbc import cosmology
 from pycbc.io import record
 from pycbc.waveform import parameters
-from pycbc.distributions.boundaries import Bounds
-from pycbc.distributions.bounded import VARARGS_DELIM
+from pycbc.boundaries import Bounds
+from pycbc import VARARGS_DELIM
 
 class BaseTransform(object):
     """A base class for transforming between two sets of parameters.
@@ -197,9 +198,9 @@ class CustomTransform(BaseTransform):
 
     def __init__(self, input_args, output_args, transform_functions,
                  jacobian=None):
-        if isinstance(input_args, str) or isinstance(input_args, unicode):
+        if isinstance(input_args, string_types):
             input_args = [input_args]
-        if isinstance(output_args, str) or isinstance(output_args, unicode):
+        if isinstance(output_args, string_types):
             output_args = [output_args]
         self.inputs = set(input_args)
         self.outputs = set(output_args)
@@ -355,12 +356,20 @@ class MchirpQToMass1Mass2(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[parameters.mass1] = conversions.mass1_from_mchirp_q(
-                                                maps[parameters.mchirp],
-                                                maps[parameters.q])
-        out[parameters.mass2] = conversions.mass2_from_mchirp_q(
-                                                maps[parameters.mchirp],
-                                                maps[parameters.q])
+        mchirp = maps[parameters.mchirp]
+        q = maps[parameters.q]
+        # the mass{1,2}_from_mchirp_q functions always returns mass1 >= mass2
+        primary = conversions.mass1_from_mchirp_q(mchirp, q)
+        secondary = conversions.mass2_from_mchirp_q(mchirp, q)
+        # if q > 1 means mass1 > mass2; if q < 1 means mass2 > mass1
+        if q < 1:
+            m1 = secondary
+            m2 = primary
+        else:
+            m1 = primary
+            m2 = secondary
+        out[parameters.mass1] = m1
+        out[parameters.mass2] = m2
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -389,30 +398,26 @@ class MchirpQToMass1Mass2(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[parameters.mchirp] = \
-                 conversions.mchirp_from_mass1_mass2(maps[parameters.mass1],
-                                                     maps[parameters.mass2])
-        m_p = conversions.primary_mass(maps[parameters.mass1],
-                                       maps[parameters.mass2])
-        m_s = conversions.secondary_mass(maps[parameters.mass1],
-                                         maps[parameters.mass2])
-        out[parameters.q] = m_p / m_s
+        m1 = maps[parameters.mass1]
+        m2 = maps[parameters.mass2]
+        out[parameters.mchirp] = conversions.mchirp_from_mass1_mass2(m1, m2)
+        out[parameters.q] = m1 / m2
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
         """Returns the Jacobian for transforming mchirp and q to mass1 and
         mass2.
         """
-        mchirp = maps['mchirp']
-        q = maps['q']
+        mchirp = maps[parameters.mchirp]
+        q = maps[parameters.q]
         return mchirp * ((1.+q)/q**3.)**(2./5)
 
     def inverse_jacobian(self, maps):
         """Returns the Jacobian for transforming mass1 and mass2 to
         mchirp and q.
         """
-        m1 = conversions.primary_mass(maps['mass1'], maps['mass2'])
-        m2 = conversions.secondary_mass(maps['mass1'], maps['mass2'])
+        m1 = maps[parameters.mass1]
+        m2 = maps[parameters.mass2]
         return conversions.mchirp_from_mass1_mass2(m1, m2)/m2**2.
 
 

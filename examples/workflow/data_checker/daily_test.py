@@ -31,7 +31,7 @@ import os
 import copy
 import logging
 import argparse
-from pycbc_glue import segments
+from glue import segments
 import pycbc.workflow as _workflow
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
@@ -95,7 +95,7 @@ datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSeg
 
 segment_report(scienceSegsS)
 
-print 
+print
 print
 print "RUNNING DATAFIND FOR CIT"
 logger.disabled = True

@@ -1,7 +1,7 @@
 from . frame import (locations_to_cache, read_frame, datafind_connection,
                      query_and_read_frame, frame_paths, write_frame,
                      DataBuffer, StatusBuffer)
-                     
+
 
 # Status flags for the calibration state vector
 # See e.g. https://dcc.ligo.org/LIGO-G1700234

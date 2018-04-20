@@ -49,14 +49,14 @@ class TestChisq(unittest.TestCase):
         self.z = zeros(2**20, dtype=float32)
         for i in range(0, 4):
             trusted_accum(self.z, self.x)
-        
+
     def test_accum(self):
         with self.context:
             z = zeros(2**20, dtype=float32)
             for i in range(0, 4):
                 chisq_accum_bin(z, self.x)
             self.assertTrue(self.z.almost_equal_elem(z, self.tolerance))
-            
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestChisq))
 

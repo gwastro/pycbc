@@ -22,7 +22,7 @@ def fd_sine_gaussian(amp, quality, central_frequency, fmin, fmax, delta_f):
         The maximum frequency to generate the sine-Gaussian
     delta_f: float
         The size of the frequency step
-    
+
     Returns
     -------
     sg: pycbc.types.Frequencyseries

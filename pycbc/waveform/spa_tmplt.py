@@ -1,4 +1,4 @@
-#  Adapted from code in LALSimInspiralTaylorF2.c 
+#  Adapted from code in LALSimInspiralTaylorF2.c
 #
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
@@ -30,7 +30,7 @@ from pycbc.waveform.utils import ceilpow2
 def findchirp_chirptime(m1, m2, fLower, porder):
     # variables used to compute chirp time
     m1 = float(m1)
-    m2 = float(m2) 
+    m2 = float(m2)
     m = m1 + m2
     eta = m1 * m2 / m / m
     c0T = c2T = c3T = c4T = c5T = c6T = c6LogT = c7T = 0.
@@ -59,7 +59,7 @@ def findchirp_chirptime(m1, m2, fLower, porder):
         c2T = 743.0 / 252.0 + eta * 11.0 / 3.0
         c0T = 5.0 * m * lal.MTSUN_SI / (256.0 * eta)
 
-    # This is the PN parameter v evaluated at the lower freq. cutoff 
+    # This is the PN parameter v evaluated at the lower freq. cutoff
     xT = pow (lal.PI * m * lal.MTSUN_SI * fLower, 1.0 / 3.0)
     x2T = xT * xT
     x3T = xT * x2T
@@ -69,12 +69,12 @@ def findchirp_chirptime(m1, m2, fLower, porder):
     x7T = x3T * x4T
     x8T = x4T * x4T
 
-    # Computes the chirp time as tC = t(v_low)    
-    # tC = t(v_low) - t(v_upper) would be more    
-    # correct, but the difference is negligble.   
+    # Computes the chirp time as tC = t(v_low)
+    # tC = t(v_low) - t(v_upper) would be more
+    # correct, but the difference is negligble.
 
-    # This formula works for any PN order, because 
-    # higher order coeffs will be set to zero.     
+    # This formula works for any PN order, because
+    # higher order coeffs will be set to zero.
     return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T + (c6T + c6LogT * numpy.log(xT)) * x6T + c7T * x7T) / x8T
 
 def spa_length_in_time(**kwds):
@@ -187,10 +187,10 @@ def spa_tmplt(**kwds):
 
     #Calculate the PN terms
     phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
-                                    float(mass1), float(mass2), 
+                                    float(mass1), float(mass2),
                                     float(s1z), float(s2z),
                                     lal_pars)
-                                           
+
     pfaN = phasing.v[0]
     pfa2 = phasing.v[2] / pfaN
     pfa3 = phasing.v[3] / pfaN
@@ -198,7 +198,7 @@ def spa_tmplt(**kwds):
     pfa5 = phasing.v[5] / pfaN
     pfa6 = (phasing.v[6] - phasing.vlogv[6] * log(4)) / pfaN
     pfa7 = phasing.v[7] / pfaN
-    
+
     pfl5 = phasing.vlogv[5] / pfaN
     pfl6 = phasing.vlogv[6] / pfaN
 

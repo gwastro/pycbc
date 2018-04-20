@@ -47,20 +47,20 @@ def threshold_inline(series, value):
         outl = numpy.zeros(len(series), dtype=numpy.uint32)
         outv = numpy.zeros(len(series), dtype=numpy.complex64)
         count = numpy.zeros(1, dtype=numpy.uint32)
-        
+
     N = len(series) # pylint:disable=unused-variable
     threshold = value**2.0 # pylint:disable=unused-variable
-    code = """  
+    code = """
         float v = threshold;
         unsigned int num_parallel_regions = 16;
         unsigned int t=0;
-     
+
         #pragma omp parallel for ordered shared(t)
         for (unsigned int p=0; p<num_parallel_regions; p++){
             unsigned int start  = (N * p) / num_parallel_regions;
             unsigned int end    = (N * (p+1)) / num_parallel_regions;
             unsigned int c = 0;
-            
+
             for (unsigned int i=start; i<end; i++){
                 float r = arr[i*2];
                 float im = arr[i*2+1];
@@ -69,8 +69,8 @@ def threshold_inline(series, value):
                     outv[c+start] = std::complex<float>(r, im);
                     c++;
                 }
-            } 
-            
+            }
+
             #pragma omp ordered
             {
                 t+=c;
@@ -78,8 +78,8 @@ def threshold_inline(series, value):
             memmove(outl+t-c, outl+start, sizeof(unsigned int)*c);
             memmove(outv+t-c, outv+start, sizeof(std::complex<float>)*c);
 
-        }       
-        
+        }
+
         count[0] = t;
     """
     inline(code, ['N', 'arr', 'outv', 'outl', 'count', 'threshold'],

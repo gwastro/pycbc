@@ -18,8 +18,8 @@ To download and install PyCBC follow the instructions at
   
 You can start up an interactive jupyter notebook with PyCBC using either of the links below.
 
-[![azure](https://img.shields.io/badge/azure-notebook-pi.svg)](https://notebooks.azure.com/nitz/libraries/pycbc)
-[![Binder](http://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/ligo-cbc/binder/master?filepath=index.ipynb)
+[![Azure Notebooks](https://notebooks.azure.com/launch.png)](https://notebooks.azure.com/nitz/libraries/pycbc)
+[![Start your mybinder session](http://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/gwastro/PyCBC-Tutorials/master?filepath=index.ipynb)
 
 If you use any code from PyCBC in a scientific publication, then we ask that
 it is cited in the following way:
@@ -36,10 +36,10 @@ A key for the latest release is available at:
 
 [![DOI](https://zenodo.org/badge/31596861.svg)](https://zenodo.org/badge/latestdoi/31596861)
 
-Please see our [citation guidelines](http://ligo-cbc.github.io/pycbc/latest/html/credit.html) for 
+Please see our [citation guidelines](http://pycbc.org/pycbc/latest/html/credit.html) for 
 more details.
 
 [![PyPI version](https://badge.fury.io/py/PyCBC.svg)](https://badge.fury.io/py/PyCBC)
-[![Build Status](https://travis-ci.org/ligo-cbc/pycbc.svg?branch=master)](https://travis-ci.org/ligo-cbc/pycbc)
-[![Code Health](https://landscape.io/github/ligo-cbc/pycbc/master/landscape.svg?style=flat)](https://landscape.io/github/ligo-cbc/pycbc/master)
+[![Build Status](https://travis-ci.org/gwastro/pycbc.svg?branch=master)](https://travis-ci.org/gwastro/pycbc)
+[![Code Health](https://landscape.io/github/gwastro/pycbc/master/landscape.svg?style=flat)](https://landscape.io/github/gwastro/pycbc/master)
 [![Research software impact](http://depsy.org/api/package/pypi/PyCBC/badge.svg)](http://depsy.org/package/python/PyCBC)

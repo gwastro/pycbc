@@ -112,9 +112,9 @@ def log_rho_bg(trigs, bins, counts):
     '''
 
     trigs = np.atleast_1d(trigs)
-    
+
     N = sum(counts)
-    
+
     assert np.all(trigs >= np.min(bins)), 'triggers can not besmaller than bin lower limit'
 
     # If there are any triggers that are louder than the max bin, put one
@@ -126,7 +126,7 @@ def log_rho_bg(trigs, bins, counts):
     if np.any(trigs >= np.max(bins)):
         N = N + 1
         #log_plimit = -np.log(N) - np.log(np.max(trigs) - bins[-1]) CHECK IT
-    
+
     log_rhos = []
     for t in trigs:
         if t >= np.max(bins):
@@ -141,15 +141,15 @@ def log_rho_bg(trigs, bins, counts):
 
 def log_rho_fg_mc(t, injstats, bins):
     counts, bins = np.histogram(injstats, bins)
-    
+
     N = sum(counts)
     dens = counts / np.diff(bins) / float(N)
 
     assert np.min(t) >= np.min(bins)
     assert np.max(t) < np.max(bins)
-    
+
     tinds = np.searchsorted(bins, t) - 1
-    
+
     return log(dens[tinds])
 
 def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
@@ -166,14 +166,14 @@ def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
         nsamp = len(Lb)
         Rf_sel = np.random.choice(Rf, nsamp)
         vt = np.random.lognormal(mu_log_vt, sigma_log_vt, len(Rf_sel))
-   
+
         Lf = Rf_sel * vt
 
         log_Lf, log_Lb = log(Lf), log(Lb)
-    
+
         plR = 0
         for lfr in log_fg_ratios:
-    
+
             plR += np.logaddexp(lfr + log_Lf, log_Lb)
 
         plR -= (Lf + Lb)
@@ -211,7 +211,7 @@ def fit(R):
 
     R = np.log(R)
     mu_norm, sigma_norm = np.mean(R), np.std(R)
-    
+
     xs = np.linspace(min(R), max(R), 200)
     kde = ss.gaussian_kde(R)
     pxs = kde(xs)
@@ -240,7 +240,7 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
         Rfs: array
             Large number of samples (may need fixing)
     '''
-    
+
     nsamp = 100000000
     lRu = np.random.uniform(minrp, maxrp, nsamp)
     plRu = ss.skewnorm.pdf(lRu, alpha, mu, sigma)
@@ -249,7 +249,7 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
     idx = np.where(plRu/maxp > rndn)
     log_Rf = lRu[idx]
     Rfs = np.exp(log_Rf)
-    
+
     return Rfs
 
 # The flat in log and power-law mass distribution models  #
@@ -279,20 +279,20 @@ def prob_lnm(m1, m2, s1z, s2z, **kwargs):
     max_mass = kwargs.get('max_mass', 95.)
     max_mtotal = min_mass + max_mass
     m1, m2 = np.array(m1), np.array(m2)
-    
+
     C_lnm = integrate.quad(lambda x: (log(max_mtotal - x) - log(min_mass))/x, min_mass, max_mass)[0]
-    
+
     xx = np.minimum(m1, m2)
     m1 = np.maximum(m1, m2)
     m2 = xx
-    
+
     bound = np.sign(max_mtotal - m1 - m2)
     bound += np.sign(max_mass - m1) * np.sign(m2 - min_mass)
     idx = np.where(bound != 2)
-    
+
     p_m1_m2 = (1/C_lnm)*(1./m1)*(1./m2)
     p_m1_m2[idx] = 0
-    
+
     return p_m1_m2
 
 def prob_imf(m1, m2, s1z, s2z, **kwargs):
@@ -309,7 +309,7 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
             Aligned spin 2(Not in use currently)
         **kwargs: string
             Keyword arguments as model parameters
- 
+
         Returns
         -------
         p_m1_m2: array
@@ -321,25 +321,25 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
     alpha = kwargs.get('alpha', -2.35)
     max_mtotal = min_mass + max_mass
     m1, m2 = np.array(m1), np.array(m2)
-    
+
     C_imf = max_mass**(alpha + 1)/(alpha + 1)
     C_imf -= min_mass**(alpha + 1)/(alpha + 1)
-    
+
     xx = np.minimum(m1, m2)
     m1 = np.maximum(m1, m2)
     m2 = xx
-    
+
     bound = np.sign(max_mtotal - m1 - m2)
     bound += np.sign(max_mass - m1) * np.sign(m2 - min_mass)
     idx = np.where(bound != 2)
-    
+
     p_m1_m2 = np.zeros_like(m1)
     idx = np.where(m1 <= max_mtotal/2.)
     p_m1_m2[idx] = (1./C_imf) * m1[idx]**alpha /(m1[idx] - min_mass)
     idx = np.where(m1 > max_mtotal/2.)
     p_m1_m2[idx] = (1./C_imf) * m1[idx]**alpha /(max_mass - m1[idx])
     p_m1_m2[idx] = 0
-    
+
     return p_m1_m2/2.
 
 # Functions to generate samples for the two canonical models
@@ -358,23 +358,23 @@ def draw_imf_samples(**kwargs):
         array
            The second mass
     '''
- 
+
     alpha_salpeter = kwargs.get('alpha', -2.35)
     nsamples = kwargs.get('nsamples', 1)
     min_mass = kwargs.get('min_mass', 5.)
     max_mass = kwargs.get('max_mass', 95.)
     max_mtotal = min_mass + max_mass
-        
+
     a = (max_mass/min_mass)**(alpha_salpeter + 1.0) - 1.0
     beta = 1.0 / (alpha_salpeter + 1.0)
-    
+
     k = nsamples * int(1.5 + log(1 + 100./nsamples))
     aa = min_mass * (1.0 + a * np.random.random(k))**beta
     bb = np.random.uniform(min_mass, aa, k)
-    
+
     idx = np.where(aa + bb < max_mtotal)
     m1, m2 = (np.maximum(aa, bb))[idx], (np.minimum(aa, bb))[idx]
-    
+
     return np.resize(m1, nsamples), np.resize(m2, nsamples)
 
 def draw_lnm_samples(**kwargs):
@@ -400,14 +400,14 @@ def draw_lnm_samples(**kwargs):
     max_mtotal = min_mass + max_mass
     lnmmin = log(min_mass)
     lnmmax = log(max_mass)
-    
+
     k = nsamples * int(1.5 + log(1 + 100./nsamples))
     aa = np.exp(np.random.uniform(lnmmin, lnmmax, k))
     bb = np.exp(np.random.uniform(lnmmin, lnmmax, k))
-  
+
     idx = np.where(aa + bb < max_mtotal)
     m1, m2 = (np.maximum(aa, bb))[idx], (np.minimum(aa, bb))[idx]
-    
+
     return np.resize(m1, nsamples), np.resize(m2, nsamples)
 
 # Functions to generate chirp mass samples for the two canonical models
@@ -426,7 +426,7 @@ def mchirp_sampler_lnm(**kwargs):
     '''
     m1, m2 = draw_lnm_samples(**kwargs)
     mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
-    
+
     return mchirp_astro
 
 def mchirp_sampler_imf(**kwargs):
@@ -444,5 +444,5 @@ def mchirp_sampler_imf(**kwargs):
     '''
     m1, m2 = draw_imf_samples(**kwargs)
     mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
-    
+
     return mchirp_astro

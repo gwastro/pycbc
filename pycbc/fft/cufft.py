@@ -69,7 +69,7 @@ def fft(invec, outvec, prec, itype, otype):
 def ifft(invec, outvec, prec, itype, otype):
     cuplan = _get_inv_plan(invec.dtype, outvec.dtype, len(outvec))
     cu_fft.ifft(invec.data, outvec.data, cuplan)
-    
+
 class FFT(_BaseFFT):
     def __init__(self, invec, outvec, nbatch=1, size=None):
         super(FFT, self).__init__(invec, outvec, nbatch, size)

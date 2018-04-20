@@ -26,6 +26,8 @@ This modules provides classes and functions for evaluating the log likelihood
 for parameter estimation.
 """
 
+from six import string_types
+
 from pycbc import conversions
 from pycbc import filter
 import pycbc.transforms
@@ -175,7 +177,7 @@ class BaseLikelihoodEvaluator(object):
                  sampling_parameters=None, replace_parameters=None,
                  sampling_transforms=None, waveform_transforms=None,
                  return_meta=True):
-        if isinstance(variable_args, str) or isinstance(variable_args, unicode):
+        if isinstance(variable_args, string_types):
             variable_args = (variable_args,)
         if not isinstance(variable_args, tuple):
             variable_args = tuple(variable_args)
@@ -1003,7 +1005,7 @@ class MarginalizedPhaseGaussianLikelihood(GaussianLikelihood):
     Gathering all of the terms that are not dependent on :math:`\phi` together:
 
     .. math::
-    
+
         \alpha(\Theta, d) \equiv \exp\left[-\frac{1}{2}\sum_i \left<h^0_i, h^0_i\right> + <d_i, d_i\right>\right],
 
     we can marginalize the posterior over :math:`\phi`:
@@ -1012,7 +1014,7 @@ class MarginalizedPhaseGaussianLikelihood(GaussianLikelihood):
 
         p(\Theta|d) &\propto p(\Theta)\alpha(\Theta,d)\frac{1}{2\pi}\int_{0}^{2\pi}\exp\left[\Re \left\{ e^{-i\phi} \sum_i O(h^0_i, d_i)\right\}\right]\mathrm{d}\phi \\
         &\propto p(\Theta)\alpha(\Theta, d)\frac{1}{2\pi} \int_{0}^{2\pi}\exp\left[x(\Theta,d)\cos(\phi) + y(\Theta, d)\sin(\phi)\right]\mathrm{d}\phi.
-    
+
     The integral in the last line is equal to :math:`2\pi I_0(\sqrt{x^2+y^2})`,
     where :math:`I_0` is the modified Bessel function of the first kind. Thus
     the marginalized log posterior is:
@@ -1075,4 +1077,5 @@ likelihood_evaluators = {TestEggbox.name: TestEggbox,
                             MarginalizedPhaseGaussianLikelihood}
 
 __all__ = ['BaseLikelihoodEvaluator', 'TestNormal', 'TestEggbox', 'TestVolcano',
-           'TestRosenbrock', 'GaussianLikelihood', 'likelihood_evaluators']
+           'TestRosenbrock', 'GaussianLikelihood',
+           'MarginalizedPhaseGaussianLikelihood', 'likelihood_evaluators']

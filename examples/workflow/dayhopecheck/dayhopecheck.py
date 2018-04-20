@@ -31,7 +31,7 @@ single summary XML file:
    (X1:CBC_DAYHOPE_SCIENCE_AVAILABLE)
 4) Time analysable by daily [i,a]hope. This will compute the times that the
    daily CBC analysis can analyse, which must be a subset of SCIENCE_AVAILABLE.
-   The options given in the config file tell the code what data can be 
+   The options given in the config file tell the code what data can be
    analysed by the daily analysis. (X1:CBC_DAYHOPE_ANALYSABLE)
 """
 
@@ -47,16 +47,16 @@ import os
 import copy
 import logging
 import argparse
-from pycbc_glue import segments
+from glue import segments
 import pycbc.workflow as _workflow
 
-from pycbc_glue.ligolw import ligolw
-from pycbc_glue.ligolw import lsctables
-from pycbc_glue.ligolw import utils as ligolw_utils
-from pycbc_glue.ligolw.utils import segments as ligolw_segments
-from pycbc_glue.ligolw.utils import process as ligolw_process
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import segments as ligolw_segments
+from pycbc.ligolw.utils import process as ligolw_process
 
-from pycbc_glue.segmentdb import segmentdb_utils
+from glue.segmentdb import segmentdb_utils
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', \
                     level=logging.INFO,datefmt='%I:%M:%S')
@@ -143,7 +143,7 @@ for ifo in workflow.ifos:
     sciavailableSegs = sciavailableSegFile.segmentList
     # ANALYSABLE - This one needs to come from inspiral outs
     analysableSegs = insps.get_times_covered_by_files()
-   
+
     # And add these to the output file
     # Start with the segment summary
     summSegs = segments.segmentlist([workflow.analysis_time])
@@ -155,7 +155,7 @@ for ifo in workflow.ifos:
                               proc_id, ifo, "CBC_DAYHOPE_SCIENCE_AVAILABLE", 0)
     analysable_def_id = segmentdb_utils.add_to_segment_definer(outdoc, proc_id,
                                               ifo, "CBC_DAYHOPE_ANALYSABLE", 0)
-    
+
     segmentdb_utils.add_to_segment(outdoc, proc_id, sci_def_id, sciSegs)
     segmentdb_utils.add_to_segment(outdoc, proc_id, sciok_def_id, sciokSegs)
     segmentdb_utils.add_to_segment(outdoc, proc_id, sciavailable_def_id,

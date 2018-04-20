@@ -1,6 +1,6 @@
 """
-This Module contains generic utility functions for creating plots within 
-PyCBC. 
+This Module contains generic utility functions for creating plots within
+PyCBC.
 """
 import os.path, pycbc.version
 import ConfigParser
@@ -17,7 +17,7 @@ unescape_table = {
                  }
 for k, v in escape_table.items():
     unescape_table[v] = k
-    
+
 def html_escape(text):
     """ Sanitize text for html parsing """
     return escape(text, escape_table)
@@ -36,7 +36,7 @@ class MetaParser(HTMLParser):
             attr[key] = value
         if tag == 'div' and 'class' in attr and attr['class'] == 'pycbc-meta':
             self.metadata[attr['key']] = unescape(attr['value'], unescape_table)
-        
+
 
 def save_html_with_metadata(fig, filename, fig_kwds, kwds):
     """ Save a html output to file with metadata """
@@ -45,12 +45,12 @@ def save_html_with_metadata(fig, filename, fig_kwds, kwds):
     else:
         from mpld3 import fig_to_html
         text = fig_to_html(fig, **fig_kwds)
-    
+
     f = open(filename, 'w')
     for key, value in kwds.items():
         value = escape(value, escape_table)
-        line = "<div class=pycbc-meta key=\"%s\" value=\"%s\"></div>" % (str(key), value) 
-        f.write(line)    
+        line = "<div class=pycbc-meta key=\"%s\" value=\"%s\"></div>" % (str(key), value)
+        f.write(line)
 
     f.write(text)
 
@@ -71,13 +71,13 @@ def save_png_with_metadata(fig, filename, fig_kwds, kwds):
     """
     from PIL import Image, PngImagePlugin
     fig.savefig(filename, **fig_kwds)
-     
+
     im = Image.open(filename)
     meta = PngImagePlugin.PngInfo()
-    
+
     for key in kwds:
-        meta.add_text(str(key), str(kwds[key]))       
-         
+        meta.add_text(str(key), str(kwds[key]))
+
     im.save(filename, "png", pnginfo=meta)
 
 def load_png_metadata(filename):
@@ -86,7 +86,7 @@ def load_png_metadata(filename):
     cp = ConfigParser.ConfigParser(data)
     cp.add_section(os.path.basename(filename))
     return cp
-    
+
 _metadata_saver = {'.png':save_png_with_metadata,
                    '.html':save_html_with_metadata,
                   }
@@ -97,7 +97,7 @@ _metadata_loader = {'.png':load_png_metadata,
 def save_fig_with_metadata(fig, filename, fig_kwds=None, **kwds):
     """ Save plot to file with metadata included. Kewords translate to metadata
     that is stored directly in the plot file. Limited format types available.
-    
+
     Parameters
     ----------
     fig: matplotlib figure
@@ -112,17 +112,17 @@ def save_fig_with_metadata(fig, filename, fig_kwds=None, **kwds):
         kwds['version'] = pycbc.version.git_verbose_msg
         _metadata_saver[extension](fig, filename, fig_kwds, kwds)
     except KeyError:
-        raise TypeError('Cannot save file %s with metadata, extension %s not ' 
+        raise TypeError('Cannot save file %s with metadata, extension %s not '
                         'supported at this time' % (filename, extension))
 
 def load_metadata_from_file(filename):
     """ Load the plot related metadata saved in a file
-    
+
     Parameters
     ----------
     filename: str
         Name of file load metadata from.
-        
+
     Returns
     -------
     cp: ConfigParser
@@ -132,5 +132,5 @@ def load_metadata_from_file(filename):
         extension = os.path.splitext(filename)[1]
         return _metadata_loader[extension](filename)
     except KeyError:
-        raise TypeError('Cannot read metadata from file %s, extension %s not ' 
-                        'supported at this time' % (filename, extension))    
+        raise TypeError('Cannot read metadata from file %s, extension %s not '
+                        'supported at this time' % (filename, extension))

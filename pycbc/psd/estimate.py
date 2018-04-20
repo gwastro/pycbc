@@ -28,7 +28,7 @@ def median_bias(n):
     ----------
     n : int
         Number of segments used in PSD estimation.
-    
+
     Returns
     -------
     ans : float
@@ -105,7 +105,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
         fs_dtype = numpy.complex64
     elif timeseries.precision == 'double':
         fs_dtype = numpy.complex128
-        
+
     num_samples = len(timeseries)
     if num_segments is None:
         num_segments = int(num_samples // seg_stride)
@@ -134,7 +134,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
 
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
         raise ValueError('Incorrect choice of segmentation parameters')
-        
+
     if not isinstance(window, numpy.ndarray):
         window = window_map[window](seg_len)
     w = Array(window.astype(timeseries.dtype))
@@ -159,7 +159,7 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
 
         segment_psds.append(seg_psd)
 
-    segment_psds = numpy.array(segment_psds)   
+    segment_psds = numpy.array(segment_psds)
 
     if avg_method == 'mean':
         psd = numpy.mean(segment_psds, axis=0)
@@ -221,7 +221,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     inv_asd = FrequencySeries((1. / psd)**0.5, delta_f=psd.delta_f, \
         dtype=complex_same_precision_as(psd))
-        
+
     inv_asd[0] = 0
     inv_asd[N/2] = 0
     q = TimeSeries(numpy.zeros(N), delta_t=(N / psd.delta_f), \
@@ -232,7 +232,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
         inv_asd[0:kmin] = 0
 
     ifft(inv_asd, q)
-    
+
     trunc_start = max_filter_len / 2
     trunc_end = N - max_filter_len / 2
     if trunc_end < trunc_start:
@@ -271,7 +271,7 @@ def interpolate(series, delta_f):
     new_n = (len(series)-1) * series.delta_f / delta_f + 1
     samples = numpy.arange(0, numpy.rint(new_n)) * delta_f
     interpolated_series = numpy.interp(samples, series.sample_frequencies.numpy(), series.numpy())
-    return FrequencySeries(interpolated_series, epoch=series.epoch, 
+    return FrequencySeries(interpolated_series, epoch=series.epoch,
                            delta_f=delta_f, dtype=series.dtype)
 
 def bandlimited_interpolate(series, delta_f):

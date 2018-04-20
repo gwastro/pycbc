@@ -216,7 +216,7 @@ class SingleDetBankVeto(object):
         Returns
         -------
         bank_chisq_from_filters: TimeSeries of bank veto values - if indices
-        is None then evaluated at all time samples, if not then only at 
+        is None then evaluated at all time samples, if not then only at
         requested sample indices
 
         bank_chisq_dof: int, approx number of statistical degrees of freedom
@@ -226,11 +226,11 @@ class SingleDetBankVeto(object):
             overlaps = self.cache_overlaps(template, psd)
             bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
             chisq = bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
-                                            bank_veto_norms, overlaps, indices) 
+                                            bank_veto_norms, overlaps, indices)
             dof = numpy.repeat(self.dof, len(chisq))
             return chisq, dof
         else:
-            return None, None      
+            return None, None
 
 class SingleDetSkyMaxBankVeto(SingleDetBankVeto):
     """Stub for precessing bank veto if anyone ever wants to code it up.

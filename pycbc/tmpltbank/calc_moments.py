@@ -17,7 +17,7 @@
 from __future__ import division
 import numpy
 from pycbc.tmpltbank.lambda_mapping import generate_mapping
-        
+
 
 def determine_eigen_directions(metricParams, preserveMoments=False,
                                vary_fmax=False, vary_density=None):
@@ -39,9 +39,9 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
         If set to False the metric and rotations are calculated once, for the
         full range of frequency [f_low,f_upper).
         If set to True the metric and rotations are calculated multiple times,
-        for frequency ranges [f_low,f_low + i*vary_density), where i starts at 
-        1 and runs up until f_low + (i+1)*vary_density > f_upper. 
-        Thus values greater than f_upper are *not* computed. 
+        for frequency ranges [f_low,f_low + i*vary_density), where i starts at
+        1 and runs up until f_low + (i+1)*vary_density > f_upper.
+        Thus values greater than f_upper are *not* computed.
         The calculation for the full range [f_low,f_upper) is also done.
     vary_density : float, optional
         If vary_fmax is True, this will be used in computing the frequency
@@ -62,7 +62,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
         varying.
         Each numpy.array contains the eigenvalues which, with the eigenvectors
         in evecs, are needed to rotate the
-        coordinate system to one in which the metric is the identity matrix. 
+        coordinate system to one in which the metric is the identity matrix.
     metricParams.evecs : Dictionary of numpy.matrix
         Each entry in the dictionary is as described under evals.
         Each numpy.matrix contains the eigenvectors which, with the eigenvalues
@@ -78,12 +78,12 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
         above. It can be used for the ethinca components calculation, or other
         similar calculations.
     """
-   
+
     evals = {}
     evecs = {}
     metric = {}
     unmax_metric = {}
-  
+
     # First step is to get the moments needed to calculate the metric
     if not (metricParams.moments and preserveMoments):
         get_moments(metricParams, vary_fmax=vary_fmax,
@@ -117,7 +117,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
             loglogloglogJs[i] = metricParams.moments['loglogloglog%d'%(i)][item]
 
         mapping = generate_mapping(metricParams.pnOrder)
- 
+
         # Calculate the metric
         gs, unmax_metric_curr = calculate_metric(Js, logJs, loglogJs,
                                           logloglogJs, loglogloglogJs, mapping)
@@ -144,14 +144,14 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
     metricParams.evecs = evecs
     metricParams.metric = metric
     metricParams.time_unprojected_metric = unmax_metric
-    
+
     return metricParams
 
 def get_moments(metricParams, vary_fmax=False, vary_density=None):
     """
     This function will calculate the various integrals (moments) that are
     needed to compute the metric used in template bank placement and
-    coincidence.   
+    coincidence.
 
     Parameters
     -----------
@@ -161,9 +161,9 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
         If set to False the metric and rotations are calculated once, for the
         full range of frequency [f_low,f_upper).
         If set to True the metric and rotations are calculated multiple times,
-        for frequency ranges [f_low,f_low + i*vary_density), where i starts at 
-        1 and runs up until f_low + (i+1)*vary_density > f_upper. 
-        Thus values greater than f_upper are *not* computed. 
+        for frequency ranges [f_low,f_low + i*vary_density), where i starts at
+        1 and runs up until f_low + (i+1)*vary_density > f_upper.
+        Thus values greater than f_upper are *not* computed.
         The calculation for the full range [f_low,f_upper) is also done.
     vary_density : float, optional
         If vary_fmax is True, this will be used in computing the frequency
@@ -185,34 +185,34 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
         In all cases x = f/f0.
 
         For the first entries the options are:
-        
+
         moments['J%d' %(i)][f_cutoff]
-        This stores the integral of 
+        This stores the integral of
         x**((-i)/3.) * delta X / PSD(x)
-        
+
         moments['log%d' %(i)][f_cutoff]
-        This stores the integral of 
+        This stores the integral of
         (numpy.log(x**(1./3.))) x**((-i)/3.) * delta X / PSD(x)
 
         moments['loglog%d' %(i)][f_cutoff]
-        This stores the integral of 
+        This stores the integral of
         (numpy.log(x**(1./3.)))**2 x**((-i)/3.) * delta X / PSD(x)
 
         moments['loglog%d' %(i)][f_cutoff]
-        This stores the integral of 
+        This stores the integral of
         (numpy.log(x**(1./3.)))**3 x**((-i)/3.) * delta X / PSD(x)
 
         moments['loglog%d' %(i)][f_cutoff]
-        This stores the integral of 
+        This stores the integral of
         (numpy.log(x**(1./3.)))**4 x**((-i)/3.) * delta X / PSD(x)
 
-        The second entry stores the frequency cutoff used when computing 
+        The second entry stores the frequency cutoff used when computing
         the integral. See description of the vary_fmax option above.
 
         All of these values are nomralized by a factor of
-    
+
         x**((-7)/3.) * delta X / PSD(x)
- 
+
         The normalization factor can be obtained in
 
         moments['I7'][f_cutoff]
@@ -222,7 +222,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
     # placement we just do this anyway.
 
     psd_amp = metricParams.psd.data
-    psd_f = numpy.arange(len(psd_amp), dtype=float) * metricParams.deltaF 
+    psd_f = numpy.arange(len(psd_amp), dtype=float) * metricParams.deltaF
     new_f, new_amp = interpolate_psd(psd_f, psd_amp, metricParams.deltaF)
 
     # Need I7 first as this is the normalization factor
@@ -278,7 +278,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
 def interpolate_psd(psd_f, psd_amp, deltaF):
     """
     Function to interpolate a PSD to a different value of deltaF. Uses linear
-    interpolation. 
+    interpolation.
 
     Parameters
     ----------
@@ -287,7 +287,7 @@ def interpolate_psd(psd_f, psd_amp, deltaF):
     psd_amp : numpy.array or list or similar
         List of the PSD values at the frequencies in psd_f.
     deltaF : float
-        Value of deltaF to interpolate the PSD to. 
+        Value of deltaF to interpolate the PSD to.
 
     Returns
     --------
@@ -328,7 +328,7 @@ def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct,
     bank placement metric. The integral calculated will be
 
     \int funct(x) * (psd_x)**(-7./3.) * delta_x / PSD(x)
- 
+
     where x = f / f0. The lower frequency cutoff is given by fmin, see
     the parameters below for details on how the upper frequency cutoff is
     chosen
@@ -360,9 +360,9 @@ def calculate_moment(psd_f, psd_amp, fmin, fmax, f0, funct,
         If set to False the metric and rotations are calculated once, for the
         full range of frequency [f_low,f_upper).
         If set to True the metric and rotations are calculated multiple times,
-        for frequency ranges [f_low,f_low + i*vary_density), where i starts at 
-        1 and runs up until f_low + (i+1)*vary_density > f_upper. 
-        Thus values greater than f_upper are *not* computed. 
+        for frequency ranges [f_low,f_low + i*vary_density), where i starts at
+        1 and runs up until f_low + (i+1)*vary_density > f_upper.
+        Thus values greater than f_upper are *not* computed.
         The calculation for the full range [f_low,f_upper) is also done.
     vary_density : float, optional
         If vary_fmax is True, this will be used in computing the frequency

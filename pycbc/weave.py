@@ -49,7 +49,7 @@ def pycbc_compile_function(code,arg_names,local_dict,global_dict,
     lockfile = open(lockfile_name, 'w')
     fcntl.lockf(lockfile, fcntl.LOCK_EX)
     logging.info("we have aquired the lock")
-    
+
     func = _compile_function(code,arg_names, local_dict, global_dict,
                      module_dir, compiler, verbose,
                      support_code, headers, customize,
@@ -67,7 +67,7 @@ from weave import inline
 def insert_weave_option_group(parser):
     """
     Adds the options used to specify weave options.
-    
+
     Parameters
     ----------
     parser : object
@@ -75,7 +75,7 @@ def insert_weave_option_group(parser):
     """
     optimization_group = parser.add_argument_group("Options for controlling "
                                    "weave")
-    
+
     optimization_group.add_argument("--per-process-weave-cache",
                     action="store_true",
                     default=False,
@@ -84,13 +84,13 @@ def insert_weave_option_group(parser):
                          several instances may be starting on the same machine at
                          the same time.""")
 
-    optimization_group.add_argument("--clear-weave-cache-at-start", 
+    optimization_group.add_argument("--clear-weave-cache-at-start",
                     action="store_true",
                     default=False,
                     help="If given, delete the contents of the weave cache "
                          "when the process starts")
 
-    optimization_group.add_argument("--clear-weave-cache-at-end", 
+    optimization_group.add_argument("--clear-weave-cache-at-end",
                     action="store_true",
                     default=False,
                     help="If given, delete the contents of the weave cache "
@@ -112,14 +112,14 @@ def _clear_weave_cache():
 
 
 def verify_weave_options(opt, parser):
-    """Parses the CLI options, verifies that they are consistent and 
+    """Parses the CLI options, verifies that they are consistent and
     reasonable, and acts on them if they are
 
     Parameters
     ----------
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
-        required attributes 
+        required attributes
     parser : object
         OptionParser instance.
     """
@@ -155,7 +155,7 @@ def verify_weave_options(opt, parser):
         except:
             logging.error("Unable to create weave cache %s", cache_dir)
             sys.exit(1)
-        
+
     if opt.clear_weave_cache_at_start:
         _clear_weave_cache()
         os.makedirs(cache_dir)

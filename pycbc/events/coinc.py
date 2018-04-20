@@ -364,7 +364,7 @@ class MultiRingBuffer(object):
 
     def straighten(self):
         """ Resets ring buffers that wrap around to the beginning to start
-        at zero. This ensures they lie in contiguous memory. 
+        at zero. This ensures they lie in contiguous memory.
         """
         locs = numpy.where(self.index < self.start)[0]
         for l in locs:
@@ -621,18 +621,18 @@ class LiveCoincTimeslideBackgroundEstimator(object):
     @classmethod
     def from_cli(cls, args, num_templates, analysis_chunk, ifos):
         return cls(num_templates, analysis_chunk,
-                   args.background_statistic, 
-                   args.background_statistic_files, 
+                   args.background_statistic,
+                   args.background_statistic_files,
                    return_background=args.store_background,
                    ifar_limit=args.background_ifar_limit,
                    timeslide_interval=args.timeslide_interval,
                    ifar_remove_threshold=args.ifar_remove_threshold,
-                   ifos=ifos)  
+                   ifos=ifos)
 
     @staticmethod
     def insert_args(parser):
         group = parser.add_argument_group('Coincident Background Estimation')
-        group.add_argument('--background-statistic', default='newsnr', 
+        group.add_argument('--background-statistic', default='newsnr',
             help="Ranking statistic to use for candidate coincident events")
         group.add_argument('--background-statistic-files', nargs='+',
             help="Files containing precalculate values to calculate ranking"

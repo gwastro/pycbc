@@ -120,33 +120,6 @@ lalsuite is now installed in your virtual environment. You can check this with t
 
 which should return the path to the installation under your virtual environment.
 
-==========================================================================================
-Building and installing lalapps_inspinj and lalapps_coh_PTF_inspiral with static libraries
-==========================================================================================
-
-In some cases you may want to build *only* these two programs as static binaries and install them.  To do this, run the commands:
-
-.. code-block:: bash
-
-    cd $VIRTUAL_ENV/src/lalsuite/lalapps
-    LIBS="-lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic --disable-lalxml
-    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
-    make
-    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
-    make lalapps_inspinj
-    cp lalapps_inspinj $VIRTUAL_ENV/bin
-    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/ring
-    make lalapps_coh_PTF_inspiral
-    cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
-
-.. note::
-
-    The LALApps build above builds static binaries, so you will need static libraries for fftw, glibc, etc. installed on your system to do this. These libraries are present by default in a LIGO Data Grid environment. 
-
-.. note::
-
-    Installing LALApps binaries in ``$VIRTUAL_ENV/bin`` as above may clash with executables previously installed in ``$VIRTUAL_ENV/opt/lalsuite/bin``, the destination used by the standard lalsuite build.  If in doubt, run ``which lalapps_inspinj``` to determine which executable is in your path.
-
 =========================================
 Additional data files from lalsuite-extra
 =========================================

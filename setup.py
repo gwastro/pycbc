@@ -58,7 +58,7 @@ try:
 except ImportError:
     pass
 
-requires = ['lal.lal', 'lalsimulation.lalsimulation', 'glue']
+requires = ['lal.lal', 'lalsimulation.lalsimulation']
 setup_requires = []
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
@@ -74,12 +74,13 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'astropy==2.0.3',
                       'mpld3>=0.3',
                       'pyRXP>=2.1.0',
-                      'pycbc-glue-obsolete==1.1.0',
+                      'lscsoft-glue>=1.58.2',
                       'kombine>=0.8.2',
                       'emcee==2.2.1',
                       'corner>=2.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
+                      'six',
                       ]
 
 #FIXME Remove me when we bump to h5py > 2.5
@@ -276,7 +277,7 @@ def get_version_info():
 
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.9.3dev'
+        version = '1.9.5dev'
         release = 'False'
 
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
@@ -315,7 +316,7 @@ class build_docs(Command):
         pass
     def run(self):
         subprocess.check_call("cd docs; cp Makefile.std Makefile; cp conf_std.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc ../pycbc/ligolw && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 class build_gh_pages(Command):
@@ -328,7 +329,7 @@ class build_gh_pages(Command):
     def run(self):
         subprocess.check_call("mkdir -p _gh-pages/latest && touch _gh-pages/.nojekyll && "
                               "cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc ../pycbc/ligolw && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 cmdclass = { 'test'  : test,
@@ -451,7 +452,6 @@ setup (
                'bin/hwinj/pycbc_plot_hwinj',
                'bin/hwinj/pycbc_insert_frame_hwinj',
                'bin/pycbc_submit_dax',
-               'bin/mvsc/pycbc_mvsc_get_features',
                'bin/pycbc_coinc_time',
                'bin/pygrb/pycbc_make_offline_grb_workflow',
                'bin/pygrb/pycbc_make_grb_summary_page',
@@ -509,9 +509,30 @@ setup (
                'pycbc.inject',
                'pycbc.frame',
                'pycbc.catalog',
+               'pycbc.ligolw',
+               'pycbc.ligolw.utils',
                ],
-     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
-	             'pycbc.results': find_package_data('pycbc/results'),
-                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
+    package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
+                    'pycbc.results': find_package_data('pycbc/results'),
+                    'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
+    ext_modules = [
+        Extension(
+            "pycbc.ligolw.tokenizer",
+            [
+                "pycbc/ligolw/tokenizer.c",
+                "pycbc/ligolw/tokenizer.Tokenizer.c",
+                "pycbc/ligolw/tokenizer.RowBuilder.c",
+                "pycbc/ligolw/tokenizer.RowDumper.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        ),
+        Extension(
+            "pycbc.ligolw._ilwd",
+            [
+                "pycbc/ligolw/ilwd.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        )
+    ],
 )
 

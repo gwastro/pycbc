@@ -1,6 +1,6 @@
 """
-Generates a plot that shows the time-frequency trace of 
-Nth loudest coincident trigger overlaid on a background of 
+Generates a plot that shows the time-frequency trace of
+Nth loudest coincident trigger overlaid on a background of
 Omicron triggers.
 """
 
@@ -9,7 +9,7 @@ import h5py
 import numpy as np
 import argparse
 import glob
-from pycbc_glue.ligolw import ligolw, lsctables, table, utils
+from pycbc.ligolw import ligolw, lsctables, table, utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -30,7 +30,7 @@ parser.add_argument('--coinc-file', type=str, required=True,
 parser.add_argument('--single-ifo-trigs', type=str, required=True,
                     help='HDF file containing single IFO CBC triggers')
 parser.add_argument('--ifo', type=str, required=True,
-                    help='IFO, L1 or H1')    
+                    help='IFO, L1 or H1')
 parser.add_argument('--tmpltbank-file', type=str, required=True,
                     help='HDF file containing template information for CBC search')
 parser.add_argument('--output-file', type=str, required=True,
@@ -44,7 +44,7 @@ parser.add_argument('--omicron-snr-thresh', type=int, required=False, default=5,
 parser.add_argument('--plot-window', type=float, required=False, default=32,
                     help='Time window to plot around CBC trigger')
 parser.add_argument('--omicron-channel',type=str, required=False, default='GDS-CALIB_STRAIN',
-                    help='Channel to plot Omicron triggers for, do not include IFO')    
+                    help='Channel to plot Omicron triggers for, do not include IFO')
 parser.add_argument('--analysis-level', type=str, required=False, default='foreground',
                     choices = ['foreground','background','background_exc'],
                     help='Designates which level of the analysis output to search')
@@ -101,17 +101,17 @@ omicron_freq = []
 
 for era in eras:
     # Generate list of all Omicron SnglBurst xml trigger files
-    file_list = glob.glob(args.omicron_dir + 
-            '/%s/%s_Omicron/%s/%s-%s_Omicron-*.xml.gz' 
+    file_list = glob.glob(args.omicron_dir +
+            '/%s/%s_Omicron/%s/%s-%s_Omicron-*.xml.gz'
             %(args.ifo,args.omicron_channel,era,args.ifo,args.omicron_channel.replace('-','_')))
-    
+
     # Parse trigger files into SNR, time, and frequency for Omicron triggers
     for file_name in file_list:
         omicron_xml = utils.load_filename(file_name, contenthandler=DefaultContentHandler)
         snglburst_table = table.get_table(omicron_xml, lsctables.SnglBurstTable.tableName)
 
         for row in snglburst_table:
-            if (row.snr > args.omicron_snr_thresh and 
+            if (row.snr > args.omicron_snr_thresh and
                     omicron_start_time < row.peak_time < omicron_end_time):
                 omicron_times.append(row.peak_time + row.peak_time_ns * 10**(-9))
                 omicron_snr.append(row.snr)
@@ -146,9 +146,9 @@ plt.yscale('log')
 plt.ylabel('Frequency (Hz)')
 plt.xlabel('Time (s)')
 plt.xlim(omicron_start_time,omicron_end_time)
-plt.suptitle('%s CBC trigger SNR = ' % (args.ifo) + format(snr,'.2f') + 
+plt.suptitle('%s CBC trigger SNR = ' % (args.ifo) + format(snr,'.2f') +
             ", newSNR = " + format(newsnr,'.2f'),fontsize=12)
-plt.title(format(m1,'.2f') + " - " + format(m2,'.2f') + 
+plt.title(format(m1,'.2f') + " - " + format(m2,'.2f') +
             " solar masses at GPS time " + format(cbc_end_time,'.2f'),fontsize=12)
 plt.hold(True)
 plt.plot(times,freq)

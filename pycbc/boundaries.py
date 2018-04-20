@@ -190,7 +190,7 @@ class Bounds(object):
 
     The default is for the minimum bound to be "closed" and the maximum bound
     to be "open", i.e., a right-open interval.
-     
+
     Parameters
     ----------
     min_bound : {-numpy.inf, float}
@@ -358,7 +358,7 @@ class Bounds(object):
 
     def apply_conditions(self, value):
         """Applies any boundary conditions to the given value.
-        
+
         The value is manipulated according based on the following conditions:
 
          * If `self.cyclic` is True then `value` is wrapped around to the

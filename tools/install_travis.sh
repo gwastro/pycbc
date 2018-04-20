@@ -69,16 +69,13 @@ fi
 
 pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
 
-# install M2Crypto
-SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
-
 # install the segment database tools
 pip install dqsegdb
 
 # install the packges needed to build the documentation
 pip install "Sphinx>=1.5.0"
 pip install sphinx-rtd-theme
-pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git#egg=sphinxcontrib-programoutput
+pip install sphinxcontrib-programoutput
 
 # get library needed to build documentation
 wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"

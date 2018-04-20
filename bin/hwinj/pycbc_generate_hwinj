@@ -17,13 +17,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import pycbc_glue
-from pycbc_glue.ligolw import ilwd
-from pycbc_glue.ligolw import ligolw
-from pycbc_glue.ligolw import lsctables
-from pycbc_glue.ligolw import utils
+from pycbc.ligolw import ilwd
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils
 import logging
 import numpy
+import pycbc
+import pycbc.version
 from pycbc import DYN_RANGE_FAC
 from pycbc import fft
 from pycbc import pnutils
@@ -278,9 +279,9 @@ opts_dict = convert_to_process_params_dict(opts)
 proc_id = utils.process.register_to_xmldoc(
                     outdoc, sys.argv[0], opts_dict,
                     comment="", ifos=[''.join(opts.instruments)],
-                    version=pycbc_glue.git_version.id,
-                    cvs_repository=pycbc_glue.git_version.branch,
-                    cvs_entry_time=pycbc_glue.git_version.date).process_id
+                    version=pycbc.version.git_hash,
+                    cvs_repository='pycbc/'+pycbc.version.git_branch,
+                    cvs_entry_time=pycbc.version.date).process_id
 
 # create sim_inspiral row for injection
 # and populate non-IFO-specific columns in XML output file
