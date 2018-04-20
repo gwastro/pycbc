@@ -5,7 +5,7 @@ import math, numpy
 from pycbc.types import TimeSeries, FrequencySeries, zeros
 
 def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
-                       overlap, low_freq, high_freq, f_weight):
+                       overlap, low_freq, high_freq):
     """Calculates time series of PSD variability
 
     This function first splits the segment up in to 512 second chunks. It
@@ -28,8 +28,6 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
         Minimum frequency to consider the comparison between PSDs.
     high_freq : {float, 512}
         Maximum frequency to consider the comparison between PSDs.
-    f_weight : str
-        Consider frequency weighting in PSD variation.
 
     Returns
     -------
@@ -37,12 +35,11 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
         Time series of the variability in the PSD estimation
     """
 
-    if f_weight == 'True':
-        # Calculate strain precision
-        if strain.precision == 'single':
-            fs_dtype = numpy.float32
-        elif strain.precision == 'double':
-            fs_dtype = numpy.float64
+    # Calculate strain precision
+    if strain.precision == 'single':
+        fs_dtype = numpy.float32
+    elif strain.precision == 'double':
+        fs_dtype = numpy.float64
 
     # Find the times of the long segments
     times_long = numpy.arange(float(strain.start_time),
@@ -83,22 +80,15 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
         kmin = int(low_freq / psd_long.delta_f)
         kmax = int(high_freq / psd_long.delta_f)
         # Comapre the PSD of the short segment to the long segment
-        if f_weight == 'True':
-            freqs = FrequencySeries(psd_long.sample_frequencies,
-                                    delta_f = psd_long.delta_f,
-                                    epoch = psd_long.epoch, dtype = fs_dtype)
-            weight = numpy.array(
-                         freqs[kmin:kmax]**(-7./3.) / psd_long[kmin:kmax])
-            weight /= weight.sum()
-            diff = numpy.array([(weight * numpy.array(p_short[kmin:kmax] /
-                                 psd_long[kmin:kmax])).sum()
-                                 for p_short in psd_short])
-        else:
-            #diff = numpy.array([numpy.std((p_short[kmin:kmax] /
-            #           psd_long[kmin:kmax])) for p_short in psd_short])
-            diff = numpy.array([(p_short[kmin:kmax] / psd_long[kmin:kmax]).sum()
-                           for p_short in psd_short])
-            diff /= (kmax - kmin)
+        freqs = FrequencySeries(psd_long.sample_frequencies,
+                                delta_f = psd_long.delta_f,
+                                epoch = psd_long.epoch, dtype = fs_dtype)
+        weight = numpy.array(
+                     freqs[kmin:kmax]**(-7./3.) / psd_long[kmin:kmax])
+        weight /= weight.sum()
+        diff = numpy.array([(weight * numpy.array(p_short[kmin:kmax] /
+                             psd_long[kmin:kmax])).sum()
+                             for p_short in psd_short])
 
         # Store variation value
         for i, val in enumerate(diff):

@@ -262,7 +262,7 @@ with ctx:
         psd_var = pycbc.psd.calc_psd_variation(gwstrain,
                 opt.psdvar_short_segment, opt.psdvar_long_segment,
                 opt.psdvar_overlap, opt.psdvar_low_freq,
-                opt.psdvar_high_freq, opt.psdvar_f_weight)
+                opt.psdvar_high_freq)
 
     if opt.enable_q_transform:
         logging.info("Performing q-transform on analysis segments")
