@@ -12,11 +12,11 @@ h1 = read_frame('H-H1_LOSC_4_V2-1126259446-32.gwf', 'H1:LOSC-STRAIN')
 h1 = highpass_fir(h1, 15, 8)
 
 # Calculate the noise spectrum
-psd = interpolate(welch(h1), 1.0 / 32)
+psd = interpolate(welch(h1), 1.0 / h1.duration)
 
 # Generate a template to filter with
 hp, hc = get_fd_waveform(approximant="IMRPhenomD", mass1=40, mass2=32,
-                         f_lower=20, delta_f=1.0/32)
+                         f_lower=20, delta_f=1.0/h1.duration)
 hp.resize(len(h1) / 2 + 1)
 
 # Calculate the complex (two-phase SNR)

@@ -14,7 +14,7 @@ for ifo in ['H1', 'L1']:
     h1 = highpass_fir(h1, 15, 8)
 
     # Calculate the noise spectrum
-    psd = interpolate(welch(h1), 1.0 / 32)
+    psd = interpolate(welch(h1), 1.0 / h1.duration)
 
     # whiten
     white_strain = (h1.to_frequencyseries() / psd ** 0.5 * psd.delta_f).to_timeseries()
