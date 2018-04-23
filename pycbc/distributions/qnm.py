@@ -25,6 +25,15 @@ class UniformF0Tau(uniform.Uniform):
     Constraints may be placed to exclude frequencies and damping times
     corresponding to specific masses and spins.
 
+    To ensure a properly normalized pdf that accounts for the constraints
+    on final mass and spin, a renormalization factor is calculated upon
+    initialization. This is calculated numerically: f0 and tau are drawn
+    randomly, then the norm is scaled by the fraction of points that yield
+    final masses and spins within the constraints. The `norm_tolerance` keyword
+    arguments sets the error on the estimate of the norm from this numerical
+    method. If this value is too large, such that no points are found in
+    the allowed region, a ValueError is raised.
+
     Parameters
     ----------
     f0 : tuple or boundaries.Bounds
@@ -41,6 +50,12 @@ class UniformF0Tau(uniform.Uniform):
     damping_time : str, optional
         Use the given string as the name for the tau parameter. Default is
         'tau'.
+    norm_tolerance : float, optional
+        The tolerance on the estimate of the normalization. Default is 1e-3.
+    norm_seed : int, optional
+        Seed to use for the random number generator when estimating the norm.
+        Default is 0. After the norm is estimated, the random number generator
+        is set back to the state it was in upon initialization.
 
     Examples
     --------
@@ -79,7 +94,8 @@ class UniformF0Tau(uniform.Uniform):
     name = 'uniform_f0_tau'
 
     def __init__(self, f0=None, tau=None, final_mass=None, final_spin=None,
-                 rdfreq='f0', damping_time='tau'):
+                 rdfreq='f0', damping_time='tau', norm_tolerance=1e-3,
+                 norm_seed=0):
         if f0 is None:
             raise ValueError("must provide a range for f0")
         if tau is None:
@@ -96,6 +112,25 @@ class UniformF0Tau(uniform.Uniform):
             min_bound=final_mass[0], max_bound=final_mass[1])
         self.final_spin_bounds = boundaries.Bounds(
             min_bound=final_spin[0], max_bound=final_spin[1])
+        # Re-normalize to account for cuts: we'll do this by just sampling
+        # a large number of spaces f0 taus, and seeing how many are in the
+        # desired range.
+        # perseve the current random state
+        s = numpy.random.get_state()
+        numpy.random.seed(norm_seed)
+        nsamples = int(1./norm_tolerance**2)
+        draws = super(UniformF0Tau, self).rvs(size=nsamples)
+        # reset the random state
+        numpy.random.set_state(s)
+        num_in = self._constraints(draws).sum()
+        # if num_in is 0, than the requested tolerance is too large 
+        if num_in == 0:
+            raise ValueError("the normalization is < then the norm_tolerance; "
+                             "try again with a smaller nrom_tolerance")
+        renorm = num_in / float(nsamples)
+        self._norm *= renorm
+        self._lognorm = numpy.log(self._norm)
+
 
     def __contains__(self, params):
         isin = super(UniformF0Tau, self).__contains__(params)
@@ -203,5 +238,12 @@ class UniformF0Tau(uniform.Uniform):
         final_spin = bounded.get_param_bounds_from_config(cp, section, tag,
             'final_spin')
         opts = {'final_mass': final_mass, 'final_spin': final_spin}
+        extra_opts = {}
+        if cp.has_option_tag(section, 'norm_tolerance', tag):
+            extra_opts['norm_tolerance'] = float(
+                cp.get_opt_tag(section, 'norm_tolerance', tag))
+        if cp.has_option_tag(section, 'norm_seed', tag):
+            extra_opts['norm_seed'] = int(
+                cp.get_opt_tag(section, 'norm_seed', tag))
         return cls(f0=f0, tau=tau, final_mass=final_mass, rdfreq=rdfreq,
-                   damping_time=damping_time)
+                   damping_time=damping_time, **extra_opts)
