@@ -322,7 +322,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
             logging.info("Setting up matched-filtering for slide {}"
                          .format(slide_num))
             slide_shift = int(cp.get("inspiral", "segment-duration"))
-            time_slide_dict = {ifo: (slide_num + 1) * ix * 256
+            time_slide_dict = {ifo: (slide_num + 1) * ix * slide_shift
                                for ix, ifo in enumerate(ifos)}
             multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,
                                          science_segs, datafind_outs,

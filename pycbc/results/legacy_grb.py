@@ -331,24 +331,24 @@ def write_offsource(page, args, grbtag, onsource=False):
 
     if args.time_slides:
         if onsource:
-            dir = 'ZEROLAG_ALL'
+            out_dir = 'ZEROLAG_ALL'
         else:
-            dir = 'ZEROLAG_OFF'
+            out_dir = 'ZEROLAG_OFF'
     else:
         if onsource:
-            dir = 'ALL_TIMES'
+            out_dir = 'ALL_TIMES'
         else:
-            dir = 'OFFSOURCE'
+            out_dir = 'OFFSOURCE'
 
     plot = markup.page()
-    p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (dir, grbtag)
+    p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (out_dir, grbtag)
     plot.a(href=p, title="Coherent SNR versus time")
     plot.img(src=p)
     plot.a.close()
     td = [ plot() ]
 
     plot = markup.page()
-    p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % (dir, grbtag)
+    p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % (out_dir, grbtag)
     plot.a(href=p, title="Coherent SNR versus time")
     plot.img(src=p)
     plot.a.close()
@@ -359,7 +359,7 @@ def write_offsource(page, args, grbtag, onsource=False):
         th.append('%s SNR' % ifo)
         plot = markup.page()
         p = "%s/plots_clustered/GRB%s_%s_triggers_vs_time_noinj.png"\
-            % (dir, grbtag, ifo)
+            % (out_dir, grbtag, ifo)
         plot.a(href=p, title="%s SNR versus time" % ifo)
         plot.img(src=p)
         plot.a.close()
