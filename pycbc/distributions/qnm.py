@@ -127,10 +127,8 @@ class UniformF0Tau(uniform.Uniform):
         if num_in == 0:
             raise ValueError("the normalization is < then the norm_tolerance; "
                              "try again with a smaller nrom_tolerance")
-        renorm = num_in / float(nsamples)
-        self._norm *= renorm
-        self._lognorm = numpy.log(self._norm)
-
+        self._lognorm += numpy.log(num_in) - numpy.log(nsamples)
+        self._norm = numpy.exp(self._lognorm)
 
     def __contains__(self, params):
         isin = super(UniformF0Tau, self).__contains__(params)
@@ -141,10 +139,15 @@ class UniformF0Tau(uniform.Uniform):
     def _constraints(self, params):
         f0 = params[self.rdfreq]
         tau = params[self.damping_time]
+        # temporarily silence invalid warnings... these will just be ruled out
+        # automatically
+        orig = numpy.seterr(invalid='ignore')
         mf = conversions.final_mass_from_f0_tau(f0, tau)
         sf = conversions.final_spin_from_f0_tau(f0, tau)
-        return (self.final_mass_bounds.__contains__(mf)) & (
+        isin = (self.final_mass_bounds.__contains__(mf)) & (
                 self.final_spin_bounds.__contains__(sf))
+        numpy.seterr(**orig)
+        return isin
 
     def rvs(self, size=1):
         """Draw random samples from this distribution.
