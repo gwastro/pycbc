@@ -1,6 +1,6 @@
 """ PSD Variation """
 
-import math, numpy
+import numpy
 
 from pycbc.types import TimeSeries, FrequencySeries, zeros
 
@@ -41,40 +41,41 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
     elif strain.precision == 'double':
         fs_dtype = numpy.float64
 
+    # Convert start and end times immediately to floats
+    start_time = numpy.float(strain.start_time)
+    end_time = numpy.float(strain.end_time)
+
     # Find the times of the long segments
-    times_long = numpy.arange(float(strain.start_time),
-                              float(strain.end_time), psd_long_segment)
+    times_long = numpy.arange(start_time, end_time, psd_long_segment)
 
     # Set up the empty time series for the PSD variation estimate
-    psd_var = TimeSeries(zeros(int(math.ceil((strain.end_time -
-                                   strain.start_time) / psd_short_segment))),
+    psd_var = TimeSeries(zeros(int(numpy.ceil((end_time -
+                                   start_time) / psd_short_segment))),
                          delta_t=psd_short_segment, copy=False,
-                         epoch=strain.start_time)
+                         epoch=start_time)
 
     ind = 0
     for tlong in times_long:
         # Calculate PSD for long segment and separate the long segment in to
         # overlapping shorter segments
-        if tlong + psd_long_segment <= float(strain.end_time):
+        if tlong + psd_long_segment <= end_time:
             psd_long = strain.time_slice(tlong,
                           tlong + psd_long_segment).psd(overlap)
             times_short = numpy.arange(tlong, tlong + psd_long_segment,
                                        psd_short_segment)
         else:
-            psd_long = strain.time_slice(float(strain.end_time) -
-                           psd_long_segment,
-                           float(strain.end_time)).psd(overlap)
-            times_short = numpy.arange(tlong, float(strain.end_time),
-                                       psd_short_segment)
-        # Caculate the PSD of the shorter segments
+            psd_long = strain.time_slice(end_time - psd_long_segment,
+                                         end_time).psd(overlap)
+            times_short = numpy.arange(tlong, end_time, psd_short_segment)
+        # Calculate the PSD of the shorter segments
         psd_short = []
         for tshort in times_short:
-            if tshort + psd_short_segment*2 <= float(strain.end_time):
+            if tshort + psd_short_segment*2 <= end_time:
                 pshort = strain.time_slice(tshort,
                              tshort + psd_short_segment*2).psd(overlap)
             else:
                 pshort = strain.time_slice(tshort - psd_short_segment,
-                             float(strain.end_time)).psd(overlap)
+                                           end_time).psd(overlap)
             psd_short.append(pshort)
         # Estimate the range of the PSD to compare
         kmin = int(low_freq / psd_long.delta_f)
