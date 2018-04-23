@@ -174,7 +174,7 @@ def acl_or_max_posterior(sampler, fp):
     """Burn in that uses the minimum of `n_acl` and `max_posteior`.
     """
     acl_bidx, acl_ibi = n_acl(sampler, fp)
-    maxp_bidx, maxp_ibi = max_poseterior(sampler, fp)
+    maxp_bidx, maxp_ibi = max_posterior(sampler, fp)
     burn_in_idx = numpy.min([acl_bidx, maxp_bidx], axis=0)
     is_burned_in = acl_ibi | maxp_ibi
     return burn_in_idx, is_burned_in
