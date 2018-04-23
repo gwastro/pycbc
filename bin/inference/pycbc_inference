@@ -430,8 +430,13 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp,static_args=static_args,
                                   ifos=opts.instruments)
-            logging.info("Updating burn in")
-            burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
+            try:
+                is_burned_in = fp.is_burned_in
+            except AttributeError, KeyError:
+                is_burned_in = False
+            if not is_burned_in:
+                logging.info("Calculating burn in")
+                burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
 
             # compute the acls and write
             acls = None
