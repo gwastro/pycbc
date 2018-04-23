@@ -310,41 +310,42 @@ _linear_decompress_code = r"""
     // This code expects to be passed:
     // h: array of complex doubles
     //      the output array to write the results to.
-    // delta_f: double
-    //      the df of the output array
     // hlen: int
     //      the length of h
-    // start_index: int
+    // delta_f: double
+    //      the df of the output array
+    // kmin: int
     //      the index to start the waveform in the output
-    //      frequency series; i.e., floor(f_lower*df)
+    //      frequency series; i.e., ceil(f_lower/df)
+    // imin: int
+    //      the index to start at in the compressed series
     // sample_frequencies: array of real doubles
     //      the frequencies at which the compressed waveform is sampled
+    // sflen: int
+    //      the length of the sample frequencies
     // amp: array of real doubles
     //      the amplitude of the waveform at the sample frequencies
     // phase: array of real doubles
     //      the phase of the waveform at the sample frequencies
-    // sflen: int
-    //      the length of the sample frequencies
-    // imin: int
-    //      the index to start at in the compressed series
 
-    // We will cast the output to a double array for faster processing.
-    // This takes advantage of the fact that complex arrays store
-    // their real and imaginary values next to each other in memory.
+    //
+    // Variable definitions
+    //
+    int kmax; // the maximum index we will go to in the output
+    int ii; // index in the sample frequencies
 
-    double* outptr = (double*) h;
-
-    // for keeping track of where in the output frequencies we are
-    int findex, next_sfindex, kmax;
+    // we will re-compute cos/sin of the phase at the following intervals:
+    int update_interval = 128;
+    // for keeping track of how many steps between updates:
+    int update_counter;
 
     // variables for computing the interpolation
+    double f;
     double df = (double) delta_f;
     double inv_df = 1./df;
-    double f, inv_sdf;
+    double inv_sdf;
     double sf, this_amp, this_phi;
-    double next_sf = sample_frequencies[imin];
-    double next_amp = amp[imin];
-    double next_phi = phase[imin];
+    double next_sf, next_amp, next_phi;
     double m_amp, b_amp;
     double m_phi, b_phi;
     double interp_amp, interp_phi;
@@ -354,40 +355,61 @@ _linear_decompress_code = r"""
     double g_re, g_im, incrg_re, incrg_im;
     double dphi_re, dphi_im;
 
-    // we will re-compute cos/sin of the phase at the following intervals:
-    int update_interval = 128;
+    // We will cast the output to a double array for faster processing.
+    // This takes advantage of the fact that complex arrays store
+    // their real and imaginary values next to each other in memory.
+    double* outptr = (double*) h;
+
+    // figure out the maximum frequency we will interpolate to: this is
+    // the minimum of the output and the sample frequencies
+
+    if (sample_frequencies[sflen-1] < hlen * df){
+        kmax = (int) floor(sample_frequencies[sflen-1] * inv_df);
+    }
+    else {
+        kmax = hlen-1;
+    }
 
     // zero out the beginning
-    memset(outptr, 0, sizeof(*outptr)*2*start_index);
+    memset(outptr, 0, sizeof(*outptr)*2*kmin);
 
     // move to the start position
-    outptr += 2*start_index;
-    findex = start_index;
+    outptr += 2*kmin;
 
-    // cycle over the compressed samples
-    for (int ii=imin; ii<(sflen-1); ii++){
-        // update the linear interpolations
-        sf = next_sf;
-        next_sf = (double) sample_frequencies[ii+1];
-        next_sfindex = (int) ceil(next_sf * inv_df);
-        if (next_sfindex > hlen)
-            next_sfindex = hlen;
-        inv_sdf = 1./(next_sf - sf);
-        this_amp = next_amp;
-        next_amp = (double) amp[ii+1];
-        this_phi = next_phi;
-        next_phi = (double) phase[ii+1];
-        m_amp = (next_amp - this_amp)*inv_sdf;
-        b_amp = this_amp - m_amp*sf;
-        m_phi = (next_phi - this_phi)*inv_sdf;
-        b_phi = this_phi - m_phi*sf;
+    // set initial variables
+    ii = imin;
+    next_sf = sample_frequencies[imin];
+    next_amp = amp[imin];
+    next_phi = phase[imin];
+    update_counter = update_interval;
 
-        // cycle over the interpolated points between this and the next
-        // compressed sample
-        while (findex < next_sfindex){
-            // for the first step, compute the value of h from the interpolated
-            // amplitude and phase
-            f = findex*df;
+    // cycle over the index values in the output array, populating it
+    // accordingly
+    for (int kk=kmin; kk<=kmax; kk++){
+        f = kk * df;
+
+        // if we've gone past the next frequency in the compressed waveforms,
+        // update the interpolation variables
+        if (f >= next_sf) {
+            sf = next_sf;
+            this_amp = next_amp;
+            this_phi = next_phi;
+            ii += 1;
+            next_sf = (double) sample_frequencies[ii];
+            inv_sdf = 1./(next_sf - sf);
+            next_amp = (double) amp[ii];
+            next_phi = (double) phase[ii];
+            m_amp = (next_amp - this_amp)*inv_sdf;
+            b_amp = this_amp - m_amp*sf;
+            m_phi = (next_phi - this_phi)*inv_sdf;
+            b_phi = this_phi - m_phi*sf;
+            // force the update
+            update_counter = update_interval;
+        }
+
+        // calculate the output
+        if (update_counter == update_interval){
+            // compute h from the interpolated amplitude and phase
             interp_amp = m_amp * f + b_amp;
             interp_phi = m_phi * f + b_phi;
             dphi_re = cos(m_phi * df);
@@ -396,42 +418,30 @@ _linear_decompress_code = r"""
             h_im = interp_amp * sin(interp_phi);
             g_re = m_amp * df * cos(interp_phi);
             g_im = m_amp * df * sin(interp_phi);
-
-            // save and update counters
-            *outptr = h_re;
-            *(outptr+1) = h_im;
-            outptr += 2;
-            findex++;
-
-            // for the next update_interval steps, compute h by incrementing
-            // the last h
-            kmax = findex + update_interval;
-            if (kmax > next_sfindex)
-                kmax = next_sfindex;
-            while (findex < kmax){
-                incrh_re = h_re * dphi_re - h_im * dphi_im;
-                incrh_im = h_re * dphi_im + h_im * dphi_re;
-                incrg_re = g_re * dphi_re - g_im * dphi_im;
-                incrg_im = g_re * dphi_im + g_im * dphi_re;
-                h_re = incrh_re + incrg_re;
-                h_im = incrh_im + incrg_im;
-                g_re = incrg_re;
-                g_im = incrg_im;
-
-                // save and update counters
-                *outptr = h_re;
-                *(outptr+1) = h_im;
-                outptr += 2;
-                findex++;
-            }
+            // reset the update counter
+            update_counter = 0;
         }
-        if (next_sfindex == hlen){
-            break;
+        else {
+            // compute h by incrementing the last h
+            incrh_re = h_re * dphi_re - h_im * dphi_im;
+            incrh_im = h_re * dphi_im + h_im * dphi_re;
+            incrg_re = g_re * dphi_re - g_im * dphi_im;
+            incrg_im = g_re * dphi_im + g_im * dphi_re;
+            h_re = incrh_re + incrg_re;
+            h_im = incrh_im + incrg_im;
+            g_re = incrg_re;
+            g_im = incrg_im;
+            update_counter += 1;
         }
+
+        // save and update output pointer
+        *outptr = h_re;
+        *(outptr+1) = h_im;
+        outptr += 2;
     }
 
     // zero out the rest of the array
-    memset(outptr, 0, sizeof(*outptr)*2*(hlen-findex));
+    memset(outptr, 0, sizeof(*outptr)*2*(hlen-kmax));
 """
 # for single precision
 _linear_decompress_code32 = _linear_decompress_code.replace('double', 'float')
@@ -479,9 +489,9 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         frequencies less than this will be 0 in the decompressed waveform.
     interpolation : {'inline_linear', str}
         The interpolation to use for the amplitude and phase. Default is
-        'inline_linear'. If 'inline_linear' a custom interpolater is used. Otherwise,
-        ``scipy.interpolate.interp1d`` is used; for other options, see
-        possible values for that function's ``kind`` argument.
+        'inline_linear'. If 'inline_linear' a custom interpolater is used.
+        Otherwise, ``scipy.interpolate.interp1d`` is used; for other options,
+        see possible values for that function's ``kind`` argument.
 
     Returns
     -------
@@ -518,9 +528,12 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     else:
         if f_lower >= sample_frequencies.max():
             raise ValueError("f_lower is > than the maximum sample frequency")
-        imin = int(numpy.searchsorted(sample_frequencies, f_lower)) # pylint:disable=unused-variable
-    start_index = int(numpy.floor(f_lower/df))
-    if start_index >= hlen:
+        if f_lower < sample_frequencies.min():
+            raise ValueError("f_lower is < than the minimum sample frequency")
+        imin = int(numpy.searchsorted(sample_frequencies, f_lower,
+            side='right')) - 1 # pylint:disable=unused-variable
+    kmin = int(numpy.ceil(f_lower/df))
+    if kmin >= hlen:
         raise ValueError('requested f_lower >= largest frequency in out')
     # interpolate the amplitude and the phase
     if interpolation == "inline_linear":
@@ -532,8 +545,8 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
         sflen = len(sample_frequencies) # pylint:disable=unused-variable
         h = numpy.array(out.data, copy=False) # pylint:disable=unused-variable
         delta_f = float(df) # pylint:disable=unused-variable
-        inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
-                      'amp', 'phase', 'start_index', 'imin'],
+        inline(code, ['h', 'hlen', 'delta_f', 'sample_frequencies', 'sflen',
+                      'amp', 'phase', 'kmin', 'imin'],
                extra_compile_args=[WEAVE_FLAGS] +\
                                   omp_flags,
                libraries=omp_libs)
