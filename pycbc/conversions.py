@@ -776,11 +776,50 @@ def get_lm_f0tau(mass, spin, l, m, nmodes):
 
 
 def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
+    """Returns QNM frequency for the given mass and spin and mode.
+    """
     return get_lm_f0tau(final_mass, final_spin, l, m, 1)[0][0]
 
 
 def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
+    """Returns QNM damping time for the given mass and spin and mode.
+    """
     return get_lm_f0tau(final_mass, final_spin, l, m, 1)[1][0]
+
+
+# following are from Berti et al. 2006.
+# keys are l,m. Constants are for converting from
+# frequency and damping time to mass and spin
+_berti_spin_constants = {
+    (2,2) : (0.7, 1.4187, -0.4990),
+    }
+
+_berti_mass_constants = {
+    (2,2) : (1.5251, -1.1568, 0.1292),
+    }
+
+
+def final_spin_from_f0_tau(f0, tau, l=2, m=2):
+    """Returns the final spin based on the given frequency and damping time.
+    """
+    # from Berti et al. 2006
+    a, b, c = _berti_spin_constants[l,m]
+    Q = f0 * tau * numpy.pi
+    try:
+        return 1. - ((Q-a)/b)**(1./c)
+    except ValueError:
+        return numpy.nan
+
+
+def final_mass_from_f0_tau(f0, tau, l=2, m=2):
+    """Returns the final mass (in solar masses) based on the given frequency
+    and damping time.
+    """
+    # from Berti et al. 2006
+    spin = final_spin_from_f0_tau(f0, tau, l=l, m=m)
+    a, b, c = _berti_mass_constants[l,m]
+    return (a + b*(1-spin)**c)/(2*numpy.pi*f0*lal.MTSUN_SI)
+
 
 #
 # =============================================================================
@@ -1007,7 +1046,8 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
            'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
+           'final_spin_from_f0_tau', 'final_mass_from_f0_tau',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
-           'nltides_gw_phase_diff_isco'
+           'nltides_gw_phase_diff_isco',
           ]
