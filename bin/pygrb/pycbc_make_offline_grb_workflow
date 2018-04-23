@@ -91,6 +91,7 @@ else:
     wflow.cp.set("workflow-exttrig_segments", "min-before", str(deadtime))
     wflow.cp.set("workflow-exttrig_segments", "min-after", str(deadtime))
 
+# Do checks for no/single IFO case
 single_ifo = wflow.cp.has_option("workflow", "allow-single-ifo-search")
 if len(sciSegs.keys()) == 0:
     plot_met = make_grb_segments_plot(wflow, segmentlistdict(), triggertime,
@@ -109,6 +110,9 @@ elif len(sciSegs.keys()) < 2 and not single_ifo:
 else:
     if len(sciSegs.keys()) < 2:
         logging.info("Generating a single IFO search.")
+        mf_tag = "sngl"
+    else:
+        mf_tag = "coherent"
     onSrc, offSrc = _workflow.generate_triggered_segment(wflow, segDir,
                                                          sciSegs)
 
@@ -127,15 +131,16 @@ else:
     sciSegs = offSrc
     all_files.extend(_workflow.FileList([segs_plot]))
 
-# How many IFOs do we have in the search?
-if len(sciSegs.keys()) == 1:
-    mf_tag = "sngl"
-else:
-    mf_tag = "coherent"
-
 # Update analysis time after coherent segment calculation
 ifo = sciSegs.keys()[0]
+wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
+                                       int(sciSegs[ifo][0][1]))
+
 padding = int(wflow.cp.get("inspiral", "pad-data"))
+if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
+    gate_pad = int(wflow.cp.get("condition_strain", "pad-data"))
+    padding += gate_pad
+
 if wflow.cp.has_option("inspiral", "analyse-segment-end"):
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime - \
                                       spec_len + padding - safety,
@@ -149,21 +154,15 @@ ext_file = None
 
 # DATAFIND
 dfDir = os.path.join(currDir, "datafind")
+datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow,
+        sciSegs, dfDir, segsFileList)
 if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
-    gating_pad = int(wflow.cp.get("condition_strain", "pad-data"))
-    gatSegs = segmentlistdict({key: segmentlist([\
-            segment(int(sciSegs[key][0][0] - gating_pad),
-                    int(sciSegs[key][0][1] + gating_pad))]) \
-            for key in sciSegs.keys()})
-    wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(gatSegs[ifo][0][0]),
-                                           int(gatSegs[ifo][0][1]))
-    datafind_files, _, gatSegs, _ = _workflow.setup_datafind_workflow(wflow,
-        gatSegs, dfDir, segsFileList)
+    for iifo in sciSegs:
+        sciSegs[iifo][0] = segment(sciSegs[iifo][0][0] + gate_pad,
+                                   sciSegs[iifo][0][1] - gate_pad)
     wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
                                            int(sciSegs[ifo][0][1]))
 else:
-    wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
-                                           int(sciSegs[ifo][0][1]))
     datafind_files, _, sciSegs, _ = _workflow.setup_datafind_workflow(wflow,
             sciSegs, dfDir, segsFileList)
 
