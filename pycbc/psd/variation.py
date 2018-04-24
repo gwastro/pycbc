@@ -2,7 +2,7 @@
 
 import numpy
 
-from pycbc.types import TimeSeries, zeros
+from pycbc.types import TimeSeries, FrequencySeries, zeros
 
 def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
                        overlap, low_freq, high_freq):
@@ -35,50 +35,66 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
         Time series of the variability in the PSD estimation
     """
 
+    # Calculate strain precision
+    if strain.precision == 'single':
+        fs_dtype = numpy.float32
+    elif strain.precision == 'double':
+        fs_dtype = numpy.float64
+
+    # Convert start and end times immediately to floats
+    start_time = numpy.float(strain.start_time)
+    end_time = numpy.float(strain.end_time)
+
     # Find the times of the long segments
-    times_long = numpy.arange(float(strain.start_time),
-                              float(strain.end_time), psd_long_segment)
+    times_long = numpy.arange(start_time, end_time, psd_long_segment)
 
     # Set up the empty time series for the PSD variation estimate
-    psd_var = TimeSeries(zeros(int((strain.end_time - strain.start_time) /
-                  psd_short_segment)), delta_t=psd_short_segment,
-                  copy=False, epoch=strain.start_time)
+    psd_var = TimeSeries(zeros(int(numpy.ceil((end_time -
+                                   start_time) / psd_short_segment))),
+                         delta_t=psd_short_segment, copy=False,
+                         epoch=start_time)
 
     ind = 0
     for tlong in times_long:
         # Calculate PSD for long segment and separate the long segment in to
-        # Overlapping shorter segments
-        if tlong + psd_long_segment <= float(strain.end_time):
+        # overlapping shorter segments
+        if tlong + psd_long_segment <= end_time:
             psd_long = strain.time_slice(tlong,
                           tlong + psd_long_segment).psd(overlap)
             times_short = numpy.arange(tlong, tlong + psd_long_segment,
                                        psd_short_segment)
         else:
-            psd_long = strain.time_slice(float(strain.end_time) -
-                           psd_long_segment,
-                           float(strain.end_time)).psd(overlap)
-            times_short = numpy.arange(tlong, float(strain.end_time),
-                                       psd_short_segment)
-
-        # Caculate the PSD of the shorter segments
+            psd_long = strain.time_slice(end_time - psd_long_segment,
+                                         end_time).psd(overlap)
+            times_short = numpy.arange(tlong, end_time, psd_short_segment)
+        # Calculate the PSD of the shorter segments
         psd_short = []
         for tshort in times_short:
-            if tshort + psd_short_segment*2 <= float(strain.end_time):
+            if tshort + psd_short_segment*2 <= end_time:
                 pshort = strain.time_slice(tshort,
                              tshort + psd_short_segment*2).psd(overlap)
             else:
                 pshort = strain.time_slice(tshort - psd_short_segment,
-                             float(strain.end_time)).psd(overlap)
+                                           end_time).psd(overlap)
             psd_short.append(pshort)
         # Estimate the range of the PSD to compare
         kmin = int(low_freq / psd_long.delta_f)
         kmax = int(high_freq / psd_long.delta_f)
         # Comapre the PSD of the short segment to the long segment
-        #diff = numpy.array([numpy.std((p_short[kmin:kmax] /
-        #           psd_long[kmin:kmax])) for p_short in psd_short])
-        diff = numpy.array([(p_short[kmin:kmax] / psd_long[kmin:kmax]).sum()
-                           for p_short in psd_short])
-        diff /= (kmax - kmin)
+        # The weight factor gives the rough response of a cbc template across
+        # the defined frequency range given the expected PSD (i.e. long PSD)
+        # Then integrate the weighted ratio of the actual PSD (i.e. short PSD)
+        # with the expected PSD (i.e. long PSD) over the specified frequency
+        # range
+        freqs = FrequencySeries(psd_long.sample_frequencies,
+                                delta_f=psd_long.delta_f,
+                                epoch=psd_long.epoch, dtype=fs_dtype)
+        weight = numpy.array(
+                     freqs[kmin:kmax]**(-7./3.) / psd_long[kmin:kmax])
+        weight /= weight.sum()
+        diff = numpy.array([(weight * numpy.array(p_short[kmin:kmax] /
+                             psd_long[kmin:kmax])).sum()
+                             for p_short in psd_short])
 
         # Store variation value
         for i, val in enumerate(diff):
