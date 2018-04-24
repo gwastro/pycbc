@@ -503,6 +503,72 @@ get_fd_waveform.__doc__ = get_fd_waveform.__doc__.format(
     params=parameters.fd_waveform_params.docstr(prefix="    ",
            include_label=False).lstrip(' '))
 
+def get_fd_waveform_from_td(**params):
+    """ Return time domain version of fourier domain approximant.
+
+    This returns a frequency domain version of a fourier domain approximant,
+    with padding and tapering at the start of the waveform.
+
+    Parameters
+    ----------
+    params: dict
+        The parameters defining the waveform to generator.
+        See `get_td_waveform`.
+
+    Returns
+    -------
+    hp: pycbc.types.FrequencySeries
+        Plus polarization time series
+    hc: pycbc.types.FrequencySeries
+        Cross polarization time series
+    """
+
+    # determine the duration to use
+    full_duration = duration = get_waveform_filter_length_in_time(**params)
+    nparams = params.copy()
+
+    while full_duration < duration * 1.5:
+        full_duration = get_waveform_filter_length_in_time(**nparams)
+        nparams['f_lower'] -= 1
+
+    if 'f_fref' not in nparams:
+        nparams['f_ref'] = params['f_lower']
+
+    # We'll try to do the right thing and figure out what the frequency
+    # end is. Otherwise, we'll just assume 2048 Hz.
+    # (consider removing as we hopefully have better estimates for more
+    # approximants
+    try:
+        f_end = get_waveform_end_frequency(**params)
+        delta_t = (0.5 / pnutils.nearest_larger_binary_number(f_end))
+    except:
+        delta_t = 1.0 / 2048
+
+    nparams['delta_t'] = delta_t
+    hp, hc = get_td_waveform(**nparams)
+
+    # Resize to the right duration
+    tsamples = int(1.0 / params['delta_f'] / delta_t)
+
+    if tsamples < len(hp):
+        raise ValueError("The frequency spacing (df = {}) is too low to "
+                         "generate the {} approximant from the time "
+                         "domain".format(params['delta_f'], params['approximant']))
+
+    hp.resize(tsamples)
+    hc.resize(tsamples)
+
+    # apply the tapering, we will use a safety factor here to allow for
+    # somewhat innacurate duration difference estimation.
+    window = (full_duration - duration) * 0.8
+    hp = wfutils.td_taper(hp, hp.start_time, hp.start_time + window)
+    hc = wfutils.td_taper(hc, hc.start_time, hc.start_time + window)
+
+    # avoid wraparound
+    hp = hp.to_frequencyseries().cyclic_time_shift(hp.start_time)
+    hc = hc.to_frequencyseries().cyclic_time_shift(hc.start_time)
+    return hp, hc
+
 def get_td_waveform_from_fd(**params):
     """ Return time domain version of fourier domain approximant.
 
@@ -526,8 +592,6 @@ def get_td_waveform_from_fd(**params):
     # determine the duration to use
     full_duration = duration = get_waveform_filter_length_in_time(**params)
     nparams = params.copy()
-    if '_FD' in nparams['approximant']:
-        nparams['approximant'] = nparams['approximant'][:-3]
 
     while full_duration < duration * 1.5:
         full_duration = get_waveform_filter_length_in_time(**nparams)
@@ -740,6 +804,7 @@ _filter_time_lengths["EOBNRv2_ROM"] = seobnrv2_length_in_time
 _filter_time_lengths["EOBNRv2HM_ROM"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv2_ROM_DoubleSpin_HI"] = seobnrv2_length_in_time
 _filter_time_lengths["SEOBNRv4_ROM"] = seobnrv4_length_in_time
+_filter_time_lengths["SEOBNRv4"] = seobnrv4_length_in_time
 _filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
@@ -755,16 +820,24 @@ from . nltides import nonlinear_tidal_spa
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 
 for apx in copy.copy(_filter_time_lengths):
-    if apx in cpu_fd:
+    fd_apx = cpu_fd.keys()
+    td_apx = cpu_td.keys()
+
+    if (apx in td_apx) and (apx not in fd_apx):
+        # We can make a fd version of td approximants
+        cpu_fd[apx] = get_fd_waveform_from_td
+
+    if apx in fd_apx:
         # We can do interpolation for waveforms that have a time length
         apx_int = apx + '_INTERP'
         cpu_fd[apx_int] = get_interpolated_fd_waveform
         _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
 
         # We can also make a td version of this
-        apx_int = apx + '_FD'
-        cpu_td[apx_int] = get_td_waveform_from_fd
-        _filter_time_lengths[apx_int] = _filter_time_lengths[apx]
+        # This will override any existing approximants with the same name
+        # (ex. IMRPhenomXX)
+        cpu_td[apx] = get_td_waveform_from_fd
+
 
 td_wav = _scheme.ChooseBySchemeDict()
 fd_wav = _scheme.ChooseBySchemeDict()
@@ -986,6 +1059,7 @@ def get_waveform_filter_length_in_time(approximant, template=None, **kwargs):
         return None
 
 __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
+           "get_fd_waveform_from_td",
            "print_td_approximants", "print_fd_approximants",
            "td_approximants", "fd_approximants",
            "get_waveform_filter", "filter_approximants",
