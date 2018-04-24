@@ -25,29 +25,40 @@ def com(f, files, group):
         print group
         raise
 
-def com_with_swapping(f, files, group):
+def com_with_detector_key(f, files, group):
     """
     Combine data from multiple files where the group is dependent on which of
     the two ifos the data belongs to, e.g. time1, time2 or trigger_id1,
-    trigger_id2. This function checks which of the two groups should be used
+    trigger_id2. This function checks which group should be used
     for each file, as each file might have a different convention, and combines
     according to the attributes set in f.
     """
-    # Set what the group should be for the "other" ifo
+    # We have to be careful here, because in these cases the group, for
+    # example time1 or time2 encodes a detector name, stored in the attributes.
+    # It may not be the *same* detector for each file.
+
+    # What detector are we dealing with
     if group.endswith('1'):
-        ngroup = group[:-1] + '2'
+        ifo_name = f.attrs['detector_1']
     elif group.endswith('2'):
-        ngroup = group[:-1] + '1'
+        ifo_name = f.attrs['detector_2']
     else:
         raise ValueError("Input must end in 1 or 2, got %s" % inp_str)
 
-    # Need to swap detector ID if this file uses the other convention
+    # We defined the format using the first file, so we can just add that
     data_for_catting = [files[0][group][:]]
+    # For the remaining files we must check the detector name
     for nfp in files[1:]:
-        if nfp.attrs['detector_1'] == f.attrs['detector_1']:
-            data_for_catting.append(nfp[group][:])
+        # What detector do we need in this file
+        if nfp.attrs['detector_1'] == ifo_name:
+            new_det_num = '1'
+        elif nfp.attrs['detector_2'] == ifo_name:
+            new_det_num = '2'
         else:
-            data_for_catting.append(nfp[ngroup][:])
+            raise ValueError("Cannot find detector %s in input file" % ifo_name)
+        new_group = group[:-1] + new_det_num
+
+        data_for_catting.append(nfp[new_group][:])
     f[group] = numpy.concatenate(data_for_catting)
     
 
@@ -92,8 +103,8 @@ for fg_bg_key in ['foreground', 'background', 'background_exc']:
                        'fap', 'fap_exc']:
             com(f, files, '%s/%s' % (fg_bg_key,key))
         elif key in ['time1', 'time2', 'trigger_id1', 'trigger_id2']:
-            # Check if all files use the same detector numbering
-            com_with_swapping(f, files, '%s/%s' % (fg_bg_key,key))
+            # Check if all files use the same detector convention
+            com_with_detector_key(f, files, '%s/%s' % (fg_bg_key,key))
         else:
             # Do not store FAP numbers ... Could be recalculated.
             continue
