@@ -13,7 +13,9 @@ import pycbc.version
 
 def com(f, files, group):
     """ Combine the same column from multiple files into another file f"""
-    f[group] = numpy.concatenate([fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32) for fi in files])
+    f[group] = numpy.concatenate\
+        ([fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32)\
+         for fi in files])
 
 def com_with_detector_key(f, files, group):
     """
@@ -33,7 +35,7 @@ def com_with_detector_key(f, files, group):
     elif group.endswith('2'):
         ifo_name = f.attrs['detector_2']
     else:
-        raise ValueError("Input must end in 1 or 2, got %s" % inp_str)
+        raise ValueError("Group name must end in 1 or 2, got %s" % group)
 
     # We defined the format using the first file, so we can just add that
     data_for_catting = [files[0][group][:]]
