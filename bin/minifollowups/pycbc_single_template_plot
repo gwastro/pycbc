@@ -15,11 +15,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Plot the output of pycbc_single_template """
-import argparse, pycbc.results, pycbc.events, pycbc.events, sys, h5py, numpy
-import matplotlib; matplotlib.use('Agg')
-import pylab
 
-parser = argparse.ArgumentParser()
+import argparse
+import sys
+import h5py
+import numpy
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+import pycbc.results
+import pycbc.events
+
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose')
