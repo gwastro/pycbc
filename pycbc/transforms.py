@@ -442,7 +442,7 @@ class ChirpDistanceToDistance(BaseTransform):
         >>> t = transforms.ChirpDistanceToDistance()
         >>> t.transform({'chirp_distance': np.array([40.]), 'mchirp': np.array([1.2])})
         {'mchirp': array([ 1.2]), 'chirp_distance': array([ 40.]), 'distance': array([ 39.48595679])}
-        
+
         Returns
         -------
         out : dict
