@@ -473,6 +473,7 @@ setup (
                'bin/inference/pycbc_inference_plot_samples',
                'bin/inference/pycbc_inference_table_summary',
                'bin/population/pycbc_population_rates',
+               'bin/population/pycbc_population_plots',
                'bin/plotting/pycbc_plot_waveform',
                'bin/plotting/pycbc_plot_qscan',
                'bin/plotting/pycbc_banksim_plot_eff_fitting_factor',
