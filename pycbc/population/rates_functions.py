@@ -138,7 +138,7 @@ def log_rho_bg(trigs, bins, counts):
             log_rhos.append(log(counts[i]) - log(bins[i+1] - bins[i]) - log(N))
     return np.array(log_rhos)
 
-def log_rho_fg_mc(t, injstats, bins):
+def log_rho_fgmc(t, injstats, bins):
     counts, bins = np.histogram(injstats, bins)
     
     N = sum(counts)
@@ -151,7 +151,7 @@ def log_rho_fg_mc(t, injstats, bins):
     
     return log(dens[tinds])
 
-def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
+def fgmc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
     '''
     Function to fit the likelihood Fixme
     '''
