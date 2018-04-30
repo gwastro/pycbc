@@ -342,7 +342,7 @@ def write_offsource(page, args, grbtag, onsource=False):
 
     plot = markup.page()
     p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (out_dir, grbtag)
-    plot.a(href=p, title="Coherent SNR versus time")
+    plot.a(href=p, title="Detection statistic versus time")
     plot.img(src=p)
     plot.a.close()
     td = [ plot() ]
