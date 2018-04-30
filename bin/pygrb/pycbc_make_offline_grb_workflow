@@ -34,6 +34,8 @@ import argparse
 import logging
 import pycbc.workflow as _workflow
 from glue.segments import segment, segmentlist, segmentlistdict
+import matplotlib
+matplotlib.use('agg')
 from pycbc.results.legacy_grb import make_grb_segments_plot
 
 workflow_name = "pygrb_offline"
