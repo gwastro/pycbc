@@ -356,20 +356,12 @@ class MchirpQToMass1Mass2(BaseTransform):
             of transformed values.
         """
         out = {}
-        mchirp = maps[parameters.mchirp]
-        q = maps[parameters.q]
-        # the mass{1,2}_from_mchirp_q functions always returns mass1 >= mass2
-        primary = conversions.mass1_from_mchirp_q(mchirp, q)
-        secondary = conversions.mass2_from_mchirp_q(mchirp, q)
-        # if q > 1 means mass1 > mass2; if q < 1 means mass2 > mass1
-        if q < 1:
-            m1 = secondary
-            m2 = primary
-        else:
-            m1 = primary
-            m2 = secondary
-        out[parameters.mass1] = m1
-        out[parameters.mass2] = m2
+        out[parameters.mass1] = conversions.mass1_from_mchirp_q(
+                                                maps[parameters.mchirp],
+                                                maps[parameters.q])
+        out[parameters.mass2] = conversions.mass2_from_mchirp_q(
+                                                maps[parameters.mchirp],
+                                                maps[parameters.q])
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -450,7 +442,7 @@ class ChirpDistanceToDistance(BaseTransform):
         >>> t = transforms.ChirpDistanceToDistance()
         >>> t.transform({'chirp_distance': np.array([40.]), 'mchirp': np.array([1.2])})
         {'mchirp': array([ 1.2]), 'chirp_distance': array([ 40.]), 'distance': array([ 39.48595679])}
-        
+
         Returns
         -------
         out : dict

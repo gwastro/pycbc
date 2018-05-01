@@ -271,13 +271,13 @@ def eta_from_q(q):
 
 def mass1_from_mchirp_q(mchirp, q):
     """Returns the primary mass from the given chirp mass and mass ratio."""
-    return mass1_from_mchirp_eta(mchirp, eta_from_q(q))
-
+    mass1 = (q**(2./5.))*((1.0 + q)**(1./5.))*mchirp
+    return mass1
 
 def mass2_from_mchirp_q(mchirp, q):
     """Returns the secondary mass from the given chirp mass and mass ratio."""
-    return mass2_from_mchirp_eta(mchirp, eta_from_q(q))
-
+    mass2 = (q**(-3./5.))*((1.0 + q)**(1./5.))*mchirp
+    return mass2
 
 def _a0(f_lower):
     """Used in calculating chirp times: see Cokelaer, arxiv.org:0706.4437
