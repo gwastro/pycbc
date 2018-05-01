@@ -111,10 +111,10 @@ def log_rho_bg(trigs, bins, counts):
     '''
 
     trigs = np.atleast_1d(trigs)
-    
+
     N = sum(counts)
-    
-    assert np.all(trigs >= np.min(bins)), 'triggers can not besmaller than bin lower limit'
+
+    assert np.all(trigs >= np.min(bins)), 'Trigger SNR values cannot all be below the lowest bin limit!'
 
     # If there are any triggers that are louder than the max bin, put one
     # fictituous count in a bin that extends from the limits of the slide

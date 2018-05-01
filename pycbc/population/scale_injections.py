@@ -148,7 +148,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
 
         if key == 'z_range' or key == 'inj_astro_vol':
             continue
-    
+
         data = injections[key]
         distance = data['distance']
         mass1, mass2 = data['mass1'], data['mass2']
