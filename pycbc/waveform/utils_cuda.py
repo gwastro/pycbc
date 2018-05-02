@@ -30,6 +30,7 @@ from pycbc.types import FrequencySeries
 import pycuda.gpuarray
 from mako.template import Template
 from pycuda.compiler import SourceModule
+import numpy
 
 time_shift_kernel = Template("""
 __global__ void fseries_ts(float2 *h, float phi,
