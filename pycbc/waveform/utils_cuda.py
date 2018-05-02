@@ -103,14 +103,14 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     else:
         out = htilde.data.gpudata
 
+    kmin = numpy.int32(kmin)
+    kmax = numpy.int32(len(htilde))
     # Right now, hardcoding the number of threads per block
     nt = numpy.int32(1024)
-    nb = numpy.int32(numpy.ceil(hlen / 1024.0))
+    nb = numpy.int32(numpy.ceil(kmax / 1024.0))
     phi = numpy.float32(-2 * numpy.pi * dt * htilde.delta_f)
-    kmax = numpy.int32(len(htilde))
-    kmin = numpy.int32(kmin)
-    fn = get_ts_kernel(nb).prepared_call
-    fn((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out)
+    fn = get_ts_kernel(nb)
+    fn.prepared_call((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out)
     if copy:
         htilde = FrequencySeries(out, delta_f=htilde.delta_f, epoch=htilde.epoch,
                                  copy=False)
