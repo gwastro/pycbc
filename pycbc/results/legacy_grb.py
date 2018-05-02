@@ -25,21 +25,7 @@ from __future__ import division
 import re
 import os
 from argparse import ArgumentParser
-import matplotlib
-# Only if a backend is not already set ... This should really *not* be done
-# here, but in the executables you should set matplotlib.use()
-# This matches the check that matplotlib does internally, but this *may* be
-# version dependenant. If this is a problem then remove this and control from
-# the executables directly.
-import sys
-if 'matplotlib.backends' not in sys.modules:
-    matplotlib.use('agg')
-import matplotlib.pyplot as plt
 from glue import markup, segments
-from matplotlib.patches import Rectangle
-from matplotlib.lines import Line2D
-from matplotlib.ticker import ScalarFormatter
-from pycbc.results.color import ifo_color
 
 def initialize_page(title, style, script, header=None):
     """
@@ -663,6 +649,11 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
 
 def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
                            out_dir, coherent_seg=None, fail_criterion=None):
+
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+    from matplotlib.lines import Line2D
+    from pycbc.results.color import ifo_color
 
     ifos = wkflow.ifos
     if len(science_segs.keys()) == 0:
