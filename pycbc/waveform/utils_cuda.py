@@ -77,19 +77,12 @@ __global__ void fseries_ts(float2 *h, float phi,
     }
 """)
 
-ts_kernel_cache = {}
-def get_ts_kernel(nb):
-    if nb > 1024:
-        raise ValueError("More than 1024 blocks not supported yet")
-
-    try:
-        return ts_kernel_cache[nb]
-    except KeyError:
-        mod = SourceModule(time_shift_kernel.render(ntpb=nt))
-        fn = mod.get_function("fseries_ts")
-        fn.prepare("PfiiP")
-        ts_kernel_cache[hlen] = fn
-        return ts_kernel_cache[hlen]
+# Right now, hardcoding the number of threads per block
+nt = numpy.int32(1024)
+nt_float = numpy.float32(nt)
+mod = SourceModule(time_shift_kernel.render(ntpb=nt))
+fseries_ts_fn = mod.get_function("fseries_ts")
+fseries_ts_fn.prepare("PfiiP")
 
 def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     """Shifts a frequency domain waveform in time. The waveform is assumed to
@@ -105,12 +98,12 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
 
     kmin = numpy.int32(kmin)
     kmax = numpy.int32(len(htilde))
-    # Right now, hardcoding the number of threads per block
-    nt = numpy.int32(1024)
-    nb = numpy.int32(numpy.ceil(kmax / 1024.0))
+    nb = numpy.int32(numpy.ceil(kmax / nt_float))
+    if nb > 1024:
+        raise ValueError("More than 1024 blocks not supported yet")
+
     phi = numpy.float32(-2 * numpy.pi * dt * htilde.delta_f)
-    fn = get_ts_kernel(nb)
-    fn.prepared_call((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out)
+    fseries_ts_fn.prepared_call((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out)
     if copy:
         htilde = FrequencySeries(out, delta_f=htilde.delta_f, epoch=htilde.epoch,
                                  copy=False)
