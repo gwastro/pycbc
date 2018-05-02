@@ -370,7 +370,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         else:
             logging.info("Making colored noise")
             from pycbc.noise.reproduceable import colored_noise
-            lowfreq = opt.strain_high_pass if opt.strain_high_pass else 10.
+            lowfreq = opt.low_frequency_cutoff / 2.
             strain = colored_noise(strain_psd, opt.gps_start_time,
                                           opt.gps_end_time,
                                           seed=opt.fake_strain_seed,
