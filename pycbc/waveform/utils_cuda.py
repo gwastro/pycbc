@@ -109,7 +109,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     kmax = numpy.int32(len(htilde))
     kmin = numpy.int32(kmin)
     fn = get_ts_kernel(nb).prepared_call
-    fn.((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out)
+    fn((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out)
     if copy:
         htilde = FrequencySeries(out, delta_f=htilde.delta_f, epoch=htilde.epoch,
                                  copy=False)
