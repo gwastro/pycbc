@@ -93,9 +93,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
         raise NotImplementedError("CUDA version of apply_fseries_time_shift only supports single precision")
 
     if copy:
-        out = htilde.copy().data.gpudata
-    else:
-        out = htilde.data.gpudata
+        out = htilde.copy()
 
     kmin = numpy.int32(kmin)
     kmax = numpy.int32(len(htilde))
@@ -104,7 +102,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
         raise ValueError("More than 1024 blocks not supported yet")
 
     phi = numpy.float32(-2 * numpy.pi * dt * htilde.delta_f)
-    fseries_ts_fn.prepared_call((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out)
+    fseries_ts_fn.prepared_call((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out.data.gpudata)
     if copy:
         htilde = FrequencySeries(out, delta_f=htilde.delta_f, epoch=htilde.epoch,
                                  copy=False)
