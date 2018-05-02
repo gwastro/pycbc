@@ -33,7 +33,7 @@ unset X509_USER_PROXY
 LIGO_USER=`cat ~/.ssh/ldg_user`
 
 echo -e "\\n>> [`date`] Init LIGO keytab"
-kinit ${LIGO_USER} -k -t ~/.ssh/lgd_token
+kinit ${LIGO_USER} -k -t ~/.ssh/ldg_token
 
 echo -e "\\n>> [`date`] Creating proxy"
 ./ligo-proxy-init -p ${LIGO_USER} 1>/dev/null
