@@ -647,7 +647,6 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
     import matplotlib.pyplot as plt
     from matplotlib.patches import Rectangle
     from matplotlib.lines import Line2D
-    from matplotlib.ticker import ScalarFormatter
     from pycbc.results.color import ifo_color
 
     ifos = wkflow.ifos
