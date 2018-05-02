@@ -62,14 +62,15 @@ __global__ void fseries_ts(float2 *h, float phi,
 
     float x, y;
     unsigned int i;
-    float2 tmp;
+    float2 tmp, htmp;
 
     i = ${ntpb}*blockIdx.x + threadIdx.x;
 
     if ((i >= kmin) && (i < kmax)){
+       htmp = h[i];
        __sincosf(phi*i, &y, &x);
-       tmp.x = x*h.x-y*h.y;
-       tmp.y = x*h.y+y*h.x;
+       tmp.x = x*htmp.x-y*htmp.y;
+       tmp.y = x*htmp.y+y*htmp.x;
        h[i] = tmp;
     }
     
