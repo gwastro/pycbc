@@ -61,7 +61,7 @@ __global__ void fseries_ts(float2 *h, float phi,
     */
 
     float x, y;
-    unsigned int i;
+    int i;
     float2 tmp, htmp;
 
     i = ${ntpb}*blockIdx.x + threadIdx.x;
@@ -79,7 +79,7 @@ __global__ void fseries_ts(float2 *h, float phi,
 """)
 
 # Right now, hardcoding the number of threads per block
-nt = numpy.int32(1024)
+nt = 1024
 nt_float = numpy.float32(nt)
 mod = SourceModule(time_shift_kernel.render(ntpb=nt))
 fseries_ts_fn = mod.get_function("fseries_ts")
@@ -99,7 +99,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
 
     kmin = numpy.int32(kmin)
     kmax = numpy.int32(len(htilde))
-    nb = numpy.int32(numpy.ceil(kmax / nt_float))
+    nb = int(numpy.ceil(kmax / nt_float))
     if nb > 1024:
         raise ValueError("More than 1024 blocks not supported yet")
 
