@@ -110,11 +110,6 @@ elif len(sciSegs.keys()) < 2 and not single_ifo:
     logging.warning(msg)
     sys.exit()
 else:
-    if len(sciSegs.keys()) < 2:
-        logging.info("Generating a single IFO search.")
-        mf_tag = "sngl"
-    else:
-        mf_tag = "coherent"
     onSrc, offSrc = _workflow.generate_triggered_segment(wflow, segDir,
                                                          sciSegs)
 
@@ -132,6 +127,12 @@ else:
     segs_plot.PFN(segs_plot.cache_entry.path, site="local")
     sciSegs = offSrc
     all_files.extend(_workflow.FileList([segs_plot]))
+
+if len(sciSegs) == 1:
+    logging.info("Generating a single IFO search.")
+    mf_tag = "sngl"
+elif len(sciSegs) > 1:
+    mf_tag = "coherent"
 
 # Update analysis time after coherent segment calculation
 ifo = sciSegs.keys()[0]
