@@ -4,7 +4,7 @@ PyCBC.
 """
 import os.path, pycbc.version
 import ConfigParser
-from pycbc.future import HTMLParser
+from HTMLParser import HTMLParser
 from xml.sax.saxutils import escape, unescape
 
 escape_table = {
