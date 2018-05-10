@@ -4,38 +4,16 @@ PyCBC installation instructions
 Prerequisites
 -------------
 
-* Python 2.6 or 2.7
-  Should be provided by the distribution.
-
-* python-decorator >= 3.3
-  Should be available in the distribution.
-  
-* argparse >= 1.2.0
-  Should be available in the distribution
-
-* Numpy >= 1.4.1 and Scipy >= 0.7.2
-  Should be installable either via the distribution packaging system,
-  pip or easy_install. Numpy >= 1.5.1 is required for GPU acceleration
-  via CUDA due to a bug in older versions.
-
 * LALSuite
   See https://www.lsc-group.phys.uwm.edu/daswg/docs/howto/lal-install.html
-  for installation instructions. LALSuite must be configured with the
-  --enable-swig-python option.
+  for instructions to install through source, or simply install the pre-built
+  version hosted on pypi using pip.
 
 Installing PyCBC
 ----------------
 
-    git clone https://github.com/ligo-cbc/pycbc.git
-    cd pycbc
-    python setup.py build
-    python setup.py install --user
-    python setup.py test
-
-For installing system-wide, replace the 'setup.py install' command with
-    sudo python setup.py install
-
-
+    pip install lalsuite pycbc
+    
 Installing CUDA Python modules
 ------------------------------
 
