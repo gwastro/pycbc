@@ -231,34 +231,6 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     vol_err = mc_prefactor * (Ninj * mc_sample_variance) ** 0.5
     return vol, vol_err
 
-
-def volume_binned_pylal(f_dist, m_dist, bins=15):
-    """ Compute the sensitive volume using a distance binned efficiency estimate
-
-    Parameters
-    -----------
-    f_dist: numpy.ndarray
-        The distances of found injections
-    m_dist: numpy.ndarray
-        The distances of missed injections
-
-    Returns
-    --------
-    volume: float
-        Volume estimate
-    volume_error: float
-        The standard error in the volume
-    """
-    def sims_to_bin(sim):
-        return (sim, 0)
-
-    total = numpy.concatenate([f_dist, m_dist])
-    ndbins = bin_utils.NDBins([bin_utils.LinearBins(min(total), max(total), bins),
-                               bin_utils.LinearBins(0., 1, 1)])
-    vol, verr = compute_search_volume_in_bins(f_dist, total, ndbins, sims_to_bin)
-    return vol.array[0], verr.array[0]
-
-
 def volume_shell(f_dist, m_dist):
     """ Compute the sensitive volume using sum over spherical shells.
 
