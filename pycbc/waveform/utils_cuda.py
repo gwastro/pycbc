@@ -77,7 +77,7 @@ nt = 1024
 nt_float = numpy.float32(nt)
 mod = SourceModule(time_shift_kernel.render(ntpb=nt))
 fseries_ts_fn = mod.get_function("fseries_ts")
-fseries_ts_fn.prepare("PfiiP")
+fseries_ts_fn.prepare("Pfii")
 
 def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     """Shifts a frequency domain waveform in time. The waveform is assumed to
