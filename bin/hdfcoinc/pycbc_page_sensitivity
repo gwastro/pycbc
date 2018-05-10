@@ -40,12 +40,9 @@ parser.add_argument('--min-dist', type=float,
                     help="Lower y-axis limit for sensitive distance")
 parser.add_argument('--max-dist', type=float,
                     help="Upper y-axis limit for sensitive distance")
-parser.add_argument('--integration-method', choices=['pylal', 'shell', 'mc'],
-                    default='pylal',
-                    help="Sensitive volume estimation method. Default 'pylal'")
-parser.add_argument('--dist-bins', type=int, default=100,
-                    help="Number of distance bins for 'pylal' volume "
-                         "estimation. Default 100")
+parser.add_argument('--integration-method', choices=['shell', 'mc'],
+                    default='shell',
+                    help="Sensitive volume estimation method. Default 'shell'")
 parser.add_argument('--distance-param', choices=['distance', 'chirp_distance'],
                     help="Parameter D used to generate injection distribution "
                          "over distance, required for 'mc' volume estimation")
@@ -275,9 +272,6 @@ for j in range(len(args.bins)-1):
             # Choose the volume estimation method
             if args.integration_method == 'shell':
                 vol, vol_err = sensitivity.volume_shell(f_dist, m_dist_full)
-            elif args.integration_method == 'pylal':
-                vol, vol_err = sensitivity.volume_binned_pylal(f_dist,
-                                             m_dist_full, bins=args.dist_bins)
             elif args.integration_method == 'mc':
                 found_mchirp = found['mchirp'][binf][loud]
                 missed_mchirp = numpy.append(missed['mchirp'][binm],
