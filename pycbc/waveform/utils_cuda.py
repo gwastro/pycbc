@@ -33,15 +33,15 @@ from pycuda.compiler import SourceModule
 import numpy
 
 time_shift_kernel = Template("""
-__global__ void fseries_ts(float2 *h, float phi,
-                           int kmin, int kmax,
-                           float2 *out){
+__global__ void fseries_ts(float2 *out, float phi,
+                           int kmin, int kmax){
     /*
       Input parameters:
       =================
 
-      h:    float2 pointer
-            The input frequency series to shift
+      out:  float2 pointer
+            The input frequency series to shift;
+            will be shifted in-place
  
       phi:  float
             Equals -2*pi*delta_f*time_shift
@@ -52,12 +52,6 @@ __global__ void fseries_ts(float2 *h, float phi,
       kmax: int
             maximum index to examine or write
 
-      Output parameters:
-      ==================
-
-      out:  float2 pointer
-            The output array, may be the same as h
-
     */
 
     float x, y;
@@ -67,11 +61,11 @@ __global__ void fseries_ts(float2 *h, float phi,
     i = ${ntpb}*blockIdx.x + threadIdx.x;
 
     if ((i >= kmin) && (i < kmax)){
-       htmp = h[i];
+       htmp = out[i];
        __sincosf(phi*i, &y, &x);
        tmp.x = x*htmp.x-y*htmp.y;
        tmp.y = x*htmp.y+y*htmp.x;
-       h[i] = tmp;
+       out[i] = tmp;
     }
     
     return;
@@ -94,6 +88,8 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
 
     if copy:
         out = htilde.copy()
+    else:
+        out = htilde
 
     kmin = numpy.int32(kmin)
     kmax = numpy.int32(len(htilde))
@@ -102,7 +98,7 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
         raise ValueError("More than 1024 blocks not supported yet")
 
     phi = numpy.float32(-2 * numpy.pi * dt * htilde.delta_f)
-    fseries_ts_fn.prepared_call((nb,1), (nt,1,1), htilde.data.gpudata, phi, kmin, kmax, out.data.gpudata)
+    fseries_ts_fn.prepared_call((nb,1), (nt,1,1), out.data.gpudata, phi, kmin, kmax)
     if copy:
         htilde = FrequencySeries(out, delta_f=htilde.delta_f, epoch=htilde.epoch,
                                  copy=False)
