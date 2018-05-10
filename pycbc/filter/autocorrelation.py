@@ -107,35 +107,48 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     else:
         return acf
 
-def calculate_acl(data, m=5, k=2, dtype=int):
-    """ Calculates the autocorrelation length (ACL).
 
-    ACL is estimated using
+def calculate_acl(data, m=5, dtype=int):
+    r"""Calculates the autocorrelation length (ACL).
 
-        r = 1 + 2 \sum_{i=1}^{m*s} \hat{R}(i) < s
+    Given a normalized autocorrelation function :math:`\rho[i]` (by normalized,
+    we mean that :math:`\rho[0] = 1`), the ACL :math:`\tau` is:
 
-    Where r is the ACL and \hat{R}(i) is the ACF that has been normalized so
-    that \hat{R}(0) is 1.0. And s is equal to i/m.
+    .. math::
 
-    The parameter k sets the maximum samples to use in calculation of ACL. The
-    maximum number of samples will be the length of the ACL divided by k.
+        \tau = 1 + 2 \sum_{i=1}^{K} \rho[i].
 
-    The parameter m controls the length of the window that is summed to
-    compute the ACL.
+    The number of samples used :math:`K` is found by using the first point
+    such that:
+
+    .. math::
+
+        m \tau[K] \leq K,
+
+    where :math:`m` is a tuneable parameter (default = 5). If no such point
+    exists, then the given data set it too short to estimate the ACL; in this
+    case ``inf`` is returned.
+    
+    This algorithm for computing the ACL is taken from:
+    
+    N. Madras and A.D. Sokal, J. Stat. Phys. 50, 109 (1988).
 
     Parameters
     -----------
-    data : {TimeSeries, numpy.array}
-        A TimeSeries or numpy.array of data.
-    dtype : {int, float}
+    data : TimeSeries or array
+        A TimeSeries of data.
+    m : int
+        The number of autocorrelation lengths to use for determining the window
+        size :math:`K` (see above).
+    dtype : int or float
         The datatype of the output. If the dtype was set to int, then the
         ceiling is returned.
 
     Returns
     -------
-    acl : {int, float}
-        The length s which is longer than the ACL. If ACL can not be estimated
-        then returns numpy.inf.
+    acl : int or float
+        The autocorrelation length. If the ACL cannot be estimated, returns
+        ``numpy.inf``.
     """
 
     # sanity check output data type
@@ -149,28 +162,12 @@ def calculate_acl(data, m=5, k=2, dtype=int):
     # calculate ACF that is normalized by the zero-lag value
     acf = calculate_acf(data)
 
-    # multiply all values beyond the zero-lag value by 2.0
-    acf[1:] *= 2.0
-
-    # sanity check ACF
-    if isnan(acf[0]):
-        return numpy.inf
-    assert acf[0] == 1.0
-
-    # the maximum index to calculate ACF
-    imax = int(len(acf)/k)
-
-    # calculate cumlative ACL until s is less than the cumulative ACL
-    cum_acl = 0.0
-    for i,val in enumerate(acf[:imax]):
-        s = float(i)/m
-        if cum_acl+val < s:
-            if dtype == int:
-                return numpy.ceil(s)
-            elif dtype == float:
-                return s
-        cum_acl += val
-
-    return numpy.inf
-
-
+    cacf = 2 * acf.numpy().cumsum() - 1
+    win = m * cacf <= numpy.arange(len(cacf))
+    if win.any():
+        acl = cacf[numpy.where(win)[0][0]]
+        if dtype == int:
+            acl = int(numpy.ceil(acl))
+    else:
+        acl = numpy.inf
+    return acl
