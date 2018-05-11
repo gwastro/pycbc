@@ -918,14 +918,14 @@ class EmceePTSampler(BaseMCMCSampler):
         return FieldArray.from_kwargs(**acfs)
 
     @classmethod
-    def compute_acls(cls, fp, start_index=None, end_index=None):
+    def compute_acls(cls, fp, start_index=None, end_index=None, pool=None):
         """Computes the autocorrleation length for all variable args and
         temperatures in the given file.
 
-        Parameter values are averaged over all walkers at each iteration and
-        temperature.  The ACL is then calculated over the averaged chain. If
-        the returned ACL is `inf`,  will default to the number of current
-        iterations.
+        An ACL is calculated for each walker and teperature. The average ACL
+        over all walkers is then taken for each temperature. If any walker
+        returns an ACL of `inf`, the mean will also be `inf`. In this case,
+        the returned ACL will default to the number of current iterations.
 
         Parameters
         -----------
@@ -944,6 +944,10 @@ class EmceePTSampler(BaseMCMCSampler):
         dict
             A dictionary of ntemps-long arrays of the ACLs of each parameter.
         """
+        if pool is None:
+            mfunc = map
+        else:
+            mfunc = pool.map
         acls = {}
         if end_index is None:
             end_index = fp.niterations
@@ -954,12 +958,13 @@ class EmceePTSampler(BaseMCMCSampler):
                 samples = cls.read_samples(fp, param, thin_start=start_index,
                                            thin_interval=1, thin_end=end_index,
                                            temps=tk, flatten=False)[param]
-                # contract the walker dimension using the mean, and flatten
-                # the (length 1) temp dimension
-                samples = samples.mean(axis=1)[0,:]
-                acl = autocorrelation.calculate_acl(samples)
+                # flatten the (length 1) temp dimension
+                samples = samples[0,:,:]
+                # compute the acl for each chain and average
+                acl = numpy.array(mfunc(autocorrelation.calculate_acl,
+                                        samples)).mean()
                 if numpy.isinf(acl):
-                    acl = samples.size
+                    acl = samples.shape[1]
                 these_acls[tk] = acl
             acls[param] = these_acls
         return acls
