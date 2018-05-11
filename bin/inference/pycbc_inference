@@ -444,7 +444,7 @@ with ctx:
             if opts.n_independent_samples is not None or end >= get_nsamples \
                     or not opts.checkpoint_fast:
                 logging.info("Computing acls")
-                acls = sampler.compute_acls(fp)
+                acls = sampler.compute_acls(fp, pool=sampler.pool)
                 sampler.write_acls(fp, acls)
 
         # write to backup
