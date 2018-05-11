@@ -121,6 +121,7 @@ class _BaseSampler(object):
     def __init__(self, likelihood_evaluator):
         self.likelihood_evaluator = likelihood_evaluator
         self.lastclear = 0
+        self.pool = None
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator, pool=None,

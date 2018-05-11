@@ -81,6 +81,7 @@ class EmceeEnsembleSampler(BaseMCMCSampler):
         super(EmceeEnsembleSampler, self).__init__(
               sampler, likelihood_evaluator)
         self._nwalkers = nwalkers
+        self.pool = pool
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator, pool=None,
@@ -288,6 +289,7 @@ class EmceePTSampler(BaseMCMCSampler):
               sampler, likelihood_evaluator)
         self._nwalkers = nwalkers
         self._ntemps = ntemps
+        self.pool = pool
 
     @classmethod
     def from_cli(cls, opts, likelihood_evaluator, pool=None,
