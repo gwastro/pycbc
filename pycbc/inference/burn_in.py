@@ -29,7 +29,7 @@ have burned in.
 import numpy
 from scipy.stats import ks_2samp
 
-def ks_test(sampler, fp, threshold=0.9):
+def ks_test(sampler, fp, threshold=0.9, **kwargs):
     """Burn in based on whether the p-value of the KS test between the samples
     at the last iteration and the samples midway along the chain for each
     parameter is > ``threshold``.
@@ -81,7 +81,7 @@ def ks_test(sampler, fp, threshold=0.9):
     return burn_in_idx, is_burned_in
 
 
-def n_acl(sampler, fp, nacls=100):
+def n_acl(sampler, fp, nacls=100, pool=None, **kwargs):
     """Burn in based on ACL.
 
     This applies the following test to determine burn in:
@@ -117,7 +117,8 @@ def n_acl(sampler, fp, nacls=100):
         of all False or True.
     """
     N = fp.niterations
-    acl = numpy.array(sampler.compute_acls(fp, start_index=N/2).values()).max()
+    acl = numpy.array(
+        sampler.compute_acls(fp, pool=pool, start_index=N/2).values()).max()
     is_burned_in = nacls * acl < N/2
     if not is_burned_in:
         burn_idx = N
@@ -128,7 +129,7 @@ def n_acl(sampler, fp, nacls=100):
            numpy.repeat(is_burned_in, nwalkers).astype(bool)
 
 
-def max_posterior(sampler, fp):
+def max_posterior(sampler, fp, **kwargs):
     """Burn in based on samples being within dim/2 of maximum posterior.
 
     Parameters
@@ -177,16 +178,16 @@ def max_posterior(sampler, fp):
     return burn_in_idx, is_burned_in
 
 
-def acl_or_max_posterior(sampler, fp):
+def acl_or_max_posterior(sampler, fp, **kwargs):
     """Burn in that uses the minimum of `n_acl` and `max_posteior`.
     """
-    acl_bidx, acl_ibi = n_acl(sampler, fp)
-    maxp_bidx, maxp_ibi = max_posterior(sampler, fp)
+    acl_bidx, acl_ibi = n_acl(sampler, fp, **kwargs)
+    maxp_bidx, maxp_ibi = max_posterior(sampler, fp, **kwargs)
     burn_in_idx = numpy.min([acl_bidx, maxp_bidx], axis=0)
     is_burned_in = acl_ibi | maxp_ibi
     return burn_in_idx, is_burned_in
 
-def posterior_step(sampler, fp):
+def posterior_step(sampler, fp, **kwargs):
     """Burn in based on the last time a chain made a jump > dim/2.
 
     Parameters
@@ -228,7 +229,7 @@ def posterior_step(sampler, fp):
     return burn_in_idx, numpy.ones(nwalkers, dtype=bool)
 
 
-def half_chain(sampler, fp):
+def half_chain(sampler, fp, **kwargs):
     """Takes the second half of the iterations as post-burn in.
 
     Parameters
@@ -254,7 +255,7 @@ def half_chain(sampler, fp):
            numpy.ones(nwalkers, dtype=bool)
 
 
-def use_sampler(sampler, fp=None):
+def use_sampler(sampler, fp=None, **kwargs):
     """Uses the sampler's burn_in function.
 
     Parameters
@@ -330,7 +331,7 @@ class BurnIn(object):
         self.burn_in_functions = {fname: burn_in_functions[fname]
                                   for fname in function_names}
 
-    def evaluate(self, sampler, fp):
+    def evaluate(self, sampler, fp, **kwargs):
         """Evaluates sampler's chains to find burn in.
 
         Parameters
@@ -367,7 +368,7 @@ class BurnIn(object):
         if self.burn_in_functions != {}:
             newidx = []
             for func in self.burn_in_functions.values():
-                idx, state = func(sampler, fp)
+                idx, state = func(sampler, fp, **kwargs)
                 newidx.append(idx)
                 is_burned_in &= state
             newidx = numpy.vstack(newidx).max(axis=0)
@@ -379,7 +380,7 @@ class BurnIn(object):
         burnidx[burnidx < self.min_iterations] = self.min_iterations
         return burnidx, is_burned_in
 
-    def update(self, sampler, fp):
+    def update(self, sampler, fp, **kwargs):
         """Evaluates burn in and saves the updated indices to the given file.
 
         Parameters
@@ -398,7 +399,7 @@ class BurnIn(object):
         is_burned_in : array
             Array of booleans indicating whether each chain is burned in.
         """
-        burnidx, is_burned_in = self.evaluate(sampler, fp)
+        burnidx, is_burned_in = self.evaluate(sampler, fp, **kwargs)
         sampler.burn_in_iterations = burnidx
         sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
         return burnidx, is_burned_in
