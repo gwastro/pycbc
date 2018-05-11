@@ -947,7 +947,7 @@ class BaseMCMCSampler(_BaseSampler):
         return FieldArray.from_kwargs(**acfs)
 
     @classmethod
-    def compute_acls(cls, fp, start_index=None, end_index=None):
+    def compute_acls(cls, fp, start_index=None, end_index=None, pool=None):
         """Computes the autocorrleation length for all variable args in the
         given file.
 
@@ -972,16 +972,20 @@ class BaseMCMCSampler(_BaseSampler):
         dict
             A dictionary giving the ACL for each parameter.
         """
+        if pool is None:
+            mfunc = map
+        else:
+            mfunc = pool.map
         acls = {}
         for param in fp.variable_args:
             samples = cls.read_samples(fp, param,
                                            thin_start=start_index,
                                            thin_interval=1, thin_end=end_index,
                                            flatten=False)[param]
-            samples = samples.mean(axis=0)
-            acl = autocorrelation.calculate_acl(samples)
+            acl = numpy.array(mfunc(autocorrelation.calculate_acl,
+                samples)).mean()
             if numpy.isinf(acl):
-                acl = samples.size
+                acl = samples.shape[0]
             acls[param] = acl
         return acls
 
