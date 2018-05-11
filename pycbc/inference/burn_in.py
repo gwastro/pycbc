@@ -81,12 +81,17 @@ def ks_test(sampler, fp, threshold=0.9):
     return burn_in_idx, is_burned_in
 
 
-def n_acl(sampler, fp, nacls=10):
+def n_acl(sampler, fp, nacls=100):
     """Burn in based on ACL.
 
-    The sampler is considered burned in if the number of itertions is >=
-    ``nacls`` times the maximum ACL over all parameters, as measured from the
-    first iteration.
+    This applies the following test to determine burn in:
+
+    1. The first half of the samples are ignored.
+
+    2. An ACL is calculated from the second half.
+
+    3. If the ``nacls`` times the ACL is < the number of iterations / 2,
+       the sampler is considered to be burned in at the half-way point.
 
     Parameters
     ----------
@@ -97,7 +102,7 @@ def n_acl(sampler, fp, nacls=10):
         Open inference hdf file containing the samples to load for determing
         burn in.
     nacls : int
-        Number of ACLs to use for burn in. Default is 10.
+        Number of ACLs to use; default is 100.
 
     Returns
     -------
@@ -111,11 +116,13 @@ def n_acl(sampler, fp, nacls=10):
         all chains obtain burn in at the same time, this is either an array
         of all False or True.
     """
-    acl = numpy.array(sampler.compute_acls(fp, start_index=0).values()).max()
-    burn_idx = nacls * acl
-    is_burned_in = burn_idx < fp.niterations
+    N = fp.niterations
+    acl = numpy.array(sampler.compute_acls(fp, start_index=N/2).values()).max()
+    is_burned_in = nacls * acl < N/2
     if not is_burned_in:
-        burn_idx = fp.niterations
+        burn_idx = N
+    else:
+        burn_idx = N/2
     nwalkers = fp.nwalkers
     return numpy.repeat(burn_idx, nwalkers).astype(int), \
            numpy.repeat(is_burned_in, nwalkers).astype(bool)
