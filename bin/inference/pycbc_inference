@@ -437,7 +437,8 @@ with ctx:
                 is_burned_in = False
             if not is_burned_in:
                 logging.info("Calculating burn in")
-                burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
+                burnidx, is_burned_in = burn_in_eval.update(sampler, fp,
+                    pool=sampler.pool)
 
             # compute the acls and write
             acls = None
