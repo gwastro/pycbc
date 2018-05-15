@@ -432,7 +432,7 @@ with ctx:
                                   ifos=opts.instruments)
             try:
                 is_burned_in = fp.is_burned_in
-            except AttributeError, KeyError:
+            except (AttributeError, KeyError):
                 is_burned_in = False
             if not is_burned_in:
                 logging.info("Calculating burn in")
