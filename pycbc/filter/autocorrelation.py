@@ -128,9 +128,9 @@ def calculate_acl(data, m=5, dtype=int):
     where :math:`m` is a tuneable parameter (default = 5). If no such point
     exists, then the given data set it too short to estimate the ACL; in this
     case ``inf`` is returned.
-    
+
     This algorithm for computing the ACL is taken from:
-    
+
     N. Madras and A.D. Sokal, J. Stat. Phys. 50, 109 (1988).
 
     Parameters
