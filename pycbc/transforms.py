@@ -631,12 +631,9 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
             A dict with key as parameter name and value as numpy.array or float
             of transformed values.
         """
-        mass1 = conversions.primary_mass(maps[parameters.mass1],
-                                         maps[parameters.mass2])
-        mass2 = conversions.secondary_mass(maps[parameters.mass1],
-                                           maps[parameters.mass2])
+        mass1 = maps[parameters.mass1]
+        mass2 = maps[parameters.mass2]
         out = {}
-        same_idx = numpy.where(mass1 != maps[parameters.mass1])[0]
         out[parameters.spin1z] = \
                          conversions.spin1z_from_mass1_mass2_chi_eff_chi_a(
                                mass1, mass2,
@@ -645,14 +642,6 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
                          conversions.spin2z_from_mass1_mass2_chi_eff_chi_a(
                                mass1, mass2,
                                maps[parameters.chi_eff], maps["chi_a"])
-        if len(same_idx) and isinstance(out[parameters.spin1z], float):
-            tmp = out[parameters.spin1z]
-            out[parameters.spin1z] = out[parameters.spin2z]
-            out[parameters.spin2z] = tmp
-        elif len(same_idx):
-            tmp = out[parameters.spin1z]
-            out[parameters.spin1z][same_idx] = out[parameters.spin2z]
-            out[parameters.spin2z][same_idx] = tmp[same_idx]
         return self.format_output(maps, out)
 
     def inverse_transform(self, maps):
@@ -669,16 +658,10 @@ class AlignedMassSpinToCartesianSpin(BaseTransform):
             A dict with key as parameter name and value as numpy.array or float
             of transformed values.
         """
-        mass1 = conversions.primary_mass(
-                              maps[parameters.mass1], maps[parameters.mass2])
-        spin1z = conversions.primary_spin(
-                              maps[parameters.mass1], maps[parameters.mass2],
-                              maps[parameters.spin1z], maps[parameters.spin2z])
-        mass2 = conversions.secondary_mass(
-                              maps[parameters.mass1], maps[parameters.mass2])
-        spin2z = conversions.secondary_spin(
-                              maps[parameters.mass1], maps[parameters.mass2],
-                              maps[parameters.spin1z], maps[parameters.spin2z])
+        mass1 = maps[parameters.mass1]
+        spin1z = maps[parameters.spin1z]
+        mass2 = maps[parameters.mass2]
+        spin2z = maps[parameters.spin2z]
         out = {
             parameters.chi_eff : conversions.chi_eff(mass1, mass2,
                                                      spin1z, spin2z),

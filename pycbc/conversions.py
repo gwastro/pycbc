@@ -390,11 +390,7 @@ def chi_a(mass1, mass2, spin1z, spin2z):
     """ Returns the aligned mass-weighted spin difference from mass1, mass2,
     spin1z, and spin2z.
     """
-    m_p = primary_mass(mass1, mass2)
-    spin_p = primary_spin(mass1, mass2, spin1z, spin2z)
-    m_s = secondary_mass(mass1, mass2)
-    spin_s = secondary_spin(mass1, mass2, spin1z, spin2z)
-    return (spin_s * m_s - spin_p * m_p) / (m_s + m_p)
+    return (spin2z * mass2 - spin1z * mass1) / (mass2 + mass1)
 
 def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin from mass1, mass2, spin1x,
