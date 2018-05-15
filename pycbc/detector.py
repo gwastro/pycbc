@@ -31,6 +31,11 @@ import lal
 from numpy import cos, sin
 from pycbc.types import TimeSeries
 
+_ld = lal.__dict__
+_known_lal_names = [j for j in _ld.keys() if "DETECTOR_PREFIX" in j]
+_known_prefixes = [_ld[k] for k in _known_lal_names]
+_known_names = [_ld[k.replace('PREFIX','NAME')] for k in _known_lal_names]
+available_detectors = zip(_known_prefixes, _known_names)
 
 class Detector(object):
     """A gravitaional wave detector
