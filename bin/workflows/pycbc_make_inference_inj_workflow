@@ -166,7 +166,7 @@ plot_groups = {}
 for option in workflow.cp.options("workflow-inference"):
     if option.startswith("plot-group-"):
         group = option.replace("plot-group-", "").replace("-", "_")
-        plot_groups[group] = shelex.split(workflow.cp.get_opt_tag(
+        plot_groups[group] = shlex.split(workflow.cp.get_opt_tag(
                                 "workflow", option, "inference"))
 all_plot_parameters = sorted([param for group in plot_groups.values()
                               for param in group])
