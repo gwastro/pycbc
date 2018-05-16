@@ -104,6 +104,9 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 # read inference configuration file
 cp = configuration.WorkflowConfigParser([opts.inference_config_file])
 
+# typecast str from command line to File instances
+config_file = core.File.from_path(opts.inference_config_file)
+
 # change working directory to the output
 os.chdir(opts.output_dir)
 
@@ -132,9 +135,6 @@ formatter = logging.Formatter(log_format)
 log_file.setFormatter(formatter)
 logging.getLogger("").addHandler(log_file)
 logging.info("Created log file {}".format(log_file_txt.storage_path))
-
-# typecast str from command line to File instances
-config_file = core.File.from_path(opts.inference_config_file)
 
 # construct Executable for creating injections
 create_injections_exe = jobsetup.PycbcCreateInjectionsExecutable(
