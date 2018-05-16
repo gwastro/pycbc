@@ -89,8 +89,6 @@ opts = parser.parse_args()
 # make data output directory
 core.makedir(opts.output_dir)
 
-# change working directory to the output
-os.chdir(opts.output_dir)
 # the file we'll store all output files in
 filedir = '/'.join([opts.output_dir, 'output'])
 
@@ -105,6 +103,9 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # read inference configuration file
 cp = configuration.WorkflowConfigParser([opts.inference_config_file])
+
+# change working directory to the output
+os.chdir(opts.output_dir)
 
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
