@@ -147,16 +147,16 @@ for ifo in workflow.ifos:
                                "workflow", "%s-channel-name" % ifo.lower(), "")
 
 # get what parameters to plot in the PP and recovery plots
-if 'pp-plot-parameters' in  workflow.cp.options("workflow-plots"):
+if 'pp-plot-parameters' in  workflow.cp.options("workflow-inference"):
     pp_plot_params = workflow.cp.get_opt_tag("workflow", 'pp-plot-parameters',
-                                             'plots').split(" ")
+                                             'inference').split(" ")
 else:
     # just use the variable args
     pp_plot_params = workflow.cp.options(cp.options("variable_args"))
 
 # get groups of parameters to plot in posterior and samples plots
 plot_groups = {}
-for option in workflow.cp.options("workflow-plots"):
+for option in workflow.cp.options("workflow-inference"):
     if option.startswith("plot-group-"):
         group = option.replace("plot-group-", "").replace("-", "_")
         plot_groups[group] = workflow.cp.get_opt_tag(
