@@ -50,7 +50,7 @@ parser.add_argument(
     help="Name of the workflow to append in various places.")
 parser.add_argument(
     "--output-dir",
-    default=None,
+    default='run',
     help="Path that will contain output data files from the workflow.")
 parser.add_argument(
     "--output-map",
@@ -86,6 +86,14 @@ configuration.add_workflow_command_line_group(parser)
 # parser command line
 opts = parser.parse_args()
 
+# make data output directory
+core.makedir(opts.output_dir)
+
+# change working directory to the output
+os.chdir(opts.output_dir)
+# the file we'll store all output files in
+filedir = '/'.join([opts.output_dir, 'output'])
+
 # log to stdout until we know where the path to log output file
 log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
@@ -101,9 +109,6 @@ cp = configuration.WorkflowConfigParser([opts.inference_config_file])
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
                             ["posteriors", "samples", "workflow"])
-
-# make data output directory
-core.makedir(opts.output_dir)
 
 # make results directories
 core.makedir(rdir.base)
@@ -133,12 +138,12 @@ config_file = core.File.from_path(opts.inference_config_file)
 # construct Executable for creating injections
 create_injections_exe = jobsetup.PycbcCreateInjectionsExecutable(
                            workflow.cp, "create_injections",
-                           ifo=workflow.ifos, out_dir=opts.output_dir)
+                           ifo=workflow.ifos, out_dir=filedir)
 
 # construct Executable for running sampler
 inference_exe = jobsetup.PycbcInferenceExecutable(
                            workflow.cp, "inference",
-                           ifo=workflow.ifos, out_dir=opts.output_dir)
+                           ifo=workflow.ifos, out_dir=filedir)
 
 # get channel names from workflow configuration file
 channel_names = {}
