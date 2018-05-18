@@ -91,7 +91,7 @@ opts = parser.parse_args()
 core.makedir(opts.output_dir)
 
 # the file we'll store all output files in
-filedir = '/'.join([opts.output_dir, 'output'])
+filedir = 'output'
 
 # log to stdout until we know where the path to log output file
 log_format = "%(asctime)s:%(levelname)s : %(message)s"
