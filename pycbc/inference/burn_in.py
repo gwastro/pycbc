@@ -81,7 +81,7 @@ def ks_test(sampler, fp, threshold=0.9):
     return burn_in_idx, is_burned_in
 
 
-def n_acl(sampler, fp, nacls=5):
+def n_acl(sampler, fp, nacls=25):
     """Burn in based on ACL.
 
     This applies the following test to determine burn in:
