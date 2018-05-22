@@ -355,13 +355,8 @@ class BurnIn(object):
         if fp.niterations < self.min_iterations:
             return numpy.repeat(self.min_iterations, fp.nwalkers), \
                    numpy.zeros(fp.nwalkers, dtype=bool)
-        # if the file already has burn in iterations saved, use those as a
-        # base
-        try:
-            burnidx = fp['burn_in_iterations'][:]
-        except KeyError:
-            # just use the minimum
-            burnidx = numpy.repeat(self.min_iterations, fp.nwalkers)
+        # start assuming the minimum
+        burnidx = numpy.repeat(self.min_iterations, fp.nwalkers)
         # start by assuming is burned in; the &= below will make this false
         # if any test yields false
         is_burned_in = numpy.ones(fp.nwalkers, dtype=bool)
