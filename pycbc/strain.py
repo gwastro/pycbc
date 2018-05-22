@@ -347,7 +347,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Generating Fake Strain")
         if not opt.low_frequency_cutoff:
             raise ValueError('Please provide low frequency cutoff to '
-                              'generate a fake strain')
+                             'generate a fake strain')
         duration = opt.gps_end_time - opt.gps_start_time
         tlen = duration * opt.sample_rate
         pdf = 1.0/128
@@ -381,6 +381,9 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if opt.injection_file:
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
+            if not opt.channel_name:
+                raise ValueError('Please provide channel names to inject '
+                                 'simulated signals into fake strain')
             injections = \
                 injector.apply(strain, opt.channel_name[0:2],
                                distance_scale=opt.injection_scale_factor,
@@ -389,12 +392,18 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if opt.sgburst_injection_file:
             logging.info("Applying sine-Gaussian burst injections")
             injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
+            if not opt.channel_name:
+                raise ValueError('Please provide channel names to inject '
+                                 'simulated signals into fake strain')
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
         if opt.ringdown_injection_file:
             logging.info("Applying ringdown-only injection.")
             injector = RingdownInjectionSet(opt.ringdown_injection_file)
+            if not opt.channel_name:
+                raise ValueError('Please provide channel names to inject '
+                                 'simulated signals into fake strain')
             injector.apply(strain, opt.channel_name[0:2])
 
         if precision == 'single':
