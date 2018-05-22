@@ -430,11 +430,11 @@ with ctx:
             sampler.write_results(fp,static_args=static_args,
                                   ifos=opts.instruments)
             try:
-                is_burned_in = fp.is_burned_in
+                update_burn_in = not fp.is_burned_in
                 burnidx = fp.burn_in_iterations
             except (AttributeError, KeyError):
-                is_burned_in = False
-            if not is_burned_in:
+                update_burn_in = True
+            if update_burn_in:
                 logging.info("Calculating burn in")
                 burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
 
@@ -452,7 +452,8 @@ with ctx:
             logging.info("Writing to backup file")
             sampler.write_results(fp,static_args=static_args,
                                   ifos=opts.instruments)
-            sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+            if update_burn_in:
+                sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
             if acls is not None:
                 sampler.write_acls(fp, acls)
 
