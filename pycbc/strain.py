@@ -382,7 +382,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Applying injections")
             injector = InjectionSet(opt.injection_file)
             if not opt.channel_name:
-                raise ValueError('Please provide channel names to inject '
+                raise ValueError('Please provide channel names with the format '
+                                 'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
                                  'simulated signals into fake strain')
             injections = \
                 injector.apply(strain, opt.channel_name[0:2],
@@ -393,7 +394,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Applying sine-Gaussian burst injections")
             injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
             if not opt.channel_name:
-                raise ValueError('Please provide channel names to inject '
+                raise ValueError('Please provide channel names with the format '
+                                 'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
                                  'simulated signals into fake strain')
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
@@ -402,7 +404,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             logging.info("Applying ringdown-only injection.")
             injector = RingdownInjectionSet(opt.ringdown_injection_file)
             if not opt.channel_name:
-                raise ValueError('Please provide channel names to inject '
+                raise ValueError('Please provide channel names with the format '
+                                 'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
                                  'simulated signals into fake strain')
             injector.apply(strain, opt.channel_name[0:2])
 
