@@ -347,7 +347,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Generating Fake Strain")
         if not opt.low_frequency_cutoff:
             raise ValueError('Please provide low frequency cutoff to '
-                              'generate a fake strain')
+                             'generate a fake strain')
         duration = opt.gps_end_time - opt.gps_start_time
         tlen = duration * opt.sample_rate
         pdf = 1.0/128
@@ -377,6 +377,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                           low_frequency_cutoff=lowfreq)
             strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 
+        if opt.injection_file or opt.sgburst_injection_file \
+                or opt.ringdown_injection_file and not opt.channel_name:
+            raise ValueError('Please provide channel names with the format '
+                             'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
+                             'simulated signals into fake strain')
 
         if opt.injection_file:
             logging.info("Applying injections")
