@@ -1005,6 +1005,29 @@ if $silent_build ; then
     exec 2>&4
 fi
 
+# Temporary workaround until
+# https://git.ligo.org/lscsoft/glue/merge_requests/40
+# has been merged
+if $build_dlls; then
+    p=lscsoft-glue
+    echo -e "\\n\\n>> [`date`] building $p" >&3
+    if ! test -d $p/.git; then
+	git clone https://git.ligo.org/lscsoft/glue.git $p
+	( cd $p && git remote add bema https://git.ligo.org/bernd.machenschalk/glue.git )
+    fi
+    cd $p
+    git remote update
+    git remote prune bema
+    if git branch -r | fgrep bema/fix_eah_windows >/dev/null; then
+	git checkout fix_eah_windows || true
+    else
+	git checkout master || true
+    fi
+    git pull
+    python setup.py install --prefix="$PREFIX"
+    cd ..
+fi
+
 # PyCBC
 echo -e "\\n\\n>> [`date`] building pycbc"
 if $scratch_pycbc || ! test -d pycbc/.git ; then
