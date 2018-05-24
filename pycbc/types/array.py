@@ -414,6 +414,7 @@ class Array(object):
     def __str__(self):
         return str(self._data)
         
+    @property
     def ndim(self):
         return self._data.ndim
 
