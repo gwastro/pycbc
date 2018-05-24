@@ -413,6 +413,9 @@ class Array(object):
 
     def __str__(self):
         return str(self._data)
+        
+    def ndim(self):
+        return self._data.ndim
 
     def __eq__(self,other):
         """
