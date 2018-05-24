@@ -37,6 +37,7 @@ import lal as _lal
 import numpy as _numpy
 from numpy import float32, float64, complex64, complex128, ones
 from numpy.linalg import norm
+from types import MethodType
 
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
@@ -954,6 +955,13 @@ class Array(object):
     def copy(self):
         """ Return copy of this array """
         return self._return(self.data.copy())
+            
+# pass through methods from numpy
+_pass = ['__lt__', '__le__', '__ne__', '__gt__', '__ge__']
+for p in _pass:
+    def fn(self, other):
+        return getattr(self.numpy(), p)(other)
+    setattr(Array, p, MethodType(fn, None, Array))
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
