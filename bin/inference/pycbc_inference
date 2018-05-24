@@ -437,14 +437,15 @@ with ctx:
                 is_burned_in = False
             if not is_burned_in:
                 logging.info("Calculating burn in")
-                burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
+                burnidx, is_burned_in = burn_in_eval.update(sampler, fp,
+                    pool=sampler.pool)
 
             # compute the acls and write
             acls = None
             if opts.n_independent_samples is not None or end >= get_nsamples \
                     or not opts.checkpoint_fast:
                 logging.info("Computing acls")
-                acls = sampler.compute_acls(fp)
+                acls = sampler.compute_acls(fp, pool=sampler.pool)
                 sampler.write_acls(fp, acls)
 
         # write to backup

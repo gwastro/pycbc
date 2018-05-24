@@ -85,6 +85,7 @@ class KombineSampler(BaseMCMCSampler):
         super(KombineSampler, self).__init__(sampler, likelihood_evaluator)
         self._nwalkers = nwalkers
         self.update_interval = update_interval
+        self.pool = pool
 
     @property
     def acceptance_fraction(self):
