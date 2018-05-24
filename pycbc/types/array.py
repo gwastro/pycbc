@@ -79,7 +79,7 @@ def _noreal(fn, self, *args):
         raise TypeError( fn.__name__ + " does not support real types")
 
 def force_precision_to_match(scalar, precision):
-    if _numpy.iscomplex(scalar):
+    if _numpy.iscomplexobj(scalar):
         if precision is 'single':
             return _numpy.complex64(scalar)
         else:
