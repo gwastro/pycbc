@@ -44,7 +44,6 @@ class ArrayWithAligned(_np.ndarray):
         else:
             return _np.ndarray.__array_wrap__(self, obj)
 
-
     @property
     def isaligned(self):
         return check_aligned(self)
