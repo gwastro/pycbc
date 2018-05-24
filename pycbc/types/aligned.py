@@ -42,7 +42,7 @@ class ArrayWithAligned(_np.ndarray):
         if obj.shape == ():
             return obj[()]    # if ufunc output is scalar, return it
         else:
-            return np.ndarray.__array_wrap__(self, obj)
+            return _np.ndarray.__array_wrap__(self, obj)
 
     @property
     def isaligned(self):
