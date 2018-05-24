@@ -955,13 +955,21 @@ class Array(object):
     def copy(self):
         """ Return copy of this array """
         return self._return(self.data.copy())
-            
-# pass through methods from numpy
-_pass = ['__lt__', '__le__', '__ne__', '__gt__', '__ge__']
-for p in _pass:
-    def fn(self, other):
-        return getattr(self.numpy(), p)(other)
-    setattr(Array, p, MethodType(fn, None, Array))
+        
+    def __lt__(self, other):
+        return self.numpy().__lt__(other)
+        
+    def __le__(self, other):
+        return self.numpy().__le__(other)
+        
+    def __ne__(self, other):
+        return self.numpy().__ne__(other)
+        
+    def __gt__(self, other):
+        return self.numpy().__gt__(other)
+        
+    def __ge__(self, other):
+        return self.numpy().__ge__(other)
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
