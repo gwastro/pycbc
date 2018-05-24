@@ -34,11 +34,19 @@ parser.add_argument('--tolerance', type=float)
 parser.add_argument('--max-mtotal', type=float)
 parser.add_argument('--min-mchirp', type=float)
 parser.add_argument('--max-mchirp', type=float)
+parser.add_argument('--fixed-params', type=str, nargs='*')
+parser.add_argument('--fixed-values', type=float, nargs='*')
 parser.add_argument('--max-q', type=float)
 pycbc.psd.insert_psd_option_group(parser)
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 numpy.random.seed(args.seed)
+
+
+fdict = {}
+if args.fixed_params:
+    for p, v in zip(args.fixed_params, args.fixed_values):
+        fdict[p] = v
 
 class Shrinker(object):
     def __init__(self, data):
@@ -194,6 +202,7 @@ class GenUniformWaveform(object):
         self.md2 = q._data[0:100]
 
     def generate(self, **kwds):
+        kwds.update(fdict)
         if kwds['approximant'] in pycbc.waveform.fd_approximants():
             hp, hc = pycbc.waveform.get_fd_waveform(delta_f=self.delta_f, 
                                                 f_lower=self.f_lower, **kwds)
