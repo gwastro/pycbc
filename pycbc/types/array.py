@@ -37,7 +37,6 @@ import lal as _lal
 import numpy as _numpy
 from numpy import float32, float64, complex64, complex128, ones
 from numpy.linalg import norm
-from types import MethodType
 
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
