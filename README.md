@@ -6,15 +6,20 @@ from compact binary coalescences (CBCs).
 
 The PyCBC home page is located on github at
 
- * http://www.pycbc.org/
+ * https://www.pycbc.org/
 
 Documentation is automatically built nightly and available from
 
- * http://pycbc.org/pycbc/latest/html/
+ * https://pycbc.org/pycbc/latest/html/
 
-To download and install PyCBC follow the instructions at
+For the detailed installation instructions of PyCBC
 
-  * http://pycbc.org/pycbc/latest/html/install.html
+ * https://pycbc.org/pycbc/latest/html/install.html
+  
+Quick Installation
+```
+pip install lalsuite pycbc
+```
   
 You can start up an interactive jupyter notebook with PyCBC using either of the links below.
 
