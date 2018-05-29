@@ -8,7 +8,7 @@ Installing PyCBC
 Simple Installation
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-PyCBC is available through PyPi, for straightforward use of the PyCBC library
+PyCBC is available through the PyPI. For straightforward use of the PyCBC library
 and executables, we recommend installing with the following command. If you 
 are not running in a specialized computing environment, this is probably the
 appropriate thing to do. Note, that at this time, PyCBC supports Python2. Python3
@@ -23,7 +23,7 @@ getting lalsuite through another means, you may ommit this part of the command.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Full Virtualenv for Development and Production
-%%%s%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 The following instructions are appropriate for development use on LDG clusters, 
 and goes through some special case scenarios appropriate for these environments
