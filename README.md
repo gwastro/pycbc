@@ -6,7 +6,7 @@ from compact binary coalescences (CBCs).
 
 The PyCBC home page is located on github at
 
- * https://www.pycbc.org/
+ * https://pycbc.org/
 
 Documentation is automatically built nightly and available from
 
