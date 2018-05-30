@@ -21,7 +21,6 @@ else
 fi
 
 # set the lalsuite checkout to use
-LALSUITE_HASH="8cbd1b7187ce3ed9a825d6ed11cc432f3cfde9a5"
 
 if [ "x$TRAVIS_TAG" == "x" ] ; then
   TRAVIS_TAG="master"

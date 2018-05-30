@@ -10,9 +10,6 @@ else
     PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
 fi
 
-# set the lalsuite checkout to use
-LALSUITE_CODE="--lalsuite-commit=8cbd1b7187ce3ed9a825d6ed11cc432f3cfde9a5"
-
 echo -e "\\n>> [`date`] Ubuntu build"
 
 # store the travis test directory
@@ -26,7 +23,7 @@ export XDG_CACHE_HOME=${BUILD}/.cache
 
 # run the einstein at home build and test script
 pushd ${BUILD}
-${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh ${LALSUITE_CODE} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/710a51f4770cbba77f61dfb798472bebe6c43d38/travis
+${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/710a51f4770cbba77f61dfb798472bebe6c43d38/travis
 popd
 
 # setup the pycbc environment to run the additional travis tests
