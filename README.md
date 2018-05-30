@@ -16,7 +16,7 @@ For the detailed installation instructions of PyCBC
 
  * https://pycbc.org/pycbc/latest/html/install.html
   
-Quick Installation
+Quick installation
 ```
 pip install lalsuite pycbc
 ```
