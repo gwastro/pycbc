@@ -864,7 +864,7 @@ else
         fi
     else
         echo -e "\\n\\n>> [`date`] Cloning lalsuite" >&3
-        git clone https://git.ligo.org/lscsoft/lalsuite-archive.git lalsuite
+        git clone https://git.ligo.org/lscsoft/lalsuite.git lalsuite
         cd lalsuite
         git remote add gitlab $gitlab/lalsuite.git
         if [ ".$lalsuite_branch" != "." ]; then
