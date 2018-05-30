@@ -61,7 +61,7 @@ The ``--instruments`` option specifies the IFOs to include in the injection. The
 
 Now let's specify the parameters of the waveform. A full list of the command line options is available with ``pycbc_generate_hwinj --help``. Here we provide an example for generating a coherent 1.4-1.4 component mass binary using the ``EOBNRv2`` approximant. Here is an example of this command line case ::
 
-    --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 
+    --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0
 
 The sample rate of the output ASCII file is given by the ``--sample-rate`` option. The sample rate for each IFO must match, example usage of this option is ::
 
@@ -91,7 +91,7 @@ Here is a full example command for generating an injection in only H1 ::
 
   pycbc_generate_hwinj --high-frequency-cutoff 1000.0 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time H1:${GPS_START_TIME} --gps-end-time H1:${GPS_END_TIME} --frame-type H1:${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --waveform-low-frequency-cutoff 10.0 --low-frequency-cutoff 40.0 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --instruments H1
 
-This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``L1-HWINJ_CBC-${START}-${DURATION}.txt`` where ``${START}`` is the start time stamp of the time series and ``${DURATION}`` is the length in seconds of the ASCII waveform file. The LIGOLW XML file will be named ``H1L1-HWINJ_CBC-${START}-${DURATION}.xml.gz``.
+This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``hwinjcbc_${START}_${IFO}.txt`` where ``${START}`` is the start time stamp of the time series and ``${IFO}`` is the interferometer. The LIGOLW XML file will be named ``hwinjcbc_${START}.xml.gz``.
 
 The LIGOLW XML file contains a ``process_params`` table that saves the command line that was used to generate the waveform for future reference. It also includes a ``sim_inspiral`` table and a ``sngl_inspiral`` table. The ``sim_inspiral`` entry allows us to use the parameters of the waveform as a software injection in the PyCBC matched filtering executable ``pycbc_inspiral``. The ``sngl_inspiral`` entry allows us to use the parameters of the waveform as the filter in ``pycbc_inspiral``.
 
@@ -132,9 +132,9 @@ Our inclination distribution will be uniform. The command line option will be ::
   --i-distr uniform
 
 Our source distribution will be random. The command line option will be ::
-  
+
   --l-distr random
-  
+
 We select to use the ``SpinTaylorT4`` approximant and begin the waveforms at 10.0Hz. Here we taper the injection at the start and end of the injection. The command line options will be ::
 
   --waveform SpinTaylorT4threePointFivePN --f-lower 10 --taper-injection startend --band-pass-injection
