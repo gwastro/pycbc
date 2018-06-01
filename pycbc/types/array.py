@@ -113,8 +113,6 @@ class Array(object):
     devices. It is a convience wrapper around numpy, and
     pycuda.
     """
-    
-    __array_priority__ = 1000
 
     def __init__(self, initial_array, dtype=None, copy=True):
         """ initial_array: An array-like object as specified by NumPy, this
@@ -192,6 +190,17 @@ class Array(object):
             else:
                 initial_array = _numpy.array(initial_array, dtype=dtype, ndmin=1)
                 self._data = _to_device(initial_array) # pylint:disable=assignment-from-no-return
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        inputs = [i.numpy() if isinstance(i, Array) else i for i in inputs]
+        ret = getattr(ufunc, method)(*inputs, **kwargs)
+        if hasattr(ret, 'shape') and ret.shape == self.shape:
+            ret = self._return(ret)
+        return ret
+
+    @property
+    def shape(self):
+        return self._data.shape
      
     @decorator
     def _memoize_single(fn, self, arg):
@@ -403,6 +412,10 @@ class Array(object):
 
     def __str__(self):
         return str(self._data)
+        
+    @property
+    def ndim(self):
+        return self._data.ndim
 
     def __eq__(self,other):
         """
@@ -945,6 +958,21 @@ class Array(object):
     def copy(self):
         """ Return copy of this array """
         return self._return(self.data.copy())
+        
+    def __lt__(self, other):
+        return self.numpy().__lt__(other)
+        
+    def __le__(self, other):
+        return self.numpy().__le__(other)
+        
+    def __ne__(self, other):
+        return self.numpy().__ne__(other)
+        
+    def __gt__(self, other):
+        return self.numpy().__gt__(other)
+        
+    def __ge__(self, other):
+        return self.numpy().__ge__(other)
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
