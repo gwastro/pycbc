@@ -119,7 +119,7 @@ parser.add_argument("--checkpoint-fast", action="store_true",
 parser.add_argument("--acl-interval", type=int, default=None,
                     help="Specify the interval on which to calculate ACL and "
                          "burn-in. If not provided, will use the "
-                         "checkpoint-interval. This is doubled after 10000 "
+                         "checkpoint-interval. This is doubled after 50000 "
                          "iterations; doubled again after 100000 iterations; "
                          "and doubled again after 200000 iterations.")
 
@@ -488,7 +488,7 @@ with ctx:
                 acl_interval = 8 * opts.acl_interval
             elif niters > 100000:
                 acl_interval = 4 * opts.acl_interval
-            elif niters > 10000:
+            elif niters > 50000:
                 acl_interval = 2 * opts.acl_interval
 
         # clear the in-memory chain to save memory
