@@ -116,7 +116,12 @@ parser.add_argument("--checkpoint-fast", action="store_true",
                     help="Do not calculate ACL after each checkpoint, only at "
                          "the end. Not applicable if n-independent-samples "
                          "have been specified.")
-parser.add_argument("--acl-interval", type=int, default=None)
+parser.add_argument("--acl-interval", type=int, default=None,
+                    help="Specify the interval on which to calculate ACL and "
+                         "burn-in. If not provided, will use the "
+                         "checkpoint-interval. This is doubled after 10000 "
+                         "iterations; doubled again after 100000 iterations; "
+                         "and doubled again after 200000 iterations.")
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
@@ -407,9 +412,10 @@ with ctx:
     if interval is None:
         interval = get_nsamples
 
+    if opts.acl_interval is None:
+        opts.acl_interval = interval
+
     acl_interval = opts.acl_interval
-    if acl_interval is None:
-        acl_interval = checkpoint_interval
 
     # run sampler until we have the desired number of samples
     acl_interval_count = 0
@@ -484,12 +490,12 @@ with ctx:
 
         with InferenceFile(checkpoint_file, 'r') as fp:
             niters = fp.niterations
-            if niters > 10000:
-                acl_interval = 4000
-            if niters > 100000:
-                acl_interval = 8000
             if niters > 200000:
-                acl_interval = 16000
+                acl_interval = 8 * opts.acl_interval
+            elif niters > 100000:
+                acl_interval = 4 * opts.acl_interval
+            elif niters > 10000:
+                acl_interval = 2 * opts.acl_interval
 
         # clear the in-memory chain to save memory
         logging.info("Clearing chain")
