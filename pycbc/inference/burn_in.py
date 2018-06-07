@@ -81,7 +81,7 @@ def ks_test(sampler, fp, threshold=0.9):
     return burn_in_idx, is_burned_in
 
 
-def n_acl(sampler, fp, nacls=25):
+def n_acl(sampler, fp, nacls=5):
     """Burn in based on ACL.
 
     This applies the following test to determine burn in:
@@ -103,7 +103,7 @@ def n_acl(sampler, fp, nacls=25):
         Open inference hdf file containing the samples to load for determing
         burn in.
     nacls : int
-        Number of ACLs to use for burn in. Default is 10.
+        Number of ACLs to use for burn in. Default is 5.
 
     Returns
     -------
