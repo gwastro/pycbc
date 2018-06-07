@@ -442,18 +442,13 @@ with ctx:
                                   ifos=opts.instruments)
             acl_interval_count += interval
             if acl_interval_count >= acl_interval:
-                try:
-                    update_burn_in = not fp.is_burned_in
-                    burnidx = fp.burn_in_iterations
-                except (AttributeError, KeyError):
-                    update_burn_in = True
-                if update_burn_in:
-                    logging.info("Calculating burn in")
-                    burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
+                logging.info("Calculating burn in")
+                burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
 
                 # compute the acls and write
                 acls = None
-                if opts.n_independent_samples is not None or end >= get_nsamples \
+                if opts.n_independent_samples is not None \
+                        or end >= get_nsamples \
                         or not opts.checkpoint_fast:
                     logging.info("Computing acls")
                     acls = sampler.compute_acls(fp)
@@ -466,8 +461,7 @@ with ctx:
             sampler.write_results(fp,static_args=static_args,
                                   ifos=opts.instruments)
             if acl_interval_count >= acl_interval:
-                if update_burn_in:
-                    sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+                sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
                 if acls is not None:
                     sampler.write_acls(fp, acls)
 
