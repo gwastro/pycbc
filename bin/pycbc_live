@@ -77,16 +77,54 @@ class LiveEventManager(object):
         else:
             raise TypeError("Not root process")
 
+    def compute_snr_series(self, ifos, coinc_results, data_readers, bank,
+                           followup_ifos=None):
+        """Compute SNR time series and figure out which of the followup
+        detectors are usable.
+        """
+        all_snr_series = {}
+        all_psds = {}
+
+        template_id = coinc_results['foreground/{}/template_id'.format(ifos[0])]
+        htilde = bank[template_id]
+
+        subthreshold_sngl_time = numpy.mean(
+                [coinc_results['foreground/{}/end_time'.format(ifo)]
+                 for ifo in ifos])
+
+        for ifo in ifos + (followup_ifos or []):
+            if ifo in ifos:
+                trig_time = coinc_results['foreground/{}/end_time'.format(ifo)]
+            else:
+                trig_time = subthreshold_sngl_time
+            # NOTE we only check the state/DQ of followup IFOs here.
+            # IFOs producing the coincidence are assumed to also
+            # produce valid SNR series.
+            snr_series, snr_series_psd = compute_followup_snr_series(
+                    data_readers[ifo], htilde, trig_time,
+                    check_state=(ifo in followup_ifos))
+            if snr_series is not None:
+                all_snr_series[ifo] = snr_series
+                all_psds[ifo] = snr_series_psd
+
+        return all_snr_series, all_psds
+
     def check_coincs(self, ifos, coinc_results, psds, low_frequency_cutoff,
                      data_readers, bank, followup_ifos=None):
         """ Save zerolag triggers to a coinc xml file """
         if 'foreground/ifar' in coinc_results: 
             ifar = coinc_results['foreground/ifar']
-            event = SingleCoincForGraceDB(
-                    ifos, coinc_results, data_readers=data_readers,
-                    bank=bank, upload_snr_series=args.upload_snr_series,
-                    followup_ifos=followup_ifos,
-                    gracedb_server=args.gracedb_server)
+
+            event_kwa = {'bank': bank,
+                         'gracedb_server': args.gracedb_server}
+
+            if args.upload_snr_series:
+                event_kwa['snr_series'], event_kwa['snr_series_psd'] = \
+                        self.compute_snr_series(ifos, coinc_results,
+                                                data_readers, bank,
+                                                followup_ifos)
+
+            event = SingleCoincForGraceDB(ifos, coinc_results, **event_kwa)
 
             end_time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml' % end_time)
@@ -106,11 +144,18 @@ class LiveEventManager(object):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
+
+            event_kwa = {'bank': bank,
+                         'gracedb_server': args.gracedb_server}
+
+            if args.upload_snr_series:
+                event_kwa['snr_series'], event_kwa['snr_series_psd'] = \
+                        self.compute_snr_series([ifo], coinc_results,
+                                                data_reader, bank,
+                                                followup_ifos)
+
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
-                    data_readers=data_reader,
-                    bank=bank, upload_snr_series=args.upload_snr_series,
-                    followup_ifos=followup_ifos,
-                    gracedb_server=args.gracedb_server)
+                                               **event_kwa)
             if single is not None:
                 fname = 'single-%s-%s.xml' % (ifo, int(single.time))
                 fname = os.path.join(self.path, fname)
