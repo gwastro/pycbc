@@ -102,6 +102,7 @@ def choose_pool(processes, mpi=False):
             pool = schwimmbad.choose_pool(mpi=mpi,
                                           processes=processes)
             pool.broadcast = types.MethodType(_dummy_broadcast, pool)
+            atexit.register(pool.close)
         except ImportError:
             raise ValueError("Failed to start up an MPI pool, "
                              "install mpi4py / schwimmbadd")
