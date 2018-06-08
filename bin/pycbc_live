@@ -77,13 +77,12 @@ class LiveEventManager(object):
         else:
             raise TypeError("Not root process")
 
-    def compute_snr_series(self, ifos, coinc_results, data_readers, bank,
-                           followup_ifos=None):
-        """Compute SNR time series and figure out which of the followup
-        detectors are usable.
+    def compute_followup_data(self, ifos, coinc_results, data_readers, bank,
+                              followup_ifos=None):
+        """Figure out which of the followup detectors are usable, and compute
+        SNR time series for all the available detectors.
         """
-        all_snr_series = {}
-        all_psds = {}
+        out = {}
 
         template_id = coinc_results['foreground/{}/template_id'.format(ifos[0])]
         htilde = bank[template_id]
@@ -100,14 +99,13 @@ class LiveEventManager(object):
             # NOTE we only check the state/DQ of followup IFOs here.
             # IFOs producing the coincidence are assumed to also
             # produce valid SNR series.
-            snr_series, snr_series_psd = compute_followup_snr_series(
+            snr_series, psd = compute_followup_snr_series(
                     data_readers[ifo], htilde, trig_time,
                     check_state=(ifo in followup_ifos))
             if snr_series is not None:
-                all_snr_series[ifo] = snr_series
-                all_psds[ifo] = snr_series_psd
+                out[ifo] = {'snr_series': snr_series, 'psd': psd}
 
-        return all_snr_series, all_psds
+        return out
 
     def check_coincs(self, ifos, coinc_results, psds, low_frequency_cutoff,
                      data_readers, bank, followup_ifos=None):
@@ -119,10 +117,8 @@ class LiveEventManager(object):
                          'gracedb_server': args.gracedb_server}
 
             if args.upload_snr_series:
-                event_kwa['snr_series'], event_kwa['snr_series_psd'] = \
-                        self.compute_snr_series(ifos, coinc_results,
-                                                data_readers, bank,
-                                                followup_ifos)
+                event_kwa['followup_data'] = self.compute_followup_data(
+                        ifos, coinc_results, data_readers, bank, followup_ifos)
 
             event = SingleCoincForGraceDB(ifos, coinc_results, **event_kwa)
 
@@ -149,10 +145,8 @@ class LiveEventManager(object):
                          'gracedb_server': args.gracedb_server}
 
             if args.upload_snr_series:
-                event_kwa['snr_series'], event_kwa['snr_series_psd'] = \
-                        self.compute_snr_series([ifo], coinc_results,
-                                                data_reader, bank,
-                                                followup_ifos)
+                event_kwa['followup_data'] = self.compute_followup_data(
+                        [ifo], coinc_results, data_reader, bank, followup_ifos)
 
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
                                                **event_kwa)

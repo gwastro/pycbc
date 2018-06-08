@@ -88,11 +88,11 @@ class SingleCoincForGraceDB(object):
         # remember if we want to use a non-standard gracedb server
         self.gracedb_server = kwargs.get('gracedb_server')
 
-        # SNR series
-        self.snr_series = kwargs.get('snr_series')
-        self.snr_series_psd = kwargs.get('snr_series_psd')
-        if self.snr_series is not None:
-            usable_ifos = self.snr_series.keys()
+        if 'followup_data' in kwargs:
+            fud = kwargs['followup_data']
+            self.snr_series = {ifo: fud[ifo]['snr_series'] for ifo in fud}
+            self.snr_series_psd = {ifo: fud[ifo]['psd'] for ifo in fud}
+            usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
         else:
             usable_ifos = ifos
