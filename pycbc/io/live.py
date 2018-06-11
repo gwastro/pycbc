@@ -95,6 +95,7 @@ class SingleCoincForGraceDB(object):
             usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
         else:
+            self.snr_series = None
             usable_ifos = ifos
             followup_ifos = []
 

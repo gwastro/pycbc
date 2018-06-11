@@ -116,9 +116,8 @@ class LiveEventManager(object):
             event_kwa = {'bank': bank,
                          'gracedb_server': args.gracedb_server}
 
-            if args.upload_snr_series:
-                event_kwa['followup_data'] = self.compute_followup_data(
-                        ifos, coinc_results, data_readers, bank, followup_ifos)
+            event_kwa['followup_data'] = self.compute_followup_data(
+                    ifos, coinc_results, data_readers, bank, followup_ifos)
 
             event = SingleCoincForGraceDB(ifos, coinc_results, **event_kwa)
 
@@ -144,9 +143,8 @@ class LiveEventManager(object):
             event_kwa = {'bank': bank,
                          'gracedb_server': args.gracedb_server}
 
-            if args.upload_snr_series:
-                event_kwa['followup_data'] = self.compute_followup_data(
-                        [ifo], coinc_results, data_reader, bank, followup_ifos)
+            event_kwa['followup_data'] = self.compute_followup_data(
+                    [ifo], coinc_results, data_reader, bank, followup_ifos)
 
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
                                                **event_kwa)
@@ -300,7 +298,6 @@ parser.add_argument('--enable-gracedb-upload', action='store_true', default=Fals
 parser.add_argument('--file-prefix', default='Live')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False)
 parser.add_argument('--enable-single-detector-upload', action='store_true', default=False)
-parser.add_argument('--upload-snr-series', action='store_true', default=False)
 parser.add_argument('--followup-detectors', default=[], nargs='*',
                     help='List of detectors to use as followup')
 parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
