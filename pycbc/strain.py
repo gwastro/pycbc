@@ -378,7 +378,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 
         if not opt.channel_name and (opt.injection_file \
-                or opt.sgburst_injection_file or opt.ringdown_injection_file):
+                                     or opt.sgburst_injection_file \
+                                     or opt.ringdown_injection_file):
             raise ValueError('Please provide channel names with the format '
                              'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
                              'simulated signals into fake strain')
