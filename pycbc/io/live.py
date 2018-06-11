@@ -218,7 +218,8 @@ class SingleCoincForGraceDB(object):
         filename: str
             Name of file to write to disk.
         """
-        ligolw_utils.write_filename(self.outdoc, filename)
+        gz = filename.endswith('.gz')
+        ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
 
     def upload(self, fname, psds, low_frequency_cutoff,
                testing=True,
