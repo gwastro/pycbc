@@ -2,7 +2,7 @@
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal
 from pycbc import fft, version, waveform, scheme, frame
 from pycbc.types import MultiDetOptionAction
-from pycbc.filter import LiveBatchMatchedFilter
+from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.strain import StrainBuffer
 from time import time
 import os.path

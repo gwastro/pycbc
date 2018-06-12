@@ -12,7 +12,7 @@ from pycbc.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
-from pycbc.filter import compute_followup_snr_series
+
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats

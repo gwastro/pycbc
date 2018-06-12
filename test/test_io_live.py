@@ -114,8 +114,8 @@ class TestIOLive(unittest.TestCase):
 
             # read the PSDs document
             psd_file_name = os.path.join(tempdir, 'coinc-psd.xml.gz')
-            read_psds = ligolw_utils.load_filename(
-                    psd_file_name, verbose=False, contenthandler=ContentHandler)
+            ligolw_utils.load_filename(psd_file_name, verbose=False,
+                                       contenthandler=ContentHandler)
         else:
             # no GraceDb module, so just save the coinc file
             coinc.save(coinc_file_name)
