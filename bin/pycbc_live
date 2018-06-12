@@ -118,7 +118,7 @@ class LiveEventManager(object):
                                           low_frequency_cutoff=low_frequency_cutoff)
 
             end_time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
-            fname = os.path.join(self.path, 'coinc-%s.xml' % end_time)
+            fname = os.path.join(self.path, 'coinc-%s.xml.gz' % end_time)
 
             comments = ['using ranking statistic: %s' % args.background_statistic]
 
@@ -145,7 +145,7 @@ class LiveEventManager(object):
                                                psds=psds,
                                                low_frequency_cutoff=low_frequency_cutoff)
             if single is not None:
-                fname = 'single-%s-%s.xml' % (ifo, int(single.time))
+                fname = 'single-%s-%s.xml.gz' % (ifo, int(single.time))
                 fname = os.path.join(self.path, fname)
                 if args.enable_single_detector_upload:
                     single.upload(fname, gracedb_server=args.gracedb_server,

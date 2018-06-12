@@ -267,7 +267,10 @@ class SingleCoincForGraceDB(object):
         self.save(fname)
 
         if self.snr_series is not None:
-            snr_series_fname = os.path.splitext(fname)[0] + '.hdf'
+            if fname.endswith('.xml.gz'):
+                snr_series_fname = fname.replace('.xml.gz', '.hdf')
+            else:
+                snr_series_fname = fname.replace('.xml', '.hdf')
             for ifo in self.snr_series:
                 self.snr_series[ifo].save(snr_series_fname,
                                           group='%s/snr' % ifo)
@@ -293,51 +296,52 @@ class SingleCoincForGraceDB(object):
             logging.error(str(exc))
             logging.error('Carrying on, but event %s will NOT be uploaded!', fname)
             return None
-        logging.info("Uploaded event %s", r["graceid"])
+        gid = r["graceid"]
+        logging.info("Uploaded event %s", gid)
 
         if self.is_hardware_injection:
             try:
-                gracedb.writeLabel(r['graceid'], 'INJ')
+                gracedb.writeLabel(gid, 'INJ')
             except Exception as exc:
-                logging.error("Cannot tag event %s as an injection", r["graceid"])
+                logging.error("Cannot tag event %s as an injection", gid)
                 logging.error(str(exc))
-            logging.info("Tagging event %s as an injection", r["graceid"])
+            logging.info("Tagging event %s as an injection", gid)
 
         # upload PSDs. Note that the PSDs are already stored in the original
         # event file and we just upload a copy of that same file here.
         # This keeps things as they were in O2 and can be removed after
         # updating the follow-up infrastructure
+        psd_fname = 'psd.xml.gz' if fname.endswith('.gz') else 'psd.xml'
         try:
-            gracedb.writeLog(r["graceid"],
-                             "PyCBC PSD estimate from the time of event",
-                             "psd.xml.gz", open(fname, "rb").read(),
+            gracedb.writeLog(gid, "PyCBC PSD estimate from the time of event",
+                             psd_fname, open(fname, "rb").read(),
                              "psd").json()
         except Exception as exc:
-            logging.error("Cannot upload PSDs for event %s", r["graceid"])
+            logging.error("Cannot upload PSDs for event %s", gid)
             logging.error(str(exc))
-        logging.info("Uploaded PSDs for event %s", r["graceid"])
+        logging.info("Uploaded PSDs for event %s", gid)
 
         # add other tags and comments
         try:
-            gracedb.writeLog(r["graceid"],
+            gracedb.writeLog(gid,
                 "Using PyCBC code hash %s" % pycbc_version.git_hash).json()
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
-                gracedb.writeLog(r["graceid"], text).json()
+                gracedb.writeLog(gid, text).json()
         except Exception as exc:
-            logging.error("Cannot write comments for event %s", r["graceid"])
+            logging.error("Cannot write comments for event %s", gid)
             logging.error(str(exc))
 
         # upload SNR series in HDF format
         if self.snr_series is not None:
             try:
-                gracedb.writeFile(r['graceid'], snr_series_fname)
+                gracedb.writeFile(gid, snr_series_fname)
             except Exception as exc:
                 logging.error("Cannot upload HDF SNR series for event %s",
-                              r["graceid"])
+                              gid)
                 logging.error(str(exc))
 
-        return r['graceid']
+        return gid
 
 class SingleForGraceDB(SingleCoincForGraceDB):
     """Create xml files and submit them to gracedb from PyCBC Live"""

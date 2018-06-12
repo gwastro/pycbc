@@ -103,7 +103,7 @@ class TestIOLive(unittest.TestCase):
 
         tempdir = tempfile.mkdtemp()
 
-        coinc_file_name = os.path.join(tempdir, 'coinc.xml')
+        coinc_file_name = os.path.join(tempdir, 'coinc.xml.gz')
 
         if GraceDb is not None:
             # pretend to upload the event to GraceDB.
