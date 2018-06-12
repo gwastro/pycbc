@@ -29,6 +29,13 @@ from pycbc.ligolw import lsctables
 from pycbc.ligolw import table
 from pycbc.ligolw import utils as ligolw_utils
 
+# if we have the GraceDb module then we can do deeper tests,
+# otherwise just fall back to quicker ones
+try:
+    from ligo.gracedb.rest import GraceDb
+except ImportError:
+    GraceDb = None
+
 
 parse_args_cpu_only("io.live")
 
@@ -95,25 +102,33 @@ class TestIOLive(unittest.TestCase):
 
         tempdir = tempfile.mkdtemp()
 
-        # pretend to upload the event to GraceDB.
-        # This will fail, but it should not raise an exception
-        # and it should leave a bunch of files around
         coinc_file_name = os.path.join(tempdir, 'coinc.xml')
-        coinc.upload(coinc_file_name,
-                     {ifo: followup_data[ifo]['psd'] for ifo in all_ifos},
-                     20., testing=True)
+
+        if GraceDB is not None:
+            # pretend to upload the event to GraceDB.
+            # This will fail, but it should not raise an exception
+            # and it should leave a bunch of files around
+            coinc.upload(coinc_file_name,
+                         {ifo: followup_data[ifo]['psd'] for ifo in all_ifos},
+                         20., testing=True)
+
+            # read the PSDs document
+            psd_file_name = os.path.join(tempdir, 'coinc-psd.xml.gz')
+            read_psds = ligolw_utils.load_filename(
+                    psd_file_name, verbose=False, contenthandler=ContentHandler)
+        else:
+            # no GraceDb module, so just save the coinc file
+            coinc.save(coinc_file_name)
 
         # read back and check the coinc document
         read_coinc = ligolw_utils.load_filename(
                 coinc_file_name, verbose=False, contenthandler=ContentHandler)
         single_table = table.get_table(
                 read_coinc, lsctables.SnglInspiralTable.tableName)
-        self.assertEqual(len(all_ifos), len(single_table))
-
-        # read the PSDs document
-        psd_file_name = os.path.join(tempdir, 'coinc-psd.xml.gz')
-        read_psds = ligolw_utils.load_filename(
-                psd_file_name, verbose=False, contenthandler=ContentHandler)
+        self.assertEqual(len(single_table), len(all_ifos))
+        coinc_table = table.get_table(
+                read_coinc, lsctables.CoincInspiralTable.tableName)
+        self.assertEqual(len(coinc_table), 1)
 
         shutil.rmtree(tempdir)
 
@@ -134,6 +149,18 @@ class TestIOLive(unittest.TestCase):
 
     def test_2_ifos_2_followup(self):
         self.do_test(2, 2)
+
+    def test_2_ifos_3_followup(self):
+        self.do_test(2, 3)
+
+    def test_3_ifos_1_followup(self):
+        self.do_test(3, 1)
+
+    def test_3_ifos_2_followup(self):
+        self.do_test(3, 2)
+
+    def test_4_ifos_1_followup(self):
+        self.do_test(4, 1)
 
 
 suite = unittest.TestSuite()
