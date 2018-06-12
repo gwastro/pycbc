@@ -104,7 +104,7 @@ class TestIOLive(unittest.TestCase):
 
         coinc_file_name = os.path.join(tempdir, 'coinc.xml')
 
-        if GraceDB is not None:
+        if GraceDb is not None:
             # pretend to upload the event to GraceDB.
             # This will fail, but it should not raise an exception
             # and it should leave a bunch of files around
