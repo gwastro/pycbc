@@ -61,7 +61,8 @@ def make_psd_xmldoc(psddict, xmldoc=None):
         xmldoc = ligolw.Document()
         root_name = u"psd"
         Attributes = ligolw.sax.xmlreader.AttributesImpl
-        lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({u"Name": root_name})))
+        lw = xmldoc.appendChild(
+            ligolw.LIGO_LW(Attributes({u"Name": root_name})))
     else:
         lw = xmldoc.childNodes[0]
     for instrument, psd in psddict.items():
@@ -92,16 +93,11 @@ class SingleCoincForGraceDB(object):
         followup_data: dict of dicts, optional
             Dictionary providing SNR time series and PSDs for each detector,
             to be used in sky localization with BAYESTAR.
-        gracedb_server: string
-            URL to the GraceDB web API service for uploading the event.
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
 
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results)
-
-        # remember if we want to use a non-standard gracedb server
-        self.gracedb_server = kwargs.get('gracedb_server')
 
         if 'followup_data' in kwargs:
             fud = kwargs['followup_data']
@@ -249,13 +245,17 @@ class SingleCoincForGraceDB(object):
         gz = filename.endswith('.gz')
         ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
 
-    def upload(self, fname, testing=True, extra_strings=None):
+    def upload(self, fname, gracedb_server=None, testing=True,
+               extra_strings=None):
         """Upload this trigger to gracedb
 
         Parameters
         ----------
         fname: str
             The name to give the xml file associated with this trigger
+        gracedb_server: string, optional
+            URL to the GraceDB web API service for uploading the event.
+            If omitted, the default will be used.
         testing: bool
             Switch to determine if the upload should be sent to gracedb as a
             test trigger (True) or a production trigger (False).
@@ -276,8 +276,8 @@ class SingleCoincForGraceDB(object):
 
         # try connecting to GraceDB
         try:
-            gracedb = GraceDb(self.gracedb_server) \
-                    if self.gracedb_server is not None else GraceDb()
+            gracedb = GraceDb(gracedb_server) \
+                    if gracedb_server is not None else GraceDb()
         except Exception as exc:
             logging.error('Cannot connect to GraceDB')
             logging.error(str(exc))
@@ -303,10 +303,10 @@ class SingleCoincForGraceDB(object):
                 logging.error(str(exc))
             logging.info("Tagging event %s as an injection", r["graceid"])
 
-        # upload PSDs
-        # FIXME the PSDs are already stored in the original event file.
-        # This separate upload is for compatibility with GraceDB/BAYESTAR,
-        # until we prove that it is no longer necessary
+        # upload PSDs. Note that the PSDs are already stored in the original
+        # event file and we just upload a copy of that same file here.
+        # This keeps things as they were in O2 and can be removed after
+        # updating the follow-up infrastructure
         try:
             gracedb.writeLog(r["graceid"],
                              "PyCBC PSD estimate from the time of event",

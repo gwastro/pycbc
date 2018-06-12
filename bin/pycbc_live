@@ -114,7 +114,6 @@ class LiveEventManager(object):
             fud = self.compute_followup_data(ifos, coinc_results, data_readers,
                                              bank, followup_ifos)
             event = SingleCoincForGraceDB(ifos, coinc_results, bank=bank,
-                                          gracedb_server=args.gracedb_server,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=low_frequency_cutoff)
 
@@ -125,7 +124,8 @@ class LiveEventManager(object):
 
             ifar = coinc_results['foreground/ifar']
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-                event.upload(fname, testing=self.gracedb_testing,
+                event.upload(fname, gracedb_server=args.gracedb_server,
+                             testing=self.gracedb_testing,
                              extra_strings=comments)
             else:
                 event.save(fname)
@@ -142,14 +142,14 @@ class LiveEventManager(object):
                                              bank, followup_ifos)
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
                                                bank=bank, followup_data=fud,
-                                               gracedb_server=args.gracedb_server,
                                                psds=psds,
                                                low_frequency_cutoff=low_frequency_cutoff)
             if single is not None:
                 fname = 'single-%s-%s.xml' % (ifo, int(single.time))
                 fname = os.path.join(self.path, fname)
                 if args.enable_single_detector_upload:
-                    single.upload(fname, testing=self.gracedb_testing)
+                    single.upload(fname, gracedb_server=args.gracedb_server,
+                                  testing=self.gracedb_testing)
                 else:
                     single.save(fname)
 

@@ -96,8 +96,7 @@ class TestIOLive(unittest.TestCase):
         for ifo, k in itertools.product(trig_ifos, self.template):
             results['foreground/' + ifo + '/' + k] = self.template[k]
 
-        kwargs = {'gracedb_server': 'localhost',
-                  'psds': {ifo: followup_data[ifo]['psd'] for ifo in all_ifos},
+        kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in all_ifos},
                   'low_frequency_cutoff': 20.,
                   'followup_data': followup_data}
         coinc = SingleCoincForGraceDB(trig_ifos, results, **kwargs)
@@ -108,9 +107,10 @@ class TestIOLive(unittest.TestCase):
 
         if GraceDb is not None:
             # pretend to upload the event to GraceDB.
-            # This will fail, but it should not raise an exception
-            # and it should leave a bunch of files around
-            coinc.upload(coinc_file_name, testing=True)
+            # The upload will fail, but it should not raise an exception
+            # and it should still leave the event file around
+            coinc.upload(coinc_file_name, gracedb_server='localhost',
+                         testing=True)
         else:
             # no GraceDb module, so just save the coinc file
             coinc.save(coinc_file_name)
