@@ -53,11 +53,17 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
                                        sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
-def make_psd_xmldoc(psddict):
-    Attributes = ligolw.sax.xmlreader.AttributesImpl
-    xmldoc = ligolw.Document()
-    root_name = u"psd"
-    lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({u"Name": root_name})))
+def make_psd_xmldoc(psddict, xmldoc=None):
+    """Add a set of PSDs to a LIGOLW XML document. If the document is not
+    given, a new one is created first.
+    """
+    if xmldoc is None:
+        xmldoc = ligolw.Document()
+        root_name = u"psd"
+        Attributes = ligolw.sax.xmlreader.AttributesImpl
+        lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({u"Name": root_name})))
+    else:
+        lw = xmldoc.childNodes[0]
     for instrument, psd in psddict.items():
         xmlseries = _build_series(psd, (u"Frequency,Real", u"Frequency"),
                                   None, 'deltaF', 's^-1')
@@ -79,6 +85,15 @@ class SingleCoincForGraceDB(object):
             A dictionary of values. The format is defined in
             pycbc/events/coinc.py and matches the on disk representation
             in the hdf file for this time.
+        psds: dict of FrequencySeries
+            Dictionary providing PSD estimates for all involved detectors.
+        low_frequency_cutoff: float
+            Minimum valid frequency for the PSD estimates.
+        followup_data: dict of dicts, optional
+            Dictionary providing SNR time series and PSDs for each detector,
+            to be used in sky localization with BAYESTAR.
+        gracedb_server: string
+            URL to the GraceDB web API service for uploading the event.
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
 
@@ -207,6 +222,19 @@ class SingleCoincForGraceDB(object):
         coinc_inspiral_row.combined_far = far
         coinc_inspiral_table.append(coinc_inspiral_row)
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
+
+        # append the PSDs
+        psds_lal = {}
+        for ifo in kwargs['psds']:
+            psd = kwargs['psds'][ifo]
+            kmin = int(kwargs['low_frequency_cutoff'] / psd.delta_f)
+            fseries = lal.CreateREAL8FrequencySeries(
+                "psd", psd.epoch, kwargs['low_frequency_cutoff'], psd.delta_f,
+                lal.StrainUnit**2 / lal.HertzUnit, len(psd) - kmin)
+            fseries.data.data = psd.numpy()[kmin:] / pycbc.DYN_RANGE_FAC ** 2.0
+            psds_lal[ifo] = fseries
+        make_psd_xmldoc(psds_lal, outdoc)
+
         self.outdoc = outdoc
         self.time = sngl_populated.get_end()
 
@@ -221,44 +249,22 @@ class SingleCoincForGraceDB(object):
         gz = filename.endswith('.gz')
         ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
 
-    def upload(self, fname, psds, low_frequency_cutoff,
-               testing=True,
-               extra_strings=None,
-               ):
+    def upload(self, fname, testing=True, extra_strings=None):
         """Upload this trigger to gracedb
 
         Parameters
         ----------
         fname: str
             The name to give the xml file associated with this trigger
-        pds: dict of pybc.types.FrequencySeries
-            A ifo keyed dictionary of psds to be uploaded in association
-        with this trigger.
-        low_frequency_cutoff: float
-            The low frequency cutoff of the psds.
         testing: bool
             Switch to determine if the upload should be sent to gracedb as a
-        test trigger (True) or a production trigger (False)
+            test trigger (True) or a production trigger (False).
         """
         from ligo.gracedb.rest import GraceDb
 
-        # first of all, make sure the event and PSDs are saved on disk
+        # first of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
-
         self.save(fname)
-
-        psds_lal = {}
-        for ifo in psds:
-            psd = psds[ifo]
-            kmin = int(low_frequency_cutoff / psd.delta_f)
-            fseries = lal.CreateREAL8FrequencySeries(
-                "psd", psd.epoch, low_frequency_cutoff, psd.delta_f,
-                lal.StrainUnit**2 / lal.HertzUnit, len(psd) - kmin)
-            fseries.data.data = psd.numpy()[kmin:] / pycbc.DYN_RANGE_FAC ** 2.0
-            psds_lal[ifo] = fseries
-        psd_xmldoc = make_psd_xmldoc(psds_lal)
-        psd_xml_path = os.path.splitext(fname)[0] + '-psd.xml.gz'
-        ligolw_utils.write_filename(psd_xmldoc, psd_xml_path, gz=True)
 
         if self.snr_series is not None:
             snr_series_fname = os.path.splitext(fname)[0] + '.hdf'
@@ -298,10 +304,13 @@ class SingleCoincForGraceDB(object):
             logging.info("Tagging event %s as an injection", r["graceid"])
 
         # upload PSDs
+        # FIXME the PSDs are already stored in the original event file.
+        # This separate upload is for compatibility with GraceDB/BAYESTAR,
+        # until we prove that it is no longer necessary
         try:
             gracedb.writeLog(r["graceid"],
                              "PyCBC PSD estimate from the time of event",
-                             "psd.xml.gz", open(psd_xml_path, "rb").read(),
+                             "psd.xml.gz", open(fname, "rb").read(),
                              "psd").json()
         except Exception as exc:
             logging.error("Cannot upload PSDs for event %s", r["graceid"])

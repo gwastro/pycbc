@@ -111,24 +111,22 @@ class LiveEventManager(object):
                      data_readers, bank, followup_ifos=None):
         """ Save zerolag triggers to a coinc xml file """
         if 'foreground/ifar' in coinc_results: 
-            ifar = coinc_results['foreground/ifar']
-
-            event_kwa = {'bank': bank,
-                         'gracedb_server': args.gracedb_server}
-
-            event_kwa['followup_data'] = self.compute_followup_data(
-                    ifos, coinc_results, data_readers, bank, followup_ifos)
-
-            event = SingleCoincForGraceDB(ifos, coinc_results, **event_kwa)
+            fud = self.compute_followup_data(ifos, coinc_results, data_readers,
+                                             bank, followup_ifos)
+            event = SingleCoincForGraceDB(ifos, coinc_results, bank=bank,
+                                          gracedb_server=args.gracedb_server,
+                                          psds=psds, followup_data=fud,
+                                          low_frequency_cutoff=low_frequency_cutoff)
 
             end_time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml' % end_time)
 
             comments = ['using ranking statistic: %s' % args.background_statistic]
 
+            ifar = coinc_results['foreground/ifar']
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-                event.upload(fname, psds, low_frequency_cutoff, 
-                             testing=self.gracedb_testing, extra_strings=comments)
+                event.upload(fname, testing=self.gracedb_testing,
+                             extra_strings=comments)
             else:
                 event.save(fname)
 
@@ -140,20 +138,18 @@ class LiveEventManager(object):
         if len(active) == 1:
             ifo = active[0]
 
-            event_kwa = {'bank': bank,
-                         'gracedb_server': args.gracedb_server}
-
-            event_kwa['followup_data'] = self.compute_followup_data(
-                    [ifo], coinc_results, data_reader, bank, followup_ifos)
-
+            fud = self.compute_followup_data([ifo], coinc_results, data_reader,
+                                             bank, followup_ifos)
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
-                                               **event_kwa)
+                                               bank=bank, followup_data=fud,
+                                               gracedb_server=args.gracedb_server,
+                                               psds=psds,
+                                               low_frequency_cutoff=low_frequency_cutoff)
             if single is not None:
                 fname = 'single-%s-%s.xml' % (ifo, int(single.time))
                 fname = os.path.join(self.path, fname)
                 if args.enable_single_detector_upload:
-                    single.upload(fname, psds, low_frequency_cutoff,
-                                  testing=self.gracedb_testing)
+                    single.upload(fname, testing=self.gracedb_testing)
                 else:
                     single.save(fname)
 
