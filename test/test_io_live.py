@@ -51,9 +51,11 @@ class TestIOLive(unittest.TestCase):
         self.possible_ifos = 'H1 L1 V1 K1 I1'.split()
 
     def do_test(self, n_ifos, n_ifos_followup):
+        # choose a random selection of interferometers
+        # n_ifos will be used to generate the simulated trigger
+        # n_ifos_followup will be used as followup-only
         all_ifos = random.sample(self.possible_ifos, n_ifos + n_ifos_followup)
         trig_ifos = all_ifos[0:n_ifos]
-        fup_ifos = list(set(all_ifos) - set(trig_ifos))
 
         results = {'foreground/stat': np.random.uniform(4, 20),
                    'foreground/ifar': np.random.uniform(0.01, 1000)}
@@ -108,8 +110,10 @@ class TestIOLive(unittest.TestCase):
                 read_coinc, lsctables.SnglInspiralTable.tableName)
         self.assertEqual(len(all_ifos), len(single_table))
 
-        self.assertTrue(
-                os.path.isfile(os.path.join(tempdir, 'coinc-psd.xml.gz')))
+        # read the PSDs document
+        psd_file_name = os.path.join(tempdir, 'coinc-psd.xml.gz')
+        read_psds = ligolw_utils.load_filename(
+                psd_file_name, verbose=False, contenthandler=ContentHandler)
 
         shutil.rmtree(tempdir)
 

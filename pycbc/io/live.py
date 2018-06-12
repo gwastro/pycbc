@@ -50,7 +50,7 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
                             'deltaT', 's')
     snr_node = document.childNodes[-1].appendChild(snr_xml)
     eid_param = ligolw_param.new_param(u'event_id', u'ilwd:char',
-                                       unicode(sngl_inspiral_id))
+                                       sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def make_psd_xmldoc(psddict):
