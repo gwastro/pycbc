@@ -277,69 +277,48 @@ class SingleCoincForGraceDB(object):
                 self.snr_series_psd[ifo].save(snr_series_fname,
                                               group='%s/psd' % ifo)
 
-        # try connecting to GraceDB
+        gid = None
         try:
+            # try connecting to GraceDB
             gracedb = GraceDb(gracedb_server) \
                     if gracedb_server is not None else GraceDb()
-        except Exception as exc:
-            logging.error('Cannot connect to GraceDB')
-            logging.error(str(exc))
-            logging.error('Carrying on, but event %s will NOT be uploaded!', fname)
-            return None
 
-        # create GraceDB event
-        group = 'Test' if testing else 'CBC'
-        try:
+            # create GraceDB event
+            group = 'Test' if testing else 'CBC'
             r = gracedb.createEvent(group, "pycbc", fname, "AllSky").json()
-        except Exception as exc:
-            logging.error('Cannot create GraceDB event')
-            logging.error(str(exc))
-            logging.error('Carrying on, but event %s will NOT be uploaded!', fname)
-            return None
-        gid = r["graceid"]
-        logging.info("Uploaded event %s", gid)
+            gid = r["graceid"]
+            logging.info("Uploaded event %s", gid)
 
-        if self.is_hardware_injection:
-            try:
+            if self.is_hardware_injection:
                 gracedb.writeLabel(gid, 'INJ')
-            except Exception as exc:
-                logging.error("Cannot tag event %s as an injection", gid)
-                logging.error(str(exc))
-            logging.info("Tagging event %s as an injection", gid)
+                logging.info("Tagging event %s as an injection", gid)
 
-        # upload PSDs. Note that the PSDs are already stored in the original
-        # event file and we just upload a copy of that same file here.
-        # This keeps things as they were in O2 and can be removed after
-        # updating the follow-up infrastructure
-        psd_fname = 'psd.xml.gz' if fname.endswith('.gz') else 'psd.xml'
-        try:
+            # upload PSDs. Note that the PSDs are already stored in the original
+            # event file and we just upload a copy of that same file here.
+            # This keeps things as they were in O2 and can be removed after
+            # updating the follow-up infrastructure
+            psd_fname = 'psd.xml.gz' if fname.endswith('.gz') else 'psd.xml'
             gracedb.writeLog(gid, "PyCBC PSD estimate from the time of event",
                              psd_fname, open(fname, "rb").read(),
                              "psd").json()
-        except Exception as exc:
-            logging.error("Cannot upload PSDs for event %s", gid)
-            logging.error(str(exc))
-        logging.info("Uploaded PSDs for event %s", gid)
+            logging.info("Uploaded PSDs for event %s", gid)
 
-        # add other tags and comments
-        try:
+            # add other tags and comments
             gracedb.writeLog(gid,
                 "Using PyCBC code hash %s" % pycbc_version.git_hash).json()
+
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
                 gracedb.writeLog(gid, text).json()
-        except Exception as exc:
-            logging.error("Cannot write comments for event %s", gid)
-            logging.error(str(exc))
 
-        # upload SNR series in HDF format
-        if self.snr_series is not None:
-            try:
+            # upload SNR series in HDF format
+            if self.snr_series is not None:
                 gracedb.writeFile(gid, snr_series_fname)
-            except Exception as exc:
-                logging.error("Cannot upload HDF SNR series for event %s",
-                              gid)
-                logging.error(str(exc))
+        except Exception as exc:
+            logging.error('Something failed during the upload/annotation of '
+                          'event %s on GraceDB. It may not have been '
+                          'uploaded!', fname)
+            logging.error(str(exc))
 
         return gid
 
