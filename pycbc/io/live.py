@@ -19,7 +19,8 @@ from pycbc.tmpltbank import return_empty_sngl
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
     from pycbc.ligolw import array as ligolw_array
     Attributes = ligolw.sax.xmlreader.AttributesImpl
-    elem = ligolw.LIGO_LW(Attributes({u"Name": unicode(series.__class__.__name__)}))
+    elem = ligolw.LIGO_LW(
+            Attributes({u"Name": unicode(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
@@ -29,7 +30,8 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
                              series.data.data.real, series.data.data.imag))
     else:
-        data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta, series.data.data))
+        data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
+                                series.data.data))
     a = ligolw_array.from_array(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
@@ -293,10 +295,10 @@ class SingleCoincForGraceDB(object):
                 gracedb.writeLabel(gid, 'INJ')
                 logging.info("Tagging event %s as an injection", gid)
 
-            # upload PSDs. Note that the PSDs are already stored in the original
-            # event file and we just upload a copy of that same file here.
-            # This keeps things as they were in O2 and can be removed after
-            # updating the follow-up infrastructure
+            # upload PSDs. Note that the PSDs are already stored in the
+            # original event file and we just upload a copy of that same file
+            # here. This keeps things as they were in O2 and can be removed
+            # after updating the follow-up infrastructure
             psd_fname = 'psd.xml.gz' if fname.endswith('.gz') else 'psd.xml'
             gracedb.writeLog(gid, "PyCBC PSD estimate from the time of event",
                              psd_fname, open(fname, "rb").read(),
@@ -316,7 +318,7 @@ class SingleCoincForGraceDB(object):
                 gracedb.writeFile(gid, snr_series_fname)
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
-                          'event %s on GraceDB. It may not have been '
+                          'event %s on GraceDB. The event may not have been '
                           'uploaded!', fname)
             logging.error(str(exc))
 
@@ -344,4 +346,3 @@ class SingleForGraceDB(SingleCoincForGraceDB):
         if hardware_injection:
             fake_coinc['HWINJ'] = True
         SingleCoincForGraceDB.__init__(self, [ifo], fake_coinc, **kwds)
-
