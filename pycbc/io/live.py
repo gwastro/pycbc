@@ -301,17 +301,16 @@ class SingleCoincForGraceDB(object):
             # after updating the follow-up infrastructure
             psd_fname = 'psd.xml.gz' if fname.endswith('.gz') else 'psd.xml'
             gracedb.writeLog(gid, "PyCBC PSD estimate from the time of event",
-                             psd_fname, open(fname, "rb").read(),
-                             "psd").json()
+                             psd_fname, open(fname, "rb").read(), "psd")
             logging.info("Uploaded PSDs for event %s", gid)
 
             # add other tags and comments
-            gracedb.writeLog(gid,
-                "Using PyCBC code hash %s" % pycbc_version.git_hash).json()
+            gracedb.writeLog(
+                    gid, "Using PyCBC code hash %s" % pycbc_version.git_hash)
 
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
-                gracedb.writeLog(gid, text).json()
+                gracedb.writeLog(gid, text)
 
             # upload SNR series in HDF format
             if self.snr_series is not None:
@@ -346,3 +345,7 @@ class SingleForGraceDB(SingleCoincForGraceDB):
         if hardware_injection:
             fake_coinc['HWINJ'] = True
         SingleCoincForGraceDB.__init__(self, [ifo], fake_coinc, **kwds)
+
+
+__all__ = ['SingleCoincForGraceDB', 'SingleForGraceDB', 'make_psd_xmldoc',
+           'snr_series_to_xml']
