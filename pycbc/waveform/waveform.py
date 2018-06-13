@@ -106,7 +106,7 @@ def _check_lal_pars(p):
     if p['quadfmode1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(lal_pars, p['quadfmode1'])
     if p['quadfmode2'] is not None:
-        lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(lal_pars, p['lambda_octu2'])
+        lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(lal_pars, p['quadfmode2'])
     if p['octufmode1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarFMode1(lal_pars, p['octufmode1'])
     if p['octufmode2'] is not None:
