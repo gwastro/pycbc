@@ -23,6 +23,7 @@ time_init = time.time()
 import logging
 from collections import defaultdict
 import argparse
+import events2
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
@@ -117,15 +118,16 @@ coinc_threshold = 7.0
 coh_threshold = 7.0
 null_fraction = 0.2 #Triggers with null_snr/coinc_snr>null_fraction are cut
 generate_histograms = False
-generate_snr_plots = True
-generate_chi2_plots = True
+generate_snr_plots = False
+generate_chi2_plots = False
 pol = 1.21771
+
 #bns options
 longitude = 3.446131227771
 latitude = -0.40812483499946
 t_gps = 1187008884
-"""
 
+"""
 #glitch options
 longitude = 3.446131227771
 latitude = -0.40812483499946
@@ -224,14 +226,14 @@ def coincident_snr(snr_dict,index,threshold):
     """
     #Restrict the snr timeseries to just the interesting points
     coinc_triggers = {}
-    for ifo in opt.instruments:
+    for ifo in snr_dict.keys():
         coinc_triggers[ifo] = snr[ifo][index]
     #Calculate the coincident snr
     snr_array = np.array([coinc_triggers[ifo] for ifo in coinc_triggers.keys()])
     roh_coinc = np.sqrt(np.sum(snr_array*snr_array.conj(),axis=0))
     #Apply threshold
     index = index[roh_coinc>coinc_threshold]
-    for ifo in opt.instruments:
+    for ifo in snr_dict.keys():
         coinc_triggers[ifo] = snr[ifo][index]
     roh_coinc = roh_coinc[roh_coinc>threshold]
     return roh_coinc, index, coinc_triggers
@@ -369,29 +371,44 @@ with ctx:
 	for seg in segments[ifo]:
             #seg /= psds[ifo]
             seg /= seg.psd
-    out_types = {
+    ifo_out_types = {
 	'time_index'     : int,
 	'ifo'            : int, # IFO is stored as an int internally!
-	'snr'            : complex64,
+        'snr'            : complex64,
 	'chisq'          : float32,
 	'chisq_dof'      : int,
-	'bank_chisq'     : float32,
-	'bank_chisq_dof' : int,
-	'cont_chisq'     : float32,
+	#'bank_chisq'     : float32,
+	#'bank_chisq_dof' : int,
+	#'cont_chisq'     : float32,
 		}
-    out_vals = {
+    ifo_out_vals = {
 	'time_index'     : None,
 	'ifo'            : None,
-	'snr'            : None,
+        'snr'            : None,
 	'chisq'          : None,
 	'chisq_dof'      : None,
-	'bank_chisq'     : None,
-	'bank_chisq_dof' : None,
-	'cont_chisq'     : None,
+	#'bank_chisq'     : None,
+	#'bank_chisq_dof' : None,
+	#'cont_chisq'     : None,
 	       }
-    names = sorted(out_vals.keys())
-    event_mgr = events.EventManagerMultiDet(opt, opt.instruments, names,
-					[out_types[n] for n in names])
+    ifo_names = sorted(ifo_out_vals.keys())
+
+    network_out_types = {
+	'time_index'    : int,
+	'network_snr'   : complex64,
+        'null_snr'      : complex64,
+        'nifo'          : int
+               }
+    network_out_vals = {
+	'time_index'    : None,
+	'network_snr'   : None,
+        'null_snr'      : None,
+        'nifo'          : None
+               }
+    network_names = sorted(network_out_vals.keys())
+
+    event_mgr = events2.EventManagerCoherent(opt, opt.instruments, ifo_names,
+					[ifo_out_types[n] for n in ifo_names], network_names, [network_out_types[n] for n in network_names])
 
     logging.info("Read in template bank")
     bank = waveform.FilterBank(opt.bank_file, flen, delta_f, complex64,
@@ -411,9 +428,11 @@ with ctx:
     #Keep list of templates and segments with triggers in
     coh_snr_list = []
     for t_num, template in enumerate(bank):
+    #for t_num, template in enumerate(bank,start=201954):
         """
-	if t_num == 1: #use small sample set for development
-	   break
+	if t_num == 201955: #use small sample set for development
+            t_num-=1
+            break
         """
 	roh_coh_dict[t_num] = {}
 	roh_coinc_dict[t_num] = {}
@@ -447,6 +466,7 @@ with ctx:
 	    idx_dict={}
             coinc_idx[t_num][s_num] = np.array([])
             stilde = {}
+            ifo_list = opt.instruments
 	    for ifo in opt.instruments:
 		stilde[ifo] = segments[ifo][s_num]
 		logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
@@ -457,16 +477,9 @@ with ctx:
 			matched_filter[ifo].matched_filter_and_cluster(s_num,
 			    template.sigmasq(stilde[ifo].psd), window=cluster_window)
 
-                #If we have no data, move onto next ifo and note the
-                # number of ifos with data that we have
-                nifo = len(opt.instruments)
-                if len(snr_ts) == 0:
-                    snr[ifo] = []
-                    idx_dict[ifo] = []
-                    norm_dict[ifo] = []
-                    corr_dict = []
-                    nifo -= 1
-                    continue
+                #List of ifos with triggers
+                if len(idx) == 0:
+                    ifo_list.remove(ifo)
                 #Save norm values to dict
                 norm_dict[ifo] = norm
                 corr_dict[ifo] = corr
@@ -481,12 +494,19 @@ with ctx:
                 #Even if we have none, need to keep an empty dictionary.
                 #Only do this is idx doesn't get time shifted out of the time
                 #we are looking at.
-                idx_dict[ifo] = idx[np.logical_and(idx > time_delay_idx[ifo],\
+                if len(idx)!=0:
+                    idx_dict[ifo] = idx[np.logical_and(idx > time_delay_idx[ifo],\
                                    idx - time_delay_idx[ifo] < len(snr[ifo]))]
 
-            #Find triggers that are coincident (in geocent time) in multiple ifos
-            coinc_idx[t_num][s_num] = get_coinc_indexes(idx_dict,time_delay_idx)
+            #Find triggers that are coincident (in geocent time) in multiple ifos.
+            #If only one detector has a trigger, just use the indexes from that ifo.
+            if len(ifo_list)>1:
+                coinc_idx[t_num][s_num] = get_coinc_indexes(idx_dict,time_delay_idx)
+            else:
+                coinc_idx[t_num][s_num] = idx_dict[ifo_list[0]] - time_delay_idx[ifo_list[0]]
             print "Number of coincident indexes: " + str(len(coinc_idx[t_num][s_num]))
+
+            nifo = len(ifo_list)
             
             for ifo in opt.instruments:
                 # Move to next segment if this segment has no data 
@@ -495,32 +515,6 @@ with ctx:
                 #Apply time delay
 		snr[ifo].roll(-time_delay_idx[ifo])
        
-            """ 
-                #This is the original chi2 tests. 
-		out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
-			bank_chisq.values(template, stilde.psd, stilde, snrv_dict[ifo],
-					  norm_dict[ifo], idx_dict[ifo]+stilde.analyze.start)
-
-		out_vals['chisq'], out_vals['chisq_dof'] =\
-			power_chisq.values(corr_dict[ifo], snrv_dict[ifo], norm_dict[ifo], stilde[ifo].psd,
-					   idx_dict[ifo]+stilde.analyze.start, template)
-
-		out_vals['cont_chisq'] = autochisq.values(snr,
-			idx_dict[ifo]+stilde.analyze.start, template, stilde.psd, norm_dict[ifo],
-			stilde=stilde, low_frequency_cutoff=flow)
-                #Don't know what this line is for
-		#idx += stilde.cumulative_index
-
-		out_vals['time_index'] = idx_dict[ifo]
-		out_vals['snr'] = snrv_dict[ifo] * norm_dict[ifo]
-		snrv_dict[ifo]=snrv_dict[ifo]*norm_dict[ifo]
-		# IFO is stored as an int
-		out_vals['ifo'] = event_mgr.ifo_dict[ifo]
-
-		event_mgr.add_template_events_to_ifo(ifo, names,
-			[out_vals[n] for n in names])
-            """
-                
 
 	    #Calculate coherent snr roh_coh
 	    #Check we have data before we try to compute the coherent snr
@@ -531,6 +525,12 @@ with ctx:
                 print "Points above threshold: " + str(len(coinc_idx[t_num][s_num]))
                 if len(coinc_idx[t_num][s_num]) != 0:
                     print "max coincident snr" + str(max(roh_coinc_dict[t_num][s_num]))
+            #If there is only one ifo, then coinc_triggers is just the triggers from ifo
+            elif nifo==1:
+                coinc_triggers = {}
+                coinc_triggers[ifo_list[0]] = snr[ifo_list[0]][coinc_idx[t_num][s_num]]
+            else:
+                print("No triggers above threshold")
             #If we have triggers above coinc threshold and more than 2 ifos 
             # then calculate the coherent statistics 
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 2:
@@ -551,6 +551,8 @@ with ctx:
                          coinc_triggers = null_snr(roh_coh_dict[t_num][s_num],\
                          roh_coinc_dict[t_num][s_num],null_fraction,coinc_triggers,\
                                                             coinc_idx[t_num][s_num])
+                    if len(coinc_idx[t_num][s_num]) != 0:
+                        print "max null snr" + str(max(null_dict[t_num][s_num]))
             #We are now going to find the individual detector chi2 values. To do this it
             #is useful to find the indexes of coinc triggers in the detector frame.
             #We do this by overwriting the dictionary of all single detector triggers
@@ -570,15 +572,54 @@ with ctx:
                     power_chisq_ts[ifo],power_chisq_dof[ifo] = power_chisq.values(corr_dict[ifo], coinc_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
                     auto_chisq[ifo] = autochisq.values(snr[ifo],idx_dict[ifo]+stilde[ifo].analyze.start, template, stilde[ifo].psd, norm_dict[ifo],stilde=stilde[ifo], low_frequency_cutoff=flow)
                 
-	    event_mgr.cluster_template_events_single_ifo("time_index",
-           					    "snr", cluster_window, ifo)
+            #Add the values we want to output to the ifo and network out vals dictionaries
+	    for ifo in opt.instruments:
+		"""
+		ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
+			bank_chisq.values(template, stilde[ifo].psd, stilde[ifo], snrv_dict[ifo],
+					  norm_dict[ifo], idx_dict[ifo]+stilde[ifo].analyze.start)
+
+
+		ifo_out_vals['cont_chisq'] = autochisq.values(snr[ifo],
+			idx_dict[ifo]+stilde[ifo].analyze.start, template, stilde[ifo].psd, norm_dict[ifo],
+			stilde=stilde[ifo], low_frequency_cutoff=flow)
+                """
+		ifo_out_vals['chisq'], ifo_out_vals['chisq_dof'] =\
+			power_chisq.values(corr_dict[ifo], coinc_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
+		#Don't know what this line is for (edited the next line instead so that I don't have to change idx)
+		#idx += stilde.cumulative_index
+
+		ifo_out_vals['time_index'] = idx_dict[ifo]+stilde[ifo].cumulative_index
+		#ifo_out_vals['snr'] = snrv_dict[ifo] * norm_dict[ifo]
+                ifo_out_vals['snr'] = snr[ifo][coinc_idx[t_num][s_num]]
+		snrv_dict[ifo]=snrv_dict[ifo]*norm_dict[ifo]
+		# IFO is stored as an int
+		ifo_out_vals['ifo'] = event_mgr.ifo_dict[ifo]
+                
+		event_mgr.add_template_events_to_ifo(ifo, ifo_names,
+			[ifo_out_vals[n] for n in ifo_names])
+
+            if nifo>2:
+                network_out_vals['network_snr'] = roh_coh_dict[t_num][s_num]
+                network_out_vals['null_snr'] = null_dict[t_num][s_num]
+            elif nifo==2:
+                network_out_vals['network_snr'] = roh_coinc_dict[t_num][s_num]
+            else:
+                network_out_vals['network_snr'] = abs(snr[ifo_list[0]][coinc_idx[t_num][s_num]])
+            network_out_vals['time_index'] = idx_dict[ifo]+stilde[ifo].cumulative_index
+            network_out_vals['nifo'] = nifo
+            event_mgr.add_template_events_to_network( network_names,
+			[network_out_vals[n] for n in network_names])
+
+	    #event_mgr.cluster_template_events_single_ifo("time_index",
+            #					    "snr", cluster_window, ifo)
+event_mgr.finalize_template_events()
 
 
 print "Time to complete analysis: " + str(time.time() - time_init)
 
 """
 #FIXME This stuff doesn't work for more than 2 detectors.
-event_mgr.finalize_template_events()
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
 if opt.chisq_threshold and opt.chisq_bins:
     logging.info("Removing triggers with poor chisq")
@@ -634,7 +675,7 @@ if generate_snr_plots == True:
     coinc_snr,_,_ = coincident_snr(snr,np.arange(len(snr[ifo])),0)
     plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),coinc_snr,'b.',label='coinc snr')
     try:
-        roh_coh,_,_ = coherent_snr(snr,np.arange(len(snr[ifo])),0,projection_matrix)
+        roh_coh,_,_,_ = coherent_snr(snr,np.arange(len(snr[ifo])),0,projection_matrix)
         plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),roh_coh,'rx',label='coh snr')
         plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),(coinc_snr**2-roh_coh**2)**0.5,'mx',label='null snr')
     except NameError:
@@ -698,7 +739,7 @@ for i in range(len(idx_gc)):
     if idx_gc[i] in coinc_idx[0][0]:
         snrv.append(snrv_dict[ifo][i])
 snrv = np.array(snrv)
-out_vals['chisq'], out_vals['chisq_dof'] =\
+ifo_out_vals['chisq'], ifo_out_vals['chisq_dof'] =\
 power_chisq.values(corr_dict[ifo], snrv, norm_dict[ifo], stilde[ifo].psd, coinc_idx[0][0]+time_delay_idx[ifo]+stilde[ifo].analyze.start, template)
 """
 if generate_chi2_plots == True:
@@ -712,7 +753,7 @@ if generate_chi2_plots == True:
 
 """
 plt.figure()
-plt.plot(out_vals['chisq'])
+plt.plot(ifo_out_vals['chisq'])
 plt.savefig("/home/c1551011/public_html/old_chi2.png")
 
 plt.figure()
