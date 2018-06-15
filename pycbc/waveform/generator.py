@@ -35,7 +35,7 @@ from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
                                  ceilpow2
 from pycbc.detector import Detector
 import lal as _lal
-from pycbc import gate
+from pycbc import strain
 import logging
 
 #
@@ -590,7 +590,7 @@ class FDomainDetFrameGenerator(object):
             # resize all to nearest power of 2
             for d in h.values():
                 d.resize(ceilpow2(len(d)-1) + 1)
-            h = gate.apply_gates_to_fd(h, self.gates)
+            h = strain.apply_gates_to_fd(h, self.gates)
         return h
 
 
