@@ -1,7 +1,7 @@
-from pycbc.calibration.recalibrate import Recalibrate
+from . import recalibrate
 
 models = {
-    Recalibrate.name : Recalibrate
+    recalibrate.Recalibrate.name : Recalibrate
 }
 
 def read_model_from_config(cp, ifo, section="calibration"):

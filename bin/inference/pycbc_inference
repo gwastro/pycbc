@@ -27,7 +27,6 @@ import pycbc
 import pycbc.opt
 import pycbc.weave
 import pycbc.version
-from pycbc import calibration
 from pycbc import distributions
 from pycbc import transforms
 from pycbc import fft
@@ -254,7 +253,7 @@ with ctx:
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
         logging.info("Initializing calibration model")
-        recalib = {ifo : calibration.read_model_from_config(cp, ifo) for
+        recalib = {ifo : strain.read_model_from_config(cp, ifo) for
                    ifo in opts.instruments}
     else:
         recalib = None
