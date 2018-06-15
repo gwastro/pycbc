@@ -491,6 +491,7 @@ setup (
                ],
     packages = [
                'pycbc',
+               'pycbc.strain',
                'pycbc.distributions',
                'pycbc.fft',
                'pycbc.types',
