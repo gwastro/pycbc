@@ -27,11 +27,9 @@ import pycbc
 import pycbc.opt
 import pycbc.weave
 import pycbc.version
-from pycbc import calibration
 from pycbc import distributions
 from pycbc import transforms
 from pycbc import fft
-from pycbc import gate
 from pycbc import inference
 from pycbc import psd
 from pycbc import scheme
@@ -43,7 +41,6 @@ from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
 from pycbc.inference.option_utils import validate_checkpoint_files
 from pycbc.inference import burn_in
-from pycbc import gate
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -130,7 +127,7 @@ psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
 strain.insert_strain_option_group_multi_ifo(parser)
 pycbc.weave.insert_weave_option_group(parser)
-gate.add_gate_option_group(parser)
+strain.add_gate_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
@@ -254,7 +251,7 @@ with ctx:
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
         logging.info("Initializing calibration model")
-        recalib = {ifo : calibration.read_model_from_config(cp, ifo) for
+        recalib = {ifo : strain.read_model_from_config(cp, ifo) for
                    ifo in opts.instruments}
     else:
         recalib = None
@@ -264,7 +261,7 @@ with ctx:
     logging.info("Setting up sampler")
 
     # get gates for templates
-    gates = gate.gates_from_cli(opts)
+    gates = strain.gates_from_cli(opts)
 
     if 'waveform_generator' in likelihood_class.required_kwargs:
         generator_function = generator.select_waveform_generator(
