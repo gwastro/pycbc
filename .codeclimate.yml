@@ -30,10 +30,9 @@ checks:
   identical-code:
     config:
       threshold: # language-specific defaults. an override will affect all languages.
-engines:
+plugins:
   pylint:
     enabled: true
     channel: "beta"
-plugins:
   pep8:
     enabled: true
