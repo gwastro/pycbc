@@ -53,6 +53,15 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   export PYTHONUSERBASE=${BUILD}/.local
   export XDG_CACHE_HOME=${BUILD}/.cache
 
+  # Autoconf needs m4
+  wget -O m4-1.4.9.tar.gz http://ftp.gnu.org/gnu/m4/m4-1.4.9.tar.gz
+  tar -zvxf m4-1.4.9.tar.gz
+  cd m4-1.4.9
+  ./configure
+  make
+  make install
+  cd ..
+
   # Build new autoconf
   curl -L -O http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
   tar zxf autoconf-2.69.tar.gz
