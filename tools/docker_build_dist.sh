@@ -66,7 +66,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   curl -L -O http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
   tar zxf autoconf-2.69.tar.gz
   cd autoconf-2.69
-  #yum install -y openssl-devel
   ./configure
   make && make install
   cd ..
