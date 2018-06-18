@@ -924,7 +924,7 @@ EOF
     rm -rf lalsuite-build
     mkdir lalsuite-build
     cd lalsuite-build
-    echo -e "$(<../lalsuite/lal/configure )" >&3
+    cat ../lalsuite/lal/configure >&3
     echo -e "\\n\\n>> [`date`] Configuring lalsuite" >&3
     ../lalsuite/configure CPPFLAGS="$lal_cppflags $CPPFLAGS" --disable-gcc-flags $shared $static --prefix="$PREFIX" --disable-silent-rules \
         --disable-all-lal --enable-lalframe --enable-lalmetaio --enable-lalsimulation --enable-lalinspiral ${lal_pulsar} --enable-swig-python
