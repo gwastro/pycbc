@@ -6,6 +6,7 @@ for i in $*; do
   case $i in
     --pycbc-container=*) PYCBC_CONTAINER="`echo $i|sed 's/^--pycbc-container=//'`";;
     --pull-request=*) TRAVIS_PULL_REQUEST="`echo $i|sed 's/^--pull-request=//'`";;
+    --lalsuite-hash=*) LALSUITE_HASH="`echo $i|sed 's/^--lalsuite-hash=//'`";;
     --commit=*) TRAVIS_COMMIT="`echo $i|sed 's/^--commit=//'`";;
     --secure=*) TRAVIS_SECURE_ENV_VARS="`echo $i|sed 's/^--secure=//'`";;
     --tag=*) TRAVIS_TAG="`echo $i|sed 's/^--tag=//'`";;
