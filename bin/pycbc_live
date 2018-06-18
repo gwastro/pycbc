@@ -77,23 +77,22 @@ class LiveEventManager(object):
         else:
             raise TypeError("Not root process")
 
-    def compute_followup_data(self, ifos, coinc_results, data_readers, bank,
+    def compute_followup_data(self, ifos, triggers, data_readers, bank,
                               followup_ifos=None):
         """Figure out which of the followup detectors are usable, and compute
         SNR time series for all the available detectors.
         """
         out = {}
 
-        template_id = coinc_results['foreground/{}/template_id'.format(ifos[0])]
+        template_id = triggers[ifos[0] + '/template_id']
         htilde = bank[template_id]
 
         subthreshold_sngl_time = numpy.mean(
-                [coinc_results['foreground/{}/end_time'.format(ifo)]
-                 for ifo in ifos])
+                [triggers[ifo + '/end_time'] for ifo in ifos])
 
         for ifo in ifos + (followup_ifos or []):
             if ifo in ifos:
-                trig_time = coinc_results['foreground/{}/end_time'.format(ifo)]
+                trig_time = triggers[ifo + '/end_time']
             else:
                 trig_time = subthreshold_sngl_time
             # NOTE we only check the state/DQ of followup IFOs here.
@@ -107,15 +106,17 @@ class LiveEventManager(object):
 
         return out
 
-    def check_coincs(self, ifos, coinc_results, psds, low_frequency_cutoff,
+    def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank, followup_ifos=None):
         """ Save zerolag triggers to a coinc xml file """
-        if 'foreground/ifar' in coinc_results: 
-            fud = self.compute_followup_data(ifos, coinc_results, data_readers,
+        if 'foreground/ifar' in coinc_results:
+            trig_data = {key.replace('foreground/', ''): value \
+                         for key, value in coinc_results.items()}
+            fud = self.compute_followup_data(ifos, trig_data, data_readers,
                                              bank, followup_ifos)
             event = SingleCoincForGraceDB(ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
-                                          low_frequency_cutoff=low_frequency_cutoff)
+                                          low_frequency_cutoff=f_low)
 
             end_time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml.gz' % end_time)
@@ -132,18 +133,20 @@ class LiveEventManager(object):
 
             logging.info('saving coinc to xml %s', fname)
 
-    def check_singles(self, results, data_reader, psds, low_frequency_cutoff,
+    def check_singles(self, results, data_reader, psds, f_low,
                       followup_ifos=None):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
 
-            fud = self.compute_followup_data([ifo], coinc_results, data_reader,
+            trig_data = {ifo + '/' + key: value \
+                         for key, value in results[ifo].items()}
+            fud = self.compute_followup_data([ifo], trig_data, data_reader,
                                              bank, followup_ifos)
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
                                                bank=bank, followup_data=fud,
                                                psds=psds,
-                                               low_frequency_cutoff=low_frequency_cutoff)
+                                               low_frequency_cutoff=f_low)
             if single is not None:
                 fname = 'single-%s-%s.xml.gz' % (ifo, int(single.time))
                 fname = os.path.join(self.path, fname)
