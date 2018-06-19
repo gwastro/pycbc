@@ -86,8 +86,6 @@ snr_filter = '(self.snr>%f)' % (opts.min_snr) if opts.min_snr > 0. else None
 filts = [f for f in [snr_filter, opts.filter_string] if f is not None]
 filter_func = ' & '.join(filts) if filts else None
 
-print filter_func
-
 trigs = pycbc.io.SingleDetTriggers(opts.single_trig_file, opts.bank_file,
                   opts.veto_file, opts.segment_name, filter_func, opts.detector)
 
