@@ -16,7 +16,7 @@ def is_main_process():
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
         return rank == 0
-    except ImportError, ValueError, RuntimeError:
+    except (ImportError, ValueError, RuntimeError):
         return True
 
 # Allow the pool to be interrupted, need to disable the children processes
