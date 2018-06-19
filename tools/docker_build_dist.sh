@@ -6,6 +6,7 @@ for i in $*; do
   case $i in
     --pycbc-container=*) PYCBC_CONTAINER="`echo $i|sed 's/^--pycbc-container=//'`";;
     --pull-request=*) TRAVIS_PULL_REQUEST="`echo $i|sed 's/^--pull-request=//'`";;
+    --lalsuite-hash=*) LALSUITE_HASH="`echo $i|sed 's/^--lalsuite-hash=//'`";;
     --commit=*) TRAVIS_COMMIT="`echo $i|sed 's/^--commit=//'`";;
     --secure=*) TRAVIS_SECURE_ENV_VARS="`echo $i|sed 's/^--secure=//'`";;
     --tag=*) TRAVIS_TAG="`echo $i|sed 's/^--tag=//'`";;
@@ -174,7 +175,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Installing LAL"
   mkdir -p ${VIRTUAL_ENV}/src
   cd ${VIRTUAL_ENV}/src
-  git clone --depth 1 https://git.ligo.org/lscsoft/lalsuite.git lalsuite
+  git clone https://git.ligo.org/lscsoft/lalsuite.git lalsuite
   cd ${VIRTUAL_ENV}/src/lalsuite
   git checkout ${LALSUITE_HASH}
   ./00boot
