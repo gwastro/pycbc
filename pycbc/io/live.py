@@ -323,29 +323,5 @@ class SingleCoincForGraceDB(object):
 
         return gid
 
-class SingleForGraceDB(SingleCoincForGraceDB):
-    """Create xml files and submit them to gracedb from PyCBC Live"""
-    def __init__(self, ifo, sngls_dict, hardware_injection=False, **kwds):
-        """Initialize a ligolw xml representation of this single trigger for
-        upload to gracedb
-
-        Parameters
-        ----------
-        ifo: str
-            The IFO that the trigger came from.
-        sngls_dict: dict
-            Dictionary of singles parameters. Must include template parameters
-        and both 'ifar' and 'stat' values.
-        """
-        fake_coinc = {}
-        fake_coinc['foreground/stat'] = sngls_dict.pop('stat')
-        fake_coinc['foreground/ifar'] = sngls_dict.pop('ifar')
-        for key in sngls_dict:
-            fake_coinc['foreground/%s/%s' % (ifo, key)] = sngls_dict[key]
-        if hardware_injection:
-            fake_coinc['HWINJ'] = True
-        SingleCoincForGraceDB.__init__(self, [ifo], fake_coinc, **kwds)
-
-
 __all__ = ['SingleCoincForGraceDB', 'SingleForGraceDB', 'make_psd_xmldoc',
            'snr_series_to_xml']
