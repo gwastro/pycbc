@@ -11,7 +11,6 @@ pillow
 h5py>=2.5
 jinja2
 mpld3>=0.3
-pyRXP>=2.1.0
 lscsoft-glue>=1.58.2
 weave>=0.16.0
 requests>=1.2.1
