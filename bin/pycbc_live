@@ -136,15 +136,11 @@ class LiveEventManager(object):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
-            single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
-                                               bank=bank, followup_data=fud,
-                                               psds=psds,
-                                               low_frequency_cutoff=f_low)
+            single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
 
             if single is not None:
                 fud = self.compute_followup_data([ifo], single, data_reader,
                                                  bank, followup_ifos)
-
                 event = SingleCoincForGraceDB([self.ifo], single, bank=bank,
                                               psds=psds, followup_data=fud,
                                               low_frequency_cutoff=f_low)

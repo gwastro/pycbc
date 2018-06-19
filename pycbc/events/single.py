@@ -29,7 +29,7 @@ class LiveSingleFarThreshold(object):
                    duration_threshold=args.single_duration_threshold,
                    )
 
-    def check(self, triggers, data_reader, **kwds):
+    def check(self, triggers, data_reader):
         """ Look for a single detector trigger that passes the thresholds in
         the current data.
         """
@@ -51,5 +51,5 @@ class LiveSingleFarThreshold(object):
             fake_coinc['foreground/stat'] = nsnr
             fake_coinc['foreground/ifar'] = self.fixed_ifar
             fake_coinc['HWINJ'] = data_reader.near_hwinj()
-        else:
-            return None
+            return fake_coinc
+        return None
