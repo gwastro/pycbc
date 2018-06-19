@@ -84,15 +84,15 @@ class LiveEventManager(object):
         """
         out = {}
 
-        template_id = triggers[ifos[0] + '/template_id']
+        template_id = triggers['foreground/' + ifos[0] + '/template_id']
         htilde = bank[template_id]
 
         subthreshold_sngl_time = numpy.mean(
-                [triggers[ifo + '/end_time'] for ifo in ifos])
+                [triggers['foreground/' + ifo + '/end_time'] for ifo in ifos])
 
         for ifo in ifos + (followup_ifos or []):
             if ifo in ifos:
-                trig_time = triggers[ifo + '/end_time']
+                trig_time = triggers['foreground/' + ifo + '/end_time']
             else:
                 trig_time = subthreshold_sngl_time
             # NOTE we only check the state/DQ of followup IFOs here.
@@ -110,9 +110,7 @@ class LiveEventManager(object):
                      data_readers, bank, followup_ifos=None):
         """ Save zerolag triggers to a coinc xml file """
         if 'foreground/ifar' in coinc_results:
-            trig_data = {key.replace('foreground/', ''): value \
-                         for key, value in coinc_results.items()}
-            fud = self.compute_followup_data(ifos, trig_data, data_readers,
+            fud = self.compute_followup_data(ifos, coinc_results, data_readers,
                                              bank, followup_ifos)
             event = SingleCoincForGraceDB(ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
@@ -138,23 +136,27 @@ class LiveEventManager(object):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
-
-            trig_data = {ifo + '/' + key: value \
-                         for key, value in results[ifo].items()}
-            fud = self.compute_followup_data([ifo], trig_data, data_reader,
-                                             bank, followup_ifos)
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
                                                bank=bank, followup_data=fud,
                                                psds=psds,
                                                low_frequency_cutoff=f_low)
+
             if single is not None:
-                fname = 'single-%s-%s.xml.gz' % (ifo, int(single.time))
-                fname = os.path.join(self.path, fname)
-                if args.enable_single_detector_upload:
-                    single.upload(fname, gracedb_server=args.gracedb_server,
-                                  testing=self.gracedb_testing)
-                else:
-                    single.save(fname)
+                fud = self.compute_followup_data([ifo], single, data_reader,
+                                                 bank, followup_ifos)
+
+                event = SingleCoincForGraceDB([self.ifo], single, bank=bank,
+                                              psds=psds, followup_data=fud,
+                                              low_frequency_cutoff=f_low)
+
+                if event is not None:
+                    fname = 'single-%s-%s.xml.gz' % (ifo, int(single.time))
+                    fname = os.path.join(self.path, fname)
+                    if args.enable_single_detector_upload:
+                        event.upload(fname, gracedb_server=args.gracedb_server,
+                                      testing=self.gracedb_testing)
+                    else:
+                        event.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
                   store_loudest_index=False,
