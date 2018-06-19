@@ -323,5 +323,4 @@ class SingleCoincForGraceDB(object):
 
         return gid
 
-__all__ = ['SingleCoincForGraceDB', 'SingleForGraceDB', 'make_psd_xmldoc',
-           'snr_series_to_xml']
+__all__ = ['SingleCoincForGraceDB', 'make_psd_xmldoc', 'snr_series_to_xml']
