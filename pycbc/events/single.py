@@ -48,7 +48,8 @@ class LiveSingleFarThreshold(object):
                 rchisq < self.reduced_chisq_threshold and \
                 dur > self.duration_threshold:
             fake_coinc = {}
-            fake_coinc = {'foreground/%s/%s' % (ifo, key): triggers[key][i] for key in triggers}
+            fake_coinc = {'foreground/%s/%s' % (ifo, key): triggers[key][i]
+                          for key in triggers}
             fake_coinc['foreground/stat'] = nsnr
             fake_coinc['foreground/ifar'] = self.fixed_ifar
             fake_coinc['HWINJ'] = data_reader.near_hwinj()
