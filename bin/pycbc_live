@@ -118,7 +118,7 @@ class LiveEventManager(object):
 
             end_time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml.gz' % end_time)
-
+            logging.info('Coincident candidate! Saving as %s', fname)
             comments = ['using ranking statistic: %s' % args.background_statistic]
 
             ifar = coinc_results['foreground/ifar']
@@ -128,8 +128,6 @@ class LiveEventManager(object):
                              extra_strings=comments)
             else:
                 event.save(fname)
-
-            logging.info('saving coinc to xml %s', fname)
 
     def check_singles(self, results, data_reader, psds, f_low,
                       followup_ifos=None):
@@ -141,18 +139,19 @@ class LiveEventManager(object):
             if single is not None:
                 fud = self.compute_followup_data([ifo], single, data_reader,
                                                  bank, followup_ifos)
-                event = SingleCoincForGraceDB([self.ifo], single, bank=bank,
+                event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                               psds=psds, followup_data=fud,
                                               low_frequency_cutoff=f_low)
 
-                if event is not None:
-                    fname = 'single-%s-%s.xml.gz' % (ifo, int(single.time))
-                    fname = os.path.join(self.path, fname)
-                    if args.enable_single_detector_upload:
-                        event.upload(fname, gracedb_server=args.gracedb_server,
-                                      testing=self.gracedb_testing)
-                    else:
-                        event.save(fname)
+                end_time = int(single['foreground/%s/end_time' % ifo])
+                fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
+                fname = os.path.join(self.path, fname)
+                logging.info('Single-detector candidate! Saving as %s', fname)
+                if args.enable_single_detector_upload:
+                    event.upload(fname, gracedb_server=args.gracedb_server,
+                                 testing=self.gracedb_testing)
+                else:
+                    event.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
                   store_loudest_index=False,
