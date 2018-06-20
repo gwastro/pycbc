@@ -99,7 +99,8 @@ class SingleCoincForGraceDB(object):
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
 
         # remember if this should be marked as HWINJ
-        self.is_hardware_injection = ('HWINJ' in coinc_results)
+        self.is_hardware_injection = \
+                ('HWINJ' in coinc_results and coinc_results['HWINJ'])
 
         if 'followup_data' in kwargs:
             fud = kwargs['followup_data']
