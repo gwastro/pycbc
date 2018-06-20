@@ -8,6 +8,17 @@ import types
 import signal
 import atexit
 
+def is_main_process():
+    """ Check if this is the main control process and may handle one time tasks
+    """
+    try:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+        return rank == 0
+    except (ImportError, ValueError, RuntimeError):
+        return True
+
 # Allow the pool to be interrupted, need to disable the children processes
 # from intercepting the keyboard interrupt
 def _noint(init, *args):

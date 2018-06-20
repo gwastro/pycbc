@@ -148,19 +148,6 @@ if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
 
-# check for backup file(s)
-checkpoint_file = opts.output_file + '.checkpoint'
-backup_file = opts.output_file + '.bkup'
-checkpoint_valid = validate_checkpoint_files(checkpoint_file, backup_file)
-
-# determine what to do with checkpoints
-if checkpoint_valid and not opts.resume_from_checkpoint and not opts.force:
-    raise OSError("valid checkpoint file {} found, but "
-                  "resume-from-checkpoint not on. If you wish to overwrite "
-                  "use --force; otherwise, use --resume-from-checkpoint")
-if not opts.resume_from_checkpoint and opts.force:
-    checkpoint_valid = False
-
 # check for how many iterations to run
 max_iterations = opts.niterations
 if opts.niterations is not None and opts.n_independent_samples is not None:
@@ -294,6 +281,19 @@ with ctx:
 
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
+
+    # check for backup file(s)
+    checkpoint_file = opts.output_file + '.checkpoint'
+    backup_file = opts.output_file + '.bkup'
+    checkpoint_valid = validate_checkpoint_files(checkpoint_file, backup_file)
+
+    # determine what to do with checkpoints
+    if checkpoint_valid and not opts.resume_from_checkpoint and not opts.force:
+        raise OSError("valid checkpoint file {} found, but "
+                      "resume-from-checkpoint not on. If you wish to overwrite "
+                      "use --force; otherwise, use --resume-from-checkpoint")
+    if not opts.resume_from_checkpoint and opts.force:
+        checkpoint_valid = False
 
     # save information about this data and settings
     if not checkpoint_valid:
