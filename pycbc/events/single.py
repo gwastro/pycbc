@@ -1,7 +1,6 @@
 """ utilities for assigning FAR to single detector triggers
 """
 from pycbc.events import newsnr
-from pycbc.io.live import SingleForGraceDB
 
 class LiveSingleFarThreshold(object):
     def __init__(self, ifo,
@@ -30,7 +29,7 @@ class LiveSingleFarThreshold(object):
                    duration_threshold=args.single_duration_threshold,
                    )
 
-    def check(self, triggers, data_reader, **kwds):
+    def check(self, triggers, data_reader):
         """ Look for a single detector trigger that passes the thresholds in
         the current data.
         """
@@ -47,11 +46,10 @@ class LiveSingleFarThreshold(object):
         if nsnr > self.newsnr_threshold and \
                 rchisq < self.reduced_chisq_threshold and \
                 dur > self.duration_threshold:
-            d = {key: triggers[key][i] for key in triggers}
-            d['stat'] = nsnr
-            d['ifar'] = self.fixed_ifar
-            return SingleForGraceDB(self.ifo, d,
-                                    hardware_injection=data_reader.near_hwinj(),
-                                    **kwds)
-        else:
-            return None
+            fake_coinc = {'foreground/%s/%s' % (self.ifo, k): triggers[k][i]
+                          for k in triggers}
+            fake_coinc['foreground/stat'] = nsnr
+            fake_coinc['foreground/ifar'] = self.fixed_ifar
+            fake_coinc['HWINJ'] = data_reader.near_hwinj()
+            return fake_coinc
+        return None
