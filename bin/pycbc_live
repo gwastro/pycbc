@@ -339,7 +339,7 @@ with ctx:
 
         if args.fftw_input_double_wisdom_file is not None:
             fft.fftw.import_double_wisdom_from_filename(args.fftw_input_double_wisdom_file)
-    except:
+    except RuntimeError:
         pass
 
     maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
