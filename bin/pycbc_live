@@ -360,16 +360,19 @@ if evnt.rank == 0 and args.enable_gracedb_upload:
 
 # I'm not the root, so do some actually filtering.
 with ctx:
-    # Import system wisdom.
-    if args.fftw_import_system_wisdom:
-        fft.fftw.import_sys_wisdom()
+    try:
+        # Import system wisdom.
+        if args.fftw_import_system_wisdom:
+            fft.fftw.import_sys_wisdom()
 
-    # Read specified user-provided wisdom files
-    if args.fftw_input_float_wisdom_file is not None:
-        fft.fftw.import_single_wisdom_from_filename(args.fftw_input_float_wisdom_file)
+        # Read specified user-provided wisdom files
+        if args.fftw_input_float_wisdom_file is not None:
+            fft.fftw.import_single_wisdom_from_filename(args.fftw_input_float_wisdom_file)
 
-    if args.fftw_input_double_wisdom_file is not None:
-        fft.fftw.import_double_wisdom_from_filename(args.fftw_input_double_wisdom_file)
+        if args.fftw_input_double_wisdom_file is not None:
+            fft.fftw.import_double_wisdom_from_filename(args.fftw_input_double_wisdom_file)
+    except RuntimeError:
+        pass
 
     maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
     if evnt.rank > 0:
