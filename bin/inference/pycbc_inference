@@ -430,6 +430,7 @@ with ctx:
                                   ifos=opts.instruments)
             try:
                 is_burned_in = fp.is_burned_in
+                burnidx = fp.burn_in_iterations
             except (AttributeError, KeyError):
                 is_burned_in = False
             if not is_burned_in:
