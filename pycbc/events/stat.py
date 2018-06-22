@@ -64,8 +64,9 @@ def get_newsnr_sgveto(trigs):
         Array of newsnr values
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
-    nsnr_sg = events.newsnr_sgveto\
-        (trigs['snr'][:], trigs['chisq'][:] / dof, trigs['sg_chisq'][:])
+    nsnr_sg = events.newsnr_sgveto(trigs['snr'][:],
+                                   trigs['chisq'][:] / dof,
+                                   trigs['sg_chisq'][:])
     return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
 
 
@@ -552,12 +553,12 @@ sngl_statistic_dict = {
 
 def get_statistic(stat):
     """
-    Error-handling sugar around dict lookup
+    Error-handling sugar around dict lookup for coincident statistics
 
     Parameters
     ----------
     stat : string
-        Name of the statistic
+        Name of the coincident statistic
 
     Returns
     -------
@@ -576,12 +577,12 @@ def get_statistic(stat):
 
 def get_sngl_statistic(stat):
     """
-    Error-handling sugar around dict lookup
+    Error-handling sugar around dict lookup for single-detector statistics
 
     Parameters
     ----------
     stat : string
-        Name of the statistic
+        Name of the single-detector statistic
 
     Returns
     -------
