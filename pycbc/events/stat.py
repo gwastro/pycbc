@@ -551,7 +551,7 @@ sngl_statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic
 }
 
-def get_statistic(stat):
+def get_statistic(stat, stat_dict=statistic_dict):
     """
     Error-handling sugar around dict lookup for coincident statistics
 
@@ -571,7 +571,7 @@ def get_statistic(stat):
         If the string is not recognized as corresponding to a Stat subclass
     """
     try:
-        return statistic_dict[stat]
+        return stat_dict[stat]
     except KeyError:
         raise RuntimeError('%s is not an available detection statistic' % stat)
 
@@ -594,8 +594,5 @@ def get_sngl_statistic(stat):
     RuntimeError
         If the string is not recognized as corresponding to a Stat subclass
     """
-    try:
-        return sngl_statistic_dict[stat]
-    except KeyError:
-        raise RuntimeError('%s is not an available detection statistic' % stat)
+    return get_statistic(stat, stat_dict=sngl_statistic_dict)
 
