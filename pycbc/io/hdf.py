@@ -18,6 +18,7 @@ from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
+from pycbc.events.stat import sngl_statistic_dict
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -400,24 +401,19 @@ class SingleDetTriggers(object):
         clustered so that no more than 1 event within +/- cluster-window will
         be considered."""
         # If this becomes memory intensive we can optimize
+        stat_instance = sngl_statistic_dict[ranking_statistic]([])
+        stat = stat_instance.single(self.trigs)[self.mask]
+
+        # Used for naming in plots ... Seems an odd place for this to live!
         if ranking_statistic == "newsnr":
-            stat = self.newsnr
-            # newsnr doesn't return an array if len(stat) == 1
-            if len(self.snr) == 1:
-                stat = np.array([stat])
             self.stat_name = "Reweighted SNR"
         elif ranking_statistic == "newsnr_sgveto":
-            stat = self.newsnr_sgveto
-            # newsnr doesn't return an array if len(stat) == 1
-            if len(self.snr) == 1:
-                stat = np.array([stat])
             self.stat_name = "Reweighted SNR (+sgveto)"
         elif ranking_statistic == "snr":
-            stat = self.snr
             self.stat_name = "SNR"
         else:
-            err_msg = "Don't recognize statistic %s." % (ranking_statistic)
-            raise ValueError(err_msg)
+            self.stat_name=ranking_statistic
+
         times = self.end_time
         index = stat.argsort()[::-1]
         new_times = []
