@@ -73,7 +73,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'jinja2',
                       'astropy>=2.0.3',
                       'mpld3>=0.3',
-                      'lscsoft-glue>=1.58.2',
+                      'lscsoft-glue>=1.59.3',
                       'kombine>=0.8.2',
                       'emcee==2.2.1',
                       'corner>=2.0.1',
@@ -276,7 +276,7 @@ def get_version_info():
 
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.11.dev0'
+        version = '1.12.dev0'
         release = 'False'
 
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
