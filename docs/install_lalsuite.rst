@@ -29,7 +29,7 @@ changing the path to the activate script appropriately.  Clone the lalsuite repo
 
     mkdir -p ${VIRTUAL_ENV}/src
     cd ${VIRTUAL_ENV}/src
-    git clone https://github.com/lscsoft/lalsuite.git
+    git clone git@git.ligo.org:lscsoft/lalsuite.git
 
 Note that this checks out a read-only repository. If you want a git repository
 that you can edit, you can either fork this repository to your own GitHub
