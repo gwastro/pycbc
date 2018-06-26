@@ -661,9 +661,9 @@ def create_multidim_plot(parameters, samples, labels=None,
             else:
                 alpha = 1.
             plt = ax.scatter(x=samples[px], y=samples[py], c=zvals,
-                        s=scatter_size, edgecolors='none',
-                        vmin=vmin, vmax=vmax,
-                        cmap=scatter_cmap, alpha=alpha, zorder=2)
+                             s=scatter_size, edgecolors='none',
+                             vmin=vmin, vmax=vmax,
+                             cmap=scatter_cmap, alpha=alpha, zorder=2)
 
         if plot_contours or plot_density:
             # Exclude out-of-bound regions
