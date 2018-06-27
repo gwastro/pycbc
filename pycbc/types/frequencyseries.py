@@ -124,6 +124,12 @@ class FrequencySeries(Array):
                                delta_f=new_delta_f,
                                epoch=self._epoch,
                                copy=False)
+
+    def at(self, freq):
+        """ Return the value at the specified frequency
+        """
+        return self[int(freq / self.delta_f)]                               
+
     @property
     def start_time(self):
         """Return the start time of this vector
