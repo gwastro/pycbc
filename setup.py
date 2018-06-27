@@ -534,5 +534,16 @@ setup (
             include_dirs = [ "pycbc/ligolw" ]
         )
     ],
+    classifiers=[
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Intended Audience :: Science/Research',
+        'Natural Language :: English',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Astronomy',
+        'Topic :: Scientific/Engineering :: Physics',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    ],
 )
 
