@@ -23,7 +23,7 @@ your virtual environment with the command
 
     source ~/src/pycbc/bin/activate
 
-changing the path to the activate script appropriately.  Clone the lalsuite repository into the directory ``${VIRTUAL_ENV}/src/lalsuite`` by running the commands
+changing the path to the activate script appropriately.  Clone the lalsuite repository into the directory ``${VIRTUAL_ENV}/src/lalsuite`` using the ``SSH`` authentication scheme, by running the following commands. Alternatively, you can use the HTTPS connection method, where ``git@git.ligo.org:`` is replaced with ``https://git.ligo.org/``.
 
 .. code-block:: bash
 
