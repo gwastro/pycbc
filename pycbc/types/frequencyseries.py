@@ -128,7 +128,7 @@ class FrequencySeries(Array):
     def at(self, freq):
         """ Return the value at the specified frequency
         """
-        return self[int(freq / self.delta_f)]                               
+        return self[int(freq / self.delta_f)]
 
     @property
     def start_time(self):
