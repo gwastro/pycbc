@@ -24,7 +24,8 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
-    elem.appendChild(ligolw_param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
+    elem.appendChild(ligolw_param.Param.from_pyvalue(u"f0", series.f0,
+                                                     unit=u"s^-1"))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
