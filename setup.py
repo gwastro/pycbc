@@ -315,7 +315,7 @@ class build_docs(Command):
         pass
     def run(self):
         subprocess.check_call("cd docs; cp Makefile.std Makefile; cp conf_std.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc ../pycbc/ligolw && make html",
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 class build_gh_pages(Command):
@@ -328,7 +328,7 @@ class build_gh_pages(Command):
     def run(self):
         subprocess.check_call("mkdir -p _gh-pages/latest && touch _gh-pages/.nojekyll && "
                               "cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc ../pycbc/ligolw && make html",
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 cmdclass = { 'test'  : test,
@@ -509,30 +509,11 @@ setup (
                'pycbc.inject',
                'pycbc.frame',
                'pycbc.catalog',
-               'pycbc.ligolw',
-               'pycbc.ligolw.utils',
                ],
     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
                     'pycbc.results': find_package_data('pycbc/results'),
                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
     ext_modules = [
-        Extension(
-            "pycbc.ligolw.tokenizer",
-            [
-                "pycbc/ligolw/tokenizer.c",
-                "pycbc/ligolw/tokenizer.Tokenizer.c",
-                "pycbc/ligolw/tokenizer.RowBuilder.c",
-                "pycbc/ligolw/tokenizer.RowDumper.c"
-            ],
-            include_dirs = [ "pycbc/ligolw" ]
-        ),
-        Extension(
-            "pycbc.ligolw._ilwd",
-            [
-                "pycbc/ligolw/ilwd.c"
-            ],
-            include_dirs = [ "pycbc/ligolw" ]
-        )
     ],
     classifiers=[
         'Programming Language :: Python',

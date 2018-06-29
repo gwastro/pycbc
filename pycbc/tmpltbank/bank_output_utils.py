@@ -1,8 +1,8 @@
 from __future__ import division
 import numpy
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
-from pycbc.ligolw import ligolw, lsctables, ilwd, utils as ligolw_utils
-from pycbc.ligolw.utils import process as ligolw_process
+from glue.ligolw import ligolw, lsctables, ilwd, utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
 

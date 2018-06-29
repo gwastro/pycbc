@@ -4,11 +4,11 @@ import pycbc
 import numpy
 import lal
 from six import u as unicode
-from pycbc.ligolw import ligolw
-from pycbc.ligolw import lsctables
-from pycbc.ligolw import utils as ligolw_utils
-from pycbc.ligolw.utils import process as ligolw_process
-from pycbc.ligolw import param as ligolw_param
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
@@ -17,7 +17,7 @@ from pycbc.tmpltbank import return_empty_sngl
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    from pycbc.ligolw import array as ligolw_array
+    from glue.ligolw import array as ligolw_array
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     elem = ligolw.LIGO_LW(
             Attributes({u"Name": unicode(series.__class__.__name__)}))
