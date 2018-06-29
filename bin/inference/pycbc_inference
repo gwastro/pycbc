@@ -19,6 +19,7 @@
 """
 
 import os
+import sys
 import argparse
 import logging
 import numpy
@@ -494,3 +495,4 @@ if not opts.save_backup:
 
 # exit
 logging.info("Done")
+sys.exit(0)
