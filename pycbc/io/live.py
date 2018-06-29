@@ -33,7 +33,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     else:
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
                                 series.data.data))
-    a = ligolw_array.from_array(series.name, data, dim_names=dim_names)
+    a = ligolw_array.Array.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -52,8 +52,8 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     snr_xml = _build_series(snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
                             'deltaT', 's')
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = ligolw_param.new_param(u'event_id', u'ilwd:char',
-                                       sngl_inspiral_id)
+    eid_param = ligolw_param.Param.build(u'event_id', u'ilwd:char',
+                                         sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def make_psd_xmldoc(psddict, xmldoc=None):
@@ -72,7 +72,8 @@ def make_psd_xmldoc(psddict, xmldoc=None):
         xmlseries = _build_series(psd, (u"Frequency,Real", u"Frequency"),
                                   None, 'deltaF', 's^-1')
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(ligolw_param.from_pyvalue(u"instrument", instrument))
+        fs.appendChild(ligolw_param.Param.from_pyvalue(u"instrument",
+                                                       instrument))
     return xmldoc
 
 class SingleCoincForGraceDB(object):
