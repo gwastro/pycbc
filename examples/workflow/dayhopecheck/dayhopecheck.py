@@ -50,11 +50,11 @@ import argparse
 from glue import segments
 import pycbc.workflow as _workflow
 
-from pycbc.ligolw import ligolw
-from pycbc.ligolw import lsctables
-from pycbc.ligolw import utils as ligolw_utils
-from pycbc.ligolw.utils import segments as ligolw_segments
-from pycbc.ligolw.utils import process as ligolw_process
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw.utils import process as ligolw_process
 
 from glue.segmentdb import segmentdb_utils
 

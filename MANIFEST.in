@@ -1,6 +1,5 @@
 include test/*test*py
 include bin/*
-include pycbc/ligolw/*.h
 recursive-include examples *py *sh *xml
 recursive-include tools *py
 include descr.rst

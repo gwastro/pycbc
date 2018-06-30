@@ -10,11 +10,11 @@ import time
 from scipy import stats, special
 from argparse import ArgumentParser
 
-from pycbc.ligolw import ligolw
-from pycbc.ligolw import lsctables
-from pycbc.ligolw import utils as ligolw_utils
-from pycbc.ligolw import table
-from pycbc.ligolw.utils import process
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import table
+from glue.ligolw.utils import process
 
 def r_uniform_in_volume(r1, r2, N):
     xi = numpy.random.uniform(0., 1., size=N)

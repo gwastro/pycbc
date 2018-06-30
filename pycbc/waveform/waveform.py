@@ -324,7 +324,7 @@ def get_obj_attrs(obj):
         if isinstance(obj, numpy.core.records.record):
             for name in obj.dtype.names:
                 pr[name] = getattr(obj, name)
-        elif hasattr(obj, '__dict__'):
+        elif hasattr(obj, '__dict__') and obj.__dict__:
             pr = obj.__dict__
         elif hasattr(obj, '__slots__'):
             for slot in obj.__slots__:

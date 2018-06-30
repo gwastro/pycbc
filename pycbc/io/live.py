@@ -4,11 +4,11 @@ import pycbc
 import numpy
 import lal
 from six import u as unicode
-from pycbc.ligolw import ligolw
-from pycbc.ligolw import lsctables
-from pycbc.ligolw import utils as ligolw_utils
-from pycbc.ligolw.utils import process as ligolw_process
-from pycbc.ligolw import param as ligolw_param
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import process as ligolw_process
+from glue.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
@@ -17,14 +17,15 @@ from pycbc.tmpltbank import return_empty_sngl
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
 def _build_series(series, dim_names, comment, delta_name, delta_unit):
-    from pycbc.ligolw import array as ligolw_array
+    from glue.ligolw import array as ligolw_array
     Attributes = ligolw.sax.xmlreader.AttributesImpl
     elem = ligolw.LIGO_LW(
             Attributes({u"Name": unicode(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
-    elem.appendChild(ligolw_param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
+    elem.appendChild(ligolw_param.Param.from_pyvalue(u"f0", series.f0,
+                                                     unit=u"s^-1"))
     delta = getattr(series, delta_name)
     if numpy.iscomplexobj(series.data.data):
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
@@ -32,7 +33,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     else:
         data = numpy.row_stack((numpy.arange(len(series.data.data)) * delta,
                                 series.data.data))
-    a = ligolw_array.from_array(series.name, data, dim_names=dim_names)
+    a = ligolw_array.Array.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -51,8 +52,8 @@ def snr_series_to_xml(snr_series, document, sngl_inspiral_id):
     snr_xml = _build_series(snr_lal, (u'Time', u'Time,Real,Imaginary'), None,
                             'deltaT', 's')
     snr_node = document.childNodes[-1].appendChild(snr_xml)
-    eid_param = ligolw_param.new_param(u'event_id', u'ilwd:char',
-                                       sngl_inspiral_id)
+    eid_param = ligolw_param.Param.build(u'event_id', u'ilwd:char',
+                                         sngl_inspiral_id)
     snr_node.appendChild(eid_param)
 
 def make_psd_xmldoc(psddict, xmldoc=None):
@@ -71,7 +72,8 @@ def make_psd_xmldoc(psddict, xmldoc=None):
         xmlseries = _build_series(psd, (u"Frequency,Real", u"Frequency"),
                                   None, 'deltaF', 's^-1')
         fs = lw.appendChild(xmlseries)
-        fs.appendChild(ligolw_param.from_pyvalue(u"instrument", instrument))
+        fs.appendChild(ligolw_param.Param.from_pyvalue(u"instrument",
+                                                       instrument))
     return xmldoc
 
 class SingleCoincForGraceDB(object):
