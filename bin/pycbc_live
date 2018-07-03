@@ -450,7 +450,7 @@ with ctx:
     i = 0
     while data_end() < args.end_time:
         t1 = time()
-        logging.info('%s: Analyzing up to %s', evnt.rank, data_end())
+        logging.info('%s: Analyzing from %s', evnt.rank, data_end())
         results = {}
         usable_followup_ifos = []
 
@@ -526,6 +526,8 @@ with ctx:
                       store_loudest_index=args.store_loudest_index,
                       raw_results=coinc_results,
                      )     
+                     
+            logging.info('Finished Analyzing up to %s', data_end())
 
         if args.sync: evnt.barrier()
         tdiff = time() - t1
