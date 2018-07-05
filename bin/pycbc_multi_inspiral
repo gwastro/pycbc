@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/bin/python
+#!/usr/bin/env /usr/bin/pytho
 
 # Copyright (C) 2014 Alex Nitz
 #
@@ -85,6 +85,15 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     compatibility with pipedown post-processing. 
                     Option will be removed when no longer needed.""")
 
+# Arguments added for the coherent stuff
+parser.add_argument("--longitude", type=float)
+parser.add_argument("--latitude", type=float)
+parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
+                    Triggers with coincident snr below this value with be discarded""")
+parser.add_argument("--coh-threshold", type=float, default=0.0, help="""
+                    Triggers with coherent snr below this value with be discarded""")
+parser.add_argument("--null-fraction", type=float, default=0.0, help="""
+                    Triggers with null_snr/coinc_snr above this value with be discarded""")
 
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
@@ -113,19 +122,26 @@ pol = 1.21771
 """
 
 
-
+"""
 coinc_threshold = 7.0
 coh_threshold = 7.0
 null_fraction = 0.2 #Triggers with null_snr/coinc_snr>null_fraction are cut
+"""
+coinc_threshold = opt.coinc_threshold
+coh_threshold = opt.coh_threshold
+null_fraction = opt.null_fraction #Triggers with null_snr/coinc_snr>null_fraction are cut
 generate_histograms = False
 generate_snr_plots = False
 generate_chi2_plots = False
 pol = 1.21771
+t_gps = opt.trig_start_time[0] + 100
 
+"""
 #bns options
 longitude = 3.446131227771
 latitude = -0.40812483499946
 t_gps = 1187008884
+"""
 
 """
 #glitch options
@@ -133,8 +149,8 @@ longitude = 3.446131227771
 latitude = -0.40812483499946
 t_gps = 1185938872
 """
-ra = longitude 
-dec = latitude
+ra = opt.longitude 
+dec = opt.latitude
 
 opt = parser.parse_args()
 
@@ -397,8 +413,8 @@ with ctx:
         'latitude'      : float32,
         'longitude'     : float32,
 	'time_index'    : int,
-	'network_snr'   : complex64,
-        'null_snr'      : complex64,
+	'network_snr'   : float32,
+        'null_snr'      : float32,
         'nifo'          : int
                }
     network_out_vals = {
@@ -604,16 +620,16 @@ with ctx:
 			[ifo_out_vals[n] for n in ifo_names])
 
             if nifo>2:
-                network_out_vals['network_snr'] = roh_coh_dict[t_num][s_num]
-                network_out_vals['null_snr'] = null_dict[t_num][s_num]
+                network_out_vals['network_snr'] = np.real(roh_coh_dict[t_num][s_num])
+                network_out_vals['null_snr'] = np.real(null_dict[t_num][s_num])
             elif nifo==2:
-                network_out_vals['network_snr'] = roh_coinc_dict[t_num][s_num]
+                network_out_vals['network_snr'] = np.real(roh_coinc_dict[t_num][s_num])
             else:
                 network_out_vals['network_snr'] = abs(snr[ifo_list[0]][coinc_idx[t_num][s_num]])
             network_out_vals['time_index'] = idx_dict[ifo]+stilde[ifo].cumulative_index
             network_out_vals['nifo'] = [nifo]
-            network_out_vals['latitude'] = [latitude]
-            network_out_vals['longitude'] = [longitude]
+            network_out_vals['latitude'] = [opt.latitude]
+            network_out_vals['longitude'] = [opt.longitude]
 
             event_mgr.add_template_events_to_network( network_names,
 			[network_out_vals[n] for n in network_names])
