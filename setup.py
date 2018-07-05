@@ -30,14 +30,14 @@ try:
 except ImportError:
     from trace import _fullmodname as fullmodname
 
-from setuptools.command.install import install as _install
-from setuptools.command.install_egg_info import install_egg_info as egg_info
-from setuptools import Extension, setup, Command
-
 from distutils.errors import DistutilsError
 from distutils.command.clean import clean as _clean
 from distutils.file_util import write_file
 from distutils.version import LooseVersion
+
+from setuptools.command.install import install as _install
+from setuptools.command.install_egg_info import install_egg_info as egg_info
+from setuptools import Extension, setup, Command
 
 requires = []
 setup_requires = []
@@ -317,12 +317,13 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 VERSION = get_version_info()
 
 cythonext = ['waveform.spa_tmplt']
-ext = [Extension("pycbc.%s_cpu" % name,
-             ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
-             extra_compile_args=[ '-O3', '-w', '-msse4.2',
-                                 '-ffast-math', '-ffinite-math-only'],
-             ) for name in cythonext
-             ]
+ext = []
+for name in cythonext:
+    e = Extension("pycbc.%s_cpu" % name,
+                  ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
+                  extra_compile_args=[ '-O3', '-w', '-msse4.2',
+                                 '-ffast-math', '-ffinite-math-only'])
+    ext.append(e)
 
 setup (
     name = 'PyCBC',
