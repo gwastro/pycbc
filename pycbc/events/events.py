@@ -511,6 +511,238 @@ class EventManager(object):
                     f['gating/' + gate_type + '/pad'] = \
                             numpy.array([g[2] for g in gating_info[gate_type]])
 
+class EventManagerCoherent(EventManager):
+    def __init__(self, opt, ifos, column, column_types, network_column, network_column_types, psd=None, **kwargs):
+        self.opt = opt
+        self.ifos = ifos
+        self.global_params = kwargs
+        if psd is not None:
+            self.global_params['psd'] = psd[ifos[0]]
+
+        # The events array does not like holding the ifo as string,
+        # so create a mapping dict and hold as an int
+        self.ifo_dict = {}
+        self.ifo_reverse = {}
+        for i, ifo in enumerate(ifos):
+            self.ifo_dict[ifo] = i
+            self.ifo_reverse[i] = ifo
+
+        self.event_dtype = [ ('template_id', int), ('event_id', int) ]
+        for column, coltype in zip (column, column_types):
+            self.event_dtype.append( (column, coltype) )
+
+        self.network_event_dtype = [ ('template_id', int), ('event_id', int) ]
+        for column, coltype in zip (network_column, network_column_types):
+            self.network_event_dtype.append( (column, coltype) )
+        
+        self.events = numpy.array([], dtype=self.event_dtype)
+        self.network_events = numpy.array([], dtype=self.network_event_dtype)
+        self.event_id_map = {}
+        self.event_index = 0
+        self.template_params = []
+        self.template_index = -1
+        self.template_event_dict = {}
+        self.coinc_list = []
+        self.write_performance = False
+        for ifo in ifos:
+            self.template_event_dict[ifo] = numpy.array([],
+                                                        dtype=self.event_dtype)
+        self.template_event_dict['network'] = numpy.array([],
+                                                        dtype=self.network_event_dtype)
+
+    def add_template_network_events(self, columns, vectors):
+        """ Add a vector indexed """
+        # initialize with zeros - since vectors can be None, look for the
+        # first one that isn't
+        new_events = None
+        new_events = numpy.zeros(max([len(v) for v in vectors]), dtype=self.network_event_dtype)
+        # they shouldn't all be None
+        assert new_events is not None
+        new_events['template_id'] = self.template_index
+        for c, v in zip(columns, vectors):
+            if v is not None:
+                if isinstance(v, Array):
+                    new_events[c] = v.numpy()
+                else:
+                    new_events[c] = v
+        self.template_events = numpy.append(self.template_events, new_events)
+
+    def add_template_events_to_ifo(self, ifo, columns, vectors):
+        """ Add a vector indexed """
+        # Just call through to the standard function
+        self.template_events = self.template_event_dict[ifo]
+        self.add_template_events(columns, vectors)
+        self.template_event_dict[ifo] = self.template_events
+        self.template_events = None
+
+    def add_template_events_to_network(self, columns, vectors):
+        """ Add a vector indexed """
+        # Just call through to the standard function
+        self.template_events = self.template_event_dict['network']
+        self.add_template_network_events(columns, vectors)
+        self.template_event_dict['network'] = self.template_events
+        self.template_events = None
+
+    def write_to_hdf(self, outname):
+        class fw(object):
+            def __init__(self, name):
+                import h5py
+                self.f = h5py.File(name, 'w')
+
+            def __setitem__(self, name, data):
+                col = self.prefix + '/' + name
+                self.f.create_dataset(col, data=data,
+                                      compression='gzip',
+                                      compression_opts=9,
+                                      shuffle=True)
+
+        self.events.sort(order='template_id')
+        th = numpy.array([p['tmplt'].template_hash for p in \
+                          self.template_params])
+        tid = self.events['template_id']
+        f = fw(outname)
+        #Output network stuff
+        f.prefix = 'network'
+        network_events = numpy.array([e for e in self.network_events], dtype=self.network_event_dtype)
+        f['event_id'] = network_events['event_id']
+        f['network_snr'] = network_events['network_snr']
+        f['null_snr'] = network_events['null_snr']
+        f['time_index'] = network_events['time_index']
+        f['nifo'] = network_events['nifo']
+        f['latitude'] = network_events['latitude']
+        f['longitude'] = network_events['longitude']
+        f['template_id'] = network_events['template_id']
+        #Individual ifo stuff
+        for ifo in self.ifos:
+            f.prefix = ifo
+            ifo_events = numpy.array([e for e in self.events if \
+                    e['ifo'] == self.ifo_dict[ifo]], dtype=self.event_dtype)
+            if len(ifo_events):
+                ifo_str = ifo.lower()[0] if ifo != 'H1' else ifo.lower()
+                f['snr_%s' % ifo_str] = abs(ifo_events['snr'])
+                f['event_id'] = ifo_events['event_id']
+                try:
+                    # Precessing
+                    f['u_vals'] = ifo_events['u_vals']
+                    f['coa_phase'] = ifo_events['coa_phase']
+                    f['hplus_cross_corr'] = ifo_events['hplus_cross_corr']
+                except Exception:
+                    f['coa_phase'] = numpy.angle(ifo_events['snr'])
+                f['chisq'] = ifo_events['chisq']
+                #f['bank_chisq'] = ifo_events['bank_chisq']
+                #f['bank_chisq_dof'] = ifo_events['bank_chisq_dof']
+                #f['cont_chisq'] = ifo_events['cont_chisq']
+                f['end_time'] = ifo_events['time_index'] / \
+                        float(self.opt.sample_rate[ifo_str]) + \
+                        self.opt.gps_start_time[ifo_str]
+                try:
+                    # Precessing
+                    template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t \
+                            in self.template_params], dtype=numpy.float32)
+                    f['sigmasq_plus'] = template_sigmasq_plus[tid]
+                    template_sigmasq_cross = numpy.array([t['sigmasq_cross'] for t \
+                            in self.template_params], dtype=numpy.float32)
+                    f['sigmasq_cross'] = template_sigmasq_cross[tid]
+                    # FIXME: I want to put something here, but I haven't yet
+                    #        figured out what it should be. I think we would also
+                    #        need information from the plus and cross correlation
+                    #        (both real and imaginary(?)) to get this.
+                    f['sigmasq'] = template_sigmasq_plus[tid]
+                except Exception:
+                    # Not precessing
+                    template_sigmasq = numpy.array([t['sigmasq'][ifo] for t in \
+                            self.template_params], dtype=numpy.float32)
+                    f['sigmasq'] = template_sigmasq[tid]
+
+                template_durations = [p['tmplt'].template_duration for p in \
+                        self.template_params]
+                f['template_duration'] = numpy.array(template_durations, \
+                        dtype=numpy.float32)[tid]
+
+                # FIXME: Can we get this value from the autochisq instance?
+                cont_dof = self.opt.autochi_number_points
+                #if self.opt.autochi_onesided is None:
+                #    cont_dof = cont_dof * 2
+                #if self.opt.autochi_two_phase:
+                #    cont_dof = cont_dof * 2
+                #if self.opt.autochi_max_valued_dof:
+                #    cont_dof = self.opt.autochi_max_valued_dof
+                #f['cont_chisq_dof'] = numpy.repeat(cont_dof, len(ifo_events))
+
+                if 'chisq_dof' in ifo_events.dtype.names:
+                    f['chisq_dof'] = ifo_events['chisq_dof'] / 2 + 1
+                else:
+                    f['chisq_dof'] = numpy.zeros(len(ifo_events))
+
+                f['template_hash'] = th[tid]
+
+            if self.opt.trig_start_time:
+                f['search/start_time'] = numpy.array([\
+                        self.opt.trig_start_time[ifo]], dtype=numpy.int32)
+                search_start_time = float(self.opt.trig_start_time[ifo])
+            else:
+                f['search/start_time'] = numpy.array([\
+                        self.opt.gps_start_time[ifo] + \
+                        self.opt.segment_start_pad[ifo]], dtype=numpy.int32)
+                search_start_time = float(self.opt.gps_start_time[ifo] + \
+                                          self.opt.segment_start_pad[ifo])
+            if self.opt.trig_end_time:
+                f['search/end_time'] = numpy.array([\
+                        self.opt.trig_end_time[ifo]], dtype=numpy.int32)
+                search_end_time = float(self.opt.trig_end_time[ifo])
+            else:
+                f['search/end_time'] = numpy.array([self.opt.gps_end_time[ifo] \
+                        - self.opt.segment_end_pad[ifo]], dtype=numpy.int32)
+                search_end_time = float(self.opt.gps_end_time[ifo] - \
+                        self.opt.segment_end_pad[ifo])
+
+            if self.write_performance:
+                self.analysis_time = search_end_time - search_start_time
+                time_ratio = numpy.array([float(self.analysis_time) / float(self.run_time)])
+                temps_per_core = float(self.ntemplates) / float(self.ncores)
+                filters_per_core = float(self.nfilters) / float(self.ncores)
+                f['search/templates_per_core'] = \
+                    numpy.array([float(temps_per_core) * float(time_ratio)])
+                f['search/filter_rate_per_core'] = \
+                    numpy.array([filters_per_core / float(self.run_time)])
+                f['search/setup_time_fraction'] = \
+                    numpy.array([float(self.setup_time) / float(self.run_time)])
+
+            if 'gating_info' in self.global_params:
+                gating_info = self.global_params['gating_info']
+                for gate_type in ['file', 'auto']:
+                    if gate_type in gating_info:
+                        f['gating/' + gate_type + '/time'] = \
+                                numpy.array([float(g[0]) for g in \
+                                             gating_info[gate_type]])
+                        f['gating/' + gate_type + '/width'] = \
+                                numpy.array([g[1] for g in gating_info[gate_type]])
+                        f['gating/' + gate_type + '/pad'] = \
+                                numpy.array([g[2] for g in gating_info[gate_type]])
+
+    def finalize_template_events(self):
+        # Set ids (The event id shows how the ifo and network triggers correspond)
+        num_events = len(self.template_event_dict['network'])
+        new_event_ids = numpy.arange(self.event_index,
+                                              self.event_index+num_events)
+        for ifo in self.ifos:
+            self.template_event_dict[ifo]['event_id'] = new_event_ids
+            self.event_index = self.event_index+num_events
+
+        self.template_event_dict['network']['event_id'] = new_event_ids
+        #Move template events for each ifo to the events list
+        for ifo in self.ifos:
+            self.events = numpy.append(self.events,
+                                       self.template_event_dict[ifo])
+            self.template_event_dict[ifo] = numpy.array([],
+                                                        dtype=self.event_dtype)
+        #Move the template evetns for the network to the network events list
+        self.network_events = numpy.append(self.network_events,
+                                   self.template_event_dict['network'])
+        self.template_event_dict['network'] = numpy.array([],
+                                                    dtype=self.event_dtype)
+
+
 class EventManagerMultiDet(EventManager):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
         self.opt = opt
@@ -742,4 +974,4 @@ __all__ = ['threshold_only', 'threshold_and_cluster', 'newsnr', 'effsnr','newsnr
            'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
            'threshold_real_numpy', 'threshold_only',
-           'EventManager', 'EventManagerMultiDet']
+           'EventManager', 'EventManagerMultiDet','EventManagerCoherent']
