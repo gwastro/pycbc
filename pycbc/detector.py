@@ -52,7 +52,7 @@ def get_available_detectors():
 
 
 class Detector(object):
-    """A gravitaional wave detector
+    """A gravitational wave detector
     """
     def __init__(self, detector_name):
         self.name = str(detector_name)
@@ -67,7 +67,7 @@ class Detector(object):
 
         Parameters
         ----------
-        detector: Detector
+        det: Detector
             The other detector to determine the light travel time to.
 
         Returns
