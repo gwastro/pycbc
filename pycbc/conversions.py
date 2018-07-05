@@ -626,6 +626,62 @@ def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
 
 det_tc = numpy.vectorize(_det_tc)
 
+def _optimal_orientation_from_detector(detector_name, tc):
+    """ Low-level function to be called from _optimal_dec_from_detector
+    and _optimal_ra_from_detector"""
+
+    d = Detector(detector_name)
+    ra, dec = d.optimal_orientation(tc)
+
+    return ra, dec
+
+
+def _optimal_dec_from_detector(detector_name, tc):
+    """For a given detector and GPS time, return the optimal orientation
+    (directly overhead of the detector) in declination.
+
+
+    Parameters
+    ----------
+    detector_name : string
+        The name of the detector, e.g., 'H1'.
+    tc : float
+        The GPS time of the coalescence of the signal in the `ref_frame`.
+
+    Returns
+    -------
+    float :
+        The declination of the signal, in radians.
+    """
+    return _optimal_orientation_from_detector(detector_name, tc)[1]
+
+
+optimal_dec_from_detector = numpy.vectorize(_optimal_dec_from_detector)
+
+
+def _optimal_ra_from_detector(detector_name, tc):
+    """For a given detector and GPS time, return the optimal orientation
+    (directly overhead of the detector) in right ascension.
+
+
+    Parameters
+    ----------
+    detector_name : string
+        The name of the detector, e.g., 'H1'.
+    tc : float
+        The GPS time of the coalescence of the signal in the `ref_frame`.
+
+    Returns
+    -------
+    float :
+        The declination of the signal, in radians.
+    """
+    return _optimal_orientation_from_detector(detector_name, tc)[0]
+
+
+optimal_ra_from_detector = numpy.vectorize(_optimal_ra_from_detector)
+
+
 #
 # =============================================================================
 #
@@ -711,4 +767,5 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass', 'secondary_ma
            'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
+           'optimal_dec_from_detector','optimal_ra_from_detector'
           ]
