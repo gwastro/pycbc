@@ -23,7 +23,6 @@ time_init = time.time()
 import logging
 from collections import defaultdict
 import argparse
-import events2
 from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
@@ -427,7 +426,7 @@ with ctx:
                }
     network_names = sorted(network_out_vals.keys())
 
-    event_mgr = events2.EventManagerCoherent(opt, opt.instruments, ifo_names,
+    event_mgr = events.EventManagerCoherent(opt, opt.instruments, ifo_names,
 					[ifo_out_types[n] for n in ifo_names], network_names, [network_out_types[n] for n in network_names])
 
     logging.info("Read in template bank")
