@@ -626,7 +626,7 @@ def _det_tc(detector_name, ra, dec, tc, ref_frame='geocentric'):
 
 det_tc = numpy.vectorize(_det_tc)
 
-def _detector_to_optimal_orientation(detector_name, tc):
+def _optimal_orientation_from_detector(detector_name, tc):
     """ Low-level function to be called from _optimal_dec_from_detector
     and _optimal_ra_from_detector"""
 
@@ -638,23 +638,7 @@ def _detector_to_optimal_orientation(detector_name, tc):
 
 def _optimal_dec_from_detector(detector_name, tc):
     """For a given detector and GPS time, return the optimal orientation
-    in declination.
-
-    A typical use case: Given a detector D and GPS time T, one wants to
-    inject signals that are optimally oriented. Therefore, values of
-    right ascension (ra) and declination (dec) are not known before calling
-    pycbc_create_injections. This transform computes them on-the-fly.
-
-    Example:
-
-    >>> pycbc_create_injections --config-files params.ini
-    >>> cat params.ini
-
-    [waveform_transforms-ra+dec]
-    name = custom
-    inputs = tc
-    ra = optimal_ra_from_detector("H1",tc)
-    dec = optimal_dec_from_detector("H1",tc)
+    (directly overhead of the detector) in declination.
 
 
     Parameters
@@ -669,7 +653,7 @@ def _optimal_dec_from_detector(detector_name, tc):
     float :
         The declination of the signal, in radians.
     """
-    return _detector_to_optimal_orientation(detector_name, tc)[1]
+    return _optimal_orientation_from_detector(detector_name, tc)[1]
 
 
 optimal_dec_from_detector = numpy.vectorize(_optimal_dec_from_detector)
@@ -677,23 +661,7 @@ optimal_dec_from_detector = numpy.vectorize(_optimal_dec_from_detector)
 
 def _optimal_ra_from_detector(detector_name, tc):
     """For a given detector and GPS time, return the optimal orientation
-    in right ascension.
-
-    A typical use case: Given a detector D and GPS time T, one wants to
-    inject signals that are optimally oriented. Therefore, values of
-    right ascension (ra) and declination (dec) are not known before calling
-    pycbc_create_injections. This transform computes them on-the-fly.
-
-    Example:
-
-    >>> pycbc_create_injections --config-files params.ini
-    >>> cat params.ini
-
-    [waveform_transforms-ra+dec]
-    name = custom
-    inputs = tc
-    ra = optimal_ra_from_detector("H1",tc)
-    dec = optimal_dec_from_detector("H1",tc)
+    (directly overhead of the detector) in right ascension.
 
 
     Parameters
@@ -708,7 +676,7 @@ def _optimal_ra_from_detector(detector_name, tc):
     float :
         The declination of the signal, in radians.
     """
-    return _detector_to_optimal_orientation(detector_name, tc)[0]
+    return _optimal_orientation_from_detector(detector_name, tc)[0]
 
 
 optimal_ra_from_detector = numpy.vectorize(_optimal_ra_from_detector)
