@@ -32,9 +32,9 @@ except ImportError:
 
 from setuptools.command.install import install as _install
 from setuptools.command.install_egg_info import install_egg_info as egg_info
+from setuptools import Extension, setup, Command
 
 from distutils.errors import DistutilsError
-from distutils.core import setup, Command, Extension
 from distutils.command.clean import clean as _clean
 from distutils.file_util import write_file
 from distutils.version import LooseVersion
@@ -316,12 +316,20 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 # do the actual work of building the package
 VERSION = get_version_info()
 
+cythonext = ['waveform.spa_tmplt']
+ext = [Extension("pycbc.%s_cpu" % name,
+             ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
+             extra_compile_args=[ '-O3', '-w', '-msse4.2',
+                                 '-ffast-math', '-ffinite-math-only'],
+             ) for name in cythonext
+             ]
+
 setup (
     name = 'PyCBC',
     version = VERSION,
     description = 'Analyze gravitational-wave data, find signals, and study their parameters.',
     long_description = open('descr.rst').read(),
-    author = 'Ligo Virgo Collaboration - PyCBC team',
+    author = 'Ligo Virgo Collaboration and the PyCBC team',
     author_email = 'alex.nitz@ligo.org',
     url = 'http://www.pycbc.org/',
     download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
@@ -484,8 +492,7 @@ setup (
     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
                     'pycbc.results': find_package_data('pycbc/results'),
                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
-    ext_modules = [
-    ],
+    ext_modules = ext,
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
