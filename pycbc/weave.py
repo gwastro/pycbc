@@ -22,9 +22,11 @@ import os.path, sys
 import logging
 import shutil, atexit, signal
 import fcntl
-import weave.inline_tools as inline_tools
 
-_compile_function = inline_tools.compile_function
+PY3 = sys.version_info[0] == 3
+if not PY3:
+    import weave.inline_tools as inline_tools
+    _compile_function = inline_tools.compile_function
 
 ## Blatently taken from weave to implement a crude file locking scheme
 def pycbc_compile_function(code,arg_names,local_dict,global_dict,
@@ -61,8 +63,13 @@ def pycbc_compile_function(code,arg_names,local_dict,global_dict,
 
     return func
 
-inline_tools.compile_function = pycbc_compile_function
-from weave import inline
+if not PY3:
+    inline_tools.compile_function = pycbc_compile_function
+    from weave import inline
+else:
+    def inline(*args, **kwds):
+        raise RuntimeError("Oh no! You tried to use capabilities"
+                           "s we haven't ported to python3 yet")
 
 def insert_weave_option_group(parser):
     """
