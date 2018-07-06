@@ -30,26 +30,29 @@ try:
 except ImportError:
     from trace import _fullmodname as fullmodname
 
-from distutils.errors import DistutilsError
-from distutils.command.clean import clean as _clean
-from distutils.file_util import write_file
-from distutils.version import LooseVersion
 
 from setuptools.command.install import install as _install
 from setuptools.command.install_egg_info import install_egg_info as egg_info
 from setuptools import Extension, setup, Command
 from setuptools.command.build_ext import build_ext as _build_ext
 
+from distutils.errors import DistutilsError
+from distutils.command.clean import clean as _clean
+from distutils.file_util import write_file
+from distutils.version import LooseVersion
+
+
+
 requires = []
-setup_requires = []
+setup_requires = ['numpy>=1.13.0',]
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
+                      'cython',
                       'decorator>=3.4.2',
                       'scipy>=0.16.0',
                       'weave>=0.16.0',
                       'unittest2',
                       'matplotlib>=1.5.1',
-                      'numpy>=1.13.0',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
@@ -62,7 +65,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       'six>=1.10.0',
-                      'cython',
                       ]
 
 def find_package_data(dirname):
@@ -79,15 +81,17 @@ def find_package_data(dirname):
     return [os.path.relpath(path, dirname) for path in items]
 
 class cbuild_ext(_build_ext):
-    """build_ext command for use when numpy headers are needed."""
     def run(self):
-        # Import numpy here, only when headers are needed
-        import numpy
+        import pkg_resources
+    
+        # At this point we can be sure pip has already installed numpy
+        numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
 
-        # Add numpy headers to include_dirs
-        self.include_dirs.append(numpy.get_include())
+        for ext in self.extensions:
+            if (hasattr(ext, 'include_dirs') and
+                    numpy_incl not in ext.include_dirs):
+                ext.include_dirs.append(numpy_incl)
 
-        # Call original build_ext command
         _build_ext.run(self)
 
 
@@ -323,7 +327,7 @@ cmdclass = { 'test'  : test,
              'test_cpu':test_cpu,
              'test_cuda':test_cuda,
              'clean' : clean,
-             'build_ext': cbuild_ext
+             'build_ext':cbuild_ext
             }
 
 extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
