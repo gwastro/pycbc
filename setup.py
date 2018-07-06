@@ -30,13 +30,8 @@ try:
 except ImportError:
     from trace import _fullmodname as fullmodname
 
-try:
-    from setuptools.command.install import install as _install
-    from setuptools.command.install_egg_info import install_egg_info as egg_info
-    USE_SETUPTOOLS = True
-except:
-    from distutils.command.install import install as _install
-    USE_SETUPTOOLS = False
+from setuptools.command.install import install as _install
+from setuptools.command.install_egg_info import install_egg_info as egg_info
 
 from distutils.errors import DistutilsError
 from distutils.core import setup, Command, Extension
@@ -44,21 +39,7 @@ from distutils.command.clean import clean as _clean
 from distutils.file_util import write_file
 from distutils.version import LooseVersion
 
-try:
-    import numpy.version
-    if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
-        print(" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
-              " We found version %s already installed. Please update \n"
-              " to a more recent version and then retry PyCBC  \n"
-              " installation. \n"
-              " \n"
-              " Using pip: [pip install 'numpy>=1.6.4' --upgrade --user] \n"
-              "" % numpy.version.version)
-        exit(1)
-except ImportError:
-    pass
-
-requires = ['lal.lal', 'lalsimulation.lalsimulation']
+requires = []
 setup_requires = []
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
@@ -80,18 +61,8 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       'six>=1.10.0',
+                      'cython',
                       ]
-
-#FIXME Remove me when we bump to h5py > 2.5
-try:
-    import h5py
-except ImportError:
-    setup_requires.append('cython')
-else:
-    import h5py.version
-    if h5py.version.version < '2.5':
-        setup_requires.append('cython')
-
 
 def find_package_data(dirname):
     def find_paths(dirname):
