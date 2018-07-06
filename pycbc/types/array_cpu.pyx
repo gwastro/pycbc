@@ -28,10 +28,8 @@ import numpy as _np
 from pycbc.types.array import common_kind, complex128, float64
 from . import aligned as _algn
 from scipy.linalg import blas
-from pycbc.weave import inline
-from pycbc.opt import omp_libs, omp_flags
-from pycbc import WEAVE_FLAGS
 from pycbc.types import real_same_precision_as
+cimport cython, numpy
 
 def zeros(length, dtype=_np.float64):
     return _algn.zeros(length, dtype=dtype)
@@ -47,33 +45,6 @@ def dot(self, other):
 
 def min(self):
     return self.data.min()
-
-code_abs_arg_max = """
-float val = 0;
-int l = 0;
-for (int i=0; i<N; i++){
-    float mag = data[i*2] * data[i*2] + data[i*2+1] * data[i*2+1];
-    if ( mag > val){
-        l = i;
-        val = mag;
-    }
-}
-loc[0] = l;
-"""
-code_flags = [WEAVE_FLAGS] + omp_flags
-
-
-def abs_arg_max(self):
-    if self.kind == 'real':
-        return _np.argmax(abs(self.data))
-    else:
-        data = _np.array(self._data, # pylint:disable=unused-variable
-                         copy=False).view(real_same_precision_as(self))
-        loc = _np.array([0])
-        N = len(self) # pylint:disable=unused-variable
-        inline(code_abs_arg_max, ['data', 'loc', 'N'], libraries=omp_libs,
-               extra_compile_args=code_flags)
-        return loc[0]
 
 def abs_max_loc(self):
     if self.kind == 'real':
@@ -113,27 +84,47 @@ def weighted_inner(self, other, weight):
 
     return _np.sum(self.data.conj() * other / weight, dtype=acum_dtype)
 
+ctypedef fused REALTYPE:
+    float
+    double
 
-inner_code = """
-double value = 0;
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def inner_real(numpy.ndarray [REALTYPE, ndim = 1] a, numpy.ndarray [REALTYPE, ndim = 1] b):
+    cdef double total = 0
+    cdef unsigned int xmax = a.shape[0]
+    cdef unsigned int i
+    
+    cdef REALTYPE* x = &a[0]
+    cdef REALTYPE* y = &b[0]
 
-#pragma omp parallel for reduction(+:value)
-for (int i=0; i<N; i++){
-    float val = x[i] * y[i];
-    value += val;
-}
-total[0] = value;
-"""
+    for i in range(xmax):
+        total += x[i] * y[i]
+    return total
+    
+ctypedef fused COMPLEXTYPE:
+    float complex
+    double complex
 
+def abs_arg_max_complex(numpy.ndarray [COMPLEXTYPE, ndim=1] a):
+    cdef unsigned int xmax = a.shape[0]
+    cdef double mag
+    cdef double magmax = 0
+    cdef unsigned int idx = 0
 
-def inner_inline_real(self, other):
-    x = _np.array(self._data, copy=False) # pylint:disable=unused-variable
-    y = _np.array(other, copy=False) # pylint:disable=unused-variable
-    total = _np.array([0.], dtype=float64)
-    N = len(self) # pylint:disable=unused-variable
-    inline(inner_code, ['x', 'y', 'total', 'N'], libraries=omp_libs,
-           extra_compile_args=code_flags)
-    return total[0]
+    for i in range(xmax):
+        mag = a[i].real * a[i].real + a[i].imag * a[i].imag
+        if mag > magmax:
+            magmax = mag
+            idx = i
+            
+    return idx  
+
+def abs_arg_max(self):
+    if self.kind == 'real':
+        return _np.argmax(abs(self.data))
+    else:
+        return abs_arg_max_complex(self._data)    
 
 def inner(self, other):
     """ Return the inner product of the array with complex conjugation.
@@ -142,7 +133,7 @@ def inner(self, other):
     if cdtype.kind == 'c':
         return _np.sum(self.data.conj() * other, dtype=complex128)
     else:
-        return inner_inline_real(self, other)
+        return inner_real(self.data, other)
 
 def vdot(self, other):
     """ Return the inner product of the array with complex conjugation.

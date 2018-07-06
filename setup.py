@@ -332,7 +332,7 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 # do the actual work of building the package
 VERSION = get_version_info()
 
-cythonext = ['waveform.spa_tmplt']
+cythonext = ['waveform.spa_tmplt', 'types.array']
 ext = []
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,
