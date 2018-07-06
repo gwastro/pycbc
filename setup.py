@@ -66,7 +66,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       ]
 
 if not PY3:
-    install_requires += ['weave>0.16.0']
+    install_requires += ['weave>=0.16.0']
 
 def find_package_data(dirname):
     def find_paths(dirname):
