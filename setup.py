@@ -30,18 +30,15 @@ try:
 except ImportError:
     from trace import _fullmodname as fullmodname
 
-
-from setuptools.command.install import install as _install
-from setuptools.command.install_egg_info import install_egg_info as egg_info
-from setuptools import Extension, setup, Command
-from setuptools.command.build_ext import build_ext as _build_ext
-
 from distutils.errors import DistutilsError
 from distutils.command.clean import clean as _clean
 from distutils.file_util import write_file
 from distutils.version import LooseVersion
 
-
+from setuptools.command.install import install as _install
+from setuptools.command.install_egg_info import install_egg_info as egg_info
+from setuptools import Extension, setup, Command
+from setuptools.command.build_ext import build_ext as _build_ext
 
 requires = []
 setup_requires = ['numpy>=1.13.0',]
@@ -83,7 +80,7 @@ def find_package_data(dirname):
 class cbuild_ext(_build_ext):
     def run(self):
         import pkg_resources
-    
+
         # At this point we can be sure pip has already installed numpy
         numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
 
@@ -334,22 +331,6 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 
 # do the actual work of building the package
 VERSION = get_version_info()
-
-#delayed import of numpy
-class delay(list):
-    def __init__(self, *args):
-        list.__init__(self, *args)
-        self.start = False
-        
-    def __getitem__(self, *args):
-        if not self.start:
-            import numpy
-            self += [numpy.get_include()]
-        return list.__getitem__(self, *args)
-        
-    def __len__(self):
-        if not self.start:
-            return 1
 
 cythonext = ['waveform.spa_tmplt']
 ext = []
