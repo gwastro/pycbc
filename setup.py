@@ -38,6 +38,7 @@ from distutils.version import LooseVersion
 from setuptools.command.install import install as _install
 from setuptools.command.install_egg_info import install_egg_info as egg_info
 from setuptools import Extension, setup, Command
+from setuptools.command.build_ext import build_ext as _build_ext
 
 requires = []
 setup_requires = []
@@ -76,6 +77,19 @@ def find_package_data(dirname):
         return items
     items = find_paths(dirname)
     return [os.path.relpath(path, dirname) for path in items]
+
+class cbuild_ext(_build_ext):
+    """build_ext command for use when numpy headers are needed."""
+    def run(self):
+        # Import numpy here, only when headers are needed
+        import numpy
+
+        # Add numpy headers to include_dirs
+        self.include_dirs.append(numpy.get_include())
+
+        # Call original build_ext command
+        _build_ext.run(self)
+
 
 # Add swig-generated files to the list of things to clean, so they
 # get regenerated each time.
@@ -309,12 +323,29 @@ cmdclass = { 'test'  : test,
              'test_cpu':test_cpu,
              'test_cuda':test_cuda,
              'clean' : clean,
+             'build_ext': cbuild_ext
             }
 
 extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 
 # do the actual work of building the package
 VERSION = get_version_info()
+
+#delayed import of numpy
+class delay(list):
+    def __init__(self, *args):
+        list.__init__(self, *args)
+        self.start = False
+        
+    def __getitem__(self, *args):
+        if not self.start:
+            import numpy
+            self += [numpy.get_include()]
+        return list.__getitem__(self, *args)
+        
+    def __len__(self):
+        if not self.start:
+            return 1
 
 cythonext = ['waveform.spa_tmplt']
 ext = []
