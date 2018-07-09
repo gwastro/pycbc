@@ -197,6 +197,11 @@ class TimeSeries(Array):
     sample_times = property(get_sample_times,
                             doc="Array containing the sample times.")
 
+    def at_time(self, time):
+        """ Return the value at the specified gps time
+        """
+        return self[int((time-self.start_time)*self.sample_rate)]
+
     def __eq__(self,other):
         """
         This is the Python special method invoked whenever the '=='
