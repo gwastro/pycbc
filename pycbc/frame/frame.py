@@ -98,7 +98,6 @@ def locations_to_cache(locations, latest=False):
         A cumulative lal cache object containing the files derived from the
     list of locations
     """
-    import os.path
     cum_cache = lal.Cache()
     for source in locations:
         flist = glob.glob(source)
@@ -780,4 +779,3 @@ class StatusBuffer(DataBuffer):
         except RuntimeError:
             self.null_advance(blocksize)
             return False
-
