@@ -197,7 +197,7 @@ class TimeSeries(Array):
     sample_times = property(get_sample_times,
                             doc="Array containing the sample times.")
 
-    def at(self, time):
+    def at_time(self, time):
         """ Return the value at the specified gps time
         """
         return self[int((time-self.start_time)*self.sample_rate)]

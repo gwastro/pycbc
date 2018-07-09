@@ -125,7 +125,7 @@ class FrequencySeries(Array):
                                epoch=self._epoch,
                                copy=False)
 
-    def at(self, freq):
+    def at_frequency(self, freq):
         """ Return the value at the specified frequency
         """
         return self[int(freq / self.delta_f)]
