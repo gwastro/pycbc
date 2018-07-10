@@ -27,12 +27,12 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 """
 
-import os, sys, shutil, stat, copy
+import os, sys, shutil, stat, copy, itertools
 import logging
-import urllib2, urlparse
+import urlparse
 import lal
 from glue import segments, segmentsUtils
-from glue.ligolw import utils, table, lsctables, ligolw
+from pycbc.ligolw import table, lsctables, ligolw
 from pycbc.workflow.core import Executable, FileList, Node, SegFile, make_analysis_dir, make_external_call, File
 from pycbc.workflow.core import resolve_url
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
@@ -285,7 +285,7 @@ def get_analyzable_segments(workflow, sci_segs, cat_files, out_dir, tags=None):
 def get_cumulative_veto_group_files(workflow, option, cat_files,
                                     out_dir, execute_now=True, tags=None):
     """
-    Get the cumulative veto files that define the different backgrounds 
+    Get the cumulative veto files that define the different backgrounds
     we want to analyze, defined by groups of vetos.
 
     Parameters
@@ -308,7 +308,7 @@ def get_cumulative_veto_group_files(workflow, option, cat_files,
     Returns
     --------
     seg_files : workflow.core.FileList instance
-        The cumulative segment files for each veto group.   
+        The cumulative segment files for each veto group.
     names : list of strings
         The segment names for the corresponding seg_file
     cat_files : workflow.core.FileList instance
@@ -345,7 +345,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
     these segments and to combine/edit such files as necessary for analysis.
     The current modules have the capability to generate files at runtime or to
     generate files that are not needed for workflow generation within the workflow.
-    
+
     Parameters
     -----------
     workflow : pycbc.workflow.core.Workflow
@@ -354,7 +354,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
         segments for this analysis and the start and end times to search for
         segments over.
     out_dir : path
-        The directory in which output will be stored.    
+        The directory in which output will be stored.
     tag : string, optional (default=None)
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
@@ -378,7 +378,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
     """
     logging.info("Entering segment generation module")
     make_analysis_dir(out_dir)
-    
+
     cp = workflow.cp
 
     # Parse for options in ini file
@@ -401,16 +401,12 @@ def setup_segment_generation(workflow, out_dir, tag=None):
                                      "segments-veto-definer-url", [tag])
         vetoDefBaseName = os.path.basename(vetoDefUrl)
         vetoDefNewPath = os.path.join(out_dir, vetoDefBaseName)
-        response = urllib2.urlopen(vetoDefUrl)
-        html = response.read()
-        out_file = open(vetoDefNewPath, 'w')
-        out_file.write(html)
-        out_file.close()
+        resolve_url(vetoDefUrl,out_dir)
         # and update location
         cp.set("workflow-segments", "segments-veto-definer-file",
                 vetoDefNewPath)
 
-    
+
     if cp.has_option_tags("workflow-segments",
                           "segments-minimum-segment-length", [tag]):
         minSegLength = int( cp.get_opt_tags("workflow-segments",
@@ -433,7 +429,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
         raise ValueError(msg)
 
     logging.info("Generating segments with setup_segment_gen_mixed")
-    segFilesList = setup_segment_gen_mixed(workflow, veto_categories, 
+    segFilesList = setup_segment_gen_mixed(workflow, veto_categories,
                              out_dir, max_veto, tag=tag,
                              generate_coincident_segs=generate_coincident_segs)
     logging.info("Segments obtained")
@@ -464,7 +460,7 @@ def setup_segment_generation(workflow, out_dir, tag=None):
     logging.info("Leaving segment generation module")
     return segsToAnalyse, segFilesList
 
-def setup_segment_gen_mixed(workflow, veto_categories, out_dir, 
+def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                             maxVetoAtRunTime, tag=None,
                             generate_coincident_segs=True):
     """
@@ -489,7 +485,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         List of veto categories to generate segments for. If this stops being
         integers, this can be changed here.
     out_dir : path
-        The directory in which output will be stored.    
+        The directory in which output will be stored.
     maxVetoAtRunTime : int
         Generate veto files at run time up to this category. Veto categories
         beyond this in veto_categories will be generated in the workflow.
@@ -515,7 +511,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         analysis (e.g. for performing DQ vetoes). If the file was generated at
         run-time the segment lists contained within these files will be an
         attribute
-        of the instance. (If it will be generated in the workflow it will 
+        of the instance. (If it will be generated in the workflow it will
         not be because I am not psychic).
     """
     cp = workflow.cp
@@ -525,7 +521,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
     segValidSeg = workflow.analysis_time
     # Will I need to add some jobs to the workflow?
     vetoGenJob = create_segs_from_cats_job(cp, out_dir, workflow.ifo_string)
-    
+
     for ifo in workflow.ifos:
         logging.info("Generating science segments for ifo %s" %(ifo))
         currSciSegs, currSciXmlFile, _ = get_sci_segs_for_ifo(ifo, cp,
@@ -538,22 +534,22 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
                 msg += "for ifo %s to workflow." %(ifo)
                 logging.info(msg)
                 execute_status = False
-                                 
+
             if category <= maxVetoAtRunTime:
                 logging.info("Generating CAT_%d segments for ifo %s." \
                              %(category,ifo))
                 execute_status = True
 
-            currVetoXmlFile = get_veto_segs(workflow, ifo, category, 
+            currVetoXmlFile = get_veto_segs(workflow, ifo, category,
                                                 start_time, end_time, out_dir,
-                                                vetoGenJob, 
-                                                execute_now=execute_status)  
+                                                vetoGenJob,
+                                                execute_now=execute_status)
 
-            segFilesList.append(currVetoXmlFile) 
+            segFilesList.append(currVetoXmlFile)
             # Store the CAT_1 veto segs for use below
             if category == 1:
                 cat1Segs = currVetoXmlFile.return_union_seglist()
-                
+
         analysedSegs = currSciSegs - cat1Segs
         analysedSegs.coalesce()
         analysedSegDict = segments.segmentlistdict()
@@ -595,7 +591,7 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
             else:
                 execute_status = False
             currSegFile = get_cumulative_segs(workflow, categories,
-                                segFilesList, out_dir, 
+                                segFilesList, out_dir,
                                 execute_now=execute_status, tags=currTags)
 
             segFilesList.append(currSegFile)
@@ -640,7 +636,7 @@ def get_sci_segs_for_ifo(ifo, cp, start_time, end_time, out_dir, tags=None):
     end_time : gps time (either int/LIGOTimeGPS)
         The time at which to stop searching for segments.
     out_dir : path
-        The directory in which output will be stored.    
+        The directory in which output will be stored.
     tag : string, optional (default=None)
         Use this to specify a tag. This can be used if this module is being
         called more than once to give call specific configuration (by setting
@@ -687,7 +683,7 @@ def get_sci_segs_for_ifo(ifo, cp, start_time, end_time, out_dir, tags=None):
             "--gps-end-time", str(end_time),
             "--include-segments", sci_seg_name,
             "--output-file", sci_xml_file_path ]
-   
+
         make_external_call(seg_find_call, out_dir=os.path.join(out_dir,'logs'),
                                 out_basename='%s-science-call' %(ifo.lower()) )
 
@@ -704,7 +700,7 @@ def get_sci_segs_for_ifo(ifo, cp, start_time, end_time, out_dir, tags=None):
     sci_segs = sci_xml_file.return_union_seglist()
     return sci_segs, sci_xml_file, out_sci_seg_name
 
-def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir, 
+def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
                   veto_gen_job, tags=None, execute_now=False):
     """
     Obtain veto segments for the selected ifo and veto category and add the job
@@ -723,7 +719,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
     end_time : gps time (either int/LIGOTimeGPS)
         The time at which to stop searching for segments.
     out_dir : path
-        The directory in which output will be stored.    
+        The directory in which output will be stored.
     vetoGenJob : Job
         The veto generation Job class that will be used to create the Node.
     tag : string, optional (default=None)
@@ -791,7 +787,7 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
 
 def create_segs_from_cats_job(cp, out_dir, ifo_string, tags=None):
     """
-    This function creates the CondorDAGJob that will be used to run 
+    This function creates the CondorDAGJob that will be used to run
     ligolw_segments_from_cats as part of the workflow
 
     Parameters
@@ -818,28 +814,28 @@ def create_segs_from_cats_job(cp, out_dir, ifo_string, tags=None):
     if tags is None:
         tags = []
 
-    seg_server_url = cp.get_opt_tags("workflow-segments", 
+    seg_server_url = cp.get_opt_tags("workflow-segments",
                                    "segments-database-url", tags)
-    veto_def_file = cp.get_opt_tags("workflow-segments", 
+    veto_def_file = cp.get_opt_tags("workflow-segments",
                                   "segments-veto-definer-file", tags)
 
     job = Executable(cp, 'segments_from_cats', universe='local',
                                ifos=ifo_string, out_dir=out_dir, tags=tags)
     job.add_opt('--separate-categories')
     job.add_opt('--segment-url', seg_server_url)
-    
+
     job.add_opt('--veto-file', veto_def_file)
     # FIXME: Would like the proxy in the Workflow instance
     # FIXME: Explore using the x509 condor commands
     # If the user has a proxy set in the environment, add it to the job
     return job
-    
+
 def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
                         tags=None, execute_now=False, segment_name=None):
     """
     Function to generate one of the cumulative, multi-detector segment files
     as part of the workflow.
-   
+
     Parameters
     -----------
     workflow: pycbc.workflow.core.Workflow
@@ -867,14 +863,14 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
     cp = workflow.cp
     # calculate the cumulative veto files for a given ifo
     for ifo in workflow.ifos:
-        cum_job = LigoLWCombineSegsExecutable(cp, 'ligolw_combine_segments', 
+        cum_job = LigoLWCombineSegsExecutable(cp, 'ligolw_combine_segments',
                        out_dir=out_dir, tags=[segment_name]+tags, ifos=ifo)
         inputs = []
         files = seg_files_list.find_output_with_ifo(ifo)
         for category in categories:
             file_list = files.find_output_with_tag('VETO_CAT%d' %(category))
-            inputs+=file_list                                                      
-        
+            inputs+=file_list
+
         cum_node  = cum_job.create_node(valid_segment, inputs, segment_name)
         if file_needs_generating(cum_node.output_files[0].cache_entry.path,
                                  workflow.cp, tags=tags):
@@ -888,7 +884,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
                 fil.node = None
                 fil.PFN(fil.storage_path, site='local')
         add_inputs += cum_node.output_files
-            
+
     # add cumulative files for each ifo together
     name = '%s_VETO_SEGMENTS' %(segment_name)
     outfile = File(workflow.ifos, name, workflow.analysis_time,
@@ -934,7 +930,7 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
     """
     if tags is None:
         tags = []
-    llwadd_job = LigolwAddExecutable(workflow.cp, 'llwadd', 
+    llwadd_job = LigolwAddExecutable(workflow.cp, 'llwadd',
                        ifo=output_file.ifo_list, out_dir=out_dir, tags=tags)
     add_node = llwadd_job.create_node(output_file.segment, input_files,
                                    output=output_file)
@@ -961,7 +957,7 @@ def find_playground_segments(segs):
       ----------
       segs : segmentfilelist
           A segmentfilelist to find playground segments.
-        
+
       Returns
       -------
       outlist : segmentfilelist
@@ -1008,8 +1004,7 @@ def find_playground_segments(segs):
 
     return outlist
 
-def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
-                                   sngl_ifo=False):
+def get_triggered_coherent_segment(workflow, sciencesegs):
     """
     Construct the coherent network on and off source segments. Can switch to
     construction of segments for a single IFO search when coherent segments
@@ -1019,13 +1014,8 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
     -----------
     workflow : pycbc.workflow.core.Workflow
         The workflow instance that the calculated segments belong to.
-    out_dir : str
-        The directory in which output will be stored.
     sciencesegs : dict
         Dictionary of all science segments within analysis time.
-    sngl_ifo : bool, optional (default=False)
-        If true, will fall back on single IFO segments if coherent segments
-        do not match the required criteria.
 
     Returns
     --------
@@ -1035,16 +1025,10 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
     offsource : glue.segments.segmentlistdict
         A dictionary containing the off source segments for network IFOs
     """
-    logging.info("Calculating optimal coherent segment.")
 
     # Load parsed workflow config options
     cp = workflow.cp
     triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
-    triggername = cp.get('workflow', 'trigger-name')
-    minbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
-                                            'min-before')))
-    minafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
-                                           'min-after')))
     minduration = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                               'min-duration')))
     maxduration = int(os.path.basename(cp.get('workflow-exttrig_segments',
@@ -1055,36 +1039,14 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
                                           'on-after')))
     padding = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'pad-data')))
+    if cp.has_option("workflow-condition_strain", "do-gating"):
+        padding += int(os.path.basename(cp.get("condition_strain",
+                                               "pad-data")))
     quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                          'quanta')))
-    bufferleft = int(cp.get('workflow-exttrig_segments', 'num-buffer-before'))
-    bufferright = int(cp.get('workflow-exttrig_segments', 'num-buffer-after'))
 
     # Check available data segments meet criteria specified in arguments
-    sciencesegs = segments.segmentlistdict(sciencesegs)
     commonsegs = sciencesegs.extract_common(sciencesegs.keys())
-    if triggertime not in commonsegs[commonsegs.keys()[0]]:
-        if sngl_ifo:
-            snglsegs = segments.segmentlistdict()
-            for key in sciencesegs.keys():
-                if triggertime in sciencesegs[key]:
-                    snglsegs[key] = sciencesegs[key]
-                    logging.warning("Trigger is only found in %s segments. "
-                                    "Falling back on single IFO data." % key)
-                    return get_triggered_single_ifo_segment(workflow, out_dir,
-                                                            snglsegs)
-            if len(snglsegs.keys()) == 0:
-                logging.error("Trigger is not contained within any available "
-                              "science segment. Exiting.")
-                return None, None
-        else:
-            logging.error("Trigger is not contained within any available "
-                          "coherent science segment. If you wish to enable "
-                          "single IFO running add the option "
-                          "'allow-single-ifo-search' to the [workflow] "
-                          "section of your configuration file. Exiting.")
-            return None, None
-
     offsrclist = commonsegs[commonsegs.keys()[0]]
     if len(offsrclist) > 1:
         logging.info("Removing network segments that do not contain trigger "
@@ -1095,41 +1057,12 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
     else:
         offsrc = offsrclist[0]
 
-    if (triggertime - onbefore - minbefore - padding not in offsrc) or (
-            triggertime + onafter + minafter + padding not in offsrc):
-        if sngl_ifo:
-            logging.warning("Not enough data either side of trigger time in "
-                            "coherent segment. Falling back on single IFO "
-                            "data.")
-            return get_triggered_single_ifo_segment(workflow, out_dir,
-                                                    sciencesegs)
-        else:
-            fail = segments.segment([triggertime - onbefore - minbefore - \
-                                     padding,
-                                     triggertime + onafter + minafter + \
-                                     padding])
-            logging.error("Not enough data either side of trigger time. If "
-                          "you wish to enable single IFO running add the "
-                          "option 'allow-single-ifo-search' to the [workflow] "
-                          "section of your configuration file. Exiting.")
-            return None, fail
-
     if abs(offsrc) < minduration + 2 * padding:
-        if sngl_ifo:
-            logging.warning("Available coherent segment shorter than minimum "
-                            "allowed duration. Falling back on single IFO "
-                            "data.")
-            return get_triggered_single_ifo_segment(workflow, out_dir,
-                                                    sciencesegs)
-        else:
-            fail = segments.segment([triggertime - minduration / 2. - padding,
-                                     triggertime + minduration / 2. + padding])
-            logging.error("Available network segment shorter than minimum "
-                          "allowed duration. If you wish to enable single IFO "
-                          "running add the option 'allow-single-ifo-search' "
-                          "to the [workflow] section of your configuration "
-                          "file. Exiting.")
-            return None, fail
+        fail = segments.segment([triggertime - minduration / 2. - padding,
+                                 triggertime + minduration / 2. + padding])
+        logging.warning("Available network segment shorter than minimum "
+                        "allowed duration.")
+        return None, fail
 
     # Will segment duration be the maximum desired length or not?
     if abs(offsrc) >= maxduration + 2 * padding:
@@ -1212,234 +1145,115 @@ def get_triggered_coherent_segment(workflow, out_dir, sciencesegs,
         onsource[iifo] = onsrc
         offsource[iifo] = offsrc
 
-    # Write off-source to xml file
-    coherent_seg = segments.segmentlistdict()
-    coherent_seg[ifos + ':COH_OFFSOURCE'] = offsrc
-    currFile = SegFile.from_segment_list_dict('COH_OFFSOURCE_SEGMENT',
-                      coherent_seg, ifo_list=ifos, extension="xml",
-                      directory=out_dir)
-    logging.info("Optimal coherent segment calculated.")
-
-    offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
-    segmentsUtils.tosegwizard(open(offsourceSegfile, "w"), offsrc)
-
-    onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
-    segmentsUtils.tosegwizard(file(onsourceSegfile, "w"), onsrc)
-
-    onlen = abs(onsrc[0])
-    bufferSegment = segments.segment(onstart - bufferleft * onlen,
-                                     onend + bufferright * onlen)
-    bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
-    segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
-                              segments.segmentlist([bufferSegment]))
-
     return onsource, offsource
 
-def get_triggered_single_ifo_segment(workflow, out_dir, sciencesegs):
-    """
-    Construct a single IFO segment for a triggered search.
-
-    Parameters
-    -----------
-    workflow : pycbc.workflow.core.Workflow
-        The workflow instance that the calculated segments belong to.
-    out_dir : str
-        The directory in which output will be stored.
-    sciencesegs : dict
-        Dictionary of interesting science segments within analysis time.
-
-    Returns
-    --------
-    onsource : glue.segments.segmentlistdict
-        A dictionary containing the on source segment for a single IFO
-
-    offsource : glue.segments.segmentlistdict
-        A dictionary containing the off source segment for a single IFO
-    """
-    # Load parsed workflow config options
+def generate_triggered_segment(workflow, out_dir, sciencesegs):
     cp = workflow.cp
+
+    if cp.has_option("workflow", "allow-single-ifo-search"):
+        min_ifos = 1
+    else:
+        min_ifos = 2
+
     triggertime = int(os.path.basename(cp.get('workflow', 'trigger-time')))
-    triggername = cp.get('workflow', 'trigger-name')
     minbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                             'min-before')))
     minafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                            'min-after')))
     minduration = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                               'min-duration')))
-    maxduration = int(os.path.basename(cp.get('workflow-exttrig_segments',
-                                              'max-duration')))
     onbefore = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                            'on-before')))
     onafter = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'on-after')))
     padding = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'pad-data')))
-    quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
-                                         'quanta')))
-    bufferleft = int(cp.get('workflow-exttrig_segments', 'num-buffer-before'))
-    bufferright = int(cp.get('workflow-exttrig_segments', 'num-buffer-after'))
+    if cp.has_option("workflow-condition_strain", "do-gating"):
+        padding += int(os.path.basename(cp.get("condition_strain",
+                                               "pad-data")))
 
-    # Check available data segments meet criteria specified in arguments
-    sciencesegs = segments.segmentlistdict(sciencesegs)
-    snglsegs = segments.segmentlistdict()
-    for key in sciencesegs.keys():
-        if triggertime in sciencesegs[key]:
-            snglsegs[key] = sciencesegs[key]
-            logging.info("Trigger is within %s segments." % key)
-    
-    if len(snglsegs.keys()) == 0:
-        logging.error("Trigger is not contained within any available segment. "
-                      "Exiting.")
-        return None, None
+    # How many IFOs meet minimum data requirements?
+    min_seg = segments.segment(triggertime - onbefore - minbefore - padding,
+                               triggertime + onafter + minafter + padding)
+    scisegs = segments.segmentlistdict({ifo: sciencesegs[ifo]
+            for ifo in sciencesegs.keys() if min_seg in sciencesegs[ifo]
+            and abs(sciencesegs[ifo]) >= minduration})
 
-    offsrc = segments.segmentlistdict()
-    for key in snglsegs.keys():
-        if len(snglsegs[key]) > 1:
-            logging.info("Removing network segments that do not contain "
-                         "trigger time.")
-            for seg in snglsegs[key]:
-                if triggertime in seg:
-                    offsrc[key] = seg
+    # Find highest number of IFOs that give an acceptable coherent segment
+    num_ifos = len(scisegs.keys())
+    while num_ifos >= min_ifos:
+        # Consider all combinations for a given number of IFOs
+        ifo_combos = itertools.combinations(scisegs.keys(), num_ifos)
+        onsource = {}
+        offsource = {}
+        for ifo_combo in ifo_combos:
+            ifos = "".join(ifo_combo)
+            logging.info("Calculating optimal segment for %s.", ifos)
+            segs = segments.segmentlistdict({ifo: scisegs[ifo]
+                                             for ifo in ifo_combo})
+            onsource[ifos], offsource[ifos] = get_triggered_coherent_segment(\
+                    workflow, segs)
+
+        # Which combination gives the longest coherent segment?
+        valid_combs = [iifos for iifos in onsource.keys()
+                       if onsource[iifos] is not None]
+
+        if len(valid_combs) == 0:
+            # If none, offsource dict will contain segments showing criteria
+            # that have not been met, for use in plotting
+            if len(offsource.keys()) > 1:
+                seg_lens = {ifos: abs(offsource[ifos].itervalues().next()[0])
+                            for ifos in offsource.keys()}
+                best_comb = max(seg_lens.iterkeys(),
+                                key=(lambda key: seg_lens[key]))
+            else:
+                best_comb = offsource.keys()[0]
+            logging.info("No combination of %d IFOs with suitable science "
+                         "segment.", num_ifos)
         else:
-            offsrc[key] = snglsegs[key][0]
+            # Identify best analysis segment
+            if len(valid_combs) > 1:
+                seg_lens = {ifos: abs(offsource[ifos].itervalues().next()[0])
+                            for ifos in valid_combs}
+                best_comb = max(seg_lens.iterkeys(),
+                                key=(lambda key: seg_lens[key]))
+            else:
+                best_comb = valid_combs[0]
+            logging.info("Calculated science segments.")
 
-    for key in offsrc.keys():
-        if (triggertime - onbefore - minbefore - padding not in offsrc[key]) \
-                or (triggertime + onafter + minafter + padding not in \
-                    offsrc[key]):
-            logging.info("Not enough data either side of trigger time in %s."
-                         % key)
-            offsrc.pop(key)
-    if len(offsrc.keys()) == 0:
-        fail = segments.segment([triggertime - onbefore - minbefore,
-                                 triggertime + +onafter + minafter])
-        logging.error("Not enough data either side of trigger time in any "
-                      "IFO. Exiting.")
-        return None, fail
+            offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
+            segmentsUtils.tosegwizard(open(offsourceSegfile, "w"),
+                                      offsource[best_comb].itervalues().next())
 
-    for key in offsrc.keys():
-        if abs(offsrc[key]) < minduration + 2 * padding:
-            logging.info("%s segment shorter than minimum allowed duration."
-                         % key)
-            offsrc.pop(key)
-    if len(offsrc.keys()) == 0:
-        fail = segments.segment([triggertime - minduration / 2. - padding,
-                                 triggertime + minduration / 2. + padding])
-        logging.error("All available segments shorter than minimum allowed "
-                      "duration. Exiting.")
-        return None, fail
-    elif len(offsrc.keys()) > 1:
-        logging.error("Something is broken! At this point there should only "
-                      "be 1 IFO in play, but there are %d."
-                      % len(offsrc.keys()))
-        sys.exit()
-    else:
-        ifo = offsrc.keys()[0]
+            onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
+            segmentsUtils.tosegwizard(file(onsourceSegfile, "w"),
+                                      onsource[best_comb].itervalues().next())
 
-    # Will segment duration be the maximum desired length or not?
-    if abs(offsrc[ifo]) >= maxduration + 2 * padding:
-        logging.info("Available network science segment duration (%ds) is "
-                     "greater than the maximum allowed segment length (%ds). "
-                     "Truncating..." % (abs(offsrc[ifo]), maxduration))
-    else:
-        logging.info("Available network science segment duration (%ds) is "
-                     "less than the maximum allowed segment length (%ds)."
-                     % (abs(offsrc[ifo]), maxduration))
+            bufferleft = int(cp.get('workflow-exttrig_segments',
+                                    'num-buffer-before'))
+            bufferright = int(cp.get('workflow-exttrig_segments',
+                                     'num-buffer-after'))
+            onlen = onbefore + onafter
+            bufferSegment = segments.segment(\
+                    triggertime - onbefore - bufferleft * onlen,
+                    triggertime + onafter + bufferright * onlen)
+            bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
+            segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
+                                      segments.segmentlist([bufferSegment]))
 
-    logging.info("%ds of padding applied at beginning and end of segment."
-                 % padding)
+            return onsource[best_comb], offsource[best_comb]
 
+        num_ifos -= 1
 
-    # Construct on-source
-    onstart = triggertime - onbefore
-    onend = triggertime + onafter
-    oncentre = onstart + ((onbefore + onafter) / 2)
-    onsrc = segments.segment(onstart, onend)
-    logging.info("Constructed ON-SOURCE: duration %ds (%ds before to %ds after"
-                 " trigger)."
-                 % (abs(onsrc), triggertime - onsrc[0],
-                    onsrc[1] - triggertime))
-    onsrc = segments.segmentlist([onsrc])
-
-    # Maximal, centred coherent network segment
-    idealsegment = segments.segment(int(oncentre - padding -
-                                    0.5 * maxduration),
-                                    int(oncentre + padding +
-                                    0.5 * maxduration))
-
-    # Construct off-source
-    offsrc = offsrc[ifo]
-    if (idealsegment in offsrc):
-        offsrc = idealsegment
-
-    elif idealsegment[1] not in offsrc:
-        offsrc &= segments.segment(offsrc[1] - maxduration - 2 * padding,
-                                   offsrc[1])
-
-    elif idealsegment[0] not in offsrc:
-        offsrc &= segments.segment(offsrc[0],
-                                   offsrc[0] + maxduration + 2 * padding)
-
-    # Trimming off-source
-    excess = (abs(offsrc) - 2 * padding) % quanta
-    if excess != 0:
-        logging.info("Trimming %ds excess time to make OFF-SOURCE duration a "
-                     "multiple of %ds" % (excess, quanta))
-        offset = (offsrc[0] + abs(offsrc) / 2.) - oncentre
-        if 2 * abs(offset) > excess:
-            if offset < 0:
-                offsrc &= segments.segment(offsrc[0] + excess,
-                                           offsrc[1])
-            elif offset > 0:
-                offsrc &= segments.segment(offsrc[0],
-                                           offsrc[1] - excess)
-            assert abs(offsrc) % quanta == 2 * padding
-        else:
-            logging.info("This will make OFF-SOURCE symmetrical about "
-                         "ON-SOURCE.")
-            start = int(offsrc[0] - offset + excess / 2)
-            end = int(offsrc[1] - offset - round(float(excess) / 2))
-            offsrc = segments.segment(start, end)
-            assert abs(offsrc) % quanta == 2 * padding
-
-    logging.info("Constructed OFF-SOURCE: duration %ds (%ds before to %ds "
-                 "after trigger)."
-                 % (abs(offsrc) - 2 * padding,
-                    triggertime - offsrc[0] - padding,
-                    offsrc[1] - triggertime - padding))
-    offsrc = segments.segmentlist([offsrc])
-
-    # Put segments into segmentlistdicts
-    onsource = segments.segmentlistdict()
-    offsource = segments.segmentlistdict()
-    onsource[ifo] = onsrc
-    offsource[ifo] = offsrc
-
-    # Write off-source to xml file
-    single_seg = segments.segmentlistdict()
-    single_seg[ifo + ':SINGLE_IFO_OFFSOURCE'] = offsrc
-    currFile = SegFile.from_segment_list_dict('SINGLE_IFO_OFFSOURCE_SEGMENT',
-            single_seg, ifo_list=ifo, extension="xml", directory=out_dir)
-    logging.info("Optimal single IFO segment calculated for %s." % ifo)
-
-    offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
-    segmentsUtils.tosegwizard(open(offsourceSegfile, "w"), offsrc)
-
-    onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
-    segmentsUtils.tosegwizard(file(onsourceSegfile, "w"), onsrc)
-
-    onlen = abs(onsrc[0])
-    bufferSegment = segments.segment(onstart - bufferleft * onlen,
-                                     onend + bufferright * onlen)
-    bufferSegfile = os.path.join(out_dir, "bufferSeg.txt")
-    segmentsUtils.tosegwizard(file(bufferSegfile, "w"),
-                              segments.segmentlist([bufferSegment]))
-
-    return onsource, offsource
+    logging.warning("No suitable science segments available.")
+    try:
+        return None, offsource[best_comb]
+    except UnboundLocalError:
+        return None, min_seg
 
 def save_veto_definer(cp, out_dir, tags=None):
     """ Retrieve the veto definer file and save it locally
-    
+
     Parameters
     -----------
     cp : ConfigParser instance
@@ -1457,42 +1271,36 @@ def save_veto_definer(cp, out_dir, tags=None):
     veto_def_new_path = os.path.abspath(os.path.join(out_dir,
                                         veto_def_base_name))
     # Don't need to do this if already done
-    if veto_def_url == veto_def_new_path:
-        return
-    response = urllib2.urlopen(veto_def_url)
-    html = response.read()
-    out_file = open(veto_def_new_path, 'w')
-    out_file.write(html)
-    out_file.close()
+    resolve_url(veto_def_url,out_dir)
 
     # and update location
     cp.set("workflow-segments", "segments-veto-definer-file", veto_def_new_path)
-    
+
 def parse_cat_ini_opt(cat_str):
     """ Parse a cat str from the ini file into a list of sets """
     if cat_str == "":
-        return []    
-        
+        return []
+
     cat_groups = cat_str.split(',')
     cat_sets = []
     for group in cat_groups:
         group = group.strip()
         cat_sets += [set(c for c in group)]
-    return cat_sets  
-    
+    return cat_sets
+
 def cat_to_veto_def_cat(val):
     """ Convert a category character to the corresponding value in the veto
     definer file.
-    
+
     Parameters
     ----------
     str : single character string
         The input category character
-        
+
     Returns
     -------
     pipedown_str : str
-        The pipedown equivelant notation that can be passed to programs 
+        The pipedown equivelant notation that can be passed to programs
     that expect this definition.
     """
     if val == '1':
@@ -1502,17 +1310,17 @@ def cat_to_veto_def_cat(val):
     if val == '3':
         return 4
     if val == 'H':
-        return 3 
+        return 3
     else:
         raise ValueError('Invalid Category Choice')
 
 def file_needs_generating(file_path, cp, tags=None):
     """
     This job tests the file location and determines if the file should be
-    generated now or if an error should be raised. This uses the 
+    generated now or if an error should be raised. This uses the
     generate_segment_files variable, global to this module, which is described
     above and in the documentation.
-   
+
     Parameters
     -----------
     file_path : path
@@ -1564,7 +1372,7 @@ def file_needs_generating(file_path, cp, tags=None):
             err_msg += '"never". Got %s.' %(generate_segment_files,)
             raise ValueError(err_msg)
     else:
-        if generate_segment_files in ['always', 'if_not_present', 
+        if generate_segment_files in ['always', 'if_not_present',
                                       'error_on_duplicate']:
             return 1
         elif generate_segment_files == 'never':

@@ -92,27 +92,6 @@ _other_kind = {float32:complex64, float64:complex128,
 _bad_dtype = {float32: float32, float64: float64,
               complex64: float32, complex128: float64}
 
-# Several dicts for our direct comparisons with LAL's Time/Freq FFT routines.
-
-_fwd_plan_dict = {float32: _lal.CreateForwardREAL4FFTPlan,
-                  float64: _lal.CreateForwardREAL8FFTPlan,
-                  complex64: _lal.CreateForwardCOMPLEX8FFTPlan,
-                  complex128: _lal.CreateForwardCOMPLEX16FFTPlan}
-
-_rev_plan_dict = {float32: _lal.CreateReverseREAL4FFTPlan,
-                  float64: _lal.CreateReverseREAL8FFTPlan,
-                  complex64: _lal.CreateReverseCOMPLEX8FFTPlan,
-                  complex128: _lal.CreateReverseCOMPLEX16FFTPlan}
-
-_fwd_lalfft_dict = {float32: _lal.REAL4TimeFreqFFT,
-                    float64: _lal.REAL8TimeFreqFFT,
-                    complex64: _lal.COMPLEX8TimeFreqFFT,
-                    complex128: _lal.COMPLEX16TimeFreqFFT}
-
-_rev_lalfft_dict = {float32: _lal.REAL4FreqTimeFFT,
-                    float64: _lal.REAL8FreqTimeFFT,
-                    complex64: _lal.COMPLEX8FreqTimeFFT,
-                    complex128: _lal.COMPLEX16FreqTimeFFT}
 
 # Our actual helper functions.  Note that these perform the necessary operations
 # within the appropriate context, so they should not themselves be called inside
@@ -132,9 +111,9 @@ def _test_fft(test_case,inarr,expec,tol):
     outarr.clear()
     if hasattr(outarr,'_epoch'):
         outarr._epoch *= 5*tol
-    if hasattr(outarr,'delta_t'):
+    if hasattr(outarr,'_delta_t'):
         outarr._delta_t *= 5*tol
-    if hasattr(outarr,'delta_f'):
+    if hasattr(outarr,'_delta_f'):
         outarr._delta_f *= 5*tol
     with tc.context:
         pycbc.fft.fft(inarr, outarr)
@@ -163,9 +142,9 @@ def _test_ifft(test_case,inarr,expec,tol):
     outarr.clear()
     if hasattr(outarr,'_epoch'):
         outarr._epoch *= 5*tol
-    if hasattr(outarr,'delta_t'):
+    if hasattr(outarr,'_delta_t'):
         outarr._delta_t *= 5*tol
-    if hasattr(outarr,'delta_f'):
+    if hasattr(outarr,'_delta_f'):
         outarr._delta_f *= 5*tol
     with tc.context:
         pycbc.fft.ifft(inarr, outarr)
@@ -240,66 +219,6 @@ def _test_random(test_case,inarr,outarr,tol):
         else:
             tc.assertTrue(outcopy.almost_equal_norm(outarr,tol=tol),
                           msg=emsg)
-
-def _test_lal_tf_fft(test_case,inarr,outarr,tol):
-    tc = test_case
-    # Make sure input and output have been moved back to CPU if needed
-    inarr *= 1.0
-    outarr *=1.0
-    # Fill input array with random, clear output, and get lal handles for each.
-    if dtype(inarr).kind == 'c':
-        inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
-    else:
-        inarr._data[:] = randn(len(inarr))
-    outarr.clear()
-    inlal = inarr.lal()
-    outlal = outarr.lal()
-    # Calculate the pycbc fft:
-    with tc.context:
-        pycbc.fft.fft(inarr, outarr)
-    fwdplan = _fwd_plan_dict[dtype(inarr).type](len(inarr),0)
-    # Call the lal function directly (see above for dict).  Note that
-    # lal functions want *output* given first.
-    _fwd_lalfft_dict[dtype(inarr).type](outlal,inlal,fwdplan)
-    # Make a pycbc type from outlal.  Some hackiness because we don't know the
-    # type of outlal.
-    if hasattr(outlal,'deltaT'):
-        cmparr = ts(outlal.data.data,epoch=outlal.epoch,delta_t=outlal.deltaT)
-    else:
-        cmparr = fs(outlal.data.data,epoch=outlal.epoch,delta_f=outlal.deltaF)
-    emsg = "Direct call to LAL TimeFreqFFT() did not agree with fft() to within precision {0}".format(tol)
-    tc.assertTrue(outarr.almost_equal_norm(cmparr,tol=tol),msg=emsg)
-
-def _test_lal_tf_ifft(test_case,inarr,outarr,tol):
-    tc = test_case
-    # Fill input array with random, clear output, and get lal handles for each.
-    if dtype(inarr).kind == 'c':
-        inarr._data[:] = randn(len(inarr)) +1j*randn(len(inarr))
-        # We must worry about DC/Nyquist imag parts if this is HC2R transform:
-        if dtype(outarr).kind == 'f':
-            inarr._data[0] = real(inarr._data[0])
-            if (len(outarr)%2)==0:
-                inarr._data[len(inarr)-1] = real(inarr[len(inarr)-1])
-    else:
-        inarr._data[:] = randn(len(outarr))
-    outarr.clear()
-    inlal = inarr.lal()
-    outlal = outarr.lal()
-    # Calculate the pycbc fft:
-    with tc.context:
-        pycbc.fft.ifft(inarr, outarr)
-    revplan = _rev_plan_dict[dtype(outarr).type](len(outarr),0)
-    # Call the lal function directly (see above for dict).  Note that
-    # lal functions want *output* given first.
-    _rev_lalfft_dict[dtype(outarr).type](outlal,inlal,revplan)
-    # Make a pycbc type from outlal.  Some hackiness because we don't know the
-    # type of outlal.
-    if hasattr(outlal,'deltaT'):
-        cmparr = ts(outlal.data.data,epoch=outlal.epoch,delta_t=outlal.deltaT)
-    else:
-        cmparr = fs(outlal.data.data,epoch=outlal.epoch,delta_f=outlal.deltaF)
-    emsg = "Direct call to LAL TimeFreqFFT() did not agree with fft() to within precision {0}".format(tol)
-    tc.assertTrue(outarr.almost_equal_norm(cmparr,tol=tol),msg=emsg)
 
 def _test_raise_excep_fft(test_case,inarr,outarr,other_args=None):
     # As far as can be told from the unittest module documentation, the
@@ -390,27 +309,6 @@ def _test_raise_excep_ifft(test_case,inarr,outarr,other_args=None):
         args = [in_badtype,outarr]
         tc.assertRaises(TypeError,pycbc.fft.ifft,*args)
 
-# The following isn't a helper function, called by several test functions, but it only applies
-# to the 'lalfft' backend, so we only add it to that TestCase class, rather than putting it in
-# the main class definition
-def _test_lalfft(test_case):
-    import pycbc.fft.lalfft as lfft
-    tc = test_case
-    tc.assertEquals(lfft._default_measurelvl,1,
-                    msg="Default lalfft measure level not initialized to 1")
-    tc.assertRaises(ValueError,lfft.set_measure_level,5)
-    tc.assertEquals(lfft.get_measure_level(),1,
-                    msg="lalfft.get_measure_level() did not return _default_measurelvl")
-    plan1 = lfft._get_fwd_plan('single','complex','complex',4)
-    lfft.set_measure_level(2)
-    plan2 = lfft._get_fwd_plan('single','complex','complex',4)
-    tc.assertTrue(plan1 is not plan2,msg="Increasing measure level did not result in new plan")
-    lfft.set_measure_level(0)
-    plan0 = lfft._get_fwd_plan('single','complex','complex',4)
-    tc.assertTrue(plan2 is plan0,msg="Decreasing measure level *did* result in new plan")
-    # Restore default
-    lfft.set_measure_level(1)
-
 class _BaseTestFFTClass(unittest.TestCase):
     """
     This is the base class from which unit tests for all FFT backends
@@ -496,7 +394,7 @@ class _BaseTestFFTClass(unittest.TestCase):
                              delta_f=delta_f)
             _test_random(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
             # Reuse random arrays for the LAL tests:
-            _test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
+            #_test_lal_tf_fft(self,rand_inarr,rand_outarr,self.tdict[fwd_dtype])
             # Clean these up since they could be big:
             del rand_inarr
             del rand_outarr
@@ -599,19 +497,6 @@ class _BaseTestFFTClass(unittest.TestCase):
             outexp = ts(self.out_c2r_o,dtype=rev_dtype,delta_t=delta_t,epoch=self.epoch)
             outexp *= delta_f
             _test_ifft(self,inarr,outexp,self.tdict[rev_dtype])
-            # Random---we don't do that in 'reverse' tests, since both
-            # directions are already tested in forward, and if we just passed
-            # in arrays in the other order we'd only get exceptions
-            #
-            # However, we do still generate the arrays for T/F series, so that we may
-            # do the LAL comparison test.  As usual, we then delete those arrays.
-            rand_inarr = fs(zeros(self.rand_len_c,dtype=_other_kind[rev_dtype]),epoch=self.epoch,
-                            delta_f=self.delta)
-            rand_outarr = ts(zeros(self.rand_len_r,dtype=rev_dtype),epoch=self.epoch,
-                             delta_t=self.delta)
-            _test_lal_tf_ifft(self,rand_inarr,rand_outarr,self.tdict[rev_dtype])
-            del rand_inarr
-            del rand_outarr
             # Check that exceptions are raised.  Need input and
             # output arrays; just reuse inarr and outexp (values won't
             # matter, we're just checking exceptions).

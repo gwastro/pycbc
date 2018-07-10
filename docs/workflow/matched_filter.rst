@@ -112,9 +112,7 @@ $$$$$$$$$$$$$$$$$$$$$$$
 
 Lalapps_inspiral is the legacy C-code that has been used for years to find gravitational-wave triggers in  It is a little inflexible in terms of output file names.
 
-lalapps_inspiral is supported in the workflow module via a wrapper script lalapps_inspiral_ahope, this allows us to specify all the frame files and the output file name directly.
-
-.. command-output:: lalapps_inspiral --help
+lalapps_inspiral is supported in the workflow module via a wrapper script lalapps_inspiral_ahope, this allows us to specify all the frame files and the output file name directly. Documentation for the lalapps_inspiral command line arguments can be found at http://software.ligo.org/docs/lalsuite/lalapps/inspiral_8c.html
 
 Of these options the workflow module or the wrapper script will automatically add the following, which are unique for each job. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 

@@ -31,7 +31,7 @@ def find_lib_path(libname, packages):
         pass
 
     path = get_libpath_from_dirlist(libname, libdirs)
-    
+
     if path is not None:
         return [(path, '')]
     else:
@@ -47,7 +47,6 @@ hiddenimports = ['pycbc.fft.fft_cpu',
                  'pycbc.fft.backend_mkl',
                  'pycbc.fft.fftw',
                  'pycbc.fft.mkl',
-                 'pycbc.fft.lalfft',
                  'pycbc.fft.npfft',
                  'pycbc.fft.__init__',
                  'pycbc.events.threshold_cpu',
@@ -57,14 +56,13 @@ hiddenimports = ['pycbc.fft.fft_cpu',
                  'h5py',
                  'h5py._conv',
                  'h5py._stub',
-                 'mpld3',
-                 'M2Crypto'
+                 'mpld3'
                  ]
 
 datas = []
 
 # Add html assets to all executables
-cwd     = os.getcwd()
+cwd     = os.environ.get("PYCBC_HOOKS_DIR", os.getcwd())
 basedir = cwd.replace('tools/static','')
 rootdir = basedir + 'pycbc/results'
 
@@ -82,7 +80,7 @@ store_path = '/'.join(file_path.split('/')[:-1])
 store_path = store_path.replace(basedir, '')
 datas.append( (file_path, store_path) )
 
-if os.environ["NOW_BUILDING"] in needs_mkl:
+if os.environ.get("NOW_BUILDING", None) in needs_mkl:
     # pull in all the mkl .so files
     datas += find_lib_path('mkl_rt', [])
     datas += find_lib_path('mkl_core', [])

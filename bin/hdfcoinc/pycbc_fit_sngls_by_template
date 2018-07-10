@@ -29,25 +29,26 @@ stat_dict = {
     "new_snr"       : events.newsnr,
     "effective_snr" : events.effsnr,
     "snr"           : lambda snr, rchisq : snr,
-    "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5)
+    "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5),
+    "newsnr_sgveto"      : events.newsnr_sgveto,
 }
 
-def get_stat(statchoice, snr, rchisq, fac):
+def get_stat(statchoice, snr, rchisq, sgchisq, fac):
     if fac is not None:
-        if statchoice not in ["new_snr", "effective_snr"]:
+        if statchoice not in ['new_snr', 'effective_snr']:
             raise RuntimeError("Can't use --stat-factor with this statistic!")
         return stat_dict[statchoice](snr, rchisq, fac)
+    elif statchoice == 'newsnr_sgveto':
+        return stat_dict[statchoice](snr, rchisq, sgchisq)
     else:
         return stat_dict[statchoice](snr, rchisq)
-
 #### MAIN ####
 
 parser = argparse.ArgumentParser(usage="",
     description="Perform maximum-likelihood fits of single inspiral trigger"
                 " distributions to various functions")
 
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument("-V", "--verbose", action="store_true",
                     help="Print extra debugging information", default=False)
 parser.add_argument("--trigger-file",
@@ -58,10 +59,10 @@ parser.add_argument("--bank-file", default=None,
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. "
                     "Format is PART/NUM_PARTS")
-parser.add_argument("--veto-file", nargs='*',
+parser.add_argument("--veto-file", nargs='*', default=[], action='append',
                     help="File(s) in .xml format with veto segments to apply "
                     "to triggers before fitting")
-parser.add_argument("--veto-segment-name", default=None,
+parser.add_argument("--veto-segment-name", nargs='*', default=[], action='append',
                     help="Name(s) of veto segments to apply. Optional, if not "
                     "given all segments for a given ifo will be used")
 parser.add_argument("--output", required=True,
@@ -73,7 +74,7 @@ parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
 parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=["snr", "snronchi", "effective_snr", "new_snr"],
+                    choices=["snr", "snronchi", "effective_snr", "new_snr", "newsnr_sgveto"],
                     help="Function of SNR and chisq to perform fits with")
 parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
@@ -106,8 +107,16 @@ parser.add_argument("--min-duration", default=0.,
                     help="Fudge factor for templates with tiny or negative "
                     "values of template_duration: add to duration values "
                     "before pruning. Units seconds")
+parser.add_argument("--approximant", default="SEOBNRv4",
+                    help="Approximant for template duration. Default SEOBNRv4")
 
 args = parser.parse_args()
+
+args.veto_segment_name = sum(args.veto_segment_name, [])
+args.veto_file = sum(args.veto_file, [])
+
+if len(args.veto_segment_name) != len(args.veto_file):
+    raise RuntimeError("Number of veto files much match veto file names")
 
 if (args.prune_param or args.prune_bins or args.prune_number) and not \
    (args.prune_param and args.prune_bins and args.prune_number):
@@ -131,14 +140,19 @@ templatef = h5py.File(args.bank_file, 'r')
 chisq = trigf[args.ifo+'/chisq'][:]
 chisq_dof = trigf[args.ifo+'/chisq_dof'][:]
 rchisq = chisq / (2 * chisq_dof - 2)
+try:
+    sgchisq = trigf[args.ifo+'/sg_chisq'][:]
+except KeyError:
+    sgchisq = None
+
 del chisq
 del chisq_dof
 snr = trigf[args.ifo+'/snr'][:]
 logging.info('Calculating stat values')
-stat = get_stat(args.sngl_stat, snr, rchisq, args.stat_factor)
+stat = get_stat(args.sngl_stat, snr, rchisq, sgchisq, args.stat_factor)
 del snr
 del rchisq
-
+del sgchisq
 # do first thresholding operation to reduce trigger numbers
 abovethresh = stat >= args.stat_threshold
 stat = stat[abovethresh]
@@ -149,72 +163,28 @@ if args.save_trig_param:
 logging.info('%i trigs left after thresholding' % len(stat))
 
 # now do vetoing
-retain, junk = events.veto.indices_outside_segments(time, args.veto_file,
-                             ifo=args.ifo, segment_name=args.veto_segment_name)
-stat = stat[retain]
-tid = tid[retain]
-time = time[retain]
-if args.save_trig_param:
-    tparam = tparam[retain]
-logging.info('%i trigs left after vetoing with %s' %
-                                                   (len(stat), args.veto_file))
+for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
+    retain, junk = events.veto.indices_outside_segments(time, [veto_file],
+                                 ifo=args.ifo, segment_name=veto_segment_name)
+    stat = stat[retain]
+    tid = tid[retain]
+    time = time[retain]
+    if args.save_trig_param:
+        tparam = tparam[retain]
+    logging.info('%i trigs left after vetoing with %s' %
+                                                       (len(stat), veto_file))
 
-### Functions for doing the pruning (removal of trigs at loudest times)
-
-def get_masses(args, tid):
-    m1 = templatef['mass1'][:][tid]
-    m2 = templatef['mass2'][:][tid]
-    s1z = templatef['spin1z'][:][tid]
-    s2z = templatef['spin2z'][:][tid]
-    return m1, m2, s1z, s2z
-
-def get_param(args, m1, m2, s1z, s2z):
-    if args.prune_param == 'mchirp':
-        parvals, _ = pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-    elif args.prune_param == 'mtotal':
-        parvals = m1 + m2
-    elif args.prune_param == 'template_duration':
-        # by default this will use SEOBNRv4 duration function
-        parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, f_low=args.f_lower)
-        parvals += args.min_duration
-    elif args.prune_param in pnutils.named_frequency_cutoffs.keys():
-        parvals = pnutils.frequency_cutoff_from_name(args.prune_param, m1, m2,
-                                                                      s1z, s2z)
-    else:
-        # try asking for a LALSimulation frequency function
-        parvals = pnutils.get_freq(args.prune_param, m1, m2, s1z, s2z)
-    return parvals
-
-# get min and max param values in bank
-num_templates = len(templatef['template_hash'])
+# do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
     logging.info('Getting min and max param values')
-    pars = get_param(args, templatef['mass1'][:], templatef['mass2'][:],
+    pars = trstats.get_param(args.prune_param, args,
+                     templatef['mass1'][:], templatef['mass2'][:],
                      templatef['spin1z'][:], templatef['spin2z'][:])
     minpar = min(pars)
     maxpar = max(pars)
     del pars
     logging.info('%f %f' % (minpar, maxpar))
 
-def which_bin(par, minpar, maxpar, nbins, log=False):
-    """
-    Returns the bin index in which the parameter value belongs (from 0 through
-    nbins-1) when dividing the range between minpar and maxpar equally into
-    nbins bins.
-    """
-    assert (par >= minpar and par <= maxpar)
-    if log:
-        par, minpar, maxpar = np.log(par), np.log(minpar), np.log(maxpar)
-    # par lies some fraction of the way between min and max
-    frac = float(par - minpar) / float(maxpar - minpar)
-    # binind then lies between 0 and nbins - 1
-    binind = int(frac * nbins)
-    # except for a corner case
-    if par == maxpar:
-        binind = nbins - 1
-    return binind
-
-if args.prune_param:
     # hard-coded time window of 0.1s
     args.prune_window = 0.1
     # initialize bin storage
@@ -243,13 +213,15 @@ if args.prune_param:
         lstat = statpruneall[loudest]
         ltid = tidpruneall[loudest]
         ltime = timepruneall[loudest]
-        m1, m2, s1z, s2z = get_masses(args, ltid)
-        lbin = which_bin(get_param(args, m1, m2, s1z, s2z), minpar, maxpar,
-                         args.prune_bins, log=args.log_prune_param)
+        m1, m2, s1z, s2z = trstats.get_masses(templatef, ltid)
+        lbin = trstats.which_bin(trstats.get_param(args.prune_param, args,
+                                           m1, m2, s1z, s2z),
+                                 minpar, maxpar, args.prune_bins,
+                                                      log=args.log_prune_param)
         # is the bin where the loudest trigger lives full already?
         if len(prunedtimes[lbin]) == args.prune_number:
-            logging.info('%i - Bin %i full, not pruning event with stat %f at time '
-                         '%.3f' % (j, lbin, lstat, ltime))
+            logging.info('%i - Bin %i full, not pruning event with stat %f at '
+                         'time %.3f' % (j, lbin, lstat, ltime))
             # prune the reference trigger array
             retain = abs(timepruneall - ltime) > args.prune_window
             statpruneall = statpruneall[retain]
@@ -283,6 +255,7 @@ if args.prune_param:
     logging.info('%i trigs remain after pruning loop' % len(stat))
 
 # parse template range
+num_templates = len(templatef['template_hash'])
 rangestr = args.template_fraction_range
 part = int(rangestr.split('/')[0])
 pieces = int(rangestr.split('/')[1])

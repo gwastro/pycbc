@@ -16,15 +16,17 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import matplotlib as mpl; mpl.use("Agg")
+import matplotlib.pyplot as plt
 import argparse
 import corner
 import itertools
 import logging
-import matplotlib as mpl; mpl.use("Agg")
-import matplotlib.pyplot as plt
 import numpy
 import sys
-from pycbc import inference, results
+from pycbc import distributions
+from pycbc import inference
+from pycbc import results
 from pycbc.workflow import WorkflowConfigParser
 
 def cartesian(arrays):
@@ -74,7 +76,7 @@ cp = WorkflowConfigParser(opts.config_files)
 # and add distributions to list
 logging.info("Constructing prior")
 variable_args = []
-distributions = []
+dists = []
 for sec in opts.sections:
     section = sec.split("-")[0]
     subsec = sec.split("-")[1:]
@@ -84,20 +86,21 @@ for sec in opts.sections:
         subsections = cp.get_subsections(section)
     for subsection in subsections:
         name = cp.get_opt_tag(section, "name", subsection)
-        dist = inference.priors[name].from_config(cp, section, subsection)
+        dist = distributions.distribs[name].from_config(
+                                            cp, section, subsection)
         variable_args += dist.params
-        distributions.append( dist )
+        dists.append(dist)
 variable_args = sorted(variable_args)
 ndim = len(variable_args)
 
 # construct class that will return draws from the prior
-prior = inference.PriorEvaluator(variable_args, *distributions)
+prior = distributions.JointDistribution(variable_args, *dists)
 
 # get all points in space to calculate PDF
 logging.info("Getting grid of points")
 vals = numpy.zeros(shape=(ndim,opts.bins))
 bounds = [{}] * ndim
-for dist in distributions:
+for dist in dists:
     for param in dist.params:
         idx = variable_args.index(param)
         step = float(dist.bounds[param][1]-dist.bounds[param][0]) / opts.bins
@@ -110,7 +113,7 @@ logging.info("Calculating PDF")
 pdf = []
 for pt in pts:
     pt_dict = dict([(param,pt[j]) for j,param in enumerate(variable_args)])
-    pdf.append( sum([dist.pdf(**pt_dict) for dist in distributions]) )
+    pdf.append(sum([dist.pdf(**pt_dict) for dist in dists]))
 pdf = numpy.array(pdf)
 
 # check if only one parameter to plot PDF

@@ -115,6 +115,53 @@ class FrequencySeries(Array):
     sample_frequencies = property(get_sample_frequencies,
                                   doc="Array of the sample frequencies.")
 
+    def _getslice(self, index):
+        if index.step is not None:
+            new_delta_f = self._delta_f * index.step
+        else:
+            new_delta_f = self._delta_f
+        return FrequencySeries(Array._getslice(self, index),
+                               delta_f=new_delta_f,
+                               epoch=self._epoch,
+                               copy=False)
+    @property
+    def start_time(self):
+        """Return the start time of this vector
+        """
+        return self.epoch
+
+    @start_time.setter
+    def start_time(self, time):
+        """ Set the start time
+        """
+        self._epoch = _lal.LIGOTimeGPS(time)
+
+    @property
+    def end_time(self):
+        """Return the end time of this vector
+        """
+        return self.start_time + self.duration
+
+    @property
+    def duration(self):
+        """Return the time duration of this vector
+        """
+        return 1.0 / self.delta_f
+
+    @property
+    def delta_t(self):
+        """Return the time between samples if this were a time series.
+        This assume the time series is even in length!
+        """
+        return 1.0 / self.sample_rate
+
+    @property
+    def sample_rate(self):
+        """Return the sample rate this would have in the time domain. This 
+        assumes even length time series!
+        """
+        return (len(self) - 1) * self.delta_f * 2.0
+
     def __eq__(self,other):
         """
         This is the Python special method invoked whenever the '=='
@@ -348,9 +395,11 @@ class FrequencySeries(Array):
                                         self.numpy().imag)).T
             _numpy.savetxt(path, output)
         elif ext == '.xml' or path.endswith('.xml.gz'):
-            from pylal import series as lalseries
-            from glue.ligolw import utils
-            assert(self.kind == 'real')
+            from pycbc.io.live import make_psd_xmldoc
+            from pycbc.ligolw import utils
+
+            if self.kind != 'real':
+                raise ValueError('XML only supports real frequency series')
             output = self.lal()
             # When writing in this format we must *not* have the 0 values at
             # frequencies less than flow. To resolve this we set the first
@@ -360,7 +409,7 @@ class FrequencySeries(Array):
             if not first_idx == 0:
                 data_lal[:first_idx] = data_lal[first_idx]
             psddict = {ifo: output}
-            utils.write_filename(lalseries.make_psd_xmldoc(psddict), path,
+            utils.write_filename(make_psd_xmldoc(psddict), path,
                                  gz=path.endswith(".gz"))
         elif ext =='.hdf':
             key = 'data' if group is None else group
@@ -375,7 +424,9 @@ class FrequencySeries(Array):
 
     @_noreal
     def to_timeseries(self, delta_t=None):
-        """ Return the Fourier transform of this time series
+        """ Return the Fourier transform of this time series.
+
+        Note that this assumes even length time series!
         
         Parameters
         ----------
@@ -415,7 +466,82 @@ class FrequencySeries(Array):
                            delta_t=delta_t)
         ifft(tmp, f)
         return f
-            
+
+    @_noreal
+    def cyclic_time_shift(self, dt):
+        """Shift the data and timestamps by a given number of seconds
+
+        Shift the data and timestamps in the time domain a given number of 
+        seconds. To just change the time stamps, do ts.start_time += dt. 
+        The time shift may be smaller than the intrinsic sample rate of the data.
+        Note that data will be cycliclly rotated, so if you shift by 2
+        seconds, the final 2 seconds of your data will now be at the 
+        beginning of the data set.
+
+        Parameters
+        ----------
+        dt : float
+            Amount of time to shift the vector.
+
+        Returns
+        -------
+        data : pycbc.types.FrequencySeries
+            The time shifted frequency series.
+        """
+        from pycbc.waveform import apply_fseries_time_shift
+        data = apply_fseries_time_shift(self, dt)
+        data.start_time = self.start_time - dt
+        return data
+
+    def match(self, other, psd=None,
+              low_frequency_cutoff=None, high_frequency_cutoff=None):
+        """ Return the match between the two TimeSeries or FrequencySeries.
+
+        Return the match between two waveforms. This is equivelant to the overlap
+        maximized over time and phase. By default, the other vector will be
+        resized to match self. Beware, this may remove high frequency content or the
+        end of the vector.
+
+        Parameters
+        ----------
+        other : TimeSeries or FrequencySeries
+            The input vector containing a waveform.
+        psd : Frequency Series
+            A power spectral density to weight the overlap.
+        low_frequency_cutoff : {None, float}, optional
+            The frequency to begin the match.
+        high_frequency_cutoff : {None, float}, optional
+            The frequency to stop the match.
+        index: int
+            The number of samples to shift to get the match.
+
+        Returns
+        -------
+        match: float
+        index: int
+            The number of samples to shift to get the match.
+        """
+        from pycbc.types import TimeSeries
+        from pycbc.filter import match
+
+        if isinstance(other, TimeSeries):
+            if other.duration != self.duration:
+                other = other.copy()
+                other.resize(int(other.sample_rate * self.duration))
+
+            other = other.to_frequencyseries()
+        
+        if len(other) != len(self):
+            other = other.copy()
+            other.resize(len(self))
+
+        if psd is not None and len(psd) > len(self):
+            psd = psd.copy()
+            psd.resize(len(self))
+
+        return match(self, other, psd=psd,
+                     low_frequency_cutoff=low_frequency_cutoff,
+                     high_frequency_cutoff=high_frequency_cutoff)
 
 def load_frequencyseries(path, group=None):
     """
@@ -455,11 +581,12 @@ def load_frequencyseries(path, group=None):
     if data.ndim == 2:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
         epoch = _lal.LIGOTimeGPS(data[0][0])
-        return FrequencySeries(data[:,1], delta_f=delta_f)
+        return FrequencySeries(data[:,1], delta_f=delta_f, epoch=epoch)
     elif data.ndim == 3:
         delta_f = (data[-1][0] - data[0][0]) / (len(data)-1)
         epoch = _lal.LIGOTimeGPS(data[0][0])
-        return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f)
+        return FrequencySeries(data[:,1] + 1j*data[:,2], delta_f=delta_f,
+                               epoch=epoch)
     else:
         raise ValueError('File has %s dimensions, cannot convert to Array, \
                           must be 2 (real) or 3 (complex)' % data.ndim)

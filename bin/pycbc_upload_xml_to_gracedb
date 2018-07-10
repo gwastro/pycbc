@@ -29,11 +29,11 @@ import h5py
 import pycbc
 import lal
 import lal.series
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import table
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import process as ligolw_process
 from glue.segments import segment, segmentlist
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -50,6 +50,8 @@ parser.add_argument('--input-file', dest='input_file',
                     help='Input LIGOLW XML file of coincidences.')
 parser.add_argument('--testing', action="store_true", default=False,
                     help="Upload event to the TEST group of gracedb.")
+parser.add_argument('--min-ifar', type=float, metavar='YEARS',
+                    help='Only upload events more significant than given IFAR')
 args = parser.parse_args()
 
 gracedb = GraceDb()
@@ -97,6 +99,10 @@ for event in coinc_table:
     for coinc_insp in coinc_inspiral_table:
         if coinc_insp.coinc_event_id == event.coinc_event_id:
             coinc_inspiral_table_curr.append(coinc_insp)
+
+    if args.min_ifar is not None and \
+            coinc_inspiral_table_curr[0].combined_far > 1./args.min_ifar/YRJUL_SI:
+        continue
 
     sngl_ids = []
     for coinc_map in coinc_event_map_table:

@@ -32,23 +32,25 @@ A simple workflow configuration file::
     datafind-method = AT_RUNTIME_SINGLE_FRAMES
     datafind-check-segment-gaps = raise_error
     datafind-check-frames-exist = raise_error
-    datafind-check-segment-summary = warn
+    datafind-check-segment-summary = no_test
 
     [workflow-inference]
     ; how the workflow generator should setup inference nodes
     num-events = 1
+    plot-1d-mass = mass1 mass2 mchirp q
+    plot-1d-orientation = ra dec tc polarization inclination coa_phase
+    plot-1d-distance = distance redshift
 
     [executables]
     ; paths to executables to use in workflow
     inference = ${which:pycbc_inference}
-    inference_acf = ${which:pycbc_inference_plot_acf}
-    inference_acl = ${which:pycbc_inference_plot_acl}
     inference_posterior = ${which:pycbc_inference_plot_posterior}
     inference_prior = ${which:pycbc_inference_plot_prior}
     inference_rate = ${which:pycbc_inference_plot_acceptance_rate}
     inference_samples = ${which:pycbc_inference_plot_samples}
     inference_table = ${which:pycbc_inference_table_summary}
     plot_spectrum = ${which:pycbc_plot_psd_file}
+    results_page = ${which:pycbc_make_html_page}
 
     [datafind]
     ; datafind options
@@ -73,16 +75,8 @@ A simple workflow configuration file::
 
     [pegasus_profile-inference]
     ; pegasus profile for inference nodes
-    condor|universe = local
-    condor|request_memory = 150000
-
-    [inference_acf]
-    ; command line options use --help for more information
-    ymax = 1.1
-    ymin = -1.1
-
-    [inference_acl]
-    ; command line options use --help for more information
+    condor|request_memory = 20G
+    condor|request_cpus = 12
 
     [inference_posterior]
     ; command line options use --help for more information
@@ -104,6 +98,10 @@ A simple workflow configuration file::
 
     [plot_spectrum]
     ; command line options use --help for more information
+
+    [results_page]
+    ; command line options use --help for more information
+    analysis-title = "PyCBC Inference Test"
 
 ============================
 Inference configuration file
@@ -160,10 +158,7 @@ You will also need a configuration file with sections that tells ``pycbc_inferen
 
     [prior-inclination]
     ; how to construct prior distribution
-    name = uniform_angle
-    ; inclination between 0 and pi
-    min-inclination = 0
-    max-inclination = 1
+    name = sin_angle
 
     [prior-ra+dec]
     ; how to construct prior distribution
@@ -238,9 +233,6 @@ Generate the workflow
 
 To generate a workflow you will need your configuration files. We set the following enviroment variables for this example::
 
-    # remove proxy from env
-    unset X509_USER_PROXY
-
     # name of the workflow
     WORKFLOW_NAME="r1"
 
@@ -250,6 +242,11 @@ To generate a workflow you will need your configuration files. We set the follow
     # input configuration files
     CONFIG_PATH=workflow.ini
     INFERENCE_CONFIG_PATH=inference.ini
+
+Specify a directory to save the HTML pages::
+
+    # directory that will be populated with HTML pages
+    HTML_DIR=${HOME}/public_html/inference_test
 
 If you want to run on the loudest triggers from a PyCBC coincident search workflow then run::
 
@@ -266,7 +263,9 @@ If you want to run on the loudest triggers from a PyCBC coincident search workfl
         --config-overrides workflow:start-time:${WORKFLOW_START_TIME} \
                            workflow:end-time:${WORKFLOW_END_TIME} \
                            workflow-inference:data-seconds-before-trigger:8 \
-                           workflow-inference:data-seconds-after-trigger:8
+                           workflow-inference:data-seconds-after-trigger:8 \
+                           results_page:output-path:${HTML_DIR} \
+                           results_page:analysis-subtitle:${WORKFLOW_NAME}
 
 Where ``${BANK_FILE}`` is the path to the template bank HDF file, ``${STATMAP_FILE}`` is the path to the combined statmap HDF file, ``${SNGL_H1_PATHS}`` and ``${SNGL_L1_PATHS}`` are the paths to the merged single-detector HDF files,  and ``${WORKFLOW_START_TIME}`` and ``${WORKFLOW_END_TIME}`` are the start and end time of the coincidence workflow.
 
@@ -285,7 +284,10 @@ Else you can run from a specific GPS end time with the ``--gps-end-time`` option
                            workflow-inference:data-seconds-before-trigger:2 \
                            workflow-inference:data-seconds-after-trigger:2 \
                            inference:psd-start-time:$((${GPS_END_TIME}-300)) \
-                           inference:psd-end-time:$((${GPS_END_TIME}+1748))
+                           inference:psd-end-time:$((${GPS_END_TIME}+1748)) \
+                           results_page:output-path:${HTML_DIR} \
+                           results_page:analysis-subtitle:${WORKFLOW_NAME}
+
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
 
@@ -299,6 +301,5 @@ Finally plan and submit the workflow with::
 
     # submit workflow
     pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
-        --accounting-group ligo.dev.o2.cbc.explore.test \
-        --no-create-proxy
+        --accounting-group ligo.dev.o2.cbc.explore.test
 

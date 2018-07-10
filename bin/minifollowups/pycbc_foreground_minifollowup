@@ -95,7 +95,7 @@ if len(stat) == 0:
     # There are no triggers, make no-op job and exit
     noop_node = mini.create_noop_node()
     workflow += noop_node
-    workflow.save(filename=args.output_file, output_map=args.output_map)
+    workflow.save(filename=args.output_file, output_map_path=args.output_map)
     sys.exit(0)
 
 if len(stat) < num_events:
@@ -125,8 +125,8 @@ for num_event in range(num_events):
     bank_id = f['foreground/template_id'][:][sorting][num_event]
     
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
-                              coinc_file, num_event, 
-                              args.output_dir, tags=args.tags + [str(num_event)]),)        
+                              coinc_file, args.output_dir, n_loudest=num_event, 
+                              tags=args.tags + [str(num_event)]),)        
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir, special_tids=ifo_tids,
                               tags=args.tags + [str(num_event)])
@@ -145,6 +145,7 @@ for num_event in range(num_events):
     params['mass2'] = bank_data['mass2'][bank_id]
     params['spin1z'] = bank_data['spin1z'][bank_id]
     params['spin2z'] = bank_data['spin2z'][bank_id]
+    params['f_lower'] = bank_data['f_lower'][bank_id]
     # don't require precessing template info if not present
     try:
         params['spin1x'] = bank_data['spin1x'][bank_id]
@@ -167,9 +168,15 @@ for num_event in range(num_events):
                                 time, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
-    
+
+        files += mini.make_qscan_plot\
+            (workflow, single.ifo, time, args.output_dir,
+             data_segments=insp_data_seglists[single.ifo],
+             tags=args.tags + [str(num_event)])
+
+
     layouts += list(layout.grouper(files, 2))
     num_event += 1
 
-workflow.save(filename=args.output_file, output_map=args.output_map)
+workflow.save(filename=args.output_file, output_map_path=args.output_map)
 layout.two_column_layout(args.output_dir, layouts)

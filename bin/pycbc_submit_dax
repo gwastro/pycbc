@@ -252,7 +252,7 @@ if [ $NO_CREATE_PROXY == 0 ]; then
     fi
   done
   unset X509_USER_PROXY
-  ligo-proxy-init $LIGO_USER_NAME || exit 1
+  ligo-proxy-init -p $LIGO_USER_NAME || exit 1
 else
   if [ ! -z ${X509_USER_PROXY} ] ; then
     if [ -f ${X509_USER_PROXY} ] ; then
@@ -263,15 +263,17 @@ else
 fi
 
 #Check that the proxy is valid
+set +e
 grid-proxy-info -exists
 RESULT=$?
+set -e
 if [ ${RESULT} -eq 0 ] ; then
   PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
   if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
     grid-proxy-info
   else
     cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+    grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
     rm -f /tmp/x509up_u`id -u`.orig
     grid-proxy-info
   fi
@@ -449,7 +451,7 @@ if [ \${RESULT} -eq 0 ] ; then
     grid-proxy-info
   else
     cp /tmp/x509up_u\`id -u\` /tmp/x509up_u\`id -u\`.orig
-    grid-proxy-init -valid 72:0 -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
+    grid-proxy-init -cert /tmp/x509up_u\`id -u\`.orig -key /tmp/x509up_u\`id -u\`.orig
     rm -f /tmp/x509up_u\`id -u\`.orig
     grid-proxy-info
   fi
@@ -516,6 +518,12 @@ fi
 WORKFLOW_ID_STRING=""
 WORKFLOW_DB_CMD="sqlite3 -csv ${HOME}/.pegasus/workflow.db \"select submit_hostname,wf_id,wf_uuid from master_workflow where submit_dir = '${SUBMIT_DIR}/work';\""
 DB_TRY=0
+
+# force a condor reschedule to get the workflow running
+set +e
+condor_reschedule &> /dev/null
+set -e
+
 /bin/echo "Querying Pegasus database for workflow stored in ${SUBMIT_DIR}/work"
 /bin/echo -n "This may take up to 120 seconds. Please wait..."
 rm -f pegasus_db.log

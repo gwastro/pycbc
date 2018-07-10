@@ -34,7 +34,7 @@ import logging
 from glue import segments
 import pycbc.workflow as _workflow
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO, datefmt='%I:%M:%S')
 
 # command line options
@@ -54,7 +54,7 @@ if not os.path.exists(dfDir+'/logs'):
     os.makedirs(dfDir+'/logs')
 
 scienceSegs, segsList = _workflow.setup_segment_generation(workflow, segDir)
-datafinds, scienceSegs = _workflow.setup_datafind_workflow(workflow, scienceSegs, 
+datafinds, scienceSegs = _workflow.setup_datafind_workflow(workflow, scienceSegs,
                            dfDir, segsList)
 
 # scienceSegs is a glue.segmentlist of the times you should analyse.

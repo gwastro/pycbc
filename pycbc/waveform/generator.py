@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Collin Capano, Alex Nitz
+# Copyright (C) 2016  Collin Capano, Alex Nitz, Christopher Biwer
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -25,111 +25,18 @@
 This modules provides classes for generating waveforms.
 """
 
-import functools
 import waveform
 import ringdown
-from pycbc import coordinates
+from pycbc import filter
+from pycbc import transforms
+from pycbc.types import TimeSeries
 from pycbc.waveform import parameters
-from pycbc.waveform.utils import apply_fd_time_shift
+from pycbc.waveform.utils import apply_fd_time_shift, taper_timeseries, \
+                                 ceilpow2
 from pycbc.detector import Detector
-from pycbc import pnutils
 import lal as _lal
-
-#
-#   Pregenerator functions for generator
-#
-
-
-def add_attrs(**func_attrs):
-    """ Decorator for adding attributes to a function.
-    """
-    def add_attr_decorator(fn):
-        # wraps is a decorator for updating the attributes of the
-        # wrapping function to those of the original function
-        # ie. __name__, __doc__, and __module__ will point to the
-        # original function instead of the wrapped function
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            return fn(*args, **kwargs)
-        # update with attributes
-        for attr, value in func_attrs.iteritems():
-            setattr(wrapper, attr, value)
-        return wrapper
-    return add_attr_decorator
-
-
-@add_attrs(input_params=[parameters.mchirp, parameters.eta],
-           output_params=[parameters.mass1, parameters.mass2])
-def generator_mchirp_eta_to_mass1_mass2(generator):
-    """Converts mchirp and eta in `current_params`, to mass1 and mass2.
-    """
-    mchirp = generator.current_params['mchirp']
-    eta = generator.current_params['eta']
-    m1, m2 = pnutils.mchirp_eta_to_mass1_mass2(mchirp, eta)
-    generator.current_params['mass1'] = m1
-    generator.current_params['mass2'] = m2
-
-
-@add_attrs(input_params=[parameters.mtotal, parameters.eta],
-           output_params=[parameters.mass1, parameters.mass2])
-def generator_mtotal_eta_to_mass1_mass2(generator):
-    """Converts mtotal and eta in `current_params`, to mass1 and mass2.
-    """
-    mtotal = generator.current_params['mtotal']
-    eta = generator.current_params['eta']
-    m1, m2 = pnutils.mtotal_eta_to_mass1_mass2(mtotal, eta)
-    generator.current_params['mass1'] = m1
-    generator.current_params['mass2'] = m2
-
-
-@add_attrs(input_params=[parameters.mchirp, parameters.q],
-           output_params=[parameters.mass1, parameters.mass2])
-def generator_mchirp_q_to_mass1_mass2(generator):
-    """Converts mchirp and q in `current_params`, to mass1 and mass2.
-    """
-    mchirp = generator.current_params['mchirp']
-    q = generator.current_params['q']
-    m1, m2 = pnutils.mchirp_q_to_mass1_mass2(mchirp, q)
-    generator.current_params['mass1'] = m1
-    generator.current_params['mass2'] = m2
-
-
-@add_attrs(input_params=[parameters.spin1_a, parameters.spin2_a,
-                         parameters.spin1_azimuthal,
-                         parameters.spin2_azimuthal,
-                         parameters.spin1_polar, parameters.spin2_polar],
-           output_params=[parameters.spin1x, parameters.spin2x,
-                          parameters.spin1y, parameters.spin2y,
-                          parameters.spin1z, parameters.spin2z])
-def generator_spin_spherical_to_spin_cartesian(generator):
-    """Converts spherical spin magnitude and angles in `current_params`,
-    to cartesian component spins.
-    """
-    x, y, z = coordinates.spherical_to_cartesian(
-                                   generator.current_params["spin1_a"] *
-                                   generator.current_params["mass1"]**2,
-                                   generator.current_params["spin1_azimuthal"],
-                                   generator.current_params["spin1_polar"])
-    generator.current_params["spin1x"] = x
-    generator.current_params["spin1y"] = y
-    generator.current_params["spin1z"] = z
-    x, y, z = coordinates.spherical_to_cartesian(
-                                   generator.current_params["spin2_a"] *
-                                   generator.current_params["mass2"]**2,
-                                   generator.current_params["spin2_azimuthal"],
-                                   generator.current_params["spin2_polar"])
-    generator.current_params["spin2x"] = x
-    generator.current_params["spin2y"] = y
-    generator.current_params["spin2z"] = z
-
-
-# a list of all generator functions
-generator_functions = [
-    generator_mchirp_eta_to_mass1_mass2,
-    generator_mtotal_eta_to_mass1_mass2,
-    generator_mchirp_q_to_mass1_mass2,
-    generator_spin_spherical_to_spin_cartesian,
-]
+from pycbc import gate
+import logging
 
 #
 #   Generator for CBC waveforms
@@ -163,8 +70,9 @@ class BaseGenerator(object):
     generator : function
         The function that is called for waveform generation.
     variable_args : tuple
-        The list of names of variable arguments. Values passed to the generate
-        function must be in the same order as the arguments in this list.
+        The list of names of variable arguments. Values passed to the
+        `generate_from_args` function must be in the same order as the
+        arguments in this list.
     frozen_params : dict
         A dictionary of the frozen keyword arguments that are always passed
         to the waveform generator function.
@@ -193,15 +101,15 @@ class BaseGenerator(object):
         """Returns a dictionary of the static arguments."""
         return self.frozen_params
 
-    def generate(self, *args):
+    def generate_from_args(self, *args):
         """Generates a waveform. The list of arguments must be in the same
         order as self's variable_args attribute.
         """
         if len(args) != len(self.variable_args):
             raise ValueError("variable argument length mismatch")
-        return self.generate_from_kwargs(**dict(zip(self.variable_args, args)))
+        return self.generate(**dict(zip(self.variable_args, args)))
 
-    def generate_from_kwargs(self, **kwargs):
+    def generate(self, **kwargs):
         """Generates a waveform from the keyword args. The current params
         are updated with the given kwargs, then the generator is called.
         """
@@ -227,8 +135,8 @@ class BaseGenerator(object):
         """
         def dostuff(self):
             for func in self._pregenerate_functions:
-                func(self)
-            res = generate_func(self)
+                self.current_params = func(self.current_params)
+            res = generate_func(self) # pylint:disable=not-callable
             return self._postgenerate(res)
         return dostuff
 
@@ -242,7 +150,16 @@ class BaseGenerator(object):
 class BaseCBCGenerator(BaseGenerator):
     """Adds ability to convert from various derived parameters to parameters
     needed by the waveform generators.
+
+    Attributes
+    ----------
+    possible_args : set
+        The set of names of arguments that may be used in the `variable_args`
+        or `frozen_params`.
     """
+    possible_args = set(parameters.td_waveform_params +
+                        parameters.fd_waveform_params +
+                        ['taper'])
     def __init__(self, generator, variable_args=(), **frozen_params):
         super(BaseCBCGenerator, self).__init__(generator,
             variable_args=variable_args, **frozen_params)
@@ -252,19 +169,20 @@ class BaseCBCGenerator(BaseGenerator):
         # compare a set of all args of the generator to the input parameters
         # of the functions that do conversions and adds to list of pregenerate
         # functions if it is needed
-        params_used = set([])
-        for func in generator_functions:
-            if set(func.input_params).issubset(all_args):
-                self._add_pregenerate(func)
-                params_used.update(func.input_params)
-        # check that there are no unused parameters
-        all_waveform_input_args = set(parameters.td_waveform_params +
-                                      parameters.fd_waveform_params)
+        params_used, cs = transforms.get_common_cbc_transforms(
+                                       list(self.possible_args), variable_args)
+        for c in cs:
+            self._add_pregenerate(c)
+        # check that there are no unused (non-calibration) parameters
+        calib_args = set([a for a in self.variable_args if
+                          a.startswith('calib_')])
+        all_args = all_args - calib_args
         unused_args = all_args.difference(params_used) \
-                              .difference(all_waveform_input_args)
+                              .difference(self.possible_args)
         if len(unused_args):
-            raise ValueError("The following args are not being used: "
-                             "{opts}".format(opts=unused_args))
+            logging.warning("WARNING: The following args are not being used "
+                            "for waveform generation: %s",
+                            ', '.join(unused_args))
 
 
 class FDomainCBCGenerator(BaseCBCGenerator):
@@ -285,19 +203,20 @@ class FDomainCBCGenerator(BaseCBCGenerator):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
+    >>> from pycbc.waveform.generator import FDomainCBCGenerator
+    >>> generator = FDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
-    >>> generator.generate(1.4, 1.4)
+    >>> generator.generate(mass1=1.4, mass2=1.4)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
 
     Initialize a generator using mchirp, eta as the variable args, and generate
     a waveform:
 
-    >>> generator = waveform.FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
-    >>> generator.generate(1.5, 0.25)
+    >>> generator = FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
+    >>> generator.generate(mchirp=1.5, eta=0.25)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x109a104d0>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x109a10b50>)
 
@@ -337,19 +256,20 @@ class TDomainCBCGenerator(BaseCBCGenerator):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.TDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
+    >>> from pycbc.waveform.generator import TDomainCBCGenerator
+    >>> generator = TDomainCBCGenerator(variable_args=['mass1', 'mass2'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
 
     Create a waveform with the variable arguments (in this case, mass1, mass2):
 
-    >>> generator.generate(2., 1.3)
+    >>> generator.generate(mass1=2., mass2=1.3)
         (<pycbc.types.timeseries.TimeSeries at 0x10e546710>,
          <pycbc.types.timeseries.TimeSeries at 0x115f37690>)
 
     Initialize a generator using mchirp, eta as the variable args, and generate
     a waveform:
 
-    >>> generator = waveform.TDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
-    >>> generator.generate(1.75, 0.2)
+    >>> generator = TDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_t=1./4096, f_lower=30., approximant='TaylorT4')
+    >>> generator.generate(mchirp=1.75, eta=0.2)
         (<pycbc.types.timeseries.TimeSeries at 0x116ac6050>,
          <pycbc.types.timeseries.TimeSeries at 0x116ac6950>)
 
@@ -358,51 +278,124 @@ class TDomainCBCGenerator(BaseCBCGenerator):
         super(TDomainCBCGenerator, self).__init__(waveform.get_td_waveform,
             variable_args=variable_args, **frozen_params)
 
-class FDomainRingdownGenerator(BaseGenerator):
-    """Uses ringdown.get_fd_qnm as a generator function to create frequency-
-    domain ringdown waveforms in the radiation frame; i.e., with no detector response
-    function applied. For more details, see BaseGenerator.
+    def _postgenerate(self, res):
+        """Applies a taper if it is in current params.
+        """
+        hp, hc = res
+        try:
+            hp = taper_timeseries(hp, tapermethod=self.current_params['taper'])
+            hc = taper_timeseries(hc, tapermethod=self.current_params['taper'])
+        except KeyError:
+            pass
+        return hp, hc
 
-    Examples
-    --------
-    Initialize a generator:
 
-    >>> generator = waveform.FDomainRingdownGenerator(variable_args=['tau', 'f_0'], delta_f=1./32, f_lower=30., f_final=500)
-
-    Create a ringdown with the variable arguments (in this case, tau, f_0):
-
-    >>> generator.generate(5, 100)
-        (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
-         <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
-
-    """
-    def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainRingdownGenerator, self).__init__(ringdown.get_fd_qnm,
-            variable_args=variable_args, **frozen_params)
-
-class FDomainMultiModeRingdownGenerator(BaseGenerator):
-    """Uses ringdown.get_fd_lm_allmodes as a generator function to create 
-    frequency-domain ringdown waveforms with higher modes in the radiation 
-    frame; i.e., with no detector response function applied. 
+class FDomainMassSpinRingdownGenerator(BaseGenerator):
+    """Uses ringdown.get_fd_from_final_mass_spin as a generator function to
+    create frequency-domain ringdown waveforms with higher modes in the
+    radiation frame; i.e., with no detector response function applied.
     For more details, see BaseGenerator.
 
     Examples
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainMultiModeRingdownGenerator(
-            variable_args=['final_mass', 'final_spin', 'lmns','amp220','amp210','phi220','phi210'],
-            delta_f=1./32, f_lower=30., f_final=500)
+    >>> from pycbc.waveform.generator import FDomainMassSpinRingdownGenerator
+    >>> generator = FDomainMassSpinRingdownGenerator(variable_args=['final_mass',
+                    'final_spin','amp220','amp210','phi220','phi210'], lmns=['221','211'],
+                    delta_f=1./32, f_lower=30., f_final=500)
 
     Create a ringdown with the variable arguments:
 
-    >>> generator.generate(65., 0.7, ['221','211'], 1e-21, 1./10, 0., 0.)
+    >>> generator.generate(final_mass=65., final_spin=0.7,
+                           amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)
         (<pycbc.types.frequencyseries.FrequencySeries at 0x51614d0>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x5161550>)
 
     """
     def __init__(self, variable_args=(), **frozen_params):
-        super(FDomainMultiModeRingdownGenerator, self).__init__(ringdown.get_fd_lm_allmodes,
+        super(FDomainMassSpinRingdownGenerator, self).__init__(ringdown.get_fd_from_final_mass_spin,
+            variable_args=variable_args, **frozen_params)
+
+class FDomainFreqTauRingdownGenerator(BaseGenerator):
+    """Uses ringdown.get_fd_from_freqtau as a generator function to
+    create frequency-domain ringdown waveforms with higher modes in the
+    radiation frame; i.e., with no detector response function applied.
+    For more details, see BaseGenerator.
+
+    Examples
+    --------
+    Initialize a generator:
+
+    >>> from pycbc.waveform.generator import FDomainFreqTauRingdownGenerator
+    >>> generator = FDomainFreqTauRingdownGenerator(variable_args=['f_220',
+                    'tau_220','f_210','tau_210','amp220','amp210','phi220','phi210'],
+                    lmns=['221','211'], delta_f=1./32, f_lower=30., f_final=500)
+
+    Create a ringdown with the variable arguments:
+
+    >>> generator.generate(f_220=317., tau_220=0.003, f_210=274., tau_210=0.003,
+                           amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)
+        (<pycbc.types.frequencyseries.FrequencySeries at 0x51614d0>,
+         <pycbc.types.frequencyseries.FrequencySeries at 0x5161550>)
+
+    """
+    def __init__(self, variable_args=(), **frozen_params):
+        super(FDomainFreqTauRingdownGenerator, self).__init__(ringdown.get_fd_from_freqtau,
+            variable_args=variable_args, **frozen_params)
+
+class TDomainMassSpinRingdownGenerator(BaseGenerator):
+    """Uses ringdown.get_td_from_final_mass_spin as a generator function to
+    create time-domain ringdown waveforms with higher modes in the
+    radiation frame; i.e., with no detector response function applied.
+    For more details, see BaseGenerator.
+
+    Examples
+    --------
+    Initialize a generator:
+
+    >>> from pycbc.waveform.generator import TDomainMassSpinRingdownGenerator
+    >>> generator = TDomainMassSpinRingdownGenerator(variable_args=['final_mass',
+                    'final_spin','amp220','amp210','phi220','phi210'], lmns=['221','211'],
+                    delta_t=1./2048)
+
+    Create a ringdown with the variable arguments:
+
+    >>> generator.generate(final_mass=65., final_spin=0.7,
+                           amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)
+        (<pycbc.types.frequencyseries.FrequencySeries at 0x51614d0>,
+         <pycbc.types.frequencyseries.FrequencySeries at 0x5161550>)
+
+    """
+    def __init__(self, variable_args=(), **frozen_params):
+        super(TDomainMassSpinRingdownGenerator, self).__init__(ringdown.get_td_from_final_mass_spin,
+            variable_args=variable_args, **frozen_params)
+
+class TDomainFreqTauRingdownGenerator(BaseGenerator):
+    """Uses ringdown.get_td_from_freqtau as a generator function to
+    create time-domain ringdown waveforms with higher modes in the
+    radiation frame; i.e., with no detector response function applied.
+    For more details, see BaseGenerator.
+
+    Examples
+    --------
+    Initialize a generator:
+
+    >>> from pycbc.waveform.generator import FDomainFreqTauRingdownGenerator
+    >>> generator = TDomainFreqTauRingdownGenerator(variable_args=['f_220',
+                    'tau_220','f_210','tau_210','amp220','amp210','phi220','phi210'],
+                    lmns=['221','211'], delta_t=1./2048)
+
+    Create a ringdown with the variable arguments:
+
+    >>> generator.generate(f_220=317., tau_220=0.003, f_210=274., tau_210=0.003,
+                           amp220=1e-21, amp210=1./10, phi220=0., phi210=0.)
+        (<pycbc.types.frequencyseries.FrequencySeries at 0x51614d0>,
+         <pycbc.types.frequencyseries.FrequencySeries at 0x5161550>)
+
+    """
+    def __init__(self, variable_args=(), **frozen_params):
+        super(TDomainFreqTauRingdownGenerator, self).__init__(ringdown.get_td_from_freqtau,
             variable_args=variable_args, **frozen_params)
 
 class FDomainDetFrameGenerator(object):
@@ -479,11 +472,12 @@ class FDomainDetFrameGenerator(object):
     --------
     Initialize a generator:
 
-    >>> generator = waveform.FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
+    >>> from pycbc.waveform.generator import FDomainDetFrameGenerator
+    >>> generator = FDomainDetFrameGenerator(waveform.FDomainCBCGenerator, 0., variable_args=['mass1', 'mass2', 'spin1z', 'spin2z', 'tc', 'ra', 'dec', 'polarization'], detectors=['H1', 'L1'], delta_f=1./64, f_lower=20., approximant='SEOBNRv2_ROM_DoubleSpin')
 
     Generate a waveform:
 
-    >>> generator.generate(38.6, 29.3, 0.33, -0.94, 2.43, 1.37, -1.26, 2.76)
+    >>> generator.generate(mass1=38.6, mass2=29.3, spin1z=0.33, spin2z=-0.94, tc=2.43, ra=1.37, dec=-1.26, polarization=2.76)
     {'H1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637350>,
      'L1': <pycbc.types.frequencyseries.FrequencySeries at 0x116637a50>}
 
@@ -491,7 +485,7 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-            variable_args=(), **frozen_params):
+                 variable_args=(), recalib=None, gates=None, **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         self._static_args = frozen_params.copy()
@@ -509,12 +503,12 @@ class FDomainDetFrameGenerator(object):
         self.rframe_generator = rFrameGeneratorClass(
             variable_args=rframe_variables, **frozen_params)
         self.set_epoch(epoch)
+        # set calibration model
+        self.recalib = recalib
         # if detectors are provided, convert to detector type; also ensure that
         # location variables are specified
         if detectors is not None:
-            # FIXME: use the following when we switch to 2.7
-            #self.detectors = {det: Detector(det) for det in detectors}
-            self.detectors = dict([(det, Detector(det)) for det in detectors])
+            self.detectors = {det: Detector(det) for det in detectors}
             missing_args = [arg for arg in self.location_args if not
                 (arg in self.current_params or arg in self.variable_args)]
             if any(missing_args):
@@ -525,6 +519,7 @@ class FDomainDetFrameGenerator(object):
         else:
             self.detectors = {'RF': None}
         self.detector_names = sorted(self.detectors.keys())
+        self.gates = gates
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
@@ -539,23 +534,34 @@ class FDomainDetFrameGenerator(object):
     def epoch(self):
         return _lal.LIGOTimeGPS(self._epoch)
 
-    def generate(self, *args):
+    def generate_from_args(self, *args):
         """Generates a waveform, applies a time shift and the detector response
-        function."""
-        self.current_params.update(dict(zip(self.variable_args, args)))
-        # FIXME: use the following when we switch to 2.7
-        #rfparams = {param: self.current_params[param]
-        #    for param in self.rframe_generator.variable_args}
-        rfparams = dict([(param, self.current_params[param])
-            for param in self.rframe_generator.variable_args])
-        hp, hc = self.rframe_generator.generate_from_kwargs(**rfparams)
+        function from the given args.
+
+        The args are assumed to be in the same order as the variable args.
+        """
+        return self.generate(**dict(zip(self.variable_args, args)))
+
+    def generate(self, **kwargs):
+        """Generates a waveform, applies a time shift and the detector response
+        function from the given kwargs.
+        """
+        self.current_params.update(kwargs)
+        rfparams = {param: self.current_params[param]
+            for param in kwargs if param not in self.location_args}
+        hp, hc = self.rframe_generator.generate(**rfparams)
+        if isinstance(hp, TimeSeries):
+            df = self.current_params['delta_f']
+            hp = hp.to_frequencyseries(delta_f=df)
+            hc = hc.to_frequencyseries(delta_f=df)
+            # time-domain waveforms will not be shifted so that the peak amp
+            # happens at the end of the time series (as they are for f-domain),
+            # so we add an additional shift to account for it
+            tshift = 1./df - abs(hp._epoch)
+        else:
+            tshift = 0.
         hp._epoch = hc._epoch = self._epoch
         h = {}
-        if 'tc' in self.current_params:
-            try:
-                kmin = int(self.current_params['f_lower']/hp.delta_f)
-            except KeyError:
-                kmin = 0
         if self.detector_names != ['RF']:
             for detname, det in self.detectors.items():
                 # apply detector response function
@@ -567,13 +573,76 @@ class FDomainDetFrameGenerator(object):
                 # apply the time shift
                 tc = self.current_params['tc'] + \
                     det.time_delay_from_earth_center(self.current_params['ra'],
-                                                     self.current_params['dec'],
-                                                     self.current_params['tc'])
-                h[detname] = apply_fd_time_shift(thish, tc, kmin=kmin, copy=False)
+                         self.current_params['dec'], self.current_params['tc'])
+                h[detname] = apply_fd_time_shift(thish, tc+tshift, copy=False)
+                if self.recalib:
+                    # recalibrate with given calibration model
+                    h[detname] = \
+                        self.recalib[detname].map_to_adjust(h[detname],
+                            **self.current_params)
         else:
             # no detector response, just use the + polarization
             if 'tc' in self.current_params:
-                hp = apply_fd_time_shift(hp, self.current_params['tc'],
-                            kmin=kmin, copy=False)
+                hp = apply_fd_time_shift(hp, self.current_params['tc']+tshift,
+                                         copy=False)
             h['RF'] = hp
+        if self.gates is not None:
+            # resize all to nearest power of 2
+            for d in h.values():
+                d.resize(ceilpow2(len(d)-1) + 1)
+            h = gate.apply_gates_to_fd(h, self.gates)
         return h
+
+
+def select_waveform_generator(approximant):
+    """Returns the single-IFO generator for the approximant.
+
+    Parameters
+    ----------
+    approximant : str
+        Name of waveform approximant. Valid names can be found using
+        ``pycbc.waveform`` methods.
+
+    Returns
+    -------
+    generator : (PyCBC generator instance)
+        A waveform generator object.
+
+    Examples
+    --------
+    Get a list of available approximants:
+    >>> from pycbc import waveform
+    >>> waveform.fd_approximants()
+    >>> waveform.td_approximants()
+    >>> from pycbc.waveform import ringdown
+    >>> ringdown.ringdown_fd_approximants.keys()
+
+    Get generator object:
+    >>> from pycbc.waveform.generator import select_waveform_generator
+    >>> select_waveform_generator(waveform.fd_approximants()[0])
+    """
+
+    # check if frequency-domain CBC waveform
+    if approximant in waveform.fd_approximants():
+        return FDomainCBCGenerator
+
+    # check if time-domain CBC waveform
+    elif approximant in waveform.td_approximants():
+        return TDomainCBCGenerator
+
+    # check if frequency-domain ringdown waveform
+    elif approximant in ringdown.ringdown_fd_approximants:
+        if approximant == 'FdQNMfromFinalMassSpin':
+            return FDomainMassSpinRingdownGenerator
+        elif approximant == 'FdQNMfromFreqTau':
+            return FDomainFreqTauRingdownGenerator
+
+    elif approximant in ringdown.ringdown_td_approximants:
+        if approximant == 'TdQNMfromFinalMassSpin':
+            return TDomainMassSpinRingdownGenerator
+        elif approximant == 'TdQNMfromFreqTau':
+            return TDomainFreqTauRingdownGenerator
+
+    # otherwise waveform approximant is not supported
+    else:
+        raise ValueError("%s is not a valid approximant." % approximant)

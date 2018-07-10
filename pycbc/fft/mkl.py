@@ -1,18 +1,7 @@
-import ctypes, functools, pycbc.libutils
+import ctypes, pycbc.libutils
 from pycbc.types import zeros
 from .core import _BaseFFT, _BaseIFFT
 import pycbc.scheme as _scheme
-
-def memoize(obj):
-    cache = obj.cache = {}
-
-    @functools.wraps(obj)
-    def memoizer(*args, **kwargs):
-        key = str(args) + str(kwargs)
-        if key not in cache:
-            cache[key] = obj(*args, **kwargs)
-        return cache[key]
-    return memoizer
 
 lib = pycbc.libutils.get_ctypes_library('mkl_rt', [])
 if lib is None:
@@ -53,22 +42,22 @@ DFTI_COMPLEX_COMPLEX = 39
 DFTI_COMPLEX_REAL = 40
 DFTI_REAL_COMPLEX = 41
 DFTI_REAL_REAL = 42
-DFTI_INPLACE = 43         
-DFTI_NOT_INPLACE = 44      
+DFTI_INPLACE = 43
+DFTI_NOT_INPLACE = 44
 DFTI_ORDERED = 48
 DFTI_BACKWARD_SCRAMBLED = 49
-DFTI_ALLOW = 51            
+DFTI_ALLOW = 51
 DFTI_AVOID = 52
 DFTI_NONE = 53
-DFTI_CCS_FORMAT = 54       
-DFTI_PACK_FORMAT = 55    
-DFTI_PERM_FORMAT = 56      
-DFTI_CCE_FORMAT = 57      
+DFTI_CCS_FORMAT = 54
+DFTI_PACK_FORMAT = 55
+DFTI_PERM_FORMAT = 56
+DFTI_CCE_FORMAT = 57
 
 mkl_prec = {'single': DFTI_SINGLE,
             'double': DFTI_DOUBLE,
            }
-            
+
 mkl_domain = {'real': {'complex': DFTI_REAL},
               'complex': {'real': DFTI_REAL,
                           'complex':DFTI_COMPLEX,
@@ -76,26 +65,25 @@ mkl_domain = {'real': {'complex': DFTI_REAL},
              }
 
 def check_status(status):
-    """ Check the status of a mkl functions and raise a python exeption if 
+    """ Check the status of a mkl functions and raise a python exeption if
     there is an error.
     """
     if status:
         msg = lib.DftiErrorMessage(status)
         msg = ctypes.c_char_p(msg).value
         raise RuntimeError(msg)
-   
-@memoize     
+
 def create_descriptor(size, idtype, odtype, inplace):
     invec = zeros(1, dtype=idtype)
     outvec = zeros(1, dtype=odtype)
-    
+
     desc = ctypes.c_void_p(1)
     f = lib.DftiCreateDescriptor
     f.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int]
-    
+
     prec = mkl_prec[invec.precision]
     domain = mkl_domain[str(invec.kind)][str(outvec.kind)]
-    
+
     status = f(ctypes.byref(desc), prec, domain, 1, size)
     if inplace:
         lib.DftiSetValue(desc, DFTI_PLACEMENT, DFTI_INPLACE)
@@ -105,7 +93,7 @@ def create_descriptor(size, idtype, odtype, inplace):
     lib.DftiCommitDescriptor(desc)
     check_status(status)
     return desc
-    
+
 def fft(invec, outvec, prec, itype, otype):
     descr = create_descriptor(max(len(invec), len(outvec)), invec.dtype,
                               outvec.dtype, (invec.ptr == outvec.ptr))
@@ -121,7 +109,7 @@ def ifft(invec, outvec, prec, itype, otype):
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
     check_status(status)
- 
+
 # Class based API
 
 _create_descr = lib.DftiCreateDescriptor

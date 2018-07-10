@@ -6,3 +6,22 @@ ignore-patterns:
     - test/*
     - docs/*
     - tools/*
+    - build/*
+    - dist/*
+    - PyCBC.egg-info/*
+    - pycbc/ligolw/*
+
+pylint:
+  disable:
+  - too-many-arguments
+  - too-many-locals
+  - too-many-branches
+  - too-many-statements
+
+pyflakes:
+  disable:
+  - F841
+
+mccabe:
+  disable:
+  - MC0001

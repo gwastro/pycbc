@@ -26,15 +26,16 @@ from xml.sax.saxutils import unescape
 import pycbc.results
 from pycbc.results import unescape_table
 from pycbc.results.metadata import save_html_with_metadata
-from pycbc.workflow.core import SegFile
+from pycbc.workflow.core import SegFile, makedir
 
-def render_workflow_html_template(filename, subtemplate, filelists):
+def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
     """ Writes a template given inputs from the workflow generator. Takes
     a list of tuples. Each tuple is a pycbc File object. Also the name of the
     subtemplate to render and the filename of the output.
     """
 
-    dir = os.path.dirname(filename)
+    dirnam = os.path.dirname(filename)
+    makedir(dirnam)
 
     try:
         filenames = [f.name for filelist in filelists for f in filelist if f is not None]
@@ -49,7 +50,8 @@ def render_workflow_html_template(filename, subtemplate, filelists):
     env.globals.update(len=len)
     subtemplate = env.get_template(subtemplate)
     context = {'filelists' : filelists,
-               'dir' : dir}
+               'dir' : dirnam}
+    context.update(kwargs)
     output = subtemplate.render(context)
 
     # save as html page
@@ -68,9 +70,9 @@ def get_embedded_config(filename):
         cp = pycbc.results.load_metadata_from_file(filename)
     except TypeError:
         cp = ConfigParser()
-        
+
     cp.check_option = types.MethodType(check_option, cp)
- 
+
     return cp
 
 def setup_template_render(path, config_path):
@@ -124,14 +126,13 @@ def render_default(path, cp):
 
     if path.endswith('.xml') or path.endswith('.xml.gz'):
         # segment or veto file return a segmentslistdict instance
-        with open(path, 'r') as xmlfile:
-            try:
-                wf_file = SegFile.from_segment_xml(path)
-                # FIXME: This is a dictionary, but the code wants a segmentlist
-                #        for now I just coalesce.
-                seg_dict = wf_file.return_union_seglist()
-            except Exception as e:
-                print 'No segment table found in', path, ':', e
+        try:
+            wf_file = SegFile.from_segment_xml(path)
+            # FIXME: This is a dictionary, but the code wants a segmentlist
+            #        for now I just coalesce.
+            wf_file.return_union_seglist()
+        except Exception as e:
+            print('No segment table found in %s : %s' % (path, e))
 
     # render template
     template_dir = pycbc.results.__path__[0] + '/templates/files'

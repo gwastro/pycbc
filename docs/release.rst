@@ -30,6 +30,8 @@ To create a new PyCBC release:
     unless you are back-porting a bug fix from a new release series to an
     old production release series.
 
+Creating the release will trigger a Travis build that updates CVMFS, Docker, and PyPI with the release.
+
 ------------------------------------------------
 Backporting Bug Fixes to Previous Release Series
 ------------------------------------------------
@@ -52,53 +54,4 @@ tag and cherry pick the changes to that branch. For example, to create a
   git push
 
 Then go to the `PyCBC release page <https://github.com/ligo-cbc/pycbc/releases>`_ and click on ``Draft a new release`` following the instructions above.
-
-=====================================
-Uploading to the Python Package Index
-=====================================
-
-.. note::
-
-    Keep in mind that once you register a version number with the package index and upload a package, you can never change it. You can only deactivate the package from the index, and increment the version number.
-
-If this is the first time that you have pushed to PyPI, you will need to create a configuration file. Create a file in your home directory called ``.pypirc`` that contains the lines::
-    [distutils] # this tells distutils what package indexes you can push to
-    index-servers =
-    pypi
-    pypitest
-
-    [pypi]
-    repository: https://pypi.python.org/pypi
-    username: your_username
-    password: your_password
-
-    [pypitest]
-    repository: https://testpypi.python.org/pypi
-    username: your_username
-    password: your_password
-
-Replace ``your_username`` and ``your_password`` with your PyPI and PyPI testing usernames and passwords.
-
-Once you have tagged the release of PyCBC a tarball should be available from the `GitHib PyCBC releases page <https://github.com/ligo-cbc/pycbc/releases>`_. Download this tarball, untar it, and change into the source directory of the tarball. 
-
-First check the release with the PyPI test repository. Register the package with 
-
-.. code:: bash
-
-    python setup.py register -r pypitest
-
-If you get no errors, you can then upload the package with
-
-.. code:: bash
-
-    python setup.py sdist upload -r pypitest
-
-You should now see the package uploaded in the `PyPI Test Repository <https://testpypi.python.org/pypi>`_. If this is successful, you can publish it to the main repository with the commands
-
-.. code:: bash
-
-    python setup.py register -r pypi
-    python setup.py sdist upload -r pypi
-
-The package should then be available in PyPI for download.
 

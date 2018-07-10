@@ -224,7 +224,7 @@ def get_random_mass(numPoints, massRangeParams):
     # only systems that can yield (at least) the desired remnant
     # disk mass and that pass the mass and spin range cuts.
     else:
-        ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
+        _, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
 
         # Generate EM constraint surface: minumum eta as a function of BH spin
         # and NS mass required to produce an EM counterpart
@@ -291,7 +291,9 @@ def get_random_mass(numPoints, massRangeParams):
 
     return mass1, mass2, spin1z, spin2z
 
-def get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
+def get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                   lambda1=None, lambda2=None, quadparam1=None,
+                   quadparam2=None):
     """
     Function to convert between masses and spins and locations in the xi
     parameter space. Xi = Cartesian metric and rotated to principal components.
@@ -324,12 +326,16 @@ def get_cov_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
     """
 
     # Do this by doing masses - > lambdas -> mus
-    mus = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper)
+    mus = get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                          lambda1=lambda1, lambda2=lambda2,
+                          quadparam1=quadparam1, quadparam2=quadparam2)
     # and then mus -> xis
     xis = get_covaried_params(mus, metricParams.evecsCV[fUpper])
     return xis
 
-def get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
+def get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper,
+                    lambda1=None, lambda2=None, quadparam1=None,
+                    quadparam2=None):
     """
     Function to convert between masses and spins and locations in the mu
     parameter space. Mu = Cartesian metric, but not principal components.
@@ -362,7 +368,9 @@ def get_conv_params(mass1, mass2, spin1z, spin2z, metricParams, fUpper):
 
     # Do this by masses -> lambdas
     lambdas = get_chirp_params(mass1, mass2, spin1z, spin2z,
-                               metricParams.f0, metricParams.pnOrder)
+                               metricParams.f0, metricParams.pnOrder,
+                               lambda1=lambda1, lambda2=lambda2,
+                               quadparam1=quadparam1, quadparam2=quadparam2)
     # and lambdas -> mus
     mus = get_mu_params(lambdas, metricParams, fUpper)
     return mus
@@ -515,17 +523,11 @@ def get_point_distance(point1, point2, metricParams, fUpper):
     aMass2 = point1[1]
     aSpin1 = point1[2]
     aSpin2 = point1[3]
-    try:
-        leng = len(aMass1)
-        aArray = True
-    except:
-        aArray = False
 
     bMass1 = point2[0]
     bMass2 = point2[1]
     bSpin1 = point2[2]
     bSpin2 = point2[3]
-    bArray = False
 
     aXis = get_cov_params(aMass1, aMass2, aSpin1, aSpin2, metricParams, fUpper)
 
@@ -656,10 +658,10 @@ def find_max_and_min_frequencies(name, mass_range_params, freqs):
         mass1, mass2, spin1z, spin2z = \
                 get_random_mass(1000000, mass_range_params)
         mass_dict = {}
-        mass_dict['m1'] = mass1
-        mass_dict['m2'] = mass2
-        mass_dict['s1z'] = spin1z
-        mass_dict['s2z'] = spin2z
+        mass_dict['mass1'] = mass1
+        mass_dict['mass2'] = mass2
+        mass_dict['spin1z'] = spin1z
+        mass_dict['spin2z'] = spin2z
         tmp_freqs = cutoff_fns[name](mass_dict)
         upper_f_cutoff = tmp_freqs.max()
         lower_f_cutoff = tmp_freqs.min()

@@ -38,12 +38,12 @@ __program__ = "pycbc_splitbank"
 import time
 import argparse
 from glue import gpstime
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
-from glue import git_version
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import table
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import process as ligolw_process
+from pycbc import version
 from numpy import random, ceil
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
@@ -161,8 +161,8 @@ for num, (idx1, idx2) in enumerate(zip(index_list[:-1], index_list[1:])):
 
     proc_id = ligolw_process.register_to_xmldoc(outdoc, 
                     __program__, args.__dict__, ifos=["G1"],
-                    version=git_version.id, cvs_repository=git_version.branch,
-                    cvs_entry_time=git_version.date).process_id
+                    version=version.version, cvs_repository=version.git_branch,
+                    cvs_entry_time=version.date).process_id
 
     sngl_inspiral_table = lsctables.New(tabletype,columns=template_bank_table.columnnames)
     outdoc.childNodes[0].appendChild(sngl_inspiral_table)

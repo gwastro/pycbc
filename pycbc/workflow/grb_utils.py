@@ -25,15 +25,18 @@
 """
 This library code contains functions and classes that are used in the
 generation of pygrb workflows. For details about pycbc.workflow see here:
-http://ligo-cbc.github.io/pycbc/latest/html/workflow.html
+http://pycbc.org/pycbc/latest/html/workflow.html
 """
+
+from __future__ import print_function
 import sys
 import os
 import shutil
 import urlparse, urllib
 from glue import segments
-from glue.ligolw import ligolw, lsctables, utils, ilwd
+from pycbc.ligolw import ligolw, lsctables, utils, ilwd
 from pycbc.workflow.core import File, FileList, resolve_url
+from pycbc.workflow.jobsetup import select_generic_executable
 
 
 def set_grb_start_end(cp, start, end):
@@ -50,7 +53,7 @@ def set_grb_start_end(cp, start, end):
 
     end : int
     The end of the workflow analysis time.
-    
+
     Returns
     --------
     cp : pycbc.workflow.configuration.WorkflowConfigParser object
@@ -146,7 +149,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
 
     sci_seg : glue.segments.segment
     The science segment for the analysis run.
-    
+
     out_dir : str
     The output directory, destination for xml file.
 
@@ -161,9 +164,9 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
     xmldoc.appendChild(ligolw.LIGO_LW())
     tbl = lsctables.New(lsctables.ExtTriggersTable)
     cols = tbl.validcolumns
-    xmldoc.childNodes[-1].appendChild(tbl)    
+    xmldoc.childNodes[-1].appendChild(tbl)
     row = tbl.appendRow()
-    
+
     # Add known attributes for this GRB
     setattr(row, "event_ra", float(cp.get("workflow", "ra")))
     setattr(row, "event_dec", float(cp.get("workflow", "dec")))
@@ -184,7 +187,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
             elif entry == 'event_id':
                 row.event_id = ilwd.ilwdchar("external_trigger:event_id:0")
             else:
-                print >> sys.stderr, "Column %s not recognized" %(entry)
+                print("Column %s not recognized" %(entry), file=sys.stderr)
                 raise ValueError
 
     # Save file
@@ -195,7 +198,7 @@ def make_exttrig_file(cp, ifos, sci_seg, out_dir):
     xml_file_url = urlparse.urljoin("file:", urllib.pathname2url(xml_file_path))
     xml_file = File(ifos, xml_file_name, sci_seg, file_url=xml_file_url)
     xml_file.PFN(xml_file_url, site="local")
-    
+
     return xml_file
 
 
@@ -229,3 +232,56 @@ def get_ipn_sky_files(workflow, file_url, tags=None):
 
     return sky_points_file
 
+def make_gating_node(workflow, datafind_files, outdir=None, tags=None):
+    '''
+    Generate jobs for autogating the data for PyGRB runs.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.core.Workflow
+        An instanced class that manages the constructed workflow.
+    datafind_files : pycbc.workflow.core.FileList
+        A FileList containing the frame files to be gated.
+    outdir : string
+        Path of the output directory
+    tags : list of strings
+        If given these tags are used to uniquely name and identify output files
+        that would be produced in multiple calls to this function.
+
+    Returns
+    --------
+    condition_strain_nodes : list
+        List containing the pycbc.workflow.core.Node objects representing the
+        autogating jobs.
+    condition_strain_outs : pycbc.workflow.core.FileList
+        FileList containing the pycbc.workflow.core.File objects representing
+        the gated frame files.
+    '''
+
+    cp = workflow.cp
+    if tags is None:
+        tags = []
+
+    condition_strain_class = select_generic_executable(workflow,
+                                                       "condition_strain")
+    condition_strain_nodes = []
+    condition_strain_outs = FileList([])
+    for ifo in workflow.ifos:
+        input_files = FileList([datafind_file for datafind_file in \
+                                datafind_files if datafind_file.ifo == ifo])
+        condition_strain_jobs = condition_strain_class(cp, "condition_strain",
+                ifo=ifo, out_dir=outdir, tags=tags)
+        condition_strain_node, condition_strain_out = \
+                condition_strain_jobs.create_node(input_files, tags=tags)
+        condition_strain_nodes.append(condition_strain_node)
+        condition_strain_outs.extend(FileList([condition_strain_out]))
+
+    return condition_strain_nodes, condition_strain_outs
+
+
+def get_sky_grid_scale(sky_error, sigma_sys=6.8359):
+    """
+    Calculate suitable 3-sigma radius of the search patch, incorporating Fermi
+    GBM systematic if necessary.
+    """
+    return 1.65 * (sky_error**2 + sigma_sys**2)**0.5

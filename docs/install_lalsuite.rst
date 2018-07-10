@@ -63,7 +63,7 @@ Building and installing into your virtual environment
 
     The install instructions below install lalsuite into a directory called ``opt/lalsuite`` under your virtual environment. You can remove lalsuite by removing this directory with ``rm -rf ${VIRTUAL_ENV}/opt/lalsuite`` from inside your virtual environment. If you want to install multiple versions of lalsuite in your virtual environment, you can chose different directories by specifying a different ``--prefix`` to configure below.
 
-First make sure you are in your virtual environment by activiating it. If you
+First make sure you are in your virtual environment by activating it. If you
 are not already in your virtual environment run the command
 
 .. code-block:: bash
@@ -80,9 +80,13 @@ From the top-level lalsuite directory, you can use the master configure script t
     ./00boot 
     ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps
 
+.. note::
+
+    The configure command above *does not* build lalapps executables, which include some template bank generation codes, and ``lalapps_inspinj`` and ``lalapps_coh_PTF_inspiral`` which are currently used in search pipelines.  To instead build lalapps executables, run the configure command without the ``disable-lalapps`` option.
+
 Next make the software and install it. If you are on a multicore machine, you
 can speed this up by running ``make -j N`` where ``N`` is the number of
-processors you want to use for the build (e.g. 16).
+processors you want to use for the build (e.g. 16). To use the maximum number of processors, run ``make -j``. (This may not be appropriate on shared machines, e.g. LDG head nodes.)
 
 .. code-block:: bash
 
@@ -106,7 +110,7 @@ changing ``~/pycbc/src`` as appropriate for your virtual environment path.
 
 .. note::
 
-    If you want to manage multiple versions of lalsuite, it is not reccommended to source the ``lalsuite-user-env.sh`` script from your activate script.  You should just source it when you enter your virtual environment with the command ``source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh``
+    If you want to manage multiple versions of lalsuite, it is not recommended to source the ``lalsuite-user-env.sh`` script in your activate script.  Instead, you should explicitly source the lalsuite install corresponding to your pycbc build after entering your virtual environment, with the command ``source ${VIRTUAL_ENV}/opt/lalsuite/etc/lalsuite-user-env.sh``
 
 lalsuite is now installed in your virtual environment. You can check this with the command
 
@@ -116,38 +120,18 @@ lalsuite is now installed in your virtual environment. You can check this with t
 
 which should return the path to the installation under your virtual environment.
 
-If you are running a pipeline that uses the old LALApps programs ``lalapps_inspinj`` or ``lalapps_coh_PTF_inspiral`` then you can optionally build and install these by running the commands
+=========================================
+Additional data files from lalsuite-extra
+=========================================
 
-.. code-block:: bash
-
-    cd $VIRTUAL_ENV/src/lalsuite/lalapps
-    LIBS="-lhdf5_hl -lhdf5 -ldl -lz" ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite --enable-static-binaries --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic
-    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
-    make
-    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
-    make lalapps_inspinj
-    cp lalapps_inspinj $VIRTUAL_ENV/bin
-    cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/ring
-    make lalapps_coh_PTF_inspiral
-    cp lalapps_coh_PTF_inspiral $VIRTUAL_ENV/bin
-
-.. note::
-
-    On the AEI atlas cluster, the HDF5 libraries are installed in a non-stardard location so you will need to add ``-L/usr/lib/x86_64-linux-gnu/hdf5/serial`` to the ``LIBS`` variable before configuring lalapps.
-
-.. note::
-
-    The LALApps build above builds static binaries, so you will need static libraries for fftw, glibc, etc. installed on your system to do this. These libraries are present by default in a LIGO Data Grid environment. If you do not wish to build static LALApps programs, the omit the ``--enable-static-binaries`` option to the configure script.
-
-
-In addition to lalsuite, the generation of certain template waveforms (e.g.  the reduced order model implementations of SEOBNRv2 and SEOBNRv4) requires addition data files from the `lalsuite-extra repository <https://svn.ligo.caltech.edu/svn/lalsuite-extra/>`_. These data can either be obtained by downloading and installing lalsuite-extra into your virtual environment or using a copy of the data from the CERN virtual filesystem.
+In addition to lalsuite, the generation of certain template waveforms (e.g. the reduced order model implementations of SEOBNRv2 and SEOBNRv4) requires data files from the `lalsuite-extra repository <https://git.ligo.org/lscsoft/lalsuite-extra/>`_. These data can either be obtained by downloading and installing lalsuite-extra into your virtual environment or using a copy of the data from the CERN virtual filesystem.
 
 To install the data into your virtual environment, run the commands
 
 .. code-block:: bash
 
     cd ${VIRTUAL_ENV}/src
-    svn co https://svn.ligo.caltech.edu/svn/lalsuite-extra/
+    git clone https://git.ligo.org/lscsoft/lalsuite-extra.git
     cd lalsuite-extra
     ./00boot
     ./configure --prefix=${VIRTUAL_ENV}/opt/lalsuite-extra
@@ -166,5 +150,4 @@ run the command
 
 to add the appropriate path to your virtual environment's ``activate`` script.
 Then deactivate and activate your virtual environment.
-
 

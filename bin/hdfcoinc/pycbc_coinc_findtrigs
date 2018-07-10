@@ -7,10 +7,10 @@ import pycbc.version
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
-parser.add_argument("--veto-files", nargs='*',
+parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     help="Optional veto file. Triggers within veto segments "
                     "contained in the file are ignored")
-parser.add_argument("--segment-name",
+parser.add_argument("--segment-name", nargs='*', action='append', default=[],
                     help="Optional, name of veto segment in veto file")
 parser.add_argument("--strict-coinc-time", action='store_true',
                     help="Optional, only allow coincidences between triggers "
@@ -24,6 +24,7 @@ parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
                     help="Files containing ranking statistic info")
 parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
                     help="The ranking statistic to use", default='newsnr')
+parser.add_argument("--use-maxalpha", action="store_true")
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
 parser.add_argument("--timeslide-interval", type=float,
@@ -48,6 +49,8 @@ args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
 args.statistic_files = sum(args.statistic_files, [])
+args.segment_name = sum(args.segment_name, [])
+args.veto_files = sum(args.veto_files, [])
 
 if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=logging.DEBUG)
@@ -61,7 +64,7 @@ def parse_template_range(num_templates, rangestr):
     return tmin, tmax
 
 class ReadByTemplate(object):
-    def __init__(self, filename, bank=None, segment_name=None, veto_files=[]):
+    def __init__(self, filename, bank=None, segment_name=[], veto_files=[]):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
         self.ifo = self.file.keys()[0]
@@ -74,11 +77,11 @@ class ReadByTemplate(object):
         key = '%s/search/' % self.ifo
         s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
-        for vfile in veto_files:
+        for vfile, name in zip(veto_files, segment_name):
             veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
-                                                     segment_name=segment_name)
+                                                     segment_name=name)
             self.segs = (self.segs - veto_segs).coalesce()
-            self.valid = veto.segments_to_start_end(self.segs)
+        self.valid = veto.segments_to_start_end(self.segs)
 
     def get_data(self, col, num):
         """ Get a column of data for template with id 'num'
@@ -124,8 +127,12 @@ class ReadByTemplate(object):
 
         if self.bank is not None:
             self.param = {}
-            for col in self.bank:
-                self.param[col] = self.bank[col][self.template_num]
+            if 'parameters' in self.bank.attrs :
+                for col in self.bank.attrs['parameters']:
+                    self.param[col] = self.bank[col][self.template_num]
+            else :
+                for col in self.bank:
+                    self.param[col] = self.bank[col][self.template_num]
 
         # Calculate the trigger id by adding the relative offset in self.keep
         # to the absolute beginning index of this templates triggers stored
@@ -176,14 +183,16 @@ if args.strict_coinc_time:
 
 # initialize a Stat class instance to calculate the coinc ranking statistic
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
+if args.use_maxalpha:
+    rank_method.use_alphamax()
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 
 if time_window >= args.timeslide_interval and args.timeslide_interval is not None:
     raise parser.error("The maximum time delay between detectors should be smaller "
                        "than the timeslide interval.")
-                       
-# slide = 0 significes don't do timeslides
+
+# slide = 0 means don't do timeslides
 if args.timeslide_interval is None:
     args.timeslide_interval = 0
 

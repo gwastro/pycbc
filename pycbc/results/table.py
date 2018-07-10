@@ -36,7 +36,7 @@ google_table_template = mako.template.Template("""
             data.addColumn('${str(type)}', '${str(name)}');
         % endfor
         data.addRows(${data});
-        
+
         % if format_strings is not None:
             % for i, format_string in enumerate(format_strings):
                 % if format_string is not None:
@@ -46,8 +46,8 @@ google_table_template = mako.template.Template("""
             % endfor
         % endif
         var table = new google.visualization.Table(document.getElementById('${div_id}'));
-        table.draw(data, {showRowNumber: 'true', 
-                          page: '${page_enable}', 
+        table.draw(data, {showRowNumber: 'true',
+                          page: '${page_enable}',
                           allowHtml: 'true',
                           pageSize: ${page_size}});
       }
@@ -57,30 +57,30 @@ google_table_template = mako.template.Template("""
 
 def table(columns, names, page_size=None, format_strings=None):
     """ Return an html table of this data
-    
+
     Parameters
     ----------
-    columns : list of numpy arrays 
-    names : list of strings 
-        The list of columns names  
+    columns : list of numpy arrays
+    names : list of strings
+        The list of columns names
     page_size : {int, None}, optional
         The number of items to show on each page of the table
     format_strings : {lists of strings, None}, optional
         The ICU format string for this column, None for no formatting. All
     columns must have a format string if provided.
-        
+
     Returns
     -------
-    html_table : str 
+    html_table : str
         A str containing the html code to display a table of this data
     """
     if page_size is None:
         page = 'disable'
     else:
         page = 'enable'
-        
+
     div_id = uuid.uuid4()
-    
+
     column_descriptions = []
     for column, name in zip(columns, names):
         if column.dtype.kind == 'S':
@@ -88,11 +88,11 @@ def table(columns, names, page_size=None, format_strings=None):
         else:
             ctype = 'number'
         column_descriptions.append((ctype, name))
-    
+
     data = []
     for item in zip(*columns):
         data.append(list(item))
-        
+
     return google_table_template.render(div_id=div_id,
                                 page_enable=page,
                                 column_descriptions = column_descriptions,
@@ -112,7 +112,7 @@ static_table_template = mako.template.Template("""
             % endfor
             </tr>
         % endif
-    
+
         % for i in range(len(data)):
             <tr>
             % for j in range(len(data[i])):
@@ -124,17 +124,17 @@ static_table_template = mako.template.Template("""
         % endfor
     </table>
 """)
-                               
+
 def static_table(data, titles=None):
     """ Return an html tableo of this data
-    
+
     Parameters
     ----------
     data : two-dimensional numpy string array
         Array containing the cell values
-    titles : numpy array 
+    titles : numpy array
         Vector str of titles
-    
+
     Returns
     -------
     html_table : str

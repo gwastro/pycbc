@@ -52,13 +52,13 @@ class Testcorrelate(unittest.TestCase):
         self.y = Array(yr + yi * 1.0j, dtype=complex64)
         self.z = zeros(2**20, dtype=complex64)
         trusted_correlate(self.x, self.y, self.z)
-        
+
     def test_correlate(self):
         with self.context:
             z = zeros(2**20, dtype=complex64)
             correlate(self.x, self.y, z)
             self.assertTrue(self.z.almost_equal_elem(z, self.tolerance))
-            
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Testcorrelate))
 

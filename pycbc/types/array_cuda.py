@@ -73,19 +73,17 @@ def call_prepare(self, sz, allocator):
 
 class LowerLatencyReductionKernel(ReductionKernel):
     def __init__(self, dtype_out,
-            neutral, reduce_expr, map_expr=None, arguments=None,
-            name="reduce_kernel", keep=False, options=None, preamble=""):
-            ReductionKernel.__init__(self, dtype_out,
-                neutral, reduce_expr, map_expr, arguments,
-                name, keep, options, preamble)
+                 neutral, reduce_expr, map_expr=None, arguments=None,
+                 name="reduce_kernel", keep=False, options=None, preamble=""):
+        ReductionKernel.__init__(self, dtype_out,
+                                 neutral, reduce_expr, map_expr, arguments,
+                                 name, keep, options, preamble)
 
-            self.shared_size=self.block_size*self.dtype_out.itemsize
+        self.shared_size=self.block_size*self.dtype_out.itemsize
 
 
     def __call__(self, *args, **kwargs):
         f = self.stage1_func
-        arg_types = self.stage1_arg_types
-        stage1_args = args
         s1_invocation_args = [] 
         for arg in args:
             s1_invocation_args.append(arg.gpudata)
@@ -99,7 +97,6 @@ class LowerLatencyReductionKernel(ReductionKernel):
 
         while True:
             f = self.stage2_func
-            arg_types = self.stage2_arg_types
             sz = result.size
             result2 = result
             result, block_count, seq_count, grid_size, block_size = call_prepare(self, sz, args[0].allocator)

@@ -17,13 +17,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import glue
-from glue.ligolw import ilwd
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
+from pycbc.ligolw import ilwd
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils
 import logging
 import numpy
+import pycbc
+import pycbc.version
 from pycbc import DYN_RANGE_FAC
 from pycbc import fft
 from pycbc import pnutils
@@ -141,6 +142,14 @@ parser.add_argument('--mass2', type=float, required=True,
                     help='Second mass of the binary in solar masses.')
 parser.add_argument('--inclination', type=float, required=True,
                     help='Inclination of the binary in radians.')
+parser.add_argument('--coa-phase', type=float, default=0.0,
+                    help='Reference orbital phase parameter in radians. '
+                         'Note, this is not the same as the constant '
+                         'frequency-domain phase shift that is maximized '
+                         'over in the standard matched-filter search and '
+                         'which is also commonly called coa-phase.'
+                         'Called phiRef in LALSimulation. '
+                         'Called coa_phase in sim_inspiral tables.')
 parser.add_argument('--taper',  required=True,
                     choices=['TAPER_NONE', 'TAPER_START',
                              'TAPER_END', 'TAPER_STARTEND'],
@@ -163,6 +172,32 @@ parser.add_argument('--spin2y', type=float, default=0.0,
 parser.add_argument('--spin2x', type=float, default=0.0,
                     help='(optional) Spin in x direction for mass2.')
 
+# tidal options
+parser.add_argument('--lambda1', type=float, default=None,
+                    help='(optional) Tidal lambda term for mass1.'
+                         'WARNING: Giving this option will produce an XML '
+                         'file containing a lambda1 column. This file will '
+                         'not be readable by default methods.')
+parser.add_argument('--lambda2', type=float, default=None,
+                    help='(optional) Tidal lambda term for mass2. '
+                         'WARNING: Giving this option will produce an XML '
+                         'file containing a lambda2 column. This file will '
+                         'not be readable by default methods.')
+parser.add_argument('--dquad-mon1', type=float, default=None,
+                    help='(optional) Tidal self-spin term for mass1, '
+                         'for BHs this is 0 (its the deformation relative to '
+                         'Kerr. '
+                         'WARNING: Giving this option will produce an XML '
+                         'file containing a dquad_mon1 column. This file will '
+                         'not be readable by default methods.')
+parser.add_argument('--dquad-mon2', type=float, default=None,
+                    help='(optional) Tidal self-spin term for mass2, '
+                         'for BHs this is 0 (its the deformation relative to '
+                         'Kerr. '
+                         'WARNING: Giving this option will produce an XML '
+                         'file containing a dquad_mon2 column. This file will '
+                         'not be readable by default methods.')
+
 # Use this for NR injections
 parser.add_argument('--numrel-data', type=str, default='',
                     help="Location of NR data file if using NR injections.")
@@ -172,10 +207,10 @@ parser.add_argument('--geocentric-end-time', type=float, required=True,
                     help='The geocentric GPS end time of the injection.')
 
 # data conditioning options
-parser.add_argument('--psd-low-frequency-cutoff', type=float, required=True,
+parser.add_argument('--low-frequency-cutoff', type=float, required=True,
                     help='Frequency to begin generating the PSD in Hz. This '
                          'is the start frequency of the SNR calculation.')
-parser.add_argument('--psd-high-frequency-cutoff', type=float,
+parser.add_argument('--high-frequency-cutoff', type=float,
                     help='(optional) Upper frequency to terminate the SNR '
                          'calculation. Default will be Nyquist frequency, '
                          'ie. int(sample_rate/2).')
@@ -215,8 +250,8 @@ for ifo in opts.instruments:
 sample_rate = opts.sample_rate[opts.instruments[0]]
 
 # set upper frequency cutoff if not given
-if opts.psd_high_frequency_cutoff:
-    f_high = opts.psd_high_frequency_cutoff
+if opts.high_frequency_cutoff:
+    f_high = opts.high_frequency_cutoff
 else:
     f_high = int(sample_rate / 2)
 
@@ -244,22 +279,41 @@ opts_dict = convert_to_process_params_dict(opts)
 proc_id = utils.process.register_to_xmldoc(
                     outdoc, sys.argv[0], opts_dict,
                     comment="", ifos=[''.join(opts.instruments)],
-                    version=glue.git_version.id,
-                    cvs_repository=glue.git_version.branch,
-                    cvs_entry_time=glue.git_version.date).process_id
+                    version=pycbc.version.git_hash,
+                    cvs_repository='pycbc/'+pycbc.version.git_branch,
+                    cvs_entry_time=pycbc.version.date).process_id
+
+# create sim_inspiral row for injection
+# and populate non-IFO-specific columns in XML output file
+
+# If using tidal terms some hacking is currently needed. Hopefully this can
+# be resolved in the future by using HDF injection files!
+if opts.lambda1 is not None:
+    lsctables.SimInspiralTable.validcolumns['lambda1'] = 'real_4'
+if opts.lambda2 is not None:
+    lsctables.SimInspiralTable.validcolumns['lambda2'] = 'real_4'
+if opts.dquad_mon1 is not None:
+    lsctables.SimInspiralTable.validcolumns['dquad_mon1'] = 'real_4'
+if opts.dquad_mon2 is not None:
+    lsctables.SimInspiralTable.validcolumns['dquad_mon2'] = 'real_4'
+# You'd think that would it to redefine the table columns, but wait, it gets
+# worse!
+class SimInspiralNew(lsctables.SimInspiral):
+    __slots__ = lsctables.SimInspiralTable.validcolumns.keys()
+lsctables.SimInspiral = SimInspiralNew
+lsctables.SimInspiralTable.RowType = SimInspiralNew
 
 # create sim_inspiral table
 sim_table = lsctables.New(lsctables.SimInspiralTable,
                           columns=lsctables.SimInspiralTable.validcolumns)
 outdoc.childNodes[0].appendChild(sim_table)
 
-# create sim_inspiral row for injection
-# and populate non-IFO-specific columns in XML output file
 sim = _empty_row(lsctables.SimInspiral)
 sim.f_lower = opts.waveform_low_frequency_cutoff
 sim.geocent_end_time = int(opts.geocentric_end_time)
 sim.geocent_end_time_ns = int(opts.geocentric_end_time % 1 * 1e9)
 sim.inclination = opts.inclination
+sim.coa_phase = opts.coa_phase
 sim.latitude = opts.dec
 sim.longitude = opts.ra
 sim.mass1 = opts.mass1
@@ -271,6 +325,14 @@ sim.spin1x = opts.spin1x
 sim.spin2z = opts.spin2z
 sim.spin2y = opts.spin2y
 sim.spin2x = opts.spin2x
+if opts.lambda1 is not None:
+    sim.lambda1 = opts.lambda1
+if opts.lambda2 is not None:
+    sim.lambda2 = opts.lambda2
+if opts.dquad_mon1 is not None:
+    sim.dquad_mon1 = opts.dquad_mon1
+if opts.dquad_mon2 is not None:
+    sim.dquad_mon2 = opts.dquad_mon2
 sim.polarization = opts.polarization
 sim.taper = opts.taper
 sim.distance = distance
@@ -305,10 +367,10 @@ sngl.spin2x = opts.spin2x
 
 # generate waveform
 logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
-             'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+             'SNR calculation', sim.distance, opts.low_frequency_cutoff)
 h_plus, h_cross = get_td_waveform(sim, approximant=name,
                                   phase_order=phase_order,
-                                  f_lower=opts.psd_low_frequency_cutoff,
+                                  f_lower=opts.low_frequency_cutoff,
                                   delta_t=1.0 / sample_rate)
 
 # zero pad polarizations to get integer second time series
@@ -333,7 +395,7 @@ for ifo in opts.instruments:
     stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
     length_dict[ifo] = len(stilde_dict[ifo])
     delta_f_dict[ifo] = stilde_dict[ifo].delta_f
-    low_frequency_cutoff_dict[ifo] = opts.psd_low_frequency_cutoff
+    low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
 
 # get PSD
 logging.info('Generating PSDs')
@@ -384,12 +446,12 @@ for ifo in opts.instruments:
     sigma_squared = sigmasq(
                         DYN_RANGE_FAC * strain_tilde,
                         psd=psd_dict[ifo],
-                        low_frequency_cutoff=opts.psd_low_frequency_cutoff,
+                        low_frequency_cutoff=opts.low_frequency_cutoff,
                         high_frequency_cutoff=f_high)
     logging.info('Sigma integrated from %.3f to %.3fHz for %s is %.3f',
-                 opts.psd_low_frequency_cutoff, f_high, ifo,
+                 opts.low_frequency_cutoff, f_high, ifo,
                  numpy.sqrt(sigma_squared))
- 
+
     # populate IFO end time columns
     setattr(sim, ifo[0].lower()+'_end_time', int(end_time))
     setattr(sim, ifo[0].lower()+'_end_time_ns', int(end_time % 1 * 1e9))
@@ -417,10 +479,10 @@ for ifo in opts.instruments:
 
 # generate waveform
 logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
-             'SNR calculation', sim.distance, opts.psd_low_frequency_cutoff)
+             'SNR calculation', sim.distance, opts.low_frequency_cutoff)
 h_plus, h_cross = get_td_waveform(sim, approximant=name,
                                   phase_order=phase_order,
-                                  f_lower=opts.psd_low_frequency_cutoff,
+                                  f_lower=opts.low_frequency_cutoff,
                                   delta_t=1.0 / sample_rate)
 
 # zero pad polarizations to get integer second time series

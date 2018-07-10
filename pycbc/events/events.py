@@ -24,7 +24,7 @@
 """This modules defines functions for clustering and thresholding timeseries to
 produces event triggers
 """
-import glue.ligolw.utils.process
+from __future__ import absolute_import
 import lal, numpy, copy, os.path
 
 from pycbc import WEAVE_FLAGS
@@ -39,14 +39,14 @@ from . import coinc
 def threshold(series, value):
     """Return list of values and indices values over threshold in series.
     """
-    return
-    
+    return None, None
+
 @schemed("pycbc.events.threshold_")
 def threshold_only(series, value):
     """Return list of values and indices whose values in series are
        larger (in absolute value) than value
     """
-    return
+    return None, None
 
 #FIXME: This should be under schemed, but I don't understand that yet!
 def threshold_real_numpy(series, value):
@@ -69,14 +69,14 @@ class ThresholdCluster(object):
     """Create a threshold and cluster engine
 
     Parameters
-    ----------
+    -----------
     series : complex64
       Input pycbc.types.Array (or subclass); it will be searched for
       points above threshold that are then clustered
     """
     def __new__(cls, *args, **kwargs):
         real_cls = _threshold_cluster_factory(*args, **kwargs)
-        return real_cls(*args, **kwargs)
+        return real_cls(*args, **kwargs) # pylint:disable=not-callable
 
 # The class below should serve as the parent for all schemed classes.
 # The intention is that this class serves simply as the location for
@@ -92,7 +92,7 @@ class _BaseThresholdCluster(object):
         Threshold and cluster the memory specified at instantiation with the
         threshold specified at creation and the window size specified at creation.
 
-        Parameters:
+        Parameters
         -----------
         threshold : float32
           The minimum absolute value of the series given at object initialization
@@ -130,11 +130,11 @@ def findchirp_cluster_over_window(times, values, window_length):
     """
     assert window_length > 0, 'Clustering window length is not positive'
 
-    from scipy.weave import inline
+    from weave import inline
     indices = numpy.zeros(len(times), dtype=int)
-    tlen = len(times)
+    tlen = len(times) # pylint:disable=unused-variable
     k = numpy.zeros(1, dtype=int)
-    absvalues = abs(values)
+    absvalues = abs(values) # pylint:disable=unused-variable
     times = times.astype(int)
     code = """
         int j = 0;
@@ -190,10 +190,27 @@ def newsnr(snr, reduced_x2, q=6., n=2.):
     ind = numpy.where(reduced_x2 > 1.)[0]
     newsnr[ind] *= ( 0.5 * (1. + reduced_x2[ind] ** (q/n)) ) ** (-1./q)
 
-    if len(newsnr) > 1:
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
         return newsnr
     else:
         return newsnr[0]
+
+def newsnr_sgveto(snr, bchisq, sgchisq):
+    """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
+    # Test function
+    nsnr = newsnr(snr, bchisq)
+    nsnr = numpy.array(nsnr, ndmin=1)
+    sgchisq = numpy.array(sgchisq, ndmin=1)
+    t = numpy.array(sgchisq > 4, ndmin=1)
+    if len(t) > 0:
+        nsnr[t] = nsnr[t] / (sgchisq[t] / 4.0) ** 0.5
+
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
+        return nsnr
+    else:
+        return nsnr[0]
 
 def effsnr(snr, reduced_x2, fac=250.):
     """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
@@ -203,7 +220,8 @@ def effsnr(snr, reduced_x2, fac=250.):
     rchisq = numpy.array(reduced_x2, ndmin=1, dtype=numpy.float64)
     effsnr = snr / (1 + snr ** 2 / fac) ** 0.25 / rchisq ** 0.25
 
-    if len(effsnr) > 1:
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
         return effsnr
     else:
         return effsnr[0]
@@ -254,12 +272,12 @@ class EventManager(object):
         remove = [i for i, e in enumerate(self.events) if \
             newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof']) < threshold]
         self.events = numpy.delete(self.events, remove)
-        
+
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times
         if len(self.events) == 0:
             return
-        
+
         inj_time = numpy.array(injections.end_times())
         gpstime = self.events['time_index'].astype(numpy.float64)
         gpstime = gpstime / self.opt.sample_rate + self.opt.gps_start_time
@@ -269,14 +287,14 @@ class EventManager(object):
     def keep_loudest_in_interval(self, window, num_keep):
         if len(self.events) == 0:
             return
-        
+
         e = self.events
         stat = newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
         time = e['time_index']
-        
+
         wtime = (time / window).astype(numpy.int32)
         bins = numpy.unique(wtime)
-        
+
         keep = []
         for b in bins:
             bloc = numpy.where((wtime == b))[0]
@@ -321,8 +339,8 @@ class EventManager(object):
         indices.append(0)
         for i in xrange(len(tvec)):
             if gps_sec[i] == gps_sec[indices[-1]] and  win[i] == win[indices[-1]]:
-                    if abs(cvec[i]) > abs(cvec[indices[-1]]):
-                        indices[-1] = i
+                if abs(cvec[i]) > abs(cvec[indices[-1]]):
+                    indices[-1] = i
             else:
                 indices.append(i)
 
@@ -465,6 +483,12 @@ class EventManager(object):
 
             f['template_hash'] = th[tid]
 
+            if 'sg_chisq' in self.events.dtype.names:
+                f['sg_chisq'] = self.events['sg_chisq']
+
+            if self.opt.psdvar_short_segment is not None:
+                f['psd_var_val'] = self.events['psd_var_val']
+
         if self.opt.trig_start_time:
             f['search/start_time'] = numpy.array([self.opt.trig_start_time])
             search_start_time = float(self.opt.trig_start_time)
@@ -489,6 +513,18 @@ class EventManager(object):
                 numpy.array([filters_per_core / float(self.run_time)])
             f['search/setup_time_fraction'] = \
                 numpy.array([float(self.setup_time) / float(self.run_time)])
+            f['search/run_time'] = numpy.array([float(self.run_time)])
+
+        if 'q_trans' in self.global_params:
+            qtrans = self.global_params['q_trans']
+            for key in qtrans:
+                if key == 'qtiles':
+                    for seg in qtrans[key]:
+                        for q in qtrans[key][seg]:
+                            f['qtransform/%s/%s/%s' % (key,seg,q)]=qtrans[key][seg][q]
+                elif key == 'qplanes':
+                    for seg in qtrans[key]:
+                        f['qtransform/%s/%s' % (key,seg)]=qtrans[key][seg]
 
         if 'gating_info' in self.global_params:
             gating_info = self.global_params['gating_info']
@@ -595,7 +631,7 @@ class EventManagerMultiDet(EventManager):
         """ Write the found events to a sngl inspiral table
         """
         self.make_output_dir(outname)
- 
+
         if '.hdf' in outname:
             self.write_to_hdf(outname)
         else:
@@ -681,6 +717,9 @@ class EventManagerMultiDet(EventManager):
 
                 f['template_hash'] = th[tid]
 
+                if self.opt.psdvar_short_segment is not None:
+                    f['psd_var_val'] = ifo_events['psd_var_val']
+
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([\
                         self.opt.trig_start_time[ifo]], dtype=numpy.int32)
@@ -725,8 +764,8 @@ class EventManagerMultiDet(EventManager):
                         f['gating/' + gate_type + '/pad'] = \
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
-__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr',
+__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr', 'newsnr_sgveto',
            'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
-           'threshold_real_numpy',
+           'threshold_real_numpy', 'threshold_only',
            'EventManager', 'EventManagerMultiDet']

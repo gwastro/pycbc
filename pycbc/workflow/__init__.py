@@ -31,7 +31,6 @@ import os.path
 from pycbc.workflow.configuration import *
 try:
     from pycbc.workflow.core import *
-    from pycbc.workflow.legacy_ihope import *
     from pycbc.workflow.grb_utils import *
     from pycbc.workflow.jobsetup import *
     from pycbc.workflow.psd import *
@@ -39,11 +38,11 @@ try:
     from pycbc.workflow.datafind import *
     from pycbc.workflow.segment import *
     from pycbc.workflow.tmpltbank import *
+    from pycbc.workflow.gatefiles import *
     from pycbc.workflow.psdfiles import *
     from pycbc.workflow.splittable import *
     from pycbc.workflow.coincidence import *
     from pycbc.workflow.injection import *
-    from pycbc.workflow.postprocessing_cohptf import *
     from pycbc.workflow.plotting import *
     from pycbc.workflow.minifollowups import *
 except ImportError:

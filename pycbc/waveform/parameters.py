@@ -25,7 +25,11 @@
 """Classes to define common parameters used for waveform generation.
 """
 
-from UserList import UserList
+from collections import OrderedDict
+try:
+    from collections import UserList
+except ImportError:
+    from UserList import UserList
 
 #
 # =============================================================================
@@ -83,20 +87,17 @@ class ParameterList(UserList):
         """Returns a dictionary of the parameters keyed by the parameters."""
         return dict([[x, x] for x in self])
 
-    def defaults(self, include_nulls=False):
+    def defaults(self):
         """Returns a list of the name and default value of each parameter,
-        as tuples. If include_nulls is False, only parameters that do not
-        have None as a default are returnted. Otherwise, all parameters
-        are returned.
+        as tuples.
         """
-        return [(x, x.default) for x in self
-                    if include_nulls or x.default is not None]
+        return [(x, x.default) for x in self]
 
-    def default_dict(self, include_nulls=False):
+    def default_dict(self):
         """Returns a dictionary of the name and default value of each
         parameter.
         """
-        return dict(self.defaults(include_nulls=include_nulls))
+        return OrderedDict(self.defaults())
 
     @property
     def nodefaults(self):
@@ -115,7 +116,7 @@ class ParameterList(UserList):
     @property
     def dtype_dict(self):
         """Returns a dictionary of the name and dtype of each parameter."""
-        return dict(self.dtypes)
+        return OrderedDict(self.dtypes)
 
     @property
     def descriptions(self):
@@ -128,7 +129,7 @@ class ParameterList(UserList):
     def description_dict(self):
         """Return a dictionary of the name and description of each parameter.
         """
-        return dict(self.descriptions)
+        return OrderedDict(self.descriptions)
 
     @property
     def labels(self):
@@ -139,7 +140,7 @@ class ParameterList(UserList):
     def label_dict(self):
         """Return a dictionary of the name and label of each parameter.
         """
-        return dict(self.labels)
+        return OrderedDict(self.labels)
 
     def docstr(self, prefix='', include_label=True):
         """Returns the ``docstr`` of each parameter joined together."""
@@ -205,11 +206,11 @@ mtotal = Parameter("mtotal",
 q = Parameter("q",
                 dtype=float, label=r"$q$",
                 description="The mass ratio, m1/m2, where m1 >= m2.")
-m_p = Parameter("m_p",
-                dtype=float, label=r"$m_{\mathrm{pr}}$",
+primary_mass = Parameter("primary_mass",
+                dtype=float, label=r"$m_{1}$",
                 description="Mass of the primary object (in solar masses).")
-m_s = Parameter("m_s",
-                dtype=float, label=r"$m_{\mathrm{sc}}$",
+secondary_mass = Parameter("secondary_mass",
+                dtype=float, label=r"$m_{2}$",
                 description="Mass of the secondary object (in solar masses).")
 
 # derived parameters for component spins
@@ -217,51 +218,75 @@ chi_eff = Parameter("chi_eff",
                 dtype=float, label=r"$\chi_\mathrm{eff}$",
                 description="Effective spin of the binary.")
 spin_px = Parameter("spin_px",
-                dtype=float, label=r"$\chi_{\mathrm{pr}\,x}$",
+                dtype=float, label=r"$\chi_{1x}$",
                 description="The x component of the dimensionless spin of the "
                             "primary object.")
 spin_py = Parameter("spin_py",
-                dtype=float, label=r"$\chi_{\mathrm{pr}\,y}$",
+                dtype=float, label=r"$\chi_{1y}$",
                 description="The y component of the dimensionless spin of the "
                             "primary object.")
 spin_pz = Parameter("spin_pz",
-                dtype=float, label=r"$\chi_{\mathrm{pr}\,z}$",
+                dtype=float, label=r"$\chi_{1z}$",
                 description="The z component of the dimensionless spin of the "
                             "primary object.")
 spin_sx = Parameter("spin_sx",
-                dtype=float, label=r"$\chi_{\mathrm{sc}\,x}$",
+                dtype=float, label=r"$\chi_{2x}$",
                 description="The x component of the dimensionless spin of the "
                             "secondary object.")
 spin_sy = Parameter("spin_sy",
-                dtype=float, label=r"$\chi_{\mathrm{sc}\,y}$",
+                dtype=float, label=r"$\chi_{2y}$",
                 description="The y component of the dimensionless spin of the "
                             "secondary object.")
 spin_sz = Parameter("spin_sz",
-                dtype=float, label=r"$\chi_{\mathrm{sc}\,z}$",
+                dtype=float, label=r"$\chi_{2z}$",
                 description="The z component of the dimensionless spin of the "
                             "secondary object.")
 lambda1 = Parameter("lambda1",
-                dtype=float, default=0., label=r"$\lambda_1$",
-                description="The tidal deformability parameter of object 1.")
+                dtype=float, default=None, label=r"$\Lambda_1$",
+                description="The dimensionless tidal deformability parameter of object 1.")
 lambda2 = Parameter("lambda2",
-                dtype=float, default=0., label=r"$\lambda_2$",
-                description="The tidal deformability parameter of object 2.")
+                dtype=float, default=None, label=r"$\Lambda_2$",
+                description="The dimensionless tidal deformability parameter of object 2.")
 dquad_mon1 = Parameter("dquad_mon1",
-                dtype=float, default=0., label=r"$qm_1$",
+                dtype=float, default=None, label=r"$qm_1$",
                 description="Quadrupole-monopole parameter / m_1^5 -1.")
 dquad_mon2 = Parameter("dquad_mon2",
-                dtype=float, default=0., label=r"$qm_2$",
+                dtype=float, default=None, label=r"$qm_2$",
                 description="Quadrupole-monopole parameter / m_2^5 -1.")
+lambda_octu1 = Parameter("lambda_octu1",
+                dtype=float, default=None, label=r"$\Lambda_3^{(1)}$",
+                description="The octupolar tidal deformability parameter of "
+                            "object 1.")
+lambda_octu2 = Parameter("lambda_octu2",
+                dtype=float, default=None, label=r"$\Lambda_3^{(2)}$",
+                description="The octupolar tidal deformability parameter of "
+                            "object 2.")
+quadfmode1 = Parameter("quadfmode1",
+                dtype=float, default=None, label=r"$m_1 \omega_{02}^{(1)}$",
+                description="The quadrupolar f-mode angular frequency of "
+                            "object 1.")
+quadfmode2 = Parameter("quadfmode2",
+                dtype=float, default=None, label=r"$m_ \omega_{02}^{(2)}$",
+                description="The quadrupolar f-mode angular frequency of "
+                            "object 2.")
+octufmode1 = Parameter("octufmode1",
+                dtype=float, default=None, label=r"$m_1 \omega_{03}^{(1)}$",
+                description="The octupolar f-mode angular frequency of "
+                            "object 1.")
+octufmode2 = Parameter("octufmode2",
+                dtype=float, default=None, label=r"$m_ \omega_{03}^{(2)}$",
+                description="The octupolar f-mode angular frequency of "
+                            "object 2.")
 
 # derived parameters for component spin magnitude and angles
 spin1_a = Parameter("spin1_a",
-                    dtype=float, label=r"$\a_{1}$",
+                    dtype=float, label=r"$a_{1}$",
                     description="The dimensionless spin magnitude "
-                                "$|\vec{s}/m_{1}^2|$.")
+                                r"$|\vec{s}/m_{1}^2|$.")
 spin2_a = Parameter("spin2_a",
-                    dtype=float, label=r"$\a_{2}$",
+                    dtype=float, label=r"$a_{2}$",
                     description="The dimensionless spin magnitude "
-                                "$|\vec{s}/m_{2}^2|$.")
+                                r"$|\vec{s}/m_{2}^2|$.")
 spin1_azimuthal = Parameter(
                       "spin1_azimuthal",
                       dtype=float, label=r"$\theta_1^\mathrm{azimuthal}$",
@@ -289,6 +314,10 @@ f_final = Parameter("f_final",
                 description="The ending frequency of the waveform. The "
                             "default (0) indicates that the choice is made by "
                             "the respective approximant.")
+f_final_func = Parameter("f_final_func",
+                dtype=str, default="", label=None,
+                description="Use the given frequency function to compute f_final "
+                            "based on the parameters of the waveform.")
 f_ref = Parameter("f_ref",
                 dtype=float, default=0, label=r"$f_{\mathrm{ref}}$ (Hz)",
                 description="The reference frequency.")
@@ -340,6 +369,9 @@ numrel_data = Parameter("numrel_data",
 distance = Parameter("distance",
                 dtype=float, default=1., label=r"$d_L$ (Mpc)",
                 description="Luminosity distance to the binary (in Mpc).")
+chirp_distance = Parameter("chirp_distance",
+                dtype=float, default=1., label=r"$d_c$ (Mpc)",
+                description="Chirp distance to the binary (in Mpc).")
 coa_phase = Parameter("coa_phase",
                 dtype=float, default=0., label=r"$\phi_c$",
                 description="Coalesence phase of the binary (in rad).")
@@ -366,6 +398,32 @@ dec = Parameter("dec",
 polarization = Parameter("polarization",
                 dtype=float, default=None, label=r"$\psi$",
                 description="Polarization (rad).")
+redshift = Parameter("redshift",
+                dtype=float, default=None, label=r"$z$",
+                description="Redshift.")
+
+#
+#   Calibration parameters
+#
+delta_fs = Parameter("calib_delta_fs",
+                     dtype=float,
+                     description="Change in optical spring freq (Hz).")
+delta_fc = Parameter("calib_delta_fc",
+                     dtype=float,
+                     description="Change in cavity pole freq (Hz).")
+delta_qinv = Parameter("calib_delta_qinv",
+                       dtype=float,
+                       description="Change in inverse quality factor.")
+kappa_c = Parameter("calib_kappa_c",
+                    dtype=float)
+kappa_tst_re = Parameter("calib_kappa_tst_re",
+                         dtype=float)
+kappa_tst_im = Parameter("calib_kappa_tst_im",
+                         dtype=float)
+kappa_pu_re = Parameter("calib_kappa_pu_re",
+                        dtype=float)
+kappa_pu_im = Parameter("calib_kappa_pu_im",
+                        dtype=float)
 
 #
 #   Non mandatory flags with default values
@@ -379,7 +437,14 @@ modes_choice = Parameter("modes_choice",
 side_bands = Parameter("side_bands",
                 dtype=int, default=0,
                 description="Flag for generating sidebands")
-
+mode_array = Parameter("mode_array",
+                dtype=int, default=0,
+                description="Choose which (l,m) modes to include when "
+                            "generating a waveform. "
+                            "Only if approximant supports this feature."
+                            "By default pass None and let lalsimulation "
+                            "use it's default behaviour."
+                            "Example: mode_array = [ [2,2], [2,-2] ]")
 #
 # =============================================================================
 #
@@ -398,18 +463,26 @@ location_params = ParameterList([tc, ra, dec, polarization])
 # parameters describing the orientation of a binary w.r.t. the radiation
 # frame. Note: we include distance here, as it is typically used for generating
 # waveforms.
-orientation_params = ParameterList([distance, coa_phase, inclination, long_asc_nodes, mean_per_ano])
+orientation_params = ParameterList\
+    ([distance, coa_phase, inclination, long_asc_nodes, mean_per_ano])
 
 # the extrinsic parameters of a waveform
-extrinsic_params = orientation_params + location_params 
+extrinsic_params = orientation_params + location_params
 
-# intrinsic parameters of a CBC waveform
-cbc_intrinsic_params = ParameterList([
-    mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-    eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2])
+# intrinsic parameters of a CBC waveform. Some of these are not recognized
+# by every waveform model
+cbc_intrinsic_params = ParameterList\
+    ([mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+      eccentricity, lambda1, lambda2, dquad_mon1, dquad_mon2, lambda_octu1,
+      lambda_octu2, quadfmode1, quadfmode2, octufmode1, octufmode2])
 
 # the parameters of a cbc in the radiation frame
 cbc_rframe_params = cbc_intrinsic_params + orientation_params
+
+# calibration parameters
+calibration_params = ParameterList([
+    delta_fc, delta_fs, delta_qinv, kappa_c, kappa_tst_re, kappa_tst_im,
+    kappa_pu_re, kappa_pu_im])
 
 # common generation parameters are parameters needed to generate either
 # a TD, FD, or frequency sequence waveform
@@ -418,23 +491,32 @@ common_generation_params = ParameterList([
 
 # Flags having discrete values, optional to generate either
 # a TD, FD, or frequency sequence waveform
-flags_generation_params = ParameterList([frame_axis, modes_choice, side_bands])
+flags_generation_params = ParameterList([frame_axis, modes_choice, side_bands, mode_array])
 
 # the following are parameters needed to generate an FD or TD waveform that
 # is equally sampled
 common_gen_equal_sampled_params = ParameterList([f_lower]) + \
     common_generation_params + flags_generation_params
 
-# the following are parameters needed to generate an FD waveform
+# the following are parameters that can be used to generate an FD waveform
 fd_waveform_params = cbc_rframe_params + ParameterList([delta_f]) + \
-    common_gen_equal_sampled_params + ParameterList([f_final])
+    common_gen_equal_sampled_params + ParameterList([f_final, f_final_func])
 
-# the following are parameters needed to generate a TD waveform
+# the following are parameters that can be used to generate a TD waveform
 td_waveform_params = cbc_rframe_params + ParameterList([delta_t]) + \
     common_gen_equal_sampled_params + ParameterList([numrel_data]) + \
     flags_generation_params
 
-# the following are parameters needed to generate a frequency series waveform
+# The following are the minimum set of parameters that are required to
+# generate a FD or TD waveform. All other parameters have some default value as
+# defined above. Defaults of None simply mean that the value is not passed into
+# the lal_dict structure and the waveform generator will take whatever default
+# behaviour
+cbc_td_required = ParameterList([mass1, mass2, f_lower, delta_t, approximant])
+cbc_fd_required = ParameterList([mass1, mass2, f_lower, delta_f, approximant])
+
+# the following are parameters that can be used to generate a
+# frequency series waveform
 fd_waveform_sequence_params = cbc_rframe_params + \
     ParameterList([sample_points]) + common_generation_params + \
     flags_generation_params

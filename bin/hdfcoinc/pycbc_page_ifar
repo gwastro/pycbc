@@ -39,6 +39,10 @@ def calculate_time_slide_duration(ifo1_segments, ifo2_segments, offset=0):
 
    return duration
 
+
+pylab.rc('text', usetex=True)
+pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+
 # parser command line
 parser = argparse.ArgumentParser(usage='pycbc_page_ifar [--options]',
                     description='Plots a cumulative histogram of IFAR for'
@@ -67,6 +71,20 @@ parser.add_argument('--all-decimated-background-min-ifar', type=float,
                           'zerolag down to VAL*(zerolag coinc time/total '
                           'decimated slide time). Recommended value equal '
                           'to default value 0.01yr.')
+parser.add_argument('--use-hierarchical-level', type=int, default=None,
+                    help='Indicate which inclusive background and FARs of '
+                         'foreground triggers to plot if there were any '
+                         'hierarchical removals done. Choosing None plots '
+                         'the inclusive backgrounds prior to any '
+                         'hierarchical removals with the updated FARs for '
+                         'foreground triggers after hierarchical removal(s). '
+                         'Choosing 0 means plotting inclusive background '
+                         'from prior to any hierarchical removals with FARs '
+                         'for foreground triggers prior to hierarchical '
+                         'removal. Choosing 1 means plotting the inclusive '
+                         'background after doing 1 hierarchical removal, and '
+                         'includes updated FARs from after 1 hierarchical '
+                         'removal. [default=None]')
 parser.add_argument('--open-box', action='store_true', default=False,
                     help='Show the foreground triggers on the output plot. ')
 opts = parser.parse_args()
@@ -74,9 +92,61 @@ opts = parser.parse_args()
 # read file
 fp = h5py.File(opts.trigger_file, 'r')
 
+# Parse which inclusive background to use for the plotting
+h_inc_back_num = opts.use_hierarchical_level
+
+try:
+    h_iterations = fp.attrs['hierarchical_removal_iterations']
+except KeyError:
+    h_iterations = 0
+
+if h_inc_back_num is None:
+    h_inc_back_num = h_iterations
+
+if h_inc_back_num > h_iterations:
+    # Produce a null plot saying no hierarchical removals can be plotted
+    import sys
+    fig = pylab.figure()
+    ax = fig.add_subplot(111)
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+
+    output_message = "No more foreground events louder than all background\n" \
+                     "at this removal level.\n" \
+                     "Attempted to show " + str(h_inc_back_num) + " removal(s),\n" \
+                     "but only " + str(h_iterations) + " removal(s) done."
+
+    ax.text(0.5, 0.5, output_message, horizontalalignment='center',
+            verticalalignment='center')
+
+    pycbc.results.save_fig_with_metadata(fig, opts.output_file,
+     title='Cumulative Number vs. IFAR',
+     caption=output_message,
+     cmd=' '.join(sys.argv))
+
+    # Exit the code successfully and bypass the rest of the plotting code.
+    sys.exit(0)
+
 # get foreground IFAR values and cumulative number for each IFAR value
 if opts.open_box:
-    fore_ifar = fp['foreground/ifar'][:]
+
+    if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
+        fore_ifar = fp['foreground_h%s/ifar' % h_inc_back_num][:]
+        # Get ifar of hierarchically removed foreground triggers
+        supp_fore_ifar = fp['foreground/ifar'][:]
+
+        # Use to plot hierarchically removed foreground triggers
+        # on the plot and correct the cumulative number at IFAR level
+        hrm_sorted = sorted(supp_fore_ifar)
+        idx_start = len(supp_fore_ifar) - h_inc_back_num
+
+        h_rm_ifar = hrm_sorted[idx_start:]
+        h_rm_cumnum = numpy.arange(len(h_rm_ifar), 0, -1)
+
+    else :
+        fore_ifar = fp['foreground/ifar'][:]
+
     fore_ifar.sort()
     fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
 
@@ -85,8 +155,37 @@ expected_ifar = numpy.logspace(-8, 2, num=100, endpoint=True, base=10.0)
 expected_cumnum = fp.attrs['foreground_time'] / expected_ifar / lal.YRJUL_SI 
 
 # get background timeslide IDs and IFAR values
-back_tsid = fp['background/timeslide_id'][:]
-back_ifar = fp['background/ifar'][:]
+
+# Use these backgrounds for n-th stage of hierarchical removals
+# and test for backwards compatibility and that stage was written. 
+if opts.open_box:
+    if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
+        back_tsid = fp['background_h%s/timeslide_id' % h_inc_back_num][:]
+        back_ifar = fp['background_h%s/ifar' % h_inc_back_num][:]
+
+    # If the user wants to plot foreground events at h_inc_back_num == 0
+    # and h_iterations == 0 then no hierarchical removals were done and
+    # the line below is safe to use. The other case is the trigger-file
+    # is before hierarchical removals so the else below catches that.
+    # The third case is requesting to plot hierarchical removal level
+    # greater than was done and an empty plot is made earlier in the code.
+    else :
+        back_tsid = fp['background/timeslide_id'][:]
+        back_ifar = fp['background/ifar'][:]
+
+else :
+    # If the box is closed use the background from no hierarchical
+    # removals. Results should be agnostic of judgments about
+    # whether a hierarchical removal was done.
+    if h_iterations > 0 and h_iterations is not None:
+        back_tsid = fp['background_h0/timeslide_id'][:]
+        back_ifar = fp['background_h0/ifar'][:]
+
+    # Otherwise the box is closed and no hierarchical removals
+    # were done so use top level background
+    else :
+        back_tsid = fp['background/timeslide_id'][:]
+        back_ifar = fp['background/ifar'][:]
 
 # get IFO segments
 h1_segments = segments.segmentlist([segments.segment(s,e) for s,e in zip(fp['segments']['H1']['start'][:],fp['segments']['H1']['end'][:])])
@@ -175,6 +274,9 @@ pylab.fill(xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ Errors')
 if opts.open_box:
     pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^', label='Foreground')
 
+    if h_inc_back_num > 0:
+        pylab.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff', marker='v', label='Hierarchically Removed Foreground')
+
 # format plot
 if opts.open_box and len(fore_cumnum) > 100:
     # If we have > 100 foreground triggers, scale the plot around the foreground
@@ -186,7 +288,7 @@ elif len(allbkg_cumnum) > 0:
     pylab.ylim(0.8, 1.1 * len(allbkg_cumnum))
     pylab.xlim(0.9 * min(allbkg_ifars))
 pylab.grid()
-pylab.legend()
+pylab.legend(loc='upper right', fontsize=9)
 pylab.ylabel('Cumulative Number')
 pylab.xlabel('Inverse False Alarm Rate (yr)')
 

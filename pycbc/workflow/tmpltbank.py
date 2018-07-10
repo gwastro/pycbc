@@ -143,9 +143,7 @@ def setup_tmpltbank_workflow(workflow, science_segs, datafind_outs,
     if return_format is None :
         tmplt_banks_return = tmplt_banks
     elif return_format in ('hdf', 'h5', 'hdf5'):
-        if ext in ('hdf', 'h5', 'hdf5'):
-            tmplt_banks_return = tmplt_banks
-        elif ext in ('xml.gz' , 'xml'):
+        if ext in ('hdf', 'h5', 'hdf5') or ext in ('xml.gz' , 'xml'):
             tmplt_banks_return = pycbc.workflow.convert_bank_to_hdf(workflow,
                                                         tmplt_banks, "bank")
     else :

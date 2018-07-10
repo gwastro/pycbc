@@ -22,9 +22,14 @@ import os
 import argparse
 import logging
 import numpy
+import shutil
 import pycbc
 import pycbc.opt
 import pycbc.weave
+import pycbc.version
+from pycbc import calibration
+from pycbc import distributions
+from pycbc import transforms
 from pycbc import fft
 from pycbc import gate
 from pycbc import inference
@@ -32,48 +37,27 @@ from pycbc import psd
 from pycbc import scheme
 from pycbc import strain
 from pycbc import types
-from pycbc import waveform
-from pycbc.io.inference_hdf import InferenceFile
+from pycbc.io.inference_hdf import InferenceFile, check_integrity
+from pycbc.waveform import generator
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
-
-def select_waveform_generator(approximant):
-    """ Returns the generator for the approximant.
-    """
-    if approximant in waveform.fd_approximants():
-        return waveform.FDomainCBCGenerator
-    elif approximant in waveform.td_approximants():
-        return waveform.TDomainCBCGenerator
-    elif approximant in waveform.ringdown_fd_approximants:
-        if approximant=='FdQNM':
-            return waveform.FDomainRingdownGenerator
-        elif approximant=='FdQNMmultiModes':
-            return waveform.FDomainMultiModeRingdownGenerator
-    elif approximant in waveform.ringdown_td_approximants:
-        raise ValueError("Time domain ringdowns not supported")
-    else:
-        raise ValueError("%s is not a valid approximant."%approximant)
-
-
-def convert_liststring_to_list(lstring):
-    """ Checks if an argument of the configuration file is a string of a list
-    and returns the corresponding list (of strings)
-    """
-    if lstring[0]=='[' and lstring[-1]==']':
-        lvalue = [str(lstring[1:-1].split(',')[n].strip().strip("'"))
-                      for n in range(len(lstring[1:-1].split(',')))]
-    return lvalue
-
+from pycbc.inference.option_utils import validate_checkpoint_files
+from pycbc.inference import burn_in
+from pycbc import gate
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
                                  description=__doc__)
 
+# version option
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg,
+                    help="Prints version information.")
+
 # add data options
-parser.add_argument("--instruments", type=str, nargs="+", required=True,
+parser.add_argument("--instruments", type=str, nargs="+",
                     help="IFOs, eg. H1 L1.")
-parser.add_argument("--low-frequency-cutoff", type=float, required=True,
-                    help="Low frequency cutoff for each IFO.")
+option_utils.add_low_frequency_cutoff_opt(parser)
 parser.add_argument("--psd-start-time", type=float, default=None,
                     help="Start time to use for PSD estimation if different "
                          "from analysis.")
@@ -88,18 +72,19 @@ parser.add_argument("--likelihood-evaluator", required=True,
 parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initially distributes the walkers. Default is 0.")
+parser.add_argument("--samples-file", default=None,
+                    help="Use an iteration from an InferenceFile as the "
+                         "initial proposal distribution. The same "
+                         "number of walkers and the same [variable_args] "
+                         "section in the configuration file should be used. "
+                         "The priors must allow encompass the initial "
+                         "positions from the InferenceFile being read.")
 
 # add sampler options
 option_utils.add_sampler_option_group(parser)
 
 # add config options
-parser.add_argument("--config-files", type=str, nargs="+", required=True,
-                    help="A file parsable by "
-                         "pycbc.workflow.WorkflowConfigParser.")
-parser.add_argument("--config-overrides", type=str, nargs="+", default=None,
-                    metavar="SECTION:OPTION:VALUE",
-                    help="List of section:option:value combinations to add "
-                         "into the configuration file.")
+WorkflowConfigParser.add_config_opts_to_parser(parser)
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -119,11 +104,21 @@ parser.add_argument("--save-psd", action="store_true", default=False,
                     help="Save the psd of each ifo to the output file.")
 parser.add_argument("--checkpoint-interval", type=int, default=None,
                     help="Number of iterations to take before saving new "
-                         "samples to file.")
+                         "samples to file, calculating ACL, and updating "
+                         "burn-in estimate.")
+parser.add_argument("--resume-from-checkpoint", action="store_true",
+                    default=False,
+                    help="Automatically load results from checkpoint/backup "
+                         "file.")
+parser.add_argument("--save-backup", action="store_true",
+                    default=False,
+                    help="Don't delete the backup file after the run has "
+                         "completed.")
 parser.add_argument("--checkpoint-fast", action="store_true",
-                    help="Do not calculate derived data (eg. ACL or evidence) "
-                         "after each checkpoint. Calculate them at the end.")
- 
+                    help="Do not calculate ACL after each checkpoint, only at "
+                         "the end. Not applicable if n-independent-samples "
+                         "have been specified.")
+
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Print logging messages.")
@@ -140,6 +135,9 @@ gate.add_gate_option_group(parser)
 # parse command line
 opts = parser.parse_args()
 
+# setup log
+pycbc.init_logging(opts.verbose)
+
 # verify options are sane
 fft.verify_fft_options(opts, parser)
 pycbc.opt.verify_optimization_options(opts, parser)
@@ -153,252 +151,343 @@ if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
 
-# create the file for adding to
-fp = InferenceFile(opts.output_file, "w")
-fp.close()
+# check for backup file(s)
+checkpoint_file = opts.output_file + '.checkpoint'
+backup_file = opts.output_file + '.bkup'
+checkpoint_valid = validate_checkpoint_files(checkpoint_file, backup_file)
 
-# setup log
-pycbc.init_logging(opts.verbose)
+# determine what to do with checkpoints
+if checkpoint_valid and not opts.resume_from_checkpoint and not opts.force:
+    raise OSError("valid checkpoint file {} found, but "
+                  "resume-from-checkpoint not on. If you wish to overwrite "
+                  "use --force; otherwise, use --resume-from-checkpoint")
+if not opts.resume_from_checkpoint and opts.force:
+    checkpoint_valid = False
 
-# set the seed
+# check for how many iterations to run
+max_iterations = opts.niterations
+if opts.niterations is not None and opts.n_independent_samples is not None:
+    raise ValueError("Must specify either niterations or n-independent-"
+                     "samples, not both")
+elif opts.niterations is not None:
+    get_nsamples = opts.niterations
+elif opts.n_independent_samples is not None:
+    if opts.checkpoint_interval is None:
+        raise ValueError("n-independent-samples requires a checkpoint-"
+                         "interval; see help")
+    get_nsamples = opts.n_independent_samples
+else:
+    raise ValueError("Must specify niterations or n-independent-samples; "
+                     "see --help")
+
+
+# get likelihood class
+likelihood_class = inference.likelihood_evaluators[opts.likelihood_evaluator]
+likelihood_args = {}
+
+# warn user about options that will be removed
+if opts.skip_burn_in:
+    logging.warning("DEPRECATION WARNING: Option --skip-burn-in has been "
+                    "deprecated and does nothing. "
+                    "If you wish to use no burn in, simply do not "
+                    "provide a burn-in-function. This option will be removed "
+                    "in future versions.")
+
+# set seed
 numpy.random.seed(opts.seed)
-logging.info("Using seed %i" %(opts.seed))
+logging.info("Using seed %i", opts.seed)
+
+# we'll silence numpy warnings since they are benign and make for confusing
+# logging output
+numpy.seterr(divide='ignore', invalid='ignore')
 
 # get scheme
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
-# get gates to apply
-gates = gate.gates_from_cli(opts)
-psd_gates = gate.psd_gates_from_cli(opts)
-
-# get strain time series
-strain_dict = strain.from_cli_multi_ifos(opts, opts.instruments,
-                                         precision="double")
-# apply gates if not waiting to overwhiten
-if not opts.gate_overwhitened:
-    logging.info("Applying gates to strain data")
-    strain_dict = gate.apply_gates_to_td(strain_dict, gates)
-
-# get strain time series to use for PSD estimation
-# if user has not given the PSD time options then use same data as analysis
-if opts.psd_start_time and opts.psd_end_time:
-    logging.info("Will generate a different time series for PSD estimation")
-    psd_opts = opts
-    psd_opts.gps_start_time = psd_opts.psd_start_time
-    psd_opts.gps_end_time = psd_opts.psd_end_time
-    psd_strain_dict = strain.from_cli_multi_ifos(psd_opts, opts.instruments,
-                                                precision="double")
-    # apply any gates
-    logging.info("Applying gates to PSD data")
-    psd_strain_dict = gate.apply_gates_to_td(psd_strain_dict, psd_gates)
-
-elif opts.psd_start_time or opts.psd_end_time:
-    raise ValueError("Must give --psd-start-time and --psd-end-time")
+# get the data and psd
+if 'data' in likelihood_class.required_kwargs:
+    logging.info("Loading data")
+    strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
+    low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
+    likelihood_args['f_lower'] = low_frequency_cutoff_dict.values()[0]
+    likelihood_args['psds'] = psd_dict
 else:
-    psd_strain_dict = strain_dict
+    strain_dict = stilde_dict = psd_dict = low_frequency_cutoff_dict = None
 
 with ctx:
 
-    # FFT strain and save each of the length of the FFT, delta_f, and
-    # low frequency cutoff to a dict
-    logging.info("FFT strain")
-    stilde_dict = {}
-    length_dict = {}
-    delta_f_dict = {}
-    low_frequency_cutoff_dict = {}
-    for ifo in opts.instruments:
-        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
-        length_dict[ifo] = len(stilde_dict[ifo])
-        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
-        low_frequency_cutoff_dict[ifo] = opts.low_frequency_cutoff
-
-    # get PSD as frequency series
-    psd_dict = psd.from_cli_multi_ifos(opts, length_dict, delta_f_dict,
-                               low_frequency_cutoff_dict, opts.instruments,
-                               strain_dict=psd_strain_dict, precision="double")
-
-    # apply any gates to overwhitened data, if desired
-    if opts.gate_overwhitened and opts.gate is not None:
-        logging.info("Applying gates to overwhitened data")
-
-        # overwhiten the data
-        for ifo in gates:
-            stilde_dict[ifo] /= psd_dict[ifo]
-        stilde_dict = gate.apply_gates_to_fd(stilde_dict, gates)
-
-        # unwhiten the data for the likelihood generator
-        for ifo in gates:
-            stilde_dict[ifo] *= psd_dict[ifo]
-
-    # save PSD
-    if opts.save_psd:
-
-        # apply dynamic range factor for saving PSDs since
-        # plotting code expects it
-        logging.info("Saving PSDs")
-        psd_dyn_dict = {}
-        for key,val in psd_dict.iteritems():
-             psd_dyn_dict[key] = types.FrequencySeries(
-                                        psd_dict[key] * pycbc.DYN_RANGE_FAC**2,
-                                        delta_f=psd_dict[key].delta_f)
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_psd(psds=psd_dyn_dict,
-                          low_frequency_cutoff=low_frequency_cutoff_dict)
-
-    # save stilde
-    if opts.save_stilde:
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_stilde(stilde_dict)
-
-    # save strain if desired
-    if opts.save_strain:
-        with InferenceFile(opts.output_file, "a") as fp:
-            fp.write_strain(strain_dict)
-
     # read configuration file
-    logging.info("Reading configuration file")
-    if opts.config_overrides is not None:
-        overrides = [override.split(":") for override in opts.config_overrides]
-    else:
-        overrides = None
-    cp = WorkflowConfigParser(opts.config_files, overrides)
+    cp = WorkflowConfigParser.from_cli(opts)
 
-    # sanity check that each parameter in [variable_args] has a priors section
-    variable_args = cp.options("variable_args")
-    subsections = cp.get_subsections("prior")
-    tags = numpy.concatenate([tag.split("+") for tag in subsections])
-    if not any(param in tags for param in variable_args):
-        raise KeyError("You are missing a priors section in the config file.")
-
-    # get parameters that do not change in sampler
-    static_args = dict([(key,cp.get_opt_tags("static_args",key,[])) \
-                                         for key in cp.options("static_args")])
-    for key,val in static_args.iteritems():
-        try:
-            static_args[key] = float(val)
-            continue
-        except:
-            pass
-        try:
-            static_args[key] = convert_liststring_to_list(val) 
-        except:
-            pass
+    # get the vairable and static arguments from the config file
+    variable_args, static_args, constraints = \
+        distributions.read_args_from_config(cp)
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")
-    distributions = inference.read_distributions_from_config(cp, "prior")
+    dists = distributions.read_distributions_from_config(cp, "prior")
 
     # construct class that will return the prior
-    prior = inference.PriorEvaluator(variable_args, *distributions)
+    prior_eval = distributions.JointDistribution(variable_args, *dists,
+                                      **{"constraints" : constraints})
 
-    # select generator that will generate waveform
+    # get sampling transformations
+    if cp.has_section('sampling_parameters'):
+        sampling_parameters, replace_parameters = \
+            option_utils.read_sampling_args_from_config(cp)
+        sampling_transforms = transforms.read_transforms_from_config(cp,
+            'sampling_transforms')
+        logging.info("Sampling in {} in place of {}".format(
+            ', '.join(sampling_parameters), ', '.join(replace_parameters)))
+    else:
+        sampling_parameters = replace_parameters = sampling_transforms = None
+
+    # get waveform transformations
+    if any(cp.get_subsections('waveform_transforms')):
+        logging.info("Loading waveform transforms")
+        waveform_transforms = transforms.read_transforms_from_config(cp,
+            'waveform_transforms')
+    else:
+        waveform_transforms = None
+
+    # get ifo-specific instances of calibration model
+    if cp.has_section('calibration'):
+        logging.info("Initializing calibration model")
+        recalib = {ifo : calibration.read_model_from_config(cp, ifo) for
+                   ifo in opts.instruments}
+    else:
+        recalib = None
+
+    # select generator that will generate waveform for a single IFO
     # for likelihood evaluator
     logging.info("Setting up sampler")
-    generator_function = select_waveform_generator(static_args["approximant"])
 
-    # construct class that will generate waveforms
-    generator = waveform.FDomainDetFrameGenerator(generator_function,
-                        epoch=stilde_dict.values()[0].epoch,
-                        variable_args=variable_args,
-                        detectors=opts.instruments,
-                        delta_f=delta_f_dict.values()[0], **static_args)
+    # get gates for templates
+    gates = gate.gates_from_cli(opts)
+
+    if 'waveform_generator' in likelihood_class.required_kwargs:
+        generator_function = generator.select_waveform_generator(
+            static_args["approximant"])
+
+        # construct class that will generate waveforms
+        waveform_generator = generator.FDomainDetFrameGenerator(
+            generator_function, epoch=stilde_dict.values()[0].epoch,
+            variable_args=variable_args, detectors=opts.instruments,
+            delta_f=stilde_dict.values()[0].delta_f,
+            delta_t=strain_dict.values()[0].delta_t,
+            recalib=recalib, gates=gates,
+            **static_args)
+
+    else:
+        waveform_generator = None
 
     # construct class that will return the natural logarithm of likelihood
-    likelihood = inference.likelihood_evaluators[opts.likelihood_evaluator](
-                        generator, stilde_dict, opts.low_frequency_cutoff,
-                        psds=psd_dict, prior=prior)
+    likelihood = likelihood_class(variable_args,
+                                  waveform_generator=waveform_generator,
+                                  data=stilde_dict, prior=prior_eval,
+                                  sampling_parameters=sampling_parameters,
+                                  replace_parameters=replace_parameters,
+                                  sampling_transforms=sampling_transforms,
+                                  waveform_transforms=waveform_transforms,
+                                  **likelihood_args)
+
+    burn_in_eval = burn_in.BurnIn(opts.burn_in_function,
+                                min_iterations=opts.min_burn_in)
 
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
 
-    # get distribution to draw from for each walker initial position
+    # save information about this data and settings
+    if not checkpoint_valid:
+        with InferenceFile(checkpoint_file, "w") as fp:
+            # save command line and data
+            logging.info("Creating and writing data to output file")
+            fp.write_data(
+                strain_dict=strain_dict if opts.save_strain else None,
+                stilde_dict=stilde_dict if opts.save_stilde else None,
+                psd_dict=psd_dict if opts.save_psd else None,
+                low_frequency_cutoff_dict=low_frequency_cutoff_dict)
+
+            # save injection parameters
+            if opts.injection_file:
+                for ifo in opts.instruments:
+                    logging.info("Writing %s injections to output file", ifo)
+                    if ifo in opts.injection_file.keys():
+                        inj_file = opts.injection_file[ifo]
+                    elif len(opts.injection_file) == 1:
+                        inj_file = opts.injection_file.values()[0]
+                    else:
+                        logging.warn("Could not find injections for %s", ifo)
+                        continue
+                    fp.write_injections(opts.injection_file.values()[0], ifo)
+        # copy to backup
+        shutil.copy(checkpoint_file, backup_file)
+
+    # write the command line, resume point
+    for fn in [checkpoint_file, backup_file]:
+        with InferenceFile(fn, "a") as fp:
+            fp.write_command_line()
+            if checkpoint_valid:
+                fp.write_resume_point()
+
+    # set the walkers initial positions from a pre-existing InferenceFile
+    # or a specific initial distribution listed in the configuration file
+    # or else use the prior distributions to set initial positions
     logging.info("Setting walkers initial conditions for varying parameters")
-
-    # check if user wants to use different distributions than prior for setting
-    # walkers initial positions
-    if len(cp.get_subsections("initial")):
-        initial_distributions = inference.read_distributions_from_config(cp,
-            section="initial")
+    samples_file = opts.samples_file
+    # use the checkpoint file instead if resume from checkpoint
+    if opts.resume_from_checkpoint and checkpoint_valid:
+        samples_file = checkpoint_file
+    if samples_file is not None:
+        logging.info("Initial positions taken from last iteration in %s",
+                     samples_file)
+        samples_file = InferenceFile(samples_file, "r")
+        init_prior = None
+    elif len(cp.get_subsections("initial")):
+        initial_dists = distributions.read_distributions_from_config(
+            cp, section="initial")
+        init_prior = distributions.JointDistribution(variable_args,
+            *initial_dists, **{"constraints" : constraints})
     else:
-        initial_distributions = inference.read_distributions_from_config(cp,
-            section="prior")
+        init_prior = None
+    sampler.set_p0(samples_file=samples_file, prior=init_prior)
 
-    # set the initial positions
-    sampler.set_p0(initial_distributions)
+    # if getting samples from file then put sampler and random number generator
+    # back in its former state
+    if samples_file is not None:
+        sampler.set_state_from_file(samples_file)
+        samples_file.close()
 
-    # setup checkpointing
-    if opts.checkpoint_interval:
+    # run sampler's burn in if it is in the list of burn in functions
+    if "use_sampler" in burn_in_eval.burn_in_functions:
+        # remove the sampler's burn in so we don't run more than once
+        burn_in_eval.burn_in_functions.pop("use_sampler")
+        # we'll only do this if we don't have a valid checkpoint: since the
+        # checkpoint happens after the sampler's burn in, the sampler's burn in
+        # must have already run if we have a valid checkpoint file
+        if not checkpoint_valid:
+            with InferenceFile(checkpoint_file, "a") as fp:
+                logging.info("Running sampler's burn in function")
+                burnidx, is_burned_in = burn_in.use_sampler(sampler, fp)
+                sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+                # write the burn in results
+                logging.info("Writing burn in samples to file")
+                sampler.write_results(fp, static_args=static_args,
+                                      ifos=opts.instruments)
+            # write to backup file
+            with InferenceFile(backup_file, "a") as fp:
+                sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+                sampler.write_results(fp, static_args=static_args,
+                                      ifos=opts.instruments)
 
-        # determine intervals to run sampler until we save the new samples 
-        intervals = [i for i in range(0, opts.niterations,
-                                      opts.checkpoint_interval)]
 
-        # determine if there is a small bit at the end
-        remainder = opts.niterations % opts.checkpoint_interval
-        if remainder:
-            intervals += [intervals[-1]+remainder]
-        else:
-            intervals += [opts.niterations]
-
-    # if not checkpointing then set intervals to run sampler in one call
+    # get the starting number of samples:
+    # nsamples keeps track of the number of samples we've obtained (if
+    # --n-independent-samples is used, this is the number of independent
+    # samples; otherwise, this is the number of iterations);
+    # start is the number of iterations that the file already contains (either
+    # due to sampler burn-in, or a previous checkpoint)
+    try:
+        with InferenceFile(checkpoint_file, "r") as fp:
+            start = fp.niterations
+    except KeyError:
+        start = 0
+    if opts.n_independent_samples is not None:
+        try:
+            with InferenceFile(checkpoint_file, "r") as fp:
+                nsamples = fp.n_independent_samples
+        except AttributeError:
+            nsamples = start
     else:
-        intervals = [0, opts.niterations]
+        nsamples = start
+    # to ensure iterations are counted properly, he sampler's lastclear should
+    # be the same as start
+    sampler.lastclear = start
 
-    intervals = numpy.array(intervals)
+    interval = opts.checkpoint_interval
+    if interval is None:
+        interval = get_nsamples
 
-    # check if user wants to skip the burn in
-    if not opts.skip_burn_in:
-        logging.info("Burn in")
-        sampler.burn_in()
-        n_burnin = sampler.burn_in_iterations
-        logging.info("Used %i burn in samples" % n_burnin)
-        with InferenceFile(opts.output_file, "a") as fp:
-            # write the burn in results
-            sampler.write_results(fp, max_iterations=opts.niterations+n_burnin)
-    else:
-        n_burnin = 0
+    # run sampler until we have the desired number of samples
+    while nsamples < get_nsamples:
 
+        end = start + interval
 
-    # increase the intervals to account for the burn in
-    intervals += n_burnin
-
-    # loop over number of checkpoints
-    for i,start in enumerate(intervals[:-1]):
-
-        end = intervals[i+1]
+        # adjust the interval if we would go past the number of iterations
+        if opts.n_independent_samples is None and end > get_nsamples:
+            interval = get_nsamples - start
+            end = start + interval
 
         # run sampler and set initial values to None so that sampler
         # picks up from where it left off next call
-        logging.info("Running sampler for %i to %i out of %i iterations"%(
-            start-n_burnin, end-n_burnin, opts.niterations))
-        sampler.run(end-start)
+        logging.info("Running sampler for {} to {} iterations".format(start,
+                                                                      end))
+        sampler.run(interval)
 
         # write new samples
-        with InferenceFile(opts.output_file, "a") as fp:
+        with InferenceFile(checkpoint_file, "a") as fp:
 
             logging.info("Writing results to file")
-            sampler.write_results(fp, start_iteration=start,
-                                  end_iteration=end,
-                                  max_iterations=opts.niterations+n_burnin)
+            sampler.write_results(fp,static_args=static_args,
+                                  ifos=opts.instruments)
+            logging.info("Updating burn in")
+            burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
 
-            if not opts.checkpoint_fast or end == opts.niterations:
-
-                # compute the acls and write
+            # compute the acls and write
+            acls = None
+            if opts.n_independent_samples is not None or end >= get_nsamples \
+                    or not opts.checkpoint_fast:
                 logging.info("Computing acls")
-                sampler.write_acls(fp, sampler.compute_acls(fp))
+                acls = sampler.compute_acls(fp)
+                sampler.write_acls(fp, acls)
 
-                # compute evidence, if supported
-                try:
-                    lnz, dlnz = sampler.calculate_logevidence(fp)
-                    logging.info("Saving evidence")
-                    sampler.write_logevidence(fp, lnz, dlnz)
-                except NotImplementedError:
-                    pass
+        # write to backup
+        with InferenceFile(backup_file, "a") as fp:
 
-            # clear the in-memory chain to save memory
-            logging.info("Clearing chain")
-            sampler.clear_chain()
+            logging.info("Writing to backup file")
+            sampler.write_results(fp,static_args=static_args,
+                                  ifos=opts.instruments)
+            sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+            if acls is not None:
+                sampler.write_acls(fp, acls)
+
+        # check validity
+        checkpoint_valid = validate_checkpoint_files(checkpoint_file,
+                                                     backup_file)
+        if not checkpoint_valid:
+            raise IOError("error writing to checkpoint file")
+
+        # update nsamples for next loop
+        if opts.n_independent_samples is not None:
+            with InferenceFile(checkpoint_file, 'r') as fp:
+                nsamples = fp.n_independent_samples
+            logging.info("Have {} independent samples".format(nsamples))
+        else:
+            nsamples += interval
+
+
+        # clear the in-memory chain to save memory
+        logging.info("Clearing chain")
+        sampler.clear_chain()
+
+        start = end
+
+    # compute evidence, if supported
+    with InferenceFile(checkpoint_file, 'a') as fp:
+        try:
+            lnz, dlnz = sampler.calculate_logevidence(fp)
+            logging.info("Saving evidence")
+            sampler.write_logevidence(fp, lnz, dlnz)
+        except NotImplementedError:
+            pass
+
+# rename checkpoint to output and delete backup
+logging.info("Moving checkpoint to output")
+os.rename(checkpoint_file, opts.output_file)
+if not opts.save_backup:
+    logging.info("Deleting backup file")
+    os.remove(backup_file)
 
 # exit
 logging.info("Done")

@@ -51,8 +51,8 @@ else:
 logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
 
 # load the results
-fp, parameters, labels, samples = option_utils.results_from_cli(opts,
-    load_samples=True, walkers=None)
+fp, parameters, labels, samples = option_utils.results_from_cli(
+                                      opts, load_samples=True, walkers=None)
 
 # get thinned samples for each parameter
 table = []

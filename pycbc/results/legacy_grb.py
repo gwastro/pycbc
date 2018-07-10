@@ -25,14 +25,7 @@ from __future__ import division
 import re
 import os
 from argparse import ArgumentParser
-import matplotlib; matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from glue import markup, segments
-from lal.gpstime import gps_to_utc, LIGOTimeGPS
-from matplotlib.patches import Rectangle
-from matplotlib.lines import Line2D
-from matplotlib.ticker import ScalarFormatter
-from pycbc.results.color import ifo_color
 
 def initialize_page(title, style, script, header=None):
     """
@@ -124,6 +117,7 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
         Write summary of information to markup.page object page
     """
     from pylal import antenna
+    from lal.gpstime import gps_to_utc, LIGOTimeGPS
 
     gps = args.start_time
     grbdate = gps_to_utc(LIGOTimeGPS(gps))\
@@ -139,7 +133,6 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
         td2 = []
         td3 = []
         timedelay = {}
-        deltat = []
         search_file = '../../../S5IPN_GRB%s_search_180deg.txt' % args.grb_name
         for line in open(search_file):
             ra.append(line.split()[0])
@@ -225,7 +218,6 @@ def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
                                                 ifo)
                 antenna_ifo[ifo].append(round(f_q,3))
         dectKeys = antenna_ifo.keys()
-        newList=[]
 
         for elements in range(len(antenna_ifo.values()[0])):
             newDict={}
@@ -234,7 +226,7 @@ def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
                                                dectKeys[detectors]][elements]
             for key in newDict.keys():
                 th.append(key)
-            td.append(newDict.values())        
+            td.append(newDict.values())
         page = write_table(page, list(set(th)), td)
     for ifo in ifos:
         _, _, _, f_q = antenna.response(args.start_time, args.ra, args.dec,
@@ -264,7 +256,7 @@ def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
 #    th2 = ['Response Diagram']
 #    td2 = [plot() ]
 
-        # FIXME: Add these in!!
+# FIXME: Add these in!!
 #    plot = markup.page()
 #    p = "ALL_TIMES/plots_clustered/GRB%s_search.png"\
 #        % args.grb_name
@@ -323,20 +315,26 @@ def write_offsource(page, args, grbtag, onsource=False):
 
     th = ['Re-weighted SNR', 'Coherent SNR']
 
-    if onsource:
-        dir = 'ALL_TIMES'
+    if args.time_slides:
+        if onsource:
+            out_dir = 'ZEROLAG_ALL'
+        else:
+            out_dir = 'ZEROLAG_OFF'
     else:
-        dir = 'OFFSOURCE'
+        if onsource:
+            out_dir = 'ALL_TIMES'
+        else:
+            out_dir = 'OFFSOURCE'
 
     plot = markup.page()
-    p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (dir, grbtag)
-    plot.a(href=p, title="Coherent SNR versus time")
+    p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (out_dir, grbtag)
+    plot.a(href=p, title="Detection statistic versus time")
     plot.img(src=p)
     plot.a.close()
     td = [ plot() ]
 
     plot = markup.page()
-    p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % (dir, grbtag)
+    p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % (out_dir, grbtag)
     plot.a(href=p, title="Coherent SNR versus time")
     plot.img(src=p)
     plot.a.close()
@@ -347,7 +345,7 @@ def write_offsource(page, args, grbtag, onsource=False):
         th.append('%s SNR' % ifo)
         plot = markup.page()
         p = "%s/plots_clustered/GRB%s_%s_triggers_vs_time_noinj.png"\
-            % (dir, grbtag, ifo)
+            % (out_dir, grbtag, ifo)
         plot.a(href=p, title="%s SNR versus time" % ifo)
         plot.img(src=p)
         plot.a.close()
@@ -384,7 +382,7 @@ def write_chisq(page, injList, grbtag):
             plot.img(src=p)
             plot.a.close()
             d.append(plot())
-  
+
         td.append(d)
 
     page = write_table(page, th, td)
@@ -571,10 +569,10 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
     FAPS = []
     for line in file:
         line = line.replace('\n','')
-        if float(line) == -2:
+        if line == "-2":
             FAPS.append('No event')
         else:
-            FAPS.append(float(line))
+            FAPS.append(line)
 
     file.close()
 
@@ -587,7 +585,7 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
     page.a.close()
 
     if reduced or not injList:
-        return page  
+        return page
 
     page.h3()
     page.add('Detection efficiency plots - injections louder than loudest '
@@ -651,7 +649,12 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
 
 def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
                            out_dir, coherent_seg=None, fail_criterion=None):
-    
+
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+    from matplotlib.lines import Line2D
+    from pycbc.results.color import ifo_color
+
     ifos = wkflow.ifos
     if len(science_segs.keys()) == 0:
         extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
@@ -671,8 +674,9 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
 
     # Make plot
     fig, subs = plt.subplots(len(ifos), sharey=True)
+    if len(ifos) == 1:
+        subs = [subs]
     plt.xticks(rotation=20, ha='right')
-    plt.subplots_adjust(bottom=0.15)
     for sub, ifo in zip(subs, ifos):
         for seg in science_segs[ifo]:
             sub.add_patch(Rectangle((seg[0], 0.1), abs(seg), 0.8,
@@ -707,25 +711,27 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
         sub.set_frame_on(False)
         sub.set_yticks([])
         sub.set_ylabel(ifo, rotation=45)
+        sub.set_ylim([0, 1])
         sub.set_xlim([float(extent[0]), float(extent[1])])
         sub.get_xaxis().get_major_formatter().set_useOffset(False)
         sub.get_xaxis().get_major_formatter().set_scientific(False)
         sub.get_xaxis().tick_bottom()
-        if not sub is subs[-1]:
+        if sub is subs[-1]:
+            sub.tick_params(labelsize=10, pad=1)
+        else:
             sub.get_xaxis().set_ticks([])
             sub.get_xaxis().set_ticklabels([])
-        else:
-            sub.tick_params(labelsize=10, pad=1)
 
     xmin, xmax = fig.axes[-1].get_xaxis().get_view_interval()
-    ymin, ymax = fig.axes[-1].get_yaxis().get_view_interval()
+    ymin, _ = fig.axes[-1].get_yaxis().get_view_interval()
     fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymin), color='black',
-                                linewidth=2))
+                                   linewidth=2))
     fig.axes[-1].set_xlabel('GPS Time')
 
     fig.axes[0].set_title('Science Segments for GRB%s' % trigger_name)
+    plt.tight_layout()
     fig.subplots_adjust(hspace=0)
-    
+
     plot_name = 'GRB%s_segments.png' % trigger_name
     plot_url = 'file://localhost%s/%s' % (out_dir, plot_name)
     fig.savefig('%s/%s' % (out_dir, plot_name))

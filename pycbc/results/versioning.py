@@ -21,8 +21,8 @@ import os
 import subprocess
 from pycbc.results import save_fig_with_metadata, html_escape
 
-import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
-import glue.git_version, pycbc.version
+import lal, lalframe, lalsimulation
+import pycbc.version, glue.git_version
 
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
@@ -71,36 +71,6 @@ def get_library_version_info():
         add_info_new_version(lalframeinfo, lalframe, 'Frame')
     library_list.append(lalframeinfo)
 
-    lalmetaioinfo = {}
-    lalmetaioinfo['Name'] = 'LALMetaIO'
-    try:
-        lalmetaioinfo['ID'] = lalmetaio.MetaIOVCSId
-        lalmetaioinfo['Status'] = lalmetaio.MetaIOVCSStatus
-        lalmetaioinfo['Version'] = lalmetaio.MetaIOVCSVersion
-        lalmetaioinfo['Tag'] = lalmetaio.MetaIOVCSTag
-        lalmetaioinfo['Author'] = lalmetaio.MetaIOVCSAuthor
-        lalmetaioinfo['Branch'] = lalmetaio.MetaIOVCSBranch
-        lalmetaioinfo['Committer'] = lalmetaio.MetaIOVCSCommitter
-        lalmetaioinfo['Date'] = lalmetaio.MetaIOVCSDate
-    except AttributeError:
-        add_info_new_version(lalmetaioinfo, lalmetaio, 'MetaIO')
-    library_list.append(lalmetaioinfo)
-
-    lalinspiralinfo = {}
-    lalinspiralinfo['Name'] = 'LALInspiral'
-    try:
-        lalinspiralinfo['ID'] = lalinspiral.InspiralVCSId
-        lalinspiralinfo['Status'] = lalinspiral.InspiralVCSStatus
-        lalinspiralinfo['Version'] = lalinspiral.InspiralVCSVersion
-        lalinspiralinfo['Tag'] = lalinspiral.InspiralVCSTag
-        lalinspiralinfo['Author'] = lalinspiral.InspiralVCSAuthor
-        lalinspiralinfo['Branch'] = lalinspiral.InspiralVCSBranch
-        lalinspiralinfo['Committer'] = lalinspiral.InspiralVCSCommitter
-        lalinspiralinfo['Date'] = lalinspiral.InspiralVCSDate
-    except AttributeError:
-        add_info_new_version(lalinspiralinfo, lalinspiral, 'Inspiral')
-    library_list.append(lalinspiralinfo)
-
     lalsimulationinfo = {}
     lalsimulationinfo['Name'] = 'LALSimulation'
     try:
@@ -117,7 +87,7 @@ def get_library_version_info():
     library_list.append(lalsimulationinfo)
 
     glueinfo = {}
-    glueinfo['Name'] = 'Glue'
+    glueinfo['Name'] = 'LSCSoft-Glue'
     glueinfo['ID'] = glue.git_version.id
     glueinfo['Status'] = glue.git_version.status
     glueinfo['Version'] = glue.git_version.version
@@ -168,38 +138,20 @@ def get_code_version_numbers(cp):
         A dictionary keyed by the executable name with values giving the
         version string for each executable.
     """
-    from pycbc.workflow.core import check_output_error_and_retcode
     code_version_dict = {}
-    for item, value in cp.items('executables'):
-        path, exe_name = os.path.split(value)
+    for _, value in cp.items('executables'):
+        _, exe_name = os.path.split(value)
         version_string = None
         if value.startswith('gsiftp://') or value.startswith('http://'):
-           code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
+            code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
         else:
             try:
-                # FIXME: Replace with this version when python 2.7 is guaranteed
-                # version_output = subprocess.check_output([value, '--version'],
-                #                                         stderr=subprocess.STDOUT) 
-                # Start of legacy block
                 if value.startswith('file://'):
                     value = value[7:]
-                output, error, retcode = \
-                               check_output_error_and_retcode([value, '--version'])
-                if not retcode == 0:
-                    raise subprocess.CalledProcessError(retcode, '')
-                # End of legacy block
-                version_output = (output + error).replace('\n', ' ').split()
-                # Look for a version
-                if "Id:" in version_output:
-                    index = version_output.index("Id:") + 1
-                    version_string = 'Version is %s.' %(version_output[index],)
-                elif "LALApps:" in version_output:
-                    index = version_output.index("LALApps:") + 3
-                    version_string = 'Version (lalapps) is %s.' %(version_output[index],)
-                if version_string is None:
-                    version_string = "Cannot identify version string in output."
+                version_string = subprocess.check_output([value, '--version'],
+                                                        stderr=subprocess.STDOUT) 
             except subprocess.CalledProcessError:
-                version_string = "Executable fails on %s --version" %(value)
+                version_string = "Executable fails on %s --version" % (value)
             except OSError:
                 version_string = "Executable doesn't seem to exist(!)"
             code_version_dict[exe_name] = version_string
@@ -209,7 +161,7 @@ def write_code_versions(path, cp):
     code_version_dict = get_code_version_numbers(cp)
     html_text = ''
     for key,value in code_version_dict.items():
-        html_text+= '<li><b>%s</b>: %s </li>\n' %(key,value.replace('@', '&#64;'))
+        html_text+= '<li><b>%s</b>:<br><pre>%s</pre></li><hr><br><br>\n' %(key,value.replace('@', '&#64;'))
     kwds = {'render-function' : 'render_text',
             'title' : 'Version Information from Executables',
     }

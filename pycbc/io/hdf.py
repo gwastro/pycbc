@@ -1,5 +1,5 @@
 # convenience classes for accessing hdf5 trigger files
-# the 'get_column()' method is implemented parallel to 
+# the 'get_column()' method is implemented parallel to
 # the existing pylal.SnglInspiralUtils functions
 
 import h5py
@@ -9,19 +9,17 @@ import inspect
 
 from lal import LIGOTimeGPS, YRJUL_SI
 
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from pycbc.ligolw import ligolw
+from pycbc.ligolw import lsctables
+from pycbc.ligolw import utils as ligolw_utils
+from pycbc.ligolw.utils import process as ligolw_process
 
 from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
-from pycbc import events, pnutils
+from pycbc import events, conversions, pnutils
 
-class HFile(h5py.File):   
+class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
 
@@ -101,8 +99,8 @@ class HFile(h5py.File):
 
 
 class DictArray(object):
-    """ Utility for organizing sets of arrays of equal length. 
-    
+    """ Utility for organizing sets of arrays of equal length.
+
     Manages a dictionary of arrays of equal length. This can also
     be instantiated with a set of hdf5 files and the key values. The full
     data is always in memory and all operations create new instances of the
@@ -110,7 +108,7 @@ class DictArray(object):
     """
     def __init__(self, data=None, files=None, groups=None):
         """ Create a DictArray
-        
+
         Parameters
         ----------
         data: dict, optional
@@ -121,18 +119,19 @@ class DictArray(object):
             List of keys into each file. Required by the files options.
         """
         self.data = data
-        
+
         if files:
             self.data = {}
             for g in groups:
                 self.data[g] = []
-            
+
             for f in files:
                 d = HFile(f)
                 for g in groups:
                     if g in d:
                         self.data[g].append(d[g][:])
-                    
+                d.close()
+
             for k in self.data:
                 if not len(self.data[k]) == 0:
                     self.data[k] = np.concatenate(self.data[k])
@@ -159,7 +158,7 @@ class DictArray(object):
         for k in self.data:
             data[k] = self.data[k][idx]
         return self._return(data=data)
-   
+
     def remove(self, idx):
         """ Return a new DictArray that does not contain the indexed values
         """
@@ -172,10 +171,10 @@ class DictArray(object):
 class StatmapData(DictArray):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None):
-        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2', 
+        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2',
                'template_id', 'decimation_factor', 'timeslide_id']
         super(StatmapData, self).__init__(data=data, files=files, groups=groups)
-        
+
         if data:
             self.seg=seg
             self.attrs=attrs
@@ -198,19 +197,19 @@ class StatmapData(DictArray):
         interval = self.attrs['timeslide_interval']
         cid = cluster_coincs(self.stat, self.time1, self.time2,
                                  self.timeslide_id, interval, window)
-        return self.select(cid) 
+        return self.select(cid)
 
     def save(self, outname):
         f = HFile(outname, "w")
         for k in self.attrs:
             f.attrs[k] = self.attrs[k]
-            
+
         for k in self.data:
-            f.create_dataset(k, data=self.data[k], 
+            f.create_dataset(k, data=self.data[k],
                       compression='gzip',
                       compression_opts=9,
                       shuffle=True)
-            
+
 
         for key in self.seg.keys():
             f['segments/%s/start' % key] = self.seg[key]['start'][:]
@@ -226,8 +225,8 @@ class FileData(object):
         group : string
             Name of group to be read from the file
         columnlist : list of strings
-            Names of columns to be read; if None, use all existing columns 
-        filter_func : string 
+            Names of columns to be read; if None, use all existing columns
+        filter_func : string
             String should evaluate to a Boolean expression using attributes
             of the class instance derived from columns: ex. 'self.snr < 6.5'
         """
@@ -348,10 +347,10 @@ class SingleDetTriggers(object):
         if veto_file:
             logging.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
-            # giving the surviving triggers 
+            # giving the surviving triggers
             logging.info('%i triggers before vetoes',
                           len(self.trigs['end_time'][:]))
-            self.veto_mask, segs = events.veto.indices_outside_segments(
+            self.veto_mask, _ = events.veto.indices_outside_segments(
                 self.trigs['end_time'][:], [veto_file],
                 ifo=detector, segment_name=segment_name)
             logging.info('%i triggers remain after vetoes',
@@ -384,7 +383,7 @@ class SingleDetTriggers(object):
 
     def checkbank(self, param):
         if self.bank == {}:
-            return RuntimeError("Can't get %s values without a bank file" 
+            return RuntimeError("Can't get %s values without a bank file"
                                                                        % param)
 
     @classmethod
@@ -407,6 +406,12 @@ class SingleDetTriggers(object):
             if len(self.snr) == 1:
                 stat = np.array([stat])
             self.stat_name = "Reweighted SNR"
+        elif ranking_statistic == "newsnr_sgveto":
+            stat = self.newsnr_sgveto
+            # newsnr doesn't return an array if len(stat) == 1
+            if len(self.snr) == 1:
+                stat = np.array([stat])
+            self.stat_name = "Reweighted SNR (+sgveto)"
         elif ranking_statistic == "snr":
             stat = self.snr
             self.stat_name = "SNR"
@@ -418,7 +423,7 @@ class SingleDetTriggers(object):
         new_times = []
         new_index = []
         for curr_idx in index:
-            curr_time = times[curr_idx] 
+            curr_time = times[curr_idx]
             for time in new_times:
                 if abs(curr_time - time) < cluster_window:
                     break
@@ -487,25 +492,26 @@ class SingleDetTriggers(object):
         return np.array(self.bank['inclination'])[self.template_id]
 
     @property
+    def f_lower(self):
+        self.checkbank('f_lower')
+        return np.array(self.bank['f_lower'])[self.template_id]
+
+    @property
     def mtotal(self):
         return self.mass1 + self.mass2
 
     @property
     def mchirp(self):
-        mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(
-            self.mass1, self.mass2)
-        return mchirp
+        return conversions.mchirp_from_mass1_mass2(self.mass1, self.mass2)
 
     @property
     def eta(self):
-        mchirp, eta = pnutils.mass1_mass2_to_mchirp_eta(
-            self.mass1, self.mass2)
-        return eta
+        return conversions.eta_from_mass1_mass2(self.mass1, self.mass2)
 
     @property
     def effective_spin(self):
         # FIXME assumes aligned spins
-        return pnutils.phenomb_chi(self.mass1, self.mass2,
+        return conversions.chi_eff(self.mass1, self.mass2,
                                    self.spin1z, self.spin2z)
 
     # IMPROVEME: would like to have a way to access all get_freq and/or
@@ -534,6 +540,10 @@ class SingleDetTriggers(object):
         return np.array(self.trigs['snr'])[self.mask]
 
     @property
+    def sgchisq(self):
+        return np.array(self.trigs['sg_chisq'])[self.mask]
+
+    @property
     def u_vals(self):
         return np.array(self.trigs['u_vals'])[self.mask]
 
@@ -545,6 +555,10 @@ class SingleDetTriggers(object):
     @property
     def newsnr(self):
         return events.newsnr(self.snr, self.rchisq)
+
+    @property
+    def newsnr_sgveto(self):
+        return events.newsnr_sgveto(self.snr, self.rchisq, self.sgchisq)
 
     def get_column(self, cname):
         if hasattr(self, cname):
@@ -694,9 +708,8 @@ class ForegroundTriggers(object):
         for name in sngl_col_names:
             sngl_col_vals[name] = self.get_snglfile_array_dict(name)
 
-        for idx, coinc_idx in enumerate(self.sort_arr):
+        for idx in xrange(len(self.sort_arr)):
             # Set up IDs and mapping values
-            curr_tmplt_id = self.template_id[idx]
             coinc_id = lsctables.CoincID(idx)
 
             # Set up sngls
@@ -709,7 +722,6 @@ class ForegroundTriggers(object):
                 sngl = return_empty_sngl()
                 sngl.event_id = event_id
                 sngl.ifo = ifo
-                curr_sngl_file = self.sngl_files[ifo].h5file[ifo]
                 for name in sngl_col_names:
                     val = sngl_col_vals[name][ifo][idx]
                     if name == 'end_time':
@@ -721,7 +733,7 @@ class ForegroundTriggers(object):
                     setattr(sngl, name, val)
                 sngl.mtotal, sngl.eta = pnutils.mass1_mass2_to_mtotal_eta(
                         sngl.mass1, sngl.mass2)
-                sngl.mchirp, junk = pnutils.mass1_mass2_to_mchirp_eta(
+                sngl.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
                         sngl.mass1, sngl.mass2)
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
                 sngl_combined_mchirp += sngl.mchirp
@@ -774,7 +786,7 @@ class ForegroundTriggers(object):
 
         ligolw_utils.write_filename(outdoc, file_name)
 
-chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad',
+chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
                  'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
 def get_chisq_from_file_choice(hdfile, chisq_choice):
@@ -784,7 +796,6 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         trad_chisq = f['chisq'][:]
         # We now need to handle the case where chisq is not actually calculated
         # 0 is used as a sentinel value
-        l = trad_chisq == 0
         trad_chisq_dof = f['chisq_dof'][:]
         trad_chisq /= (trad_chisq_dof * 2 - 2)
     if chisq_choice in ['cont', 'max_cont_trad', 'max_bank_cont',
@@ -797,7 +808,9 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         bank_chisq = f['bank_chisq'][:]
         bank_chisq_dof = f['bank_chisq_dof'][:]
         bank_chisq /= bank_chisq_dof
-    if chisq_choice == 'traditional':
+    if chisq_choice == 'sg':
+        chisq = f['sg_chisq'][:]
+    elif chisq_choice == 'traditional':
         chisq = trad_chisq
     elif chisq_choice == 'cont':
         chisq = cont_chisq
@@ -815,3 +828,35 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         err_msg="Do not recognized --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
+
+def save_dict_to_hdf5(dic, filename):
+    """
+    Parameters
+    ----------
+    dic:
+        python dictionary to be converted to hdf5 format
+    filename:
+        desired name of hdf5 file
+    """
+    with h5py.File(filename, 'w') as h5file:
+        recursively_save_dict_contents_to_group(h5file, '/', dic)
+
+def recursively_save_dict_contents_to_group(h5file, path, dic):
+    """
+    Parameters
+    ----------
+    h5file:
+        h5py file to be written to
+    path:
+        path within h5py file to saved dictionary
+    dic:
+        python dictionary to be converted to hdf5 format
+    """
+    for key, item in dic.items():
+        if isinstance(item, (np.ndarray, np.int64, np.float64, str, bytes, tuple, list)):
+            h5file[path + str(key)] = item
+        elif isinstance(item, dict):
+            recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
+        else:
+            raise ValueError('Cannot save %s type'%type(item))
+

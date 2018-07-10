@@ -18,6 +18,7 @@
 
 import argparse
 import h5py
+import pycbc
 import logging
 import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
@@ -47,11 +48,7 @@ option_utils.add_inference_results_option_group(parser)
 opts = parser.parse_args()
 
 # setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # load the results
 fp, parameters, labels, _ = option_utils.results_from_cli(opts,

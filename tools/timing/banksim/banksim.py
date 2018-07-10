@@ -41,7 +41,7 @@ from pycbc.filter import match, sigmasq, resample_to_delta_t
 from pycbc.scheme import DefaultScheme, CUDAScheme, OpenCLScheme
 from pycbc.fft import fft
 from math import cos, sin
-import pycbc.psd 
+import pycbc.psd
 
 def update_progress(progress):
     print '\r\r[{0}] {1:.2%}'.format('#'*(int(progress*100)/2)+' '*(50-int(progress*100)/2), progress),
@@ -55,11 +55,11 @@ def generate_fplus_fcross(latitude,longitude,polarization):
     f_plus = - (1.0/2.0) * (1.0 + cos(latitude)*cos(latitude)) * cos (2.0 * longitude) * cos (2.0 * polarization) - cos(latitude) * sin(2.0*longitude) * sin (2.0 * polarization)
     f_cross=  (1.0/2.0) * (1.0 + cos(latitude)*cos(latitude)) * cos (2.0 * longitude) * sin (2.0* polarization) - cos (latitude) * sin(2.0*longitude) * cos (2.0 * polarization)
     return f_plus, f_cross
-    
+
 def generate_detector_strain(template_params, h_plus, h_cross):
-    latitude = 0 
-    longitude = 0 
-    polarization = 0 
+    latitude = 0
+    longitude = 0
+    polarization = 0
 
     if hasattr(template_params, 'latitude'):
         latitude = template_params.latitude
@@ -74,7 +74,7 @@ def generate_detector_strain(template_params, h_plus, h_cross):
 
 def make_padded_frequency_series(vec,filter_N=None):
     """Pad a TimeSeries with a length of zeros greater than its length, such
-    that the total length is the closest power of 2. This prevents the effects 
+    that the total length is the closest power of 2. This prevents the effects
     of wraparound.
     """
     if filter_N is None:
@@ -82,9 +82,9 @@ def make_padded_frequency_series(vec,filter_N=None):
         N = 2 ** power
     else:
         N = filter_N
-    n = N/2+1    
-    
-   
+    n = N/2+1
+
+
     if isinstance(vec,FrequencySeries):
         vectilde = FrequencySeries(zeros(n, dtype=complex_same_precision_as(vec)),
                                    delta_f=1.0,copy=False)
@@ -92,19 +92,19 @@ def make_padded_frequency_series(vec,filter_N=None):
 	    cplen = len(vectilde)
         else:
             cplen = len(vec)
-        vectilde[0:cplen] = vec[0:cplen]  
+        vectilde[0:cplen] = vec[0:cplen]
         delta_f = vec.delta_f
-    
-        
-    if isinstance(vec,TimeSeries):  
+
+
+    if isinstance(vec,TimeSeries):
         vec_pad = TimeSeries(zeros(N),delta_t=vec.delta_t,
                          dtype=real_same_precision_as(vec))
-        vec_pad[0:len(vec)] = vec   
+        vec_pad[0:len(vec)] = vec
         delta_f = 1.0/(vec.delta_t*N)
-        vectilde = FrequencySeries(zeros(n),delta_f=1.0, 
+        vectilde = FrequencySeries(zeros(n),delta_f=1.0,
                                dtype=complex_same_precision_as(vec))
         fft(vec_pad,vectilde)
-        
+
     vectilde = FrequencySeries(vectilde * DYN_RANGE_FAC,delta_f=delta_f,dtype=complex64)
     return vectilde
 
@@ -113,14 +113,14 @@ def get_waveform(approximant, phase_order, amplitude_order, template_params, sta
     if approximant in td_approximants():
         hplus,hcross = get_td_waveform(template_params, approximant=approximant,
                                    phase_order=phase_order, delta_t=1.0 / sample_rate,
-                                   f_lower=start_frequency, amplitude_order=amplitude_order) 
+                                   f_lower=start_frequency, amplitude_order=amplitude_order)
         hvec = generate_detector_strain(template_params, hplus, hcross)
 
     elif approximant in fd_approximants():
         delta_f = sample_rate / length
         hvec = get_fd_waveform(template_params, approximant=approximant,
                                phase_order=phase_order, delta_f=delta_f,
-                               f_lower=start_frequency, amplitude_order=amplitude_order)     
+                               f_lower=start_frequency, amplitude_order=amplitude_order)
 
 
     htilde = make_padded_frequency_series(hvec,filter_N)
@@ -144,18 +144,18 @@ aprs = list(set(td_approximants() + fd_approximants()))
 #Template Settings
 parser.add_option("--template-file", dest="bank_file", help="SimInspiral or SnglInspiral XML file containing the template parameters.", metavar="FILE")
 parser.add_option("--template-approximant",help="Template Approximant Name: " + str(aprs), choices = aprs)
-parser.add_option("--template-phase-order",help="PN order to use for the phase",default=-1,type=int) 
-parser.add_option("--template-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
-parser.add_option("--template-start-frequency",help="Starting frequency for injections",type=float) 
-parser.add_option("--template-sample-rate",help="Starting frequency for injections",type=float) 
+parser.add_option("--template-phase-order",help="PN order to use for the phase",default=-1,type=int)
+parser.add_option("--template-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int)
+parser.add_option("--template-start-frequency",help="Starting frequency for injections",type=float)
+parser.add_option("--template-sample-rate",help="Starting frequency for injections",type=float)
 
 #Signal Settings
 parser.add_option("--signal-file", dest="sim_file", help="SimInspiral or SnglInspiral XML file containing the signal parameters.", metavar="FILE")
 parser.add_option("--signal-approximant",help="Signal Approximant Name: " + str(aprs), choices = aprs)
-parser.add_option("--signal-phase-order",help="PN order to use for the phase",default=-1,type=int) 
-parser.add_option("--signal-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int) 
-parser.add_option("--signal-start-frequency",help="Starting frequency for templates",type=float)  
-parser.add_option("--signal-sample-rate",help="Starting frequency for templates",type=float)  
+parser.add_option("--signal-phase-order",help="PN order to use for the phase",default=-1,type=int)
+parser.add_option("--signal-amplitude-order",help="PN order to use for the amplitude",default=-1,type=int)
+parser.add_option("--signal-start-frequency",help="Starting frequency for templates",type=float)
+parser.add_option("--signal-sample-rate",help="Starting frequency for templates",type=float)
 
 #Filtering Settings
 parser.add_option('--filter-low-frequency-cutoff', metavar='FREQ', help='low frequency cutoff of matched filter', type=float)
@@ -166,8 +166,8 @@ parser.add_option("--filter-signal-length",help="Length of signal for filtering,
 parser.add_option("--use-cuda",action="store_true")
 
 #Restricted maximization
-parser.add_option("--mchirp-window",type=float)               
-(options, args) = parser.parse_args()   
+parser.add_option("--mchirp-window",type=float)
+(options, args) = parser.parse_args()
 
 template_sample_rate = options.filter_sample_rate
 signal_sample_rate = options.filter_sample_rate
@@ -191,11 +191,11 @@ print "STARTING THE BANKSIM"
 # Load in the template bank file
 indoc = ligolw_utils.load_filename(options.bank_file, False)
 try :
-    template_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName) 
+    template_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
 except ValueError:
     template_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
 
-# open the output file where the max overlaps over the bank are stored 
+# open the output file where the max overlaps over the bank are stored
 fout = open(options.out_file, "w")
 fout2 = open(options.out_file+".found", "w")
 
@@ -205,7 +205,7 @@ print "Writing recovered template in " + options.out_file+".found"
 # Load in the simulation list
 indoc = ligolw_utils.load_filename(options.sim_file, False)
 try:
-    signal_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName) 
+    signal_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
 except ValueError:
     signal_table = table.get_table(indoc, lsctables.SnglInspiralTable.tableName)
 
@@ -227,36 +227,36 @@ print("Number of Templates       : ",len(template_table))
 
 print("Reading and Interpolating PSD")
 if options.asd_file:
-    psd = pycbc.psd.read.from_txt(options.asd_file, filter_n, filter_delta_f, 
+    psd = pycbc.psd.read.from_txt(options.asd_file, filter_n, filter_delta_f,
                            options.filter_low_frequency_cutoff)
 elif options.psd:
     psd = pycbc.psd.analytic.from_string(options.psd, filter_n, filter_delta_f,
-                           options.filter_low_frequency_cutoff) 
+                           options.filter_low_frequency_cutoff)
 
 psd *= DYN_RANGE_FAC **2
-psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32) 
+psd = FrequencySeries(psd,delta_f=psd.delta_f,dtype=float32)
 
 with ctx:
     print("Pregenerating Signals")
     signals = []
-    index = 0 
+    index = 0
     for signal_params in signal_table:
         index += 1
         update_progress(index/len(signal_table))
-        stilde = get_waveform(options.signal_approximant, 
-                      options.signal_phase_order, 
-                      options.signal_amplitude_order, 
-                      signal_params, 
-                      options.signal_start_frequency, 
-                      options.filter_sample_rate, 
+        stilde = get_waveform(options.signal_approximant,
+                      options.signal_phase_order,
+                      options.signal_amplitude_order,
+                      signal_params,
+                      options.signal_start_frequency,
+                      options.filter_sample_rate,
                       filter_N)
-        s_norm = sigmasq(stilde, psd=psd, 
+        s_norm = sigmasq(stilde, psd=psd,
                           low_frequency_cutoff=options.filter_low_frequency_cutoff)
         stilde /= psd
         signals.append( (stilde, s_norm, [], signal_params) )
 
     print("Calculating Overlaps")
-    index = 0 
+    index = 0
     # Calculate the overlaps
     for template_params in template_table:
         index += 1
@@ -264,27 +264,27 @@ with ctx:
         h_norm = htilde = None
         for stilde, s_norm, matches, signal_params in signals:
             # Check if we need to look at this template
-            if options.mchirp_window and outside_mchirp_window(template_params, 
+            if options.mchirp_window and outside_mchirp_window(template_params,
                                         signal_params, options.mchirp_window):
                 matches.append(-1)
                 continue
 
-            # Generate htilde if we haven't already done so 
+            # Generate htilde if we haven't already done so
             if htilde is None:
-                htilde = get_waveform(options.template_approximant, 
-                                      options.template_phase_order, 
-                                      options.template_amplitude_order, 
-                                      template_params, 
-                                      options.template_start_frequency, 
-                                      options.filter_sample_rate, 
+                htilde = get_waveform(options.template_approximant,
+                                      options.template_phase_order,
+                                      options.template_amplitude_order,
+                                      template_params,
+                                      options.template_start_frequency,
+                                      options.filter_sample_rate,
                                       filter_N)
-                h_norm = sigmasq(htilde, psd=psd, 
+                h_norm = sigmasq(htilde, psd=psd,
                        low_frequency_cutoff=options.filter_low_frequency_cutoff)
 
-            o,i = match(htilde, stilde, h_norm=h_norm, s_norm=s_norm, 
-                     low_frequency_cutoff=options.filter_low_frequency_cutoff)         
+            o,i = match(htilde, stilde, h_norm=h_norm, s_norm=s_norm,
+                     low_frequency_cutoff=options.filter_low_frequency_cutoff)
             matches.append(o)
-         
+
 
 #Find the maximum overlap in the bank and output to a file
 for stilde, s_norm, matches, sim_template in signals:

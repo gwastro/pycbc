@@ -29,16 +29,17 @@ documentation for this function can be found here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/datafind.html
 """
 
+from __future__ import print_function
 import os, copy
 import urlparse
 import logging
 from glue import segments, lal
-from glue.ligolw import utils, table, lsctables, ligolw
+from pycbc.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
-        pass
+    pass
 
 lsctables.use_in(ContentHandler)
 
@@ -102,7 +103,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
     cp = workflow.cp
 
     # Parse for options in ini file
-    datafindMethod = cp.get_opt_tags("workflow-datafind",
+    datafind_method = cp.get_opt_tags("workflow-datafind",
                                      "datafind-method", tags)
 
     if cp.has_option_tags("workflow-datafind",
@@ -125,39 +126,41 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
         checkSegmentSummary = "no_test"
 
     logging.info("Starting datafind with setup_datafind_runtime_generated")
-    if datafindMethod == "AT_RUNTIME_MULTIPLE_CACHES":
+    if datafind_method == "AT_RUNTIME_MULTIPLE_CACHES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_SINGLE_CACHES":
+    elif datafind_method == "AT_RUNTIME_SINGLE_CACHES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES":
+    elif datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_frames_multi_calls_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-    elif datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
+    elif datafind_method == "AT_RUNTIME_SINGLE_FRAMES":
         datafindcaches, datafindouts = \
             setup_datafind_runtime_frames_single_call_perifo(cp, scienceSegs,
                                                           outputDir, tags=tags)
-
-    elif datafindMethod == "FROM_PREGENERATED_LCF_FILES":
+    elif datafind_method == "AT_RUNTIME_FAKE_DATA":
+        pass
+    elif datafind_method == "FROM_PREGENERATED_LCF_FILES":
         ifos = scienceSegs.keys()
         datafindcaches, datafindouts = \
             setup_datafind_from_pregenerated_lcf_files(cp, ifos,
                                                        outputDir, tags=tags)
     else:
-        msg = "Entry datafind-method in [workflow-datafind] does not have "
-        msg += "expected value. Valid values are "
-        msg += "AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES "
-        msg += "AT_RUNTIME_MULTIPLE_CACHES or AT_RUNTIME_SINGLE_CACHES. "
-        msg += "Consult the documentation for more info."
+        msg = """Entry datafind-method in [workflow-datafind] does not have "
+              expected value. Valid values are 
+              AT_RUNTIME_MULTIPLE_FRAMES, AT_RUNTIME_SINGLE_FRAMES 
+              AT_RUNTIME_MULTIPLE_CACHES, AT_RUNTIME_SINGLE_CACHES,
+              FROM_PREGENERATED_LCF_FILES, or AT_RUNTIME_FAKE_DATA.
+              Consult the documentation for more info."""
         raise ValueError(msg)
 
     using_backup_server = False
-    if datafindMethod == "AT_RUNTIME_MULTIPLE_FRAMES" or \
-                                  datafindMethod == "AT_RUNTIME_SINGLE_FRAMES":
+    if datafind_method == "AT_RUNTIME_MULTIPLE_FRAMES" or \
+                                  datafind_method == "AT_RUNTIME_SINGLE_FRAMES":
         if cp.has_option_tags("workflow-datafind",
                           "datafind-backup-datafind-server", tags):
             using_backup_server = True
@@ -192,7 +195,7 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
                 msg += "times."
                 logging.warning(msg)
                 continue
-            if not newScienceSegs.has_key(ifo):
+            if ifo not in newScienceSegs:
                 msg = "No data frames were found corresponding to the science "
                 msg += "segments for ifo %s" %(ifo)
                 logging.error(msg)
@@ -343,7 +346,13 @@ def setup_datafind_workflow(workflow, scienceSegs, outputDir, seg_file=None,
                             extension='.xml', tags=tags, directory=outputDir)
 
     logging.info("Leaving datafind module")
-    return FileList(datafindouts), sci_avlble_file, scienceSegs, sci_avlble_name
+    if datafind_method == "AT_RUNTIME_FAKE_DATA":
+        datafindouts = None
+    else:
+        datafindouts = FileList(datafindouts) 
+
+
+    return datafindouts, sci_avlble_file, scienceSegs, sci_avlble_name
 
 
 def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
@@ -399,7 +408,6 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
     # Now ready to loop over the input segments
     datafindouts = []
     datafindcaches = []
-    ifos = scienceSegs.keys()
     logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
@@ -485,7 +493,6 @@ def setup_datafind_runtime_cache_single_call_perifo(cp, scienceSegs, outputDir,
     # Now ready to loop over the input segments
     datafindouts = []
     datafindcaches = []
-    ifos = scienceSegs.keys()
     logging.info("Querying datafind server for all science segments.")
     for ifo, scienceSegsIfo in scienceSegs.items():
         observatory = ifo[0].upper()
@@ -669,25 +676,33 @@ def convert_cachelist_to_filelist(datafindcache_list):
     datafind_filelist : FileList of frame File objects
         The list of frame files.
     """
-    datafind_filelist = FileList([])
     prev_file = None
+    prev_name = None
+    this_name = None
+
+    datafind_filelist = FileList([])
+
     for cache in datafindcache_list:
+        # sort the cache into time sequential order
+        cache.sort()
         curr_ifo = cache.ifo
         for frame in cache:
-            # Don't add a new workflow file entry for this frame if
-            # if is a duplicate. These are assumed to be returned in time
-            # order
-            if prev_file:
-                prev_name = prev_file.cache_entry.url.split('/')[-1]
-                this_name = frame.url.split('/')[-1]
-                if prev_name == this_name:
-                    continue
-
             # Pegasus doesn't like "localhost" in URLs.
             frame.url = frame.url.replace('file://localhost','file://')
 
-            currFile = File(curr_ifo, frame.description,
+            # Create one File() object for each unique frame file that we
+            # get back in the cache.
+            if prev_file:
+                prev_name = os.path.basename(prev_file.cache_entry.url)
+                this_name = os.path.basename(frame.url)
+
+            if (prev_file is None) or (prev_name != this_name):
+                currFile = File(curr_ifo, frame.description,
                     frame.segment, file_url=frame.url, use_tmp_subdirs=True)
+                datafind_filelist.append(currFile)
+                prev_file = currFile
+
+            # Populate the PFNs for the File() we just created
             if frame.url.startswith('file://'):
                 currFile.PFN(frame.url, site='local')
                 if frame.url.startswith(
@@ -701,10 +716,12 @@ def convert_cachelist_to_filelist(datafindcache_list):
                     currFile.PFN(frame.url.replace(
                         'file:///cvmfs/oasis.opensciencegrid.org/',
                         'gsiftp://red-gridftp.unl.edu/user/'), site='osg')
+                    currFile.PFN(frame.url.replace(
+                        'file:///cvmfs/oasis.opensciencegrid.org/',
+                        'gsiftp://ldas-grid.ligo.caltech.edu/hdfs/'), site='osg')
             else:
                 currFile.PFN(frame.url, site='notlocal')
-            datafind_filelist.append(currFile)
-            prev_file = currFile
+
     return datafind_filelist
 
 
@@ -730,7 +747,7 @@ def get_science_segs_from_datafind_outs(datafindcaches):
         if len(cache) > 0:
             groupSegs = segments.segmentlist(e.segment for e in cache).coalesce()
             ifo = cache.ifo
-            if not newScienceSegs.has_key(ifo):
+            if ifo not in newScienceSegs:
                 newScienceSegs[ifo] = groupSegs
             else:
                 newScienceSegs[ifo].extend(groupSegs)
@@ -770,7 +787,7 @@ def get_missing_segs_from_frame_file_cache(datafindcaches):
             missingSegs = segments.segmentlist(e.segment \
                                          for e in currMissingFrames).coalesce()
             ifo = cache.ifo
-            if not missingFrameSegs.has_key(ifo):
+            if ifo not in missingFrameSegs:
                 missingFrameSegs[ifo] = missingSegs
                 missingFrames[ifo] = lal.Cache(currMissingFrames)
             else:
@@ -947,8 +964,8 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     for entry in dfCache:
         start = str(int(entry.segment[0]))
         duration = str(int(abs(entry.segment)))
-        print >> fP, "%s %s %s %s %s" \
-            %(entry.observatory, entry.description, start, duration, entry.url)
+        print("%s %s %s %s %s" \
+              % (entry.observatory, entry.description, start, duration, entry.url), file=fP)
         entry.segment = segments.segment(int(entry.segment[0]), int(entry.segment[1]))
 
     fP.close()

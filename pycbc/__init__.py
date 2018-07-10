@@ -24,28 +24,22 @@
 #
 """PyCBC contains a toolkit for CBC gravitational wave analysis
 """
+from __future__ import (absolute_import, print_function)
 import subprocess, os, sys, tempfile
 import logging
 import signal
 
-# We need to allow a try/except here to allow for importing during install
-# of pycbc, where we can't guarantee that scipy is installed yet.
-try:
-    import scipy.weave.inline_tools
-    from . import weave as pycbc_weave
-    scipy.weave.inline_tools._compile_function = scipy.weave.inline_tools.compile_function
-    scipy.weave.inline_tools.compile_function = pycbc_weave.pycbc_compile_function
-except:
-    pass
-
 try:
     # This will fail when pycbc is imported during the build process,
     # before version.py has been generated.
-    from version import git_hash
-    from version import version as pycbc_version
+    from .version import git_hash
+    from .version import version as pycbc_version
 except:
     git_hash = 'none'
     pycbc_version = 'none'
+
+__version__ = pycbc_version
+
 
 def init_logging(verbose=False, format='%(asctime)s %(message)s'):
     """ Common utility for setting up logging in PyCBC.
@@ -79,7 +73,8 @@ try:
     # This is a crude check to make sure that the driver is installed
     try:
         loaded_modules = subprocess.Popen(['lsmod'], stdout=subprocess.PIPE).communicate()[0]
-        if str.find(loaded_modules, "nvidia") == -1:
+        loaded_modules = loaded_modules.decode()
+        if 'nvidia' not in loaded_modules:
             raise ImportError("nvidia driver may not be installed correctly")
     except OSError:
         pass
@@ -87,12 +82,12 @@ try:
     # Check that pycuda is installed and can talk to the driver
     import pycuda.driver as _pycudadrv
 
-    HAVE_CUDA=True 
+    HAVE_CUDA=True
 except ImportError:
     HAVE_CUDA=False
-    
-# Check for openmp suppport, currently we pressume it exists, unless on 
-# platforms (mac) that are silly and don't use the standard gcc. 
+
+# Check for openmp suppport, currently we pressume it exists, unless on
+# platforms (mac) that are silly and don't use the standard gcc.
 if sys.platform == 'darwin':
     HAVE_OMP = False
 else:
@@ -111,6 +106,10 @@ PYCBC_ALIGNMENT = 32
 
 DYN_RANGE_FAC =  5.9029581035870565e+20
 
+# String used to separate parameters in configuration file section headers.
+# This is used by the distributions and transforms modules
+VARARGS_DELIM = '+'
+
 if os.environ.get("INITIAL_LOG_LEVEL", None):
     logging.basicConfig(format='%(asctime)s %(message)s',
                         level=int(os.environ["INITIAL_LOG_LEVEL"]))
@@ -120,7 +119,7 @@ _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
 _cache_dir_name = repr(os.getuid()) + '_' + _python_name
 _cache_dir_path = os.path.join(_tmp_dir, _cache_dir_name)
-# Append the git hash to the cache path.  This will ensure that cached 
+# Append the git hash to the cache path.  This will ensure that cached
 # files are correct even in cases where weave currently doesn't realize
 # that a recompile is needed.
 # FIXME: It would be better to find a way to trigger a recompile off
@@ -129,22 +128,23 @@ _cache_dir_path = os.path.join(_cache_dir_path, pycbc_version)
 _cache_dir_path = os.path.join(_cache_dir_path, git_hash)
 if os.environ.get("NO_TMPDIR", None):
     if os.environ.get("INITIAL_LOG_LEVEL", 0) >= 10:
-        print >>sys.stderr, "__init__: Skipped creating %s as NO_TEMPDIR is set" % _cache_dir_path
+        print("__init__: Skipped creating %s as NO_TEMPDIR is set"
+              % _cache_dir_path, file=sys.stderr)
 else:
     try: os.makedirs(_cache_dir_path)
     except OSError: pass
     if os.environ.get("INITIAL_LOG_LEVEL", 0) >= 10:
-        print >>sys.stderr, "__init__: Setting weave cache to %s" % _cache_dir_path
+        print("__init__: Setting weave cache to %s" % _cache_dir_path,
+              file=sys.stderr)
 os.environ['PYTHONCOMPILED'] = _cache_dir_path
 
 # Check for MKL capability
 try:
     import pycbc.fft.mkl
     HAVE_MKL=True
-except ImportError as e:
-    print e
+except ImportError:
     HAVE_MKL=False
-    
+
 
 # Check for site-local flags to pass to gcc
 WEAVE_FLAGS = '-march=native -O3 -w '

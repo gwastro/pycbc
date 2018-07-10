@@ -95,9 +95,7 @@ $$$$$$$$$$$$$$$$$
 lalapps_inspinj
 $$$$$$$$$$$$$$$$$
 
-lalapps_inspinj is the legacy C-code that has been used to generate injection files for gravitational-wave data analysis since the dawn of time. The help message for lalapps_inspinj follows
-
-.. command-output:: lalapps_inspinj --help
+lalapps_inspinj is the legacy C-code that has been used to generate injection files for gravitational-wave data analysis since the dawn of time. Documentation and command line options can be found at http://software.ligo.org/docs/lalsuite/lalapps/inspinj_8c.html
 
 Of these options the workflow will automatically add the following. **DO NOT ADD THESE OPTIONS IN THE CONFIGURATION FILE**.
 

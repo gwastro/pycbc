@@ -45,24 +45,24 @@ def merge_psds(workflow, files, ifo, out_dir, tags=None):
     node.add_input_list_opt('--psd-files', files)
     node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
     workflow += node
-    return node.output_files[0]        
+    return node.output_files[0]
 
 def setup_psd_calculate(workflow, frame_files, ifo, segments,
                         segment_name, out_dir, tags=None):
     make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     if workflow.cp.has_option_tags('workflow-psd', 'parallelization-factor', tags=tags):
-        num_parts = int(workflow.cp.get_opt_tags('workflow-psd', 
+        num_parts = int(workflow.cp.get_opt_tags('workflow-psd',
                                                  'parallelization-factor',
                                                  tags=tags))
     else:
         num_parts = 1
-        
+
     # get rid of duplicate segments which happen when splitting the bank
-    segments = segmentlist(frozenset(segments))       
-        
-    segment_lists = list(chunks(segments, num_parts)) 
-    
+    segments = segmentlist(frozenset(segments))
+
+    segment_lists = list(chunks(segments, num_parts))
+
     psd_files = FileList([])
     for i, segs in enumerate(segment_lists):
         seg_file = SegFile.from_segment_list('%s_%s' %(segment_name, i),
@@ -71,14 +71,14 @@ def setup_psd_calculate(workflow, frame_files, ifo, segments,
                          extension='xml', directory=out_dir)
 
         psd_files += [make_psd_file(workflow, frame_files, seg_file,
-                                    segment_name, out_dir, 
+                                    segment_name, out_dir,
                                     tags=tags + ['PART%s' % i])]
-    
+
     if num_parts > 1:
         return merge_psds(workflow, psd_files, ifo, out_dir, tags=tags)
     else:
         return psd_files[0]
-    
+
 def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
                   tags=None):
     make_analysis_dir(out_dir)
@@ -89,9 +89,10 @@ def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
     node = exe.create_node()
     node.add_input_opt('--analysis-segment-file', segment_file)
     node.add_opt('--segment-name', segment_name)
-    
-    if not exe.has_opt('frame-type'):
+
+    if frame_files and not exe.has_opt('frame-type'):
         node.add_input_list_opt('--frame-files', frame_files)
+
     node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
     workflow += node
     return node.output_files[0]

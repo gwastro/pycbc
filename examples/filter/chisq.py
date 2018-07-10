@@ -30,7 +30,6 @@ chisq = pycbc.vetoes.power_chisq(hp, stilde, num_bins, psd,
 chisq /= (num_bins * 2) - 2
 
 pylab.plot(chisq.sample_times, chisq)
-pylab.legend()
 pylab.ylabel('$\chi^2_r$')
 pylab.xlabel('time (s)')
 pylab.show()

@@ -40,7 +40,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
 
     .. math::
 
-        \hat{R}(k) = \frac{1}{n \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right) 
+        \hat{R}(k) = \frac{1}{n \sigma^{2}} \sum_{t=1}^{n-k} \left( X_{t} - \mu \right) \left( X_{t+k} - \mu \right)
 
     Where :math:`\hat{R}(k)` is the ACF, :math:`X_{t}` is the data series at
     time t, :math:`\mu` is the mean of :math:`X_{t}`, and :math:`\sigma^{2}` is
@@ -71,8 +71,18 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
     else:
         y = data
 
+    # Zero mean
+    y = y - y.mean()
+    ny_orig = len(y)
+
+    npad = 1
+    while npad < 2*ny_orig:
+        npad = npad << 1
+    ypad = numpy.zeros(npad)
+    ypad[:ny_orig] = y
+
     # FFT data minus the mean
-    fdata = TimeSeries(y-y.mean(), delta_t=delta_t).to_frequencyseries()
+    fdata = TimeSeries(ypad, delta_t=delta_t).to_frequencyseries()
 
     # correlate
     # do not need to give the congjugate since correlate function does it
@@ -82,6 +92,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
 
     # IFFT correlated data to get unnormalized autocovariance time series
     acf = cdata.to_timeseries()
+    acf = acf[:ny_orig]
 
     # normalize the autocovariance
     # note that dividing by acf[0] is the same as ( y.var() * len(acf) )
@@ -130,6 +141,10 @@ def calculate_acl(data, m=5, k=2, dtype=int):
     # sanity check output data type
     if dtype not in [int, float]:
         raise ValueError("The dtype must be either int or float.")
+
+    # if we have only a single point, just return 1
+    if len(data) < 2:
+        return 1
 
     # calculate ACF that is normalized by the zero-lag value
     acf = calculate_acf(data)

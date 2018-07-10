@@ -25,7 +25,7 @@ BACKEND_PREFIX="pycbc.vetoes.autochisq_"
 def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
                        stride=1, num_points=None, oneside=None,
                        twophase=True, maxvalued=False):
-    """ 
+    """
     Compute correlation (two sided) between template and data
     and compares with autocorrelation of the template: C(t) = IFFT(A*A/S(f))
 
@@ -38,7 +38,7 @@ def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
         normalized (!) array of complex snr for the template that you want to
         produce a correlation chisq test for. In the [common] case that sn and
         corr_sn are the same, you are computing auto-correlation chisq.
-    hautocorr: Array[complex] 
+    hautocorr: Array[complex]
         time domain autocorrelation for the template
     indices: Array[int]
         compute correlation chisquare at the points specified in this array,
@@ -62,12 +62,10 @@ def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
     Returns
     -------
     autochisq: [tuple]
-        returns autochisq values and snr corresponding to the instances 
+        returns autochisq values and snr corresponding to the instances
         of time defined by indices
     """
     Nsnr = len(sn)
-
-    indx = np.array([])
 
     achisq = np.zeros(len(indices))
     num_points_all = int(Nsnr/stride)
@@ -100,7 +98,7 @@ def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
 
     for ip,ind in enumerate(indices):
         curr_achisq_idx_list = achisq_idx_list + ind
-        
+
         cphi = cphi_array[ip]
         sphi = sphi_array[ip]
         # By construction, the other "phase" of the SNR is 0
@@ -123,7 +121,7 @@ def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
                  corr_sn[curr_achisq_idx_list].imag*cphi
             dz = z - hauto_corr_vec.imag*snr_ind
             curr_achisq_list += dz*dz/chisq_norm
-          
+
         if maxvalued:
             achisq[ip] = curr_achisq_list.max()
         else:
@@ -140,7 +138,7 @@ def autochisq_from_precomputed(sn, corr_sn, hautocorr, indices,
 class SingleDetAutoChisq(object):
     """Class that handles precomputation and memory management for efficiently
     running the auto chisq in a single detector inspiral analysis.
-    """	
+    """
     def __init__(self, stride, num_points, onesided=None, twophase=False,
                  reverse_template=False, take_maximum_value=False,
                  maximal_value_dof=None):
@@ -194,7 +192,7 @@ class SingleDetAutoChisq(object):
                     err_msg += "option."
                     raise ValueError(err_msg)
                 self.dof = maximal_value_dof
-            
+
             self._autocor = None
             self._autocor_id = None
         else:
@@ -209,10 +207,10 @@ class SingleDetAutoChisq(object):
         -----------
         sn : Array[complex]
             SNR time series of the template for which auto-chisq is being
-            computed. Provided unnormalized. 
+            computed. Provided unnormalized.
         indices : Array[int]
             List of points at which to calculate auto-chisq
-        template : Pycbc template object 
+        template : Pycbc template object
             The template for which we are calculating auto-chisq
         psd : Pycbc psd object
             The PSD of the data being analysed
@@ -235,14 +233,14 @@ class SingleDetAutoChisq(object):
                 logging.info("Calculating autocorrelation")
 
                 if not self.reverse_template:
-                    Pt, _Ptilde, P_norm = matched_filter_core(htilde,
+                    Pt, _, P_norm = matched_filter_core(htilde,
                               htilde, psd=psd,
                               low_frequency_cutoff=low_frequency_cutoff,
                               high_frequency_cutoff=high_frequency_cutoff)
                     Pt = Pt * (1./ Pt[0])
                     self._autocor = Array(Pt, copy=True)
                 else:
-                    Pt, _Ptilde, P_norm = matched_filter_core(htilde.conj(),
+                    Pt, _, P_norm = matched_filter_core(htilde.conj(),
                               htilde, psd=psd,
                               low_frequency_cutoff=low_frequency_cutoff,
                               high_frequency_cutoff=high_frequency_cutoff)
@@ -255,12 +253,12 @@ class SingleDetAutoChisq(object):
                     Pt *= norm_fac
                     self._autocor = Array(Pt, copy=True)
                 self._autocor_id = key
-            
+
             logging.info("...Calculating autochisquare")
             sn = sn*norm
             if self.reverse_template:
                 assert(stilde is not None)
-                asn, acor, ahnrm = matched_filter_core(htilde.conj(), stilde,
+                asn, _, ahnrm = matched_filter_core(htilde.conj(), stilde,
                                  low_frequency_cutoff=low_frequency_cutoff,
                                  high_frequency_cutoff=high_frequency_cutoff,
                                  h_norm=template.sigmasq(psd))

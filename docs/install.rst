@@ -1,14 +1,21 @@
+.. _installing_pycbc:
+
 ################
 Installing PyCBC
 ################
 
-There are three typical use cases for PyCBC:
+This document explains how to set up a virtual environment to install PyCBC
+either for development or use in a production analysis with a release. The
+code build will be a standard Python install which requires that the
+installation directory containing the Python libraries is accessible at
+runtime. Some executables also use weave for just-in-time compilation of code
+at runtime. These executables require a gcc and Python build environment on
+the execution machine.
 
-1. Installing a release of PyCBC from GitHub for an end user to run the tools.
-2. Installing an editable version from GitHub for development.
-3. Production LIGO astrophysical searches.
-
-This page documents the first two use cases. For production analysis, see :ref:`using_production_binaries`.
+If you wish to run PyCBC executables on a machine that does not have the
+required environment, then you must use PyInstaller to build bundled versions
+of the executables. Documentation on doing this is available on the page
+:ref:`building_bundled_executables`.
 
 .. note::
 
@@ -24,7 +31,6 @@ These instructions walk you through the process of
         * `Installing source from GitHub for development`_.
     * Optional additional installation steps
         * `Building and Installing Documentation`_.
-        * `Modifying pycbc-glue`_.
         * `Use of Intel MKL Optimized FFT libraries`_.
         * `Graphics Processing Unit support with CUDA`_
 
@@ -126,7 +132,7 @@ If you are running on a Scientific Linux 6 cluster, you need to install the HDF5
     mkdir -p $VIRTUAL_ENV/src
     cd $VIRTUAL_ENV/src
     pip install "nose>=1.0.0"
-    curl https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
+    curl https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
     tar -zxvf hdf5-1.8.12.tar.gz
     cd hdf5-1.8.12
     ./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
@@ -142,25 +148,14 @@ Make sure your versions of ``pip`` and ``setuptools`` are up to date by running 
 
 .. code-block:: bash
 
-    pip install --upgrade pip setuptools
+    pip install --upgrade pip
+    pip install --upgrade setuptools
 
 Install unittest2, python-cjson, and numpy with the command:
 
 .. code-block:: bash
 
     pip install "numpy>=1.6.4" unittest2 python-cjson Cython decorator
-
-To authenticate with LIGO Data Grid services, you need M2Crypto which you should install with 
-
-.. code-block:: bash
-
-    SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
-
-On MacOS using homebrew to install openssl you may need to set the following extra environment variables to install M2Crypto:
-
-.. code-block:: bash
-
-   CFLAGS="-I/usr/local/opt/openssl/include -L/usr/local/opt/openssl/lib" SWIG_FEATURES="-cpperraswarn -includeall -I/usr/local/opt/openssl/include/" pip install M2Crypto
 
 Once you have these packages installed, you can now install lalsuite following the instructions at:
 
@@ -183,13 +178,13 @@ Next install the Pegasus WMS python libraries needed to build the workflows with
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.7.2/pegasus-python-source-4.7.2.tar.gz
+    pip install http://download.pegasus.isi.edu/pegasus/4.7.3/pegasus-python-source-4.7.3.tar.gz
 
-To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. At the moment, these are not available from the Python Package Index, so you will need to install them from a branch in Duncan's repository with the command
+To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. Install the 1.4.1 pre-release of these tools, run the command:
 
 .. code-block:: bash
 
-    pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+    pip install dqsegdb
 
 For uploading triggers to GraceDB at the end of the workflow you will need to have the gracedb client tools installed. The latest release is in pip
 
@@ -283,57 +278,44 @@ To build the documentation from your virtual environment, first make sure that y
 
 .. code-block:: bash
 
-    pip install "Sphinx>=1.4.2"
-    pip install numpydoc
+    pip install "Sphinx>=1.5.0"
     pip install sphinx-rtd-theme
-    pip install git+https://github.com/ligo-cbc/sphinxcontrib-programoutput.git@pypi_release#egg=sphinxcontrib-programoutput
+    pip install sphinxcontrib-programoutput
     
-To generate the documentation, from the top level of the PyCBC source tree run
+To generate the documentation and push it to your personal GitHub pages, first create a branch names ``gh-pages``, if you do not already have one. Follow the `GitHub branch <https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/>`_ instructions to do this.
+
+To build and publish the documentation, run the following commands from the
+top-level of your PyCBC source tree, replacing ``github-username`` with your
+GitHub user name:
 
 .. code-block:: bash
 
-    python setup.py build_docs
-    
-This will build the documentation in the directory docs/_build/html which can be copied to a web-accessible directory. For example
+    git clone git@github.com:github-username/pycbc.git _gh-pages
+    cd _gh-pages
+    git checkout gh-pages
+    git rm -rf *
+    git commit -a -m "flush documentation"
+    cd ..
+    python setup.py build_gh_pages
+    cd _gh-pages
+    git add --all
+    git commit -a -m "documentation update"
+    git push origin gh-pages
 
-.. code-block:: bash
+The documentation will then be visible at http://github-username.github.io/pycbc/latest/html where ``github-username`` should be replaced with your GitHub username.
 
-    cp -a docs/_build/html/ ~/public_html/pycbc-docs
-    
-will copy the documentation to a directory called ``pycbc-docs`` under your public html pages.
+.. note::
 
-To maintain the documentation under GitHub project pages, see
+    Be careful with the ``git rm -rf *`` command as if you run it in the wrong
+    directory you can delete the contents of your git repository. If you do
+    this by accident, you can use ``git reset`` to undo the commit.
+
+For more details on building and maintaining the documentation under GitHub project pages, see
 
 .. toctree::
     :maxdepth: 1
 
     build_gh_pages
-
-
-====================
-Modifying pycbc-glue
-====================
-
-PyCBC depends on the package pycbc-glue which is a fork of the lalsuite packages. The correct version is automatically installed by pip as part of the main PyCBC install. If you are developing code in pycbc-glue, then you can clone them from GitHib into your virtual environment's source directory and build and install them from there.
-
-.. note::
-
-    If you want to develop pycbc-glue, you should follow the instructions to `fork a repository <https://help.github.com/articles/fork-a-repo/>`_ to fork the `ligo-cbc/pycbc-glue <https://github.com/ligo-cbc/pycbc-glue>`_ repository into your own account.
-
-You can obtain these repositories in the standard way using git, replacing ``ligo-cbc`` with your GitHub user account name
-
-.. code-block:: bash
-
-    cd ${VIRTUAL_ENV}/src
-    git clone git@github.com:ligo-cbc/pycbc-glue.git
-
-Once you have the source code cloned, you can run 
-
-.. code-block:: bash
-
-    python setup.py install
-
-to install pycbc-glue into your virtual environment.
 
 ========================================
 Use of Intel MKL Optimized FFT libraries

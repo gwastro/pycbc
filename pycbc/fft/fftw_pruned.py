@@ -11,7 +11,8 @@ http://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
 I use a similar naming convention here, with minor simplifications to the
 twiddle factors.
 """
-import numpy, scipy.weave, ctypes, pycbc.types
+from __future__ import absolute_import
+import numpy, weave, ctypes, pycbc.types
 from pycbc import WEAVE_FLAGS
 from pycbc.libutils import get_ctypes_library
 
@@ -49,18 +50,18 @@ def plan_transpose(N1, N2):
     rows = N1
     cols = N2
 
-    iodim = numpy.zeros(6, dtype=numpy.int32) 
+    iodim = numpy.zeros(6, dtype=numpy.int32)
     iodim[0] = rows
     iodim[1] = 1
     iodim[2] = cols
     iodim[3] = cols
     iodim[4] = rows
     iodim[5] = 1
-    
+
     N = N1*N2
     vin = pycbc.types.zeros(N, dtype=numpy.complex64)
     vout = pycbc.types.zeros(N, dtype=numpy.complex64)
-    
+
     f = float_lib.fftwf_plan_guru_dft
     f.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_int,
                   ctypes.c_void_p, ctypes.c_void_p,
@@ -122,7 +123,7 @@ def first_phase(invec, outvec, N1, N2):
     if _theplan is None:
         _theplan = plan_first_phase(N1, N2)
     fexecute(_theplan, invec.ptr, outvec.ptr)
-    
+
 def second_phase(invec, indices, N1, N2):
     """
     This is the second phase of the FFT decomposition that actually performs
@@ -146,7 +147,7 @@ def second_phase(invec, indices, N1, N2):
     out : array of floats
     """
     invec = numpy.array(invec.data, copy=False)
-    NI = len(indices)
+    NI = len(indices) # pylint:disable=unused-variable
     N1=int(N1)
     N2=int(N2)
     out = numpy.zeros(len(indices), dtype=numpy.complex64)
@@ -167,7 +168,7 @@ def second_phase(invec, indices, N1, N2):
             out[i] = val;
         }
     """
-    scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
+    weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
                       )
     return out
 
@@ -194,25 +195,25 @@ def fast_second_phase(invec, indices, N1, N2):
     out : array of floats
     """
     invec = numpy.array(invec.data, copy=False)
-    NI = len(indices)
+    NI = len(indices) # pylint:disable=unused-variable
     N1=int(N1)
     N2=int(N2)
     out = numpy.zeros(len(indices), dtype=numpy.complex64)
-    
+
     # Note, the next step if this needs to be faster is to invert the loops
     code = """
         float pi = 3.14159265359;
         for(int i=0; i<NI; i++){
             float sp, cp;
             std::complex<double> val= (0, 0);
-            
+
             unsigned int k = indices[i];
             int N = N1*N2;
             float k2 = k % N2;
-            
+
             float phase_inc = 2 * pi * float(k) / float(N);
             sincosf(phase_inc, &sp, &cp);
-            std::complex<float> twiddle_inc = std::complex<float>(cp, sp);             
+            std::complex<float> twiddle_inc = std::complex<float>(cp, sp);
             std::complex<float> twiddle = std::complex<float>(1, 0);
 
             for (float n1=0; n1<N1; n1+=1){
@@ -222,7 +223,7 @@ def fast_second_phase(invec, indices, N1, N2):
             out[i] = val;
         }
     """
-    scipy.weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
+    weave.inline(code, ['N1', 'N2', 'NI', 'indices', 'out', 'invec'],
                        extra_compile_args=[WEAVE_FLAGS])
     return out
 
@@ -231,7 +232,7 @@ def fft_transpose_fftw(vec):
     """
     Perform an FFT transpose from vec into outvec.
     (Alex to provide more details in a write-up.)
-   
+
     Parameters
     -----------
     vec : array
@@ -254,7 +255,7 @@ def fft_transpose_numpy(vec):
     """
     Perform a numpy transpose from vec into outvec.
     (Alex to provide more details in a write-up.)
-   
+
     Parameters
     -----------
     vec : array
@@ -283,7 +284,7 @@ def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     decomposition is easier to choose. This is not a strict requirement of the
     functions, but it is unlikely to the optimal to use anything but power
     of 2. (Alex to provide more details in write up.
- 
+
     Parameters
     -----------
     invec : array

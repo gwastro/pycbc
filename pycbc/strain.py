@@ -17,7 +17,7 @@
 This modules contains functions reading, generating, and segmenting strain data
 """
 import copy
-import logging, numpy, lal
+import logging, numpy
 import pycbc.noise
 import pycbc.types
 from pycbc.types import TimeSeries, zeros
@@ -31,13 +31,13 @@ from pycbc.frame import read_frame, query_and_read_frame
 from pycbc.inject import InjectionSet, SGBurstInjectionSet, RingdownInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
+from pycbc.waveform.spa_tmplt import spa_distance
 import pycbc.psd
 import pycbc.fft
 import pycbc.events
 import pycbc.frame
 import pycbc.filter
 from scipy.signal import kaiserord
- 
 
 def next_power_of_2(n):
     """Return the smallest integer power of 2 larger than the argument.
@@ -182,7 +182,6 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
              for idx in indices[cluster_idx]]
     return times
 
-
 def from_cli(opt, dyn_range_fac=1, precision='single',
              inj_filter_rejector=None):
     """Parses the CLI options related to strain data reading and conditioning.
@@ -191,12 +190,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     ----------
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
-        required attributes  (gps-start-time, gps-end-time, strain-high-pass, 
-        pad-data, sample-rate, (frame-cache or frame-files), channel-name, 
+        required attributes  (gps-start-time, gps-end-time, strain-high-pass,
+        pad-data, sample-rate, (frame-cache or frame-files), channel-name,
         fake-strain, fake-strain-seed, fake-strain-from-file, gating_file).
-    dyn_range_fac: {float, 1}, optional
+    dyn_range_fac : {float, 1}, optional
         A large constant to reduce the dynamic range of the strain.
-    inj_filter_rejector: InjFilterRejector instance; optional, default=None
+    precision : string
+        Precision of the returned strain ('single' or 'double').
+    inj_filter_rejector : InjFilterRejector instance; optional, default=None
         If given send the InjFilterRejector instance to the inject module so
         that it can store a reduced representation of injections if
         necessary.
@@ -215,15 +216,22 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             frame_source = opt.frame_files
 
         logging.info("Reading Frames")
-        
+
+        if hasattr(opt, 'frame_sieve') and opt.frame_sieve:
+            sieve = opt.frame_sieve
+        else:
+            sieve = None
+
         if opt.frame_type:
             strain = query_and_read_frame(opt.frame_type, opt.channel_name,
                                           start_time=opt.gps_start_time-opt.pad_data,
-                                          end_time=opt.gps_end_time+opt.pad_data)
+                                          end_time=opt.gps_end_time+opt.pad_data,
+                                          sieve=sieve)
         else:
             strain = read_frame(frame_source, opt.channel_name,
                             start_time=opt.gps_start_time-opt.pad_data,
-                            end_time=opt.gps_end_time+opt.pad_data)
+                            end_time=opt.gps_end_time+opt.pad_data,
+                            sieve=sieve)
 
         if opt.zpk_z and opt.zpk_p and opt.zpk_k:
             logging.info("Highpass Filtering")
@@ -265,9 +273,14 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if precision == 'single':
             logging.info("Converting to float32")
             strain = (strain * dyn_range_fac).astype(pycbc.types.float32)
+        elif precision == "double":
+            logging.info("Converting to float64")
+            strain = (strain * dyn_range_fac).astype(pycbc.types.float64)
+        else:
+            raise ValueError("Unrecognized precision {}".format(precision))
 
         if opt.gating_file is not None:
-            logging.info("Gating glitches")
+            logging.info("Gating times contained in gating file")
             gate_params = numpy.loadtxt(opt.gating_file)
             if len(gate_params.shape) == 1:
                 gate_params = [gate_params]
@@ -299,6 +312,32 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
+        if hasattr(opt, 'witness_frame_type') and opt.witness_frame_type:
+            stilde = strain.to_frequencyseries()
+            import h5py
+            tf_file = h5py.File(opt.witness_tf_file)
+            for key in tf_file:
+                witness = pycbc.frame.query_and_read_frame(opt.witness_frame_type, str(key),
+                       start_time=strain.start_time, end_time=strain.end_time)
+                witness = (witness * dyn_range_fac).astype(strain.dtype)
+                tf = pycbc.types.load_frequencyseries(opt.witness_tf_file, group=key)
+                tf = tf.astype(stilde.dtype)
+
+                flen = int(opt.witness_filter_length * strain.sample_rate)
+                tf = pycbc.psd.interpolate(tf, stilde.delta_f)
+
+                tf_time = tf.to_timeseries()
+                window = Array(numpy.hanning(flen*2), dtype=strain.dtype)
+                tf_time[0:flen] *= window[flen:]
+                tf_time[len(tf_time)-flen:] *= window[0:flen]
+                tf = tf_time.to_frequencyseries()
+
+                kmax = min(len(tf), len(stilde)-1)
+                stilde[:kmax] -= tf[:kmax] * witness.to_frequencyseries()[:kmax]
+
+            strain = stilde.to_timeseries()
+
+
         logging.info("Remove Padding")
         start = opt.pad_data*opt.sample_rate
         end = len(strain)-opt.sample_rate*opt.pad_data
@@ -306,6 +345,9 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
     if opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
+        if not opt.low_frequency_cutoff:
+            raise ValueError('Please provide low frequency cutoff to '
+                              'generate a fake strain')
         duration = opt.gps_end_time - opt.gps_start_time
         tlen = duration * opt.sample_rate
         pdf = 1.0/128
@@ -323,13 +365,18 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
             strain = TimeSeries(pycbc.types.zeros(tlen),
-                                delta_t=1.0/opt.sample_rate)
+                                delta_t=1.0/opt.sample_rate,
+                                epoch=opt.gps_start_time)
         else:
             logging.info("Making colored noise")
-            strain = pycbc.noise.noise_from_psd(tlen, 1.0/opt.sample_rate,
-                                                strain_psd,
-                                                seed=opt.fake_strain_seed)
-        strain._epoch = lal.LIGOTimeGPS(opt.gps_start_time)
+            from pycbc.noise.reproduceable import colored_noise
+            lowfreq = opt.low_frequency_cutoff / 2.
+            strain = colored_noise(strain_psd, opt.gps_start_time,
+                                          opt.gps_end_time,
+                                          seed=opt.fake_strain_seed,
+                                          low_frequency_cutoff=lowfreq)
+            strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
+
 
         if opt.injection_file:
             logging.info("Applying injections")
@@ -353,6 +400,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         if precision == 'single':
             logging.info("Converting to float32")
             strain = (dyn_range_fac * strain).astype(pycbc.types.float32)
+        elif precision == 'double':
+            logging.info("Converting to float64")
+            strain = (dyn_range_fac * strain).astype(pycbc.types.float64)
+        else:
+            raise ValueError("Unrecognized precision {}".format(precision))
 
     if opt.taper_data:
         logging.info("Tapering data")
@@ -367,7 +419,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         strain.injections = injections
     strain.gating_info = gating_info
 
-    return strain  
+    return strain
 
 def from_cli_single_ifo(opt, ifo, **kwargs):
     """
@@ -406,7 +458,7 @@ def insert_strain_option_group(parser, gps_times=True):
                   " if the --psd-estimation option is given.")
 
     # Required options
-    
+
     if gps_times:
         data_reading_group.add_argument("--gps-start-time",
                                 help="The gps start time of the data "
@@ -414,8 +466,8 @@ def insert_strain_option_group(parser, gps_times=True):
         data_reading_group.add_argument("--gps-end-time",
                                 help="The gps end time of the data "
                                      " (integer seconds)", type=int)
-                                     
-                                 
+
+
     data_reading_group.add_argument("--strain-high-pass", type=float,
                             help="High pass frequency")
     data_reading_group.add_argument("--pad-data",
@@ -438,11 +490,17 @@ def insert_strain_option_group(parser, gps_times=True):
                             type=str, nargs="+",
                             help="list of frame files")
 
-    #Use datafind to get frame files 
+    #Use datafind to get frame files
     data_reading_group.add_argument("--frame-type",
                             type=str,
                             help="(optional), replaces frame-files. Use datafind "
                                  "to get the needed frame file(s) of this type.")
+
+    #Filter frame files by URL
+    data_reading_group.add_argument("--frame-sieve",
+                            type=str,
+                            help="(optional), Only use frame files where the "
+                                 "URL matches the regular expression given.")
 
     #Generate gaussian noise with given psd
     data_reading_group.add_argument("--fake-strain",
@@ -514,6 +572,17 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--zpk-k", type=float,
                     help="(optional) Zero-pole-gain (zpk) filter strain. "
                         "Transfer function gain")
+
+    # Options to apply to subtract noise from a witness channel and known
+    # transfer function.
+    data_reading_group.add_argument("--witness-frame-type", type=str,
+                    help="(optional), frame type which will be use to query the"
+                         "witness channel data.")
+    data_reading_group.add_argument("--witness-tf-file", type=str,
+                    help="an hdf file containing the transfer"
+                         "  functions and the associated channel names")
+    data_reading_group.add_argument("--witness-filter-length", type=float,
+                    help="filter length in seconds for the transfer function")
 
     return data_reading_group
 
@@ -591,6 +660,13 @@ def insert_strain_option_group_multi_ifo(parser):
                                     help="(optional) Replaces frame-files. "
                                          "Use datafind to get the needed frame "
                                          "file(s) of this type.")
+
+    #Filter frame files by URL
+    data_reading_group_multi.add_argument("--frame-sieve", type=str, nargs="+",
+                            action=MultiDetOptionAction,
+                            metavar='IFO:FRAME_SIEVE',
+                            help="(optional), Only use frame files where the "
+                                 "URL matches the regular expression given.")
 
     #Generate gaussian noise with given psd
     data_reading_group_multi.add_argument("--fake-strain", type=str, nargs="+",
@@ -711,8 +787,8 @@ def verify_strain_options(opts, parser):
     ----------
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
-        required attributes (gps-start-time, gps-end-time, strain-high-pass, 
-        pad-data, sample-rate, frame-cache, channel-name, fake-strain, 
+        required attributes (gps-start-time, gps-end-time, strain-high-pass,
+        pad-data, sample-rate, frame-cache, channel-name, fake-strain,
         fake-strain-seed).
     parser : object
         OptionParser instance.
@@ -731,8 +807,8 @@ def verify_strain_options_multi_ifo(opts, parser, ifos):
     ----------
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
-        required attributes (gps-start-time, gps-end-time, strain-high-pass, 
-        pad-data, sample-rate, frame-cache, channel-name, fake-strain, 
+        required attributes (gps-start-time, gps-end-time, strain-high-pass,
+        pad-data, sample-rate, frame-cache, channel-name, fake-strain,
         fake-strain-seed).
     parser : object
         OptionParser instance.
@@ -747,7 +823,7 @@ def verify_strain_options_multi_ifo(opts, parser, ifos):
 
 def gate_data(data, gate_params):
     """Apply a set of gating windows to a time series.
-    
+
     Each gating window is
     defined by a central time, a given duration (centered on the given
     time) to zero out, and a given duration of smooth tapering on each side of
@@ -888,7 +964,7 @@ class StrainSegments(object):
             self.analyze_slices.append(ana_slice)
 
         # The last segment takes up any integer boundary slop
-        seg_end = data_end
+        seg_end = int(data_end)
         seg_start = int(seg_end - seg_len * strain.sample_rate)
         seg_slice = slice(seg_start, seg_end)
         self.segment_slices.append(seg_slice)
@@ -898,7 +974,7 @@ class StrainSegments(object):
         ana_end = int((seg_len - seg_end_pad) * strain.sample_rate)
         ana_slice = slice(ana_start, ana_end)
         self.analyze_slices.append(ana_slice)
-        
+
         self.full_segment_slices = copy.deepcopy(self.segment_slices)
 
         #Remove segments that are outside trig start and end
@@ -908,7 +984,7 @@ class StrainSegments(object):
         trig_end_idx = (trigger_end - int(strain.start_time)) * strain.sample_rate
 
         if filter_inj_only and hasattr(strain, 'injections'):
-            end_times = strain.injections.end_times()   
+            end_times = strain.injections.end_times()
             end_times = [time for time in end_times if float(time) < trigger_end and float(time) > trigger_start]
             inj_idx = [(float(time) - float(strain.start_time)) * strain.sample_rate for time in end_times]
 
@@ -928,8 +1004,10 @@ class StrainSegments(object):
 
             if filter_inj_only and hasattr(strain, 'injections'):
                 analyze_this = False
+                inj_window = strain.sample_rate * 8
                 for inj_id in inj_idx:
-                    if inj_id < cum_end and inj_id > cum_start:
+                    if inj_id < (cum_end + inj_window) and \
+                            inj_id > (cum_start - inj_window):
                         analyze_this = True
 
                 if not analyze_this:
@@ -989,7 +1067,7 @@ class StrainSegments(object):
     @classmethod
     def insert_segment_option_group(cls, parser):
         segment_group = parser.add_argument_group(
-                                   "Options for segmenting the strain",
+                                  "Options for segmenting the strain",
                                   "These options are used to determine how to "
                                   "segment the strain into smaller chunks, "
                                   "and for determining the portion of each to "
@@ -1050,7 +1128,7 @@ class StrainSegments(object):
     @classmethod
     def insert_segment_option_group_multi_ifo(cls, parser):
         segment_group = parser.add_argument_group(
-                                   "Options for segmenting the strain",
+                                  "Options for segmenting the strain",
                                   "These options are used to determine how to "
                                   "segment the strain into smaller chunks, "
                                   "and for determining the portion of each to "
@@ -1118,9 +1196,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  force_update_cache=True,
                  increment_update_cache=None,
                  analyze_flags=None,
-                 ):
+                 data_quality_flags=None,
+                 dq_padding=0):
         """ Class to produce overwhitened strain incrementally
-        
+
         Parameters
         ----------
         frame_src: str of list of strings
@@ -1128,7 +1207,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             list of frame files, a glob, etc.
         channel_name: str
             Name of the channel to read from the frame files
-        start_time: 
+        start_time:
             Time to start reading from.
         max_buffer: {int, 512}, Optional
             Length of the buffer in seconds
@@ -1173,17 +1252,21 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             the relative change in the inspiral range from the previous PSD
             to trigger a re-estimatoin of the PSD.
         force_update_cache: {boolean, True}, Optional
-            Re-check the filesystem for frame files on every attempt to 
+            Re-check the filesystem for frame files on every attempt to
             read more data.
         analyze_flags: list of strs
             The flags that must be on to mark the current data as valid for
             *any* use.
+        data_quality_flags: list of strs
+            The flags used to determine if to keep triggers.
+        dq_padding: {float, 0}, optional
+            Extra seconds to consider invalid before/after times with bad DQ.
         increment_update_cache: {str, None}, Optional
             Pattern to look for frame files in a GPS dependent directory. This
             is an alternate to the forced updated of the frame cache, and
             apptempts to predict the next frame file name without probing the
             filesystem.
-        """ 
+        """
         super(StrainBuffer, self).__init__(frame_src, channel_name, start_time,
                                            max_buffer=max_buffer,
                                            force_update_cache=force_update_cache,
@@ -1191,18 +1274,34 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         self.low_frequency_cutoff = low_frequency_cutoff
 
-        # Set the state channel buffer
-        self.state_channel = state_channel
-        self.data_quality_channel = data_quality_channel
+        # Set up status buffers
         self.analyze_flags = analyze_flags
+        self.data_quality_flags = data_quality_flags
         self.state = None
-        if 'None' not in self.state_channel:
+        self.dq = None
+        self.dq_padding = dq_padding
+
+        # State channel
+        if state_channel is not None:
             valid_mask = 0
             for flag in self.analyze_flags:
                 valid_mask = valid_mask | getattr(pycbc.frame, flag)
             self.state = pycbc.frame.StatusBuffer(
                 frame_src,
                 state_channel, start_time,
+                max_buffer=max_buffer,
+                valid_mask=valid_mask,
+                force_update_cache=force_update_cache,
+                increment_update_cache=increment_update_cache)
+
+        # low latency dq channel
+        if data_quality_channel is not None:
+            valid_mask = 0
+            for flag in self.data_quality_flags:
+                valid_mask = valid_mask | getattr(pycbc.frame, flag)
+            self.dq = pycbc.frame.StatusBuffer(
+                frame_src,
+                data_quality_channel, start_time,
                 max_buffer=max_buffer,
                 valid_mask=valid_mask,
                 force_update_cache=force_update_cache,
@@ -1230,7 +1329,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         strain_len = int(sample_rate * self.raw_buffer.delta_t * len(self.raw_buffer))
         self.strain = TimeSeries(zeros(strain_len, dtype=numpy.float32),
-                                 delta_t=1.0/self.sample_rate, 
+                                 delta_t=1.0/self.sample_rate,
                                  epoch=start_time-max_buffer)
 
         # Determine the total number of corrupted samples for highpass
@@ -1255,7 +1354,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         self.reduced_pad = int(self.total_corruption - self.trim_padding)
         self.segments = {}
-        
+
         # time to ignore output of frame (for initial buffering)
         self.add_hard_count()
         self.taper_immediate_strain = True
@@ -1284,36 +1383,37 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.psds = {}
 
     def recalculate_psd(self):
-        """ Recalculate the psd 
-        """ 
+        """ Recalculate the psd
+        """
 
         seg_len = self.sample_rate * self.psd_segment_length
         e = len(self.strain)
         s = e - ((self.psd_samples + 1) * self.psd_segment_length / 2) * self.sample_rate
         psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, seg_stride=seg_len / 2)
 
-        from pycbc.waveform.spa_tmplt import spa_distance
         psd.dist = spa_distance(psd, 1.4, 1.4, self.low_frequency_cutoff) * pycbc.DYN_RANGE_FAC
 
         # If the new psd is similar to the old one, don't replace it
         if self.psd and self.psd_recalculate_difference:
             if abs(self.psd.dist - psd.dist) / self.psd.dist < self.psd_recalculate_difference:
-                logging.info("Skipping Recalculation of PSD, %s-%s", self.psd.dist, psd.dist)
+                logging.info("Skipping recalculation of %s PSD, %s-%s",
+                             self.detector, self.psd.dist, psd.dist)
                 return True
-        
+
         # If the new psd is *really* different than the old one, return an error
         if self.psd and self.psd_abort_difference:
             if abs(self.psd.dist - psd.dist) / self.psd.dist > self.psd_abort_difference:
-                logging.info("PSD is CRAZY, aborting!!!!, %s-%s", self.psd.dist, psd.dist)
+                logging.info("%s PSD is CRAZY, aborting!!!!, %s-%s",
+                             self.detector, self.psd.dist, psd.dist)
                 self.psd = psd
-                self.psds = {}  
+                self.psds = {}
                 return False
 
         # If the new estimate replaces the current one, invalide the ineterpolate PSDs
         self.psd = psd
-        self.psds = {}     
-        logging.info("Recalculating PSD, %s", psd.dist)  
-        return True   
+        self.psds = {}
+        logging.info("Recalculating %s PSD, %s", self.detector, psd.dist)
+        return True
 
     def overwhitened_data(self, delta_f):
         """ Return overwhitened data
@@ -1322,7 +1422,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         ----------
         delta_f: float
             The sample step to generate overwhitened frequency domain data for
-        
+
         Returns
         -------
         htilde: FrequencySeries
@@ -1338,7 +1438,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             # we haven't calculate a resample psd for this delta_f
             if delta_f not in self.psds:
                 psdt = pycbc.psd.interpolate(self.psd, fseries.delta_f)
-                psdt = pycbc.psd.inverse_spectrum_truncation(psdt, 
+                psdt = pycbc.psd.inverse_spectrum_truncation(psdt,
                                        int(self.sample_rate * self.psd_inverse_length),
                                        low_frequency_cutoff=self.low_frequency_cutoff)
                 psdt._delta_f = fseries.delta_f
@@ -1372,9 +1472,25 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
             fseries_trimmed.psd = psd
             self.segments[delta_f] = fseries_trimmed
-            
+
         stilde = self.segments[delta_f]
-        return stilde  
+        return stilde
+
+    def near_hwinj(self):
+        """Check that the current set of triggers could be influenced by
+        a hardware injection.
+
+        Parameters
+        ----------
+        data_reader: dict of StrainBuffers
+            A dict of StrainBuffer instances, indexed by ifos.
+        """
+        if not self.state:
+            return False
+
+        if not self.state.is_extent_valid(self.start_time, self.blocksize, pycbc.frame.NO_HWINJ):
+            return True
+        return False
 
     def null_advance_strain(self, blocksize):
         """ Advance and insert zeros
@@ -1391,10 +1507,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # We should roll this off at some point too...
         self.strain[len(self.strain) - csize + self.corruption:] = 0
         self.strain.start_time += blocksize
-        
+
         # The next time we need strain will need to be tapered
         self.taper_immediate_strain = True
-       
+
     def advance(self, blocksize, timeout=10):
         """Advanced buffer blocksize seconds.
 
@@ -1409,17 +1525,19 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         Returns
         -------
         status: boolean
-            Returns True if this block is analyzable.         
+            Returns True if this block is analyzable.
         """
         ts = super(StrainBuffer, self).attempt_advance(blocksize, timeout=timeout)
         self.blocksize = blocksize
 
         # We have given up so there is no time series
         if ts is None:
-            logging.info("Giving on up frame...")
+            logging.info("%s frame is late, giving up", self.detector)
+            self.null_advance_strain(blocksize)
             if self.state:
                 self.state.null_advance(blocksize)
-                self.null_advance_strain(blocksize)
+            if self.dq:
+                self.dq.null_advance(blocksize)
             return False
 
         # We collected some data so we are closer to being able to analyze data
@@ -1430,8 +1548,15 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if self.state and self.state.advance(blocksize) is False:
             self.add_hard_count()
             self.null_advance_strain(blocksize)
-            logging.info("Time has invalid data, resetting buffer")
+            if self.dq:
+                self.dq.null_advance(blocksize)
+            logging.info("%s time has invalid data, resetting buffer",
+                         self.detector)
             return False
+
+        # Also advance the dq vector in lockstep
+        if self.dq:
+            self.dq.advance(blocksize)
 
         self.segments = {}
 
@@ -1448,16 +1573,16 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                                        self.highpass_samples,
                                        beta=self.beta)
         strain = (strain * self.dyn_range_fac).astype(numpy.float32)
-        
-        strain = pycbc.filter.resample_to_delta_t(strain, 
+
+        strain = pycbc.filter.resample_to_delta_t(strain,
                                            1.0/self.sample_rate, method='ldas')
 
         # remove corruption at beginning
         strain = strain[self.corruption:]
-        
+
         # taper beginning if needed
         if self.taper_immediate_strain:
-            logging.info("tapering start of strain block")
+            logging.info("Tapering start of %s strain block", self.detector)
             strain = gate_data(strain, [(strain.start_time, 0., self.autogating_pad)])
             self.taper_immediate_strain = False
 
@@ -1467,10 +1592,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain.start_time += blocksize
 
         # apply gating if need be: NOT YET IMPLEMENTED
-        # if DQ vector says the new bit of strain is has some invalid part
-        # return false so it is not analyzed (but may be used for PSD).
-        # This behavior is equivelant to how we handle CAT2 vetoes.
-
         if self.psd is None and self.wait_duration <=0:
             self.recalculate_psd()
 
@@ -1478,5 +1599,3 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             return False
         else:
             return True
-
-

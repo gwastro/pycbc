@@ -43,14 +43,14 @@ phenomC_text = """
     const double v7 = v3 * v4;
     const double w = (double) cbrt( m_sec * f );
     const double w3 = (double) w * w * w;
-   
+
     /* ******************************************************* */
     /* *********************** Phasing *********************** */
     /* This is defined in Eq 5.1 - 5.9, 3.13 of the main paper */
     /* ******************************************************* */
 
-    double phSPA = 1. + pfa2 * v2 + pfa3 * v3 + pfa4 * v4 + 
-          (1. + log(v3)) * pfa5 * v5 + (pfa6  + pfa6log * log(v3))*v6 + 
+    double phSPA = 1. + pfa2 * v2 + pfa3 * v3 + pfa4 * v4 +
+          (1. + log(v3)) * pfa5 * v5 + (pfa6  + pfa6log * log(v3))*v6 +
           pfa7 * v7;
     phSPA *= (pfaN / v5);
     phSPA -= (LAL_PI/4.0);
@@ -65,7 +65,7 @@ phenomC_text = """
     double wPlusf2 = 0.5*(1. + tanh( (4*(fd - Mf2)/d2) ));
     double wMinusf2 = 0.5*(1. - tanh( (4*(fd - Mf2)/d2) ));
 
-    double phasing = (phSPA * ((double) wMinusf1)) + (phPM * ((double) wPlusf1 * wMinusf2)) + 
+    double phasing = (phSPA * ((double) wMinusf1)) + (phPM * ((double) wPlusf1 * wMinusf2)) +
                   (phRD * ((double) wPlusf2));
 
     /* ******************************************************* */
@@ -78,7 +78,7 @@ phenomC_text = """
     xdot *= (xdotaN * v5 * v5);
     double omgdot = 0.0, ampfac = 0.0;
     double ampSPA = 0.0, ampSPAre = 0.0, ampSPAim = 0.0;
-    
+
     /* If xdot becomes negative, take ampSPA = 0.0 */
     /* This is valid because it becomes negative much after ISCO */
 
@@ -86,7 +86,7 @@ phenomC_text = """
     {
       omgdot = 1.5 * v * xdot;
       ampfac = sqrt( LAL_PI / omgdot );
-      ampSPAre = ampfac * AN * v2 * (1. + A2 * v2 + A3 * v3 + A4 * v4 + 
+      ampSPAre = ampfac * AN * v2 * (1. + A2 * v2 + A3 * v3 + A4 * v4 +
               A5 * v5 + (A6 + A6log * log(v2)) * v6);
       ampSPAim = ampfac * AN * v2 * (A5imag * v5 + A6imag * v6);
       ampSPA = sqrt( ampSPAre * ampSPAre + ampSPAim * ampSPAim );
@@ -111,17 +111,17 @@ phenomC_text = """
 
 """
 
-phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, double delta_f, 
+phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin, double delta_f,
                                        double eta, double Xi, double distance,
                                        double m_sec, double piM, double Mfrd,
-                                       double pfaN, double pfa2, double pfa3, double pfa4, 
+                                       double pfaN, double pfa2, double pfa3, double pfa4,
                                        double pfa5, double pfa6, double pfa6log, double pfa7,
                                        double a1, double a2, double a3, double a4,
-                                       double a5, double a6, double b1, double b2, 
-                                       double Mf1, double Mf2, double Mf0, 
-                                       double d1, double d2, double d0, 
-                                       double xdota2, double xdota3, double xdota4, 
-                                       double xdota5, double xdota6, double xdota6log, 
+                                       double a5, double a6, double b1, double b2,
+                                       double Mf1, double Mf2, double Mf0,
+                                       double d1, double d2, double d0,
+                                       double xdota2, double xdota3, double xdota4,
+                                       double xdota5, double xdota6, double xdota6log,
                                        double xdota7, double xdotaN, double AN,
                                        double A2, double A3, double A4, double A5,
                                        double A5imag, double A6, double A6log, double A6imag,
@@ -131,28 +131,28 @@ phenomC_kernel = ElementwiseKernel("""pycuda::complex<double> *htilde, int kmin,
 
 
 def FinalSpin( Xi, eta ):
-  """Computes the spin of the final BH that gets formed after merger. This is done usingn Eq 5-6 of arXiv:0710.3345"""
-  s4 = -0.129
-  s5 = -0.384
-  t0 = -2.686
-  t2 = -3.454
-  t3 = 2.353
-  etaXi = eta * Xi
-  eta2 = eta*eta
-  finspin = (Xi + s4*Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
-  if finspin > 1.0:
-    raise ValueError("Value of final spin > 1.0. Aborting")
-  else:
-    return finspin
+    """Computes the spin of the final BH that gets formed after merger. This is done usingn Eq 5-6 of arXiv:0710.3345"""
+    s4 = -0.129
+    s5 = -0.384
+    t0 = -2.686
+    t2 = -3.454
+    t3 = 2.353
+    etaXi = eta * Xi
+    eta2 = eta*eta
+    finspin = (Xi + s4*Xi*etaXi + s5*etaXi*eta + t0*etaXi + 2.*(3.**0.5)*eta + t2*eta2 + t3*eta2*eta)
+    if finspin > 1.0:
+        raise ValueError("Value of final spin > 1.0. Aborting")
+    else:
+        return finspin
 
 def fRD( a, M):
-  """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
-  f = (lal.C_SI**3.0 / (2.0*lal.PI*lal.G_SI*M*lal.MSUN_SI)) * (1.5251 - 1.1568*(1.0-a)**0.1292)
-  return f
+    """Calculate the ring-down frequency for the final Kerr BH. Using Eq. 5.5 of Main paper"""
+    f = (lal.C_SI**3.0 / (2.0*lal.PI*lal.G_SI*M*lal.MSUN_SI)) * (1.5251 - 1.1568*(1.0-a)**0.1292)
+    return f
 
 def Qa( a ):
-  """Calculate the quality factor of ring-down, using Eq 5.6 of Main paper"""
-  return (0.7 + 1.4187*(1.0-a)**-0.4990)
+    """Calculate the quality factor of ring-down, using Eq 5.6 of Main paper"""
+    return (0.7 + 1.4187*(1.0-a)**-0.4990)
 
 #Functions to calculate the Tanh window, defined in Eq 5.8 of the main paper
 def imrphenomc_tmplt(**kwds):
@@ -168,10 +168,6 @@ def imrphenomc_tmplt(**kwds):
     mass2 = float128(kwds['mass2'])
     spin1z = float128(kwds['spin1z'])
     spin2z = float128(kwds['spin2z'])
-
-    # phi0, tC are taken to be 0 in the paper, sec V-A, first paragraph.
-    psi0 = 0. #float128(kwds['phi0'])
-    tC= 0. #-1.0 / delta_f 
 
     if 'out' in kwds:
         out = kwds['out']
@@ -194,10 +190,10 @@ def imrphenomc_tmplt(**kwds):
 
     # Check if the value of f_max is correctly given, else replace with the fCut
     # used in the PhenomB code in lalsimulation. The various coefficients come
-    # from Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and 
+    # from Eq.(4.18) of http://arxiv.org/pdf/0710.2335 and
     # Table I of http://arxiv.org/pdf/0712.0343
     if not f_max:
-      f_max = (1.7086 * eta * eta - 0.26592 * eta + 0.28236) / piM
+        f_max = (1.7086 * eta * eta - 0.26592 * eta + 0.28236) / piM
 
     # Transform the eta, chi to Lambda parameters, using Eq 5.14, Table II of Main
     # paper.
@@ -386,9 +382,9 @@ def imrphenomc_tmplt(**kwds):
     phenomC_kernel(htilde.data[kmin:kmax], kmin, delta_f, eta, Xi, distance,
                                        m_sec,  piM,  Mfrd,
                                        pfaN,  pfa2,  pfa3,  pfa4, pfa5,  pfa6,  pfa6log,  pfa7,
-                                       a1,  a2,  a3,  a4, a5,  a6,  b1,  b2, 
-                                       Mf1,  Mf2,  Mf0, d1,  d2,  d0, 
-                                       xdota2,  xdota3,  xdota4, xdota5,  xdota6,  xdota6log, 
+                                       a1,  a2,  a3,  a4, a5,  a6,  b1,  b2,
+                                       Mf1,  Mf2,  Mf0, d1,  d2,  d0,
+                                       xdota2,  xdota3,  xdota4, xdota5,  xdota6,  xdota6log,
                                        xdota7,  xdotaN,  AN, A2,  A3,  A4,  A5,
                                        A5imag,  A6,  A6log,  A6imag,
                                        g1,  del1,  del2,  Q )

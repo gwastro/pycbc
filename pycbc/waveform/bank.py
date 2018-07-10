@@ -26,18 +26,17 @@
 This module provides classes that describe banks of waveforms
 """
 import types
-import numpy
 import logging
 import os.path
 import h5py
 from copy import copy
 import numpy as np
-from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from pycbc.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 import pycbc.waveform
 import pycbc.pnutils
 import pycbc.waveform.compress
 from pycbc import DYN_RANGE_FAC
-from pycbc.types import zeros
+from pycbc.types import FrequencySeries, zeros
 import pycbc.io
 
 def sigma_cached(self, psd):
@@ -66,7 +65,8 @@ def sigma_cached(self, psd):
                 self.sigma_scale = (DYN_RANGE_FAC * amp_norm) ** 2.0
 
 
-            self._sigmasq[key] = psd.sigmasq_vec[self.approximant][self.end_idx] * self.sigma_scale
+            self._sigmasq[key] = self.sigma_scale * \
+                psd.sigmasq_vec[self.approximant][self.end_idx-1]
 
         else:
             if not hasattr(self, 'sigma_view'):
@@ -208,14 +208,6 @@ class TemplateBank(object):
         the file. Note that derived parameters can only be used if the
         needed parameters are in the file; e.g., you cannot use `chi_eff` if
         `spin1z`, `spin2z`, `mass1`, and `mass2` are in the input file.
-    load_compressed : {True, bool}
-        If compressed waveforms are present in the file, load them. Only works
-        for hdf files.
-    load_compressed_now : {False, bool}
-        If compressed waveforms are present in the file, load all of them into
-        memory now. Otherwise, they will be loaded into memory on their first
-        use. Note: if not `load_compressed_now`, the filehandler to the hdf
-        file must be kept open.
     \**kwds :
         Any additional keyword arguments are stored to the `extra_args`
         attribute.
@@ -226,10 +218,9 @@ class TemplateBank(object):
     table : WaveformArray
         An instance of a WaveformArray containing all of the information about
         the parameters of the bank.
-    compressed_waveforms : {None, dict}
-        If compressed waveforms are present in the (hdf) file, a dictionary
-        of those waveforms. Keys are the template hashes, values are
-        `CompressedWaveform` instances.
+    has_compressed_waveforms : {False, bool}
+        True if compressed waveforms are present in the the (hdf) file; False
+        otherwise.
     parameters : tuple
         The parameters loaded from the input file. Same as `table.fieldnames`.
     indoc : {None, xmldoc}
@@ -242,11 +233,10 @@ class TemplateBank(object):
         Any extra keyword arguments that were provided on initialization.
     """
     def __init__(self, filename, approximant=None, parameters=None,
-            load_compressed=True, load_compressed_now=False,
-            **kwds):
+                 **kwds):
+        self.has_compressed_waveforms = False
         ext = os.path.basename(filename)
-        self.compressed_waveforms = None
-        if ext.endswith('.xml') or ext.endswith('.xml.gz') or ext.endswith('.xmlgz'):
+        if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
             self.filehandler = None
             self.indoc = ligolw_utils.load_filename(
                 filename, False, contenthandler=LIGOLWContentHandler)
@@ -257,13 +247,13 @@ class TemplateBank(object):
 
             # inclination stored in xml alpha3 column
             names = list(self.table.dtype.names)
-            names = tuple([n if n != 'alpha3' else 'inclination' for n in names]) 
+            names = tuple([n if n != 'alpha3' else 'inclination' for n in names])
 
             # low frequency cutoff in xml alpha6 column
             names = tuple([n if n!= 'alpha6' else 'f_lower' for n in names])
             self.table.dtype.names = names
 
-        elif ext.endswith('hdf'):
+        elif ext.endswith(('hdf', '.h5')):
             self.indoc = None
             f = h5py.File(filename, 'r')
             self.filehandler = f
@@ -294,12 +284,7 @@ class TemplateBank(object):
             for key in data:
                 self.table[key] = data[key]
             # add the compressed waveforms, if they exist
-            if load_compressed and 'compressed_waveforms' in f:
-                self.compressed_waveforms = {}
-                for tmplt_hash in self.table['template_hash']:
-                    self.compressed_waveforms[tmplt_hash] = \
-                        pycbc.waveform.compress.CompressedWaveform.from_hdf(f,
-                            tmplt_hash, load_now=load_compressed_now)
+            self.has_compressed_waveforms = 'compressed_waveforms' in f
         else:
             raise ValueError("Unsupported template bank file extension %s" %(
                 ext))
@@ -328,7 +313,7 @@ class TemplateBank(object):
         """
         fields = self.table.fieldnames
         if 'template_hash' in fields:
-             return
+            return
 
         # The fields to use in making a template hash
         hash_fields = ['mass1', 'mass2', 'inclination',
@@ -336,12 +321,13 @@ class TemplateBank(object):
                        'spin2x', 'spin2y', 'spin2z',]
 
         fields = [f for f in hash_fields if f in fields]
-        template_hash = numpy.array([hash(v) for v in zip(*[self.table[p]
-                                    for p in fields])])
+        template_hash = np.array([hash(v) for v in zip(*[self.table[p]
+                                  for p in fields])])
         self.table = self.table.add_fields(template_hash, 'template_hash')
 
     def write_to_hdf(self, filename, start_index=None, stop_index=None,
-                     force=False, skip_fields=None):
+                     force=False, skip_fields=None,
+                     write_compressed_waveforms=True):
         """Writes self to the given hdf file.
 
         Parameters
@@ -360,6 +346,11 @@ class TemplateBank(object):
         skip_fields : {None, (list of) strings}
             Do not write the given fields to the hdf file. Default is None,
             in which case all fields in self.table.fieldnames are written.
+        write_compressed_waveforms : {True, bool}
+            Write compressed waveforms to the output (hdf) file if this is
+            True, which is the default setting. If False, do not write the
+            compressed waveforms group, but only the template parameters to
+            the output file.
 
         Returns
         -------
@@ -381,10 +372,12 @@ class TemplateBank(object):
         write_tbl = self.table[start_index:stop_index]
         for p in parameters:
             f[p] = write_tbl[p]
-        if self.compressed_waveforms is not None:
+        if write_compressed_waveforms and self.has_compressed_waveforms:
             for tmplt_hash in write_tbl.template_hash:
-                self.compressed_waveforms[tmplt_hash].write_to_hdf(
-                                                        f, tmplt_hash)
+                compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
+                                        self.filehandler, tmplt_hash,
+                                        load_now=True)
+                compressed_waveform.write_to_hdf(f, tmplt_hash)
         return f
 
     def end_frequency(self, index):
@@ -415,28 +408,6 @@ class TemplateBank(object):
     def __len__(self):
         return len(self.table)
 
-    def generate_with_delta_f_and_max_freq(self, t_num, max_freq, delta_f,
-                                           low_frequency_cutoff=None,
-                                           cached_mem=None):
-        """Generate the template with index t_num using custom length."""
-        approximant = self.approximant(t_num)
-        # Don't want to use INTERP waveforms in here
-        if approximant.endswith('_INTERP'):
-            approximant = approximant.replace('_INTERP', '')
-        # Using SPAtmplt here is bad as the stored cbrt and logv get
-        # recalculated as we change delta_f values. Fall back to TaylorF2
-        # in lalsimulation.
-        if approximant == 'SPAtmplt':
-            approximant = 'TaylorF2'
-        if cached_mem is None:
-            wav_len = int(max_freq / delta_f) + 1
-            cached_mem = zeros(wav_len, dtype=numpy.complex64)
-        htilde = pycbc.waveform.get_waveform_filter(
-            cached_mem, self.table[t_num], approximant=approximant,
-            f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
-            distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
-        return htilde
-
     def template_thinning(self, inj_filter_rejector):
         """Remove templates from bank that are far from all injections."""
         if not inj_filter_rejector.enabled or \
@@ -449,7 +420,6 @@ class TemplateBank(object):
         threshold = inj_filter_rejector.chirp_time_window
         m1= self.table['mass1']
         m2= self.table['mass2']
-        thinning_bank = []
         tau0_temp, _ = pycbc.pnutils.mass1_mass2_to_tau0_tau3(m1, m2, fref)
         indices = []
 
@@ -462,35 +432,38 @@ class TemplateBank(object):
             indices_combined = np.concatenate(indices)
 
         indices_unique= np.unique(indices_combined)
-        self.table = self.table[indices_unique]   
+        self.table = self.table[indices_unique]
 
 
     def ensure_standard_filter_columns(self, low_frequency_cutoff=None):
         """ Initialize FilterBank common fields
-        
+
         Parameters
         ----------
         low_frequency_cutoff: {float, None}, Optional
             A low frequency cutoff which overrides any given within the
             template bank file.
         """
-        
+
         # Make sure we have a template duration field
         if not hasattr(self.table, 'template_duration'):
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                     dtype=numpy.float32), 'template_duration') 
+            self.table = self.table.add_fields(np.zeros(len(self.table),
+                                     dtype=np.float32), 'template_duration')
 
         # Make sure we have a f_lower field
         if low_frequency_cutoff is not None:
             if not hasattr(self.table, 'f_lower'):
-                vec = numpy.zeros(len(self.table), dtype=numpy.float32)
+                vec = np.zeros(len(self.table), dtype=np.float32)
                 self.table = self.table.add_fields(vec, 'f_lower')
-            self.table['f_lower'][:] = low_frequency_cutoff        
+            self.table['f_lower'][:] = low_frequency_cutoff
+
+        self.min_f_lower = min(self.table['f_lower'])
+        if self.f_lower is None and self.min_f_lower == 0.:
+            raise ValueError('Invalid low-frequency cutoff settings')
 
 class LiveFilterBank(TemplateBank):
     def __init__(self, filename, sample_rate, minimum_buffer,
                        approximant=None, increment=8, parameters=None,
-                       load_compressed=True, load_compressed_now=False, 
                        low_frequency_cutoff=None,
                        **kwds):
 
@@ -498,12 +471,11 @@ class LiveFilterBank(TemplateBank):
         self.filename = filename
         self.sample_rate = sample_rate
         self.minimum_buffer = minimum_buffer
+        self.f_lower = low_frequency_cutoff
 
         super(LiveFilterBank, self).__init__(filename, approximant=approximant,
-                parameters=parameters, load_compressed=load_compressed,
-                load_compressed_now=load_compressed_now, **kwds)
+                parameters=parameters, **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
-        self.table.sort(order='mchirp')
         self.hash_lookup = {}
         for i, p in enumerate(self.table):
             hash_value =  hash((p.mass1, p.mass2, p.spin1z, p.spin2z))
@@ -525,7 +497,7 @@ class LiveFilterBank(TemplateBank):
         the discreteness of the rounding.
         """
         inc = self.increment
-        size = numpy.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
+        size = np.ceil(num / self.sample_rate / inc) * self.sample_rate * inc
         return size
 
     def getslice(self, sindex):
@@ -554,7 +526,7 @@ class LiveFilterBank(TemplateBank):
 
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
-        flow = self.table[index].f_lower        
+        flow = self.table[index].f_lower
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
@@ -564,21 +536,22 @@ class LiveFilterBank(TemplateBank):
         p = props(self.table[index])
         p.pop('approximant')
         buff_size = pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
-        
+
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
-        flen = tlen / 2 + 1
+        flen = int(tlen / 2 + 1)
 
         delta_f = self.sample_rate / float(tlen)
 
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen-1) * delta_f
 
-        logging.info("Generating %s, %ss, %i" % (approximant, 1.0/delta_f, index))
+        logging.info("Generating %s, %ss, %i, starting from %s Hz",
+                     approximant, 1.0/delta_f, index, flow)
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
         htilde = pycbc.waveform.get_waveform_filter(
-            zeros(flen, dtype=numpy.complex64), self.table[index],
+            zeros(flen, dtype=np.complex64), self.table[index],
             approximant=approximant, f_lower=flow, f_final=f_end,
             delta_f=delta_f, delta_t=1.0/self.sample_rate, distance=distance,
             **self.extra_args)
@@ -588,15 +561,16 @@ class LiveFilterBank(TemplateBank):
         # erased by the type conversion below.
         ttotal = template_duration = -1
         if hasattr(htilde, 'length_in_time'):
-                ttotal = htilde.length_in_time
+            ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
-                template_duration = htilde.chirp_length
+            template_duration = htilde.chirp_length
 
         self.table[index].template_duration = template_duration
 
-        htilde = htilde.astype(numpy.complex64)
+        htilde = htilde.astype(np.complex64)
         htilde.f_lower = flow
-        htilde.end_idx = int(htilde.f_end / htilde.delta_f)
+        htilde.min_f_lower = self.min_f_lower
+        htilde.end_idx = int(f_end / htilde.delta_f)
         htilde.params = self.table[index]
         htilde.chirp_length = template_duration
         htilde.length_in_time = ttotal
@@ -617,9 +591,9 @@ class FilterBank(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, dtype,
                  out=None, max_template_length=None,
                  approximant=None, parameters=None,
-                 load_compressed=True,
-                 load_compressed_now=False,
+                 enable_compressed_waveforms=True,
                  low_frequency_cutoff=None,
+                 waveform_decompression_method=None,
                  **kwds):
         self.out = out
         self.dtype = dtype
@@ -630,16 +604,88 @@ class FilterBank(TemplateBank):
         self.delta_t = 1.0 / (self.N * self.delta_f)
         self.filter_length = filter_length
         self.max_template_length = max_template_length
+        self.enable_compressed_waveforms = enable_compressed_waveforms
+        self.waveform_decompression_method = waveform_decompression_method
 
         super(FilterBank, self).__init__(filename, approximant=approximant,
-            parameters=parameters, load_compressed=load_compressed,
-            load_compressed_now=load_compressed_now,
-            **kwds)
+            parameters=parameters, **kwds)
         self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
-        self.min_f_lower = min(self.table['f_lower'])
-        if self.f_lower is None and self.min_f_lower == 0.:
-            raise ValueError('Invalid low-frequency cutoff settings')
+    def get_decompressed_waveform(self, tempout, index, f_lower=None,
+                                  approximant=None, df=None):
+        """Returns a frequency domain decompressed waveform for the template
+        in the bank corresponding to the index taken in as an argument. The
+        decompressed waveform is obtained by interpolating in frequency space,
+        the amplitude and phase points for the compressed template that are
+        read in from the bank."""
+
+        from pycbc.waveform.waveform import props
+        from pycbc.waveform import get_waveform_filter_length_in_time
+
+        # Get the template hash corresponding to the template index taken in as argument
+        tmplt_hash = self.table.template_hash[index]
+
+        # Read the compressed waveform from the bank file
+        compressed_waveform = pycbc.waveform.compress.CompressedWaveform.from_hdf(
+                                self.filehandler, tmplt_hash,
+                                load_now=True)
+
+        # Get the interpolation method to be used to decompress the waveform
+        if self.waveform_decompression_method is not None :
+            decompression_method = self.waveform_decompression_method
+        else :
+            decompression_method = compressed_waveform.interpolation
+        logging.info("Decompressing waveform using %s", decompression_method)
+
+        if df is not None :
+            delta_f = df
+        else :
+            delta_f = self.delta_f
+
+        # Create memory space for writing the decompressed waveform
+        decomp_scratch = FrequencySeries(tempout[0:self.filter_length], delta_f=delta_f, copy=False)
+
+        # Get the decompressed waveform
+        hdecomp = compressed_waveform.decompress(out=decomp_scratch, f_lower=f_lower, interpolation=decompression_method)
+        p = props(self.table[index])
+        p.pop('approximant')
+        try:
+            tmpltdur = self.table[index].template_duration
+        except AttributeError:
+            tmpltdur = None
+        if tmpltdur is None or tmpltdur==0.0 :
+            tmpltdur = get_waveform_filter_length_in_time(approximant, **p)
+        hdecomp.chirp_length = tmpltdur
+        hdecomp.length_in_time = hdecomp.chirp_length
+        return hdecomp
+
+    def generate_with_delta_f_and_max_freq(self, t_num, max_freq, delta_f,
+                                           low_frequency_cutoff=None,
+                                           cached_mem=None):
+        """Generate the template with index t_num using custom length."""
+        approximant = self.approximant(t_num)
+        # Don't want to use INTERP waveforms in here
+        if approximant.endswith('_INTERP'):
+            approximant = approximant.replace('_INTERP', '')
+        # Using SPAtmplt here is bad as the stored cbrt and logv get
+        # recalculated as we change delta_f values. Fall back to TaylorF2
+        # in lalsimulation.
+        if approximant == 'SPAtmplt':
+            approximant = 'TaylorF2'
+        if cached_mem is None:
+            wav_len = int(max_freq / delta_f) + 1
+            cached_mem = zeros(wav_len, dtype=np.complex64)
+        if self.has_compressed_waveforms and self.enable_compressed_waveforms:
+            htilde = self.get_decompressed_waveform(cached_mem, t_num,
+                                                    f_lower=low_frequency_cutoff,
+                                                    approximant=approximant,
+                                                    df=delta_f)
+        else :
+            htilde = pycbc.waveform.get_waveform_filter(
+                cached_mem, self.table[t_num], approximant=approximant,
+                f_lower=low_frequency_cutoff, f_final=max_freq, delta_f=delta_f,
+                distance=1./DYN_RANGE_FAC, delta_t=1./(2.*max_freq))
+        return htilde
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -663,29 +709,32 @@ class FilterBank(TemplateBank):
                                                   self.max_template_length)
         else:
             f_low = self.f_lower
-
         logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
 
         # Clear the storage memory
-        poke  = tempout.data
+        poke  = tempout.data # pylint:disable=unused-variable
         tempout.clear()
 
         # Get the waveform filter
         distance = 1.0 / DYN_RANGE_FAC
-        htilde = pycbc.waveform.get_waveform_filter(
-            tempout[0:self.filter_length], self.table[index],
-            approximant=approximant, f_lower=f_low, f_final=f_end,
-            delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
-            **self.extra_args)
+        if self.has_compressed_waveforms and self.enable_compressed_waveforms:
+            htilde = self.get_decompressed_waveform(tempout, index, f_lower=f_low,
+                                                    approximant=approximant, df=None)
+        else :
+            htilde = pycbc.waveform.get_waveform_filter(
+                tempout[0:self.filter_length], self.table[index],
+                approximant=approximant, f_lower=f_low, f_final=f_end,
+                delta_f=self.delta_f, delta_t=self.delta_t, distance=distance,
+                **self.extra_args)
 
         # If available, record the total duration (which may
         # include ringdown) and the duration up to merger since they will be
         # erased by the type conversion below.
         ttotal = template_duration = None
         if hasattr(htilde, 'length_in_time'):
-                ttotal = htilde.length_in_time
+            ttotal = htilde.length_in_time
         if hasattr(htilde, 'chirp_length'):
-                template_duration = htilde.chirp_length
+            template_duration = htilde.chirp_length
 
         self.table[index].template_duration = template_duration
 
@@ -719,15 +768,14 @@ def find_variable_start_frequency(approximant, parameters, f_start, max_length,
 
 
 class FilterBankSkyMax(TemplateBank):
-    def __init__(self, filename, filter_length, delta_f, f_lower,
+    def __init__(self, filename, filter_length, delta_f,
                  dtype, out_plus=None, out_cross=None,
                  max_template_length=None, parameters=None,
-                 load_compressed=True, load_compressed_now=False,
-                 **kwds):
+                 low_frequency_cutoff=None, **kwds):
         self.out_plus = out_plus
         self.out_cross = out_cross
         self.dtype = dtype
-        self.f_lower = f_lower
+        self.f_lower = low_frequency_cutoff
         self.filename = filename
         self.delta_f = delta_f
         self.N = (filter_length - 1 ) * 2
@@ -736,18 +784,9 @@ class FilterBankSkyMax(TemplateBank):
         self.max_template_length = max_template_length
 
         super(FilterBankSkyMax, self).__init__(filename, parameters=parameters,
-            load_compressed=True, load_compressed_now=False,
-            **kwds)
+              **kwds)
 
-        # add a template duration field if it already doesn't exist
-        if not hasattr(self.table, 'template_duration'):
-            if dtype == numpy.complex64 or dtype == numpy.float32:
-                rdtype = numpy.float32
-            else:
-                rdtype = numpy.float64
-            self.table = self.table.add_fields(numpy.zeros(len(self.table),
-                                               dtype=rdtype),
-                                               'template_duration')
+        self.ensure_standard_filter_columns(low_frequency_cutoff=low_frequency_cutoff)
 
     def __getitem__(self, index):
         # Make new memory for templates if we aren't given output memory
@@ -776,11 +815,11 @@ class FilterBankSkyMax(TemplateBank):
         else:
             f_low = self.f_lower
 
-        logging.info('%s: generating %s from %s Hz' % (index, approximant, f_low))
+        logging.info('%s: generating %s from %s Hz', index, approximant, f_low)
 
         # What does this do???
-        poke1 = tempoutplus.data
-        poke2 = tempoutcross.data
+        poke1 = tempoutplus.data # pylint:disable=unused-variable
+        poke2 = tempoutcross.data # pylint:disable=unused-variable
 
         # Clear the storage memory
         tempoutplus.clear()
@@ -802,6 +841,8 @@ class FilterBankSkyMax(TemplateBank):
         hcross = hcross.astype(self.dtype)
         hplus.f_lower = f_low
         hcross.f_lower = f_low
+        hplus.min_f_lower = self.min_f_lower
+        hcross.min_f_lower = self.min_f_lower
         hplus.end_frequency = f_end
         hcross.end_frequency = f_end
         hplus.end_idx = int(hplus.end_frequency / hplus.delta_f)

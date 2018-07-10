@@ -27,7 +27,6 @@ snr = pycbc.filter.matched_filter(hp, stilde, psd=psd,
 
 
 pylab.plot(snr.sample_times, abs(snr))
-pylab.legend()
 pylab.ylabel('signal-to-noise ratio')
 pylab.xlabel('time (s)')
 pylab.show()

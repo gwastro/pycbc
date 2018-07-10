@@ -26,11 +26,11 @@ import pycbc.version
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 
-          'sphinx.ext.intersphinx', 'sphinx.ext.coverage', 
-              'sphinx.ext.viewcode', 
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
+          'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
+              'sphinx.ext.viewcode',
             'sphinxcontrib.programoutput',
-         'numpydoc',           'matplotlib.sphinxext.mathmpl',
+         'sphinx.ext.napoleon',           'sphinx.ext.mathjax',
           'matplotlib.sphinxext.only_directives',
           'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary']
 
@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'PyCBC'
-copyright = u'2014, Alexander Nitz'
+copyright = u'2015, 2016, 2017, Alexander Nitz, Ian Harry, Christopher M. Biwer, Duncan A.  Brown, Josh Willis, and Tito Dal Canton'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -129,7 +129,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -254,19 +254,10 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}
 
-# Fix for WARNING: toctree references unknown document
-# http://stackoverflow.com/questions/12206334/sphinx-autosummary-toctree-contains-reference-to-nonexisting-document-warnings
-numpydoc_show_class_members = False
-numpydoc_class_members_toctree = False
-
-# Ensure that __init__ gets documented for classes ... Not sure why this isn't
-# done by default ...
-def skip(app, what, name, obj, skip, options):
-    if name == "__init__":
-        return False
-    return skip
-
-def setup(app):
-    app.connect("autodoc-skip-member", skip)
+napoleon_use_ivar = False
 
 suppress_warnings = ['image.nonlocal_uri']
+
+def setup(app):
+    app.add_javascript('typed.min.js')
+    app.add_stylesheet('terminal.css')

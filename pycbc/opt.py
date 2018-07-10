@@ -128,15 +128,15 @@ elif HAVE_GETCONF:
 def insert_optimization_option_group(parser):
     """
     Adds the options used to specify optimization-specific options.
-    
+
     Parameters
     ----------
     parser : object
         OptionParser instance
     """
     optimization_group = parser.add_argument_group("Options for selecting "
-                                   "optimization-specific settings")   
-    
+                                   "optimization-specific settings")
+
     optimization_group.add_argument("--cpu-affinity", help="""
                     A set of CPUs on which to run, specified in a format suitable
                     to pass to taskset.""")
@@ -147,14 +147,14 @@ def insert_optimization_option_group(parser):
 
 
 def verify_optimization_options(opt, parser):
-    """Parses the CLI options, verifies that they are consistent and 
+    """Parses the CLI options, verifies that they are consistent and
     reasonable, and acts on them if they are
 
     Parameters
     ----------
     opt : object
         Result of parsing the CLI with OptionParser, or any object with the
-        required attributes 
+        required attributes
     parser : object
         OptionParser instance.
     """

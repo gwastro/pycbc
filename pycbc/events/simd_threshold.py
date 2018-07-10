@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
+from __future__ import absolute_import
 from pycbc import WEAVE_FLAGS
 from pycbc.types import zeros, complex64, float32
-from scipy.weave import inline
+from pycbc.weave import inline
 import numpy as _np
 import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags
@@ -58,10 +58,16 @@ compartmentalize SIMD code from OpenMP code.
 
 tc_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
 #include <stdint.h> // For uint32_t, int64_t
-#include <error.h>
 #include <complex> // Must use C++ header with weave
 #include <math.h> // For M_SQRT2
 
+/* Rough approx of GCC's error function. */
+void error(int status, int errnum, const char *format) {
+  fprintf(stderr, format);
+  if (status != 0) {
+    exit(status);
+  }
+}
 """
 
 # The following maximizes over an interval that can be no longer than
@@ -545,11 +551,11 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
   // Signed versions of all our array length inputs, so loop
   // logic and calls to other functions are safe.
 
-  s_segsize = (int64_t) segsize; 
+  s_segsize = (int64_t) segsize;
   s_arrlen = (int64_t) arrlen;
   s_winsize = (int64_t) winsize;
 
-  // If the length of a window is less than the length of a segment, then the 
+  // If the length of a window is less than the length of a segment, then the
   // number of windows per segment is segsize/winsize (which rounds *down* if
   // it does not divide evenly). If not, then the number of windows per segment
   // is one, since we will then always give a window-sized chunks to each core,
@@ -652,7 +658,7 @@ int parallel_thresh_cluster(std::complex<float> * __restrict inarr, const uint32
       cnt++;
       values[cnt-1] = cvals[i];
       locs[cnt-1] = (uint32_t) mlocs[i];
-    }    
+    }
   }
 
   // Finally, handle the last element. We test for whether
@@ -703,12 +709,12 @@ class MaxOnlyObject(object):
         self.verbose = verbose
 
     def execute(self):
-        inarr = self.inarr
-        mval = self.mval
-        norm = self.norm
-        mloc = self.mloc
-        nstart = self.nstart
-        howmany = self.howmany
+        inarr = self.inarr # pylint:disable=unused-variable
+        mval = self.mval # pylint:disable=unused-variable
+        norm = self.norm # pylint:disable=unused-variable
+        mloc = self.mloc # pylint:disable=unused-variable
+        nstart = self.nstart # pylint:disable=unused-variable
+        howmany = self.howmany # pylint:disable=unused-variable
         inline(self.code, ['inarr', 'mval', 'norm', 'mloc', 'nstart', 'howmany'],
                extra_compile_args = [WEAVE_FLAGS],
                #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
@@ -741,13 +747,13 @@ class WindowedMaxObject(object):
         self.verbose = verbose
 
     def execute(self):
-        inarr = self.inarr
-        arrlen = self.arrlen
-        cvals = self.cvals
-        norms = self.norms
-        locs = self.locs
-        winsize = self.winsize
-        startoffset = self.startoffset
+        inarr = self.inarr # pylint:disable=unused-variable
+        arrlen = self.arrlen # pylint:disable=unused-variable
+        cvals = self.cvals # pylint:disable=unused-variable
+        norms = self.norms # pylint:disable=unused-variable
+        locs = self.locs # pylint:disable=unused-variable
+        winsize = self.winsize # pylint:disable=unused-variable
+        startoffset = self.startoffset # pylint:disable=unused-variable
         inline(self.code, ['inarr', 'arrlen', 'cvals', 'norms', 'locs', 'winsize', 'startoffset'],
                extra_compile_args = [WEAVE_FLAGS],
                #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
@@ -795,12 +801,12 @@ class ThreshClusterObject(object):
         self.verbose = verbose
 
     def execute(self, thresh):
-        series = self.series
-        slen = self.slen
-        values = self.values
-        locs = self.locs
-        window = self.window
-        segsize = self.segsize
+        series = self.series # pylint:disable=unused-variable
+        slen = self.slen # pylint:disable=unused-variable
+        values = self.values # pylint:disable=unused-variable
+        locs = self.locs # pylint:disable=unused-variable
+        window = self.window # pylint:disable=unused-variable
+        segsize = self.segsize # pylint:disable=unused-variable
         nthr = inline(self.code, ['series', 'slen', 'values', 'locs', 'thresh', 'window', 'segsize'],
                       extra_compile_args = [WEAVE_FLAGS] + omp_flags,
                       #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],

@@ -28,7 +28,7 @@ This modules provides a device independent Array class based on PyCUDA and Numpy
 
 BACKEND_PREFIX="pycbc.types.array_"
 
-import logging, h5py
+import h5py
 import os as _os
 
 from decorator import decorator
@@ -47,7 +47,10 @@ from pycbc.types.aligned import ArrayWithAligned
 # array of uint32 integers
 _ALLOWED_DTYPES = [_numpy.float32, _numpy.float64, _numpy.complex64,
                    _numpy.complex128, _numpy.uint32, _numpy.int32, _numpy.int]
-_ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
+try:
+    _ALLOWED_SCALARS = [int, long, float, complex] + _ALLOWED_DTYPES
+except NameError:
+    _ALLOWED_SCALARS = [int, float, complex] + _ALLOWED_DTYPES
 
 def _convert_to_scheme(ary):
     if not isinstance(ary._scheme, _scheme.mgr.state.__class__):
@@ -185,10 +188,10 @@ class Array(object):
                     self._data = ArrayWithAligned(_numpy.array(initial_array, 
                                                                dtype=dtype, ndmin=1))
             elif _scheme_matches_base_array(initial_array):
-                self._data = _copy_base_array(initial_array)
+                self._data = _copy_base_array(initial_array) # pylint:disable=assignment-from-no-return
             else:
                 initial_array = _numpy.array(initial_array, dtype=dtype, ndmin=1)
-                self._data = _to_device(initial_array)
+                self._data = _to_device(initial_array) # pylint:disable=assignment-from-no-return
      
     @decorator
     def _memoize_single(fn, self, arg):
@@ -197,17 +200,17 @@ class Array(object):
         if badh in self._saved:
             return self._saved[badh]
 
-        res = fn(self, arg)
+        res = fn(self, arg) # pylint:disable=not-callable
         self._saved[badh] = res      
         return res
                    
     @decorator
     def _returnarray(fn, self, *args):
-        return Array(fn(self, *args), copy=False)
+        return Array(fn(self, *args), copy=False) # pylint:disable=not-callable
 
     @decorator
     def _returntype(fn, self, *args):
-        ary = fn(self,*args)
+        ary = fn(self,*args) # pylint:disable=not-callable
         if ary is NotImplemented:
             return NotImplemented
         return self._return(ary)
@@ -237,7 +240,7 @@ class Array(object):
             else:
                 return NotImplemented
 
-        return fn(self, *nargs)
+        return fn(self, *nargs) # pylint:disable=not-callable
     
     @decorator  
     def _vcheckother(fn, self, *args):
@@ -255,7 +258,7 @@ class Array(object):
             else:
                 raise TypeError('array argument required')                    
 
-        return fn(self,*nargs)
+        return fn(self,*nargs) # pylint:disable=not-callable
         
     @decorator  
     def _vrcheckother(fn, self,*args):
@@ -272,7 +275,7 @@ class Array(object):
             else:
                 raise TypeError('array argument required')                    
 
-        return fn(self, *nargs)
+        return fn(self, *nargs) # pylint:disable=not-callable
 
     @decorator
     def _icheckother(fn, self, other):
@@ -296,7 +299,7 @@ class Array(object):
         else:
             return NotImplemented
 
-        return fn(self, other)
+        return fn(self, other) # pylint:disable=not-callable
 
     def _typecheck(self, other):
         """ Additional typechecking for other. Placeholder for use by derived
@@ -711,9 +714,6 @@ class Array(object):
     @_memoize_single
     @_returntype
     def _getslice(self, index):
-        if index.step is not None:
-            raise ValueError("Step size not supported for slicing")
-        
         return self._return(self._data[index])
     
     @_convert
@@ -730,14 +730,10 @@ class Array(object):
     def resize(self, new_size):
         """Resize self to new_size
         """
-        if (new_size < len(self)):
-            logging.warn("Requested size (%s) of array is less than "
-                         "current size (%s). This will truncate "
-                         "the array." % (new_size, len(self)))
-        
         if new_size == len(self):
             return
         else:
+            self._saved = {}
             new_arr = zeros(new_size, dtype=self.dtype)
             if len(self) <= new_size:
                 new_arr[0:len(self)] = self
@@ -917,8 +913,8 @@ class Array(object):
         elif ext == '.hdf':
             key = 'data' if group is None else group
             f = h5py.File(path)
-            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
-                                  compression_opts=9, shuffle=True)
+            f.create_dataset(key, data=self.numpy(), compression='gzip',
+                             compression_opts=9, shuffle=True)
         else:
             raise ValueError('Path must end with .npy, .txt, or .hdf')
            
@@ -945,6 +941,10 @@ class Array(object):
             The new dtype that should be used to interpret the bytes of self
         """
         return self._data.view(dtype)
+
+    def copy(self):
+        """ Return copy of this array """
+        return self._return(self.data.copy())
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):

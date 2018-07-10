@@ -1,16 +1,12 @@
 from __future__ import division
 import numpy
 from lal import PI, MTSUN_SI, TWOPI, GAMMA
-from glue.ligolw import ligolw
-from glue.ligolw import table
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
-from glue.ligolw import utils as ligolw_utils
-from glue.ligolw.utils import process as ligolw_process
+from pycbc.ligolw import ligolw, lsctables, ilwd, utils as ligolw_utils
+from pycbc.ligolw.utils import process as ligolw_process
 from pycbc import pnutils
 from pycbc.tmpltbank.lambda_mapping import ethinca_order_from_string
 
-def return_empty_sngl():
+def return_empty_sngl(nones=False):
     """
     Function to create a SnglInspiral object where all columns are populated
     but all are set to values that test False (ie. strings to '', floats/ints
@@ -18,6 +14,11 @@ def return_empty_sngl():
     columns you don't care about, but which still need populating. NOTE: This
     will also produce a process_id and event_id with 0 values. For most
     applications these should be set to their correct values.
+
+    Parameters
+    ----------
+    nones : bool (False)
+        If True, just set all columns to None.
 
     Returns
     --------
@@ -27,19 +28,23 @@ def return_empty_sngl():
 
     sngl = lsctables.SnglInspiral()
     cols = lsctables.SnglInspiralTable.validcolumns
-    for entry in cols.keys():
-        if cols[entry] in ['real_4','real_8']:
-            setattr(sngl,entry,0.)
-        elif cols[entry] == 'int_4s':
-            setattr(sngl,entry,0)
-        elif cols[entry] == 'lstring':
-            setattr(sngl,entry,'')
-        elif entry == 'process_id':
-            sngl.process_id = ilwd.ilwdchar("process:process_id:0")
-        elif entry == 'event_id':
-            sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
-        else:
-            raise ValueError("Column %s not recognized" %(entry) )
+    if nones:
+        for entry in cols:
+            setattr(sngl, entry, None)
+    else:
+        for entry in cols.keys():
+            if cols[entry] in ['real_4','real_8']:
+                setattr(sngl,entry,0.)
+            elif cols[entry] == 'int_4s':
+                setattr(sngl,entry,0)
+            elif cols[entry] == 'lstring':
+                setattr(sngl,entry,'')
+            elif entry == 'process_id':
+                sngl.process_id = ilwd.ilwdchar("process:process_id:0")
+            elif entry == 'event_id':
+                sngl.event_id = ilwd.ilwdchar("sngl_inspiral:event_id:0")
+            else:
+                raise ValueError("Column %s not recognized" %(entry) )
     return sngl
 
 def return_search_summary(start_time=0, end_time=0, nevents=0,
@@ -96,13 +101,13 @@ def return_search_summary(start_time=0, end_time=0, nevents=0,
 
 def convert_to_sngl_inspiral_table(params, proc_id):
     '''
-    Convert a list of m1,m2,spin1z,spin2z values into a basic sngl_inspiral 
+    Convert a list of m1,m2,spin1z,spin2z values into a basic sngl_inspiral
     table with mass and spin parameters populated and event IDs assigned
 
     Parameters
     -----------
     params : iterable
-        Each entry in the params iterable should be a sequence of 
+        Each entry in the params iterable should be a sequence of
         [mass1, mass2, spin1z, spin2z] in that order
     proc_id : ilwd char
         Process ID to add to each row of the sngl_inspiral table
@@ -123,7 +128,7 @@ def convert_to_sngl_inspiral_table(params, proc_id):
             setattr(tmplt, colname, value)
         tmplt.mtotal, tmplt.eta = pnutils.mass1_mass2_to_mtotal_eta(
             tmplt.mass1, tmplt.mass2)
-        tmplt.mchirp, junk = pnutils.mass1_mass2_to_mchirp_eta(
+        tmplt.mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(
             tmplt.mass1, tmplt.mass2)
         tmplt.template_duration = 0 # FIXME
         tmplt.event_id = sngl_inspiral_table.get_next_id()
@@ -131,15 +136,15 @@ def convert_to_sngl_inspiral_table(params, proc_id):
 
     return sngl_inspiral_table
 
-def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2, 
+def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
                                    spin1z=0., spin2z=0., full_ethinca=True):
     """
     Calculate the Gamma components needed to use the ethinca metric.
-    At present this outputs the standard TaylorF2 metric over the end time 
+    At present this outputs the standard TaylorF2 metric over the end time
     and chirp times \tau_0 and \tau_3.
-    A desirable upgrade might be to use the \chi coordinates [defined WHERE?] 
+    A desirable upgrade might be to use the \chi coordinates [defined WHERE?]
     for metric distance instead of \tau_0 and \tau_3.
-    The lower frequency cutoff is currently hard-coded to be the same as the 
+    The lower frequency cutoff is currently hard-coded to be the same as the
     bank layout options fLow and f0 (which must be the same as each other).
 
     Parameters
@@ -169,15 +174,15 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
         and the cutoff formula requested.
 
     gammaVals : numpy_array
-        Array holding 6 independent metric components in 
-        (end_time, tau_0, tau_3) coordinates to be stored in the Gamma0-5 
+        Array holding 6 independent metric components in
+        (end_time, tau_0, tau_3) coordinates to be stored in the Gamma0-5
         slots of a SnglInspiral object.
     """
     if (float(spin1z) != 0. or float(spin2z) != 0.) and full_ethinca:
         raise NotImplementedError("Ethinca cannot at present be calculated "
                                   "for nonzero component spins!")
     f0 = metricParams.f0
-    if f0 != metricParams.fLow: 
+    if f0 != metricParams.fLow:
         raise ValueError("If calculating ethinca the bank f0 value must be "
                          "equal to f-low!")
     if ethincaParams.fLow is not None and (
@@ -193,7 +198,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     v0cube = totalMass*piFl
     v0 = v0cube**(1./3.)
 
-    # Get theoretical cutoff frequency and work out the closest 
+    # Get theoretical cutoff frequency and work out the closest
     # frequency for which moments were calculated
     fMax_theor = pnutils.frequency_cutoff_from_name(
         ethincaParams.cutoff, mass1, mass2, spin1z, spin2z)
@@ -213,7 +218,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     gammaVals = numpy.zeros([6],dtype=float)
     gammaVals[0] = 0.5 * two_pi_flower_sq * \
                     ( Js[(1,0)] - (Js[(4,0)]*Js[(4,0)]) )
-   
+
     # If mass terms not required stop here
     if not full_ethinca:
         return fMax_theor, gammaVals
@@ -291,7 +296,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
     Function that converts the information produced by the various pyCBC bank
     generation codes into a valid LIGOLW xml file containing a sngl_inspiral
     table and outputs to file.
- 
+
     Parameters
     -----------
     outputFile : string
@@ -316,7 +321,7 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
         If given add template bank to this representation of a xml document and
         write to disk. If not given create a new document.
     kwargs : key-word arguments
-        All other key word arguments will be passed directly to 
+        All other key word arguments will be passed directly to
         ligolw_process.register_to_xmldoc
     """
     if optDict is None:
@@ -374,13 +379,12 @@ def output_sngl_inspiral_table(outputFile, tempBank, metricParams,
         end_time = optDict['gps_end_time']
 
     # make search summary table
-    search_summary_table = lsctables.New(lsctables.SearchSummaryTable) 
+    search_summary_table = lsctables.New(lsctables.SearchSummaryTable)
     search_summary = return_search_summary(start_time, end_time,
                                len(sngl_inspiral_table), ifos, **kwargs)
     search_summary_table.append(search_summary)
     outdoc.childNodes[0].appendChild(search_summary_table)
 
     # write the xml doc to disk
-    proctable = table.get_table(outdoc, lsctables.ProcessTable.tableName)
     ligolw_utils.write_filename(outdoc, outputFile,
                                 gz=outputFile.endswith('.gz'))

@@ -95,7 +95,7 @@ datafinds, scienceSegsS = _workflow.setup_datafind_workflow(workflow, scienceSeg
 
 segment_report(scienceSegsS)
 
-print 
+print
 print
 print "RUNNING DATAFIND FOR CIT"
 logger.disabled = True

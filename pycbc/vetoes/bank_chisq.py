@@ -48,9 +48,9 @@ def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
     snrs = []
     norms = []
 
-    for i, bank_template in enumerate(filters):
+    for bank_template in filters:
         # For every template compute the snr against the stilde segment
-        snr, corr, norm = matched_filter_core(
+        snr, _, norm = matched_filter_core(
                 bank_template, stilde, h_norm=bank_template.sigmasq(psd),
                 psd=None, low_frequency_cutoff=low_frequency_cutoff)
         # SNR time series stored here
@@ -216,7 +216,7 @@ class SingleDetBankVeto(object):
         Returns
         -------
         bank_chisq_from_filters: TimeSeries of bank veto values - if indices
-        is None then evaluated at all time samples, if not then only at 
+        is None then evaluated at all time samples, if not then only at
         requested sample indices
 
         bank_chisq_dof: int, approx number of statistical degrees of freedom
@@ -226,11 +226,11 @@ class SingleDetBankVeto(object):
             overlaps = self.cache_overlaps(template, psd)
             bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
             chisq = bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
-                                            bank_veto_norms, overlaps, indices) 
+                                            bank_veto_norms, overlaps, indices)
             dof = numpy.repeat(self.dof, len(chisq))
             return chisq, dof
         else:
-            return None, None      
+            return None, None
 
 class SingleDetSkyMaxBankVeto(SingleDetBankVeto):
     """Stub for precessing bank veto if anyone ever wants to code it up.

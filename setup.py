@@ -1,5 +1,5 @@
-#!/usr/bin/python
-# Copyright (C) 2012 Alex Nitz, Andrew Miller, Josh Willis
+#!/usr/bin/env python
+# Copyright (C) 2012 Alex Nitz, Duncan Brown, Andrew Miller, Josh Willis
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -18,9 +18,17 @@
 """
 setup.py file for PyCBC package
 """
+
+from __future__ import print_function
+
 import os, fnmatch, sys, subprocess, shutil
 
-from trace import fullmodname
+# FIXME: trace.fullmodname was undocumented in Python 2 and actually became an
+# internal function in Python 3. We should not depend on it.
+try:
+    from trace import fullmodname
+except ImportError:
+    from trace import _fullmodname as fullmodname
 
 try:
     from setuptools.command.install import install as _install
@@ -39,7 +47,7 @@ from distutils.version import LooseVersion
 try:
     import numpy.version
     if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
-        print (" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
+        print(" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
               " We found version %s already installed. Please update \n"
               " to a more recent version and then retry PyCBC  \n"
               " installation. \n"
@@ -50,25 +58,29 @@ try:
 except ImportError:
     pass
 
-requires = ['lal.lal', 'lalsimulation.lalsimulation', 'glue']
+requires = ['lal.lal', 'lalsimulation.lalsimulation']
 setup_requires = []
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
                       'decorator>=3.4.2',
                       'scipy>=0.13.0',
+                      'weave>=0.16.0',
                       'unittest2',
                       'matplotlib>=1.3.1',
-                      'numpy>=1.6.4',
+                      'numpy>=1.9.0',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
-                      'pycbc-mpld3>=0.3.dev0',
+                      'astropy==2.0.3',
+                      'mpld3>=0.3',
                       'pyRXP>=2.1.0',
-                      'pycbc-glue>=1.0.1',
-                      'kombine',
-                      'emcee>=2.2.0',
+                      'lscsoft-glue>=1.58.2',
+                      'kombine>=0.8.2',
+                      'emcee==2.2.1',
                       'corner>=2.0.1',
-                      #'scikit-learn>=0.17.0',  # travis does not like scikit-learn
+                      'requests>=1.2.1',
+                      'beautifulsoup4>=4.6.0',
+                      'six',
                       ]
 
 #FIXME Remove me when we bump to h5py > 2.5
@@ -107,13 +119,13 @@ class clean(_clean):
         for f in self.clean_files:
             try:
                 os.unlink(f)
-                print 'removed {0}'.format(f)
+                print('removed {0}'.format(f))
             except:
                 pass
 
         for fol in self.clean_folders:
             shutil.rmtree(fol, ignore_errors=True)
-            print 'removed {0}'.format(fol)
+            print('removed {0}'.format(fol))
 
 class install(_install):
     def run(self):
@@ -127,11 +139,12 @@ class install(_install):
                      "creating %s" % filename)
 
         env_file = open(filename, 'w')
-        print >> env_file, "# Source this file to access PyCBC"
-        print >> env_file, "PATH=" + self.install_scripts + ":$PATH"
-        print >> env_file, "PYTHONPATH=" + self.install_libbase + ":$PYTHONPATH"
-        print >> env_file, "export PYTHONPATH"
-        print >> env_file, "export PATH"
+        print("# Source this file to access PyCBC", file=env_file)
+        print("PATH=" + self.install_scripts + ":$PATH", file=env_file)
+        print("PYTHONPATH=" + self.install_libbase + ":$PYTHONPATH",
+              file=env_file)
+        print("export PYTHONPATH", file=env_file)
+        print("export PATH", file=env_file)
         env_file.close()
 
         _install.run(self)
@@ -177,8 +190,10 @@ class TestBase(Command):
 
         test_results.append("\n" + (self.scheme + " tests ").rjust(30))
         for test in self.test_modules:
-            test_command = 'python ' + 'test/' + test + '.py -s ' + self.scheme
-            a = subprocess.call(test_command,env=os.environ,shell=True)
+            test_command = [sys.executable,
+                            'test/' + test + '.py',
+                            '-s', self.scheme]
+            a = subprocess.call(test_command, env=os.environ)
             if a != 0:
                 result_str = str(test).ljust(30) + ": Fail : " + str(a)
             else:
@@ -186,7 +201,7 @@ class TestBase(Command):
             test_results.append(result_str)
 
         for test in test_results:
-            print test
+            print(test)
 
 class test(Command):
     def has_cuda(self):
@@ -251,18 +266,20 @@ def get_version_info():
                     'Id: %s\n'
                     'Builder: %s\n'
                     'Build date: %s\n'
-                    'Repository status is %s"""' %(vcs_info.branch,
+                    'Repository status is %s"""\n' %(vcs_info.branch,
                                                    vcs_info.tag,
                                                    vcs_info.hash,
                                                    vcs_info.builder,
                                                    vcs_info.build_date,
                                                    vcs_info.status))
+            f.write('from pycbc._version import *\n')
             version = vcs_info.version
 
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.7.0dev'
+        version = '1.9.5dev'
         release = 'False'
+
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
 
         with open('pycbc/version.py', 'w') as f:
@@ -283,7 +300,8 @@ def get_version_info():
             f.write('git_builder = \'%s\'\n' % builder)
             f.write('git_build_date = \'%s\'\n' % build_date)
             f.write('git_verbose_msg = """Version: %s Release: %s \n'
-                    ' """' % (version, release))
+                    ' """\n' % (version, release))
+            f.write('from pycbc._version import *\n')
 
     from pycbc import version
     version = version.version
@@ -298,7 +316,7 @@ class build_docs(Command):
         pass
     def run(self):
         subprocess.check_call("cd docs; cp Makefile.std Makefile; cp conf_std.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc ../pycbc/ligolw && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 class build_gh_pages(Command):
@@ -309,8 +327,9 @@ class build_gh_pages(Command):
     def finalize_options(self):
         pass
     def run(self):
-        subprocess.check_call("cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
+        subprocess.check_call("mkdir -p _gh-pages/latest && touch _gh-pages/.nojekyll && "
+                              "cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc ../pycbc/ligolw && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 cmdclass = { 'test'  : test,
@@ -330,12 +349,13 @@ VERSION = get_version_info()
 setup (
     name = 'PyCBC',
     version = VERSION,
-    description = 'Gravitational wave CBC analysis toolkit',
+    description = 'Analyze gravitational-wave data, find signals, and study their parameters.',
+    long_description = open('descr.rst').read(),
     author = 'Ligo Virgo Collaboration - PyCBC team',
     author_email = 'alex.nitz@ligo.org',
-    url = 'https://github.com/ligo-cbc/pycbc',
+    url = 'http://www.pycbc.org/',
     download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
-    keywords = ['ligo', 'physics', 'gravity', 'signal processing'],
+    keywords = ['ligo', 'physics', 'gravity', 'signal processing', 'gravitational waves'],
     cmdclass = cmdclass,
     setup_requires = setup_requires,
     extras_require = extras_require,
@@ -350,28 +370,32 @@ setup (
                'bin/minifollowups/pycbc_page_injinfo',
                'bin/minifollowups/pycbc_page_snglinfo',
                'bin/minifollowups/pycbc_plot_trigger_timeseries',
-               'bin/lalapps/lalapps_inspiral_ahope',
-               'bin/lalapps/lalapps_tmpltbank_ahope',
                'bin/pycbc_banksim',
+               'bin/pycbc_banksim_skymax',
+               'bin/pycbc_banksim_combine_banks',
+               'bin/pycbc_banksim_match_combine',
                'bin/pycbc_faithsim',
                'bin/pycbc_inspiral',
                'bin/pycbc_inspiral_skymax',
+               'bin/pycbc_live',
+               'bin/pycbc_live_nagios_monitor',
                'bin/pycbc_single_template',
                'bin/pycbc_multi_inspiral',
                'bin/pycbc_make_banksim',
                'bin/pycbc_splitbank',
                'bin/pycbc_hdf5_splitbank',
                'bin/pycbc_split_inspinj',
-               'bin/pycbc_geom_aligned_2dstack',
-               'bin/pycbc_geom_aligned_bank',
-               'bin/pycbc_geom_nonspinbank',
-               'bin/pycbc_aligned_bank_cat',
-               'bin/pycbc_aligned_stoch_bank',
+               'bin/bank/pycbc_brute_bank',
+               'bin/bank/pycbc_geom_aligned_2dstack',
+               'bin/bank/pycbc_geom_aligned_bank',
+               'bin/bank/pycbc_geom_nonspinbank',
+               'bin/bank/pycbc_aligned_bank_cat',
+               'bin/bank/pycbc_aligned_stoch_bank',
+               'bin/bank/pycbc_coinc_bank2hdf',
+               'bin/bank/pycbc_tmpltbank_to_chi_params',
+               'bin/bank/pycbc_bank_verification',
                'bin/pycbc_make_faithsim',
                'bin/pycbc_get_ffinal',
-               'bin/pycbc_tmpltbank_to_chi_params',
-               'bin/pycbc_bank_verification',
-               'bin/pycbc_run_sqlite',
                'bin/pycbc_inj_cut',
                'bin/pycbc_upload_xml_to_gracedb',
                'bin/pycbc_dark_vs_bright_injections',
@@ -379,14 +403,14 @@ setup (
                'bin/pycbc_optimal_snr',
                'bin/pycbc_fit_sngl_trigs',
                'bin/pycbc_randomize_inj_dist_by_optsnr',
+               'bin/pycbc_create_injections',
                'bin/hdfcoinc/pycbc_calculate_psd',
                'bin/hdfcoinc/pycbc_average_psd',
                'bin/hdfcoinc/pycbc_coinc_mergetrigs',
                'bin/hdfcoinc/pycbc_coinc_findtrigs',
-               'bin/hdfcoinc/pycbc_coinc_bank2hdf',
-               'bin/hdfcoinc/pycbc_coinc_trig2hdf',
                'bin/hdfcoinc/pycbc_coinc_statmap',
                'bin/hdfcoinc/pycbc_coinc_statmap_inj',
+               'bin/hdfcoinc/pycbc_combine_coincident_events',
                'bin/hdfcoinc/pycbc_page_foreground',
                'bin/hdfcoinc/pycbc_page_foundmissed',
                'bin/hdfcoinc/pycbc_page_ifar',
@@ -421,38 +445,54 @@ setup (
                'bin/hdfcoinc/pycbc_plot_gating',
                'bin/hdfcoinc/pycbc_fit_sngls_by_template',
                'bin/hdfcoinc/pycbc_fit_sngls_over_param',
+               'bin/hdfcoinc/pycbc_fit_sngls_over_multiparam',
                'bin/hdfcoinc/pycbc_fit_sngls_binned',
+               'bin/hdfcoinc/pycbc_template_recovery_hist',
                'bin/hwinj/pycbc_generate_hwinj',
                'bin/hwinj/pycbc_generate_hwinj_from_xml',
                'bin/hwinj/pycbc_plot_hwinj',
                'bin/hwinj/pycbc_insert_frame_hwinj',
                'bin/pycbc_submit_dax',
-               'bin/mvsc/pycbc_mvsc_get_features',
                'bin/pycbc_coinc_time',
                'bin/pygrb/pycbc_make_offline_grb_workflow',
                'bin/pygrb/pycbc_make_grb_summary_page',
                'bin/pycbc_condition_strain',
-               'bin/inference/pycbc_make_inference_workflow',
                'bin/inference/pycbc_inference',
+               'bin/inference/run_pycbc_inference',
+               'bin/inference/pycbc_inference_extract_samples',
                'bin/inference/pycbc_inference_plot_acceptance_rate',
                'bin/inference/pycbc_inference_plot_acf',
                'bin/inference/pycbc_inference_plot_acl',
-               'bin/inference/pycbc_inference_plot_corner',
+               'bin/inference/pycbc_inference_plot_geweke',
+               'bin/inference/pycbc_inference_plot_gelman_rubin',
                'bin/inference/pycbc_inference_plot_movie',
+               'bin/inference/pycbc_inference_plot_inj_recovery',
+               'bin/inference/pycbc_inference_plot_inj_intervals',
                'bin/inference/pycbc_inference_plot_posterior',
                'bin/inference/pycbc_inference_plot_prior',
                'bin/inference/pycbc_inference_plot_samples',
                'bin/inference/pycbc_inference_table_summary',
+               'bin/population/pycbc_population_rates',
                'bin/plotting/pycbc_plot_waveform',
+               'bin/plotting/pycbc_plot_qscan',
+               'bin/plotting/pycbc_banksim_plot_eff_fitting_factor',
+               'bin/plotting/pycbc_banksim_table_point_injs',
+               'bin/plotting/pycbc_banksim_plot_fitting_factors',
                'bin/workflows/pycbc_create_sbank_workflow',
                'bin/workflows/pycbc_create_uberbank_workflow',
                'bin/workflows/pycbc_make_coinc_search_workflow',
+               'bin/workflows/pycbc_make_inference_workflow',
+               'bin/workflows/pycbc_make_inference_inj_workflow',
                'bin/workflows/pycbc_make_psd_estimation_workflow',
+               'bin/workflows/pycbc_create_bank_verifier_workflow',
                'bin/pycbc_compress_bank',
                'bin/pycbc_ringinj',
+               'tools/einsteinathome/pycbc_build_eah.sh'
                ],
     packages = [
                'pycbc',
+               'pycbc.calibration',
+               'pycbc.distributions',
                'pycbc.fft',
                'pycbc.types',
                'pycbc.filter',
@@ -466,10 +506,34 @@ setup (
                'pycbc.results',
                'pycbc.io',
                'pycbc.inference',
+               'pycbc.population',
                'pycbc.inject',
+               'pycbc.frame',
+               'pycbc.catalog',
+               'pycbc.ligolw',
+               'pycbc.ligolw.utils',
                ],
-     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
-	             'pycbc.results': find_package_data('pycbc/results'),
-                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
+    package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
+                    'pycbc.results': find_package_data('pycbc/results'),
+                    'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
+    ext_modules = [
+        Extension(
+            "pycbc.ligolw.tokenizer",
+            [
+                "pycbc/ligolw/tokenizer.c",
+                "pycbc/ligolw/tokenizer.Tokenizer.c",
+                "pycbc/ligolw/tokenizer.RowBuilder.c",
+                "pycbc/ligolw/tokenizer.RowDumper.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        ),
+        Extension(
+            "pycbc.ligolw._ilwd",
+            [
+                "pycbc/ligolw/ilwd.c"
+            ],
+            include_dirs = [ "pycbc/ligolw" ]
+        )
+    ],
 )
 

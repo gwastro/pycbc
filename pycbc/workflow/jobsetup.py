@@ -34,11 +34,6 @@ import lal
 from glue import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
-from pycbc.workflow.legacy_ihope import (LegacyCohPTFInspiralExecutable,
-        LegacyCohPTFTrigCombiner, LegacyCohPTFTrigCluster,
-        LegacyCohPTFInjfinder, LegacyCohPTFInjcombiner,
-        LegacyCohPTFSbvPlotter, LegacyCohPTFEfficiency, PyGRBMakeSummaryPage)
-
 
 def int_gps_time_to_str(t):
     """Takes an integer GPS time, either given as int or lal.LIGOTimeGPS, and
@@ -101,7 +96,6 @@ def select_matchedfilter_class(curr_exe):
     """
     exe_to_class_map = {
         'pycbc_inspiral'          : PyCBCInspiralExecutable,
-        'lalapps_coh_PTF_inspiral': LegacyCohPTFInspiralExecutable,
         'pycbc_inspiral_skymax'   : PyCBCInspiralExecutable
     }
     try:
@@ -163,13 +157,7 @@ def select_generic_executable(workflow, exe_tag):
         "gstlal_inspiral_plot_background" : GstlalPlotBackground,
         "gstlal_inspiral_plotsummary"     : GstlalPlotSummary,
         "gstlal_inspiral_summary_page"    : GstlalSummaryPage,
-        "pylal_cbc_cohptf_trig_combiner" : LegacyCohPTFTrigCombiner,
-        "pylal_cbc_cohptf_trig_cluster"  : LegacyCohPTFTrigCluster,
-        "pylal_cbc_cohptf_injfinder"     : LegacyCohPTFInjfinder,
-        "pylal_cbc_cohptf_injcombiner"   : LegacyCohPTFInjcombiner,
-        "pylal_cbc_cohptf_sbv_plotter"   : LegacyCohPTFSbvPlotter,
-        "pylal_cbc_cohptf_efficiency"    : LegacyCohPTFEfficiency,
-        "pycbc_make_grb_summary_page"  : PyGRBMakeSummaryPage
+        "pycbc_condition_strain"         : PycbcConditionStrainExecutable
     }
     try:
         return exe_to_class_map[exe_name]
@@ -279,7 +267,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             else:
                 curr_parent = [None]
 
-
+            curr_dfouts = None
             if datafind_outs:
                 curr_dfouts = datafind_outs.find_all_output_in_range(ifo,
                                               job_data_seg, useSplitLists=True)
@@ -321,15 +309,12 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
 
 def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
                                  science_segs, datafind_outs, output_dir,
-                                 parents=None, tags=None):
+                                 parents=None, slide_dict=None, tags=None):
     """
     Method for setting up coherent inspiral jobs.
     """
     if tags is None:
         tags = []
-    cp = workflow.cp
-    ifos = science_segs.keys()
-    job_tag = curr_exe_job.name.upper()
     data_seg, job_valid_seg = curr_exe_job.get_valid_times()
     curr_out_files = FileList([])
     if 'IPN' in datafind_outs[-1].description \
@@ -350,7 +335,8 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
             tag.append(split_bank.tag_str)
             node = curr_exe_job.create_node(data_seg, job_valid_seg,
                     parent=split_bank, dfParents=frame_files,
-                    bankVetoBank=bank_veto, ipn_file=ipn_sky_points, tags=tag)
+                    bankVetoBank=bank_veto, ipn_file=ipn_sky_points,
+                    slide=slide_dict, tags=tag)
             workflow.add_node(node)
             split_bank_counter += 1
             curr_out_files.extend(node.output_files)
@@ -374,101 +360,6 @@ def multi_ifo_coherent_job_setup(workflow, out_files, curr_exe_job,
     curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
                       not in i.tags]
     out_files += curr_out_files
-
-    return out_files
-
-def multi_ifo_job_setup(workflow, out_files, curr_exe_job, science_segs,
-                        datafind_outs, output_dir, parents=None):
-    """
-    Documentation goes here.
-    """
-    cp = workflow.cp
-    ifos = science_segs.keys()
-    job_tag = curr_exe_job.name.upper()
-
-    ########### (1) ############
-    # Get the times that can be analysed and needed data lengths
-    data_length, valid_chunk, valid_length = identify_needed_data(curr_exe_job)
-
-    segmenter = MultiDetJobSegmenter(valid_chunk, data_length, science_segs,
-                                     ifos)
-    analyzable_segments = segmenter.identify_analysis_times()
-
-    for ifo_combo, seg_list in analyzable_segments.items():
-        for curr_seg in seg_list:
-            segmenter.set_current_segment(curr_seg, ifo_combo)
-            for job_num in range(segmenter.num_jobs):
-                ############## (3) #############
-                # Figure out over what times this job will be valid for
-
-                job_valid_seg = segmenter.get_valid_times_for_job(job_num,
-                                                   allow_overlap=False)
-
-                ############## (4) #############
-                # Get the data that this job should read in
-                job_data_seg_dict = segmenter.get_data_times_for_job(job_num,
-                                                                 job_valid_seg)
-
-                ############# (5) ############
-                # Identify parents/inputs to the job
-
-                if parents:
-                    # Find the set of files with the best overlap
-                    # FIXME: How to do this correctly?
-                    curr_parent = parents.find_outputs_in_range(ifo_combo,
-                                             job_valid_seg, useSplitLists=True)
-                    if not curr_parent:
-                        err_string = ("No parent jobs overlapping %d to %d.\n"
-                                      %(job_valid_seg[0], job_valid_seg[1]))
-                        err_string += "This is a bad error! Contact developer."
-                        raise ValueError(err_string)
-                else:
-                    curr_parent = [None]
-
-                if datafind_outs:
-                    curr_dfouts = FileList([])
-                    for ifo in ifo_combo:
-                        curr_outs = datafind_outs.find_all_output_in_range(ifo,
-                                    job_data_seg_dict[ifo], useSplitLists=True)
-                        if not curr_outs:
-                            err_str = ("No datafind jobs between %d to %d.\n"
-                                    %(job_data_seg[0],job_data_seg[1]))
-                            err_str += "Shouldn't happen. Contact developer."
-                            raise ValueError(err_str)
-
-                        curr_dfouts.extend(curr_outs)
-
-
-                ############## (6) #############
-                # Make node and add to workflow
-
-                # Note if I have more than one curr_parent I need to make more
-                # than one job. If there are no curr_parents it is set to
-                # [None] and I make a single job. This catches the case of a
-                # split template bank where I run a number of jobs to cover a
-                # single range of time.
-                for pnum, parent in enumerate(curr_parent):
-                    if len(curr_parent) != 1:
-                        tag = ["JOB%d" %(pnum,)]
-                    else:
-                        tag = []
-                    # To ensure output file uniqueness I add a tag
-                    # We should generate unique names automatically, but it is a
-                    # pain until we can set the output names for all Executables
-                    # FIXME: This needs to take multi-ifo input
-                    node = curr_exe_job.create_node(job_data_seg_dict,
-                                                    job_valid_seg,
-                                                    parent=parent,
-                                                    dfParents=curr_dfouts,
-                                                    tags=tag)
-                    workflow.add_node(node)
-                    curr_out_files = node.output_files
-                    # FIXME: Here we remove PSD files if they are coming
-                    #        through. This should be done in a better way. On
-                    #        to-do list.
-                    curr_out_files = [i for i in curr_out_files if 'PSD_FILE'\
-                                                                 not in i.tags]
-                    out_files += curr_out_files
 
     return out_files
 
@@ -581,7 +472,7 @@ class JobSegmenter(object):
         if compatibility_mode and (self.valid_length != abs(self.valid_chunk)):
             errMsg = "In compatibility mode the template bank and matched-"
             errMsg += "filter jobs must read in the same amount of data."
-            print self.valid_length, self.valid_chunk
+            print(self.valid_length, self.valid_chunk)
             raise ValueError(errMsg)
         elif compatibility_mode and len(data_lengths) > 1:
             raise ValueError("Cannot enable compatibility mode tiling with "
@@ -730,18 +621,7 @@ class PyCBCInspiralExecutable(Executable):
         self.cp = cp
         self.set_memory(2000)
         self.injection_file = injection_file
-
-        try:
-            outtype = cp.get('workflow-matchedfilter', 'output-type')
-        except:
-            outtype = None
-
-        if outtype is None or 'xml' in outtype:
-            self.ext = '.xml.gz'
-        elif 'hdf' in outtype:
-            self.ext = '.hdf'
-        else:
-            raise ValueError('Invalid output type for PyCBC Inspiral: %s' % outtype)
+        self.ext = '.hdf'
 
         self.num_threads = 1
         if self.get_opt('processing-scheme') is not None:
@@ -757,10 +637,6 @@ class PyCBCInspiralExecutable(Executable):
             raise ValueError("The option pad-data is a required option of "
                              "%s. Please check the ini file." % self.name)
         pad_data = int(self.get_opt('pad-data'))
-
-        if not dfParents:
-            raise ValueError("%s must be supplied with data file(s)"
-                              %(self.name))
 
         # set remaining options flags
         node.add_opt('--gps-start-time',
@@ -778,26 +654,9 @@ class PyCBCInspiralExecutable(Executable):
         fil = node.new_output_file_opt(valid_seg, self.ext, '--output', tags=tags,
                          store_file=self.retain_files, use_tmp_subdirs=True)
         fil.add_metadata('data_seg', data_seg)
-        node.add_input_list_opt('--frame-files', dfParents)
-        node.add_input_opt('--bank-file', parent, )
-
-        # FIXME: This hack is needed for pipedown compatibility. user-tag is
-        #        no-op and is only needed for pipedown to know whether this is
-        #        a "FULL_DATA" job or otherwise. Alex wants to burn this code
-        #        with fire.
-        if node.output_files[0].storage_path is not None:
-            outFile = os.path.basename(node.output_files[0].storage_path)
-            userTag = outFile.split('-')[1]
-            userTag = userTag.split('_')[1:]
-            if userTag[0] == 'FULL' and userTag[1] == 'DATA':
-                userTag = 'FULL_DATA'
-            elif userTag[0] == 'PLAYGROUND':
-                userTag = 'PLAYGROUND'
-            elif userTag[0].endswith("INJ"):
-                userTag = userTag[0]
-            else:
-                userTag = '_'.join(userTag)
-            node.add_opt("--user-tag", userTag)
+        node.add_input_opt('--bank-file', parent)
+        if dfParents is not None:
+            node.add_input_list_opt('--frame-files', dfParents)
 
         return node
 
@@ -1723,3 +1582,157 @@ class PycbcSplitBankXmlExecutable(PycbcSplitBankExecutable):
 
     extension='.xml.gz'
 
+class PycbcConditionStrainExecutable(Executable):
+    """ The class responsible for creating jobs for pycbc_condition_strain. """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None, universe=None,
+            tags=None):
+        super(PycbcConditionStrainExecutable, self).__init__(cp, exe_name, universe,
+              ifo, out_dir, tags)
+
+    def create_node(self, input_files, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        node.add_opt('--gps-start-time', start_time)
+        node.add_opt('--gps-end-time', end_time)
+        node.add_input_list_opt('--frame-files', input_files)
+
+        out_file = File(self.ifo, "gated",
+                        segments.segment(int(start_time), int(end_time)),
+                        directory=self.out_dir, store_file=self.retain_files,
+                        extension=input_files[0].name.split('.', 1)[-1],
+                        tags=tags)
+        node.add_output_opt('--output-strain-file', out_file)
+
+        out_gates_file = File(self.ifo, "output_gates",
+                              segments.segment(int(start_time), int(end_time)),
+                              directory=self.out_dir, extension='txt',
+                              store_file=self.retain_files, tags=tags)
+        node.add_output_opt('--output-gates-file', out_gates_file)
+
+        return node, out_file
+
+class PycbcCreateInjectionsExecutable(Executable):
+    """ The class responsible for creating jobs
+    for ``pycbc_create_injections``.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+                 universe=None, tags=None):
+        super(PycbcCreateInjectionsExecutable, self).__init__(
+                               cp, exe_name, universe, ifo, out_dir, tags)
+
+    def create_node(self, config_file=None, seed=None, tags=None):
+        """ Set up a CondorDagmanNode class to run ``pycbc_create_injections``.
+
+        Parameters
+        ----------
+        config_file : pycbc.workflow.core.File
+            A ``pycbc.workflow.core.File`` for inference configuration file
+            to be used with ``--config-files`` option.
+        seed : int
+            Seed to use for generating injections.
+        tags : list
+            A list of tags to include in filenames.
+
+        Returns
+        --------
+        node : pycbc.workflow.core.Node
+            The node to run the job.
+        """
+
+        # default for tags is empty list
+        tags = [] if tags is None else tags
+
+        # get analysis start and end time
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        analysis_time = segments.segment(int(start_time), int(end_time))
+
+        # make node for running executable
+        node = Node(self)
+        node.add_input_opt("--config-file", config_file)
+        if seed:
+            node.add_opt("--seed", seed)
+        injection_file = node.new_output_file_opt(analysis_time,
+                                                  ".hdf", "--output-file",
+                                                  tags=tags)
+
+        return node, injection_file
+
+class PycbcInferenceExecutable(Executable):
+    """ The class responsible for creating jobs for ``pycbc_inference``.
+    """
+
+    current_retention_level = Executable.ALL_TRIGGERS
+    def __init__(self, cp, exe_name, ifo=None, out_dir=None,
+                 universe=None, tags=None):
+        super(PycbcInferenceExecutable, self).__init__(cp, exe_name, universe,
+                                                       ifo, out_dir, tags)
+
+    def create_node(self, channel_names, config_file, injection_file=None,
+                    seed=None, fake_strain_seed=None, tags=None):
+        """ Set up a CondorDagmanNode class to run ``pycbc_inference``.
+
+        Parameters
+        ----------
+        channel_names : dict
+            A ``dict`` of ``str`` to use for ``--channel-name`` option.
+        config_file : pycbc.workflow.core.File
+            A ``pycbc.workflow.core.File`` for inference configuration file
+            to be used with ``--config-files`` option.
+        injection_file : pycbc.workflow.core.File
+            A ``pycbc.workflow.core.File`` for injection file to be used
+            with ``--injection-file`` option.
+        seed : int
+            An ``int`` to be used with ``--seed`` option.
+        fake_strain_seed : dict
+            An ``int`` to be used with ``--fake-strain-seed`` option.
+        tags : list
+            A list of tags to include in filenames.
+
+        Returns
+        --------
+        node : pycbc.workflow.core.Node
+            The node to run the job.
+        """
+
+        # default for tags is empty list
+        tags = [] if tags is None else tags
+
+        # get analysis start and end time
+        start_time = self.cp.get("workflow", "start-time")
+        end_time = self.cp.get("workflow", "end-time")
+        analysis_time = segments.segment(int(start_time), int(end_time))
+
+        # get multi-IFO opts
+        channel_names_opt = " ".join(["{}:{}".format(k, v)
+                                      for k, v in channel_names.iteritems()])
+        if fake_strain_seed is not None:
+            fake_strain_seed_opt = " ".join([
+                                    "{}:{}".format(k, v)
+                                    for k, v in fake_strain_seed.iteritems()])
+
+        # make node for running executable
+        node = Node(self)
+        node.add_opt("--instruments", " ".join(self.ifo_list))
+        node.add_opt("--gps-start-time", start_time)
+        node.add_opt("--gps-end-time", end_time)
+        node.add_opt("--channel-name", channel_names_opt)
+        node.add_input_opt("--config-file", config_file)
+        if fake_strain_seed is not None:
+            node.add_opt("--fake-strain-seed", fake_strain_seed_opt)
+        if injection_file:
+            node.add_input_opt("--injection-file", injection_file)
+        if seed:
+            node.add_opt("--seed", seed)
+        inference_file = node.new_output_file_opt(analysis_time,
+                                                  ".hdf", "--output-file",
+                                                  tags=tags)
+
+        return node, inference_file

@@ -1,0 +1,123 @@
+#!/usr/bin/python
+
+# Copyright (C) 2014 Alex Nitz, Ian Harry, Collin Capano
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+""" This program converts a standard sngl_inspiral table based template bank
+into an hdf format that includes a template hash used to associate triggers
+with their template.
+"""
+import argparse
+import logging
+import numpy
+import pycbc
+from pycbc.waveform import bank
+
+# the following are the default parameters that will be loaded from the
+# xml file (and what they are called in the xml file)
+default_parameters = [
+    "mass1", "mass2",
+    "spin1z", "spin2z",
+    "f_lower:alpha6",
+    ]
+
+def parse_parameters(parameters):
+    """Parses the parameters argument into names to write to and columns
+    to read from.
+    """
+    outnames = []
+    columns = []
+    for p in parameters:
+        ps = p.split(":")
+        if len(ps) == 1:
+            outname = column = p
+        elif len(ps) == 2:
+            outname, column = ps
+        else:
+            raise ValueError("parameter %s not formatted correctly; " %(p) +
+                             "see help")
+        outnames.append(outname)
+        columns.append(column)
+    return outnames, columns
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--bank-file', required=True,
+                    help="The bank file to load. Must end in '.xml[.gz]' "
+                         "and must contain a SnglInspiral table or must end "
+                         "in .hdf/.h5 and contain template bank parameters.")
+parser.add_argument('--output-file', required=True,
+                    help="The ouput file name. Must end in '.hdf'.")
+parser.add_argument("--parameters", metavar="parameter[:xml_column]",
+                    nargs="+", default=None,
+                    help="The parameters to load from the xml file and to "
+                         "write to the hdf file. The given name will be the "
+                         "dataset's name in the hdf file. If this is "
+                         "different than the column name in the xml file, "
+                         "provide the column name after a colon, e.g., "
+                         "'inclination:alpha3'. Otherwise, the given name "
+                         "will assumed to be the same as the column name. "
+                         "Not used with HDF input files. "
+                         "Default is '%s'." %(' '.join(default_parameters)))
+# add the ability to specify the approximant to use
+bank.add_approximant_arg(parser,
+                         help="Specify the approximant to use with each "
+                              "template. See pycbc_inspiral's help message "
+                              "for syntax details. If provided, 'approximant'"
+                              "will be added to the list of parameters.")
+parser.add_argument("--force", action="store_true", default=False,
+                    help="Overwrite the given hdf file if it exists. "
+                         "Otherwise, an error is raised.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Be verbose.")
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+# parse the parameters
+if args.bank_file.endswith(('.xml','.xml.gz','.xmlgz')) or \
+        args.parameters is not None:
+    if args.parameters is None:
+        args.parameters = default_parameters
+    outnames, columns = parse_parameters(args.parameters)
+    name_map = dict(zip(columns, outnames))
+else:
+    columns=None
+    name_map=None
+
+# load the file
+logging.info("Loading %s" %(args.bank_file))
+bankf = bank.TemplateBank(args.bank_file, approximant=args.approximant,
+                          parameters=columns)
+
+# rename the columns to the outnames
+if name_map is not None:
+    params = list(bankf.table.fieldnames)
+    for ii,p in enumerate(params):
+        try:
+            params[ii] = name_map[p]
+        except KeyError:
+            pass
+    bankf.table.dtype.names = tuple(params)
+
+# compute the hash
+logging.info("Getting template hashes")
+bankf.ensure_hash()
+
+# write to output
+logging.info("Writing to %s" %(args.output_file))
+bankf.write_to_hdf(args.output_file, force=args.force)

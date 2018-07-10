@@ -1,8 +1,8 @@
+import numpy
 import matplotlib.pyplot as plt
-from pycbc.inference import distributions
 import pycbc.coordinates as co
 from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
+from pycbc import distributions
 
 # We can choose any bounds between 0 and pi for this distribution but in units
 # of pi so we use between 0 and 1.
@@ -27,7 +27,7 @@ solid_angle_samples = uniform_solid_angle_distribution.rvs(size=10000)
 
 # Make a spin 1 magnitude since solid angle is only 2 dimensions and we need a
 # 3rd dimension for a 3D plot that we make later on.
-spin_mag = np.ndarray(shape=(10000), dtype=float)
+spin_mag = numpy.ndarray(shape=(10000), dtype=float)
 
 for i in range(0,10000):
     spin_mag[i] = 1.

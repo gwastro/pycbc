@@ -3,8 +3,7 @@ import h5py, argparse, numpy, pycbc.events, logging, pycbc.events, pycbc.io
 import pycbc.version
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg)
+parser.add_argument("--version", action=pycbc.version.Version)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--coinc-files', nargs='+',
                     help="List of coinc files to be redistributed")

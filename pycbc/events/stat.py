@@ -48,6 +48,25 @@ def get_newsnr(trigs):
     newsnr = events.newsnr(trigs['snr'], trigs['chisq'] / dof)
     return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
+def get_newsnr_sgveto(trigs):
+    """
+    Calculate newsnr re-weigthed by the sine-gaussian veto
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', and 'chisq' are required keys
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'] - 2.
+    nsnr_sg = events.newsnr_sgveto(trigs['snr'], trigs['chisq'] / dof, trigs['sg_chisq'])
+    return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
+
 
 class Stat(object):
 
@@ -94,7 +113,7 @@ class NewSNRStatistic(Stat):
         """
         return get_newsnr(trigs)
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
 
         Parameters
@@ -112,6 +131,33 @@ class NewSNRStatistic(Stat):
             Array of coincident ranking statistic values
         """
         return (s0**2. + s1**2.) ** 0.5
+
+
+class NewSNRSGStatistic(NewSNRStatistic):
+
+    """ Calculate the NewSNRSG coincident detection statistic """
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return get_newsnr_sgveto(trigs)
+
+
+class NetworkSNRStatistic(NewSNRStatistic):
+
+    """Same as the NewSNR statistic, but just sum of squares of SNRs"""
+
+    def single(self, trigs):
+        return trigs['snr']
 
 
 class NewSNRCutStatistic(NewSNRStatistic):
@@ -137,7 +183,7 @@ class NewSNRCutStatistic(NewSNRStatistic):
         newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
         return newsnr
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
 
         Parameters
@@ -247,7 +293,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         s1v[s1v >= len(self.sbins) - 1] = len(self.sbins) - 2
         rv[rv < 0] = 0
         rv[rv >= len(self.rbins) - 1] = len(self.rbins) - 2
-        
+
         return self.hist[tv, pv, s0v, s1v, rv]
 
     def coinc(self, s0, s1, slide, step):
@@ -297,8 +343,12 @@ class ExpFitStatistic(NewSNRStatistic):
             raise RuntimeError("None of the statistic files has the required "
                                "attribute called {ifo}-fit_coeffs !")
         self.fits_by_tid = {}
+        self.alphamax = {}
         for i in self.ifos:
-           self.fits_by_tid[i] = self.assign_fits(i)
+            self.fits_by_tid[i] = self.assign_fits(i)
+            self.get_ref_vals(i)
+
+        self.get_newsnr = get_newsnr
 
     def assign_fits(self, ifo):
         coeff_file = self.files[ifo+'-fit_coeffs']
@@ -310,6 +360,9 @@ class ExpFitStatistic(NewSNRStatistic):
         tid_sort = numpy.argsort(template_id)
         return {'alpha':alphas[tid_sort], 'lambda':lambdas[tid_sort],
                 'thresh':coeff_file.attrs['stat_threshold']}
+
+    def get_ref_vals(self, ifo):
+        self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
 
     def find_fits(self, trigs):
         """Get fit coeffs for a specific ifo and template id"""
@@ -329,7 +382,7 @@ class ExpFitStatistic(NewSNRStatistic):
         and rescale by the fitted coefficients alpha and lambda
         """
         alphai, lambdai, thresh = self.find_fits(trigs)
-        newsnr = get_newsnr(trigs)
+        newsnr = self.get_newsnr(trigs)
         # alphai is constant of proportionality between single-ifo newsnr and
         #  negative log noise likelihood in given template
         # lambdai is rate of trigs in given template compared to average
@@ -342,7 +395,7 @@ class ExpFitStatistic(NewSNRStatistic):
         """Single-detector statistic, here just equal to the log noise rate"""
         return self.lognoiserate(trigs)
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
         # Approximate log likelihood ratio by summing single-ifo negative
         # log noise likelihoods
@@ -368,6 +421,12 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
 
+    def use_alphamax(self):
+        # take reference slope as the harmonic mean of individual ifo slopes
+        inv_alphas = [1./self.alphamax[i] for i in self.ifos]
+        self.alpharef = (sum(inv_alphas)/len(inv_alphas))**-1
+        print(self.alpharef)
+
     def single(self, trigs):
         logr_n = self.lognoiserate(trigs)
         _, _, thresh = self.find_fits(trigs)
@@ -377,7 +436,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         stat = thresh - (logr_n / self.alpharef)
         return numpy.array(stat, ndmin=1, dtype=numpy.float32)
 
-    def coinc(self, s0, s1, slide, step):
+    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / (2.**0.5)
 
@@ -414,6 +473,17 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         return cstat / (2.**0.5)
 
 
+class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
+
+    """Statistic combining exponential noise model with signal histogram PDF
+       and adding the sine-Gaussian veto to the single detector ranking
+    """
+
+    def __init__(self, files):
+        PhaseTDExpFitStatistic.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto
+
+
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
     """Combination of NewSNR with the power chisq and auto chisq"""
@@ -442,12 +512,15 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
 statistic_dict = {
     'newsnr': NewSNRStatistic,
+    'network_snr': NetworkSNRStatistic,
     'newsnr_cut': NewSNRCutStatistic,
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
+    'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
+    'newsnr_sgveto': NewSNRSGStatistic
 }
 
 def get_statistic(stat):

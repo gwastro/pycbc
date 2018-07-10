@@ -29,7 +29,9 @@ __program__ = "pycbc_make_coinc_search_workflow"
 import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging, glue.segments, numpy, lal, datetime
+import os, argparse, ConfigParser, logging
+from glue import segments
+import numpy, lal, datetime
 from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
@@ -44,6 +46,10 @@ def symlink_path(f, path):
 
 def symlink_result(f, rdir_path):
     symlink_path(f, rdir[rdir_path])
+
+# Log to the screen until we know where the output file is
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
+    level=logging.INFO)
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument('--version', action='version', version=__version__)
@@ -83,11 +89,12 @@ logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO,
                     filemode='w')
 
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
+logfile = logging.FileHandler(filename=wf_log_file.storage_path,mode='w')
+logfile.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s:%(levelname)s : %(message)s')
-console.setFormatter(formatter)
-logging.getLogger('').addHandler(console)
+logfile.setFormatter(formatter)
+logging.getLogger('').addHandler(logfile)
+logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # put start / end time at top of summary page
 time = workflow.analysis_time
@@ -147,6 +154,23 @@ final_veto_file, final_veto_name, ind_cats = \
                                             rdir['analysis_time/segment_data'],
                                             execute_now=False)
 
+# setup gating files if provided
+gate_files = wf.setup_gating_workflow(workflow, output_dir="gating")
+
+# add the gate files to the jobs that use them
+for job in ['calculate_psd', 'inspiral', 'single_template', 
+            'plot_singles_timefreq']:
+  for gate_file in gate_files:
+      ifo_gate = gate_file.cache_entry.url
+      try:
+          workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()), 
+                          'gating-file', ifo_gate)
+      except ConfigParser.SectionError:
+          workflow.cp.add_section('{}-{}'.format(job, 
+                                  gate_file.ifo.lower()))
+          workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()), 
+                          'gating-file', ifo_gate)
+
 # Precalculated PSDs
 precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
                                             datafind_files, "psdfiles")
@@ -169,7 +193,7 @@ bank_plot = [(wf.make_template_plot(workflow, hdfbank[0],
 
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow,
-                                                     output_dir="inj_files")
+                                                  output_dir="inj_files")
 
 ######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
@@ -215,10 +239,18 @@ for bg_file, bg_bins in (bg_files + final_bg_files):
         if bg_file == final_bg_file:
             closed_snrifar.append(snrifar)
 
+max_hierarchical_removal = workflow.cp.get('workflow-results', 
+                                           'max-hierarchical-removal')
 results_page = []
 results_aux_page = []
 closed_box_ifars = []
+
+# create the main results page with the two plots and the table
+# if there are bins, then there is a pair of plots for each bin
+# with no hierarchical_level specified, these results are the
+# final stage of hierarchical removal (i.e. the main result).
 for bin_file in bin_files:
+    # Open box
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result'], tags=bin_file.tags)
     ratehist = wf.make_snrratehist_plot(workflow, bin_file,
@@ -226,36 +258,38 @@ for bin_file in bin_files:
 
     results_page += [(snrifar, ratehist)]
 
+    # Significance page
     snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result/significance'],
                     cumulative=False, tags=bin_file.tags + ['ifar'])
     ifar_ob = wf.make_ifar_plot(workflow, bin_file,
                     rdir['open_box_result/significance'],
                     tags=bin_file.tags + ['open_box'])
+
+    symlink_result(snrifar, 'open_box_result/significance')
+    symlink_result(ratehist, 'open_box_result/significance')
+
+    results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
+
     # Closed box
     ifar_cb = wf.make_ifar_plot(workflow, bin_file,
                     rdir['coincident_triggers'],
                     tags=bin_file.tags + ['closed_box'])
     closed_box_ifars.append(ifar_cb)
-
-    symlink_result(snrifar, 'open_box_result/significance')
-    symlink_result(ratehist, 'open_box_result/significance')
-    results_aux_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
-
-layout.group_layout(rdir['coincident_triggers'],
-                    closed_box_ifars + all_snrifar + [bank_plot[0][0]])
-
-wf.make_ifar_plot(workflow, final_bg_file, rdir['open_box_result'],
-                  tags=['open_box'])
-
+    
+# Open box table
 table = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.html', tags=["html"])
 
-results_page += [(table,)]
-results_aux_page += [(table,)]
 symlink_result(table, 'open_box_result/significance')
+
+# Open box results summary
+results_page += [(table,)]
 layout.two_column_layout(rdir['open_box_result'], results_page)
+
+# Significance page
+results_aux_page += [(table,)]
 layout.two_column_layout(rdir['open_box_result/significance'], results_aux_page)
 
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
@@ -264,6 +298,52 @@ fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], tag, rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
+
+# Closed box coincident triggers page
+layout.group_layout(rdir['coincident_triggers'],
+                    closed_box_ifars + all_snrifar + [bank_plot[0][0]])
+
+# Now make the plots showing each stage of hierarchical removal
+for hierarchical_level in range(int(max_hierarchical_removal) + 1):
+    results_hier_page = []
+
+    if hierarchical_level == 0:
+        hierarchical_level_page = \
+        'open_box_result/no_events_removed_from_background'
+    elif hierarchical_level == 1:
+        hierarchical_level_page = \
+        'open_box_result/loudest_event_removed_from_background'
+    else:
+        hierarchical_level_page = \
+            'open_box_result/loudest_{}_events_removed_from_background'.format(
+                 hierarchical_level)
+
+    for bin_file in bin_files:
+        snrifar = wf.make_snrifar_plot(workflow, bin_file,
+                       rdir[hierarchical_level_page], tags=bin_file.tags,
+                       hierarchical_level=hierarchical_level)
+        ratehist = wf.make_snrratehist_plot(workflow, bin_file,
+                       rdir[hierarchical_level_page], tags=bin_file.tags,
+                       hierarchical_level=hierarchical_level)
+        snrifar_ifar = wf.make_snrifar_plot(workflow, bin_file,
+                       rdir[hierarchical_level_page],
+                       cumulative=False, tags=bin_file.tags + ['ifar'],
+                       hierarchical_level=hierarchical_level)
+        ifar_ob = wf.make_ifar_plot(workflow, bin_file,
+                       rdir[hierarchical_level_page],
+                       tags=bin_file.tags + ['open_box'],
+                       hierarchical_level=hierarchical_level)
+
+        results_hier_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
+
+    table = wf.make_foreground_table(workflow, final_bg_file,
+                    hdfbank[0], tag, rdir[hierarchical_level_page], 
+                    singles=insps,
+                    extension='.html', tags=["html"],
+                    hierarchical_level=hierarchical_level)
+
+    results_hier_page += [(table,)]
+    layout.two_column_layout(rdir[hierarchical_level_page], results_hier_page)
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto,
                     'closed_box', rdir['single_triggers'], tags=[tag])
@@ -298,30 +378,30 @@ trig_generated_name = 'TRIGGERS_GENERATED'
 trig_generated_segs = {}
 data_analysed_name = 'DATA_ANALYSED'
 data_analysed_segs = {}
-insp_files_seg_dict = glue.segments.segmentlistdict()
+insp_files_seg_dict = segments.segmentlistdict()
 
 for ifo, files in zip(*ind_insps.categorize_by_attr('ifo')):
-    trig_generated_segs[ifo] = glue.segments.segmentlist([\
-                                                     f.segment for f in files])
-    data_analysed_segs[ifo] = glue.segments.segmentlist([\
-                                        f.metadata['data_seg'] for f in files])
+    trig_generated_segs[ifo] = segments.segmentlist([f.segment for f in files])
+    data_analysed_segs[ifo] = \
+        segments.segmentlist([f.metadata['data_seg'] for f in files])
 
     # Remove duplicates from splitbank
-    trig_generated_segs[ifo] = glue.segments.segmentlist(
-                                                 set(trig_generated_segs[ifo]))
-    data_analysed_segs[ifo] = glue.segments.segmentlist(
-                                                  set(data_analysed_segs[ifo]))
+    trig_generated_segs[ifo] = \
+        segments.segmentlist(set(trig_generated_segs[ifo]))
+    data_analysed_segs[ifo] = \
+        segments.segmentlist(set(data_analysed_segs[ifo]))
 
     insp_files_seg_dict[ifo + ":" + trig_generated_name] = \
                                                        trig_generated_segs[ifo]
     insp_files_seg_dict[ifo + ":" + data_analysed_name] = \
                                                         data_analysed_segs[ifo]
 
-    # NOTE: Should we also store the coalesced segments?
-
-    psd_files += [wf.setup_psd_calculate(workflow,
-                  datafind_files.find_output_with_ifo(ifo), ifo,
-                  data_analysed_segs[ifo], data_analysed_name, 'psds')]
+    if datafind_files:
+        frame_files = datafind_files.find_output_with_ifo(ifo)
+    else:
+        frame_files = None
+    psd_files += [wf.setup_psd_calculate(workflow, frame_files, ifo,
+              data_analysed_segs[ifo], data_analysed_name, 'psds')]
 
 insp_files_seg_file = wf.SegFile.from_segment_list_dict('INSP_SEGMENTS',
                  insp_files_seg_dict, valid_segment=workflow.analysis_time,
@@ -336,7 +416,7 @@ r2 = wf.make_range_plot(workflow, psd_files, rdir['detector_sensitivity'],
 
 det_summ = [(s, r[0] if len(r) != 0 else None)]
 layout.two_column_layout(rdir['detector_sensitivity'],
-                         det_summ + list(layout.grouper(r2, 2)))
+                     det_summ + list(layout.grouper(r2, 2)))
 
 # run minifollowups on the output of the loudest events
 wf.setup_foreground_minifollowups(workflow, final_bg_file,
@@ -409,8 +489,13 @@ seg_summ_plot = wf.make_seg_plot(workflow, curr_files,
                         curr_names, ['SUMMARY'])
 
 curr_files = [insp_files_seg_file] + final_veto_file + cum_veto_files
+# Add in singular veto files
+curr_files = curr_files + veto_cat_files + [science_seg_file]
 curr_names = [trig_generated_name + '&' + veto_name\
                    for veto_name in veto_names+final_veto_name]
+# And SCIENCE - CAT 1 vetoes explicitly.
+curr_names += [sci_seg_name + '&' + 'VETO_CAT1']
+
 veto_summ_table = wf.make_seg_table(workflow, curr_files, curr_names,
                       rdir['analysis_time/segments'], ['VETO_SUMMARY'],
                       title_text='Time removed by vetoes',
@@ -504,7 +589,13 @@ for inj_file, tag in zip(inj_files, inj_tags):
     if len(f) > 0: layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)
 
     # run minifollowups on nearest missed injections
-    currdir = rdir['injections/followup_of_missed_%s' % tag]
+    curr_dir_nam = 'injections/followup_of_{}'.format(tag)
+    if workflow.cp.has_option_tags('workflow-injection_minifollowups',
+                                   'subsection-suffix', tags=[tag]):
+        suf_str = workflow.cp.get_opt_tags('workflow-injection_minifollowups',
+                                           'subsection-suffix', tags=[tag])
+        curr_dir_nam += '_' + suf_str
+    currdir = rdir[curr_dir_nam]
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
                                      insps,  hdfbank[0], insp_files_seg_file,
                                      data_analysed_name, trig_generated_name,
