@@ -23,6 +23,7 @@ import pycbc.inference.sampler
 from pycbc import inject
 from pycbc.io.record import FieldArray
 from pycbc.inference import burn_in
+from pycbc import waveform
 from pycbc import conversions
 from pycbc import transforms
 from pycbc.distributions import bounded
@@ -482,6 +483,11 @@ def parse_parameters_opt(parameters):
         if len(p.split(':')) == 2:
             p, label = p.split(':')
             parameters[ii] = p
+            # try to get the label from waveform.parameters
+            try:
+                label = getattr(waveform.parameters, label).label
+            except AttributeError:
+                pass
             labels[p] = label
     return parameters, labels
 
