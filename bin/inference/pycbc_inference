@@ -116,6 +116,12 @@ parser.add_argument("--checkpoint-fast", action="store_true",
                     help="Do not calculate ACL after each checkpoint, only at "
                          "the end. Not applicable if n-independent-samples "
                          "have been specified.")
+parser.add_argument("--acl-interval", type=int, default=None,
+                    help="Specify the interval on which to calculate ACL and "
+                         "burn-in. If not provided, will use the "
+                         "checkpoint-interval. This is doubled after 50000 "
+                         "iterations; doubled again after 100000 iterations; "
+                         "and doubled again after 200000 iterations.")
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
@@ -164,7 +170,6 @@ elif opts.n_independent_samples is not None:
 else:
     raise ValueError("Must specify niterations or n-independent-samples; "
                      "see --help")
-
 
 # get likelihood class
 likelihood_class = inference.likelihood_evaluators[opts.likelihood_evaluator]
@@ -407,7 +412,13 @@ with ctx:
     if interval is None:
         interval = get_nsamples
 
+    if opts.acl_interval is None:
+        opts.acl_interval = interval
+
+    acl_interval = opts.acl_interval
+
     # run sampler until we have the desired number of samples
+    acl_interval_count = 0
     while nsamples < get_nsamples:
 
         end = start + interval
@@ -429,22 +440,19 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp,static_args=static_args,
                                   ifos=opts.instruments)
-            try:
-                is_burned_in = fp.is_burned_in
-                burnidx = fp.burn_in_iterations
-            except (AttributeError, KeyError):
-                is_burned_in = False
-            if not is_burned_in:
+            acl_interval_count += interval
+            if acl_interval_count >= acl_interval:
                 logging.info("Calculating burn in")
                 burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
 
-            # compute the acls and write
-            acls = None
-            if opts.n_independent_samples is not None or end >= get_nsamples \
-                    or not opts.checkpoint_fast:
-                logging.info("Computing acls")
-                acls = sampler.compute_acls(fp)
-                sampler.write_acls(fp, acls)
+                # compute the acls and write
+                acls = None
+                if opts.n_independent_samples is not None \
+                        or end >= get_nsamples \
+                        or not opts.checkpoint_fast:
+                    logging.info("Computing acls")
+                    acls = sampler.compute_acls(fp)
+                    sampler.write_acls(fp, acls)
 
         # write to backup
         with InferenceFile(backup_file, "a") as fp:
@@ -452,9 +460,10 @@ with ctx:
             logging.info("Writing to backup file")
             sampler.write_results(fp,static_args=static_args,
                                   ifos=opts.instruments)
-            sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
-            if acls is not None:
-                sampler.write_acls(fp, acls)
+            if acl_interval_count >= acl_interval:
+                sampler.write_burn_in_iterations(fp, burnidx, is_burned_in)
+                if acls is not None:
+                    sampler.write_acls(fp, acls)
 
         # check validity
         checkpoint_valid = validate_checkpoint_files(checkpoint_file,
@@ -470,6 +479,17 @@ with ctx:
         else:
             nsamples += interval
 
+        if acl_interval_count >= acl_interval:
+            acl_interval_count = 0
+
+        with InferenceFile(checkpoint_file, 'r') as fp:
+            niters = fp.niterations
+            if niters > 200000:
+                acl_interval = 8 * opts.acl_interval
+            elif niters > 100000:
+                acl_interval = 4 * opts.acl_interval
+            elif niters > 50000:
+                acl_interval = 2 * opts.acl_interval
 
         # clear the in-memory chain to save memory
         logging.info("Clearing chain")
