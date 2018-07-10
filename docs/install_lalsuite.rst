@@ -38,7 +38,7 @@ account or, if you have ``LIGO.ORG`` credentials, you can follow the
 
 .. note::
 
-    Since building lalsuite is very disk intensive, you may want to store the lalsuite git repository on a local disk rather than an NSF-mounted directory. If this is the case, change the path in the ``mkdir`` and ``cd`` above to a directory on a non-NFS mounted filesystem. This ie not required, as lalsuite will build on an NFS disk, it is just slower.
+    Since building lalsuite is very disk intensive, you may want to store the lalsuite git repository on a local disk rather than an NSF-mounted directory. If this is the case, change the path in the ``mkdir`` and ``cd`` above to a directory on a non-NFS mounted filesystem. This is not required, as lalsuite will build on an NFS disk, it is just slower.
 
 Once you have the repository cloned, you should change your working directory to the top-level of the repository with 
 
@@ -52,7 +52,7 @@ Now determine which version of the code you want to install. To run the latest (
 
     git checkout master
 
-If you want to build a specific release, replace ``master`` with a release tag, for example ``lalsuite-v6.30``. See the `list of lalsuite tags <https://ligo-vcs.phys.uwm.edu/cgit/lalsuite/refs/tags>`_ for available tags. You can also check out a branch from the `list of lalsuite branches <https://ligo-vcs.phys.uwm.edu/cgit/lalsuite/refs/heads>`_ in the same way; replace ``master`` with the branch name, e.g. ``lalsuite_o1_branch``.  Once you have checked out a tag or a branch, you can build and install lalsuite.
+If you want to build a specific release, replace ``master`` with a release tag, for example ``lalsuite-v6.30``. See the `list of lalsuite tags <https://git.ligo.org/lscsoft/lalsuite/tags>`_ for available tags. You can also check out a branch from the `list of lalsuite branches <https://git.ligo.org/lscsoft/lalsuite/branches>`_ in the same way; replace ``master`` with the branch name, e.g. ``lalsuite_o1_branch``.  Once you have checked out a tag or a branch, you can build and install lalsuite.
 
 
 =====================================================
