@@ -205,13 +205,21 @@ class InferenceFile(h5py.File):
     def burn_in_iterations(self):
         """Returns number of iterations in the burn in.
         """
-        return self.attrs["burn_in_iterations"]
+        try:
+            return self.attrs["burn_in_iterations"]
+        except KeyError:
+            # wasn't written; assume the last
+            return self.niterations
 
     @property
     def is_burned_in(self):
         """Returns whether or not the sampler is burned in.
         """
-        return self.attrs["is_burned_in"]
+        try:
+            return self.attrs["is_burned_in"]
+        except KeyError:
+            # wasn't written; assume False
+            return False
 
     @property
     def nwalkers(self):
