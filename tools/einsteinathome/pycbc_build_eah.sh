@@ -1378,6 +1378,37 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 
+# FIXME remove this line when the file is on $albert
+github_raw_url="https://raw.githubusercontent.com/duncan-brown/pycbc/bundle_fix/tools/einsteinathome"
+
+#87f7158d11b38487ee96049431785df3 HL-INJECTIONS.xml
+echo -e "\\n\\n>> [`date`] downloading injection file" >&3
+p="HL-INJECTIONS.xml"
+md5="87f7158d11b38487ee96049431785df3"
+if check_md5 "$p" "$md5"; then
+    rm -f "$p"
+    wget $wget_opts "$github_raw_url/$p"
+    # FIXME wget $wget_opts "$albert/$p"
+    if check_md5 "$p" "$md5"; then
+        echo "can't download $p - md5 mismatch"
+        exit 1
+    fi
+fi
+
+#89ec8c06076bdd46a3f66ecdc6bebf97  H1L1-SINGLE_TEMPLATE_BANK.xml
+echo -e "\\n\\n>> [`date`] downloading single template bank file" >&3
+p="H1L1-SINGLE_TEMPLATE_BANK.xml"
+md5="89ec8c06076bdd46a3f66ecdc6bebf97"
+if check_md5 "$p" "$md5"; then
+    rm -f "$p"
+    wget $wget_opts "$github_raw_url/$p"
+    # FIXME wget $wget_opts "$albert/$p"
+    if check_md5 "$p" "$md5"; then
+        echo "can't download $p - md5 mismatch"
+        exit 1
+    fi
+fi
+
 # Fetch any extra libraries specified on the command line
 if [ ! -z ${extra_libs} ] ; then
   echo -e "\\n\\n>> [`date`] installing extra libraries from ${extra_libs} to $PREFIX/lib" >&3
@@ -1391,7 +1422,7 @@ else
     export LAL_FRAME_LIBRARY=FrameL
 fi
 
-gw150914_bank=$p
+gw150914_bank="H1L1-SBANK_FOR_GW150914ER10.xml.gz"
 gw150914_approx='SPAtmplt:mtotal<4 SEOBNRv4_ROM:mtotal<20 SEOBNRv2_ROM_DoubleSpin:else'
 bank_array=( "$gw150914_bank" )
 approx_array=( "$gw150914_approx" )
@@ -1423,7 +1454,7 @@ for (( i=0; i<${n_runs}; i++ ))
 do
     rm -f H1-INSPIRAL-OUT.hdf
     echo "\
->> [`date`] Running pycbc_inspiral using
+>> [`date`] running pycbc_inspiral using
 >>   --bank-file ${bank_array[$i]}
 >>   --approximant ${approx_array[$i]}
 >>   ROM data from $lal_data_path"
@@ -1435,7 +1466,8 @@ do
       LEVEL2_CACHE_SIZE=8192 \
       WEAVE_FLAGS='-O3 -march=core2 -w' \
       FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral"
-    args="--fixed-weave-cache ${processing_scheme} \
+    base_args= "--fixed-weave-cache ${processing_scheme} \
+      --frame-files $frames \
       --sample-rate 2048 \
       --sgchisq-snr-threshold 6.0 \
       --sgchisq-locations mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120 \
@@ -1466,10 +1498,10 @@ do
       --gps-start-time 1126259078 \
       --gps-end-time 1126259846 \
       --output H1-INSPIRAL-OUT.hdf \
-      --frame-files $frames \
-      --approximant ${approx_array[$i]} \
-      --bank-file ${bank_array[$i]} \
       --verbose"
+      args="${base_args} 
+      --approximant ${approx_array[$i]} \
+      --bank-file ${bank_array[$i]} "
     if $silent_build; then
         "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args 2>&1|
           awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
@@ -1481,6 +1513,14 @@ done
 # test for GW150914
 echo -e "\\n\\n>> [`date`] test for GW150914"
 python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
+
+# run a set of injections to weave compile the injection code path
+echo -e "\\n\\n>> [`date`] running pycbc_inspiral with injections"
+args="${base_args} \
+  --approximant ${gw150914_approx} \
+  --bank-file H1L1-SINGLE_TEMPLATE_BANK.xml \
+  --injection-file HL-INJECTIONS.xml"
+"$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args
 
 fi # if $run_analysis
 
