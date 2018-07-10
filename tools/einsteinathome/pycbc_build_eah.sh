@@ -1466,7 +1466,7 @@ do
       LEVEL2_CACHE_SIZE=8192 \
       WEAVE_FLAGS='-O3 -march=core2 -w' \
       FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral"
-    base_args= "--fixed-weave-cache ${processing_scheme} \
+    base_args="--fixed-weave-cache ${processing_scheme} \
       --frame-files $frames \
       --sample-rate 2048 \
       --sgchisq-snr-threshold 6.0 \
@@ -1501,7 +1501,7 @@ do
       --verbose"
       args="${base_args} \
       --approximant ${approx_array[$i]} \
-      --bank-file ${bank_array[$i]} "
+      --bank-file ${bank_array[$i]}"
     if $silent_build; then
         "$ENVIRONMENT/dist/pycbc_inspiral/pycbc_inspiral" $args 2>&1|
           awk '{if ((!/Filtering template|points above|power chisq|point chisq|Found chisq|generating SEOBNR|generating SPA/) || (/segment 1/ && NR % 50 == 0) || / 0: generating/ || / 1: generating/ ) print}'
