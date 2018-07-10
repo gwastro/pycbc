@@ -1499,7 +1499,7 @@ do
       --gps-end-time 1126259846 \
       --output H1-INSPIRAL-OUT.hdf \
       --verbose"
-      args="${base_args} 
+      args="${base_args} \
       --approximant ${approx_array[$i]} \
       --bank-file ${bank_array[$i]} "
     if $silent_build; then
