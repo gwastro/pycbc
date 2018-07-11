@@ -1378,17 +1378,13 @@ if check_md5 "$p" "$md5"; then
     fi
 fi
 
-# FIXME remove this line when the file is on $albert
-github_raw_url="https://raw.githubusercontent.com/duncan-brown/pycbc/bundle_fix/tools/einsteinathome"
-
 #87f7158d11b38487ee96049431785df3 HL-INJECTIONS.xml
 echo -e "\\n\\n>> [`date`] downloading injection file" >&3
 p="HL-INJECTIONS.xml"
 md5="87f7158d11b38487ee96049431785df3"
 if check_md5 "$p" "$md5"; then
     rm -f "$p"
-    wget $wget_opts "$github_raw_url/$p"
-    # FIXME wget $wget_opts "$albert/$p"
+    wget $wget_opts "$albert/$p"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
         exit 1
@@ -1401,8 +1397,7 @@ p="H1L1-SINGLE_TEMPLATE_BANK.xml"
 md5="89ec8c06076bdd46a3f66ecdc6bebf97"
 if check_md5 "$p" "$md5"; then
     rm -f "$p"
-    wget $wget_opts "$github_raw_url/$p"
-    # FIXME wget $wget_opts "$albert/$p"
+    wget $wget_opts "$albert/$p"
     if check_md5 "$p" "$md5"; then
         echo "can't download $p - md5 mismatch"
         exit 1
