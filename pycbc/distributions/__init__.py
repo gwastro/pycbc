@@ -97,7 +97,9 @@ def _convert_liststring_to_list(lstring):
     return lstring
 
 
-def read_args_from_config(cp, section_group=None, prior_section='prior'):
+def read_args_from_config(cp, prior_section='prior',
+        varargs_section='variable_args', staticargs_section='static_args',
+        constraint_section='constraint'):
     """Loads static and variable arguments from a configuration file.
 
     Parameters
@@ -120,15 +122,9 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
     static_args : dict
         Dictionary of names -> values giving the parameters to keep fixed.
     """
-    if section_group is not None:
-        section_prefix = '{}_'.format(section_group)
-    else:
-        section_prefix = ''
-
     # sanity check that each parameter in [variable_args] has a priors section
-    variable_args = cp.options("{}variable_args".format(section_prefix))
-    subsections = cp.get_subsections("{}{}".format(section_prefix,
-                                                   prior_section))
+    variable_args = cp.options(varargs_section)
+    subsections = cp.get_subsections(prior_section)
     tags = set([p for tag in subsections for p in tag.split('+')])
     missing_prior = set(variable_args) - tags
     if any(missing_prior):
@@ -137,9 +133,8 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
 
     # get parameters that do not change in sampler
     try:
-        static_args = dict([(key,cp.get_opt_tags(
-            "{}static_args".format(section_prefix), key, []))
-            for key in cp.options("{}static_args".format(section_prefix))])
+        static_args = dict([(key, cp.get_opt_tags(staticargs_section, key, []))
+            for key in cp.options(staticargs_section)])
     except _ConfigParser.NoSectionError:
         static_args = {}
     # try converting values to float
@@ -155,15 +150,15 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
 
     # get additional constraints to apply in prior
     cons = []
-    section = "{}constraint".format(section_prefix)
-    for subsection in cp.get_subsections(section):
-        name = cp.get_opt_tag(section, "name", subsection)
-        constraint_arg = cp.get_opt_tag(section, "constraint_arg", subsection)
+    for subsection in cp.get_subsections(constraint_section):
+        name = cp.get_opt_tag(constraint_section, "name", subsection)
+        constraint_arg = cp.get_opt_tag(
+            constraint_section, "constraint_arg", subsection)
         kwargs = {}
-        for key in cp.options(section + "-" + subsection):
+        for key in cp.options(constraint_section + "-" + subsection):
             if key in ["name", "constraint_arg"]:
                 continue
-            val = cp.get_opt_tag(section, key, subsection)
+            val = cp.get_opt_tag(constraint_section, key, subsection)
             if key == "required_parameters":
                 kwargs["required_parameters"] = val.split(_VARARGS_DELIM)
                 continue
