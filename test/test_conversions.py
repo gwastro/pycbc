@@ -133,11 +133,11 @@ class TestParams(unittest.TestCase):
             (conversions.mass1_from_tau0_tau3, (self.tau0, self.tau3, self.f_lower), 'mp'),
             (conversions.mass2_from_tau0_tau3, (self.tau0, self.tau3, self.f_lower), 'ms'),
             (conversions.chi_eff_from_spherical,
-                (self.mass1, self.mass2, self.spin1_a, self.spin1_polar,
+                (self.m1, self.m2, self.spin1_a, self.spin1_polar,
                  self.spin2_a, self.spin2_polar), 'effective_spin'),
             (conversions.chi_p_from_spherical,
-                (self.mass1, self.mass2, self.spin1_a, self.spin1_azimuthal,
-                 self.spin1_polar, self.spin2_a, self.spin2_azimuthal,
+                (self.m1, self.m2, self.spin1_a, self.spin1_az,
+                 self.spin1_polar, self.spin2_a, self.spin2_az,
                  self.spin2_polar), 'chi_p'),
             ]
 
