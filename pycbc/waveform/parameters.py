@@ -217,6 +217,9 @@ secondary_mass = Parameter("secondary_mass",
 chi_eff = Parameter("chi_eff",
                 dtype=float, label=r"$\chi_\mathrm{eff}$",
                 description="Effective spin of the binary.")
+chi_p = Parameter("chi_p",
+                dtype=float, label=r"$\chi_p$",
+                description="Effective precessing spin of the binary.")
 spin_px = Parameter("spin_px",
                 dtype=float, label=r"$\chi_{1x}$",
                 description="The x component of the dimensionless spin of the "
