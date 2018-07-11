@@ -1736,8 +1736,9 @@ class SegFile(File):
 
             # Add using glue library to set all segment tables
             with ligolw_segments.LigolwSegments(outdoc, process) as x:
-                x.add(LigolwSegmentList(active=fsegs, instruments = set([ifo]),
-                                        name=name, version=1, valid=vsegs))
+                x.add(ligolw_segments.LigolwSegmentList(active=fsegs,
+                                    instruments=set([ifo]), name=name,
+                                    version=1, valid=vsegs))
 
         # write file
         if override_file_if_exists and \
