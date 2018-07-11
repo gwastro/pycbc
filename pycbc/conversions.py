@@ -422,7 +422,7 @@ def phi_s(spin1x, spin1y, spin2x, spin2y):
 
 
 def chi_eff_from_spherical(mass1, mass2, spin1_a, spin1_polar,
-                         spin2_a, spin2_polar):
+                           spin2_a, spin2_polar):
     """Returns the effective spin using spins in spherical coordinates."""
     spin1z = spin1_a * numpy.cos(spin1_polar)
     spin2z = spin2_a * numpy.cos(spin2_polar)
