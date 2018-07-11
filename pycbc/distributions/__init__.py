@@ -97,10 +97,9 @@ def _convert_liststring_to_list(lstring):
     return lstring
 
 
-def read_args_from_config(cp, prior_section='prior',
-        vargs_section='variable_args', sargs_section='static_args',
-        constraint_section='constraint'):
-    """Loads static and variable arguments from a configuration file.
+def read_params_from_config(cp, prior_section='prior',
+        vargs_section='variable_args', sargs_section='static_args'):
+    """Loads static and variable parameters from a configuration file.
 
     Parameters
     ----------
@@ -114,8 +113,6 @@ def read_args_from_config(cp, prior_section='prior',
     sargs_section : str, optional
         The section to get the parameters that will remain fixed. Default is
         'static_args'.
-    constraint_section : str, optional
-        The section to get the constraints from. Default is 'constraint'.
 
     Returns
     -------
@@ -123,8 +120,6 @@ def read_args_from_config(cp, prior_section='prior',
         The names of the parameters to vary in the PE run.
     static_args : dict
         Dictionary of names -> values giving the parameters to keep fixed.
-    constraints : list
-        List of ``Constraint`` objects. Empty if no constraints were provided.
     """
     # sanity check that each parameter in [variable_args] has a priors section
     variable_args = cp.options(vargs_section)
@@ -151,7 +146,24 @@ def read_args_from_config(cp, prior_section='prior',
             # try converting to a list of strings; this function will just
             # return val if it does not begin (end) with [ (])
             static_args[key] = _convert_liststring_to_list(val)
+    return variable_args, static_args
 
+
+def read_constraints_from_config(cp, constraint_section='constraint'):
+    """Loads parameter constraints from a configuration file.
+
+    Parameters
+    ----------
+    cp : WorkflowConfigParser
+        An open config parser to read from.
+    constraint_section : str, optional
+        The section to get the constraints from. Default is 'constraint'.
+
+    Returns
+    -------
+    list
+        List of ``Constraint`` objects. Empty if no constraints were provided.
+    """
     # get additional constraints to apply in prior
     cons = []
     for subsection in cp.get_subsections(constraint_section):
@@ -174,4 +186,4 @@ def read_args_from_config(cp, prior_section='prior',
         cons.append(constraints.constraints[name](variable_args,
                                                   constraint_arg, **kwargs))
 
-    return variable_args, static_args, cons
+    return cons
