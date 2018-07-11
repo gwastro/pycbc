@@ -33,6 +33,8 @@ import lal
 import lalsimulation as lalsim
 from pycbc.detector import Detector
 
+from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
+
 #
 # =============================================================================
 #
@@ -386,11 +388,13 @@ def chi_eff(mass1, mass2, spin1z, spin2z):
     """Returns the effective spin from mass1, mass2, spin1z, and spin2z."""
     return (spin1z * mass1 + spin2z * mass2) / (mass1 + mass2)
 
+
 def chi_a(mass1, mass2, spin1z, spin2z):
     """ Returns the aligned mass-weighted spin difference from mass1, mass2,
     spin1z, and spin2z.
     """
     return (spin2z * mass2 - spin1z * mass1) / (mass2 + mass1)
+
 
 def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin from mass1, mass2, spin1x,
@@ -400,6 +404,7 @@ def chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     xi2 = primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
     return chi_p_from_xi1_xi2(xi1, xi2)
 
+
 def phi_a(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """ Returns the angle between the in-plane perpendicular spins."""
     phi1 = phi_from_spinx_spiny(primary_spin(mass1, mass2, spin1x, spin2x),
@@ -408,11 +413,33 @@ def phi_a(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
                                 secondary_spin(mass1, mass2, spin1y, spin2y))
     return (phi1 - phi2) % (2 * numpy.pi)
 
+
 def phi_s(spin1x, spin1y, spin2x, spin2y):
     """ Returns the sum of the in-plane perpendicular spins."""
     phi1 = phi_from_spinx_spiny(spin1x, spin1y)
     phi2 = phi_from_spinx_spiny(spin2x, spin2y)
     return (phi1 + phi2) % (2 * numpy.pi)
+
+
+def chi_eff_from_spherical(mass1, mass2, spin1_a, spin1_polar,
+                         spin2_a, spin2_polar):
+    """Returns the effective spin using spins in spherical coordinates."""
+    spin1z = spin1_a * numpy.cos(spin1_polar)
+    spin2z = spin2_a * numpy.cos(spin2_polar)
+    return chi_eff(mass1, mass2, spin1z, spin2z)
+
+
+def chi_p_from_spherical(mass1, mass2, spin1_a, spin1_azimuthal, spin1_polar,
+                         spin2_a, spin2_azimuthal, spin2_polar):
+    """Returns the effective precession spin using spins in spherical
+    coordinates.
+    """
+    spin1x, spin1y, _ = _spherical_to_cartesian(
+        spin1_a, spin1_azimuthal, spin1_polar)
+    spin2x, spin2y, _ = _spherical_to_cartesian(
+        spin2_a, spin2_azimuthal, spin2_polar)
+    return chi_p(mass1, mass2, spin1x, spin1y, spin2x, spin2y)
+
 
 def primary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the primary mass."""
@@ -429,6 +456,7 @@ def primary_spin(mass1, mass2, spin1, spin2):
     sp[mask] = spin2[mask]
     return formatreturn(sp, input_is_array)
 
+
 def secondary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the secondary mass."""
     mass1, ia1 = ensurearray(mass1)
@@ -444,12 +472,14 @@ def secondary_spin(mass1, mass2, spin1, spin2):
     ss[mask] = spin1[mask]
     return formatreturn(ss, input_is_array)
 
+
 def primary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin argument for the larger mass.
     """
     spinx = primary_spin(mass1, mass2, spin1x, spin2x)
     spiny = primary_spin(mass1, mass2, spin1y, spin2y)
     return chi_perp_from_spinx_spiny(spinx, spiny)
+
 
 def secondary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     """Returns the effective precession spin argument for the smaller mass.
@@ -458,11 +488,13 @@ def secondary_xi(mass1, mass2, spin1x, spin1y, spin2x, spin2y):
     spiny = secondary_spin(mass1, mass2, spin1y, spin2y)
     return xi2_from_mass1_mass2_spin2x_spin2y(mass1, mass2, spinx, spiny)
 
+
 def xi1_from_spin1x_spin1y(spin1x, spin1y):
     """Returns the effective precession spin argument for the larger mass.
     This function assumes it's given spins of the primary mass.
     """
     return chi_perp_from_spinx_spiny(spin1x, spin1y)
+
 
 def xi2_from_mass1_mass2_spin2x_spin2y(mass1, mass2, spin2x, spin2y):
     """Returns the effective precession spin argument for the smaller mass.
@@ -473,10 +505,12 @@ def xi2_from_mass1_mass2_spin2x_spin2y(mass1, mass2, spin2x, spin2y):
     a2 = 2 + 3 / (2 * q)
     return a1 / (q**2 * a2) * chi_perp_from_spinx_spiny(spin2x, spin2y)
 
+
 def chi_perp_from_spinx_spiny(spinx, spiny):
     """Returns the in-plane spin from the x/y components of the spin.
     """
     return numpy.sqrt(spinx**2 + spiny**2)
+
 
 def chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2):
     """Returns the in-plane spin from mass1, mass2, and xi2 for the
@@ -486,6 +520,7 @@ def chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2):
     a1 = 2 + 3 * q / 2
     a2 = 2 + 3 / (2 * q)
     return q**2 * a2 / a1 * xi2
+
 
 def chi_p_from_xi1_xi2(xi1, xi2):
     """Returns effective precession spin from xi1 and xi2.
@@ -500,11 +535,13 @@ def chi_p_from_xi1_xi2(xi1, xi2):
     chi_p[mask] = xi2[mask]
     return formatreturn(chi_p, input_is_array)
 
+
 def phi1_from_phi_a_phi_s(phi_a, phi_s):
     """Returns the angle between the x-component axis and the in-plane
     spin for the primary mass from phi_s and phi_a.
     """
     return (phi_s + phi_a) / 2.0
+
 
 def phi2_from_phi_a_phi_s(phi_a, phi_s):
     """Returns the angle between the x-component axis and the in-plane
@@ -512,21 +549,25 @@ def phi2_from_phi_a_phi_s(phi_a, phi_s):
     """
     return (phi_s - phi_a) / 2.0
 
+
 def phi_from_spinx_spiny(spinx, spiny):
     """Returns the angle between the x-component axis and the in-plane spin.
     """
     phi = numpy.arctan2(spiny, spinx)
     return phi % (2 * numpy.pi)
 
+
 def spin1z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin1z.
     """
     return (mass1 + mass2) / (2.0 * mass1) * (chi_eff - chi_a)
 
+
 def spin2z_from_mass1_mass2_chi_eff_chi_a(mass1, mass2, chi_eff, chi_a):
     """Returns spin2z.
     """
     return (mass1 + mass2) / (2.0 * mass2) * (chi_eff + chi_a)
+
 
 def spin1x_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
     """Returns x-component spin for primary mass.
@@ -534,11 +575,13 @@ def spin1x_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
     phi1 = phi1_from_phi_a_phi_s(phi_a, phi_s)
     return xi1 * numpy.cos(phi1)
 
+
 def spin1y_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s):
     """Returns y-component spin for primary mass.
     """
     phi1 = phi1_from_phi_a_phi_s(phi_s, phi_a)
     return xi1 * numpy.sin(phi1)
+
 
 def spin2x_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     """Returns x-component spin for secondary mass.
@@ -547,12 +590,14 @@ def spin2x_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     phi2 = phi2_from_phi_a_phi_s(phi_a, phi_s)
     return chi_perp * numpy.cos(phi2)
 
+
 def spin2y_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2, xi2, phi_a, phi_s):
     """Returns y-component spin for secondary mass.
     """
     chi_perp = chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2)
     phi2 = phi2_from_phi_a_phi_s(phi_a, phi_s)
     return chi_perp * numpy.sin(phi2)
+
 
 def dquadmon_from_lambda(lambdav):
     r"""Return the quadrupole moment of a neutron star given its lambda
@@ -586,6 +631,7 @@ def chirp_distance(dist, mchirp, ref_mass=1.4):
     """Returns the chirp distance given the luminosity distance and chirp mass.
     """
     return dist * (2.**(-1./5) * ref_mass / mchirp)**(5./6)
+
 
 def distance_from_chirp_distance_mchirp(chirp_distance, mchirp, ref_mass=1.4):
     """Returns the luminosity distance given a chirp distance and chirp mass.
@@ -726,21 +772,23 @@ def get_lm_f0tau(mass, spin, l, m, nmodes):
     """Return the f_0 and the tau of each overtone for a given lm mode
     """
     qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
-    lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(qnmfreq, float(mass), float(spin), l, m, nmodes)
-
+    lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(
+        qnmfreq, float(mass), float(spin), l, m, nmodes)
     f_0 = [qnmfreq.data[n].real / (2 * numpy.pi) for n in range(nmodes)]
     tau = [1. / qnmfreq.data[n].imag for n in range(nmodes)]
-
     return f_0, tau
+
 
 def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
     return get_lm_f0tau(final_mass, final_spin, l, m, 1)[0][0]
+
 
 def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
     return get_lm_f0tau(final_mass, final_spin, l, m, 1)[1][0]
 
 
-__all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
+__all__ = ['dquadmon_from_lambda', 'lambda_tilde',
+           'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
            'eta_from_mass1_mass2', 'mchirp_from_mass1_mass2',
            'mass1_from_mtotal_q', 'mass2_from_mtotal_q',
@@ -767,5 +815,6 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass', 'secondary_ma
            'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
-           'optimal_dec_from_detector','optimal_ra_from_detector'
+           'optimal_dec_from_detector','optimal_ra_from_detector',
+           'chi_eff_from_spherical', 'chi_p_from_spherical',
           ]
