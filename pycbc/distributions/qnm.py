@@ -130,7 +130,7 @@ class UniformF0Tau(uniform.Uniform):
         # reset the random state
         numpy.random.set_state(s)
         num_in = self._constraints(draws).sum()
-        # if num_in is 0, than the requested tolerance is too large 
+        # if num_in is 0, than the requested tolerance is too large
         if num_in == 0:
             raise ValueError("the normalization is < then the norm_tolerance; "
                              "try again with a smaller nrom_tolerance")
@@ -243,10 +243,10 @@ class UniformF0Tau(uniform.Uniform):
             raise ValueError("variable args do not match rdfreq and "
                              "damping_time names")
         # get the final mass and spin values, if provided
-        final_mass = bounded.get_param_bounds_from_config(cp, section, tag,
-            'final_mass')
-        final_spin = bounded.get_param_bounds_from_config(cp, section, tag,
-            'final_spin')
+        final_mass = bounded.get_param_bounds_from_config(
+            cp, section, tag, 'final_mass')
+        final_spin = bounded.get_param_bounds_from_config(
+            cp, section, tag, 'final_spin')
         opts = {'final_mass': final_mass, 'final_spin': final_spin}
         extra_opts = {}
         if cp.has_option_tag(section, 'norm_tolerance', tag):
