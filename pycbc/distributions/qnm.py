@@ -247,7 +247,6 @@ class UniformF0Tau(uniform.Uniform):
             cp, section, tag, 'final_mass')
         final_spin = bounded.get_param_bounds_from_config(
             cp, section, tag, 'final_spin')
-        opts = {'final_mass': final_mass, 'final_spin': final_spin}
         extra_opts = {}
         if cp.has_option_tag(section, 'norm_tolerance', tag):
             extra_opts['norm_tolerance'] = float(
@@ -255,5 +254,7 @@ class UniformF0Tau(uniform.Uniform):
         if cp.has_option_tag(section, 'norm_seed', tag):
             extra_opts['norm_seed'] = int(
                 cp.get_opt_tag(section, 'norm_seed', tag))
-        return cls(f0=f0, tau=tau, final_mass=final_mass, rdfreq=rdfreq,
-                   damping_time=damping_time, **extra_opts)
+        return cls(f0=f0, tau=tau,
+                   final_mass=final_mass, final_spin=final_spin,
+                   rdfreq=rdfreq, damping_time=damping_time,
+                   **extra_opts)
