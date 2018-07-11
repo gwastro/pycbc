@@ -98,7 +98,7 @@ def _convert_liststring_to_list(lstring):
 
 
 def read_args_from_config(cp, prior_section='prior',
-        varargs_section='variable_args', staticargs_section='static_args',
+        vargs_section='variable_args', sargs_section='static_args',
         constraint_section='constraint'):
     """Loads static and variable arguments from a configuration file.
 
@@ -106,14 +106,16 @@ def read_args_from_config(cp, prior_section='prior',
     ----------
     cp : WorkflowConfigParser
         An open config parser to read from.
-    section_group : {None, str}
-        When reading the config file, only read from sections that begin with
-        `{section_group}_`. For example, if `section_group='foo'`, the
-        variable arguments will be retrieved from section
-        `[foo_variable_args]`. If None, no prefix will be appended to section
-        names.
     prior_section : str, optional
         Check that priors exist in the given section. Default is 'prior.'
+    vargs_section : str, optional
+        The section to get the parameters that will be varied/need priors
+        defined for them. Default is 'variable_args'.
+    sargs_section : str, optional
+        The section to get the parameters that will remain fixed. Default is
+        'static_args'.
+    constraint_section : str, optional
+        The section to get the constraints from. Default is 'constraint'.
 
     Returns
     -------
@@ -121,9 +123,11 @@ def read_args_from_config(cp, prior_section='prior',
         The names of the parameters to vary in the PE run.
     static_args : dict
         Dictionary of names -> values giving the parameters to keep fixed.
+    constraints : list
+        List of ``Constraint`` objects. Empty if no constraints were provided.
     """
     # sanity check that each parameter in [variable_args] has a priors section
-    variable_args = cp.options(varargs_section)
+    variable_args = cp.options(vargs_section)
     subsections = cp.get_subsections(prior_section)
     tags = set([p for tag in subsections for p in tag.split('+')])
     missing_prior = set(variable_args) - tags
@@ -133,8 +137,8 @@ def read_args_from_config(cp, prior_section='prior',
 
     # get parameters that do not change in sampler
     try:
-        static_args = dict([(key, cp.get_opt_tags(staticargs_section, key, []))
-            for key in cp.options(staticargs_section)])
+        static_args = dict([(key, cp.get_opt_tags(sargs_section, key, []))
+            for key in cp.options(sargs_section)])
     except _ConfigParser.NoSectionError:
         static_args = {}
     # try converting values to float
