@@ -211,8 +211,8 @@ with ctx:
     cp = WorkflowConfigParser.from_cli(opts)
 
     # get the vairable and static arguments from the config file
-    variable_args, static_args, constraints = \
-        distributions.read_args_from_config(cp)
+    variable_args, static_args = distributions.read_params_from_config(cp)
+    constraints = distributions.read_constraints_from_config(cp)
 
     # get prior distribution for each variable parameter
     logging.info("Setting up priors for each parameter")

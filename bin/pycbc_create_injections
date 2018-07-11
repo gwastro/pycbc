@@ -227,8 +227,8 @@ logging.info("Loading config file")
 cp = WorkflowConfigParser.from_cli(opts)
 
 # get the vairable and static arguments from the config file
-variable_args, static_args, constraints = \
-    distributions.read_args_from_config(cp, prior_section=opts.dist_section)
+variable_args, static_args = distributions.read_params_from_config(cp)
+constraints = distributions.read_constraints_from_config(cp)
 
 if any(cp.get_subsections('waveform_transforms')):
     waveform_transforms = transforms.read_transforms_from_config(cp,
