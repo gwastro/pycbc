@@ -98,7 +98,8 @@ def _convert_liststring_to_list(lstring):
 
 
 def read_params_from_config(cp, prior_section='prior',
-        vargs_section='variable_args', sargs_section='static_args'):
+                            vargs_section='variable_args',
+                            sargs_section='static_args'):
     """Loads static and variable parameters from a configuration file.
 
     Parameters
@@ -129,11 +130,10 @@ def read_params_from_config(cp, prior_section='prior',
     if any(missing_prior):
         raise KeyError("You are missing a priors section in the config file "
                        "for parameter(s): {}".format(', '.join(missing_prior)))
-
-    # get parameters that do not change in sampler
+    # get static args
     try:
         static_args = dict([(key, cp.get_opt_tags(sargs_section, key, []))
-            for key in cp.options(sargs_section)])
+                           for key in cp.options(sargs_section)])
     except _ConfigParser.NoSectionError:
         static_args = {}
     # try converting values to float
@@ -164,24 +164,25 @@ def read_constraints_from_config(cp, constraint_section='constraint'):
     list
         List of ``Constraint`` objects. Empty if no constraints were provided.
     """
-    # get additional constraints to apply in prior
     cons = []
     for subsection in cp.get_subsections(constraint_section):
         name = cp.get_opt_tag(constraint_section, "name", subsection)
         constraint_arg = cp.get_opt_tag(
             constraint_section, "constraint_arg", subsection)
+        # get any other keyword arguments
         kwargs = {}
-        for key in cp.options(constraint_section + "-" + subsection):
-            if key in ["name", "constraint_arg"]:
-                continue
-            val = cp.get_opt_tag(constraint_section, key, subsection)
+        section = constraint_section + "-" + subsection
+        extra_opts = [key for key in cp.options(section)
+                      if key not in ["name", "constraint_arg"]]
+        for key in extra_opts:
+            val = cp.get(section, key)
             if key == "required_parameters":
-                kwargs["required_parameters"] = val.split(_VARARGS_DELIM)
-                continue
-            try:
-                val = float(val)
-            except ValueError:
-                pass
+                val = val.split(_VARARGS_DELIM)
+            else:
+                try:
+                    val = float(val)
+                except ValueError:
+                    pass
             kwargs[key] = val
         cons.append(constraints.constraints[name](variable_args,
                                                   constraint_arg, **kwargs))
