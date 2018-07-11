@@ -1735,10 +1735,10 @@ class SegFile(File):
                          for seg in self.seg_summ_dict[key]]
 
             # Add using glue library to set all segment tables
-            with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
-                xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name,
-                                                    version = 1,
-                                                    valid = {ifo : vsegs})
+            with ligolw_segments.LigolwSegments(outdoc, process) as x:
+                x.add(LigolwSegmentList(active=fsegs, instruments = set([ifo]),
+                                         name=name, version=1, valid=vsegs))
+
         # write file
         if override_file_if_exists and \
                                  self.has_pfn(self.storage_path, site='local'):
