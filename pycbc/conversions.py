@@ -791,11 +791,11 @@ def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
 # keys are l,m. Constants are for converting from
 # frequency and damping time to mass and spin
 _berti_spin_constants = {
-    (2,2) : (0.7, 1.4187, -0.4990),
+    (2,2): (0.7, 1.4187, -0.4990),
     }
 
 _berti_mass_constants = {
-    (2,2) : (1.5251, -1.1568, 0.1292),
+    (2,2): (1.5251, -1.1568, 0.1292),
     }
 
 

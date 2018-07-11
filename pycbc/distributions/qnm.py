@@ -19,6 +19,7 @@ import pycbc
 from pycbc import conversions, boundaries
 from . import uniform, bounded
 
+
 class UniformF0Tau(uniform.Uniform):
     """A distribution uniform in QNM frequency and damping time.
 
@@ -59,7 +60,7 @@ class UniformF0Tau(uniform.Uniform):
 
     Examples
     --------
-    
+
     Create a distribution:
 
     >>> dist = UniformF0Tau(f0=(10., 2048.), tau=(1e-4,1e-2))
@@ -69,24 +70,30 @@ class UniformF0Tau(uniform.Uniform):
 
     >>> from pycbc import conversions
     >>> samples = dist.rvs(size=1000)
-    >>> (conversions.final_mass_from_f0_tau(samples['f0'], samples['tau']) > 1.).all()
+    >>> (conversions.final_mass_from_f0_tau(samples['f0'],
+            samples['tau']) > 1.).all()
     True
 
     Create a distribution with tighter bounds on final mass and spin:
 
-    >>> dist = UniformF0Tau(f0=(10., 2048.), tau=(1e-4,1e-2), final_mass=(20., 200.), final_spin=(0,0.996))
+    >>> dist = UniformF0Tau(f0=(10., 2048.), tau=(1e-4,1e-2),
+            final_mass=(20., 200.), final_spin=(0,0.996))
 
     Check that all random samples drawn from the distribution are in the
     final mass and spin constraints:
 
     >>> samples = dist.rvs(size=1000)
-    >>> (conversions.final_mass_from_f0_tau(samples['f0'], samples['tau']) >= 20.).all()
+    >>> (conversions.final_mass_from_f0_tau(samples['f0'],
+            samples['tau']) >= 20.).all()
     True
-    >>> (conversions.final_mass_from_f0_tau(samples['f0'], samples['tau']) < 200.).all()
+    >>> (conversions.final_mass_from_f0_tau(samples['f0'],
+            samples['tau']) < 200.).all()
     True
-    >>> (conversions.final_spin_from_f0_tau(samples['f0'], samples['tau']) >= 0.).all()
+    >>> (conversions.final_spin_from_f0_tau(samples['f0'],
+            samples['tau']) >= 0.).all()
     True
-    >>> (conversions.final_spin_from_f0_tau(samples['f0'], samples['tau']) < 0.996).all()
+    >>> (conversions.final_spin_from_f0_tau(samples['f0'],
+            samples['tau']) < 0.996).all()
     True
 
     """
@@ -151,7 +158,7 @@ class UniformF0Tau(uniform.Uniform):
 
     def rvs(self, size=1):
         """Draw random samples from this distribution.
-        
+
         Parameters
         ----------
         size : int, optional
