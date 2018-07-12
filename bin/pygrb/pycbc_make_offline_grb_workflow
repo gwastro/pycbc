@@ -47,8 +47,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=__version__)
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-wflow = _workflow.Workflow(args, workflow_name)
-all_files = _workflow.FileList([])
+wflow = _workflow.core.Workflow(args, workflow_name)
+all_files = _workflow.core.FileList([])
 tags = []
 initDir = os.getcwd()
 
@@ -241,8 +241,8 @@ else:
     IPN = False
 
 # If using coh_PTF_inspiral we need bank_veto_bank.xml
-if os.path.basename(wflow.cp.get("executables", "inspiral")) \
-                    == "lalapps_coh_PTF_inspiral":
+if (os.path.basename(wflow.cp.get("executables", "inspiral")) \
+                    == "lalapps_coh_PTF_inspiral") or (os.path.basename(wflow.cp.get("executables", "inspiral")) == "pycbc_multi_inspiral"):
     bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
                                                  bank_veto=True)
     datafind_veto_files.extend(bank_veto_file)
