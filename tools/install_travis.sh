@@ -65,4 +65,4 @@ chmod +x $PREFIX/lib/$p
 popd
 
 # re-install pycbc
-python setup.py install
+pip install .
