@@ -795,7 +795,7 @@ class PyCBCMultiInspiralExecutable(Executable):
         node = Node(self)
 
         if not dfParents:
-            raise ValueError("%s must be supplied with frame files"
+            raise ValueError("%s must be supplied with frame or cache files"
                               % self.name)
 
         # If doing single IFO search, make sure slides are disabled
@@ -805,6 +805,9 @@ class PyCBCMultiInspiralExecutable(Executable):
             raise ValueError("Cannot run with time slides in a single IFO "
                              "configuration! Please edit your configuration "
                              "file accordingly.")
+
+        # Set instuments
+        node.add_opt("--instruments", " ".join(self.ifo_list))
 
         pad_data = self.get_opt('pad-data')
         if pad_data is None:
@@ -828,14 +831,15 @@ class PyCBCMultiInspiralExecutable(Executable):
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
         # Set the input and output files
-        node.new_output_file_opt(data_seg, '.xml.gz', '--output-file',
+        node.new_output_file_opt(data_seg, '.xml.gz', '--output',
                                  tags=tags, store_file=self.retain_files)
-        node.add_input_opt('--non-spin-bank', parent, )
+        node.add_input_opt('--bank-file', parent, )
 
-        for frameCache in dfParents:
-            node.add_input_opt('--%s-frame-cache' % frameCache.ifo.lower(),
-                               frameCache)
-            node.add_arg('--%s-data' % frameCache.ifo.lower())
+        if dfParents is not None:
+            #node.add_arg('--frame-cache %s' % \
+            #    " ".join([":".join([frameCache.ifo, frameCache.name]) \
+            #    for frameCache in dfParents]))
+            node.add_input_list_opt('--frame-cache', dfParents)
 
         if ipn_file is not None:
             node.add_input_opt('--sky-positions-file', ipn_file)
@@ -851,6 +855,15 @@ class PyCBCMultiInspiralExecutable(Executable):
         if slide is not None:
             for ifo in self.ifo_list:
                 node.add_opt('--%s-slide-segment' % ifo.lower(), slide[ifo])
+
+        # Channels
+        channel_names = {}
+        for ifo in self.ifo_list:
+            channel_names[ifo] = self.cp.get_opt_tags(
+                               "workflow", "%s-channel-name" % ifo.lower(), "")
+        channel_names_str = " ".join([val for key, val in channel_names.iteritems()])
+        node.add_opt("--channel-name", channel_names_str)
+
         return node
 
     def get_valid_times(self):

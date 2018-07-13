@@ -35,6 +35,7 @@ from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (select_matchedfilter_class,
         select_tmpltbank_class, sngl_ifo_job_setup,
         multi_ifo_coherent_job_setup)
+from math import radians
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
@@ -297,8 +298,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         from pycbc.workflow.grb_utils import get_sky_grid_scale
         from pycbc.workflow.jobsetup import select_matchedfilter_class
         exe_class = select_matchedfilter_class(match_fltr_exe)
-        cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
-        cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
+        cp.set('inspiral', 'longitude', str(radians(float(cp.get('workflow', 'ra')))))
+        cp.set('inspiral', 'latitude', str(radians(float(cp.get('workflow', 'dec')))))
         if cp.has_option("jitter_skyloc", "apply-fermi-error"):
             cp.set('inspiral', 'sky-error',
                    str(get_sky_grid_scale(float(cp.get('workflow',
