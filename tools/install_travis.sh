@@ -48,22 +48,6 @@ pip install 'setuptools==18.2' --upgrade
 # as Pegasus pulls in boto which hits this issue
 export BOTO_CONFIG=/dev/null
 
-# install pegasus
-
-# FIXME this is a workaround for a bug in psycopg2 2.6 (required by pegasus)
-# see e.g. https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
-echo -e "Trying to get rid of pg_config"
-sudo apt-get -y purge libpq-dev
-echo -e "Making sure it is really gone..."
-if [ -n "`which pg_config`" ]
-then
-    echo -e "...still here:"
-    which pg_config
-    sudo rm -f `which pg_config`
-else
-    echo -e "...seems gone"
-fi
-
 pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
 
 # install the segment database tools
