@@ -772,7 +772,7 @@ class PyCBCInspiralExecutable(Executable):
 
 class PyCBCMultiInspiralExecutable(Executable):
     """
-    The class responsible for setting up jobs for legacy
+    The class responsible for setting up jobs for the
     pycbc_multi_inspiral executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -836,10 +836,10 @@ class PyCBCMultiInspiralExecutable(Executable):
         node.add_input_opt('--bank-file', parent, )
 
         if dfParents is not None:
-            #node.add_arg('--frame-cache %s' % \
-            #    " ".join([":".join([frameCache.ifo, frameCache.name]) \
-            #    for frameCache in dfParents]))
-            node.add_input_list_opt('--frame-cache', dfParents)
+            node.add_arg('--frame-cache %s' % \
+                " ".join([":".join([frameCache.ifo, frameCache.name]) \
+                for frameCache in dfParents]))
+            #node.add_input_list_opt('--frame-cache', dfParents)
 
         if ipn_file is not None:
             node.add_input_opt('--sky-positions-file', ipn_file)
@@ -870,13 +870,13 @@ class PyCBCMultiInspiralExecutable(Executable):
         pad_data = int(self.get_opt('pad-data'))
         if self.has_opt('analyse-segment-end'):
             safety = 1
-            deadtime = int(self.get_opt('segment-duration')) / 2
+            deadtime = int(self.get_opt('segment-length')) / 2
             spec_len = int(self.get_opt('inverse-spec-length')) / 2
             valid_start = self.data_seg[0] + deadtime - spec_len + pad_data \
                     - safety
             valid_end = self.data_seg[1] - spec_len - pad_data - safety
         else:
-            overlap = int(self.get_opt('segment-duration')) / 4
+            overlap = int(self.get_opt('segment-length')) / 4
             valid_start = self.data_seg[0] + overlap + pad_data
             valid_end = self.data_seg[1] - overlap - pad_data
         
