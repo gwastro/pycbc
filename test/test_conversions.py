@@ -141,6 +141,26 @@ class TestParams(unittest.TestCase):
                 failinputs = None
             self.assertTrue(passed, msg.format(func, compval, maxdiff, failinputs))
 
+    def test_chip_compare_lalsuite(self):
+        """Compares effective precession parameter bewteen
+        the pycbc implementation and the lalsuite implementation.
+        """
+        import lal
+        import lalsimulation as lalsim
+
+        f_ref = self.f_lower
+        _,_,chip_lal,_,_,_,_ = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
+            self.m1*lal.MSUN_SI, self.m1*lal.MSUN_SI,
+            f_ref, 0, 0,
+            self.spin1x, self.spin1y, self.spin1z,
+            self.spin2x, self.spin2y, self.spin2z, 2)
+
+        chip_pycbc = conversions.chi_p(
+            self.m1,self.m2,self.spin1x,self.spin1y,self.spin2x,self.spin2y)
+
+        passed, maxdiff, maxidx = almost_equal(chip_lal, chip_pycbc, self.precision)
+        self.assertTrue(passed, "conversions.chi_p failed")
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams))
 
