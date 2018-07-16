@@ -310,9 +310,9 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         #                                               'sky-error')),
         #                                  sigma_sys=0.0)))
         #cp.set('inspiral', 'trigger-time', cp.get('workflow', 'trigger-time'))
-        cp.set('inspiral', 'block-duration',
-               str(abs(science_segs[ifos[0]][0]) - \
-                       2 * int(cp.get('inspiral', 'pad-data'))))
+        #cp.set('inspiral', 'block-duration',
+        #       str(abs(science_segs[ifos[0]][0]) - \
+        #               2 * int(cp.get('inspiral', 'pad-data'))))
 
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
