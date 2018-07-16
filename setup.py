@@ -40,6 +40,8 @@ from setuptools.command.install_egg_info import install_egg_info as egg_info
 from setuptools import Extension, setup, Command
 from setuptools.command.build_ext import build_ext as _build_ext
 
+PY3 = sys.version_info[0] == 3
+
 requires = []
 setup_requires = ['numpy>=1.13.0',]
 install_requires =  setup_requires + ['Mako>=1.0.1',
@@ -47,7 +49,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'cython',
                       'decorator>=3.4.2',
                       'scipy>=0.16.0',
-                      'weave>=0.16.0',
                       'unittest2',
                       'matplotlib>=1.5.1',
                       'pillow',
@@ -63,6 +64,9 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'beautifulsoup4>=4.6.0',
                       'six>=1.10.0',
                       ]
+
+if not PY3:
+    install_requires += ['weave>=0.16.0']
 
 def find_package_data(dirname):
     def find_paths(dirname):
@@ -522,4 +526,3 @@ setup (
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
     ],
 )
-

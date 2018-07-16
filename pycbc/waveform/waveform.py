@@ -37,9 +37,10 @@ from pycbc.waveform import utils as wfutils
 from pycbc.waveform import parameters
 from pycbc.filter import interpolate_complex_frequency, resample_to_delta_t
 import pycbc
-from spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
+from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
+from six.moves import range as xrange
 
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
@@ -263,8 +264,8 @@ if pycbc.HAVE_CUDA:
     _cuda_fd_approximants["IMRPhenomC"] = imrphenomc_tmplt
     _cuda_fd_approximants["SpinTaylorF2"] = cuda_spintaylorf2
 
-cuda_td = dict(_lalsim_td_approximants.items() + _cuda_td_approximants.items())
-cuda_fd = dict(_lalsim_fd_approximants.items() + _cuda_fd_approximants.items())
+cuda_td = dict(list(_lalsim_td_approximants.items()) + list(_cuda_td_approximants.items()))
+cuda_fd = dict(list(_lalsim_fd_approximants.items()) + list(_cuda_fd_approximants.items()))
 
 
 # List the various available approximants ####################################
