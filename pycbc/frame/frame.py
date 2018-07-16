@@ -80,7 +80,7 @@ def _read_channel(channel, stream, start, duration):
     return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start,
                       dtype=d_type)
 
-def locations_to_cache(locations):
+def locations_to_cache(locations, latest=False):
     """ Return a cumulative cache file build from the list of locations
 
     Parameters
@@ -88,6 +88,9 @@ def locations_to_cache(locations):
     locations : list
         A list of strings containing files, globs, or cache files used to build
     a combined lal cache file object.
+    latest : Optional, {False, Boolean}
+        Only return a cache with the most recent frame in the locations.
+        If false, all results are returned.
 
     Returns
     -------
@@ -97,7 +100,11 @@ def locations_to_cache(locations):
     """
     cum_cache = lal.Cache()
     for source in locations:
-        for file_path in glob.glob(source):
+        flist = glob.glob(source)
+        if latest:
+            flist = [max(flist, key=os.path.getctime)]
+
+        for file_path in flist:
             dir_name, file_name = os.path.split(file_path)
             _, file_extension = os.path.splitext(file_name)
 
@@ -463,7 +470,7 @@ class DataBuffer(object):
         result may change due to more files being added to the filesystem,
         for example.
         """
-        cache = locations_to_cache(self.frame_src)
+        cache = locations_to_cache(self.frame_src, latest=True)
         stream = lalframe.FrStreamCacheOpen(cache)
         self.stream = stream
 
