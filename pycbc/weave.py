@@ -22,8 +22,8 @@ import os.path, sys
 import logging
 import shutil, atexit, signal
 import fcntl
+from six import PY3
 
-PY3 = sys.version_info[0] == 3
 if not PY3:
     import weave.inline_tools as inline_tools
     _compile_function = inline_tools.compile_function
@@ -69,7 +69,7 @@ if not PY3:
 else:
     def inline(*args, **kwds):
         raise RuntimeError("Oh no! You tried to use capabilities"
-                           "s we haven't ported to python3 yet")
+                           " we haven't ported to python3 yet")
 
 def insert_weave_option_group(parser):
     """
