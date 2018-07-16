@@ -545,10 +545,11 @@ with ctx:
                 if len(coinc_idx[t_num][s_num]) != 0:
                     print "max coincident snr" + str(max(roh_coinc_dict[t_num][s_num]))
             #If there is only one ifo, then coinc_triggers is just the triggers from ifo
-            elif nifo==1:
+            elif len(coinc_idx[t_num][s_num]) != 0 and nifo==1:
                 coinc_triggers = {}
                 coinc_triggers[ifo_list[0]] = snr[ifo_list[0]][coinc_idx[t_num][s_num]]
             else:
+                coinc_triggers = {}
                 print("No triggers above threshold")
             #If we have triggers above coinc threshold and more than 2 ifos 
             # then calculate the coherent statistics 
@@ -592,7 +593,7 @@ with ctx:
                     auto_chisq[ifo] = autochisq.values(snr[ifo],idx_dict[ifo]+stilde[ifo].analyze.start, template, stilde[ifo].psd, norm_dict[ifo],stilde=stilde[ifo], low_frequency_cutoff=flow)
                 
             #Add the values we want to output to the ifo and network out vals dictionaries
-	    for ifo in opt.instruments:
+	    for ifo in ifo_list:
 		"""
 		ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
 			bank_chisq.values(template, stilde[ifo].psd, stilde[ifo], snrv_dict[ifo],
