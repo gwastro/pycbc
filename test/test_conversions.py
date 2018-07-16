@@ -68,6 +68,8 @@ class TestParams(unittest.TestCase):
                                 self.spin2_polar)
         self.effective_spin = conversions.chi_eff(self.m1, self.m2,
                                 self.spin1z, self.spin2z)
+        self.chi_p = conversions.chi_p(self.m1, self.m2, self.spin1x,
+            self.spin1y, self.spin2x, self.spin2y)
         self.primary_spinx = conversions.primary_spin(self.m1, self.m2,
                                 self.spin1x, self.spin2x)
         self.primary_spiny = conversions.primary_spin(self.m1, self.m2,
@@ -130,6 +132,13 @@ class TestParams(unittest.TestCase):
             (conversions.eta_from_tau0_tau3, (self.tau0, self.tau3, self.f_lower), 'eta'),
             (conversions.mass1_from_tau0_tau3, (self.tau0, self.tau3, self.f_lower), 'mp'),
             (conversions.mass2_from_tau0_tau3, (self.tau0, self.tau3, self.f_lower), 'ms'),
+            (conversions.chi_eff_from_spherical,
+                (self.m1, self.m2, self.spin1_amp, self.spin1_polar,
+                 self.spin2_amp, self.spin2_polar), 'effective_spin'),
+            (conversions.chi_p_from_spherical,
+                (self.m1, self.m2, self.spin1_amp, self.spin1_az,
+                 self.spin1_polar, self.spin2_amp, self.spin2_az,
+                 self.spin2_polar), 'chi_p'),
             ]
 
         for func, args, compval in fchecks:
