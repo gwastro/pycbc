@@ -136,7 +136,7 @@ deploy:
     branch: master
     condition: $PYCBC_CONTAINER = build_and_test
 - provider: pypi
-  user: duncan-brown
+  user: $PYPI_USER
   password: $PYPI_TOKEN
   on:
     tags: true
