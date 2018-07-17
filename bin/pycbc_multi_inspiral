@@ -621,7 +621,7 @@ with ctx:
                     ifo_out_vals['snr'] = snr[ifo][coinc_idx[t_num][s_num]]
 		    snrv_dict[ifo]=snrv_dict[ifo]*norm_dict[ifo]
 		    # IFO is stored as an int
-		    ifo_out_vals['ifo'] = event_mgr.ifo_dict[ifo]
+		    ifo_out_vals['ifo'] = [event_mgr.ifo_dict[ifo]]
 		    event_mgr.add_template_events_to_ifo(ifo, ifo_names,
 			[ifo_out_vals[n] for n in ifo_names])
                 if nifo>2:
