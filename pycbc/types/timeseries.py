@@ -102,7 +102,8 @@ class TimeSeries(Array):
             new_epoch = self._epoch
         else:
             if index.start < 0:
-                raise ValueError('Negative start index not supported')
+                raise ValueError(('Negative start index ({})'
+                                  ' not supported').format(index.start))
             new_epoch = self._epoch + index.start * self._delta_t
 
         if index.step is not None:
