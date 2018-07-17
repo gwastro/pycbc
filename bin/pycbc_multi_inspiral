@@ -88,9 +88,7 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
 parser.add_argument("--longitude", type=float)
 parser.add_argument("--latitude", type=float)
 parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
-                    Triggers with coincident snr below this value with be discarded""")
-parser.add_argument("--coh-threshold", type=float, default=0.0, help="""
-                    Triggers with coherent snr below this value with be discarded""")
+                    Triggers with coincident/coherent snr below this value with be discarded""")
 parser.add_argument("--null-fraction", type=float, default=0.0, help="""
                     Triggers with null_snr/coinc_snr above this value with be discarded""")
 
@@ -123,11 +121,9 @@ pol = 1.21771
 
 """
 coinc_threshold = 7.0
-coh_threshold = 7.0
 null_fraction = 0.2 #Triggers with null_snr/coinc_snr>null_fraction are cut
 """
 coinc_threshold = opt.coinc_threshold
-coh_threshold = opt.coh_threshold
 null_fraction = opt.null_fraction #Triggers with null_snr/coinc_snr>null_fraction are cut
 generate_histograms = False
 generate_snr_plots = False
@@ -558,7 +554,7 @@ with ctx:
                 projection_matrix = get_projection_matrix(wp,wc)
                 roh_coh_dict[t_num][s_num],coinc_idx[t_num][s_num],coinc_triggers,\
                         roh_coinc_dict[t_num][s_num] = coherent_snr(coinc_triggers,\
-                          coinc_idx[t_num][s_num],coh_threshold,projection_matrix,\
+                          coinc_idx[t_num][s_num],coinc_threshold,projection_matrix,\
                                                       roh_coinc_dict[t_num][s_num])
                 if len(coinc_idx[t_num][s_num]) != 0:
                     print "max coherent snr" + str(max(roh_coh_dict[t_num][s_num]))
