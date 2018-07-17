@@ -1776,7 +1776,8 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
     valid_start -= int(data_reader.sample_rate * coinc_window)
     valid_end += half_dur_samples
     if valid_start < 0 or valid_end > len(snr)-1:
-        raise ValueError('Requested SNR duration ({0} s) too long'.format(duration))
+        raise ValueError(('Requested SNR duration ({0} s)'
+                          ' too long').format(duration))
 
     snr = snr[slice(valid_start, valid_end)]
     snr_dt = 1. / data_reader.sample_rate
@@ -1791,8 +1792,13 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
     return snr[onsource_slice] * norm, stilde.psd
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
-           'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
-           'matched_filter_core', 'correlate', 'MatchedFilterControl', 'LiveBatchMatchedFilter',
-           'MatchedFilterSkyMaxControl','MatchedFilterSkyMaxControlNoPhase','compute_max_snr_over_sky_loc_stat_no_phase', 'compute_max_snr_over_sky_loc_stat',
-           'compute_followup_snr_series','compute_u_val_for_sky_loc_stat_no_phase','compute_u_val_for_sky_loc_stat']
+           'sigmasq_series', 'make_frequency_series', 'overlap',
+           'overlap_cplx', 'matched_filter_core', 'correlate',
+           'MatchedFilterControl', 'LiveBatchMatchedFilter',
+           'MatchedFilterSkyMaxControl', 'MatchedFilterSkyMaxControlNoPhase',
+           'compute_max_snr_over_sky_loc_stat_no_phase',
+           'compute_max_snr_over_sky_loc_stat',
+           'compute_followup_snr_series',
+           'compute_u_val_for_sky_loc_stat_no_phase',
+           'compute_u_val_for_sky_loc_stat']
 
