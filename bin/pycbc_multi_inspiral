@@ -388,9 +388,9 @@ with ctx:
         'snr'            : complex64,
 	'chisq'          : float32,
 	'chisq_dof'      : int,
-	#'bank_chisq'     : float32,
-	#'bank_chisq_dof' : int,
-	#'cont_chisq'     : float32,
+	'bank_chisq'     : float32,
+	'bank_chisq_dof' : int,
+	'cont_chisq'     : float32,
 		}
     ifo_out_vals = {
 	'time_index'     : None,
@@ -398,9 +398,9 @@ with ctx:
         'snr'            : None,
 	'chisq'          : None,
 	'chisq_dof'      : None,
-	#'bank_chisq'     : None,
-	#'bank_chisq_dof' : None,
-	#'cont_chisq'     : None,
+	'bank_chisq'     : None,
+	'bank_chisq_dof' : None,
+	'cont_chisq'     : None,
 	       }
     ifo_names = sorted(ifo_out_vals.keys())
 
@@ -590,7 +590,6 @@ with ctx:
                 
             #Add the values we want to output to the ifo and network out vals dictionaries
 	    for ifo in ifo_list:
-		"""
 		ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
 			bank_chisq.values(template, stilde[ifo].psd, stilde[ifo], snrv_dict[ifo],
 					  norm_dict[ifo], idx_dict[ifo]+stilde[ifo].analyze.start)
@@ -599,7 +598,6 @@ with ctx:
 		ifo_out_vals['cont_chisq'] = autochisq.values(snr[ifo],
 			idx_dict[ifo]+stilde[ifo].analyze.start, template, stilde[ifo].psd, norm_dict[ifo],
 			stilde=stilde[ifo], low_frequency_cutoff=flow)
-                """
 		ifo_out_vals['chisq'], ifo_out_vals['chisq_dof'] =\
 			power_chisq.values(corr_dict[ifo], coinc_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
 		#Don't know what this line is for (edited the next line instead so that I don't have to change idx)

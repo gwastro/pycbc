@@ -660,9 +660,9 @@ class EventManagerCoherent(EventManager):
                 except Exception:
                     f['coa_phase'] = numpy.angle(ifo_events['snr'])
                 f['chisq'] = ifo_events['chisq']
-                #f['bank_chisq'] = ifo_events['bank_chisq']
-                #f['bank_chisq_dof'] = ifo_events['bank_chisq_dof']
-                #f['cont_chisq'] = ifo_events['cont_chisq']
+                f['bank_chisq'] = ifo_events['bank_chisq']
+                f['bank_chisq_dof'] = ifo_events['bank_chisq_dof']
+                f['cont_chisq'] = ifo_events['cont_chisq']
                 f['end_time'] = ifo_events['time_index'] / \
                         float(self.opt.sample_rate[ifo_str]) + \
                         self.opt.gps_start_time[ifo_str]
