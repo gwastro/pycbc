@@ -1769,7 +1769,7 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
 
     valid_end = int(len(snr) - data_reader.trim_padding)
     valid_start = int(valid_end - data_reader.blocksize \
-            * data_reader.sample_rate)
+                      * data_reader.sample_rate)
 
     half_dur_samples = int(data_reader.sample_rate * duration / 2)
     valid_start -= half_dur_samples
@@ -1782,11 +1782,11 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
     snr = snr[slice(valid_start, valid_end)]
     snr_dt = 1. / data_reader.sample_rate
     snr_epoch = data_reader.start_time - half_dur_samples * snr_dt \
-            - coinc_window
+        - coinc_window
     snr = TimeSeries(snr, delta_t=snr_dt, epoch=snr_epoch)
 
     onsource_idx = int(round(float(trig_time - snr.start_time) \
-            * snr.sample_rate))
+                             * snr.sample_rate))
     onsource_slice = slice(onsource_idx - half_dur_samples,
                            onsource_idx + half_dur_samples + 1)
     return snr[onsource_slice] * norm, stilde.psd
