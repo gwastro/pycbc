@@ -201,7 +201,7 @@ def coherent_snr(snr_triggers,index,threshold,projection_matrix,coinc_snr=[]):
     Output: roh_coh: an array of the coherent snr for the detector network
             index  : Indexes that survive cuts
             snrv   : Dictionary of individual ifo triggers that survive cuts
-            coinc_snr: The coincicedent snr value for triggers surviving the coherent cut
+            coinc_snr: The coincident snr value for triggers surviving the coherent cut
     Inputs: snr_triggers: is a dictionary of the normalised complex snr time series for 
                       each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
             index  : An array of the indexes you want to analyse. Not used for 
@@ -249,20 +249,34 @@ def coincident_snr(snr_dict,index,threshold):
     roh_coinc = roh_coinc[roh_coinc>threshold]
     return roh_coinc, index, coinc_triggers
 
-def null_snr(roh_coh,roh_coinc,null_fraction,snrv,index):
+def null_snr(roh_coh,roh_coinc,null_min=5.25,null_grad=0.2,null_step=20.,index=[],snrv=[]):
+    """
+    Output: null: null snr for surviving triggers
+            roh_coh: Coherent snr for surviving triggers
+            roh_coinc: Coincident snr for suviving triggers
+            index: Indexes for surviving triggers
+            snrv: Single detector snr for surviving triggers
+    Input:  roh_coh: Numpy array of coherent snr triggers
+            roh_coinc: Numpy array of coincident snr triggers
+            null_min: Any trigger with null snr below this is cut
+            null_grad: Any trigger with null snr<(null_grad*roh_coh+null_min) is cut
+            null_step: The value for required for coherent snr to start increasing the null threshold
+            index: Optional- Indexes of triggers. If given, will remove triggers that fail cuts
+            snrv: Optional- Individual ifo snr for triggers. If given will remove triggers that fail cut
+    """
     null2 = roh_coinc**2 - roh_coh**2
     #Numerical errors may make this negative and break the sqrt, so set negaitive values to 0
     null2[null2<0] = 0 
     null = null2**0.5
-    index = index[(null/roh_coinc)<null_fraction]
-    roh_coh  = roh_coh[(null/roh_coinc)<null_fraction] 
-    #Still need roh coinc, so create temporary array with triggers 
-    #below threshold removed
-    roh_coinc_temp = roh_coinc[(null/roh_coinc)<null_fraction] 
+    # Make cut on null
+    keep = np.logical_and(null<null_min,roh_coh<=null_step)
+    keep = np.logical_and(null<(roh_coh*null_grad + null_min), roh_coh>null_step)
+    index = index[keep]
+    roh_coh  = roh_coh[keep] 
     for ifo in opt.instruments:
-        snrv[ifo] = snrv[ifo][(null/roh_coinc)<null_fraction]
-    null = null[(null/roh_coinc)<null_fraction]
-    roh_coinc = roh_coinc_temp
+        snrv[ifo] = snrv[ifo][keep]
+    roh_coinc = roh_coinc[keep] 
+    null = null[keep]
     return null, roh_coh, roh_coinc, index, snrv
 
 def get_coinc_indexes(idx_dict,time_delay_idx):
@@ -565,8 +579,8 @@ with ctx:
                     null_dict[t_num][s_num],roh_coh_dict[t_num][s_num],\
                         roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num],\
                          coinc_triggers = null_snr(roh_coh_dict[t_num][s_num],\
-                         roh_coinc_dict[t_num][s_num],null_fraction,coinc_triggers,\
-                                                            coinc_idx[t_num][s_num])
+                         roh_coinc_dict[t_num][s_num],snrv=coinc_triggers,\
+                                                            index=coinc_idx[t_num][s_num])
                     if len(coinc_idx[t_num][s_num]) != 0:
                         print "max null snr" + str(max(null_dict[t_num][s_num]))
             #We are now going to find the individual detector chi2 values. To do this it
