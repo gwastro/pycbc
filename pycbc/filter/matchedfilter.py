@@ -1696,7 +1696,8 @@ class LiveBatchMatchedFilter(object):
         return result, veto_info
 
 def compute_followup_snr_series(data_reader, htilde, trig_time,
-                                duration=0.095, check_state=True):
+                                duration=0.095, check_state=True,
+                                coinc_window=0.05):
     """Given a StrainBuffer, a template frequency series and a trigger time,
     compute a portion of the SNR time series centered on the trigger for its
     rapid sky localization and followup.
@@ -1724,6 +1725,10 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
     check_state : boolean
         If True, and the detector was offline or flagged for bad data quality
         at any point during the inspiral, then return (None, None) instead.
+
+    coinc_window : float (optional)
+        Maximum possible time between coincident triggers at different
+        detectors. This is needed to properly determine data padding.
 
     Returns
     -------
@@ -1759,24 +1764,28 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
 
     qtilde = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
     correlate(htilde, stilde, qtilde)
-    snr = qtilde * 0
+    snr = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
     ifft(qtilde, snr)
 
-    valid_end = int(len(qtilde) - data_reader.trim_padding)
-    valid_start = int(valid_end - data_reader.blocksize * data_reader.sample_rate)
+    valid_end = int(len(snr) - data_reader.trim_padding)
+    valid_start = int(valid_end - data_reader.blocksize \
+            * data_reader.sample_rate)
 
     half_dur_samples = int(data_reader.sample_rate * duration / 2)
     valid_start -= half_dur_samples
+    valid_start -= int(data_reader.sample_rate * coinc_window)
     valid_end += half_dur_samples
     if valid_start < 0 or valid_end > len(snr)-1:
         raise ValueError('Requested SNR duration ({0} s) too long'.format(duration))
 
     snr = snr[slice(valid_start, valid_end)]
     snr_dt = 1. / data_reader.sample_rate
-    snr_epoch = data_reader.start_time - half_dur_samples * snr_dt
+    snr_epoch = data_reader.start_time - half_dur_samples * snr_dt \
+            - coinc_window
     snr = TimeSeries(snr, delta_t=snr_dt, epoch=snr_epoch)
 
-    onsource_idx = int(round(float(trig_time - snr.start_time) * snr.sample_rate))
+    onsource_idx = int(round(float(trig_time - snr.start_time) \
+            * snr.sample_rate))
     onsource_slice = slice(onsource_idx - half_dur_samples,
                            onsource_idx + half_dur_samples + 1)
     return snr[onsource_slice] * norm, stilde.psd
