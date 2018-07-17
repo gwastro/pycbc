@@ -89,8 +89,12 @@ parser.add_argument("--longitude", type=float)
 parser.add_argument("--latitude", type=float)
 parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
                     Triggers with coincident/coherent snr below this value with be discarded""")
-parser.add_argument("--null-fraction", type=float, default=0.0, help="""
-                    Triggers with null_snr/coinc_snr above this value with be discarded""")
+parser.add_argument("--null-min", type=float, default=5.25, help="""
+                    Triggers with null_snr above this value with be discarded""")
+parser.add_argument("--null-grad", type=float, default=0.2, help="""
+                    The gradient of the line defining the null cut after the null step""")
+parser.add_argument("--null-step", type=float, default=20., help="""Triggers with coherent snr 
+                    above null_step will be cut according to the null_grad and null_min""")
 
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
