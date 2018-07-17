@@ -210,7 +210,7 @@ def coherent_snr(snr_triggers,index,threshold,projection_matrix,coinc_snr=[]):
             projection_matrix 
             coinc_snr: Optional- The coincident snr for each trigger. 
     """
-    #Calculate roh_roh
+    #Calculate roh_coh
     snr_array = np.array([snr_triggers[ifo] for ifo in opt.instruments])
     x = np.inner(snr_array.conj().transpose(),projection_matrix)
     roh_coh2 = sum(x.transpose()*snr_array)
