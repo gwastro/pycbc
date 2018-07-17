@@ -88,9 +88,9 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
 parser.add_argument("--longitude", type=float)
 parser.add_argument("--latitude", type=float)
 parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
-                    Triggers with coincident/coherent snr below this value with be discarded""")
+                    Triggers with coincident/coherent snr below this value will be discarded""")
 parser.add_argument("--null-fraction", type=float, default=0.0, help="""
-                    Triggers with null_snr/coinc_snr above this value with be discarded""")
+                    Triggers with null_snr/coinc_snr above this value will be discarded""")
 
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
