@@ -587,7 +587,7 @@ with ctx:
                                                             index=coinc_idx[t_num][s_num])
                     if len(coinc_idx[t_num][s_num]) != 0:
                         logging.info("Max null SNR = %s" % str(max(null_dict[t_num][s_num])))
-            logging.info("%s points above null threshold: " % str(len(null_dict[t_num][s_num])))
+                    logging.info("%s points above null threshold: " % str(len(null_dict[t_num][s_num])))
             #We are now going to find the individual detector chi2 values. To do this it
             #is useful to find the indexes of coinc triggers in the detector frame.
             #We do this by overwriting the dictionary of all single detector triggers
