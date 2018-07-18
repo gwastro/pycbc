@@ -248,7 +248,7 @@ def get_version_info():
             f.write('git_author = \"%s\"\n' % vcs_info.author)
             f.write('git_committer = \"%s\"\n' % vcs_info.committer)
             f.write('git_status = \'%s\'\n' % vcs_info.status)
-            f.write('git_builder = \'%s\'\n' % vcs_info.builder)
+            f.write('git_builder = \"%s\"\n' % vcs_info.builder)
             f.write('git_build_date = \'%s\'\n' % vcs_info.build_date)
             f.write('git_verbose_msg = """Branch: %s\n'
                     'Tag: %s\n'
@@ -283,10 +283,10 @@ def get_version_info():
             f.write('\ngit_hash = \'%s\'\n' % hash)
             f.write('git_branch = \'%s\'\n' % branch)
             f.write('git_tag = \'%s\'\n' % tag)
-            f.write('git_author = \'%s\'\n' % author)
-            f.write('git_committer = \'%s\'\n' % committer)
+            f.write('git_author = \"%s\"\n' % author)
+            f.write('git_committer = \"%s\"\n' % committer)
             f.write('git_status = \'%s\'\n' % status)
-            f.write('git_builder = \'%s\'\n' % builder)
+            f.write('git_builder = \"%s\"\n' % builder)
             f.write('git_build_date = \'%s\'\n' % build_date)
             f.write('git_verbose_msg = """Version: %s Release: %s \n'
                     ' """\n' % (version, release))
