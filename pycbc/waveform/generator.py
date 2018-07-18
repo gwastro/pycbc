@@ -559,7 +559,7 @@ class FDomainDetFrameGenerator(object):
                     "variable args.")
             # Dictionary of frequency arrays for each detector
             if frozen_params['sample_points_for_detectors']:
-                self.sample_points_for_detectors =
+                self.sample_points_for_detectors = \
                 frozen_params['sample_points_for_detectors'].copy()
             else:
                 self.sample_points_for_detectors = None
