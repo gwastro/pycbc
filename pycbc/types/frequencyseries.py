@@ -43,13 +43,15 @@ class FrequencySeries(Array):
     ----------
     delta_f : float
         Frequency spacing
+    twosided: bool
+        Is this a two-sided frequency series or not
     epoch : lal.LIGOTimeGPS
         Time at 0 index.
     sample_frequencies : Array
         Frequencies that each index corresponds to.
     """
 
-    def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True):
+    def __init__(self, initial_array, delta_f=None, epoch="", dtype=None, copy=True, twosided=False):
         if len(initial_array) < 1:
             raise ValueError('initial_array must contain at least one sample.')
         if delta_f is None:
@@ -77,11 +79,12 @@ class FrequencySeries(Array):
                 except:
                     raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
+        self.twosided = twosided
         self._delta_f = delta_f
         self._epoch = epoch
 
     def _return(self, ary):
-        return FrequencySeries(ary, self._delta_f, epoch=self._epoch, copy=False)
+        return FrequencySeries(ary, self._delta_f, epoch=self._epoch, copy=False, twosided=self.twosided)
 
     def _typecheck(self, other):
         if isinstance(other, FrequencySeries):
@@ -111,11 +114,11 @@ class FrequencySeries(Array):
     def get_sample_frequencies(self):
         """Return an Array containing the sample frequencies.
         """
-        if self.kind is 'real':
+        if not self.twosided:
             return Array(range(len(self))) * self._delta_f
-        if self.kind is 'complex':
+        else:
             npts = len(self)
-            return self._delta_f * _numpy.array([ k if  k<=npts/2 else -k+npts for k in _numpy.arange(npts)])  # How lal packs its fft
+            return self._delta_f * _numpy.array([ k if  k<=npts/2 else -npts+k for k in _numpy.arange(npts)])  # How lal packs its fft
     sample_frequencies = property(get_sample_frequencies,
                                   doc="Array of the sample frequencies.")
 
@@ -127,7 +130,7 @@ class FrequencySeries(Array):
         return FrequencySeries(Array._getslice(self, index),
                                delta_f=new_delta_f,
                                epoch=self._epoch,
-                               copy=False)
+                               copy=False, twosided=self.twosided)
 
     def at_frequency(self, freq):
         """ Return the value at the specified frequency
@@ -432,7 +435,7 @@ class FrequencySeries(Array):
             raise ValueError('Path must end with .npy, .txt, .xml, .xml.gz '
                              'or .hdf')
 
-    @_noreal
+#    @_noreal
     def to_timeseries(self, delta_t=None):
         """ Return the Fourier transform of this time series.
 
@@ -459,6 +462,8 @@ class FrequencySeries(Array):
         # add 0.5 to round integer
         tlen  = int(1.0 / self.delta_f / delta_t + 0.5)
         flen = tlen / 2 + 1
+        if self.twosided:
+            flen=tlen
         
         if flen < len(self):
             raise ValueError("The value of delta_t (%s) would be "
@@ -468,7 +473,7 @@ class FrequencySeries(Array):
             tmp = self
         else:
             tmp = FrequencySeries(zeros(flen, dtype=self.dtype), 
-                             delta_f=self.delta_f, epoch=self.epoch)
+                             delta_f=self.delta_f, epoch=self.epoch, twosided=self.twosided)
             tmp[:len(self)] = self[:]
         
         f = TimeSeries(zeros(tlen, 
