@@ -115,7 +115,7 @@ class FrequencySeries(Array):
             return Array(range(len(self))) * self._delta_f
         if self.kind is 'complex':
             npts = len(self)
-            return self._delta_f * _numpy.array([ npts/2 -k if  k<=npts/2 else -k+npts/2 for k in np.arange(npts)])  # How lal packs its fft
+            return self._delta_f * _numpy.array([ k if  k<=npts/2 else -k+npts for k in _numpy.arange(npts)])  # How lal packs its fft
     sample_frequencies = property(get_sample_frequencies,
                                   doc="Array of the sample frequencies.")
 
