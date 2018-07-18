@@ -742,8 +742,8 @@ class TimeSeries(Array):
 
         # add 0.5 to round integer
         tlen  = int(1.0 / delta_f / self.delta_t + 0.5)
-        flen = tlen / 2 + 1       
-        twosided_flag =twosided or self.kind=='complex'
+        flen = tlen / 2 + 1
+        twosided_flag = (twosided or self.kind == 'complex')
         if twosided_flag:
             # two-sided complex FFT
             flen = tlen
