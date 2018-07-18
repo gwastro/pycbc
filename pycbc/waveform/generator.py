@@ -463,6 +463,8 @@ class FDomainDetFrameGenerator(object):
     \**frozen_params
         Keyword arguments setting the parameters that will not be changed from
         call-to-call of the generate function.
+    apply_time_shift: bool
+        Whether to apply a time shift to the waveform
 
     Attributes
     ----------
@@ -523,7 +525,8 @@ class FDomainDetFrameGenerator(object):
     location_args = set(['tc', 'ra', 'dec', 'polarization'])
 
     def __init__(self, rFrameGeneratorClass, epoch, detectors=None,
-                 variable_args=(), recalib=None, gates=None, **frozen_params):
+                 variable_args=(), recalib=None, gates=None, apply_time_shift=True,
+                 **frozen_params):
         # initialize frozen & current parameters:
         self.current_params = frozen_params.copy()
         self._static_args = frozen_params.copy()
@@ -554,10 +557,17 @@ class FDomainDetFrameGenerator(object):
                     "parameters %s. " %(', '.join(missing_args)) +
                     "These must be either in the frozen params or the "
                     "variable args.")
+            # Dictionary of frequency arrays for each detector
+            if frozen_params['sample_points_for_detectors']:
+                self.sample_points_for_detectors =
+                frozen_params['sample_points_for_detectors'].copy()
+            else:
+                self.sample_points_for_detectors = None
         else:
             self.detectors = {'RF': None}
         self.detector_names = sorted(self.detectors.keys())
         self.gates = gates
+        self.apply_time_shift = apply_time_shift
 
     def set_epoch(self, epoch):
         """Sets the epoch; epoch should be a float or a LIGOTimeGPS."""
@@ -587,7 +597,19 @@ class FDomainDetFrameGenerator(object):
         self.current_params.update(kwargs)
         rfparams = {param: self.current_params[param]
             for param in kwargs if param not in self.location_args}
-        hp, hc = self.rframe_generator.generate(**rfparams)
+
+        if sample_points_for_detectors:
+            hp_dict = {}
+            hc_dict = {}
+            for k, v in sample_points_for_detectors.iteritems():
+                freqs = sample_points_for_detectors[k]
+                hp, hc = self.rframe_generator.generate(sample_points=freqs, **rfparams)
+                hp_dict[k] = hp
+                hc_dict[k] = hc
+            hp, hc = None, None
+        else:
+            hp, hc = self.rframe_generator.generate(**rfparams)
+
         if isinstance(hp, TimeSeries):
             df = self.current_params['delta_f']
             hp = hp.to_frequencyseries(delta_f=df)
@@ -607,12 +629,17 @@ class FDomainDetFrameGenerator(object):
                             self.current_params['dec'],
                             self.current_params['polarization'],
                             self.current_params['tc'])
-                thish = fp*hp + fc*hc
-                # apply the time shift
-                tc = self.current_params['tc'] + \
-                    det.time_delay_from_earth_center(self.current_params['ra'],
-                         self.current_params['dec'], self.current_params['tc'])
-                h[detname] = apply_fd_time_shift(thish, tc+tshift, copy=False)
+                if sample_points_for_detectors:
+                    thish = fp*hp[detname] + fc*hc[detname]
+                else:
+                    thish = fp*hp + fc*hc
+                if self.apply_time_shift:
+                    tc = self.current_params['tc'] + \
+                        det.time_delay_from_earth_center(self.current_params['ra'],
+                             self.current_params['dec'], self.current_params['tc'])
+                    h[detname] = apply_fd_time_shift(thish, tc+tshift, copy=False)
+                else:
+                    h[detname] = thish
                 if self.recalib:
                     # recalibrate with given calibration model
                     h[detname] = \
@@ -620,7 +647,7 @@ class FDomainDetFrameGenerator(object):
                             **self.current_params)
         else:
             # no detector response, just use the + polarization
-            if 'tc' in self.current_params:
+            if 'tc' in self.current_params and apply_time_shift:
                 hp = apply_fd_time_shift(hp, self.current_params['tc']+tshift,
                                          copy=False)
             h['RF'] = hp
