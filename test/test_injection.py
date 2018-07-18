@@ -22,14 +22,14 @@ import tempfile
 import lal
 import pycbc
 from pycbc.types import TimeSeries
-from pycbc.detector import Detector
+from pycbc.detector import Detector, get_available_detectors
 from pycbc.inject import InjectionSet
 import unittest
 import numpy
 import itertools
-from pycbc.ligolw import ligolw
-from pycbc.ligolw import lsctables
-from pycbc.ligolw import utils as ligolw_utils
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
 from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU
@@ -85,6 +85,11 @@ class MyInjection(object):
 
 class TestInjection(unittest.TestCase):
     def setUp(self):
+        available_detectors = get_available_detectors()
+        available_detectors = [a[0] for a in available_detectors]
+        self.assertTrue('H1' in available_detectors)
+        self.assertTrue('L1' in available_detectors)
+        self.assertTrue('V1' in available_detectors)
         self.detectors = [Detector(d) for d in ['H1', 'L1', 'V1']]
         self.sample_rate = 4096.
         self.earth_time = lal.REARTH_SI / lal.C_SI

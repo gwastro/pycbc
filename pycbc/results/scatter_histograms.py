@@ -473,7 +473,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                 plot_marginal=True, plot_scatter=True,
                 marginal_percentiles=None, contour_percentiles=None,
                 zvals=None, show_colorbar=True, cbar_label=None,
-                vmin=None, vmax=None, scatter_cmap='plasma',
+                vmin=None, vmax=None, scatter_cmap='plasma', scatter_size=5,
                 plot_density=False, plot_contours=True,
                 density_cmap='viridis',
                 contour_color=None, hist_color='black',
@@ -530,6 +530,8 @@ def create_multidim_plot(parameters, samples, labels=None,
         zvals.
     scatter_cmap : {'plasma', string}
         The color map to use for the scatter points. Default is 'plasma'.
+    scatter_size : {5, scalar or array}
+        Size of points to pass to scatter plot
     plot_density : {False, bool}
         Plot the density of points as a color map.
     plot_contours : {True, bool}
@@ -658,9 +660,10 @@ def create_multidim_plot(parameters, samples, labels=None,
                 alpha = 0.3
             else:
                 alpha = 1.
-            plt = ax.scatter(x=samples[px], y=samples[py], c=zvals, s=5,
-                        edgecolors='none', vmin=vmin, vmax=vmax,
-                        cmap=scatter_cmap, alpha=alpha, zorder=2)
+            plt = ax.scatter(x=samples[px], y=samples[py], c=zvals,
+                             s=scatter_size, edgecolors='none',
+                             vmin=vmin, vmax=vmax,
+                             cmap=scatter_cmap, alpha=alpha, zorder=2)
 
         if plot_contours or plot_density:
             # Exclude out-of-bound regions

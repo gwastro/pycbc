@@ -32,8 +32,27 @@ from numpy import cos, sin
 from pycbc.types import TimeSeries
 
 
+def get_available_detectors():
+    """Return list of detectors known in the currently sourced lalsuite.
+
+    This function will query lalsuite about which detectors are known to
+    lalsuite. Detectors are identified by a two character string e.g. 'K1',
+    but also by a longer, and clearer name, e.g. KAGRA. This function returns
+    both. As LAL doesn't really expose this functionality we have to make some
+    assumptions about how this information is stored in LAL. Therefore while
+    we hope this function will work correctly, it's possible it will need
+    updating in the future. Better if lal would expose this information
+    properly.
+    """
+    ld = lal.__dict__
+    known_lal_names = [j for j in ld.keys() if "DETECTOR_PREFIX" in j]
+    known_prefixes = [ld[k] for k in known_lal_names]
+    known_names = [ld[k.replace('PREFIX', 'NAME')] for k in known_lal_names]
+    return zip(known_prefixes, known_names)
+
+
 class Detector(object):
-    """A gravitaional wave detector
+    """A gravitational wave detector
     """
     def __init__(self, detector_name):
         self.name = str(detector_name)
@@ -48,7 +67,7 @@ class Detector(object):
 
         Parameters
         ----------
-        detector: Detector
+        det: Detector
             The other detector to determine the light travel time to.
 
         Returns

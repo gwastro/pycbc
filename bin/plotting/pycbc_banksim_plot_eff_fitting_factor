@@ -84,11 +84,8 @@ if opt.filter_injections:
 
 fig = plt.figure()
 ax = fig.gca()
-try:
-    cmap = plt.get_cmap('viridis')
-except ValueError:
-    from pycbc.future import cmaps
-    cmap = cmaps['viridis']
+cmap = plt.get_cmap('viridis')
+
 
 if not opt.log_colorbar:
     sctr = ax.scatter(m1, m2, c=eff_ff, cmap=cmap, edgecolors='none',

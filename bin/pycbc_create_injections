@@ -123,7 +123,7 @@ from pycbc.workflow import WorkflowConfigParser
 import h5py
 
 # stuff for writing xml files... remove this when we drop xml
-from pycbc.ligolw import ligolw, lsctables, table, utils as ligolw_utils
+from glue.ligolw import ligolw, lsctables, table, utils as ligolw_utils
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass

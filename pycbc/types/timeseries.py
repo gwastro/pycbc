@@ -450,7 +450,8 @@ class TimeSeries(Array):
                            **kwds)
 
     def whiten(self, segment_duration, max_filter_duration, trunc_method='hann',
-                     remove_corrupted=True, low_frequency_cutoff=None, **kwds):
+                     remove_corrupted=True, low_frequency_cutoff=None,
+                     return_psd=False, **kwds):
         """ Return a whitened time series
 
         Parameters
@@ -470,6 +471,9 @@ class TimeSeries(Array):
             Low frequency cutoff to pass to the inverse spectrum truncation.
             This should be matched to a known low frequency cutoff of the
             data if there is one.
+        return_psd : {False, Boolean}
+            Return the estimated and conditioned PSD that was used to whiten
+            the data.
         kwds : keywords
             Additional keyword arguments are passed on to the `pycbc.psd.welch` method.
             
@@ -491,10 +495,13 @@ class TimeSeries(Array):
                    trunc_method=trunc_method)
 
         # Whiten the data by the asd
-        white = (self.to_frequencyseries() / psd ** 0.5).to_timeseries()
+        white = (self.to_frequencyseries() / psd**0.5).to_timeseries()
 
         if remove_corrupted:
             white = white[max_filter_len/2:len(self)-max_filter_len/2]
+
+        if return_psd:
+            return white, psd
 
         return white
 

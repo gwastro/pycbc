@@ -17,10 +17,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-from pycbc.ligolw import ilwd
-from pycbc.ligolw import ligolw
-from pycbc.ligolw import lsctables
-from pycbc.ligolw import utils
+from glue.ligolw import ilwd
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
 import logging
 import numpy
 import pycbc

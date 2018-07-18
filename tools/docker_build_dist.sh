@@ -6,6 +6,7 @@ for i in $*; do
   case $i in
     --pycbc-container=*) PYCBC_CONTAINER="`echo $i|sed 's/^--pycbc-container=//'`";;
     --pull-request=*) TRAVIS_PULL_REQUEST="`echo $i|sed 's/^--pull-request=//'`";;
+    --lalsuite-hash=*) LALSUITE_HASH="`echo $i|sed 's/^--lalsuite-hash=//'`";;
     --commit=*) TRAVIS_COMMIT="`echo $i|sed 's/^--commit=//'`";;
     --secure=*) TRAVIS_SECURE_ENV_VARS="`echo $i|sed 's/^--secure=//'`";;
     --tag=*) TRAVIS_TAG="`echo $i|sed 's/^--tag=//'`";;
@@ -21,7 +22,6 @@ else
 fi
 
 # set the lalsuite checkout to use
-LALSUITE_HASH="8cbd1b7187ce3ed9a825d6ed11cc432f3cfde9a5"
 
 if [ "x$TRAVIS_TAG" == "x" ] ; then
   TRAVIS_TAG="master"
@@ -53,6 +53,23 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   mkdir -p ${BUILD}
   export PYTHONUSERBASE=${BUILD}/.local
   export XDG_CACHE_HOME=${BUILD}/.cache
+
+  # Autoconf needs m4
+  wget -O m4-1.4.9.tar.gz http://ftp.gnu.org/gnu/m4/m4-1.4.9.tar.gz
+  tar -zvxf m4-1.4.9.tar.gz
+  cd m4-1.4.9
+  ./configure
+  make
+  make install
+  cd ..
+
+  # Build new autoconf
+  curl -L -O http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
+  tar zxf autoconf-2.69.tar.gz
+  cd autoconf-2.69
+  ./configure
+  make && make install
+  cd ..
 
   # get library to build optimized pycbc_inspiral bundle
   wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
@@ -158,7 +175,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   echo -e "\\n>> [`date`] Installing LAL"
   mkdir -p ${VIRTUAL_ENV}/src
   cd ${VIRTUAL_ENV}/src
-  git clone --depth 1 https://git.ligo.org/lscsoft/lalsuite-archive.git lalsuite
+  git clone https://git.ligo.org/lscsoft/lalsuite.git lalsuite
   cd ${VIRTUAL_ENV}/src/lalsuite
   git checkout ${LALSUITE_HASH}
   ./00boot

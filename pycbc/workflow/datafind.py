@@ -34,7 +34,7 @@ import os, copy
 import urlparse
 import logging
 from glue import segments, lal
-from pycbc.ligolw import utils, table, lsctables, ligolw
+from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 

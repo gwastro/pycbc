@@ -124,9 +124,6 @@ pol = 1.21771
 
 
 coinc_threshold = opt.coinc_threshold
-null_min = opt.null_min
-null_grad = opt.null_grad
-null_step = opt.null_step
 generate_histograms = False
 generate_snr_plots = False
 generate_chi2_plots = False
@@ -207,6 +204,7 @@ def coherent_snr(snr_triggers,index,threshold,projection_matrix,coinc_snr=[]):
             projection_matrix 
             coinc_snr: Optional- The coincident snr for each trigger. 
     """
+    
     #Calculate roh_coh
     snr_array = np.array([snr_triggers[ifo] for ifo in opt.instruments])
     x = np.inner(snr_array.conj().transpose(),projection_matrix)
@@ -752,7 +750,6 @@ if generate_histograms == True:
         plt.title(ifo + " snr2")
         plt.savefig("/home/c1551011/public_html/" + ifo + "_snr2_histogram.png")
     logging.info("Done")
-
 
 
 """

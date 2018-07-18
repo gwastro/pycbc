@@ -75,11 +75,8 @@ eta = m1*m2 / (mtot*mtot)
 effspin = (s1z*m1 + s2z*m2) / mtot
 curr_fp.close()
 
-try:
-    cmap = plt.get_cmap('magma')
-except ValueError:
-    from pycbc.future import cmaps
-    cmap = cmaps['magma']
+
+cmap = plt.get_cmap('magma')
 
 def adjust_axes(ax_instance):
     """Adjust axes so that there is always a range of >= 0.1 on the plots."""

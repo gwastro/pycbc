@@ -38,6 +38,12 @@ class ArrayWithAligned(_np.ndarray):
         obj = _np.asarray(input_array).view(cls)
         return obj
 
+    def __array_wrap__(self, obj):
+        if obj.shape == ():
+            return obj[()]    # if ufunc output is scalar, return it
+        else:
+            return _np.ndarray.__array_wrap__(self, obj)
+
     @property
     def isaligned(self):
         return check_aligned(self)

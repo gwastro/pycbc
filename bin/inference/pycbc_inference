@@ -19,6 +19,7 @@
 """
 
 import os
+import sys
 import argparse
 import logging
 import numpy
@@ -27,11 +28,9 @@ import pycbc
 import pycbc.opt
 import pycbc.weave
 import pycbc.version
-from pycbc import calibration
 from pycbc import distributions
 from pycbc import transforms
 from pycbc import fft
-from pycbc import gate
 from pycbc import inference
 from pycbc import psd
 from pycbc import scheme
@@ -43,7 +42,6 @@ from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import option_utils
 from pycbc.inference.option_utils import validate_checkpoint_files
 from pycbc.inference import burn_in
-from pycbc import gate
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -130,7 +128,7 @@ psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
 strain.insert_strain_option_group_multi_ifo(parser)
 pycbc.weave.insert_weave_option_group(parser)
-gate.add_gate_option_group(parser)
+strain.add_gate_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
@@ -150,19 +148,6 @@ pycbc.weave.verify_weave_options(opts, parser)
 if os.path.exists(opts.output_file) and not opts.force:
     raise OSError("output-file already exists; use --force if you wish to "
                   "overwrite it.")
-
-# check for backup file(s)
-checkpoint_file = opts.output_file + '.checkpoint'
-backup_file = opts.output_file + '.bkup'
-checkpoint_valid = validate_checkpoint_files(checkpoint_file, backup_file)
-
-# determine what to do with checkpoints
-if checkpoint_valid and not opts.resume_from_checkpoint and not opts.force:
-    raise OSError("valid checkpoint file {} found, but "
-                  "resume-from-checkpoint not on. If you wish to overwrite "
-                  "use --force; otherwise, use --resume-from-checkpoint")
-if not opts.resume_from_checkpoint and opts.force:
-    checkpoint_valid = False
 
 # check for how many iterations to run
 max_iterations = opts.niterations
@@ -254,7 +239,7 @@ with ctx:
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
         logging.info("Initializing calibration model")
-        recalib = {ifo : calibration.read_model_from_config(cp, ifo) for
+        recalib = {ifo : strain.read_model_from_config(cp, ifo) for
                    ifo in opts.instruments}
     else:
         recalib = None
@@ -264,7 +249,7 @@ with ctx:
     logging.info("Setting up sampler")
 
     # get gates for templates
-    gates = gate.gates_from_cli(opts)
+    gates = strain.gates_from_cli(opts)
 
     if 'waveform_generator' in likelihood_class.required_kwargs:
         generator_function = generator.select_waveform_generator(
@@ -297,6 +282,19 @@ with ctx:
 
     # create sampler that will run
     sampler = option_utils.sampler_from_cli(opts, likelihood)
+
+    # check for backup file(s)
+    checkpoint_file = opts.output_file + '.checkpoint'
+    backup_file = opts.output_file + '.bkup'
+    checkpoint_valid = validate_checkpoint_files(checkpoint_file, backup_file)
+
+    # determine what to do with checkpoints
+    if checkpoint_valid and not opts.resume_from_checkpoint and not opts.force:
+        raise OSError("valid checkpoint file {} found, but "
+                      "resume-from-checkpoint not on. If you wish to overwrite "
+                      "use --force; otherwise, use --resume-from-checkpoint")
+    if not opts.resume_from_checkpoint and opts.force:
+        checkpoint_valid = False
 
     # save information about this data and settings
     if not checkpoint_valid:
@@ -431,8 +429,14 @@ with ctx:
             logging.info("Writing results to file")
             sampler.write_results(fp,static_args=static_args,
                                   ifos=opts.instruments)
-            logging.info("Updating burn in")
-            burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
+            try:
+                is_burned_in = fp.is_burned_in
+                burnidx = fp.burn_in_iterations
+            except (AttributeError, KeyError):
+                is_burned_in = False
+            if not is_burned_in:
+                logging.info("Calculating burn in")
+                burnidx, is_burned_in = burn_in_eval.update(sampler, fp)
 
             # compute the acls and write
             acls = None
@@ -491,3 +495,4 @@ if not opts.save_backup:
 
 # exit
 logging.info("Done")
+sys.exit(0)

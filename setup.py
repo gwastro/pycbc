@@ -30,69 +30,39 @@ try:
 except ImportError:
     from trace import _fullmodname as fullmodname
 
-try:
-    from setuptools.command.install import install as _install
-    from setuptools.command.install_egg_info import install_egg_info as egg_info
-    USE_SETUPTOOLS = True
-except:
-    from distutils.command.install import install as _install
-    USE_SETUPTOOLS = False
-
 from distutils.errors import DistutilsError
-from distutils.core import setup, Command, Extension
 from distutils.command.clean import clean as _clean
 from distutils.file_util import write_file
 from distutils.version import LooseVersion
 
-try:
-    import numpy.version
-    if LooseVersion(numpy.version.version) < LooseVersion("1.6.4"):
-        print(" Numpy >= 1.6.4 is required for pycbc dependencies. \n"
-              " We found version %s already installed. Please update \n"
-              " to a more recent version and then retry PyCBC  \n"
-              " installation. \n"
-              " \n"
-              " Using pip: [pip install 'numpy>=1.6.4' --upgrade --user] \n"
-              "" % numpy.version.version)
-        exit(1)
-except ImportError:
-    pass
+from setuptools.command.install import install as _install
+from setuptools.command.install_egg_info import install_egg_info as egg_info
+from setuptools import Extension, setup, Command
+from setuptools.command.build_ext import build_ext as _build_ext
 
-requires = ['lal.lal', 'lalsimulation.lalsimulation']
-setup_requires = []
+requires = []
+setup_requires = ['numpy>=1.13.0',]
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'argparse>=1.3.0',
+                      'cython',
                       'decorator>=3.4.2',
-                      'scipy>=0.13.0',
+                      'scipy>=0.16.0',
                       'weave>=0.16.0',
                       'unittest2',
-                      'matplotlib>=1.3.1',
-                      'numpy>=1.9.0',
+                      'matplotlib>=1.5.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
-                      'astropy==2.0.3',
+                      'astropy>=2.0.3',
                       'mpld3>=0.3',
-                      'pyRXP>=2.1.0',
-                      'lscsoft-glue>=1.58.2',
+                      'lscsoft-glue>=1.59.3',
                       'kombine>=0.8.2',
                       'emcee==2.2.1',
                       'corner>=2.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
-                      'six',
+                      'six>=1.10.0',
                       ]
-
-#FIXME Remove me when we bump to h5py > 2.5
-try:
-    import h5py
-except ImportError:
-    setup_requires.append('cython')
-else:
-    import h5py.version
-    if h5py.version.version < '2.5':
-        setup_requires.append('cython')
-
 
 def find_package_data(dirname):
     def find_paths(dirname):
@@ -106,6 +76,21 @@ def find_package_data(dirname):
         return items
     items = find_paths(dirname)
     return [os.path.relpath(path, dirname) for path in items]
+
+class cbuild_ext(_build_ext):
+    def run(self):
+        import pkg_resources
+
+        # At this point we can be sure pip has already installed numpy
+        numpy_incl = pkg_resources.resource_filename('numpy', 'core/include')
+
+        for ext in self.extensions:
+            if (hasattr(ext, 'include_dirs') and
+                    numpy_incl not in ext.include_dirs):
+                ext.include_dirs.append(numpy_incl)
+
+        _build_ext.run(self)
+
 
 # Add swig-generated files to the list of things to clean, so they
 # get regenerated each time.
@@ -277,7 +262,7 @@ def get_version_info():
 
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.9.5dev'
+        version = '1.12.dev0'
         release = 'False'
 
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
@@ -316,7 +301,7 @@ class build_docs(Command):
         pass
     def run(self):
         subprocess.check_call("cd docs; cp Makefile.std Makefile; cp conf_std.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc ../pycbc/ligolw && make html",
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 class build_gh_pages(Command):
@@ -329,7 +314,7 @@ class build_gh_pages(Command):
     def run(self):
         subprocess.check_call("mkdir -p _gh-pages/latest && touch _gh-pages/.nojekyll && "
                               "cd docs; cp Makefile.gh_pages Makefile; cp conf_std.py conf.py; sphinx-apidoc "
-                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc ../pycbc/ligolw && make html",
+                              " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
 cmdclass = { 'test'  : test,
@@ -339,6 +324,7 @@ cmdclass = { 'test'  : test,
              'test_cpu':test_cpu,
              'test_cuda':test_cuda,
              'clean' : clean,
+             'build_ext':cbuild_ext
             }
 
 extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
@@ -346,12 +332,21 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 # do the actual work of building the package
 VERSION = get_version_info()
 
+cythonext = ['waveform.spa_tmplt', 'types.array']
+ext = []
+for name in cythonext:
+    e = Extension("pycbc.%s_cpu" % name,
+                  ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
+                  extra_compile_args=[ '-O3', '-w', '-msse4.2',
+                                 '-ffast-math', '-ffinite-math-only'])
+    ext.append(e)
+
 setup (
     name = 'PyCBC',
     version = VERSION,
     description = 'Analyze gravitational-wave data, find signals, and study their parameters.',
     long_description = open('descr.rst').read(),
-    author = 'Ligo Virgo Collaboration - PyCBC team',
+    author = 'Ligo Virgo Collaboration and the PyCBC team',
     author_email = 'alex.nitz@ligo.org',
     url = 'http://www.pycbc.org/',
     download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
@@ -491,7 +486,7 @@ setup (
                ],
     packages = [
                'pycbc',
-               'pycbc.calibration',
+               'pycbc.strain',
                'pycbc.distributions',
                'pycbc.fft',
                'pycbc.types',
@@ -510,30 +505,21 @@ setup (
                'pycbc.inject',
                'pycbc.frame',
                'pycbc.catalog',
-               'pycbc.ligolw',
-               'pycbc.ligolw.utils',
                ],
     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
                     'pycbc.results': find_package_data('pycbc/results'),
                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
-    ext_modules = [
-        Extension(
-            "pycbc.ligolw.tokenizer",
-            [
-                "pycbc/ligolw/tokenizer.c",
-                "pycbc/ligolw/tokenizer.Tokenizer.c",
-                "pycbc/ligolw/tokenizer.RowBuilder.c",
-                "pycbc/ligolw/tokenizer.RowDumper.c"
-            ],
-            include_dirs = [ "pycbc/ligolw" ]
-        ),
-        Extension(
-            "pycbc.ligolw._ilwd",
-            [
-                "pycbc/ligolw/ilwd.c"
-            ],
-            include_dirs = [ "pycbc/ligolw" ]
-        )
+    ext_modules = ext,
+    classifiers=[
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Intended Audience :: Science/Research',
+        'Natural Language :: English',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Astronomy',
+        'Topic :: Scientific/Engineering :: Physics',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
     ],
 )
 

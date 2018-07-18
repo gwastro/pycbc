@@ -142,6 +142,9 @@ parser.add_argument("--spin2y", type=float, default=0,
 parser.add_argument("--inclination", type=float, default=0,
                   help="The inclination of the source w.r.t the observer. "
                     "Default = 0")
+parser.add_argument("--coa-phase", type=float, default=0,
+                  help="The orbital azimuth of the source w.r.t the observer. "
+                    "Default = 0")
 parser.add_argument("--u-val", type=float, default=None,
                   help="The ratio between hplus and hcross to use in the "
                     "template, according to h(t) = hplus * u_val + hcross. "
@@ -282,6 +285,7 @@ with ctx:
                                     approximant=approximant,
                                     template=row[0],
                                     inclination=opt.inclination,
+                                    coa_phase=opt.coa_phase,
                                     taper=opt.taper_template,
                                     f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t,
@@ -292,6 +296,7 @@ with ctx:
                                     zeros(flen, dtype=complex64), row[0],
                                     approximant=approximant,
                                     inclination=opt.inclination,
+                                    coa_phase=opt.coa_phase,
                                     taper=opt.taper_template,
                                     f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)

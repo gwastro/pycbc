@@ -106,7 +106,7 @@ def _check_lal_pars(p):
     if p['quadfmode1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(lal_pars, p['quadfmode1'])
     if p['quadfmode2'] is not None:
-        lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(lal_pars, p['lambda_octu2'])
+        lalsimulation.SimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(lal_pars, p['quadfmode2'])
     if p['octufmode1'] is not None:
         lalsimulation.SimInspiralWaveformParamsInsertTidalOctupolarFMode1(lal_pars, p['octufmode1'])
     if p['octufmode2'] is not None:
@@ -153,8 +153,8 @@ def _lalsim_td_waveform(**p):
             raise
         # For some cases failure modes can occur. Here we add waveform-specific
         # instructions to try to work with waveforms that are known to fail.
-        if p['approximant'] == 'SEOBNRv3':
-            # In this case we'll try doubling the sample time and trying again
+        if 'SEOBNRv3' in p['approximant']:
+            # Try doubling the sample time and redoing.
             # Don't want to get stuck in a loop though!
             if 'delta_t_orig' not in p:
                 p['delta_t_orig'] = p['delta_t']
@@ -324,7 +324,7 @@ def get_obj_attrs(obj):
         if isinstance(obj, numpy.core.records.record):
             for name in obj.dtype.names:
                 pr[name] = getattr(obj, name)
-        elif hasattr(obj, '__dict__'):
+        elif hasattr(obj, '__dict__') and obj.__dict__:
             pr = obj.__dict__
         elif hasattr(obj, '__slots__'):
             for slot in obj.__slots__:

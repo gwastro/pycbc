@@ -58,6 +58,11 @@ parser.add_argument("--sample-rate", type=float, required=True,
 parser.add_argument("--waveform-length", type=float, required=True,
                   help="Used to set the value of delta-f when either generating"
                        "in frequency domain, or when FFTing.")
+# Optional orientation arguments
+parser.add_argument("--inclination", type=float, default=0,
+                  help="Latitude of the observer w.r.t the source. ")
+parser.add_argument("--coa-phase", type=float, default=0,
+                  help="Longitude of the observer w.r.t these source. ")
 # Optional arguments for precession
 parser.add_argument("--spin1x", type=float, default=0,
                   help="Non-aligned spin of the first component object. ")
@@ -66,8 +71,6 @@ parser.add_argument("--spin1y", type=float, default=0,
 parser.add_argument("--spin2x", type=float, default=0,
                   help="Non-aligned spin of the second component object. ")
 parser.add_argument("--spin2y", type=float, default=0,
-                  help="Non-aligned spin of the second component object. ")
-parser.add_argument("--inclination", type=float, default=0,
                   help="Non-aligned spin of the second component object. ")
 parser.add_argument("--u-val", type=float, default=0,
                   help="Ratio between h_+ and h_x according to "
@@ -100,7 +103,8 @@ tmp_params = io.WaveformArray.from_kwargs(
                     spin2x=opt.spin2x,
                     spin2y=opt.spin2y,
                     spin2z=opt.spin2z,
-                    inclination=opt.inclination)
+                    inclination=opt.inclination,
+                    coa_phase=opt.coa_phase)
 
 # Deal with parameter-dependent approximant string
 approximant = waveform.bank.parse_approximant_arg(opt.approximant,
