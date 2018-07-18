@@ -598,7 +598,7 @@ class FDomainDetFrameGenerator(object):
         rfparams = {param: self.current_params[param]
             for param in kwargs if param not in self.location_args}
 
-        if sample_points_for_detectors:
+        if self.sample_points_for_detectors:
             hp_dict = {}
             hc_dict = {}
             for k, v in sample_points_for_detectors.iteritems():
