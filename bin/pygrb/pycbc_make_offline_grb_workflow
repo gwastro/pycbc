@@ -240,9 +240,8 @@ elif wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
 else:
     IPN = False
 
-# If using coh_PTF_inspiral we need bank_veto_bank.xml
-if (os.path.basename(wflow.cp.get("executables", "inspiral")) \
-                    == "lalapps_coh_PTF_inspiral") or (os.path.basename(wflow.cp.get("executables", "inspiral")) == "pycbc_multi_inspiral"):
+# If using pycbc_multi_inspiral we need bank_veto_bank.xml
+if (os.path.basename(wflow.cp.get("executables", "inspiral")) == "pycbc_multi_inspiral"):
     bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
                                                  bank_veto=True)
     datafind_veto_files.extend(bank_veto_file)
