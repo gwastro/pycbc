@@ -840,7 +840,7 @@ class PyCBCMultiInspiralExecutable(Executable):
         node.add_profile('condor', 'request_cpus', self.num_threads)
 
         # Set the input and output files
-        node.new_output_file_opt(data_seg, '.xml.gz', '--output',
+        node.new_output_file_opt(data_seg, '.hdf', '--output',
                                  tags=tags, store_file=self.retain_files)
         node.add_input_opt('--bank-file', parent, )
 
