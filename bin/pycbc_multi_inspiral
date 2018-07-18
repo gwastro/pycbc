@@ -149,8 +149,6 @@ t_gps = 1185938872
 ra = opt.longitude 
 dec = opt.latitude
 
-opt = parser.parse_args()
-
 strain.verify_strain_options_multi_ifo(opt, parser, opt.instruments)
 strain.StrainSegments.verify_segment_options_multi_ifo(opt, parser,
                                                        opt.instruments)
@@ -158,10 +156,7 @@ psd.verify_psd_options_multi_ifo(opt, parser, opt.instruments)
 scheme.verify_processing_options(opt, parser)
 fft.verify_fft_options(opt,parser)
 
-if opt.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
+log_level = logging.DEBUG if opt.verbose else logging.INFO
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 ctx = scheme.from_cli(opt)
@@ -501,7 +496,7 @@ with ctx:
             ifo_list = opt.instruments
 	    for ifo in opt.instruments:
 		stilde[ifo] = segments[ifo][s_num]
-		logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
+		logging.debug("Filtering template %d/%d ifo %s segment %d/%d" % \
 			     (t_num + 1, len(bank), ifo, s_num + 1,
 			      len(segments[ifo])))       
                 #The correlation vector is the FFT of the snr (so inverse FFT it to get the snr)
@@ -536,7 +531,8 @@ with ctx:
                 coinc_idx[t_num][s_num] = get_coinc_indexes(idx_dict,time_delay_idx)
             else:
                 coinc_idx[t_num][s_num] = idx_dict[ifo_list[0]] - time_delay_idx[ifo_list[0]]
-            logging.info("Found %s coincident triggers" % str(len(coinc_idx[t_num][s_num]))) 
+            logging.info("Found %s coincident triggers in segment %d/%d" % \
+                         (str(len(coinc_idx[t_num][s_num])), s_num + 1, len(segments[ifo])))
 
             nifo = len(ifo_list)
             
@@ -554,7 +550,8 @@ with ctx:
                 #Find coinc snr at trigger times and apply coinc snr threshold 
                 roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num], coinc_triggers =\
                                            coincident_snr(snr,coinc_idx[t_num][s_num],coinc_threshold)
-                logging.info("%s points above threshold" % str(len(coinc_idx[t_num][s_num]))) 
+                logging.info("%s points above coincident SNR threshold" % \
+                             str(len(coinc_idx[t_num][s_num]))) 
                 if len(coinc_idx[t_num][s_num]) != 0:
                     logging.info("Max coincident SNR = %s" % str(max(roh_coinc_dict[t_num][s_num])))
             #If there is only one ifo, then coinc_triggers is just the triggers from ifo
@@ -563,7 +560,7 @@ with ctx:
                 coinc_triggers[ifo_list[0]] = snr[ifo_list[0]][coinc_idx[t_num][s_num]]
             else:
                 coinc_triggers = {}
-                logging.info("No triggers above threshold")
+                logging.info("No triggers above coincident SNR threshold")
             #If we have triggers above coinc threshold and more than 2 ifos 
             # then calculate the coherent statistics 
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 2:
