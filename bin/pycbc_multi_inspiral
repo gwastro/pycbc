@@ -88,7 +88,7 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
 parser.add_argument("--longitude", type=float)
 parser.add_argument("--latitude", type=float)
 parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
-                    Triggers with coincident/coherent snr below this value with be discarded""")
+                    Triggers with coincident/coherent snr below this value will be discarded""")
 parser.add_argument("--null-min", type=float, default=5.25, help="""
                     Triggers with null_snr above this value with be discarded""")
 parser.add_argument("--null-grad", type=float, default=0.2, help="""
@@ -146,8 +146,6 @@ t_gps = 1185938872
 ra = opt.longitude 
 dec = opt.latitude
 
-opt = parser.parse_args()
-
 strain.verify_strain_options_multi_ifo(opt, parser, opt.instruments)
 strain.StrainSegments.verify_segment_options_multi_ifo(opt, parser,
                                                        opt.instruments)
@@ -155,10 +153,7 @@ psd.verify_psd_options_multi_ifo(opt, parser, opt.instruments)
 scheme.verify_processing_options(opt, parser)
 fft.verify_fft_options(opt,parser)
 
-if opt.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
+log_level = logging.DEBUG if opt.verbose else logging.INFO
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 ctx = scheme.from_cli(opt)
@@ -209,7 +204,8 @@ def coherent_snr(snr_triggers,index,threshold,projection_matrix,coinc_snr=[]):
             projection_matrix 
             coinc_snr: Optional- The coincident snr for each trigger. 
     """
-    #Calculate roh_roh
+    
+    #Calculate roh_coh
     snr_array = np.array([snr_triggers[ifo] for ifo in opt.instruments])
     x = np.inner(snr_array.conj().transpose(),projection_matrix)
     roh_coh2 = sum(x.transpose()*snr_array)
@@ -477,6 +473,7 @@ with ctx:
 		 cluster_window = int(0)
 
 	for s_num,stilde in enumerate(segments[opt.instruments[0]]): #Loop over segments
+            logging.info("Analyzing segment %d/%d" % (s_num + 1, len(segments[ifo]))) 
             """
 	    if s_num==1:
 		break
@@ -498,9 +495,8 @@ with ctx:
             ifo_list = opt.instruments
 	    for ifo in opt.instruments:
 		stilde[ifo] = segments[ifo][s_num]
-		logging.info("Filtering template %d/%d ifo %s segment %d/%d" % \
-			     (t_num + 1, len(bank), ifo, s_num + 1,
-			      len(segments[ifo])))       
+		logging.debug("Filtering template %d/%d, ifo %s" % \
+			     (t_num + 1, len(bank), ifo))
                 #The correlation vector is the FFT of the snr (so inverse FFT it to get the snr)
 		snr_ts, norm, corr, idx, snrv_dict[ifo] = \
 			matched_filter[ifo].matched_filter_and_cluster(s_num,
@@ -533,7 +529,7 @@ with ctx:
                 coinc_idx[t_num][s_num] = get_coinc_indexes(idx_dict,time_delay_idx)
             else:
                 coinc_idx[t_num][s_num] = idx_dict[ifo_list[0]] - time_delay_idx[ifo_list[0]]
-            print "Number of coincident indexes: " + str(len(coinc_idx[t_num][s_num]))
+            logging.info("Found %s coincident triggers" % str(len(coinc_idx[t_num][s_num])))
 
             nifo = len(ifo_list)
             
@@ -551,16 +547,17 @@ with ctx:
                 #Find coinc snr at trigger times and apply coinc snr threshold 
                 roh_coinc_dict[t_num][s_num], coinc_idx[t_num][s_num], coinc_triggers =\
                                            coincident_snr(snr,coinc_idx[t_num][s_num],coinc_threshold)
-                print "Points above threshold: " + str(len(coinc_idx[t_num][s_num]))
+                logging.info("%s points above coincident SNR threshold" % \
+                             str(len(coinc_idx[t_num][s_num]))) 
                 if len(coinc_idx[t_num][s_num]) != 0:
-                    print "max coincident snr" + str(max(roh_coinc_dict[t_num][s_num]))
+                    logging.info("Max coincident SNR = %s" % str(max(roh_coinc_dict[t_num][s_num])))
             #If there is only one ifo, then coinc_triggers is just the triggers from ifo
             elif len(coinc_idx[t_num][s_num]) != 0 and nifo==1:
                 coinc_triggers = {}
                 coinc_triggers[ifo_list[0]] = snr[ifo_list[0]][coinc_idx[t_num][s_num]]
             else:
                 coinc_triggers = {}
-                print("No triggers above threshold")
+                logging.info("No triggers above coincident SNR threshold")
             #If we have triggers above coinc threshold and more than 2 ifos 
             # then calculate the coherent statistics 
             if len(coinc_idx[t_num][s_num]) != 0 and nifo > 2:
@@ -570,9 +567,9 @@ with ctx:
                         roh_coinc_dict[t_num][s_num] = coherent_snr(coinc_triggers,\
                           coinc_idx[t_num][s_num],coinc_threshold,projection_matrix,\
                                                       roh_coinc_dict[t_num][s_num])
-                print("Number of points above coherent threshold: " + str(len(roh_coh_dict[t_num][s_num])))
+                logging.info("%s points above coherent threshold" % str(len(roh_coh_dict[t_num][s_num])))
                 if len(coinc_idx[t_num][s_num]) != 0:
-                    print "max coherent snr" + str(max(roh_coh_dict[t_num][s_num]))
+                    logging.info("Max coherent SNR = %s" % str(max(roh_coh_dict[t_num][s_num])))
                 
                     coh_snr_list.append(max(roh_coh_dict[t_num][s_num]))
  
@@ -583,8 +580,8 @@ with ctx:
                          roh_coinc_dict[t_num][s_num],snrv=coinc_triggers,\
                                                             index=coinc_idx[t_num][s_num])
                     if len(coinc_idx[t_num][s_num]) != 0:
-                        print "max null snr" + str(max(null_dict[t_num][s_num]))
-            print("Number of points above null threshold: " + str(len(null_dict[t_num][s_num])))
+                        logging.info("Max null SNR = %s" % str(max(null_dict[t_num][s_num])))
+                    logging.info("%s points above null threshold: " % str(len(null_dict[t_num][s_num])))
             #We are now going to find the individual detector chi2 values. To do this it
             #is useful to find the indexes of coinc triggers in the detector frame.
             #We do this by overwriting the dictionary of all single detector triggers
@@ -618,7 +615,7 @@ with ctx:
                     ifo_out_vals['snr'] = snr[ifo][coinc_idx[t_num][s_num]]
 		    snrv_dict[ifo]=snrv_dict[ifo]*norm_dict[ifo]
 		    # IFO is stored as an int
-		    ifo_out_vals['ifo'] = event_mgr.ifo_dict[ifo]
+		    ifo_out_vals['ifo'] = [event_mgr.ifo_dict[ifo]]
 		    event_mgr.add_template_events_to_ifo(ifo, ifo_names,
 			[ifo_out_vals[n] for n in ifo_names])
                 if nifo>2:
@@ -641,7 +638,7 @@ event_mgr.finalize_template_events()
 event_mgr.write_events(opt.output)
 
 
-print "Time to complete analysis: " + str(time.time() - time_init)
+logging.info("Time to complete analysis: %s" % str(time.time() - time_init))
 
 """
 #FIXME This stuff doesn't work for more than 2 detectors.
@@ -676,7 +673,7 @@ if generate_snr_plots == True or generate_histograms == True:
     import matplotlib.pyplot as plt
 
 if generate_snr_plots == True:
-    print "Generating network SNR plots..."
+    logging.info("Generating network SNR plots")
     plot_tnum = 0
     plot_snum = 0
     plt.figure()
@@ -684,7 +681,7 @@ if generate_snr_plots == True:
         plt.plot(coinc_idx[plot_tnum][plot_snum],roh_coinc_dict[plot_tnum][plot_snum]\
         [roh_coinc_dict[plot_tnum][plot_snum]>coinc_threshold],'b.',label='coinc snr')
     except KeyError:
-        print "Cannot plot this template/segment"
+        logging.info("Cannot plot this template/segment")
     try:
         plt.plot(coinc_idx[plot_tnum][plot_snum],roh_coh_dict[plot_tnum][plot_snum],'rx',label='coh snr')
         plt.plot(coinc_idx[plot_tnum][plot_snum],null_dict[plot_tnum][plot_snum],'mx',label='null snr')
@@ -695,7 +692,7 @@ if generate_snr_plots == True:
     plt.xlabel("Trigger idx")
     plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr.png")
 
-    print "Generating network SNR plots..."
+    logging.info("Generating network SNR plots")
     plt.figure()
     coinc_snr,_,_ = coincident_snr(snr,np.arange(len(snr[ifo])),0)
     plt.plot(np.array(range(len(coinc_snr)))/float(sample_rate),coinc_snr,'b.',label='coinc snr')
@@ -709,7 +706,7 @@ if generate_snr_plots == True:
     plt.legend(loc="best")
     plt.xlabel("Time (seconds)")
     plt.savefig("/home/c1551011/public_html/coh_snr_vs_coinc_snr_whole_segment.png")
-    print "Done"
+    logging.info("Done")
 
     plt.figure()
     for ifo in opt.instruments:
@@ -729,7 +726,7 @@ if generate_snr_plots == True:
 
 
 if generate_histograms == True:
-    print "Generating Historgrams..."
+    logging.info("Generating Historgrams")
     from scipy.stats import chi2
     plt.figure()
     x = np.linspace(0, 20, 100)
@@ -752,8 +749,7 @@ if generate_histograms == True:
         plt.xlim(0,10)
         plt.title(ifo + " snr2")
         plt.savefig("/home/c1551011/public_html/" + ifo + "_snr2_histogram.png")
-    print "Done"
-
+    logging.info("Done")
 
 
 """

@@ -351,12 +351,9 @@ class EventManager(object):
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
         # initialize with zeros - since vectors can be None, look for the
-        # first one that isn't
+        # longest one that isn't
         new_events = None
-        for v in vectors:
-            if v is not None:
-                new_events = numpy.zeros(len(v), dtype=self.event_dtype)
-                break
+        new_events = numpy.zeros(max([len(v) for v in vectors if v is not None]), dtype=self.event_dtype)
         # they shouldn't all be None
         assert new_events is not None
         new_events['template_id'] = self.template_index
@@ -584,9 +581,9 @@ class EventManagerCoherent(EventManager):
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """
         # initialize with zeros - since vectors can be None, look for the
-        # first one that isn't
+        # longest one that isn't
         new_events = None
-        new_events = numpy.zeros(max([len(v) for v in vectors]), dtype=self.network_event_dtype)
+        new_events = numpy.zeros(max([len(v) for v in vectors if v is not None]), dtype=self.network_event_dtype)
         # they shouldn't all be None
         assert new_events is not None
         new_events['template_id'] = self.template_index

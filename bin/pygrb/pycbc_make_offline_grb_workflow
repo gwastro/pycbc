@@ -47,8 +47,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=__version__)
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-wflow = _workflow.Workflow(args, workflow_name)
-all_files = _workflow.FileList([])
+wflow = _workflow.core.Workflow(args, workflow_name)
+all_files = _workflow.core.FileList([])
 tags = []
 initDir = os.getcwd()
 
@@ -82,14 +82,14 @@ sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
 # Make coherent network segments
 if wflow.cp.has_option("inspiral", "analyse-segment-end"):
     safety = 1
-    deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 2
+    deadtime = int(wflow.cp.get("inspiral", "segment-length")) / 2
     spec_len = int(wflow.cp.get("inspiral", "inverse-spec-length")) / 2
     wflow.cp.set("workflow-exttrig_segments", "min-before",
                  str(deadtime - spec_len - safety))
     wflow.cp.set("workflow-exttrig_segments", "min-after",
                  str(spec_len + safety))
 else:
-    deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 4
+    deadtime = int(wflow.cp.get("inspiral", "segment-length")) / 4
     wflow.cp.set("workflow-exttrig_segments", "min-before", str(deadtime))
     wflow.cp.set("workflow-exttrig_segments", "min-after", str(deadtime))
 
@@ -240,9 +240,8 @@ elif wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
 else:
     IPN = False
 
-# If using coh_PTF_inspiral we need bank_veto_bank.xml
-if os.path.basename(wflow.cp.get("executables", "inspiral")) \
-                    == "lalapps_coh_PTF_inspiral":
+# If using pycbc_multi_inspiral we need bank_veto_bank.xml
+if (os.path.basename(wflow.cp.get("executables", "inspiral")) == "pycbc_multi_inspiral"):
     bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
                                                  bank_veto=True)
     datafind_veto_files.extend(bank_veto_file)
@@ -388,7 +387,7 @@ if long_slides:
     else:
         num_slides = int((int(wflow.cp.get("workflow", "end-time")) - \
                          int(wflow.cp.get("workflow", "start-time"))) / \
-                         float(int(wflow.cp.get("inspiral", "segment-duration")) * \
+                         float(int(wflow.cp.get("inspiral", "segment-length")) * \
                                (len(ifo_list) - 1)))
     logging.info("Doing {} long slides".format(num_slides))
     inspiral_ts_files = _workflow.FileList([])
