@@ -722,7 +722,7 @@ class TimeSeries(Array):
         else:
             raise ValueError('Path must end with .npy, .txt or .hdf')
                 
-    def to_frequencyseries(self, delta_f=None,twosided=False):
+    def to_frequencyseries(self, delta_f=None, twosided=False):
         """ Return the Fourier transform of this time series
         
         Parameters
@@ -743,7 +743,7 @@ class TimeSeries(Array):
         # add 0.5 to round integer
         tlen  = int(1.0 / delta_f / self.delta_t + 0.5)
         flen = tlen / 2 + 1        
-        if twosided or self.dtype == np.complex128:
+        if twosided or self.kind=='complex':
             # two-sided complex FFT
             flen = tlen
 
@@ -763,48 +763,6 @@ class TimeSeries(Array):
                            delta_f=delta_f)
         fft(tmp, f)
         return f
-
-    def to_frequencyseries_2sided(self, delta_f=None):
-        """ Return the Fourier transform of this time series, as a two-sided function.
-        See COMPLEX16FrequencySeries for example
-        
-        Parameters
-        ----------
-        delta_f : {None, float}, optional
-            The frequency resolution of the returned frequency series. By 
-        default the resolution is determined by the duration of the timeseries.
-        
-        Returns
-        -------        
-        FrequencySeries: 
-            The fourier transform of this time series.
- 
-        """
-        from pycbc.fft import fft
-        if not delta_f:
-            delta_f = 1.0 / self.duration
-
-        # add 0.5 to round integer
-        tlen  = int(1.0 / delta_f / self.delta_t + 0.5)
-        flen = tlen
-
-        if tlen < len(self):
-            raise ValueError("The value of delta_f (%s) would be "
-                             "undersampled. Maximum delta_f "
-                             "is %s." % (delta_f, 1.0 / self.duration))
-        if not delta_f:
-            tmp = self
-        else:
-            tmp = TimeSeries(zeros(tlen, dtype=self.dtype), 
-                             delta_t=self.delta_t, epoch=self.start_time)
-            tmp[:len(self)] = self[:]
-        
-        f = FrequencySeries(zeros(flen, 
-                           dtype=complex_same_precision_as(self)),
-                           delta_f=delta_f)
-        fft(tmp, f)
-        return f
-
 
     def add_into(self, other):
         """Return the sum of the two time series accounting for the time stamp.
