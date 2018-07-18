@@ -212,29 +212,67 @@ class FDomainCBCGenerator(BaseCBCGenerator):
         (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
          <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
 
-    Initialize a generator using mchirp, eta as the variable args, and generate
-    a waveform:
-
-    >>> generator = FDomainCBCGenerator(variable_args=['mchirp', 'eta'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
-    >>> generator.generate(mchirp=1.5, eta=0.25)
-        (<pycbc.types.frequencyseries.FrequencySeries at 0x109a104d0>,
-         <pycbc.types.frequencyseries.FrequencySeries at 0x109a10b50>)
-
-    Note that the `current_params` contains the mchirp and eta values, along
-    with the mass1 and mass2 they were converted to:
+    Note that the `current_params` contains the following parameters:
 
     >>> generator.current_params
         {'approximant': 'TaylorF2',
          'delta_f': 0.03125,
          'eta': 0.25,
          'f_lower': 30.0,
-         'mass1': 1.7230475324955525,
-         'mass2': 1.7230475324955525,
+         'mass1': 1.4,
+         'mass2': 1.4,
          'mchirp': 1.5}
 
     """
     def __init__(self, variable_args=(), **frozen_params):
         super(FDomainCBCGenerator, self).__init__(waveform.get_fd_waveform,
+            variable_args=variable_args, **frozen_params)
+
+
+class FDomainSequenceCBCGenerator(BaseCBCGenerator):
+    """Generates frequency-domain CBC waveforms in the radiation frame.
+
+    Uses `waveform.get_fd_waveform_sequence` as a generator function to create
+    frequency- domain CBC waveforms in the radiation frame; i.e., with no
+    detector response function applied. For more details, see `BaseGenerator`.
+
+    Derived parameters not understood by `get_fd_waveform_sequence` may be used as
+    variable args and/or frozen parameters, as long as they can be converted into 
+    parameters that `get_fd_waveform_sequence` can use. For example, `mchirp` and
+    `eta` (currently, the only supported derived parameters) may be used as
+    variable/frozen params; these are converted to `mass1` and `mass2` prior to
+    calling the waveform generator function.
+    
+    `frequencies_per_detector` is a dictionary of 1D numpy arrays of frequencies
+    passed to the waveform generator.
+
+    Examples
+    --------
+    Initialize a generator:
+
+    >>> from pycbc.waveform.generator import FDomainSequenceCBCGenerator
+    >>> generator = FDomainSequenceCBCGenerator(variable_args=['mass1', 'mass2'], delta_f=1./32, f_lower=30., approximant='TaylorF2')
+
+    Create a waveform with the variable arguments (in this case, mass1, mass2):
+
+    >>> generator.generate(mass1=1.4, mass2=1.4)
+        (<pycbc.types.frequencyseries.FrequencySeries at 0x1110c1450>,
+         <pycbc.types.frequencyseries.FrequencySeries at 0x1110c1510>)
+
+    Note that the `current_params` contains the following parameters:
+
+    >>> generator.current_params
+        {'approximant': 'TaylorF2',
+         'delta_f': 0.03125,
+         'eta': 0.25,
+         'f_lower': 30.0,
+         'mass1': 1.4,
+         'mass2': 1.4,
+         'mchirp': 1.5}
+
+    """
+    def __init__(self, variable_args=(), **frozen_params):
+        super(FDomainSequenceCBCGenerator, self).__init__(waveform.get_fd_waveform_sequence,
             variable_args=variable_args, **frozen_params)
 
 
