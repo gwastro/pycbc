@@ -122,6 +122,11 @@ if __name__ == '__main__':
     parser.add_argument('--ignore-waveform-errors', action='store_true',
                         help='Ignore errors in waveform generation and keep '
                              'the corresponding column unchanged')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Print which injection is going to be attempted '
+                             'next and when it completes. Use this to debug '
+                             'misbehaving approximants which crash or quit '
+                             'the Python interpreter')
     psd_group = pycbc.psd.insert_psd_option_group_multi_ifo(parser)
     psd_group.add_argument('--time-varying-psds', nargs='*', metavar='FILE',
                            help='Instead of time-independent PSDs, use time-varying '
@@ -134,9 +139,10 @@ if __name__ == '__main__':
     if not opts.time_varying_psds:
         pycbc.psd.verify_psd_options_multi_ifo(opts, parser, detectors)
 
-    log_fmt = '%(asctime)s %(message)s'
-    log_date_fmt = '%Y-%m-%d %H:%M:%S'
-    logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
+    log_level = logging.DEBUG if opts.verbose else logging.INFO
+    logging.basicConfig(level=log_level,
+                        format='%(asctime)s %(message)s',
+                        datefmt='%Y-%m-%d %H:%M:%S')
 
     seg_len = opts.seg_length
     sample_rate = opts.sample_rate
@@ -185,6 +191,7 @@ if __name__ == '__main__':
             psd = psds[det](injection_time)
             if psd is None:
                 continue
+            logging.debug('Trying injection %s', inj.simulation_id)
             try:
                 wave = get_injection(injections, det, injection_time,
                                      simulation_id=inj.simulation_id)
@@ -195,6 +202,7 @@ if __name__ == '__main__':
                     continue
                 else:
                     raise
+            logging.debug('Injection %s completed', inj.simulation_id)
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
             setattr(inj, column, sval)
 
