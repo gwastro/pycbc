@@ -722,8 +722,7 @@ class TimeSeries(Array):
         else:
             raise ValueError('Path must end with .npy, .txt or .hdf')
                 
-    @_nocomplex
-    def to_frequencyseries(self, delta_f=None):
+    def to_frequencyseries(self, delta_f=None, twosided=False):
         """ Return the Fourier transform of this time series
         
         Parameters
@@ -743,7 +742,11 @@ class TimeSeries(Array):
 
         # add 0.5 to round integer
         tlen  = int(1.0 / delta_f / self.delta_t + 0.5)
-        flen = tlen / 2 + 1
+        flen = tlen / 2 + 1       
+        twosided_flag =twosided or self.kind=='complex'
+        if twosided_flag:
+            # two-sided complex FFT
+            flen = tlen
 
         if tlen < len(self):
             raise ValueError("The value of delta_f (%s) would be "
@@ -758,7 +761,7 @@ class TimeSeries(Array):
         
         f = FrequencySeries(zeros(flen, 
                            dtype=complex_same_precision_as(self)),
-                           delta_f=delta_f)
+                           delta_f=delta_f, twosided=twosided_flag)
         fft(tmp, f)
         return f
 
