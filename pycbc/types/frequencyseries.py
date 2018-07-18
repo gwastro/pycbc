@@ -118,7 +118,9 @@ class FrequencySeries(Array):
             return Array(range(len(self))) * self._delta_f
         else:
             npts = len(self)
-            return self._delta_f * _numpy.array([ k if  k<=npts/2 else -npts+k for k in _numpy.arange(npts)])  # How lal packs its fft
+            return self._delta_f * _numpy.array([ k \
+                                                      if  k<=npts/2 else \
+                                                      -npts + k for k in _numpy.arange(npts)])  # How lal packs its fft
     sample_frequencies = property(get_sample_frequencies,
                                   doc="Array of the sample frequencies.")
 
