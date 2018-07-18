@@ -127,6 +127,8 @@ if __name__ == '__main__':
                              'next and when it completes. Use this to debug '
                              'misbehaving approximants which crash or quit '
                              'the Python interpreter')
+    parser.add_argument('--progress', action='store_true',
+                        help='Show a progress bar (requires tqdm)')
     psd_group = pycbc.psd.insert_psd_option_group_multi_ifo(parser)
     psd_group.add_argument('--time-varying-psds', nargs='*', metavar='FILE',
                            help='Instead of time-independent PSDs, use time-varying '
@@ -227,8 +229,16 @@ if __name__ == '__main__':
     logging.info('Starting workers')
     pool = multiprocessing.Pool(processes=opts.cores)
 
-    proc_injs = pool.map(compute_optimal_snr, inj_table)
-    for inj in proc_injs:
+    progress = lambda x, **kwargs: x
+    if opts.progress:
+        try:
+            from tqdm import tqdm as progress
+        except ImportError:
+            logging.warn('cannot import tqdm; not showing progress bar')
+            pass
+
+    for inj in progress(pool.imap(compute_optimal_snr, inj_table),
+                        total=len(inj_table)):
         out_sim_inspiral.append(inj)
 
     out_sim_inspiral.sort(key=lambda x: x.geocent_end_time)
