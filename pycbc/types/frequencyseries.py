@@ -124,6 +124,26 @@ class FrequencySeries(Array):
     sample_frequencies = property(get_sample_frequencies,
                                   doc="Array of the sample frequencies.")
 
+    def to_twosided_frequencyseries(self):
+        """
+        If a one-sided frequency series, convert to two-sided
+        """
+        if self.twosided:
+            return self
+        flen_onesided = len(self)
+        flen_twosided = 2*(flen_onesided - 1)
+        arr = self[:flen_onesided]  # cast to accessible
+        arr_rev = (_numpy.conj(arr.numpy()))[::-1]  # problem with accessing in reverse?  Force to numpy array
+        print self._delta_f
+        # Allocate
+        fout = FrequencySeries(zeros(flen_twosided), delta_f=self._delta_f, epoch=self._epoch, copy=False, twosided=True,dtype=self.dtype)
+        # Copy
+        #   - intentional dual assignment to last element
+        fout[:flen_onesided] = arr
+        fout[flen_onesided-2:] = Array(arr_rev,dtype=self.dtype) # required to write. Note 'conj' done earlier
+        return fout
+
+
     def _getslice(self, index):
         if index.step is not None:
             new_delta_f = self._delta_f * index.step
