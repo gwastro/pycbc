@@ -427,7 +427,12 @@ def get_fd_waveform_sequence(template=None, **kwds):
                lal_pars,
                _lalsim_enum[p['approximant']],
                p['sample_points'].lal())
-    return Array(hp.data.data), Array(hc.data.data)
+
+    hp_array = Array(hp.data.data)
+    hp_array.sample_points = p['sample_points']
+    hc_array = Array(hc.data.data)
+    hc_array.sample_points = p['sample_points']
+    return hp_array, hc_array
 
 get_fd_waveform_sequence.__doc__ = get_fd_waveform_sequence.__doc__.format(
     params=parameters.fd_waveform_sequence_params.docstr(prefix="    ",
