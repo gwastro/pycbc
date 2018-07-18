@@ -60,14 +60,14 @@ def make_psd_xmldoc(psddict, xmldoc=None):
     """Add a set of PSDs to a LIGOLW XML document. If the document is not
     given, a new one is created first.
     """
-    if xmldoc is None:
-        xmldoc = ligolw.Document()
-        root_name = u"psd"
-        Attributes = ligolw.sax.xmlreader.AttributesImpl
-        lw = xmldoc.appendChild(
-            ligolw.LIGO_LW(Attributes({u"Name": root_name})))
-    else:
-        lw = xmldoc.childNodes[0]
+    xmldoc = ligolw.Document() if xmldoc is None else xmldoc.childNodes[0]
+
+    # the PSDs must be children of a LIGO_LW with name "psd"
+    root_name = u"psd"
+    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    lw = xmldoc.appendChild(
+        ligolw.LIGO_LW(Attributes({u"Name": root_name})))
+
     for instrument, psd in psddict.items():
         xmlseries = _build_series(psd, (u"Frequency,Real", u"Frequency"),
                                   None, 'deltaF', 's^-1')

@@ -28,6 +28,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
 from glue.ligolw import utils as ligolw_utils
+from lal import series as lalseries
 
 # if we have the GraceDb module then we can do deeper tests,
 # otherwise just fall back to quicker ones
@@ -124,6 +125,13 @@ class TestIOLive(unittest.TestCase):
         coinc_table = table.get_table(
                 read_coinc, lsctables.CoincInspiralTable.tableName)
         self.assertEqual(len(coinc_table), 1)
+
+        # make sure lalseries can read the PSDs
+        psd_doc = ligolw_utils.load_filename(
+                coinc_file_name, verbose=False,
+                contenthandler=lalseries.PSDContentHandler)
+        psd_dict = lalseries.read_psd_xmldoc(psd_doc)
+        self.assertEqual(set(psd_dict.keys()), set(all_ifos))
 
         shutil.rmtree(tempdir)
 
