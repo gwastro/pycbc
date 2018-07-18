@@ -150,8 +150,8 @@ class TestParams(unittest.TestCase):
 
         f_ref = self.f_lower
         _,_,chip_lal,_,_,_,_ = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
-            self.m1*lal.MSUN_SI, self.m1*lal.MSUN_SI,
-            f_ref, 0, 0,
+            self.m1*lal.MSUN_SI, self.m2*lal.MSUN_SI,
+            f_ref, 0., 0.,
             self.spin1x, self.spin1y, self.spin1z,
             self.spin2x, self.spin2y, self.spin2z, 2)
 
