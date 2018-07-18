@@ -475,6 +475,7 @@ with ctx:
 		 cluster_window = int(0)
 
 	for s_num,stilde in enumerate(segments[opt.instruments[0]]): #Loop over segments
+            logging.info("Analyzing segment %d/%d" % (s_num + 1, len(segments[ifo]))) 
             """
 	    if s_num==1:
 		break
@@ -496,9 +497,8 @@ with ctx:
             ifo_list = opt.instruments
 	    for ifo in opt.instruments:
 		stilde[ifo] = segments[ifo][s_num]
-		logging.debug("Filtering template %d/%d ifo %s segment %d/%d" % \
-			     (t_num + 1, len(bank), ifo, s_num + 1,
-			      len(segments[ifo])))       
+		logging.debug("Filtering template %d/%d, ifo %s" % \
+			     (t_num + 1, len(bank), ifo))
                 #The correlation vector is the FFT of the snr (so inverse FFT it to get the snr)
 		snr_ts, norm, corr, idx, snrv_dict[ifo] = \
 			matched_filter[ifo].matched_filter_and_cluster(s_num,
@@ -531,8 +531,7 @@ with ctx:
                 coinc_idx[t_num][s_num] = get_coinc_indexes(idx_dict,time_delay_idx)
             else:
                 coinc_idx[t_num][s_num] = idx_dict[ifo_list[0]] - time_delay_idx[ifo_list[0]]
-            logging.info("Found %s coincident triggers in segment %d/%d" % \
-                         (str(len(coinc_idx[t_num][s_num])), s_num + 1, len(segments[ifo])))
+            logging.info("Found %s coincident triggers" % str(len(coinc_idx[t_num][s_num])))
 
             nifo = len(ifo_list)
             
