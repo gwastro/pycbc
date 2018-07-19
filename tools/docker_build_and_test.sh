@@ -10,16 +10,19 @@ if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
 fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
-  echo -e "\\n>> [`date`] Looking for cached E@H build environment"
+  echo -e "\\n>> [`date`] Looking for cached E@H build environment containing lalsuite ${LALSUITE_HASH}"
   mkdir -p build/pycbc-sources
-  if [ -f "$HOME/docker-cache/pycbc-build-preinst.tgz" ] ; then
-    cp $HOME/docker-cache/pycbc-build-preinst.tgz build/pycbc-sources
-  fi
-  if [ -f "$HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz" ] ; then
-    cp $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz build/pycbc-sources
-  fi
-  if [ -f "$HOME/docker-cache/test" ] ; then
-    cp -a $HOME/docker-cache/test build/pycbc-sources/test
+  if [ -f "$HOME/docker-cache/pycbc-build-preinst-lalsuite-${LALSUITE_HASH}.tgz" ] ; then
+      echo -e "\\n>> [`date`] Found cache containing lalsuite ${LALSUITE_HASH}"
+    cp $HOME/docker-cache/pycbc-build-preinst-lalsuite-${LALSUITE_HASH}.tgz build/pycbc-sources/pycbc-build-preinst-lalsuite.tgz
+    if [ -f "$HOME/docker-cache/pycbc-build-preinst.tgz" ] ; then
+      cp $HOME/docker-cache/pycbc-build-preinst.tgz build/pycbc-sources
+    fi
+    if [ -f "$HOME/docker-cache/test" ] ; then
+      cp -a $HOME/docker-cache/test build/pycbc-sources/test
+    fi
+  else
+      echo -e "\\n>> [`date`] Cache containing lalsuite ${LALSUITE_HASH} not found"
   fi
 fi
 
@@ -32,7 +35,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   mkdir -p $HOME/docker-cache
   mkdir -p $HOME/docker-cache/test
   sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst.tgz $HOME/docker-cache/pycbc-build-preinst.tgz
-  sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst-lalsuite.tgz $HOME/docker-cache/pycbc-build-preinst-lalsuite.tgz
+  sudo docker cp buildvm:/pycbc/build/pycbc-sources/pycbc-build-preinst-lalsuite.tgz $HOME/docker-cache/pycbc-build-preinst-lalsuite-${LALSUITE_HASH}.tgz
   sudo docker cp buildvm:/pycbc/build/pycbc-sources/test/H1L1-SBANK_FOR_GW150914ER10.xml.gz $HOME/docker-cache/test/H1L1-SBANK_FOR_GW150914ER10.xml.gz
   sudo docker cp buildvm:/pycbc/build/pycbc-sources/test/H-H1_LOSC_4_V1-1126257414-4096.gwf $HOME/docker-cache/test/H-H1_LOSC_4_V1-1126257414-4096.gwf
 fi
