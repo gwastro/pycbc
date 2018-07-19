@@ -157,7 +157,7 @@ class TestParams(unittest.TestCase):
                 self.m1[i]*lal.MSUN_SI, self.m2[i]*lal.MSUN_SI,
                 f_ref, 0., 0.,
                 self.spin1x[i], self.spin1y[i], self.spin1z[i],
-                self.spin2x[i], self.spin2y[i], self.spin2z[i], 2)
+                self.spin2x[i], self.spin2y[i], self.spin2z[i], lalsim.IMRPhenomPv2_V)
             chip_lal.append(tmp)
 
         chip_pycbc = conversions.chi_p(
