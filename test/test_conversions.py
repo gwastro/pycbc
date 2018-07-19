@@ -148,6 +148,13 @@ class TestParams(unittest.TestCase):
         import lal
         import lalsimulation as lalsim
 
+        print("type(self.spin1x) = ", type(self.spin1x))
+        print("type(self.spin1y) = ", type(self.spin1y))
+        print("type(self.spin1z) = ", type(self.spin1z))
+        print("type(self.spin2x) = ", type(self.spin2x))
+        print("type(self.spin2y) = ", type(self.spin2y))
+        print("type(self.spin2z) = ", type(self.spin2z))
+
         f_ref = self.f_lower
         _,_,chip_lal,_,_,_,_ = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
             self.m1*lal.MSUN_SI, self.m2*lal.MSUN_SI,
