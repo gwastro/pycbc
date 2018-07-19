@@ -17,6 +17,7 @@ requests>=1.2.1
 beautifulsoup4>=4.6.0
 six
 cython
+ligo-segments
 
 # Ensure pyOpenSSL is recent enough
 pyOpenSSL==17.2.0
