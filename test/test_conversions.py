@@ -148,32 +148,28 @@ class TestParams(unittest.TestCase):
         import lal
         import lalsimulation as lalsim
 
-        print("type(self.spin1x) = ", type(self.spin1x))
-        print("type(self.spin1y) = ", type(self.spin1y))
-        print("type(self.spin1z) = ", type(self.spin1z))
-        print("type(self.spin2x) = ", type(self.spin2x))
-        print("type(self.spin2y) = ", type(self.spin2y))
-        print("type(self.spin2z) = ", type(self.spin2z))
-
-        print("spin1x = ", spin1x)
-        print("spin1y = ", spin1y)
-        print("spin1z = ", spin1z)
-        print("spin2x = ", spin2x)
-        print("spin2y = ", spin2y)
-        print("spin2z = ", spin2z)
+        msg = '{} does not recover same {}; max difference: {}; inputs: {}'
 
         f_ref = self.f_lower
-        _,_,chip_lal,_,_,_,_ = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
-            self.m1*lal.MSUN_SI, self.m2*lal.MSUN_SI,
-            f_ref, 0., 0.,
-            self.spin1x, self.spin1y, self.spin1z,
-            self.spin2x, self.spin2y, self.spin2z, 2)
+        chip_lal = []
+        for i in range(len(self.m1)):
+            _,_,tmp,_,_,_,_ = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
+                self.m1[i]*lal.MSUN_SI, self.m2[i]*lal.MSUN_SI,
+                f_ref, 0., 0.,
+                self.spin1x[i], self.spin1y[i], self.spin1z[i],
+                self.spin2x[i], self.spin2y[i], self.spin2z[i], 2)
+            chip_lal.append(tmp)
 
         chip_pycbc = conversions.chi_p(
             self.m1,self.m2,self.spin1x,self.spin1y,self.spin2x,self.spin2y)
 
         passed, maxdiff, maxidx = almost_equal(chip_lal, chip_pycbc, self.precision)
-        self.assertTrue(passed, "conversions.chi_p failed")
+        failinputs = (
+            self.m1[maxidx], self.m2[maxidx],
+            self.spin1x[maxidx], self.spin1y[maxidx],
+            self.spin2x[maxidx],self.spin2y[maxidx]
+            )
+        self.assertTrue(passed, msg.format("conversions.chi_p", "chi_p", maxdiff, failinputs))
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams))
