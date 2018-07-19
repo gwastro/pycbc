@@ -28,12 +28,11 @@ from matplotlib import use
 use('agg')
 from matplotlib import pyplot as plt
 
-import corner
-
 from pycbc import (distributions, results)
 from pycbc.workflow import WorkflowConfigParser
 
 from gwin import __version__
+from gwin.results.scatter_histograms import create_multidim_plot
 
 
 def cartesian(arrays):
@@ -50,10 +49,6 @@ parser.add_argument("--config-files", type=str, nargs="+", required=True,
     help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
 parser.add_argument("--sections", type=str, nargs="+", default=["prior"],
     help="Name of section plus subsection with distribution configurations, eg. prior-mass1.")
-
-# add prior options
-parser.add_argument("--bins", type=int, default=20,
-    help="Number of points to grid a parameter. Need at least 20 bins to fill in the plot.")
 
 # add output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -104,56 +99,23 @@ ndim = len(variable_params)
 
 # construct class that will return draws from the prior
 prior = distributions.JointDistribution(variable_params, *dists)
+samples = prior.rvs(10000)
 
-# get all points in space to calculate PDF
-logging.info("Getting grid of points")
-vals = numpy.zeros(shape=(ndim,opts.bins))
-bounds = [{}] * ndim
-for dist in dists:
-    for param in dist.params:
-        idx = variable_params.index(param)
-        step = float(dist.bounds[param][1]-dist.bounds[param][0]) / opts.bins
-        vals[idx,:] = numpy.arange(dist.bounds[param][0],dist.bounds[param][1],step)
-        bounds[idx] = dist.bounds
-pts = cartesian(vals)
+fig, axis_dict = create_multidim_plot(
+    variable_params, samples,
+    plot_marginal=True,
+    marginal_percentiles=[5, 50, 95],
+    plot_scatter=False,
+    plot_density=True,
+    plot_contours=True,
+    contour_percentiles=[50, 90],)
 
-# evaulate PDF between the bounds
-logging.info("Calculating PDF")
-pdf = []
-for pt in pts:
-    pt_dict = dict([(param,pt[j]) for j,param in enumerate(variable_params)])
-    pdf.append(sum([dist.pdf(**pt_dict) for dist in dists]))
-pdf = numpy.array(pdf)
 
-# check if only one parameter to plot PDF
-logging.info("Plotting") 
-if len(variable_params) == 1:
-    x = vals[0,:]
-    xmax = x.max()
-    xmin = x.min()
-    pad = 0.1*(xmax-xmin)
-    fig = plt.figure()
-    plt.plot(x, pdf, "k", label="Prior")
-    plt.xlim(xmin-pad, xmax+pad)
-    plt.ylabel("Probability Density Function")
-    plt.xlabel(variable_params[0])
-    plt.legend()
+# set DPI
+fig.set_dpi(200)
 
-# else make corner plot of all PDF
-else:
-    fig = corner.corner(pts, weights=pdf, labels=variable_params,
-                       plot_contours=False, plot_datapoints=False)
-
-    # remove the 1-D histograms
-    delaxs = fig.axes[::ndim+1]
-    [fig.delaxes(ax) for ax in delaxs]
-
-    # adjust size of remaining plots to cover entire canvas
-    fig.subplots_adjust(top=1+1.0/(ndim))
-    fig.subplots_adjust(right=1+1.0/(ndim))
-    for ax in fig.axes:
-        ax.yaxis.get_label().set_position((-0.2,0.5))
-        ax.xaxis.get_label().set_position((0.5,-0.2))
+# set tight layout
+fig.set_tight_layout(True)
 
 # save figure with meta-data
 caption_kwargs = {
