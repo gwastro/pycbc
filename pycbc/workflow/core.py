@@ -1829,7 +1829,7 @@ class CalledProcessErrorMod(Exception):
         self.outFile = outFile
         self.cmdFile = cmdFile
     def __str__(self):
-        msg = "Command '%s' returned non-zero exit pycbc_submit_dax --dax gw.dax --accounting-group ligo.dev.o1.cbc.bns.pycbcofflinestatus %d.\n" \
+        msg = "Command '%s' returned non-zero exit status %d.\n" \
               %(self.cmd, self.returncode)
         if self.errFile:
             msg += "Stderr can be found in %s .\n" %(self.errFile)
