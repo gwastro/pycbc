@@ -72,7 +72,8 @@ fi
 
 echo -e "\\n>> [`date`] Building documentation"
 
-python setup.py build_gh_pages &> $LOG_FILE
+python setup.py build_gh_pages
+# &> $LOG_FILE
 if test $? -ne 0 ; then
     echo -e "    FAILED!"
     echo -e "---------------------------------------------------------"
