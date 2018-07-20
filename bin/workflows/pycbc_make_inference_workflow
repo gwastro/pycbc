@@ -94,9 +94,9 @@ parser.add_argument("--gps-end-time", type=float, nargs="+", default=None,
                          "this option is ignored.")
 
 # input configuration file options
-parser.add_argument("--inference-config-file", type=str, required=True,
+parser.add_argument("--inference-config-file", type=str, nargs='+', required=True,
                     help="workflow.WorkflowConfigParser parsable file with "
-                         "proir information.")
+                         "prior information.")
 parser.add_argument("--prior-section", type=str, default="prior",
                     help="Name of the section in inference configuration file "
                          "that contains priors.")
@@ -154,9 +154,6 @@ workflow_options = opts.bank_file != None \
 if not workflow_options and not (opts.gps_end_time != None):
     raise ValueError("Must use either workflow options or --gps-end-time")
 
-# typecast str from command line to File instances
-config_file = to_file(opts.inference_config_file)
-
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
                             ["detector_sensitivity", "priors", "posteriors",
@@ -193,9 +190,6 @@ workflow_options = opts.bank_file != None \
                    and opts.single_detector_triggers != None
 if not workflow_options and not (opts.gps_end_time != None):
     raise ValueError("Must use either workflow options or --gps-end-time")
-
-# typecast str from command line to File instances
-config_file = to_file(opts.inference_config_file)
 
 # if using workflow files to find analysis times
 if workflow_options:
@@ -239,7 +233,11 @@ inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
                               out_dir=opts.output_dir)
 
 # read inference configuration file
-cp = WorkflowConfigParser([opts.inference_config_file])
+# typecast str from command line to File instances
+cp = WorkflowConfigParser(opts.inference_config_file)
+with open('inference.ini', 'w') as ff:
+    cp.write(ff)
+config_file = to_file('inference.ini')
 
 # get channel names
 channel_names = {}
