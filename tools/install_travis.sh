@@ -64,7 +64,7 @@ else
     echo -e "...seems gone"
 fi
 
-pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
+http://download.pegasus.isi.edu/pegasus/4.8.1/pegasus-python-source-4.8.1.tar.gz
 
 # install the segment database tools
 pip install dqsegdb
