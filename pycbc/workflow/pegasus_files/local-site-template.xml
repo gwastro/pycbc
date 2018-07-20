@@ -16,3 +16,4 @@
     <profile namespace="condor" key="use_x509userproxy">True</profile>
     <profile namespace="condor" key="+DESIRED_Sites">&quot;nogrid&quot;</profile>
     <profile namespace="condor" key="+IS_GLIDEIN">&quot;False&quot;</profile>
+    <profile namespace="env" key="LAL_DATA_PATH">/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/e02dab8c/share/lalsimulation</profile>
