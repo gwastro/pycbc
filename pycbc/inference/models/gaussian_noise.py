@@ -49,7 +49,7 @@ class GaussianNoise(BaseDataModel):
 
     where :math:`S_n(f)` is the PSD in the given detector.
 
-    Note that the log prior-weighted likelihood ratio has one less term
+    Note that the log prior-weighted likelihood ratio has one fewer term
     than the log posterior, since the :math:`\left<d_i|d_i\right>` term cancels
     in the likelihood ratio:
 
@@ -549,7 +549,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
                     h[self._kmin:kmax])
             # store
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh_i)
-            # XXX: is it possible to store a somethigng like cplx_loglr for
+            # TODO: is it possible to store a something like cplx_loglr for
             # each detector?
             hh += hh_i
             hd += hd_i
