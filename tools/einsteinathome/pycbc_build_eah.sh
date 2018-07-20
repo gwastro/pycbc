@@ -955,7 +955,7 @@ fi # if $BUILDDIRNAME-preinst.tgz
 
 # Pegasus
 if $build_pegasus ; then
-    v=4.7.4
+    v=4.8.1
     p=pegasus-python-source-$v
     echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz ||
