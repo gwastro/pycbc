@@ -204,8 +204,8 @@ Next install the Pegasus WMS python libraries needed to build the workflows with
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.7.3/pegasus-python-source-4.7.3.tar.gz
-
+    http://download.pegasus.isi.edu/pegasus/4.8.1/pegasus-python-source-4.8.1.tar.gz
+    
 To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. Install the 1.4.1 pre-release of these tools, run the command:
 
 .. code-block:: bash

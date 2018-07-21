@@ -65,7 +65,7 @@ static="--disable-static"
 build_dlls=false
 rebase_dlls_before_pycbc=false
 build_lapack=true
-pyssl_from="tarball" # "pip-install"
+pyssl_from="pip-install" # "pip-install"
 numpy_from="pip-install" # "tarball"
 scipy_from="pip-install" # "git"
 scipy_version=0.19.0
@@ -535,7 +535,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 
     # pyOpenSSL-0.13
     if [ "$pyssl_from" = "tarball" ] ; then
-	p=pyOpenSSL-0.13
+	p=pyOpenSSL-0.16
 	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts "$pypi/source/p/pyOpenSSL/$p.tar.gz"
 	rm -rf $p
@@ -955,7 +955,7 @@ fi # if $BUILDDIRNAME-preinst.tgz
 
 # Pegasus
 if $build_pegasus ; then
-    v=4.7.4
+    v=4.8.1
     p=pegasus-python-source-$v
     echo -e "\\n\\n>> [`date`] building $p" >&3
     test -r $p.tar.gz ||
