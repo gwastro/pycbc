@@ -535,7 +535,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 
     # pyOpenSSL-0.13
     if [ "$pyssl_from" = "tarball" ] ; then
-	p=pyOpenSSL-0.13
+	p=pyOpenSSL-0.16
 	echo -e "\\n\\n>> [`date`] building $p" >&3
 	test -r $p.tar.gz || wget $wget_opts "$pypi/source/p/pyOpenSSL/$p.tar.gz"
 	rm -rf $p
