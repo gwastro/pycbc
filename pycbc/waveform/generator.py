@@ -601,8 +601,8 @@ class FDomainDetFrameGenerator(object):
         if self.sample_points_for_detectors:
             hp_dict = {}
             hc_dict = {}
-            for k, v in sample_points_for_detectors.iteritems():
-                freqs = sample_points_for_detectors[k]
+            for k, v in self.sample_points_for_detectors.iteritems():
+                freqs = self.sample_points_for_detectors[k]
                 hp, hc = self.rframe_generator.generate(sample_points=freqs, **rfparams)
                 hp_dict[k] = hp
                 hc_dict[k] = hc
