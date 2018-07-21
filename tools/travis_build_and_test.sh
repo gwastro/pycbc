@@ -23,6 +23,7 @@ RESULT=0
 # this is needed for test_inference.py
 pip uninstall -y numpy
 pip install -r requirements.txt
+pip install markupsafe --upgrade
 
 # Using python setup.py test has two issues:
 #     Some tests fail for reasons not necessarily related to PyCBC
