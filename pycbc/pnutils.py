@@ -35,7 +35,7 @@ from pycbc import conversions
 def nearest_larger_binary_number(input_len):
     """ Return the nearest binary number larger than input_len.
     """
-    return 2**numpy.ceil(numpy.log2(input_len))
+    return int(2**numpy.ceil(numpy.log2(input_len)))
 
 def chirp_distance(dist, mchirp, ref_mass=1.4):
     return conversions.chirp_distance(dist, mchirp, ref_mass=ref_mass)
