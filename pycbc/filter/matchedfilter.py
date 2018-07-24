@@ -1151,7 +1151,7 @@ def get_cutoff_indices(flow, fhigh, df, N):
     if kmax <= kmin:
         err_msg = "Kmax cannot be less than or equal to kmin. "
         err_msg += "Provided values of freqencies (min,max) were "
-        err_msg += "{} and {} ".format(fmin, fmax)
+        err_msg += "{} and {} ".format(flow, fhigh)
         err_msg += "corresponding to (kmin, kmax) of "
         err_msg += "{} and {}.".format(kmin, kmax)
         raise ValueError(err_msg)
