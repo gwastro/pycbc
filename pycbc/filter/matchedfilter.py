@@ -1133,14 +1133,28 @@ def get_cutoff_indices(flow, fhigh, df, N):
     """
     if flow:
         kmin = int(flow / df)
+        if kmin < 0:
+            err_msg = "Start frequency cannot be negative. "
+            err_msg += "Supplied value and kmin {} and {}".format(flow, kmin)
+            raise ValueError(err_msg)
     else:
         kmin = 1
     if fhigh:
         kmax = int(fhigh / df )
+        if kmax > int((N + 1)/2.):
+            kmax = int((N + 1)/2.)
     else:
         # int() truncates towards 0, so this is
         # equivalent to the floor of the float
         kmax = int((N + 1)/2.)
+
+    if kmax <= kmin:
+        err_msg = "Kmax cannot be less than or equal to kmin. "
+        err_msg += "Provided values of freqencies (min,max) were "
+        err_msg += "{} and {} ".format(fmin, fmax)
+        err_msg += "corresponding to (kmin, kmax) of "
+        err_msg += "{} and {}.".format(kmin, kmax)
+        raise ValueError(err_msg)
 
     return kmin,kmax
 
