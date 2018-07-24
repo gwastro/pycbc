@@ -25,35 +25,33 @@ class Constraint(object):
     """
     name = "custom"
     required_parameters = []
-    def __init__(self, variable_args, constraint_arg, **kwargs):
+    def __init__(self, constraint_arg, transforms=None, **kwargs):
         self.constraint_arg = constraint_arg
-
-        # set any given attributes and get transforms from variable_args
-        # to required parameters
+        self.transforms = transforms
         for kwarg in kwargs.keys():
             setattr(self, kwarg, kwargs[kwarg])
-        _, self.transforms = transforms.get_common_cbc_transforms(
-                                       self.required_parameters, variable_args)
 
     def __call__(self, params):
         """ Evaluates constraint.
         """
-
         # cast to FieldArray
         if isinstance(params, dict):
             params = record.FieldArray.from_kwargs(**params)
         elif not isinstance(params, record.FieldArray):
            raise ValueError("params must be dict or FieldArray instance")
 
-        # apply transforms
-        params = transforms.apply_transforms(params, self.transforms) \
+        # try to evaluate; this will assume that all of the needed parameters
+        # for the constraint exists in params
+        try:
+            out = self._constraint(params)
+        except NameError:
+            # one or more needed parameters don't exist; try applying the
+            # transforms
+            params = transforms.apply_transforms(params, self.transforms) \
                      if self.transforms else params
-
-        # apply constraints
-        out = self._constraint(params)
+            out = self._constraint(params)
         if isinstance(out, record.FieldArray):
             out = out.item() if params.size == 1 else out
-
         return out
 
     def _constraint(self, params):

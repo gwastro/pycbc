@@ -149,13 +149,16 @@ def read_params_from_config(cp, prior_section='prior',
     return variable_args, static_args
 
 
-def read_constraints_from_config(cp, constraint_section='constraint'):
+def read_constraints_from_config(cp, transforms=None,
+                                 constraint_section='constraint'):
     """Loads parameter constraints from a configuration file.
 
     Parameters
     ----------
     cp : WorkflowConfigParser
         An open config parser to read from.
+    transforms : list, optional
+        List of transforms to apply to parameters before applying constraints.
     constraint_section : str, optional
         The section to get the constraints from. Default is 'constraint'.
 
@@ -184,7 +187,8 @@ def read_constraints_from_config(cp, constraint_section='constraint'):
                 except ValueError:
                     pass
             kwargs[key] = val
-        cons.append(constraints.constraints[name](variable_args,
-                                                  constraint_arg, **kwargs))
+        cons.append(constraints.constraints[name](constraint_arg,
+                                                  transforms=transforms,
+                                                  **kwargs))
 
     return cons
