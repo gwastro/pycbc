@@ -200,7 +200,7 @@ if 'data' in likelihood_class.required_kwargs:
     logging.info("Loading data")
     strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
     low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
-    likelihood_args['f_lower'] = low_frequency_cutoff_dict.values()[0]
+    likelihood_args['f_lower'] = low_frequency_cutoff_dict
     likelihood_args['psds'] = psd_dict
 else:
     strain_dict = stilde_dict = psd_dict = low_frequency_cutoff_dict = None

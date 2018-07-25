@@ -727,8 +727,10 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         values are the data (assumed to be unwhitened). The list of keys must
         match the waveform generator's detectors keys, and the epoch of every
         data set must be the same as the waveform generator's epoch.
-    f_lower : float
-        The starting frequency to use for computing inner products.
+    f_lower : dict
+        A dictionary of starting frequencies, in which the keys are the detector
+        names and the values are the starting frequency for that detector to be 
+        used for computing inner products.
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
@@ -761,24 +763,24 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
-    >>> likelihood_eval = inference.GaussianLikelihood(['tc'], generator, signal, fmin, psds=psds, return_meta=False)
+    >>> f_lower = {'H1': fmin, 'L1': fmin}
+    >>> likelihood_eval = inference.GaussianLikelihood(['tc'], generator, signal, f_lower=f_lower, psds=psds, return_meta=False)
 
     Now compute the log likelihood ratio and prior-weighted likelihood ratio;
     since we have not provided a prior, these should be equal to each other:
 
     >>> likelihood_eval.loglr(tc=tsig), likelihood_eval.logplr(tc=tsig)
-        (ArrayWithAligned(277.92945279883855), ArrayWithAligned(277.92945279883855))
+        (278.9612860719217, 278.9612860719217)
 
     Compute the log likelihood and log posterior; since we have not
     provided a prior, these should both be equal to zero:
 
     >>> likelihood_eval.loglikelihood(tc=tsig), likelihood_eval.logposterior(tc=tsig)
-        (ArrayWithAligned(0.0), ArrayWithAligned(0.0))
+        (0.0, 0.0)
 
     Compute the SNR; for this system and PSD, this should be approximately 24:
 
-    >>> likelihood_eval.snr([tsig])
-        ArrayWithAligned(23.576660187517593)
+    >>> likelihood_eval.snr()
 
     Using the same likelihood evaluator, evaluate the log prior-weighted
     likelihood ratio at several points in time, check that the max is at tsig,
@@ -800,7 +802,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
     >>> from pycbc import distributions
     >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior_eval = inference.JointDistribution(['tc'], uniform_prior)
-    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, 20., psds=psds, prior=prior_eval, return_meta=False)
+    >>> likelihood_eval = inference.GaussianLikelihood(generator, signal, f_lower=f_lower, psds=psds, prior=prior_eval, return_meta=False)
     >>> likelihood_eval.logplr([tsig]), likelihood_eval.logposterior([tsig])
         (ArrayWithAligned(278.84574353071264), ArrayWithAligned(0.9162907318741418))
 
@@ -842,13 +844,9 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
-        # figure out the kmin, kmax to use
-        kmin, kmax = filter.get_cutoff_indices(f_lower, f_upper, d.delta_f,
-            (N-1)*2)
-        self._kmin = kmin
-        self._kmax = kmax
+        delta_f = d.delta_f
         if norm is None:
-            norm = 4*d.delta_f
+            norm = 4*delta_f
         # we'll store the weight to apply to the inner product
         if psds is None:
             w = Array(numpy.sqrt(norm)*numpy.ones(N))
@@ -859,13 +857,23 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
             self._weight = {det: Array(numpy.sqrt(norm/psds[det]))
                             for det in data}
             numpy.seterr(**numpysettings)
-        # whiten the data
+        
+        lognl = 0.
+        self._kmin = {}
+        self._kmax = {}
         for det in self._data:
+            # whiten the data
+            kmin, kmax = filter.get_cutoff_indices(f_lower[det], f_upper,
+                                                   delta_f, (N-1)*2)
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
-        # compute the log likelihood function of the noise and save it
-        self.set_lognl(-0.5*sum([
-            d[kmin:kmax].inner(d[kmin:kmax]).real
-            for d in self._data.values()]))
+            self._kmin[det] = kmin
+            self._kmax[det] = kmax
+            # compute log likelihood function inner product
+            lognl += (-0.5*(self._data[det][kmin:kmax].inner(self._data[det][kmin:kmax]).real))
+
+        # save the log likelihood function of the noise
+        self.set_lognl(lognl)
+
         # set default call function to logplor
         self.set_callfunc('logplr')
 
@@ -897,18 +905,18 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
             return lr
         for det,h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
-            kmax = min(len(h), self._kmax)
+            kmax = min(len(h), self._kmax[det])
             # whiten the waveform
-            if self._kmin >= kmax:
+            if self._kmin[det] >= kmax:
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
-            h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
+            h[self._kmin[det]:kmax] *= self._weight[det][self._kmin[det]:kmax]
             lr += (
                 # <h, d>
-                self.data[det][self._kmin:kmax].inner(h[self._kmin:kmax]).real
+                self.data[det][self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax]).real
                 # - <h, h>/2.
-                - 0.5*h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
+                - 0.5*h[self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax]).real
                 )
         return numpy.float64(lr)
 
@@ -1056,15 +1064,15 @@ class MarginalizedPhaseGaussianLikelihood(GaussianLikelihood):
         hd = 0j
         for det,h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
-            kmax = min(len(h), self._kmax)
+            kmax = min(len(h), self._kmax[det])
             # whiten the waveform
-            if self._kmin >= kmax:
+            if self._kmin[det] >= kmax:
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, there is nothing to filter, so just go onto the next
                 continue
-            h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
-            hh += h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
-            hd += self.data[det][self._kmin:kmax].inner(h[self._kmin:kmax])
+            h[self._kmin[det]:kmax] *= self._weight[det][self._kmin[det]:kmax]
+            hh += h[self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax]).real
+            hd += self.data[det][self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax])
         hd = abs(hd)
         return numpy.log(special.i0e(hd)) + hd - 0.5*hh
 
