@@ -729,7 +729,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
         data set must be the same as the waveform generator's epoch.
     f_lower : dict
         A dictionary of starting frequencies, in which the keys are the detector
-        names and the values are the starting frequency for that detector to be 
+        names and the values are the starting frequency for that detector to be
         used for computing inner products.
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
@@ -857,7 +857,7 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
             self._weight = {det: Array(numpy.sqrt(norm/psds[det]))
                             for det in data}
             numpy.seterr(**numpysettings)
-        
+
         lognl = 0.
         self._kmin = {}
         self._kmax = {}
