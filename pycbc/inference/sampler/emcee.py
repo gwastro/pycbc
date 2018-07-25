@@ -246,7 +246,8 @@ class _callloglikelihood(object):
         self.callable = model_call
 
     def __call__(self, args):
-        return self.callable(args, callstat='loglikelihood')
+        return self.callable(args, callstat='loglikelihood',
+                             return_all_stats=False)
 
 
 class EmceePTSampler(BaseMCMCSampler):
@@ -344,7 +345,7 @@ class EmceePTSampler(BaseMCMCSampler):
         logp = self._sampler.lnprobability - logl
         # compute the likelihood ratio
         loglr = logl - self.model.lognl
-        kwargs = {'loglr': loglr, 'prior': logp}
+        kwargs = {'loglr': loglr, 'logprior': logp}
         # if different coordinates were used for sampling, get the jacobian
         if self.model.sampling_transforms is not None:
             samples = self.samples
