@@ -869,7 +869,8 @@ class GaussianLikelihood(BaseLikelihoodEvaluator):
             self._kmin[det] = kmin
             self._kmax[det] = kmax
             # compute log likelihood function inner product
-            lognl += (-0.5*(self._data[det][kmin:kmax].inner(self._data[det][kmin:kmax]).real))
+            lognl += (-0.5*(self._data[det][kmin:kmax].inner(
+                            self._data[det][kmin:kmax]).real))
 
         # save the log likelihood function of the noise
         self.set_lognl(lognl)

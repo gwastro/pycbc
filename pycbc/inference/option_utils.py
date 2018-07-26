@@ -293,7 +293,7 @@ def add_low_frequency_cutoff_opt(parser):
     # Allow for different frequency cutoffs to be used for every detector
     parser.add_argument("--low-frequency-cutoff", type=float, nargs="+",
                         action=MultiDetOptionAction, metavar='IFO:FLOW',
-                         help="Low frequency cutoff for each IFO.")
+                        help="Low frequency cutoff for each IFO.")
 
 
 def low_frequency_cutoff_from_cli(opts):

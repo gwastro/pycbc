@@ -53,7 +53,7 @@ class TestSamplers(unittest.TestCase):
         self.fdomain_samples = self.data_length * self.sample_rate / 2 + 1
         self.delta_f = 1.0 / self.data_length
         self.fmin = {ifo : 30.0 for ifo in self.ifos}
-        
+
         self.psds = {}
         # set an analyitcal PSD for each detector
         for ifo in self.ifos:
