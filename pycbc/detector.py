@@ -156,7 +156,9 @@ class Detector(object):
         """Return the optimal orientation in right ascension and declination
            for a given GPS time.
         """
-        ra = self.longitude + (lal.GreenwichMeanSiderealTime(t_gps) % (2*np.pi))
+        gmst = Time(t_gps, format='gps',
+                    location=(0, 0)).sidereal_time('mean').rad
+        ra = self.longitude + (gmst % (2.0*np.pi))
         dec = self.latitude
         return ra, dec
 
