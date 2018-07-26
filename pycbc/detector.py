@@ -30,6 +30,7 @@ import numpy as np
 import lal
 from numpy import cos, sin
 from pycbc.types import TimeSeries
+from astropy.time import Time
 
 
 def get_available_detectors():
@@ -80,9 +81,31 @@ class Detector(object):
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
         """
-        gmst = lal.GreenwichMeanSiderealTime(t_gps)
-        return tuple(lal.ComputeDetAMResponse(self.response,
-                     right_ascension, declination, polarization, gmst))
+        gmst = Time(t_gps, format='gps', location=(0, 0))
+        gha = gmst.sidereal_time('mean').rad - right_ascension
+        
+        cosgha = cos(gha)
+        singha = sin(gha)
+        cosdec = cos(declination)
+        sindec = sin(declination)
+        cospsi = cos(polarization)
+        sinpsi = sin(polarization)
+
+        x0 = -cospsi * singha - sinpsi * cosgha * sindec
+        x1 = -cospsi * cosgha + sinpsi * singha * sindec
+        x2 =  sinpsi * cosdec
+        x = np.array([x0, x1, x2])
+        dx = resp.dot(x)
+
+        y0 =  sinpsi * singha - cospsi * cosgha * sindec
+        y1 =  sinpsi * cosgha + cospsi * singha * sindec
+        y2 =  cospsi * cosdec
+        y = np.array([y0, y1, y2])
+        dy = resp.dot(y)
+        
+        fplus = (x * dx - y * dy).sum()
+        fcross = (x * dy + y * dx).sum()
+        return fplus, fcross
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
