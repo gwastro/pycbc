@@ -52,12 +52,13 @@ class TestSamplers(unittest.TestCase):
         self.sample_rate = 2048 # in Hertz
         self.fdomain_samples = self.data_length * self.sample_rate / 2 + 1
         self.delta_f = 1.0 / self.data_length
-        self.fmin = 30.0
-
+        self.fmin = {ifo : 30.0 for ifo in self.ifos}
+        
+        self.psds = {}
         # set an analyitcal PSD for each detector
-        psd = analytical.aLIGOZeroDetHighPower(self.fdomain_samples,
-                                               self.delta_f, self.fmin)
-        self.psds = {ifo : psd for ifo in self.ifos}
+        for ifo in self.ifos:
+            self.psds[ifo] = analytical.aLIGOZeroDetHighPower(
+                                self.fdomain_samples, self.delta_f, self.fmin[ifo])
 
         # set parameter to use for generating waveform of test CBC signal
         cbc_test_parameters = (
@@ -92,7 +93,7 @@ class TestSamplers(unittest.TestCase):
             nprocesses = 2
         self.opts = Arguments()
 
-    def get_cbc_fdomain_generator(self, approximant="IMRPhenomPv2"):
+    def get_cbc_fdomain_generator(self, approximant="IMRPhenomPv2", f_lower=30.0):
         """ Returns the waveform generator class for a CBC signal in the
         detector frame.
         """
@@ -100,7 +101,7 @@ class TestSamplers(unittest.TestCase):
                            generator.FDomainCBCGenerator, self.epoch,
                            variable_args=self.parameters,
                            detectors=self.ifos,
-                           delta_f=self.delta_f, f_lower=self.fmin,
+                           delta_f=self.delta_f, f_lower=f_lower,
                            approximant=approximant)
         return waveform_gen
 
@@ -133,7 +134,7 @@ class TestSamplers(unittest.TestCase):
         """ Returns the likelihood evaluator class.
         """
         likelihood_eval = likelihood.GaussianLikelihood(waveform_gen.variable_args,
-                                             waveform_gen, data, self.fmin,
+                                             waveform_gen, data, f_lower=self.fmin,
                                              psds=self.psds, prior=prior_eval,
                                              return_meta=False)
         return likelihood_eval
