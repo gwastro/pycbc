@@ -28,9 +28,9 @@
 import lalsimulation
 import numpy as np
 import lal
-from numpy import cos, sin
 from pycbc.types import TimeSeries
 from astropy.time import Time
+from astropy import constants
 
 
 def get_available_detectors():
@@ -76,7 +76,8 @@ class Detector(object):
         time: float
             The light travel time in seconds
         """
-        return lal.LightTravelTime(self.frDetector, det.frDetector) * 1e-9
+        d = self.location - det.location
+        return d.dot(d)**0.5 / constants.c
 
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
