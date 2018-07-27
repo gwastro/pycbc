@@ -23,7 +23,8 @@
 #
 # =============================================================================
 #
-"""This module provides utilities for calculating detector responses.
+"""This module provides utilities for calculating detector responses and timing
+between observatories.
 """
 import lalsimulation
 import numpy as np
@@ -138,9 +139,18 @@ class Detector(object):
         float
             The arrival time difference between the detectors.
         """
-        return lal.ArrivalTimeDiff(self.location, other_detector.location,
-                                   float(right_ascension), float(declination),
-                                   float(t_gps))
+        gmst = Time(t_gps, format='gps',
+                    location=(0, 0)).sidereal_time('mean').rad
+        ra_angle = gmst - right_ascension
+        cosd = cos(declination)
+        
+        e0 = cosd * cos(ra_angle)
+        e1 = cosd * -sin(ra_angle)
+        e2 = sin(declination)
+        
+        ehat = numpy.array([e0, e1, e2])
+        dx = other_detector.location - self.location
+        return ehat.dot(dx) / constants.c
 
     def project_wave(self, hp, hc, longitude, latitude, polarization):
         """Return the strain of a wave with given amplitudes and angles as
