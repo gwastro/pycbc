@@ -1,4 +1,4 @@
-#!/usr/bin/env /usr/bin/pytho
+#!/usr/bin/env /usr/bin/python
 
 # Copyright (C) 2014 Alex Nitz
 #
@@ -430,6 +430,9 @@ with ctx:
         'null_snr'      : None,
         'nifo'          : None
                }
+    for ifo in opt.instruments:
+        network_out_types[ifo + '_event_id'] = int
+        network_out_vals[ifo + '_event_id'] = None
     network_names = sorted(network_out_vals.keys())
 
     event_mgr = events.EventManagerCoherent(opt, opt.instruments, ifo_names,
@@ -491,6 +494,7 @@ with ctx:
 	    snr={} 
 	    idx_dict={}
             coinc_idx[t_num][s_num] = np.array([])
+            coinc_idx_det_frame = {}
             stilde = {}
             ifo_list = opt.instruments
 	    for ifo in opt.instruments:
@@ -584,11 +588,9 @@ with ctx:
                     logging.info("%s points above null threshold: " % str(len(null_dict[t_num][s_num])))
             #We are now going to find the individual detector chi2 values. To do this it
             #is useful to find the indexes of coinc triggers in the detector frame.
-            #We do this by overwriting the dictionary of all single detector triggers
-            #with just those of coinc triggers
             if len(coinc_idx[t_num][s_num]) != 0:
                 for ifo in opt.instruments:
-                    idx_dict[ifo] = coinc_idx[t_num][s_num] + time_delay_idx[ifo]
+                    coinc_idx_det_frame[ifo] = coinc_idx[t_num][s_num] + time_delay_idx[ifo]
                 #calculate the power and auto chi2 values for the coinc indexes (this uses the snr time series before the time delay, so we need to undo it. Same for normalisation)
                 power_chisq_ts = {}
                 power_chisq_dof = {}
@@ -596,11 +598,12 @@ with ctx:
                 bank_chisq_ts = {}
                 bank_chisq_dof = {}
                 for ifo in opt.instruments:
+                    """
 		    bank_chisq_ts[ifo], bank_chisq_dof[ifo] = \
 			bank_chisq.values(template, stilde[ifo].psd, stilde[ifo], snrv_dict[ifo],norm_dict[ifo], idx_dict[ifo]+stilde[ifo].analyze.start)
                     power_chisq_ts[ifo],power_chisq_dof[ifo] = power_chisq.values(corr_dict[ifo], coinc_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
                     auto_chisq[ifo] = autochisq.values(snr[ifo],idx_dict[ifo]+stilde[ifo].analyze.start, template, stilde[ifo].psd, norm_dict[ifo],stilde=stilde[ifo], low_frequency_cutoff=flow)
-                
+                    """
 		    ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
 			bank_chisq.values(template, stilde[ifo].psd, stilde[ifo], snrv_dict[ifo],
 					  norm_dict[ifo], idx_dict[ifo]+stilde[ifo].analyze.start)
@@ -610,14 +613,21 @@ with ctx:
 			idx_dict[ifo]+stilde[ifo].analyze.start, template, stilde[ifo].psd, norm_dict[ifo],
 			stilde=stilde[ifo], low_frequency_cutoff=flow)
 		    ifo_out_vals['chisq'], ifo_out_vals['chisq_dof'] =\
-			power_chisq.values(corr_dict[ifo], coinc_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
+			power_chisq.values(corr_dict[ifo], snrv_dict[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,idx_dict[ifo]+stilde[ifo].analyze.start, template)
 		    ifo_out_vals['time_index'] = idx_dict[ifo]+stilde[ifo].cumulative_index
-                    ifo_out_vals['snr'] = snr[ifo][coinc_idx[t_num][s_num]]
-		    snrv_dict[ifo]=snrv_dict[ifo]*norm_dict[ifo]
+                    ifo_out_vals['snr'] = snr[ifo][idx_dict[ifo]-time_delay_idx[ifo]]
 		    # IFO is stored as an int
 		    ifo_out_vals['ifo'] = [event_mgr.ifo_dict[ifo]]
 		    event_mgr.add_template_events_to_ifo(ifo, ifo_names,
 			[ifo_out_vals[n] for n in ifo_names])
+                    #Find which of the coherent triggers have a corresonding single ifo trigger
+                    ifo_coinc_events = np.isin(coinc_idx[t_num][s_num] + time_delay_idx[ifo],idx_dict[ifo])
+                    #Make a list of the single ifo event ids for these triggers
+                    single_ifo_event_id = np.argwhere(np.isin(idx_dict[ifo], coinc_idx[t_num][s_num] + time_delay_idx[ifo])).reshape(-1,)
+                    #Make list which lists single ifo trigger if coherent trigger has a corresponding single ifo trigger and nan otherwise
+                    coherent_event_ids=np.zeros(len(ifo_coinc_events))
+                    coherent_event_ids[ifo_coinc_events]=single_ifo_event_id
+                    network_out_vals[ifo + '_event_id'] = coherent_event_ids
                 if nifo>2:
                     network_out_vals['network_snr'] = np.real(roh_coh_dict[t_num][s_num])
                     network_out_vals['null_snr'] = np.real(null_dict[t_num][s_num])
@@ -625,7 +635,7 @@ with ctx:
                     network_out_vals['network_snr'] = np.real(roh_coinc_dict[t_num][s_num])
                 else:
                     network_out_vals['network_snr'] = abs(snr[ifo_list[0]][coinc_idx[t_num][s_num]])
-                network_out_vals['time_index'] = idx_dict[ifo]+stilde[ifo].cumulative_index
+                network_out_vals['time_index'] = coinc_idx[t_num][s_num]+stilde[ifo].cumulative_index
                 network_out_vals['nifo'] = [nifo]
                 network_out_vals['latitude'] = [opt.latitude]
                 network_out_vals['longitude'] = [opt.longitude]
