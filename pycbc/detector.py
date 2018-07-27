@@ -185,11 +185,10 @@ class Detector(object):
                                              t_gps)
 
     def project_wave(self, hp, hc, longitude, latitude, polarization):
-        """Return the strain of a wave with given amplitudes and angles as
-        measured by the detector.
+        """Return the strain of a waveform as measured by the detector.
         
-        Apply the time shift for the given detector relative to the geocentric
-        frame and apply the antenna patterns to the pluss and cross 
+        Apply the time shift for the given detector relative to the assumed
+        geocentric frame and apply the antenna patterns to the plus and cross 
         polarizations.
         
         """
