@@ -187,6 +187,11 @@ class Detector(object):
     def project_wave(self, hp, hc, longitude, latitude, polarization):
         """Return the strain of a wave with given amplitudes and angles as
         measured by the detector.
+        
+        Apply the time shift for the given detector relative to the geocentric
+        frame and apply the antenna patterns to the pluss and cross 
+        polarizations.
+        
         """
         h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
                 hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
