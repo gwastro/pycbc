@@ -566,7 +566,10 @@ class EventManagerCoherent(EventManager):
         self.events = numpy.array([], dtype=self.event_dtype)
         self.network_events = numpy.array([], dtype=self.network_event_dtype)
         self.event_id_map = {}
-        self.event_index = 0
+        self.event_index = {}
+        for ifo in self.ifos:
+            self.event_index[ifo] = 0
+        self.event_index['network'] = 0
         self.template_params = []
         self.template_index = -1
         self.template_event_dict = {}
@@ -640,6 +643,9 @@ class EventManagerCoherent(EventManager):
         f['latitude'] = network_events['latitude']
         f['longitude'] = network_events['longitude']
         f['template_id'] = network_events['template_id']
+        for ifo in self.ifos:
+            #First add the ifo event ids to the network branch
+            f[ifo + '_event_id'] = network_events[ifo + '_event_id']
         #Individual ifo stuff
         for ifo in self.ifos:
             f.prefix = ifo
@@ -749,14 +755,19 @@ class EventManagerCoherent(EventManager):
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
     def finalize_template_events(self):
-        # Set ids (The event id shows how the ifo and network triggers correspond)
-        num_events = len(self.template_event_dict['network'])
-        new_event_ids = numpy.arange(self.event_index,
-                                              self.event_index+num_events)
+        # Set ids (These will eventually show how each trigger in the single ifo 
+        #trigger list correspond to the network triggers)
+        #num_events = len(self.template_event_dict['network'])
         for ifo in self.ifos:
+            num_events = len(self.template_event_dict[ifo])
+            new_event_ids = numpy.arange(self.event_index[ifo],
+                                              self.event_index[ifo]+num_events)
             self.template_event_dict[ifo]['event_id'] = new_event_ids
-            self.event_index = self.event_index+num_events
+            self.event_index[ifo] = self.event_index[ifo]+num_events
 
+        num_events = len(self.template_event_dict['network'])
+        new_event_ids = numpy.arange(self.event_index['network'],
+                                              self.event_index['network']+num_events)
         self.template_event_dict['network']['event_id'] = new_event_ids
         #Move template events for each ifo to the events list
         for ifo in self.ifos:
