@@ -569,7 +569,7 @@ def load_frequencyseries(path, group=None):
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         data = f[key][:]
         series = FrequencySeries(data, delta_f=f[key].attrs['delta_f'],
                                        epoch=f[key].attrs['epoch']) 
