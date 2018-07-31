@@ -32,6 +32,7 @@ from pycbc.types import Array
 from pycbc.types import convert_to_process_params_dict
 from pycbc.scheme import schemed
 from pycbc.detector import Detector
+import numpy as np
 
 from . import coinc
 
@@ -559,7 +560,9 @@ class EventManagerCoherent(EventManager):
         for column, coltype in zip (column, column_types):
             self.event_dtype.append( (column, coltype) )
 
-        self.network_event_dtype = [ ('template_id', int), ('event_id', int) ]
+        self.network_event_dtype = [ (ifo + '_event_id', int) for ifo in self.ifos ]
+        self.network_event_dtype.append(('template_id', int)) 
+        self.network_event_dtype.append(('event_id', int))
         for column, coltype in zip (network_column, network_column_types):
             self.network_event_dtype.append( (column, coltype) )
         
@@ -638,7 +641,7 @@ class EventManagerCoherent(EventManager):
         f['event_id'] = network_events['event_id']
         f['network_snr'] = network_events['network_snr']
         f['null_snr'] = network_events['null_snr']
-        f['time_index'] = network_events['time_index']
+        f['time_index_gc'] = network_events['time_index']
         f['nifo'] = network_events['nifo']
         f['latitude'] = network_events['latitude']
         f['longitude'] = network_events['longitude']
@@ -669,6 +672,7 @@ class EventManagerCoherent(EventManager):
                 f['end_time'] = ifo_events['time_index'] / \
                         float(self.opt.sample_rate[ifo_str]) + \
                         self.opt.gps_start_time[ifo_str]
+                f['time_index'] = ifo_events['time_index']
                 try:
                     # Precessing
                     template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t \
@@ -755,14 +759,32 @@ class EventManagerCoherent(EventManager):
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
     def finalize_template_events(self):
-        # Set ids (These will eventually show how each trigger in the single ifo 
-        #trigger list correspond to the network triggers)
-        #num_events = len(self.template_event_dict['network'])
-        for ifo in self.ifos:
-            num_events = len(self.template_event_dict[ifo])
+        #Check that none of the template events have the same time index as an 
+        #existing event in events. i.e. don't list the same ifo event multiple times
+        #when looping over sky points and time slides.
+        existing_times = {}
+        new_times = {}
+        existing_events_mask = {}
+        new_template_event_mask = {}
+        existing_template_event_mask = {}
+        for i,ifo in enumerate(self.ifos):
+            existing_times[ifo] = self.events['time_index'][np.where(self.events['ifo']==i)]
+            new_times[ifo] = self.template_event_dict[ifo]['time_index']
+            existing_events_mask[ifo] = np.argwhere(np.isin(existing_times[ifo], new_times[ifo])).reshape(-1,)
+            new_template_event_mask[ifo] = np.argwhere(~np.isin(new_times[ifo], existing_times[ifo])).reshape(-1,)
+            existing_template_event_mask[ifo] = np.argwhere(np.isin(new_times[ifo], existing_times[ifo])).reshape(-1,)
+            #self.template_event_dict[self.ifos[ifo]] = np.delete(self.template_event_dict[self.ifos[ifo]],existing_event_mask)
+
+            # Set ids (These will eventually show how each trigger in the single ifo 
+            #trigger list correspond to the network triggers)
+            #num_events = len(self.template_event_dict['network'])
+            #num_events = len(self.template_event_dict[ifo])
+            num_events = len(new_template_event_mask[ifo])
             new_event_ids = numpy.arange(self.event_index[ifo],
                                               self.event_index[ifo]+num_events)
-            self.template_event_dict[ifo]['event_id'] = new_event_ids
+            self.template_event_dict[ifo]['event_id'][new_template_event_mask[ifo]] = new_event_ids
+            self.template_event_dict['network'][ifo + '_event_id'][new_template_event_mask[ifo]] = new_event_ids
+            self.template_event_dict['network'][ifo + '_event_id'][existing_template_event_mask[ifo]] = self.events[self.events['ifo']==i][existing_events_mask[ifo]]['event_id']
             self.event_index[ifo] = self.event_index[ifo]+num_events
 
         num_events = len(self.template_event_dict['network'])
@@ -772,14 +794,14 @@ class EventManagerCoherent(EventManager):
         #Move template events for each ifo to the events list
         for ifo in self.ifos:
             self.events = numpy.append(self.events,
-                                       self.template_event_dict[ifo])
+                                       self.template_event_dict[ifo][new_template_event_mask[ifo]])
             self.template_event_dict[ifo] = numpy.array([],
                                                         dtype=self.event_dtype)
-        #Move the template evetns for the network to the network events list
+        #Move the template events for the network to the network events list
         self.network_events = numpy.append(self.network_events,
                                    self.template_event_dict['network'])
         self.template_event_dict['network'] = numpy.array([],
-                                                    dtype=self.event_dtype)
+                                                    dtype=self.network_event_dtype)
 
 
 class EventManagerMultiDet(EventManager):
