@@ -118,33 +118,6 @@ class clean(_clean):
             shutil.rmtree(fol, ignore_errors=True)
             print('removed {0}'.format(fol))
 
-class install(_install):
-    def run(self):
-        etcdirectory = os.path.join(self.install_data, 'etc')
-        if not os.path.exists(etcdirectory):
-            os.makedirs(etcdirectory)
-
-        filename = os.path.join(etcdirectory, 'pycbc-user-env.sh')
-        self.execute(write_file,
-                     (filename, [self.extra_dirs]),
-                     "creating %s" % filename)
-
-        env_file = open(filename, 'w')
-        print("# Source this file to access PyCBC", file=env_file)
-        print("PATH=" + self.install_scripts + ":$PATH", file=env_file)
-        print("PYTHONPATH=" + self.install_libbase + ":$PYTHONPATH",
-              file=env_file)
-        print("export PYTHONPATH", file=env_file)
-        print("export PATH", file=env_file)
-        env_file.close()
-
-        _install.run(self)
-
-def do_setup(*args):
-    return True
-
-_install._called_from_setup=do_setup
-
 test_results = []
 # Run all of the testing scripts
 class TestBase(Command):
@@ -326,7 +299,6 @@ class build_gh_pages(Command):
 cmdclass = { 'test'  : test,
              'build_docs' : build_docs,
              'build_gh_pages' : build_gh_pages,
-             'install' : install,
              'test_cpu':test_cpu,
              'test_cuda':test_cuda,
              'clean' : clean,
