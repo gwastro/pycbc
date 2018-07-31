@@ -32,6 +32,7 @@ import lal
 from pycbc.types import TimeSeries
 from astropy.time import Time
 from astropy import constants
+from numpy import cos, sin
 
 def get_available_detectors():
     """Return list of detectors known in the currently sourced lalsuite.
@@ -77,7 +78,7 @@ class Detector(object):
             The light travel time in seconds
         """
         d = self.location - det.location
-        return d.dot(d)**0.5 / constants.c
+        return float(d.dot(d)**0.5 / constants.c.value)
 
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
@@ -111,7 +112,7 @@ class Detector(object):
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
         """
-        return self.time_delay_from_location(numpy.array([0, 0, 0]),
+        return self.time_delay_from_location(np.array([0, 0, 0]),
                                              right_ascension,
                                              declination,
                                              t_gps)
@@ -150,9 +151,9 @@ class Detector(object):
         e1 = cosd * -sin(ra_angle)
         e2 = sin(declination)
         
-        ehat = numpy.array([e0, e1, e2])
+        ehat = np.array([e0, e1, e2])
         dx = other_location - self.location
-        return ehat.dot(dx) / constants.c
+        return float(ehat.dot(dx) / constants.c.value)
 
 
     def time_delay_from_detector(self, other_detector, right_ascension,
