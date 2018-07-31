@@ -39,6 +39,7 @@ from setuptools.command.install import install as _install
 from setuptools.command.install_egg_info import install_egg_info as egg_info
 from setuptools import Extension, setup, Command
 from setuptools.command.build_ext import build_ext as _build_ext
+from setuptools import find_packages
 
 PY3 = sys.version_info[0] == 3
 
@@ -355,7 +356,7 @@ setup (
     author_email = 'alex.nitz@ligo.org',
     url = 'http://www.pycbc.org/',
     download_url = 'https://github.com/ligo-cbc/pycbc/tarball/v%s' % VERSION,
-    keywords = ['ligo', 'physics', 'gravity', 'signal processing', 'gravitational waves'],
+    keywords = ['ligo', 'physics', 'gravity', 'signal processing',          'gravitational waves'],
     cmdclass = cmdclass,
     setup_requires = setup_requires,
     extras_require = extras_require,
@@ -489,28 +490,7 @@ setup (
                'bin/pycbc_ringinj',
                'tools/einsteinathome/pycbc_build_eah.sh'
                ],
-    packages = [
-               'pycbc',
-               'pycbc.strain',
-               'pycbc.distributions',
-               'pycbc.fft',
-               'pycbc.types',
-               'pycbc.filter',
-               'pycbc.psd',
-               'pycbc.waveform',
-               'pycbc.events',
-               'pycbc.noise',
-               'pycbc.vetoes',
-               'pycbc.tmpltbank',
-               'pycbc.workflow',
-               'pycbc.results',
-               'pycbc.io',
-               'pycbc.inference',
-               'pycbc.population',
-               'pycbc.inject',
-               'pycbc.frame',
-               'pycbc.catalog',
-               ],
+    packages = find_packages(),
     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
                     'pycbc.results': find_package_data('pycbc/results'),
                     'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
