@@ -60,7 +60,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
 if not PY3:
     install_requires += ['weave>=0.16.0']
 
-def find_package_data(dirname):
+def find_files(dirname, relpath=None):
     def find_paths(dirname):
         items = []
         for fname in os.listdir(dirname):
@@ -71,7 +71,9 @@ def find_package_data(dirname):
                 items.append(path)
         return items
     items = find_paths(dirname)
-    return [os.path.relpath(path, dirname) for path in items]
+    if relpath is None:
+        relpath = dirname
+    return [os.path.relpath(path, relpath) for path in items]
 
 class cbuild_ext(_build_ext):
     def run(self):
@@ -243,11 +245,11 @@ setup (
     setup_requires = setup_requires,
     extras_require = extras_require,
     install_requires = install_requires,
-    scripts  = find_package_data('bin') + ['tools/einsteinathome/pycbc_build_eah.sh'],
+    scripts  = find_files('bin', relpath='./') + ['tools/einsteinathome/pycbc_build_eah.sh'],
     packages = find_packages(),
-    package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
-                    'pycbc.results': find_package_data('pycbc/results'),
-                    'pycbc.tmpltbank': find_package_data('pycbc/tmpltbank')},
+    package_data = {'pycbc.workflow': find_files('pycbc/workflow'),
+                    'pycbc.results': find_files('pycbc/results'),
+                    'pycbc.tmpltbank': find_files('pycbc/tmpltbank')},
     ext_modules = ext,
     classifiers=[
         'Programming Language :: Python',
