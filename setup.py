@@ -211,8 +211,6 @@ class build_gh_pages(Command):
 
 cmdclass = { 'build_docs' : build_docs,
              'build_gh_pages' : build_gh_pages,
-             'test_cpu':test_cpu,
-             'test_cuda':test_cuda,
              'clean' : clean,
              'build_ext':cbuild_ext
             }
@@ -240,12 +238,12 @@ setup (
     author_email = 'alex.nitz@gmail.org',
     url = 'http://www.pycbc.org/',
     download_url = 'https://github.com/gwastro/pycbc/tarball/v%s' % VERSION,
-    keywords = ['ligo', 'physics', 'gravity', 'signal processing',          'gravitational waves'],
+    keywords = ['ligo', 'physics', 'gravity', 'signal processing', 'gravitational waves'],
     cmdclass = cmdclass,
     setup_requires = setup_requires,
     extras_require = extras_require,
     install_requires = install_requires,
-    scripts  = ['tools/einsteinathome/pycbc_build_eah.sh'],
+    scripts  = find_package_data('bin') + ['tools/einsteinathome/pycbc_build_eah.sh'],
     packages = find_packages(),
     package_data = {'pycbc.workflow': find_package_data('pycbc/workflow'),
                     'pycbc.results': find_package_data('pycbc/results'),
