@@ -50,7 +50,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'cython',
                       'decorator>=3.4.2',
                       'scipy>=0.16.0',
-                      'unittest2',
                       'matplotlib>=1.5.1',
                       'pillow',
                       'h5py>=2.5',
@@ -64,7 +63,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       'six>=1.10.0',
-                      'ligo-segments'
                       ]
 
 if not PY3:
@@ -117,83 +115,6 @@ class clean(_clean):
         for fol in self.clean_folders:
             shutil.rmtree(fol, ignore_errors=True)
             print('removed {0}'.format(fol))
-
-test_results = []
-# Run all of the testing scripts
-class TestBase(Command):
-    user_options = []
-    test_modules = []
-    def initialize_options(self):
-        self.scheme = None
-        self.build_dir = None
-    def finalize_options(self):
-        #Populate the needed variables
-        self.set_undefined_options('build',('build_lib', 'build_dir'))
-
-    def find_test_modules(self,pattern):
-       # Find all the unittests that match a given string pattern
-        modules= []
-        for path, dirs, files in os.walk("test"):
-            for filename in fnmatch.filter(files, pattern):
-                #add the test directories to the path
-                sys.path.append(os.path.join(path))
-                #save the module name for importing
-                modules.append(fullmodname(filename))
-        return modules
-
-    def run(self):
-        self.run_command('build')
-        # Get the list of cpu test modules
-        self.test_modules = self.find_test_modules("test*.py")
-
-        # Run from the build directory
-        if 'PYTHONPATH' in os.environ:
-            os.environ['PYTHONPATH'] = self.build_dir + ":" + os.environ['PYTHONPATH']
-        else:
-            os.environ['PYTHONPATH'] = self.build_dir
-
-        test_results.append("\n" + (self.scheme + " tests ").rjust(30))
-        for test in self.test_modules:
-            test_command = [sys.executable,
-                            'test/' + test + '.py',
-                            '-s', self.scheme]
-            a = subprocess.call(test_command, env=os.environ)
-            if a != 0:
-                result_str = str(test).ljust(30) + ": Fail : " + str(a)
-            else:
-                result_str = str(test).ljust(30) + ": Pass"
-            test_results.append(result_str)
-
-        for test in test_results:
-            print(test)
-
-class test(Command):
-    def has_cuda(self):
-        import pycbc
-        return pycbc.HAVE_CUDA
-
-    sub_commands = [('test_cpu',None),('test_cuda',has_cuda)]
-    user_options = []
-    description = "run the available tests for all compute schemes (cpu, cuda)"
-    def initialize_options(self):
-        pass
-    def finalize_options(self):
-        pass
-    def run(self):
-        for cmd_name in self.get_sub_commands():
-            self.run_command(cmd_name)
-
-class test_cpu(TestBase):
-    description = "run all CPU tests"
-    def initialize_options(self):
-        TestBase.initialize_options(self)
-        self.scheme = 'cpu'
-
-class test_cuda(TestBase):
-    description = "run CUDA tests"
-    def initialize_options(self):
-        TestBase.initialize_options(self)
-        self.scheme = 'cuda'
 
 # write versioning info
 def get_version_info():
@@ -296,8 +217,7 @@ class build_gh_pages(Command):
                               " -o ./ -f -A 'PyCBC dev team' -V '0.1' ../pycbc && make html",
                             stderr=subprocess.STDOUT, shell=True)
 
-cmdclass = { 'test'  : test,
-             'build_docs' : build_docs,
+cmdclass = { 'build_docs' : build_docs,
              'build_gh_pages' : build_gh_pages,
              'test_cpu':test_cpu,
              'test_cuda':test_cuda,
