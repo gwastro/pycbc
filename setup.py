@@ -63,6 +63,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       'six>=1.10.0',
+                      'ligo-segments',
                       ]
 
 if not PY3:
