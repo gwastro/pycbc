@@ -168,7 +168,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   pip install --upgrade setuptools
 
   echo -e "\\n>> [`date`] Installing base python packages required to build lalsuite"
-  pip install "numpy>=1.6.4" "h5py>=2.5" unittest2 python-cjson Cython decorator
+  pip install "numpy>=1.6.4" "h5py>=2.5" python-cjson Cython decorator
   echo -e "\\n>> [`date`] Installing scipy"
   pip install "scipy>=0.13.0" &>/dev/null
 
