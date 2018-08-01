@@ -1,2 +1,4 @@
 # other tools which may be useful
 gwpy>=0.8.1
+# HEALPix is very useful for some analysis.
+healpy
