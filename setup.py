@@ -37,7 +37,6 @@ PY3 = sys.version_info[0] == 3
 requires = []
 setup_requires = ['numpy>=1.13.0',]
 install_requires =  setup_requires + ['Mako>=1.0.1',
-                      'argparse>=1.3.0',
                       'cython',
                       'decorator>=3.4.2',
                       'scipy>=0.16.0',
