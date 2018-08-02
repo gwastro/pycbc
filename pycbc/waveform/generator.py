@@ -38,6 +38,8 @@ import lal as _lal
 from pycbc import strain
 import logging
 
+from pycbc.waveform.echoeswaveformPComega_pycbc import get_td_echoes_waveform
+
 #
 #   Generator for CBC waveforms
 #
@@ -289,11 +291,23 @@ class TDomainCBCGenerator(BaseCBCGenerator):
             pass
         return hp, hc
 
+class TDomainEchoesGenerator(BaseGenerator):
+    """Uses an existing SEOBNRv4 waveform to generate an echoes waveform by the method of Abedi et al..
+    """ 
+
+    def __init__(self, variable_args=(), **frozen_params):
+        frozen_params["approximant"] = "SEOBNRv4"
+        hp, hc = waveform.get_td_waveform(**frozen_params)
+        frozen_params["hp"] = hp
+        frozen_params["hc"] = hc
+        super(TDomainEchoesGenerator, self).__init__(get_td_echoes_waveform,
+            variable_args=variable_args, **frozen_params)
+
 
 class FDomainMassSpinRingdownGenerator(BaseGenerator):
     """Uses ringdown.get_fd_from_final_mass_spin as a generator function to
     create frequency-domain ringdown waveforms with higher modes in the
-    radiation frame; i.e., with no detector response function applied.
+    radiation frame; i.e., with no detector response function applied. 
     For more details, see BaseGenerator.
 
     Examples
@@ -318,7 +332,7 @@ class FDomainMassSpinRingdownGenerator(BaseGenerator):
             variable_args=variable_args, **frozen_params)
 
 class FDomainFreqTauRingdownGenerator(BaseGenerator):
-    """Uses ringdown.get_fd_from_freqtau as a generator function to
+    """Uses ringdown.get_fd_from_freqtau as a generator function to 
     create frequency-domain ringdown waveforms with higher modes in the
     radiation frame; i.e., with no detector response function applied.
     For more details, see BaseGenerator.
@@ -629,6 +643,10 @@ def select_waveform_generator(approximant):
     # check if time-domain CBC waveform
     elif approximant in waveform.td_approximants():
         return TDomainCBCGenerator
+
+    # check if time-domain echo waveform
+    elif approximant == 'TDechoes1':
+        return TDomainEchoesGenerator
 
     # check if frequency-domain ringdown waveform
     elif approximant in ringdown.ringdown_fd_approximants:

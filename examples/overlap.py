@@ -1,5 +1,5 @@
 from pycbc.waveform import get_td_waveform
-from pycbc.filter import match, overlap
+from pycbc.filter import match, overlap, matched_filter
 from pycbc.psd import aLIGOZeroDetHighPower
 
 # Buffer size in seconds. This is presumed to be
@@ -7,6 +7,7 @@ from pycbc.psd import aLIGOZeroDetHighPower
 time_buffer = 4
 
 f_low = 30
+f_hi = 31
 sample_rate = 4096
 
 # Length of corresponding time series and frequency series
@@ -17,7 +18,7 @@ delta_t = 1.0 / sample_rate
 delta_f = 1.0 / time_buffer
 
 print "Generating waveform 1"
-hp, hc = get_td_waveform(approximant="EOBNRv2",
+hp, hc = get_td_waveform(approximant="TaylorT4",
                          mass1=10,
                          mass2=10,
                          f_lower=f_low,
@@ -43,8 +44,9 @@ psd = aLIGOZeroDetHighPower(flen, delta_f, f_low)
 print "Calculating match and overlap"
 # Note: This takes a while the first time as an FFT plan is generated
 # subsequent calls within the same program will be faster
-m, i = match(hp, sp, psd=psd, low_frequency_cutoff=f_low)
-o = overlap(hp, sp, psd=psd, low_frequency_cutoff=f_low)
+m, i = match(hp, sp, psd=psd, low_frequency_cutoff=f_low, high_frequency_cutoff=f_hi)
+o = overlap(hp, sp, psd=psd, low_frequency_cutoff=f_low, high_frequency_cutoff=f_hi)
+s = matched_filter(hp, sp, psd=psd, low_frequency_cutoff=f_low, high_frequency_cutoff=f_hi)
 print "Overlap %s" % o
 print "Maximized Overlap %s" % m
-
+print "SNR %s" % max(abs(s)) 
