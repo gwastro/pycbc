@@ -1,9 +1,8 @@
 import numpy as np
-import pylab
 import h5py
 import time as timemodule
 import pycbc
-from pycbc import waveform
+from pycbc.waveform import utils
 
 """Includes a method to append echoes to a given waveform 
 and a tapering function used for the echo's form 
@@ -17,26 +16,14 @@ def truncfunc(t, t0, t_merger, omega_of_t):
     theta = 0.5 * (1 + np.tanh(0.5 * omega_of_t * (t - t_merger - t0)))
     return theta
 
-def get_td_echoes_waveform(**kwargs):
-    hp = kwargs["hp"]
-    hc = kwargs["hc"]
-    t0trunc = kwargs["t0trunc"]
-    t_echo = kwargs["t_echo"]
-    del_t_echo = kwargs["del_t_echo"]
-    n_echoes = kwargs["n_echoes"]
-    amplitude = kwargs["amplitude"]
-    gamma = kwargs["gamma"]
-    return add_echoes(hp, hc, t0trunc, t_echo,
-                        del_t_echo, n_echoes, amplitude, gamma, timestep=None)
 
-
-def add_echoes(hp, hc, t0trunc, t_echo, 
-                        del_t_echo, n_echoes, amplitude, gamma, timestep=None):
-    
+def add_echoes(hp, hc, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, gamma,
+               timestep=None):
     """Takes waveform timeseries' of plus and cross polarisation, 
     produces echoes of the waveform and returns the original 
     waveform timeseries' with the echoes appended. 
     The original starting time is lost, however.
+
     Parameters:
     hp, hc : timeseries
         Plus and cross polarisation timeseries' of the original waveform.
@@ -75,7 +62,7 @@ def add_echoes(hp, hc, t0trunc, t_echo,
     
     # Counting leading zeros. Calculate angular frequency for trimmed waveform. For leading/trailing zeros, use first/last frequency found. Use np.nonzero instead?
     
-    omega = 2. * np.pi * waveform.utils.frequency_from_polarizations(hp.trim_zeros(), 
+    omega = 2. * np.pi * utils.frequency_from_polarizations(hp.trim_zeros(), 
                                                         hc.trim_zeros())
     
     omega_temp = np.zeros(len(template))
