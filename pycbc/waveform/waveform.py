@@ -735,6 +735,7 @@ def get_td_echoes_waveform(template=None, **kwargs):
     """Generates an IMR waveform with echoes."""
     input_params = props(template, required_args=td_required_args, **kwargs)
     # call get_td_waveform to generate the IMR waveform
+    inclination = input_params.pop('inclination')
     try:
         # try to get the IMR waveform from the input params
         hp = input_params['hp']
@@ -753,7 +754,8 @@ def get_td_echoes_waveform(template=None, **kwargs):
     amplitude = input_params["amplitude"]
     gamma = input_params["gamma"]
     return add_echoes(hp, hc, t0trunc, t_echo,
-                      del_t_echo, n_echoes, amplitude, gamma, timestep=None)
+                      del_t_echo, n_echoes, amplitude, gamma,
+                      inclination=inclination, timestep=None)
 
 # add echoes to cpu_td
 echoes_apprx = 'TDechoes1'
