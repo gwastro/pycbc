@@ -46,6 +46,18 @@ def ceilpow2(n):
     return (1) << exponent;
 
 
+def spher_harms(l, m, inclination):
+    """Return spherical harmonic polarizations
+    """
+    # FIXME: we are using spin -2 weighted spherical harmonics for now,
+    # when possible switch to spheroidal harmonics.
+    Y_lm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m).real
+    Y_lminusm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, -m).real
+    Y_plus = Y_lm + (-1)**l * Y_lminusm
+    Y_cross = Y_lm - (-1)**l * Y_lminusm
+    return Y_plus, Y_cross
+
+
 def coalign_waveforms(h1, h2, psd=None,
                       low_frequency_cutoff=None,
                       high_frequency_cutoff=None,
