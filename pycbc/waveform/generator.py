@@ -38,8 +38,6 @@ import lal as _lal
 from pycbc import strain
 import logging
 
-from pycbc.waveform.echoeswaveformPComega_pycbc import get_td_echoes_waveform
-
 #
 #   Generator for CBC waveforms
 #
@@ -291,17 +289,22 @@ class TDomainCBCGenerator(BaseCBCGenerator):
             pass
         return hp, hc
 
+
 class TDomainEchoesGenerator(BaseGenerator):
     """Uses an existing SEOBNRv4 waveform to generate an echoes waveform by the method of Abedi et al..
     """ 
 
     def __init__(self, variable_args=(), **frozen_params):
-        frozen_params["approximant"] = "SEOBNRv4"
-        hp, hc = waveform.get_td_waveform(**frozen_params)
+        # generate the IMR waveform and cache it
+        apprx = frozen_params['imr_approximant']
+        imrargs = frozen_params.copy()
+        imrargs['approximant'] = apprx
+        hp, hc = waveform.get_td_waveform(**imrargs)
         frozen_params["hp"] = hp
         frozen_params["hc"] = hc
-        super(TDomainEchoesGenerator, self).__init__(get_td_echoes_waveform,
-            variable_args=variable_args, **frozen_params)
+        super(TDomainEchoesGenerator, self).__init__(
+            waveform.get_td_echoes_waveform, variable_args=variable_args,
+            **frozen_params)
 
 
 class FDomainMassSpinRingdownGenerator(BaseGenerator):
@@ -640,13 +643,13 @@ def select_waveform_generator(approximant):
     if approximant in waveform.fd_approximants():
         return FDomainCBCGenerator
 
+    # check if time-domain echo waveform
+    elif approximant == waveform.echoes_apprx:
+        return TDomainEchoesGenerator
+
     # check if time-domain CBC waveform
     elif approximant in waveform.td_approximants():
         return TDomainCBCGenerator
-
-    # check if time-domain echo waveform
-    elif approximant == 'TDechoes1':
-        return TDomainEchoesGenerator
 
     # check if frequency-domain ringdown waveform
     elif approximant in ringdown.ringdown_fd_approximants:

@@ -41,6 +41,7 @@ from .spa_tmplt import spa_tmplt, spa_tmplt_norm, spa_tmplt_end, \
                       spa_tmplt_precondition, spa_amplitude_factor, \
                       spa_length_in_time
 from six.moves import range as xrange
+from pycbc.waveform.echoeswaveformPComega_pycbc import add_echoes
 
 class NoWaveformError(Exception):
     """This should be raised if generating a waveform would just result in all
@@ -729,6 +730,35 @@ def get_sgburst_waveform(template=None, **kwargs):
 
     return _lalsim_sgburst_waveform(**input_params)
 
+
+def get_td_echoes_waveform(template=None, **kwargs):
+    """Generates an IMR waveform with echoes."""
+    input_params = props(template, required_args=td_required_args, **kwargs)
+    # call get_td_waveform to generate the IMR waveform
+    try:
+        # try to get the IMR waveform from the input params
+        hp = input_params['hp']
+        hc = input_params['hc']
+    except KeyError:
+        # generate the IMR waveform
+        apprx = input_params['imr_approximant']
+        imrargs = input_params.copy()
+        imrargs['approximant'] = apprx
+        hp, hc = get_td_waveform(**imrargs)
+    # get the echo parameters
+    t0trunc = input_params["t0trunc"]
+    t_echo = input_params["t_echo"]
+    del_t_echo = input_params["del_t_echo"]
+    n_echoes = input_params["n_echoes"]
+    amplitude = input_params["amplitude"]
+    gamma = input_params["gamma"]
+    return add_echoes(hp, hc, t0trunc, t_echo,
+                      del_t_echo, n_echoes, amplitude, gamma, timestep=None)
+
+# add echoes to cpu_td
+echoes_apprx = 'TDechoes1'
+cpu_td[echoes_apprx] = get_td_echoes_waveform
+
 # Waveform filter routines ###################################################
 
 # Organize Filter Generators
@@ -1069,4 +1099,5 @@ __all__ = ["get_td_waveform", "get_fd_waveform", "get_fd_waveform_sequence",
            "get_waveform_filter_length_in_time", "get_sgburst_waveform",
            "print_sgburst_approximants", "sgburst_approximants",
            "td_waveform_to_fd_waveform", "get_two_pol_waveform_filter",
-           "NoWaveformError", "get_td_waveform_from_fd"]
+           "NoWaveformError", "get_td_waveform_from_fd",
+           "get_td_echoes_waveform"]
