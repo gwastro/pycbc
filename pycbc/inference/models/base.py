@@ -418,7 +418,16 @@ class BaseModel(object):
     @property
     def default_stats(self):
         """The stats that ``get_current_stats`` returns by default."""
-        return ['logjacobian', 'logprior', 'loglikelihood']
+        return ['logjacobian', 'logprior', 'loglikelihood'] + self._extra_stats
+
+    @property
+    def _extra_stats(self):
+        """Allows child classes to add more stats to the default stats.
+
+        This returns an empty list; classes that inherit should override this
+        property if they want to add extra stats.
+        """
+        return []
 
     def get_current_stats(self, names=None):
         """Return one or more of the current stats as a tuple.
