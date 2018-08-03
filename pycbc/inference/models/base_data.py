@@ -91,9 +91,9 @@ class BaseDataModel(BaseModel):
             variable_params, **kwargs)
 
     @property
-    def default_stats(self):
-        """The stats that ``get_current_stats`` returns by default."""
-        return ['logjacobian', 'logprior', 'loglr', 'lognl']
+    def _extra_stats(self):
+        """Adds ``loglr`` and ``lognl`` to the ``default_stats``."""
+        return ['loglr', 'lognl']
 
     @property
     def lognl(self):
