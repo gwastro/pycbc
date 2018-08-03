@@ -272,9 +272,10 @@ class MarginalizedGaussianNoise(GaussianNoise):
             self._setup_prior()
 
     @property
-    def default_stats(self):
-        """The stats that ``get_current_stats`` returns by default."""
-        return ['logjacobian', 'logprior', 'loglr'] + \
+    def _extra_stats(self):
+        """Adds ``loglr``, ``optimal_snrsq`` and matched filter snrsq in each
+        detector to the default stats."""
+        return ['loglr'] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data] + \
                ['{}_matchedfilter_snrsq'.format(det) for det in self._data]
 
@@ -504,4 +505,7 @@ class MarginalizedGaussianNoise(GaussianNoise):
                     hd_i)
         mf_snr = abs(mf_snr)
         loglr = self._eval_loglr(mf_snr, opt_snr)
+        # also store the loglikelihood, to ensure it is populated in the
+        # current stats even if loglikelihood is never called
+        self._current_stats.loglikelihood = loglr + self.lognl
         return loglr
