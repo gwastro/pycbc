@@ -113,31 +113,31 @@ class GaussianNoise(BaseDataModel):
 
     Examples
     --------
-    Create a signal, and set up the model on that signal:
+    Create a signal, and set up the model using that signal:
 
     >>> from pycbc import psd as pypsd
     >>> from pycbc.waveform.generator import (FDomainDetFrameGenerator,
-                                              FDomainCBCGenerator)
+    ...                                       FDomainCBCGenerator)
     >>> import gwin
     >>> seglen = 4
     >>> sample_rate = 2048
     >>> N = seglen*sample_rate/2+1
     >>> fmin = 30.
     >>> m1, m2, s1z, s2z, tsig, ra, dec, pol, dist = (
-            38.6, 29.3, 0., 0., 3.1, 1.37, -1.26, 2.76, 3*500.)
+    ...     38.6, 29.3, 0., 0., 3.1, 1.37, -1.26, 2.76, 3*500.)
     >>> variable_params = ['tc']
     >>> generator = FDomainDetFrameGenerator(
-            FDomainCBCGenerator, 0.,
-            variable_args=variable_params, detectors=['H1', 'L1'],
-            delta_f=1./seglen, f_lower=fmin,
-            approximant='SEOBNRv2_ROM_DoubleSpin',
-            mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z,
-            ra=ra, dec=dec, polarization=pol, distance=dist)
+    ...     FDomainCBCGenerator, 0.,
+    ...     variable_args=variable_params, detectors=['H1', 'L1'],
+    ...     delta_f=1./seglen, f_lower=fmin,
+    ...     approximant='SEOBNRv2_ROM_DoubleSpin',
+    ...     mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z,
+    ...     ra=ra, dec=dec, polarization=pol, distance=dist)
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
     >>> model = gwin.models.GaussianNoise(
-            variable_params, signal, generator, fmin, psds=psds)
+    ...     variable_params, signal, generator, fmin, psds=psds)
 
     Set the current position to the coalescence time of the signal:
 
@@ -146,33 +146,38 @@ class GaussianNoise(BaseDataModel):
     Now compute the log likelihood ratio and prior-weighted likelihood ratio;
     since we have not provided a prior, these should be equal to each other:
 
-    >>> model.loglr
-    278.9612860719217
-    >>> model.logplr
-    278.9612860719217
+    >>> print('{:.2f}'.format(model.loglr))
+    278.96
+    >>> print('{:.2f}'.format(model.logplr))
+    278.96
 
     Print all of the default_stats:
 
-    >>> model.current_stats
-    {'H1_cplx_loglr': (175.56552899471038+0j),
-     'H1_optimal_snrsq': 351.13105798942075,
-     'L1_cplx_loglr': (103.39575707721129+0j),
-     'L1_optimal_snrsq': 206.79151415442257,
-     'logjacobian': 0.0,
-     'loglr': 278.9612860719217,
-     'logprior': 0.0}
+    >>> print(',\n'.join(['{}: {:.2f}'.format(s, v)
+    ...                   for (s, v) in sorted(model.current_stats.items())]))
+    H1_cplx_loglr: 175.57+0.00j,
+    H1_optimal_snrsq: 351.13,
+    L1_cplx_loglr: 103.40+0.00j,
+    L1_optimal_snrsq: 206.79,
+    logjacobian: 0.00,
+    loglikelihood: 0.00,
+    loglr: 278.96,
+    logprior: 0.00
 
     Compute the SNR; for this system and PSD, this should be approximately 24:
 
     >>> from pycbc.conversions import snr_from_loglr
-    >>> snr_from_loglr(model.loglr)
-    23.62038467391764
+    >>> x = snr_from_loglr(model.loglr)
+    >>> print('{:.2f}'.format(x))
+    23.62
 
     Since there is no noise, the SNR should be the same as the quadrature sum
     of the optimal SNRs in each detector:
 
-    >>> (model.det_optimal_snrsq('H1') + model.det_optimal_snrsq('L1'))**0.5
-    23.62038467391764
+    >>> x = (model.det_optimal_snrsq('H1') +
+    ...      model.det_optimal_snrsq('L1'))**0.5
+    >>> print('{:.2f}'.format(x))
+    23.62
 
     Using the same model, evaluate the log likelihood ratio at several points
     in time and check that the max is at tsig:
@@ -181,11 +186,11 @@ class GaussianNoise(BaseDataModel):
     >>> times = numpy.arange(seglen*sample_rate)/float(sample_rate)
     >>> loglrs = numpy.zeros(len(times))
     >>> for (ii, t) in enumerate(times):
-            model.update(tc=t)
-            loglrs[ii] = model.loglr
-    >>> print('tsig: {}, time of max loglr: {}'.format(
-            tsig, times[loglrs.argmax()]))
-    tsig: 3.1, time of max loglr: 3.10009765625
+    ...     model.update(tc=t)
+    ...     loglrs[ii] = model.loglr
+    >>> print('tsig: {:.3f}, time of max loglr: {:.3f}'.format(
+    ...     tsig, times[loglrs.argmax()]))
+    tsig: 3.100, time of max loglr: 3.100
 
     Create a prior and use it (see distributions module for more details):
 
@@ -193,18 +198,20 @@ class GaussianNoise(BaseDataModel):
     >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior = distributions.JointDistribution(variable_params, uniform_prior)
     >>> model = gwin.models.GaussianNoise(variable_params,
-            signal, generator, 20., psds=psds, prior=prior)
+    ...     signal, generator, 20., psds=psds, prior=prior)
     >>> model.update(tc=tsig)
-    >>> model.logplr
-    279.8775768037958
-    >>> model.current_stats
-    {'H1_cplx_loglr': (175.56552899471038+0j),
-     'H1_optimal_snrsq': 351.13105798942075,
-     'L1_cplx_loglr': (103.39575707721127+0j),
-     'L1_optimal_snrsq': 206.79151415442254,
-     'logjacobian': 0.0,
-     'loglr': 278.9612860719217,
-     'logprior': 0.9162907318741542}
+    >>> print('{:.2f}'.format(model.logplr))
+    279.88
+    >>> print(',\n'.join(['{}: {:.2f}'.format(s, v)
+    ...                   for (s, v) in sorted(model.current_stats.items())]))
+    H1_cplx_loglr: 175.57+0.00j,
+    H1_optimal_snrsq: 351.13,
+    L1_cplx_loglr: 103.40+0.00j,
+    L1_optimal_snrsq: 206.79,
+    logjacobian: 0.00,
+    loglikelihood: 0.00,
+    loglr: 278.96,
+    logprior: 0.92
 
     """
     name = 'gaussian_noise'
@@ -258,9 +265,10 @@ class GaussianNoise(BaseDataModel):
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
 
     @property
-    def default_stats(self):
-        """The stats that ``get_current_stats`` returns by default."""
-        return ['logjacobian', 'logprior', 'loglr'] + \
+    def _extra_stats(self):
+        """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
+        detector."""
+        return ['loglr'] + \
                ['{}_cplx_loglr'.format(det) for det in self._data] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
 
@@ -286,6 +294,7 @@ class GaussianNoise(BaseDataModel):
         """Convenience function to set loglr values if no waveform generated.
         """
         for det in self._data:
+            setattr(self._current_stats, 'loglikelihood', -numpy.inf)
             setattr(self._current_stats, '{}_cplx_loglr'.format(det),
                     -numpy.inf)
             # snr can't be < 0 by definition, so return 0
@@ -335,6 +344,9 @@ class GaussianNoise(BaseDataModel):
             setattr(self._current_stats, '{}_cplx_loglr'.format(det),
                     cplx_loglr)
             lr += cplx_loglr.real
+        # also store the loglikelihood, to ensure it is populated in the
+        # current stats even if loglikelihood is never called
+        self._current_stats.loglikelihood = lr + self.lognl
         return float(lr)
 
     def _loglikelihood(self):
