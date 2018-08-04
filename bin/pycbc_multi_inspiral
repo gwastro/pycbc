@@ -29,7 +29,6 @@ from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
 import pycbc.detector
 import numpy as np
-import events
 
 parser = argparse.ArgumentParser(usage='',
     description="Find multiple detector gravitational-wave triggers.")
