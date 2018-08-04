@@ -1119,7 +1119,7 @@ mkdir -p "$ENVIRONMENT/dist"
 # if the build machine has dbhash & shelve, scipy weave will use bsddb
 # make sure these exist and get added to the bundle(s)
 python -c "import dbhash, shelve"
-hidden_imports="--hidden-import=dbhash --hidden-import=shelve"
+hidden_imports="--hidden-import=dbhash --hidden-import=shelve --hidden-import=six"
 
 # PyInstaller
 if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
