@@ -1562,6 +1562,8 @@ if $build_onefile_bundles; then
     echo -e "\\n\\n>> [`date`] building pycbc_inspiral_osg pyinstaller onefile spec" >&3
     pyi-makespec \
         --additional-hooks-dir $hooks/hooks \
+        --exclude-module astropy \
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
         --runtime-hook $hooks/runtime-tkinter.py \
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_inspiral --name pycbc_inspiral_osg
