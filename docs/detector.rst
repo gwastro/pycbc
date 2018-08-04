@@ -27,12 +27,10 @@ Time source gravitational-wave passes through detector
 .. literalinclude:: ../examples/detector/delay.py
 .. command-output:: python ../examples/detector/delay.py
 
-======================================================
-Antenna pattern of a gravitational wave detector and
-projecting a signal into the detector frame
-======================================================
+================================================================
+Antenna Patterns and Projecting a Signal into the Detector Frame
+================================================================
 
 .. literalinclude:: ../examples/detector/ant.py
 .. command-output:: python ../examples/detector/ant.py
-
 
