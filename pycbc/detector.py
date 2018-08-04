@@ -86,7 +86,7 @@ class Detector(object):
 
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
-        
+
         Parameters
         ----------
         right_ascension: float or numpy.ndarray
@@ -95,7 +95,7 @@ class Detector(object):
             The declination of the source
         polarization: float or numpy.ndarray
             The polarization angle of the source
-        
+
         Returns
         -------
         fplus: float or numpy.ndarray
@@ -105,7 +105,7 @@ class Detector(object):
         """
         gmst = Time(t_gps, format='gps', location=(0, 0))
         gha = gmst.sidereal_time('mean').rad - right_ascension
-        
+
         cosgha = cos(gha)
         singha = sin(gha)
         cosdec = cos(declination)
@@ -117,7 +117,7 @@ class Detector(object):
         x1 = -cospsi * cosgha + sinpsi * singha * sindec
         x2 =  sinpsi * cosdec
         x = np.array([x0, x1, x2])
-        
+
         dx = self.response.dot(x)
 
         y0 =  sinpsi * singha - cospsi * cosgha * sindec
@@ -125,14 +125,14 @@ class Detector(object):
         y2 =  cospsi * cosdec
         y = np.array([y0, y1, y2])
         dy = self.response.dot(y)
-        
+
         if hasattr(dx, 'shape'):
             fplus = (x * dx - y * dy).sum(axis=0)
             fcross = (x * dy + y * dx).sum(axis=0)
         else:
             fplus = (x * dx - y * dy).sum()
             fcross = (x * dy + y * dx).sum()
-        
+
         return fplus, fcross
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
@@ -144,10 +144,10 @@ class Detector(object):
                                              t_gps)
 
     def time_delay_from_location(self, other_location, right_ascension,
-                                  declination, t_gps):
+                                 declination, t_gps):
         """Return the time delay from the given location to detector for
         a signal with the given sky location
-        
+
         In other words return `t1 - t2` where `t1` is the
         arrival time in this detector and `t2` is the arrival time in the
         other location.
@@ -172,11 +172,11 @@ class Detector(object):
                     location=(0, 0)).sidereal_time('mean').rad
         ra_angle = gmst - right_ascension
         cosd = cos(declination)
-        
+
         e0 = cosd * cos(ra_angle)
         e1 = cosd * -sin(ra_angle)
         e2 = sin(declination)
-        
+
         ehat = np.array([e0, e1, e2])
         dx = other_location - self.location
         return dx.dot(ehat) / constants.c.value
@@ -213,11 +213,11 @@ class Detector(object):
 
     def project_wave(self, hp, hc, longitude, latitude, polarization):
         """Return the strain of a waveform as measured by the detector.
-        
+
         Apply the time shift for the given detector relative to the assumed
-        geocentric frame and apply the antenna patterns to the plus and cross 
+        geocentric frame and apply the antenna patterns to the plus and cross
         polarizations.
-        
+
         """
         h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
                 hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
@@ -229,12 +229,12 @@ class Detector(object):
     def optimal_orientation(self, t_gps):
         """Return the optimal orientation in right ascension and declination
            for a given GPS time.
-           
+
         Parameters
         ----------
         t_gps: float
             Time in gps seconds
-            
+
         Returns
         -------
         ra: float
