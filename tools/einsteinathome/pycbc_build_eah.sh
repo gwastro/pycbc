@@ -1585,7 +1585,9 @@ if $build_onefile_bundles; then
         pycbc_inspiral_osg.spec1 > pycbc_inspiral_osg.spec
 
     echo -e ">> [`date`] running pyinstaller" >&3
-    pyinstaller pycbc_inspiral_osg.spec
+    pyinstaller pycbc_inspiral_osg.spec \
+                --exclude-module astropy \
+                --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
 
     if echo ".$pycbc_tag" | egrep '^\.v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
         mv dist/pycbc_inspiral_osg "dist/pycbc_inspiral_osg_$pycbc_tag"
