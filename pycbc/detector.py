@@ -181,7 +181,6 @@ class Detector(object):
         dx = other_location - self.location
         return dx.dot(ehat) / constants.c.value
 
-
     def time_delay_from_detector(self, other_detector, right_ascension,
                                  declination, t_gps):
         """Return the time delay from the given to detector for a signal with
