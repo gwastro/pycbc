@@ -712,7 +712,7 @@ class EventManagerCoherent(EventManager):
                 else:
                     f['chisq_dof'] = numpy.zeros(len(ifo_events))
 
-                f['template_hash'] = th[tid]
+                f['template_hash'] = th[tid][self.events['ifo']==i]
 
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([\
