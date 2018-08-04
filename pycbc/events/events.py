@@ -650,7 +650,7 @@ class EventManagerCoherent(EventManager):
             #First add the ifo event ids to the network branch
             f[ifo + '_event_id'] = network_events[ifo + '_event_id']
         #Individual ifo stuff
-        for ifo in self.ifos:
+        for i,ifo in enumerate(self.ifos):
             f.prefix = ifo
             ifo_events = numpy.array([e for e in self.events if \
                     e['ifo'] == self.ifo_dict[ifo]], dtype=self.event_dtype)
@@ -764,27 +764,35 @@ class EventManagerCoherent(EventManager):
         #when looping over sky points and time slides.
         existing_times = {}
         new_times = {}
+        existing_template_id = {}
+        new_template_id = {}
         existing_events_mask = {}
         new_template_event_mask = {}
         existing_template_event_mask = {}
         for i,ifo in enumerate(self.ifos):
             existing_times[ifo] = self.events['time_index'][np.where(self.events['ifo']==i)]
             new_times[ifo] = self.template_event_dict[ifo]['time_index']
-            existing_events_mask[ifo] = np.argwhere(np.isin(existing_times[ifo], new_times[ifo])).reshape(-1,)
-            new_template_event_mask[ifo] = np.argwhere(~np.isin(new_times[ifo], existing_times[ifo])).reshape(-1,)
-            existing_template_event_mask[ifo] = np.argwhere(np.isin(new_times[ifo], existing_times[ifo])).reshape(-1,)
-            #self.template_event_dict[self.ifos[ifo]] = np.delete(self.template_event_dict[self.ifos[ifo]],existing_event_mask)
-
-            # Set ids (These will eventually show how each trigger in the single ifo 
-            #trigger list correspond to the network triggers)
-            #num_events = len(self.template_event_dict['network'])
-            #num_events = len(self.template_event_dict[ifo])
+            existing_template_id[ifo] = self.events['template_id'][np.where(self.events['ifo']==i)]
+            new_template_id[ifo] = self.template_event_dict[ifo]['template_id']
+            #This is true for each existing event that has the same time index and template id as a template trigger.
+            existing_events_mask[ifo] = np.argwhere(np.logical_and(np.isin(existing_times[ifo], new_times[ifo]),\
+                                                      np.isin(existing_template_id[ifo],new_template_id[ifo]))).reshape(-1,)
+            #This is true for each template event that has either a new trigger time or a new template id.
+            new_template_event_mask[ifo] = np.argwhere(np.logical_or(~np.isin(new_times[ifo], existing_times[ifo]),\
+                                                     ~np.isin(new_template_id[ifo], existing_template_id[ifo]))).reshape(-1,)
+            #This is true for each template event that has the same time index and template id as an exisitng event trigger.
+            existing_template_event_mask[ifo] = np.argwhere(np.logical_and(np.isin(new_times[ifo], existing_times[ifo]),\
+                                                      np.isin(new_template_id[ifo],existing_template_id[ifo]))).reshape(-1,)
+            # Set ids (These show how each trigger in the single ifo trigger list correspond to the network triggers)
             num_events = len(new_template_event_mask[ifo])
             new_event_ids = numpy.arange(self.event_index[ifo],
                                               self.event_index[ifo]+num_events)
+            #Every template event that corresponds to a new trigger gets a new id. Triggers that have been found before are not saved.
             self.template_event_dict[ifo]['event_id'][new_template_event_mask[ifo]] = new_event_ids
             self.template_event_dict['network'][ifo + '_event_id'][new_template_event_mask[ifo]] = new_event_ids
-            self.template_event_dict['network'][ifo + '_event_id'][existing_template_event_mask[ifo]] = self.events[self.events['ifo']==i][existing_events_mask[ifo]]['event_id']
+            #Template events that have been found before get the event id of the first time they were found.
+            self.template_event_dict['network'][ifo + '_event_id'][existing_template_event_mask[ifo]] = \
+                                                 self.events[self.events['ifo']==i][existing_events_mask[ifo]]['event_id']
             self.event_index[ifo] = self.event_index[ifo]+num_events
 
         num_events = len(self.template_event_dict['network'])
