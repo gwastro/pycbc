@@ -34,6 +34,10 @@ from astropy.time import Time
 from astropy import constants
 from numpy import cos, sin
 
+# Response functions are modelled after those in lalsuite and as also 
+# presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
+
+
 def get_available_detectors():
     """Return list of detectors known in the currently sourced lalsuite.
 
@@ -82,6 +86,22 @@ class Detector(object):
 
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
+        
+        Parameters
+        ----------
+        right_ascension: float or numpy.ndarray
+            The right ascension of the source
+        declination: float or numpy.ndarray
+            The declination of the source
+        polarization: float or numpy.ndarray
+            The polarization angle of the source
+        
+        Returns
+        -------
+        fplus: float or numpy.ndarray
+            The plus polarization factor for this sky location / orientation
+        fcross: float or numpy.ndarray
+            The cross polarization factor for this sky location / orientation
         """
         gmst = Time(t_gps, format='gps', location=(0, 0))
         gha = gmst.sidereal_time('mean').rad - right_ascension
@@ -209,6 +229,18 @@ class Detector(object):
     def optimal_orientation(self, t_gps):
         """Return the optimal orientation in right ascension and declination
            for a given GPS time.
+           
+        Parameters
+        ----------
+        t_gps: float
+            Time in gps seconds
+            
+        Returns
+        -------
+        ra: float
+            Right ascension that is optimally oriented for the detector
+        dec: float
+            Declination that is optimally oriented for the detector
         """
         gmst = Time(t_gps, format='gps',
                     location=(0, 0)).sidereal_time('mean').rad
