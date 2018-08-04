@@ -1563,7 +1563,7 @@ if $build_onefile_bundles; then
     pyi-makespec \
         --additional-hooks-dir $hooks/hooks \
         --exclude-module astropy \
-        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy \
         --runtime-hook $hooks/runtime-tkinter.py \
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_inspiral --name pycbc_inspiral_osg
