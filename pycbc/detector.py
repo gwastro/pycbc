@@ -97,16 +97,22 @@ class Detector(object):
         x1 = -cospsi * cosgha + sinpsi * singha * sindec
         x2 =  sinpsi * cosdec
         x = np.array([x0, x1, x2])
-        dx = resp.dot(x)
+        
+        dx = self.response.dot(x)
 
         y0 =  sinpsi * singha - cospsi * cosgha * sindec
         y1 =  sinpsi * cosgha + cospsi * singha * sindec
         y2 =  cospsi * cosdec
         y = np.array([y0, y1, y2])
-        dy = resp.dot(y)
+        dy = self.response.dot(y)
         
-        fplus = (x * dx - y * dy).sum()
-        fcross = (x * dy + y * dx).sum()
+        if hasattr(dx, 'shape'):
+            fplus = (x * dx - y * dy).sum(axis=0)
+            fcross = (x * dy + y * dx).sum(axis=0)
+        else:
+            fplus = (x * dx - y * dy).sum()
+            fcross = (x * dy + y * dx).sum()
+        
         return fplus, fcross
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
@@ -153,7 +159,7 @@ class Detector(object):
         
         ehat = np.array([e0, e1, e2])
         dx = other_location - self.location
-        return float(ehat.dot(dx) / constants.c.value)
+        return dx.dot(ehat) / constants.c.value
 
 
     def time_delay_from_detector(self, other_detector, right_ascension,
