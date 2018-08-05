@@ -1239,13 +1239,17 @@ if $use_pycbc_pyinstaller_hooks; then
     export PYCBC_HOOKS_DIR="$hooks"
     pyi-makespec $upx \
         --additional-hooks-dir $hooks/hooks \
+         --exclude-module astropy \
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
         --runtime-hook $hooks/runtime-tkinter.py $hidden_imports \
         --hidden-import=pkg_resources \
         --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
     hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
-    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
+    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral \
+            --exclude-module astropy \
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
 fi
 # patch spec file to add "-v" to python interpreter options
 if $verbose_pyinstalled_python; then
