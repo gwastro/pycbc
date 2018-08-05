@@ -1240,7 +1240,7 @@ if $use_pycbc_pyinstaller_hooks; then
     pyi-makespec $upx \
         --additional-hooks-dir $hooks/hooks \
          --exclude-module astropy \
-        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy \
         --runtime-hook $hooks/runtime-tkinter.py $hidden_imports \
         --hidden-import=pkg_resources \
         --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
