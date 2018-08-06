@@ -137,7 +137,8 @@ def read_params_from_config(cp, prior_section='prior',
     except _ConfigParser.NoSectionError:
         static_args = {}
     # try converting values to float
-    for key,val in static_args.iteritems():
+    for key in static_args:
+        val = static_args[key]
         try:
             # the following will raise a ValueError if it cannot be cast to
             # float (as we would expect for string arguments)

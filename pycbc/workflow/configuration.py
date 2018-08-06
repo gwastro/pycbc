@@ -33,15 +33,15 @@ import stat
 import shutil
 import time
 import logging
-import urlparse
-import cookielib
 import requests
 import distutils.spawn
-import ConfigParser
 import itertools
 import glue.pipeline
 
-from cookielib import (_warn_unhandled_exception, LoadError, Cookie)
+from six.moves import configparser as ConfigParser
+from six.moves.urllib.parse import urlparse
+from six.moves import http_cookiejar as cookielib
+from six.moves.http_cookiejar import (_warn_unhandled_exception, LoadError, Cookie)
 from bs4 import BeautifulSoup
 
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
@@ -143,7 +143,7 @@ def resolve_url(url, directory=None, permissions=None):
     that file.
     """
 
-    u = urlparse.urlparse(url)
+    u = urlparse(url)
 
     # create the name of the destination file
     if directory is None:

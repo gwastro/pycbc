@@ -18,6 +18,7 @@ from __future__ import division
 import logging
 import numpy
 import os.path
+from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
 from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data, load_ns_sequence, min_eta_for_em_bright
@@ -477,7 +478,7 @@ def rotate_vector(evecs, old_vector, rescale_factor, index):
         Position of the point(s) in the resulting coordinate.
     """
     temp = 0
-    for i in xrange(len(evecs)):
+    for i in range(len(evecs)):
         temp += (evecs[i,index] * rescale_factor) * old_vector[i]
     return temp
 
@@ -534,7 +535,7 @@ def get_point_distance(point1, point2, metricParams, fUpper):
     bXis = get_cov_params(bMass1, bMass2, bSpin1, bSpin2, metricParams, fUpper)
 
     dist = (aXis[0] - bXis[0])**2
-    for i in xrange(1,len(aXis)):
+    for i in range(1,len(aXis)):
         dist += (aXis[i] - bXis[i])**2
 
     return dist, aXis, bXis
@@ -756,7 +757,7 @@ def find_closest_calculated_frequencies(input_freqs, metric_freqs):
     # NOTE: totmass and f_cutoff are both numpy arrays as this function is
     #       designed so that the cutoff can be calculated for many systems
     #       simulataneously
-    for i in xrange(len(metric_freqs)):
+    for i in range(len(metric_freqs)):
         if i == 0:
             # If frequency is lower than halfway between the first two entries
             # use the first (lowest) value

@@ -25,6 +25,7 @@
 """
 This modules provides a device independent Array class based on PyCUDA and Numpy.
 """
+from __future__ import division
 
 BACKEND_PREFIX="pycbc.types.array_"
 
@@ -290,7 +291,6 @@ class Array(object):
     def _icheckother(fn, self, other):
         """ Checks the input to in-place operations """
         self._typecheck(other) 
-
         if type(other) in _ALLOWED_SCALARS:
             if self.kind == 'real' and type(other) == complex:
                 raise TypeError('dtypes are incompatible')
@@ -354,7 +354,7 @@ class Array(object):
     @_convert
     @_checkother
     @_returntype
-    def __div__(self,other):
+    def __truediv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         return self._data / other
 
@@ -367,7 +367,7 @@ class Array(object):
 
     @_convert
     @_icheckother
-    def __idiv__(self,other):
+    def __itruediv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         self._data /= other
         return self

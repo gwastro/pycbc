@@ -72,7 +72,8 @@ class TestDistributions(unittest.TestCase):
         self.dists = distributions.read_distributions_from_config(self.cp)
 
         # check that all distriubtions will be tested
-        for dname, dclass in distributions.distribs.iteritems():
+        for dname in distributions.distribs:
+            dclass = distributions.distribs[dname]
             if (not numpy.any([isinstance(dist, dclass)
                                for dist in self.dists])
                     and dname not in EXCLUDE_DIST_NAMES):

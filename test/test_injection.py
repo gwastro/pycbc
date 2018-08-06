@@ -98,7 +98,7 @@ class TestInjection(unittest.TestCase):
         self.injections = []
         start_time = float(lal.GPSTimeNow())
         taper_choices = ('TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND')
-        for i, taper in zip(xrange(20), itertools.cycle(taper_choices)):
+        for i, taper in zip(range(20), itertools.cycle(taper_choices)):
             inj = MyInjection()
             inj.end_time = start_time + 40000 * i + \
                     numpy.random.normal(scale=3600)
@@ -120,7 +120,7 @@ class TestInjection(unittest.TestCase):
         # create sim inspiral table, link it to document and fill it
         sim_table = lsctables.New(lsctables.SimInspiralTable)
         xmldoc.childNodes[-1].appendChild(sim_table)
-        for i in xrange(len(self.injections)):
+        for i in range(len(self.injections)):
             row = sim_table.RowType()
             self.injections[i].fill_sim_inspiral_row(row)
             row.process_id = 'process:process_id:0'

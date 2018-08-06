@@ -16,6 +16,7 @@
 
 from __future__ import division
 import numpy
+from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import generate_mapping
 
 
@@ -97,23 +98,23 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
     for item in list:
         # Here we convert the moments into a form easier to use here
         Js = {}
-        for i in xrange(-7,18):
+        for i in range(-7,18):
             Js[i] = metricParams.moments['J%d'%(i)][item]
 
         logJs = {}
-        for i in xrange(-1,18):
+        for i in range(-1,18):
             logJs[i] = metricParams.moments['log%d'%(i)][item]
 
         loglogJs = {}
-        for i in xrange(-1,18):
+        for i in range(-1,18):
             loglogJs[i] = metricParams.moments['loglog%d'%(i)][item]
 
         logloglogJs = {}
-        for i in xrange(-1,18):
+        for i in range(-1,18):
             logloglogJs[i] = metricParams.moments['logloglog%d'%(i)][item]
 
         loglogloglogJs = {}
-        for i in xrange(-1,18):
+        for i in range(-1,18):
             loglogloglogJs[i] = metricParams.moments['loglogloglog%d'%(i)][item]
 
         mapping = generate_mapping(metricParams.pnOrder)
@@ -128,7 +129,7 @@ def determine_eigen_directions(metricParams, preserveMoments=False,
         evals[item],evecs[item] = numpy.linalg.eig(gs)
 
         # Numerical error can lead to small negative eigenvalues.
-        for i in xrange(len(evals[item])):
+        for i in range(len(evals[item])):
             if evals[item][i] < 0:
                 # Due to numerical imprecision the very small eigenvalues can
                 # be negative. Make these positive.
@@ -234,7 +235,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
     # Do all the J moments
     moments = {}
     moments['I7'] = I7
-    for i in xrange(-7,18):
+    for i in range(-7,18):
         funct = lambda x,f0: x**((-i+7)/3.)
         moments['J%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
@@ -242,7 +243,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do the logx multiplied by some power terms
-    for i in xrange(-1,18):
+    for i in range(-1,18):
         funct = lambda x,f0: (numpy.log((x*f0)**(1./3.))) * x**((-i+7)/3.)
         moments['log%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
@@ -250,7 +251,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do the loglog term
-    for i in xrange(-1,18):
+    for i in range(-1,18):
         funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**2 * x**((-i+7)/3.)
         moments['loglog%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
@@ -258,7 +259,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do the logloglog term
-    for i in xrange(-1,18):
+    for i in range(-1,18):
         funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**3 * x**((-i+7)/3.)
         moments['logloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
@@ -266,7 +267,7 @@ def get_moments(metricParams, vary_fmax=False, vary_density=None):
                                 vary_fmax=vary_fmax, vary_density=vary_density)
 
     # Do the logloglog term
-    for i in xrange(-1,18):
+    for i in range(-1,18):
         funct = lambda x,f0: (numpy.log((x*f0)**(1./3.)))**4 * x**((-i+7)/3.)
         moments['loglogloglog%d' %(i)] = calculate_moment(new_f, new_amp, \
                                 metricParams.fLow, metricParams.fUpper, \
@@ -305,7 +306,7 @@ def interpolate_psd(psd_f, psd_amp, deltaF):
     new_psd_amp = []
     fcurr = psd_f[0]
 
-    for i in xrange(len(psd_f) - 1):
+    for i in range(len(psd_f) - 1):
         f_low = psd_f[i]
         f_high = psd_f[i+1]
         amp_low = psd_amp[i]
@@ -434,8 +435,8 @@ def calculate_metric(Js, logJs, loglogJs, logloglogJs, loglogloglogJs, \
     unmax_metric = numpy.matrix(numpy.zeros(shape=(maxLen+1,maxLen+1),
                                                                   dtype=float))
 
-    for i in xrange(16):
-        for j in xrange(16):
+    for i in range(16):
+        for j in range(16):
             calculate_metric_comp(metric, unmax_metric, i, j, Js,
                                            logJs, loglogJs, logloglogJs,
                                            loglogloglogJs, mapping)
