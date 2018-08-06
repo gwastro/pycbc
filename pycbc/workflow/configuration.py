@@ -41,7 +41,8 @@ import glue.pipeline
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.parse import urlparse
 from six.moves import http_cookiejar as cookielib
-from six.moves.http_cookiejar import (_warn_unhandled_exception, LoadError, Cookie)
+from six.moves.http_cookiejar import (_warn_unhandled_exception,
+                                      LoadError, Cookie)
 from bs4 import BeautifulSoup
 
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
