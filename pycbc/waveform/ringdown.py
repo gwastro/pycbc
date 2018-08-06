@@ -29,6 +29,7 @@ import numpy, lal
 import lalsimulation as lalsim
 from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
+from pycbc.waveform.utils import spher_harms
 
 default_qnm_args = {'t_0':0}
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
@@ -258,21 +259,6 @@ def lm_deltaf(damping_times, modes):
                 1. / qnm_time_decay(damping_times['%d%d%d' %(l,m,n)], 1./1000)
 
     return min(df.values())
-
-# Spherical harmonics #########################################################
-
-def spher_harms(l, m, inclination):
-    """Return spherical harmonic polarizations
-    """
-
-    # FIXME: we are using spin -2 weighted spherical harmonics for now,
-    # when possible switch to spheroidal harmonics.
-    Y_lm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, m).real
-    Y_lminusm = lal.SpinWeightedSphericalHarmonic(inclination, 0., -2, l, -m).real
-    Y_plus = Y_lm + (-1)**l * Y_lminusm
-    Y_cross = Y_lm - (-1)**l * Y_lminusm
-
-    return Y_plus, Y_cross
 
 # Functions for tapering ######################################################
 

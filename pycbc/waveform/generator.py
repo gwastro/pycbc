@@ -299,6 +299,8 @@ class TDomainEchoesGenerator(BaseGenerator):
         apprx = frozen_params['imr_approximant']
         imrargs = frozen_params.copy()
         imrargs['approximant'] = apprx
+        # ensure we generate with inclination set to 0
+        imrargs['inclination'] = 0.
         hp, hc = waveform.get_td_waveform(**imrargs)
         frozen_params["hp"] = hp
         frozen_params["hc"] = hc
