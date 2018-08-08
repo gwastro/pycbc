@@ -361,7 +361,7 @@ class Array(object):
     @_returntype
     @_convert
     @_checkother
-    def __rdiv__(self,other):
+    def __rtruediv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         return self._data.__rdiv__(other)
 
