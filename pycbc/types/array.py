@@ -363,7 +363,7 @@ class Array(object):
     @_checkother
     def __rtruediv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
-        return self._data.__rdiv__(other)
+        return self._data.__rtruediv__(other)
 
     @_convert
     @_icheckother
@@ -371,6 +371,10 @@ class Array(object):
         """ Divide Array by Array or scalar and return an Array. """
         self._data /= other
         return self
+        
+    __div__ = __truediv__
+    __idiv__ = __itruediv__
+    __rdiv__ = __rtruediv__
 
     @_returntype
     @_convert
