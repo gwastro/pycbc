@@ -449,7 +449,7 @@ class TimeSeries(Array):
         """
         from pycbc.psd import welch
         seg_len = int(segment_duration * self.sample_rate)
-        seg_stride = seg_len / 2
+        seg_stride = int(seg_len / 2)
         return welch(self, seg_len=seg_len,
                            seg_stride=seg_stride,
                            **kwds)
