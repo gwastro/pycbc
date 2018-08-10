@@ -1073,7 +1073,8 @@ class MarginalizedPhaseGaussianLikelihood(GaussianLikelihood):
                 continue
             h[self._kmin[det]:kmax] *= self._weight[det][self._kmin[det]:kmax]
             hh += h[self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax]).real
-            hd += self.data[det][self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax])
+            hd += self.data[det][self._kmin[det]:kmax].inner(
+                                                    h[self._kmin[det]:kmax])
         hd = abs(hd)
         return numpy.log(special.i0e(hd)) + hd - 0.5*hh
 
