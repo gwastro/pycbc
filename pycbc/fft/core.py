@@ -25,7 +25,7 @@
 This package provides a front-end to various fast Fourier transform
 implementations within PyCBC.
 """
-
+from __future__ import division
 from pycbc.types import Array as _Array
 from pycbc.types import TimeSeries as _TimeSeries
 from pycbc.types import FrequencySeries as _FrequencySeries
@@ -114,10 +114,10 @@ def _check_fwd_args(invec, itype, outvec, otype, nbatch, size):
         if (olen/nbatch) != size:
             raise ValueError("For C2C FFT, len(outvec) must be nbatch*size")
     elif itype == 'real' and otype == 'complex':
-        if (olen/nbatch) != (size/2 + 1):
+        if (olen/nbatch) != int(size/2 + 1):
             raise ValueError("For R2C FFT, len(outvec) must be nbatch*(size/2 + 1)")
         if inplace:
-            if (ilen/nbatch) != 2*(size/2 + 1):
+            if (ilen/nbatch) != int(2*(size/2 + 1)):
                 raise ValueError("For R2C in-place FFT, len(invec) must be nbatch*2*(size/2+1)")
         else:
             if (ilen/nbatch) != size:
@@ -145,10 +145,10 @@ def _check_inv_args(invec, itype, outvec, otype, nbatch, size):
         if (olen/nbatch) != size:
             raise ValueError("For C2C IFFT, len(outvec) must be nbatch*size")
     elif itype == 'complex' and otype == 'real':
-        if (ilen/nbatch) != (size/2 + 1):
+        if (ilen/nbatch) != int(size/2 + 1):
             raise ValueError("For C2R IFFT, len(invec) must be nbatch*(size/2 + 1)")
         if inplace:
-            if (olen/nbatch) != 2*(size/2 + 1):
+            if (olen/nbatch) != 2*int(size/2 + 1):
                 raise ValueError("For C2R in-place IFFT, len(outvec) must be nbatch*2*(size/2+1)")
         else:
             if (olen/nbatch) != size:
@@ -191,9 +191,9 @@ class _BaseFFT(object):
             self.odist = self.size
         else:
             # Real-to-complex case:
-            self.odist = (self.size/2 + 1)
+            self.odist = int(self.size/2 + 1)
             if self.inplace:
-                self.idist = 2*(self.size/2 + 1)
+                self.idist = 2*int(self.size/2 + 1)
             else:
                 self.idist = self.size
 
@@ -244,9 +244,9 @@ class _BaseIFFT(object):
             self.odist = self.size
         else:
             # Complex-to-real case:
-            self.idist = (self.size/2 + 1)
+            self.idist = int(self.size/2 + 1)
             if self.inplace:
-                self.odist = 2*(self.size/2 + 1)
+                self.odist = 2*int(self.size/2 + 1)
             else:
                 self.odist = self.size
 
