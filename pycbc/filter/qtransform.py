@@ -214,7 +214,7 @@ def qseries(fseries, Q, f0, return_complex=False):
 
     tlen = (len(fseries)-1) * 2
     windowed.resize(tlen)
-    windowed = numpy.roll(windowed, -center)
+    windowed.roll(-center)
 
     # calculate the time series for this q -value
     windowed = FrequencySeries(windowed, delta_f=fseries.delta_f,
