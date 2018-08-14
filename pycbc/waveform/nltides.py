@@ -1,21 +1,25 @@
 """ Utilities for introducing nonlinear tidal effects into waveform approximants
 """
-import pycbc.pnutils
+import pycbc.conversions
 import numpy
+import lal
 
-def nonlinear_phase_difference(f, f0, A, n, m1, m2):
-    """Return the phase difference for nonlinear tides
-
-    Implemenents the phase difference approximation of nonlinear
-    tides in Essick, et al. https://arxiv.org/pdf/1609.06362v2.pdf
+def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
+    """Calculate the change to the Fourier phase change due
+    to non-linear tides. Note that the Fourier phase \Psi(f)
+    is not the same as the gravitational-wave phase \phi(f) and
+    is computed by
+    \Delta \Psi(f) = 2 \pi f \Delta t(f) - \Delta \phi(f)
 
     Parameters
     ----------
     f: numpy.ndarray
-        Array of frequency values to calculate the fourier phase difference.
+        Array of frequency values to calculate the fourier phase difference
+    delta_f: float
+        Frequency resolution of f array
     f0: float
         Frequency that NL effects switch on
-    A: float
+    amplitude: float
         Amplitude of effect
     n: float
         Growth dependence of effect
@@ -24,15 +28,34 @@ def nonlinear_phase_difference(f, f0, A, n, m1, m2):
     m2: float
         Mass of component 2
     """
-    x0 = f0 / 100.0
-    x = f / 100.0
-    mc, _ = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
-    dphi = 0.4 * (mc / 1.2) ** (-10.0 / 3) * A * 10**8
-    dphi *= (x0**(n - 3.0) - x**(n - 3.0)) / (n - 3.0)
-    return dphi
+
+    kmin = int(f0/delta_f)
+    kmax = len(f)
+
+    f_ref, t_of_f_factor, phi_of_f_factor = \
+        pycbc.conversions.nltides_coefs(f0, amplitude, n, m1, m2)
+
+    # Fourier phase shift below f0 from \Delta \phi(f)
+    delta_psi_f_le_f0 = numpy.ones(kmin)
+    delta_psi_f_le_f0 *= - phi_of_f_factor * (f0/f_ref)**(n-3.)
+
+    # Fourier phase shift above f0 from \Delta \phi(f)
+    delta_psi_f_gt_f0 = - phi_of_f_factor * (f[kmin:kmax]/f_ref)**(n-3.)
+
+    # Fourier phase shift below f0 from 2 pi f \Delta t(f)
+    delta_psi_f_le_f0 += 2.0 * lal.lal.PI * f[0:kmin] * t_of_f_factor * \
+        (f0/f_ref)**(n-4.)
+
+    # Fourier phase shift above f0 from 2 pi f \Delta t(f)
+    delta_psi_f_gt_f0 += 2.0 * lal.lal.PI * f[kmin:kmax] * t_of_f_factor * \
+        (f[kmin:kmax]/f_ref)**(n-4.)
+
+    # Return the shift to the Fourier phase
+    return numpy.concatenate((delta_psi_f_le_f0,delta_psi_f_gt_f0),axis=0)
+
 
 def nonlinear_tidal_spa(**kwds):
-    from . import waveform
+    from pycbc import waveform
     from pycbc.types import Array
 
     # We start with the standard TaylorF2 based waveform
@@ -40,11 +63,12 @@ def nonlinear_tidal_spa(**kwds):
     hp, hc = waveform.get_fd_waveform(approximant="TaylorF2", **kwds)
 
     # Add the phasing difference from the nonlinear tides
-    kmin = int((kwds['f0'] / hp.delta_f))
-    f = numpy.arange(kmin, len(hp)) * hp.delta_f
-    pd =  Array(numpy.exp(1.0j * nonlinear_phase_difference(f,
-               kwds['f0'], kwds['A'], kwds['n'], kwds['mass1'], kwds['mass2'])),
+    f = numpy.arange(len(hp)) * hp.delta_f
+    pd =  Array(numpy.exp(-1.0j * nltides_fourier_phase_difference(f,
+               hp.delta_f,
+               kwds['f0'], kwds['amplitude'], kwds['n'],
+               kwds['mass1'], kwds['mass2'])),
                dtype=hp.dtype)
-    hp[kmin:] *= pd
-    hc[kmin:] *= pd
+    hp *= pd
+    hc *= pd
     return hp, hc
