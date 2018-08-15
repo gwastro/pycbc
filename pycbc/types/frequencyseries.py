@@ -17,7 +17,7 @@
 """
 Provides a class representing a frequency series.
 """
-
+from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, zeros, _noreal
 import lal as _lal
@@ -454,7 +454,7 @@ class FrequencySeries(Array):
 
         # add 0.5 to round integer
         tlen  = int(1.0 / self.delta_f / delta_t + 0.5)
-        flen = tlen / 2 + 1
+        flen = int(tlen / 2 + 1)
         
         if flen < len(self):
             raise ValueError("The value of delta_t (%s) would be "

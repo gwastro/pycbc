@@ -17,7 +17,7 @@
 """
 Provides a class representing a time series.
 """
-
+from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
@@ -449,7 +449,7 @@ class TimeSeries(Array):
         """
         from pycbc.psd import welch
         seg_len = int(segment_duration * self.sample_rate)
-        seg_stride = seg_len / 2
+        seg_stride = int(seg_len / 2)
         return welch(self, seg_len=seg_len,
                            seg_stride=seg_stride,
                            **kwds)
@@ -503,7 +503,7 @@ class TimeSeries(Array):
         white = (self.to_frequencyseries() / psd**0.5).to_timeseries()
 
         if remove_corrupted:
-            white = white[max_filter_len/2:len(self)-max_filter_len/2]
+            white = white[int(max_filter_len/2):int(len(self)-max_filter_len/2)]
 
         if return_psd:
             return white, psd
@@ -743,7 +743,7 @@ class TimeSeries(Array):
 
         # add 0.5 to round integer
         tlen  = int(1.0 / delta_f / self.delta_t + 0.5)
-        flen = tlen / 2 + 1
+        flen = int(tlen / 2 + 1)
 
         if tlen < len(self):
             raise ValueError("The value of delta_f (%s) would be "
