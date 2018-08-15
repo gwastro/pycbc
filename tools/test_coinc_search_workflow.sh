@@ -23,17 +23,19 @@ source ${VENV_PATH}/bin/activate
 CONFIG_PATH="https://raw.githubusercontent.com/ligo-cbc/pycbc-config/${TRAVIS_TAG}"
 echo -e "\\n>> [`date`] Using config files from ${CONFIG_PATH}"
 
-VETO_DEFINER="https://git.ligo.org/detchar/veto-definitions/raw/a07f542b37ccfcfbf2b732f0d75d0f1ab4166d9f/cbc/O1/H1L1-CBC_VETO_DEFINER_C02_O1_1126051217-11203200.xml"
+VETO_DEFINER="https://raw.githubusercontent.com/gwastro/pycbc-config/master/O1/dq/H1L1-DUMMY_O1_CBC_VDEF-1126051217-1220400.xml"
 echo -e "\\n>> [`date`] Using veto definer file from ${VETO_DEFINER}"
 
 BANK_FILE="${CONFIG_PATH}/O1/bank/H1L1-UBERBANK_MAXM100_NS0p05_ER8HMPSD-1126033217-223200.xml.gz"
 echo -e "\\n>> [`date`] Using template bank from ${BANK_FILE}"
 
+LOSC_SEG_QUERY=`which pycbc_losc_segment_query`
+
 echo -e "\\n>> [`date`] Creating test workflow"
 UUID=`uuidgen`
 WORKFLOW_NAME=test-workflow-$UUID
 OUTPUT_PATH=`pwd`/public_html/test_workflow/${WORKFLOW_NAME}
-export LIGO_DATAFIND_SERVER="datafind.ligo.org:443"
+export LIGO_DATAFIND_SERVER='128.230.190.43:80'
 
 mkdir $WORKFLOW_NAME
 pushd $WORKFLOW_NAME
@@ -50,6 +52,7 @@ pycbc_make_coinc_search_workflow \
   ${CONFIG_PATH}/O2/pipeline/injections.ini \
   ${CONFIG_PATH}/O2/pipeline/plotting.ini \
 --config-overrides \
+  "executables:segment_query:${LOSC_SEG_QUERY}" \
   "workflow-datafind:datafind-check-frames-exist:warn" \
   "workflow:start-time:$((1126259462 - 1800))" \
   "workflow:end-time:$((1126259462 + 1800))" \
