@@ -46,16 +46,17 @@ patch -p0 ligo-proxy-init <<EOF
 EOF
 if [ ! $? -eq 0 ] ; then
 patch -p0 ligo-proxy-init <<EOF
---- /bin/ligo-proxy-init	2017-04-12 12:27:45.000000000 +0000
-+++ ligo-proxy-init	2017-09-07 23:37:51.224116188 +0000
+--- ligo-proxy-init.orig	2018-08-15 15:09:33.230404745 -0400
++++ ligo-proxy-init	2018-08-15 15:10:13.922339055 -0400
 @@ -212,7 +212,7 @@
  
-     login=\${1/@*/}
-     [[ \$login == *","* ]] && echo "Replacing comma characters in login!"; login=\${login//,/.}
--    curl_auth_method="--user \$login"
-+    curl_auth_method="--user \$login:\${LIGO_TOKEN}"
-     echo "Your identity: \$login@LIGO.ORG"
+     login=${1/@*/}
+     [[ $login == *","* ]] && echo "Replacing comma characters in login!"; login=${login//,/.}
+-    curl_auth_method="--user $login"
++    curl_auth_method="--user $login:\${LIGO_TOKEN}"
+     echo "Your identity: $login@LIGO.ORG"
  fi
+ 
 EOF
 if [ ! $? -eq 0 ] ; then
 echo -e "\\n>> [`date`] ERROR: could not patch ligo-proxy-init for Travis"
