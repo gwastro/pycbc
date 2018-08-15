@@ -1,0 +1,364 @@
+#!/usr/bin/env python
+import argparse
+from dqsegdb import clientutils
+import glue.segments
+from glue import git_version
+from glue.ligolw import ligolw
+from glue.ligolw import utils
+from glue.ligolw.utils import process
+from glue.segmentdb import segmentdb_utils
+from glue.segments import segment, segmentlist
+import json
+import logging
+import numpy
+import os
+import shutil
+import pwd
+from pycbc.workflow import SegFile
+import urllib2
+
+# Logging formatting from pycbc optimal snr
+log_fmt = '%(asctime)s %(message)s'
+log_date_fmt = '%Y-%m-%d %H:%M:%S'
+logging.basicConfig(level=logging.INFO, format=log_fmt,
+                    datefmt=log_date_fmt)
+
+# Function to query json segment data from LOSC
+def query_losc(ifo, segment_name, gps_start_time, duration):
+    """
+    Function that queries the O1 LOSC data from json to xml
+
+    Parameters
+    ----------
+    ifo: string
+        The interferometer to query (H1, L1).
+    segment_name: string
+        The veto group or science group to query from LOSC.
+    gps_start_time: int / string
+        The starting gps time to begin querying from the O1 LOSC data set.
+    duration: int / string
+        The amount of time in seconds after the gps start time.
+
+    Returns
+    ---------
+    doc: glue.ligolw.ligolw.Document
+        A ligolw document file containing the segment information from
+        querying LOSC. 
+    """
+    version = 1
+
+    PROGRAM_NAME = 'segment_script'
+    PROGRAM_PID  = os.getpid()
+    USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+    __author__  = "Duncan Brown <dabrown@syr.edu>"
+    __version__ = "git id %s" % git_version.id
+    __date__ = git_version.date
+
+    doc = ligolw.Document()
+    doc.appendChild(ligolw.LIGO_LW())
+    process_id = process.register_to_xmldoc(doc, PROGRAM_NAME, {},
+                                            version = git_version.id,
+                                            cvs_entry_time = __date__,
+                                            comment='LOSC Data').process_id
+
+    response = urllib2.urlopen(
+        'https://losc.ligo.org//timeline/segments/json/O1/{}_{}/{}/{}/'.format(ifo,
+                                         segment_name,gps_start_time,duration))
+    logging.info(response.info())
+    json_segment_data = json.loads(response.read())
+
+    seg_def_id = segmentdb_utils.add_to_segment_definer(doc, process_id, ifo,
+                                                        'RESULT', 1,
+                                                        comment='{} {}'.format(json_segment_data['dataset'],
+                                                                         json_segment_data['id']))
+    clientutils.add_to_segment_summary_ns(doc, process_id, seg_def_id,
+                                          [[json_segment_data['start'],
+                                            json_segment_data['end']]],
+                                          comment='start and end time from query')
+
+    found_segments=glue.segments.segmentlist([glue.segments.segment(x[0],x[1]) for x in json_segment_data['segments']])
+    clientutils.add_to_segment_ns(doc, process_id, seg_def_id, found_segments)
+
+    return doc
+
+# Write a new xml file given a segment list, the segment name to be written,
+# the ifo written for, starting time, and duration of the new segment.
+def write_new_seg_to_xml(input_segment_list, seg_name, ifo, starting_time, duration):
+    """
+    Function that writes glue segment information to a ligolw xml file.
+
+    Format for output xml file is <IFO-SEG_NAME-GPS_START_TIME-DURATION.xml>,
+    i.e. H1-VETOTIME_CAT1-9999999-33333.xml.
+
+    Parameters
+    ----------
+    input_segment_list: glue.segments.segmentlist
+        The list of segments to be placed in a ligolw xml file.
+    seg_name: string
+        The veto group or science group to write to the ligolw xml file.
+    ifo: string
+        The interferometer relevant to the input segment list to write to
+        the ligolw xml file. (H1, L1)
+    starting_time: int / string
+        The starting gps time to write to a ligolw xml file.
+    duration: int / string
+        The amount of time in seconds after the gps start time to write to
+        a ligolw xml file.
+
+    Returns
+    ---------
+    """
+    PROGRAM_NAME = "losc_segment_script"
+    PROGRAM_PID  = os.getpid()
+    USER_NAME = pwd.getpwuid(os.getuid())[0]
+
+    __author__  = "Steven Reyes <sdreyes@syr.edu>"
+    __version__ = "git id %s" % git_version.id
+    __date__ = git_version.date
+
+    doc = ligolw.Document()
+    doc.appendChild(ligolw.LIGO_LW())
+    process_id = process.register_to_xmldoc(doc, PROGRAM_NAME, {},
+                                            version = git_version.id,
+                                            cvs_entry_time = __date__,
+                                            comment='LOSC Data').process_id
+
+    seg_def_id = segmentdb_utils.add_to_segment_definer(
+                                doc, process_id, ifo, 'RESULT', 1,
+                                comment='{}-{}'.format(ifo, seg_name))
+    clientutils.add_to_segment_summary_ns(doc, process_id, seg_def_id,
+                                          [[starting_time, duration]],
+                                          comment='start and end time from query')
+
+    found_segments = input_segment_list
+    clientutils.add_to_segment_ns(doc, process_id, seg_def_id,
+                                  found_segments)
+
+    output_file = '{}-{}-{}-{}.xml'.format(ifo,seg_name,
+                                           starting_time,
+                                           duration)
+
+    logging.info("Writing {}".format(output_file))
+
+    utils.write_filename(doc, output_file, gz=False)
+
+    return output_file
+
+def complement_seg(segment_list_A, starting_time, ending_time):
+    """
+    Take a coalesced segment list A and subtract it from a segment containing
+    the full set of times between the start and end times given. This
+    will give the complement of the coalesced segment list A.
+
+    Parameters
+    ---------
+    segment_A: glue.segments.segmentlist
+        The list of coalesced segments from which to take the complement.
+
+    starting_time: int
+        The beginning gps time for which to construct the superset for segment
+        A. This with the ending time will be used to take the complement of
+        segment A.
+    ending_time: int
+        The ending gps time for which to construct the superset for segment A.
+        Paired with the starting time, a complement of segment list A can be
+        performed by subtracting segment A from this newly constructed segment
+        list.
+
+    Returns
+    ---------
+    segment_complement: glue.segments.segmentlist
+        The complement of segment list A given some starting and ending gps times.
+        This is a coalesced segments list from input gps starting time to
+        input gps ending time minus the times contained in segment list A.
+    """
+    segment_full = segmentlist([segment(starting_time, ending_time)])
+    # coalesce superstitiously
+    segment_full.coalesce()
+
+    segment_complement = segment_full - segment_list_A
+    segment_complement.coalesce()
+    return segment_complement
+
+def print_total_duration_of_segments(segment_list):
+    """
+    Print out the total duration of times listed in a segment list. Useful
+    tool for sanity checking segment arithmetic and examining final results.
+
+    Parameters
+    ---------
+    segment_list: glue.segments.segmentlist
+        The segment list to print out total duration of gps times.
+
+    Returns
+    ---------
+    total_duration: float
+        The total amount of seconds contained in a segment list.
+    """
+    start_times = numpy.zeros(len(segment_list))
+    end_times = numpy.zeros(len(segment_list))
+    for idx in range(len(segment_list)):
+        start_times[idx] = segment_list[idx][0]
+        end_times[idx] = segment_list[idx][1]
+
+    duration = end_times - start_times
+    total_duration = numpy.sum(duration)
+    # change to below for days
+    #total_duration = float(numpy.sum(duration)) / (24*60*60) 
+
+    return total_duration
+
+# Main
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--gps-start-time', type=int)
+parser.add_argument('--gps-end-time', type=int)
+parser.add_argument('--query-segments', action='store_true')
+parser.add_argument('--segment-url', type=str)
+parser.add_argument('--include-segments', type=str)
+parser.add_argument('--output-file', type=str)
+args = parser.parse_args()
+
+gps_start_time = args.gps_start_time
+gps_end_time = args.gps_end_time
+duration = gps_end_time - gps_start_time
+
+# Check gps times
+logging.info("Reading in LOSC files from {} to {}.".format(gps_start_time,
+                                                           gps_end_time))
+detector=args.include_segments.split(':')[0]
+logging.info("Querying for {}".format(detector))
+
+# output files
+file_list = []
+
+for ifo in [ detector ]:
+    for segment_name in ["DATA", "CBC_CAT1", "CBC_CAT2", "NO_CBC_HW_INJ"]:
+        logging.info("Querying for {}".format(segment_name))
+        doc = query_losc(ifo, segment_name, gps_start_time, duration)
+
+        if segment_name == "DATA":
+            alias_name = "SCIENCE_SEGMENTS"
+
+        elif segment_name.startswith("NO") :
+            alias_name = segment_name
+
+        else :
+            alias_name = "NO_" + segment_name
+
+        if alias_name == "SCIENCE_SEGMENTS":
+            f = "{}-{}.xml".format(ifo,alias_name)
+            logging.info("Writing {}".format(f))
+            utils.write_filename(doc, f, gz=False)
+            file_list.append(f)
+
+        else:
+            f = "{}-{}-{}-{}.xml".format(ifo,alias_name,
+                                         gps_start_time,
+                                         duration)
+
+            logging.info("Writing {}".format(f))
+            utils.write_filename(doc, f, gz=False)
+            file_list.append(f)
+
+logging.info("LOSC querying done.")
+
+no_cat1_file_name = "{}-NO_CBC_CAT1-{}-{}.xml".format(detector,
+                                                       gps_start_time,
+                                                       duration)
+
+# PyCBC has a bit of a monstrous way of reading glue segments from
+# xml files.
+seg_no_cat1_file = SegFile.from_segment_xml(no_cat1_file_name)
+seg_no_cat1 = seg_no_cat1_file.return_union_seglist()
+# WARNING: pycbc_glue.__segments.segmentlist
+# not exactly the same as a glue.__segments.segmentlist
+
+logging.info("{} contains {} seconds of data.".format(no_cat1_file_name,
+                     print_total_duration_of_segments(seg_no_cat1)))
+
+seg_cat1 = complement_seg(seg_no_cat1, gps_start_time,
+                             gps_end_time)
+
+logging.info("The complement of {} gives {} seconds of data.".format(no_cat1_file_name,
+                                 print_total_duration_of_segments(seg_cat1)))
+logging.info("This with the complement gives {} total seconds in O1.".format(print_total_duration_of_segments(seg_no_cat1) \
+                                 + print_total_duration_of_segments(seg_cat1)))
+
+f = write_new_seg_to_xml(seg_cat1, "VETOTIME_CAT1", detector, gps_start_time,
+                     duration)
+file_list.append(f)
+
+# This file contains all available LOSC data after CAT 1, which includes
+# burst hardware injections, stochastic hardware injections, and detchar hardware injections
+science_file_name = "{}-SCIENCE_SEGMENTS.xml".format(detector, gps_start_time,
+                                                        duration)
+
+seg_science_file = SegFile.from_segment_xml(science_file_name)
+seg_science = seg_science_file.return_union_seglist()
+
+# Read in LOSC data
+logging.info("{} contains {} seconds of data.".format(science_file_name,
+                             print_total_duration_of_segments(seg_science)))
+
+# Read in LOSC not-CAT2 times
+no_cat2_file_name = "{}-NO_CBC_CAT2-{}-{}.xml".format(detector, gps_start_time,
+                                                       duration)
+
+seg_no_cat2_file = SegFile.from_segment_xml(no_cat2_file_name)
+seg_no_cat2 = seg_science_file.return_union_seglist()
+
+logging.info("{} contains {} seconds of data.".format(no_cat2_file_name,
+                              print_total_duration_of_segments(seg_no_cat2)))
+
+# Take the complement of H1-NO_CBC_CAT2 and then L1-NO_CBC_CAT2
+seg_cat2 = complement_seg(seg_no_cat2, gps_start_time, gps_end_time)
+
+logging.info("The complement of {} gives {} seconds of data.".format(no_cat2_file_name,
+                              print_total_duration_of_segments(seg_cat2)))
+logging.info("This with the complement gives {} total seconds in O1.".format(print_total_duration_of_segments(seg_no_cat2) \
+                              + print_total_duration_of_segments(seg_cat2)))
+
+# Subtract no_seg_CAT2_H1 with times from SCIENCE
+seg_vetotime_cat2 = seg_science - seg_no_cat2
+
+# Coalesce superstitiously
+seg_vetotime_cat2.coalesce()
+
+logging.info("{}-SCIENCE intersected with the complement of {}-NO_CAT2 gives {} seconds of data.".format(
+                              detector, detector, print_total_duration_of_segments(seg_vetotime_cat2)))
+
+f = write_new_seg_to_xml(seg_vetotime_cat2, "VETOTIME_CAT2", detector,
+                     gps_start_time, duration)
+file_list.append(f)
+
+no_cat3_file_name = "{}-NO_CBC_HW_INJ-{}-{}.xml".format(detector,gps_start_time,
+                                                           duration)
+
+seg_no_cat3_file = SegFile.from_segment_xml(no_cat3_file_name)
+seg_no_cat3 = seg_no_cat3_file.return_union_seglist()
+
+logging.info("{} contains {} seconds of data.".format(no_cat3_file_name,
+                              print_total_duration_of_segments(seg_no_cat3)))
+
+seg_cat3 = complement_seg(seg_no_cat3, gps_start_time, gps_end_time)
+
+logging.info("The complement of {} gives {} seconds of data.".format(no_cat3_file_name,
+                              print_total_duration_of_segments(seg_cat3)))
+logging.info("This with the complement gives {} total seconds in O1.".format(print_total_duration_of_segments(seg_no_cat3) \
+                              + print_total_duration_of_segments(seg_cat3)))
+
+f = write_new_seg_to_xml(seg_cat3, "VETOTIME_CAT3", detector, gps_start_time,
+                     duration)
+file_list.append(f)
+
+destination_path = os.path.dirname(os.path.abspath(args.output_file))
+
+for f in file_list:
+    d = os.path.join(destination_path,f)
+    logging.info("Copying {} to {}".format(f,d))
+    shutil.copy2(f, os.path.join(destination_path,f))
+    os.unlink(f)
+
+logging.info("Science and Veto files written. Done.")
