@@ -85,10 +85,10 @@ export LIGO_TOKEN=`cat ~/.ssh/ldg_token`
 LIGO_USER=`cat ~/.ssh/ldg_user`
 
 echo -e "\\n>> [`date`] Creating proxy"
-./ligo-proxy-init -p ${LIGO_USER} 1>/dev/null
+./ligo-proxy-init -p ${LIGO_USER}
 
 echo -e "\\n>> [`date`] Creating ECP cookie"
-./ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback ${LIGO_USER} 1>/dev/null
+./ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback ${LIGO_USER}
 unset LIGO_TOKEN LIGO_USER
 
 echo -e "\\n>> [`date`] Creating test workflow"
