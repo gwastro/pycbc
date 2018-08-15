@@ -181,7 +181,7 @@ Install unittest2, python-cjson, and numpy with the command:
 
 .. code-block:: bash
 
-    pip install "numpy>=1.6.4" unittest2 python-cjson Cython decorator
+    pip install "numpy>=1.13.0" python-cjson Cython decorator
 
 Once you have these packages installed, you can now install lalsuite following the instructions at:
 
