@@ -91,11 +91,6 @@ pycbc_make_coinc_search_workflow \
   "injections-imbheobnrv2hm_inj" \
   "inspiral:enable-bank-start-frequency"
 
-if [ -f /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.err ] ; then
-  cat /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.err
-  cat /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.out
-fi
-
 pushd output
 
 for workflow in *.dax
