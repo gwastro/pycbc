@@ -23,79 +23,19 @@ source ${VENV_PATH}/bin/activate
 CONFIG_PATH="https://raw.githubusercontent.com/ligo-cbc/pycbc-config/${TRAVIS_TAG}"
 echo -e "\\n>> [`date`] Using config files from ${CONFIG_PATH}"
 
-VETO_DEFINER="https://git.ligo.org/detchar/veto-definitions/raw/a07f542b37ccfcfbf2b732f0d75d0f1ab4166d9f/cbc/O1/H1L1-CBC_VETO_DEFINER_C02_O1_1126051217-11203200.xml"
+VETO_DEFINER="https://raw.githubusercontent.com/gwastro/pycbc-config/master/O1/dq/H1L1-DUMMY_O1_CBC_VDEF-1126051217-1220400.xml"
 echo -e "\\n>> [`date`] Using veto definer file from ${VETO_DEFINER}"
 
 BANK_FILE="${CONFIG_PATH}/O1/bank/H1L1-UBERBANK_MAXM100_NS0p05_ER8HMPSD-1126033217-223200.xml.gz"
 echo -e "\\n>> [`date`] Using template bank from ${BANK_FILE}"
 
-echo -e "\\n>> [`date`] Patching ligo-proxy-init for Travis"
-cp `which ligo-proxy-init` .
-set +e
-patch -p0 ligo-proxy-init <<EOF
---- /bin/ligo-proxy-init	2016-12-05 07:18:14.000000000 -0500
-+++ ligo-proxy-init	2017-04-09 12:49:35.575182509 -0400
-@@ -210,7 +210,7 @@
-     fi
- 
-     login=\${1/@*/}
--    curl_auth_method="--user \$login"
-+    curl_auth_method="--user \$login:\${LIGO_TOKEN}"
-     echo "Your identity: \$login@LIGO.ORG"
- fi
-EOF
-if [ ! $? -eq 0 ] ; then
-patch -p0 ligo-proxy-init <<EOF
---- /bin/ligo-proxy-init	2017-04-12 12:27:45.000000000 +0000
-+++ ligo-proxy-init	2017-09-07 23:37:51.224116188 +0000
-@@ -212,7 +212,7 @@
- 
-     login=\${1/@*/}
-     [[ \$login == *","* ]] && echo "Replacing comma characters in login!"; login=\${login//,/.}
--    curl_auth_method="--user \$login"
-+    curl_auth_method="--user \$login:\${LIGO_TOKEN}"
-     echo "Your identity: \$login@LIGO.ORG"
- fi
-EOF
-if [ ! $? -eq 0 ] ; then
-echo -e "\\n>> [`date`] ERROR: could not patch ligo-proxy-init for Travis"
-exit 1
-fi
-fi
-set -e
-
-echo -e "\\n>> [`date`] Patching ecp-cookie-init for Travis"
-cp `which ecp-cookie-init` .
-patch -p0 ecp-cookie-init << EOF
---- /bin/ecp-cookie-init        2016-12-21 08:41:13.000000000 -0500
-+++ /tmp/ecp-cookie-init        2017-07-11 09:43:30.846451317 -0400
-@@ -268,7 +268,7 @@
-     target=\$2
-     login=\$3
- 
--    curl_auth_method="--user \$login"
-+    curl_auth_method="--user \$login:\${LIGO_TOKEN}"
- fi
- 
- if [ "\${idp_tag}" = "LIGO.ORG" ] ; then
-EOF
-
-unset X509_USER_PROXY
-export LIGO_TOKEN=`cat ~/.ssh/ldg_token`
-LIGO_USER=`cat ~/.ssh/ldg_user`
-
-echo -e "\\n>> [`date`] Creating proxy"
-./ligo-proxy-init -p ${LIGO_USER}
-
-echo -e "\\n>> [`date`] Creating ECP cookie"
-./ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback ${LIGO_USER}
-unset LIGO_TOKEN LIGO_USER
+LOSC_SEG_QUERY=`which pycbc_losc_segment_query`
 
 echo -e "\\n>> [`date`] Creating test workflow"
 UUID=`uuidgen`
 WORKFLOW_NAME=test-workflow-$UUID
 OUTPUT_PATH=`pwd`/public_html/test_workflow/${WORKFLOW_NAME}
-export LIGO_DATAFIND_SERVER="datafind.ligo.org:443"
+export LIGO_DATAFIND_SERVER='128.230.190.43:80'
 
 mkdir $WORKFLOW_NAME
 pushd $WORKFLOW_NAME
@@ -112,6 +52,7 @@ pycbc_make_coinc_search_workflow \
   ${CONFIG_PATH}/O2/pipeline/injections.ini \
   ${CONFIG_PATH}/O2/pipeline/plotting.ini \
 --config-overrides \
+  "executables:segment_query:${LOSC_SEG_QUERY}" \
   "workflow-datafind:datafind-check-frames-exist:warn" \
   "workflow:start-time:$((1126259462 - 1800))" \
   "workflow:end-time:$((1126259462 + 1800))" \
@@ -153,11 +94,6 @@ pycbc_make_coinc_search_workflow \
   "injections-imbheobnrv2hm_inj" \
   "inspiral:enable-bank-start-frequency"
 
-if [ -f /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.err ] ; then
-  cat /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.err
-  cat /pycbc/workflow-test/test-workflow-*/output/results/1._analysis_time/1.01_segment_data/logs/segments_from_cats.out
-fi
-
 pushd output
 
 for workflow in *.dax
@@ -176,8 +112,6 @@ popd
 popd
 
 set -e 
-
-grid-proxy-destroy
 
 echo -e "\\n>> [`date`] Test workflow validation complete"
 
