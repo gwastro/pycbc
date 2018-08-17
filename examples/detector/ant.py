@@ -8,7 +8,7 @@ pol = 0.2
 inc = 0
 time = 1000000000
 
-# We can calcualate the antenna pattern for Hanford at 
+# We can calcualate the antenna pattern for Hanford at
 # the specific sky location
 d = Detector("H1")
 
@@ -21,9 +21,9 @@ print("fp={}, fc={}".format(fp, fc))
 
 ## Generate a waveform
 hp, hc = get_td_waveform(approximant="IMRPhenomD", mass1=10, mass2=10,
-                         f_lower=30, delta_t=1.0/4096, inclination=inc, 
+                         f_lower=30, delta_t=1.0/4096, inclination=inc,
                          distance=400)
-                         
+
 ## Apply the factors to get the detector frame strain
 ht = fp * hp + fc * hc
 

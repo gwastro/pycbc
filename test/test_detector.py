@@ -33,14 +33,14 @@ seed(0)
 # We require lal as a reference comparison
 import lal
 
-from utils import parse_args_all_schemes, simple_exit
+from utils simple_exit
 
 class TestDetector(unittest.TestCase):
-    def setUp(self,*args):
+    def setUp(self):
         self.d = [det.Detector(ifo)
                   for ifo, name in det.get_available_detectors()]
-                
-        # not distributed sanely, but should provide some good coverage  
+
+        # not distributed sanely, but should provide some good coverage
         N = 1000
         self.ra = uniform(0, numpy.pi * 2, size=N)
         self.dec = uniform(-numpy.pi, numpy.pi, size=N)
@@ -53,20 +53,20 @@ class TestDetector(unittest.TestCase):
                 t1 = lal.LightTravelTime(d1.frDetector, d2.frDetector) * 1e-9
                 t2 = d1.light_travel_time_to_detector(d2)
                 self.assertAlmostEqual(t1, t2, 7)
-               
+
     def test_antenna_pattern(self):
         vals = zip(self.ra, self.dec, self.pol, self.time)
-        for det in self.d:
+        for ifo in self.d:
             fp = []
             fc = []
             for ra1, dec1, pol1, time1 in vals:
                 gmst = lal.GreenwichMeanSiderealTime(time1)
-                fp1, fc1 = tuple(lal.ComputeDetAMResponse(det.response, ra1, dec1, pol1, gmst))
+                fp1, fc1 = tuple(lal.ComputeDetAMResponse(ifo.response, ra1, dec1, pol1, gmst))
                 fp.append(fp1)
                 fc.append(fc1)
-            
-            fp2, fc2 = det.antenna_pattern(self.ra, self.dec, self.pol, self.time)
-            
+
+            fp2, fc2 = ifo.antenna_pattern(self.ra, self.dec, self.pol, self.time)
+
             fp = numpy.array(fp)
             fc = numpy.array(fc)
 
@@ -74,7 +74,7 @@ class TestDetector(unittest.TestCase):
             diff2 = fc - fc2
             diff = abs(numpy.concatenate([diff1, diff2]))
             tolerance = 1e-4
-            print("Max antenna diff:", det.name, diff.max())
+            print("Max antenna diff:", ifo.name, diff.max())
             
             self.assertLess(diff.max(), tolerance)
 
@@ -85,22 +85,21 @@ class TestDetector(unittest.TestCase):
                 time1 = []
                 for ra1, dec1, tim1 in zip(ra, dec, time):
                     t1 = lal.ArrivalTimeDiff(d1.location, d2.location,
-                                             ra1, dec1, tim1) 
+                                             ra1, dec1, tim1)
                     time1.append(t1)
                 time1 = numpy.array(time1)
                 time2 = d1.time_delay_from_detector(d2, ra, dec, time)
                 self.assertLess(abs(time1 - time2).max(), 1e-4)
-                
+
     def test_optimal_orientation(self):
         for d1 in self.d:
             ra, dec = d1.optimal_orientation(self.time[0])
             ra1 = d1.longitude + lal.GreenwichMeanSiderealTime(self.time[0]) % (numpy.pi *2)
             dec1 = d1.latitude
-            
+
             self.assertAlmostEqual(ra, ra1, 4)
             self.assertAlmostEqual(dec, dec1, 7)
-                    
-        
+
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDetector))

@@ -34,7 +34,7 @@ from astropy.time import Time
 from astropy import constants
 from numpy import cos, sin
 
-# Response functions are modelled after those in lalsuite and as also 
+# Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
 
 

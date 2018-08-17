@@ -6,7 +6,7 @@ from pycbc.detector import Detector, get_available_detectors
 
 for abv, long_name in get_available_detectors():
     d = Detector(abv)
-    
+
     # Note that units are all in radians
     print("{} {} Latitude {} Longitude {}".format(long_name, abv,
                                                   d.latitude,
