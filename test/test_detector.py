@@ -33,7 +33,7 @@ seed(0)
 # We require lal as a reference comparison
 import lal
 
-from utils simple_exit
+from utils import simple_exit
 
 class TestDetector(unittest.TestCase):
     def setUp(self):
