@@ -25,9 +25,12 @@
 """PyCBC contains a toolkit for CBC gravitational wave analysis
 """
 from __future__ import (absolute_import, print_function)
-import subprocess, os, sys, tempfile
+import subprocess, os, sys, tempfile, signal, warnings
+
+# Filter annoying Cython warnings that serve no good purpose.
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 import logging
-import signal
 
 try:
     # This will fail when pycbc is imported during the build process,

@@ -1119,7 +1119,7 @@ mkdir -p "$ENVIRONMENT/dist"
 # if the build machine has dbhash & shelve, scipy weave will use bsddb
 # make sure these exist and get added to the bundle(s)
 python -c "import dbhash, shelve"
-hidden_imports="--hidden-import=dbhash --hidden-import=shelve"
+hidden_imports="--hidden-import=dbhash --hidden-import=shelve --hidden-import=six --hidden-import=cmath"
 
 # PyInstaller
 if echo "$pyinstaller_version" | egrep '^[0-9]\.[0-9][0-9]*$' > /dev/null; then
@@ -1237,11 +1237,19 @@ fi
 if $use_pycbc_pyinstaller_hooks; then
     export NOW_BUILDING=NULL
     export PYCBC_HOOKS_DIR="$hooks"
-    pyi-makespec $upx --additional-hooks-dir $hooks/hooks --runtime-hook $hooks/runtime-tkinter.py $hidden_imports --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
+    pyi-makespec $upx \
+        --additional-hooks-dir $hooks/hooks \
+         --exclude-module astropy \
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy \
+        --runtime-hook $hooks/runtime-tkinter.py $hidden_imports \
+        --hidden-import=pkg_resources \
+        --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
 else
     # find hidden imports (pycbc CPU modules)
     hidden_imports=`find $PREFIX/lib/python2.7/site-packages/pycbc/ -name '*_cpu.py' | sed 's%.*/site-packages/%%;s%\.py$%%;s%/%.%g;s%^% --hidden-import=%' | tr -d '\012'`
-    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral
+    pyi-makespec $upx $hidden_imports --hidden-import=scipy.linalg.cython_blas --hidden-import=scipy.linalg.cython_lapack --hidden-import=pkg_resources --onedir --name pycbc_inspiral$ext ./bin/pycbc_inspiral \
+            --exclude-module astropy \
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
 fi
 # patch spec file to add "-v" to python interpreter options
 if $verbose_pyinstalled_python; then
@@ -1249,7 +1257,9 @@ if $verbose_pyinstalled_python; then
 exe = EXE(pyz, options,%' pycbc_inspiral$ext.spec
 fi
 echo -e "\\n\\n>> [`date`] running pyinstaller" >&3
-pyinstaller $upx pycbc_inspiral$ext.spec
+pyinstaller $upx pycbc_inspiral$ext.spec \
+        --exclude-module astropy \
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
 
 test ".$ext" != "." &&
     mv dist/pycbc_inspiral$ext dist/pycbc_inspiral
@@ -1562,6 +1572,8 @@ if $build_onefile_bundles; then
     echo -e "\\n\\n>> [`date`] building pycbc_inspiral_osg pyinstaller onefile spec" >&3
     pyi-makespec \
         --additional-hooks-dir $hooks/hooks \
+        --exclude-module astropy \
+        --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy \
         --runtime-hook $hooks/runtime-tkinter.py \
         --hidden-import=pkg_resources $hidden_imports \
         --onefile ./bin/pycbc_inspiral --name pycbc_inspiral_osg
@@ -1577,7 +1589,9 @@ if $build_onefile_bundles; then
         pycbc_inspiral_osg.spec1 > pycbc_inspiral_osg.spec
 
     echo -e ">> [`date`] running pyinstaller" >&3
-    pyinstaller pycbc_inspiral_osg.spec
+    pyinstaller pycbc_inspiral_osg.spec \
+                --exclude-module astropy \
+                --add-data `python -c 'import astropy; print astropy.__path__[0],'`:astropy
 
     if echo ".$pycbc_tag" | egrep '^\.v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$' >/dev/null; then
         mv dist/pycbc_inspiral_osg "dist/pycbc_inspiral_osg_$pycbc_tag"

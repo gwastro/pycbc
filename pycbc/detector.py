@@ -23,13 +23,19 @@
 #
 # =============================================================================
 #
-"""This module provides utilities for calculating detector responses.
+"""This module provides utilities for calculating detector responses and timing
+between observatories.
 """
 import lalsimulation
 import numpy as np
 import lal
-from numpy import cos, sin
 from pycbc.types import TimeSeries
+from astropy.time import Time
+from astropy import constants
+from numpy import cos, sin
+
+# Response functions are modelled after those in lalsuite and as also
+# presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
 
 
 def get_available_detectors():
@@ -75,20 +81,105 @@ class Detector(object):
         time: float
             The light travel time in seconds
         """
-        return lal.LightTravelTime(self.frDetector, det.frDetector) * 1e-9
+        d = self.location - det.location
+        return float(d.dot(d)**0.5 / constants.c.value)
 
     def antenna_pattern(self, right_ascension, declination, polarization, t_gps):
         """Return the detector response.
+
+        Parameters
+        ----------
+        right_ascension: float or numpy.ndarray
+            The right ascension of the source
+        declination: float or numpy.ndarray
+            The declination of the source
+        polarization: float or numpy.ndarray
+            The polarization angle of the source
+
+        Returns
+        -------
+        fplus: float or numpy.ndarray
+            The plus polarization factor for this sky location / orientation
+        fcross: float or numpy.ndarray
+            The cross polarization factor for this sky location / orientation
         """
-        gmst = lal.GreenwichMeanSiderealTime(t_gps)
-        return tuple(lal.ComputeDetAMResponse(self.response,
-                     right_ascension, declination, polarization, gmst))
+        gmst = Time(t_gps, format='gps', location=(0, 0))
+        gha = gmst.sidereal_time('mean').rad - right_ascension
+
+        cosgha = cos(gha)
+        singha = sin(gha)
+        cosdec = cos(declination)
+        sindec = sin(declination)
+        cospsi = cos(polarization)
+        sinpsi = sin(polarization)
+
+        x0 = -cospsi * singha - sinpsi * cosgha * sindec
+        x1 = -cospsi * cosgha + sinpsi * singha * sindec
+        x2 =  sinpsi * cosdec
+        x = np.array([x0, x1, x2])
+
+        dx = self.response.dot(x)
+
+        y0 =  sinpsi * singha - cospsi * cosgha * sindec
+        y1 =  sinpsi * cosgha + cospsi * singha * sindec
+        y2 =  cospsi * cosdec
+        y = np.array([y0, y1, y2])
+        dy = self.response.dot(y)
+
+        if hasattr(dx, 'shape'):
+            fplus = (x * dx - y * dy).sum(axis=0)
+            fcross = (x * dy + y * dx).sum(axis=0)
+        else:
+            fplus = (x * dx - y * dy).sum()
+            fcross = (x * dy + y * dx).sum()
+
+        return fplus, fcross
 
     def time_delay_from_earth_center(self, right_ascension, declination, t_gps):
         """Return the time delay from the earth center
         """
-        return lal.TimeDelayFromEarthCenter(self.location,
-                      float(right_ascension), float(declination), float(t_gps))
+        return self.time_delay_from_location(np.array([0, 0, 0]),
+                                             right_ascension,
+                                             declination,
+                                             t_gps)
+
+    def time_delay_from_location(self, other_location, right_ascension,
+                                 declination, t_gps):
+        """Return the time delay from the given location to detector for
+        a signal with the given sky location
+
+        In other words return `t1 - t2` where `t1` is the
+        arrival time in this detector and `t2` is the arrival time in the
+        other location.
+
+        Parameters
+        ----------
+        other_location : numpy.ndarray of coordinates
+            A detector instance.
+        right_ascension : float
+            The right ascension (in rad) of the signal.
+        declination : float
+            The declination (in rad) of the signal.
+        t_gps : float
+            The GPS time (in s) of the signal.
+
+        Returns
+        -------
+        float
+            The arrival time difference between the detectors.
+        """
+        gmst = Time(t_gps, format='gps',
+                    location=(0, 0)).sidereal_time('mean').rad
+        ra_angle = gmst - right_ascension
+        cosd = cos(declination)
+
+        e0 = cosd * cos(ra_angle)
+        e1 = cosd * -sin(ra_angle)
+        e2 = sin(declination)
+
+        ehat = np.array([e0, e1, e2])
+        dx = other_location - self.location
+        return dx.dot(ehat) / constants.c.value
 
     def time_delay_from_detector(self, other_detector, right_ascension,
                                  declination, t_gps):
@@ -114,13 +205,18 @@ class Detector(object):
         float
             The arrival time difference between the detectors.
         """
-        return lal.ArrivalTimeDiff(self.location, other_detector.location,
-                                   float(right_ascension), float(declination),
-                                   float(t_gps))
+        return self.time_delay_from_location(other_detector.location,
+                                             right_ascension,
+                                             declination,
+                                             t_gps)
 
     def project_wave(self, hp, hc, longitude, latitude, polarization):
-        """Return the strain of a wave with given amplitudes and angles as
-        measured by the detector.
+        """Return the strain of a waveform as measured by the detector.
+
+        Apply the time shift for the given detector relative to the assumed
+        geocentric frame and apply the antenna patterns to the plus and cross
+        polarizations.
+
         """
         h_lal = lalsimulation.SimDetectorStrainREAL8TimeSeries(
                 hp.astype(np.float64).lal(), hc.astype(np.float64).lal(),
@@ -132,8 +228,22 @@ class Detector(object):
     def optimal_orientation(self, t_gps):
         """Return the optimal orientation in right ascension and declination
            for a given GPS time.
+
+        Parameters
+        ----------
+        t_gps: float
+            Time in gps seconds
+
+        Returns
+        -------
+        ra: float
+            Right ascension that is optimally oriented for the detector
+        dec: float
+            Declination that is optimally oriented for the detector
         """
-        ra = self.longitude + (lal.GreenwichMeanSiderealTime(t_gps) % (2*np.pi))
+        gmst = Time(t_gps, format='gps',
+                    location=(0, 0)).sidereal_time('mean').rad
+        ra = self.longitude + (gmst % (2.0*np.pi))
         dec = self.latitude
         return ra, dec
 

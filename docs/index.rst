@@ -129,6 +129,7 @@ In addition we have some examples below.
    catalog
    gw150914
    frame
+   detector
    psd
    noise
    waveform
