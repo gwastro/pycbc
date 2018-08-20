@@ -176,8 +176,7 @@ def schemed(prefix):
                 try:
                     backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                     schemed_fn = getattr(backend, fn.__name__)
-                except (ImportError, AttributeError) as e:
-                    print(e)
+                except (ImportError, AttributeError):
                     continue
 
                 if mgr.state not in _import_cache:
