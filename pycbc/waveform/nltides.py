@@ -33,7 +33,7 @@ def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
     kmax = len(f)
 
     f_ref, t_of_f_factor, phi_of_f_factor = \
-        pycbc.conversions.nltides_coefs(f0, amplitude, n, m1, m2)
+        pycbc.conversions.nltides_coefs(amplitude, n, m1, m2)
 
     # Fourier phase shift below f0 from \Delta \phi(f)
     delta_psi_f_le_f0 = numpy.ones(kmin)

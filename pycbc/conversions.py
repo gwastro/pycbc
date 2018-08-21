@@ -863,7 +863,7 @@ def f_schwarzchild_isco(M):
 # ============================================================================
 #
 
-def nltides_coefs(f0, amplitude, n, m1, m2):
+def nltides_coefs(amplitude, n, m1, m2):
     """Calculate the coefficents needed to compute the
     shift in t(f) and phi(f) due to non-linear tides.
 
@@ -941,7 +941,7 @@ def nltides_gw_phase_difference(f, f0, amplitude, n, m1, m2):
 
     delta_phi = numpy.zeros(m1.shape)
 
-    f_ref, _, phi_of_f_factor = nltides_coefs(f0, amplitude, n, m1, m2)
+    f_ref, _, phi_of_f_factor = nltides_coefs(amplitude, n, m1, m2)
 
     mask = f <= f0
     delta_phi[mask] = - phi_of_f_factor[mask] * (f0[mask]/f_ref)**(n[mask]-3.)
