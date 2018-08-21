@@ -971,7 +971,7 @@ def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
     m2: float or array
         Mass of component 2
     """
-    
+
     f0, ia1 = ensurearray(f0)
     amplitude, ia2 = ensurearray(amplitude)
     n, ia3 = ensurearray(n)
