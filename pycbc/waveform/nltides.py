@@ -51,7 +51,7 @@ def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
         (f[kmin:kmax]/f_ref)**(n-4.)
 
     # Return the shift to the Fourier phase
-    return numpy.concatenate((delta_psi_f_le_f0,delta_psi_f_gt_f0),axis=0)
+    return numpy.concatenate((delta_psi_f_le_f0, delta_psi_f_gt_f0), axis=0)
 
 
 def nonlinear_tidal_spa(**kwds):
