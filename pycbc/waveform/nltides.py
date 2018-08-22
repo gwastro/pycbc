@@ -6,14 +6,14 @@ import lal
 
 def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
     """Calculate the change to the Fourier phase change due
-    to non-linear tides. Note that the Fourier phase \Psi(f)
-    is not the same as the gravitational-wave phase \phi(f) and
+    to non-linear tides. Note that the Fourier phase Psi(f)
+    is not the same as the gravitational-wave phase phi(f) and
     is computed by
-    \Delta \Psi(f) = 2 \pi f \Delta t(f) - \Delta \phi(f)
+    Delta Psi(f) = 2 \pi f Delta t(f) - Delta phi(f)
 
     Parameters
     ----------
-    f: numpy.ndarray
+    f: numpy.array
         Array of frequency values to calculate the fourier phase difference
     delta_f: float
         Frequency resolution of f array
@@ -27,6 +27,11 @@ def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
         Mass of component 1
     m2: float
         Mass of component 2
+
+    Returns
+    -------
+    delta_psi: numpy.array
+        Fourier phase as a function of frequency
     """
 
     kmin = int(f0/delta_f)
@@ -55,6 +60,10 @@ def nltides_fourier_phase_difference(f, delta_f, f0, amplitude, n, m1, m2):
 
 
 def nonlinear_tidal_spa(**kwds):
+    """Generates a frequency-domain waveform that implements the
+    TaylorF2+NL tide model described in https://arxiv.org/abs/1808.07013
+    """
+
     from pycbc import waveform
     from pycbc.types import Array
 

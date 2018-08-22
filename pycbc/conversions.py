@@ -816,24 +816,36 @@ def return_base10_log(x):
 def velocity_to_frequency(v, M):
     """ Calculate the gravitational-wave frequency from the
     total mass and invariant velocity.
+
     Parameters
     ----------
-    v: float
+    v : float
         Invariant velocity
-    M: float
+    M : float
         Binary total mass
+
+    Returns
+    -------
+    f : float
+        Gravitational-wave frequency
     """
     return v**(3.0) / (M * lal.MTSUN_SI * lal.PI)
 
 def frequency_to_velocity(f, M):
     """ Calculate the invariant velocity from the total
     mass and gravitational-wave frequency.
+
     Parameters
     ----------
     f: float
         Gravitational-wave frequency
     M: float
         Binary total mass
+
+    Returns
+    -------
+    v : float or numpy.array
+        Invariant velocity
     """
     return (lal.PI * M * lal.MTSUN_SI * f)**(1.0/3.0)
 
@@ -869,8 +881,6 @@ def nltides_coefs(amplitude, n, m1, m2):
 
     Parameters
     ----------
-    f0: float
-        Frequency that NL effects switch on
     amplitude: float
         Amplitude of effect
     n: float
@@ -879,6 +889,15 @@ def nltides_coefs(amplitude, n, m1, m2):
         Mass of component 1
     m2: float
         Mass of component 2
+
+    Returns
+    -------
+    f_ref : float
+        Reference frequency used to define A and n
+    t_of_f_factor: float
+        The constant factor needed to compute t(f)
+    phi_of_f_factor: float
+        The constant factor needed to compute phi(f)
     """
 
     # Use 100.0 Hz as a reference frequency
@@ -905,18 +924,23 @@ def nltides_gw_phase_difference(f, f0, amplitude, n, m1, m2):
 
     Parameters
     ----------
-    f: float
+    f: float or numpy.array
         Frequency from which to compute phase
-    f0: float
+    f0: float or numpy.array
         Frequency that NL effects switch on
-    amplitude: float
+    amplitude: float or numpy.array
         Amplitude of effect
-    n: float
+    n: float or numpy.array
         Growth dependence of effect
-    m1: float
+    m1: float or numpy.array
         Mass of component 1
-    m2: float
+    m2: float or numpy.array
         Mass of component 2
+
+    Returns
+    -------
+    delta_phi: float or numpy.array
+        Phase in radians
     """
 
     f, ia1 = ensurearray(f)
@@ -954,22 +978,28 @@ def nltides_gw_phase_difference(f, f0, amplitude, n, m1, m2):
 def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
     """Calculate the gravitational-wave phase shift bwtween
     f_low and f_isco due to non-linear tides.
+
     Parameters
     ----------
     f_low: float
         Frequency from which to compute phase. If the other
         arguments are passed as numpy arrays then the value
         of f_low is duplicated for all elements in the array
-    f0: float or array
+    f0: float or numpy.array
         Frequency that NL effects switch on
-    amplitude: float or array
+    amplitude: float or numpy.array
         Amplitude of effect
-    n: float or array
+    n: float or numpy.array
         Growth dependence of effect
-    m1: float or array
+    m1: float or numpy.array
         Mass of component 1
-    m2: float or array
+    m2: float or numpy.array
         Mass of component 2
+
+    Returns
+    -------
+    delta_phi: float or numpy.array
+        Phase in radians
     """
 
     f0, ia1 = ensurearray(f0)
