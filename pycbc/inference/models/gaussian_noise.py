@@ -244,6 +244,7 @@ class GaussianNoise(BaseDataModel):
         d = data.values()[0]
         N = len(d)
         # figure out the kmin, kmax to use
+        self._f_lower = f_lower
         kmin, kmax = filter.get_cutoff_indices(f_lower, f_upper, d.delta_f,
                                                (N-1)*2)
         self._kmin = kmin
@@ -252,9 +253,12 @@ class GaussianNoise(BaseDataModel):
             norm = 4*d.delta_f
         # we'll store the weight to apply to the inner product
         if psds is None:
+            self._psds = None
             w = Array(numpy.sqrt(norm)*numpy.ones(N))
             self._weight = {det: w for det in data}
         else:
+            # store a copy of the psds
+            self._psds = {ifo: d.copy() for (ifo, d) in psds.items()}
             # temporarily suppress numpy divide by 0 warning
             numpysettings = numpy.seterr(divide='ignore')
             self._weight = {det: Array(numpy.sqrt(norm/psds[det]))
@@ -432,3 +436,27 @@ class GaussianNoise(BaseDataModel):
             self.loglr
             # now try returning again
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
+
+    def write_metadata(self, fp):
+        """Adds writing the psds and lognl, since it's a constant.
+
+        The lognl is written to the sample group's ``attrs``.
+
+        Parameters
+        ----------
+        fp : gwin.io.BaseInferenceFile instance
+            The inference file to write to.
+        """
+        super(GaussianNoise, self).write_metadata(fp)
+        fp.attrs['f_lower'] = self._f_lower
+        if self._psds is not None:
+            fp.write_psd(self._psds)
+        try:
+            attrs = fp[fp.samples_group].attrs
+        except KeyError:
+            # group doesn't exist, create it
+            fp.create_group(fp.samples_group)
+            attrs = fp[fp.samples_group].attrs
+        attrs['lognl'] = self.lognl
+        for det in self.detectors:
+            attrs['{}_lognl'.format(det)] = self.det_lognl(det)
