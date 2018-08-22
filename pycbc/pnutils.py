@@ -193,10 +193,10 @@ def megaparsecs_to_meters(distance):
     return parsecs_to_meters(distance) * 1e6
 
 def velocity_to_frequency(v, M):
-    return v**(3.0) / (M * lal.MTSUN_SI * lal.PI)
+    return conversions.velocity_to_frequency(v, M)
 
 def frequency_to_velocity(f, M):
-    return (lal.PI * M * lal.MTSUN_SI * f)**(1.0/3.0)
+    return conversions.frequency_to_velocity(f, M)
 
 def f_SchwarzISCO(M):
     """
@@ -213,7 +213,7 @@ def f_SchwarzISCO(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return velocity_to_frequency((1.0/6.0)**(0.5), M)
+    return conversions.f_schwarzchild_isco(M)
 
 def f_BKLISCO(m1, m2):
     """

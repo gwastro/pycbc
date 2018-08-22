@@ -1,4 +1,5 @@
-# Copyright (C) 2017  Collin Capano, Christopher M. Biwer
+# Copyright (C) 2017  Collin Capano, Christopher M. Biwer, Duncan Brown,
+# and Steven Reyes
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -358,6 +359,7 @@ def mass2_from_tau0_tau3(tau0, tau3, f_lower):
     mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower)
     eta = eta_from_tau0_tau3(tau0, tau3, f_lower)
     return mass2_from_mtotal_eta(mtotal, eta)
+
 
 def lambda_tilde(mass1, mass2, lambda1, lambda2):
     """ The effective lambda parameter
@@ -786,6 +788,7 @@ def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
 def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
     return get_lm_f0tau(final_mass, final_spin, l, m, 1)[1][0]
 
+
 #
 # =============================================================================
 #
@@ -804,9 +807,235 @@ def return_base10_log(x):
     return formatreturn(numpy.log10(x), ia1)
 
 
+#
+# =============================================================================
+#
+#                         post-Newtonian functions
+#
+# =============================================================================
+#
 
-__all__ = ['dquadmon_from_lambda', 'lambda_tilde',
-           'primary_mass', 'secondary_mass', 'mtotal_from_mass1_mass2',
+def velocity_to_frequency(v, M):
+    """ Calculate the gravitational-wave frequency from the
+    total mass and invariant velocity.
+
+    Parameters
+    ----------
+    v : float
+        Invariant velocity
+    M : float
+        Binary total mass
+
+    Returns
+    -------
+    f : float
+        Gravitational-wave frequency
+    """
+    return v**(3.0) / (M * lal.MTSUN_SI * lal.PI)
+
+def frequency_to_velocity(f, M):
+    """ Calculate the invariant velocity from the total
+    mass and gravitational-wave frequency.
+
+    Parameters
+    ----------
+    f: float
+        Gravitational-wave frequency
+    M: float
+        Binary total mass
+
+    Returns
+    -------
+    v : float or numpy.array
+        Invariant velocity
+    """
+    return (lal.PI * M * lal.MTSUN_SI * f)**(1.0/3.0)
+
+def f_schwarzchild_isco(M):
+    """
+    Innermost stable circular orbit (ISCO) for a test particle
+    orbiting a Schwarzschild black hole
+
+    Parameters
+    ----------
+    M : float or numpy.array
+        Total mass in solar mass units
+
+    Returns
+    -------
+    f : float or numpy.array
+        Frequency in Hz
+    """
+    return velocity_to_frequency((1.0/6.0)**(0.5), M)
+
+
+#
+# ============================================================================
+#
+#                          p-g mode non-linear tide functions
+#
+# ============================================================================
+#
+
+def nltides_coefs(amplitude, n, m1, m2):
+    """Calculate the coefficents needed to compute the
+    shift in t(f) and phi(f) due to non-linear tides.
+
+    Parameters
+    ----------
+    amplitude: float
+        Amplitude of effect
+    n: float
+        Growth dependence of effect
+    m1: float
+        Mass of component 1
+    m2: float
+        Mass of component 2
+
+    Returns
+    -------
+    f_ref : float
+        Reference frequency used to define A and n
+    t_of_f_factor: float
+        The constant factor needed to compute t(f)
+    phi_of_f_factor: float
+        The constant factor needed to compute phi(f)
+    """
+
+    # Use 100.0 Hz as a reference frequency
+    f_ref = 100.0
+
+    # Calculate chirp mass
+    mc = mchirp_from_mass1_mass2(m1, m2)
+    mc *= lal.lal.MSUN_SI
+
+    # Calculate constants in phasing
+    a = (96./5.) * \
+        (lal.lal.G_SI * lal.lal.PI * mc * f_ref / lal.lal.C_SI**3.)**(5./3.)
+    b = 6. * amplitude
+    t_of_f_factor = -1./(lal.lal.PI*f_ref) * b/(a*a * (n-4.))
+    phi_of_f_factor = -2.*b / (a*a * (n-3.))
+
+    return f_ref, t_of_f_factor, phi_of_f_factor
+
+def nltides_gw_phase_difference(f, f0, amplitude, n, m1, m2):
+    """Calculate the gravitational-wave phase shift bwtween
+    f and f_coalescence = infinity due to non-linear tides.
+    To compute the phase shift between e.g. f_low and f_isco,
+    call this function twice and compute the difference.
+
+    Parameters
+    ----------
+    f: float or numpy.array
+        Frequency from which to compute phase
+    f0: float or numpy.array
+        Frequency that NL effects switch on
+    amplitude: float or numpy.array
+        Amplitude of effect
+    n: float or numpy.array
+        Growth dependence of effect
+    m1: float or numpy.array
+        Mass of component 1
+    m2: float or numpy.array
+        Mass of component 2
+
+    Returns
+    -------
+    delta_phi: float or numpy.array
+        Phase in radians
+    """
+
+    f, ia1 = ensurearray(f)
+    f0, ia2 = ensurearray(f0)
+    amplitude, ia3 = ensurearray(amplitude)
+    n, ia4 = ensurearray(n)
+    m1, ia5 = ensurearray(m1)
+    m2, ia6 = ensurearray(m2)
+
+    if f.shape != f0.shape:
+        raise ValueError("f, f0 must have same shape")
+    if f.shape != amplitude.shape:
+        raise ValueError("f, amplitude must have same shape")
+    if f.shape != n.shape:
+        raise ValueError("f, n must have same shape")
+    if f.shape != m1.shape:
+        raise ValueError("f, m1 must have same shape")
+    if f.shape != m2.shape:
+        raise ValueError("f, m2 must have same shape")
+
+    input_is_array = any([ia1, ia2, ia3, ia4, ia5, ia6])
+
+    delta_phi = numpy.zeros(m1.shape)
+
+    f_ref, _, phi_of_f_factor = nltides_coefs(amplitude, n, m1, m2)
+
+    mask = f <= f0
+    delta_phi[mask] = - phi_of_f_factor[mask] * (f0[mask]/f_ref)**(n[mask]-3.)
+
+    mask = f > f0
+    delta_phi[mask] = - phi_of_f_factor[mask] * (f[mask]/f_ref)**(n[mask]-3.)
+
+    return formatreturn(delta_phi,input_is_array)
+
+def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
+    """Calculate the gravitational-wave phase shift bwtween
+    f_low and f_isco due to non-linear tides.
+
+    Parameters
+    ----------
+    f_low: float
+        Frequency from which to compute phase. If the other
+        arguments are passed as numpy arrays then the value
+        of f_low is duplicated for all elements in the array
+    f0: float or numpy.array
+        Frequency that NL effects switch on
+    amplitude: float or numpy.array
+        Amplitude of effect
+    n: float or numpy.array
+        Growth dependence of effect
+    m1: float or numpy.array
+        Mass of component 1
+    m2: float or numpy.array
+        Mass of component 2
+
+    Returns
+    -------
+    delta_phi: float or numpy.array
+        Phase in radians
+    """
+
+    f0, ia1 = ensurearray(f0)
+    amplitude, ia2 = ensurearray(amplitude)
+    n, ia3 = ensurearray(n)
+    m1, ia4 = ensurearray(m1)
+    m2, ia5 = ensurearray(m2)
+
+    if f0.shape != amplitude.shape:
+        raise ValueError("f0, amplitude must have same shape")
+    if f0.shape != n.shape:
+        raise ValueError("f0, n must have same shape")
+    if f0.shape != m1.shape:
+        raise ValueError("f0, m1 must have same shape")
+    if f0.shape != m2.shape:
+        raise ValueError("f0, m2 must have same shape")
+
+    input_is_array = any([ia1, ia2, ia3, ia4, ia5])
+
+    f_low = numpy.zeros(m1.shape) + f_low
+
+    phi_l = nltides_gw_phase_difference(
+                f_low, f0, amplitude, n, m1, m2)
+
+    f_isco = f_schwarzchild_isco(m1+m2)
+
+    phi_i = nltides_gw_phase_difference(
+                f_isco, f0, amplitude, n, m1, m2)
+
+    return formatreturn(phi_i - phi_l, input_is_array)
+
+
+__all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
+           'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
            'eta_from_mass1_mass2', 'mchirp_from_mass1_mass2',
            'mass1_from_mtotal_q', 'mass2_from_mtotal_q',
@@ -833,7 +1062,7 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
-           'optimal_dec_from_detector','optimal_ra_from_detector',
+           'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
-           'return_base10_log'
+           'return_base10_log', 'nltides_gw_phase_diff_isco'
           ]
