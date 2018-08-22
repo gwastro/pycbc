@@ -34,6 +34,7 @@ from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 from pycbc.workflow import ConfigParser
 
+from gwin.io.base_hdf import write_kwargs_to_hdf_attrs
 
 #
 # =============================================================================
@@ -742,3 +743,16 @@ class BaseModel(object):
         args['sampling_transforms'] = sampling_transforms
         args.update(kwargs)
         return cls(**args)
+
+    def write_metadata(self, fp):
+        """Writes metadata to the given file handler.
+
+        Parameters
+        ----------
+        fp : gwin.io.BaseInferenceFile instance
+            The inference file to write to.
+        """
+        fp.attrs['model'] = self.name
+        fp.attrs['variable_params'] = list(self.variable_params)
+        fp.attrs['sampling_params'] = list(self.sampling_params)
+        write_kwargs_to_hdf_attrs(fp.attrs, static_params=self.static_params)

@@ -150,6 +150,11 @@ class BaseDataModel(BaseModel):
         """Returns the data that was set."""
         return self._data
 
+    @property
+    def detectors(self):
+        """Returns the detectors used."""
+        return self._data.keys()
+
     def _transform_params(self, **params):
         """Adds waveform transforms to parent's ``_transform_params``."""
         params = super(BaseDataModel, self)._transform_params(**params)
@@ -231,3 +236,14 @@ class BaseDataModel(BaseModel):
         args['waveform_generator'] = waveform_generator
 
         return cls(**args)
+
+    def write_metadata(self, fp):
+        """Adds data to the metadata that's written.
+
+        Parameters
+        ----------
+        fp : gwin.io.BaseInferenceFile instance
+            The inference file to write to.
+        """
+        super(BaseDataModel, self).write_metadata(fp)
+        fp.write_stilde(self.data)

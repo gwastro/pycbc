@@ -17,14 +17,43 @@
 This modules provides a list of implemented samplers for parameter estimation.
 """
 
-from .kombine import KombineSampler
-from .emcee import (EmceeEnsembleSampler, EmceePTSampler)
-from .mcmc import MCMCSampler
+from __future__ import absolute_import
+
+from .base import (initial_dist_from_config, create_new_output_file)
+# from .kombine import KombineSampler
+from .emcee import EmceeEnsembleSampler
+# from .emcee_pt import EmceePTSampler
+# from .mcmc import MCMCSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
-    KombineSampler,
+    # KombineSampler,
     EmceeEnsembleSampler,
-    EmceePTSampler,
-    MCMCSampler,
+    # EmceePTSampler,
+    # MCMCSampler,
 )}
+
+
+def load_from_config(cp, model, **kwargs):
+    """Loads a sampler from the given config file.
+
+    This looks for a name in the section ``[sampler]`` to determine which
+    sampler class to load. That sampler's ``from_config`` is then called.
+
+    Parameters
+    ----------
+    cp : WorkflowConfigParser
+        Config parser to read from.
+    model : gwin.model
+        Which model to pass to the sampler.
+    \**kwargs :
+        All other keyword arguments are passed directly to the sampler's
+        ``from_config`` file.
+
+    Returns
+    -------
+    sampler :
+        The initialized sampler.
+    """
+    name = cp.get('sampler', 'name')
+    return samplers[name].from_config(cp, model, **kwargs)
