@@ -1,4 +1,5 @@
-# Copyright (C) 2017  Collin Capano, Christopher M. Biwer
+# Copyright (C) 2017  Collin Capano, Christopher M. Biwer, Duncan Brown,
+# and Steven Reyes
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -358,6 +359,7 @@ def mass2_from_tau0_tau3(tau0, tau3, f_lower):
     mtotal = mtotal_from_tau0_tau3(tau0, tau3, f_lower)
     eta = eta_from_tau0_tau3(tau0, tau3, f_lower)
     return mass2_from_mtotal_eta(mtotal, eta)
+
 
 def lambda_tilde(mass1, mass2, lambda1, lambda2):
     """ The effective lambda parameter
@@ -786,6 +788,7 @@ def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
 def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
     return get_lm_f0tau(final_mass, final_spin, l, m, 1)[1][0]
 
+
 #
 # =============================================================================
 #
@@ -802,7 +805,6 @@ def return_base10_log(x):
     """
     x, ia1 = ensurearray(x)
     return formatreturn(numpy.log10(x), ia1)
-
 
 
 #
@@ -1060,8 +1062,7 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
            'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
-           'optimal_dec_from_detector','optimal_ra_from_detector',
+           'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
-           'return_base10_log'
-           'nltides_gw_phase_diff_isco'
+           'return_base10_log', 'nltides_gw_phase_diff_isco'
           ]
