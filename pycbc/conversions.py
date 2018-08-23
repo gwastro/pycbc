@@ -43,15 +43,32 @@ from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
 #
 # =============================================================================
 #
-def ensurearray(arg):
-    """Ensures that the given argument is a numpy array. If it is not, the
-    argument is converted to an array.
+def ensurearray(*args):
+    """Apply numpy's broadcast rules to the given arguments.
+
+    This will ensure that all of the arguments are numpy arrays and that they
+    all have the same shape. See ``numpy.broadcast_arrays`` for more details.
+
+    It also returns a boolean indicating whether any of the inputs were
+    originally arrays.
+
+    Parameters
+    ----------
+    *args :
+        The arguments to check.
+
+    Returns
+    -------
+    list :
+        A list with length ``N+1`` where ``N`` is the number of given
+        arguments. The first N values are the input arguments as ``ndarrays``s.
+        The last value is a boolean indicating whether any of the
+        inputs was an array.
     """
-    input_is_array = isinstance(arg, numpy.ndarray)
-    if not input_is_array:
-        arr = numpy.array(arg)
-        arg = arr
-    return arg, input_is_array
+    input_is_array = any(isinstance(arg, numpy.ndarray) for arg in args)
+    args = numpy.broadcast_arrays(*args)
+    args.append(input_is_array)
+    return args
 
 
 def formatreturn(arg, input_is_array=False):
@@ -70,11 +87,7 @@ def formatreturn(arg, input_is_array=False):
 #
 def primary_mass(mass1, mass2):
     """Returns the larger of mass1 and mass2 (p = primary)."""
-    mass1, ia1 = ensurearray(mass1)
-    mass2, ia2 = ensurearray(mass2)
-    input_is_array = ia1 or ia2
-    if mass1.shape != mass2.shape:
-        raise ValueError("mass1 and mass2 must have same shape")
+    mass1, mass2, input_is_array = ensurearray(mass1, mass2)
     mp = copy.copy(mass1)
     mask = mass1 < mass2
     mp[mask] = mass2[mask]
@@ -83,9 +96,7 @@ def primary_mass(mass1, mass2):
 
 def secondary_mass(mass1, mass2):
     """Returns the smaller of mass1 and mass2 (s = secondary)."""
-    mass1, ia1 = ensurearray(mass1)
-    mass2, ia2 = ensurearray(mass2)
-    input_is_array = ia1 or ia2
+    mass1, mass2, input_is_array = ensurearray(mass1, mass2)
     if mass1.shape != mass2.shape:
         raise ValueError("mass1 and mass2 must have same shape")
     ms = copy.copy(mass2)
@@ -367,11 +378,10 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     The mass-weighted dominant effective lambda parameter defined in
     https://journals.aps.org/prd/pdf/10.1103/PhysRevD.91.043002
     """
-    m1, ia1 = ensurearray(mass1)
-    m2, ia2 = ensurearray(mass2)
-    lsum, ia3 = ensurearray(lambda1 + lambda2)
-    ldiff, ia4 = ensurearray(lambda1 - lambda2)
-    input_is_array = any([ia1, ia2, ia3, ia4])
+    m1, m2, lambda1, lambda2, input_is_array = ensurearray(
+        mass1, mass2, lambda1, lambda2)
+    lsum = lambda1 + lambda2
+    ldiff = lambda1 - lambda2
     mask = m1 < m2
     ldiff[mask] = -ldiff[mask]
     eta = eta_from_mass1_mass2(m1, m2)
@@ -445,14 +455,8 @@ def chi_p_from_spherical(mass1, mass2, spin1_a, spin1_azimuthal, spin1_polar,
 
 def primary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the primary mass."""
-    mass1, ia1 = ensurearray(mass1)
-    mass2, ia2 = ensurearray(mass2)
-    spin1, ia3 = ensurearray(spin1)
-    spin2, ia4 = ensurearray(spin2)
-    input_is_array = any([ia1, ia2, ia3, ia4])
-    if (mass1.shape != mass2.shape) or (mass1.shape != spin1.shape) or (
-        mass1.shape != spin2.shape):
-        raise ValueError("mass1, mass2, spin1, spin2 must have same shape")
+    mass1, mass2, spin1, spin2, input_is_array = ensurearray(
+        mass1, mass2, spin1, spin2)
     sp = copy.copy(spin1)
     mask = mass1 < mass2
     sp[mask] = spin2[mask]
@@ -461,14 +465,8 @@ def primary_spin(mass1, mass2, spin1, spin2):
 
 def secondary_spin(mass1, mass2, spin1, spin2):
     """Returns the dimensionless spin of the secondary mass."""
-    mass1, ia1 = ensurearray(mass1)
-    mass2, ia2 = ensurearray(mass2)
-    spin1, ia3 = ensurearray(spin1)
-    spin2, ia4 = ensurearray(spin2)
-    input_is_array = any([ia1, ia2, ia3, ia4])
-    if (mass1.shape != mass2.shape) or (mass1.shape != spin1.shape) or (
-        mass1.shape != spin2.shape):
-        raise ValueError("mass1, mass2, spin1, spin2 must have same shape")
+    mass1, mass2, spin1, spin2, input_is_array = ensurearray(
+        mass1, mass2, spin1, spin2)
     ss = copy.copy(spin2)
     mask = mass1 < mass2
     ss[mask] = spin1[mask]
@@ -527,11 +525,7 @@ def chi_perp_from_mass1_mass2_xi2(mass1, mass2, xi2):
 def chi_p_from_xi1_xi2(xi1, xi2):
     """Returns effective precession spin from xi1 and xi2.
     """
-    xi1, ia1 = ensurearray(xi1)
-    xi2, ia2 = ensurearray(xi2)
-    input_is_array = ia1 or ia2
-    if xi1.shape != xi2.shape:
-        raise ValueError("xi1, xi2 must have same shape")
+    xi1, xi2, input_is_array = ensurearray(xi1, xi2)
     chi_p = copy.copy(xi1)
     mask = xi1 < xi2
     chi_p[mask] = xi2[mask]
@@ -832,6 +826,7 @@ def frequency_to_velocity(f, M):
     """
     return (lal.PI * M * lal.MTSUN_SI * f)**(1.0/3.0)
 
+
 def f_schwarzchild_isco(M):
     """
     Innermost stable circular orbit (ISCO) for a test particle
@@ -899,6 +894,7 @@ def nltides_coefs(amplitude, n, m1, m2):
 
     return f_ref, t_of_f_factor, phi_of_f_factor
 
+
 def nltides_gw_phase_difference(f, f0, amplitude, n, m1, m2):
     """Calculate the gravitational-wave phase shift bwtween
     f and f_coalescence = infinity due to non-linear tides.
@@ -925,26 +921,8 @@ def nltides_gw_phase_difference(f, f0, amplitude, n, m1, m2):
     delta_phi: float or numpy.array
         Phase in radians
     """
-
-    f, ia1 = ensurearray(f)
-    f0, ia2 = ensurearray(f0)
-    amplitude, ia3 = ensurearray(amplitude)
-    n, ia4 = ensurearray(n)
-    m1, ia5 = ensurearray(m1)
-    m2, ia6 = ensurearray(m2)
-
-    if f.shape != f0.shape:
-        raise ValueError("f, f0 must have same shape")
-    if f.shape != amplitude.shape:
-        raise ValueError("f, amplitude must have same shape")
-    if f.shape != n.shape:
-        raise ValueError("f, n must have same shape")
-    if f.shape != m1.shape:
-        raise ValueError("f, m1 must have same shape")
-    if f.shape != m2.shape:
-        raise ValueError("f, m2 must have same shape")
-
-    input_is_array = any([ia1, ia2, ia3, ia4, ia5, ia6])
+    f, f0, amplitude, n, m1, m2, input_is_array = ensurearray(
+        f, f0, amplitude, n, m1, m2)
 
     delta_phi = numpy.zeros(m1.shape)
 
@@ -956,7 +934,8 @@ def nltides_gw_phase_difference(f, f0, amplitude, n, m1, m2):
     mask = f > f0
     delta_phi[mask] = - phi_of_f_factor[mask] * (f[mask]/f_ref)**(n[mask]-3.)
 
-    return formatreturn(delta_phi,input_is_array)
+    return formatreturn(delta_phi, input_is_array)
+
 
 def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
     """Calculate the gravitational-wave phase shift bwtween
@@ -984,23 +963,8 @@ def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
     delta_phi: float or numpy.array
         Phase in radians
     """
-
-    f0, ia1 = ensurearray(f0)
-    amplitude, ia2 = ensurearray(amplitude)
-    n, ia3 = ensurearray(n)
-    m1, ia4 = ensurearray(m1)
-    m2, ia5 = ensurearray(m2)
-
-    if f0.shape != amplitude.shape:
-        raise ValueError("f0, amplitude must have same shape")
-    if f0.shape != n.shape:
-        raise ValueError("f0, n must have same shape")
-    if f0.shape != m1.shape:
-        raise ValueError("f0, m1 must have same shape")
-    if f0.shape != m2.shape:
-        raise ValueError("f0, m2 must have same shape")
-
-    input_is_array = any([ia1, ia2, ia3, ia4, ia5])
+    f0, amplitude, n, m1, m2, input_is_array = ensurearray(
+        f0, amplitude, n, m1, m2)
 
     f_low = numpy.zeros(m1.shape) + f_low
 
