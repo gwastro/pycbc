@@ -124,7 +124,7 @@ def _check_lal_pars(p):
         lalsimulation.SimInspiralWaveformParamsInsertFrameAxis(lal_pars, p['frame_axis'])
     if p['side_bands']:
         lalsimulation.SimInspiralWaveformParamsInsertSideband(lal_pars, p['side_bands'])
-    if p['mode_array']:
+    if p['mode_array'] is not None:
         ma = lalsimulation.SimInspiralCreateModeArray()
         for l,m in p['mode_array']:
             lalsimulation.SimInspiralModeArrayActivateMode(ma, l, m)
