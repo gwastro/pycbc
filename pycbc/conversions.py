@@ -45,7 +45,7 @@ from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
 #
 def ensurearray(*args):
     """Apply numpy's broadcast rules to the given arguments.
-    
+
     This will ensure that all of the arguments are numpy arrays and that they
     all have the same shape. See ``numpy.broadcast_arrays`` for more details.
 
@@ -54,7 +54,7 @@ def ensurearray(*args):
 
     Parameters
     ----------
-    \*args :
+    *args :
         The arguments to check.
 
     Returns
