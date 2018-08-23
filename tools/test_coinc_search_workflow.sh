@@ -72,6 +72,7 @@ pycbc_make_coinc_search_workflow \
   "workflow-segments:segments-science-veto:1" \
   "workflow-segments:segments-final-veto-group:12H" \
   "workflow-segments:segments-veto-groups:" \
+  "workflow-segments:segments-generate-segment-files:if_not_present" \
   "datafind:urltype:file" \
   "workflow-segments:segments-veto-definer-url:${VETO_DEFINER}" \
   "workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE}" \
