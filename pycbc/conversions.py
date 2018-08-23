@@ -767,9 +767,9 @@ def snr_from_loglr(loglr):
 def get_lm_f0tau(mass, spin, l, m, nmodes):
     """Return the f_0 and the tau of each overtone for a given lm mode
     """
-    qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
+    qnmfreq = lal.CreateCOMPLEX16Vector(int(nmodes))
     lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(
-        qnmfreq, float(mass), float(spin), l, m, nmodes)
+        qnmfreq, float(mass), float(spin), int(l), int(m), int(nmodes))
     f_0 = [qnmfreq.data[n].real / (2 * numpy.pi) for n in range(nmodes)]
     tau = [1. / qnmfreq.data[n].imag for n in range(nmodes)]
     return f_0, tau
