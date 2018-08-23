@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/ahnitz/projects/plive/env/bin/python
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal
 from pycbc import fft, version, waveform, scheme, frame
 from pycbc.types import MultiDetOptionAction
@@ -304,6 +304,12 @@ parser.add_argument('--round-start-time', type=int,
 parser.add_argument('--gracedb-server',
                     help="Location of gracedb server. If not provide, the "
                          "default location is used. ")
+parser.add_argument('--size-override', 
+                    help="Override the internal MPI size layout. "
+                         " Useful for debugging and running a portion of a bank",
+                    type=int)
+parser.add_argument('--fftw-planning-limit', type=float,
+                    help="Time is seconds to allow for a plan to be created")
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
@@ -342,6 +348,9 @@ evnt = LiveEventManager(args.output_path,
                         gracedb_testing=not args.enable_production_gracedb_upload,
                        )
 
+if args.size_override:
+    evnt.size=args.size_override
+
 # ifos used for primary analysis (only two at the moment)
 ifos = set(args.channel_name.keys())
 followup_ifos = set(args.followup_detectors)
@@ -371,8 +380,13 @@ with ctx:
 
         if args.fftw_input_double_wisdom_file is not None:
             fft.fftw.import_double_wisdom_from_filename(args.fftw_input_double_wisdom_file)
-    except RuntimeError:
-        pass
+
+        if args.fftw_planning_limit:
+            fft.fftw.set_planning_limit(args.fftw_planning_limit)
+    except (ValueError, RuntimeError) as e:
+        print(e)
+        exit()
+
 
     maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
     if evnt.rank > 0:
@@ -534,11 +548,12 @@ with ctx:
         logging.info('%s: Took %1.2f, duty factor of %.2f', evnt.rank, tdiff, tdiff / valid_pad)
         i += 1
 
-if args.fftw_output_float_wisdom_file:
-    fft.fftw.export_single_wisdom_to_filename(args.fftw_output_float_wisdom_file)
+if evnt.rank == 1:
+    if args.fftw_output_float_wisdom_file:
+        fft.fftw.export_single_wisdom_to_filename(args.fftw_output_float_wisdom_file)
 
-if args.fftw_output_double_wisdom_file:
-    fft.fftw.export_double_wisdom_to_filename(args.fftw_output_double_wisdom_file)
+    if args.fftw_output_double_wisdom_file:
+        fft.fftw.export_double_wisdom_to_filename(args.fftw_output_double_wisdom_file)
 
-if args.enable_profiling is not None and args.enable_profiling == evnt.rank:
-    pr.dump_stats('log')
+    if args.enable_profiling:
+        pr.dump_stats('log')

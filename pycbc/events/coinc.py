@@ -379,8 +379,8 @@ class MultiRingBuffer(object):
             raise ValueError("The new size must be larger than the old one")
         self.straighten()
         self.pad_count = size
-        self.buffer.resize((self.num_rings, size))
-        self.buffer_expire.resize((self.num_rings, size))
+        self.buffer = numpy.resize(self.buffer, (self.num_rings, size))
+        self.buffer_expire = numpy.resize(self.buffer, (self.num_rings, size))
 
     @property
     def start_time(self):
@@ -804,7 +804,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
                 single_expire[oifo].append(self.singles[oifo].expire_vector(template)[i1])
                 single_expire[ifo].append(numpy.zeros(len(c),
-                                          dtype=numpy.float64))
+                                          dtype=numpy.int32))
                 single_expire[ifo][-1].fill(self.singles[ifo].expire - 1)
 
                 # save the template and trigger ids to keep association
