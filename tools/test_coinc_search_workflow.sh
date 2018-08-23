@@ -105,7 +105,8 @@ pycbc_submit_dax \
   --accounting-group ligo.dev.o2.cbc.bbh.pycbcoffline \
   --dax ${WORKFLOW_NAME}.dax \
   --no-create-proxy \
-  --no-submit
+  --no-submit \
+  --no-grid
 popd
 popd
 
