@@ -29,7 +29,7 @@ TRANSFORMATION_CATALOG=""
 LOCAL_GSIFTP_SERVER=""
 REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
-NO_GRID="--grid"
+NO_GRID=""
 SUBMIT_DAX="--submit"
 
 # These will be changed by the bundle builder
@@ -163,7 +163,7 @@ while true ; do
         "") shift 2 ;;
         *) LOCAL_PEGASUS_DIR=$2 ; shift 2 ;;
       esac ;;
-    -G|--no-grid) NO_GRID="--nogrid" ; shift ;;
+    -G|--no-grid) NO_GRID="--forward nogrid" ; shift ;;
     -h|--help)
       echo "usage: pycbc_submit_dax [-h] --dax DAX [optional arguments]"
       echo
@@ -413,9 +413,9 @@ fi
 
 
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE $NO_GRID --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE $NO_GRID --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
 fi
 
 echo
