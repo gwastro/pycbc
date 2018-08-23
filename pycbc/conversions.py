@@ -788,25 +788,6 @@ def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
 def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
     return get_lm_f0tau(final_mass, final_spin, l, m, 1)[1][0]
 
-
-#
-# =============================================================================
-#
-#                         Math helper functions
-#
-# =============================================================================
-#
-def return_base10_log(x):
-    """
-    Simply return the log base 10 of the input.
-    Parameters
-    ----------
-    x: float or array
-    """
-    x, ia1 = ensurearray(x)
-    return formatreturn(numpy.log10(x), ia1)
-
-
 #
 # =============================================================================
 #
@@ -1064,5 +1045,5 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
-           'return_base10_log', 'nltides_gw_phase_diff_isco'
+           'nltides_gw_phase_diff_isco'
           ]
