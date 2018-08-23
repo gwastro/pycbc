@@ -222,11 +222,11 @@ def set_planning_limit(time):
         set_threads_backend()
 
     f = double_lib.fftw_set_timelimit
-    f.argtypes= [ctypes.c_double]
+    f.argtypes = [ctypes.c_double]
     f(time)
 
     f = float_lib.fftwf_set_timelimit
-    f.argtypes= [ctypes.c_double]
+    f.argtypes = [ctypes.c_double]
     f(time)
 
 # Create function maps for the dtypes
