@@ -45,7 +45,7 @@ If you use the PyCBC search algorithms, please cite all four of these papers:
 
 If you use the offline PyCBC search pipeline, please additionally cite:
 
-- `The PyCBC search for gravitational waves from compact binary coalescence. <http://iopscience.iop.org/article/10.1088/0264-9381/33/21/215004/meta>`__ `[INSPIRES BibTeX Key] <https://inspirehep.net/record/1387292/export/hx>`_ `[ADS BibTeX key] <http://adsabs.harvard.edu/cgi-bin/nph-bib_query?bibcode=2016CQGra..33u5004U&data_type=BIBTEX&db_key=AST&nocookieset=1>`__
+- `The PyCBC search for gravitational waves from compact binary coalescence. <http://iopscience.iop.org/article/10.1088/0264-9381/33/21/215004/meta>`__ `[INSPIRES BibTeX Key] <https://inspirehep.net/record/1387292/export/hx>`__ `[ADS BibTeX key] <http://adsabs.harvard.edu/cgi-bin/nph-bib_query?bibcode=2016CQGra..33u5004U&data_type=BIBTEX&db_key=AST&nocookieset=1>`__
 
 If you use the low-latency PyCBC search pipeline, please additionally cite:
 
