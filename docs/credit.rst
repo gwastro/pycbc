@@ -22,7 +22,7 @@ Citing the scientific publications that describe the algorithms
 PyCBC implements a large number of data-analysis algorithms and so it is not possible to give one single citation. To give proper scientific credit for the development of PyCBC, in addition to citing the DOI from the software, please cite the appropriate scientific publications below.
 
 ^^^^^^^^^^^^^^^^^^
-Bayseian Inference
+Bayesian Inference
 ^^^^^^^^^^^^^^^^^^
 
 If you use the Bayesian inference modules, or code derived from those modules, please cite the paper:
