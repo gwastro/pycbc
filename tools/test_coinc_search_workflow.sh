@@ -101,13 +101,13 @@ do
   pegasus-dax-validator $workflow
 done
 
-#echo -e "\\n>> [`date`] Planning test workflow"
-#pycbc_submit_dax \
-#  --accounting-group ligo.dev.o2.cbc.bbh.pycbcoffline \
-#  --dax ${WORKFLOW_NAME}.dax \
-#  --no-create-proxy \
-#  --no-submit \
-#  --no-grid
+echo -e "\\n>> [`date`] Planning test workflow"
+pycbc_submit_dax \
+  --force-no-accounting-group \
+  --dax ${WORKFLOW_NAME}.dax \
+  --no-create-proxy \
+  --no-submit \
+  --no-grid
 
 popd
 popd
