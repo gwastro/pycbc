@@ -1,4 +1,4 @@
-#!/home/ahnitz/projects/plive/env/bin/python
+#!/usr/bin/env python
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal
 from pycbc import fft, version, waveform, scheme, frame
 from pycbc.types import MultiDetOptionAction
