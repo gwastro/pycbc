@@ -29,6 +29,7 @@ TRANSFORMATION_CATALOG=""
 LOCAL_GSIFTP_SERVER=""
 REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
+NO_GRID=""
 SUBMIT_DAX="--submit"
 
 # These will be changed by the bundle builder
@@ -47,7 +48,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:Gh --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -162,6 +163,7 @@ while true ; do
         "") shift 2 ;;
         *) LOCAL_PEGASUS_DIR=$2 ; shift 2 ;;
       esac ;;
+    -G|--no-grid) NO_GRID="--forward nogrid" ; shift ;;
     -h|--help)
       echo "usage: pycbc_submit_dax [-h] --dax DAX [optional arguments]"
       echo
@@ -205,6 +207,8 @@ while true ; do
       echo "                             that the user has a valid grid proxy"
       echo "  -n, --no-submit         Plan the DAX but do not submit it"
       echo "  -l, --local-dir         Directory to put condor files under"
+      echo "  -G, --no-grid           Disable checks for grid proxy and"
+      echo "                             GLOBUS_LOCATION in pegasus-plan"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
       echo "path to the temporary workflow execute directory passed to pegasus-plan."
@@ -409,9 +413,9 @@ fi
 
 
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
 fi
 
 echo

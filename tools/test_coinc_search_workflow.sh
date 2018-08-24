@@ -42,8 +42,6 @@ pushd $WORKFLOW_NAME
 
 echo -e "\\n>> [`date`] Building test workflow $WORKFLOWNAME"
 
-set +e
-
 pycbc_make_coinc_search_workflow \
 --workflow-name ${WORKFLOW_NAME} --output-dir output \
 --config-files \
@@ -62,18 +60,19 @@ pycbc_make_coinc_search_workflow \
   "optimal_snr:cores:24" \
   "workflow-splittable-full_data:splittable-num-banks:20" \
   "workflow-splittable-injections:splittable-num-banks:10" \
-  "workflow:h1-channel-name:H1:DCS-CALIB_STRAIN_C02" \
-  "workflow:l1-channel-name:L1:DCS-CALIB_STRAIN_C02" \
+  "workflow:h1-channel-name:H1:GWOSC-16KHZ_R1_STRAIN" \
+  "workflow:l1-channel-name:L1:GWOSC-16KHZ_R1_STRAIN" \
   "workflow-ifos:h1:" \
   "workflow-ifos:l1:" \
-  "workflow-datafind:datafind-h1-frame-type:H1_HOFT_C02" \
-  "workflow-datafind:datafind-l1-frame-type:L1_HOFT_C02" \
-  "workflow-segments:segments-h1-science-name:H1:DCS-ANALYSIS_READY_C02:1" \
-  "workflow-segments:segments-l1-science-name:L1:DCS-ANALYSIS_READY_C02:1" \
-  "workflow-segments:segments-database-url:https://segments.ligo.org" \
+  "workflow-datafind:datafind-h1-frame-type:H1_LOSC_16_V1" \
+  "workflow-datafind:datafind-l1-frame-type:L1_LOSC_16_V1" \
+  "workflow-segments:segments-h1-science-name:H1:RESULT:1" \
+  "workflow-segments:segments-l1-science-name:L1:RESULT:1" \
+  "workflow-segments:segments-database-url:https://losc.ligo.org/archive/O1/" \
   "workflow-segments:segments-science-veto:1" \
   "workflow-segments:segments-final-veto-group:12H" \
   "workflow-segments:segments-veto-groups:" \
+  "workflow-segments:segments-generate-segment-files:if_not_present" \
   "datafind:urltype:file" \
   "workflow-segments:segments-veto-definer-url:${VETO_DEFINER}" \
   "workflow-tmpltbank:tmpltbank-pregenerated-bank:${BANK_FILE}" \
@@ -102,16 +101,16 @@ do
   pegasus-dax-validator $workflow
 done
 
-echo -e "\\n>> [`date`] Planning test workflow"
-pycbc_submit_dax \
-  --accounting-group ligo.dev.o2.cbc.bbh.pycbcoffline \
-  --dax ${WORKFLOW_NAME}.dax \
-  --no-create-proxy \
-  --no-submit
-popd
-popd
+#echo -e "\\n>> [`date`] Planning test workflow"
+#pycbc_submit_dax \
+#  --accounting-group ligo.dev.o2.cbc.bbh.pycbcoffline \
+#  --dax ${WORKFLOW_NAME}.dax \
+#  --no-create-proxy \
+#  --no-submit \
+#  --no-grid
 
-set -e 
+popd
+popd
 
 echo -e "\\n>> [`date`] Test workflow validation complete"
 
