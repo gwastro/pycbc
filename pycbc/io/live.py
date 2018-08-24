@@ -60,14 +60,14 @@ def make_psd_xmldoc(psddict, xmldoc=None):
     """Add a set of PSDs to a LIGOLW XML document. If the document is not
     given, a new one is created first.
     """
-    if xmldoc is None:
-        xmldoc = ligolw.Document()
-        root_name = u"psd"
-        Attributes = ligolw.sax.xmlreader.AttributesImpl
-        lw = xmldoc.appendChild(
-            ligolw.LIGO_LW(Attributes({u"Name": root_name})))
-    else:
-        lw = xmldoc.childNodes[0]
+    xmldoc = ligolw.Document() if xmldoc is None else xmldoc.childNodes[0]
+
+    # the PSDs must be children of a LIGO_LW with name "psd"
+    root_name = u"psd"
+    Attributes = ligolw.sax.xmlreader.AttributesImpl
+    lw = xmldoc.appendChild(
+        ligolw.LIGO_LW(Attributes({u"Name": root_name})))
+
     for instrument, psd in psddict.items():
         xmlseries = _build_series(psd, (u"Frequency,Real", u"Frequency"),
                                   None, 'deltaF', 's^-1')
@@ -95,8 +95,11 @@ class SingleCoincForGraceDB(object):
         low_frequency_cutoff: float
             Minimum valid frequency for the PSD estimates.
         followup_data: dict of dicts, optional
-            Dictionary providing SNR time series and PSDs for each detector,
-            to be used in sky localization with BAYESTAR.
+            Dictionary providing SNR time series for each detector,
+            to be used in sky localization with BAYESTAR. The format should
+            be `followup_data['H1']['snr_series']`. More detectors can be
+            present than given in `ifos`. If so, the extra detectors will only
+            be used for sky localization.
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
 
@@ -107,7 +110,6 @@ class SingleCoincForGraceDB(object):
         if 'followup_data' in kwargs:
             fud = kwargs['followup_data']
             self.snr_series = {ifo: fud[ifo]['snr_series'] for ifo in fud}
-            self.snr_series_psd = {ifo: fud[ifo]['psd'] for ifo in fud}
             usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
         else:
@@ -227,9 +229,10 @@ class SingleCoincForGraceDB(object):
         outdoc.childNodes[0].appendChild(coinc_inspiral_table)
 
         # append the PSDs
+        self.psds = kwargs['psds']
         psds_lal = {}
-        for ifo in kwargs['psds']:
-            psd = kwargs['psds'][ifo]
+        for ifo in self.psds:
+            psd = self.psds[ifo]
             kmin = int(kwargs['low_frequency_cutoff'] / psd.delta_f)
             fseries = lal.CreateREAL8FrequencySeries(
                 "psd", psd.epoch, kwargs['low_frequency_cutoff'], psd.delta_f,
@@ -281,8 +284,8 @@ class SingleCoincForGraceDB(object):
             for ifo in self.snr_series:
                 self.snr_series[ifo].save(snr_series_fname,
                                           group='%s/snr' % ifo)
-                self.snr_series_psd[ifo].save(snr_series_fname,
-                                              group='%s/psd' % ifo)
+                self.psds[ifo].save(snr_series_fname,
+                                    group='%s/psd' % ifo)
 
         gid = None
         try:

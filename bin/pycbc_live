@@ -98,11 +98,11 @@ class LiveEventManager(object):
             # NOTE we only check the state/DQ of followup IFOs here.
             # IFOs producing the coincidence are assumed to also
             # produce valid SNR series.
-            snr_series, psd = compute_followup_snr_series(
+            snr_series = compute_followup_snr_series(
                     data_readers[ifo], htilde, trig_time,
                     check_state=(ifo in followup_ifos))
             if snr_series is not None:
-                out[ifo] = {'snr_series': snr_series, 'psd': psd}
+                out[ifo] = {'snr_series': snr_series}
 
         return out
 
