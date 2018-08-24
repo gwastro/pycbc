@@ -380,7 +380,7 @@ class MultiRingBuffer(object):
         self.straighten()
         self.pad_count = size
         self.buffer = numpy.resize(self.buffer, (self.num_rings, size))
-        self.buffer_expire = numpy.resize(self.buffer, (self.num_rings, size))
+        self.buffer_expire = numpy.resize(self.buffer_expire, (self.num_rings, size))
 
     @property
     def start_time(self):
