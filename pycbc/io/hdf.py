@@ -373,11 +373,11 @@ class SingleDetTriggers(object):
             # remove the dummy attributes
             for c in self.trigs.keys() + self.bank.keys():
                 if c in filter_func: delattr(self, '_'+c)
-            self.boolean_veto = np.in1d(np.arange(len(self.trigs['end_time'])),
-                  self.veto_mask, assume_unique=True)
-            self.mask = np.logical_and(self.boolean_veto, self.filter_mask)
+            boolean_veto = np.zeros(len(self.trigs['end_time']), dtype=bool)
+            boolean_veto[self.veto_mask] = True
+            self.mask = np.logical_and(boolean_veto, self.filter_mask)
             logging.info('%i triggers remain after cut on %s',
-                          len(self.trigs['end_time'][self.mask]), filter_func)
+                         sum(self.mask), filter_func)
         else:
             self.mask = self.veto_mask
 
@@ -436,9 +436,9 @@ class SingleDetTriggers(object):
         index = np.array(new_index)
         self.stat = stat[index]
         if self.mask.dtype == 'bool':
-            orig_indices = self.mask.nonzero()[0][index]
-            self.mask = np.in1d(np.arange(len(self.mask)), orig_indices,
-                                assume_unique=True)
+            orig_indices = np.flatnonzero(self.mask)[index]
+            self.mask[:] = False
+            self.mask[orig_indices] = True
         else:
             self.mask = self.mask[index]
 
