@@ -155,6 +155,7 @@ class SingleCoincForGraceDB(object):
         coinc_event_map_table = lsctables.New(lsctables.CoincMapTable)
 
         sngl_populated = None
+        network_snrsq = 0
         for sngl_id, ifo in enumerate(usable_ifos):
             sngl = return_empty_sngl(nones=True)
             sngl.event_id = lsctables.SnglInspiralID(sngl_id)
@@ -179,6 +180,7 @@ class SingleCoincForGraceDB(object):
                 sngl_populated = sngl
             if sngl.snr:
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
+                network_snrsq += sngl.snr ** 2.0
             sngl_inspiral_table.append(sngl)
 
             # Set up coinc_map entry
@@ -218,7 +220,7 @@ class SingleCoincForGraceDB(object):
         coinc_inspiral_row.mass = sngl_populated.mtotal
         coinc_inspiral_row.end_time = sngl_populated.end_time
         coinc_inspiral_row.end_time_ns = sngl_populated.end_time_ns
-        coinc_inspiral_row.snr = coinc_results['foreground/stat']
+        coinc_inspiral_row.snr = network_snrsq ** 0.5
         far = 1.0 / (lal.YRJUL_SI * coinc_results['foreground/ifar'])
         coinc_inspiral_row.combined_far = far
         coinc_inspiral_table.append(coinc_inspiral_row)
