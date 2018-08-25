@@ -465,7 +465,6 @@ with ctx:
 
     # get more data
     data_end = lambda: data_reader[data_reader.keys()[0]].end_time
-    i = 0
     while data_end() < args.end_time:
         t1 = time()
         logging.info('%s: Analyzing from %s', evnt.rank, data_end())
@@ -575,8 +574,6 @@ with ctx:
                       'status_intervals': status_intervals}
             with open(args.output_status, 'w') as status_fp:
                 json.dump(status, status_fp)
-
-        i += 1
 
 if evnt.rank == 1:
     if args.fftw_output_float_wisdom_file:
