@@ -266,7 +266,7 @@ else
   fi
 fi
 
-if [ -z ${NO_GRID} ] ; then
+if [ -z "${NO_GRID}" ] ; then
   #Check that the proxy is valid
   set +e
   grid-proxy-info -exists
@@ -433,7 +433,7 @@ chmod 755 debug
 echo pegasus-remove $SUBMIT_DIR/work > stop
 chmod 755 stop
 
-if [ -z ${NO_GRID} ] ; then
+if [ -z "${NO_GRID}" ] ; then
   cat << EOF > start
 #!/bin/bash
 
