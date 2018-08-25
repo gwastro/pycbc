@@ -118,7 +118,6 @@ def get_version_info():
         def __getattr__(self, attr):
             return ''
 
-
     # If this is a pycbc git repo always populate version information using GIT
     try:
         vinfo = _version_helper.generate_git_version_info()
@@ -126,6 +125,10 @@ def get_version_info():
         vinfo = vdummy()
         vinfo.version = '1.12.dev3'
         vinfo.release = 'False'
+    vinfo = vdummy()
+    vinfo.version = '1.12.dev3'
+    vinfo.release = 'False'
+
 
     with open('pycbc/version.py', 'w') as f:
         f.write("# coding: utf-8\n")
@@ -147,12 +150,15 @@ def get_version_info():
         f.write('git_status = \'%s\'\n' % vinfo.status)
         f.write('git_builder = \'%s\'\n' % vinfo.builder)
         f.write('git_build_date = \'%s\'\n' % vinfo.build_date)
-        f.write('git_verbose_msg = """Branch: %s\n'
+        f.write('git_verbose_msg = """Version: %s\n'
+                'Branch: %s\n'
                 'Tag: %s\n'
                 'Id: %s\n'
                 'Builder: %s\n'
                 'Build date: %s\n'
-                'Repository status is %s"""\n' %(vinfo.branch,
+                'Repository status is %s"""\n' %(
+                                               vinfo.version,
+                                               vinfo.branch,
                                                vinfo.tag,
                                                vinfo.hash,
                                                vinfo.builder,
