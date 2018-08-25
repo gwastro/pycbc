@@ -266,26 +266,27 @@ else
   fi
 fi
 
-#Check that the proxy is valid
-set +e
-grid-proxy-info -exists
-RESULT=$?
-set -e
-if [ ${RESULT} -eq 0 ] ; then
-  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
-  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
-    grid-proxy-info
+if [ -z "${NO_GRID}" ] ; then
+  #Check that the proxy is valid
+  set +e
+  grid-proxy-info -exists
+  RESULT=$?
+  set -e
+  if [ ${RESULT} -eq 0 ] ; then
+    PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+    if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+      grid-proxy-info
+    else
+      cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+      grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+      rm -f /tmp/x509up_u`id -u`.orig
+      grid-proxy-info
+    fi
   else
-    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
-    rm -f /tmp/x509up_u`id -u`.orig
-    grid-proxy-info
+    echo "Error: Could not find a valid grid proxy to submit workflow."
+    exit 1
   fi
-else
-  echo "Error: Could not find a valid grid proxy to submit workflow."
-  exit 1
 fi
-
 
 #Make a directory for the submit files
 SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
@@ -432,7 +433,8 @@ chmod 755 debug
 echo pegasus-remove $SUBMIT_DIR/work > stop
 chmod 755 stop
 
-cat << EOF > start
+if [ -z "${NO_GRID}" ] ; then
+  cat << EOF > start
 #!/bin/bash
 
 if [ -f /tmp/x509up_u\`id -u\` ] ; then
@@ -465,9 +467,9 @@ else
 fi
 
 EOF
+fi
+
 echo pegasus-run $SUBMIT_DIR/work >> start
-
-
 
 chmod 755 start
 
