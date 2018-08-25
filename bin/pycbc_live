@@ -568,8 +568,8 @@ with ctx:
             status_intervals.append({'num_status': 2,
                                      'txt_status': 'CRITICAL: last report >4 min ago',
                                      'start_sec': 240})
-            status = {'author': 'Alexander Harvey Nitz',
-                      'email': 'alex.nitz@ligo.org',
+            status = {'author': 'Tito Dal Canton',
+                      'email': 'tito.canton@ligo.org',
                       'created_gps': int(lal.GPSTimeNow()),
                       'status_intervals': status_intervals}
             with open(args.output_status, 'w') as status_fp:
