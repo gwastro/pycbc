@@ -203,6 +203,8 @@ if __name__ == '__main__':
                                  inj.simulation_id, e)
                     continue
                 else:
+                    logging.error('%s: waveform generation failed with the '
+                                  'following exception', inj.simulation_id)
                     raise
             logging.debug('Injection %s completed', inj.simulation_id)
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
