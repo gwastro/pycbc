@@ -923,6 +923,15 @@ def td_waveform_to_fd_waveform(waveform, out=None, length=None,
 
     # total duration of the waveform
     tmplt_length = len(waveform) * waveform.delta_t
+    if len(waveform) > N:
+        err_msg = "The time domain template is longer than the intended "
+        err_msg += "duration in the frequency domain. This situation is "
+        err_msg += "not supported in this function. Please shorten the "
+        err_msg += "waveform appropriately before calling this function or "
+        err_msg += "increase the allowed waveform length. "
+        err_msg += "Waveform length (in samples): {}".format(len(waveform))
+        err_msg += ". Intended length: {}.".format(N)
+        raise ValueError(err_msg)
     # for IMR templates the zero of time is at max amplitude (merger)
     # thus the start time is minus the duration of the template from
     # lower frequency cutoff to merger, i.e. minus the 'chirp time'
