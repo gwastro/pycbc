@@ -20,7 +20,8 @@ fi
 echo -e "\\n>> [`date`] Entering virtual environment $VENV_PATH"
 source ${VENV_PATH}/bin/activate
 
-CONFIG_PATH="https://raw.githubusercontent.com/ligo-cbc/pycbc-config/${TRAVIS_TAG}"
+CONFIG_TAG="v1.9.1"
+CONFIG_PATH="https://raw.githubusercontent.com/ligo-cbc/pycbc-config/${CONFIG_TAG}"
 echo -e "\\n>> [`date`] Using config files from ${CONFIG_PATH}"
 
 VETO_DEFINER="https://raw.githubusercontent.com/gwastro/pycbc-config/master/O1/dq/H1L1-DUMMY_O1_CBC_VDEF-1126051217-1220400.xml"
