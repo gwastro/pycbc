@@ -278,7 +278,7 @@ def get_version_info():
 
     # If this is a release or another kind of source distribution of PyCBC
     except:
-        version = '1.11.9'
+        version = '1.11.11'
         release = 'True'
 
         date = hash = branch = tag = author = committer = status = builder = build_date = ''
@@ -488,7 +488,8 @@ setup (
                'bin/workflows/pycbc_create_bank_verifier_workflow',
                'bin/pycbc_compress_bank',
                'bin/pycbc_ringinj',
-               'tools/einsteinathome/pycbc_build_eah.sh'
+               'tools/einsteinathome/pycbc_build_eah.sh',
+               'bin/pycbc_losc_segment_query'
                ],
     packages = [
                'pycbc',
