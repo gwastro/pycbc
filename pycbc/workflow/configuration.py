@@ -30,6 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 import os
 import re
 import stat
+import string
 import shutil
 import time
 import logging
@@ -138,6 +139,30 @@ ecp-cookie-init LIGO.ORG https://git.ligo.org/users/auth/shibboleth/callback alb
 before attempting to download files from git.ligo.org.
 """
 
+def istext(s, text_characters=None, threshold=0.3):
+    """
+    Determines if the string is a set of binary data or a text file.
+    This is done by checking if a large proportion of characters are > 0X7E
+    (0x7F is <DEL> and unprintable) or low bit control codes. In other words
+    things that you wouldn't see (often) in a text file. (ASCII past 0x7F
+    might appear, but rarely).
+
+    Code modified from
+    https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch01s12.html
+    """
+    text_characters = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
+    _null_trans = string.maketrans("", "")
+    # if s contains any null, it's not text:
+    if "\0" in s:
+        return False
+    # an "empty" string is "text" (arbitrary but reasonable choice):
+    if not s:
+        return True
+    # Get the substring of s made up of non-text characters
+    t = s.translate(_null_trans, text_characters)
+    # s is 'text' if less than 30% of its characters are non-text ones:
+    return len(t)/float(len(s)) <= threshold
+
 def resolve_url(url, directory=None, permissions=None):
     """
     Resolves a URL to a local file, and returns the path to
@@ -198,11 +223,13 @@ def resolve_url(url, directory=None, permissions=None):
         # if we are downloading from git.ligo.org, check that we
         # did not get redirected to the sign-in page
         if u.netloc == 'git.ligo.org' or u.netloc == 'code.pycbc.phy.syr.edu':
-            soup = BeautifulSoup(r.content, 'html.parser')
-            desc = soup.findAll(attrs={"property":"og:url"})
-            if len(desc) and \
-              desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
-                raise ValueError(ecp_cookie_error.format(url))
+            # Check if we have downloaded a binary file.
+            if istext(r.content):
+                soup = BeautifulSoup(r.content, 'html.parser')
+                desc = soup.findAll(attrs={"property":"og:url"})
+                if len(desc) and \
+                  desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
+                    raise ValueError(ecp_cookie_error.format(url))
 
         output_fp = open(filename, 'w')
         output_fp.write(r.content)
