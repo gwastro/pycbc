@@ -219,7 +219,7 @@ with ctx:
             'sampling_transforms')
         logging.info("Sampling in {} in place of {}".format(
             ', '.join(sampling_parameters), ', '.join(replace_parameters)))
-        all_transforms = sampling_transforms
+        all_transforms.extend(sampling_transforms)
     else:
         sampling_parameters = replace_parameters = sampling_transforms = None
 
