@@ -1054,7 +1054,8 @@ class File(pegasus_workflow.File):
         self.ifo_string = ''.join(self.ifo_list)
         self.description = exe_name
 
-        if isinstance(segs, (segments.segment)):
+        import ligo.segments
+        if isinstance(segs, (segments.segment, ligo.segments.segment)):
             self.segment_list = segments.segmentlist([segs])
         elif isinstance(segs, (segments.segmentlist)):
             self.segment_list = segs
