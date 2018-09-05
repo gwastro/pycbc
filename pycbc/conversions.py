@@ -764,23 +764,285 @@ def snr_from_loglr(loglr):
 #
 # =============================================================================
 #
-def get_lm_f0tau(mass, spin, l, m, nmodes):
-    """Return the f_0 and the tau of each overtone for a given lm mode
+def _genqnmfreq(mass, spin, l, m, nmodes, qnmfreq=None):
+    """Convenience function to generate QNM frequencies from lalsimulation.
+
+    Parameters
+    ----------
+    mass : float
+        The mass of the black hole (in solar masses).
+    spin : float
+        The dimensionless spin of the black hole.
+    l : int
+        l-index of the harmonic.
+    m : int
+        m-index of the harmonic.
+    nmodes : int
+        The number of overtones to generate.
+    qnmfreq : lal.COMPLEX16Vector, optional
+        LAL vector to write the results into. Must be the same length as
+        ``nmodes``. If None, will create one.
+
+    Returns
+    -------
+    lal.COMPLEX16Vector
+        LAL vector containing the complex QNM frequencies.
     """
-    qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
+    if qnmfreq is None:
+        qnmfreq = lal.CreateCOMPLEX16Vector(int(nmodes))
     lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(
-        qnmfreq, float(mass), float(spin), l, m, nmodes)
-    f_0 = [qnmfreq.data[n].real / (2 * numpy.pi) for n in range(nmodes)]
-    tau = [1. / qnmfreq.data[n].imag for n in range(nmodes)]
-    return f_0, tau
+        qnmfreq, float(mass), float(spin), int(l), int(m), int(nmodes))
+    return qnmfreq
 
 
-def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
-    return get_lm_f0tau(final_mass, final_spin, l, m, 1)[0][0]
+def get_lm_f0tau(mass, spin, l, m, nmodes):
+    """Return the f0 and the tau of each overtone for a given l, m mode.
+
+    Parameters
+    ----------
+    mass : float or array
+        Mass of the black hole (in solar masses).
+    spin : float or array
+        Dimensionless spin of the final black hole.
+    l : int or array
+        l-index of the harmonic.
+    m : int or array
+        m-index of the harmonic.
+    nmodes : int
+        The number of overtones to generate.
+
+    Returns
+    -------
+    f0 : float or array
+        The frequency of the QNM(s), in Hz. If only a single mode is requested
+        (and mass, spin, l, and m are not arrays), this will be a float. If
+        multiple modes requested, will be an array with shape
+        ``[input shape x] nmodes``, where ``input shape`` is the broadcasted
+        shape of the inputs.
+    tau : float or array
+        The damping time of the QNM(s), in seconds. Return type is same as f0.
+    """
+    # convert to arrays
+    mass, spin, l, m, input_is_array = ensurearray(
+        mass, spin, l, m)
+    # we'll ravel the arrays so we can evaluate each parameter combination
+    # one at a a time
+    origshape = mass.shape
+    if nmodes < 1:
+        raise ValueError("nmodes must be >= 1")
+    if nmodes > 1:
+        newshape = tuple(list(origshape)+[nmodes])
+    else:
+        newshape = origshape
+    f0s = numpy.zeros((mass.size, nmodes))
+    taus = numpy.zeros((mass.size, nmodes))
+    mass = mass.ravel()
+    spin = spin.ravel()
+    l = l.ravel()
+    m = m.ravel()
+    qnmfreq = None
+    modes = range(nmodes)
+    for ii in range(mass.size):
+        qnmfreq = _genqnmfreq(mass[ii], spin[ii], l[ii], m[ii], nmodes,
+                              qnmfreq=qnmfreq)
+        f0s[ii, :] = [qnmfreq.data[n].real/(2 * numpy.pi) for n in modes]
+        taus[ii, :] = [1./qnmfreq.data[n].imag for n in modes]
+    f0s = f0s.reshape(newshape)
+    taus = taus.reshape(newshape)
+    return (formatreturn(f0s, input_is_array),
+            formatreturn(taus, input_is_array))
 
 
-def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2):
-    return get_lm_f0tau(final_mass, final_spin, l, m, 1)[1][0]
+def get_lm_f0tau_allmodes(mass, spin, modes):
+    """Returns a dictionary of all of the frequencies and damping times for the
+    requested modes.
+
+    Parameters
+    ----------
+    mass : float or array
+        Mass of the black hole (in solar masses).
+    spin : float or array
+        Dimensionless spin of the final black hole.
+    modes : list of str
+        The modes to get. Each string in the list should be formatted 'lmN',
+        where l (m) is the l (m) index of the harmonic and N is the number of
+        overtones to generate (note, N is not the index of the overtone). For
+        example, '221' will generate the 0th overtone of the l = m = 2 mode.
+
+    Returns
+    -------
+    f0 : dict
+        Dictionary mapping the modes to the frequencies. The dictionary keys
+        are 'lmn' string, where l (m) is the l (m) index of the harmonic and
+        n is the index of the overtone. For example, '220' is the l = m = 2
+        mode and the 0th overtone.
+    tau : dict
+        Dictionary mapping the modes to the damping times. The keys are the
+        same as ``f0``.
+    """
+    f0, tau = {}, {}
+    key = '{}{}{}'
+    for lmn in modes:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, nmodes)
+        if nmodes == 1:
+            # in this case, tmp_f0 and tmp_tau will just be floats
+            f0[key.format(l, m, '0')] = tmp_f0
+            tau[key.format(l, m, '0')] = tmp_tau
+        else:
+            for n in range(nmodes):
+                # we need to wrap tmp_f0 with formatreturn to ensure that if
+                # only a mass, spin pair was requested, the value stored to
+                # the dict is a float
+                f0[key.format(l, m, n)] = formatreturn(tmp_f0[..., n])
+                tau[key.format(l, m, n)] = formatreturn(tmp_tau[..., n])
+    return f0, tau
+
+
+def freq_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1):
+    """Returns QNM frequency for the given mass and spin and mode.
+
+    Parameters
+    ----------
+    final_mass : float or array
+        Mass of the black hole (in solar masses).
+    final_spin : float or array
+        Dimensionless spin of the final black hole.
+    l : int or array, optional
+        l-index of the harmonic. Default is 2.
+    m : int or array, optional
+        m-index of the harmonic. Default is 2.
+    nmodes : int, optional
+        The number of overtones to generate. Default is 1.
+
+    Returns
+    -------
+    float or array
+        The frequency of the QNM(s), in Hz. If only a single mode is requested
+        (and mass, spin, l, and m are not arrays), this will be a float. If
+        multiple modes requested, will be an array with shape
+        ``[input shape x] nmodes``, where ``input shape`` is the broadcasted
+        shape of the inputs.
+    """
+    return get_lm_f0tau(final_mass, final_spin, l, m, nmodes)[0]
+
+
+def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1):
+    """Returns QNM damping time for the given mass and spin and mode.
+
+    Parameters
+    ----------
+    final_mass : float or array
+        Mass of the black hole (in solar masses).
+    final_spin : float or array
+        Dimensionless spin of the final black hole.
+    l : int or array, optional
+        l-index of the harmonic. Default is 2.
+    m : int or array, optional
+        m-index of the harmonic. Default is 2.
+    nmodes : int, optional
+        The number of overtones to generate. Default is 1.
+
+    Returns
+    -------
+    float or array
+        The damping time of the QNM(s), in seconds. If only a single mode is
+        requested (and mass, spin, l, and m are not arrays), this will be a
+        float. If multiple modes requested, will be an array with shape
+        ``[input shape x] nmodes``, where ``input shape`` is the broadcasted
+        shape of the inputs.
+    """
+    return get_lm_f0tau(final_mass, final_spin, l, m, nmodes)[1]
+
+
+# The following are from Table VIII of Berti et al., PRD 73 064030,
+# arXiv:gr-qc/0512160 (2006).
+# Keys are l,m. Constants are for converting from
+# frequency and damping time to mass and spin.
+_berti_spin_constants = {
+    (2,2): (0.7, 1.4187, -0.4990),
+    }
+
+_berti_mass_constants = {
+    (2,2): (1.5251, -1.1568, 0.1292),
+    }
+
+
+def final_spin_from_f0_tau(f0, tau, l=2, m=2):
+    """Returns the final spin based on the given frequency and damping time.
+
+    .. note::
+        Currently, only l = m = 2 is supported. Any other indices will raise
+        a ``KeyError``.
+
+    Parameters
+    ----------
+    f0 : float or array
+        Frequency of the QNM (in Hz).
+    tau : float or array
+        Damping time of the QNM (in seconds).
+    l : int, optional
+        l-index of the harmonic. Default is 2.
+    m : int, optional
+        m-index of the harmonic. Default is 2.
+
+    Returns
+    -------
+    float or array
+        The spin of the final black hole. If the combination of frequency
+        and damping times give an unphysical result, ``numpy.nan`` will be
+        returned.
+    """
+    f0, tau, input_is_array = ensurearray(f0, tau)
+    # from Berti et al. 2006
+    a, b, c = _berti_spin_constants[l,m]
+    origshape = f0.shape
+    # flatten inputs for storing results
+    f0 = f0.ravel()
+    tau = tau.ravel()
+    spins = numpy.zeros(f0.size)
+    for ii in range(spins.size):
+        Q = f0[ii] * tau[ii] * numpy.pi
+        try:
+            s = 1. - ((Q-a)/b)**(1./c)
+        except ValueError:
+            s = numpy.nan
+        spins[ii] = s
+    spins = spins.reshape(origshape)
+    return formatreturn(spins, input_is_array)
+
+
+def final_mass_from_f0_tau(f0, tau, l=2, m=2):
+    """Returns the final mass (in solar masses) based on the given frequency
+    and damping time.
+
+    .. note::
+        Currently, only l = m = 2 is supported. Any other indices will raise
+        a ``KeyError``.
+
+    Parameters
+    ----------
+    f0 : float or array
+        Frequency of the QNM (in Hz).
+    tau : float or array
+        Damping time of the QNM (in seconds).
+    l : int, optional
+        l-index of the harmonic. Default is 2.
+    m : int, optional
+        m-index of the harmonic. Default is 2.
+
+    Returns
+    -------
+    float or array
+        The mass of the final black hole. If the combination of frequency
+        and damping times give an unphysical result, ``numpy.nan`` will be
+        returned.
+    """
+    # from Berti et al. 2006
+    spin = final_spin_from_f0_tau(f0, tau, l=l, m=m)
+    a, b, c = _berti_mass_constants[l,m]
+    return (a + b*(1-spin)**c)/(2*numpy.pi*f0*lal.MTSUN_SI)
+
 
 #
 # =============================================================================
@@ -1007,7 +1269,8 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
            'spin2y_from_mass1_mass2_xi2_phi_a_phi_s',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
+           'final_spin_from_f0_tau', 'final_mass_from_f0_tau',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
-           'nltides_gw_phase_diff_isco'
+           'nltides_gw_phase_diff_isco',
           ]
