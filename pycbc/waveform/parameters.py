@@ -441,7 +441,7 @@ side_bands = Parameter("side_bands",
                 dtype=int, default=0,
                 description="Flag for generating sidebands")
 mode_array = Parameter("mode_array",
-                dtype=int, default=0,
+                dtype=list, default=None,
                 description="Choose which (l,m) modes to include when "
                             "generating a waveform. "
                             "Only if approximant supports this feature."
