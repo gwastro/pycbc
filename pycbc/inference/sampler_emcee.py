@@ -266,7 +266,7 @@ class EmceePTSampler(BaseMCMCSampler):
     name = "emcee_pt"
 
     def __init__(self, likelihood_evaluator, ntemps, nwalkers, pool=None,
-                 likelihood_call=None):
+                 betas=None, likelihood_call=None):
 
         try:
             import emcee
@@ -282,7 +282,7 @@ class EmceePTSampler(BaseMCMCSampler):
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
                                   _callloglikelihood(likelihood_call),
                                   _callprior(likelihood_call),
-                                  pool=pool)
+                                  pool=pool, betas=betas)
         # initialize
         super(EmceePTSampler, self).__init__(
               sampler, likelihood_evaluator)
@@ -307,8 +307,24 @@ class EmceePTSampler(BaseMCMCSampler):
         EmceePTSampler
             An emcee sampler initialized based on the given arguments.
         """
-        return cls(likelihood_evaluator, opts.ntemps, opts.nwalkers,
-                   pool=pool, likelihood_call=likelihood_call)
+        import h5py
+        if opts.ntemps is not None and opts.betas_input_file is not None:
+            raise ValueError("Must specify either ntemps or "
+                             "betas-input-file, not both.")
+
+        if opts.betas_input_file:
+            try:
+                with h5py.File(opts.betas_input_file, "r") as fp:
+                    betas = numpy.array(fp.attrs['betas'])
+                    ntemps = betas.shape[0]
+            except AttributeError:
+                    raise AttributeError(e)
+        else:
+            betas = None
+            ntemps = opts.ntemps
+
+        return cls(likelihood_evaluator, ntemps, opts.nwalkers,
+                   pool=pool, betas=betas, likelihood_call=likelihood_call)
 
     @property
     def ntemps(self):
