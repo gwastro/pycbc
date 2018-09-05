@@ -308,7 +308,8 @@ class EmceePTSampler(BaseMCMCSampler):
             An emcee sampler initialized based on the given arguments.
         """
         import h5py
-        if opts.ntemps is not None and opts.inverse_temperatures_input_file is not None:
+        if opts.ntemps is not None and \
+                opts.inverse_temperatures_input_file is not None:
             raise ValueError("Must specify either ntemps or "
                              "inverse-temperatures-input-file, not both.")
 
