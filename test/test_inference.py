@@ -91,7 +91,7 @@ class TestSamplers(unittest.TestCase):
             niterations = 4
             update_interval = 2
             nprocesses = 2
-            betas_input_file = None
+            inverse_temperatures_input_file = None
 
         self.opts = Arguments()
 

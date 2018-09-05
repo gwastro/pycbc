@@ -139,7 +139,7 @@ def add_sampler_option_group(parser):
     sampler_group.add_argument("--ntemps", type=int, default=None,
         help="Number of temperatures to use in sampler. Required for parallel "
              "tempered MCMC samplers.")
-    sampler_group.add_argument("--betas-input-file", type=str, default=None,
+    sampler_group.add_argument("--inverse-temperatures-input-file", type=str, default=None,
         help="Input hdf file from which beta (inverse-temperature) values "
              "should be read in. Applicable for emcee_pt samplers.")
     sampler_group.add_argument("--burn-in-function", default=None, nargs='+',

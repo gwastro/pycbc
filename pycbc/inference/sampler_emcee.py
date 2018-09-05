@@ -308,12 +308,12 @@ class EmceePTSampler(BaseMCMCSampler):
             An emcee sampler initialized based on the given arguments.
         """
         import h5py
-        if opts.ntemps is not None and opts.betas_input_file is not None:
+        if opts.ntemps is not None and opts.inverse_temperatures_input_file is not None:
             raise ValueError("Must specify either ntemps or "
-                             "betas-input-file, not both.")
+                             "inverse-temperatures-input-file, not both.")
 
-        if opts.betas_input_file:
-            with h5py.File(opts.betas_input_file, "r") as fp:
+        if opts.inverse_temperatures_input_file:
+            with h5py.File(opts.inverse_temperatures_input_file, "r") as fp:
                 try:
                     betas = numpy.array(fp.attrs['betas'])
                     ntemps = betas.shape[0]
