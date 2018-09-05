@@ -313,12 +313,13 @@ class EmceePTSampler(BaseMCMCSampler):
                              "betas-input-file, not both.")
 
         if opts.betas_input_file:
-            try:
-                with h5py.File(opts.betas_input_file, "r") as fp:
+            with h5py.File(opts.betas_input_file, "r") as fp:
+                try:
                     betas = numpy.array(fp.attrs['betas'])
                     ntemps = betas.shape[0]
-            except AttributeError:
-                    raise AttributeError(e)
+                except KeyError:
+                    raise AttributeError("No attribute called betas")
+
         else:
             betas = None
             ntemps = opts.ntemps
