@@ -80,6 +80,19 @@ def _read_channel(channel, stream, start, duration):
     return TimeSeries(data.data.data, delta_t=data.deltaT, epoch=start,
                       dtype=d_type)
 
+
+def _is_gwf(file_path):
+    """Test if a file is a frame file by checking if its contents begins with
+    the magic string 'IGWD'."""
+    try:
+        with open(file_path, 'rb') as f:
+            if f.read(4) == b'IGWD':
+                return True
+    except IOError:
+        pass
+    return False
+
+
 def locations_to_cache(locations, latest=False):
     """ Return a cumulative cache file build from the list of locations
 
@@ -110,7 +123,7 @@ def locations_to_cache(locations, latest=False):
 
             if file_extension in [".lcf", ".cache"]:
                 cache = lal.CacheImport(file_path)
-            elif file_extension == ".gwf":
+            elif file_extension == ".gwf" or _is_gwf(file_path):
                 cache = lalframe.FrOpen(str(dir_name), str(file_name)).cache
             else:
                 raise TypeError("Invalid location name")
