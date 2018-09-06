@@ -322,10 +322,6 @@ class SingleDetPowerChisq(object):
         key = id(psd)
         if not hasattr(psd, '_chisq_cached_key'):
             psd._chisq_cached_key = {}
-            
-            # In this mode we reset the caches if we get a new PSD
-            if self.fixed_cache:
-                template._bin_cache = {}
 
         if not hasattr(template, '_bin_cache'):
             template._bin_cache = {}
@@ -341,6 +337,11 @@ class SingleDetPowerChisq(object):
                     psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax)
             else:
                 bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
+                
+            # In this mode we reset the caches if we get a new PSD
+            if self.fixed_cache:
+                template._bin_cache = {}
+                
             template._bin_cache[key] = bins
 
         return template._bin_cache[key]
