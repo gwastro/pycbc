@@ -70,7 +70,7 @@ for psd_file in args.psd_files:
 
     for apx in args.approximant:
         label = '%s-%s' % (ifo, apx)
-        plt.errorbar(mbin, avg_range, yerr=rangerr, ecolor=pycbc.results.ifo_color(ifo), label=label, fmt=None)  
+        plt.errorbar(mbin, avg_range, yerr=rangerr, ecolor=pycbc.results.ifo_color(ifo), label=label, fmt='none')  
         plt.plot(mbin, avg_range, color=pycbc.results.ifo_color(ifo))
   
 plt.legend(loc="upper left")        
