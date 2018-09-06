@@ -570,7 +570,7 @@ def get_fd_waveform_from_td(**params):
     hc = hc.to_frequencyseries().cyclic_time_shift(hc.start_time)
     return hp, hc
 
-def get_td_waveform_from_fd(**params):
+def get_td_waveform_from_fd(rwrap=0.2, **params):
     """ Return time domain version of fourier domain approximant.
 
     This returns a time domain version of a fourier domain approximant, with
@@ -578,6 +578,8 @@ def get_td_waveform_from_fd(**params):
 
     Parameters
     ----------
+    rwrap: float
+        Cyclic time shift parameter in seconds
     params: dict
         The parameters defining the waveform to generator.
         See `get_fd_waveform`.
