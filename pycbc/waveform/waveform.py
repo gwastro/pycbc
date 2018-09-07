@@ -570,7 +570,7 @@ def get_fd_waveform_from_td(**params):
     hc = hc.to_frequencyseries().cyclic_time_shift(hc.start_time)
     return hp, hc
 
-def get_td_waveform_from_fd(**params):
+def get_td_waveform_from_fd(rwrap=0.2, **params):
     """ Return time domain version of fourier domain approximant.
 
     This returns a time domain version of a fourier domain approximant, with
@@ -578,6 +578,10 @@ def get_td_waveform_from_fd(**params):
 
     Parameters
     ----------
+    rwrap: float
+        Cyclic time shift parameter in seconds. A fudge factor to ensure
+        that the entire time series is contiguous in the array and not
+        wrapped around the end.
     params: dict
         The parameters defining the waveform to generator.
         See `get_fd_waveform`.
@@ -604,7 +608,6 @@ def get_td_waveform_from_fd(**params):
     # factor to ensure the vectors are all large enough. We don't need to
     # completely trust our duration estimator in this case, at a small
     # increase in computational cost
-    rwrap = 0.2
     fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
     fsamples = int(fudge_duration / params['delta_t'])
     N = pnutils.nearest_larger_binary_number(fsamples)
