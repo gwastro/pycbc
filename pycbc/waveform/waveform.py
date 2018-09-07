@@ -579,7 +579,9 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     Parameters
     ----------
     rwrap: float
-        Cyclic time shift parameter in seconds
+        Cyclic time shift parameter in seconds. A fudge factor to ensure
+        that the entire time series is contiguous in the array and not
+        wrapped around the end.
     params: dict
         The parameters defining the waveform to generator.
         See `get_fd_waveform`.
@@ -606,7 +608,6 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
     # factor to ensure the vectors are all large enough. We don't need to
     # completely trust our duration estimator in this case, at a small
     # increase in computational cost
-    rwrap = 0.2
     fudge_duration = (max(0, full_duration) + .1 + rwrap) * 1.5
     fsamples = int(fudge_duration / params['delta_t'])
     N = pnutils.nearest_larger_binary_number(fsamples)
