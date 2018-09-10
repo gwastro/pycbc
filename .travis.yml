@@ -94,7 +94,7 @@ script:
     df -h ;
     sudo chown -R 1000:1000 . ;
     sudo chown -R 1000:1000 ~/.ssh ;
-    docker run --name pycbc_inst --cidfile /tmp/docker.cid -d -e USERID=$UID -v ~/.ssh:/home/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' || exit 1 ;
+    docker run --name pycbc_inst --cidfile /tmp/docker.cid -d -e USERID=$UID -v ~/.ssh:/opt/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' || exit 1 ;
     sleep 10 ;
     docker ps -a || exit 1 ;
     TMP_CONTAINER_ID=$(cat /tmp/docker.cid) ;
