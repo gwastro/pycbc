@@ -156,7 +156,7 @@ while true ; do
         *) TRANSFORMATION_CATALOG=$2 ; shift 2 ;;
       esac ;;
     -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
-    -k|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
+    -K|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
     -n|--no-submit) SUBMIT_DAX="" ; shift ;;
     -l|--local-dir)
       case "$2" in
@@ -182,10 +182,10 @@ while true ; do
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
       echo "  -g, --local-gsiftp-server HOST provide a gsiftp url on HOST"
       echo "                                 for the local site storage"
-      echo "                                 and scratch directories" 
+      echo "                                 and scratch directories"
       echo "  -r, --remote-staging-server HOST provide a gsiftp url on HOST"
       echo "                                 for the remote site storage"
-      echo "                                 and scratch directories" 
+      echo "                                 and scratch directories"
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
       echo "  -P, --append-pegasus-property STRING add the extra property"
@@ -203,7 +203,7 @@ while true ; do
       echo "                               site catalog entry for SITE"
       echo "  -t, --transformation-catalog FILE pass the specified"
       echo "                                   transformation catalog to Pegasus"
-      echo "  -k, --no-create-proxy   Do not run ligo-proxy-init and assume"
+      echo "  -K, --no-create-proxy   Do not run ligo-proxy-init and assume"
       echo "                             that the user has a valid grid proxy"
       echo "  -n, --no-submit         Plan the DAX but do not submit it"
       echo "  -l, --local-dir         Directory to put condor files under"
@@ -403,7 +403,7 @@ cat extra-properties.conf >> pegasus-properties.conf
 # then don't add another one
 if ! grep -q pegasus.data.configuration= pegasus-properties.conf
 then
-  # No option specified, append nonshared unless user said 
+  # No option specified, append nonshared unless user said
   # not to
   if [ $SHARED_FILESYSTEM == 0 ]
   then
@@ -491,7 +491,7 @@ if [ -e output.map ] ; then
 fi
 
 # ugly shell to extract the sub-dax names from the uberdax xml
-for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
+for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do
   if [ -e ${dax} ] ; then
     cp ${dax} workflow/dax
   fi
@@ -501,7 +501,7 @@ for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk
   fi
 done
 
-if [ -z ${SUBMIT_DAX} ] ; then 
+if [ -z ${SUBMIT_DAX} ] ; then
   echo
   echo "WARNING: DAX planned but not submitted. No dashboard entry has been created and"
   echo "         the workflow section of results page will not show a dashboard URL."
@@ -537,7 +537,7 @@ touch pegasus_db.log
 # querying the database sometimes fails, so allow retries
 set +e
 until [ $DB_TRY -ge 15 ]
-do 
+do
   /bin/echo -n "."
   WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
   if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
@@ -597,7 +597,7 @@ fi
 shopt -u nullglob
 
 echo "Workflow submission completed successfully."
-echo 
+echo
 echo "The Pegasus dashboard URL for this workflow is:"
 echo "  ${DASHBOARD_URL}"
 echo
