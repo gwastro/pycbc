@@ -54,7 +54,7 @@ Sharing user files and SSH keys
 It can be useful to share your SSH public/private key with the Docker container, for example to allow you to git push and pull from your repository on GitHub. To do this, add the argument ``-v ${HOME}/.ssh:/home/pycbc/.ssh`` to the ``docker run`` commands.  You can also create e.g. a ``scratch`` directory and use the ``-v`` option to mount it in the container. This directory can be used to transfer files between the container and the host computer.  The command below will start a Docker container with graphics on a Mac and share ssh keys and a ``scratch`` directory::
 
     mkdir -p scratch
-    docker run -e DISPLAY=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}'):0 -v `pwd`/scratch:/home/pycbc/scratch -v ${HOME}/.ssh:/home/pycbc/.ssh -it pycbc/pycbc-el7:latest /bin/bash -l
+    docker run -e DISPLAY=$(ifconfig en0 | grep inet | awk '$1=="inet" {print $2}'):0 -v `pwd`/scratch:/opt/pycbc/scratch -v ${HOME}/.ssh:/opt/pycbc/.ssh -it pycbc/pycbc-el7:latest /bin/bash -l
 
 
 -----------------------------
@@ -71,7 +71,7 @@ If do not already have a personal ssh public/private key, first create one with 
 
 Now start the docker container with::
 
-    docker run --name pycbc -d -P -v ${HOME}/.ssh:/home/pycbc/.ssh -t pycbc/pycbc-el7 tail -f /dev/null i   
+    docker run --name pycbc -d -P -v ${HOME}/.ssh:/opt/pycbc/.ssh -t pycbc/pycbc-el7 tail -f /dev/null i   
     docker exec -u root -it pycbc /usr/bin/pycbc-sshd
 
 And then you can connect to it with the command::
@@ -90,4 +90,4 @@ computer environment.::
 
 Within the docker environment::
 
-    jupyter notebook --ip 0.0.0.0
+    jupyter notebook --no-browser --ip 0.0.0.0
