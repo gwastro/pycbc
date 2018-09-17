@@ -336,7 +336,7 @@ elif len(args.trigger_files) == 3:
         det0, det1 = detector.Detector(j[0].ifo), detector.Detector(j[1].ifo)
         time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 
-        if time_window >= args.timeslide_interval and args.timeslide_interval is not None:
+        if time_window >= args.timeslide_interval and args.timeslide_interval is not None and args.timeslide_interval!=0:
             raise parser.error("The maximum time delay between detectors should be smaller "
                        "than the timeslide interval.")
         # slide = 0 means don't do timeslides
