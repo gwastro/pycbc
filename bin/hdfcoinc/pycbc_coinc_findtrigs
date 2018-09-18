@@ -358,7 +358,7 @@ elif len(args.trigger_files) == 3:
             t0 = j[0]['end_time']
             t1 = j[1]['end_time']
             logging.info('Trigs for template %s, %s:%s %s:%s' % \
-                (tnum, trigs['trigs0'].ifo, len(t0), trigs['trigs1'].ifo, len(t1)))
+                (tnum, j[0].ifo, len(t0), j[1].ifo, len(t1)))
 
             i0, i1, slide = coinc.time_coincidence(t0, t1, time_window, args.timeslide_interval)
 
@@ -451,8 +451,8 @@ elif len(args.trigger_files) == 3:
         f.attrs['timeslide_interval'] = args.timeslide_interval
         f.attrs['detector_1'] = det0.name
         f.attrs['detector_2'] = det1.name
-        f.attrs['foreground_time1'] = abs(trigs['trigs0'].segs)
-        f.attrs['foreground_time2'] = abs(trigs['trigs1'].segs)
+        f.attrs['foreground_time1'] = abs(j[0].segs)
+        f.attrs['foreground_time2'] = abs(j[1].segs)
         f.attrs['coinc_time'] = abs(coinc_segs)
 
         if args.timeslide_interval:
