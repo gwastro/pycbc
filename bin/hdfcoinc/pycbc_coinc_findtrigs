@@ -177,7 +177,7 @@ for i in range(len(args.trigger_files)):
 
 # Two detector case
 if len(args.trigger_files) == 2:
-    coinc_segs = (trigs[trigs0].segs & trigs[trigsq].segs).coalesce()
+    coinc_segs = (trigs['trigs0'].segs & trigs['trigsq'].segs).coalesce()
     if args.strict_coinc_time:
         trigs['trigs0'].segs = coinc_segs
         trigs['trigs1'].segs = coinc_segs
