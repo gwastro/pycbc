@@ -46,7 +46,8 @@ parser.add_argument("--cluster-window", type=float,
 parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 args = parser.parse_args()
-
+# disable detector pair calculations for 3 detector coinc testing
+detpaircoinc = False
 # flatten the list of lists of filenames to a single list (may be empty)
 args.statistic_files = sum(args.statistic_files, [])
 args.segment_name = sum(args.segment_name, [])
@@ -317,8 +318,6 @@ if len(args.trigger_files) == 2:
     f.attrs['num_slides'] = nslides
 
 # 3 detector case
-# disable detector pair calculations for 3 detector coinc testing
-detpaircoinc = False
 elif len(args.trigger_files and detpaircoinc) == 3:
     detpairs={}
     detpairs['detpair0']=[trigs['trigs0'],trigs['trigs1']]
