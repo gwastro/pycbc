@@ -318,7 +318,7 @@ if len(args.trigger_files) == 2:
     f.attrs['num_slides'] = nslides
 
 # 3 detector case
-elif len(args.trigger_files and detpaircoinc) == 3:
+elif len(args.trigger_files) == 3  and detpaircoinc:
     detpairs={}
     detpairs['detpair0']=[trigs['trigs0'],trigs['trigs1']]
     detpairs['detpair1']=[trigs['trigs1'],trigs['trigs2']]
