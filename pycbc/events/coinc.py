@@ -288,7 +288,7 @@ def time_multiifo_coincidence(t1, t2, t3, window12, window13, slide_step=0):
     sort3 = fold3.argsort()
     fold1 = fold1[sort1]
     fold2 = fold2[sort2]
-    fold3 = fold2[sort3]
+    fold3 = fold3[sort3]
 
     if slide_step:
         fold2 = numpy.concatenate([fold2 - slide_step, fold2, fold2 + slide_step])
