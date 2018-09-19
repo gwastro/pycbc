@@ -505,7 +505,7 @@ elif len(args.trigger_files) == 3:
         logging.info('Trigs for template %s, %s:%s %s:%s %s:%s' % \
                 (tnum, trigs['trigs0'].ifo, len(t0), trigs['trigs1'].ifo, len(t1), trigs['trigs2'].ifo, len(t2)))
 
-        i0, i1, i2, slide1, slide2 = coinc.time_multiifo_coincidence(t0, t1, t2, time_window, args.timeslide_interval)
+        i0, i1, i2, slide1, slide2 = coinc.time_multiifo_coincidence(t0, t1, t2, time_window01, time_window02, args.timeslide_interval)
 
         logging.info('Coincident Trigs: %s' % (len(i2)))
 
