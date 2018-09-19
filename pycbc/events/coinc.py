@@ -324,7 +324,8 @@ def time_multiifo_coincidence(t1, t2, t3, window12, window13, slide_step=0):
         diff13 = ((t1 / slide_step)[idx1] - (t3 / det3m*slide_step)[idx3])
         slide13 = numpy.rint(diff)
     else:
-        slide = numpy.zeros(len(idx1))
+        slide12 = numpy.zeros(len(idx1))
+        slide13 = numpy.zeros(len(idx1))
 
     return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), idx3.astype(numpy.uint32), slide12.astype(numpy.int32), slide13.astype(numpy.int32)
 
