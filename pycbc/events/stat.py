@@ -133,11 +133,11 @@ class NewSNRStatistic(Stat):
         return (s0**2. + s1**2.) ** 0.5
 
 
-    def coinc_multiifo(self, s=[], slide, step): # pylint:disable=unused-argument
+    def coinc_multiifo(self, slide, step, s=[]): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
         Parameters
         ----------
-        s[]: numpy.ndarray
+        s[]: set of numpy.ndarray
             Single detector ranking statistic for the detectors.
         slide: (unused in this statistic)
         step: (unused in this statistic)

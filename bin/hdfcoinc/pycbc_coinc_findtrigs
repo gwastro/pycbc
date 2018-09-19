@@ -515,7 +515,7 @@ elif len(args.trigger_files) == 3:
 
         logging.info('Calculating Multi-Detector Combined Statistic')
         setofsingledetstat = [s0[i0], s1[i1],s2[i2]]
-        c = rank_method.coinc_multiifo(setofsingledetstat, slide, args.timeslide_interval)
+        c = rank_method.coinc_multiifo(slide, args.timeslide_interval, setofsingledetstat)
 
         #index values of the zerolag triggers
         fi = numpy.where(slide == 0)[0]
