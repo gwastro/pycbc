@@ -518,10 +518,10 @@ elif len(args.trigger_files) == 3:
         c = rank_method.coinc_multiifo(slide1, args.timeslide_interval, setofsingledetstat)
 
         #index values of the zerolag triggers
-        fi = numpy.where(slide == 0)[0]
+        fi = numpy.where(slide1 == 0)[0]
 
         #index values of the background triggers
-        bi = numpy.where(slide != 0)[0]
+        bi = numpy.where(slide1 != 0)[0]
         logging.info('%s foreground triggers' % len(fi))
         logging.info('%s background triggers' % len(bi))
 
