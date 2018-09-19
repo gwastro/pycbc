@@ -181,8 +181,8 @@ if len(args.trigger_files) == 2:
     if args.strict_coinc_time:
         trigs['trigs0'].segs = coinc_segs
         trigs['trigs1'].segs = coinc_segs
-        trigs['trigs0'].valid = veto.segments_to_start_end(trigs[trigs0].segs)
-        trigs['trigs1'].valid = veto.segments_to_start_end(trigs[trigs1].segs)
+        trigs['trigs0'].valid = veto.segments_to_start_end(trigs['trigs0'].segs)
+        trigs['trigs1'].valid = veto.segments_to_start_end(trigs['trigs1'].segs)
     # initialize a Stat class instance to calculate the coinc ranking statistic
     rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
     if args.use_maxalpha:
@@ -317,7 +317,9 @@ if len(args.trigger_files) == 2:
     f.attrs['num_slides'] = nslides
 
 # 3 detector case
-elif len(args.trigger_files) == 3:
+# disable detector pair calculations for 3 detector coinc testing
+detpaircoinc = False
+elif len(args.trigger_files and detpaircoinc) == 3:
     detpairs={}
     detpairs['detpair0']=[trigs['trigs0'],trigs['trigs1']]
     detpairs['detpair1']=[trigs['trigs1'],trigs['trigs2']]
@@ -461,5 +463,158 @@ elif len(args.trigger_files) == 3:
             nslides = 0
 
         f.attrs['num_slides'] = nslides
+
+
+elif len(args.trigger_files) == 3:
+    coinc_segs = (trigs['trigs0'].segs & trigs['trigs1'].segs & trigs['trigs2'].segs).coalesce()
+    if args.strict_coinc_time:
+        for i in trigs:
+            trigs[i].segs = coinc_segs
+            trigs[i].valid = veto.segments_to_start_end(trigs[i].segs)
+    # initialize a Stat class instance to calculate the coinc ranking statistic
+    rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
+    if args.use_maxalpha:
+        rank_method.use_alphamax()
+    det0, det1, det2 = detector.Detector(trigs['trigs0'].ifo), detector.Detector(trigs['trigs1'].ifo), detector.Detector(trigs['trigs2'].ifo)
+    time_window01 = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
+    time_window02 = det0.light_travel_time_to_detector(det2) + args.coinc_threshold
+
+    if time_window01 >= args.timeslide_interval and time_window02 >= args.timeslide_interval and args.timeslide_interval is not None:
+        raise parser.error("The maximum time delay between detectors should be smaller "
+                       "than the timeslide interval.")
+    # slide = 0 means don't do timeslides
+    if args.timeslide_interval is None:
+        args.timeslide_interval = 0
+
+    logging.info('The coincidence window between detector 0 and 1 is %3.1f ms' % (time_window01 * 1000))
+    logging.info('The coincidence window between detector 0 and 2  is %3.1f ms' % (time_window02 * 1000))
+
+    data = {'stat':[], 'decimation_factor':[], 'time1':[], 'time2':[], 'time3':[],
+        'trigger_id1':[], 'trigger_id2':[], 'trigger_id3':[], 'timeslide_id1':[], 'timeslide_id2':[], 'template_id':[]}
+
+    for tnum in range(tmin, tmax):
+        tid0 = trigs['trigs0'].set_template(tnum)
+        tid1 = trigs['trigs1'].set_template(tnum)
+        tid2 = trigs['trigs2'].set_template(tnum)
+
+        if (len(tid0) == 0) or (len(tid1) == 0 or (len(tid2) == 0):
+            continue
+
+        t0 = trigs['trigs0']['end_time']
+        t1 = trigs['trigs1']['end_time']
+        t2 = trigs['trigs2']['end_time']
+        logging.info('Trigs for template %s, %s:%s %s:%s %s:%s' % \
+                (tnum, trigs['trigs0'].ifo, len(t0), trigs['trigs1'].ifo, len(t1), trigs['trigs2'].ifo, len(t2)))
+
+        i0, i1, i2, slide1, slide2 = coinc.time_multiifo_coincidence(t0, t1, t2, time_window, args.timeslide_interval)
+
+        logging.info('Coincident Trigs: %s' % (len(i2)))
+
+        logging.info('Calculating Single Detector Statistic')
+        s0, s1, s2 = rank_method.single(trigs['trigs0']), rank_method.single(trigs['trigs1']), rank_method.single(trigs['trigs2'])
+
+        logging.info('Calculating Multi-Detector Combined Statistic')
+        setofsingledetstat = [s0[i0], s1[i1],s2[i2]]
+        c = rank_method.coinc_multiifo(setofsingledetstat, slide, args.timeslide_interval)
+
+        #index values of the zerolag triggers
+        fi = numpy.where(slide == 0)[0]
+
+        #index values of the background triggers
+        bi = numpy.where(slide != 0)[0]
+        logging.info('%s foreground triggers' % len(fi))
+        logging.info('%s background triggers' % len(bi))
+
+        # We split the background triggers into two types which we keep track of
+        # in "bh" (triggers which are *not* decimated, stored in full) and
+        # "bl" (triggers which may not be stored in full, but we keep track of
+        # how many are removed)
+        # "bl_int" keeps track of which triggers are *not* in the bh set. Depending
+        # on the decimation factor option we may not store any of these or we may
+        # keep a fraction of them corresponding to a subset of the timeslides
+        if args.loudest_keep:
+            sep = len(bi) - args.loudest_keep
+            sep = 0 if sep < 0 else sep
+
+            bsort = numpy.argpartition(c[bi], sep)
+            bl_int = bi[bsort[0:sep]]
+            bh = bi[bsort[sep:]]
+            del bsort
+            del bi
+        elif args.loudest_keep_value:
+            bh = bi[c[bi] > args.loudest_keep_value]
+            bl_int = bi[c[bi] <= args.loudest_keep_value]
+        else:
+            bh = bi
+
+        if args.decimation_factor:
+            bl = bl_int[slide[bl_int] % args.decimation_factor == 0]
+        else:
+            bl = []
+
+        ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
+        logging.info('%s after decimation' % len(ti))
+
+        g0 = i0[ti]
+        g1 = i1[ti]
+        g2 = i2[ti]
+        del i0
+        del i1
+        del i2
+
+        data['stat'] += [c[ti]]
+        dec_fac = numpy.repeat([args.decimation_factor, 1, 1],
+                           [len(bl), len(bh), len(fi)]).astype(numpy.uint32)
+        data['decimation_factor'] += [dec_fac]
+        data['time1'] += [t0[g0]]
+        data['time2'] += [t1[g1]]
+        data['time3'] += [t2[g2]]
+        data['trigger_id1'] += [tid0[g0]]
+        data['trigger_id2'] += [tid1[g1]]
+        data['trigger_id3'] += [tid2[g2]]
+        data['timeslide_id1'] += [slide1[ti]]
+        data['timeslide_id2'] += [slide2[ti]]
+        data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
+
+    if len(data['stat']) > 0:
+        for key in data:
+            data[key] = numpy.concatenate(data[key])
+
+    if args.cluster_window and len(data['stat']) > 0:
+        cid = coinc.cluster_coincs(data['stat'], data['time1'], data['time2'],
+                               data['timeslide_id'], args.timeslide_interval,
+                               args.cluster_window)
+
+    logging.info('saving coincident triggers')
+    f = h5py.File(args.output_file, 'w')
+    if len(data['stat']) > 0:
+        for key in data:
+            var = data[key][cid] if args.cluster_window else data[key]
+            f.create_dataset(key, data=var,
+                              compression='gzip',
+                              compression_opts=9,
+                              shuffle=True)
+
+    f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
+
+    for t in [trigs['trigs0'], trigs['trigs1']]:
+        f['segments/%s/start' % t.ifo], f['segments/%s/end' % t.ifo] = t.valid
+
+    f.attrs['timeslide_interval'] = args.timeslide_interval
+    f.attrs['detector_1'] = det0.name
+    f.attrs['detector_2'] = det1.name
+    f.attrs['detector_3'] = det2.name
+    f.attrs['foreground_time1'] = abs(trigs['trigs0'].segs)
+    f.attrs['foreground_time2'] = abs(trigs['trigs1'].segs)
+    f.attrs['foreground_time3'] = abs(trigs['trigs2'].segs)
+    f.attrs['coinc_time'] = abs(coinc_segs)
+
+    if args.timeslide_interval:
+        nslides = int(max(abs(trigs['trigs0'].segs), abs(trigs['trigs1'].segs), abs(trigs['trigs2'].segs)) / args.timeslide_interval)
+    else:
+        nslides = 0
+
+    f.attrs['num_slides'] = nslides
+
 
 logging.info('Done')
