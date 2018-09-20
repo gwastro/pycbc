@@ -498,7 +498,7 @@ class InferenceFile(h5py.File):
             A dictionary of stilde. If None, no stilde will be written.
         psd_dict : {None, dict}
             A dictionary of psds. If None, no psds will be written.
-        low_freuency_cutoff_dict : {None, dict}
+        low_frequency_cutoff_dict : {None, dict}
             A dictionary of low frequency cutoffs used for each detector in
             `psd_dict`; must be provided if `psd_dict` is not None.
         group : {None, str}
