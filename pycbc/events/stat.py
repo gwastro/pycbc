@@ -148,7 +148,7 @@ class NewSNRStatistic(Stat):
         """
         newsnr = 0
         for i in range(len(s)):
-            newsnr += s[i]**2
+            newsnr = newsnr + s[i]**2
         return newsnr ** 0.5
 
 class NewSNRSGStatistic(NewSNRStatistic):
