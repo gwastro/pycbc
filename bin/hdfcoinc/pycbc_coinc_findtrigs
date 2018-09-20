@@ -559,9 +559,9 @@ elif len(args.trigger_files) == 3:
         logging.info('%s det1' % i1[ti])
         logging.info('%s det2' % i2[ti])
 
-        g0[0] = i0[ti]
-        g1[0] = i1[ti]
-        g2[0] = i2[ti]
+        g0 = i0[ti]
+        g1 = i1[ti]
+        g2 = i2[ti]
         del i0
         del i1
         del i2
