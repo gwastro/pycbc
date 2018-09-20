@@ -479,10 +479,11 @@ class InferenceFile(h5py.File):
             group = subgroup
         else:
             group = '/'.join([group, subgroup])
-        self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
         for ifo in psds:
             self[group.format(ifo=ifo)] = psds[ifo]
             self[group.format(ifo=ifo)].attrs['delta_f'] = psds[ifo].delta_f
+            self[group.format(ifo=ifo)].attrs['low_frequency_cutoff'] = \
+                low_frequency_cutoff[ifo]
 
     def write_data(self, strain_dict=None, stilde_dict=None,
                    psd_dict=None, low_frequency_cutoff_dict=None,
