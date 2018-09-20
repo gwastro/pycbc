@@ -554,10 +554,14 @@ elif len(args.trigger_files) == 3:
 
         ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
         logging.info('%s after decimation' % len(ti))
+        #Debug IndexError: index 0 is out of bounds for axis 0 with size 0 error
+        logging.info('%s det0' % i0[ti])
+        logging.info('%s det1' % i1[ti])
+        logging.info('%s det2' % i2[ti])
 
-        g0 = i0[ti]
-        g1 = i1[ti]
-        g2 = i2[ti]
+        g0[0] = i0[ti]
+        g1[0] = i1[ti]
+        g2[0] = i2[ti]
         del i0
         del i1
         del i2
