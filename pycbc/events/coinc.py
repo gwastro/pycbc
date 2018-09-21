@@ -313,11 +313,11 @@ def time_multiifo_coincidence(t1, t2, t3, window12, window13, slide_step=0):
         idx3 = numpy.concatenate(idx3)
         # these indicate only 2 detector coincs, need to check if the times are the same in detector 1
         idx1 = numpy.intersect1d(idx1w2,idx1w3)
+        idx1f = numpy.array([], dtype=numpy.int64)
+        idx2f = numpy.array([], dtype=numpy.int64)
+        idx3f = numpy.array([], dtype=numpy.int64)
         if len(idx1) > 0:
             #need to get the correct indeces for the 3 detector coinc times, there might be 2 detector only coincs in idx2 and idx3
-            idx1f = numpy.array([], dtype=numpy.int64)
-            idx2f = numpy.array([], dtype=numpy.int64)
-            idx3f = numpy.array([], dtype=numpy.int64)
             for i in idx1:
                 numpy.append(idx1f,i)
                 for j in idx2:
