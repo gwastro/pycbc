@@ -268,7 +268,7 @@ def time_multiifo_coincidence(t1, t2, t3, window12, window13, slide_step=0):
     idx3 : numpy.ndarray
         Array of indices into the t3 array.
     slide12 : numpy.ndarray
-        Array of slide ids
+        Array of slide ids between t1 and t2
     slide13 : numpy.ndarray
         Array of slide ids between t1 and t3
     """
@@ -299,35 +299,49 @@ def time_multiifo_coincidence(t1, t2, t3, window12, window13, slide_step=0):
     left12 = numpy.searchsorted(fold2, fold1 - window12)
     right12 = numpy.searchsorted(fold2, fold1 + window12)
 
-    idx1 = numpy.repeat(sort1, right12-left12)
+    idx1w2 = numpy.repeat(sort1, right12-left12)
     idx2 = [sort2[l:r] for l,r in zip(left12, right12)]
 
     left13 = numpy.searchsorted(fold3, fold1 - window13)
     right13 = numpy.searchsorted(fold3, fold1 + window13)
 
-    idx1 = numpy.repeat(sort1, right13-left13)
-    idx3 = [sort2[l:r] for l,r in zip(left13, right13)]
+    idx1w3 = numpy.repeat(sort1, right13-left13)
+    idx3 = [sort3[l:r] for l,r in zip(left13, right13)]
 
-    if len(idx2) > 0:
+    if len(idx2) > 0 and len(idx3) > 0:
         idx2 = numpy.concatenate(idx2)
-    else:
-        idx2 = numpy.array([], dtype=numpy.int64)
-
-    if len(idx3) > 0:
         idx3 = numpy.concatenate(idx3)
+        # these indicate only 2 detector coincs, need to check if the times are the same in detector 1
+        idx1 = numpy.intersect1d(idx1w2,idx1w3)
+        if len(idx1) > 0:
+            #need to get the correct indeces for the 3 detector coinc times, there might be 2 detector only coincs in idx2 and idx3
+            idx1f = numpy.array([], dtype=numpy.int64)
+            idx2f = numpy.array([], dtype=numpy.int64)
+            idx3f = numpy.array([], dtype=numpy.int64)
+            for i in idx1:
+                numpy.append(idx1f,i)
+                for j in idx2:
+                    if t2[j] < (t1[i] + window12) and t2[j] > (t1[i] - window12):
+                        numpy.append(idx2f,j)
+                for j in idx3:
+                    if t3[j] < (t1[i] + window13) and t3[j] > (t1[i] - window13):
+                        numpy.append(idx3f,j)
+                
     else:
-        idx3 = numpy.array([], dtype=numpy.int64)
+        idx1f = numpy.array([], dtype=numpy.int64)
+        idx2f = numpy.array([], dtype=numpy.int64)
+        idx3f = numpy.array([], dtype=numpy.int64)
 
     if slide_step:
-        diff12 = ((t1 / slide_step)[idx1] - (t2 / slide_step)[idx2])
+        diff12 = ((t1 / slide_step)[idx1f] - (t2 / slide_step)[idx2f])
         slide12 = numpy.rint(diff)
-        diff13 = ((t1 / slide_step)[idx1] - (t3 / det3m*slide_step)[idx3])
+        diff13 = ((t1 / slide_step)[idx1f] - (t3 / det3m*slide_step)[idx3f])
         slide13 = numpy.rint(diff)
     else:
-        slide12 = numpy.zeros(len(idx1))
-        slide13 = numpy.zeros(len(idx1))
+        slide12 = numpy.zeros(len(idx1f))
+        slide13 = numpy.zeros(len(idx1f))
 
-    return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), idx3.astype(numpy.uint32), slide12.astype(numpy.int32), slide13.astype(numpy.int32)
+    return idx1f.astype(numpy.uint32), idx2f.astype(numpy.uint32), idx3f.astype(numpy.uint32), slide12.astype(numpy.int32), slide13.astype(numpy.int32)
 
 def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
     """Cluster coincident events for each timeslide separately, across
