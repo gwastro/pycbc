@@ -159,7 +159,7 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
     fp = open(filename, 'r')
     ct_handler = lal.series.PSDContentHandler
     fileobj, _ = ligolw_utils.load_fileobj(fp, contenthandler=ct_handler)
-    psd_dict = lal.series.read_psd_xmldoc(filobj, root_name=root_name)
+    psd_dict = lal.series.read_psd_xmldoc(fileobj, root_name=root_name)
 
     if ifo_string is not None:
         psd_freq_series = psd_dict[ifo_string]
@@ -172,8 +172,7 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
             raise ValueError(err_msg)
 
     noise_data = psd_freq_series.data.data[:]
-    freq_data = numpy.arange(len(noise_data)) * psd_freq_series.delta_f
+    freq_data = numpy.arange(len(noise_data)) * psd_freq_series.deltaF
 
     return from_numpy_arrays(freq_data, noise_data, length, delta_f,
                              low_freq_cutoff)
-

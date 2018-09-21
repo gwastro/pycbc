@@ -72,8 +72,13 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     except AttributeError:
         psd_estimation = False
 
-    if (opt.psd_model or opt.psd_file or opt.asd_file)\
-                      and not psd_estimation:
+    exclusive_opts = [opt.psd_model, opt.psd_file, opt.asd_file, psd_estimation]
+    if sum(map(bool, exclusive_opts)) != 1:
+        err_msg = "You must specify exactly one of '--psd-file', "
+        err_msg += "'--psd-model', '--asd-file', '--psd-estimation'"
+        raise ValueError(err_msg)
+
+    if (opt.psd_model or opt.psd_file or opt.asd_file):
         # PSD from lalsimulation or file
         if opt.psd_model:
             psd = from_string(opt.psd_model, length, delta_f, f_low)
@@ -99,8 +104,7 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
 
         psd *= dyn_range_factor ** 2
 
-    elif psd_estimation and not (opt.psd_model or
-                                     opt.psd_file or opt.asd_file):
+    elif psd_estimation:
         # estimate PSD from data
         psd = welch(strain, avg_method=opt.psd_estimation,
                     seg_len=int(opt.psd_segment_length * sample_rate),
@@ -111,8 +115,8 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         if delta_f != psd.delta_f:
             psd = interpolate(psd, delta_f)
     else:
-        # no PSD options given
-        return None
+        # Shouldn't be possible to get here
+        raise ValueError("Shouldn't be possible to raise this!")
 
     if opt.psd_inverse_length:
         psd = inverse_spectrum_truncation(psd,
