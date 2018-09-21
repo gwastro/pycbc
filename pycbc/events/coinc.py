@@ -319,13 +319,13 @@ def time_multiifo_coincidence(t1, t2, t3, window12, window13, slide_step=0):
         if len(idx1) > 0:
             #need to get the correct indeces for the 3 detector coinc times, there might be 2 detector only coincs in idx2 and idx3
             for i in idx1:
-                numpy.append(idx1f,i)
+                idx1f = numpy.append(idx1f,i)
                 for j in idx2:
                     if t2[j] < (t1[i] + window12) and t2[j] > (t1[i] - window12):
-                        numpy.append(idx2f,j)
+                        idx2f = numpy.append(idx2f,j)
                 for j in idx3:
                     if t3[j] < (t1[i] + window13) and t3[j] > (t1[i] - window13):
-                        numpy.append(idx3f,j)
+                        idx3f = numpy.append(idx3f,j)
                 
     else:
         idx1f = numpy.array([], dtype=numpy.int64)
