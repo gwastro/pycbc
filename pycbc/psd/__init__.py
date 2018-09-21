@@ -72,7 +72,8 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     except AttributeError:
         psd_estimation = False
 
-    exclusive_opts = [opt.psd_model, opt.psd_file, opt.asd_file, psd_estimation]
+    exclusive_opts = [opt.psd_model, opt.psd_file, opt.asd_file,
+                      psd_estimation]
     if sum(map(bool, exclusive_opts)) != 1:
         err_msg = "You must specify exactly one of '--psd-file', "
         err_msg += "'--psd-model', '--asd-file', '--psd-estimation'"
