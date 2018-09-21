@@ -2,3 +2,5 @@
 gwpy>=0.8.1
 # HEALPix is very useful for some analysis.
 healpy
+# Needed for gracedb uploads
+ligo-gracedb
