@@ -479,10 +479,11 @@ class InferenceFile(h5py.File):
             group = subgroup
         else:
             group = '/'.join([group, subgroup])
-        self.attrs["low_frequency_cutoff"] = min(low_frequency_cutoff.values())
         for ifo in psds:
             self[group.format(ifo=ifo)] = psds[ifo]
             self[group.format(ifo=ifo)].attrs['delta_f'] = psds[ifo].delta_f
+            self[group.format(ifo=ifo)].attrs['low_frequency_cutoff'] = \
+                low_frequency_cutoff[ifo]
 
     def write_data(self, strain_dict=None, stilde_dict=None,
                    psd_dict=None, low_frequency_cutoff_dict=None,
@@ -497,7 +498,7 @@ class InferenceFile(h5py.File):
             A dictionary of stilde. If None, no stilde will be written.
         psd_dict : {None, dict}
             A dictionary of psds. If None, no psds will be written.
-        low_freuency_cutoff_dict : {None, dict}
+        low_frequency_cutoff_dict : {None, dict}
             A dictionary of low frequency cutoffs used for each detector in
             `psd_dict`; must be provided if `psd_dict` is not None.
         group : {None, str}
