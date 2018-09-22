@@ -305,7 +305,7 @@ def compute_hpd_credible_interval(samples_array, hpd_percent=None):
     # Widths of all intervals in the sorted samples array that contain
     # "num_samples_hpd" samples.
     intervals_width = samples_array_sorted[num_samples_hpd:] - \
-                        samples_array_sorted[:n-num_samples_hpd]
+                    samples_array_sorted[:n-num_samples_hpd]
 
     # Minimal interval
     min_interval_idx = numpy.argmin(intervals_width)
@@ -524,8 +524,8 @@ def create_multidim_plot(parameters, samples, labels=None,
                 marginal_percentiles=None,
                 plot_marginal_hpd_credible_interval=False,
                 marginal_hpd_percent=None,
-                contour_percentiles=None, zvals=None,
-                show_colorbar=True, cbar_label=None,
+                contour_percentiles=None,
+                zvals=None, show_colorbar=True, cbar_label=None,
                 vmin=None, vmax=None, scatter_cmap='plasma', scatter_size=5,
                 plot_density=False, plot_contours=True,
                 density_cmap='viridis',

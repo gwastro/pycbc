@@ -678,8 +678,8 @@ def add_plot_posterior_option_group(parser):
                         type=float,
                         help="Percentiles to draw lines at on the 1D "
                              "histograms.")
-    pgroup.add_argument('--plot-marginal-hpd-credible-interval', action='store_true',
-                        default=False,
+    pgroup.add_argument('--plot-marginal-hpd-credible-interval',
+                        action='store_true', default=False,
                         help="Plot HPD credible interval on the 1D "
                              "marginalized histograms.")
     pgroup.add_argument('--marginal-hpd-percent', default=None, type=float,
