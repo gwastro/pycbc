@@ -184,6 +184,9 @@ for i, (p, l, s) in enumerate(zip(parameters, labels, samples)):
                     p, s, labels=l, fig=fig, axis_dict=axis_dict,
                     plot_marginal=opts.plot_marginal,
                     marginal_percentiles=opts.marginal_percentiles,
+                    plot_marginal_hpd_credible_interval=
+                    opts.plot_marginal_hpd_credible_interval,
+                    marginal_hpd_percent=opts.marginal_hpd_percent,
                     plot_scatter=opts.plot_scatter,
                     zvals=zvals[i] if zvals is not None else None,
                     show_colorbar=show_colorbar,
