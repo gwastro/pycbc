@@ -305,7 +305,7 @@ def compute_hpd_credible_interval(samples_array, hpd_percent=None):
     # Widths of all intervals in the sorted samples array that contain
     # "num_samples_hpd" samples.
     intervals_width = samples_array_sorted[num_samples_hpd:] - \
-                    samples_array_sorted[:n-num_samples_hpd]
+        samples_array_sorted[:n-num_samples_hpd]
 
     # Minimal interval
     min_interval_idx = numpy.argmin(intervals_width)
