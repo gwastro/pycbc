@@ -412,9 +412,6 @@ def get_fd_waveform_sequence(template=None, **kwds):
     kwds['f_lower'] = -1
     p = props(template, required_args=fd_required_args, **kwds)
     lal_pars = _check_lal_pars(p)
-    flags = lalsimulation.SimInspiralCreateWaveformFlags()
-    lalsimulation.SimInspiralSetSpinOrder(flags, p['spin_order'])
-    lalsimulation.SimInspiralSetTidalOrder(flags, p['tidal_order'])
 
     hp, hc = lalsimulation.SimInspiralChooseFDWaveformSequence(float(p['coa_phase']),
                float(pnutils.solar_mass_to_kg(p['mass1'])),
