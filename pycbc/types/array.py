@@ -42,6 +42,7 @@ from numpy.linalg import norm
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 from pycbc.types.aligned import ArrayWithAligned
+from pycbc.opt import LimitedSizeDict
 
 #! FIXME: the uint32 datatype has not been fully tested,
 # we should restrict any functions that do not allow an
@@ -130,7 +131,7 @@ class Array(object):
         The default is to copy the given object.
         """
         self._scheme=_scheme.mgr.state
-        self._saved = {}
+        self._saved = LimitedSizeDict(size_limit=1000)
         
         #Unwrap initial_array
         if isinstance(initial_array, Array):
