@@ -20,8 +20,8 @@ other modules and packages may use in addition to some optimized utilities.
 """
 import os, sys
 import logging
-import pycbc
 from collections import OrderedDict
+import pycbc
 
 # Work around different Python versions to get runtime
 # info on hardware cache sizes
@@ -206,5 +206,5 @@ class LimitedSizeDict(OrderedDict):
 
     def _check_size_limit(self):
         if self.size_limit is not None:
-        while len(self) > self.size_limit:
-            self.popitem(last=False)
+            while len(self) > self.size_limit:
+                self.popitem(last=False)
