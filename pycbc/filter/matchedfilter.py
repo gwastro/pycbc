@@ -1489,7 +1489,8 @@ class LiveBatchMatchedFilter(object):
         self.max_triggers_in_batch = max_triggers_in_batch
 
         from pycbc import vetoes
-        self.power_chisq = vetoes.SingleDetPowerChisq(chisq_bins, None)
+        self.power_chisq = vetoes.SingleDetPowerChisq(chisq_bins, None,
+                                                      fixed_cache=True)
 
         durations = numpy.array([1.0 / t.delta_f for t in templates])
 

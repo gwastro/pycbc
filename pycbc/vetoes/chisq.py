@@ -299,7 +299,7 @@ class SingleDetPowerChisq(object):
     """Class that handles precomputation and memory management for efficiently
     running the power chisq in a single detector inspiral analysis.
     """
-    def __init__(self, num_bins=0, snr_threshold=None):
+    def __init__(self, num_bins=0, snr_threshold=None, fixed_cache=False):
         if not (num_bins == "0" or num_bins == 0):
             self.do = True
             self.column_name = "chisq"
@@ -308,6 +308,7 @@ class SingleDetPowerChisq(object):
         else:
             self.do = False
         self.snr_threshold = snr_threshold
+        self.fixed_cache=fixed_cache
 
     @staticmethod
     def parse_option(row, arg):
@@ -336,6 +337,11 @@ class SingleDetPowerChisq(object):
                     psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax)
             else:
                 bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
+                
+            # In this mode we reset the caches if we get a new PSD
+            if self.fixed_cache:
+                template._bin_cache = {}
+                
             template._bin_cache[key] = bins
 
         return template._bin_cache[key]
