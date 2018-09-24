@@ -285,25 +285,31 @@ class Executable(pegasus_workflow.Executable):
             opt = '--%s' %(opt,)
             if opt in self.file_input_options:
                 # This now expects the option to be a file
+                # Check is we have a list of files
+                values = [path for path in value.split(' ') if path]
+                dax_reprs = []
+
                 # Get LFN and PFN
-                curr_lfn = os.path.basename(value)
+                for path in values:
+                    curr_lfn = os.path.basename(path)
 
-                # If the file exists make sure to use.
-                if os.path.isfile(value):
-                    curr_pfn = os.path.abspath(value)
-                else:
-                    curr_pfn = value
+                    # If the file exists make sure to use.
+                    if os.path.isfile(path):
+                        curr_pfn = os.path.abspath(path)
+                    else:
+                        curr_pfn = value
 
-                if curr_lfn in file_input_from_config_dict.keys():
-                    file_pfn = file_input_from_config_dict[curr_lfn][0]
-                    assert(file_pfn == curr_pfn)
-                    curr_file = file_input_from_config_dict[curr_lfn][1]
-                else:
-                    curr_file = File.from_path(value)
-                    tuple_val = (curr_pfn, curr_file)
-                    file_input_from_config_dict[curr_lfn] = tuple_val
-                self.common_input_files.append(curr_file)
-                value = curr_file.dax_repr
+                    if curr_lfn in file_input_from_config_dict.keys():
+                        file_pfn = file_input_from_config_dict[curr_lfn][0]
+                        assert(file_pfn == curr_pfn)
+                        curr_file = file_input_from_config_dict[curr_lfn][1]
+                    else:
+                        curr_file = File.from_path(value)
+                        tuple_val = (curr_pfn, curr_file)
+                        file_input_from_config_dict[curr_lfn] = tuple_val
+                    self.common_input_files.append(curr_file)
+                    dax_reprs.append(curr_file.dax_repr)
+                value = ' '.join(dax_reprs)
             self.common_options += [opt, value]
 
     def add_opt(self, opt, value=None):
