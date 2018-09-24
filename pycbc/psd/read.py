@@ -45,7 +45,7 @@ def from_numpy_arrays(freq_data, noise_data, length, delta_f, low_freq_cutoff):
     """
     # Only include points above the low frequency cutoff
     if freq_data[0] > low_freq_cutoff:
-        raise ValueError('Lowest frequency in input file ' + filename + \
+        raise ValueError('Lowest frequency in input data '
           ' is higher than requested low-frequency cutoff ' + str(low_freq_cutoff))
 
     kmin = int(low_freq_cutoff / delta_f)
