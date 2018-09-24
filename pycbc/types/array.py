@@ -131,7 +131,7 @@ class Array(object):
         The default is to copy the given object.
         """
         self._scheme=_scheme.mgr.state
-        self._saved = LimitedSizeDict(size_limit=1000)
+        self._saved = LimitedSizeDict(size_limit=2**5)
         
         #Unwrap initial_array
         if isinstance(initial_array, Array):
@@ -751,7 +751,7 @@ class Array(object):
         if new_size == len(self):
             return
         else:
-            self._saved = {}
+            self._saved = LimitedSizeDict(size_limit=2**5)
             new_arr = zeros(new_size, dtype=self.dtype)
             if len(self) <= new_size:
                 new_arr[0:len(self)] = self
@@ -764,7 +764,7 @@ class Array(object):
     def roll(self, shift):
         """shift vector
         """
-        self._saved = {}
+        self._saved = LimitedSizeDict(size_limit=2**5)
         new_arr = zeros(len(self), dtype=self.dtype)
 
         if shift == 0:

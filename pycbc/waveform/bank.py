@@ -44,7 +44,7 @@ def sigma_cached(self, psd):
     """
     if not hasattr(self, '_sigmasq'):
         from pycbc.opt import LimitedSizeDict
-        self._sigmasq = LimitedSizeDict(size_limit=2**15)
+        self._sigmasq = LimitedSizeDict(size_limit=2**5)
 
     key = id(psd)
     if not hasattr(psd, '_sigma_cached_key'):
