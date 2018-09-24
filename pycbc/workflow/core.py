@@ -309,8 +309,9 @@ class Executable(pegasus_workflow.Executable):
                         file_input_from_config_dict[curr_lfn] = tuple_val
                     self.common_input_files.append(curr_file)
                     dax_reprs.append(curr_file.dax_repr)
-                value = ' '.join(dax_reprs)
-            self.common_options += [opt, value]
+                self.common_options += [opt] + dax_reprs
+            else:
+                self.common_options += [opt, value]
 
     def add_opt(self, opt, value=None):
         """Add option to job.
