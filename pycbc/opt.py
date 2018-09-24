@@ -195,6 +195,8 @@ def verify_optimization_options(opt, parser):
         logging.info("Pinned to CPUs %s " % requested_cpus)
 
 class LimitedSizeDict(OrderedDict):
+    """ Fixed sized dict for FIFO caching"""
+
     def __init__(self, *args, **kwds):
         self.size_limit = kwds.pop("size_limit", None)
         OrderedDict.__init__(self, *args, **kwds)
