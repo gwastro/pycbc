@@ -205,6 +205,13 @@ class SingleCoincForGraceDB(object):
             if sngl.ifo in followup_ifos:
                 for bcf in bayestar_check_fields:
                     setattr(sngl, bcf, getattr(sngl_populated, bcf))
+                # GraceDB needs these populated
+                sngl.eff_distance = 100000
+                sngl.coa_phase = 0.
+                sngl.snr = 0.
+                sngl.chisq = 0.
+                sngl.chisq_dof = 1.
+
                 sngl.set_end(lal.LIGOTimeGPS(subthreshold_sngl_time))
 
         outdoc.childNodes[0].appendChild(coinc_event_map_table)
