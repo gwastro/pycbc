@@ -5,7 +5,7 @@ class UniformDiscreteIntervals(bounded.BoundedDist):
     name = "uniform_discrete_intervals"
 
 def __init__(self, **params):
-    super(Uniform, self).__init__(**params)
+    super(UniformDiscreteIntervals, self).__init__(**params)
 
 """
 def __init__(self, **params):
