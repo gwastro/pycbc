@@ -2,11 +2,8 @@ import numpy
 from pycbc.distributions import bounded
 
 class UniformDiscreteIntervals(bounded.BoundedDist):
-    """
-
-
-    """
     name = "uniform_discrete_intervals"
+
 """
 def __init__(self, **params):
     self._bounds = {}
@@ -42,8 +39,6 @@ def interval(self):
     return self._interval
 
 def rvs(self, size=1, param=None):
-    """
-    """
     if param is not None:
         dtype = [(param, float)]
     else:
