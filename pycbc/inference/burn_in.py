@@ -215,6 +215,16 @@ class MCMCBurnInTests(object):
             logposts = samples['loglikelihood'] + samples['logprior']
         return logposts
 
+    def _getacls(self, filename, start_index):
+        """Convenience function for calculating acls for the given filename.
+
+        Since we calculate the acls, this will also store it to the sampler.
+        """
+        acls = self.sampler.compute_acl(filename, start_index=start_index)
+        # since we calculated it, save the acls to the sampler
+        self.sampler.acls = acls
+        return acls
+
     def halfchain(self, filename):
         """Just uses half the chain as the burn-in iteration.
         """
@@ -279,7 +289,7 @@ class MCMCBurnInTests(object):
         """
         niters = self._getniters(filename)
         kstart = int(niters / 2.)
-        acls = self.sampler.compute_acl(filename, start_index=kstart)
+        acls = self._getacls(filename, start_index=kstart)
         is_burned_in = {param: (self._nacls * acl) < kstart
                         for (param, acl) in acls.items()}
         data = self.burn_in_data['nacl']
@@ -291,8 +301,6 @@ class MCMCBurnInTests(object):
             data['burn_in_iteration'] = NOT_BURNED_IN_ITER
         # additional information
         data['status_per_parameter'] = is_burned_in
-        # since we calculated it, save the acls to the sampler
-        self.sampler.acls = acls
 
     def ks_test(self, filename):
         """Applies ks burn-in test."""
@@ -371,3 +379,41 @@ class MCMCBurnInTests(object):
             kwargs['min_iterations'] = int(
                 cp.get_opt_tag(section, 'min-iterations', tag))
         return cls(sampler, burn_in_test, **kwargs)
+
+
+class MultiTemperedMCMCBurnInTests(MCMCBurnInTests):
+    """Adds support for multiple temperatures to the MCMCBurnInTests."""
+
+    def _getacls(self, filename, start_index):
+        """Convenience function for calculating acls for the given filename.
+
+        This function is used by the ``n_acl`` burn-in test. That function
+        expects the returned ``acls`` dict to just report a single ACL for
+        each parameter. Since multi-tempered samplers return an array of ACLs
+        for each parameter instead, this takes the max over the array before
+        returning.
+
+        Since we calculate the acls, this will also store it to the sampler.
+        """
+        acls = super(MultiTemperedMCMCBurnInTests, self)._getacls(
+            filename, start_index)
+        # return the max for each parameter
+        return {param: vals.max() for (param, vals) in acls.items()}
+
+    def _getlogposts(self, filename):
+        """Convenience function for retrieving log posteriors.
+
+        This just gets the coldest temperature chain, and returns arrays with
+        shape nwalkers x niterations, so the parent class can run the same
+        ``posterior_step`` function.
+        """
+        with self.sampler.io(filename, 'r') as fp:
+            samples = fp.read_raw_samples(
+                ['loglikelihood', 'logprior'], thin_start=0, thin_interval=1,
+                temps=0, flatten=False)
+            # reshape to drop the first dimension
+            for (stat, arr) in samples.items():
+                _, nwalkers, niterations = arr.shape
+                samples[stat] = arr.reshape((nwalkers, niterations))
+            logposts = samples['loglikelihood'] + samples['logprior']
+        return logposts

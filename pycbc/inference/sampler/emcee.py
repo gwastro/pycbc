@@ -31,11 +31,10 @@ from __future__ import absolute_import
 import numpy
 import emcee
 from pycbc.pool import choose_pool
-from pycbc.workflow import ConfigParser
 
 from .base import BaseSampler
 from .base_mcmc import (BaseMCMC, MCMCAutocorrSupport, raw_samples_to_dict,
-                        raw_stats_to_dict)
+                        blob_data_to_dict, get_optional_arg_from_config)
 from ..burn_in import MCMCBurnInTests
 from ..io import EmceeFile
 from .. import models
@@ -123,11 +122,8 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
 
         The returned array has shape ``nwalkers x niterations``.
         """
-        raw_stats = numpy.array(self._sampler.blobs)
-        # raw_stats has shape niterations x nwalkers x nstats; transpose
-        # so that it has shape nwalkers x niterations x nstats
-        raw_stats = raw_stats.transpose((1, 0, 2))
-        return raw_stats_to_dict(self, raw_stats)
+        stats = self.model.default_stats
+        return blob_data_to_dict(stats, self._sampler.blobs)
 
     def clear_samples(self):
         """Clears the samples and stats from memory.
@@ -202,31 +198,14 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
         # get the checkpoint interval, if it's specified
-        if cp.has_option(section, "checkpoint-interval"):
-            checkpoint_interval = int(cp.get(section, "checkpoint-interval"))
-        else:
-            checkpoint_interval = None
-        if cp.has_option(section, "logpost-function"):
-            lnpost = cp.get(section, "logpost-function")
-        else:
-            lnpost = None
+        checkpoint_interval = cls.checkpoint_from_config(cp, section)
+        # get the logpost function
+        lnpost = get_optional_arg_from_config(cp, section, 'logpost-function')
         obj = cls(model, nwalkers, checkpoint_interval=checkpoint_interval,
                   logpost_function=lnpost, nprocesses=nprocesses,
                   use_mpi=use_mpi)
-        # get target
-        if cp.has_option(section, "niterations"):
-            niterations = int(cp.get(section, "niterations"))
-        else:
-            niterations = None
-        if cp.has_option(section, "effective-nsamples"):
-            nsamples = int(cp.get(section, "effective-nsamples"))
-        else:
-            nsamples = None
-        obj.set_target(niterations=niterations, eff_nsamples=nsamples)
+        # set target
+        obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
-        try:
-            bit = obj.burn_in_class.from_config(cp, obj)
-        except ConfigParser.Error:
-            bit = None
-        obj.set_burn_in(bit)
+        obj.set_burn_in_from_config(cp)
         return obj
