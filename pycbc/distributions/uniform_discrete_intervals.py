@@ -29,6 +29,9 @@ class UniformIntervals(bounded.BoundedDist):
         self._norm = numpy.exp(self._lognorm)
 
         missing = set(self._stride.keys()) - set(params.keys())
+        print self._stride.keys()
+        print set(params.keys())
+
         if any(missing):
             raise ValueError("stride provided for unknow params {}".format(
                              ', '.join(missing)))
