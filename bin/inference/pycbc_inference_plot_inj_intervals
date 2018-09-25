@@ -18,7 +18,8 @@ from matplotlib import pyplot as plt
 import pycbc
 from pycbc.results import save_fig_with_metadata
 
-from gwin import (__version__, option_utils)
+from pycbc import __version__
+from pycbc.inference import option_utils
 
 # parse command line
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",

@@ -31,8 +31,8 @@ from matplotlib import pyplot as plt
 from pycbc import (distributions, results)
 from pycbc.workflow import WorkflowConfigParser
 
-from gwin import __version__
-from gwin.results.scatter_histograms import create_multidim_plot
+from pycbc import __version__
+from pycbc.results.scatter_histograms import create_multidim_plot
 
 
 def cartesian(arrays):

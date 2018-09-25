@@ -30,7 +30,8 @@ import pycbc
 from pycbc import results
 from pycbc.filter import autocorrelation
 
-from gwin import (__version__, option_utils)
+from pycbc import __version__
+from pycbc.inference import option_utils
 
 # command line usage
 parser = argparse.ArgumentParser(
