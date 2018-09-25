@@ -29,7 +29,7 @@ from __future__ import absolute_import
 from abc import (ABCMeta, abstractmethod)
 
 import numpy
-from .base_hdf import write_kwargs_to_hdf_attrs
+import argparse
 
 
 class MCMCIO(object):
@@ -148,6 +148,77 @@ class MCMCIO(object):
             arrays[name] = arr
         return arrays
 
+    @staticmethod
+    def extra_args_parser(parser=None, skip_args=None, **kwargs):
+        """Create a parser to parse sampler-specific arguments for loading
+        samples.
+
+        Parameters
+        ----------
+        parser : argparse.ArgumentParser, optional
+            Instead of creating a parser, add arguments to the given one. If
+            none provided, will create one.
+        skip_args : list, optional
+            Don't parse the given options. Options should be given as the
+            option string, minus the '--'. For example,
+            ``skip_args=['iteration']`` would cause the ``--iteration``
+            argument not to be included.
+        \**kwargs :
+            All other keyword arguments are passed to the parser that is
+            created.
+
+        Returns
+        -------
+        parser : argparse.ArgumentParser
+            An argument parser with th extra arguments added.
+        actions : list of argparse.Action
+            A list of the actions that were added.
+        """
+        if parser is None:
+            parser = argparse.ArgumentParser(**kwargs)
+        elif kwargs:
+            raise ValueError("No other keyword arguments should be provded if "
+                             "a parser is provided.")
+        if skip_args is None:
+            skip_args = []
+        actions = []
+        if 'thin-start' not in skip_args:
+            act = parser.add_argument(
+                "--thin-start", type=int, default=None,
+                help="Sample number to start collecting samples to plot. If "
+                     "none provided, will use the input file's `thin_start` "
+                     "attribute.")
+            actions.append(act)
+        if 'thin-interval' not in skip_args:
+            act = parser.add_argument(
+                "--thin-interval", type=int, default=None,
+                help="Interval to use for thinning samples. If none provided, "
+                     "will use the input file's `thin_interval` attribute.")
+            actions.append(act)
+        if 'thin-end' not in skip_args:
+            act = parser.add_argument(
+                "--thin-end", type=int, default=None,
+                help="Sample number to stop collecting samples to plot. If "
+                     "none provided, will use the input file's `thin_end` "
+                     "attribute.")
+            actions.append(act)
+        if 'iteration' not in skip_args:
+            act = parser.add_argument(
+                "--iteration", type=int, default=None,
+                help="Only retrieve the given iteration. To load "
+                     "the last n-th sampe use -n, e.g., -1 will "
+                     "load the last iteration. This overrides "
+                     "the thin-start/interval/end options.")
+            actions.append(act)
+        if 'walkers' not in skip_args:
+            act = parser.add_argument(
+                "--walkers", type=int, nargs="+", default=None,
+                help="Only retrieve samples from the listed "
+                     "walkers. Default is to retrieve from all "
+                     "walkers.")
+            actions.append(act)
+        return parser, actions
+
     def write_resume_point(self):
         """Keeps a list of the number of iterations that were in a file when a
         run was resumed from a checkpoint."""
@@ -248,4 +319,4 @@ class MCMCIO(object):
             except KeyError:
                 group.create_group(key)
                 attrs = group[key].attrs
-            write_kwargs_to_hdf_attrs(attrs, **burn_in.burn_in_data[tst])
+            self.write_kwargs_to_attrs(attrs, **burn_in.burn_in_data[tst])

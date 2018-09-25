@@ -341,7 +341,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     else:
         orientation = 'vertical'
     ax.hist(values, bins=50, histtype=htype, orientation=orientation,
-            facecolor=fillcolor, edgecolor=color, lw=2, normed=True)
+            facecolor=fillcolor, edgecolor=color, lw=2, density=True)
     if percentiles is None:
         percentiles = [5., 50., 95.]
     values = numpy.percentile(values, percentiles)
@@ -496,8 +496,9 @@ def create_multidim_plot(parameters, samples, labels=None,
         Names of the variables to be plotted.
     samples : FieldArray
         A field array of the samples to plot.
-    labels: {None, list}, optional
-        A list of names for the parameters.
+    labels: dict, optional
+        A dictionary mapping parameters to labels. If none provided, will just
+        use the parameter strings as the labels.
     mins : {None, dict}, optional
         Minimum value for the axis of each variable in `parameters`.
         If None, it will use the minimum of the corresponding variable in
@@ -563,10 +564,7 @@ def create_multidim_plot(parameters, samples, labels=None,
         `{('param1', 'param2'): (pyplot.axes, row index, column index)}`
     """
     if labels is None:
-        labels = [p for p in parameters]
-    # turn labels into a dict for easier access
-    labels = dict(zip(parameters, labels))
-
+        labels = {p: p for p in parameters}
     # set up the figure with a grid of axes
     # if only plotting 2 parameters, make the marginal plots smaller
     nparams = len(parameters)

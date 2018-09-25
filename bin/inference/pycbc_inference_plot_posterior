@@ -37,35 +37,27 @@ from matplotlib import (patches, use)
 import pycbc
 import pycbc.version
 from pycbc.results import metadata
-from pycbc.results.scatter_histograms import create_multidim_plot
 
-from gwin import (__version__, option_utils)
+from gwin import (__version__, option_utils, io)
+from gwin.results.scatter_histograms import create_multidim_plot
 
 use('agg')
 
 # add options to command line
-parser = argparse.ArgumentParser()
+parser = io.ResultsArgumentParser()
+# program-specific
 parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Be verbose")
-parser.add_argument("--input-file-labels", nargs="+", default=None,
-                    help="Labels to add to plot if using more than one"
-                         "input file.")
-
 # add options for what plots to create
 option_utils.add_plot_posterior_option_group(parser)
-
 # scatter configuration
 option_utils.add_scatter_option_group(parser)
-
 # density configuration
 option_utils.add_density_option_group(parser)
-
-# add standard option utils
-option_utils.add_inference_results_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
@@ -73,52 +65,34 @@ opts = parser.parse_args()
 # set logging
 pycbc.init_logging(opts.verbose)
 
-# get parameters
-logging.info("Loading parameters")
-fp, parameters, labels, samples = option_utils.results_from_cli(opts)
+# load the samples
+fps, parameters, labels, samples = io.results_from_cli(opts)
 
 # typecast to list so the input files can be iterated over
-fp = fp if isinstance(fp, list) else [fp]
-parameters = parameters if isinstance(parameters[0], list) else [parameters]
-labels = labels if isinstance(labels[0], list) else [labels]
+fps = fps if isinstance(fps, list) else [fps]
 samples = samples if isinstance(samples, list) else [samples]
 
-# get likelihood statistic values
+# if a z-arg is specified, load samples for it
 if opts.z_arg is not None:
-    logging.info("Getting model stats")
-
-    z_arg, f_zlbl = option_utils.parse_parameters_opt([opts.z_arg])
-    z_arg = z_arg[0]
-    f_zlbl = f_zlbl[z_arg]
-
-    # lists to hold z-axis values and labels for each input file
+    logging.info("Getting samples for colorbar")
+    zlbl = opts.z_arg_labels[opts.z_arg]
     zvals = []
-    zlbl = []
-
-    # loop over each input file and append z-axis values and labels to lists
-    for f in fp:
-        model_stats = f.read_model_stats(
-            thin_start=opts.thin_start, thin_end=opts.thin_end,
-            thin_interval=opts.thin_interval, iteration=opts.iteration)
-        zvals.append(model_stats[z_arg])
-        zlbl.append(f_zlbl)
-        f.close()
-
-# else there are no z-axis values
+    for fp in fps:
+        zsamples = fp.samples_from_cli(opts, parameters=opts.z_arg)
+        zvals.append(zsamples[opts.z_arg])
 else:
     zvals = None
     zlbl = None
-    for f in fp:
-        f.close()
 
-# determine if colorbar should be shown
-show_colorbar = True if opts.z_arg else False
+# closet the files, we don't need them anymore
+for fp in fps:
+    fp.close()
 
 # if no plotting options selected, then the default options are based
 # on the number of parameters
 plot_options = [opts.plot_marginal, opts.plot_scatter, opts.plot_density]
 if not numpy.any(plot_options):
-    if len(parameters[0]) == 1:
+    if len(parameters) == 1:
         opts.plot_marginal = True
     else:
         opts.plot_scatter = True
@@ -132,7 +106,7 @@ if not numpy.any(plot_options):
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
 
 # add any missing parameters
-for p in parameters[0]:
+for p in parameters:
     if p not in mins:
         mins[p] = numpy.array([s[p].min() for s in samples]).min()
     if p not in maxs:
@@ -141,10 +115,16 @@ for p in parameters[0]:
 # get injection values if desired
 expected_parameters = {}
 if opts.plot_injection_parameters:
-    injections = option_utils.injections_from_cli(opts)
-    for p in parameters[0]:
+    injections = io.injections_from_cli(opts)
+    for p in parameters:
         # check that all of the injections are the same
-        unique_vals = numpy.unique(injections[p])
+        try:
+            vals = injections[p]
+        except NameError:
+            # injection doesn't have this parameter, skip
+            logging.warn("Could not find injection parameter {}".format(p))
+            continue
+        unique_vals = numpy.unique(vals)
         if unique_vals.size != 1:
             raise ValueError("More than one injection found! To use "
                 "plot-injection-parameters, there must be a single unique "
@@ -162,7 +142,7 @@ colors = itertools.cycle(["black"] + ["C{}".format(i) for i in range(10)])
 # plot each input file
 logging.info("Plotting")
 hist_colors = []
-for i, (p, l, s) in enumerate(zip(parameters, labels, samples)):
+for (i, s) in enumerate(samples):
 
     # on first iteration create figure otherwise update old figure
     if i == 0:
@@ -185,13 +165,13 @@ for i, (p, l, s) in enumerate(zip(parameters, labels, samples)):
 
     # plot
     fig, axis_dict = create_multidim_plot(
-                    p, s, labels=l, fig=fig, axis_dict=axis_dict,
+                    parameters, s, labels=labels, fig=fig, axis_dict=axis_dict,
                     plot_marginal=opts.plot_marginal,
                     marginal_percentiles=opts.marginal_percentiles,
                     plot_scatter=opts.plot_scatter,
                     zvals=zvals[i] if zvals is not None else None,
-                    show_colorbar=show_colorbar,
-                    cbar_label=zlbl[i] if zlbl is not None else None,
+                    show_colorbar=opts.z_arg is not None,
+                    cbar_label=zlbl,
                     vmin=opts.vmin, vmax=opts.vmax,
                     scatter_cmap=opts.scatter_cmap,
                     plot_density=opts.plot_density,
@@ -208,7 +188,7 @@ for i, (p, l, s) in enumerate(zip(parameters, labels, samples)):
                     expected_parameters_color=opts.expected_parameters_color)
 
 # add legend to upper right for input files
-if opts.input_file_labels:
+if len(opts.input_file) > 1:
     handles = []
     for color, label in zip(hist_colors, opts.input_file_labels):
         handles.append(patches.Patch(color=color, label=label))
@@ -217,9 +197,6 @@ if opts.input_file_labels:
 
 # set DPI
 fig.set_dpi(200)
-
-# set tight layout
-fig.set_tight_layout(True)
 
 # save
 metadata.save_fig_with_metadata(
