@@ -26,8 +26,9 @@ from matplotlib import pyplot as plt
 
 from pycbc import results
 
-from gwin import __version__
-from gwin.io.hdf import InferenceFile
+from pycbc import __version__
+# FIXME: needs to be updated for new io api
+from pycbc.io.inference.hdf import InferenceFile
 
 # command line usage
 parser = argparse.ArgumentParser(

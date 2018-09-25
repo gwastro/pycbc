@@ -14,7 +14,8 @@ import pycbc.version
 from matplotlib import cm
 from pycbc import inject
 from pycbc import transforms
-from gwin import (__version__, option_utils)
+from pycbc import __version__
+from pycbc.inference import option_utils
 
 # parse command line
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
