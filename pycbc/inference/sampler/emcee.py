@@ -36,7 +36,7 @@ from .base import BaseSampler
 from .base_mcmc import (BaseMCMC, MCMCAutocorrSupport, raw_samples_to_dict,
                         blob_data_to_dict, get_optional_arg_from_config)
 from ..burn_in import MCMCBurnInTests
-from ..io import EmceeFile
+from pycbc.io.inference import EmceeFile
 from .. import models
 
 
@@ -55,7 +55,7 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
     Parameters
     ----------
     model : model
-        A model from ``gwin.models``.
+        A model from ``pycbc.inference.models``.
     nwalkers : int
         Number of walkers to use in sampler.
     pool : function with map, Optional

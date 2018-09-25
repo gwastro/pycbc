@@ -34,7 +34,7 @@ from pycbc.filter import autocorrelation
 import h5py
 import logging
 
-from ..io import validate_checkpoint_files
+from pycbc.io.inference import validate_checkpoint_files
 
 #
 # =============================================================================
@@ -51,7 +51,7 @@ class BaseSampler(object):
     Parameters
     ----------
     model : Model
-        An instance of a model from ``gwin.models``.
+        An instance of a model from ``pycbc.inference.models``.
     """
     __metaclass__ = ABCMeta
     name = None
