@@ -24,17 +24,17 @@ class UniformIntervals(bounded.BoundedDist):
 
         missing = set(self._mean.keys()) - set(params.keys())
         if any(missing):
-            raise ValueError("means provided for unknow params {}".format(
+            raise ValueError("stride provided for unknow params {}".format(
                              ', '.join(missing)))
         missing = set(self._var.keys()) - set(params.keys())
         if any(missing):
-            raise ValueError("vars provided for unknow params {}".format(
+            raise ValueError("interval provided for unknow params {}".format(
                              ', '.join(missing)))
         # set default mean/var for params not specified
         self._stride.update(dict([[p, 0.]
-            for p in params if p not in self._mean]))
+            for p in params if p not in self._stride]))
         self._interval.update(dict([[p, 1.]
-            for p in params if p not in self._var]))
+            for p in params if p not in self._interval]))
 
         numpy.seterr(divide='warn')
 
