@@ -18,6 +18,7 @@
 
 import numpy
 
+
 def geweke(x, seg_length, seg_stride, end_idx, ref_start,
            ref_end=None, seg_start=0):
     """ Calculates Geweke conervergence statistic for a chain of data.
@@ -73,8 +74,8 @@ def geweke(x, seg_length, seg_stride, end_idx, ref_start,
         x_start = x[start:x_start_end]
 
         # compute statistic
-        stats.append((x_start.mean() - x_end.mean())
-                     / numpy.sqrt(x_start.var() + x_end.var()))
+        stats.append((x_start.mean() - x_end.mean()) / numpy.sqrt(
+            x_start.var() + x_end.var()))
 
         # store end of first segment
         ends.append(x_start_end)
