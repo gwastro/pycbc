@@ -74,7 +74,7 @@ class CallModel(object):
     Create a wrapper around an instance of the ``TestNormal`` model, with the
     ``callstat`` set to ``logposterior``:
 
-    >>> from gwin.models import TestNormal, CallModel
+    >>> from pycbc.inference.models import TestNormal, CallModel
     >>> model = TestNormal(['x', 'y'])
     >>> call_model = CallModel(model, 'logposterior')
 
