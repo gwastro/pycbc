@@ -11,10 +11,10 @@ class UniformIntervals(bounded.BoundedDist):
         self._stride = {}
         self._interval = {}
 
-        stride = [p for p in params if p.endswith('_stride')]
-        interval = [p for p in params if p.endswith('_interval')]
-        self._stride = dict([[p[:-5], params.pop(p)] for p in mean_args])
-        self._interval = dict([[p[:-4], params.pop(p)] for p in var_args])
+        stride_args = [p for p in params if p.endswith('_stride')]
+        interval_args = [p for p in params if p.endswith('_interval')]
+        self._stride = dict([[p[:-5], params.pop(p)] for p in stride_args])
+        self._interval = dict([[p[:-4], params.pop(p)] for p in interval_args])
 
         super(UniformIntervals, self).__init__(**params)
 
