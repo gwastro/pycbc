@@ -18,6 +18,7 @@ diagnostic statistic.
 
 import numpy
 
+
 def walk(chains, start, end, step):
     """ Calculates Gelman-Rubin conervergence statistic along chains of data.
     This function will advance along the chains and calculate the
@@ -59,10 +60,11 @@ def walk(chains, start, end, step):
 
     # loop over end indexes and calculate statistic
     for i, e in enumerate(ends):
-        tmp = chains[:,:,0:e]
+        tmp = chains[:, :, 0:e]
         stats[:, i] = gelman_rubin(tmp)
 
     return starts, ends, stats
+
 
 def gelman_rubin(chains, auto_burn_in=True):
     """ Calculates the univariate Gelman-Rubin convergence statistic
@@ -144,19 +146,25 @@ def gelman_rubin(chains, auto_burn_in=True):
 
     # get V the combined variance of all chains
     # this will have shape (nparameters)
-    v = (niterations - 1.) * w_diag / niterations + (1. + 1. / nchains) * b_diag / niterations
+    v = ((niterations - 1.) * w_diag / niterations +
+         (1. + 1. / nchains) * b_diag / niterations)
 
     # get factors in variance of V calculation
     # this will have shape (nparameters)
     k = 2 * b_diag**2 / (nchains - 1)
-    mid_term = numpy.cov(var, means**2)[nparameters:2 * nparameters, 0:nparameters].T
-    end_term = numpy.cov(var, means)[nparameters:2 * nparameters, 0:nparameters].T
+    mid_term = numpy.cov(
+        var, means**2)[nparameters:2*nparameters, 0:nparameters].T
+    end_term = numpy.cov(
+        var, means)[nparameters:2*nparameters, 0:nparameters].T
     wb = niterations / nchains * numpy.diag(mid_term - 2 * mu_hat * end_term)
 
     # get variance of V
     # this will have shape (nparameters)
-    var_v = ((niterations - 1.)**2 * s + (1. + 1. / nchains)**2 * k + \
-             2. * (niterations - 1.) * (1. + 1. / nchains) * wb) / niterations**2
+    var_v = (
+        (niterations - 1.) ** 2 * s +
+        (1. + 1. / nchains) ** 2 * k +
+        2. * (niterations - 1.) * (1. + 1. / nchains) * wb
+    ) / niterations**2
 
     # get degrees of freedom
     # this will have shape (nparameters)
@@ -177,4 +185,3 @@ def gelman_rubin(chains, auto_burn_in=True):
     psrf = numpy.sqrt(r2_estimate * df_adj)
 
     return psrf
-
