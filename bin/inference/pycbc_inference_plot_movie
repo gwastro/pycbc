@@ -41,9 +41,12 @@ from matplotlib import pyplot
 import pycbc.results
 from pycbc import transforms
 
-from gwin import (__version__, option_utils, io)
-from gwin.results.scatter_histograms import (create_multidim_plot,
-                                             get_scale_fac)
+from pycbc import __version__
+from pycbc.io import inference as io
+from pycbc.inference import option_utils
+
+from pycbc.results.scatter_histograms import (create_multidim_plot,
+                                              get_scale_fac)
 
 
 def integer_logspace(start, end, num):

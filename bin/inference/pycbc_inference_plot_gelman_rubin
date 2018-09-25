@@ -22,7 +22,10 @@ import logging
 from pycbc import results
 import matplotlib.pyplot as plt
 import sys
-from gwin import (__version__, gelman_rubin, option_utils)
+from pycbc import __version__ 
+from pycbc.inference import gelman_rubin
+from pycbc.inference import option_utils
+
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
