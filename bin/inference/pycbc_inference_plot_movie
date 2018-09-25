@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright (C) 2016 Miriam Cabero Mueller
 #
@@ -27,20 +27,24 @@
 
 import argparse
 import logging
-import numpy
 import subprocess
 import os
 import glob
-import matplotlib
-matplotlib.use('agg')
-from matplotlib import pyplot
 from multiprocessing import Pool
+
+import numpy
+
+from matplotlib import use
+use('agg')
+from matplotlib import pyplot
+
 import pycbc.results
 from pycbc import transforms
-from pycbc.inference import option_utils
-from pycbc.io.inference_hdf import InferenceFile
-from pycbc.results.scatter_histograms import create_multidim_plot, \
-    get_scale_fac
+
+from gwin import (__version__, option_utils)
+from gwin.results.scatter_histograms import (create_multidim_plot,
+                                             get_scale_fac)
+
 
 def integer_logspace(start, end, num):
     """Generates a list of integers that are spaced approximately uniformly
@@ -89,6 +93,8 @@ def integer_logspace(start, end, num):
 
 parser = argparse.ArgumentParser()
 
+parser.add_argument("--version", action="version", version=__version__,
+                    help="show version number and exit")
 parser.add_argument("--input-file", type=str, required=True,
                     help="Results file path.")
 parser.add_argument("--start-sample", type=int, default=1,
@@ -186,7 +192,7 @@ else:
 
 # get samples from InferenceFile
 file_parameters, trans = transforms.get_common_cbc_transforms(
-                                         parameters, fp.variable_args)
+                                         parameters, fp.variable_params)
 samples = fp.read_samples(file_parameters, thin_start=thin_start,
                           thin_interval=thinint, thin_end=thin_end,
                           iteration=itermask, flatten=False)
@@ -198,14 +204,17 @@ if samples.ndim > 2:
 
 # Get z-values
 if opts.z_arg is not None:
-    logging.info("Getting likelihood stats")
-    likelihood_stats = fp.read_likelihood_stats(thin_start=thin_start,
+    logging.info("Getting model stats")
+    z_arg, zlbl = option_utils.parse_parameters_opt([opts.z_arg])
+    z_arg = z_arg[0]
+    zlbl = zlbl[z_arg]
+    model_stats = fp.read_model_stats(thin_start=thin_start,
         thin_end=thin_end, thin_interval=thinint, iteration=itermask,
         flatten=False)
-    if likelihood_stats.ndim > 2:
-        _, ii, jj = likelihood_stats.shape
-        likelihood_stats = likelihood_stats.reshape((ii, jj))
-    zvals, zlbl = option_utils.get_zvalues(fp, opts.z_arg, likelihood_stats)
+    if model_stats.ndim > 2:
+        _, ii, jj = model_stats.shape
+        model_stats = model_stats.reshape((ii, jj))
+    zvals = model_stats[z_arg]
     show_colorbar = True
     # Set common min and max for colorbar in all plots
     if opts.vmin is None:
