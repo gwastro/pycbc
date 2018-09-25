@@ -748,7 +748,7 @@ class BaseModel(object):
 
         Parameters
         ----------
-        fp : gwin.io.BaseInferenceFile instance
+        fp : pycbc.io.inference.BaseInferenceFile instance
             The inference file to write to.
         """
         fp.attrs['model'] = self.name

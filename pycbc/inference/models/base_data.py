@@ -242,7 +242,7 @@ class BaseDataModel(BaseModel):
 
         Parameters
         ----------
-        fp : gwin.io.BaseInferenceFile instance
+        fp : pycbc.io.inference.BaseInferenceFile instance
             The inference file to write to.
         """
         super(BaseDataModel, self).write_metadata(fp)

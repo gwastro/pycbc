@@ -118,7 +118,7 @@ class GaussianNoise(BaseDataModel):
     >>> from pycbc import psd as pypsd
     >>> from pycbc.waveform.generator import (FDomainDetFrameGenerator,
     ...                                       FDomainCBCGenerator)
-    >>> import gwin
+    >>> import pycbc.inference
     >>> seglen = 4
     >>> sample_rate = 2048
     >>> N = seglen*sample_rate/2+1
@@ -136,7 +136,7 @@ class GaussianNoise(BaseDataModel):
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
-    >>> model = gwin.models.GaussianNoise(
+    >>> model = pycbc.inference.models.GaussianNoise(
     ...     variable_params, signal, generator, fmin, psds=psds)
 
     Set the current position to the coalescence time of the signal:
@@ -197,7 +197,7 @@ class GaussianNoise(BaseDataModel):
     >>> from pycbc import distributions
     >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior = distributions.JointDistribution(variable_params, uniform_prior)
-    >>> model = gwin.models.GaussianNoise(variable_params,
+    >>> model = pycbc.inference.models.GaussianNoise(variable_params,
     ...     signal, generator, 20., psds=psds, prior=prior)
     >>> model.update(tc=tsig)
     >>> print('{:.2f}'.format(model.logplr))
@@ -444,7 +444,7 @@ class GaussianNoise(BaseDataModel):
 
         Parameters
         ----------
-        fp : gwin.io.BaseInferenceFile instance
+        fp : pycbc.io.inference.BaseInferenceFile instance
             The inference file to write to.
         """
         super(GaussianNoise, self).write_metadata(fp)
