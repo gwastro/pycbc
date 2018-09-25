@@ -7,7 +7,7 @@ class UniformDiscreteIntervals(bounded.BoundedDist):
 
     """
     name = "uniform_discrete_intervals"
-
+"""
 def __init__(self, **params):
     self._bounds = {}
     self._stride = {}
@@ -55,5 +55,5 @@ def rvs(self, size=1, param=None):
                          self._stride + self._interval)
         arr[p] = numpy.random.uniform(x, x + self._stride, size=size)
     return arr
-
+"""
 __all__ = ['UniformDiscreteIntervals']
