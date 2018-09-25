@@ -20,17 +20,13 @@ This modules provides a list of implemented samplers for parameter estimation.
 from __future__ import absolute_import
 
 from .base import (initial_dist_from_config, create_new_output_file)
-# from .kombine import KombineSampler
 from .emcee import EmceeEnsembleSampler
 from .emcee_pt import EmceePTSampler
-# from .mcmc import MCMCSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
-    # KombineSampler,
     EmceeEnsembleSampler,
     EmceePTSampler,
-    # MCMCSampler,
 )}
 
 
@@ -44,7 +40,7 @@ def load_from_config(cp, model, **kwargs):
     ----------
     cp : WorkflowConfigParser
         Config parser to read from.
-    model : gwin.model
+    model : pycbc.inference.model
         Which model to pass to the sampler.
     \**kwargs :
         All other keyword arguments are passed directly to the sampler's
