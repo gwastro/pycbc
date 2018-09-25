@@ -34,6 +34,15 @@ def _call_global_model(*args, **kwds):
     return _global_instance(*args, **kwds)  # pylint:disable=not-callable
 
 
+def _call_global_model_logprior(*args, **kwds):
+    """Private function for a calling global's logprior.
+
+    This is needed for samplers that use a separate function for the logprior,
+    like ``emcee_pt``.
+    """
+    return _global_instance(*args, callstat='logprior', **kwds)
+
+
 class CallModel(object):
     """Wrapper class for calling models from a sampler.
 
