@@ -13,21 +13,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-
-#
-# =============================================================================
-#
-#                                   Preamble
-#
-# =============================================================================
-#
 """
 This modules provides classes and functions for determining when Markov Chains
 have burned in.
 """
 
 import numpy
+
 from scipy.stats import ks_2samp
+
 
 def ks_test(sampler, fp, threshold=0.9):
     """Burn in based on whether the p-value of the KS test between the samples
@@ -36,9 +30,9 @@ def ks_test(sampler, fp, threshold=0.9):
 
     Parameters
     ----------
-    sampler : pycbc.inference.sampler
+    sampler : gwin.sampler
         Sampler to determine burn in for. May be either an instance of a
-        `inference.sampler`, or the class itself.
+        `gwin.sampler`, or the class itself.
     fp : InferenceFile
         Open inference hdf file containing the samples to load for determing
         burn in.
@@ -54,24 +48,27 @@ def ks_test(sampler, fp, threshold=0.9):
     """
     nwalkers = fp.nwalkers
     niterations = fp.niterations
-    # Create a dictionary which would have keys are the variable args and values
-    # are booleans indicating whether the p-value for the parameters satisfies
-    # the KS test
+    # Create a dictionary which would have keys are the variable args and
+    # values are booleans indicating whether the p-value for the parameters
+    # satisfies the KS test
     is_burned_in_param = {}
     # iterate over the parameters
-    for param in fp.variable_args:
+    for param in fp.variable_params:
         # read samples for the parameter from the last iteration of the chain
         samples_last_iter = sampler.read_samples(fp, param, iteration=-1,
                                                  flatten=True)[param]
-        # read samples for the parameter from the iteration midway along the chain
-        samples_chain_midpt = sampler.read_samples(fp, param, iteration=int(niterations/2),
-                                                  flatten=True)[param]
+        # read samples for the parameter from the iteration midway
+        # along the chain
+        samples_chain_midpt = sampler.read_samples(
+            fp, param, iteration=int(niterations/2), flatten=True)[param]
         _, p_value = ks_2samp(samples_last_iter, samples_chain_midpt)
         # check if p_value is > than the desired range
         is_burned_in_param[param] = p_value > threshold
-    # The chains are burned in if the p-value of the KS test lies in the range [0.1,0.9]
-    # for all the parameters. If the KS test is passed, the chains have burned in at their
-    # mid-way point. 
+
+    # The chains are burned in if the p-value of the KS test lies
+    # in the range [0.1,0.9] for all the parameters.
+    # If the KS test is passed, the chains have burned in at their
+    # mid-way point.
     if all(is_burned_in_param.values()):
         is_burned_in = numpy.ones(nwalkers, dtype=bool)
         burn_in_idx = numpy.repeat(niterations/2, nwalkers).astype(int)
@@ -81,18 +78,12 @@ def ks_test(sampler, fp, threshold=0.9):
     return burn_in_idx, is_burned_in
 
 
-def n_acl(sampler, fp, nacls=5):
+def n_acl(sampler, fp, nacls=10):
     """Burn in based on ACL.
 
-    This applies the following test to determine burn in:
-
-    1. The first half of the samples are ignored.
-
-    2. An ACL is calculated from the second half.
-
-    3. If the ``nacls`` times the ACL is < the number of iterations / 2,
-       the sampler is considered to be burned in at the half-way point.
-
+    The sampler is considered burned in if the number of itertions is >=
+    ``nacls`` times the maximum ACL over all parameters, as measured from the
+    first iteration.
 
     Parameters
     ----------
@@ -103,7 +94,7 @@ def n_acl(sampler, fp, nacls=5):
         Open inference hdf file containing the samples to load for determing
         burn in.
     nacls : int
-        Number of ACLs to use for burn in. Default is 5.
+        Number of ACLs to use for burn in. Default is 10.
 
     Returns
     -------
@@ -117,16 +108,14 @@ def n_acl(sampler, fp, nacls=5):
         all chains obtain burn in at the same time, this is either an array
         of all False or True.
     """
-    N = fp.niterations
-    acl = numpy.array(sampler.compute_acls(fp, start_index=N/2).values()).max()
-    is_burned_in = nacls * acl < N/2
+    acl = numpy.array(sampler.compute_acls(fp, start_index=0).values()).max()
+    burn_idx = nacls * acl
+    is_burned_in = burn_idx < fp.niterations
     if not is_burned_in:
-        burn_idx = N
-    else:
-        burn_idx = N/2
+        burn_idx = fp.niterations
     nwalkers = fp.nwalkers
     return numpy.repeat(burn_idx, nwalkers).astype(int), \
-           numpy.repeat(is_burned_in, nwalkers).astype(bool)
+        numpy.repeat(is_burned_in, nwalkers).astype(bool)
 
 
 def max_posterior(sampler, fp):
@@ -134,9 +123,9 @@ def max_posterior(sampler, fp):
 
     Parameters
     ----------
-    sampler : pycbc.inference.sampler
+    sampler : gwin.sampler
         Sampler to determine burn in for. May be either an instance of a
-        `inference.sampler`, or the class itself.
+        `gwin.sampler`, or the class itself.
     fp : InferenceFile
         Open inference hdf file containing the samples to load for determing
         burn in.
@@ -151,11 +140,12 @@ def max_posterior(sampler, fp):
     # get the posteriors
     # Note: multi-tempered samplers should just return the coldest chain by
     # default
-    chain_stats = sampler.read_samples(fp, ['loglr', 'prior'],
-        samples_group=fp.stats_group, thin_interval=1, thin_start=0,
-        thin_end=None, flatten=False)
-    chain_posteriors = chain_stats['loglr'] + chain_stats['prior']
-    dim = float(len(fp.variable_args))
+    chain_stats = sampler.read_samples(
+        fp, ['loglr', 'logprior'], samples_group=fp.stats_group,
+        thin_interval=1, thin_start=0, thin_end=None, flatten=False)
+    chain_posteriors = chain_stats['loglr'] + chain_stats['logprior']
+    dim = float(len(fp.variable_params))
+
     # find the posterior to compare against
     max_p = chain_posteriors.max()
     criteria = max_p - dim/2
@@ -163,10 +153,11 @@ def max_posterior(sampler, fp):
     niterations = chain_posteriors.shape[-1]
     burn_in_idx = numpy.repeat(niterations, nwalkers).astype(int)
     is_burned_in = numpy.zeros(nwalkers, dtype=bool)
+
     # find the first iteration in each chain where the logplr has exceeded
     # max_p - dim/2
     for ii in range(nwalkers):
-        chain = chain_posteriors[...,ii,:]
+        chain = chain_posteriors[..., ii, :]
         # numpy.where will return a tuple with multiple arrays if the chain is
         # more than 1D (which can happen for multi-tempered samplers). Always
         # taking the last array ensures we are looking at the indices that
@@ -178,23 +169,14 @@ def max_posterior(sampler, fp):
     return burn_in_idx, is_burned_in
 
 
-def acl_or_max_posterior(sampler, fp):
-    """Burn in that uses the minimum of `n_acl` and `max_posteior`.
-    """
-    acl_bidx, acl_ibi = n_acl(sampler, fp)
-    maxp_bidx, maxp_ibi = max_posterior(sampler, fp)
-    burn_in_idx = numpy.min([acl_bidx, maxp_bidx], axis=0)
-    is_burned_in = acl_ibi | maxp_ibi
-    return burn_in_idx, is_burned_in
-
 def posterior_step(sampler, fp):
     """Burn in based on the last time a chain made a jump > dim/2.
 
     Parameters
     ----------
-    sampler : pycbc.inference.sampler
+    sampler : gwin.sampler
         Sampler to determine burn in for. May be either an instance of a
-        `inference.sampler`, or the class itself.
+        `gwin.sampler`, or the class itself.
     fp : InferenceFile
         Open inference hdf file containing the samples to load for determing
         burn in.
@@ -210,18 +192,19 @@ def posterior_step(sampler, fp):
     # get the posteriors
     # Note: multi-tempered samplers should just return the coldest chain by
     # default
-    chain_stats = sampler.read_samples(fp, ['loglr', 'prior'],
-        samples_group=fp.stats_group, thin_interval=1, thin_start=0,
-        thin_end=None, flatten=False)
-    chain_posteriors = chain_stats['loglr'] + chain_stats['prior']
+    chain_stats = sampler.read_samples(
+        fp, ['loglr', 'logprior'], samples_group=fp.stats_group,
+        thin_interval=1, thin_start=0, thin_end=None, flatten=False)
+    chain_posteriors = chain_stats['loglr'] + chain_stats['logprior']
     nwalkers = chain_posteriors.shape[-2]
-    dim = float(len(fp.variable_args))
+    dim = float(len(fp.variable_params))
     burn_in_idx = numpy.zeros(nwalkers).astype(int)
     criteria = dim/2.
+
     # find the last iteration in each chain where the logplr has
     # jumped by more than dim/2
     for ii in range(nwalkers):
-        chain = chain_posteriors[...,ii,:]
+        chain = chain_posteriors[..., ii, :]
         dp = abs(numpy.diff(chain))
         idx = numpy.where(dp >= criteria)[-1]
         if idx.size != 0:
@@ -234,7 +217,7 @@ def half_chain(sampler, fp):
 
     Parameters
     ----------
-    sampler : pycbc.inference.sampler
+    sampler : gwin.sampler
         This option is not used; it is just here give consistent API as the
         other burn in functions.
     fp : InferenceFile
@@ -251,8 +234,10 @@ def half_chain(sampler, fp):
     """
     nwalkers = fp.nwalkers
     niterations = fp.niterations
-    return numpy.repeat(niterations/2, nwalkers).astype(int), \
-           numpy.ones(nwalkers, dtype=bool)
+    return (
+        numpy.repeat(niterations/2, nwalkers).astype(int),
+        numpy.ones(nwalkers, dtype=bool),
+    )
 
 
 def use_sampler(sampler, fp=None):
@@ -260,9 +245,9 @@ def use_sampler(sampler, fp=None):
 
     Parameters
     ----------
-    sampler : pycbc.inference.sampler
+    sampler : gwin.sampler
         Sampler to determine burn in for. Must be an instance of an
-        `inference.sampler` that has a `burn_in` function.
+        `gwin.sampler` that has a `burn_in` function.
     fp : InferenceFile, optional
         This option is not used; it is just here give consistent API as the
         other burn in functions.
@@ -277,19 +262,21 @@ def use_sampler(sampler, fp=None):
         are burned, all values are set to True.
     """
     sampler.burn_in()
-    return sampler.burn_in_iterations, \
-           numpy.ones(len(sampler.burn_in_iterations), dtype=bool)
+    return (
+        sampler.burn_in_iterations,
+        numpy.ones(len(sampler.burn_in_iterations), dtype=bool),
+    )
 
 
 burn_in_functions = {
     'ks_test': ks_test,
     'n_acl': n_acl,
     'max_posterior': max_posterior,
-    'acl_or_max_posterior': acl_or_max_posterior,
     'posterior_step': posterior_step,
     'half_chain': half_chain,
     'use_sampler': use_sampler,
     }
+
 
 class BurnIn(object):
     """Class to estimate the number of burn in iterations.
@@ -311,15 +298,15 @@ class BurnIn(object):
     Initialize a `BurnIn` instance that will use `max_posterior` and
     `posterior_step` as the burn in criteria:
 
-    >>> from pycbc import inference
-    >>> burn_in = inference.BurnIn(['max_posterior', 'posterior_step'])
+    >>> import gwin
+    >>> burn_in = gwin.BurnIn(['max_posterior', 'posterior_step'])
 
     Use this `BurnIn` instance to find the burn-in iteration of each walker
     in an inference result file:
 
     >>> from pycbc.io import InferenceFile
-    >>> fp = InferenceFile('inference.hdf', 'r')
-    >>> burn_in.evaluate(inference.samplers[fp.sampler_name], fp)
+    >>> fp = InferenceFile('gwin.hdf', 'r')
+    >>> burn_in.evaluate(gwin.samplers[fp.sampler_name], fp)
     array([11486, 11983, 11894, ..., 11793, 11888, 11981])
 
     """
@@ -336,9 +323,9 @@ class BurnIn(object):
 
         Parameters
         ----------
-        sampler : pycbc.inference.sampler
+        sampler : gwin.sampler
             Sampler to determine burn in for. May be either an instance of a
-            `inference.sampler`, or the class itself.
+            `gwin.sampler`, or the class itself.
         fp : InferenceFile
             Open inference hdf file containing the samples to load for
             determing burn in.
@@ -355,8 +342,13 @@ class BurnIn(object):
         if fp.niterations < self.min_iterations:
             return numpy.repeat(self.min_iterations, fp.nwalkers), \
                    numpy.zeros(fp.nwalkers, dtype=bool)
-        # start assuming the minimum
-        burnidx = numpy.repeat(self.min_iterations, fp.nwalkers)
+        # if the file already has burn in iterations saved, use those as a
+        # base
+        try:
+            burnidx = fp['burn_in_iterations'][:]
+        except KeyError:
+            # just use the minimum
+            burnidx = numpy.repeat(self.min_iterations, fp.nwalkers)
         # start by assuming is burned in; the &= below will make this false
         # if any test yields false
         is_burned_in = numpy.ones(fp.nwalkers, dtype=bool)
@@ -380,9 +372,9 @@ class BurnIn(object):
 
         Parameters
         ----------
-        sampler : pycbc.inference.sampler
+        sampler : gwin.sampler
             Sampler to determine burn in for. May be either an instance of a
-            `inference.sampler`, or the class itself.
+            `gwin.sampler`, or the class itself.
         fp : InferenceFile
             Open inference hdf file containing the samples to load for
             determing burn in.
