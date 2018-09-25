@@ -18,6 +18,7 @@ inference samplers generate and are stored in an ASCII TXT file.
 
 import numpy
 
+
 class InferenceTXTFile(object):
     """ A class that has extra functions for handling reading the samples
     from posterior-only TXT files.
@@ -63,4 +64,3 @@ class InferenceTXTFile(object):
         numpy.savetxt(output_file, samples,
                       comments=cls.comments, header=header,
                       delimiter=delimiter)
-
