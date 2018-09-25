@@ -83,7 +83,7 @@ def __init__(self, **params):
             dx = self._interval[p] + self._stride[p]
             x = numpy.arange(self._bounds[p][0], self._bounds[p][1],
                              dx)
-            arr[p] = numpy.random.uniform(x, x self._interval[p])
+            arr[p] = numpy.random.uniform(x, x + self._interval[p])
 
             arr[p] = numpy.random.uniform(self._bounds[p][0],
                                           self._bounds[p][1],
