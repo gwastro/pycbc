@@ -32,7 +32,7 @@ from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
 from .base_multitemper import (MultiTemperedSupport,
                                MultiTemperedAutocorrSupport)
 from ..burn_in import MultiTemperedMCMCBurnInTests
-from ..io import EmceePTFile
+from pycbc.io.inference import EmceePTFile
 from .. import models
 
 
@@ -44,7 +44,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     Parameters
     ----------
     model : model
-        A model from ``gwin.models``.
+        A model from ``pycbc.inference.models``.
     ntemps : int
         Number of temeratures to use in the sampler.
     nwalkers : int
