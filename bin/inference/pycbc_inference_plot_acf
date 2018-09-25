@@ -27,7 +27,8 @@ from matplotlib import pyplot as plt
 import pycbc
 from pycbc import results
 
-from gwin import (__version__, option_utils)
+from pycbc import __version__
+from pycbc.inference import option_utils
 
 # command line usage
 parser = argparse.ArgumentParser(
