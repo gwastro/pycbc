@@ -1,11 +1,11 @@
 import numpy
 from pycbc.distributions import bounded
 
-class Uniform2(bounded.BoundedDist):
-    name = 'uniform2'
+class UniformIntervals(bounded.BoundedDist):
+    name = 'uniform_intervals'
 
 def __init__(self, **params):
-    super(Uniform2, self).__init__(**params)
+    super(UniformIntervals, self).__init__(**params)
 
      # temporarily suppress numpy divide by 0 warning
     numpy.seterr(divide='ignore')
@@ -92,8 +92,8 @@ def __init__(self, **params):
         Uniform
             A distribution instance from the pycbc.inference.prior module.
         """
-        return super(Uniform2, cls).from_config(cp, section, variable_args,
+        return super(UniformIntervals, cls).from_config(cp, section, variable_args,
                      bounds_required=True)
 
 
-__all__ = ['Uniform2']
+__all__ = ['UniformIntervals']
