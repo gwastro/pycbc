@@ -1,7 +1,7 @@
 import numpy
 from pycbc.distributions import uniform
 
-class UniformDiscreteIntervals(uniform.Uniform):
+class UniformDiscreteIntervals(bounded.BoundedDist):
     """
 
 
