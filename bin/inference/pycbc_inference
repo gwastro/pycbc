@@ -195,15 +195,6 @@ with ctx:
     # Finalize the output 
     sampler.finalize()
 
-    # FIXME: move to emcee_pt's finalize method
-    #with InferenceFile(checkpoint_file, 'a') as fp:
-    #    try:
-    #        lnz, dlnz = sampler.calculate_logevidence(fp)
-    #        logging.info("Saving evidence")
-    #        sampler.write_logevidence(fp, lnz, dlnz)
-    #    except NotImplementedError:
-    #        pass
-
 # rename checkpoint to output and delete backup
 logging.info("Moving checkpoint to output")
 os.rename(sampler.checkpoint_file, opts.output_file)

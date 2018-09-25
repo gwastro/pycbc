@@ -609,11 +609,17 @@ class BaseInferenceFile(h5py.File):
             The slice needed.
         """
         if thin_start is None:
-            thin_start = self.thin_start
+            thin_start = int(self.thin_start)
+        else:
+            thin_start = int(thin_start)
         if thin_interval is None:
             thin_interval = self.thin_interval
+        else:
+            thin_interval = int(numpy.ceil(thin_interval))
         if thin_end is None:
             thin_end = self.thin_end
+        else:
+            thin_end = int(thin_end)
         return slice(thin_start, thin_end, thin_interval)
 
     def copy_metadata(self, other):

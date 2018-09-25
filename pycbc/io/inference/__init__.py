@@ -34,10 +34,12 @@ from pycbc import waveform as _waveform
 
 from ..option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
+from .emcee_pt import EmceePTFile
 from .txt import InferenceTXTFile
 
 filetypes = {
     EmceeFile.name: EmceeFile,
+    EmceePTFile.name: EmceePTFile
 }
 
 
