@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright (C) 2016 Miriam Cabero Mueller, Collin Capano
 #
@@ -28,22 +28,24 @@
 import argparse
 import itertools
 import logging
+import sys
+
 import numpy
-import matplotlib; matplotlib.use("agg")
+
+from matplotlib import (patches, use)
+
 import pycbc
 import pycbc.version
-import sys
-from matplotlib import patches
-from matplotlib import pyplot
-from pycbc.inference import option_utils, likelihood
-from pycbc.io.inference_hdf import InferenceFile
 from pycbc.results import metadata
 from pycbc.results.scatter_histograms import create_multidim_plot
 
+from gwin import (__version__, option_utils)
+
+use('agg')
+
 # add options to command line
 parser = argparse.ArgumentParser()
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg,
+parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output plot path.")
@@ -83,7 +85,11 @@ samples = samples if isinstance(samples, list) else [samples]
 
 # get likelihood statistic values
 if opts.z_arg is not None:
-    logging.info("Getting likelihood stats")
+    logging.info("Getting model stats")
+
+    z_arg, f_zlbl = option_utils.parse_parameters_opt([opts.z_arg])
+    z_arg = z_arg[0]
+    f_zlbl = f_zlbl[z_arg]
 
     # lists to hold z-axis values and labels for each input file
     zvals = []
@@ -91,12 +97,10 @@ if opts.z_arg is not None:
 
     # loop over each input file and append z-axis values and labels to lists
     for f in fp:
-        likelihood_stats = f.read_likelihood_stats(
+        model_stats = f.read_model_stats(
             thin_start=opts.thin_start, thin_end=opts.thin_end,
             thin_interval=opts.thin_interval, iteration=opts.iteration)
-        f_zvals, f_zlbl = option_utils.get_zvalues(f, opts.z_arg,
-                                                   likelihood_stats)
-        zvals.append(f_zvals)
+        zvals.append(model_stats[z_arg])
         zlbl.append(f_zlbl)
         f.close()
 
