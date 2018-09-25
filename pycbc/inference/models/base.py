@@ -34,7 +34,6 @@ from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 from pycbc.workflow import ConfigParser
 
-from gwin.io.base_hdf import write_kwargs_to_hdf_attrs
 
 #
 # =============================================================================
@@ -755,4 +754,4 @@ class BaseModel(object):
         fp.attrs['model'] = self.name
         fp.attrs['variable_params'] = list(self.variable_params)
         fp.attrs['sampling_params'] = list(self.sampling_params)
-        write_kwargs_to_hdf_attrs(fp.attrs, static_params=self.static_params)
+        fp.write_kwargs_to_attrs(fp.attrs, static_params=self.static_params)
