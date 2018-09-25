@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright (C) 2016 Christopher M. Biwer
 #
@@ -16,18 +16,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import matplotlib as mpl; mpl.use("Agg")
-import matplotlib.pyplot as plt
 import argparse
-import corner
 import itertools
 import logging
-import numpy
 import sys
-from pycbc import distributions
-from pycbc import inference
-from pycbc import results
+
+import numpy
+
+
+from matplotlib import use
+use('agg')
+from matplotlib import pyplot as plt
+
+import corner
+
+from pycbc import (distributions, results)
 from pycbc.workflow import WorkflowConfigParser
+
+from gwin import __version__
+
 
 def cartesian(arrays):
     """ Returns a cartesian product from a list of iterables.
@@ -55,6 +62,8 @@ parser.add_argument("--output-file", type=str, required=True,
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
     help="")
+parser.add_argument("--version", action="version", version=__version__,
+                    help="show version number and exit")
 
 # parse the command line
 opts = parser.parse_args()
@@ -75,7 +84,7 @@ cp = WorkflowConfigParser(opts.config_files)
 # if only section then look for subsections
 # and add distributions to list
 logging.info("Constructing prior")
-variable_args = []
+variable_params = []
 dists = []
 for sec in opts.sections:
     section = sec.split("-")[0]
@@ -88,13 +97,13 @@ for sec in opts.sections:
         name = cp.get_opt_tag(section, "name", subsection)
         dist = distributions.distribs[name].from_config(
                                             cp, section, subsection)
-        variable_args += dist.params
+        variable_params += dist.params
         dists.append(dist)
-variable_args = sorted(variable_args)
-ndim = len(variable_args)
+variable_params = sorted(variable_params)
+ndim = len(variable_params)
 
 # construct class that will return draws from the prior
-prior = distributions.JointDistribution(variable_args, *dists)
+prior = distributions.JointDistribution(variable_params, *dists)
 
 # get all points in space to calculate PDF
 logging.info("Getting grid of points")
@@ -102,7 +111,7 @@ vals = numpy.zeros(shape=(ndim,opts.bins))
 bounds = [{}] * ndim
 for dist in dists:
     for param in dist.params:
-        idx = variable_args.index(param)
+        idx = variable_params.index(param)
         step = float(dist.bounds[param][1]-dist.bounds[param][0]) / opts.bins
         vals[idx,:] = numpy.arange(dist.bounds[param][0],dist.bounds[param][1],step)
         bounds[idx] = dist.bounds
@@ -112,13 +121,13 @@ pts = cartesian(vals)
 logging.info("Calculating PDF")
 pdf = []
 for pt in pts:
-    pt_dict = dict([(param,pt[j]) for j,param in enumerate(variable_args)])
+    pt_dict = dict([(param,pt[j]) for j,param in enumerate(variable_params)])
     pdf.append(sum([dist.pdf(**pt_dict) for dist in dists]))
 pdf = numpy.array(pdf)
 
 # check if only one parameter to plot PDF
 logging.info("Plotting") 
-if len(variable_args) == 1:
+if len(variable_params) == 1:
     x = vals[0,:]
     xmax = x.max()
     xmin = x.min()
@@ -127,12 +136,12 @@ if len(variable_args) == 1:
     plt.plot(x, pdf, "k", label="Prior")
     plt.xlim(xmin-pad, xmax+pad)
     plt.ylabel("Probability Density Function")
-    plt.xlabel(variable_args[0])
+    plt.xlabel(variable_params[0])
     plt.legend()
 
 # else make corner plot of all PDF
 else:
-    fig = corner.corner(pts, weights=pdf, labels=variable_args,
+    fig = corner.corner(pts, weights=pdf, labels=variable_params,
                        plot_contours=False, plot_datapoints=False)
 
     # remove the 1-D histograms
@@ -148,7 +157,7 @@ else:
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join([param for param in variable_args])
+    "parameters" : ", ".join([param for param in variable_params])
 }
 caption = """This plot shows the probability density function (PDF) from the 
 prior distributions."""
