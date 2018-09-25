@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright (C) 2017 Christopher M. Biwer
 #
@@ -24,9 +24,9 @@ import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import pycbc
 from pycbc import results
-from pycbc.inference import geweke
-from pycbc.inference import option_utils
 import sys
+
+from gwin import (__version__, geweke, option_utils)
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -35,6 +35,8 @@ parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
     help="Print logging info.")
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
