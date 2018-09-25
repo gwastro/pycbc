@@ -4,39 +4,39 @@ from pycbc.distributions import bounded
 class UniformIntervals(bounded.BoundedDist):
     name = 'uniform_intervals'
 
-def __init__(self, **params):
-    super(UniformIntervals, self).__init__(**params)
+    def __init__(self, **params):
+         # temporarily suppress numpy divide by 0 warning
+        numpy.seterr(divide='ignore')
+        self._bounds = {}
+        self._stride = {}
+        self._interval = {}
 
-     # temporarily suppress numpy divide by 0 warning
-    numpy.seterr(divide='ignore')
-    self._bounds = {}
-    self._stride = {}
-    self._interval = {}
+        stride = [p for p in params if p.endswith('_stride')]
+        interval = [p for p in params if p.endswith('_interval')]
+        self._stride = dict([[p[:-5], params.pop(p)] for p in mean_args])
+        self._interval = dict([[p[:-4], params.pop(p)] for p in var_args])
 
-    stride = [p for p in params if p.endswith('_stride')]
-    interval = [p for p in params if p.endswith('_interval')]
-    self._stride = dict([[p[:-5], params.pop(p)] for p in mean_args])
-    self._interval = dict([[p[:-4], params.pop(p)] for p in var_args])
+        super(UniformIntervals, self).__init__(**params)
 
-    self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
-                          for bnd in self._bounds.values()])
-    self._norm = numpy.exp(self._lognorm)
+        self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
+                             for bnd in self._bounds.values()])
+        self._norm = numpy.exp(self._lognorm)
 
-    missing = set(self._mean.keys()) - set(params.keys())
-    if any(missing):
-        raise ValueError("means provided for unknow params {}".format(
-            ', '.join(missing)))
-    missing = set(self._var.keys()) - set(params.keys())
-    if any(missing):
-        raise ValueError("vars provided for unknow params {}".format(
-            ', '.join(missing)))
-    # set default mean/var for params not specified
-    self._stride.update(dict([[p, 0.]
-        for p in params if p not in self._mean]))
-    self._interval.update(dict([[p, 1.]
-        for p in params if p not in self._var]))
+        missing = set(self._mean.keys()) - set(params.keys())
+        if any(missing):
+            raise ValueError("means provided for unknow params {}".format(
+                             ', '.join(missing)))
+        missing = set(self._var.keys()) - set(params.keys())
+        if any(missing):
+            raise ValueError("vars provided for unknow params {}".format(
+                             ', '.join(missing)))
+        # set default mean/var for params not specified
+        self._stride.update(dict([[p, 0.]
+            for p in params if p not in self._mean]))
+        self._interval.update(dict([[p, 1.]
+            for p in params if p not in self._var]))
 
-    numpy.seterr(divide='warn')
+        numpy.seterr(divide='warn')
 
     @property
     def norm(self):
