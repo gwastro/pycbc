@@ -40,7 +40,7 @@ from pycbc import DYN_RANGE_FAC
 from pycbc.io import FieldArray
 from pycbc.types import FrequencySeries
 from pycbc.waveform import parameters as wfparams
-
+from pycbc.inject import InjectionSet
 
 class BaseInferenceFile(h5py.File):
     """Base class for all inference hdf files.
@@ -211,6 +211,114 @@ class BaseInferenceFile(h5py.File):
             Any other keyword args the sampler needs to write the posterior.
         """
         pass
+
+    @abstractmethod
+    def samples_from_cli(self, opts, extra_opts=None, parameters=None,
+                         **kwargs):
+        """This should load samples using the given command-line options.
+        """
+        pass
+
+    @staticmethod
+    def extra_args_parser(parser=None, skip_args=None, **kwargs):
+        """Provides a parser that can be used to parse sampler-specific command
+        line options for loading samples.
+
+        This is optional. Inheriting classes may override this if they want to
+        implement their own options.
+
+        Parameters
+        ----------
+        parser : argparse.ArgumentParser, optional
+            Instead of creating a parser, add arguments to the given one. If
+            none provided, will create one.
+        skip_args : list, optional
+            Don't include the given options. Options should be given as the
+            option string, minus the '--'. For example,
+            ``skip_args=['iteration']`` would cause the ``--iteration``
+            argument not to be included.
+        \**kwargs :
+            All other keyword arguments are passed to the parser that is
+            created.
+
+        Returns
+        -------
+        parser : argparse.ArgumentParser or None
+            If this class adds extra arguments, an argument parser with the
+            extra arguments. Otherwise, will just return whatever was passed
+            for the ``parser`` argument (default is None).
+        actions : list of argparse.Action
+            List of the actions that were added.
+        """
+        return parser, []
+
+    @staticmethod
+    def _get_optional_args(args, opts, err_on_missing=False, **kwargs):
+        """Convenience function to retrieve arguments from an argparse
+        namespace.
+
+        Parameters
+        ----------
+        args : list of str
+            List of arguments to retreive.
+        opts : argparse.namespace
+            Namespace to retreive arguments for.
+        err_on_missing : bool, optional
+            If an argument is not found in the namespace, raise an
+            AttributeError. Otherwise, just pass. Default is False.
+        \**kwargs :
+            All other keyword arguments are added to the return dictionary.
+            Any keyword argument that is the same as an argument in ``args``
+            will override what was retrieved from ``opts``.
+
+        Returns
+        -------
+        dict :
+            Dictionary mapping arguments to values retrieved from ``opts``. If
+            keyword arguments were provided, these will also be included in the
+            dictionary.
+        """
+        parsed = {}
+        for arg in args:
+            try:
+                parsed[arg] = getattr(opts, arg)
+            except AttributeError as e:
+                if err_on_missing:
+                    raise AttributeError(e)
+                else:
+                    continue
+        parsed.update(kwargs)
+        return parsed
+
+    def samples_from_cli(self, opts, parameters=None, **kwargs):
+        """Reads samples from the given command-line options.
+
+        Parameters
+        ----------
+        opts : argparse Namespace
+            The options with the settings to use for loading samples (the sort
+            of thing returned by ``ArgumentParser().parse_args``).
+        parameters : (list of) str, optional
+            A list of the parameters to load. If none provided, will try to
+            get the parameters to load from ``opts.parameters``.
+        \**kwargs :
+            All other keyword arguments are passed to ``read_samples``. These
+            will override any options with the same name.
+
+        Returns
+        -------
+        FieldArray :
+            Array of the loaded samples.
+        """
+        if parameters is None and opts.parameters is None:
+            parameters = self.variable_args
+        elif parameters is None:
+            parameters = opts.parameters
+        # parse optional arguments
+        _, extra_actions = self.extra_args_parser()
+        extra_args = [act.dest for act in extra_actions]
+        kwargs = self._get_optional_args(extra_args, opts, **kwargs)
+        return self.read_samples(parameters, **kwargs)
 
     @property
     def static_params(self):
@@ -415,7 +523,6 @@ class BaseInferenceFile(h5py.File):
         if group is None:
             group = subgroup
         else:
-            print group, subgroup
             group = '/'.join([group, subgroup])
         for ifo in psds:
             self[group.format(ifo=ifo)] = psds[ifo]
@@ -436,6 +543,20 @@ class BaseInferenceFile(h5py.File):
                 super(BaseInferenceFile, self).copy(fp, self.injections_group)
         except IOError:
             logging.warn("Could not read %s as an HDF file", injection_file)
+
+    def read_injections(self):
+        """Gets injection parameters.
+
+        Returns
+        -------
+        FieldArray
+            Array of the injection parameters.
+        """
+        injset = InjectionSet(self.filename, hdf_group=self.injections_group)
+        injections = injset.table.view(FieldArray)
+        # close the new open filehandler to self
+        injset._injhandler.filehandler.close()
+        return injections
 
     def write_command_line(self):
         """Writes command line to attributes.
@@ -633,27 +754,27 @@ class BaseInferenceFile(h5py.File):
                 other.attrs['thin_end'] = None
         return other
 
+    @classmethod
+    def write_kwargs_to_attrs(cls, attrs, **kwargs):
+        """Writes the given keywords to the given ``attrs``.
 
-def write_kwargs_to_hdf_attrs(attrs, **kwargs):
-    """Writes the given keywords to the given ``attrs``.
+        If any keyword argument points to a dict, the keyword will point to a
+        list of the dict's keys. Each key is then written to the attrs with its
+        corresponding value.
 
-    If any keyword argument points to a dict, the keyword will point to a
-    list of the dict's keys. Each key is then written to the attrs with its
-    corresponding value.
-
-    Parameters
-    ----------
-    attrs : an HDF attrs
-        Can be either the ``attrs`` of the hdf file, or any group in a file.
-    \**kwargs :
-        The keywords to write.
-    """
-    for arg, val in kwargs.items():
-        if val is None:
-            val = str(None)
-        if isinstance(val, dict):
-            attrs[arg] = val.keys()
-            # just call self again with the dict as kwargs
-            write_kwargs_to_hdf_attrs(attrs, **val)
-        else:
-            attrs[arg] = val
+        Parameters
+        ----------
+        attrs : an HDF attrs
+            The ``attrs`` of an hdf file or a group in an hdf file.
+        \**kwargs :
+            The keywords to write.
+        """
+        for arg, val in kwargs.items():
+            if val is None:
+                val = str(None)
+            if isinstance(val, dict):
+                attrs[arg] = val.keys()
+                # just call self again with the dict as kwargs
+                cls.write_kwargs_to_attrs(attrs, **val)
+            else:
+                attrs[arg] = val

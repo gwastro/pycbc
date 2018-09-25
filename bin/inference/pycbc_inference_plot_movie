@@ -41,7 +41,7 @@ from matplotlib import pyplot
 import pycbc.results
 from pycbc import transforms
 
-from gwin import (__version__, option_utils)
+from gwin import (__version__, option_utils, io)
 from gwin.results.scatter_histograms import (create_multidim_plot,
                                              get_scale_fac)
 
@@ -91,12 +91,12 @@ def integer_logspace(start, end, num):
     out[start_idx:len(x)+start_idx] = x
     return out
 
-parser = argparse.ArgumentParser()
-
+# we won't add thinning arguments nor iteration, since this is determined by
+# the frame number/step options
+skip_args = ['thin-start', 'thin-interval', 'thin-end', 'iteration']
+parser = io.ResultsArgumentParser(skip_args=skip_args)
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
-parser.add_argument("--input-file", type=str, required=True,
-                    help="Results file path.")
 parser.add_argument("--start-sample", type=int, default=1,
                     help="Start sample for the first frame. Note: sample "
                          "counting starts from 1. Default is 1.")
@@ -117,10 +117,6 @@ parser.add_argument("--log-steps", action="store_true", default=False,
 parser.add_argument("--output-prefix", type=str, required=True,
                     help="Output path and prefix for the frame files "
                          "(without extension).")
-parser.add_argument("--parameters", type=str, nargs="+",
-                    metavar="PARAM[:LABEL]",
-                    help="Name of parameters to plot in same format "
-                         "as for pycbc_inference_plot_posterior.")
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--dpi', type=int, default=200,
                     help='Set the dpi for each frame; default is 200')
@@ -144,10 +140,12 @@ option_utils.add_density_option_group(parser)
 opts = parser.parse_args()
 pycbc.init_logging(opts.verbose)
 
+if len(opts.input_file) > 1:
+    raise ValueError("this program can only plot one file at a time")
+
 # Get data
 logging.info('Loading parameters')
-fp, parameters, labels, _ = option_utils.results_from_cli(opts,
-                            load_samples=False)
+fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
 
 if opts.end_sample is None:
     opts.end_sample = fp.niterations
@@ -190,31 +188,29 @@ else:
     raise ValueError("At least one of frame-number or frame-step must be "
                      "provided.")
 
-# get samples from InferenceFile
+# get the samples
 file_parameters, trans = transforms.get_common_cbc_transforms(
                                          parameters, fp.variable_params)
-samples = fp.read_samples(file_parameters, thin_start=thin_start,
-                          thin_interval=thinint, thin_end=thin_end,
-                          iteration=itermask, flatten=False)
+samples = fp.samples_from_cli(opts, file_parameters, thin_start=thin_start,
+                              thin_interval=thinint, thin_end=thin_end,
+                              iteration=itermask, flatten=False)
 samples = transforms.apply_transforms(samples, trans)
 if samples.ndim > 2:
-    # multi-tempered samplers will return a 3 dims, so flatten
+    # multi-tempered samplers will return 3 dims, so flatten
     _, ii, jj = samples.shape
     samples = samples.reshape((ii, jj))
 
 # Get z-values
 if opts.z_arg is not None:
-    logging.info("Getting model stats")
-    z_arg, zlbl = option_utils.parse_parameters_opt([opts.z_arg])
-    z_arg = z_arg[0]
-    zlbl = zlbl[z_arg]
-    model_stats = fp.read_model_stats(thin_start=thin_start,
-        thin_end=thin_end, thin_interval=thinint, iteration=itermask,
-        flatten=False)
-    if model_stats.ndim > 2:
-        _, ii, jj = model_stats.shape
-        model_stats = model_stats.reshape((ii, jj))
-    zvals = model_stats[z_arg]
+    logging.info("Getting samples for colorbar")
+    zsamples = fp.samples_from_cli(opts, opts.z_arg, thin_start=thin_start,
+                                   thin_interval=thinint, thin_end=thin_end,
+                                   iteration=itermask, flatten=False)
+    zlbl = opts.z_arg_labels[opts.z_arg]
+    if zsamples.ndim > 2:
+        _, ii, jj = zsamples.shape
+        zsamples = zsamples.reshape((ii, jj))
+    zvals = zsamples[opts.z_arg]
     show_colorbar = True
     # Set common min and max for colorbar in all plots
     if opts.vmin is None:
@@ -236,10 +232,16 @@ fp.close()
 # get injection values if desired
 expected_parameters = {}
 if opts.plot_injection_parameters:
-    injections = option_utils.injections_from_cli(opts)
+    injections = io.injections_from_cli(opts)
     for p in parameters:
         # check that all of the injections are the same
-        unique_vals = numpy.unique(injections[p])
+        try:
+            vals = injections[p]
+        except NameError:
+            # injection doesn't have this parameter, skip
+            logging.warn("Could not find injection parameter {}".format(p))
+            continue
+        unique_vals = numpy.unique(vals)
         if unique_vals.size != 1:
             raise ValueError("More than one injection found! To use "
                 "plot-injection-parameters, there must be a single unique "
@@ -247,6 +249,7 @@ if opts.plot_injection_parameters:
                 "option to specify an expected parameter instead.")
         # passed: use the value for the expected
         expected_parameters[p] = unique_vals[0]
+
 # get expected parameter values from command line
 expected_parameters.update(option_utils.expected_parameters_from_cli(opts))
 expected_parameters_color = opts.expected_parameters_color
