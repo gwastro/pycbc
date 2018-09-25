@@ -7,51 +7,93 @@ class UniformDiscreteIntervals(bounded.BoundedDist):
 def __init__(self, **params):
     super(UniformDiscreteIntervals, self).__init__(**params)
 
-"""
-def __init__(self, **params):
-    self._bounds = {}
-    self._stride = {}
-    self._interval = {}
-#    self._norm = (1.0 - bnd[0]) / (bnd[1] - bnd[0] + 1.0)
-#    self._log_norm = numpy.log(self._norm)
-    self._stride = [p for p in params if p.endswith('_stride')]
-    self._interval = [p for p in params if p.endswith('_interval')]
+     # temporarily suppress numpy divide by 0 warning
+        numpy.seterr(divide='ignore')
+        self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
+                                    for bnd in self._bounds.values()])
+        self._norm = numpy.exp(self._lognorm)
+        numpy.seterr(divide='warn')
 
-#    super(UniformDiscreteIntervals, self).__init__(**params)
-    print "Hello World"
-    print self._stride
-    print self._interval
-    print self._bounds[params][0]
-    print self._bounds[params][1]
-    for p,bnds in self._bounds.items():
-        a, b = bnds
+    @property
+    def norm(self):
+        return self._norm
 
-#    super(UniformDiscreteIntervals, self).__init__(**params)
-#def norm(self):
-#    return self._norm
+    @property
+    def lognorm(self):
+        return self._lognorm
 
-#def log_norm(self):
-#    return self._log_norm
+    def _pdf(self, **kwargs):
+        """Returns the pdf at the given values. The keyword arguments must
+        contain all of parameters in self's params. Unrecognized arguments are
+        ignored.
+        """
+        if kwargs in self:
+            return self._norm
+        else:
+            return 0.
 
-@property
-def stride(self):
-    return self._stride
+    def _logpdf(self, **kwargs):
+        """Returns the log of the pdf at the given values. The keyword
+        arguments must contain all of parameters in self's params. Unrecognized
+        arguments are ignored.
+        """
+        if kwargs in self:
+            return self._lognorm
+        else:
+            return -numpy.inf
 
-@property
-def interval(self):
-    return self._interval
 
-def rvs(self, size=1, param=None):
-    if param is not None:
-        dtype = [(param, float)]
-    else:
-        dtype = [(p, float) for p in self.params]
+    def rvs(self, size=1, param=None):
+        """Gives a set of random values drawn from this distribution.
+        Parameters
+        ----------
+        size : {1, int}
+            The number of values to generate; default is 1.
+        param : {None, string}
+            If provided, will just return values for the given parameter.
+            Otherwise, returns random values for each parameter.
+        Returns
+        -------
+        structured array
+            The random values in a numpy structured array. If a param was
+            specified, the array will only have an element corresponding to the
+            given parameter. Otherwise, the array will have an element for each
+            parameter in self's params.
+        """
+        if param is not None:
+            dtype = [(param, float)]
+        else:
+            dtype = [(p, float) for p in self.params]
+        arr = numpy.zeros(size, dtype=dtype)
+        for (p,_) in dtype:
+            arr[p] = numpy.random.uniform(self._bounds[p][0],
+                                        self._bounds[p][1],
+                                        size=size)
+        return arr
 
-    arr = numpy.zeros(size, dtype=dtype)
-    for (p,_) in dtype:
-        x = numpy.arange(self._bounds[p][0], self._bounds[p][1],
-                         self._stride + self._interval)
-        arr[p] = numpy.random.uniform(x, x + self._stride, size=size)
-    return arr
-"""
+    @classmethod
+    def from_config(cls, cp, section, variable_args):
+        """Returns a distribution based on a configuration file. The parameters
+        for the distribution are retrieved from the section titled
+        "[`section`-`variable_args`]" in the config file.
+        Parameters
+        ----------
+        cp : pycbc.workflow.WorkflowConfigParser
+            A parsed configuration file that contains the distribution
+            options.
+        section : str
+            Name of the section in the configuration file.
+        variable_args : str
+            The names of the parameters for this distribution, separated by
+            ``VARARGS_DELIM``. These must appear in the "tag" part
+            of the section header.
+        Returns
+        -------
+        Uniform
+            A distribution instance from the pycbc.inference.prior module.
+        """
+        return super(UniformDiscreteIntervals, cls).from_config(cp, section, variable_args,
+                     bounds_required=True)
+
+
 __all__ = ['UniformDiscreteIntervals']
