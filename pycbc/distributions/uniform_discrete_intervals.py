@@ -1,5 +1,5 @@
 import numpy
-from pycbc.distributions import uniform
+from pycbc.distributions import bounded
 
 class UniformDiscreteIntervals(bounded.BoundedDist):
     """
