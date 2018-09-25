@@ -35,7 +35,10 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.types import MultiDetOptionAppendAction
 from pycbc.workflow import WorkflowConfigParser
 
-from gwin import (__version__, workflow as inffu)
+from pycbc import __version__
+
+# FIXME see https://github.com/gwastro/pycbc/issues/2349
+# import gwin.workflow as inffu
 
 
 def to_file(path, ifo=None):
