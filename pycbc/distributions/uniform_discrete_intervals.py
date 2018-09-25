@@ -9,6 +9,12 @@ def __init__(self, **params):
 
      # temporarily suppress numpy divide by 0 warning
     numpy.seterr(divide='ignore')
+
+    stride = [p for p in params if p.endswith('_stride')]
+    interval = [p for p in params if p.endswith('_interval')]
+    self._stride = dict([[p[:-5], params.pop(p)] for p in mean_args])
+    self._interval = dict([[p[:-4], params.pop(p)] for p in var_args])
+
     self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
                           for bnd in self._bounds.values()])
     self._norm = numpy.exp(self._lognorm)
@@ -21,6 +27,14 @@ def __init__(self, **params):
     @property
     def lognorm(self):
         return self._lognorm
+
+    @property
+    def stride(self):
+        return self._stride
+
+    @property
+    def interval(self):
+        return self._interval
 
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
@@ -66,9 +80,14 @@ def __init__(self, **params):
             dtype = [(p, float) for p in self.params]
         arr = numpy.zeros(size, dtype=dtype)
         for (p,_) in dtype:
+            dx = self._interval[p] + self._stride[p]
+            x = numpy.arange(self._bounds[p][0], self._bounds[p][1],
+                             dx)
+            arr[p] = numpy.random.uniform(x, x self._interval[p])
+
             arr[p] = numpy.random.uniform(self._bounds[p][0],
-                                        self._bounds[p][1],
-                                        size=size)
+                                          self._bounds[p][1],
+                                          size=size)
         return arr
 
     @classmethod
