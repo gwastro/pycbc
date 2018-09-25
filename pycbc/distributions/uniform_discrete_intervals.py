@@ -22,11 +22,11 @@ class UniformIntervals(bounded.BoundedDist):
                              for bnd in self._bounds.values()])
         self._norm = numpy.exp(self._lognorm)
 
-        missing = set(self._mean.keys()) - set(params.keys())
+        missing = set(self._stride.keys()) - set(params.keys())
         if any(missing):
             raise ValueError("stride provided for unknow params {}".format(
                              ', '.join(missing)))
-        missing = set(self._var.keys()) - set(params.keys())
+        missing = set(self._interval.keys()) - set(params.keys())
         if any(missing):
             raise ValueError("interval provided for unknow params {}".format(
                              ', '.join(missing)))
