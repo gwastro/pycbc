@@ -30,9 +30,10 @@ from pycbc import (distributions, transforms, fft,
                    opt, psd, scheme, strain, weave)
 from pycbc.waveform import generator
 
-import gwin
-from gwin import (__version__, burn_in, option_utils)
-from gwin.calibration import Recalibrate
+import pycbc.inference
+from pycbc import __version__
+from pycbc.inference import (burn_in, option_utils)
+from pycbc.strain.calibration import Recalibrate
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -148,7 +149,7 @@ with ctx:
     logging.info("Setting up model")
 
     # construct class that will return the natural logarithm of likelihood
-    model = gwin.models.read_from_config(cp, **model_args)
+    model = pycbc.inference.models.read_from_config(cp, **model_args)
 
     logging.info("Setting up sampler")
 
@@ -156,7 +157,7 @@ with ctx:
     # Note: the pool is created at this point. This means that,
     # unless you enjoy angering your cluster admins,
     # NO SAMPLES FILE IO SHOULD BE DONE PRIOR TO THIS POINT!!!
-    sampler = gwin.sampler.load_from_config(
+    sampler = pycbc.inference.sampler.load_from_config(
         cp, model, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
 
     # set up output/checkpoint file
@@ -184,7 +185,7 @@ with ctx:
         init_prior = None
     else:
         # try to load an initial distribution from the config file
-        init_prior = gwin.sampler.initial_dist_from_config(cp)
+        init_prior = pycbc.inference.sampler.initial_dist_from_config(cp)
 
     sampler.set_initial_conditions(initial_distribution=init_prior,
         samples_file=samples_file)
