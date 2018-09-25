@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-"""I/O utilities for GWIn
+"""I/O utilities for pycbc inference
 """
 
 from __future__ import absolute_import
@@ -32,7 +32,7 @@ from pycbc.io.record import FieldArray, _numpy_function_lib
 from pycbc import transforms as _transforms
 from pycbc import waveform as _waveform
 
-from ..option_utils import (ParseLabelArg, ParseParametersArg)
+from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
 from .txt import InferenceTXTFile
@@ -486,11 +486,11 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         return opts, list(unknown)
 
     def add_results_option_group(self):
-        """Adds the options used to call gwin.io.results_from_cli function
-        to the parser.
+        """Adds the options used to call pycbc.io.inference.results_from_cli
+        function to the parser.
 
         These are options releated to loading the results from a run of
-        gwin, for purposes of plotting and/or creating tables.
+        pycbc_inference, for purposes of plotting and/or creating tables.
 
         Any argument strings included in the ``skip_args`` attribute will not
         be added.
