@@ -28,6 +28,7 @@ from __future__ import absolute_import
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 import logging
 import numpy
+from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
 
 from ..io import validate_checkpoint_files
@@ -76,36 +77,69 @@ def raw_samples_to_dict(sampler, raw_samples):
     return samples
 
 
-def raw_stats_to_dict(sampler, raw_stats):
-    """Converts an ND array of model stats to a dict.
+def blob_data_to_dict(stat_names, blobs):
+    """Converts list of "blobs" to a dictionary of model stats.
 
-    The ``raw_stats`` may either be a numpy array or a list. If the
-    former, the stats are assumed to have shape
-    ``[sampler.base_shape x] niterations x nstats, where nstats are the number
-    of stats returned by ``sampler.model.default_stats``. If the latter, the
-    list is cast to an array that is assumed to be the same shape as if an
-    array was given.
+    Samplers like ``emcee`` store the extra tuple returned by ``CallModel`` to
+    a list called blobs. This is a list of lists of tuples with shape
+    niterations x nwalkers x nstats, where nstats is the number of stats
+    returned by the model's ``default_stats``. This converts that list to a
+    dictionary of arrays keyed by the stat names.
 
     Parameters
     ----------
-    sampler : sampler instance
-        An instance of an MCMC sampler.
-    raw_stats : array or list
-        The stats to convert.
+    stat_names : list of str
+        The list of the stat names.
+    blobs : list of list of tuples
+        The data to convert.
 
     Returns
     -------
     dict :
         A dictionary mapping the model's ``default_stats`` to arrays of values.
-        Each array will have shape ``[sampler.base_shape x] niterations``.
+        Each array will have shape ``nwalkers x niterations``.
     """
-    if not isinstance(raw_stats, numpy.ndarray):
-        # Assume list. Since the model returns a tuple of values, this should
-        # be a [sampler.base_shape x] x niterations list of tuples. We can
-        # therefore immediately convert this to a ND array.
-        raw_stats = numpy.array(raw_stats)
-    return {stat: raw_stats[..., ii]
-            for (ii, stat) in enumerate(sampler.model.default_stats)}
+    # get the dtypes of each of the stats; we'll just take this from the
+    # first iteration and walker
+    dtypes = [type(val) for val in blobs[0][0]]
+    assert len(stat_names) == len(dtypes), (
+        "number of stat names must match length of tuples in the blobs")
+    # convert to an array; to ensure that we get the dtypes correct, we'll
+    # cast to a structured array
+    raw_stats = numpy.array(blobs, dtype=zip(stat_names, dtypes))
+    # transpose so that it has shape nwalkers x niterations
+    raw_stats = raw_stats.transpose()
+    # now return as a dictionary
+    return {stat: raw_stats[stat] for stat in stat_names}
+
+
+def get_optional_arg_from_config(cp, section, arg, dtype=str):
+    """Convenience function to retrieve an optional argument from a config
+    file.
+
+    Parameters
+    ----------
+    cp : ConfigParser
+        Open config parser to retrieve the argument from.
+    section : str
+        Name of the section to retrieve from.
+    arg : str
+        Name of the argument to retrieve.
+    dtype : datatype, optional
+        Cast the retrieved value (if it exists) to the given datatype. Default
+        is ``str``.
+
+    Returns
+    -------
+    val : None or str
+        If the argument is present, the value. Otherwise, None.
+    """
+    if cp.has_option(section, arg):
+        val = dtype(cp.get(section, arg))
+    else:
+        val = None
+    return val
+
 
 #
 # =============================================================================
@@ -436,6 +470,62 @@ class BaseMCMC(object):
         logging.info("Clearing samples from memory")
         self.clear_samples()
 
+    @staticmethod
+    def checkpoint_from_config(cp, section):
+        """Gets the checkpoint interval from the given config file.
+
+        This looks for 'checkpoint-interval' in the section.
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            Open config parser to retrieve the argument from.
+        section : str
+            Name of the section to retrieve from.
+
+        Return
+        ------
+        int or None :
+            The checkpoint interval, if it is in the section. Otherw
+        """
+        return get_optional_arg_from_config(cp, section, 'checkpoint-interval',
+                                            dtype=int)
+
+    def set_target_from_config(self, cp, section):
+        """Sets the target using the given config file.
+
+        This looks for 'niterations' to set the ``target_niterations``, and
+        'effective-nsamples' to set the ``target_eff_nsamples``.
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            Open config parser to retrieve the argument from.
+        section : str
+            Name of the section to retrieve from.
+        """
+        if cp.has_option(section, "niterations"):
+            niterations = int(cp.get(section, "niterations"))
+        else:
+            niterations = None
+        if cp.has_option(section, "effective-nsamples"):
+            nsamples = int(cp.get(section, "effective-nsamples"))
+        else:
+            nsamples = None
+        self.set_target(niterations=niterations, eff_nsamples=nsamples)
+
+    def set_burn_in_from_config(self, cp):
+        """Sets the burn in class from the given config file.
+
+        If no burn-in section exists in the file, then this just set the
+        burn-in class to None.
+        """
+        try:
+            bit = self.burn_in_class.from_config(cp, self)
+        except ConfigParser.Error:
+            bit = None
+        self.set_burn_in(bit)
+
     @abstractmethod
     def compute_acf(cls, filename, **kwargs):
         """A method to compute the autocorrelation function of samples in the
@@ -519,25 +609,31 @@ class MCMCAutocorrSupport(object):
         return acfs
 
     @classmethod
-    def compute_acl(cls, filename, start_index=None, end_index=None):
+    def compute_acl(cls, filename, start_index=None, end_index=None,
+                    min_nsamples=10):
         """Computes the autocorrleation length for all model params in the
         given file.
 
         Parameter values are averaged over all walkers at each iteration.
-        The ACL is then calculated over the averaged chain. If the returned ACL
-        is `inf`,  will default to the number of current iterations.
+        The ACL is then calculated over the averaged chain. If an ACL cannot
+        be calculated because there are not enough samples, it will be set
+        to ``inf``.
 
         Parameters
         -----------
         filename : str
             Name of a samples file to compute ACLs for.
-        start_index : {None, int}
+        start_index : int, optional
             The start index to compute the acl from. If None, will try to use
             the number of burn-in iterations in the file; otherwise, will start
             at the first sample.
-        end_index : {None, int}
+        end_index : int, optional
             The end index to compute the acl to. If None, will go to the end
             of the current iteration.
+        min_nsamples : int, optional
+            Require a minimum number of samples to compute an ACL. If the
+            number of samples per walker is less than this, will just set to
+            ``inf``. Default is 10.
 
         Returns
         -------
@@ -551,10 +647,8 @@ class MCMCAutocorrSupport(object):
                     param, thin_start=start_index, thin_interval=1,
                     thin_end=end_index, flatten=False)[param]
                 samples = samples.mean(axis=0)
-                # if < 10 samples, just set to inf
-                # Note: this should be done inside of pycbc's autocorrelation
-                # function
-                if samples.size < 10:
+                # if < min number of samples, just set to inf
+                if samples.size < min_nsamples:
                     acl = numpy.inf
                 else:
                     acl = autocorrelation.calculate_acl(samples)

@@ -22,14 +22,14 @@ from __future__ import absolute_import
 from .base import (initial_dist_from_config, create_new_output_file)
 # from .kombine import KombineSampler
 from .emcee import EmceeEnsembleSampler
-# from .emcee_pt import EmceePTSampler
+from .emcee_pt import EmceePTSampler
 # from .mcmc import MCMCSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
     # KombineSampler,
     EmceeEnsembleSampler,
-    # EmceePTSampler,
+    EmceePTSampler,
     # MCMCSampler,
 )}
 
