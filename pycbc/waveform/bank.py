@@ -42,6 +42,10 @@ import pycbc.io
 def sigma_cached(self, psd):
     """ Cache sigma calculate for use in tandem with the FilterBank class
     """
+    if not hasattr(self, '_sigmasq'):
+        from pycbc.opt import LimitedSizeDict
+        self._sigmasq = LimitedSizeDict(size_limit=2**5)
+
     key = id(psd)
     if not hasattr(psd, '_sigma_cached_key'):
         psd._sigma_cached_key = {}
@@ -579,7 +583,6 @@ class LiveFilterBank(TemplateBank):
 
         # Add sigmasq as a method of this instance
         htilde.sigmasq = types.MethodType(sigma_cached, htilde)
-        htilde._sigmasq = {}
 
         htilde.id = self.id_from_hash(hash((htilde.params.mass1,
                                       htilde.params.mass2,
