@@ -16,10 +16,11 @@
 
 """
 This module defines optimization flags and determines hardware features that some
-other modules and packages may use.
+other modules and packages may use in addition to some optimized utilities.
 """
 import os, sys
 import logging
+from collections import OrderedDict
 import pycbc
 
 # Work around different Python versions to get runtime
@@ -192,3 +193,20 @@ def verify_optimization_options(opt, parser):
             sys.exit(1)
 
         logging.info("Pinned to CPUs %s " % requested_cpus)
+
+class LimitedSizeDict(OrderedDict):
+    """ Fixed sized dict for FIFO caching"""
+
+    def __init__(self, *args, **kwds):
+        self.size_limit = kwds.pop("size_limit", None)
+        OrderedDict.__init__(self, *args, **kwds)
+        self._check_size_limit()
+
+    def __setitem__(self, key, value):
+        OrderedDict.__setitem__(self, key, value)
+        self._check_size_limit()
+
+    def _check_size_limit(self):
+        if self.size_limit is not None:
+            while len(self) > self.size_limit:
+                self.popitem(last=False)
