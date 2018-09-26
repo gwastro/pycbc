@@ -14,13 +14,8 @@ class UniformIntervals(bounded.BoundedDist):
         stride_args = [p for p in params if p.endswith('_stride')]
         interval_args = [p for p in params if p.endswith('_interval')]
 
-        print stride_args
-        print interval_args
         self._stride = dict([[p, params.pop(p)] for p in stride_args])
         self._interval = dict([[p, params.pop(p)] for p in interval_args])
-
-        print self._stride
-        print self._interval
 
         super(UniformIntervals, self).__init__(**params)
 
