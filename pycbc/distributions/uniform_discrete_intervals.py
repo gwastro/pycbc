@@ -24,8 +24,6 @@ class UniformIntervals(bounded.BoundedDist):
         self._norm = numpy.exp(self._lognorm)
 
         missing = set(self._stride.keys()) - set(params.keys())
-        print self._stride.keys()
-        print set(params.keys())
 
         if any(missing):
             raise ValueError("stride provided for unknow params {}".format(
@@ -103,8 +101,12 @@ class UniformIntervals(bounded.BoundedDist):
         arr = numpy.zeros(size, dtype=dtype)
         for (p,_) in dtype:
             dx = self._interval[p] + self._stride[p]
+            print dx
+            print self._interval[p]
+            print self._stride[p]
             x = numpy.arange(self._bounds[p][0], self._bounds[p][1],
                              dx)
+            print self._interval[p]
             arr[p] = numpy.random.uniform(x, x + self._interval[p])
 
         return arr
