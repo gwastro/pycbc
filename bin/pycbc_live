@@ -572,8 +572,12 @@ with ctx:
                       'email': 'tito.canton@ligo.org',
                       'created_gps': int(lal.GPSTimeNow()),
                       'status_intervals': status_intervals}
-            with open(args.output_status, 'w') as status_fp:
-                json.dump(status, status_fp)
+            try:
+                with open(args.output_status, 'w') as status_fp:
+                    json.dump(status, status_fp)
+            except IOError:
+                logging.error('I/O error writing status JSON file! '
+                              'Hopefully it works next time')
 
 if evnt.rank == 1:
     if args.fftw_output_float_wisdom_file:
