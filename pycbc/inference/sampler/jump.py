@@ -42,17 +42,3 @@ def get_jump_from_config(section, cp):
             kwds[key] = value
     return _jump_proposals[name](**kwds)
 
-class Jump(object):
-    def __init__(self):
-        pass
-
-    def propose(self, old_pos):
-        return new_pos
-
-class EmceeJump(MHMove):
-    def __init__(self, jump):
-        self.jump = jump
-
-    def get_p
-
-

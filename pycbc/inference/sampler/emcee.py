@@ -38,7 +38,7 @@ from .base_mcmc import (BaseMCMC, MCMCAutocorrSupport, raw_samples_to_dict,
 from ..burn_in import MCMCBurnInTests
 from pycbc.inference.io import EmceeFile
 from .. import models
-
+from . import jump as jumper
 
 #
 # =============================================================================
@@ -68,7 +68,8 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
     burn_in_class = MCMCBurnInTests
 
     def __init__(self, model, nwalkers, checkpoint_interval=None,
-                 logpost_function=None, nprocesses=1, use_mpi=False):
+                 logpost_function=None, nprocesses=1,
+                 use_mpi=False, jump=None):
 
         self.model = model
         # create a wrapper for calling the model
@@ -89,7 +90,7 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         self._nwalkers = nwalkers
         ndim = len(model.variable_params)
         self._sampler = emcee.EnsembleSampler(nwalkers, ndim, model_call,
-                                              pool=pool)
+                                              pool=pool, moves=jump)
         # emcee uses it's own internal random number generator; we'll set it
         # to have the same state as the numpy generator
         rstate = numpy.random.get_state()
@@ -123,7 +124,9 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         The returned array has shape ``nwalkers x niterations``.
         """
         stats = self.model.default_stats
-        return blob_data_to_dict(stats, self._sampler.blobs)
+        blobs = self._sampler.get_blobs()
+        blob_dict = {k: blobs[:,:,i].transpose() for i, k in enumerate(stats)}
+        return blob_dict
 
     def clear_samples(self):
         """Clears the samples and stats from memory.
@@ -133,7 +136,6 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         self._itercounter = 0
         # now clear the chain
         self._sampler.reset()
-        self._sampler.clear_blobs()
 
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.
@@ -156,10 +158,9 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         pos = self._pos
         if pos is None:
             pos = self._p0
-        res = self._sampler.run_mcmc(pos, niterations)
-        p, _, _ = res[0], res[1], res[2]
-        # update the positions
-        self._pos = p
+
+        state = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        self._pos = state.coords
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
@@ -195,13 +196,17 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
             "name in section [sampler] must match mine")
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
+
+        # get the jump proposal if selected
+        jump_proposer = jumper.get_jump_from_config(section, cp)
+
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         # get the logpost function
         lnpost = get_optional_arg_from_config(cp, section, 'logpost-function')
         obj = cls(model, nwalkers, checkpoint_interval=checkpoint_interval,
                   logpost_function=lnpost, nprocesses=nprocesses,
-                  use_mpi=use_mpi)
+                  jump=jump_proposer, use_mpi=use_mpi)
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
