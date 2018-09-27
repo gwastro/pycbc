@@ -32,7 +32,7 @@ from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
 from .base_multitemper import (MultiTemperedSupport,
                                MultiTemperedAutocorrSupport)
 from ..burn_in import MultiTemperedMCMCBurnInTests
-from pycbc.io.inference import EmceePTFile
+from pycbc.inference.io import EmceePTFile
 from .. import models
 
 
