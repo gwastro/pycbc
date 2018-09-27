@@ -39,8 +39,7 @@ import pycbc.version
 from pycbc.results import metadata
 
 from pycbc import __version__
-from pycbc.io import inference as io
-from pycbc.inference import option_utils
+from pycbc.inference import (option_utils, io)
 
 from pycbc.results.scatter_histograms import create_multidim_plot
 
