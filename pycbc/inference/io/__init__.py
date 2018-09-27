@@ -486,7 +486,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         return opts, list(unknown)
 
     def add_results_option_group(self):
-        """Adds the options used to call pycbc.io.inference.results_from_cli
+        """Adds the options used to call pycbc.inference.io.results_from_cli
         function to the parser.
 
         These are options releated to loading the results from a run of

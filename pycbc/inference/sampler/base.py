@@ -25,6 +25,8 @@
 Defines the base sampler class to be inherited by all samplers.
 """
 
+from __future__ import absolute_import
+
 from abc import ABCMeta, abstractmethod, abstractproperty
 import os
 import numpy
@@ -34,7 +36,7 @@ from pycbc.filter import autocorrelation
 import h5py
 import logging
 
-from pycbc.io.inference import validate_checkpoint_files
+from pycbc.inference.io import validate_checkpoint_files
 
 #
 # =============================================================================
