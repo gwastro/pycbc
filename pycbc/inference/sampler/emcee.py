@@ -36,7 +36,7 @@ from .base import BaseSampler
 from .base_mcmc import (BaseMCMC, MCMCAutocorrSupport, raw_samples_to_dict,
                         blob_data_to_dict, get_optional_arg_from_config)
 from ..burn_in import MCMCBurnInTests
-from pycbc.io.inference import EmceeFile
+from pycbc.inference.io import EmceeFile
 from .. import models
 
 
