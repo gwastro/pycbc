@@ -511,7 +511,7 @@ pycbc.init_logging(args.verbose, format=log_format)
 if args.log_file:
     # This assumes that all processes are writing to the same file.
     # This could be changed if that isn't the case
-    comm = MPI.COMM_WORLD
+    comm = mpi.COMM_WORLD
     if comm.rank > 0:
         # Essentially only the master process rotates log files
         interval = 10000000000000
