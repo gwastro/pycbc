@@ -518,10 +518,12 @@ if args.log_file:
     else:
         interval = args.log_file_rotate_interval
     
+    logging.root.removeHandler(logging.root.handlers[0])
     handler = MPIRotatingFileHandler(args.log_file,
                                      interval=interval,
                                      compress_logs=args.compress_log_files,
                                      archive_dir=args.log_files_archive_dir)
+    handler.setFormatter(log_format)
     logging.getLogger().addHandler(handler)
 
 ctx = scheme.from_cli(args)
