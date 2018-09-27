@@ -1,7 +1,8 @@
 import numpy
+from pycbc.distributions import uniform
 from pycbc.distributions import bounded
 
-class UniformIntervals(bounded.BoundedDist):
+class UniformIntervals(uniform.Uniform):
     name = 'uniform_intervals'
 
     def __init__(self, **params):
@@ -9,70 +10,66 @@ class UniformIntervals(bounded.BoundedDist):
         numpy.seterr(divide='ignore')
         self._bounds = {}
         self._stride = {}
-        self._interval = {}
 
         stride_args = [p for p in params if p.endswith('_stride')]
-        interval_args = [p for p in params if p.endswith('_interval')]
 
         self._stride = dict([[p.split("_stride")[0], params.pop(p)] for p in stride_args])
-        self._interval = dict([[p.split("_interval")[0], params.pop(p)] for p in interval_args])
 
         super(UniformIntervals, self).__init__(**params)
 
-        self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
-                             for bnd in self._bounds.values()])
-        self._norm = numpy.exp(self._lognorm)
+        self._norm = self.norm()
+        self._lognorm = self.lognorm()
 
         missing = set(self._stride.keys()) - set(params.keys())
 
         if any(missing):
-            raise ValueError("stride provided for unknow params {}".format(
+            raise ValueError("stride provided for unknown params {}".format(
                              ', '.join(missing)))
-        missing = set(self._interval.keys()) - set(params.keys())
+        missing = set(self._width.keys()) - set(params.keys())
         if any(missing):
-            raise ValueError("interval provided for unknow params {}".format(
+            raise ValueError("width provided for unknown params {}".format(
                              ', '.join(missing)))
-        # set default mean/var for params not specified
+        # set default stride/width for params not specified
         self._stride.update(dict([[p, 0.]
             for p in params if p not in self._stride]))
-        self._interval.update(dict([[p, 1.]
-            for p in params if p not in self._interval]))
+        self._width.update(dict([[p, 1.]
+            for p in params if p not in self._width]))
 
         numpy.seterr(divide='warn')
 
     @property
-    def norm(self):
-        return self._norm
+    def norm(self, size=1):
+        return size * self._norm
 
     @property
-    def lognorm(self):
-        return self._lognorm
+    def lognorm(self, size=1):
+        return numpy.log(norm(size=size))
 
     @property
     def stride(self):
         return self._stride
 
     @property
-    def interval(self):
-        return self._interval
+    def width(self):
+        return self._width
 
-    def _pdf(self, **kwargs):
+    def _pdf(self, size=1, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
-        if kwargs in self:
-            return self._norm
+        if (kwargs % (self._width + self._stride)) in self:
+            return norm(size=size)
         else:
             return 0.
 
-    def _logpdf(self, **kwargs):
+    def _logpdf(self, size=1, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
         if kwargs in self:
-            return self._lognorm
+            return numpy.log(self._pdf(size=size))
         else:
             return -numpy.inf
 
@@ -98,16 +95,11 @@ class UniformIntervals(bounded.BoundedDist):
             dtype = [(param, float)]
         else:
             dtype = [(p, float) for p in self.params]
+
         arr = numpy.zeros(size, dtype=dtype)
         for (p,_) in dtype:
-            dx = self._interval[p] + self._stride[p]
-            print dx
-            print self._interval[p]
-            print self._stride[p]
-            x = numpy.arange(self._bounds[p][0], self._bounds[p][1],
-                             dx)
-            print self._interval[p]
-            arr[p] = numpy.random.uniform(x, x + self._interval[p])
+            x = [i for i in range(0, size)]
+            arr[p] = self._dist(size=size)[p] + self._bounds[p][0] + x * self._stride[p]
 
         return arr
 
