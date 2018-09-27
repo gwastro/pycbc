@@ -7,6 +7,7 @@ import shutil
 from stat import ST_MTIME
 
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
+from logging.handlers import TimedRotatingFileHandler
 from pycbc import fft, version, waveform, scheme, frame
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
