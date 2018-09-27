@@ -144,16 +144,17 @@ if options.filter_func_file:
 
 # Also consider values over the whole set
 # Signal recovery fraction
-srfn = numpy.sum((trig_params['match'] * trig_params['sigmasq'])**3.)
-srfd = numpy.sum((trig_params['sigmasq'])**3.)
+sigma = trig_params['sigmasq']**0.5
+srfn = numpy.sum((trig_params['match'] * sigma)**3.)
+srfd = numpy.sum(sigma**3.)
 
 f['sig_rec_fac'] = srfn / srfd
 f['eff_fitting_factor'] = (srfn / srfd)**(1./3.)
 mchirp, _ = pnutils.mass1_mass2_to_mchirp_eta(inj_params['mass1'],
                                               inj_params['mass2'])
 srfn_mcweighted = numpy.sum((trig_params['match'] * mchirp**(-5./6.) *\
-                             trig_params['sigmasq'])**3.)
-srfd_mcweighted = numpy.sum((mchirp**(-5./6.) * trig_params['sigmasq'])**3.)
+                             sigma)**3.)
+srfd_mcweighted = numpy.sum((mchirp**(-5./6.) * sigma)**3.)
 f['sig_rec_fac_chirp_mass_weighted'] = srfn_mcweighted / srfd_mcweighted
 f['eff_fitting_factor_chirp_mass_weighted'] = \
     (srfn_mcweighted / srfd_mcweighted)**(1./3.)
@@ -168,15 +169,15 @@ if options.filter_func_file:
         f['frac_points_within_bank'] = \
             num_filtered / float(len(inj_params['mass1']))
         filt_match = trig_params['match'][bool_arr]
-        filt_sigmasq = trig_params['sigmasq'][bool_arr]
-        srfn_filt = numpy.sum((filt_match * filt_sigmasq)**3.)
-        srfd_filt = numpy.sum(filt_sigmasq**3)
+        filt_sigma = trig_params['sigmasq'][bool_arr]**0.5
+        srfn_filt = numpy.sum((filt_match * filt_sigma)**3.)
+        srfd_filt = numpy.sum(filt_sigma**3)
         f['filtered_sig_rec_fac'] = srfn_filt / srfd_filt
         f['filtered_eff_fitting_factor'] = (srfn_filt / srfd_filt)**(1./3.)
         mchirp = mchirp[bool_arr]
         srfn_mcweighted = numpy.sum((filt_match * mchirp**(-5./6.) *\
-                                     filt_sigmasq)**3.)
-        srfd_mcweighted = numpy.sum((mchirp**(-5./6.) * filt_sigmasq)**3.)
+                                     filt_sigma)**3.)
+        srfd_mcweighted = numpy.sum((mchirp**(-5./6.) * filt_sigma)**3.)
         f['filtered_sig_rec_fac_chirp_mass_weighted'] = \
             srfn_mcweighted / srfd_mcweighted
         f['filtered_eff_fitting_factor_chirp_mass_weighted'] = \
