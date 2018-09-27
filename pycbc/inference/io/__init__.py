@@ -201,13 +201,15 @@ def validate_checkpoint_files(checkpoint_file, backup_file):
     try:
         check_integrity(checkpoint_file)
         checkpoint_valid = True
-    except (ValueError, KeyError, IOError):
+    except (ValueError, KeyError, IOError) as e:
+        print(e)
         checkpoint_valid = False
     # backup file
     try:
         check_integrity(backup_file)
         backup_valid = True
-    except (ValueError, KeyError, IOError):
+    except (ValueError, KeyError, IOError) as e:
+        print(e)
         backup_valid = False
     # check if there are any samples in the file; if not, we'll just start from
     # scratch
