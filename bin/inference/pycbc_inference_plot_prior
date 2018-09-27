@@ -23,11 +23,11 @@ import sys
 
 import numpy
 
-
 from matplotlib import use
 use('agg')
 from matplotlib import pyplot as plt
 
+import pycbc
 from pycbc import (distributions, results)
 from pycbc.workflow import WorkflowConfigParser
 
@@ -38,25 +38,29 @@ from pycbc.results.scatter_histograms import create_multidim_plot
 def cartesian(arrays):
     """ Returns a cartesian product from a list of iterables.
     """
-    return numpy.array([numpy.array(element) for element in itertools.product(*arrays)])
+    return numpy.array([numpy.array(element)
+                        for element in itertools.product(*arrays)])
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_inference_plot_prior [--options]",
+parser = argparse.ArgumentParser(
+    usage="pycbc_inference_plot_prior [--options]",
     description="Plots prior distributions.")
-
 # add input options
 parser.add_argument("--config-files", type=str, nargs="+", required=True,
-    help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
+                    help="A file parsable by "
+                         "pycbc.workflow.WorkflowConfigParser.")
 parser.add_argument("--sections", type=str, nargs="+", default=["prior"],
-    help="Name of section plus subsection with distribution configurations, eg. prior-mass1.")
-
+                    help="Name of section plus subsection with distribution "
+                         "configurations, eg. prior-mass1.")
 # add output options
+parser.add_argument("--nsamples", type=int, default=10000,
+                    help="The number of samples to draw from the prior for "
+                         "plotting.")
 parser.add_argument("--output-file", type=str, required=True,
-    help="Path to output plot.")
-
+                    help="Path to output plot.")
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
-    help="")
+                    help="")
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
 
@@ -64,11 +68,7 @@ parser.add_argument("--version", action="version", version=__version__,
 opts = parser.parse_args()
 
 # setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # read configuration file
 logging.info("Reading configuration files")
@@ -98,9 +98,11 @@ variable_params = sorted(variable_params)
 ndim = len(variable_params)
 
 # construct class that will return draws from the prior
+logging.info("Drawing samples")
 prior = distributions.JointDistribution(variable_params, *dists)
-samples = prior.rvs(10000)
+samples = prior.rvs(opts.nsamples)
 
+logging.info("Plotting")
 fig, axis_dict = create_multidim_plot(
     variable_params, samples,
     plot_marginal=True,
