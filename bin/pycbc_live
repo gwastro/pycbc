@@ -523,7 +523,8 @@ if args.log_file:
                                      interval=interval,
                                      compress_logs=args.compress_log_files,
                                      archive_dir=args.log_files_archive_dir)
-    handler.setFormatter(log_format)
+    fmt = logging.Formatter(log_format, None)
+    handler.setFormatter(fmt)
     logging.getLogger().addHandler(handler)
 
 ctx = scheme.from_cli(args)
