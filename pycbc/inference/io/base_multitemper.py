@@ -25,11 +25,9 @@
 """
 
 from __future__ import absolute_import
-
 import argparse
-
 from .base_mcmc import MCMCIO
-
+import numpy
 
 class ParseTempsArg(argparse.Action):
     """Argparse action that will parse temps argument.
