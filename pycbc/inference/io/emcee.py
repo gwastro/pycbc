@@ -26,7 +26,7 @@
 
 from .base_hdf import BaseInferenceFile
 from .base_mcmc import MCMCIO
-
+import numpy
 
 class EmceeFile(MCMCIO, BaseInferenceFile):
     """Class to handle file IO for the ``emcee`` sampler."""
