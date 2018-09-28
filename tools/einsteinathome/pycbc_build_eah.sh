@@ -1070,7 +1070,7 @@ fi
 echo -e "[`date`] install pkgconfig and six beforehand"
 pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
 pip install `grep -w ^six requirements.txt||echo 'six>=1.9.0'`
-pip install matplotlib=='1.5.3'
+pip install matplotlib
 if $pyinstaller21_hacks; then
     echo -e "[`date`] install matplotlib beforehand"
     pip install `grep ^matplotlib== requirements.txt||echo matplotlib==1.4.3`
