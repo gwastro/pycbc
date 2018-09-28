@@ -35,11 +35,13 @@ from pycbc import waveform as _waveform
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
+from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
 
 filetypes = {
     EmceeFile.name: EmceeFile,
-    EmceePTFile.name: EmceePTFile
+    EmceePTFile.name: EmceePTFile,
+    PosteriorFile.name: PosteriorFile
 }
 
 
@@ -482,7 +484,8 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                 unknown.append(set(still_unknown))
         # the intersection of the unknowns are options not understood by
         # any of the files
-        unknown = set.intersection(*unknown)
+        if len(unknown) > 0:
+            unknown = set.intersection(*unknown)
         return opts, list(unknown)
 
     def add_results_option_group(self):
