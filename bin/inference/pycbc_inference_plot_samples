@@ -23,7 +23,6 @@ import logging
 from matplotlib import use
 use('agg')
 from matplotlib import pyplot as plt
-import numpy
 import pycbc
 from pycbc import (results, transforms)
 from pycbc import __version__
