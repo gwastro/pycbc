@@ -1,5 +1,13 @@
 #!/usr/bin/env python
+import gzip
+import time
+import glob
+import os
+import shutil
+from stat import ST_MTIME
+
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
+from logging.handlers import TimedRotatingFileHandler
 from pycbc import fft, version, waveform, scheme, frame
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
@@ -29,7 +37,7 @@ class LiveEventManager(object):
                        gracedb_testing=True,
                  ):
         self.path = output_path
-        
+
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
         self.size = self.comm.Get_size()
@@ -57,15 +65,15 @@ class LiveEventManager(object):
         if self.rank == 0:
             all_results = self.comm.gather(None, root=0)
             data_ends = [a[1] for a in all_results if a is not None]
-            results = [a[0] for a in all_results if a is not None]    
-        
+            results = [a[0] for a in all_results if a is not None]
+
             combined = {}
             for ifo in results[0]:
 
                 # check if any of the results returned invalid
-                try: 
+                try:
                     for r in results:
-                        if r[ifo] is False: 
+                        if r[ifo] is False:
                             raise ValueError
                 except ValueError:
                     continue
@@ -181,7 +189,7 @@ class LiveEventManager(object):
                     s = numpy.array(results[ifo]['snr'], ndmin=1)
                     c = numpy.array(results[ifo]['chisq'], ndmin=1)
                     nsnr = numpy.array(newsnr(s, c), ndmin=1) if len(s) > 0 else []
-                    
+
                     # loudest by newsnr
                     nloudest = numpy.argsort(nsnr)[::-1][0:store_loudest_index]
 
@@ -197,6 +205,157 @@ class LiveEventManager(object):
 
     def ingest(self, ifo, results):
         pass
+
+class MPIRotatingFileHandler(TimedRotatingFileHandler):
+    """Subclass of TimedRotatingFileHandler for PyCBC Live
+
+    In addition to TimedRotatingFileHandler's functionality this will move old
+    log files to some supplied archive directory (presumably NFS) and
+    optionally compress these old logs in the process. This also adds support
+    for MPI. This uses ideas from
+    https://gist.github.com/chengdi123000/42ec8ed2cbef09ee050766c2f25498cb
+    """
+
+    def __init__(self,
+                 filename,
+                 mode=mpi.MODE_WRONLY|mpi.MODE_CREATE|mpi.MODE_APPEND ,
+                 encoding='utf-8',
+                 delay=False,
+                 comm=mpi.COMM_WORLD,
+                 archive_dir=None,
+                 compress_logs=False,
+                 interval=60*60,
+                 backupCount=0,
+                 utc=False):
+        self.baseFilename = os.path.abspath(filename)
+        self.mode = mode
+        self.encoding = encoding
+        self.comm = comm
+        self.delay = delay
+        self.archive_dir = archive_dir
+        self.compress_logs = compress_logs
+        if delay:
+            #We don't open the stream, but we still need to call the
+            #Handler constructor to set level, formatter, lock etc.
+            logging.Handler.__init__(self)
+            self.stream = None
+        else:
+            logging.StreamHandler.__init__(self, self._open())
+
+        self.backupCount = backupCount
+        self.utc = utc
+        self.interval = interval
+        self.terminator = '\n'
+        self.suffix = "%Y-%m-%d_%H"
+        self.extMatch="^\d{4}-\d{2}-\d{2}_\d{2}"
+        if self.interval < 4000:
+            self.suffix += "-%M"
+            self.extMatch += "-\d{2}"
+        if self.interval < 100:
+            self.suffix += "-%S"
+            self.extMatch += "-\d{2}"
+        self.extMatch += "$"
+        self.when = "NONE"
+        if os.path.exists(filename):
+            t = os.stat(filename)[ST_MTIME]
+        else:
+            t = int(time.time())
+        self.rolloverAt = self.computeRollover(t)
+
+
+    def doRollover(self):
+        # get the time that this sequence started at and make it a TimeTuple
+        currentTime = int(time.time())
+        dstNow = time.localtime(currentTime)[-1]
+        t = self.rolloverAt - self.interval
+        if self.utc:
+            timeTuple = time.gmtime(t)
+        else:
+            timeTuple = time.localtime(t)
+            dstThen = timeTuple[-1]
+            if dstNow != dstThen:
+                if dstNow:
+                    addend = 3600
+                else:
+                    addend = -3600
+                timeTuple = time.localtime(t + addend)
+        dfn = self.baseFilename + "." + time.strftime(self.suffix, timeTuple)
+        if os.path.exists(dfn):
+            os.remove(dfn)
+        # Issue 18940: A file may not have been created if delay is True.
+        if os.path.exists(self.baseFilename):
+            os.rename(self.baseFilename, dfn)
+        if self.backupCount > 0:
+            for s in self.getFilesToDelete():
+                os.remove(s)
+        newRolloverAt = self.computeRollover(currentTime)
+        while newRolloverAt <= currentTime:
+            newRolloverAt = newRolloverAt + self.interval
+        #If DST changes and midnight or weekly rollover, adjust for this.
+        if (self.when == 'MIDNIGHT' or self.when.startswith('W')) and not self.utc:
+            dstAtRollover = time.localtime(newRolloverAt)[-1]
+            if dstNow != dstAtRollover:
+                if not dstNow:  # DST kicks in before next rollover, so we need to deduct an hour
+                    addend = -3600
+                else:           # DST bows out before next rollover, so we need to add an hour
+                    addend = 3600
+                newRolloverAt += addend
+        self.rolloverAt = newRolloverAt
+
+        old_log = dfn
+
+        # Compress file
+        if self.compress_logs:
+            with open(old_log) as log:
+                with gzip.open(old_log + '.gz', 'wb') as comp_log:
+                    comp_log.writelines(log)
+            os.remove(old_log)
+            old_log = old_log + '.gz'
+
+        # Archive file
+        if self.archive_dir:
+            shutil.move(old_log, os.path.join(self.archive_dir,
+                                              os.path.basename(old_log)))
+
+    def _open(self):
+        stream = mpi.File.Open( self.comm, self.baseFilename, self.mode )
+        stream.Set_atomicity(True)
+        return stream
+
+    def emit(self, record):
+        """
+        Emit a record.
+        If a formatter is specified, it is used to format the record.
+        The record is then written to the stream with a trailing newline.  If
+        exception information is present, it is formatted using
+        traceback.print_exception and appended to the stream.  If the stream
+        has an 'encoding' attribute, it is used to determine how to do the
+        output to the stream.
+
+        Modification:
+            stream is mpi.File, so it must use `Write_shared` method rather
+            than `write` method. And `Write_shared` method only accept
+            bytestring, so `encode` is used. `Write_shared` should be invoked
+            only once in each all of this emit function to keep atomicity.
+        """
+        try:
+            self.stream = self._open()
+            if self.shouldRollover(record):
+                self.doRollover()
+            msg = self.format(record)
+            stream = self.stream
+            stream.Write_shared((msg+self.terminator).encode(self.encoding))
+            self.close()
+        except Exception:
+            self.handleError(record)
+            self.close()
+
+    def close(self):
+        if self.stream:
+            self.stream.Sync()
+            self.stream.Close()
+            self.stream = None
+
 
 parser = argparse.ArgumentParser(description="Look for CBC signals in low "
     "latency. This program takes a fixed template bank and analyzes in fixed "
@@ -218,13 +377,13 @@ parser.add_argument('--snr-abort-threshold', type=float)
 
 parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+',
                     required=True)
-parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+', 
+parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
           help="The channel containing frame status information. This is used "
                "to determine when to analyze the hoft data. This somewhat "
                "corresponds to CAT1 information")
-parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'], 
+parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'],
                     help='The flags that must be in the "good" state to analzye data')
-parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+', 
+parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
           help="The channel containing data quality information. This is used "
                 "to determine when hoft may be suspect and may be used to veto"
                 "triggers or not analyze a segment of data. This roughly "
@@ -249,7 +408,7 @@ parser.add_argument('--psd-samples', type=int, required=True,
                         help="Number of PSD segments to use in the rolling estimate")
 parser.add_argument('--psd-segment-length', type=int, required=True,
                         help="Length in seconds of each PSD segment")
-parser.add_argument('--psd-inverse-length', type=float, 
+parser.add_argument('--psd-inverse-length', type=float,
                         help="Lenght in time for the equivelant FIR filter")
 parser.add_argument('--trim-padding', type=float, default=0.25,
                         help="Padding around the overwhitened analysis block")
@@ -286,7 +445,7 @@ parser.add_argument('--max-triggers-in-batch', type=int)
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')
 
-parser.add_argument('--enable-profiling', type=int, 
+parser.add_argument('--enable-profiling', type=int,
                     help="Dump out profiling information from an MPI process at"
                          " the end of program executrion")
 
@@ -308,12 +467,34 @@ parser.add_argument('--round-start-time', type=int,
 parser.add_argument('--gracedb-server',
                     help="Location of gracedb server. If not provide, the "
                          "default location is used. ")
-parser.add_argument('--size-override', 
+parser.add_argument('--size-override',
                     help="Override the internal MPI size layout. "
                          " Useful for debugging and running a portion of a bank",
                     type=int)
 parser.add_argument('--fftw-planning-limit', type=float,
                     help="Time is seconds to allow for a plan to be created")
+parser.add_argument('--log-file',
+                    help="Location for logging data to be written. If not "
+                         "provided then logging is written to stderr.")
+parser.add_argument('--log-file-rotate-interval', type=int,
+                    default=10000000000000,
+                    help="If using --log-file this option how often the log "
+                         "file is copied away and a new file started. "
+                         "This can be useful to have daily log files, for "
+                         "instance. By default, no rotation is done. "
+                         "Value must be provided in *seconds*.")
+parser.add_argument('--compress-log-files', action='store_true',
+                    default=False,
+                    help="If given, and using --log-file and "
+                         "--log-file-rotate-interval, log files will be "
+                         "compressed as gzip files while being rotated away.")
+parser.add_argument('--log-files-archive-dir',
+                    help="If given, and using --log-file and "
+                         "--log-file-rotate-interval, log files will be moved "
+                         "to this directory when being rotated away. For "
+                         "instance it may be useful to have the active log "
+                         "file on a local directory, and have the old logs "
+                         "moved to a NFS directory when rotating out.")
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
@@ -327,6 +508,25 @@ import platform
 log_format = "%(asctime)s {0} %(message)s".format(platform.node())
 pycbc.init_logging(args.verbose, format=log_format)
 
+if args.log_file:
+    # This assumes that all processes are writing to the same file.
+    # This could be changed if that isn't the case
+    comm = mpi.COMM_WORLD
+    if comm.rank > 0:
+        # Essentially only the master process rotates log files
+        interval = 10000000000000
+    else:
+        interval = args.log_file_rotate_interval
+    
+    logging.root.removeHandler(logging.root.handlers[0])
+    handler = MPIRotatingFileHandler(args.log_file,
+                                     interval=interval,
+                                     compress_logs=args.compress_log_files,
+                                     archive_dir=args.log_files_archive_dir)
+    fmt = logging.Formatter(log_format, None)
+    handler.setFormatter(fmt)
+    logging.getLogger().addHandler(handler)
+
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
 
@@ -334,7 +534,7 @@ sr = args.sample_rate
 flow = args.low_frequency_cutoff
 
 if args.round_start_time:
-    args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time 
+    args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
     logging.info('Starting from: %s', args.start_time)
 
 # Approximant guess of the total padding
@@ -345,9 +545,9 @@ bank = waveform.LiveFilterBank(args.bank_file, sr, total_pad,
                        approximant=args.approximant,
                        increment=args.increment)
 
-evnt = LiveEventManager(args.output_path, 
-                        use_date_prefix=args.day_hour_output_prefix, 
-                        ifar_upload_threshold=args.ifar_upload_threshold, 
+evnt = LiveEventManager(args.output_path,
+                        use_date_prefix=args.day_hour_output_prefix,
+                        ifar_upload_threshold=args.ifar_upload_threshold,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
                        )
@@ -400,7 +600,7 @@ with ctx:
         psd_len = args.psd_segment_length * (args.psd_samples / 2 + 1)
         maxlen = max(lengths.max(), psd_len)
         mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold, args.chisq_bins,
-                                     snr_abort_threshold=args.snr_abort_threshold, 
+                                     snr_abort_threshold=args.snr_abort_threshold,
                                      newsnr_threshold=args.newsnr_threshold,
                                      max_triggers_in_batch=args.max_triggers_in_batch,
                                      maxelements=args.max_batch_size)
@@ -483,7 +683,7 @@ with ctx:
                 if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
                     logging.info("PSD outside acceptable sensitivity %s - %s, have %s",
                                  args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
-                    status = False               
+                    status = False
 
             if ifo in followup_ifos:
                 # we advanced the data and handled the PSD, that's it
@@ -542,8 +742,8 @@ with ctx:
                       store_psd=False if args.store_psd is False else psds,
                       store_loudest_index=args.store_loudest_index,
                       raw_results=coinc_results,
-                     )     
-                     
+                     )
+
             logging.info('Finished Analyzing up to %s', data_end())
 
         if args.sync:
