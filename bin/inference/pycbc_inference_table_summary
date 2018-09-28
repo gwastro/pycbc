@@ -21,11 +21,12 @@ import h5py
 import logging
 import numpy
 import sys
+import pycbc
 from pycbc import results
-from pycbc.inference import option_utils
+from pycbc.inference.io import ResultsArgumentParser, results_from_cli
 
 # command line usage
-parser = argparse.ArgumentParser(
+parser = ResultsArgumentParser(
     description="Makes a table of posterior results.")
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
@@ -37,22 +38,15 @@ parser.add_argument("--output-file", type=str, required=True,
 parser.add_argument("--quantiles", type=float, nargs="+",
     default=[0.16,0.50,0.84],
     help="Quantiles to calculate.")
-# add results group
-option_utils.add_inference_results_option_group(parser)
 
 # parse the command line
 opts = parser.parse_args()
 
-# setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(opts.verbose)
+
 
 # load the results
-fp, parameters, labels, samples = option_utils.results_from_cli(
-                                      opts, load_samples=True, walkers=None)
+fp, parameters, labels, samples = results_from_cli(opts)
 
 # get thinned samples for each parameter
 table = []
