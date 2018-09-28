@@ -68,7 +68,7 @@ pycbc.init_logging(opts.verbose)
 
 # load the samples
 logging.info("Reading input file")
-fp = io.loadfile(opts.input_file)
+fp = io.loadfile(opts.input_file, "r")
 
 # if using a parallel-tempered sampler, then
 # add the temperature arguments if it is specified
