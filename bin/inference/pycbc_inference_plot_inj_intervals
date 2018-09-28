@@ -70,8 +70,9 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 
 # calculate the expected percentile for each injection and plot
-for param,label in zip(parameters, labels):
-    # calculate expected
+
+for param in parameters:
+    label = labels[param]
     meas = numpy.array(measured_percentiles[param])
     meas.sort()
     expected = numpy.array([stats.percentileofscore(meas, x, kind='weak')
@@ -80,6 +81,7 @@ for param,label in zip(parameters, labels):
     ks, p = stats.kstest(meas/100., 'uniform')
     ax.plot(meas/100., expected/100.,
                 label='{} $D_{{KS}}$: {:.3f} p-value: {:.3f}'.format(label, ks, p))
+
 
 # set legend
 ax.legend()
