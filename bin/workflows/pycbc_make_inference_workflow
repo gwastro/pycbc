@@ -38,7 +38,7 @@ from pycbc.workflow import WorkflowConfigParser
 from pycbc import __version__
 
 # FIXME see https://github.com/gwastro/pycbc/issues/2349
-# import gwin.workflow as inffu
+import pycbc.workflow.inference_followups as inffu
 
 
 def to_file(path, ifo=None):
