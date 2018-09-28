@@ -212,13 +212,6 @@ class BaseInferenceFile(h5py.File):
         """
         pass
 
-    @abstractmethod
-    def samples_from_cli(self, opts, extra_opts=None, parameters=None,
-                         **kwargs):
-        """This should load samples using the given command-line options.
-        """
-        pass
-
     @staticmethod
     def extra_args_parser(parser=None, skip_args=None, **kwargs):
         """Provides a parser that can be used to parse sampler-specific command
