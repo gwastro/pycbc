@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 from .base_hdf import BaseInferenceFile
 from .base_multitemper import MultiTemperedMCMCIO
-
+import numpy
 
 class EmceePTFile(MultiTemperedMCMCIO, BaseInferenceFile):
     """Class to handle file IO for the ``emcee`` sampler."""
