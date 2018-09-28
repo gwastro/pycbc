@@ -78,6 +78,9 @@ if opts.temps is not None:
 
 acceptance_fraction = fp.read_acceptance_fraction(walkers=opts.walkers,
                                                   **additional_args)
+# Close the file
+fp.close()
+
 # plot acceptance rate and drawn values
 logging.info("Plotting acceptance fraction")
 fig = plt.figure()
