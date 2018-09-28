@@ -54,6 +54,11 @@ opts = parser.parse_args()
 
 pycbc.init_logging(opts.verbose)
 
+# check that the output doesn't already exist
+if os.path.exists(opts.output_file) and not opts.force:
+    raise IOError("output file already exists; use --force if you wish to "
+                  "overwrite.")
+
 fp, params, labels, samples = results_from_cli(opts)
 
 if not opts.posterior_only:
