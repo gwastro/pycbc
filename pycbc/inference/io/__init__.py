@@ -565,6 +565,9 @@ def results_from_cli(opts, load_samples=True, **kwargs):
     samples_all : (list of) FieldArray(s) or None
         If load_samples, the samples as a FieldArray; otherwise, None.
         If more than one input file, then it returns a list.
+    \**kwargs :
+        Any other keyword arguments that are passed to read samples using
+        samples_from_cli
     """
 
     # lists for files and samples from all input files
