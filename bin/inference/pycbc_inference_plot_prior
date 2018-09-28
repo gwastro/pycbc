@@ -23,40 +23,60 @@ import sys
 
 import numpy
 
-
 from matplotlib import use
 use('agg')
 from matplotlib import pyplot as plt
 
-from pycbc import (distributions, results)
-from pycbc.workflow import WorkflowConfigParser
-
+import pycbc
 from pycbc import __version__
+from pycbc import (distributions, results)
+from pycbc.inference.option_utils import ParseParametersArg
+from pycbc.workflow import WorkflowConfigParser
 from pycbc.results.scatter_histograms import create_multidim_plot
 
 
 def cartesian(arrays):
     """ Returns a cartesian product from a list of iterables.
     """
-    return numpy.array([numpy.array(element) for element in itertools.product(*arrays)])
+    return numpy.array([numpy.array(element)
+                        for element in itertools.product(*arrays)])
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_inference_plot_prior [--options]",
+parser = argparse.ArgumentParser(
+    usage="pycbc_inference_plot_prior [--options]",
     description="Plots prior distributions.")
-
 # add input options
 parser.add_argument("--config-files", type=str, nargs="+", required=True,
-    help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
+                    help="A file parsable by "
+                         "pycbc.workflow.WorkflowConfigParser.")
+parser.add_argument("--parameters", nargs="+", action=ParseParametersArg,
+                    metavar="PARAM[:LABEL]",
+                    help="Only plot the given parameters. May also provide a "
+                         "label for each parameter. If provided, the "
+                         "parameters can be any of parameters in the "
+                         "[variable_params] section, derived parameters from "
+                         "them, or any function of them. Syntax for "
+                         "functions is python; any math functions in the "
+                         "numpy libary may be used. Can optionally also "
+                         "specify a LABEL for each parameter. If no LABEL is "
+                         "provided, PARAM will used as the LABEL. If LABEL "
+                         "is the same as a parameter in "
+                         "pycbc.waveform.parameters, the label "
+                         "property of that parameter will be used. If not "
+                         "provided, will plot all of the parameters in the "
+                         "[variable_params] section of the config file.")
 parser.add_argument("--sections", type=str, nargs="+", default=["prior"],
-    help="Name of section plus subsection with distribution configurations, eg. prior-mass1.")
-
+                    help="Name of section plus subsection with distribution "
+                         "configurations, eg. prior-mass1.")
 # add output options
+parser.add_argument("--nsamples", type=int, default=10000,
+                    help="The number of samples to draw from the prior for "
+                         "plotting. Defaults is 10000.")
 parser.add_argument("--output-file", type=str, required=True,
-    help="Path to output plot.")
-
+                    help="Path to output plot.")
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
-    help="")
+                    help="")
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
 
@@ -64,11 +84,7 @@ parser.add_argument("--version", action="version", version=__version__,
 opts = parser.parse_args()
 
 # setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # read configuration file
 logging.info("Reading configuration files")
@@ -98,11 +114,22 @@ variable_params = sorted(variable_params)
 ndim = len(variable_params)
 
 # construct class that will return draws from the prior
+logging.info("Drawing samples")
 prior = distributions.JointDistribution(variable_params, *dists)
-samples = prior.rvs(10000)
+samples = prior.rvs(opts.nsamples)
 
+# figure out what parameters to plot
+if opts.parameters is None:
+    parameters = variable_params
+    labels = {param: param for param in variable_params}
+else:
+    parameters = opts.parameters
+    labels = opts.parameters_labels
+
+logging.info("Plotting")
 fig, axis_dict = create_multidim_plot(
-    variable_params, samples,
+    parameters, samples,
+    labels=labels,
     plot_marginal=True,
     marginal_percentiles=[5, 50, 95],
     plot_scatter=False,
@@ -113,9 +140,6 @@ fig, axis_dict = create_multidim_plot(
 
 # set DPI
 fig.set_dpi(200)
-
-# set tight layout
-fig.set_tight_layout(True)
 
 # save figure with meta-data
 caption_kwargs = {
