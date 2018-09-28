@@ -542,7 +542,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         return results_reading_group
 
 
-def results_from_cli(opts, load_samples=True):
+def results_from_cli(opts, load_samples=True, **kwargs):
     """Loads an inference result file along with any labels associated with it
     from the command line options.
 
@@ -591,7 +591,7 @@ def results_from_cli(opts, load_samples=True):
                 opts.parameters, fp.variable_params)
 
             # read samples from file
-            samples = fp.samples_from_cli(opts, parameters=file_parameters)
+            samples = fp.samples_from_cli(opts, parameters=file_parameters, **kwargs)
 
             logging.info("Using {} samples".format(samples.size))
 
