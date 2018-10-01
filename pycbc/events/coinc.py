@@ -241,7 +241,7 @@ def time_coincidence(t1, t2, window, slide_step=0):
 
 
 def time_multi_coincidence(times, slide_step=0, slop=.003, pivot='H1', fixed='L1'):
-    """ Find multi detector concidences. 
+    """ Find multi detector concidences.
 
     Parameters
     ----------
@@ -259,16 +259,19 @@ def time_multi_coincidence(times, slide_step=0, slop=.003, pivot='H1', fixed='L1
         are time slid by being fixed to this detector.
     """
     # pivots are used to determine standard coincidence triggers, we then
-    # pair off additional detectors to those.   
-    win = lambda ifo1, ifo2: Detector(ifo1).light_travel_time_to_detector(Detector(ifo2)) + slop
+    # pair off additional detectors to those.
+    def win(ifo1, ifo2):
+        d1 = Detector(ifo1)
+        d2 = Detector(ifo2)
+        return d1.light_travel_time_to_detector(d2) + slop
 
     # Find coincs first between the two fully timselide detectors
     pivot_id, fix_id, slide = time_coincidence(times[pivot], times[fixed],
-                                         win(pivot, fixed),
-                                         slide_step=slide_step)
+                                               win(pivot, fixed),
+                                               slide_step=slide_step)
 
     # additional detectors are conceptually stitched to the 'fixed' one.
-    # Each trigger in an additional detector must be concidence with an 
+    # Each trigger in an additional detector must be concidence with an
     # existing coincident one. All times moved to 'fixed' relative time
     fixed_time = times[fixed][fix_id]
     pivot_time = times[pivot][pivot_id] - slide_step * slide
@@ -284,7 +287,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003, pivot='H1', fixed='L1
         
         # Find coincidences between dep ifo triggers and existing coinc.
         for ifo2 in ids.keys():
-            # Currently assumes that additional detectors do not slide 
+            # Currently assumes that additional detectors do not slide
             # independently of the 'fixed one' could change that here
             # by adding a function that remaps the coinc time frame and unmaps
             # it and the end of this loop.
