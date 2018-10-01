@@ -240,7 +240,8 @@ def time_coincidence(t1, t2, window, slide_step=0):
     return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), slide.astype(numpy.int32)
 
 
-def time_multi_coincidence(times, slide_step=0, slop=.003, pivot='H1', fixed='L1'):
+def time_multi_coincidence(times, slide_step=0, slop=.003,
+                           pivot='H1', fixed='L1'):
     """ Find multi detector concidences.
 
     Parameters
@@ -284,7 +285,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003, pivot='H1', fixed='L1
         otime = times[ifo1]
         sort = times[ifo1].argsort()
         time = otime[sort]
-        
+
         # Find coincidences between dep ifo triggers and existing coinc.
         for ifo2 in ids.keys():
             # Currently assumes that additional detectors do not slide
@@ -299,7 +300,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003, pivot='H1', fixed='L1
             w = win(ifo1, ifo2)
             left = numpy.searchsorted(time, ctimes[ifo2] - w)
             right = numpy.searchsorted(time, ctimes[ifo2] + w)
-        
+
             # remove elements that will not form a coinc
             # There is only at most one trigger for an existing coinc
             # (assumes triggers spaced > slide step)
@@ -312,7 +313,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003, pivot='H1', fixed='L1
             for ifo in ctimes:
                 ctimes[ifo] = ctimes[ifo][nz]
                 ids[ifo] = ids[ifo][nz]
-        
+
         # Add this detector now to the cumulative set and proceed to the next
         # ifo coincidence test
         ids[ifo1] = sort[dep_ids]
