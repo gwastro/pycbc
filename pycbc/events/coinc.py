@@ -315,6 +315,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003, pivot='H1', fixed='L1
         ids[ifo1] = sort[dep_ids]
         ctimes[ifo1] = otime[ids[ifo1]]
 
+    return ids, slide
+
 def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
