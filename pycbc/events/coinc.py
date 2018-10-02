@@ -309,7 +309,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
             nz = (right - left).nonzero()
             dep_ids = left[nz]
 
-            if (right - left).max() > 1:
+            if len(left) > 0 and (right - left).max() > 1:
                 raise ValueError('Somehow triggers are closer than slide step')
 
             slide = slide[nz]
