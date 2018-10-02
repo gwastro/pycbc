@@ -743,10 +743,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  stat_files, ifos,
                  ifar_limit=100,
                  timeslide_interval=.035,
-                 ifar_remove_threshold=100,
                  coinc_threshold=0.002,
-                 return_background=False,
-                 save_background_on_interrupt=False):
+                 return_background=False):
         """
         Parameters
         ----------
@@ -767,9 +765,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             calculate.
         timeslide_interval: float
             The time in seconds between consecutive timeslide offsets.
-        ifar_remove_threshold: float
-            The inverse false alarm rate to assume a detection is made and remove
-            from the background estimate. !NOT IMPLEMENTED!
         coinc_threshold: float
             Amount of time allowed to form a coincidence in addition to the
             time of flight in seconds.
@@ -787,8 +782,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.stat_calculator = stat.get_statistic(background_statistic)(stat_files)
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
-        self.ifar_remove_threshold = ifar_remove_threshold
-
+        
         self.ifos = ifos
         if len(self.ifos) != 2:
             raise ValueError("Only a two ifo analysis is supported at this time")
@@ -802,12 +796,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.singles = {}
 
-        #if save_background_on_interrupt:
-        #    import signal
-        #    def sig_handler(signum, frame):
-        #        pass
-        #    signal.signal(signal.SIGINT, sig_handler)
-
     @classmethod
     def from_cli(cls, args, num_templates, analysis_chunk, ifos):
         return cls(num_templates, analysis_chunk,
@@ -816,7 +804,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                    return_background=args.store_background,
                    ifar_limit=args.background_ifar_limit,
                    timeslide_interval=args.timeslide_interval,
-                   ifar_remove_threshold=args.ifar_remove_threshold,
                    ifos=ifos)
 
     @staticmethod
@@ -918,7 +905,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # where chisq is the reduced chisq and chisq_dof is the actual DOF
         logging.info("adding singles to the background estimate...")
         updated_indices = {}
-        for ifo in results:
+        for ifo in self.ifos:
             trigs = results[ifo]
 
             if len(trigs['snr'] > 0):
@@ -1107,11 +1094,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             A dictionary of arrays containing the coincident results.
         """
         # If there are no results just return
-        valid_ifos = [k for k in results.keys() if results[k]]
+        valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
         if len(valid_ifos) == 0: return {}
-
-        # Apply CAT2 data quality here
-        # results = self.veto_singles(results, data_reader)
 
         # Add single triggers to the internal buffer
         updated_indices = self._add_singles_to_buffer(results)
