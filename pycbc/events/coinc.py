@@ -312,6 +312,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
             if (right - left).max() > 1:
                 raise ValueError('Somehow triggers are closer than slide step')
 
+            slide = slide[nz]
             for ifo in ctimes:
                 ctimes[ifo] = ctimes[ifo][nz]
                 ids[ifo] = ids[ifo][nz]
