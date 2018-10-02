@@ -259,6 +259,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         as a fixed time reference for coincident triggers. All other detectors
         are time slid by being fixed to this detector.
     """
+    from pycbc.detector import Detector
+
     # pivots are used to determine standard coincidence triggers, we then
     # pair off additional detectors to those.
     def win(ifo1, ifo2):
