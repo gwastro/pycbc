@@ -108,17 +108,23 @@ class LiveEventManager(object):
         return out
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
-                     data_readers, bank, followup_ifos=None):
+                     data_readers, bank):
         """ Save zerolag triggers to a coinc xml file """
+    
         if 'foreground/ifar' in coinc_results:
-            fud = self.compute_followup_data(ifos, coinc_results, data_readers,
+            logging.info('computing followup data for coinc')
+
+            coinc_ifos = coinc_results['foreground/type'].split('-')
+            followup_ifos = [ifo for ifo in ifos if ifo not in coinc_ifos]
+
+            fud = self.compute_followup_data(coinc_ifos, coinc_results, data_readers,
                                              bank, followup_ifos)
-            event = SingleCoincForGraceDB(ifos, coinc_results, bank=bank,
+            event = SingleCoincForGraceDB(coinc_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name)
 
-            end_time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
+            end_time = int(coinc_results['foreground/%s/end_time' % coinc_ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml.gz' % end_time)
             logging.info('Coincident candidate! Saving as %s', fname)
             comments = ['using ranking statistic: %s' % args.background_statistic]
@@ -131,8 +137,7 @@ class LiveEventManager(object):
             else:
                 event.save(fname)
 
-    def check_singles(self, results, data_reader, psds, f_low,
-                      followup_ifos=None):
+    def check_singles(self, results, data_reader, psds, f_low):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
@@ -140,7 +145,7 @@ class LiveEventManager(object):
 
             if single is not None:
                 fud = self.compute_followup_data([ifo], single, data_reader,
-                                                 bank, followup_ifos)
+                                                 bank, [])
                 event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                               psds=psds, followup_data=fud,
                                               low_frequency_cutoff=f_low,
@@ -527,8 +532,17 @@ with ctx:
                     logging.info('Coincs: %s-%s: %s in cbuffer',
                                  c.ifos[0], c.ifos[1], c.coincs.index)
 
-            # Pick the best coinc in this chunk
-            best_coinc = Coincer.pick_best_coinc(coinc_results)
+                # Pick the best coinc in this chunk
+                best_coinc = Coincer.pick_best_coinc(coinc_results)
+
+                evnt.check_coincs(results.keys(), best_coinc,
+                                  psds, args.low_frequency_cutoff,
+                                  data_reader, bank)
+
+            # Check for singles if we don't have coinc time
+            if args.enable_single_detector_background:
+                evnt.check_singles(results, data_reader, psds,
+                                   args.low_frequency_cutoff)
 
             # map the results file to an hdf file
             prefix = '%s-%s-%s-%s' % (''.join(ifos), args.file_prefix, data_end() - args.analysis_chunk, valid_pad)
