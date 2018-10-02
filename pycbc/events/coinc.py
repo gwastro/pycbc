@@ -585,6 +585,9 @@ class MultiRingBuffer(object):
         count[self.index < self.start] += self.pad_count
         return count
 
+    def buffer_total(self):
+        return self.ring_sizes().sum()
+
     def num_elements(self):
         total = self.ring_sizes().sum()
         return total
