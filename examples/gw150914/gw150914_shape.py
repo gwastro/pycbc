@@ -1,16 +1,13 @@
 from pycbc.frame import read_frame
-from pycbc.filter import highpass_fir, lowpass_fir, matched_filter
+from pycbc.filter import highpass_fir, lowpass_fir
 from pycbc.waveform import get_fd_waveform
 from pycbc.psd import welch, interpolate
-import urllib
+from pycbc.catalog import Merger
 import pylab
 
 for ifo in ['H1', 'L1']:
     # Read data and remove low frequency content
-    fname = '%s-%s_LOSC_4_V2-1126259446-32.gwf' % (ifo[0], ifo)
-    url = "https://losc.ligo.org/s/events/GW150914/" + fname
-    urllib.urlretrieve(url, filename=fname)
-    h1 = read_frame(fname, '%s:LOSC-STRAIN' % ifo)
+    h1 = Merger("GW150914").strain(ifo)
     h1 = highpass_fir(h1, 15, 8)
 
     # Calculate the noise spectrum
