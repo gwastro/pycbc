@@ -200,7 +200,7 @@ if args.timeslide_interval is not None:
     detector_combinations=list(itertools.combinations(detectors,2))
     for i in range(len(detector_combinations)):
         timewindow = detectors[detector_combinations[i][0]].light_travel_time_to_detector(detectors[detector_combinations[i][1]]) \
-                     + args.coinc_threshold 
+                     + args.coinc_threshold
         logging.info('Time windows for detectors {} and {} are: {} '.format(detector_combinations[i][0],
                                                                             detector_combinations[i][1],
                                                                             timewindow))
@@ -240,7 +240,7 @@ for tnum in range(tmin, tmax):
         sds[trigs[i].ifo]=rank_method.single(trigs[i])
 
     logging.info('Calculating Multi-Detector Combined Statistic')
-    
+
     c = rank_method.coinc_multiifo(sds, slide, args.timeslide_interval)
 
     #index values of the zerolag triggers
@@ -285,7 +285,7 @@ for tnum in range(tmin, tmax):
     for i in ids:
         gs[i]=ids[i][ti]
     del ids
-    
+
     # In the first for cycle the time and trigger_id keys will not exist,
     # we need to create them, otherwise add new items into data.
     if 'time1' in data:
