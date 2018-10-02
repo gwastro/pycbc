@@ -876,7 +876,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         for key in data:
             self.singles_dtype.append((key, data[key].dtype))
-        self.singles_dtype.append(('stat', self.stat_calculator.single_dtype))
+
+        if 'stat' not in data:
+            self.singles_dtype.append(('stat', self.stat_calculator.single_dtype))
 
         # Create a ring buffer for each template ifo combination
         for ifo in self.ifos:
@@ -884,7 +886,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                             self.buffer_size,
                                             dtype=self.singles_dtype)
 
-    def _add_singles_to_buffer(self, results):
+    def _add_singles_to_buffer(self, results, ifos):
         """Add single detector triggers to the internal buffer
 
         Parameters
@@ -908,7 +910,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # where chisq is the reduced chisq and chisq_dof is the actual DOF
         logging.info("adding singles to the background estimate...")
         updated_indices = {}
-        for ifo in self.ifos:
+        for ifo in ifos:
             trigs = results[ifo]
 
             if len(trigs['snr'] > 0):
@@ -930,7 +932,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             updated_indices[ifo] = trigs['template_id']
         return updated_indices
 
-    def _find_coincs(self, results):
+    def _find_coincs(self, results, ifos):
         """Look for coincs within the set of single triggers
 
         Parameters
@@ -957,8 +959,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # Calculate all the permutations of coincident triggers for each
         # new single detector trigger collected
-        for ifo in results:
+        for ifo in ifos:
             trigs = results[ifo]
+
             for i in range(len(trigs['end_time'])):
                 trig_stat = trigs['stat'][i]
                 trig_time = trigs['end_time'][i]
@@ -997,7 +1000,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         cstat = numpy.concatenate(cstat)
         template_ids = numpy.concatenate(template_ids).astype(numpy.int32)
-        for ifo in self.ifos:
+        for ifo in ifos:
             trigger_ids[ifo] = numpy.concatenate(trigger_ids[ifo]).astype(numpy.int32)
 
         # cluster the triggers we've found
@@ -1018,15 +1021,15 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             zerolag_idx = (offsets == 0)
             bkg_idx = (offsets != 0)
 
-            for ifo in self.ifos:
+            for ifo in ifos:
                 single_expire[ifo] = numpy.concatenate(single_expire[ifo])
                 single_expire[ifo] = single_expire[ifo][cidx][bkg_idx]
 
-            self.coincs.add(cstat[cidx][bkg_idx], single_expire, results.keys())
+            self.coincs.add(cstat[cidx][bkg_idx], single_expire, ifos)
             num_zerolag = zerolag_idx.sum()
             num_background = bkg_idx.sum()
-        elif len(results.keys()) > 0:
-            self.coincs.increment(results.keys())
+        elif len(ifos) > 0:
+            self.coincs.increment(ifos)
 
         ####################################Collect coinc results for saving
         coinc_results = {}
@@ -1101,10 +1104,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if len(valid_ifos) == 0: return {}
 
         # Add single triggers to the internal buffer
-        updated_indices = self._add_singles_to_buffer(results)
+        updated_indices = self._add_singles_to_buffer(results, ifos=valid_ifos)
 
         # Calculate zerolag and background coincidences
-        num_background, coinc_results = self._find_coincs(results)
+        num_background, coinc_results = self._find_coincs(results, ifos=valid_ifos)
 
         # If there is a hardware injection anywhere near here dump these
         # results and mark the result group as possibly being influenced

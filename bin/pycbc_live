@@ -453,10 +453,11 @@ with ctx:
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
         ifo_combos  = itertools.combinations(ifos, 2)
-        logging.info('Calculating %s backgrounds', ifo_combos)
+        estimators = []
         for combo in ifo_combos:
-            estimators = LiveCoincTimeslideBackgroundEstimator.from_cli(args,
-                            len(bank), args.analysis_chunk, list(combo))
+            logging.info('Will calculate %s background', combo)
+            estimators.append(LiveCoincTimeslideBackgroundEstimator.from_cli(args,
+                            len(bank), args.analysis_chunk, list(combo)))
 
 
 
@@ -523,6 +524,8 @@ with ctx:
             if args.enable_background_estimation:
                 for c in estimators:
                     coinc_results = c.add_singles(results, data_reader)
+                    logging.info('Coincs: %s-%s: %s in cbuffer',
+                                 c.ifos[0], c.ifos[1], c.coincs.index)
 
             final_results = coinc_results
 
