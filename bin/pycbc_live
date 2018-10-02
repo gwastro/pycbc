@@ -359,6 +359,7 @@ if args.size_override:
 
 # ifos used for primary analysis (only two at the moment)
 ifos = set(args.channel_name.keys())
+logging.info('Running with: %s ifos', len(ifos))
 
 # make sure we can talk to GraceDB
 if evnt.rank == 0 and args.enable_gracedb_upload:
@@ -452,6 +453,7 @@ with ctx:
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
         ifo_combos  = itertools.combinations(ifos, 2)
+        logging.info('Calculating %s backgrounds', ifo_combos)
         for combo in ifo_combos:
             estimators = LiveCoincTimeslideBackgroundEstimator.from_cli(args,
                             len(bank), args.analysis_chunk, list(combo))
@@ -522,13 +524,18 @@ with ctx:
                 for c in estimators:
                     coinc_results = c.add_singles(results, data_reader)
 
+            final_results = coinc_results
+
+            # map the results file to an hdf file
             prefix = '%s-%s-%s-%s' % (''.join(ifos), args.file_prefix, data_end() - args.analysis_chunk, valid_pad)
 
-            #evnt.dump(results, prefix, time_index=data_end(),
-            #          store_psd=False if args.store_psd is False else psds,
-            #          store_loudest_index=args.store_loudest_index,
-            #          raw_results=coinc_results,
-            #         )
+            evnt.dump(results, prefix, time_index=data_end(),
+                      store_psd=False if args.store_psd is False else psds,
+                      store_loudest_index=args.store_loudest_index,
+                      raw_results=final_results,
+                     )
+
+            logging.info('Finished Analyzing up to %s', data_end())
 
         if args.sync:
             evnt.barrier()
