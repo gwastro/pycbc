@@ -132,7 +132,8 @@ class NewSNRStatistic(Stat):
         """
         return (s0**2. + s1**2.) ** 0.5
 
-    def coinc_multiifo(self, slide, step, s=[]): # pylint:disable=unused-argument
+    def coinc_multiifo(self, slide, step,
+                       s=[]): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
         Parameters
         ----------
@@ -149,6 +150,7 @@ class NewSNRStatistic(Stat):
         for i in s:
             newsnr = newsnr + i**2.
         return newsnr ** 0.5
+
 
 class NewSNRSGStatistic(NewSNRStatistic):
 
