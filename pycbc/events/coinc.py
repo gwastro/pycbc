@@ -746,7 +746,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  stat_files, ifos,
                  ifar_limit=100,
                  timeslide_interval=.035,
-                 coinc_threshold=0.002,
+                 coinc_threshold=.002,
                  return_background=False):
         """
         Parameters
@@ -798,6 +798,61 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.coincs = CoincExpireBuffer(self.buffer_size, self.ifos)
 
         self.singles = {}
+
+    # Adding this here as it requires the results format dict as defined by this
+    # class. 
+    @classmethod
+    def pick_best_coinc(cls, coinc_results):
+        """Choose the best coinc by ifar first, then statistic if needed.
+
+        This function picks which of the available coincs to use. It chooses
+        first by ifar, and if all else is equal by statistic value. A trails
+        factor is applied if multiple types of coincs were possible at this
+        time.
+
+        Parameters
+        ----------
+        coinc_results: list of coinc result dicts
+            Dictionary by detector pair of coinc result dicts.
+
+        Returns
+        -------
+        best: coinc results dict
+            Dict containing the results as would be returned by this class.
+            If there is a coinc, this will contain the 'best' one.
+        """
+        # Choose best by ifar, if equal choose loudest statistic value
+        mstat = 0
+        mifar = 0
+        mresult = None
+
+        # record the trials factor from the possible coincs we could
+        # maximize over
+        trials = 0
+        for result in coinc_results:
+            # Check that a coinc was possible
+            if 'coinc_possible' in result:
+                trials += 1
+
+                # Check that a coinc exists
+                if 'foreground/ifar' in result:
+                    ifar = result['foreground/ifar']
+                    stat = result['foreground/stat']
+                    if ifar > mifar or (ifar == mifar and stat > mstat):
+                        mifar = ifar
+                        mstat = stat
+                        mresult = result
+        
+        # apply trials factor for the best coinc
+        if mresult:
+            mresult['foreground/ifar'] = mifar / float(trials)
+            logging.info('Found %s coinc with ifar %s', 
+                         mresult['foreground/type'],
+                         mresult['foreground/ifar'])
+            return mresult
+        # If no coinc, just pick one and return
+        else:
+            return coinc_results[0]
 
     @classmethod
     def from_cli(cls, args, num_templates, analysis_chunk, ifos):
@@ -1048,6 +1103,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                     path = 'foreground/%s/%s' % (ifo, key)
                     zerolag_results[path] = single_data[key]
 
+            zerolag_results['foreground/type'] = '-'.join(self.ifos)
+
             coinc_results.update(zerolag_results)
 
         # Save some summary statistics about the background
@@ -1101,13 +1158,17 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         """
         # If there are no results just return
         valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
-        if len(valid_ifos) == 0: return {}
+        if len(valid_ifos) == 0: return {}        
 
         # Add single triggers to the internal buffer
         updated_indices = self._add_singles_to_buffer(results, ifos=valid_ifos)
 
         # Calculate zerolag and background coincidences
         num_background, coinc_results = self._find_coincs(results, ifos=valid_ifos)
+
+        # record if a coinc is possible in this chunk
+        if len(valid_ifos) == 2:
+            coinc_results['coinc_possible'] = True
 
         # If there is a hardware injection anywhere near here dump these
         # results and mark the result group as possibly being influenced

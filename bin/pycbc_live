@@ -8,7 +8,7 @@ from time import time
 import os.path
 from mpi4py import MPI as mpi
 from pycbc.events import newsnr
-from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator
+from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
@@ -320,7 +320,7 @@ parser.add_argument('--fftw-planning-limit', type=float,
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
 fft.insert_fft_option_group(parser)
-LiveCoincTimeslideBackgroundEstimator.insert_args(parser)
+Coincer.insert_args(parser)
 args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
@@ -456,8 +456,8 @@ with ctx:
         estimators = []
         for combo in ifo_combos:
             logging.info('Will calculate %s background', combo)
-            estimators.append(LiveCoincTimeslideBackgroundEstimator.from_cli(args,
-                            len(bank), args.analysis_chunk, list(combo)))
+            estimators.append(Coincer.from_cli(args,
+                              len(bank), args.analysis_chunk, list(combo)))
 
 
 
@@ -520,14 +520,15 @@ with ctx:
                             results[ifo][key] = results[ifo][key][idx]
 
             # Look for coincident triggers and do background estimation
-            coinc_results = {}
+            coinc_results = []
             if args.enable_background_estimation:
                 for c in estimators:
-                    coinc_results = c.add_singles(results, data_reader)
+                    coinc_results.append(c.add_singles(results, data_reader))
                     logging.info('Coincs: %s-%s: %s in cbuffer',
                                  c.ifos[0], c.ifos[1], c.coincs.index)
 
-            final_results = coinc_results
+            # Pick the best coinc in this chunk
+            best_coinc = Coincer.pick_best_coinc(coinc_results)
 
             # map the results file to an hdf file
             prefix = '%s-%s-%s-%s' % (''.join(ifos), args.file_prefix, data_end() - args.analysis_chunk, valid_pad)
@@ -535,7 +536,7 @@ with ctx:
             evnt.dump(results, prefix, time_index=data_end(),
                       store_psd=False if args.store_psd is False else psds,
                       store_loudest_index=args.store_loudest_index,
-                      raw_results=final_results,
+                      raw_results=best_coinc,
                      )
 
             logging.info('Finished Analyzing up to %s', data_end())
