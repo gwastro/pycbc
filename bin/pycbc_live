@@ -12,6 +12,7 @@ from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator
 from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
+import itertools
 
 def makedir(path):
     """
@@ -29,7 +30,7 @@ class LiveEventManager(object):
                        gracedb_testing=True,
                  ):
         self.path = output_path
-        
+
         # Figure out what we are supposed to process within the pool of MPI processes
         self.comm = mpi.COMM_WORLD
         self.size = self.comm.Get_size()
@@ -57,15 +58,15 @@ class LiveEventManager(object):
         if self.rank == 0:
             all_results = self.comm.gather(None, root=0)
             data_ends = [a[1] for a in all_results if a is not None]
-            results = [a[0] for a in all_results if a is not None]    
-        
+            results = [a[0] for a in all_results if a is not None]
+
             combined = {}
             for ifo in results[0]:
 
                 # check if any of the results returned invalid
-                try: 
+                try:
                     for r in results:
-                        if r[ifo] is False: 
+                        if r[ifo] is False:
                             raise ValueError
                 except ValueError:
                     continue
@@ -219,13 +220,13 @@ parser.add_argument('--snr-abort-threshold', type=float)
 
 parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+',
                     required=True)
-parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+', 
+parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
           help="The channel containing frame status information. This is used "
                "to determine when to analyze the hoft data. This somewhat "
                "corresponds to CAT1 information")
-parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'], 
+parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'],
                     help='The flags that must be in the "good" state to analzye data')
-parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+', 
+parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
           help="The channel containing data quality information. This is used "
                 "to determine when hoft may be suspect and may be used to veto"
                 "triggers or not analyze a segment of data. This roughly "
@@ -250,7 +251,7 @@ parser.add_argument('--psd-samples', type=int, required=True,
                         help="Number of PSD segments to use in the rolling estimate")
 parser.add_argument('--psd-segment-length', type=int, required=True,
                         help="Length in seconds of each PSD segment")
-parser.add_argument('--psd-inverse-length', type=float, 
+parser.add_argument('--psd-inverse-length', type=float,
                         help="Lenght in time for the equivelant FIR filter")
 parser.add_argument('--trim-padding', type=float, default=0.25,
                         help="Padding around the overwhitened analysis block")
@@ -287,7 +288,7 @@ parser.add_argument('--max-triggers-in-batch', type=int)
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')
 
-parser.add_argument('--enable-profiling', type=int, 
+parser.add_argument('--enable-profiling', type=int,
                     help="Dump out profiling information from an MPI process at"
                          " the end of program executrion")
 
@@ -309,7 +310,7 @@ parser.add_argument('--round-start-time', type=int,
 parser.add_argument('--gracedb-server',
                     help="Location of gracedb server. If not provide, the "
                          "default location is used. ")
-parser.add_argument('--size-override', 
+parser.add_argument('--size-override',
                     help="Override the internal MPI size layout. "
                          " Useful for debugging and running a portion of a bank",
                     type=int)
@@ -335,7 +336,7 @@ sr = args.sample_rate
 flow = args.low_frequency_cutoff
 
 if args.round_start_time:
-    args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time 
+    args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
     logging.info('Starting from: %s', args.start_time)
 
 # Approximant guess of the total padding
@@ -346,9 +347,9 @@ bank = waveform.LiveFilterBank(args.bank_file, sr, total_pad,
                        approximant=args.approximant,
                        increment=args.increment)
 
-evnt = LiveEventManager(args.output_path, 
-                        use_date_prefix=args.day_hour_output_prefix, 
-                        ifar_upload_threshold=args.ifar_upload_threshold, 
+evnt = LiveEventManager(args.output_path,
+                        use_date_prefix=args.day_hour_output_prefix,
+                        ifar_upload_threshold=args.ifar_upload_threshold,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
                        )
@@ -358,11 +359,6 @@ if args.size_override:
 
 # ifos used for primary analysis (only two at the moment)
 ifos = set(args.channel_name.keys())
-followup_ifos = set(args.followup_detectors)
-ifos -= followup_ifos
-ifos, followup_ifos = list(ifos), list(followup_ifos)
-# the root must also advance followup ifos, other threads don't need to
-advancing_ifos = (ifos + followup_ifos) if evnt.rank == 0 else ifos
 
 # make sure we can talk to GraceDB
 if evnt.rank == 0 and args.enable_gracedb_upload:
@@ -401,7 +397,7 @@ with ctx:
         psd_len = args.psd_segment_length * (args.psd_samples / 2 + 1)
         maxlen = max(lengths.max(), psd_len)
         mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold, args.chisq_bins,
-                                     snr_abort_threshold=args.snr_abort_threshold, 
+                                     snr_abort_threshold=args.snr_abort_threshold,
                                      newsnr_threshold=args.newsnr_threshold,
                                      max_triggers_in_batch=args.max_triggers_in_batch,
                                      maxelements=args.max_batch_size)
@@ -410,7 +406,7 @@ with ctx:
     maxlen = int(maxlen)
     data_reader = {}
     sngl_estimator = {}
-    for ifo in advancing_ifos:
+    for ifo in ifos:
         state = dq = dqf = None
         if args.state_channel and ifo in args.state_channel:
             state = '%s:%s' % (ifo, args.state_channel[ifo])
@@ -452,9 +448,13 @@ with ctx:
                             analyze_flags=args.analyze_flags,
                             data_quality_flags=dqf,
                             dq_padding=args.data_quality_padding)
+
+    # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
-        estimator = LiveCoincTimeslideBackgroundEstimator.from_cli(args,
-                            len(bank), args.analysis_chunk, ifos)
+        ifo_combos  = itertools.combinations(ifos, 2)
+        for combo in ifo_combos:
+            estimators = LiveCoincTimeslideBackgroundEstimator.from_cli(args,
+                            len(bank), args.analysis_chunk, list(combo))
 
 
 
@@ -470,9 +470,8 @@ with ctx:
         t1 = time()
         logging.info('%s: Analyzing from %s', evnt.rank, data_end())
         results = {}
-        usable_followup_ifos = []
 
-        for ifo in advancing_ifos:
+        for ifo in ifos:
             results[ifo] = False
             status = data_reader[ifo].advance(valid_pad, timeout=args.frame_read_timeout)
 
@@ -484,14 +483,7 @@ with ctx:
                 if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
                     logging.info("%s PSD outside acceptable sensitivity %s - %s, have %s",
                                  ifo, args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
-                    status = False               
-
-            if ifo in followup_ifos:
-                # we advanced the data and handled the PSD, that's it
-                if status is True:
-                    usable_followup_ifos.append(ifo)
-                    logging.info('%s usable for followup', ifo)
-                continue
+                    status = False
 
             if status is True:
                 logging.info('%s: Filtering: %s', evnt.rank, ifo)
@@ -527,25 +519,16 @@ with ctx:
             # Look for coincident triggers and do background estimation
             coinc_results = {}
             if args.enable_background_estimation:
-                coinc_results = estimator.add_singles(results, data_reader)
-                evnt.check_coincs(results.keys(), coinc_results,
-                                  psds, args.low_frequency_cutoff, data_reader, bank,
-                                  followup_ifos=usable_followup_ifos)
-
-            # Check for singles if we don't have coinc time
-            if args.enable_single_detector_background:
-                evnt.check_singles(results, data_reader, psds,
-                                   args.low_frequency_cutoff,
-                                   followup_ifos=usable_followup_ifos)
+                for c in estimators:
+                    coinc_results = c.add_singles(results, data_reader)
 
             prefix = '%s-%s-%s-%s' % (''.join(ifos), args.file_prefix, data_end() - args.analysis_chunk, valid_pad)
-            evnt.dump(results, prefix, time_index=data_end(),
-                      store_psd=False if args.store_psd is False else psds,
-                      store_loudest_index=args.store_loudest_index,
-                      raw_results=coinc_results,
-                     )     
 
-            logging.info('Finished analyzing up to %s', data_end())
+            #evnt.dump(results, prefix, time_index=data_end(),
+            #          store_psd=False if args.store_psd is False else psds,
+            #          store_loudest_index=args.store_loudest_index,
+            #          raw_results=coinc_results,
+            #         )
 
         if args.sync:
             evnt.barrier()
