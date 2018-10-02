@@ -212,7 +212,7 @@ if args.timeslide_interval is not None:
 if args.timeslide_interval is None:
     args.timeslide_interval = 0
 
-data = {'stat':[], 'decimation_factor':[], 'times':[], 'trigger_ids':[], 'timeslide_id':[], 'template_id':[]}
+data = {'stat':[], 'decimation_factor':[], 'timeslide_id':[], 'template_id':[]}
 
 for tnum in range(tmin, tmax):
     tids={}
@@ -281,25 +281,27 @@ for tnum in range(tmin, tmax):
     ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
     logging.info('%s after decimation' % len(ti))
 
-    g0 = i0[ti]
-    g1 = i1[ti]
-    g2 = i2[ti]
-    del i0
-    del i1
-    del i2
+    gs={}
+    for i in ids:
+        gs[i]=ids[i][ti]
+    del ids
+    
+    # In the first for cycle the time and trigger_id keys will not exist,
+    # we need to create them, otherwise add new items into data.
+    if 'time1' in data:
+        for i in range(len(args.trigger_files)):
+            data['time{}'.format(i+1)] += times[trigs['trigs{}'.format(i)].ifo][gs[trigs['trigs{}'.format(i)].ifo]]
+            data['trigger_id{}'.format(i+1)] += tids[trigs['trigs{}'.format(i)].ifo][gs[trigs['trigs{}'.format(i)].ifo]]
+    else:
+        for i in range(len(args.trigger_files)):
+            data['time{}'.format(i+1)] = times[trigs['trigs{}'.format(i)].ifo][gs[trigs['trigs{}'.format(i)].ifo]]
+            data['trigger_id{}'.format(i+1)] = tids[trigs['trigs{}'.format(i)].ifo][gs[trigs['trigs{}'.format(i)].ifo]]
 
     data['stat'] += [c[ti]]
     dec_fac = numpy.repeat([args.decimation_factor, 1, 1],
                            [len(bl), len(bh), len(fi)]).astype(numpy.uint32)
     data['decimation_factor'] += [dec_fac]
-    data['time1'] += [t0[g0]]
-    data['time2'] += [t1[g1]]
-    data['time3'] += [t2[g2]]
-    data['trigger_id1'] += [tid0[g0]]
-    data['trigger_id2'] += [tid1[g1]]
-    data['trigger_id3'] += [tid2[g2]]
-    data['timeslide_id1'] += [slide1[ti]]
-    data['timeslide_id2'] += [slide2[ti]]
+    data['timeslide_id'] += [slide[ti]]
     data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
 
 if len(data['stat']) > 0:
@@ -323,20 +325,21 @@ if len(data['stat']) > 0:
 
 f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
 
-for t in [trigs['trigs0'], trigs['trigs1']]:
-    f['segments/%s/start' % t.ifo], f['segments/%s/end' % t.ifo] = t.valid
+for t in trigs:
+    f['segments/%s/start' % trigs[t].ifo], f['segments/%s/end' % trigs[t].ifo] = trigs[t].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
-f.attrs['detector_1'] = det0.name
-f.attrs['detector_2'] = det1.name
-f.attrs['detector_3'] = det2.name
-f.attrs['foreground_time1'] = abs(trigs['trigs0'].segs)
-f.attrs['foreground_time2'] = abs(trigs['trigs1'].segs)
-f.attrs['foreground_time3'] = abs(trigs['trigs2'].segs)
+for i in range(len(args.trigger_files)):
+    f.attrs['detector_{}'.format(i+1)] = detectors['det{}'.format(i)].name
+    f.attrs['foreground_time{}'.format(i+1)] = abs(trigs['trigs{}'.format(i)].segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
 
 if args.timeslide_interval:
-    nslides = int(max(abs(trigs['trigs0'].segs), abs(trigs['trigs1'].segs), abs(trigs['trigs2'].segs)) / args.timeslide_interval)
+    maxtrigs=abs(trigs['trigs0'].segs)
+    for i in trigs:
+        if abs(trigs[i].segs) > maxtrigs:
+            maxtrigs=abs(trigs[i].segs)
+    nslides = int(maxtrigs / args.timeslide_interval)
 else:
     nslides = 0
 
