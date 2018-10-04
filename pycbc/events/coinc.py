@@ -248,7 +248,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
     ----------
     times: dict of numpy.ndarrays
         Dictionary keyed by ifo of the times of each single detector trigger.
-    slide_steop: float
+    slide_step: float
         The interval between time slides
     slop: float
         The amount of time to add to the TOF between detectors for coincidence
