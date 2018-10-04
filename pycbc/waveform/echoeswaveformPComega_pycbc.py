@@ -5,8 +5,6 @@ import pycbc
 from pycbc.waveform import utils
 import lal
 
-import time
-
 """Includes a method to append echoes to a given waveform 
 and a tapering function used for the echo's form 
 relative to the original waveform."""
@@ -117,7 +115,6 @@ def add_echoes(hp, hc, omega, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, 
     hp_numpy = hp_numpy[first_idx:last_idx]
     hc_numpy = hc_numpy[first_idx:last_idx]
     #Appending first echo after t_echo.
-    t0 = time.time()
     hparray = np.zeros(
                     len(hp) 
                     + int(np.ceil((t_echo + n_echoes * del_t_echo) * 1.0/timestep))
@@ -131,7 +128,6 @@ def add_echoes(hp, hc, omega, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, 
     # uncomment below to add in original event    
     #hparray[:length] += hp.numpy()
     #hcarray[:length] += hc.numpy()
-    print(time.time() - t0)
     t_echo_steps = int(round(t_echo * 1.0/timestep)) + first_idx
     
     hparray[
@@ -143,7 +139,7 @@ def add_echoes(hp, hc, omega, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, 
         ] += hc_numpy * amplitude * -1.0
 
     #Appending further echoes. 
-    t0 = time.time()
+
     for j in range(1, int(n_echoes)):
 
         del_t_echo_steps = (int(round((t_echo + del_t_echo * j) * 1.0/timestep)) 
@@ -156,17 +152,16 @@ def add_echoes(hp, hc, omega, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, 
         hcarray[
                 del_t_echo_steps:(del_t_echo_steps+len(hc_numpy))
                 ] += hc_numpy * amplitude * gamma**(j) * ((-1.0)**(j+1))
-    print(time.time() - t0)
-    t0 = time.time()
+
     hp = pycbc.types.TimeSeries(hparray, delta_t=timestep, epoch=hp.start_time)
     hc = pycbc.types.TimeSeries(hcarray, delta_t=timestep, epoch=hc.start_time)
-    print(time.time() - t0)
+
     # apply the inclination angle: since we assume this was generated with
     # zero inclination, we have to remove that
-    t0 = time.time()
+
     yp0, _ = utils.spher_harms(2, 2, 0.)
     yp, yc = utils.spher_harms(2, 2, inclination)
     hp *= yp / yp0
     hc *= yc / yp0
-    print(time.time() - t0)
+
     return hp, hc
