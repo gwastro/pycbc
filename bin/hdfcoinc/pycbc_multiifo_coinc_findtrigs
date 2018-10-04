@@ -12,9 +12,6 @@ parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     "contained in the file are ignored")
 parser.add_argument("--segment-name", nargs='*', action='append', default=[],
                     help="Optional, name of veto segment in veto file")
-parser.add_argument("--strict-coinc-time", action='store_true',
-                    help="Optional, only allow coincidences between triggers "
-                    "that lie in coincident time after applying vetoes")
 parser.add_argument("--trigger-files", nargs='*', action='append', default=[],
                     help="File containing the single-detector triggers")
 parser.add_argument("--template-bank", required=True,
@@ -181,10 +178,10 @@ coinc_segs = trigs['trigs0'].segs
 for i in range(len(args.trigger_files)-1):
     coinc_segs = (coinc_segs & trigs['trigs{0}'.format(i+1)].segs).coalesce()
 
-if args.strict_coinc_time:
-    for i in trigs:
-        trigs[i].segs = coinc_segs
-        trigs[i].valid = veto.segments_to_start_end(trigs[i].segs)
+
+for i in trigs:
+    trigs[i].segs = coinc_segs
+    trigs[i].valid = veto.segments_to_start_end(trigs[i].segs)
 
 # initialize a Stat class instance to calculate the coinc ranking statistic
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
@@ -288,7 +285,6 @@ for tnum in range(tmin, tmax):
     for i in ids:
         gs[i]=ids[i][ti]
     del ids
-    logging.info('results of gs {}'.format(gs))
 
     # In the first for cycle the time and trigger_id keys will not exist,
     # we need to create them, otherwise add new items into data.
