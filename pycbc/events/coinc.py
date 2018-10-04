@@ -290,8 +290,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         # Find coincidences between dependent ifo triggers and existing coinc.
         for ifo2 in ids.keys():
             # Currently assumes that additional detectors do not slide
-            # independently of the 'fixed one' 
-            # 
+            # independently of the 'fixed one'
+            #
             # To modify that assumption, the code here would be modified
             # by adding a function that remaps the coinc time frame and unmaps
             # it and the end of this loop.
@@ -311,8 +311,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
             dep_ids = left[nz]
 
             # The property that only one trigger can be within the window is ensured
-            # by the peak finding algorithm we use for each template. 
-            # If that is modifed, this function may need to be 
+            # by the peak finding algorithm we use for each template.
+            # If that is modifed, this function may need to be
             # extended.
             if len(left) > 0 and (right - left).max() > 1:
                 raise ValueError('Somehow triggers are closer than time-delay window')
