@@ -25,6 +25,7 @@
 coincident triggers.
 """
 import numpy, logging, pycbc.pnutils, copy, lal
+from pycbc.detector import Detector
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
@@ -239,6 +240,94 @@ def time_coincidence(t1, t2, window, slide_step=0):
 
     return idx1.astype(numpy.uint32), idx2.astype(numpy.uint32), slide.astype(numpy.int32)
 
+
+def time_multi_coincidence(times, slide_step=0, slop=.003,
+                           pivot='H1', fixed='L1'):
+    """ Find multi detector concidences.
+
+    Parameters
+    ----------
+    times: dict of numpy.ndarrays
+        Dictionary keyed by ifo of the times of each single detector trigger.
+    slide_step: float
+        The interval between time slides
+    slop: float
+        The amount of time to add to the TOF between detectors for coincidence
+    pivot: str
+        ifo used to test coincidence against in first stage
+    fixed: str
+        the other ifo used in the first stage coincidence which we'll use
+        as a fixed time reference for coincident triggers. All other detectors
+        are time slid by being fixed to this detector.
+    """
+    # pivots are used to determine standard coincidence triggers, we then
+    # pair off additional detectors to those.
+    def win(ifo1, ifo2):
+        d1 = Detector(ifo1)
+        d2 = Detector(ifo2)
+        return d1.light_travel_time_to_detector(d2) + slop
+
+    # Find coincs first between the two fully time-slid detectors
+    pivot_id, fix_id, slide = time_coincidence(times[pivot], times[fixed],
+                                               win(pivot, fixed),
+                                               slide_step=slide_step)
+
+    # additional detectors do not slide independently of the fixed one
+    # Each trigger in an additional detector must be concident with an
+    # existing coincident one. All times moved to 'fixed' relative time
+    fixed_time = times[fixed][fix_id]
+    pivot_time = times[pivot][pivot_id] - slide_step * slide
+
+    ctimes = {fixed: fixed_time, pivot:pivot_time}
+    ids = {fixed:fix_id, pivot:pivot_id}
+
+    dep_ifos = [ifo for ifo in times.keys() if ifo != fixed and ifo != pivot]
+    for ifo1 in dep_ifos:
+        otime = times[ifo1]
+        sort = times[ifo1].argsort()
+        time = otime[sort]
+
+        # Find coincidences between dependent ifo triggers and existing coinc.
+        for ifo2 in ids.keys():
+            # Currently assumes that additional detectors do not slide
+            # independently of the 'fixed one'
+            #
+            # To modify that assumption, the code here would be modified
+            # by adding a function that remaps the coinc time frame and unmaps
+            # it and the end of this loop.
+            # This remapping must ensure
+            #    * function of the standard slide number
+            #    * ensure all times remain within coincident segment
+            #    * unbiased distribution of triggers after mapping.
+
+            w = win(ifo1, ifo2)
+            left = numpy.searchsorted(time, ctimes[ifo2] - w)
+            right = numpy.searchsorted(time, ctimes[ifo2] + w)
+
+            # remove elements that will not form a coinc
+            # There is only at most one trigger for an existing coinc
+            # (assumes triggers spaced > slide step)
+            nz = (right - left).nonzero()
+            dep_ids = left[nz]
+
+            # The property that only one trigger can be within the window is ensured
+            # by the peak finding algorithm we use for each template.
+            # If that is modifed, this function may need to be
+            # extended.
+            if len(left) > 0 and (right - left).max() > 1:
+                raise ValueError('Somehow triggers are closer than time-delay window')
+
+            slide = slide[nz]
+            for ifo in ctimes:
+                ctimes[ifo] = ctimes[ifo][nz]
+                ids[ifo] = ids[ifo][nz]
+
+        # Add this detector now to the cumulative set and proceed to the next
+        # ifo coincidence test
+        ids[ifo1] = sort[dep_ids]
+        ctimes[ifo1] = otime[ids[ifo1]]
+
+    return ids, slide
 
 def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
     """Cluster coincident events for each timeslide separately, across
