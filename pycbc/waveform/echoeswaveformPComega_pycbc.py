@@ -18,7 +18,7 @@ def truncfunc(t, t0, t_merger, omega_of_t):
     return theta
 
 
-def add_echoes(hp, hc, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, gamma,
+def add_echoes(hp, hc, omega, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, gamma,
                inclination=0., timestep=None):
     """Takes waveform timeseries' of plus and cross polarisation, 
     produces echoes of the waveform and returns the original 
@@ -69,31 +69,31 @@ def add_echoes(hp, hc, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, gamma,
     # For leading/trailing zeros, use first/last frequency found. Use
     # np.nonzero instead?
     
-    omega = 2. * np.pi * utils.frequency_from_polarizations(hp.trim_zeros(), 
-                                                        hc.trim_zeros())
-    
-    omega_temp = np.zeros(len(template))
-    first_zero_index_hp = 0
-    first_zero_index_hc = 0
-    
-    if hp[0] == 0 and hc[0] == 0:
-        print('Active')
-        
-        while hp[first_zero_index_hp] == 0:
-            first_zero_index_hp += 1
-        
-        while hc[first_zero_index_hc] == 0:
-            first_zero_index_hc += 1
-        
-        if first_zero_index_hp != first_zero_index_hc:
-            print('Polarisations have unequal number of leading zeroes.')
-        
-        omega_temp[:max(first_zero_index_hp,first_zero_index_hc)] = \
-            omega[max(first_zero_index_hp,first_zero_index_hc)]
-        omega = omega_temp
-    
-    omega.resize(len(template))
-    
+#    omega = 2. * np.pi * utils.frequency_from_polarizations(hp.trim_zeros(), 
+#                                                        hc.trim_zeros())
+#    
+#    omega_temp = np.zeros(len(template))
+#    first_zero_index_hp = 0
+#    first_zero_index_hc = 0
+#    
+#    if hp[0] == 0 and hc[0] == 0:
+#        print('Active')
+#        
+#        while hp[first_zero_index_hp] == 0:
+#            first_zero_index_hp += 1
+#        
+#        while hc[first_zero_index_hc] == 0:
+#            first_zero_index_hc += 1
+#        
+#        if first_zero_index_hp != first_zero_index_hc:
+#            print('Polarisations have unequal number of leading zeroes.')
+#        
+#        omega_temp[:max(first_zero_index_hp,first_zero_index_hc)] = \
+#            omega[max(first_zero_index_hp,first_zero_index_hc)]
+#        omega = omega_temp
+#    
+#    omega.resize(len(template))
+#    
     #Producing the tapered waveform from the original one for the echoes:
     length = len(hp)
     tapercoeff = truncfunc(
@@ -102,12 +102,19 @@ def add_echoes(hp, hc, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, gamma,
                         t_merger, 
                         omega
                     )
-                    
+    threshold = 0.01
+    first_idx = np.nonzero(tapercoeff>threshold)[0][0]
+    print(first_idx)
+    
     hp_numpy = (hp_numpy * tapercoeff)
     hc_numpy = (hc_numpy * tapercoeff)
     
+    last_idx = max(np.nonzero(hp_numpy>threshold * max(hp_numpy))[0][-1],
+                np.nonzero(hc_numpy>threshold * max(hc_numpy))[0][-1]) + 1
+    print(last_idx)
+    hp_numpy = hp_numpy[first_idx:last_idx]
+    hc_numpy = hc_numpy[first_idx:last_idx]
     #Appending first echo after t_echo.
-
     hparray = np.zeros(
                     len(hp) 
                     + int(np.ceil((t_echo + n_echoes * del_t_echo) * 1.0/timestep))
@@ -121,8 +128,7 @@ def add_echoes(hp, hc, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, gamma,
     # uncomment below to add in original event    
     #hparray[:length] += hp.numpy()
     #hcarray[:length] += hc.numpy()
-    
-    t_echo_steps = int(round(t_echo * 1.0/timestep))
+    t_echo_steps = int(round(t_echo * 1.0/timestep)) + first_idx
     
     hparray[
         t_echo_steps:(t_echo_steps+len(hp_numpy))
@@ -136,14 +142,15 @@ def add_echoes(hp, hc, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, gamma,
 
     for j in range(1, int(n_echoes)):
 
-        del_t_echo_steps = int(round((t_echo + del_t_echo * j) * 1.0/timestep))
+        del_t_echo_steps = (int(round((t_echo + del_t_echo * j) * 1.0/timestep)) 
+                            + first_idx)
         
         hparray[
-                del_t_echo_steps:(del_t_echo_steps+length)
+                del_t_echo_steps:(del_t_echo_steps+len(hp_numpy))
                 ] += hp_numpy * amplitude * gamma**(j) * ((-1.0)**(j+1))
         
         hcarray[
-                del_t_echo_steps:(del_t_echo_steps+length)
+                del_t_echo_steps:(del_t_echo_steps+len(hc_numpy))
                 ] += hc_numpy * amplitude * gamma**(j) * ((-1.0)**(j+1))
 
     hp = pycbc.types.TimeSeries(hparray, delta_t=timestep, epoch=hp.start_time)
@@ -151,8 +158,10 @@ def add_echoes(hp, hc, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, gamma,
 
     # apply the inclination angle: since we assume this was generated with
     # zero inclination, we have to remove that
+
     yp0, _ = utils.spher_harms(2, 2, 0.)
     yp, yc = utils.spher_harms(2, 2, inclination)
     hp *= yp / yp0
     hc *= yc / yp0
+
     return hp, hc

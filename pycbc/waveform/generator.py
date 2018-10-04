@@ -38,6 +38,9 @@ import lal as _lal
 from pycbc import strain
 import logging
 
+import numpy
+from pycbc.waveform import utils
+
 #
 #   Generator for CBC waveforms
 #
@@ -304,6 +307,27 @@ class TDomainEchoesGenerator(BaseGenerator):
         hp, hc = waveform.get_td_waveform(**imrargs)
         frozen_params["hp"] = hp
         frozen_params["hc"] = hc
+        if len(hc) != len(hp): 
+            print("hp and hc have unequal length")
+        omega = 2. * numpy.pi * utils.frequency_from_polarizations(hp.trim_zeros(),
+                                                                 hc.trim_zeros())
+        omega_temp = numpy.zeros(len(hp))
+        first_zero_index_hp = 0
+        first_zero_index_hc = 0
+        if hp[0] == 0 and hc[0] == 0:
+            print('Active')
+            while hp[first_zero_index_hp] == 0:
+                first_zero_index_hp += 1
+            while hc[first_zero_index_hc] == 0:
+                first_zero_index_hc += 1
+            if first_zero_index_hp != first_zero_index_hc:
+                print('Polarisations have unequal number of leading zeros.')
+            omega_temp[:max(first_zero_index_hp, first_zero_index_hc)] = \
+                omega[max(first_zero_index_hp, first_zero_index_hc)]
+            omega = omega_temp
+        omega.resize(len(hp))
+        frozen_params["omega"] = omega
+        
         super(TDomainEchoesGenerator, self).__init__(
             waveform.get_td_echoes_waveform, variable_args=variable_args,
             **frozen_params)
