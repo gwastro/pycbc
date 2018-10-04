@@ -36,8 +36,8 @@ data[event] = e = {}
 e['time'] = 1126259462.4
 
 # Maybe support multiple data types later and add selection to the accessing class
-e['frames'] = {"H1":'https://losc.ligo.org/s/events/GW150914/H-H1_LOSC_4_V2-1126259446-32.gwf',
-               "L1":'https://losc.ligo.org/s/events/GW150914/L-L1_LOSC_4_V2-1126259446-32.gwf',
+e['frames'] = {"H1":'https://www.gw-openscience.org/GW150914data/H-H1_LOSC_4_V2-1126259446-32.gwf',
+               "L1":'https://www.gw-openscience.org/GW150914data/L-L1_LOSC_4_V2-1126259446-32.gwf',
               }
 e["median1d"] = d = {}
 d["mass1"] = (36.2, -3.8, +5.2)
@@ -51,8 +51,8 @@ d["redshift"] = (0.09, -.04, +.03)
 event = "GW151226"
 data[event] = e = {}
 e['time'] = 1135136350.65
-e['frames'] = {"H1":'https://losc.ligo.org/s/events/GW151226/H-H1_LOSC_4_V2-1135136334-32.gwf',
-               "L1":'https://losc.ligo.org/s/events/GW151226/L-L1_LOSC_4_V2-1135136334-32.gwf',
+e['frames'] = {"H1":'https://www.gw-openscience.org/GW151226data/H-H1_LOSC_4_V2-1135136334-32.gwf',
+               "L1":'https://www.gw-openscience.org/GW151226data/L-L1_LOSC_4_V2-1135136334-32.gwf',
               }
 e["median1d"] = d = {}
 d["mass1"] = (14.2, -3.7, +8.3)
@@ -65,8 +65,8 @@ d["redshift"] = (0.09, -.04, +.03)
 event = "LVT151012"
 data[event] = e = {}
 e['time'] = 1128678900.44
-e['frames'] = {"H1":'https://losc.ligo.org/s/events/LVT151012/H-H1_LOSC_4_V2-1128678884-32.gwf',
-               "L1":'https://losc.ligo.org/s/events/LVT151012/L-L1_LOSC_4_V2-1128678884-32.gwf',
+e['frames'] = {"H1":'https://www.gw-openscience.org/LVT151012data/H-H1_LOSC_4_V2-1128678884-32.gwf',
+               "L1":'https://www.gw-openscience.org/LVT151012data/L-L1_LOSC_4_V2-1128678884-32.gwf',
               }
 e["median1d"] = d = {}
 d["mass1"] = (23, -6., +18.)
@@ -81,8 +81,8 @@ d["redshift"] = (0.20, -0.09, +0.09)
 event = "GW170104"
 data[event] = e = {}
 e['time'] = 1167559936.6
-e['frames'] = {"H1":'https://losc.ligo.org/s/events/GW170104/H-H1_LOSC_4_V1-1167559920-32.gwf',
-               "L1":'https://losc.ligo.org/s/events/GW170104/L-L1_LOSC_4_V1-1167559920-32.gwf',
+e['frames'] = {"H1":'https://www.gw-openscience.org/GW170104data/H-H1_LOSC_4_V1-1167559920-32.gwf',
+               "L1":'https://www.gw-openscience.org/GW170104data/L-L1_LOSC_4_V1-1167559920-32.gwf',
               }
 e["median1d"] = d = {}
 d["mass1"] = (31.2, -6.0, +8.4)
@@ -96,9 +96,9 @@ d["redshift"] = (0.18, -0.07, +0.08)
 event = "GW170814"
 data[event] = e = {}
 e['time'] = 1186741861.53
-e['frames'] = {"H1":"https://losc.ligo.org/s/events/GW170814/H-H1_LOSC_CLN_4_V1-1186741845-32.gwf",
-               "L1":"https://losc.ligo.org/s/events/GW170814/L-L1_LOSC_CLN_4_V1-1186741845-32.gwf",
-               "V1":"https://losc.ligo.org/s/events/GW170814/V-V1_LOSC_CLN_4_V1-1186741845-32.gwf",
+e['frames'] = {"H1":"https://www.gw-openscience.org/GW170814data/H-H1_LOSC_CLN_4_V1-1186741845-32.gwf",
+               "L1":"https://www.gw-openscience.org/GW170814data/L-L1_LOSC_CLN_4_V1-1186741845-32.gwf",
+               "V1":"https://www.gw-openscience.org/GW170814data/V-V1_LOSC_CLN_4_V1-1186741845-32.gwf",
               }
 e["median1d"] = d = {}
 d["mass1"] = (30.5, -3.0, +5.7)
@@ -114,9 +114,9 @@ d["redshift"] = (.11, -.04, +0.03)
 event = "GW170817"
 data[event] = e = {}
 e['time'] = 1187008882.43
-e['frames'] = {"H1":"https://losc.ligo.org/s/events/GW170817/H-H1_LOSC_CLN_4_V1-1187007040-2048.gwf",
-               "L1":"https://losc.ligo.org/s/events/GW170817/L-L1_LOSC_CLN_4_V1-1187007040-2048.gwf",
-               "V1":"https://losc.ligo.org/s/events/GW170817/V-V1_LOSC_CLN_4_V1-1187007040-2048.gwf",
+e['frames'] = {"H1":"https://www.gw-openscience.org/GW170817data/H-H1_LOSC_CLN_4_V1-1187007040-2048.gwf",
+               "L1":"https://www.gw-openscience.org/GW170817data/L-L1_LOSC_CLN_4_V1-1187007040-2048.gwf",
+               "V1":"https://www.gw-openscience.org/GW170817data/V-V1_LOSC_CLN_4_V1-1187007040-2048.gwf",
               }
 e["median1d"] = d = {}
 # uses low spin prior
@@ -131,8 +131,8 @@ d["redshift"] = (.008, -.003, +.002)
 event = "GW170608"
 data[event] = e = {}
 e['time'] = 1180922494.49
-e['frames'] = {"H1":"https://losc.ligo.org/s/events/GW170608/H-H1_LOSC_CLN_4_V1-1180922478-32.gwf",
-               "L1":"https://losc.ligo.org/s/events/GW170608/L-L1_LOSC_CLN_4_V1-1180922478-32.gwf",
+e['frames'] = {"H1":"https://www.gw-openscience.org/GW170608data/H-H1_LOSC_CLN_4_V1-1180922478-32.gwf",
+               "L1":"https://www.gw-openscience.org/GW170608data/L-L1_LOSC_CLN_4_V1-1180922478-32.gwf",
              }
 e["median1d"] = d = {}
 # uses low spin prior
