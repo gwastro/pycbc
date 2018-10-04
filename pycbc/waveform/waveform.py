@@ -737,9 +737,10 @@ def get_td_echoes_waveform(template=None, **kwargs):
     # call get_td_waveform to generate the IMR waveform
     inclination = input_params.pop('inclination')
     try:
-        # try to get the IMR waveform from the input params
+        # try to get the IMR waveform and angular frequency from the input params
         hp = input_params['hp']
         hc = input_params['hc']
+        omega = input_params['omega']
     except KeyError:
         # generate the IMR waveform
         apprx = input_params['imr_approximant']
@@ -753,7 +754,7 @@ def get_td_echoes_waveform(template=None, **kwargs):
     n_echoes = input_params["n_echoes"]
     amplitude = input_params["amplitude"]
     gamma = input_params["gamma"]
-    return add_echoes(hp, hc, t0trunc, t_echo,
+    return add_echoes(hp, hc, omega, t0trunc, t_echo,
                       del_t_echo, n_echoes, amplitude, gamma,
                       inclination=inclination, timestep=None)
 
