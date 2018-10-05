@@ -1805,6 +1805,7 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
     snr = TimeSeries(snr[slice(valid_start, valid_end)],
                      delta_t=dt, epoch=epoch)
 
+    # Onsource slice for Bayestar followup
     onsource_idx = int(round(float(trig_time - snr.start_time) * sr))
     onsource_slice = slice(onsource_idx - half_dur_samples,
                            onsource_idx + half_dur_samples + 1)

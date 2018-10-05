@@ -528,6 +528,10 @@ class LiveFilterBank(TemplateBank):
         if isinstance(index, slice):
             return self.getslice(index)
 
+        return self.get_template(index)
+
+    def get_template(self, index, delta_f=None):
+
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
         flow = self.table[index].f_lower
@@ -544,7 +548,8 @@ class LiveFilterBank(TemplateBank):
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = int(tlen / 2 + 1)
 
-        delta_f = self.sample_rate / float(tlen)
+        if delta_f is None:
+            delta_f = self.sample_rate / float(tlen)
 
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen-1) * delta_f
@@ -589,6 +594,7 @@ class LiveFilterBank(TemplateBank):
                                       htilde.params.spin1z,
                                       htilde.params.spin2z)))
         return htilde
+
 
 class FilterBank(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, dtype,

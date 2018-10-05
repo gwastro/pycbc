@@ -119,6 +119,9 @@ class LiveEventManager(object):
 
             fud = self.compute_followup_data(coinc_ifos, coinc_results, data_readers,
                                              bank, followup_ifos)
+
+
+
             event = SingleCoincForGraceDB(coinc_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
