@@ -345,8 +345,9 @@ class Executable(pegasus_workflow.Executable):
                         assert(file_pfn == curr_pfn)
                         curr_file = file_input_from_config_dict[curr_lfn][1]
                     else:
-                        curr_file = File.from_path(value)
-                        tuple_val = (curr_pfn, curr_file)
+                        local_file_path = resolve_url(curr_pfn)
+                        curr_file = File.from_path(local_file_path)
+                        tuple_val = (local_file_path, curr_file)
                         file_input_from_config_dict[curr_lfn] = tuple_val
                     self.common_input_files.append(curr_file)
                     dax_reprs.append(curr_file.dax_repr)
