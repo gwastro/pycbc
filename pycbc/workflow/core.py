@@ -341,13 +341,13 @@ class Executable(pegasus_workflow.Executable):
                         curr_pfn = value
 
                     if curr_lfn in file_input_from_config_dict.keys():
-                        file_pfn = file_input_from_config_dict[curr_lfn][0]
+                        file_pfn = file_input_from_config_dict[curr_lfn][2]
                         assert(file_pfn == curr_pfn)
                         curr_file = file_input_from_config_dict[curr_lfn][1]
                     else:
                         local_file_path = resolve_url(curr_pfn)
                         curr_file = File.from_path(local_file_path)
-                        tuple_val = (local_file_path, curr_file)
+                        tuple_val = (local_file_path, curr_file, curr_pfn)
                         file_input_from_config_dict[curr_lfn] = tuple_val
                     self.common_input_files.append(curr_file)
                     dax_reprs.append(curr_file.dax_repr)
