@@ -1719,6 +1719,78 @@ class LiveBatchMatchedFilter(object):
 
         return result, veto_info
 
+def followup_event_significance(ifo, data_reader, bank,
+                                template_id, coinc_times,
+                                coinc_threshold=0.005,
+                                lookback=100, duration=0.095):
+    """ Followup an event in another detector and determine its significance
+    """
+    # calculate onsource time range
+    from pycbc.detector import Detector
+    onsource_start = -numpy.inf
+    onsource_end = numpy.inf
+    fdet = Detector(ifo)
+
+    for cifo in coinc_times:
+        time = coinc_times[cifo]
+        dtravel =  Detector(cifo).light_travel_time_to_detector(fdet)
+        if time - dtravel > onsource_start:
+            onsource_start = time - dtravel
+        if time + dtravel < onsource_end:
+            onsource_end = time + dtravel
+
+    # Source must be within this time window to be considered a possible
+    # coincidence
+    onsource_start -= coinc_threshold
+    onsource_end += coinc_threshold
+
+    # Require all strain be valid within lookback time
+    if data_reader.state is not None:
+        state_end = data_reader.strain.end_time - data_reader.reduced_pad
+        state_start = state_end - lookback
+        if not data_reader.state.is_extent_valid(state_start, state_end):
+            return None, None, None
+
+    # We won't require that all DQ checks be valid for now, except at
+    # onsource time.
+    if data_reader.dq is not None:
+        if not data_reader.dq.is_extend_valid(onsource_start - duration / 2.0,
+                                              onsource_end + duration / 2.0):
+            return None, None, None
+
+    # Calculate SNR time series for this duration
+    trim_pad = (data_reader.trim_padding * data_reader.strain.delta_t)
+    bdur = lookback + 2.0 * trim_pad
+    htilde = bank.get_template(template_id, min_buffer=bdur)
+    stilde = data_reader.overwhitened_data(htilde.delta_f)
+
+    snr, corr, norm = matched_filter_core(htilde, stilde,
+                                          h_norm=htilde.sigmasq(stilde.psd))
+
+    # Find peak in on-source and determine p-value
+    onsrc = snr.time_slice(onsource_start, onsource_end)
+    peak = onsrc.abs_arg_max()
+    peak_time = peak * snr.delta_t + onsrc.start_time
+    peak_value = abs(onsrc[peak])
+
+
+    bstart = float(snr.start_time) + htilde.length_in_time + trim_pad
+
+    bkg = abs(snr.time_slice(bstart, onsource_start)).numpy()
+
+    window = int((onsource_end - onsource_start) * snr.sample_rate)
+    nsamples = int(len(bkg) / window)
+    
+    peaks = bkg[:nsamples*window].reshape(nsamples, window).max(axis=1)
+    pvalue = (1 + (peaks >= peak_value).sum()) / float(1 + nsamples)  
+
+    # Return recentered source SNR for bayestar, along with p-value, and trigger
+    baysnr = snr.time_slice(peak_time - duration / 2.0, peak_time + duration / 2.0)
+
+    logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo, pvalue, nsamples)
+
+    return baysnr * norm, peak_time, pvalue
+
 def compute_followup_snr_series(data_reader, htilde, trig_time,
                                 duration=0.095, check_state=True,
                                 coinc_window=0.05):
@@ -1777,34 +1849,23 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
                 return None
 
     stilde = data_reader.overwhitened_data(htilde.delta_f)
+    snr, corr, norm = matched_filter_core(htilde, stilde,
+                                          h_norm=htilde.sigmasq(stilde.psd))
 
-    norm = 4.0 * htilde.delta_f * htilde.sigmasq(stilde.psd) ** (-0.5)
-
-    sr = data_reader.sample_rate
-    dt = 1. / sr
-
-    qtilde = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
-    correlate(htilde, stilde, qtilde)
-    snr = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
-    ifft(qtilde, snr)
 
     valid_end = int(len(snr) - data_reader.trim_padding)
-    valid_start = int(valid_end - data_reader.blocksize * sr)
+    valid_start = int(valid_end - data_reader.blocksize * snr.sample_rate)
 
-    half_dur_samples = int(sr * duration / 2)
-    coinc_samples = int(sr * coinc_window)
+    half_dur_samples = int(snr.sample_rate * duration / 2)
+    coinc_samples = int(snr.sample_rate * coinc_window)
     valid_start -= half_dur_samples + coinc_samples
     valid_end += half_dur_samples
     if valid_start < 0 or valid_end > len(snr)-1:
         raise ValueError(('Requested SNR duration ({0} s)'
                           ' too long').format(duration))
 
-    epoch = data_reader.start_time - (half_dur_samples + coinc_samples) * dt
-    snr = TimeSeries(snr[slice(valid_start, valid_end)],
-                     delta_t=dt, epoch=epoch)
-
     # Onsource slice for Bayestar followup
-    onsource_idx = int(round(float(trig_time - snr.start_time) * sr))
+    onsource_idx = int(round(float(trig_time - snr.start_time) * snr.sample_rate))
     onsource_slice = slice(onsource_idx - half_dur_samples,
                            onsource_idx + half_dur_samples + 1)
     return snr[onsource_slice] * norm
@@ -1818,5 +1879,6 @@ __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'compute_max_snr_over_sky_loc_stat',
            'compute_followup_snr_series',
            'compute_u_val_for_sky_loc_stat_no_phase',
-           'compute_u_val_for_sky_loc_stat']
+           'compute_u_val_for_sky_loc_stat',
+           'followup_event_significance']
 

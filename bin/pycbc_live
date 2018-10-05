@@ -3,6 +3,7 @@ import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 from pycbc import fft, version, waveform, scheme, frame
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
+from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
 from time import time
 import os.path
@@ -84,24 +85,30 @@ class LiveEventManager(object):
         SNR time series for all the available detectors.
         """
         out = {}
+        followup_ifos = [] if followup_ifos is None else followup_ifos
 
         template_id = triggers['foreground/' + ifos[0] + '/template_id']
         htilde = bank[template_id]
 
-        subthreshold_sngl_time = numpy.mean(
-                [triggers['foreground/' + ifo + '/end_time'] for ifo in ifos])
+        coinc_times = {ifo: triggers['foreground/' + ifo + '/end_time'] for ifo in ifos}
 
-        for ifo in ifos + (followup_ifos or []):
-            if ifo in ifos:
-                trig_time = triggers['foreground/' + ifo + '/end_time']
-            else:
-                trig_time = subthreshold_sngl_time
+        # Get the SNR series for the ifos that made the initial coinc
+        for ifo in ifos:
             # NOTE we only check the state/DQ of followup IFOs here.
             # IFOs producing the coincidence are assumed to also
             # produce valid SNR series.
             snr_series = compute_followup_snr_series(
-                    data_readers[ifo], htilde, trig_time,
-                    check_state=(ifo in followup_ifos))
+                    data_readers[ifo], htilde, coinc_times[ifo],
+                    check_state=False)
+
+            if snr_series is not None:
+                out[ifo] = {'snr_series': snr_series}
+
+        # Determine if the other ifos can contribute to the coincident event
+        for ifo in followup_ifos:
+            snr_series, ptime, pvalue = followup_event_significance(ifo, 
+                            data_readers[ifo], bank, template_id, coinc_times)
+
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
 

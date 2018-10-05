@@ -530,7 +530,7 @@ class LiveFilterBank(TemplateBank):
 
         return self.get_template(index)
 
-    def get_template(self, index, delta_f=None):
+    def get_template(self, index, min_buffer=None):
 
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
@@ -538,7 +538,9 @@ class LiveFilterBank(TemplateBank):
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
-        min_buffer = .5 + self.minimum_buffer
+        if min_buffer is None:
+            min_buffer =  self.minimum_buffer
+        min_buffer += 0.5
 
         from pycbc.waveform.waveform import props
         p = props(self.table[index])
@@ -548,8 +550,7 @@ class LiveFilterBank(TemplateBank):
         tlen = self.round_up((buff_size + min_buffer) * self.sample_rate)
         flen = int(tlen / 2 + 1)
 
-        if delta_f is None:
-            delta_f = self.sample_rate / float(tlen)
+        delta_f = self.sample_rate / float(tlen)
 
         if f_end is None or f_end >= (flen * delta_f):
             f_end = (flen-1) * delta_f
