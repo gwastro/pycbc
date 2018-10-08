@@ -146,7 +146,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             Array of coincident ranking statistic values
         """
-        return (sum([x**2 for x in s.values()]))**0.5
+        return (sum([x ** 2. for x in s.values()])) ** 0.5
 
 
 class NewSNRSGStatistic(NewSNRStatistic):
