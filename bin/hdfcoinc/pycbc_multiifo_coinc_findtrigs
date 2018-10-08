@@ -12,9 +12,6 @@ parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     "contained in the file are ignored")
 parser.add_argument("--segment-name", nargs='*', action='append', default=[],
                     help="Optional, name of veto segment in veto file")
-parser.add_argument("--strict-coinc-time", action='store_true',
-                    help="Optional, only allow coincidences between triggers "
-                    "that lie in coincident time after applying vetoes")
 parser.add_argument("--trigger-files", nargs='*', action='append', default=[],
                     help="File containing the single-detector triggers")
 parser.add_argument("--template-bank", required=True,
@@ -172,41 +169,33 @@ logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 trigs={}
 for i in range(len(args.trigger_files)):
     logging.info('Opening trigger file %s: %s' % (i,args.trigger_files[i]))
-    trigs["trigs{0}".format(i)]=ReadByTemplate(args.trigger_files[i],
+    trigs[ReadByTemplate(args.trigger_files[i]).ifo]=ReadByTemplate(args.trigger_files[i],
                                                args.template_bank,
                                                args.segment_name,
                                                args.veto_files)
 
-coinc_segs = trigs['trigs0'].segs
-for i in range(len(args.trigger_files)-1):
-    coinc_segs = (coinc_segs & trigs['trigs{0}'.format(i+1)].segs).coalesce()
+coinc_segs = trigs[ReadByTemplate(args.trigger_files[0]).ifo].segs
+for ifo in trigs:
+    coinc_segs = (coinc_segs & trigs[ifo].segs).coalesce()
 
-if args.strict_coinc_time:
-    for i in trigs:
-        trigs[i].segs = coinc_segs
-        trigs[i].valid = veto.segments_to_start_end(trigs[i].segs)
+
+for ifo in trigs:
+    trigs[ifo].segs = coinc_segs
+    trigs[ifo].valid = veto.segments_to_start_end(trigs[ifo].segs)
 
 # initialize a Stat class instance to calculate the coinc ranking statistic
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
 if args.use_maxalpha:
     rank_method.use_alphamax()
 detectors={}
-for i in range(len(args.trigger_files)):
-    detectors['det{}'.format(i)] = detector.Detector(trigs['trigs{}'.format(i)].ifo)
+for ifo in trigs:
+    detectors[ifo] = detector.Detector(trigs[ifo].ifo)
 
-if args.timeslide_interval is not None:
-    # check all combination of of time windows,
-    # wether they are all above the timeslide interval
-    detector_combinations=list(itertools.combinations(detectors,2))
-    for i in range(len(detector_combinations)):
-        timewindow = detectors[detector_combinations[i][0]].light_travel_time_to_detector(detectors[detector_combinations[i][1]]) \
-                     + args.coinc_threshold
-        logging.info('Time windows for detectors {} and {} are: {} '.format(detector_combinations[i][0],
-                                                                            detector_combinations[i][1],
-                                                                            timewindow))
-        if (timewindow >= args.timeslide_interval):
-            raise parser.error("The maximum time delay between detectors should be smaller "
-                               "than the timeslide interval.")
+# Sanity check, time slide interval should be larger than twice the
+# Earth crossing time, which is approximately 0.085 seconds.
+if 0.085 >= args.timeslide_interval and args.timeslide_interval is not None:
+    raise parser.error("The time slide interwal should be larger "
+                       "than twice the Earth crossing time.")
 
 # slide = 0 means don't do timeslides
 if args.timeslide_interval is None:
@@ -216,34 +205,37 @@ data = {'stat':[], 'decimation_factor':[], 'timeslide_id':[], 'template_id':[]}
 
 for tnum in range(tmin, tmax):
     tids={}
-    for i in trigs:
-        tids[trigs[i].ifo]=trigs[i].set_template(tnum)
+    for ifo in trigs:
+        tids[ifo]=trigs[ifo].set_template(tnum)
 
-    for i in tids:
-        if len(tids[i] == 0):
+    for ifo in tids:
+        if len(tids[ifo] == 0):
             continue
 
     times={}
-    for i in trigs:
-        times[trigs[i].ifo]=trigs[i]['end_time']
+    for ifo in trigs:
+        times[ifo]=trigs[ifo]['end_time']
     logging.info('Trigs for template %s, '% (tnum))
-    for i in trigs:
-        logging.info('%s:%s' % (trigs[i].ifo, len(times[trigs[i].ifo])))
+    for ifo in times:
+        logging.info('%s:%s' % (ifo, len(times[ifo])))
 
-    ids, slide = coinc.time_multi_coincidence(times, args.timeslide_interval, args.coinc_threshold,trigs['trigs0'].ifo,trigs['trigs1'].ifo)
+    ids, slide = coinc.time_multi_coincidence(times, args.timeslide_interval,
+                                              args.coinc_threshold,
+                                              trigs[ReadByTemplate(args.trigger_files[0]).ifo].ifo,
+                                              trigs[ReadByTemplate(args.trigger_files[1]).ifo].ifo)
 
-    logging.info('Coincident Trigs: %s' % (len(ids[trigs['trigs0'].ifo])))
+    logging.info('Coincident Trigs: %s' % (len(ids[ReadByTemplate(args.trigger_files[0]).ifo])))
 
     logging.info('Calculating Single Detector Statistic')
     sds={}
-    for i in trigs:
-        sds[trigs[i].ifo]=rank_method.single(trigs[i])
+    for ifo in trigs:
+        sds[ifo]=rank_method.single(trigs[ifo])
 
     logging.info('Calculating Multi-Detector Combined Statistic')
 
     sdswithids={}
-    for i in sds:
-        sdswithids[i]=sds[i][ids[i]]
+    for ifo in sds:
+        sdswithids[ifo]=sds[ifo][ids[ifo]]
     c = rank_method.coinc_multiifo(sdswithids, slide, args.timeslide_interval)
 
     #index values of the zerolag triggers
@@ -285,25 +277,25 @@ for tnum in range(tmin, tmax):
     logging.info('%s after decimation' % len(ti))
 
     gs={}
-    for i in ids:
-        gs[i]=ids[i][ti]
+    for ifo in ids:
+        gs[ifo]=ids[ifo][ti]
     del ids
-    logging.info('results of gs {}'.format(gs))
 
     # In the first for cycle the time and trigger_id keys will not exist,
     # we need to create them, otherwise add new items into data.
-    if 'time1' in data:
-        for i in range(len(args.trigger_files)):
-            addtime=times[trigs['trigs{}'.format(i)].ifo][gs[trigs['trigs{}'.format(i)].ifo]]
-            addtriggerid=tids[trigs['trigs{}'.format(i)].ifo][gs[trigs['trigs{}'.format(i)].ifo]]
-            data['time{}'.format(i+1)] += [addtime]
-            data['trigger_id{}'.format(i+1)] += [addtriggerid]
+    checkstring = '%s_time' % ReadByTemplate(args.trigger_files[0]).ifo
+    if checkstring in data:
+        for ifo in gs:
+            addtime=times[ifo][gs[ifo]]
+            addtriggerid=tids[ifo][gs[ifo]]
+            data['%s_time' % ifo] += [addtime]
+            data['%s_trigger_id' % ifo] += [addtriggerid]
     else:
-        for i in range(len(args.trigger_files)):
-            addtime=times[trigs['trigs{}'.format(i)].ifo][gs[trigs['trigs{}'.format(i)].ifo]]
-            addtriggerid=tids[trigs['trigs{}'.format(i)].ifo][gs[trigs['trigs{}'.format(i)].ifo]]
-            data['time{}'.format(i+1)] = [addtime]
-            data['trigger_id{}'.format(i+1)] = [addtriggerid]
+        for ifo in gs:
+            addtime=times[ifo][gs[ifo]]
+            addtriggerid=tids[ifo][gs[ifo]]
+            data['%s_time' % ifo] = [addtime]
+            data['%s_trigger_id' % ifo] = [addtriggerid]
     data['stat'] += [c[ti]]
     dec_fac = numpy.repeat([args.decimation_factor, 1, 1],
                            [len(bl), len(bh), len(fi)]).astype(numpy.uint32)
@@ -316,7 +308,9 @@ if len(data['stat']) > 0:
         data[key] = numpy.concatenate(data[key])
 
 if args.cluster_window and len(data['stat']) > 0:
-    cid = coinc.cluster_coincs(data['stat'], data['time1'], data['time2'],
+    timestring0 = '%s_time' % ReadByTemplate(args.trigger_files[0]).ifo
+    timestring1 = '%s_time' % ReadByTemplate(args.trigger_files[1]).ifo
+    cid = coinc.cluster_coincs(data['stat'], data[timestring0], data[timestring1],
                                data['timeslide_id'], args.timeslide_interval,
                                args.cluster_window)
 
@@ -336,16 +330,16 @@ for t in trigs:
     f['segments/%s/start' % trigs[t].ifo], f['segments/%s/end' % trigs[t].ifo] = trigs[t].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
-for i in range(len(args.trigger_files)):
-    f.attrs['detector_{}'.format(i+1)] = detectors['det{}'.format(i)].name
-    f.attrs['foreground_time{}'.format(i+1)] = abs(trigs['trigs{}'.format(i)].segs)
+for ifo in detectors:
+    f.attrs[ifo] = detectors[ifo].name
+    f.attrs['%s_foreground_time' % ifo] = abs(trigs[ifo].segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
 
 if args.timeslide_interval:
-    maxtrigs=abs(trigs['trigs0'].segs)
-    for i in trigs:
-        if abs(trigs[i].segs) > maxtrigs:
-            maxtrigs=abs(trigs[i].segs)
+    maxtrigs=abs(trigs[ReadByTemplate(args.trigger_files[0]).ifo].segs)
+    for ifo in trigs:
+        if abs(trigs[ifo].segs) > maxtrigs:
+            maxtrigs=abs(trigs[ifo].segs)
     nslides = int(maxtrigs / args.timeslide_interval)
 else:
     nslides = 0
