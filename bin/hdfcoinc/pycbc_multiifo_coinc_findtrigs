@@ -178,7 +178,6 @@ coinc_segs = trigs[ReadByTemplate(args.trigger_files[0]).ifo].segs
 for ifo in trigs:
     coinc_segs = (coinc_segs & trigs[ifo].segs).coalesce()
 
-
 for ifo in trigs:
     trigs[ifo].segs = coinc_segs
     trigs[ifo].valid = veto.segments_to_start_end(trigs[ifo].segs)
