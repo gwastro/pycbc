@@ -104,14 +104,14 @@ def add_echoes(hp, hc, omega, t0trunc, t_echo, del_t_echo, n_echoes, amplitude, 
                     )
     threshold = 0.01
     first_idx = np.nonzero(tapercoeff>threshold)[0][0]
-    print(first_idx)
+#	    print(first_idx)
     
     hp_numpy = (hp_numpy * tapercoeff)
     hc_numpy = (hc_numpy * tapercoeff)
     
     last_idx = max(np.nonzero(hp_numpy>threshold * max(hp_numpy))[0][-1],
                 np.nonzero(hc_numpy>threshold * max(hc_numpy))[0][-1]) + 1
-    print(last_idx)
+#    print(last_idx)
     hp_numpy = hp_numpy[first_idx:last_idx]
     hc_numpy = hc_numpy[first_idx:last_idx]
     #Appending first echo after t_echo.
