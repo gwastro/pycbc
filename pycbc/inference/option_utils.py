@@ -544,7 +544,7 @@ def results_from_cli(opts, load_samples=True, **kwargs):
         fp = InferenceFile(input_file, "r")
 
         # get parameters and a dict of labels for each parameter
-        parameters = fp.variable_args if opts.parameters is None \
+        parameters = list(fp.variable_args) if opts.parameters is None \
                          else opts.parameters
         parameters, ldict = parse_parameters_opt(parameters)
 
