@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import h5py, argparse, logging, numpy, numpy.random, itertools
+import h5py, argparse, logging, numpy, numpy.random
 from pycbc import events, detector
 from pycbc.events import veto, coinc, stat
 import pycbc.version
@@ -169,12 +169,18 @@ logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 trigs={}
 for i in range(len(args.trigger_files)):
     logging.info('Opening trigger file %s: %s' % (i,args.trigger_files[i]))
-    trigs[ReadByTemplate(args.trigger_files[i]).ifo]=ReadByTemplate(args.trigger_files[i],
+    reader = ReadByTemplate(args.trigger_files[i],
                                                args.template_bank,
                                                args.segment_name,
                                                args.veto_files)
+    trigs[reader.ifo] = reader
 
-coinc_segs = trigs[ReadByTemplate(args.trigger_files[0]).ifo].segs
+# Set up pivot and fixed ifo for multi ifo coincidence
+triglist = list(trigs.values())
+pivot = triglist[0].ifo
+fixed = triglist[1].ifo
+
+coinc_segs = trigs[pivot].segs
 for ifo in trigs:
     coinc_segs = (coinc_segs & trigs[ifo].segs).coalesce()
 
@@ -185,8 +191,7 @@ for ifo in trigs:
 
 # initialize a Stat class instance to calculate the coinc ranking statistic
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
-if args.use_maxalpha:
-    rank_method.use_alphamax()
+
 detectors={}
 for ifo in trigs:
     detectors[ifo] = detector.Detector(trigs[ifo].ifo)
@@ -221,10 +226,10 @@ for tnum in range(tmin, tmax):
 
     ids, slide = coinc.time_multi_coincidence(times, args.timeslide_interval,
                                               args.coinc_threshold,
-                                              trigs[ReadByTemplate(args.trigger_files[0]).ifo].ifo,
-                                              trigs[ReadByTemplate(args.trigger_files[1]).ifo].ifo)
+                                              pivot,
+                                              fixed)
 
-    logging.info('Coincident Trigs: %s' % (len(ids[ReadByTemplate(args.trigger_files[0]).ifo])))
+    logging.info('Coincident Trigs: %s' % (len(ids[pivot])))
 
     logging.info('Calculating Single Detector Statistic')
     sds={}
@@ -283,7 +288,7 @@ for tnum in range(tmin, tmax):
 
     # In the first for cycle the time and trigger_id keys will not exist,
     # we need to create them, otherwise add new items into data.
-    checkstring = '%s/time' % ReadByTemplate(args.trigger_files[0]).ifo
+    checkstring = '%s/time' % pivot
     if checkstring in data:
         for ifo in gs:
             addtime=times[ifo][gs[ifo]]
@@ -308,8 +313,8 @@ if len(data['stat']) > 0:
         data[key] = numpy.concatenate(data[key])
 
 if args.cluster_window and len(data['stat']) > 0:
-    timestring0 = '%s/time' % ReadByTemplate(args.trigger_files[0]).ifo
-    timestring1 = '%s/time' % ReadByTemplate(args.trigger_files[1]).ifo
+    timestring0 = '%s/time' % pivot
+    timestring1 = '%s/time' % fixed
     cid = coinc.cluster_coincs(data['stat'], data[timestring0], data[timestring1],
                                data['timeslide_id'], args.timeslide_interval,
                                args.cluster_window)
@@ -331,16 +336,15 @@ for t in trigs:
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['num_of_ifos'] = len(args.trigger_files)
-
-for i in range(len(args.trigger_files)):
-    f.attrs['ifo_{}'.format(i)] = ReadByTemplate(args.trigger_files[i]).ifo
+f.attrs['pivot'] = pivot
+f.attrs['fixed'] = fixed
 
 for ifo in detectors:
     f.attrs['%s_foreground_time' % ifo] = abs(trigs[ifo].segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
 
 if args.timeslide_interval:
-    maxtrigs=abs(trigs[ReadByTemplate(args.trigger_files[0]).ifo].segs)
+    maxtrigs=abs(trigs[pivot].segs)
     for ifo in trigs:
         if abs(trigs[ifo].segs) > maxtrigs:
             maxtrigs=abs(trigs[ifo].segs)
