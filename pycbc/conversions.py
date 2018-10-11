@@ -381,7 +381,7 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     m1, m2, lambda1, lambda2, input_is_array = ensurearray(
         mass1, mass2, lambda1, lambda2)
     lsum = lambda1 + lambda2
-    ldiff = lambda1 - lambda2
+    ldiff, _ = ensurearray(lambda1 - lambda2)
     mask = m1 < m2
     ldiff[mask] = -ldiff[mask]
     eta = eta_from_mass1_mass2(m1, m2)
