@@ -44,6 +44,7 @@ plugins:
       - XXX
   pylint:
     enabled: true
+    channel: beta
     checks:
       import-error:
         enabled: false
