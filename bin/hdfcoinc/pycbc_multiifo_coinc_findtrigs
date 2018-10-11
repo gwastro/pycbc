@@ -16,6 +16,12 @@ parser.add_argument("--trigger-files", nargs='*', action='append', default=[],
                     help="File containing the single-detector triggers")
 parser.add_argument("--template-bank", required=True,
                     help="Template bank file in HDF format")
+parser.add_argument("--pivot-ifo", required=True,
+                    help="Add the ifo to use as the pivot for multi "
+                         "detector coincidence")
+parser.add_argument("--fixed-ifo", required=True,
+                    help="Add the ifo to use as the fixed ifo for "
+                         "multi detector coincidence")
 # produces a list of lists to allow multiple invocations and multiple args
 parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
                     help="Files containing ranking statistic info")
@@ -175,12 +181,7 @@ for i in range(len(args.trigger_files)):
                                                args.veto_files)
     trigs[reader.ifo] = reader
 
-# Set up pivot and fixed ifo for multi ifo coincidence
-triglist = list(trigs.values())
-pivot = triglist[0].ifo
-fixed = triglist[1].ifo
-
-coinc_segs = trigs[pivot].segs
+coinc_segs = trigs[args.pivot_ifo].segs
 for ifo in trigs:
     coinc_segs = (coinc_segs & trigs[ifo].segs).coalesce()
 
@@ -226,10 +227,10 @@ for tnum in range(tmin, tmax):
 
     ids, slide = coinc.time_multi_coincidence(times, args.timeslide_interval,
                                               args.coinc_threshold,
-                                              pivot,
-                                              fixed)
+                                              args.pivot_ifo,
+                                              args.fixed_ifo)
 
-    logging.info('Coincident Trigs: %s' % (len(ids[pivot])))
+    logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
 
     logging.info('Calculating Single Detector Statistic')
     sds={}
@@ -288,7 +289,7 @@ for tnum in range(tmin, tmax):
 
     # In the first for cycle the time and trigger_id keys will not exist,
     # we need to create them, otherwise add new items into data.
-    checkstring = '%s/time' % pivot
+    checkstring = '%s/time' % args.pivot_ifo
     if checkstring in data:
         for ifo in gs:
             addtime=times[ifo][gs[ifo]]
@@ -313,8 +314,8 @@ if len(data['stat']) > 0:
         data[key] = numpy.concatenate(data[key])
 
 if args.cluster_window and len(data['stat']) > 0:
-    timestring0 = '%s/time' % pivot
-    timestring1 = '%s/time' % fixed
+    timestring0 = '%s/time' % args.pivot_ifo
+    timestring1 = '%s/time' % args.fixed_ifo
     cid = coinc.cluster_coincs(data['stat'], data[timestring0], data[timestring1],
                                data['timeslide_id'], args.timeslide_interval,
                                args.cluster_window)
@@ -336,15 +337,15 @@ for t in trigs:
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['num_of_ifos'] = len(args.trigger_files)
-f.attrs['pivot'] = pivot
-f.attrs['fixed'] = fixed
+f.attrs['pivot'] = args.pivot_ifo
+f.attrs['fixed'] = args.fixed_ifo
 
 for ifo in detectors:
     f.attrs['%s_foreground_time' % ifo] = abs(trigs[ifo].segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
 
 if args.timeslide_interval:
-    maxtrigs=abs(trigs[pivot].segs)
+    maxtrigs=abs(trigs[args.pivot_ifo].segs)
     for ifo in trigs:
         if abs(trigs[ifo].segs) > maxtrigs:
             maxtrigs=abs(trigs[ifo].segs)
