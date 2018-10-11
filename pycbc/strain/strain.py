@@ -436,7 +436,7 @@ def from_cli_single_ifo(opt, ifo, **kwargs):
 
 def from_cli_multi_ifos(opt, ifos, **kwargs):
     """
-    Get the strain for all ifos when using the multi-detector CLI
+    Get the PSD for all ifos when using the multi-detector CLI
     """
     strain = {}
     for ifo in ifos:

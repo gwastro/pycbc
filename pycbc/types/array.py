@@ -42,7 +42,6 @@ from numpy.linalg import norm
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 from pycbc.types.aligned import ArrayWithAligned
-from pycbc.opt import LimitedSizeDict
 
 #! FIXME: the uint32 datatype has not been fully tested,
 # we should restrict any functions that do not allow an
@@ -131,7 +130,7 @@ class Array(object):
         The default is to copy the given object.
         """
         self._scheme=_scheme.mgr.state
-        self._saved = LimitedSizeDict(size_limit=2**5)
+        self._saved = {}
         
         #Unwrap initial_array
         if isinstance(initial_array, Array):
@@ -751,7 +750,7 @@ class Array(object):
         if new_size == len(self):
             return
         else:
-            self._saved = LimitedSizeDict(size_limit=2**5)
+            self._saved = {}
             new_arr = zeros(new_size, dtype=self.dtype)
             if len(self) <= new_size:
                 new_arr[0:len(self)] = self
@@ -764,7 +763,7 @@ class Array(object):
     def roll(self, shift):
         """shift vector
         """
-        self._saved = LimitedSizeDict(size_limit=2**5)
+        self._saved = {}
         new_arr = zeros(len(self), dtype=self.dtype)
 
         if shift == 0:

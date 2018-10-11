@@ -1,4 +1,4 @@
-FROM pycbc/pycbc-base-el7:v1.9-89a30fc
+FROM pycbc/pycbc-base-el7:v1.7-0231cca
 
 USER pycbc
-WORKDIR /opt/pycbc
+WORKDIR /home/pycbc

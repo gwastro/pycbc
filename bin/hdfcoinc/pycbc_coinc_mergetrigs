@@ -47,7 +47,7 @@ for fname in args.trigger_files:
     try:
         f2 = h5py.File(fname, 'r')
     except IOError:
-        logging.error("Cannot open %s" % fname)
+        logging.error("Cannot open %s" % filename)
         raise IOError
     ifo = f2.keys()[0]
     if len(f2[ifo].keys()) > 0:

@@ -1,5 +1,3 @@
-# -*- coding: UTF-8 -*-
-
 # Copyright (C) 2012  Alex Nitz
 #
 #
@@ -250,16 +248,13 @@ class Detector(object):
         return ra, dec
 
 def overhead_antenna_pattern(right_ascension, declination, polarization):
-    """Return the antenna pattern factors F+ and Fx as a function of sky
-    location and polarization angle for a hypothetical interferometer located
-    at the north pole. Angles are in radians. Declinations of ±π/2 correspond
-    to the normal to the detector plane (i.e. overhead and underneath) while
-    the point with zero right ascension and declination is the direction
-    of one of the interferometer arms.
+    """Return the detector response where (0, 0) indicates an overhead source. 
+    This functions uses coordinates such that the detector can be thought to
+    be on the north pole.
 
     Parameters
     ----------
-    right_ascension: float
+    right_ascention: float
     declination: float
     polarization: float
 

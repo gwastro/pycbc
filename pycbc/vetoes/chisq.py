@@ -318,14 +318,12 @@ class SingleDetPowerChisq(object):
         return eval(arg, {"__builtins__":None}, safe_dict)
 
     def cached_chisq_bins(self, template, psd):
-        from pycbc.opt import LimitedSizeDict
-
         key = id(psd)
         if not hasattr(psd, '_chisq_cached_key'):
             psd._chisq_cached_key = {}
 
         if not hasattr(template, '_bin_cache'):
-            template._bin_cache = LimitedSizeDict(size_limite=2**2)
+            template._bin_cache = {}
 
         if key not in template._bin_cache or id(template.params) not in psd._chisq_cached_key:
             psd._chisq_cached_key[id(template.params)] = True

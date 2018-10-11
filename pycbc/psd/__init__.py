@@ -72,40 +72,25 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
     except AttributeError:
         psd_estimation = False
 
-    exclusive_opts = [opt.psd_model, opt.psd_file, opt.asd_file,
-                      psd_estimation]
-    if sum(map(bool, exclusive_opts)) != 1:
-        err_msg = "You must specify exactly one of '--psd-file', "
-        err_msg += "'--psd-model', '--asd-file', '--psd-estimation'"
-        raise ValueError(err_msg)
-
-    if (opt.psd_model or opt.psd_file or opt.asd_file):
+    if (opt.psd_model or opt.psd_file or opt.asd_file)\
+                      and not psd_estimation:
         # PSD from lalsimulation or file
         if opt.psd_model:
             psd = from_string(opt.psd_model, length, delta_f, f_low)
-        elif opt.psd_file or opt.asd_file:
-            if opt.asd_file:
-                psd_file_name = opt.asd_file
-            else:
-                psd_file_name = opt.psd_file
-            if psd_file_name.endswith(('.dat', '.txt')):
-                is_asd_file = bool(opt.asd_file)
-                psd = from_txt(psd_file_name, length,
-                               delta_f, f_low, is_asd_file=is_asd_file)
-            elif opt.asd_file:
-                err_msg = "ASD files are only valid as ASCII files (.dat or "
-                err_msg += ".txt). Supplied {}.".format(psd_file_name)
-            elif psd_file_name.endswith(('.xml', '.xml.gz')):
-                psd = from_xml(psd_file_name, length, delta_f, f_low,
-                               ifo_string=opt.psd_file_xml_ifo_string,
-                               root_name=opt.psd_file_xml_root_name)
+        elif opt.psd_file:
+            psd = from_txt(opt.psd_file, length,
+                           delta_f, f_low, is_asd_file=False)
+        elif opt.asd_file:
+            psd = from_txt(opt.asd_file, length,
+                           delta_f, f_low, is_asd_file=True)
         # Set values < flow to the value at flow
         kmin = int(low_frequency_cutoff / psd.delta_f)
         psd[0:kmin] = psd[kmin]
 
         psd *= dyn_range_factor ** 2
 
-    elif psd_estimation:
+    elif psd_estimation and not (opt.psd_model or
+                                     opt.psd_file or opt.asd_file):
         # estimate PSD from data
         psd = welch(strain, avg_method=opt.psd_estimation,
                     seg_len=int(opt.psd_segment_length * sample_rate),
@@ -116,8 +101,8 @@ def from_cli(opt, length, delta_f, low_frequency_cutoff,
         if delta_f != psd.delta_f:
             psd = interpolate(psd, delta_f)
     else:
-        # Shouldn't be possible to get here
-        raise ValueError("Shouldn't be possible to raise this!")
+        # no PSD options given
+        return None
 
     if opt.psd_inverse_length:
         psd = inverse_spectrum_truncation(psd,
@@ -190,19 +175,6 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              help="(Optional) The maximum length of the "
                              "impulse response of the overwhitening "
                              "filter (s)")
-    # Options specific to XML PSD files
-    psd_options.add_argument("--psd-file-xml-ifo-string",
-                             help="If using an XML PSD file, use the PSD in "
-                                  "the file's PSD dictionary with this "
-                                  "ifo string. If not given and only one "
-                                  "PSD present in the file return that, if "
-                                  "not given and multiple (or zero) PSDs "
-                                  "present an exception will be raised.")
-    psd_options.add_argument("--psd-file-xml-root-name", default='psd',
-                             help="If given use this as the root name for "
-                                  "the PSD XML file. If this means nothing "
-                                  "to you, then it is probably safe to "
-                                  "ignore this option.")
     # Options for PSD variation
     psd_options.add_argument("--psdvar_short_segment", type=float,
                              metavar="SECONDS", help="Length of short segment "

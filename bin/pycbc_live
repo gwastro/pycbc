@@ -160,35 +160,36 @@ class LiveEventManager(object):
         """ Save the results from this time block to an hdf output file """
         if self.use_date_prefix:
             tm = lal.GPSToUTC(int(time_index))
-            subdir = '{:04d}_{:02d}_{:02d}'.format(tm[0], tm[1], tm[2])
+            subdir = '%s_%s_%s' % (tm[0], tm[1], tm[2])
             makedir(os.path.join(self.path, subdir))
             fname = os.path.join(self.path, subdir, name) + '.hdf'
         else:
             makedir(self.path)
             fname = os.path.join(self.path, name) + '.hdf'
 
-        with h5py.File(fname, 'w') as f:
+        f = h5py.File(fname, 'w')
+        for ifo in results:
+            for k in results[ifo]:
+                f['%s/%s' % (ifo, k)] = results[ifo][k]
+
+        for key in raw_results:
+            f[key] = raw_results[key]
+
+        if store_loudest_index:
             for ifo in results:
-                for k in results[ifo]:
-                    f['%s/%s' % (ifo, k)] = results[ifo][k]
+                if 'snr' in results[ifo]:
+                    s = numpy.array(results[ifo]['snr'], ndmin=1)
+                    c = numpy.array(results[ifo]['chisq'], ndmin=1)
+                    nsnr = numpy.array(newsnr(s, c), ndmin=1) if len(s) > 0 else []
+                    
+                    # loudest by newsnr
+                    nloudest = numpy.argsort(nsnr)[::-1][0:store_loudest_index]
 
-            for key in raw_results:
-                f[key] = raw_results[key]
+                    # loudest by snr
+                    sloudest = numpy.argsort(s)[::-1][0:store_loudest_index]
+                    f[ifo]['loudest'] = numpy.union1d(nloudest, sloudest)
 
-            if store_loudest_index:
-                for ifo in results:
-                    if 'snr' in results[ifo]:
-                        s = numpy.array(results[ifo]['snr'], ndmin=1)
-                        c = numpy.array(results[ifo]['chisq'], ndmin=1)
-                        nsnr = numpy.array(newsnr(s, c), ndmin=1) if len(s) > 0 else []
-
-                        # loudest by newsnr
-                        nloudest = numpy.argsort(nsnr)[::-1][0:store_loudest_index]
-
-                        # loudest by snr
-                        sloudest = numpy.argsort(s)[::-1][0:store_loudest_index]
-                        f[ifo]['loudest'] = numpy.union1d(nloudest, sloudest)
-
+        f.close()
         if store_psd:
             for ifo in store_psd:
                 if store_psd[ifo] is not None:
@@ -571,12 +572,8 @@ with ctx:
                       'email': 'tito.canton@ligo.org',
                       'created_gps': int(lal.GPSTimeNow()),
                       'status_intervals': status_intervals}
-            try:
-                with open(args.output_status, 'w') as status_fp:
-                    json.dump(status, status_fp)
-            except IOError:
-                logging.error('I/O error writing status JSON file! '
-                              'Hopefully it works next time')
+            with open(args.output_status, 'w') as status_fp:
+                json.dump(status, status_fp)
 
 if evnt.rank == 1:
     if args.fftw_output_float_wisdom_file:

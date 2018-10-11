@@ -6,7 +6,7 @@ import urllib
 
 # Read data and remove low frequency content
 fname = 'H-H1_LOSC_4_V2-1126259446-32.gwf'
-url = "https://www.gw-openscience.org/GW150914data/" + fname
+url = "https://losc.ligo.org/s/events/GW150914/" + fname
 urllib.urlretrieve(url, filename=fname)
 h1 = highpass_fir(read_frame(fname, 'H1:LOSC-STRAIN'), 15.0, 8)
 
