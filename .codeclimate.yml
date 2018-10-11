@@ -45,7 +45,7 @@ plugins:
   pep8:
     enabled: true
 
-exclude_paths:
+exclude_patterns:
 - docs/*
 - tools/*
 - examples/*
