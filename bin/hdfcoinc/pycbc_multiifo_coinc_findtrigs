@@ -178,6 +178,7 @@ coinc_segs = trigs[ReadByTemplate(args.trigger_files[0]).ifo].segs
 for ifo in trigs:
     coinc_segs = (coinc_segs & trigs[ifo].segs).coalesce()
 
+
 for ifo in trigs:
     trigs[ifo].segs = coinc_segs
     trigs[ifo].valid = veto.segments_to_start_end(trigs[ifo].segs)
@@ -282,19 +283,19 @@ for tnum in range(tmin, tmax):
 
     # In the first for cycle the time and trigger_id keys will not exist,
     # we need to create them, otherwise add new items into data.
-    checkstring = '%s_time' % ReadByTemplate(args.trigger_files[0]).ifo
+    checkstring = '%s/time' % ReadByTemplate(args.trigger_files[0]).ifo
     if checkstring in data:
         for ifo in gs:
             addtime=times[ifo][gs[ifo]]
             addtriggerid=tids[ifo][gs[ifo]]
-            data['%s_time' % ifo] += [addtime]
-            data['%s_trigger_id' % ifo] += [addtriggerid]
+            data['%s/time' % ifo] += [addtime]
+            data['%s/trigger_id' % ifo] += [addtriggerid]
     else:
         for ifo in gs:
             addtime=times[ifo][gs[ifo]]
             addtriggerid=tids[ifo][gs[ifo]]
-            data['%s_time' % ifo] = [addtime]
-            data['%s_trigger_id' % ifo] = [addtriggerid]
+            data['%s/time' % ifo] = [addtime]
+            data['%s/trigger_id' % ifo] = [addtriggerid]
     data['stat'] += [c[ti]]
     dec_fac = numpy.repeat([args.decimation_factor, 1, 1],
                            [len(bl), len(bh), len(fi)]).astype(numpy.uint32)
@@ -307,8 +308,8 @@ if len(data['stat']) > 0:
         data[key] = numpy.concatenate(data[key])
 
 if args.cluster_window and len(data['stat']) > 0:
-    timestring0 = '%s_time' % ReadByTemplate(args.trigger_files[0]).ifo
-    timestring1 = '%s_time' % ReadByTemplate(args.trigger_files[1]).ifo
+    timestring0 = '%s/time' % ReadByTemplate(args.trigger_files[0]).ifo
+    timestring1 = '%s/time' % ReadByTemplate(args.trigger_files[1]).ifo
     cid = coinc.cluster_coincs(data['stat'], data[timestring0], data[timestring1],
                                data['timeslide_id'], args.timeslide_interval,
                                args.cluster_window)
@@ -329,8 +330,12 @@ for t in trigs:
     f['segments/%s/start' % trigs[t].ifo], f['segments/%s/end' % trigs[t].ifo] = trigs[t].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
+f.attrs['num_of_ifos'] = len(args.trigger_files)
+
+for i in range(len(args.trigger_files)):
+    f.attrs['ifo_{}'.format(i)] = ReadByTemplate(args.trigger_files[i]).ifo
+
 for ifo in detectors:
-    f.attrs[ifo] = detectors[ifo].name
     f.attrs['%s_foreground_time' % ifo] = abs(trigs[ifo].segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
 
