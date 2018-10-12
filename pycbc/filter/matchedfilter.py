@@ -40,11 +40,15 @@ BACKEND_PREFIX="pycbc.filter.matchedfilter_"
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def correlate(x, y, z):
-    pass
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def _correlate_factory(x, y, z):
-    return
+    err_msg = "This class is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 class BatchCorrelator(object):
     """ Create a batch correlation engine
