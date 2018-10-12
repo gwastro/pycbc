@@ -263,8 +263,7 @@ elif args.bin_spacing == "irreg":
 # list of bin indices
 binind = [pbins[c] for c in pbins.centres()]
 logging.info("Assigning trigger param values to bins")
-# FIXME: This is slow!! either find a better way of using pylal.rate
-# or write faster binning routine
+# This is slow!! Either find a better way of using pylal.rate or write faster binning routine
 pind = np.array([pbins[par] for par in binpars])
 
 # initialize result storage
