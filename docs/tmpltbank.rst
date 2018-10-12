@@ -17,8 +17,8 @@ These codes currently consist of
 * :ref:`A program to generate a non-spinning template bank (pycbc_geom_nonspinbank) <tmpltbank_nonspinbank>`
 * :ref:`A program to generate an aligned-spin template bank using a geometrical lattice algorithm (pycbc_geom_aligned_bank) <tmpltbank_alignedgeombank>`
 * :ref:`Two programs to generate an aligned-spin template bank using a stochastic placement algorithm. This is done either using a metric to approximate distances, or by computing explicit matches from waveforms. (pycbc_aligned_stoch_bank, lalapps_cbc_sbank) <tmpltbank_alignedstochbank>`
-* :ref:`A workflow generator for generating large template banks using the lalapps_cbc_sbank executables, but allowing the parallel use of multiple cores to optimize the generation of large template banks. (pycbc_create_sbank_workflow) <tmpltbank_sbankworkflow>`
-* :ref:`A workflow generator for generating the "uberbank". This consists of a chain of calls to the geometric aligned-spin lattice code and the sbank workflow generator to create a template bank suitable for analysing Advanced LIGO and Advanced Virgo data. (pycbc_create_uberbank_workflow) <tmpltbank_uberbankworkflow>`
+* :ref:`A workflow generator for generating large template banks using the lalapps_cbc_sbank executables, but allowing the parallel use of multiple cores to optimize the generation of large template banks. (pycbc_make_sbank_workflow) <tmpltbank_sbankworkflow>`
+* :ref:`A workflow generator for generating the "uberbank". This consists of a chain of calls to the geometric aligned-spin lattice code and the sbank workflow generator to create a template bank suitable for analysing Advanced LIGO and Advanced Virgo data. (pycbc_make_uberbank_workflow) <tmpltbank_uberbankworkflow>`
 
 Each of these codes and workflow generators is described in turn and is accompanied by some examples of how to run the code, some relevant background and references and the options described from the codes' help messages.
 
@@ -422,12 +422,12 @@ Sbank workflow generator
 ------------------------------------------------
 
 In the case where one sbank job will not do the job you can use
-pycbc_create_sbank_workflow to parallelize your template bank placement
+pycbc_make_sbank_workflow to parallelize your template bank placement
 needs.
 
 The command line options for this code read as follows
 
-.. command-output:: pycbc_create_sbank_workflow --help
+.. command-output:: pycbc_make_sbank_workflow --help
 
 The main thing here is that a configuration file is supplied. This
 configuration file supplies basically all options about the template bank
@@ -468,7 +468,7 @@ called the "uberbank". The references for this are the following:
 * Capano et al., Phys.Rev. D93 (2016) 124007
 
 The uberbank construction process is now written up in a single workflow,
-pycbc_create_uberbank_workflow. The current setup of this workflow is as
+pycbc_make_uberbank_workflow. The current setup of this workflow is as
 follows:
 
 * Run in parallel one sbank workflow and one geometric workflow
@@ -483,7 +483,7 @@ stages.
 
 The command-line help for the workflow generator is as follows:
 
-.. command-output:: pycbc_create_uberbank_workflow --help
+.. command-output:: pycbc_make_uberbank_workflow --help
 
 As with the sbank workflow generator the main bulk of the configuration is the
 configuration file, which is provided on the command line. This configuration

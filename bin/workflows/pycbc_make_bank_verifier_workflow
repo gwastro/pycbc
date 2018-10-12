@@ -40,7 +40,7 @@ from pycbc.workflow import setup_splittable_dax_generated
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
-__program__ = "pycbc_create_bank_verifier_workflow"
+__program__ = "pycbc_make_bank_verifier_workflow"
 
 # Some new executable classes. These can be moved into modules if needed
 class BanksimExecutable(wf.Executable):
