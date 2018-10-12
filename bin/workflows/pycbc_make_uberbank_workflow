@@ -40,7 +40,7 @@ import pycbc.workflow as wf
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
-__program__ = "pycbc_create_sbank_workflow"
+__program__ = "pycbc_make_sbank_workflow"
 
 # Define classes for executables
 
@@ -83,7 +83,7 @@ class GeomBankExecutable(wf.Executable):
         return node
 
 class SbankDaxGenerator(wf.Executable):
-    """ Class for running pycbc_create_sbank_workflow.
+    """ Class for running pycbc_make_sbank_workflow.
     """
     # This outputs a dax file.
     current_retention_level = wf.Executable.FINAL_RESULT

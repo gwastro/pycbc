@@ -36,7 +36,7 @@ import pycbc.workflow.pegasus_workflow as pwf
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
-__program__ = "pycbc_create_sbank_workflow"
+__program__ = "pycbc_make_sbank_workflow"
 
 # We define classes for all executables used in the workflow
 
