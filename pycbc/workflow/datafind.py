@@ -723,27 +723,28 @@ def convert_cachelist_to_filelist(datafindcache_list):
                     'file:///cvmfs/gwosc.osgstorage.org/'):
                     # Datafind returned a URL valid on the osg as well
                     # so add the additional PFNs to allow OSG access.
-                    currFile.PFN(frame.url, site='osg')
-                    if 'H1_LOSC_4_V1' in frame.url:
-                        currFile.PFN(frame.url.replace(
-                            'file:///cvmfs/gwosc.osgstorage.org/gwdata/O1/strain.4k/frame.v1/H1/',
-                            'https://losc.ligo.org/archive/data/O1/'),
-                            site='osg')
-                    elif 'L1_LOSC_4_V1' in frame.url:
-                        currFile.PFN(frame.url.replace(
-                            'file:///cvmfs/gwosc.osgstorage.org/gwdata/O1/strain.4k/frame.v1/L1/',
-                            'https://losc.ligo.org/archive/data/O1/'),
-                            site='osg')
-                    elif 'H1_LOSC_16_V1' in frame.url:
-                        currFile.PFN(frame.url.replace(
-                            'file:///cvmfs/gwosc.osgstorage.org/gwdata/O1/strain.16k/frame.v1/H1/',
-                            'https://losc.ligo.org/archive/data/O1_16KHZ/'),
-                            site='osg')
-                    elif 'L1_LOSC_16_V1' in frame.url:
-                        currFile.PFN(frame.url.replace(
-                            'file:///cvmfs/gwosc.osgstorage.org/gwdata/O1/strain.16k/frame.v1/L1/',
-                            'https://losc.ligo.org/archive/data/O1_16KHZ/'),
-                            site='osg')
+                    for s in ['osg', 'orangegrid']:
+                      currFile.PFN(frame.url, site=s)
+                      if 'H1_LOSC_4_V1' in frame.url:
+                          currFile.PFN(frame.url.replace(
+                              'file:///cvmfs/gwosc.osgstorage.org/gwdata/O1/strain.4k/frame.v1/H1/',
+                              'https://losc.ligo.org/archive/data/O1/'),
+                              site=s)
+                      elif 'L1_LOSC_4_V1' in frame.url:
+                          currFile.PFN(frame.url.replace(
+                              'file:///cvmfs/gwosc.osgstorage.org/gwdata/O1/strain.4k/frame.v1/L1/',
+                              'https://losc.ligo.org/archive/data/O1/'),
+                              site=s)
+                      elif 'H1_LOSC_16_V1' in frame.url:
+                          currFile.PFN(frame.url.replace(
+                              'file:///cvmfs/gwosc.osgstorage.org/gwdata/O1/strain.16k/frame.v1/H1/',
+                              'https://losc.ligo.org/archive/data/O1_16KHZ/'),
+                              site=s)
+                      elif 'L1_LOSC_16_V1' in frame.url:
+                          currFile.PFN(frame.url.replace(
+                              'file:///cvmfs/gwosc.osgstorage.org/gwdata/O1/strain.16k/frame.v1/L1/',
+                              'https://losc.ligo.org/archive/data/O1_16KHZ/'),
+                              site=s)
             else:
                 currFile.PFN(frame.url, site='notlocal')
 
