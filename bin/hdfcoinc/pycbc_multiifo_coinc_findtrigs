@@ -200,7 +200,7 @@ for ifo in trigs:
 # Sanity check, time slide interval should be larger than twice the
 # Earth crossing time, which is approximately 0.085 seconds.
 if 0.085 >= args.timeslide_interval and args.timeslide_interval is not None:
-    raise parser.error("The time slide interwal should be larger "
+    raise parser.error("The time slide interval should be larger "
                        "than twice the Earth crossing time.")
 
 # slide = 0 means don't do timeslides
