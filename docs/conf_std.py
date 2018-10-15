@@ -32,7 +32,8 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
             'sphinxcontrib.programoutput',
          'sphinx.ext.napoleon',           'sphinx.ext.mathjax',
           'matplotlib.sphinxext.only_directives',
-          'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary']
+          'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
+          'sphinx.ext.inheritance_diagram']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -261,3 +262,10 @@ suppress_warnings = ['image.nonlocal_uri']
 def setup(app):
     app.add_javascript('typed.min.js')
     app.add_stylesheet('terminal.css')
+
+
+
+# -- Options for inheritance graphs -------------------------------------------
+
+# Makes the graphs be vertically aligned, with parents at the top
+inheritance_graph_attrs = {'rankdir': 'TB'}
