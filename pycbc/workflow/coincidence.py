@@ -493,3 +493,40 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
 
     logging.info('...leaving coincidence ')
     return statmap_files
+
+def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
+                         veto_files, veto_names, out_dir, tags=None):
+    """
+    This function sets up exact match multiifo coincidence
+    """
+    if tags is None:
+        tags = []
+    make_analysis_dir(out_dir)
+    logging.info('Setting up coincidence')
+
+    if len(hdfbank) != 1:
+        raise ValueError('Must use exactly 1 bank file for this coincidence '
+                         'method, I got %i !' % len(hdfbank))
+    hdfbank = hdfbank[0]
+
+    findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'multiifo_coinc',
+                                             ifos=workflow.ifos,
+                                             tags=tags, out_dir=out_dir)
+
+    # Wall time knob and memory knob
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+
+    bg_files = []
+    for veto_file, veto_name in zip(veto_files, veto_names):
+        for i in range(factor):
+            group_str = '%s/%s' % (i, factor)
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                                   stat_files,
+                                                   veto_file, veto_name,
+                                                   group_str,
+                                                   tags=[veto_name, str(i)])
+            bg_files += coinc_node.output_files
+            workflow.add_node(coinc_node)
+
+    logging.info('...leaving coincidence ')
+    return bg_files

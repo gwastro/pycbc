@@ -197,7 +197,6 @@ inj_files, inj_tags = wf.setup_injection_workflow(workflow,
 
 ######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
-ctags = [tag, 'full']
 
 # setup the matchedfilter jobs
 ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
@@ -212,6 +211,37 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
 statfiles = []
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name)
+
+# setup 3 detector coinc for the filtering jobs
+ctags = [tag, 'full3d']
+full_insps = insps
+bg_files = []
+final_bg_files = []
+bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, insps, statfiles,
+                               cum_veto_files, veto_names,
+                               output_dir, tags=ctags)
+final_bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, insps, statfiles,
+                               final_veto_file, final_veto_name,
+                               output_dir, tags=ctags)
+
+# setup 2 detector pair coinc for the filtering jobs
+detector_pair_tags = ['full2d0','full2d1','full2d2']
+for i in detector_pair_tags:
+    ctags = [tag, i]
+    insp2d = wf.core.FileList()
+    pivot_ifo = workflow.cp.get_opt_tags('workflow-coincidence', 'pivot-ifo', ctags)
+    fixed_ifo = workflow.cp.get_opt_tags('workflow-coincidence', 'fixed-ifo', ctags)
+    for ifo, file in zip(*insps.categorize_by_attr('ifo')):
+        if pivot_ifo == ifo:
+            insp2d += file
+        if fixed_ifo == ifo:
+            insp2d += file
+    bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, insp2d, statfiles,
+                               cum_veto_files, veto_names,
+                               output_dir, tags=ctags)
+    final_bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, insp2d, statfiles,
+                               final_veto_file, final_veto_name,
+                               output_dir, tags=ctags)
 
 # Calculate the inspiral psds and make plots
 psd_files = []
