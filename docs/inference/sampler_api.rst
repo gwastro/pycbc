@@ -33,7 +33,7 @@ The following guidelines apply to the sampler classes:
    ``Foo(Bar, BaseSampler)``, both ``Bar`` and ``BaseSampler`` do not inherit
    from any parent classes, only ``object``.
 4. To avoid confusion, only inherited abstract methods should be overridden.
-6. All sampler classes need a corresponding class in the
+5. All sampler classes need a corresponding class in the
    :py:mod:`pycbc.inference.io` module for handling reading and writing. See
    :doc:`io` for more details on IO classes.
 
@@ -52,15 +52,16 @@ on the names to see their documentation):
  * :py:attr:`model_stats <pycbc.inference.sampler.base.BaseSampler.model_stats>`
  * :py:meth:`finalize <pycbc.inference.sampler.base.BaseSampler.finalize>`
 
----------------------
+----------------
 Detailed example
----------------------
+----------------
 
 Let's examine the
 :py:class:`EmceeEnsembleSampler <pycbc.inference.sampler.emcee.EmceeEnsembleSampler>`
 class to see how these guidelines apply in practice. Here is its inheritance
 structure (click on the names of the classes to see their documentation):
 
+.. _inheritance-emcee:
 .. inheritance-diagram:: pycbc.inference.sampler.emcee
     :parts: 2
 
@@ -88,23 +89,65 @@ a call to :py:meth:`run_mcmc <pycbc.inference.sampler.base_mcmc.BaseMCMC.run_mcm
 is made. This is an abstract method: i.e., :py:class:`BaseMCMC <pycbc.inference.sampler.base_mcmc.BaseMCMC>`
 is itself an abstract base class. Since
 :py:class:`EmceeEnsembleSampler <pycbc.inference.sampler.emcee.EmceeEnsembleSampler>`
-inheritance is ``EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler)``,
+inherits from :py:class:`BaseSampler <pycbc.inference.sampler.base.BaseSampler>`
+followed by :py:class:`BaseMCMC <pycbc.inference.sampler.base_mcmc.BaseMCMC>`
+(see :ref:`note <python-inheritance-note>`),
 :py:class:`BaseMCMC <pycbc.inference.sampler.base_mcmc.BaseMCMC>` fulfils
 :py:class:`BaseSampler's <pycbc.inference.sampler.base.BaseSampler>` requirement
 that a ``run`` method be implemented, but replaces it with the requirement that
-a ``run_mcmc`` method be implemented. Thus, looking at its source code, we see
-that :py:class:`EmceeEmsembleSampler <pycbc.inference.sampler.emcee.EmceeEnsembleSampler>`
+a ``run_mcmc`` method be implemented. This is why
+:py:class:`EmceeEmsembleSampler <pycbc.inference.sampler.emcee.EmceeEnsembleSampler>`
 implements a :py:meth:`run_mcmc <pycbc.inference.sampler.emcee.EmceeEnsembleSampler.run_mcmc>`
-method. Likewise,
+method.
 
-(note
-that BaseSampler is furthest to the right: when multiple classes are specified
+.. _python-inheritance-note: 
+.. note::
+   In python, the order of inheritance when a class inherits from multiple
+   parents is determined by the order the parents are given in the class
+   definition, from right to left. For example,
+   :py:class:`EmceeEnsembleSampler <pycbc.inference.sampler.emcee.EmceeEnsembleSampler>`
+   is defined as:
+
+   .. code-block:: python
+
+      class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
+
+   This means that methods introduced by
+   :py:class:`BaseSampler <pycbc.inference.sampler.base.BaseSampler>`
+   will be overridden by
+   :py:class:`BaseMCMC <pycbc.inference.sampler.base_mcmc.BaseMCMC>`, which in
+   turn will be overridden by
+   :py:class:`MCMCAutocorrSupport <pycbc.inference.sampler.base_mcmc.MCMCAutocorrSupport>`.
+   For this reason, all sampler class definitions must have
+   :py:class:`BaseSampler <pycbc.inference.sampler.base.BaseSampler>`
+   listed last.
+
+All MCMC samplers need to be able to compute an autocorrelation
+function (ACF) and length (ACL). This is used to determine how to thin the chains
+to obtain independent samples. Consequently, :py:class:`BaseMCMC <pycbc.inference.sampler.base_mcmc.BaseMCMC>`
+also adds abstract base methods :py:meth:`compute_acf <pycbc.inference.sampler.base_mcmc.BaseMCMC.compute_acf>`
+and :py:meth:`compute_acl <pycbc.inference.sampler.base_mcmc.BaseMCMC.compute_acl>`; these
+are called by its :py:class:`checkpoint <pycbc.inference.sampler.base_mcmc.BaseMCMC.checkpoint>` method.
+The :py:class:`MCMCAutocorrSupport <pycbc.inference.sampler.base_mcmc.MCMCAutocorrSupport>`
+provides these functions. These
+functions are provided in a class separate from :py:class:`BaseMCMC <pycbc.inference.sampler.base_mcmc.BaseMCMC>`
+because not all MCMC samplers estimate ACF/Ls in the same way. For example,
+multi-tempered samplers need to compute ACF/Ls separately for each temperature
+chain. Consequently, there is an equivalent class,
+:py:class:`MultiTemperedAutocorrSupport <pycbc.sampler.base_multitemper.MultiTemperedAutocorrSuppport>`
+which offers the same functions for multi-tempered MCMCs. This class is used by,
+e.g., :py:class:`EmceePTSampler <pycbc.sampler.emcee_pt.EmceePTSampler>` (see its
+:ref:`inheritance diagram <inheritance-emcee_pt>`, below). By making the
+compute ACF/L functions abstract base methods in
+:py:class:`BaseMCMC <pycbc.inference.sampler.base_mcmc.BaseMCMC>`, both single and
+multi-tempered MCMC samplers can inherit from
+:py:class:`BaseMCMC <pycbc.inference.sampler.base_mcmc.BaseMCMC>`.
 
 
-iterations are looped over, with results being dumped to 
-dumped to file looking at the source code for
-:py:meth:`run <pycbc.inference.sampler.base_mcmc.BaseMCMC.run>`, we see that
-ther
+We see that by separating functionality out into support classes
+and using multiple inheritance, we are able to provide support for all of the
+unique features of different samplers, while keeping the base API that
+``pycbc_inference`` interacts with simple.
 
 ---------------------
 Inheritance diagrams
@@ -112,6 +155,7 @@ Inheritance diagrams
 
 Here are inheritance diagrams for the rest of the samplers currently supported:
 
+.. _inheritance-emcee_pt:
 * ``emcee_pt``:
 
 .. inheritance-diagram:: pycbc.inference.sampler.emcee_pt
