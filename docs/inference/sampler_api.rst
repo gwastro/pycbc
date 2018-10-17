@@ -31,6 +31,8 @@ provide an overview of the general structure of the sampler classes, how it
 interacts with ``pycbc_inference``, and how to add support for new samplers. We
 also provide inheritance diagrams for all of the currently supported samplers.
 
+.. _sampler_api-overview:
+
 ---------------------
 Overview & Guidelines
 ---------------------
@@ -42,7 +44,12 @@ The following guidelines apply to the sampler classes:
    samplers must implement, as they will be used by ``pycbc_inference``. (See
    `this tutorial <https://www.python-course.eu/python3_abstract_classes.php>`_
    for a primer on abstract base classes.)
-2. Duplicate code should be avoided. If multiple samplers have common methods,
+2. All sampler classes must have a ``name`` attribute that is unique across
+   all sampler classes in :py:mod:`pycbc.inference.sampler`. This name is used
+   to reference the sampler throughout the code, and is how the user specifies
+   which sampler to use in their config file. For example,
+   |EmceeEnsembleSampler|'s name is ``'emcee'``.
+3. Duplicate code should be avoided. If multiple samplers have common methods,
    those methods should be added to one or more support classes that the
    samplers can inherit from, in addition to |BaseSampler|. For example, all
    MCMC samplers need to be able to compute an autocorrelation length. That
@@ -50,11 +57,11 @@ The following guidelines apply to the sampler classes:
    |MCMCAutocorrSupport| class. These support classes may themselves be
    abstract base classes which add more required methods to samplers that
    inherit from them.
-3. Inheritance is kept to one level. For example, if we have sampler class
+4. Inheritance is kept to one level. For example, if we have sampler class
    ``Foo(Bar, BaseSampler)``, both ``Bar`` and ``BaseSampler`` do not inherit
    from any parent classes, only ``object``.
-4. To avoid confusion, only inherited abstract methods should be overridden.
-5. All sampler classes need a corresponding class in the
+5. To avoid confusion, only inherited abstract methods should be overridden.
+6. All sampler classes need a corresponding class in the
    :py:mod:`pycbc.inference.io` module for handling reading and writing. See
    :doc:`io` for more details on IO classes.
 
@@ -83,6 +90,7 @@ classes to see their documentation):
 .. _inheritance-emcee:
 .. inheritance-diagram:: pycbc.inference.sampler.emcee
     :parts: 2
+
 |
 
 In addition to |BaseSampler|, |EmceeEnsembleSampler| inherits from |BaseMCMC|
@@ -149,11 +157,15 @@ Inheritance diagrams
 Here are inheritance diagrams for the rest of the samplers currently supported:
 
 .. _inheritance-emcee_pt:
+
 * ``emcee_pt``:
 
 .. inheritance-diagram:: pycbc.inference.sampler.emcee_pt
-    :parts: 2
+   :parts: 2
+
 |
+
+.. _how-to-add-a-sampler:
 
 --------------------
 How to add a sampler
@@ -166,20 +178,19 @@ To add support for a new sampler, do the following:
    |BaseSampler|.
 3. Give a name attribute to the class that is unique across the supported
    sampler classes.
-4. Add an IO class for the sampler to the :py:mod:`inference.io <pycbc.inference.io>`
-   modules. Set your new class's ``io`` attribute to point to this new class.
-
-5. Add any other methods you need to satisfy the |BaseSampler|'s
-   required methods. When doing so, try to follow the guidelines above: do not
-   duplicate code, and try to use support classes that offer functionality that
-   you need. If you think some of the methods will be useful for more than just
-   your sampler, create a new support class and add those methods to it.
-   However, if you're unsure what is available or you would have to make
-   changes to the support classes that may break other samplers, just add the
-   methods you need to your new class definition. Fixing code duplication or
-   rearranging support classes to accommodate can be done through the review
-   process when you wish to add your new sampler to main gwastro repository.
-
+4. :ref:`Add an IO class <how-to-add-a-sampler-io>` for the sampler to the
+   :py:mod:`inference.io <pycbc.inference.io>` modules. Set your new class's
+   ``io`` attribute to point to this new class.
+5. Add any other methods you need to satisfy the |BaseSampler|'s required
+   methods. When doing so, try to follow the guidelines above: do not duplicate
+   code, and try to use support classes that offer functionality that you need.
+   If you think some of the methods will be useful for more than just your
+   sampler, create a new support class and add those methods to it.  However,
+   if you're unsure what is available or you would have to make changes to the
+   support classes that may break other samplers, just add the methods you need
+   to your new class definition. Fixing code duplication or rearranging support
+   classes can be done through the review process when you wish to add your new
+   sampler to the main gwastro repository.
 6. Add the sampler to the ``samplers`` dictionary in
    ``pycbc/inference/sampler/__init__.py`` so that ``pycbc_inference`` is aware
    of it to use.
