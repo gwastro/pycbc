@@ -31,9 +31,10 @@ def ftop(f, ft):
 
 def combine_ifar_pvalue(ifar, pvalue):
     from scipy.stats import combine_pvalues
-    reference_foreground = .05
+    reference_foreground = 0.01 * ifar
     _, pnew = combine_pvalues([ftop(1.0/ifar, reference_foreground), pvalue])
-    return 1.0 / ptof(pnew, reference_foreground)
+    nifar = 1.0 / ptof(pnew, reference_foreground)
+    return nifar
 
 class LiveEventManager(object):
     def __init__(self, output_path,
