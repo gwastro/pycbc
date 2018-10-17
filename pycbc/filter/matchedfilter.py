@@ -1722,7 +1722,7 @@ class LiveBatchMatchedFilter(object):
 def followup_event_significance(ifo, data_reader, bank,
                                 template_id, coinc_times,
                                 coinc_threshold=0.005,
-                                lookback=100, duration=0.095):
+                                lookback=200, duration=0.095):
     """ Followup an event in another detector and determine its significance
     """
     # calculate onsource time range
