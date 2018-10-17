@@ -236,6 +236,7 @@ class EventManager(object):
             self.event_dtype.append( (column, coltype) )
 
         self.events = numpy.array([], dtype=self.event_dtype)
+        self.accumulate = []
         self.template_params = []
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
@@ -303,49 +304,6 @@ class EventManager(object):
         keep = numpy.concatenate(keep)
         self.events = e[keep]
 
-    def maximize_over_bank(self, tcolumn, column, window):
-        if len(self.events) == 0:
-            return
-
-        self.events = numpy.sort(self.events, order=tcolumn)
-        cvec = self.events[column]
-        tvec = self.events[tcolumn]
-
-        indices = []
-#        mint = tvec.min()
-#        maxt = tvec.max()
-#        edges = numpy.arange(mint, maxt, window)
-
-#        # Get the location of each time bin
-#        bins = numpy.searchsorted(tvec, edges)
-#        bins = numpy.append(bins, len(tvec))
-#        for i in range(len(bins)-1):
-#            kmin = bins[i]
-#            kmax = bins[i+1]
-#            if kmin == kmax:
-#                continue
-#            event_idx = numpy.argmax(cvec[kmin:kmax]) + kmin
-#            indices.append(event_idx)
-
-        # This algorithm is confusing, but it is what lalapps_inspiral does
-        # REMOVE ME!!!!!!!!!!!
-        gps = tvec.astype(numpy.float64) / self.opt.sample_rate + self.opt.gps_start_time
-        gps_sec  = numpy.floor(gps)
-        gps_nsec = (gps - gps_sec) * 1e9
-
-        wnsec = int(window * 1e9 / self.opt.sample_rate)
-        win = gps_nsec.astype(int) / wnsec
-
-        indices.append(0)
-        for i in xrange(len(tvec)):
-            if gps_sec[i] == gps_sec[indices[-1]] and  win[i] == win[indices[-1]]:
-                if abs(cvec[i]) > abs(cvec[indices[-1]]):
-                    indices[-1] = i
-            else:
-                indices.append(i)
-
-        self.events = numpy.take(self.events, indices)
-
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
         # initialize with zeros - since vectors can be None, look for the
@@ -382,8 +340,11 @@ class EventManager(object):
         self.template_params[-1].update(kwds)
 
     def finalize_template_events(self):
-        self.events = numpy.append(self.events, self.template_events)
+        self.accumulate.append(self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
+
+    def finalize_events(self):
+        self.events = numpy.concatenate(self.accumulate)
 
     def make_output_dir(self, outname):
         path = os.path.dirname(outname)
