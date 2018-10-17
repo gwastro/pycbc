@@ -27,13 +27,13 @@ import pycbc.version
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
-          'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
-              'sphinx.ext.viewcode',
-            'sphinxcontrib.programoutput',
-         'sphinx.ext.napoleon',           'sphinx.ext.mathjax',
-          'matplotlib.sphinxext.only_directives',
-          'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
-          'sphinx.ext.inheritance_diagram']
+              'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
+              'sphinx.ext.viewcode', 'sphinxcontrib.programoutput',
+              'sphinx.ext.napoleon', 'sphinx.ext.mathjax',
+              'matplotlib.sphinxext.only_directives',
+              'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
+              'sphinx.ext.inheritance_diagram',
+              ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -253,7 +253,9 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
+intersphinx_mapping = {'http://docs.python.org/': None,
+                       'h5py': ('http://docs.h5py.org/en/stable/', None),
+                      }
 
 napoleon_use_ivar = False
 
