@@ -28,7 +28,6 @@ for ftname, cls in sorted(filetypes.items()):
     # get the parents
     topclasses = get_topclasses(cls)
     out = tmplt.format(name=cls.__name__, module=cls.__module__)
-                       #topclasses=topclasses)
     print(out, file=fp)
 
 fp.close()

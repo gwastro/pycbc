@@ -2,15 +2,13 @@
 from __future__ import print_function
 from pycbc.inference.sampler import samplers
 
-print("CREATING SAMPLER DIAGRAM")
-
 fname = 'sampler_inheritance_diagrams.rst'
 
-tmplt = """.. _inheritance-{}:
+tmplt = """.. _inheritance-{name}:
 
-* ``{}``:
+* ``{name}``:
 
-.. inheritance-diagram:: pycbc.inference.sampler.{}
+.. inheritance-diagram:: {module}.{name}
    :parts: 3
 
 |
@@ -19,6 +17,7 @@ tmplt = """.. _inheritance-{}:
 fp = open(fname, 'w')
 
 for sampler, cls in sorted(samplers.items()):
-    print(tmplt.format(sampler, sampler, cls.__name__), file=fp)
+    out = tmplt.format(name=cls.__name__, module=cls.__module__)
+    print(out, file=fp)
 
 fp.close()
