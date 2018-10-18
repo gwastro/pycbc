@@ -151,10 +151,37 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
 
 
 class BaseMCMC(object):
-    """This class provides methods common to MCMCs.
+    """Abstract base class that provides methods common to MCMCs.
 
-    It is not a sampler class itself. Sampler classes can inherit from this
+    This is not a sampler class itself. Sampler classes can inherit from this
     along with ``BaseSampler``.
+
+    This class provides ``set_initial_conditions``, ``run``, and ``checkpoint``
+    methods, which are some of the abstract methods required by
+    ``BaseSampler``.
+
+    This class introduces the following abstract properties and methods:
+
+    * base_shape
+        [`property`] Should give the shape of the samples arrays used by the
+        sampler, excluding the iteraitons dimension. Needed for writing
+        results.
+    * run_mcmc(niterations)
+        Should run the sampler for the given number of iterations. Called by
+        ``run``.
+    * clear_samples()
+        Should clear samples from memory. Called by ``run``.
+    * set_state_from_file(filename)
+        Should set the random state of the sampler using the given filename.
+        Called by ``set_initial_conditions``.
+    * write_results(filename)
+        Writes results to the given filename. Called by ``checkpoint``.
+    * compute_acf(filename, \**kwargs)
+        [`classmethod`] Should compute the autocorrelation function using
+        the given filename. Also allows for other keyword arguments.
+    * compute_acl(filename, \**kwargs)
+        [`classmethod`] Should compute the autocorrelation length using
+        the given filename. Also allows for other keyword arguments.
 
     Attributes
     ----------
@@ -245,6 +272,10 @@ class BaseMCMC(object):
 
     @property
     def pos(self):
+        """The current position of the walkers.
+
+        Returns a dictionary mapping the sampling paramters to the values.
+        """
         pos = self._pos
         if pos is None:
             return self.p0
@@ -494,8 +525,8 @@ class BaseMCMC(object):
     def set_target_from_config(self, cp, section):
         """Sets the target using the given config file.
 
-        This looks for 'niterations' to set the ``target_niterations``, and
-        'effective-nsamples' to set the ``target_eff_nsamples``.
+        This looks for ``niterations`` to set the ``target_niterations``, and
+        ``effective-nsamples`` to set the ``target_eff_nsamples``.
 
         Parameters
         ----------

@@ -48,7 +48,10 @@ from pycbc.inference.io import validate_checkpoint_files
 
 
 class BaseSampler(object):
-    """Base container class for inference samplers.
+    """Abstract base class for all inference samplers.
+
+    All sampler classes must inherit from this class and implement its abstract
+    methods.
 
     Parameters
     ----------
@@ -241,9 +244,9 @@ def create_new_output_file(sampler, filename, force=False, injection_file=None,
 
 
 def initial_dist_from_config(cp):
-    """Loads a distribution for the sampler start from the given config file.
+    r"""Loads a distribution for the sampler start from the given config file.
 
-    A distribution will only be loaded if the config file has a [initial-*]
+    A distribution will only be loaded if the config file has a [initial-\*]
     section(s).
 
     Parameters
@@ -254,7 +257,7 @@ def initial_dist_from_config(cp):
     Returns
     -------
     JointDistribution or None :
-        The initial distribution. If no [initial-*] section found in the
+        The initial distribution. If no [initial-\*] section found in the
         config file, will just return None.
     """
     if len(cp.get_subsections("initial")):
