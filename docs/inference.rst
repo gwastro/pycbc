@@ -23,92 +23,281 @@ The executable ``pycbc_inference`` is designed to sample the parameter space
 and save the samples in an HDF file. A high-level description of the
 ``pycbc_inference`` algorithm is
 
-#. Estimate a PSD from a model or data.
+#. Read priors from a configuration file.
 
-#. Read gravitational-wave strain from a gravitational-wave model or use recolored fake strain.
+#. Setup the model to use. If the model uses data, then:
 
-#. Read priors from configuration file.
+    * Read gravitational-wave strain from a gravitational-wave model or use
+      recolored fake strain.
 
-#. Construct prior-weighted likelihood function from PSD, gravitational-wave strain, and priors.
+    * Estimate a PSD.
 
-#. Run sampler that walks around parameter space and calculates the prior-weighted likelihood function.
+#. Run a sampler to estimate the posterior distribution of the model.
 
----------------------------------------------------
-Options for samplers, likelihood models, and priors
----------------------------------------------------
+#. Write the samples and metadata to an HDF file.
 
-For a full listing of all options run ``pycbc_inference --help``. In this subsection we reference documentation for Python classes that contain more information about choices for samplers, likelihood models, and priors.
+The model, sampler, parameters to vary and their priors are specified in a
+configuration file, which is passed to the program using the ``--config-file``
+option. Other command-line options determine what data to load (if the model
+uses data) and what parallelization settings to use. For a full listing of all
+options run ``pycbc_inference --help``. Below, we give details on how
+to set up a configuration file and provide examples of how to run
+``pycbc_inference``.
 
-The user specifies the sampler on the command line with the ``--sampler`` option.
-A complete list of samplers is given in ``pycbc_inference --help``.
-These samplers are described in :py:class:`pycbc.inference.sampler_kombine.KombineSampler`, :py:class:`pycbc.inference.sampler_emcee.EmceeEnsembleSampler`, and :py:class:`pycbc.inference.sampler_emcee.EmceePTSampler`.
-In addition to ``--sampler`` the user will need to specify the number of walkers to use ``--nwalkers``, and for parallel-tempered samplers the number of temperatures ``--ntemps``. You also need to either specify the number of iterations to run for using ``--niterations`` **or** the number of independent samples to collect using ``--n-independent-samples``. For the latter, a burn-in function must be specified using ``--burn-in-function``. In this case, the program will run until the sampler has burned in, at which point the number of independent samples equals the number of walkers. If the number of independent samples desired is greater than the number of walkers, the program will continue to run until it has collected the specified number of independent samples (to do this, an autocorrelation length is computed at each checkpoint to determine how many iterations need to be skipped to obtain independent samples).
+------------------------------------------
+Configuring the model, sampler, and priors
+------------------------------------------
 
-The user specifies the likelihood model on the command line with the ``--likelihood-evaluator`` option. Any choice that starts with ``test_`` is an analytic test distribution that requires no data or waveform generation; see the section below on running on an analytic distribution for more details. For running on data, use ``--likelihood-evaluator gaussian``; this uses :py:class:`pycbc.inference.likelihood.GaussianLikelihood` for evaluating posteriors. Examples of using this on a BBH injection and on GW150914 are given below.
+The configuration file uses :py:class:`WorkflowConfigParser
+<pycbc.workflow.configuration.WorkflowConfigParser>` syntax.  The required
+sections are: ``[model]``, ``[sampler]``, and ``[variable_params]``.  In
+addition, multiple ``[prior]`` sections must be provided that define the prior
+distribution to use for the parameters in ``[variable_params]``.
 
-The user specifies a configuration file that defines the priors with the ``--config-files`` option.
-The syntax of the configuration file is described in the following subsection.
+^^^^^^^^^^^^^^^^^^^^^
+Configuring the model
+^^^^^^^^^^^^^^^^^^^^^
 
--------------------------
-Configuration file syntax
--------------------------
+The ``[model]`` section sets up what model to use for the analysis. At minimum,
+a ``name`` argument must be provided, specifying which model to use. For
+example:
 
-Configuration files follow the ``ConfigParser`` syntax.
-There are two required sections.
-One is a ``[variable_args]`` section that contains a list of parameters that we will vary to obtain a posterior distribution and the other is ``[static_args]`` section that contains a list of parameters are held fixed through out the run.
+.. code-block:: ini
 
-Each parameter in ``[variable_args]`` must have a subsection in ``[prior]``.
-To create a subsection use the ``-`` char, e.g. for one of the mass parameters do ``[prior-mass1]``.
+   [model]
+   name = gaussian_noise
 
-Each prior subsection must have a ``name`` option that identifies what prior to use.
-These distributions are described in :py:mod:`pycbc.distributions`.
-A list of all distributions that can be used is found with
+In this case, the :py:class:`GaussianNoise <gwin.models.GaussianNoise>` would
+be used.  (Examples of using this model on a BBH injection and on GW150914 are
+given below.) Other arguments to configure the model may also be set in this
+section.  The recognized arguments depend on the model. The currently available
+models are:
 
-.. literalinclude:: ../examples/distributions/list_distributions.py
-.. command-output:: python ../examples/distributions/list_distributions.py
+.. include:: _include/models-table.rst
 
-One or more of the ``variable_args`` may be transformed to a different parameter space for purposes of sampling. This is done by specifying a ``[sampling_parameters]`` section. This section specifies which ``variable_args`` to replace with which parameters for sampling. This must be followed by one or more ``[sampling_transforms-{sampling_params}]`` sections that provide the transform class to use. For example, the following would cause the sampler to sample in chirp mass (``mchirp``) and mass ratio (``q``) instead of ``mass1`` and ``mass2``::
+Refer to the models' ``from_config`` method to see what configuration arguments
+are available.
 
-    [sampling_parameters]
-    mass1, mass2: mchirp, q
+Any model name that starts with ``test_`` is an analytic test distribution that
+requires no data or waveform generation. See the section below on running on an
+analytic distribution for more details.
 
-    [sampling_transforms-mchirp+q]
-    name = mass1_mass2_to_mchirp_q
 
-For a list of all possible transforms see :py:mod:`pycbc.transforms`.
+^^^^^^^^^^^^^^^^^^^^^^^
+Configuring the sampler
+^^^^^^^^^^^^^^^^^^^^^^^
 
-There can be any number of ``variable_args`` with any name. No parameter name is special (with the exception of parameters that start with ``calib_``; see below). However, in order to generate waveforms, certain parameters must be provided for waveform generation. If you would like to specify a ``variable_arg`` that is not one of these parameters, then you must provide a ``[waveforms_transforms-{param}]`` section that provides a transform from the arbitrary ``variable_args`` to the needed waveform parameter(s) ``{param}``. For example, in the following we provide a prior on ``chirp_distance``. Since ``distance``, not ``chirp_distance``, is recognized by the CBC waveforms module, we provide a transform to go from ``chirp_distance`` to ``distance``::
+The ``[sampler]`` section sets up what sampler to use for the analysis. As
+with the ``[model]`` section, a ``name`` must be provided to specify which
+sampler to use. The currently available samplers are:
 
-    [variable_args]
-    chirp_distance =
+.. include:: _include/samplers-table.rst
 
-    [prior-chirp_distance]
-    name = uniform
-    min-chirp_distance = 1
-    max-chirp_distance = 200
+Configuration options for the sampler should also be specified in the
+``[sampler]`` section. For example:
 
-    [waveform_transforms-distance]
-    name = chirp_distance_to_distance
+.. code-block:: ini
 
-Any class in the transforms module may be used. A useful transform for these purposes is the :py:class:`pycbc.transforms.CustomTransform`, which allows for arbitrary transforms using any function in the :py:mod:`pycbc.conversions`, :py:mod:`pycbc.coordinates`, or :py:mod:`pycbc.cosmology` modules, along with numpy math functions. For example, the following would use the I-Love-Q relationship :py:meth:`pycbc.conversions.dquadmon_from_lambda` to relate the quadrupole moment of a neutron star ``dquad_mon1`` to its tidal deformation ``lambda1``::
+   [sampler]
+   name = emcee
+   nwalkers = 5000
+   niterations = 1000
+   checkpoint-interval = 100
 
-    [variable_args]
-    lambda1 =
+This would tell ``pycbc_inference`` to run the
+:py:class:`EmceeEnsembleSampler <pycbc.inference.sampler.emcee.EmceeEnsembleSampler>`
+with 5000 walkers for 1000 iterations, checkpointing every 100th iteration.
+Refer to the samplers' ``from_config`` method to see what configuration options
+are available.
 
-    [waveform_transforms-dquad_mon1]
-    name = custom
-    inputs = lambda1
-    dquad_mon1 = dquadmon_from_lambda(lambda1)
+Burn-in tests may also be configured for MCMC samplers in the config file. The
+options for the burn-in should be placed in ``[sampler-burn_in]``. At minimum,
+a ``burn-in-test`` argument must be given in this section. This argument
+specifies which test(s) to apply. Multiple tests may be combined using standard
+python logic operators. For example:
 
-A list of all parameters that are understood by the CBC waveform generator can be found with:
+.. code-block:: ini
 
-.. literalinclude:: ../examples/inference/list_parameters.py
-.. command-output:: python ../examples/inference/list_parameters.py
+   [sampler-burn_in]
+   burn-in-test = nacl & max_posterior
 
-Some common transforms are pre-defined in the code. These are: the mass parameters ``mass1`` and ``mass2`` can be substituted with ``mchirp`` and ``eta`` or ``mchirp`` and ``q``.
-The component spin parameters ``spin1x``, ``spin1y``, and ``spin1z`` can be substituted for polar coordinates ``spin1_a``, ``spin1_azimuthal``, and ``spin1_polar`` (ditto for ``spin2``).
+In this case, the sampler would be considered to be burned in when both the
+``nacl`` *and* ``max_posterior`` tests were satisfied. Setting this to ``nacl |
+max_postrior`` would instead consider the sampler to be burned in when either
+the ``nacl`` *or* ``max_posterior`` tests were satisfied. For more information
+on what tests are available, see the :py:mod:`pycbc.inference.burn_in` module.
 
-If any calibration parameters are used (prefix ``calib_``), a ``[calibration]`` section must be included. This section must have a ``name`` option that identifies what calibration model to use. The models are described in :py:mod:`pycbc.calibration`. The ``[calibration]`` section must also include reference values ``fc0``, ``fs0``, and ``qinv0``, as well as paths to ASCII transfer function files for the test mass actuation, penultimate mass actuation, sensing function, and digital filter for each IFO being used in the analysis. E.g. for an analysis using H1 only, the required options would be ``h1-fc0``, ``h1-fs0``, ``h1-qinv0``, ``h1-transfer-function-a-tst``, ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``, ``h1-transfer-function-d``.
+^^^^^^^^^^^^^^^^^^^^^
+Configuring the prior
+^^^^^^^^^^^^^^^^^^^^^
+
+What parameters to vary to obtain a posterior distribution are determined by
+``[variable_params]`` section. For example:
+
+.. code-block:: ini
+
+   [variable_params]
+   x =
+   y =
+
+This would tell ``pycbc_inference`` to sample a posterior over two parameters
+called ``x`` and ``y``.
+
+A prior must be provided for every parameter in ``[variable_params]``. This
+is done by adding sections named ``[prior-{param}]`` where ``{param}`` is the
+name of the parameter the prior is for. For example, to provide a prior for the
+``x`` parameter in the above example, you would need to add a section called
+``[prior-x]``. If the prior couples more than one parameter together in a joint
+distribution, the parameters should be provided as a ``+`` separated list,
+e.g., ``[prior-x+y+z]``.
+
+The prior sections specify what distribution to use for the parameter's prior,
+along with any settings for that distribution.  Similar to the ``model`` and
+``sampler`` sections, each ``prior`` section must have a ``name`` argument that
+identifies the distribution to use. Distributions are defined in the
+:py:mod:`pycbc.distributions` module. The currently available distributions
+are:
+
+.. include:: _include/distributions-table.rst
+
+^^^^^^^^^^^^^^^^^
+Static parameters
+^^^^^^^^^^^^^^^^^
+
+A ``[static_params]`` section may be provided to list any parameters that
+will remain fixed throughout the run. For example:
+
+.. code-block:: ini
+
+   [static_params]
+   approximant = IMRPhenomPv2
+   f_lower = 18
+
+-------------------------------
+Advanced configuration settings
+-------------------------------
+
+The following are additional settings that may be provided in the configuration
+file, in order to do more sophisticated analyses.
+
+^^^^^^^^^^^^^^^^^^^
+Sampling transforms
+^^^^^^^^^^^^^^^^^^^
+
+One or more of the ``variable_args`` may be transformed to a different
+parameter space for purposes of sampling. This is done by specifying a
+``[sampling_parameters]`` section. This section specifies which
+``variable_args`` to replace with which parameters for sampling. This must be
+followed by one or more ``[sampling_transforms-{sampling_params}]`` sections
+that provide the transform class to use. For example, the following would cause
+the sampler to sample in chirp mass (``mchirp``) and mass ratio (``q``) instead
+of ``mass1`` and ``mass2``:
+
+.. code-block:: ini
+
+   [sampling_parameters]
+   mass1, mass2: mchirp, q
+
+   [sampling_transforms-mchirp+q]
+   name = mass1_mass2_to_mchirp_q
+
+Transforms are provided by the :py:mod:`pycbc.transforms` module. The currently
+available transforms are:
+
+.. include:: _include/transforms-table.rst
+
+
+.. note::
+   Both a ``jacobian`` and ``inverse_jacobian`` must be defined in order to use
+   a transform class for a sampling transform. Not all transform classes in
+   :py:mod:`pycbc.transforms` have these defined. Check the class
+   documentation to see if a Jacobian is defined.
+
+^^^^^^^^^^^^^^^^^^^
+Waveform transforms
+^^^^^^^^^^^^^^^^^^^
+
+There can be any number of ``variable_params`` with any name. No parameter name
+is special (with the exception of parameters that start with ``calib_``; see
+below).
+
+However, when doing parameter estimation with CBC waveforms, certain parameter
+names must be provided for waveform generation. The parameter names recognized
+by the CBC waveform generators are:
+
+.. include:: _include/waveform-parameters.rst
+
+It is possible to specify a ``variable_param`` that is not one of these
+parameters. To do so, you must provide one or more
+``[waveforms_transforms-{param}]`` section(s) that define transform(s) from the
+arbitrary ``variable_params`` to the needed waveform parameter(s) ``{param}``.
+For example, in the following we provide a prior on ``chirp_distance``. Since
+``distance``, not ``chirp_distance``, is recognized by the CBC waveforms
+module, we provide a transform to go from ``chirp_distance`` to ``distance``:
+
+.. code-block:: ini
+
+   [variable_params]
+   chirp_distance =
+
+   [prior-chirp_distance]
+   name = uniform
+   min-chirp_distance = 1
+   max-chirp_distance = 200
+
+   [waveform_transforms-distance]
+   name = chirp_distance_to_distance
+
+A useful transform for these purposes is the
+:py:class:`pycbc.transforms.CustomTransform`, which allows for arbitrary
+transforms using any function in the :py:mod:`pycbc.conversions`,
+:py:mod:`pycbc.coordinates`, or :py:mod:`pycbc.cosmology` modules, along with
+numpy math functions. For example, the following would use the I-Love-Q
+relationship :py:meth:`pycbc.conversions.dquadmon_from_lambda` to relate the
+quadrupole moment of a neutron star ``dquad_mon1`` to its tidal deformation
+``lambda1``:
+
+.. code-block:: ini
+
+   [variable_args]
+   lambda1 =
+
+   [waveform_transforms-dquad_mon1]
+   name = custom
+   inputs = lambda1
+   dquad_mon1 = dquadmon_from_lambda(lambda1)
+
+.. note::
+   A Jacobian is not necessary for waveform transforms, since the transforms
+   are only being used to convert a set of parameters into something that the
+   waveform generator understands. This is why in the above example we are
+   able to use a custom transform without needing to provide a Jacobian.
+
+Some common transforms are pre-defined in the code. These are: the mass
+parameters ``mass1`` and ``mass2`` can be substituted with ``mchirp`` and
+``eta`` or ``mchirp`` and ``q``.  The component spin parameters ``spin1x``,
+``spin1y``, and ``spin1z`` can be substituted for polar coordinates
+``spin1_a``, ``spin1_azimuthal``, and ``spin1_polar`` (ditto for ``spin2``).
+
+^^^^^^^^^^^^^^^^^^^^^^
+Calibration parameters
+^^^^^^^^^^^^^^^^^^^^^^
+
+If any calibration parameters are used (prefix ``calib_``), a ``[calibration]``
+section must be included. This section must have a ``name`` option that
+identifies what calibration model to use. The models are described in
+:py:mod:`pycbc.calibration`. The ``[calibration]`` section must also include
+reference values ``fc0``, ``fs0``, and ``qinv0``, as well as paths to ASCII
+transfer function files for the test mass actuation, penultimate mass
+actuation, sensing function, and digital filter for each IFO being used in the
+analysis. E.g. for an analysis using H1 only, the required options would be
+``h1-fc0``, ``h1-fs0``, ``h1-qinv0``, ``h1-transfer-function-a-tst``,
+``h1-transfer-function-a-pu``, ``h1-transfer-function-c``,
+``h1-transfer-function-d``.
+
+========
+Examples
+========
 
 Simple examples are given in the subsections below.
 
