@@ -123,21 +123,7 @@ Inheritance diagrams
 The following are inheritance diagrams for all of the currently supported IO
 classes:
 
-* ``emcee``:
-
-.. inheritance-diagram:: pycbc.inference.io.emcee
-   :parts: 2
-   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile, pycbc.inference.io.base_mcmc.MCMCIO
-
-|
-
-* ``emcee_pt``:
-
-.. inheritance-diagram:: pycbc.inference.io.emcee_pt
-   :parts: 2
-   :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile, pycbc.inference.io.base_mcmc.MCMCIO
-
-|
+.. include:: ../_include/inference_io_inheritance_diagrams.rst
 
 .. _how-to-add-a-sampler-io:
 

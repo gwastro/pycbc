@@ -154,16 +154,9 @@ unique features of different samplers, while keeping the base API that
 Inheritance diagrams
 ---------------------
 
-Here are inheritance diagrams for the rest of the samplers currently supported:
+Here are inheritance diagrams for all of the currently supported samplers:
 
-.. _inheritance-emcee_pt:
-
-* ``emcee_pt``:
-
-.. inheritance-diagram:: pycbc.inference.sampler.emcee_pt
-   :parts: 2
-
-|
+.. include:: ../_include/sampler_inheritance_diagrams.rst
 
 .. _how-to-add-a-sampler:
 
