@@ -42,6 +42,12 @@ plugins:
       strings:
       - FIXME
       - XXX
+  pylint:
+    enabled: true
+    channel: "beta"
+    checks:
+      import-error:
+        enabled: false
   pep8:
     enabled: true
 

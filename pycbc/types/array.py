@@ -101,14 +101,23 @@ def common_kind(*dtypes):
 @schemed(BACKEND_PREFIX) 
 def _to_device(array):
     """ Move input to device """
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
     
 @schemed(BACKEND_PREFIX)
 def _copy_base_array(array):
     """ Copy a backend array"""
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 @schemed(BACKEND_PREFIX)
 def _scheme_matches_base_array(array):
     """ Check that input matches array type for scheme """
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 class Array(object):
     """Array used to do numeric calculations on a various compute
@@ -635,6 +644,9 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def squared_norm(self):
         """ Return the elementwise squared norm of the array """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_returntype
     @_checkother
@@ -645,6 +657,9 @@ class Array(object):
         Self is modified in place and returned as output.
         Precisions of inputs must match.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_vrcheckother
     @_convert
@@ -652,6 +667,9 @@ class Array(object):
     def inner(self, other):
         """ Return the inner product of the array with complex conjugation.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_vrcheckother
     @_convert
@@ -659,11 +677,17 @@ class Array(object):
     def vdot(self, other):
         """ Return the inner product of the array with complex conjugation.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def clear(self): 
         """ Clear out the values of the array. """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_vrcheckother
     @_convert
@@ -671,63 +695,95 @@ class Array(object):
     def weighted_inner(self, other, weight):
         """ Return the inner product of the array with complex conjugation.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def sum(self):
         """ Return the sum of the the array. """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_returntype
     @_convert
     @schemed(BACKEND_PREFIX)
     def cumsum(self):
         """ Return the cumulative sum of the the array. """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
      
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max(self):
         """ Return the maximum value in the array. """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
             
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max_loc(self):
         """Return the maximum value in the array along with the index location """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_arg_max(self):
         """ Return location of the maximum argument max """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_max_loc(self):
         """Return the maximum elementwise norm in the array along with the index location"""
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def min(self):
         """ Return the maximum value in the array. """ 
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
         
     @_returnarray
     @_convert
     @schemed(BACKEND_PREFIX)
     def take(self, indices):
-        """ Return the values at the given indices. """                           
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @_vcheckother
     @schemed(BACKEND_PREFIX)
     def dot(self, other):
         """ Return the dot product"""
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
     
     @schemed(BACKEND_PREFIX)
     def _getvalue(self, index):
         """Helper function to return a single value from an array. May be very
            slow if the memory is on a gpu.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_memoize_single
     @_returntype
@@ -790,6 +846,9 @@ class Array(object):
         """Helper function to copy between two arrays. The arrays references
            should be bare array types and not `Array` class instances. 
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
                 
     @_convert
     def __setitem__(self, index, other):
@@ -851,6 +910,9 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def ptr(self):
         """ Returns a pointer to the memory of this array """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
         
     @property
     def itemsize(self):
@@ -873,6 +935,9 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def numpy(self):
         """ Returns a Numpy Array that contains this data """     
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
     
     @_convert
     def lal(self):
@@ -1001,7 +1066,9 @@ def _return_array(fn, *args, **kwds):
 def zeros(length, dtype=float64):
     """ Return an Array filled with zeros.
     """
-    return
+    err_msg = "This function is a stub that should be overridden using "
+    err_msg += "the scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 def load_array(path, group=None):
     """

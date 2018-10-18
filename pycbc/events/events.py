@@ -39,14 +39,18 @@ from . import coinc
 def threshold(series, value):
     """Return list of values and indices values over threshold in series.
     """
-    return None, None
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 @schemed("pycbc.events.threshold_")
 def threshold_only(series, value):
     """Return list of values and indices whose values in series are
        larger (in absolute value) than value
     """
-    return None, None
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 #FIXME: This should be under schemed, but I don't understand that yet!
 def threshold_real_numpy(series, value):
@@ -59,11 +63,15 @@ def threshold_real_numpy(series, value):
 def threshold_and_cluster(series, threshold, window):
     """Return list of values and indices values over threshold in series.
     """
-    return
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 @schemed("pycbc.events.threshold_")
 def _threshold_cluster_factory(series):
-    return
+    err_msg = "This class is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 class ThresholdCluster(object):
     """Create a threshold and cluster engine
