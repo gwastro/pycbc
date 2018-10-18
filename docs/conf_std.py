@@ -276,7 +276,7 @@ def build_includes():
     pyfiles = glob.glob('*.py')
     for fn in pyfiles:
         if not fn.startswith('_'):
-            print(fn)
+            print(' {}'.format(fn))
             subprocess.check_output(['python', fn])
     os.chdir(cwd)
 
