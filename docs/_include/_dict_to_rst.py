@@ -20,23 +20,23 @@
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def rst_dict_table(dict_, key_format=str, val_format=str, header=None):
+def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
+                   sort=True):
     """Returns an RST-formatted table of keys and values from a `dict`
 
     Parameters
     ----------
-    dict_ : `dict`
+    dict_ : dict
         data to display in table
-
-    key_format : `callable`
+    key_format : callable
         callable function with which to format keys
-
-    val_format : `callable`
+    val_format : callable
         callable function with which to format values
-
-    header : `None`, `tuple` of `str`
+    header : None, tuple of str
         a 2-tuple of header for the two columns, or `None` to exclude
         a header line (default)
+    sort : bool, optional
+        Sort the dictionary keys alphabetically when writing the table.
 
     Examples
     --------
@@ -81,9 +81,20 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None):
     lines = [divider]
     if header:
         lines.extend((row(*header), divider))
-    for key, val in zip(keys, values):
+    params = zip(keys, values)
+    if sort:
+        params = sorted(params)
+    for key, val in params:
         fmt = '{{0:{0}s}}  {{1}}'.format(nckey, ncval)
         lines.append(fmt.format(key, val))
     lines.append(divider)
 
     return '\n'.join(lines)
+
+
+def format_class(class_):
+    """Function for formatting classes in the table.
+
+    This can be passed to ``rst_dict_table``'s ``val_format`` argument.
+    """
+    return ':py:class:`{0}.{1}`'.format(class_.__module__, class_.__name__)
