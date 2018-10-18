@@ -87,7 +87,6 @@ Let's examine the |EmceeEnsembleSampler| class to see how these guidelines
 apply in practice. Here is its inheritance structure (click on the names of the
 classes to see their documentation):
 
-.. _inheritance-emcee:
 .. inheritance-diagram:: pycbc.inference.sampler.emcee
     :parts: 2
 
