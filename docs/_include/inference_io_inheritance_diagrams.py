@@ -15,7 +15,7 @@ tmplt = """.. _inheritance-io-{name}:
 
 * ``{name}``:
 
-.. inheritance-diagram:: {module}.{name}
+.. inheritance-diagram:: {module}.{clsname}
    :parts: 3
    :top-classes: pycbc.inference.io.base_hdf.BaseInferenceFile
 
@@ -27,7 +27,8 @@ fp = open(fname, 'w')
 for ftname, cls in sorted(filetypes.items()):
     # get the parents
     topclasses = get_topclasses(cls)
-    out = tmplt.format(name=cls.__name__, module=cls.__module__)
+    out = tmplt.format(name=ftname, clsname=cls.__name__,
+                       module=cls.__module__)
     print(out, file=fp)
 
 fp.close()
