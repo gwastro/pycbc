@@ -48,7 +48,10 @@ from pycbc.inference.io import validate_checkpoint_files
 
 
 class BaseSampler(object):
-    """Base container class for inference samplers.
+    """Abstract base class for all inference samplers.
+
+    All sampler classes must inherit from this class and implement its abstract
+    methods.
 
     Parameters
     ----------
