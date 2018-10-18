@@ -249,8 +249,8 @@ module, we provide a transform to go from ``chirp_distance`` to ``distance``:
    name = chirp_distance_to_distance
 
 A useful transform for these purposes is the
-:py:class:`pycbc.transforms.CustomTransform`, which allows for arbitrary
-transforms using any function in the :py:mod:`pycbc.conversions`,
+:py:class:`CustomTransform <pycbc.transforms.CustomTransform>`, which allows
+for arbitrary transforms using any function in the :py:mod:`pycbc.conversions`,
 :py:mod:`pycbc.coordinates`, or :py:mod:`pycbc.cosmology` modules, along with
 numpy math functions. For example, the following would use the I-Love-Q
 relationship :py:meth:`pycbc.conversions.dquadmon_from_lambda` to relate the
@@ -299,73 +299,73 @@ analysis. E.g. for an analysis using H1 only, the required options would be
 Examples
 ========
 
-Simple examples are given in the subsections below.
+Examples are given in the subsections below.
 
 -----------------------------------
 Running on an analytic distribution
 -----------------------------------
 
-Several analytic distributions are available to run tests on. These can be run quickly on a laptop to check that a sampler is working properly.
+Several analytic distributions are available to run tests on. These can be run
+quickly on a laptop to check that a sampler is working properly.
 
-This example demonstrates how to sample a 2D normal distribution with the ``emcee`` sampler. First, create the following configuration file (named ``normal2d.ini``)::
+This example demonstrates how to sample a 2D normal distribution with the
+``emcee`` sampler. First, we create the following configuration file:
 
-    [variable_args]
-    x =
-    y =
+.. literalinclude:: ../examples/inference/analytic-normal2d/normal2d.ini 
+   :language: ini
 
-    [prior-x]
-    name = uniform
-    min-x = -10
-    max-x = 10
+:download:`Download <../examples/inference/analytic-normal2d/normal2d.ini>`
 
-    [prior-y]
-    name = uniform
-    min-y = -10
-    max-y = 10
+By setting the model name to ``test_normal`` we are using
+:py:class:`TestNormal <pycbc.inference.models.analytic.TestNormal>`.
+The number of dimensions of the distribution is set by the number of
+``variable_params``. The names of the parameters do not matter, just that just
+that the prior sections use the same names.
 
-Then run::
+Now run: 
 
-    pycbc_inference --verbose \
-        --config-files normal2d.ini \
-        --output-file normal2d.hdf \
-        --sampler emcee \
-        --niterations 100 \
-        --nwalkers 5000 \
-        --likelihood-evaluator test_normal
+.. literalinclude:: ../examples/inference/analytic-normal2d/run.sh
+   :language: bash
 
-This will run the ``emcee`` sampler on the 2D analytic normal distribution with 5000 walkers for 100 iterations.
+:download:`Download <../examples/inference/analytic-normal2d/run.sh>`
 
-To plot the posterior distribution after the last iteration, run::
+This will run the ``emcee`` sampler on the 2D analytic normal distribution with
+5000 walkers for 100 iterations. When it is done, you will have a file called
+``normal2d.hdf`` which contains the results. It should take about a minute to
+run. If you have a computer with more cores, you can increase the
+parallelization by changing the ``nprocesses`` argument.
 
-    pycbc_inference_plot_posterior --verbose \
-        --input-file normal2d.hdf \
-        --output-file posterior-normal2d.png \
-        --plot-scatter \
-        --plot-contours \
-        --plot-marginal \
-        --z-arg loglr \
-        --iteration -1
+To plot the posterior distribution after the last iteration, run:
 
-This will plot each walker's position as a single point colored by the log likelihood ratio at that point, with the 50th and 90th percentile contours drawn. See below for more information about using ``pycbc_inference_plot_posterior``.
+.. literalinclude:: ../examples/inference/analytic-normal2d/plot.sh
+   :language: bash
+
+:download:`Download <../examples/inference/analytic-normal2d/plot.sh>`
+
+This will create the following plot:
+
+.. image:: ../examples/inference/analytic-normal2d/posterior-normal2d.png
+   :scale: 30
+   :align: center
+
+The scatter points show each walker's position after the last iteration. The
+points are colored by the log likelihood at that point, with the 50th and 90th
+percentile contours drawn.
+
+See below for more information about using ``pycbc_inference_plot_posterior``.
 
 To make a movie showing how the walkers evolved, run::
 
-    pycbc_inference_plot_movie --verbose \
-        --input-file normal2d.hdf \
-        --output-prefix frames-normal2d \
-        --movie-file normal2d_mcmc_evolution.mp4 \
-        --cleanup \
-        --plot-scatter \
-        --plot-contours \
-        --plot-marginal \
-        --z-arg loglr \
-        --frame-step 1
+.. literalinclude:: ../examples/inference/analytic-normal2d/make_movie.sh
+   :language: bash
 
-**Note:** you need ``ffmpeg`` installed for the mp4 to be created. See below for more information on using ``pycbc_inference_plot_movie``.
+:download:`Download <../examples/inference/analytic-normal2d/make_movie.sh>`
 
-The number of dimensions of the distribution is set by the number of ``variable_args`` in the configuration file. The names of the ``variable_args`` do not matter, just that the prior sections use the same names (in this example ``x`` and ``y`` were used, but ``foo`` and ``bar`` would be equally valid). A higher (or lower) dimensional distribution can be tested by simply adding more (or less) ``variable_args``.
+.. note::
+   You need ``ffmpeg`` installed for the mp4 to be created.
+   
+See below for more information on using ``pycbc_inference_plot_movie``.
 
-Which analytic distribution is used is set by the ``--likelihood-evaluator`` option. By setting to ``test_normal`` we used :py:class:`pycbc.inference.likelihood.TestNormal`. To see the list of available likelihood classes run ``pycbc_inference --help``; any choice for ``--likelihood-evaluator`` that starts with ``test_`` is analytic. The other analytic distributions available are: :py:class:`pycbc.inference.likelihood.TestEggbox`, :py:class:`pycbc.inference.likelihood.TestRosenbrock`, and :py:class:`pycbc.inference.likelihood.TestVolcano`. As with ``test_normal``, the dimensionality of these test distributions is set by the number of ``variable_args`` in the configuration file. The ``test_volcano`` distribution must be two dimensional, but all of the other distributions can have any number of dimensions. The configuration file syntax for the other test distributions is the same as in this example. Indeed, with this configuration file one only needs to change the ``--likelihood-evaluator`` argument to try (2D versions of) the other distributions.
 
 ------------------------------
 BBH software injection example
