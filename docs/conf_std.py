@@ -13,6 +13,8 @@
 
 import sys, os
 import pycbc.version
+import subprocess
+import glob
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -260,6 +262,21 @@ intersphinx_mapping = {'http://docs.python.org/': None,
 napoleon_use_ivar = False
 
 suppress_warnings = ['image.nonlocal_uri']
+
+# build the dynamic files in _include
+def build_includes():
+    """Creates rst files in the _include directory using the python scripts
+    there."""
+    print("Running scripts in _include:")
+    cwd = os.getcwd()
+    os.chdir('_include')
+    pyfiles = glob.glob('*.py')
+    for fn in pyfiles:
+        print(fn)
+        subprocess.check_output(['python', fn])
+    os.chdir(cwd)
+
+build_includes()
 
 def setup(app):
     app.add_javascript('typed.min.js')
