@@ -30,11 +30,11 @@ from _dict_to_rst import rst_dict_table
 allparams = (waveform.td_waveform_params +
              waveform.fd_waveform_params +
              waveform.location_params)
-paramdict = waveform.ParameterList(sorted(allparams)).description_dict
 
 tbl = rst_dict_table(allparams.description_dict,
                      key_format='``\'{0}\'``'.format,
-                     header=('Parameter', 'Description'))
+                     header=('Parameter', 'Description'),
+                     sort=False)
 
 filename = 'waveform-parameters.rst'
 with open(filename, 'w') as fp:

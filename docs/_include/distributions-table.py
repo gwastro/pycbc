@@ -21,13 +21,11 @@ module.
 """
 from __future__ import (print_function, absolute_import)
 from pycbc.distributions import distribs
-from _dict_to_rst import rst_dict_table
-
-def val_format(class_):
-    return ':py:class:`{0}.{1}`'.format(class_.__module__, class_.__name__)
+from _dict_to_rst import (rst_dict_table, format_class)
 
 tbl = rst_dict_table(distribs, key_format='``\'{0}\'``'.format,
-                     val_format=val_format)
+                     header=('Name', 'Class'),
+                     val_format=format_class)
 
 filename = 'distributions-table.rst'
 with open(filename, 'w') as fp:
