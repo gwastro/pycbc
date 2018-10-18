@@ -575,3 +575,13 @@ Workflows
 
    workflow/pycbc_make_inference_workflow
    workflow/pycbc_make_inference_inj_workflow
+
+===============================================
+For Developers
+=============================================== 
+
+.. toctree::
+    :maxdepth: 1
+
+    inference/sampler_api.rst
+    inference/io.rst

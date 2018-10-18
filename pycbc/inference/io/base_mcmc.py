@@ -118,7 +118,7 @@ class MCMCIO(object):
             Start reading from the given iteration. Default is to start from
             the first iteration.
         thin_interval : int, optional
-            Only read every ``thin_interval``th sample. Default is 1.
+            Only read every ``thin_interval`` -th sample. Default is 1.
         thin_end : int, optional
             Stop reading at the given iteration. Default is to end at the last
             iteration.
