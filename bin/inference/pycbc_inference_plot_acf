@@ -33,7 +33,9 @@ from pycbc.inference import option_utils
 from pycbc.inference.sampler import samplers
 
 # command line usage
-parser = io.ResultsArgumentParser(description="Plots autocorrelation function "
+# turn off thin-interval since it won't be used
+parser = io.ResultsArgumentParser(skip_args='thin-interval',
+                                  description="Plots autocorrelation function "
                                               "from inference samples.")
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
