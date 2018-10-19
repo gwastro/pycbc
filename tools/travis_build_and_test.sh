@@ -62,7 +62,8 @@ do
 done
 
 # Run Inference Scripts
-./tools/inference_test.sh
+pushd examples/inference/analytic-normal2d
+bash -e run.sh
 if test $? -ne 0 ; then
     RESULT=1
     echo -e "    FAILED!"
@@ -70,6 +71,7 @@ if test $? -ne 0 ; then
 else
     echo -e "    Pass."
 fi
+popd
 
 echo -e "\\n>> [`date`] Building documentation"
 
