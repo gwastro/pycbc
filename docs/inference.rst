@@ -468,123 +468,46 @@ samples, increase ``effective-nsamples``.
 GW150914 example
 ----------------
 
-With a minor change to the ``tc`` prior, you can reuse ``inference.ini`` from the previous example to analyze the data containing GW150914. Change the ``[prior-tc]`` section to::
+To run on GW150914, we can use the same configuration file as was used for the
+BBH example, above.
+(:download:`Download <../examples/inference/gw150914/inference.ini>`)
 
-    [prior-tc]
-    ; coalescence time prior
-    name = uniform
-    min-tc = 1126259462.32
-    max-tc = 1126259462.52
-
-Next, you need to obtain the real LIGO data containing GW150914. Do one of
+Now you need to obtain the real LIGO data containing GW150914. Do one of
 the following:
 
 * **If you are a LIGO member and are running on a LIGO Data Grid cluster:**
   you can use the LIGO data server to automatically obtain the frame files.
-  Simply set the following environment variables::
+  Simply set the following environment variables:
 
-    FRAMES="--frame-type H1:H1_HOFT_C02 L1:L1_HOFT_C02"
-    CHANNELS="H1:H1:DCS-CALIB_STRAIN_C02 L1:L1:DCS-CALIB_STRAIN_C02"
+  .. code-block:: bash
+
+     export FRAMES="--frame-type H1:H1_HOFT_C02 L1:L1_HOFT_C02"
+     export CHANNELS="H1:H1:DCS-CALIB_STRAIN_C02 L1:L1:DCS-CALIB_STRAIN_C02"
 
 * **If you are not a LIGO member, or are not running on a LIGO Data Grid
   cluster:** you need to obtain the data from the
-  `LIGO Open Science Center <https://losc.ligo.org>`_. First run the following
-  commands to download the needed frame files to your working directory::
+  `Gravitational Wave Open Science Center <https://www.gw-openscience.org>`_.
+  First run the following commands to download the needed frame files to your
+  working directory:
 
-    wget https://losc.ligo.org/s/events/GW150914/H-H1_LOSC_4_V2-1126257414-4096.gwf
-    wget https://losc.ligo.org/s/events/GW150914/L-L1_LOSC_4_V2-1126257414-4096.gwf
+  .. code-block:: bash
 
-  Then set the following enviornment variables::
+     wget https://www.gw-openscience.org/GW150914data/H-H1_LOSC_4_V2-1126257414-4096.gwf
+     wget https://www.gw-openscience.org/GW150914data/L-L1_LOSC_4_V2-1126257414-4096.gwf
 
-    FRAMES="--frame-files H1:H-H1_LOSC_4_V2-1126257414-4096.gwf L1:L-L1_LOSC_4_V2-1126257414-4096.gwf"
-    CHANNELS="H1:LOSC-STRAIN L1:LOSC-STRAIN"
+  Then set the following enviornment variables:
 
-Now run::
+  .. code-block:: bash
 
-    # trigger parameters
-    TRIGGER_TIME=1126259462.42
+     export FRAMES="--frame-files H1:H-H1_LOSC_4_V2-1126257414-4096.gwf L1:L-L1_LOSC_4_V2-1126257414-4096.gwf"
+     export CHANNELS="H1:LOSC-STRAIN L1:LOSC-STRAIN"
 
-    # data to use
-    # the longest waveform covered by the prior must fit in these times
-    SEARCH_BEFORE=6
-    SEARCH_AFTER=2
+Now run:
 
-    # use an extra number of seconds of data in addition to the data specified
-    PAD_DATA=8
+.. literalinclude:: ../examples/inference/gw150914/run.sh
+   :language: bash
 
-    # PSD estimation options
-    PSD_ESTIMATION="H1:median L1:median"
-    PSD_INVLEN=4
-    PSD_SEG_LEN=16
-    PSD_STRIDE=8
-    PSD_DATA_LEN=1024
-
-    # sampler parameters
-    CONFIG_PATH=inference.ini
-    OUTPUT_PATH=inference.hdf
-    IFOS="H1 L1"
-    SAMPLE_RATE=2048
-    F_HIGHPASS=15
-    F_MIN=20
-    N_UPDATE=500
-    N_WALKERS=5000
-    N_SAMPLES=5000
-    N_CHECKPOINT=1000
-    PROCESSING_SCHEME=cpu
-
-    # the following sets the number of cores to use; adjust as needed to
-    # your computer's capabilities
-    NPROCS=12
-
-    # get coalescence time as an integer
-    TRIGGER_TIME_INT=${TRIGGER_TIME%.*}
-
-    # start and end time of data to read in
-    GPS_START_TIME=$((${TRIGGER_TIME_INT} - ${SEARCH_BEFORE} - ${PSD_INVLEN}))
-    GPS_END_TIME=$((${TRIGGER_TIME_INT} + ${SEARCH_AFTER} + ${PSD_INVLEN}))
-
-    # start and end time of data to read in for PSD estimation
-    PSD_START_TIME=$((${TRIGGER_TIME_INT} - ${PSD_DATA_LEN}/2))
-    PSD_END_TIME=$((${TRIGGER_TIME_INT} + ${PSD_DATA_LEN}/2))
-
-    # run sampler
-    # specifies the number of threads for OpenMP
-    # Running with OMP_NUM_THREADS=1 stops lalsimulation
-    # to spawn multiple jobs that would otherwise be used
-    # by pycbc_inference and cause a reduced runtime.
-    OMP_NUM_THREADS=1 \
-    pycbc_inference --verbose \
-        --seed 12 \
-        --instruments ${IFOS} \
-        --gps-start-time ${GPS_START_TIME} \
-        --gps-end-time ${GPS_END_TIME} \
-        --channel-name ${CHANNELS} \
-        ${FRAMES} \
-        --strain-high-pass ${F_HIGHPASS} \
-        --pad-data ${PAD_DATA} \
-        --psd-estimation ${PSD_ESTIMATION} \
-        --psd-start-time ${PSD_START_TIME} \
-        --psd-end-time ${PSD_END_TIME} \
-        --psd-segment-length ${PSD_SEG_LEN} \
-        --psd-segment-stride ${PSD_STRIDE} \
-        --psd-inverse-length ${PSD_INVLEN} \
-        --sample-rate ${SAMPLE_RATE} \
-        --low-frequency-cutoff ${F_MIN} \
-        --config-file ${CONFIG_PATH} \
-        --output-file ${OUTPUT_PATH} \
-        --processing-scheme ${PROCESSING_SCHEME} \
-        --sampler kombine \
-        --burn-in-function max_posterior \
-        --update-interval ${N_UPDATE} \
-        --likelihood-evaluator gaussian \
-        --nwalkers ${N_WALKERS} \
-        --n-independent-samples ${N_SAMPLES} \
-        --checkpoint-interval ${N_CHECKPOINT} \
-        --nprocesses ${NPROCS} \
-        --save-strain \
-        --save-psd \
-        --save-stilde \
-        --force
+:download:`Download <../examples/inference/gw150914/run.sh>`
 
 ------------------------------
 Checkpointing and output files
@@ -592,7 +515,6 @@ Checkpointing and output files
 
 While ``pycbc_inference`` is running it will create a file named
 ``inference.hdf.checkpoint`` (i.e., the ``--output-file`` + ``.checkpoint``).
-Run
 
 The executable ``pycbc_inference`` will write a HDF file with all the samples from each walker along with the PSDs and some meta-data about the sampler.
 There is a handler class ``pycbc.io.InferenceFile`` that extends ``h5py.File``.
