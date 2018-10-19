@@ -15,8 +15,8 @@ def strain_array():
 
 class CalibrateTestBase(unittest.TestCase):
     def test_instantiate(self):
-        self.assertRaises(TypeError, Recalibrate, 'test')  
-        
+        self.assertRaises(TypeError, Recalibrate, 'test')
+
     def test_instantiation(self):
         params = dict(ifo_name='test',
                           minimum_frequency=10,
@@ -40,7 +40,7 @@ class CalibrateTestBase(unittest.TestCase):
                              from_config.ifo_name == ifo_name]))
 
     def test_too_few_spline_points_fails(self):
-        self.assertRaises(ValueError, strain.CubicSpline, 
+        self.assertRaises(ValueError, strain.CubicSpline,
                          ifo_name='test', minimum_frequency=10,
                          maximum_frequency=1024, n_points=3)
    
@@ -57,7 +57,7 @@ class CalibrateTestBase(unittest.TestCase):
           recalib_phase_test_2=0.1,
           recalib_phase_test_3=0.1,
           recalib_phase_test_4=0.1,
-          )    
+          )
         model = strain.models['cubic_spline'](**init_params)
         dict_params.update(dict(foo='bar'))
         prefix = 'recalib_'

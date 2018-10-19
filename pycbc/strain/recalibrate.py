@@ -1,6 +1,7 @@
 """ Classes and functions for adjusting strain data.
 """
-# Copyright (C) 2015 Ben Lackey, Christopher M. Biwer, Daniel Finstad
+# Copyright (C) 2015 Ben Lackey, Christopher M. Biwer,
+#                    Daniel Finstad, Colm Talbot, Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -16,14 +17,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+from abc import (ABCMeta, abstractmethod)
+
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 from pycbc.types import FrequencySeries
-from abc import (ABCMeta, abstractmethod)
-import inspect
-
 
 class Recalibrate(object):
+    """ Base class for modifying calibration """
+
     __metaclass__ = ABCMeta
     name = None
 
@@ -100,36 +102,35 @@ class Recalibrate(object):
         all_params = dict(cp.items(section))
         params = {key[len(ifo)+1:]: all_params[key]
                   for key in all_params if ifo.lower() in key}
-        arg_names = inspect.getargspec(cls.__init__)[0]
-        params = {key: params[key] for key in params if key in arg_names}
+        params = {key: params[key] for key in params}
+        params.pop('model')
         params['ifo_name'] = ifo.lower()
 
         return cls(**params)
 
 
 class CubicSpline(Recalibrate):
+    """Cubic spline recalibration
+
+    see https://dcc.ligo.org/LIGO-T1400682/public
+
+    This assumes the spline points follow
+    np.logspace(np.log(minimum_frequency), np.log(maximum_frequency),
+    n_points)
+
+    Parameters
+    ----------
+    minimum_frequency: float
+    minimum frequency of spline points
+    maximum_frequency: float
+    maximum frequency of spline points
+    n_points: int
+    number of spline points
+    """
     name = 'cubic_spline'
 
     def __init__(self, minimum_frequency, maximum_frequency, n_points,
                  ifo_name):
-        """
-        Cubic spline recalibration
-
-        see https://dcc.ligo.org/LIGO-T1400682/public
-
-        This assumes the spline points follow
-        np.logspace(np.log(minimum_frequency), np.log(maximum_frequency),
-                    n_points)
-
-        Parameters
-        ----------
-        minimum_frequency: float
-            minimum frequency of spline points
-        maximum_frequency: float
-            maximum frequency of spline points
-        n_points: int
-            number of spline points
-        """
         Recalibrate.__init__(self, ifo_name=ifo_name)
         minimum_frequency = float(minimum_frequency)
         maximum_frequency = float(maximum_frequency)
@@ -175,7 +176,7 @@ class CubicSpline(Recalibrate):
         return strain_adjusted
 
 
-class PhysicalModel(Recalibrate):
+class PhysicalModel(object):
     """ Class for adjusting time-varying calibration parameters of given
     strain data.
 
@@ -213,7 +214,6 @@ class PhysicalModel(Recalibrate):
     name = 'physical_model'
     def __init__(self, freq=None, fc0=None, c0=None, d0=None,
                  a_tst0=None, a_pu0=None, fs0=None, qinv0=None):
-
         self.freq = np.real(freq)
         self.c0 = c0
         self.d0 = d0
