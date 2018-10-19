@@ -93,13 +93,9 @@ class GaussianNoise(BaseDataModel):
         values are the data (assumed to be unwhitened). The list of keys must
         match the waveform generator's detectors keys, and the epoch of every
         data set must be the same as the waveform generator's epoch.
-    f_lower : float
-        The starting frequency to use estimating the noise.
-        Specified on the command line.
     lower_frequenc_cutoff : float
         The starting frequency to use for computing inner products.
         Must be specified in the config file under section [model].
-        If not equal to f_lower, raise a Warning
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
@@ -222,8 +218,7 @@ class GaussianNoise(BaseDataModel):
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, waveform_generator,
-                 f_lower, psds=None, f_upper=None, norm=None,
-                 lower_frequency_cutoff=None,
+                 lower_frequency_cutoff=None, psds=None, f_upper=None, norm=None,
                  **kwargs):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
@@ -249,26 +244,19 @@ class GaussianNoise(BaseDataModel):
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
-        # figure out the kmin, kmax to use
         # lower frequency cutoff gets set from config file
         if lower_frequency_cutoff == None:
             errmsg = "lower frequency cutoff needs to be specified in config (.ini) file"
             raise KeyError(errmsg)
-        else:
-            self._f_lower = lower_frequency_cutoff
         # Should have been converted to float
-        if type(lower_frequency_cutoff) != type(0.0):
+        elif type(lower_frequency_cutoff) != type(0.0):
             errmsg = """lower fequency cutoff must be convertable to float 
                         but type is {}""".format(type(lower_frequency_cutoff))
             raise ValueError(errmsg)
-        # different from command line argument?
-        elif self._f_lower != f_lower:
-            warnmsg = """Lower frequency cutoff {} specified in config file 
-            does not equal specification {} in command line argument""".format(
-                self._f_lower, f_lower)
-            logging.warn(warnmsg)
-        # filter or pyfilter? 
-        kmin, kmax = filter.get_cutoff_indices(self._f_lower, f_upper, d.delta_f,
+        else:
+            self._f_lower = lower_frequency_cutoff
+        # figure out the kmin, kmax to use
+        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper, d.delta_f,
                                                (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
