@@ -21,10 +21,9 @@ GPS_START_TIME=$((${TRIGGER_TIME_INT} - ${SEGLEN}))
 GPS_END_TIME=$((${TRIGGER_TIME_INT} + ${SEGLEN}))
 
 # run sampler
-# specifies the number of threads for OpenMP
 # Running with OMP_NUM_THREADS=1 stops lalsimulation
 # from spawning multiple jobs that would otherwise be used
-# by gwin and cause a reduced runtime.
+# by pycbc_inference and cause a reduced runtime.
 OMP_NUM_THREADS=1 \
 pycbc_inference --verbose \
     --seed 12 \
