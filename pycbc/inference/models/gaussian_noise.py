@@ -19,6 +19,7 @@
 import numpy
 from scipy import special
 from scipy import interpolate
+import logging
 
 from pycbc import filter
 from pycbc.waveform import NoWaveformError
@@ -94,7 +95,12 @@ class GaussianNoise(BaseDataModel):
         match the waveform generator's detectors keys, and the epoch of every
         data set must be the same as the waveform generator's epoch.
     f_lower : float
+        The starting frequency to use estimating the noise.
+        Specified on the command line.
+    lower_frequenc_cutoff : float
         The starting frequency to use for computing inner products.
+        Must be specified in the config file under section [model].
+        If not equal to f_lower, raise a Warning
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
@@ -218,6 +224,7 @@ class GaussianNoise(BaseDataModel):
 
     def __init__(self, variable_params, data, waveform_generator,
                  f_lower, psds=None, f_upper=None, norm=None,
+                 lower_frequency_cutoff=None,
                  **kwargs):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
@@ -244,8 +251,24 @@ class GaussianNoise(BaseDataModel):
         d = data.values()[0]
         N = len(d)
         # figure out the kmin, kmax to use
-        self._f_lower = f_lower
-        kmin, kmax = filter.get_cutoff_indices(f_lower, f_upper, d.delta_f,
+        # lower frequency cutoff gets set from config file
+        if lower_frequency_cutoff == None:
+            errmsg = "lower frequency cutoff needs to be specified in config (.ini) file"
+            raise KeyError(errmsg)
+        else:
+            self._f_lower = lower_frequency_cutoff
+        # Should have been converted to float
+        if type(lower_frequency_cutoff) != type(0.0):
+            errmsg = """lower fequency cutoff must be convertable to float 
+                        but type is {}""".format(type(lower_frequency_cutoff))
+            raise ValueError(errmsg)
+        # different from command line argument?
+        elif self._f_lower != f_lower:
+            warnmsg = """Lower frequency cutoff {} specified in config file 
+            does not equal specification {} in command line argument""".format(
+                self._f_lower, f_lower)
+            logging.warn(warnmsg)
+        kmin, kmax = filter.get_cutoff_indices(self._f_lower, f_upper, d.delta_f,
                                                (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
@@ -267,6 +290,7 @@ class GaussianNoise(BaseDataModel):
         # whiten the data
         for det in self._data:
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
+
 
     @property
     def _extra_stats(self):
@@ -460,3 +484,17 @@ class GaussianNoise(BaseDataModel):
         attrs['lognl'] = self.lognl
         for det in self.detectors:
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
+    
+    '''
+    def _init_args_from_config(cls,cp):
+        """
+        Overwrite method of superclass base_data:
+
+        Call method of base_data, then check for lower frequency cutoff
+        in the config file. 
+        Raise Error if no lower frequency cutoff is given?
+        """
+        args = super(GaussianNoise, cls)._init_args_from_config(cp)
+        # add lower cutoff frequency to the arguments
+        args['lower_frequency'] = 
+    ''' 
