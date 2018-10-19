@@ -184,10 +184,10 @@ file, in order to do more sophisticated analyses.
 Sampling transforms
 ^^^^^^^^^^^^^^^^^^^
 
-One or more of the ``variable_args`` may be transformed to a different
+One or more of the ``variable_params`` may be transformed to a different
 parameter space for purposes of sampling. This is done by specifying a
 ``[sampling_parameters]`` section. This section specifies which
-``variable_args`` to replace with which parameters for sampling. This must be
+``variable_params`` to replace with which parameters for sampling. This must be
 followed by one or more ``[sampling_transforms-{sampling_params}]`` sections
 that provide the transform class to use. For example, the following would cause
 the sampler to sample in chirp mass (``mchirp``) and mass ratio (``q``) instead
@@ -259,7 +259,7 @@ quadrupole moment of a neutron star ``dquad_mon1`` to its tidal deformation
 
 .. code-block:: ini
 
-   [variable_args]
+   [variable_params]
    lambda1 =
 
    [waveform_transforms-dquad_mon1]
