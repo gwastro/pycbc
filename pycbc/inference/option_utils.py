@@ -31,6 +31,7 @@ from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd)
 from pycbc import waveform
+from pycbc.types import MultiDetOptionAction
 
 
 # -----------------------------------------------------------------------------
@@ -74,12 +75,10 @@ def config_parser_from_cli(opts):
 
 def add_low_frequency_cutoff_opt(parser):
     """Adds the low-frequency-cutoff option to the given parser."""
-    # FIXME: this just uses the same frequency cutoff for every instrument for
-    # now. We should allow for different frequency cutoffs to be used; that
-    # will require (minor) changes to the Likelihood class
-    parser.add_argument("--low-frequency-cutoff", type=float,
+    # Allow for different frequency cutoffs to be used for every detector
+    parser.add_argument("--low-frequency-cutoff", type=float, nargs="+",
+                        action=MultiDetOptionAction, metavar='IFO:FLOW',
                         help="Low frequency cutoff for each IFO.")
-
 
 def low_frequency_cutoff_from_cli(opts):
     """Parses the low frequency cutoff from the given options.
@@ -89,12 +88,7 @@ def low_frequency_cutoff_from_cli(opts):
     dict
         Dictionary of instruments -> low frequency cutoff.
     """
-    # FIXME: this just uses the same frequency cutoff for every instrument for
-    # now. We should allow for different frequency cutoffs to be used; that
-    # will require (minor) changes to the Likelihood class
-    instruments = opts.instruments if opts.instruments is not None else []
-    return {ifo: opts.low_frequency_cutoff for ifo in instruments}
-
+    return opts.low_frequency_cutoff
 
 def data_from_cli(opts):
     """Loads the data needed for a model from the given

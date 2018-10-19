@@ -93,8 +93,10 @@ class GaussianNoise(BaseDataModel):
         values are the data (assumed to be unwhitened). The list of keys must
         match the waveform generator's detectors keys, and the epoch of every
         data set must be the same as the waveform generator's epoch.
-    f_lower : float
-        The starting frequency to use for computing inner products.
+    f_lower : dict
+        A dictionary of starting frequencies, in which the keys are the detector
+        names and the values are the starting frequency for that detector to be
+        used for computing inner products.
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
@@ -136,8 +138,9 @@ class GaussianNoise(BaseDataModel):
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
+    >>> f_lower = {'H1': fmin, 'L1': fmin}
     >>> model = pycbc.inference.models.GaussianNoise(
-    ...     variable_params, signal, generator, fmin, psds=psds)
+    ...     variable_params, signal, generator, f_lower=f_lower, psds=psds)
 
     Set the current position to the coalescence time of the signal:
 
@@ -198,7 +201,7 @@ class GaussianNoise(BaseDataModel):
     >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior = distributions.JointDistribution(variable_params, uniform_prior)
     >>> model = pycbc.inference.models.GaussianNoise(variable_params,
-    ...     signal, generator, 20., psds=psds, prior=prior)
+    ...     signal, generator, f_lower=f_lower, psds=psds, prior=prior)
     >>> model.update(tc=tsig)
     >>> print('{:.2f}'.format(model.logplr))
     279.88
@@ -217,7 +220,7 @@ class GaussianNoise(BaseDataModel):
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, waveform_generator,
-                 f_lower, psds=None, f_upper=None, norm=None,
+                 f_lower=None, psds=None, f_upper=None, norm=None,
                  **kwargs):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
@@ -243,14 +246,10 @@ class GaussianNoise(BaseDataModel):
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
-        # figure out the kmin, kmax to use
         self._f_lower = f_lower
-        kmin, kmax = filter.get_cutoff_indices(f_lower, f_upper, d.delta_f,
-                                               (N-1)*2)
-        self._kmin = kmin
-        self._kmax = kmax
+        delta_f = d.delta_f
         if norm is None:
-            norm = 4*d.delta_f
+            norm = 4*delta_f
         # we'll store the weight to apply to the inner product
         if psds is None:
             self._psds = None
@@ -264,9 +263,16 @@ class GaussianNoise(BaseDataModel):
             self._weight = {det: Array(numpy.sqrt(norm/psds[det]))
                             for det in data}
             numpy.seterr(**numpysettings)
-        # whiten the data
+
+        self._kmin = {}
+        self._kmax = {}
         for det in self._data:
+            # whiten the data
+            kmin, kmax = filter.get_cutoff_indices(f_lower[det], f_upper,
+                                                   delta_f, (N-1)*2)
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
+            self._kmin[det] = kmin
+            self._kmax[det] = kmax
 
     @property
     def _extra_stats(self):
@@ -287,8 +293,8 @@ class GaussianNoise(BaseDataModel):
         except AttributeError:
             det_lognls = {}
             for (det, d) in self._data.items():
-                kmin = self._kmin
-                kmax = self._kmax
+                kmin = self._kmin[det]
+                kmax = self._kmax[det]
                 det_lognls[det] = -0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
             self.__det_lognls = det_lognls
             self.__lognl = sum(det_lognls.values())
@@ -329,16 +335,16 @@ class GaussianNoise(BaseDataModel):
         lr = 0.
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
-            kmax = min(len(h), self._kmax)
-            if self._kmin >= kmax:
+            kmax = min(len(h), self._kmax[det])
+            if self._kmin[det] >= kmax:
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, then the loglr is just 0 for this detector
                 cplx_hd = 0j
                 hh = 0.
             else:
-                slc = slice(self._kmin, kmax)
+                slc = slice(self._kmin[det], kmax)
                 # whiten the waveform
-                h[self._kmin:kmax] *= self._weight[det][slc]
+                h[self._kmin[det]:kmax] *= self._weight[det][slc]
                 # the inner products
                 cplx_hd = self.data[det][slc].inner(h[slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
