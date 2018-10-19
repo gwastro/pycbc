@@ -295,6 +295,50 @@ analysis. E.g. for an analysis using H1 only, the required options would be
 ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``,
 ``h1-transfer-function-d``.
 
+------------------------------
+Checkpointing and output files
+------------------------------
+
+While ``pycbc_inference`` is running it will create a checkpoint file which
+is named ``{output-file}.checkpoint``, where ``{output-file}`` was the name
+of the file you specified with the ``--output-file`` command. When it
+checkpoints it will dump results to this file; when finished, the file is
+renamed to ``{output-file}``. A ``{output-file}.bkup`` is also created, which
+is a copy of the checkpoint file. This is kept in case the checkpoint file gets
+corrupted during writing. The ``.bkup`` file is deleted at the end of the run,
+unless ``--save-backup`` is turned on.
+
+When ``pycbc_inference`` starts, it checks if either
+``{output-file}.checkpoint`` or ``{output-file}.bkup`` exist (in that order).
+If at least one of them exists, ``pycbc_inference`` will attempt to load them
+and continue to run from the last checkpoint state they were in.
+
+The output/checkpoint file are HDF files. To peruse the structure of the file
+you can use the `h5ls` command-line utility. More advanced utilities for
+reading and writing from/to them are provided by the sampler IO classes in
+:py:mod:`pycbc.inference.io`. To load one of these files in python do:
+
+.. code-block:: python
+
+   from pycbc.inference import io
+   fp = io.loadfile(filename, "r")
+
+Here, ``fp`` is an instance of a sampler IO class. Basically, this is an
+instance of an :py:mod:`h5py.File <h5py:File>` handler, with additional
+convenience functions added on top. For example, if you want all of the samples
+of all of the variable parameters in the file, you can do:
+
+.. code-block:: python
+
+   samples = fp.read_samples(fp.variable_params)
+
+This will return a :py:class:`FieldArray <pycbc.io.record.FieldArray>` of all
+of the samples.
+
+Each sampler has it's own sampler IO class that adds different convenience
+functions, depending on the sampler that was used. For more details on these
+classes, see the :py:mod:`pycbc.inference.io` module.
+
 ========
 Examples
 ========
@@ -508,41 +552,6 @@ Now run:
    :language: bash
 
 :download:`Download <../examples/inference/gw150914/run.sh>`
-
-------------------------------
-Checkpointing and output files
-------------------------------
-
-While ``pycbc_inference`` is running it will create a file named
-``inference.hdf.checkpoint`` (i.e., the ``--output-file`` + ``.checkpoint``).
-
-The executable ``pycbc_inference`` will write a HDF file with all the samples from each walker along with the PSDs and some meta-data about the sampler.
-There is a handler class ``pycbc.io.InferenceFile`` that extends ``h5py.File``.
-To read the output file you can do::
-
-    from pycbc.io import InferenceFile
-    fp = InferenceFile("cbc_example-n1e4.hdf", "r")
-
-To get all samples for ``distance`` from the first walker you can do::
-
-    samples = fp.read_samples("distance", walkers=0)
-    print samples.distance
-
-The function ``InferenceFile.read_samples`` includes the options to thin the samples.
-By default the function will return samples beginning at the end of the burn-in to the last written sample, and will use the autocorrelation length (ACL) calculated by ``pycbc_inference`` to select the indepdedent samples.
-You can supply ``thin_start``, ``thin_end``, and ``thin_interval`` to override this. To read all samples you would do::
-
-    samples = fp.read_samples("distance", walkers=0, thin_start=0, thin_end=-1, thin_interval=1)
-    print samples.distance
-
-Some standard parameters that are derived from the variable arguments (listed via ``fp.variable_args``) can also be retrieved. For example, if ``fp.variable_args`` includes ``mass1`` and ``mass2``, then you can retrieve the chirp mass with::
-
-   samples = fp.read_samples("mchirp")
-   print samples.mchirp
-
-In this case, ``fp.read_samples`` will retrieve ``mass1`` and ``mass2`` (since they are needed to compute chirp mass); ``samples.mchirp`` then returns an array of the chirp mass computed from ``mass1`` and ``mass2``.
-
-For more information, including the list of predefined derived parameters, see :py:class:`pycbc.io.InferenceFile`.
 
 ===============================================
 Visualizing the Posteriors
