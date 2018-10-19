@@ -64,6 +64,9 @@ else
     echo -e "...seems gone"
 fi
 
+# Install graphviz so building docs will work
+sudo apt-get install graphviz
+
 pip install -r requirements.txt
 
 # get library needed to build documentation
