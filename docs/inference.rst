@@ -354,7 +354,7 @@ percentile contours drawn.
 
 See below for more information about using ``pycbc_inference_plot_posterior``.
 
-To make a movie showing how the walkers evolved, run::
+To make a movie showing how the walkers evolved, run:
 
 .. literalinclude:: ../examples/inference/analytic-normal2d/make_movie.sh
    :language: bash
@@ -367,230 +367,102 @@ To make a movie showing how the walkers evolved, run::
 See below for more information on using ``pycbc_inference_plot_movie``.
 
 
-------------------------------
-BBH software injection example
-------------------------------
+---------------------
+Simulated BBH example
+---------------------
 
-This example recovers the parameters of a precessing binary black-hole (BBH).
+This example recovers the parameters of a simulated binary black-hole (BBH).
 
-An example configuration file (named ``inference.ini``) is::
+First, we need to create an ``injection.hdf`` file that specifies the
+parameters of the simulated signal. To do that we will use
+``pycbc_create_injection``. Like ``pycbc_inference``,
+``pycbc_create_injections`` uses a configuration file to set the parameters of
+the injections it will create. To create a binary-black hole with parameters
+similar to GW150914, use the following configuration file:
 
-    [variable_args]
-    ; waveform parameters that will vary in MCMC
-    tc =
-    mass1 =
-    mass2 =
-    spin1_a =
-    spin1_azimuthal =
-    spin1_polar =
-    spin2_a =
-    spin2_azimuthal =
-    spin2_polar =
-    distance =
-    coa_phase =
-    inclination =
-    polarization =
-    ra =
-    dec =
+.. literalinclude:: ../examples/inference/bbh-injection/injection.ini
+   :language: ini
 
-    [static_args]
-    ; waveform parameters that will not change in MCMC
-    approximant = IMRPhenomPv2
-    f_lower = 18
-    f_ref = 20
+:download:`Download <../examples/inference/bbh-injection/injection.ini>`
 
-    [prior-tc]
-    ; coalescence time prior
-    name = uniform
-    min-tc = 1126259461.8
-    max-tc = 1126259462.2
+Note the similarity to the configuration file for ``pycbc_inference``: you must
+have a ``[variable_params]`` section. If we wanted to randomize one or more
+of the parameters, we would list them there, then add ``[prior]`` sections to
+specify what distribution to draw the parameters from. In this case, however,
+we want to fix the parameters, so we just put all of the necessary parameters
+in the ``[static_params]`` section.
 
-    [prior-mass1]
-    name = uniform
-    min-mass1 = 10.
-    max-mass1 = 80.
+To create the injection file, run:
 
-    [prior-mass2]
-    name = uniform
-    min-mass2 = 10.
-    max-mass2 = 80.
+.. literalinclude:: ../examples/inference/bbh-injection/make_injection.sh
+   :language: bash
 
-    [prior-spin1_a]
-    name = uniform
-    min-spin1_a = 0.0
-    max-spin1_a = 0.99
+:download:`Download <../examples/inference/bbh-injection/make_injection.sh>`
 
-    [prior-spin1_polar+spin1_azimuthal]
-    name = uniform_solidangle
-    polar-angle = spin1_polar
-    azimuthal-angle = spin1_azimuthal
+This will create the ``injection.hdf`` file, which we will give to
+``pycbc_inference``. For more information on generating injection files, run
+``pycbc_create_injections --help``.
 
-    [prior-spin2_a]
-    name = uniform
-    min-spin2_a = 0.0
-    max-spin2_a = 0.99
+Now we need to create the configuration file for ``pycbc_inference``, calling
+it ``inference.ini``:
 
-    [prior-spin2_polar+spin2_azimuthal]
-    name = uniform_solidangle
-    polar-angle = spin2_polar
-    azimuthal-angle = spin2_azimuthal
+.. literalinclude:: ../examples/inference/bbh-injection/inference.ini
+   :language: ini
 
-    [prior-distance]
-    ; following gives a uniform volume prior
-    name = uniform_radius
-    min-distance = 10
-    max-distance = 1000
+:download:`Download <../examples/inference/bbh-injection/inference.ini>`
 
-    [prior-coa_phase]
-    ; coalescence phase prior
-    name = uniform_angle
+Here, we will use the ``emcee_pt`` sampler with 200 walkers and 20
+temperatures. We will checkpoint (i.e., dump results to file) every 2000
+iterations. Since we have provided an ``effective-nsamples`` argument and
+a ``[sampler-burn_in]`` section, ``pycbc_inference`` will run until it has
+acquired 1000 independent samples after burn-in, which is determined by the
+:py:meth:`nacl <pycbc.inference.burn_in.MultiTemperedMCMCBurnInTests.nacl>`
+test.
 
-    [prior-inclination]
-    ; inclination prior
-    name = sin_angle
+The number of independent samples is checked at each checkpoint: after dumping
+the results, the burn-in test is applied and an autocorrelation length is
+calculated. The number of independent samples is then
+``nwalkers x (the number of iterations since burn in)/ACL``. If this number
+exceeds ``effective-nsamples``, ``pycbc_inference`` will finalize the results
+and exit.
 
-    [prior-ra+dec]
-    ; sky position prior
-    name = uniform_sky
+Now run:
 
-    [prior-polarization]
-    ; polarization prior
-    name = uniform_angle
+.. literalinclude:: ../examples/inference/bbh-injection/run.sh
+   :language: bash
 
-    ;
-    ;   Sampling transforms
-    ;
-    [sampling_parameters]
-    ; parameters on the left will be sampled in
-    ; parametes on the right
-    mass1, mass2 : mchirp, q
+:download:`Download <../examples/inference/bbh-injection/run.sh>`
 
-    [sampling_transforms-mchirp+q]
-    ; inputs mass1, mass2
-    ; outputs mchirp, q
-    name = mass1_mass2_to_mchirp_q
+Note that now we must provide for data. In this case, we are generating fake
+Gaussian noise (via the ``fake-strain``) module that is colored by the
+advanced LIGO zero detuned high power PSD. We also have to provide arguments
+for estimating a PSD.
 
-An example of generating an injection::
+The duration of data that will be analyzed is set by the
+``gps-(start|end)-time`` arguments. This data should be long enough such that
+it encompasses the longest waveform admitted by our prior, plus our timing
+uncertainty (which is determined by the prior on ``tc``). Waveform duration is
+approximately determined by the total mass of a system. The lowest total mass
+(`= mass1 + mass2`) admitted by our prior is 20 solar masses. This corresponds
+to a duration of approximately 6 seconds. (See the :py:mod:`pycbc.waveform`
+module for utilities to estimate waveform duration.)
 
-    # define waveform parameters
-    TRIGGER_TIME=1126259462.0
-    INJ_APPROX=SEOBNRv2threePointFivePN
-    MASS1=37.
-    MASS2=32.
-    RA=2.21535724066
-    DEC=-1.23649695537
-    INC=2.5
-    COA_PHASE=1.5
-    POLARIZATION=1.75
-    DISTANCE=100000 # in kpc
-    INJ_F_MIN=18.
-    TAPER="start"
+In addition, the beginning and end of the data segment will be corrupted by the
+convolution of the inverse PSD with the data. To limit the amount of time that
+is corrupted, we set ``--psd-inverse-length`` to ``4``. This limits the
+corruption to at most the first and last four seconds of the data segment.
 
-    # path of injection file that will be created in the example
-    INJ_PATH=injection.xml.gz
+Combining these considerations, we end up creating 16 seconds of data: 8s for
+the waveform (we added a 2s safety buffer) + 4s at the beginning and end for
+inverse PSD corruption.
 
-    # lalapps_inspinj requires degrees on the command line
-    LONGITUDE=`python -c "import numpy; print ${RA} * 180/numpy.pi"`
-    LATITUDE=`python -c "import numpy; print ${DEC} * 180/numpy.pi"`
-    INC=`python -c "import numpy; print ${INC} * 180/numpy.pi"`
-    POLARIZATION=`python -c "import numpy; print ${POLARIZATION} * 180/numpy.pi"`
-    COA_PHASE=`python -c "import numpy; print ${COA_PHASE} * 180/numpy.pi"`
-
-    # create injection file
-    lalapps_inspinj \
-        --output ${INJ_PATH} \
-        --seed 1000 \
-        --f-lower ${INJ_F_MIN} \
-        --waveform ${INJ_APPROX} \
-        --amp-order 7 \
-        --gps-start-time ${TRIGGER_TIME} \
-        --gps-end-time ${TRIGGER_TIME} \
-        --time-step 1 \
-        --t-distr fixed \
-        --l-distr fixed \
-        --longitude ${LONGITUDE} \
-        --latitude ${LATITUDE} \
-        --d-distr uniform \
-        --min-distance ${DISTANCE} \
-        --max-distance ${DISTANCE} \
-        --i-distr fixed \
-        --fixed-inc ${INC} \
-        --coa-phase-distr fixed \
-        --fixed-coa-phase ${COA_PHASE} \
-        --polarization ${POLARIZATION} \
-        --m-distr fixMasses \
-        --fixed-mass1 ${MASS1} \
-        --fixed-mass2 ${MASS2} \
-        --taper-injection ${TAPER} \
-        --disable-spin
-
-An example of running ``pycbc_inference`` to analyze the injection in fake data::
-
-    # injection parameters
-    TRIGGER_TIME=1126259462.0
-    INJ_PATH=injection.xml.gz
-
-    # sampler parameters
-    CONFIG_PATH=inference.ini
-    OUTPUT_PATH=inference.hdf
-    SEGLEN=8
-    PSD_INVERSE_LENGTH=4
-    IFOS="H1 L1"
-    STRAIN="H1:aLIGOZeroDetHighPower L1:aLIGOZeroDetHighPower"
-    SAMPLE_RATE=2048
-    F_MIN=20
-    N_UPDATE=500
-    N_WALKERS=5000
-    N_SAMPLES=5000
-    N_CHECKPOINT=1000
-    PROCESSING_SCHEME=cpu
-
-    # the following sets the number of cores to use; adjust as needed to
-    # your computer's capabilities
-    NPROCS=12
-
-    # get coalescence time as an integer
-    TRIGGER_TIME_INT=${TRIGGER_TIME%.*}
-
-    # start and end time of data to read in
-    GPS_START_TIME=$((${TRIGGER_TIME_INT} - ${SEGLEN}))
-    GPS_END_TIME=$((${TRIGGER_TIME_INT} + ${SEGLEN}))
-
-    # run sampler
-    # specifies the number of threads for OpenMP
-    # Running with OMP_NUM_THREADS=1 stops lalsimulation
-    # to spawn multiple jobs that would otherwise be used
-    # by pycbc_inference and cause a reduced runtime.
-    OMP_NUM_THREADS=1 \
-    pycbc_inference --verbose \
-        --seed 12 \
-        --instruments ${IFOS} \
-        --gps-start-time ${GPS_START_TIME} \
-        --gps-end-time ${GPS_END_TIME} \
-        --psd-model ${STRAIN} \
-        --psd-inverse-length ${PSD_INVERSE_LENGTH} \
-        --fake-strain ${STRAIN} \
-        --fake-strain-seed 44 \
-        --strain-high-pass ${F_MIN} \
-        --sample-rate ${SAMPLE_RATE} \
-        --low-frequency-cutoff ${F_MIN} \
-        --channel-name H1:FOOBAR L1:FOOBAR \
-        --injection-file ${INJ_PATH} \
-        --config-file ${CONFIG_PATH} \
-        --output-file ${OUTPUT_PATH} \
-        --processing-scheme ${PROCESSING_SCHEME} \
-        --sampler kombine \
-        --burn-in-function max_posterior \
-        --update-interval ${N_UPDATE} \
-        --likelihood-evaluator gaussian \
-        --nwalkers ${N_WALKERS} \
-        --n-independent-samples ${N_SAMPLES} \
-        --checkpoint-interval ${N_CHECKPOINT} \
-        --nprocesses ${NPROCS} \
-        --save-strain \
-        --save-psd \
-        --save-stilde \
-        --force
+Since we are generating waveforms and analyzing a 15 dimensional parameter
+space, this run will be much more computationally expensive than the analytic
+example above. We recommend running this on a cluster or a computer with a
+large number of cores. In the example, we have set the parallelization to use
+10 cores. With these settings, it should checkpoint approximately every hour or
+two. The run should complete in a few hours. If you would like to acquire more
+samples, increase ``effective-nsamples``.
 
 ----------------
 GW150914 example
@@ -714,9 +586,13 @@ Now run::
         --save-stilde \
         --force
 
-----------------------------------------------------
-HDF output file handler (``pycbc.io.InferenceFile``)
-----------------------------------------------------
+------------------------------
+Checkpointing and output files
+------------------------------
+
+While ``pycbc_inference`` is running it will create a file named
+``inference.hdf.checkpoint`` (i.e., the ``--output-file`` + ``.checkpoint``).
+Run
 
 The executable ``pycbc_inference`` will write a HDF file with all the samples from each walker along with the PSDs and some meta-data about the sampler.
 There is a handler class ``pycbc.io.InferenceFile`` that extends ``h5py.File``.
