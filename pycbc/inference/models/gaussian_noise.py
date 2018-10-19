@@ -450,7 +450,7 @@ class GaussianNoise(BaseDataModel):
         super(GaussianNoise, self).write_metadata(fp)
         fp.attrs['f_lower'] = self._f_lower
         if self._psds is not None:
-            fp.write_psd(self._psds)
+            fp.write_psd(self._psds, self._f_lower)
         try:
             attrs = fp[fp.samples_group].attrs
         except KeyError:

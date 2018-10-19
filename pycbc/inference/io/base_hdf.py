@@ -502,13 +502,16 @@ class BaseInferenceFile(h5py.File):
             self[group.format(ifo=ifo)].attrs['delta_f'] = stilde.delta_f
             self[group.format(ifo=ifo)].attrs['epoch'] = float(stilde.epoch)
 
-    def write_psd(self, psds, group=None):
+    def write_psd(self, psds, low_frequency_cutoff, group=None):
         """Writes PSD for each IFO to file.
 
         Parameters
         -----------
         psds : {dict, FrequencySeries}
             A dict of FrequencySeries where the key is the IFO.
+        low_frequency_cutoff : {dict, float}
+            A dict of the low-frequency cutoff where the key is the IFO. The
+            minimum value will be stored as an attr in the File.
         group : {None, str}
             The group to write the psd to. Default is ``data_group``.
         """
@@ -520,6 +523,9 @@ class BaseInferenceFile(h5py.File):
         for ifo in psds:
             self[group.format(ifo=ifo)] = psds[ifo]
             self[group.format(ifo=ifo)].attrs['delta_f'] = psds[ifo].delta_f
+            self[group.format(ifo=ifo)].attrs['low_frequency_cutoff'] = \
+                low_frequency_cutoff[ifo]
+
 
     def write_injections(self, injection_file):
         """Writes injection parameters from the given injection file.
