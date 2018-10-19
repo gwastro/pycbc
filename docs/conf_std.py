@@ -266,14 +266,18 @@ suppress_warnings = ['image.nonlocal_uri']
 # build the dynamic files in _include
 def build_includes():
     """Creates rst files in the _include directory using the python scripts
-    there."""
+    there.
+    
+    This will ignore any files in the _include directory that start with ``_``.
+    """
     print("Running scripts in _include:")
     cwd = os.getcwd()
     os.chdir('_include')
     pyfiles = glob.glob('*.py')
     for fn in pyfiles:
-        print(fn)
-        subprocess.check_output(['python', fn])
+        if not fn.startswith('_'):
+            print(' {}'.format(fn))
+            subprocess.check_output(['python', fn])
     os.chdir(cwd)
 
 build_includes()
