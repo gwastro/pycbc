@@ -454,7 +454,6 @@ class GaussianNoise(BaseDataModel):
             The inference file to write to.
         """
         super(GaussianNoise, self).write_metadata(fp)
-        fp.attrs['f_lower'] = self._f_lower
         if self._psds is not None:
             fp.write_psd(self._psds, self._f_lower)
         try:
@@ -465,4 +464,9 @@ class GaussianNoise(BaseDataModel):
             attrs = fp[fp.samples_group].attrs
         attrs['lognl'] = self.lognl
         for det in self.detectors:
+            # Save lognl for each IFO as attributes in the samples group
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
+            # Save each IFO's low-frequency-cutoff used in likelihood computation
+            # as attributes
+            fp.attrs['{}_likelihood_f_lower'.format(det)] = self._f_lower[det]
+
