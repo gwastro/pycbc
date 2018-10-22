@@ -30,6 +30,7 @@ from pycbc.distributions.power_law import UniformPowerLaw, UniformRadius
 from pycbc.distributions.sky_location import UniformSky
 from pycbc.distributions.uniform import Uniform
 from pycbc.distributions.uniform_log import UniformLog10
+from pycbc.distributions.uniform_discrete_intervals import UniformIntervals
 from pycbc.distributions.masses import UniformComponentMasses
 from pycbc.distributions.spins import IndependentChiPChiEff
 from pycbc.distributions.qnm import UniformF0Tau
@@ -46,6 +47,7 @@ distribs = {
     UniformRadius.name : UniformRadius,
     Uniform.name : Uniform,
     UniformAngle.name : UniformAngle,
+    UniformIntervals.name : UniformIntervals,
     CosAngle.name : CosAngle,
     SinAngle.name : SinAngle,
     UniformSolidAngle.name : UniformSolidAngle,
