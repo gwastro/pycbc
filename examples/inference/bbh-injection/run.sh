@@ -1,4 +1,4 @@
-# injection parameters
+#!/bin/sh
 TRIGGER_TIME_INT=1126259462
 
 # sampler parameters
@@ -17,8 +17,8 @@ PROCESSING_SCHEME=cpu
 NPROCS=10
 
 # start and end time of data to read in
-GPS_START_TIME=$((${TRIGGER_TIME_INT} - ${SEGLEN}))
-GPS_END_TIME=$((${TRIGGER_TIME_INT} + ${SEGLEN}))
+GPS_START_TIME=$((TRIGGER_TIME_INT - SEGLEN))
+GPS_END_TIME=$((TRIGGER_TIME_INT + SEGLEN))
 
 # run sampler
 # Running with OMP_NUM_THREADS=1 stops lalsimulation

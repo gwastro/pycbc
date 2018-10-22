@@ -1,3 +1,4 @@
+#!/bin/sh
 pycbc_create_injections --verbose \
         --config-files inference.ini \
         --ninjections 1 \

@@ -1,3 +1,4 @@
+#!/bin/sh
 pycbc_inference_plot_posterior \
     --verbose \
     --input-file inference.hdf \
