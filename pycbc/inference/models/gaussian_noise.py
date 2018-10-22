@@ -19,7 +19,6 @@
 import numpy
 from scipy import special
 from scipy import interpolate
-import logging
 
 from pycbc import filter
 from pycbc.waveform import NoWaveformError
@@ -474,16 +473,3 @@ class GaussianNoise(BaseDataModel):
         for det in self.detectors:
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
     
-    '''
-    def _init_args_from_config(cls,cp):
-        """
-        Overwrite method of superclass base_data:
-
-        Call method of base_data, then check for lower frequency cutoff
-        in the config file. 
-        Raise Error if no lower frequency cutoff is given?
-        """
-        args = super(GaussianNoise, cls)._init_args_from_config(cp)
-        # add lower cutoff frequency to the arguments
-        args['lower_frequency'] = 
-    ''' 
