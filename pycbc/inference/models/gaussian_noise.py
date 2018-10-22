@@ -245,18 +245,17 @@ class GaussianNoise(BaseDataModel):
         d = data.values()[0]
         N = len(d)
         # lower frequency cutoff gets set from config file
-        if lower_frequency_cutoff == None:
-            errmsg = "lower frequency cutoff needs to be specified in config (.ini) file"
-            raise KeyError(errmsg)
-        # Should have been converted to float
-        elif type(lower_frequency_cutoff) != type(0.0):
-            errmsg = """lower fequency cutoff must be convertable to float 
-                        but type is {}""".format(type(lower_frequency_cutoff))
-            raise ValueError(errmsg)
-        else:
+        try:
+            lower_frequenc_cutoff = float(lower_frequency_cutoff)
             self._f_lower = lower_frequency_cutoff
-        # figure out the kmin, kmax to use
-        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper, d.delta_f,
+        except (ValueError, TypeError):
+            if lower_frequency_cutoff is None:
+                raise KeyError("lower frequency cutoff "
+                                "needs to be specified in config (.ini) file")
+            else:
+                raise ValueError("lower frequency cutoff must be convertable "
+                    "to float but type is {}".format(type(lower_frequency_cutoff)))
+        kmin, kmax = filter.get_cutoff_indices(self._f_lower, f_upper, d.delta_f,
                                                (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
