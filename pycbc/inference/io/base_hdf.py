@@ -27,19 +27,14 @@ inference samplers generate.
 
 from __future__ import absolute_import
 
-import os
 import sys
 import logging
-from abc import ABCMeta, abstractmethod, abstractproperty
-
+from abc import (ABCMeta, abstractmethod)
 import numpy
 
 import h5py
 
-from pycbc import DYN_RANGE_FAC
 from pycbc.io import FieldArray
-from pycbc.types import FrequencySeries
-from pycbc.waveform import parameters as wfparams
 from pycbc.inject import InjectionSet
 
 class BaseInferenceFile(h5py.File):
@@ -199,7 +194,7 @@ class BaseInferenceFile(h5py.File):
         pass
 
     @abstractmethod
-    def write_posterior(self, posterior_file, **kwargs):
+    def write_posterior(self, filename, **kwargs):
         """This should write a posterior plus any other metadata to the given
         file.
 

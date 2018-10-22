@@ -37,12 +37,6 @@ class MCMCIO(object):
     """
     __metaclass__ = ABCMeta
 
-    @abstractmethod
-    def read_acls(self):
-        """Should return all of the individual chains' acls.
-        """
-        pass
-
     def write_samples(self, samples, parameters=None,
                       start_iteration=None, max_iterations=None):
         """Writes samples to the given file.

@@ -21,7 +21,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
-import sys
 import argparse
 import shutil
 import textwrap
@@ -163,8 +162,8 @@ def check_integrity(filename):
         firstidx = tuple([0]*len(ref_shape))
         lastidx = tuple([-1]*len(ref_shape))
         for param in parameters:
-            fp[group.format(param)][firstidx]
-            fp[group.format(param)][lastidx]
+            _ = fp[group.format(param)][firstidx]
+            _ = fp[group.format(param)][lastidx]
 
 
 def validate_checkpoint_files(checkpoint_file, backup_file):
