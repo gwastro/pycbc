@@ -319,7 +319,9 @@ class BaseMCMC(object):
         if samples_file is not None:
             with self.io(samples_file, 'r') as fp:
                 samples = fp.read_samples(self.variable_params,
-                                          iteration=-1)
+                                          iteration=-1, flatten=False)
+                # remove the (length 1) niterations dimension
+                samples = samples[..., 0]
                 # make sure we have the same shape
                 assert samples.shape == self.base_shape, (
                        "samples in file {} have shape {}, but I have shape {}".

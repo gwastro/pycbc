@@ -75,9 +75,9 @@ class MultiTemperedMetadataIO(MCMCMetadataIO):
         return self[self.sampler_group].attrs['ntemps']
 
     def write_sampler_metadata(self, sampler):
-        """Adds writing ntemps to MCMCIO.
+        """Adds writing ntemps to file.
         """
-        super(MultiTemperedMCMCIO, self).write_sampler_metadata(sampler)
+        super(MultiTemperedMetadataIO, self).write_sampler_metadata(sampler)
         self[self.sampler_group].attrs["ntemps"] = sampler.ntemps
 
     @staticmethod
@@ -86,11 +86,11 @@ class MultiTemperedMetadataIO(MCMCMetadataIO):
         """
         if skip_args is None:
             skip_args = []
-        parser, actions = MCMCIO.extra_args_parser(
+        parser, actions = MCMCMetadataIO.extra_args_parser(
             parser=parser, skip_args=skip_args, **kwargs)
         if 'temps' not in skip_args:
             act = parser.add_argument(
-                "--temps", nargs="+", default=None, action=ParseTempsArg,
+                "--temps", nargs="+", default=0, action=ParseTempsArg,
                 help="Get the given temperatures. May provide either a "
                      "sequence of integers specifying the temperatures to "
                      "plot, or 'all' for all temperatures. Default is to only "
@@ -167,7 +167,7 @@ class MultiTemperedMCMCIO(object):
 
     def read_raw_samples(self, fields,
                          thin_start=None, thin_interval=None, thin_end=None,
-                         iteration=None, temps=None, walkers=None,
+                         iteration=None, temps='all', walkers=None,
                          flatten=True):
         """Base function for reading samples.
 
@@ -188,11 +188,9 @@ class MultiTemperedMCMCIO(object):
             Only read the given iteration. If this provided, it overrides
             the ``thin_(start|interval|end)`` options.
         temps : 'all' or (list of) int, optional
-            The temperature index (or list of indices) to retrieve. If None,
-            only samples from the coldest (= 0) temperature chain will be
-            retrieved. To retrieve all temperates pass 'all', or a list of
-            all of the temperatures. Default is to only load the coldest
-            temperature.
+            The temperature index (or list of indices) to retrieve. To retrieve
+            all temperates pass 'all', or a list of all of the temperatures.
+            Default is 'all'.
         walkers : (list of) int, optional
             Only read from the given walkers. Default is to read all.
         flatten : bool, optional
@@ -218,10 +216,7 @@ class MultiTemperedMCMCIO(object):
             nwalkers = self.nwalkers
         # temperatures to load
         selecttemps = False
-        if temps is None:
-            tidx = 0
-            ntemps = 1
-        elif isinstance(temps, int):
+        if isinstance(temps, int):
             tidx = temps
             ntemps = 1
         else:
