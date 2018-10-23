@@ -18,7 +18,6 @@
 
 import numpy as np
 from scipy.interpolate import UnivariateSpline
-from pycbc.types import FrequencySeries
 from abc import (ABCMeta, abstractmethod)
 
 

@@ -267,7 +267,7 @@ suppress_warnings = ['image.nonlocal_uri']
 def build_includes():
     """Creates rst files in the _include directory using the python scripts
     there.
-    
+
     This will ignore any files in the _include directory that start with ``_``.
     """
     print("Running scripts in _include:")

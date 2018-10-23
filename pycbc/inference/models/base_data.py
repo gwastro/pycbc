@@ -181,7 +181,7 @@ class BaseDataModel(BaseModel):
         return args
 
     @classmethod
-    def from_config(cls, cp, data, delta_f=None, delta_t=None,
+    def from_config(cls, cp, data=None, delta_f=None, delta_t=None,
                     gates=None, recalibration=None,
                     **kwargs):
         """Initializes an instance of this class from the given config file.

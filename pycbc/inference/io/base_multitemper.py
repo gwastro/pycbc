@@ -36,7 +36,7 @@ class ParseTempsArg(argparse.Action):
     a sequence of numbers are provided, converts those numbers to ints before
     saving to the namespace.
     """
-    def __init__(self, type=str, **kwargs):
+    def __init__(self, type=str, **kwargs): # pylint: disable=redefined-builtin
         # check that type is string
         if type != str:
             raise ValueError("the type for this action must be a string")

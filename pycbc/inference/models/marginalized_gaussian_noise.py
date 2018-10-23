@@ -21,14 +21,11 @@ distance.
 import numpy
 from scipy import special
 
-from pycbc import filter
 from pycbc.waveform import NoWaveformError
-from pycbc.types import Array
 from pycbc.filter.matchedfilter import matched_filter_core
 from pycbc.distributions import read_distributions_from_config
 from pycbc.waveform import generator
 
-from .base_data import BaseDataModel
 from .gaussian_noise import GaussianNoise
 from .base import SamplingTransforms
 
@@ -388,7 +385,8 @@ class MarginalizedGaussianNoise(GaussianNoise):
                                    [self._marg_prior["phase"].pdf(phase=i) for
                                     i in self._phase_array])
 
-    def _margtime_mfsnr(self, template, data):
+    @staticmethod
+    def _margtime_mfsnr(template, data):
         """Returns a time series for the matched filter SNR assuming that the
         template and data have both been normalised and whitened.
         """
@@ -396,7 +394,8 @@ class MarginalizedGaussianNoise(GaussianNoise):
         hd_i = snr[0].numpy().real
         return hd_i
 
-    def _mfsnr(self, template, data):
+    @staticmethod
+    def _mfsnr(template, data):
         """Returns the matched filter SNR assuming that the template and data
         have both been normalised and whitened.
         """
@@ -453,7 +452,8 @@ class MarginalizedGaussianNoise(GaussianNoise):
         """
         return special.logsumexp(mf_snr, b=self._deltat) - 0.5*opt_snr
 
-    def _margphase_loglr(self, mf_snr, opt_snr):
+    @staticmethod
+    def _margphase_loglr(mf_snr, opt_snr):
         """Returns the log likelihood ratio marginalized over phase.
         """
         return numpy.log(special.i0(mf_snr)) - 0.5*opt_snr
