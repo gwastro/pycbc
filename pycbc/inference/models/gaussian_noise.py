@@ -17,13 +17,10 @@
 """
 
 import numpy
-from scipy import special
-from scipy import interpolate
 
-from pycbc import filter
+from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
 from pycbc.types import Array
-from pycbc.filter.matchedfilter import matched_filter_core
 
 from .base_data import BaseDataModel
 
@@ -245,8 +242,8 @@ class GaussianNoise(BaseDataModel):
         N = len(d)
         # figure out the kmin, kmax to use
         self._f_lower = f_lower
-        kmin, kmax = filter.get_cutoff_indices(f_lower, f_upper, d.delta_f,
-                                               (N-1)*2)
+        kmin, kmax = pyfilter.get_cutoff_indices(f_lower, f_upper, d.delta_f,
+                                                 (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
         if norm is None:
@@ -411,7 +408,7 @@ class GaussianNoise(BaseDataModel):
             return getattr(self._current_stats, '{}_cplx_loglr'.format(det))
         except AttributeError:
             # hasn't been calculated yet; call loglr to do so
-            self.loglr
+            self._loglr()
             # now try returning again
             return getattr(self._current_stats, '{}_cplx_loglr'.format(det))
 
