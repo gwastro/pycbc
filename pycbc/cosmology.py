@@ -23,13 +23,103 @@
 #
 """
 This modules provides functions for computing cosmological quantities, such as
-redshift.
+redshift. This is mostly a wrapper around ``astropy.cosmology``.
+
+Note: in all functions, ``distance`` is short hand for ``luminosity_distance``.
+Any other distance measure is explicitly named; e.g., ``comoving_distance``.
 """
+
+import astropy.cosmology
+from astropy import units
 
 import numpy
 import lal
 from scipy import interpolate
 from pycbc.conversions import ensurearray, formatreturn
+
+DEFAULT_COSMOLOGY='Planck15'
+
+def get_cosmology(cosmology=DEFAULT_COSMOLOGY):
+    """Gets an astropy cosmology class based on the given string.
+
+    Parameters
+    ----------
+    cosmology : str, optional
+        The name of the cosmology to use. Must be the name of a cosmology
+        available in astropy.cosmology. For the list of options, see
+        :py:attr:`astropy.cosmology.parameters.available`. Default is
+        ``'Planck15'``.
+
+    Returns
+    -------
+    astropy.cosmology instance
+        The cosmology to use from astropy. (Currently, all are instances of
+        :py:class:`astropy.cosmology.FlatLambdaCDM`.)
+    """
+    if cosmology not in astropy.cosmology.parameters.available:
+        raise ValueError("unrecognized cosmology {}".format(cosmology))
+    return getattr(astropy.cosmology, cosmology)
+
+
+def z_at_value(func, fval, unit, **kwargs):
+    """Wrapper around astropy.cosmology.z_at_value to handle numpy arrays.
+    
+    The unit must be specified as a separate argument.
+    """
+    fval, input_is_array = ensurearray(fval)
+    # make sure fval is atleast 1D
+    if fval.size == 1 and fval.ndim == 0:
+        fval = fval.reshape(1)
+    zs = [astropy.cosmology.z_at_value(func, val*unit, **kwargs)
+          for val in fval]
+    return formatreturn(numpy.array(zs), input_is_array)
+
+
+def redshift(distance, cosmology=DEFAULT_COSMOLOGY):
+    """Returns the redshift associated with the given luminosity distance.
+
+    Parameters
+    ----------
+    distance : float
+        The luminosity distance, in Mpc.
+    cosmology : str, optional
+        The name of the cosmology to use. Must be the name of a cosmology
+        available in astropy.cosmology. For the list of options, see
+        :py:attr:`astropy.cosmology.parameters.available`. Default is
+        ``'Planck15'``.
+
+    Returns
+    -------
+    float :
+        The redshift corresponding to the given luminosity distance.
+    """
+    cosmology = get_cosmology(cosmology)
+    return z_at_value(cosmology.luminosity_distance, distance, units.Mpc)
+
+
+def distance_from_comoving_volume(vc, cosmology=DEFAULT_COSMOLOGY):
+    """Returns the luminosity distance from the given comoving volume.
+
+    Parameters
+    ----------
+    vc : float
+        The comoving volume, in units of cubed Mpc.
+    cosmology : str, optional
+        The name of the cosmology to use. Must be the name of a cosmology
+        available in astropy.cosmology. For the list of options, see
+        :py:attr:`astropy.cosmology.parameters.available`. Default is
+        ``'Planck15'``.
+
+    Returns
+    -------
+    float :
+        The luminosity distance at the given comoving volume.
+    """
+    cosmology = get_cosmology(cosmology)
+    # first get the redshift associated with the given comoving volume
+    z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
+    # now convert redshift to luminosity distance
+    return cosmology.luminosity_distance(z).value
 
 class _DistToZ(object):
     """Class to convert luminosity distance to redshift using the given
@@ -146,7 +236,7 @@ class _DistToZ(object):
 # we'll use the default cosmology for computing red shifts.
 _d2z = _DistToZ()
 
-def redshift(distance, h=None, om=None, ol=None, w0=None, w1=None, w2=None):
+def lalredshift(distance, h=None, om=None, ol=None, w0=None, w1=None, w2=None):
     """Returns the redshift associated with the given distance.
 
     Cosmological constants `h, om, ol, w0, w1, w2` may optionally be provided
@@ -188,4 +278,4 @@ def redshift(distance, h=None, om=None, ol=None, w0=None, w1=None, w2=None):
     return d2z(distance)
 
 
-__all__ = ['redshift']
+__all__ = ['redshift', 'distance_from_comoving_volume', 'lalredshift']
