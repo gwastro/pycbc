@@ -26,16 +26,193 @@
 
 from __future__ import absolute_import
 
-from abc import (ABCMeta, abstractmethod)
-
 import numpy
 import argparse
 
 
-class MCMCIO(object):
-    """Abstract base class that provides some IO functions for ensemble MCMCs.
+class MCMCMetadataIO(object):
+    """Provides functions for reading/writing MCMC metadata to file.
     """
-    __metaclass__ = ABCMeta
+    def write_resume_point(self):
+        """Keeps a list of the number of iterations that were in a file when a
+        run was resumed from a checkpoint."""
+        try:
+            resume_pts = self.attrs["resume_points"].tolist()
+        except KeyError:
+            resume_pts = []
+        try:
+            niterations = self.niterations
+        except KeyError:
+            niterations = 0
+        resume_pts.append(niterations)
+        self.attrs["resume_points"] = resume_pts
+
+    def write_niterations(self, niterations):
+        """Writes the given number of iterations to the sampler group."""
+        self[self.sampler_group].attrs['niterations'] = niterations
+
+    @property
+    def niterations(self):
+        """Returns the number of iterations the sampler was run for."""
+        return self[self.sampler_group].attrs['niterations']
+
+    @property
+    def nwalkers(self):
+        """Returns the number of walkers used by the sampler."""
+        return self[self.sampler_group].attrs['nwalkers']
+
+    def write_sampler_metadata(self, sampler):
+        """Writes the sampler's metadata."""
+        self.attrs['sampler'] = sampler.name
+        if self.sampler_group not in self.keys():
+            # create the sampler group
+            self.create_group(self.sampler_group)
+        self[self.sampler_group].attrs['nwalkers'] = sampler.nwalkers
+        # write the model's metadata
+        sampler.model.write_metadata(self)
+
+    def write_acls(self, acls):
+        """Writes the given autocorrelation lengths.
+
+        The ACL of each parameter is saved to
+        ``[sampler_group]/acls/{param}']``.  The maximum over all the
+        parameters is saved to the file's 'acl' attribute.
+
+        Parameters
+        ----------
+        acls : dict
+            A dictionary of ACLs keyed by the parameter.
+
+        Returns
+        -------
+        ACL
+            The maximum of the acls that was written to the file.
+        """
+        group = self.sampler_group + '/acls/{}'
+        # write the individual acls
+        for param in acls:
+            try:
+                # we need to use the write_direct function because it's
+                # apparently the only way to update scalars in h5py
+                self[group.format(param)].write_direct(
+                    numpy.array(acls[param]))
+            except KeyError:
+                # dataset doesn't exist yet
+                self[group.format(param)] = acls[param]
+        # write the maximum over all params
+        acl = numpy.array(acls.values()).max()
+        self[self.sampler_group].attrs['acl'] = acl
+        # set the default thin interval to be the acl (if it is finite)
+        if numpy.isfinite(acl):
+            self.attrs['thin_interval'] = int(numpy.ceil(acl))
+
+    def read_acls(self):
+        """Reads the acls of all the parameters.
+
+        Returns
+        -------
+        dict
+            A dictionary of the ACLs, keyed by the parameter name.
+        """
+        group = self[self.sampler_group]['acls']
+        return {param: group[param].value for param in group.keys()}
+
+    def write_burn_in(self, burn_in):
+        """Write the given burn-in data to the given filename."""
+        group = self[self.sampler_group]
+        group.attrs['burn_in_test'] = burn_in.burn_in_test
+        group.attrs['is_burned_in'] = burn_in.is_burned_in
+        group.attrs['burn_in_iteration'] = burn_in.burn_in_iteration
+        # set the defaut thin_start to be the burn_in_iteration
+        self.attrs['thin_start'] = burn_in.burn_in_iteration
+        # write individual test data
+        for tst in burn_in.burn_in_data:
+            key = 'burn_in_tests/{}'.format(tst)
+            try:
+                attrs = group[key].attrs
+            except KeyError:
+                group.create_group(key)
+                attrs = group[key].attrs
+            self.write_kwargs_to_attrs(attrs, **burn_in.burn_in_data[tst])
+
+    @staticmethod
+    def extra_args_parser(parser=None, skip_args=None, **kwargs):
+        """Create a parser to parse sampler-specific arguments for loading
+        samples.
+
+        Parameters
+        ----------
+        parser : argparse.ArgumentParser, optional
+            Instead of creating a parser, add arguments to the given one. If
+            none provided, will create one.
+        skip_args : list, optional
+            Don't parse the given options. Options should be given as the
+            option string, minus the '--'. For example,
+            ``skip_args=['iteration']`` would cause the ``--iteration``
+            argument not to be included.
+        \**kwargs :
+            All other keyword arguments are passed to the parser that is
+            created.
+
+        Returns
+        -------
+        parser : argparse.ArgumentParser
+            An argument parser with th extra arguments added.
+        actions : list of argparse.Action
+            A list of the actions that were added.
+        """
+        if parser is None:
+            parser = argparse.ArgumentParser(**kwargs)
+        elif kwargs:
+            raise ValueError("No other keyword arguments should be provded if "
+                             "a parser is provided.")
+        if skip_args is None:
+            skip_args = []
+        actions = []
+        if 'thin-start' not in skip_args:
+            act = parser.add_argument(
+                "--thin-start", type=int, default=None,
+                help="Sample number to start collecting samples to plot. If "
+                     "none provided, will use the input file's `thin_start` "
+                     "attribute.")
+            actions.append(act)
+        if 'thin-interval' not in skip_args:
+            act = parser.add_argument(
+                "--thin-interval", type=int, default=None,
+                help="Interval to use for thinning samples. If none provided, "
+                     "will use the input file's `thin_interval` attribute.")
+            actions.append(act)
+        if 'thin-end' not in skip_args:
+            act = parser.add_argument(
+                "--thin-end", type=int, default=None,
+                help="Sample number to stop collecting samples to plot. If "
+                     "none provided, will use the input file's `thin_end` "
+                     "attribute.")
+            actions.append(act)
+        if 'iteration' not in skip_args:
+            act = parser.add_argument(
+                "--iteration", type=int, default=None,
+                help="Only retrieve the given iteration. To load "
+                     "the last n-th sampe use -n, e.g., -1 will "
+                     "load the last iteration. This overrides "
+                     "the thin-start/interval/end options.")
+            actions.append(act)
+        if 'walkers' not in skip_args:
+            act = parser.add_argument(
+                "--walkers", type=int, nargs="+", default=None,
+                help="Only retrieve samples from the listed "
+                     "walkers. Default is to retrieve from all "
+                     "walkers.")
+            actions.append(act)
+        return parser, actions
+
+
+class SingleTempMCMCIO(object):
+    """Provides functions for reading/writing samples from an MCMC sampler.
+
+    These functions will work for samplers that have 1 or more walkers, with
+    only a single temperature.
+    """
 
     def write_samples(self, samples, parameters=None,
                       start_iteration=None, max_iterations=None):
@@ -155,176 +332,3 @@ class MCMCIO(object):
                 arr = arr.flatten()
             arrays[name] = arr
         return arrays
-
-    @staticmethod
-    def extra_args_parser(parser=None, skip_args=None, **kwargs):
-        """Create a parser to parse sampler-specific arguments for loading
-        samples.
-
-        Parameters
-        ----------
-        parser : argparse.ArgumentParser, optional
-            Instead of creating a parser, add arguments to the given one. If
-            none provided, will create one.
-        skip_args : list, optional
-            Don't parse the given options. Options should be given as the
-            option string, minus the '--'. For example,
-            ``skip_args=['iteration']`` would cause the ``--iteration``
-            argument not to be included.
-        \**kwargs :
-            All other keyword arguments are passed to the parser that is
-            created.
-
-        Returns
-        -------
-        parser : argparse.ArgumentParser
-            An argument parser with th extra arguments added.
-        actions : list of argparse.Action
-            A list of the actions that were added.
-        """
-        if parser is None:
-            parser = argparse.ArgumentParser(**kwargs)
-        elif kwargs:
-            raise ValueError("No other keyword arguments should be provded if "
-                             "a parser is provided.")
-        if skip_args is None:
-            skip_args = []
-        actions = []
-        if 'thin-start' not in skip_args:
-            act = parser.add_argument(
-                "--thin-start", type=int, default=None,
-                help="Sample number to start collecting samples to plot. If "
-                     "none provided, will use the input file's `thin_start` "
-                     "attribute.")
-            actions.append(act)
-        if 'thin-interval' not in skip_args:
-            act = parser.add_argument(
-                "--thin-interval", type=int, default=None,
-                help="Interval to use for thinning samples. If none provided, "
-                     "will use the input file's `thin_interval` attribute.")
-            actions.append(act)
-        if 'thin-end' not in skip_args:
-            act = parser.add_argument(
-                "--thin-end", type=int, default=None,
-                help="Sample number to stop collecting samples to plot. If "
-                     "none provided, will use the input file's `thin_end` "
-                     "attribute.")
-            actions.append(act)
-        if 'iteration' not in skip_args:
-            act = parser.add_argument(
-                "--iteration", type=int, default=None,
-                help="Only retrieve the given iteration. To load "
-                     "the last n-th sampe use -n, e.g., -1 will "
-                     "load the last iteration. This overrides "
-                     "the thin-start/interval/end options.")
-            actions.append(act)
-        if 'walkers' not in skip_args:
-            act = parser.add_argument(
-                "--walkers", type=int, nargs="+", default=None,
-                help="Only retrieve samples from the listed "
-                     "walkers. Default is to retrieve from all "
-                     "walkers.")
-            actions.append(act)
-        return parser, actions
-
-    def write_resume_point(self):
-        """Keeps a list of the number of iterations that were in a file when a
-        run was resumed from a checkpoint."""
-        try:
-            resume_pts = self.attrs["resume_points"].tolist()
-        except KeyError:
-            resume_pts = []
-        try:
-            niterations = self.niterations
-        except KeyError:
-            niterations = 0
-        resume_pts.append(niterations)
-        self.attrs["resume_points"] = resume_pts
-
-    def write_niterations(self, niterations):
-        """Writes the given number of iterations to the sampler group."""
-        self[self.sampler_group].attrs['niterations'] = niterations
-
-    @property
-    def niterations(self):
-        """Returns the number of iterations the sampler was run for."""
-        return self[self.sampler_group].attrs['niterations']
-
-    @property
-    def nwalkers(self):
-        """Returns the number of walkers used by the sampler."""
-        return self[self.sampler_group].attrs['nwalkers']
-
-    def write_sampler_metadata(self, sampler):
-        """Writes the sampler's metadata."""
-        self.attrs['sampler'] = sampler.name
-        if self.sampler_group not in self.keys():
-            # create the sampler group
-            self.create_group(self.sampler_group)
-        self[self.sampler_group].attrs['nwalkers'] = sampler.nwalkers
-        # write the model's metadata
-        sampler.model.write_metadata(self)
-
-    def write_acls(self, acls):
-        """Writes the given autocorrelation lengths.
-
-        The ACL of each parameter is saved to
-        ``[sampler_group]/acls/{param}']``.  The maximum over all the
-        parameters is saved to the file's 'acl' attribute.
-
-        Parameters
-        ----------
-        acls : dict
-            A dictionary of ACLs keyed by the parameter.
-
-        Returns
-        -------
-        ACL
-            The maximum of the acls that was written to the file.
-        """
-        group = self.sampler_group + '/acls/{}'
-        # write the individual acls
-        for param in acls:
-            try:
-                # we need to use the write_direct function because it's
-                # apparently the only way to update scalars in h5py
-                self[group.format(param)].write_direct(
-                    numpy.array(acls[param]))
-            except KeyError:
-                # dataset doesn't exist yet
-                self[group.format(param)] = acls[param]
-        # write the maximum over all params
-        acl = numpy.array(acls.values()).max()
-        self[self.sampler_group].attrs['acl'] = acl
-        # set the default thin interval to be the acl (if it is finite)
-        if numpy.isfinite(acl):
-            self.attrs['thin_interval'] = int(numpy.ceil(acl))
-
-    def read_acls(self):
-        """Reads the acls of all the parameters.
-
-        Returns
-        -------
-        dict
-            A dictionary of the ACLs, keyed by the parameter name.
-        """
-        group = self[self.sampler_group]['acls']
-        return {param: group[param].value for param in group.keys()}
-
-    def write_burn_in(self, burn_in):
-        """Write the given burn-in data to the given filename."""
-        group = self[self.sampler_group]
-        group.attrs['burn_in_test'] = burn_in.burn_in_test
-        group.attrs['is_burned_in'] = burn_in.is_burned_in
-        group.attrs['burn_in_iteration'] = burn_in.burn_in_iteration
-        # set the defaut thin_start to be the burn_in_iteration
-        self.attrs['thin_start'] = burn_in.burn_in_iteration
-        # write individual test data
-        for tst in burn_in.burn_in_data:
-            key = 'burn_in_tests/{}'.format(tst)
-            try:
-                attrs = group[key].attrs
-            except KeyError:
-                group.create_group(key)
-                attrs = group[key].attrs
-            self.write_kwargs_to_attrs(attrs, **burn_in.burn_in_data[tst])
