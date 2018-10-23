@@ -21,10 +21,8 @@ import logging
 import shutil
 import argparse
 
-from pycbc import (conversions, inject, transforms)
-from pycbc.distributions import (bounded, constraints)
 from pycbc.io.record import FieldArray
-from pycbc.workflow import (ConfigParser, WorkflowConfigParser)
+from pycbc.workflow import WorkflowConfigParser
 from pycbc.pool import choose_pool
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
