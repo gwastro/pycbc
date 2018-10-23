@@ -29,11 +29,8 @@ from __future__ import absolute_import
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 import os
-import numpy
 import shutil
-from pycbc.io import FieldArray
-from pycbc.filter import autocorrelation
-import h5py
+from pycbc import distributions
 import logging
 
 from pycbc.inference.io import validate_checkpoint_files
@@ -66,8 +63,7 @@ class BaseSampler(object):
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False,
-                    **kwargs):
+    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
         """This should initialize the sampler given a config file.
         """
         pass
@@ -243,7 +239,7 @@ def create_new_output_file(sampler, filename, force=False, injection_file=None,
             fp.write_injections(injection_file)
 
 
-def initial_dist_from_config(cp):
+def initial_dist_from_config(cp, variable_params):
     r"""Loads a distribution for the sampler start from the given config file.
 
     A distribution will only be loaded if the config file has a [initial-\*]
@@ -253,6 +249,8 @@ def initial_dist_from_config(cp):
     ----------
     cp : Config parser
         The config parser to try to load from.
+    variable_params : list of str
+        The variable parameters for the distribution.
 
     Returns
     -------
@@ -268,7 +266,7 @@ def initial_dist_from_config(cp):
         constraints = distributions.read_constraints_from_config(
             cp, constraint_section="initial_constraint")
         init_dist = distributions.JointDistribution(
-            sampler.variable_params, *initial_dists,
+            variable_params, *initial_dists,
             **{"constraints": constraints})
     else:
         init_dist = None

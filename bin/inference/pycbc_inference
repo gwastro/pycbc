@@ -185,10 +185,11 @@ with ctx:
         init_prior = None
     else:
         # try to load an initial distribution from the config file
-        init_prior = inference.sampler.initial_dist_from_config(cp)
+        init_prior = inference.sampler.initial_dist_from_config(
+            cp, sampler.variable_params)
 
     sampler.set_initial_conditions(initial_distribution=init_prior,
-        samples_file=samples_file)
+                                   samples_file=samples_file)
 
     # Run the sampler
     sampler.run()

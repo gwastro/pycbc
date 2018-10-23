@@ -199,7 +199,8 @@ class ParseLabelArg(argparse.Action):
     This action can work on arguments that have ``nargs != 0`` and ``type`` set
     to ``str``.
     """
-    def __init__(self, type=str, nargs=None, **kwargs):
+    def __init__(self, type=str, nargs=None,
+                 **kwargs):  # pylint: disable=redefined-builtin
         # check that type is string
         if type != str:
             raise ValueError("the type for this action must be a string")
