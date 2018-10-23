@@ -145,20 +145,18 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         # set emcee's generator to the same state
         self._sampler.random_state = rstate
 
-    def run_mcmc(self, niterations, **kwargs):
+    def run_mcmc(self, niterations):
         """Advance the ensemble for a number of samples.
 
         Parameters
         ----------
         niterations : int
             Number of iterations to run the sampler for.
-        \**kwargs :
-            All other keyword arguments are passed to the emcee sampler.
         """
         pos = self._pos
         if pos is None:
             pos = self._p0
-        res = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        res = self._sampler.run_mcmc(pos, niterations)
         p, _, _ = res[0], res[1], res[2]
         # update the positions
         self._pos = p
