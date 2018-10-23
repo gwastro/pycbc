@@ -314,21 +314,31 @@ class SingleTempMCMCIO(object):
         if walkers is not None:
             widx = numpy.zeros(self.nwalkers, dtype=bool)
             widx[walkers] = True
+            nwalkers = widx.sum()
         else:
             widx = slice(0, None)
+            nwalkers = self.nwalkers
         # get the slice to use
         if iteration is not None:
             get_index = int(iteration)
+            niterations = 1
         else:
             get_index = self.get_slice(thin_start=thin_start,
                                        thin_end=thin_end,
                                        thin_interval=thin_interval)
+            # we'll just get the number of iterations from the returned shape
+            niterations = None
         # load
         group = self.samples_group + '/{name}'
         arrays = {}
         for name in fields:
             arr = self[group.format(name=name)][widx, get_index]
+            if niterations is None:
+                niterations = arr.shape[-1]
             if flatten:
                 arr = arr.flatten()
+            else:
+                # ensure that the returned array is 2D
+                arr = arr.reshape((nwalkers, niterations))
             arrays[name] = arr
         return arrays
