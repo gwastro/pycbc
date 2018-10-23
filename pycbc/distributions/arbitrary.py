@@ -239,7 +239,8 @@ class FromFile(Arbitrary):
         else:
             ps = params.keys()
         param_vals, bw = self.get_arrays_from_file(filename, params=ps)
-        super(FromFile, self).__init__(bounds=params, bandwidth=bw, **param_vals)
+        super(FromFile, self).__init__(bounds=params, bandwidth=bw,
+                                       **param_vals)
 
     @property
     def filename(self):
@@ -278,7 +279,7 @@ class FromFile(Arbitrary):
         params_values = {p:f[p][:] for p in params}
         try:
             bandwidth = f.attrs["set_bandwidth"]
-        except KeyError: 
+        except KeyError:
             bandwidth = "scott"
 
         f.close()
