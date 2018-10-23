@@ -278,7 +278,7 @@ class FromFile(Arbitrary):
             params = [str(k) for k in f.keys()]
         params_values = {p:f[p][:] for p in params}
         try:
-            bandwidth = f.attrs["set_bandwidth"]
+            bandwidth = f.attrs["bandwidth"]
         except KeyError:
             bandwidth = "scott"
 
