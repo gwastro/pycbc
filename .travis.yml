@@ -94,16 +94,24 @@ script:
     df -h ;
     sudo chown -R 1000:1000 . ;
     sudo chown -R 1000:1000 ~/.ssh ;
-    docker run --name pycbc_inst --cidfile /tmp/docker.cid -d -e USERID=$UID -v ~/.ssh:/opt/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp /bin/bash -lc 'tail -f /dev/null' || exit 1 ;
-    sleep 10 ;
+    if docker run --name pycbc_inst --cidfile /tmp/docker.cid -d -e USERID=$UID -v ~/.ssh:/opt/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp tail -f /dev/null ;
+      then sleep 10 ;
+      else exit 1;
     docker ps -a || exit 1 ;
     TMP_CONTAINER_ID=$(cat /tmp/docker.cid) ;
-    travis_retry docker exec -it pycbc_inst /bin/bash -lc "df -h || exit 1" || exit 1 ;
-    travis_retry docker exec -it pycbc_inst /bin/bash -lc "id; ls -al /pycbc; cd /pycbc && pip install -r requirements.txt && python setup.py install || exit 1" || exit 1 ;
-    travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/src && cd ~/src && git clone https://github.com/ligo-cbc/pycbc.git || exit 1" || exit 1 ;
+    travis_retry docker exec -it pycbc_inst df -h ;
+    travis_retry docker exec -it pycbc_inst cd /pycbc ;
+    travis_retry docker exec -it pycbc_inst pip install -r requirements.txt ;
+    travis_retry docker exec -it pycbc_inst python setup.py install ;
+    travis_retry docker exec -it pycbc_inst mkdir -p ~/src ;
+    travis_retry docker exec -it pycbc_inst cd ~/src ;
+    travis_retry docker exec -it pycbc_inst git clone https://github.com/ligo-cbc/pycbc.git ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
+      # FIXME this hard codes the version of lalsuite-extra that is installed
+      # into the container. This should be set at a global level.
       LAL_EXTRA_TAG="e02dab8c" ; 
-      travis_retry docker exec -it pycbc_inst /bin/bash -lc "mkdir -p ~/pycbc-software/share/lal-data && rsync --exclude='SEOBNRv1ROM*' --exclude='SEOBNRv2ROM_DS_HI_v1.0.hdf5' --exclude='NRSur4d2s_FDROM.hdf5' -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation/ /opt/pycbc/pycbc-software/share/lal-data/ && exit $?" || exit 1 ;
+      travis_retry docker exec -it pycbc_inst mkdir -p ~/pycbc-software/share/lal-data ;
+      travis_retry docker exec -it pycbc_inst rsync --exclude='SEOBNRv1ROM*' --exclude='SEOBNRv2ROM_DS_HI_v1.0.hdf5' --exclude='NRSur4d2s_FDROM.hdf5' -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation/ /opt/pycbc/pycbc-software/share/lal-data/ ;
     fi ;
     sleep 10 ;
     docker stop pycbc_inst || exit 1 ;
