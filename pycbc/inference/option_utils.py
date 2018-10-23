@@ -18,12 +18,9 @@
 """
 
 import logging
-import shutil
 import argparse
 
-from pycbc.io.record import FieldArray
 from pycbc.workflow import WorkflowConfigParser
-from pycbc.pool import choose_pool
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
