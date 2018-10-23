@@ -32,7 +32,6 @@ from abc import (ABCMeta, abstractmethod)
 
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
-from pycbc.workflow import ConfigParser
 
 
 #

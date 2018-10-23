@@ -29,7 +29,6 @@ have burned in.
 import numpy
 from scipy.stats import ks_2samp
 
-from pycbc.filter import autocorrelation
 from pycbc.io.record import get_vars_from_arg
 
 # The value to use for a burn-in iteration if a chain is not burned in
@@ -104,7 +103,7 @@ def max_posterior(lnps_per_walker, dim):
     # find the value to compare against
     max_p = lnps_per_walker.max()
     criteria = max_p - dim/2.
-    nwalkers, niterations = lnps_per_walker.shape
+    nwalkers, _ = lnps_per_walker.shape
     burn_in_idx = numpy.empty(nwalkers, dtype=int)
     is_burned_in = numpy.empty(nwalkers, dtype=bool)
     # find the first iteration in each chain where the logpost has exceeded
