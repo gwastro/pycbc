@@ -1,3 +1,4 @@
+#!/bin/sh
 # trigger parameters
 TRIGGER_TIME=1126259462.42
 
@@ -33,12 +34,12 @@ NPROCS=10
 TRIGGER_TIME_INT=${TRIGGER_TIME%.*}
 
 # start and end time of data to read in
-GPS_START_TIME=$((${TRIGGER_TIME_INT} - ${SEARCH_BEFORE} - ${PSD_INVLEN}))
-GPS_END_TIME=$((${TRIGGER_TIME_INT} + ${SEARCH_AFTER} + ${PSD_INVLEN}))
+GPS_START_TIME=$((TRIGGER_TIME_INT - SEARCH_BEFORE - PSD_INVLEN))
+GPS_END_TIME=$((TRIGGER_TIME_INT + SEARCH_AFTER + PSD_INVLEN))
 
 # start and end time of data to read in for PSD estimation
-PSD_START_TIME=$((${TRIGGER_TIME_INT} - ${PSD_DATA_LEN}/2))
-PSD_END_TIME=$((${TRIGGER_TIME_INT} + ${PSD_DATA_LEN}/2))
+PSD_START_TIME=$((TRIGGER_TIME_INT - PSD_DATA_LEN/2))
+PSD_END_TIME=$((TRIGGER_TIME_INT + PSD_DATA_LEN/2))
 
 # run sampler
 # specifies the number of threads for OpenMP
