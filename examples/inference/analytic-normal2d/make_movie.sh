@@ -1,4 +1,5 @@
-gwin_plot_movie --verbose \
+#!/bin/sh
+pycbc_inference_plot_movie --verbose \
         --nprocesses 4 \
         --input-file normal2d.hdf \
         --output-prefix frames-normal2d \
