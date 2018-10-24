@@ -430,7 +430,7 @@ class GaussianNoise(BaseDataModel):
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
         except AttributeError:
             # hasn't been calculated yet; call loglr to do so
-            self.loglr
+            self._loglr()
             # now try returning again
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
 

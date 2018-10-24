@@ -18,9 +18,8 @@ This modules provides a list of implemented samplers for parameter estimation.
 """
 
 from __future__ import absolute_import
-
-from .base import (initial_dist_from_config,
-                   create_new_output_file)  # pylint: disable=unused-import
+# pylint: disable=unused-import
+from .base import (initial_dist_from_config, create_new_output_file)  
 from .emcee import EmceeEnsembleSampler
 from .emcee_pt import EmceePTSampler
 
