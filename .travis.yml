@@ -99,6 +99,7 @@ script:
     if docker run --name pycbc_inst --cidfile /tmp/docker.cid -d -e USERID=$UID -v ~/.ssh:/opt/pycbc/.ssh -v `pwd`:/pycbc:rw ${DOCKER_IMG}-tmp tail -f /dev/null ;
       then sleep 10 ;
       else exit 1;
+    fi ;
     docker ps -a || exit 1 ;
     TMP_CONTAINER_ID=$(cat /tmp/docker.cid) ;
     travis_retry docker exec -it pycbc_inst df -h ;
