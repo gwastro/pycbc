@@ -39,25 +39,61 @@ from pycbc.conversions import ensurearray, formatreturn
 
 DEFAULT_COSMOLOGY='Planck15'
 
-def get_cosmology(cosmology=DEFAULT_COSMOLOGY):
-    """Gets an astropy cosmology class based on the given string.
+def get_cosmology(cosmology=None, **kwargs):
+    """Gets an astropy cosmology class.
 
     Parameters
     ----------
     cosmology : str, optional
         The name of the cosmology to use. For the list of options, see
-        :py:attr:`astropy.cosmology.parameters.available`. Default is
-        ``'Planck15'``.
+        :py:attr:`astropy.cosmology.parameters.available`. If None, and no
+        other keyword arguments are provided, will default to
+        :py:attr:`DEFAULT_COSMOLOGY`.
+    \**kwargs :
+        If any other keyword arguments are provided they will be passed to
+        :py:attr:`astropy.cosmology.FlatLambdaCDM` to create a custom
+        cosmology.
 
     Returns
     -------
-    astropy.cosmology instance
-        The cosmology to use from astropy. (Currently, all are instances of
-        :py:class:`astropy.cosmology.FlatLambdaCDM`.)
+    astropy.cosmology.FlatLambdaCDM
+        The cosmology to use.
+
+    Examples
+    --------
+    Use the default:
+
+    >>> from pycbc.cosmology import get_cosmology
+    >>> get_cosmology()
+    FlatLambdaCDM(name="Planck15", H0=67.7 km / (Mpc s), Om0=0.307,
+                  Tcmb0=2.725 K, Neff=3.05, m_nu=[0.   0.   0.06] eV,
+                  Ob0=0.0486)
+
+    Don't trust Planck? Use WMAP!
+
+    >>> get_cosmology("WMAP9")
+    FlatLambdaCDM(name="WMAP9", H0=69.3 km / (Mpc s), Om0=0.286, Tcmb0=2.725 K,
+                  Neff=3.04, m_nu=[0. 0. 0.] eV, Ob0=0.0463)
+
+    Don't trust anyone? Create your own!
+
+    >>> get_cosmology(H0=70., Om0=0.3)
+    FlatLambdaCDM(H0=70 km / (Mpc s), Om0=0.3, Tcmb0=0 K, Neff=3.04, m_nu=None,
+                  Ob0=None)
+
     """
-    if cosmology not in astropy.cosmology.parameters.available:
-        raise ValueError("unrecognized cosmology {}".format(cosmology))
-    return getattr(astropy.cosmology, cosmology)
+    if kwargs:
+        if cosmology is not None:
+            raise ValueError("if providing custom cosmological parameters, do "
+                             "not provide a `cosmology` argument")
+        cosmology = astropy.cosmology.FlatLambdaCDM(**kwargs)
+    else:
+        if cosmology is None:
+            cosmology = DEFAULT_COSMOLOGY
+        if cosmology not in astropy.cosmology.parameters.available:
+            raise ValueError("unrecognized cosmology {}".format(cosmology))
+        cosmology = getattr(astropy.cosmology, cosmology)
+    return cosmology
 
 
 def z_at_value(func, fval, unit, **kwargs):
@@ -74,49 +110,48 @@ def z_at_value(func, fval, unit, **kwargs):
     return formatreturn(numpy.array(zs), input_is_array)
 
 
-def redshift(distance, cosmology=DEFAULT_COSMOLOGY):
+def redshift(distance, **kwargs):
     """Returns the redshift associated with the given luminosity distance.
 
     Parameters
     ----------
     distance : float
         The luminosity distance, in Mpc.
-    cosmology : str, optional
-        The name of the cosmology to use. For the list of options, see
-        :py:attr:`astropy.cosmology.parameters.available`. Default is
-        ``'Planck15'``.
+    \**kwargs :
+        All other keyword args are passed to :py:func:`get_cosmology` to
+        select a cosmology. If none provided, will use the default.
 
     Returns
     -------
     float :
         The redshift corresponding to the given luminosity distance.
     """
-    cosmology = get_cosmology(cosmology)
+    cosmology = get_cosmology(**kwargs)
     return z_at_value(cosmology.luminosity_distance, distance, units.Mpc)
 
 
-def distance_from_comoving_volume(vc, cosmology=DEFAULT_COSMOLOGY):
+def distance_from_comoving_volume(vc, **kwargs):
     """Returns the luminosity distance from the given comoving volume.
 
     Parameters
     ----------
     vc : float
         The comoving volume, in units of cubed Mpc.
-    cosmology : str, optional
-        The name of the cosmology to use. For the list of options, see
-        :py:attr:`astropy.cosmology.parameters.available`. Default is
-        ``'Planck15'``.
+    \**kwargs :
+        All other keyword args are passed to :py:func:`get_cosmology` to
+        select a cosmology. If none provided, will use the default.
 
     Returns
     -------
     float :
         The luminosity distance at the given comoving volume.
     """
-    cosmology = get_cosmology(cosmology)
+    cosmology = get_cosmology(**kwargs)
     # first get the redshift associated with the given comoving volume
     z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
     # now convert redshift to luminosity distance
     return cosmology.luminosity_distance(z).value
+
 
 class _DistToZ(object):
     """Class to convert luminosity distance to redshift using the given
