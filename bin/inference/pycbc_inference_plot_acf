@@ -64,14 +64,12 @@ opts = parser.parse_args()
 # setup log
 pycbc.init_logging(opts.verbose)
 
-# add the temperature args if it is specified
+# add the temperature args if it exists
 additional_args = {}
-if opts.temps is not None:
-    if 'all' in opts.temps:
-        temps = 'all'
-    else:
-        temps = map(int, opts.temps)
-    additional_args['temps'] = temps 
+try:
+    additional_args['temps'] = opts.temps
+except AttributeError:
+    pass
 
 # load the results
 logging.info('Loading parameters')
@@ -97,6 +95,8 @@ try:
     temps = additional_args['temps']
     if temps == 'all':
         temps = range(acfs.values()[0].shape[0])
+    if isinstance(temps, int):
+        temps = [temps]
 except KeyError:
     temps = [0]
 fig_height = max(6, 3*len(temps))
