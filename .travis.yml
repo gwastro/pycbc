@@ -102,12 +102,10 @@ script:
     docker ps -a || exit 1 ;
     TMP_CONTAINER_ID=$(cat /tmp/docker.cid) ;
     travis_retry docker exec -it pycbc_inst df -h ;
-    travis_retry docker exec -it pycbc_inst cd /pycbc ;
-    travis_retry docker exec -it pycbc_inst pip install -r requirements.txt ;
-    travis_retry docker exec -it pycbc_inst python setup.py install ;
+    travis_retry docker exec -it pycbc_inst cd /pycbc && pip install -r requirements.txt ;
+    travis_retry docker exec -it pycbc_inst cd /pycbc && python setup.py install ;
     travis_retry docker exec -it pycbc_inst mkdir -p ~/src ;
-    travis_retry docker exec -it pycbc_inst cd ~/src ;
-    travis_retry docker exec -it pycbc_inst git clone https://github.com/ligo-cbc/pycbc.git ;
+    travis_retry docker exec -it pycbc_inst cd ~/src && git clone https://github.com/ligo-cbc/pycbc.git ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       LAL_EXTRA_TAG="e02dab8c" ; 
       travis_retry docker exec -it pycbc_inst mkdir -p ~/pycbc-software/share/lal-data ;
