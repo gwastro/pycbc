@@ -40,8 +40,8 @@ def _call_global_model_logprior(*args, **kwds):
     This is needed for samplers that use a separate function for the logprior,
     like ``emcee_pt``.
     """
-    return _global_instance(*args, callstat='logprior',
-                            **kwds)  # pylint:disable=not-callable
+    # pylint:disable=not-callable
+    return _global_instance(*args, callstat='logprior', **kwds)  
 
 
 class CallModel(object):
