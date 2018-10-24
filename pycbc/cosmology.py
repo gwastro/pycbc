@@ -45,8 +45,7 @@ def get_cosmology(cosmology=DEFAULT_COSMOLOGY):
     Parameters
     ----------
     cosmology : str, optional
-        The name of the cosmology to use. Must be the name of a cosmology
-        available in astropy.cosmology. For the list of options, see
+        The name of the cosmology to use. For the list of options, see
         :py:attr:`astropy.cosmology.parameters.available`. Default is
         ``'Planck15'``.
 
@@ -83,8 +82,7 @@ def redshift(distance, cosmology=DEFAULT_COSMOLOGY):
     distance : float
         The luminosity distance, in Mpc.
     cosmology : str, optional
-        The name of the cosmology to use. Must be the name of a cosmology
-        available in astropy.cosmology. For the list of options, see
+        The name of the cosmology to use. For the list of options, see
         :py:attr:`astropy.cosmology.parameters.available`. Default is
         ``'Planck15'``.
 
@@ -105,8 +103,7 @@ def distance_from_comoving_volume(vc, cosmology=DEFAULT_COSMOLOGY):
     vc : float
         The comoving volume, in units of cubed Mpc.
     cosmology : str, optional
-        The name of the cosmology to use. Must be the name of a cosmology
-        available in astropy.cosmology. For the list of options, see
+        The name of the cosmology to use. For the list of options, see
         :py:attr:`astropy.cosmology.parameters.available`. Default is
         ``'Planck15'``.
 
