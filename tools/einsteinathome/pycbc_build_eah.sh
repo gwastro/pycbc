@@ -763,7 +763,7 @@ Libs: -L${libdir} -lhdf5' |
         # LIBFRAME / FrameL
         p=libframe-8.30
         echo -e "\\n\\n>> [`date`] building $p" >&3
-        test -r $p.tar.gz || wget $wget_opts http://lappweb.in2p3.fr/virgo/FrameL/$p.tar.gz
+        test -r $p.tar.gz || wget $wget_opts http://software.ligo.org/lscsoft/source/$p.tar.gz
         rm -rf $p
         tar -xzf $p.tar.gz
         cd $p
