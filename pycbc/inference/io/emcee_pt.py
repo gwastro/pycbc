@@ -20,11 +20,12 @@
 from __future__ import absolute_import
 import h5py, numpy
 from .base_hdf import BaseInferenceFile
-from .base_multitemper import MultiTemperedMCMCIO
+from .base_multitemper import (MultiTemperedMetadataIO, MultiTemperedMCMCIO)
 from .posterior import PosteriorFile
 
 
-class EmceePTFile(MultiTemperedMCMCIO, BaseInferenceFile):
+class EmceePTFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
+                  BaseInferenceFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
     name = 'emcee_pt_file'
