@@ -105,5 +105,7 @@ suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestDetector))
 
 if __name__ == '__main__':
+    from astropy.utils import iers
+    iers.conf.auto_download = False
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)
