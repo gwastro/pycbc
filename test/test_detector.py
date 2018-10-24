@@ -45,7 +45,7 @@ class TestDetector(unittest.TestCase):
         self.ra = uniform(0, numpy.pi * 2, size=N)
         self.dec = uniform(-numpy.pi, numpy.pi, size=N)
         self.pol = uniform(0, numpy.pi * 2, size=N)
-        self.time = uniform(1000000000.0, 1222387218.0, size=N)
+        self.time = uniform(1000000000.0, 1146096017.0, size=N)
 
     def test_light_time(self):
         for d1 in self.d:
