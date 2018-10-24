@@ -25,10 +25,10 @@
 """
 import h5py, numpy
 from .base_hdf import BaseInferenceFile
-from .base_mcmc import MCMCIO
+from .base_mcmc import (MCMCMetadataIO, SingleTempMCMCIO)
 from .posterior import PosteriorFile
 
-class EmceeFile(MCMCIO, BaseInferenceFile):
+class EmceeFile(SingleTempMCMCIO, MCMCMetadataIO, BaseInferenceFile):
     """Class to handle file IO for the ``emcee`` sampler."""
 
     name = 'emcee_file'
