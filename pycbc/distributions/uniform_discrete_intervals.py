@@ -29,12 +29,18 @@ class UniformIntervals(bounded.BoundedDist):
         numpy.seterr(divide='warn')
 
     @property
-    def norm(self, size=1):
-        return size * self._norm
+    def norm(self):
+        return self._norm
+
+    def get_norm_for_rvs(self, size=1):
+        return self._norm / size
 
     @property
-    def lognorm(self, size=1):
-        return numpy.log(norm(size=size))
+    def lognorm(self):
+        return numpy.log(norm())
+
+    def get_lognorm_for_rvs(self, size=1):
+        return numpy.log(get_norm_for_rvs(size=size))
 
     @property
     def stride(self):
