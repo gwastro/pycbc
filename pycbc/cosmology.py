@@ -165,9 +165,9 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
             if counter == 5:
                 # give up and warn the user
                 logging.warning("One or more values correspond to a "
-                             "redshift > {0:.1e}. The redshift for these have "
-                             "been set to inf. If you would like better "
-                             "precision, call God.".format(zmax))
+                                "redshift > {0:.1e}. The redshift for these "
+                                "have been set to inf. If you would like "
+                                "better precision, call God.".format(zmax))
                 break
     return formatreturn(zs, input_is_array)
 
