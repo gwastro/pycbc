@@ -29,19 +29,19 @@ Note: in all functions, ``distance`` is short hand for ``luminosity_distance``.
 Any other distance measure is explicitly named; e.g., ``comoving_distance``.
 """
 
-import numpy
 import logging
+import numpy
 from scipy import interpolate
 import astropy.cosmology
 from astropy import units
 from astropy.cosmology.core import CosmologyError
 from pycbc.conversions import ensurearray, formatreturn
 
-DEFAULT_COSMOLOGY='Planck15'
+DEFAULT_COSMOLOGY = 'Planck15'
 
 
 def get_cosmology(cosmology=None, **kwargs):
-    """Gets an astropy cosmology class.
+    r"""Gets an astropy cosmology class.
 
     Parameters
     ----------
@@ -102,7 +102,7 @@ def get_cosmology(cosmology=None, **kwargs):
 
 
 def z_at_value(func, fval, unit, zmax=1000., **kwargs):
-    """Wrapper around astropy.cosmology.z_at_value to handle numpy arrays.
+    r"""Wrapper around astropy.cosmology.z_at_value to handle numpy arrays.
 
     Getting a z for a cosmological quantity involves numerically inverting
     ``func``. The ``zmax`` argument sets how large of a z to guess (see
@@ -164,16 +164,16 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
             counter += 1
             if counter == 5:
                 # give up and warn the user
-                logging.warn("One or more values correspond to a "
+                logging.warning("One or more values correspond to a "
                              "redshift > {0:.1e}. The redshift for these have "
                              "been set to inf. If you would like better "
-                             "precision, call God.".format(zmax)) 
+                             "precision, call God.".format(zmax))
                 break
     return formatreturn(zs, input_is_array)
 
 
 def _redshift(distance, **kwargs):
-    """Uses astropy to get redshift from the given luminosity distance.
+    r"""Uses astropy to get redshift from the given luminosity distance.
 
     Parameters
     ----------
@@ -194,7 +194,7 @@ def _redshift(distance, **kwargs):
 
 
 class DistToZ(object):
-    """Interpolates luminosity distance as a function of redshift to allow for
+    r"""Interpolates luminosity distance as a function of redshift to allow for
     fast conversion.
 
     The :mod:`astropy.cosmology` module provides methods for converting any
@@ -232,6 +232,7 @@ class DistToZ(object):
         # them up when get_redshift is first called
         self.nearby_d2z = None
         self.faraway_d2z = None
+        self.default_maxdist = None
 
     def setup_interpolant(self):
         """Initializes the z(d) interpolation."""
@@ -285,7 +286,7 @@ _d2zs = {_c: DistToZ(cosmology=_c)
 
 
 def redshift(distance, **kwargs):
-    """Returns the redshift associated with the given luminosity distance.
+    r"""Returns the redshift associated with the given luminosity distance.
 
     If the requested cosmology is one of the pre-defined ones in
     :py:attr:`astropy.cosmology.parameters.available`, :py:class:`DistToZ` is
@@ -315,8 +316,30 @@ def redshift(distance, **kwargs):
     return z
 
 
+def redshift_from_comoving_volume(vc, **kwargs):
+    r"""Returns the redshift from the given comoving volume.
+
+    Parameters
+    ----------
+    vc : float
+        The comoving volume, in units of cubed Mpc.
+    \**kwargs :
+        All other keyword args are passed to :py:func:`get_cosmology` to
+        select a cosmology. If none provided, will use
+        :py:attr:`DEFAULT_COSMOLOGY`.
+
+    Returns
+    -------
+    float :
+        The redshift at the given comoving volume.
+    """
+    cosmology = get_cosmology(**kwargs)
+    # first get the redshift associated with the given comoving volume
+    return z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
+
+
 def distance_from_comoving_volume(vc, **kwargs):
-    """Returns the luminosity distance from the given comoving volume.
+    r"""Returns the luminosity distance from the given comoving volume.
 
     Parameters
     ----------
@@ -333,37 +356,13 @@ def distance_from_comoving_volume(vc, **kwargs):
         The luminosity distance at the given comoving volume.
     """
     cosmology = get_cosmology(**kwargs)
-    # first get the redshift associated with the given comoving volume
-    z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
-    # now convert redshift to luminosity distance
+    z = redshift_from_comoving_volume(vc, cosmology=cosmology)
     return cosmology.luminosity_distance(z).value
-
-
-def comoving_distance_from_comoving_volume(vc, **kwargs):
-    """Returns the comoving distance from the comoving volume.
-
-    Parameters
-    ----------
-    vc : float
-        The comoving volume, in units of cubed Mpc.
-    \**kwargs :
-        All other keyword args are passed to :py:func:`get_cosmology` to
-        select a cosmology. If none provided, will use
-        :py:attr:`DEFAULT_COSMOLOGY`.
-
-    Returns
-    -------
-    float :
-        The comoving distance at the given comoving volume.
-    """
-    cosmology = get_cosmology(**kwargs)
-    z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
-    return cosmology.comoving_distance(z).value
 
 
 def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
                                         **kwargs):
-    """Returns the value of a cosmological quantity (e.g., age) at a redshift.
+    r"""Returns the value of a cosmological quantity (e.g., age) at a redshift.
 
     Parameters
     ----------
@@ -393,7 +392,7 @@ def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
     return val
 
 
-__all__ = ['redshift', 'distance_from_comoving_volume',
-           'comoving_distance_from_comoving_volume',
+__all__ = ['redshift', 'redshift_from_comoving_volume',
+           'distance_from_comoving_volume',
            'cosmological_quantity_from_redshift',
            ]
