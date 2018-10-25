@@ -51,11 +51,12 @@ class UniformIntervals(bounded.BoundedDist):
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
-        for i in range(len(self._bounds.values())):
-            if (kwargs % (self._bounds[self.params[i]][1] + self.stride[self.params[i]])) not in self:
+        for p in self.params:
+            width = self._bounds[p][0] + self._bounds[p][1]
+            if kwargs[p] % (width + self._stride[p]) > width :
                 return 0.
 
-        return self._norm
+        return self.get_norm_for_rvs(size=size)
 
     def _logpdf(self, size=1, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
