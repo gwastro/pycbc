@@ -412,6 +412,98 @@ class MchirpQToMass1Mass2(BaseTransform):
         m2 = maps[parameters.mass2]
         return conversions.mchirp_from_mass1_mass2(m1, m2)/m2**2.
 
+class MchirpEtaToMass1Mass2(BaseTransform):
+    """ Converts chirp mass and symmetric mass ratio to component masses.
+    """
+    name = "mchirp_eta_to_mass1_mass2"
+    _inputs = [parameters.mchirp, parameters.eta]
+    _outputs = [parameters.mass1, parameters.mass2]
+
+    def transform(self, maps):
+        """This function transforms from chirp mass and symmetric mass ratio to
+        component masses.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy
+        >>> from pycbc import transforms
+        >>> t = transforms.MchirpEtaToMass1Mass2()
+        >>> t.transform({'mchirp': numpy.array([10.]), 'eta': numpy.array([0.25])})
+        {'mass1': array([ 16.4375183]), 'mass2': array([ 8.21875915]),
+         'mchirp': array([ 10.]), 'eta': array([ 0.25])}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        out[parameters.mass1] = conversions.mass1_from_mchirp_eta(
+                                                maps[parameters.mchirp],
+                                                maps[parameters.eta])
+        out[parameters.mass2] = conversions.mass2_from_mchirp_eta(
+                                                maps[parameters.mchirp],
+                                                maps[parameters.eta])
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        """This function transforms from component masses to chirp mass and
+        symmetric mass ratio.
+
+        Parameters
+        ----------
+        maps : a mapping object
+
+        Examples
+        --------
+        Convert a dict of numpy.array:
+
+        >>> import numpy
+        >>> from pycbc import transforms
+        >>> t = transforms.MchirpQToMass1Mass2()
+        >>> t.inverse_transform({'mass1': numpy.array([8.2]), 'mass2': numpy.array([8.2])})
+            {'mass1': array([ 8.2]), 'mass2': array([ 8.2]),
+             'mchirp': array([ 9.97717521]), 'eta': 0.25}
+
+        Returns
+        -------
+        out : dict
+            A dict with key as parameter name and value as numpy.array or float
+            of transformed values.
+        """
+        out = {}
+        m1 = maps[parameters.mass1]
+        m2 = maps[parameters.mass2]
+        out[parameters.mchirp] = conversions.mchirp_from_mass1_mass2(m1, m2)
+        out[parameters.eta] = conversions.eta_from_q(m1 / m2)
+        return self.format_output(maps, out)
+
+    def jacobian(self, maps):
+        """Returns the Jacobian for transforming mchirp and eta to mass1 and
+        mass2.
+        """
+        mchirp = maps[parameters.mchirp]
+        eta = maps[parameters.eta]
+        m1 = conversions.mass1_from_mchirp_eta(mchirp, eta)
+        m2 = conversions.mass2_from_mchirp_eta(mchirp, eta)
+        return mchirp * (m1 - m2) / (m1 + m2)**3
+
+    def inverse_jacobian(self, maps):
+        """Returns the Jacobian for transforming mass1 and mass2 to
+        mchirp and eta.
+        """
+        m1 = maps[parameters.mass1]
+        m2 = maps[parameters.mass2]
+        mchirp = conversions.mchirp_from_mass1_mass2(m1, m2)
+        eta = conversions.eta_from_q(m1 / m2)
+        return -1. * mchirp / eta**(6./5)
 
 class ChirpDistanceToDistance(BaseTransform):
     """ Converts chirp distance to luminosity distance, given the chirp mass.
@@ -1141,6 +1233,17 @@ class Mass1Mass2ToMchirpQ(MchirpQToMass1Mass2):
     jacobian = inverse.inverse_jacobian
     inverse_jacobian = inverse.jacobian
 
+class Mass1Mass2ToMchirpEta(MchirpEtaToMass1Mass2):
+    """The inverse of MchirpEtaToMass1Mass2.
+    """
+    name = "mass1_mass2_to_mchirp_eta"
+    inverse = MchirpEtaToMass1Mass2
+    _inputs = inverse._outputs
+    _outputs = inverse._inputs
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
 
 class DistanceToChirpDistance(ChirpDistanceToDistance):
     """The inverse of ChirpDistanceToDistance.
@@ -1377,6 +1480,7 @@ transforms = {
     CustomTransform.name : CustomTransform,
     MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
     Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
+    Mass1Mass2ToMchirpEta.name : Mass1Mass2ToMchirpEta,
     ChirpDistanceToDistance.name : ChirpDistanceToDistance,
     DistanceToChirpDistance.name : DistanceToChirpDistance,
     SphericalSpin1ToCartesianSpin1.name : SphericalSpin1ToCartesianSpin1,
