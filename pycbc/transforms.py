@@ -482,7 +482,7 @@ class MchirpEtaToMass1Mass2(BaseTransform):
         m1 = maps[parameters.mass1]
         m2 = maps[parameters.mass2]
         out[parameters.mchirp] = conversions.mchirp_from_mass1_mass2(m1, m2)
-        out[parameters.eta] = conversions.eta_from_q(m1 / m2)
+        out[parameters.eta] = conversions.eta_from_mass1_mass2(m1, m2)
         return self.format_output(maps, out)
 
     def jacobian(self, maps):
@@ -502,7 +502,7 @@ class MchirpEtaToMass1Mass2(BaseTransform):
         m1 = maps[parameters.mass1]
         m2 = maps[parameters.mass2]
         mchirp = conversions.mchirp_from_mass1_mass2(m1, m2)
-        eta = conversions.eta_from_q(m1 / m2)
+        eta = conversions.eta_from_mass1_mass2(m1, m2)
         return -1. * mchirp / eta**(6./5)
 
 class ChirpDistanceToDistance(BaseTransform):
