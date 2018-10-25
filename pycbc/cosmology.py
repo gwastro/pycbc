@@ -361,5 +361,39 @@ def comoving_distance_from_comoving_volume(vc, **kwargs):
     return cosmology.comoving_distance(z).value
 
 
+def cosmological_quantity_from_redshift(z, quantity, strip_unit=True,
+                                        **kwargs):
+    """Returns the value of a cosmological quantity (e.g., age) at a redshift.
 
-__all__ = ['redshift', 'distance_from_comoving_volume']
+    Parameters
+    ----------
+    z : float
+        The redshift.
+    quantity : str
+        The name of the quantity to get. The name may be any attribute of
+        :py:class:`astropy.cosmology.FlatLambdaCDM`.
+    strip_unit : bool, optional
+        Just return the value of the quantity, sans units. Default is True.
+    \**kwargs :
+        All other keyword args are passed to :py:func:`get_cosmology` to
+        select a cosmology. If none provided, will use
+        :py:attr:`DEFAULT_COSMOLOGY`.
+
+    Returns
+    -------
+    float or astropy.units.quantity :
+        The value of the quantity at the requested value. If ``strip_unit`` is
+        ``True``, will return the value. Otherwise, will return the value with
+        units.
+    """
+    cosmology = get_cosmology(**kwargs)
+    val = getattr(cosmology, quantity)(z)
+    if strip_unit:
+        val = val.value
+    return val
+
+
+__all__ = ['redshift', 'distance_from_comoving_volume',
+           'comoving_distance_from_comoving_volume',
+           'cosmological_quantity_from_redshift',
+           ]
