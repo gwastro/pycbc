@@ -31,7 +31,7 @@ import socket
 import pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging
 from glue import segments
-import numpy, lal, datetime
+import numpy, lal, datetime, itertools
 from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
@@ -212,36 +212,46 @@ statfiles = []
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name)
 
-# setup 3 detector coinc for the filtering jobs
-ctags = [tag, 'full3d']
+# setup the detector combination coincs for the filtering jobs
 full_insps = insps
+ctags = [tag, 'full']
 bg_files = []
 final_bg_files = []
-bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, insps, statfiles,
-                               cum_veto_files, veto_names,
-                               output_dir, tags=ctags)
-final_bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, insps, statfiles,
-                               final_veto_file, final_veto_name,
-                               output_dir, tags=ctags)
+ifoindeces = {}
 
-# setup 2 detector pair coinc for the filtering jobs
-detector_pair_tags = ['full2d0','full2d1','full2d2']
-for i in detector_pair_tags:
-    ctags = [tag, i]
-    insp2d = wf.core.FileList()
-    pivot_ifo = workflow.cp.get_opt_tags('workflow-coincidence', 'pivot-ifo', ctags)
-    fixed_ifo = workflow.cp.get_opt_tags('workflow-coincidence', 'fixed-ifo', ctags)
-    for ifo, file in zip(*insps.categorize_by_attr('ifo')):
-        if pivot_ifo == ifo:
-            insp2d += file
-        if fixed_ifo == ifo:
-            insp2d += file
-    bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, insp2d, statfiles,
+# Get the ifo precedent list for the multiifo coinc jobs
+ifo_precedence_list = workflow.cp.get_opt_tags('workflow-coincidence', 'timeslide-precedence', ctags)
+for ifo, file in zip(*insps.categorize_by_attr('ifo')):
+    ifoindeces[ifo] = ifo_precedence_list.index(ifo)
+
+for i in range(2,len(insps)+1):
+    combinations = itertools.combinations(ifoindeces.keys(),i)
+    for ifocomb in combinations:
+        combination_prec = {}
+        inspcomb = wf.core.FileList()
+        # create the precedent list for the detector combination
+        for ifo in ifocomb:
+            combination_prec[ifo] = ifoindeces[ifo]
+
+        # Use the inspiral files for the detector combination only.
+        for ifo, file in zip(*insps.categorize_by_attr('ifo')):
+            if ifo in combination_prec:
+                inspcomb += file
+
+        # Determine the pivot-ifo and fixed-ifo based on the precedent list
+        pivot_ifo = min(combination_prec, key=combination_prec.get)
+        del combination_prec[pivot_ifo]
+        fixed_ifo = min(combination_prec, key=combination_prec.get)
+
+        # Create coinc tag, and set up the coinc job for the combination
+        coinctag = '{}det_'.format(len(ifocomb))+pivot_ifo+fixed_ifo
+        ctagcomb = [tag, 'full', coinctag]
+        bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
                                cum_veto_files, veto_names,
-                               output_dir, tags=ctags)
-    final_bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, insp2d, statfiles,
+                               output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
+        final_bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
                                final_veto_file, final_veto_name,
-                               output_dir, tags=ctags)
+                               output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
 
 # Calculate the inspiral psds and make plots
 psd_files = []

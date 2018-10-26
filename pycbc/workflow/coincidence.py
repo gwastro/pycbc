@@ -88,7 +88,7 @@ class PyCBCFindCoincExecutable(Executable):
     current_retention_level = Executable.ALL_TRIGGERS
     file_input_options = ['--statistic-files']
     def create_node(self, trig_files, bank_file, stat_files, veto_file,
-                    veto_name, template_str, tags=None):
+                    veto_name, template_str, pivot_ifo, fixed_ifo, tags=None):
         if tags is None:
             tags = []
         segs = trig_files.get_times_covered_by_files()
@@ -102,6 +102,10 @@ class PyCBCFindCoincExecutable(Executable):
         if veto_file is not None:
             node.add_input_opt('--veto-files', veto_file)
             node.add_opt('--segment-name', veto_name)
+        if pivot_ifo is not None:
+            node.add_opt('--pivot-ifo', pivot_ifo)
+        if fixed_ifo is not None:
+            node.add_opt('--fixed-ifo', fixed_ifo)
         node.add_opt('--template-fraction-range', template_str)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
@@ -495,7 +499,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     return statmap_files
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
-                         veto_files, veto_names, out_dir, tags=None):
+                         veto_files, veto_names, out_dir, pivot_ifo, fixed_ifo, tags=None):
     """
     This function sets up exact match multiifo coincidence
     """
@@ -524,6 +528,8 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                                                    stat_files,
                                                    veto_file, veto_name,
                                                    group_str,
+                                                   pivot_ifo,
+                                                   fixed_ifo,
                                                    tags=[veto_name, str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
