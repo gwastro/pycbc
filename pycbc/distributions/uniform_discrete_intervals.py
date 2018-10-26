@@ -8,6 +8,7 @@ class UniformIntervals(bounded.BoundedDist):
     def __init__(self, **params):
          # temporarily suppress numpy divide by 0 warning
         self._stride = {}
+        self._size = 1
 
         stride_args = [p for p in params if p.endswith('_stride')]
 
@@ -28,35 +29,40 @@ class UniformIntervals(bounded.BoundedDist):
         self._norm = numpy.exp(self._lognorm)
         numpy.seterr(divide='warn')
 
+### FIXME this needs to be reset if multiple calls to rvs will keep shrinking it
     @property
     def norm(self):
+        self._norm = self._size
         return self._norm
-
-    def get_norm_for_rvs(self, size=1):
-        return self._norm / size
 
     @property
     def lognorm(self):
         return numpy.log(norm())
 
-    def get_lognorm_for_rvs(self, size=1):
-        return numpy.log(get_norm_for_rvs(size=size))
-
     @property
     def stride(self):
         return self._stride
 
-    def _pdf(self, size=1, param=None, **kwargs):
+    def set_size(self, size=1):
+        self._size = size
+
+    def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
         for p in self.params:
             width = self._bounds[p][0] + self._bounds[p][1]
-            if kwargs[p] % (width + self._stride[p]) > width :
+            print "width of bounds", width
+            print "width of bounds + stride", width + self._stride[p]
+            print "input value", kwargs[p]
+            cond = kwargs[p] % (width + self._stride[p])
+            print "cond", cond
+            print cond > width
+            if cond > width :
                 return 0.
 
-        return self.get_norm_for_rvs(size=size)
+        return self._norm
 
     def _logpdf(self, size=1, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
@@ -98,6 +104,7 @@ class UniformIntervals(bounded.BoundedDist):
             a = self.bounds[p][0] + self.stride[p] * x
             arr[p] = numpy.random.uniform(a, b) 
 
+        self.set_size(size)
         return arr
 
     @classmethod
