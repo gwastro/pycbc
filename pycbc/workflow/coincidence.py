@@ -513,8 +513,9 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          'method, I got %i !' % len(hdfbank))
     hdfbank = hdfbank[0]
 
+    ifos, file = trig_files.categorize_by_attr('ifo')
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'multiifo_coinc',
-                                             ifos=workflow.ifos,
+                                             ifos=ifos,
                                              tags=tags, out_dir=out_dir)
 
     # Wall time knob and memory knob
