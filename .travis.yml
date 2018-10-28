@@ -102,14 +102,14 @@ script:
     fi ;
     docker ps -a || exit 1 ;
     TMP_CONTAINER_ID=$(cat /tmp/docker.cid) ;
-    travis_retry docker exec -it pycbc_inst df -h ;
-    travis_retry docker exec -it pycbc_inst cd /pycbc && pip install -r requirements.txt ;
-    travis_retry docker exec -it pycbc_inst cd /pycbc && python setup.py install ;
-    travis_retry docker exec -it pycbc_inst mkdir -p ~/src ;
-    travis_retry docker exec -it pycbc_inst cd ~/src && git clone https://github.com/ligo-cbc/pycbc.git ;
+    travis_retry docker exec -w /pycbc -it pycbc_inst /bin/bash -lc 'df -h; exit $?' ;
+    travis_retry docker exec -w /pycbc -it pycbc_inst /bin/bash -lc 'pip install -r requirements.txt ; exit $?' ;
+    travis_retry docker exec -w /pycbc -it pycbc_inst /bin/bash -lc 'pip install . ; exit $?' ;
+    travis_retry docker exec -it pycbc_inst mkdir -p /opt/pycbc/src ;
+    travis_retry docker exec -w /opt/pycbc/src -it pycbc_inst /bin/bash -lc 'git clone https://github.com/ligo-cbc/pycbc.git ; exit $?' ;
     if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
       LAL_EXTRA_TAG="e02dab8c" ; 
-      travis_retry docker exec -it pycbc_inst mkdir -p ~/pycbc-software/share/lal-data ;
+      travis_retry docker exec -it pycbc_inst mkdir -p /opt/pycbc-software/share/lal-data ;
       travis_retry docker exec -it pycbc_inst rsync --exclude='SEOBNRv1ROM*' --exclude='SEOBNRv2ROM_DS_HI_v1.0.hdf5' --exclude='NRSur4d2s_FDROM.hdf5' -ravz pycbc@sugwg-condor.phy.syr.edu:/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/${LAL_EXTRA_TAG}/share/lalsimulation/ /opt/pycbc/pycbc-software/share/lal-data/ ;
     fi ;
     sleep 10 ;
