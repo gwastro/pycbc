@@ -217,21 +217,23 @@ full_insps = insps
 ctags = [tag, 'full']
 bg_files = []
 final_bg_files = []
-ifoindeces = {}
+ifo_ids = {}
 
 # Get the ifo precedent list for the multiifo coinc jobs
 ifo_precedence_list = workflow.cp.get_opt_tags('workflow-coincidence', 'timeslide-precedence', ctags)
 for ifo, file in zip(*insps.categorize_by_attr('ifo')):
-    ifoindeces[ifo] = ifo_precedence_list.index(ifo)
+    ifo_ids[ifo] = ifo_precedence_list.index(ifo)
 
-for i in range(2,len(insps)+1):
-    combinations = itertools.combinations(ifoindeces.keys(),i)
+# Generate the possible detector combinations from 2 detectors
+# to the number of trigger files.
+for i in range(2, len(insps)+1):
+    combinations = itertools.combinations(ifo_ids.keys(), i)
     for ifocomb in combinations:
         combination_prec = {}
         inspcomb = wf.core.FileList()
-        # create the precedent list for the detector combination
+        # create the precedence list for the detector combination
         for ifo in ifocomb:
-            combination_prec[ifo] = ifoindeces[ifo]
+            combination_prec[ifo] = ifo_ids[ifo]
 
         # Use the inspiral files for the detector combination only.
         for ifo, file in zip(*insps.categorize_by_attr('ifo')):
