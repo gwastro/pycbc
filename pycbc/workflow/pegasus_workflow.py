@@ -69,12 +69,18 @@ class Executable(ProfileShortcuts):
     """
     id = 0
     def __init__(self, name, namespace=None, os='linux',
-                       arch='x86_64', installed=True, version=None):
+                       arch='x86_64', installed=True, version=None,
+                       container=None):
         self.logical_name = name + "_ID%s" % str(Executable.id)
         Executable.id += 1
         self.namespace = namespace
         self.version = version
-        self._dax_executable = dax.Executable(self.logical_name,
+        if container:
+            self._dax_executable = dax.Executable(self.logical_name,
+                   namespace=self.namespace, version=version, os=os,
+                   arch=arch, installed=installed, container=container)
+        else:
+            self._dax_executable = dax.Executable(self.logical_name,
                    namespace=self.namespace, version=version, os=os,
                    arch=arch, installed=installed)
         self.in_workflow = False
@@ -392,6 +398,10 @@ class Workflow(object):
 
         for e in self._adag.executables.copy():
             tc.add(e)
+            try:
+                tc.add_container(e.container)
+            except:
+                pass
             self._adag.removeExecutable(e)
 
         f = open(filename, "w")

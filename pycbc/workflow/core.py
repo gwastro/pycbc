@@ -166,6 +166,8 @@ class Executable(pegasus_workflow.Executable):
             self.ifo_string = None
         self.cp = cp
         self.universe=universe
+        self.container_cls = None
+        self.container_type = None
 
         try:
             self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
@@ -181,8 +183,43 @@ class Executable(pegasus_workflow.Executable):
         # Determine the level at which output files should be kept
         self.update_current_retention_level(self.current_retention_level)
 
-        super(Executable, self).__init__(self.tagged_name,
-                                         installed=self.installed)
+        # Determine if this executables should be run in a container
+        try:
+            self.container_type = cp.get('pegasus_container-%s' % name,
+                                         'type')
+        except:
+            pass
+
+        if self.container_type is not None:
+            self.container_img = cp.get('pegasus_container-%s' % name,
+                                        'image')
+            try:
+                self.container_site = cp.get('pegasus_container-%s' % name,
+                                             'image_site')
+            except:
+                self.container_site = 'local'
+
+            try:
+                self.container_mount = cp.get('pegasus_container-%s' % name,
+                                             'mount').split(',')
+            except:
+                self.container_mount = None
+
+
+            self.container_cls = Pegasus.DAX3.Container("{}-container".format(
+                                                    name),
+                                                    self.container_type,
+                                                    self.container_img,
+                                                    imagesite=self.container_site,
+                                                    mount=self.container_mount)
+
+            super(Executable, self).__init__(self.tagged_name,
+                                             installed=self.installed,
+                                             container=self.container_cls)
+
+        else:
+            super(Executable, self).__init__(self.tagged_name,
+                                             installed=self.installed)
 
         self._set_pegasus_profile_options()
 
@@ -233,6 +270,7 @@ class Executable(pegasus_workflow.Executable):
 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
+
     @property
     def ifo(self):
         """Return the ifo.
