@@ -71,13 +71,14 @@ def get_cosmology(cosmology=None, **kwargs):
                   Tcmb0=2.725 K, Neff=3.05, m_nu=[0.   0.   0.06] eV,
                   Ob0=0.0486)
 
-    Don't trust Planck? Use WMAP!
+    Use properties measured by WMAP instead:
 
     >>> get_cosmology("WMAP9")
     FlatLambdaCDM(name="WMAP9", H0=69.3 km / (Mpc s), Om0=0.286, Tcmb0=2.725 K,
                   Neff=3.04, m_nu=[0. 0. 0.] eV, Ob0=0.0463)
 
-    Don't trust anyone? Create your own!
+    Create your own cosmology (see :py:class:`astropy.cosmology.FlatLambdaCDM`
+    for details on the default values used):
 
     >>> get_cosmology(H0=70., Om0=0.3)
     FlatLambdaCDM(H0=70 km / (Mpc s), Om0=0.3, Tcmb0=0 K, Neff=3.04, m_nu=None,
@@ -334,7 +335,6 @@ def redshift_from_comoving_volume(vc, **kwargs):
         The redshift at the given comoving volume.
     """
     cosmology = get_cosmology(**kwargs)
-    # first get the redshift associated with the given comoving volume
     return z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
 
 
