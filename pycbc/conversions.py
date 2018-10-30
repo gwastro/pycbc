@@ -1049,6 +1049,10 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                             approximant='SEOBNRv4'):
     """Estimates the final mass and spin from the given initial parameters.
 
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
     Parameters
     ----------
     mass1 : float
@@ -1070,6 +1074,13 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     approximant : str, optional
         The waveform approximant to use for the fit function. Default is
         "SEOBNRv4".
+
+    Returns
+    -------
+    final_mass : float
+        The final mass, in solar masses.
+    final_spin : float
+        The dimensionless final spin.
     """
     args = (mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z)
     args = ensurearray(*args)
@@ -1100,6 +1111,10 @@ def final_mass_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                             approximant='SEOBNRv4'):
     """Estimates the final mass from the given initial parameters.
 
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
     Parameters
     ----------
     mass1 : float
@@ -1121,6 +1136,11 @@ def final_mass_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     approximant : str, optional
         The waveform approximant to use for the fit function. Default is
         "SEOBNRv4".
+
+    Returns
+    -------
+    float
+        The final mass, in solar masses.
     """
     return get_final_from_initial(mass1, mass2, spin1x, spin1y, spin1z,
                                   spin2x, spin2y, spin2z, approximant)[0]
@@ -1131,6 +1151,10 @@ def final_spin_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                             approximant='SEOBNRv4'):
     """Estimates the final spin from the given initial parameters.
 
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
     Parameters
     ----------
     mass1 : float
@@ -1152,6 +1176,11 @@ def final_spin_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
     approximant : str, optional
         The waveform approximant to use for the fit function. Default is
         "SEOBNRv4".
+
+    Returns
+    -------
+    float
+        The dimensionless final spin.
     """
     return get_final_from_initial(mass1, mass2, spin1x, spin1y, spin1z,
                                   spin2x, spin2y, spin2z, approximant)[1]
