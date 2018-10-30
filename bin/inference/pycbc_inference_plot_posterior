@@ -192,10 +192,13 @@ for (i, s) in enumerate(samples):
 # add legend to upper right for input files
 if len(opts.input_file) > 1:
     handles = []
-    for color, label in zip(hist_colors, opts.input_file_labels):
+    labels = []
+    for color, fn in zip(hist_colors, opts.input_file):
+        label = opts.input_file_labels[fn]
         handles.append(patches.Patch(color=color, label=label))
+        labels.append(label)
     fig.legend(loc="upper right", handles=handles,
-               labels=opts.input_file_labels)
+               labels=labels)
 
 # set DPI
 fig.set_dpi(200)
