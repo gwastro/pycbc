@@ -1045,8 +1045,8 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
 
 
 def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
-                            spin2x=0., spin2y=0., spin2z=0.,
-                            approximant='SEOBNRv4'):
+                           spin2x=0., spin2y=0., spin2z=0.,
+                           approximant='SEOBNRv4'):
     """Estimates the final mass and spin from the given initial parameters.
 
     This uses the fits used by the EOBNR models for converting from initial
@@ -1102,8 +1102,8 @@ def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
         final_spin[ii] = fs
     final_mass = final_mass.reshape(origshape)
     final_spin = final_spin.reshape(origshape)
-    return formatreturn(final_mass, input_is_array), \
-           formatreturn(final_spin, input_is_array)
+    return (formatreturn(final_mass, input_is_array),
+            formatreturn(final_spin, input_is_array))
 
 
 def final_mass_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
