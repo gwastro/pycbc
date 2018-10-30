@@ -14,7 +14,7 @@ for ifo in ['H1', 'L1']:
     psd = interpolate(welch(h1), 1.0 / h1.duration)
 
     # whiten
-    white_strain = (h1.to_frequencyseries() / psd ** 0.5 * psd.delta_f).to_timeseries()
+    white_strain = (h1.to_frequencyseries() / psd ** 0.5).to_timeseries()
 
     # remove some of the high and low
     smooth = highpass_fir(white_strain, 35, 8)
@@ -31,7 +31,6 @@ pylab.legend()
 pylab.xlim(1126259462.21, 1126259462.45)
 pylab.ylabel('Smoothed-Whitened Strain')
 pylab.grid()
-pylab.ylim(-5, 5)
 pylab.xlabel('GPS Time (s)')
 pylab.show()
 
