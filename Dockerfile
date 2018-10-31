@@ -1,4 +1,4 @@
-FROM pycbc/pycbc-base-el7:v2.3-89a30fc
+FROM pycbc/pycbc-base-el7:v2.4-89a30fc
 
 ENTRYPOINT ["/bin/bash", "-vc", "source /opt/pycbc/pycbc-software/bin/activate; exec $0 $@"]
 
