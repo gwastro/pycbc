@@ -117,7 +117,6 @@ class PyCBCFindMultiifoCoincExecutable(Executable):
         segs = trig_files.get_times_covered_by_files()
         seg = segments.segment(segs[0][0], segs[-1][1])
         node = Node(self)
-        node.set_memory(10000)
         node.add_input_opt('--template-bank', bank_file)
         node.add_input_list_opt('--trigger-files', trig_files)
         if len(stat_files) > 0:
@@ -125,10 +124,8 @@ class PyCBCFindMultiifoCoincExecutable(Executable):
         if veto_file is not None:
             node.add_input_opt('--veto-files', veto_file)
             node.add_opt('--segment-name', veto_name)
-        if pivot_ifo is not None:
-            node.add_opt('--pivot-ifo', pivot_ifo)
-        if fixed_ifo is not None:
-            node.add_opt('--fixed-ifo', fixed_ifo)
+        node.add_opt('--pivot-ifo', pivot_ifo)
+        node.add_opt('--fixed-ifo', fixed_ifo)
         node.add_opt('--template-fraction-range', template_str)
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
@@ -536,7 +533,7 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          'method, I got %i !' % len(hdfbank))
     hdfbank = hdfbank[0]
 
-    ifos, file = trig_files.categorize_by_attr('ifo')
+    ifos, _ = trig_files.categorize_by_attr('ifo')
     findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp, 'multiifo_coinc',
                                              ifos=ifos,
                                              tags=tags, out_dir=out_dir)
