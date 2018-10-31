@@ -139,6 +139,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     echo "deb http://httpredir.debian.org/debian jessie-backports main non-free" > /etc/apt/sources.list.d/backports.list
     echo "deb-src http://httpredir.debian.org/debian jessie-backports main non-free" >> /etc/apt/sources.list.d/backports.list
     apt-get update
+    apt-get -y install ca-certificates-java
     apt-get -y install openjdk-8-jre-headless
     curl -s -o pegasus-gpg.txt https://download.pegasus.isi.edu/pegasus/gpg.txt
     apt-key add pegasus-gpg.txt
