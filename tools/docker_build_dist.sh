@@ -136,7 +136,10 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
     apt-get update
     apt-get -y remove --purge openjdk-\*
-    apt-get install openjdk-8-jre
+    echo "deb http://httpredir.debian.org/debian jessie-backports main non-free" > /etc/apt/sources.list.d/backports.list
+    echo "deb-src http://httpredir.debian.org/debian jessie-backports main non-free" >> /etc/apt/sources.list.d/backports.list
+    apt-get update
+    apt-get -y install openjdk-8-jre-headless
     curl -s -o pegasus-gpg.txt https://download.pegasus.isi.edu/pegasus/gpg.txt
     apt-key add pegasus-gpg.txt
     echo 'deb http://download.pegasus.isi.edu/wms/download/debian jessie main' > /etc/apt/sources.list.d/pegasus.list
