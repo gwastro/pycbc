@@ -135,15 +135,12 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     apt-get update
     apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
     apt-get update
+    apt-get -y remove --purge openjdk-\*
+    apt-get install openjdk-8-jre
     curl -s -o pegasus-gpg.txt https://download.pegasus.isi.edu/pegasus/gpg.txt
     apt-key add pegasus-gpg.txt
     echo 'deb http://download.pegasus.isi.edu/wms/download/debian jessie main' > /etc/apt/sources.list.d/pegasus.list
-    echo 'deb http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main' > /etc/apt/sources.list.d/java-8-debian.list
-    echo 'deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu xenial main' > /etc/apt/sources.list.d/java-8-debian.list
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 
     apt-get update
-    apt-get -y install oracle-java8-installer
-    apt-get -y install oracle-java8-set-default
     apt-get -y install pegasus
     apt-get -y install ligo-proxy-utils
     apt-get -y install ecp-cookie-init
