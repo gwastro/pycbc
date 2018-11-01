@@ -84,6 +84,7 @@ parser.add_argument('--maximum-duration', default=None, type=float,
 parser.add_argument('--wiki-file',
                     help="Name of file to save wiki-formatted table in")
 parser.add_argument('--output-map')
+parser.add_argument('--transformation-catalog')
 parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
@@ -166,7 +167,8 @@ if len(trigs.snr) == 0:
     # There are no triggers, make no-op job and exit
     noop_node = mini.create_noop_node()
     workflow += noop_node
-    workflow.save(filename=args.output_file, output_map_path=args.output_map)
+    workflow.save(filename=args.output_file, output_map_path=args.output_map,
+                  transformation_catalog_path=args.transformation_catalog)
     sys.exit(0)
 
 trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,

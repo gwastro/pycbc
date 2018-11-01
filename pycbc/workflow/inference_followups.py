@@ -92,6 +92,8 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
                                      tags=tags)
     node.new_output_file_opt(workflow.analysis_time, ".dax.map",
                                      "--output-map", tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, ".tc.txt",
+                                     "--transformation-catalog", tags=tags)
 
     # get dax name and use it for the workflow name
     name = node.output_files[0].name
@@ -101,6 +103,9 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     map_file = node.output_files[1]
     node.add_opt("--output-dir", out_dir)
 
+    # get the transformation catalog name
+    tc_file = node.output_files[2]
+
     # add this node to the workflow
     workflow += node
 
@@ -109,7 +114,7 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     fil = node.output_files[0]
     job = dax.DAX(fil)
     job.addArguments("--basename %s" % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file)
+    Workflow.set_job_properties(job, map_file, tc_file)
     workflow._adag.addJob(job)
 
     # make dax a child of the inference workflow generator node

@@ -166,6 +166,8 @@ class Executable(pegasus_workflow.Executable):
             self.ifo_string = None
         self.cp = cp
         self.universe=universe
+        self.container_cls = None
+        self.container_type = None
 
         try:
             self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
@@ -181,8 +183,43 @@ class Executable(pegasus_workflow.Executable):
         # Determine the level at which output files should be kept
         self.update_current_retention_level(self.current_retention_level)
 
-        super(Executable, self).__init__(self.tagged_name,
-                                         installed=self.installed)
+        # Determine if this executables should be run in a container
+        try:
+            self.container_type = cp.get('pegasus_container-%s' % name,
+                                         'type')
+        except:
+            pass
+
+        if self.container_type is not None:
+            self.container_img = cp.get('pegasus_container-%s' % name,
+                                        'image')
+            try:
+                self.container_site = cp.get('pegasus_container-%s' % name,
+                                             'image_site')
+            except:
+                self.container_site = 'local'
+
+            try:
+                self.container_mount = cp.get('pegasus_container-%s' % name,
+                                             'mount').split(',')
+            except:
+                self.container_mount = None
+
+
+            self.container_cls = Pegasus.DAX3.Container("{}-container".format(
+                                                    name),
+                                                    self.container_type,
+                                                    self.container_img,
+                                                    imagesite=self.container_site,
+                                                    mount=self.container_mount)
+
+            super(Executable, self).__init__(self.tagged_name,
+                                             installed=self.installed,
+                                             container=self.container_cls)
+
+        else:
+            super(Executable, self).__init__(self.tagged_name,
+                                             installed=self.installed)
 
         self._set_pegasus_profile_options()
 
@@ -233,6 +270,7 @@ class Executable(pegasus_workflow.Executable):
 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
+
     @property
     def ifo(self):
         """Return the ifo.
@@ -578,6 +616,15 @@ class Workflow(pegasus_workflow.Workflow):
         return path
 
     @property
+    def transformation_catalog(self):
+        if self.in_workflow is not False:
+            name = self.name + '.tc.txt'
+        else:
+            name = 'tc.txt'
+        path =  os.path.join(os.getcwd(), name)
+        return path
+
+    @property
     def staging_site(self):
         if self.in_workflow is not False:
             workflow_section = 'workflow-%s' % self.name
@@ -627,11 +674,22 @@ class Workflow(pegasus_workflow.Workflow):
             fil.PFN(fil.storage_path, site='local')
 
     @staticmethod
-    def set_job_properties(job, output_map_file, staging_site=None):
+    def set_job_properties(job, output_map_file, transformation_catalog_file,
+                           staging_site=None):
+
         job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' %
                          os.path.basename(output_map_file.name))
         job.uses(output_map_file, link=Pegasus.DAX3.Link.INPUT)
         job.addArguments('-Dpegasus.dir.storage.mapper.replica=File')
+
+        # FIXME this is an ugly hack to connect the right transformation
+        # catalog to the right DAX beacuse Pegasus 4.9 does not support
+        # the full transformation catalog syntax in the DAX. This will go
+        # away in Pegasus 5.x when this code is re-written.
+
+        job.addArguments('-Dpegasus.catalog.transformation.file=%s' %
+                         os.path.basename(transformation_catalog_file.name))
+        job.uses(transformation_catalog_file, link=Pegasus.DAX3.Link.INPUT)
 
         job.addArguments('--output-site local')
         job.addArguments('--cleanup inplace')
@@ -646,7 +704,9 @@ class Workflow(pegasus_workflow.Workflow):
         if staging_site:
             job.addArguments('--staging-site %s' % staging_site)
 
-    def save(self, filename=None, output_map_path=None, staging_site=None):
+    def save(self, filename=None, output_map_path=None,
+             transformation_catalog_path=None, staging_site=None):
+
         if output_map_path is None:
             output_map_path = self.output_map
         output_map_file = Pegasus.DAX3.File(os.path.basename(output_map_path))
@@ -654,9 +714,20 @@ class Workflow(pegasus_workflow.Workflow):
         if self.in_workflow is not False:
             self.in_workflow._adag.addFile(output_map_file)
 
+        if transformation_catalog_path is None:
+            transformation_catalog_path = self.transformation_catalog
+        transformation_catalog_file = Pegasus.DAX3.File(os.path.basename(
+                                                        transformation_catalog_path))
+        transformation_catalog_file.addPFN(Pegasus.DAX3.PFN(
+            transformation_catalog_path, 'local'))
+        if self.in_workflow is not False:
+            self.in_workflow._adag.addFile(transformation_catalog_file)
+
         staging_site = self.staging_site
 
-        Workflow.set_job_properties(self.as_job, output_map_file, staging_site)
+        Workflow.set_job_properties(self.as_job, output_map_file,
+                                    transformation_catalog_file,
+                                    staging_site)
 
         # add executable pfns for local site to dax
         for exe in self._executables:
@@ -681,7 +752,8 @@ class Workflow(pegasus_workflow.Workflow):
         fp.close()
 
         # save the dax file
-        super(Workflow, self).save(filename=filename)
+        super(Workflow, self).save(filename=filename,
+                                   tc=transformation_catalog_path)
 
         # add workflow storage locations to the output mapper
         f = open(output_map_path, 'w')
