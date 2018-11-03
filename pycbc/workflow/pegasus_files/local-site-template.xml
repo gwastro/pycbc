@@ -4,7 +4,7 @@
         </file-server>
     </directory>
     <directory  path="$LOCAL_SITE_PATH" type="shared-storage" free-size="null" total-size="null">
-        <file-server  operation="all" url="$LOCAL_STORAGE_URL">
+        <file-server  operation="all" url="file://${LOCAL_SITE_PATH}">
         </file-server>
     </directory>
     <profile namespace="pegasus" key="style">condor</profile>
