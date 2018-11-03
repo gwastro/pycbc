@@ -187,21 +187,29 @@ class Executable(pegasus_workflow.Executable):
         try:
             self.container_type = cp.get('pegasus_profile-%s' % name,
                                          'container|type')
+            cp.remove_option('pegasus_profile-%s' % name,
+                             'container|type')
         except:
             pass
 
         if self.container_type is not None:
             self.container_img = cp.get('pegasus_profile-%s' % name,
                                         'container|image')
+            cp.remove_option('pegasus_profile-%s' % name,
+                             'container|image')
             try:
                 self.container_site = cp.get('pegasus_profile-%s' % name,
                                              'container|image_site')
+                cp.remove_option('pegasus_profile-%s' % name,
+                                 'container|image_site')
             except:
                 self.container_site = 'local'
 
             try:
                 self.container_mount = cp.get('pegasus_profile-%s' % name,
                                              'container|mount').split(',')
+                cp.remove_option('pegasus_profile-%s' % name,
+                                 'container|mount')
             except:
                 self.container_mount = None
 
