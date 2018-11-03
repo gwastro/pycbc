@@ -15,3 +15,4 @@
     <profile namespace="condor" key="requirements">OSGVO_OS_STRING == "RHEL 7" &amp;&amp; HAS_MODULES == True</profile>
     <profile namespace="condor" key="+WantsStashCache">True</profile>
     <profile namespace="condor" key="+WantsSingularity">True</profile>
+    <profile namespace="env" key="TMPDIR">/srv</profile>
