@@ -995,7 +995,7 @@ Add the following additional arguments to ``pycbc_submit_dax``::
     --no-create-proxy \
     --execution-sites osg \
     --append-pegasus-property 'pegasus.transfer.bypass.input.staging=true' \
-    --remote-staging-server `hostname -f` \
+    --local-staging-server gsiftp://`hostname -f` \
 
 ``hostname -f`` will give the correct value if there is a gsiftp server running on the submit machine.  If not, change this as needed. The remote-staging-site is the intermediary computer than can pass files between the submitting computer and the computers doing the work.  ``hostname -f`` returns the full name of the computer. The full name of the computer that ``hostname -f`` has to be one that is accessible to both the submit machine and the workers. The ``--no-create-proxy`` may be omitted if you have LIGO.org credentials and will be
 retrieving data from authenticated locations in CVMFS.

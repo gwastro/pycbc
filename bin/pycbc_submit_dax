@@ -26,7 +26,7 @@ SHARED_FILESYSTEM=0
 SITE_LIST=""
 STAGING_SITES=""
 TRANSFORMATION_CATALOG=""
-LOCAL_GSIFTP_SERVER=""
+LOCAL_SITE_SERVER=""
 REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
 NO_GRID=""
@@ -48,7 +48,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:Gh --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -86,10 +86,10 @@ while true ; do
            set -e
            shift 2 ;;
       esac ;;
-    -g|--local-gsiftp-server)
+    -g|--local-staging-server)
       case "$2" in
         "") shift 2 ;;
-        *) LOCAL_GSIFTP_SERVER=$2 ; shift 2 ;;
+        *) LOCAL_SITE_SERVER=$2 ; shift 2 ;;
       esac ;;
     -r|--remote-staging-server)
       case "$2" in
@@ -180,12 +180,12 @@ while true ; do
       echo "optional arguments:"
       echo "  -h, --help              show this help message and exit"
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
-      echo "  -g, --local-gsiftp-server HOST provide a gsiftp url on HOST"
-      echo "                                 for the local site storage"
-      echo "                                 and scratch directories"
-      echo "  -r, --remote-staging-server HOST provide a gsiftp url on HOST"
-      echo "                                 for the remote site storage"
-      echo "                                 and scratch directories"
+      echo "  -g, --local-staging-server uri://host provide a uri on host"
+      echo "                                 for the local site scratch"
+      echo "                                 (default is file://)"
+      echo "  -r, --remote-staging-server uri://host provide a uri on host"
+      echo "                                 for the remote site scratch"
+      echo "                                 (default is file://)"
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
       echo "  -P, --append-pegasus-property STRING add the extra property"
@@ -304,18 +304,17 @@ fi
 
 # Create the site catalog
 export LOCAL_SITE_PATH=${PWD}
-if [ -z $LOCAL_GSIFTP_SERVER ] ; then
-  LOCAL_SITE_URL="file://${LOCAL_SITE_PATH}"
+if [ -z $LOCAL_SITE_SERVER ] ; then
+  LOCAL_SITE_SCRATCH_URL="file://${LOCAL_SITE_PATH}"
 else
-  LOCAL_SITE_URL="gsiftp://${LOCAL_GSIFTP_SERVER}${LOCAL_SITE_PATH}"
+  LOCAL_SITE_SCRATCH_URL="${LOCAL_SITE_SERVER}${LOCAL_SITE_PATH}"
 fi
-export LOCAL_SITE_URL
+export LOCAL_SITE_SCRATCH_URL
 
 # add the local site
 # Set remote staging url to local
 if [ -z $SITE_LIST ] ; then
   SITE_LIST="local"
-  REMOTE_STAGING_URL=${LOCAL_SITE_URL}
 else
   SITE_LIST="local,${SITE_LIST}"
 fi
@@ -330,7 +329,7 @@ if [ ${SITE_LIST} != "local" ] ; then
   if [ -z $REMOTE_STAGING_SERVER ] ; then
     REMOTE_STAGING_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
   else
-    REMOTE_STAGING_URL="gsiftp://${REMOTE_STAGING_SERVER}${LOCAL_SITE_PATH}"
+    REMOTE_STAGING_URL="${REMOTE_STAGING_SERVER}${LOCAL_SITE_PATH}"
   fi
 fi
 export REMOTE_STAGING_URL
