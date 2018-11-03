@@ -1007,6 +1007,10 @@ You will also need to specify where the code should get the data needed to gener
 
 Here, ``current`` is a symbolic link to the latest version of the data and can be replaced with a specific release (e.g.  ``e02dab8c``) if required.
 
+If you are using the PyInstaller bundled executable, you will need to give ``pycbc_submit_dax`` the additional argument::
+
+    --append-site-profile 'osg:env|NO_TMPDIR:1' \
+
 The set of arguments above will allow ``pycbc_inspiral`` to run on any OSG machine to which you have access, as well as
 the local compute cluster. If you do not want your jobs to run on the local cluster, but only on shared resources, then add
 the argument::
