@@ -723,7 +723,7 @@ def convert_cachelist_to_filelist(datafindcache_list):
                     'file:///cvmfs/gwosc.osgstorage.org/'):
                     # Datafind returned a URL valid on the osg as well
                     # so add the additional PFNs to allow OSG access.
-                    for s in ['osg', 'orangegrid']:
+                    for s in ['osg', 'orangegrid', 'osgconnect']:
                         currFile.PFN(frame.url, site=s)
                         if 'H1_LOSC_4_V1' in frame.url:
                             currFile.PFN(frame.url.replace(
