@@ -185,23 +185,23 @@ class Executable(pegasus_workflow.Executable):
 
         # Determine if this executables should be run in a container
         try:
-            self.container_type = cp.get('pegasus_container-%s' % name,
-                                         'type')
+            self.container_type = cp.get('pegasus_profile-%s' % name,
+                                         'container|type')
         except:
             pass
 
         if self.container_type is not None:
-            self.container_img = cp.get('pegasus_container-%s' % name,
-                                        'image')
+            self.container_img = cp.get('pegasus_profile-%s' % name,
+                                        'container|image')
             try:
-                self.container_site = cp.get('pegasus_container-%s' % name,
-                                             'image_site')
+                self.container_site = cp.get('pegasus_profile-%s' % name,
+                                             'container|image_site')
             except:
                 self.container_site = 'local'
 
             try:
-                self.container_mount = cp.get('pegasus_container-%s' % name,
-                                             'mount').split(',')
+                self.container_mount = cp.get('pegasus_profile-%s' % name,
+                                             'container|mount').split(',')
             except:
                 self.container_mount = None
 
