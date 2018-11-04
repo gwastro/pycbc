@@ -725,6 +725,7 @@ def convert_cachelist_to_filelist(datafindcache_list):
                     # so add the additional PFNs to allow OSG access.
                     for s in ['osg', 'orangegrid', 'osgconnect']:
                         currFile.PFN(frame.url, site=s)
+                        currFile.PFN(frame.url, site="{}-scratch".format(s))
             else:
                 currFile.PFN(frame.url, site='notlocal')
 
