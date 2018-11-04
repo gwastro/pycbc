@@ -307,7 +307,7 @@ export LOCAL_SITE_PATH=${PWD}
 if [ -z $LOCAL_SITE_SERVER ] ; then
   LOCAL_SITE_SCRATCH_URL="file://${LOCAL_SITE_PATH}"
 else
-  if [ "$LOCAL_SITE_SERVER" =~ "^stash://" ] ; then
+  if [[ "$LOCAL_SITE_SERVER" == stash://* ]] ; then
     # remove any leading /stash from the path
     TMP_LOCAL_SITE_PATH=`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`
   else
@@ -335,7 +335,7 @@ if [ ${SITE_LIST} != "local" ] ; then
   if [ -z $REMOTE_STAGING_SERVER ] ; then
     REMOTE_STAGING_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
   else
-    if [ "$LOCAL_SITE_SERVER" =~ "^stash://" ] ; then
+    if [[ "$LOCAL_SITE_SERVER" == stash://* ]] ; then
       # remove any leading /stash from the path
       TMP_LOCAL_SITE_PATH=`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`
     else
