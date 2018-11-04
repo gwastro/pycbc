@@ -16,3 +16,4 @@
     <profile namespace="condor" key="Requirements">((HAS_CVMFS_oasis_opensciencegrid_org is true) &amp;&amp; (HAS_CVMFS_gwosc_osgstorage_org is true) &amp;&amp; (HAS_CVMFS_gwosc_osgstorage_org is true) &amp;&amp; (HAS_SINGULARITY is TRUE) &amp;&amp; (OSGVO_OS_STRING == "RHEL 7") &amp;&amp; (HAS_MODULES == True))</profile>
     <profile namespace="condor" key="+SingularityBindCVMFS">True</profile>
     <profile namespace="env" key="TMPDIR">/srv</profile>
+    <profile namespace="condor" key="getenv">False</profile>
