@@ -26,7 +26,7 @@ SHARED_FILESYSTEM=0
 SITE_LIST=""
 STAGING_SITES=""
 TRANSFORMATION_CATALOG=""
-LOCAL_SITE_SERVER=""
+LOCAL_SITE_SERVER="file://"
 REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
 NO_GRID=""
@@ -184,8 +184,7 @@ while true ; do
       echo "                                 for the local site scratch"
       echo "                                 (default is file://)"
       echo "  -r, --remote-staging-server uri://host provide a uri on host"
-      echo "                                 for the remote site scratch"
-      echo "                                 (default is file://)"
+      echo "                                 for the remote site scratch."
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
       echo "  -P, --append-pegasus-property STRING add the extra property"
@@ -304,18 +303,21 @@ fi
 
 # Create the site catalog
 export LOCAL_SITE_PATH=${PWD}
-if [ -z $LOCAL_SITE_SERVER ] ; then
-  LOCAL_SITE_SCRATCH_URL="file://${LOCAL_SITE_PATH}"
+if [[ "$LOCAL_SITE_SERVER" == stash://* ]] ; then
+  # remove any leading /stash from the path
+  # all the paths should be set to stashcache
+  LOCAL_SITE_SCRATCH_PATH='stash://'`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`
+  LOCAL_SITE_SCRATCH_URL=${LOCAL_SITE_SCRATCH_PATH}
+  LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_SCRATCH_PATH}
+  LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_SCRATCH_PATH}
 else
-  if [[ "$LOCAL_SITE_SERVER" == stash://* ]] ; then
-    # remove any leading /stash from the path
-    TMP_LOCAL_SITE_PATH=`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`
-  else
-    TMP_LOCAL_SITE_PATH=${LOCAL_SITE_PATH}
-  fi
-  LOCAL_SITE_SCRATCH_URL="${LOCAL_SITE_SERVER}${TMP_LOCAL_SITE_PATH}"
+  LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
+  LOCAL_SITE_SCRATCH_URL=${LOCAL_SITE_SERVER}${LOCAL_SITE_PATH}
+  LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_PATH}
+  LOCAL_SITE_STORAGE_URL='file://'${LOCAL_SITE_PATH}
 fi
-export LOCAL_SITE_SCRATCH_URL
+export LOCAL_SITE_SCRATCH_PATH LOCAL_SITE_SCRATCH_URL
+export LOCAL_SITE_STORAGE_PATH LOCAL_SITE_STORAGE_URL
 
 # add the local site
 # Set remote staging url to local
