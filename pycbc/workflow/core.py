@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string, urlparse
+import sys, os, stat, subprocess, logging, math, string, urlparse, urllib
 import ConfigParser, copy
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations
@@ -654,7 +654,9 @@ class Workflow(pegasus_workflow.Workflow):
 
             resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             node.executable.clear_pfns()
-            node.executable.add_pfn(resolved, site='local')
+            node.executable.add_pfn(urlparse.urljoin('file:',
+                                    urllib.pathname2url(
+                                    resolved)), site='local')
 
         cmd_list = node.get_command_line()
 
@@ -671,7 +673,9 @@ class Workflow(pegasus_workflow.Workflow):
 
         for fil in node._outputs:
             fil.node = None
-            fil.PFN(fil.storage_path, site='local')
+            fil.PFN(urlparse.urljoin('file:', 
+                    urllib.pathname2url(fil.storage_path)),
+                    site='local')
 
     @staticmethod
     def set_job_properties(job, output_map_file, transformation_catalog_file,
@@ -1691,7 +1695,9 @@ class SegFile(File):
         if not file_exists:
             instnc.to_segment_xml()
         else:
-            instnc.PFN(instnc.storage_path, site='local')
+            instnc.PFN(urlparse.urljoin('file:',
+                       urllib.pathname2url(
+                       instnc.storage_path)), site='local')
         return instnc
 
     @classmethod
@@ -1824,7 +1830,9 @@ class SegFile(File):
                                  self.has_pfn(self.storage_path, site='local'):
             pass
         else:
-            self.PFN(self.storage_path, site='local')
+            self.PFN(urlparse.urljoin('file:', 
+                     urllib.pathname2url(self.storage_path)),
+                     site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
