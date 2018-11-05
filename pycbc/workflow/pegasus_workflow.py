@@ -27,7 +27,7 @@
 provides additional abstraction and argument handling.
 """
 import os
-import urlparse
+import urlparse, urllib
 from Pegasus.catalogs.transformation_catalog import TransformationCatalog
 import Pegasus.DAX3 as dax
 
@@ -487,6 +487,8 @@ class File(DataStorage, dax.File):
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
             if os.path.isfile(urlparts.path):
                 path = os.path.abspath(urlparts.path)
+                path = urlparse.urljoin('file:',
+                                        urllib.pathname2url(path)) 
                 site = 'local'
 
         fil = File(os.path.basename(path))

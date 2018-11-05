@@ -331,9 +331,12 @@ class Executable(pegasus_workflow.Executable):
                 for path in values:
                     curr_lfn = os.path.basename(path)
 
-                    # If the file exists make sure to use.
+                    # If the file exists make sure to use the
+                    # fill path as a file:// URL
                     if os.path.isfile(path):
-                        curr_pfn = os.path.abspath(path)
+                        curr_pfn = urlparse.urljoin('file:',
+                                    urllib.pathname2url(
+                                    os.path.abspath(path))) 
                     else:
                         curr_pfn = value
 
