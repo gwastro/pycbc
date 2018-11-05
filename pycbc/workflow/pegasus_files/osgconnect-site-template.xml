@@ -1,8 +1,8 @@
   <!-- a separate staging site is added else, the intermediate files are symlinked from the home
        directory since symlinking is turned on -->
   <site handle="osgconnect-scratch" arch="x86_64" os="LINUX">
-   <directory  path="${LOCAL_SITE_PATH}/osgconnect-scratch" type="shared-scratch" free-size="null" total-size="null">
-        <file-server  operation="all" url="${LOCAL_SITE_SCRATCH_URL}/osgconnect-scratch">
+   <directory  path="${REMOTE_SITE_SCRATCH_PATH}/osgconnect-scratch" type="shared-scratch" free-size="null" total-size="null">
+        <file-server  operation="all" url="${REMOTE_SITE_SCRATCH_URL}/osgconnect-scratch">
         </file-server>
     </directory>
   </site>
