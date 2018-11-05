@@ -303,18 +303,14 @@ fi
 
 # Create the site catalog
 export LOCAL_SITE_PATH=${PWD}
+LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_PATH}
+LOCAL_SITE_STORAGE_URL='file://'${LOCAL_SITE_PATH}
+LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
 if [[ "$LOCAL_SITE_SERVER" == stash://* ]] ; then
   # remove any leading /stash from the path
-  # all the paths should be set to stashcache
-  LOCAL_SITE_SCRATCH_PATH='stash://'`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`
-  LOCAL_SITE_SCRATCH_URL=${LOCAL_SITE_SCRATCH_PATH}
-  LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_SCRATCH_PATH}
-  LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_SCRATCH_PATH}
+  LOCAL_SITE_SCRATCH_URL='stash://'`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`
 else
-  LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
   LOCAL_SITE_SCRATCH_URL=${LOCAL_SITE_SERVER}${LOCAL_SITE_PATH}
-  LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_PATH}
-  LOCAL_SITE_STORAGE_URL='file://'${LOCAL_SITE_PATH}
 fi
 export LOCAL_SITE_SCRATCH_PATH LOCAL_SITE_SCRATCH_URL
 export LOCAL_SITE_STORAGE_PATH LOCAL_SITE_STORAGE_URL
@@ -333,16 +329,15 @@ fi
 
 # Create the site catalog
 # Don't overwrite remote staging URL if site list is local
+REMOTE_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
 if [ ${SITE_LIST} != "local" ] ; then
   if [ -z $REMOTE_STAGING_SERVER ] ; then
     REMOTE_SITE_SCRATCH_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
   else
     if [[ "${REMOTE_STAGING_SERVER}" == stash://* ]] ; then
       # remove any leading /stash from the path
-      REMOTE_SITE_SCRATCH_PATH='stash://'`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`
-      REMOTE_SITE_SCRATCH_URL=${REMOTE_SITE_SCRATCH_PATH}
+      REMOTE_SITE_SCRATCH_URL='stash://'`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`
     else
-      REMOTE_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
       REMOTE_SITE_SCRATCH_URL="${REMOTE_STAGING_SERVER}${REMOTE_SITE_SCRATCH_PATH}"
     fi
   fi
