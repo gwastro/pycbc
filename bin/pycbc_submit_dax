@@ -26,7 +26,7 @@ SHARED_FILESYSTEM=0
 SITE_LIST=""
 STAGING_SITES=""
 TRANSFORMATION_CATALOG=""
-LOCAL_SITE_SERVER="file://"
+LOCAL_STAGING_SERVER="file://"
 REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
 NO_GRID=""
@@ -89,7 +89,7 @@ while true ; do
     -g|--local-staging-server)
       case "$2" in
         "") shift 2 ;;
-        *) LOCAL_SITE_SERVER=$2 ; shift 2 ;;
+        *) LOCAL_STAGING_SERVER=$2 ; shift 2 ;;
       esac ;;
     -r|--remote-staging-server)
       case "$2" in
@@ -305,13 +305,13 @@ fi
 export LOCAL_SITE_PATH=${PWD}
 LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_PATH}
 LOCAL_SITE_STORAGE_URL='file://'${LOCAL_SITE_PATH}
-if [[ "$LOCAL_SITE_SERVER" == stash://* ]] ; then
+if [[ "$LOCAL_STAGING_SERVER" == stash://* ]] ; then
   # remove any leading /stash from the path
-  LOCAL_SITE_SCRATCH_PATH="/stash/"`echo ${LOCAL_SITE_SERVER} | sed 's+^stash://++g'`/`uuidgen`
-  LOCAL_SITE_SCRATCH_URL=${LOCAL_SITE_SERVER}`echo ${LOCAL_SITE_SCRATCH_PATH} | sed 's+^/stash++g'`
+  LOCAL_SITE_SCRATCH_PATH="/stash/"`echo ${LOCAL_STAGING_SERVER} | sed 's+^stash://++g'`/`uuidgen`
+  LOCAL_SITE_SCRATCH_URL=${LOCAL_STAGING_SERVER}`echo ${LOCAL_SITE_SCRATCH_PATH} | sed 's+^/stash++g'`
 else
   LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
-  LOCAL_SITE_SCRATCH_URL=${LOCAL_SITE_SERVER}${LOCAL_SITE_PATH}
+  LOCAL_SITE_SCRATCH_URL=${LOCAL_STAGING_SERVER}${LOCAL_SITE_PATH}
 fi
 export LOCAL_SITE_SCRATCH_PATH LOCAL_SITE_SCRATCH_URL
 export LOCAL_SITE_STORAGE_PATH LOCAL_SITE_STORAGE_URL
@@ -335,8 +335,8 @@ if [ ${SITE_LIST} != "local" ] ; then
     REMOTE_SITE_SCRATCH_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
   else
     if [[ "${REMOTE_STAGING_SERVER}" == stash://* ]] ; then
-      REMOTE_SITE_SCRATCH_PATH="/stash/"`echo ${REMOTE_SITE_SERVER} | sed 's+^stash://++g'`/`uuidgen`
-      REMOTE_SITE_SCRATCH_URL=${REMOTE_SITE_SERVER}`echo ${REMOTE_SITE_SCRATCH_PATH} | sed 's+^/stash++g'`
+      REMOTE_SITE_SCRATCH_PATH="/stash/"`echo ${REMOTE_STAGING_SERVER} | sed 's+^stash://++g'`/`uuidgen`
+      REMOTE_SITE_SCRATCH_URL=${REMOTE_STAGING_SERVER}`echo ${REMOTE_SITE_SCRATCH_PATH} | sed 's+^/stash++g'`
     else
       REMOTE_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
       REMOTE_SITE_SCRATCH_URL="${REMOTE_STAGING_SERVER}${REMOTE_SITE_SCRATCH_PATH}"
