@@ -353,7 +353,7 @@ if [ $NO_ACCOUNTING_GROUP == 0 ] ; then
 EOF
 fi
 
-if [ ! -z "${NO_GRID}" ] ; then
+if [ -z "${NO_GRID}" ] ; then
   echo '    <profile namespace="condor" key="use_x509userproxy">True</profile>' >> local-extra-site-properties.xml
 fi
 
