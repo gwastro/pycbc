@@ -308,7 +308,7 @@ LOCAL_SITE_STORAGE_URL='file://'${LOCAL_SITE_PATH}
 LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
 if [[ "$LOCAL_SITE_SERVER" == stash://* ]] ; then
   # remove any leading /stash from the path
-  LOCAL_SITE_SCRATCH_URL='stash://'`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`/`uuidgen`
+  LOCAL_SITE_SCRATCH_URL=${LOCAL_SITE_SERVER}`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`/`uuidgen`
 else
   LOCAL_SITE_SCRATCH_URL=${LOCAL_SITE_SERVER}${LOCAL_SITE_PATH}
 fi
@@ -336,7 +336,7 @@ if [ ${SITE_LIST} != "local" ] ; then
   else
     if [[ "${REMOTE_STAGING_SERVER}" == stash://* ]] ; then
       # remove any leading /stash from the path
-      REMOTE_SITE_SCRATCH_URL='stash://'`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`/`uuidgen`
+      REMOTE_SITE_SCRATCH_URL=${REMOTE_STAGING_SERVER}'`echo ${LOCAL_SITE_PATH} | sed 's+^/stash++g'`/`uuidgen`
     else
       REMOTE_SITE_SCRATCH_URL="${REMOTE_STAGING_SERVER}${REMOTE_SITE_SCRATCH_PATH}"
     fi
