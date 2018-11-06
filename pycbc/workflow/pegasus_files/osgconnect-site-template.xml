@@ -13,7 +13,7 @@
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
     <profile namespace="condor" key="+OpenScienceGrid">True</profile>
-    <profile namespace="condor" key="Requirements">((HAS_CVMFS_oasis_opensciencegrid_org is true) &amp;&amp; (HAS_CVMFS_gwosc_osgstorage_org is true) &amp;&amp; (HAS_CVMFS_gwosc_osgstorage_org is true) &amp;&amp; (HAS_SINGULARITY is TRUE) &amp;&amp; (OSGVO_OS_STRING == "RHEL 7") &amp;&amp; (HAS_MODULES == True))</profile>
+    <profile namespace="condor" key="Requirements">((HAS_CVMFS_oasis_opensciencegrid_org is true) &amp;&amp; (HAS_CVMFS_gwosc_osgstorage_org is true) &amp;&amp; (HAS_CVMFS_gwosc_osgstorage_org is true) &amp;&amp; (HAS_SINGULARITY is TRUE) &amp;&amp; (OSGVO_OS_STRING == "RHEL 7"))</profile>
     <profile namespace="condor" key="+SingularityBindCVMFS">True</profile>
     <profile namespace="env" key="TMPDIR">/srv</profile>
     <profile namespace="condor" key="getenv">False</profile>
