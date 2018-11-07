@@ -123,7 +123,7 @@ def get_version_info():
     except:
         vinfo = vdummy()
         vinfo.version = '1.13.0'
-        vinfo.release = 'False'
+        vinfo.release = 'True'
 
     with open('pycbc/version.py', 'w') as f:
         f.write("# coding: utf-8\n")
