@@ -303,7 +303,10 @@ if not args.cumulative:
     # add second y-axis for probabilities, sigmas
     sigmas = numpy.arange(6)+1
     ax1 = pylab.gca()
-    ax1.set_axis_bgcolor('none')
+    if hasattr(ax1, 'set_facecolor'):
+        ax1.set_facecolor('none')
+    else:
+        ax1.set_axis_bgcolor('none')
     ax2 = ax1.twinx()
     ax1.set_zorder(ax2.get_zorder()+1) # put axis1 on top
     pylab.sca(ax2)

@@ -723,36 +723,9 @@ def convert_cachelist_to_filelist(datafindcache_list):
                     'file:///cvmfs/gwosc.osgstorage.org/'):
                     # Datafind returned a URL valid on the osg as well
                     # so add the additional PFNs to allow OSG access.
-                    for s in ['osg', 'orangegrid']:
+                    for s in ['osg', 'orangegrid', 'osgconnect']:
                         currFile.PFN(frame.url, site=s)
-                        if 'H1_LOSC_4_V1' in frame.url:
-                            currFile.PFN(frame.url.replace(
-                                'file:///cvmfs/gwosc.osgstorage.org/'+
-                                'gwdata/O1/strain.4k/frame.v1/H1/',
-                                'https://www.gw-openscience.org/'+
-                                'archive/data/O1/'),
-                                site=s)
-                        elif 'L1_LOSC_4_V1' in frame.url:
-                            currFile.PFN(frame.url.replace(
-                                'file:///cvmfs/gwosc.osgstorage.org/'+
-                                'gwdata/O1/strain.4k/frame.v1/L1/',
-                                'https://www.gw-openscience.org/'+
-                                'archive/data/O1/'),
-                                site=s)
-                        elif 'H1_LOSC_16_V1' in frame.url:
-                            currFile.PFN(frame.url.replace(
-                                'file:///cvmfs/gwosc.osgstorage.org/'+
-                                'gwdata/O1/strain.16k/frame.v1/H1/',
-                                'https://www.gw-openscience.org/'+
-                                'archive/data/O1_16KHZ/'),
-                                site=s)
-                        elif 'L1_LOSC_16_V1' in frame.url:
-                            currFile.PFN(frame.url.replace(
-                                'file:///cvmfs/gwosc.osgstorage.org/'+
-                                'gwdata/O1/strain.16k/frame.v1/L1/',
-                                'https://www.gw-openscience.org/'+
-                                'archive/data/O1_16KHZ/'),
-                                site=s)
+                        currFile.PFN(frame.url, site="{}-scratch".format(s))
             else:
                 currFile.PFN(frame.url, site='notlocal')
 

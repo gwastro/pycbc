@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string, urlparse
+import sys, os, stat, subprocess, logging, math, string, urlparse, urllib
 import ConfigParser, copy
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations
@@ -185,23 +185,23 @@ class Executable(pegasus_workflow.Executable):
 
         # Determine if this executables should be run in a container
         try:
-            self.container_type = cp.get('pegasus_container-%s' % name,
-                                         'type')
+            self.container_type = cp.get('pegasus_profile-%s' % name,
+                                         'container|type')
         except:
             pass
 
         if self.container_type is not None:
-            self.container_img = cp.get('pegasus_container-%s' % name,
-                                        'image')
+            self.container_img = cp.get('pegasus_profile-%s' % name,
+                                        'container|image')
             try:
-                self.container_site = cp.get('pegasus_container-%s' % name,
-                                             'image_site')
+                self.container_site = cp.get('pegasus_profile-%s' % name,
+                                             'container|image_site')
             except:
                 self.container_site = 'local'
 
             try:
-                self.container_mount = cp.get('pegasus_container-%s' % name,
-                                             'mount').split(',')
+                self.container_mount = cp.get('pegasus_profile-%s' % name,
+                                             'container|mount').split(',')
             except:
                 self.container_mount = None
 
@@ -297,7 +297,7 @@ class Executable(pegasus_workflow.Executable):
         """
         for opt in cp.options(sec):
             namespace = opt.split('|')[0]
-            if namespace == 'pycbc':
+            if namespace == 'pycbc' or namespace == 'container':
                 continue
 
             value = string.strip(cp.get(sec, opt))
@@ -331,9 +331,12 @@ class Executable(pegasus_workflow.Executable):
                 for path in values:
                     curr_lfn = os.path.basename(path)
 
-                    # If the file exists make sure to use.
+                    # If the file exists make sure to use the
+                    # fill path as a file:// URL
                     if os.path.isfile(path):
-                        curr_pfn = os.path.abspath(path)
+                        curr_pfn = urlparse.urljoin('file:',
+                                    urllib.pathname2url(
+                                    os.path.abspath(path))) 
                     else:
                         curr_pfn = value
 
@@ -654,7 +657,9 @@ class Workflow(pegasus_workflow.Workflow):
 
             resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             node.executable.clear_pfns()
-            node.executable.add_pfn(resolved, site='local')
+            node.executable.add_pfn(urlparse.urljoin('file:',
+                                    urllib.pathname2url(
+                                    resolved)), site='local')
 
         cmd_list = node.get_command_line()
 
@@ -671,7 +676,9 @@ class Workflow(pegasus_workflow.Workflow):
 
         for fil in node._outputs:
             fil.node = None
-            fil.PFN(fil.storage_path, site='local')
+            fil.PFN(urlparse.urljoin('file:', 
+                    urllib.pathname2url(fil.storage_path)),
+                    site='local')
 
     @staticmethod
     def set_job_properties(job, output_map_file, transformation_catalog_file,
@@ -1691,7 +1698,9 @@ class SegFile(File):
         if not file_exists:
             instnc.to_segment_xml()
         else:
-            instnc.PFN(instnc.storage_path, site='local')
+            instnc.PFN(urlparse.urljoin('file:',
+                       urllib.pathname2url(
+                       instnc.storage_path)), site='local')
         return instnc
 
     @classmethod
@@ -1824,7 +1833,9 @@ class SegFile(File):
                                  self.has_pfn(self.storage_path, site='local'):
             pass
         else:
-            self.PFN(self.storage_path, site='local')
+            self.PFN(urlparse.urljoin('file:', 
+                     urllib.pathname2url(self.storage_path)),
+                     site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
