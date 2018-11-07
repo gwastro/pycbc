@@ -250,5 +250,5 @@ for num_event in range(num_events):
     num_event += 1
 
 workflow.save(filename=args.output_file, output_map_path=args.output_map,
-              transformation_catalog_path=args.transformation_catalog
+              transformation_catalog_path=args.transformation_catalog)
 layout.two_column_layout(args.output_dir, layouts)
