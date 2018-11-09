@@ -115,7 +115,7 @@ kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)',
         'cmd' :' '.join(sys.argv), }
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
-# Get segments and find where the data is
+# Get segments and find the data locations
 wf.makedir(rdir['analysis_time/segment_data'])
 science_veto_name = 'segments-science-veto'
 primary_veto_name = 'segments-final-veto-group'
@@ -212,41 +212,43 @@ statfiles = []
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name)
 
-# setup the detector combination coincs for the filtering jobs
+# Set up the multi-ifo coinc jobs
+# MARTON: please describe what 'bg_files', 'final_bg_files' and 'ifo_ids' represent
 full_insps = insps
 ctags = [tag, 'full']
 bg_files = []
 final_bg_files = []
 ifo_ids = {}
 
-# Get the ifo precedent list for the multiifo coinc jobs
+# Get the ifo precedence values
 ifo_precedence_list = workflow.cp.get_opt_tags('workflow-coincidence', 'timeslide-precedence', ctags)
-for ifo, file in zip(*insps.categorize_by_attr('ifo')):
+for ifo, _ in zip(*insps.categorize_by_attr('ifo')):
     ifo_ids[ifo] = ifo_precedence_list.index(ifo)
 
 # Generate the possible detector combinations from 2 detectors
-# to the number of trigger files.
+# up to the number of trigger files
 for i in range(2, len(insps)+1):
     combinations = itertools.combinations(ifo_ids.keys(), i)
     for ifocomb in combinations:
+        # combination_prec stores precedence info for the detectors in the combination
         combination_prec = {}
-        inspcomb = wf.core.FileList()
-        # create the precedence list for the detector combination
         for ifo in ifocomb:
             combination_prec[ifo] = ifo_ids[ifo]
 
-        # Use the inspiral files for the detector combination only.
+        # Use only the inspiral files required for the detector combination
+        inspcomb = wf.core.FileList()
         for ifo, file in zip(*insps.categorize_by_attr('ifo')):
             if ifo in combination_prec:
                 inspcomb += file
 
-        # Determine the pivot-ifo and fixed-ifo based on the precedent list
+        # pivot_ifo is the ifo in combination_prec with the smallest precedence value
         pivot_ifo = min(combination_prec, key=combination_prec.get)
         del combination_prec[pivot_ifo]
+        # fixed_ifo is the ifo with the next smallest precedence value
         fixed_ifo = min(combination_prec, key=combination_prec.get)
 
         # Create coinc tag, and set up the coinc job for the combination
-        coinctag = '{}det_'.format(len(ifocomb))+pivot_ifo+fixed_ifo
+        coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
         ctagcomb = [tag, 'full', coinctag]
         bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
                                cum_veto_files, veto_names,
