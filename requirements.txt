@@ -18,7 +18,6 @@ cython
 ligo-segments
 
 # Needed for Parameter Estimation Tasks
-kombine>=0.8.2
 emcee==2.2.1
 
 # For LDG service access
