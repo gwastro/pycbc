@@ -351,7 +351,7 @@ class BaseModel(object):
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,
-                 sampling_transforms=None):
+                 sampling_transforms=None, **kwargs):
         # store variable and static args
         if isinstance(variable_params, basestring):
             variable_params = (variable_params,)
