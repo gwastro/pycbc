@@ -23,6 +23,7 @@ assuming various noise models.
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano)
 from .gaussian_noise import GaussianNoise
 from .marginalized_gaussian_noise import MarginalizedGaussianNoise
+from .single_template import SingleTemplate
 
 
 # Used to manage a model instance across multiple cores or MPI
@@ -178,4 +179,5 @@ models = {_cls.name: _cls for _cls in (
     TestVolcano,
     GaussianNoise,
     MarginalizedGaussianNoise,
+    SingleTemplate
 )}
