@@ -213,7 +213,9 @@ statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name)
 
 # Set up the multi-ifo coinc jobs
-# MARTON: please describe what 'bg_files', 'final_bg_files' and 'ifo_ids' represent
+# 'bg_files' will contain the files resulting from using the cum_veto_files,
+# 'final_bg_files' will contain the files resulting from using the final_veto_files and
+# 'ifo_ids' dictionary will store the index of the ifo within the precedence list keyed by ifo
 full_insps = insps
 ctags = [tag, 'full']
 bg_files = []
