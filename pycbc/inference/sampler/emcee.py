@@ -159,7 +159,7 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         if pos is None:
             pos = self._p0
 
-        state = self._sampler.run_mcmc(pos, niterations, **kwargs)
+        state = self._sampler.run_mcmc(pos, niterations)
         self._pos = state.coords
 
     def write_results(self, filename):
