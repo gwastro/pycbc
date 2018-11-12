@@ -89,8 +89,9 @@ class SingleTemplate(BaseModel):
             The value of the log likelihood ratio.
         """
         # calculate <d-h|d-h> = <h|h> - 2<h|d> + <d|d> up to a constant
-        p = self.current_params
-        
+        p = self.current_params.copy()
+        p.update(self.static_params)
+
         vloglr = 0
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
@@ -100,8 +101,9 @@ class SingleTemplate(BaseModel):
             ip = numpy.cos(p['inclination'])
             ic = 0.5 * (1.0 + ip * ip)                     
             htf = (fp * ip + 1.0j * fc * ic) / p['distance']
+            htf *= numpy.exp(1.0j * p['coa_phase'])
             
-            vloglr += (self.sh[ifo].at_time(p['tc'] + dt) * htf * numpy.exp(1.0j*p['coa_phase'])).real
+            vloglr += (self.sh[ifo].at_time(p['tc'] + dt) * htf).real
             vloglr += self.hh[ifo] * abs(htf) ** 2.0     
         return float(vloglr)
 
