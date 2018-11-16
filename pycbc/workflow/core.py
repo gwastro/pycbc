@@ -730,7 +730,8 @@ class Workflow(pegasus_workflow.Workflow):
         if self.in_workflow is not False:
             self.in_workflow._adag.addFile(transformation_catalog_file)
 
-        staging_site = self.staging_site
+        if staging_site is None:
+            staging_site = self.staging_site
 
         Workflow.set_job_properties(self.as_job, output_map_file,
                                     transformation_catalog_file,

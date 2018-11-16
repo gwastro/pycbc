@@ -107,9 +107,16 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
+    # determine if a staging site has been specified
+    try:
+        staging_site = workflow.cp.get('workflow-foreground_minifollowups',
+                                       'staging-site')
+    except:
+        staging_site = None
+
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file)
+    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
@@ -202,10 +209,17 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
+    # determine if a staging site has been specified
+    try:
+        staging_site = workflow.cp.get('workflow-sngl_minifollowups',
+                                       'staging-site')
+    except:
+        staging_site = None
+
     job = dax.DAX(fil)
     job.addArguments('--basename %s' \
                      % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file)
+    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
@@ -290,9 +304,16 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
+    # determine if a staging site has been specified
+    try:
+        staging_site = workflow.cp.get('workflow-injection_minifollowups',
+                                       'staging-site')
+    except:
+        staging_site = None
+
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file, tc_file)
+    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
