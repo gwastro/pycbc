@@ -44,7 +44,9 @@ class SingleTemplate(BaseModel):
                
         # Generate template waveforms
         df = data[data.keys()[0]].delta_f
-        hp, _ = get_fd_waveform(delta_f=df, distance=1, **self.static_params)
+        p = self.static_params.copy()
+        p.pop('distance')
+        hp, _ = get_fd_waveform(delta_f=df, distance=1, **p)
  
         if f_upper is None:
             f_upper = len(data[data.keys()[0]]-1) * df
@@ -106,7 +108,7 @@ class SingleTemplate(BaseModel):
                                          p['dec'], p['tc'])                          
             ip = numpy.cos(p['inclination'])
             ic = 0.5 * (1.0 + ip * ip)                     
-            htf = (fp * ip + 1.0j * fc * ic) / p['distance']
+            htf = (fp * ip - 1.0j * fc * ic) / p['distance']
             htf *= numpy.exp(1.0j * p['coa_phase'])
             
             vloglr += (self.sh[ifo].at_time(p['tc'] + dt) * htf).real
