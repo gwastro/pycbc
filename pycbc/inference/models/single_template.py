@@ -19,8 +19,7 @@
 import numpy
 
 from pycbc import filter as pyfilter
-from pycbc.waveform import NoWaveformError, get_fd_waveform
-from pycbc.types import Array
+from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
 
 from .base import BaseModel
@@ -45,7 +44,7 @@ class SingleTemplate(BaseModel):
                
         # Generate template waveforms
         df = data[data.keys()[0]].delta_f
-        hp, _ = get_fd_waveform(delta_f=df, **self.static_params)
+        hp, _ = get_fd_waveform(delta_f=df, distance=1, **self.static_params)
  
         if f_upper is None:
             f_upper = len(data[data.keys()[0]]-1) * df
@@ -68,7 +67,14 @@ class SingleTemplate(BaseModel):
                                             high_frequency_cutoff=f_upper)
                                             
             self.sh[ifo] = 4 * df * snr
-            self.hh[ifo] = - 2.0 * df / norm
+            self.hh[ifo] = - 1./2. * pyfilter.sigmasq(hp, psd=psds[ifo],
+                                              low_frequency_cutoff=f_lower,
+                                              high_frequency_cutoff=f_upper)
+    
+            z = abs(snr).crop(4, 4)
+            i = z.abs_arg_max()
+            print z[i] * norm
+            print z.sample_times[i]
 
     def _lognl(self):
         """Computes the log likelihood assuming the data is noise.
