@@ -244,7 +244,7 @@ class EventManager(object):
             self.event_dtype.append( (column, coltype) )
 
         self.events = numpy.array([], dtype=self.event_dtype)
-        self.accumulate = []
+        self.accumulate = [self.events]
         self.template_params = []
         self.template_index = -1
         self.template_events = numpy.array([], dtype=self.event_dtype)
