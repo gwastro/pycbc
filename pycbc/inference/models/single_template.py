@@ -17,6 +17,7 @@
 """
 
 import numpy
+import scipy.special
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
@@ -45,7 +46,8 @@ class SingleTemplate(BaseModel):
         # Generate template waveforms
         df = data[data.keys()[0]].delta_f
         p = self.static_params.copy()
-        p.pop('distance')
+        if 'distance' in p:
+            p.pop('distance')
         hp, _ = get_fd_waveform(delta_f=df, distance=1, **p)
  
         if f_upper is None:
@@ -72,11 +74,6 @@ class SingleTemplate(BaseModel):
             self.hh[ifo] = - 1./2. * pyfilter.sigmasq(hp, psd=psds[ifo],
                                               low_frequency_cutoff=f_lower,
                                               high_frequency_cutoff=f_upper)
-    
-            z = abs(snr).crop(4, 4)
-            i = z.abs_arg_max()
-            print z[i] * norm
-            print z.sample_times[i]
 
     def _lognl(self):
         """Computes the log likelihood assuming the data is noise.
@@ -109,10 +106,11 @@ class SingleTemplate(BaseModel):
             ip = numpy.cos(p['inclination'])
             ic = 0.5 * (1.0 + ip * ip)                     
             htf = (fp * ip - 1.0j * fc * ic) / p['distance']
-            htf *= numpy.exp(1.0j * p['coa_phase'])
             
-            vloglr += (self.sh[ifo].at_time(p['tc'] + dt) * htf).real
+            sh = abs((self.sh[ifo].at_time(p['tc'] + dt) * htf))
+            vloglr += numpy.log(scipy.special.i0e(sh)) + sh
             vloglr += self.hh[ifo] * abs(htf) ** 2.0     
+            
         return float(vloglr)
 
     def _loglikelihood(self):
