@@ -11,7 +11,7 @@ import bisect
 from pycbc.conversions import mchirp_from_mass1_mass2
 
 def process_full_data(fname, rhomin, mass1, mass2, lo_mchirp, hi_mchirp):
-    """Read the zero and time-lagged triggers identified by templates in
+    """Read the zero-lag and time-lag triggers identified by templates in
        a specified range of chirp mass.
 
        Parameters
@@ -25,7 +25,7 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_mchirp, hi_mchirp):
        mass2: array
               Second mass of the waveform in the template bank
        lo_mchirp: float
-              Minimimum chirp mass for the template
+              Minimum chirp mass for the template
        hi_mchirp: float
               Maximum chirp mass for the template
 
@@ -54,6 +54,7 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_mchirp, hi_mchirp):
            'dec_factors': dec_factors[cstat_back_exc > rhomin],
            'cstat_back_exc': cstat_back_exc[cstat_back_exc > rhomin]}
 
+
 def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_mchirp, hi_mchirp):
     ''' Read the STATMAP files to derive snr falloff for the background events.
         Save the output to a txt file
@@ -70,9 +71,9 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_mchirp, hi_mchi
         rhomin: float
                Minimum value of SNR threhold (will need including ifar)
         lo_mchirp: float
-               Low chirp mass for the template
+               Minimum chirp mass for the template
         hi_mchirp: float
-               High chirp mass for template
+               Maximum chirp mass for template
     '''
 
     with h5py.File(fname_bank, 'r') as bulk:
