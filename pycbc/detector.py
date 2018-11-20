@@ -70,6 +70,18 @@ class Detector(object):
         self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
         self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
 
+        # time cache
+        self.time = -1
+        self.side = -1
+
+    def cached_time(self, gps_time):
+        if gps_time != self.time:
+            self.time = gps_time
+            gmst = Time(gps_time, format='gps', location=(0, 0))
+            self.side = gmst.sidereal_time('mean').rad
+
+        return self.side
+
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
 
@@ -105,8 +117,8 @@ class Detector(object):
         fcross: float or numpy.ndarray
             The cross polarization factor for this sky location / orientation
         """
-        gmst = Time(t_gps, format='gps', location=(0, 0))
-        gha = gmst.sidereal_time('mean').rad - right_ascension
+        side = self.cached_time(t_gps)
+        gha = side - right_ascension
 
         cosgha = cos(gha)
         singha = sin(gha)
@@ -170,8 +182,7 @@ class Detector(object):
         float
             The arrival time difference between the detectors.
         """
-        gmst = Time(t_gps, format='gps',
-                    location=(0, 0)).sidereal_time('mean').rad
+        gmst = self.cached_time(t_gps)
         ra_angle = gmst - right_ascension
         cosd = cos(declination)
 
@@ -243,8 +254,7 @@ class Detector(object):
         dec: float
             Declination that is optimally oriented for the detector
         """
-        gmst = Time(t_gps, format='gps',
-                    location=(0, 0)).sidereal_time('mean').rad
+        gmst = self.cached_time(t_gps)
         ra = self.longitude + (gmst % (2.0*np.pi))
         dec = self.latitude
         return ra, dec
@@ -266,7 +276,7 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
     Returns
     -------
     f_plus: float
-    f_cros: float   
+    f_cros: float
     """
     # convert from declination coordinate to polar (angle dropped from north axis)
     theta = np.pi / 2.0 - declination

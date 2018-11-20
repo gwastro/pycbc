@@ -74,6 +74,7 @@ class SingleTemplate(BaseModel):
             self.hh[ifo] = -0.5 * pyfilter.sigmasq(hp, psd=psds[ifo],
                                               low_frequency_cutoff=f_lower,
                                               high_frequency_cutoff=f_upper)
+        self.time = None
 
     def _lognl(self):
         """Computes the log likelihood assuming the data is noise.
@@ -97,12 +98,15 @@ class SingleTemplate(BaseModel):
         p = self.current_params.copy()
         p.update(self.static_params)
 
+        if self.time is None:
+            self.time = p['tc']
+
         vloglr = 0
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                         p['polarization'], p['tc'])
+                                         p['polarization'], self.time)
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
-                                         p['dec'], p['tc'])
+                                         p['dec'], self.time)
             ip = numpy.cos(p['inclination'])
             ic = 0.5 * (1.0 + ip * ip)
             htf = (fp * ip - 1.0j * fc * ic) / p['distance']
