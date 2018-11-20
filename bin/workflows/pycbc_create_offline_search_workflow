@@ -217,7 +217,7 @@ statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
 # final_bg_files contains coinc results using vetoes final_veto_files
 # ifo_ids will store an (integer) index for each ifo in the precedence list
 full_insps = insps
-ctags = [tag, 'full']
+ctags = [tag]
 bg_files = []
 final_bg_files = []
 ifo_ids = {}
@@ -251,7 +251,7 @@ for i in range(2, len(insps)+1):
 
         # Create coinc tag, and set up the coinc job for the combination
         coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
-        ctagcomb = [tag, 'full', coinctag]
+        ctagcomb = [tag, coinctag]
         bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
                                cum_veto_files, veto_names,
                                output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
@@ -310,7 +310,6 @@ layout.two_column_layout(rdir['detector_sensitivity'],
 inj_coincs = wf.FileList()
 files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
-    ctags = [tag, 'inj']
     output_dir = '%s_coinc' % tag
 
     if workflow.cp.has_option_tags('workflow-injections',
