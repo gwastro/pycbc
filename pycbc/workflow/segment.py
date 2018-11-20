@@ -1398,6 +1398,7 @@ def get_segments_file(workflow, name, option_name, out_dir):
     Use syntax of configparser string to define the resulting segment_file
     e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2
     Each ifo may have a different string and is stored separately in the file.
+    Flags which add time must precede flags which subtract time.
 
     Parameters
     ----------
@@ -1412,8 +1413,7 @@ def get_segments_file(workflow, name, option_name, out_dir):
     seg_file: pycbc.workflow.SegFile
         SegFile intance that points to the segment xml file on disk.
     """
-    from pycbc.events.status import query_combined_flags
-    from pycbc.workflow import SegFile
+    from pycbc.dq import query_str
     make_analysis_dir(out_dir)
     cp = workflow.cp
     start = workflow.analysis_time[0]
@@ -1422,27 +1422,24 @@ def get_segments_file(workflow, name, option_name, out_dir):
     # Check for veto definer file
     veto_definer = None
     if cp.has_option("workflow-segments", "segments-veto-definer-url"):
-         veto_definer = save_veto_definer(workflow.cp, out_dir, [])
+        veto_definer = save_veto_definer(workflow.cp, out_dir, [])
 
     # Check for provided server
     server = "segments.ligo.org"
     if cp.has_option("workflow-segments", "segments-database-url"):
-        server = cp.get_opt("workflow-segments", "segments-database-url")
-    
-    segments = {}
+        server = cp.get_opt_tags("workflow-segments",
+                                 "segments-database-url", [ifo])
+
+    segs = {}
     for ifo in workflow.ifos:
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
-        
-        flags = flag_str.replace(' ', '').strip().split(',')
-        up = [x[1:] for x in flags if x[0] == '+']  
-        down = [x[1:] for x in flags if x[0] == '-']        
-
         key = ifo + ':' + name
-        segments[key] = query_combined_flags(ifo, up, start, end,
-                                             down_flags=down, server=server,
-                                             veto_definer=veto_definer)
-        logging.info("%s: got %s flags", ifo, option_name) 
+        segs[key] = query_str(ifo, flag_str, start, end,
+                              server=server,
+                              veto_definer=veto_definer)
+        logging.info("%s: got %s flags", ifo, option_name)
 
-    return SegFile.from_segment_list_dict(name, segments,
+    return SegFile.from_segment_list_dict(name, segs,
                                           extension='.xml',
+                                          valid_segment=workflow.analysis_time,
                                           directory=out_dir)
