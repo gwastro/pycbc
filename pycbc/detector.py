@@ -75,7 +75,7 @@ class Detector(object):
         self.side = -1
 
     def cached_time(self, gps_time):
-        if gps_time != self.time:
+        if not np.isscalar(gps_time) or gps_time != self.time:
             self.time = gps_time
             gmst = Time(gps_time, format='gps', location=(0, 0))
             self.side = gmst.sidereal_time('mean').rad
