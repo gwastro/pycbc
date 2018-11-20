@@ -19,10 +19,10 @@ args = parser.parse_args()
 
 canonical_snr = 8.0
 
-fig = pylab.figure(0) 
-pylab.xlabel('Time (s)')    
+fig = pylab.figure(0)
+pylab.xlabel('Time (s)')
 pylab.ylabel('Inspiral Range (Mpc)')
-pylab.grid() 
+pylab.grid()
 
 for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
@@ -31,24 +31,24 @@ for psd_file in args.psd_files:
     keys = f[ifo + '/psds'].keys()
     start, end = f[ifo + '/start_time'][:], f[ifo + '/end_time'][:]
     f.close()
-    ranges = {}  
+    ranges = {}
     for i in range(len(keys)):
         name = ifo + '/psds/' + str(i)
         psd = pycbc.types.load_frequencyseries(psd_file, group=name)
         delta_t = 1.0 / ((len(psd) - 1) * 2 * psd.delta_f)
         out = pycbc.types.zeros(len(psd), dtype=numpy.complex64)
-      
-        for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):        
-            htilde = pycbc.waveform.get_waveform_filter(out, 
+
+        for m1, m2, apx in zip(args.mass1, args.mass2, args.approximant):
+            htilde = pycbc.waveform.get_waveform_filter(out,
                                      mass1=m1,mass2=m2, approximant=apx,
                                      f_lower=flow, delta_f=psd.delta_f,
-                                     delta_t=delta_t, 
+                                     delta_t=delta_t,
                                      distance = 1.0/pycbc.DYN_RANGE_FAC)
             htilde = htilde.astype(numpy.complex64)
             sigma = pycbc.filter.sigma(htilde, psd=psd, low_frequency_cutoff=flow)
-            horizon_distance = sigma / canonical_snr 
+            horizon_distance = sigma / canonical_snr
             inspiral_range = horizon_distance / 2.26
-            
+
             wf_key = (m1, m2, apx)
             if wf_key in ranges:
                 ranges[wf_key].append(inspiral_range)
@@ -64,13 +64,13 @@ for psd_file in args.psd_files:
         pylab.errorbar((start+end)/2, ranges[wf_key], xerr=(end-start)/2,
                        ecolor=pycbc.results.ifo_color(ifo), label=label,
                        fmt='none')
-                       )
+
 pylab.legend(loc="best", fontsize='small')
 
 if len(args.approximant) == 1:
     fig.suptitle('$%sM_{\odot}-%sM_{\odot}$ %s' % (m1, m2, apx))
-         
-pycbc.results.save_fig_with_metadata(fig, args.output_file, 
+
+pycbc.results.save_fig_with_metadata(fig, args.output_file,
     title = "Inspiral Range",
     caption = "The canonical sky- and orientation-averaged inspiral range for a single "
               "detector at SNR 8. This range is comparable to the SenseMon range and a factor of 2.26 smaller than the horizon distance.",

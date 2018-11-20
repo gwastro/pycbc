@@ -350,7 +350,7 @@ class Executable(pegasus_workflow.Executable):
                     if os.path.isfile(path):
                         curr_pfn = urlparse.urljoin('file:',
                                     urllib.pathname2url(
-                                    os.path.abspath(path))) 
+                                    os.path.abspath(path)))
                     else:
                         curr_pfn = path
 
@@ -696,7 +696,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         for fil in node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:', 
+            fil.PFN(urlparse.urljoin('file:',
                     urllib.pathname2url(fil.storage_path)),
                     site='local')
 
@@ -1054,8 +1054,7 @@ class File(pegasus_workflow.File):
         self.ifo_string = ''.join(self.ifo_list)
         self.description = exe_name
 
-        import ligo.segments
-        if isinstance(segs, (segments.segment, ligo.segments.segment)):
+        if isinstance(segs, segments.segment):
             self.segment_list = segments.segmentlist([segs])
         elif isinstance(segs, (segments.segmentlist)):
             self.segment_list = segs
@@ -1856,7 +1855,7 @@ class SegFile(File):
                                  self.has_pfn(self.storage_path, site='local'):
             pass
         else:
-            self.PFN(urlparse.urljoin('file:', 
+            self.PFN(urlparse.urljoin('file:',
                      urllib.pathname2url(self.storage_path)),
                      site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
