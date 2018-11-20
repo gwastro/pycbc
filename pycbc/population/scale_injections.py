@@ -196,11 +196,11 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
                 h_dist = max(dist_j / (mch_j/_mch_BNS)**(5/6.))
             elif dt_j['d_dist'] == 'uniform':
                 l_dist, h_dist = min(dist_j), max(dist_j)
-    
+
             mdist = dt_j['m_dist']
             prob_mass = inj_mass_pdf(mdist, mass1, mass2,
                                           lomass, himass, lomass_2, himass_2)
-              
+
             ddist = dt_j['d_dist']
             prob_dist = inj_distance_pdf(ddist, distance, l_dist,
                                                               h_dist, mchirp)
