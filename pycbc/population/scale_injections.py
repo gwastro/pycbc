@@ -213,7 +213,7 @@ def estimate_vt(injections, mchirp_sampler, model_pdf, **kwargs):
 
         p_in[p_in == 0] = 1e12
         p_out_in = p_out/p_in
-      
+
         i_inj += np.sum(p_out_in)
         i_det += np.sum((p_out_in)[data[thr_var] > thr_val])
         i_det_sq += np.sum((p_out_in)[data[thr_var] > thr_val]**2)
@@ -303,7 +303,7 @@ def astro_redshifts(min_z, max_z, nsamples):
        z_astro: array
             nsamples of redshift, between min_z, max_z, by standard cosmology
     '''
-    
+
     dz, fac = 0.001, 3.0
     # use interpolation instead of directly estimating all the pdfz for rndz
     V = quad(contracted_dVdc, 0., max_z)[0]
@@ -362,7 +362,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
     '''
 
     mass1, mass2 = np.array(mass1), np.array(mass2)
-    
+
     if key == 'totalMass':
         # Returns the PDF of mass when total mass is uniformly distributed.
         # Both the component masses have the same distribution for this case.
