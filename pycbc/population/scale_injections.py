@@ -371,7 +371,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
         # ----------
         # lomass: lower component mass
         # himass: higher component mass
-        
+
         bound = np.sign((lomass + himass) - (mass1 + mass2))
         bound += np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass - mass2)*(mass2 - lomass))
@@ -389,7 +389,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
         # ----------
         # lomass: lower component mass
         # himass: higher component mass
-        
+
         bound = np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
         idx = np.where(bound != 2)
@@ -406,7 +406,7 @@ def inj_mass_pdf(key, mass1, mass2, lomass, himass, lomass_2 = 0, himass_2 = 0):
         # ----------
         # lomass: lower component mass
         # himass: higher component mass
-        
+
         bound = np.sign((himass - mass1)*(mass1 - lomass))
         bound += np.sign((himass_2 - mass2)*(mass2 - lomass_2))
         idx = np.where(bound != 2)
