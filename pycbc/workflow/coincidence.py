@@ -332,7 +332,7 @@ def setup_simple_statmap(workflow, coinc_files, out_dir, tags=None):
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
 
-    stat_node = statmap_exe.create_node(coinc_files, tags=tags)
+    stat_node = statmap_exe.create_node(coinc_files)
     workflow.add_node(stat_node)
     return stat_node.output_files[0], stat_node.output_files
 
@@ -356,12 +356,12 @@ def setup_background_bins(workflow, coinc_files, bank_file, out_dir, tags=None):
 
     statmap_files = FileList([])
     for i, coinc_file in enumerate(bins_node.output_files):
-        statnode = statmap_exe.create_node(FileList([coinc_file]), tags=tags + ['BIN_%s' % i])
+        statnode = statmap_exe.create_node(FileList([coinc_file]), tags=['BIN_%s' % i])
         workflow += statnode
         statmap_files.append(statnode.output_files[0])
         statmap_files[i].bin_name = bins_node.names[i]
 
-    cstat_node = cstat_exe.create_node(statmap_files, tags=tags)
+    cstat_node = cstat_exe.create_node(statmap_files)
     workflow += cstat_node
 
     return cstat_node.output_files[0], statmap_files
@@ -402,7 +402,7 @@ def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file,
     background_bins = [x for x in background_bins if x != '']
 
     for inj_type in ['injinj', 'injfull', 'fullinj']:
-        bins_node = bins_exe.create_node(FileList(coinc_files[inj_type]), bank_file, background_bins, tags=tags + [inj_type])
+        bins_node = bins_exe.create_node(FileList(coinc_files[inj_type]), bank_file, background_bins, tags=[inj_type])
         workflow += bins_node
         coinc_files[inj_type] = bins_node.output_files
 
@@ -410,11 +410,11 @@ def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file,
     for i in range(len(background_bins)):
         statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]), FileList([background_file[i]]),
                                      FileList([coinc_files['injfull'][i]]), FileList([coinc_files['fullinj'][i]]),
-                                     tags=tags + ['BIN_%s' % i])
+                                     tags=['BIN_%s' % i])
         workflow += statnode
         statmap_files.append(statnode.output_files[0])
 
-    cstat_node = cstat_exe.create_node(statmap_files, tags=tags)
+    cstat_node = cstat_exe.create_node(statmap_files)
     workflow += cstat_node
 
     return cstat_node.output_files[0]
