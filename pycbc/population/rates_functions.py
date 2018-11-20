@@ -178,7 +178,7 @@ def fgmc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
 
         plR -= (Lf + Lb)
         plRn = plR - max(plR)
-        
+
         idx = np.exp(plRn) > np.random.random(len(plRn))
 
         pquit = ss.stats.ks_2samp(Lb, Lb[idx])[1]
@@ -351,12 +351,12 @@ def prob_flat(m1, m2, s1z, s2z, **kwargs):
         m2: array
             Component masses 2
         s1z: array
-            Aligned spin 1(Not in use currently)
+            Aligned spin 1 (not in use currently)
         s2z:
-            Aligned spin 2(Not in use currently)
+            Aligned spin 2 (not in use currently)
         **kwargs: string
             Keyword arguments as model parameters
- 
+
         Returns
         -------
         p_m1_m2: array
