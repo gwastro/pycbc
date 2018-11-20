@@ -169,7 +169,7 @@ def fgmc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
         Lf = Rf_sel * vt
 
         log_Lf, log_Lb = log(Lf), log(Lb)
-  
+
         plR = 0
         for lfr in log_fg_ratios:
             plR += np.logaddexp(lfr + log_Lf, log_Lb)
@@ -307,7 +307,7 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
             Aligned spin 2(Not in use currently)
         **kwargs: string
             Keyword arguments as model parameters
- 
+
         Returns
         -------
         p_m1_m2: array
@@ -319,7 +319,7 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
     alpha = kwargs.get('alpha', -2.35)
     max_mtotal = min_mass + max_mass
     m1, m2 = np.array(m1), np.array(m2)
-    
+
     C_imf = max_mass**(alpha + 1)/(alpha + 1)
     C_imf -= min_mass**(alpha + 1)/(alpha + 1)
 
@@ -405,7 +405,7 @@ def draw_imf_samples(**kwargs):
 
     idx = np.where(aa + bb < max_mtotal)
     m1, m2 = (np.maximum(aa, bb))[idx], (np.minimum(aa, bb))[idx]
-    
+
     return np.resize(m1, nsamples), np.resize(m2, nsamples)
 
 def draw_lnm_samples(**kwargs):
