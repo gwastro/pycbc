@@ -153,6 +153,9 @@ def spa_tmplt_engine(htilde, kmin, phase_order, delta_f, piM, pfaN,
                      pfa6, pfl6, pfa7, amp_factor):
     """ Calculate the spa tmplt phase
     """
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 def spa_tmplt(**kwds):
     """ Generate a minimal TaylorF2 approximant with optimations for the sin/cos

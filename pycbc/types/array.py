@@ -25,6 +25,7 @@
 """
 This modules provides a device independent Array class based on PyCUDA and Numpy.
 """
+from __future__ import division
 
 BACKEND_PREFIX="pycbc.types.array_"
 
@@ -41,6 +42,7 @@ from numpy.linalg import norm
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
 from pycbc.types.aligned import ArrayWithAligned
+from pycbc.opt import LimitedSizeDict
 
 #! FIXME: the uint32 datatype has not been fully tested,
 # we should restrict any functions that do not allow an
@@ -79,7 +81,7 @@ def _noreal(fn, self, *args):
         raise TypeError( fn.__name__ + " does not support real types")
 
 def force_precision_to_match(scalar, precision):
-    if _numpy.iscomplex(scalar):
+    if _numpy.iscomplexobj(scalar):
         if precision is 'single':
             return _numpy.complex64(scalar)
         else:
@@ -99,22 +101,29 @@ def common_kind(*dtypes):
 @schemed(BACKEND_PREFIX) 
 def _to_device(array):
     """ Move input to device """
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
     
 @schemed(BACKEND_PREFIX)
 def _copy_base_array(array):
     """ Copy a backend array"""
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 @schemed(BACKEND_PREFIX)
 def _scheme_matches_base_array(array):
     """ Check that input matches array type for scheme """
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 class Array(object):
     """Array used to do numeric calculations on a various compute
     devices. It is a convience wrapper around numpy, and
     pycuda.
     """
-    
-    __array_priority__ = 1000
 
     def __init__(self, initial_array, dtype=None, copy=True):
         """ initial_array: An array-like object as specified by NumPy, this
@@ -131,7 +140,7 @@ class Array(object):
         The default is to copy the given object.
         """
         self._scheme=_scheme.mgr.state
-        self._saved = {}
+        self._saved = LimitedSizeDict(size_limit=2**5)
         
         #Unwrap initial_array
         if isinstance(initial_array, Array):
@@ -192,6 +201,17 @@ class Array(object):
             else:
                 initial_array = _numpy.array(initial_array, dtype=dtype, ndmin=1)
                 self._data = _to_device(initial_array) # pylint:disable=assignment-from-no-return
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        inputs = [i.numpy() if isinstance(i, Array) else i for i in inputs]
+        ret = getattr(ufunc, method)(*inputs, **kwargs)
+        if hasattr(ret, 'shape') and ret.shape == self.shape:
+            ret = self._return(ret)
+        return ret
+
+    @property
+    def shape(self):
+        return self._data.shape
      
     @decorator
     def _memoize_single(fn, self, arg):
@@ -281,7 +301,6 @@ class Array(object):
     def _icheckother(fn, self, other):
         """ Checks the input to in-place operations """
         self._typecheck(other) 
-
         if type(other) in _ALLOWED_SCALARS:
             if self.kind == 'real' and type(other) == complex:
                 raise TypeError('dtypes are incompatible')
@@ -345,23 +364,27 @@ class Array(object):
     @_convert
     @_checkother
     @_returntype
-    def __div__(self,other):
+    def __truediv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         return self._data / other
 
     @_returntype
     @_convert
     @_checkother
-    def __rdiv__(self,other):
+    def __rtruediv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
-        return self._data.__rdiv__(other)
+        return self._data.__rtruediv__(other)
 
     @_convert
     @_icheckother
-    def __idiv__(self,other):
+    def __itruediv__(self,other):
         """ Divide Array by Array or scalar and return an Array. """
         self._data /= other
         return self
+        
+    __div__ = __truediv__
+    __idiv__ = __itruediv__
+    __rdiv__ = __rtruediv__
 
     @_returntype
     @_convert
@@ -403,6 +426,10 @@ class Array(object):
 
     def __str__(self):
         return str(self._data)
+        
+    @property
+    def ndim(self):
+        return self._data.ndim
 
     def __eq__(self,other):
         """
@@ -617,6 +644,9 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def squared_norm(self):
         """ Return the elementwise squared norm of the array """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_returntype
     @_checkother
@@ -627,6 +657,9 @@ class Array(object):
         Self is modified in place and returned as output.
         Precisions of inputs must match.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_vrcheckother
     @_convert
@@ -634,6 +667,9 @@ class Array(object):
     def inner(self, other):
         """ Return the inner product of the array with complex conjugation.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_vrcheckother
     @_convert
@@ -641,11 +677,17 @@ class Array(object):
     def vdot(self, other):
         """ Return the inner product of the array with complex conjugation.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def clear(self): 
         """ Clear out the values of the array. """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_vrcheckother
     @_convert
@@ -653,63 +695,95 @@ class Array(object):
     def weighted_inner(self, other, weight):
         """ Return the inner product of the array with complex conjugation.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def sum(self):
         """ Return the sum of the the array. """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_returntype
     @_convert
     @schemed(BACKEND_PREFIX)
     def cumsum(self):
         """ Return the cumulative sum of the the array. """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
      
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max(self):
         """ Return the maximum value in the array. """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
             
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def max_loc(self):
         """Return the maximum value in the array along with the index location """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_arg_max(self):
         """ Return location of the maximum argument max """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @schemed(BACKEND_PREFIX)
     def abs_max_loc(self):
         """Return the maximum elementwise norm in the array along with the index location"""
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @_nocomplex
     @schemed(BACKEND_PREFIX)
     def min(self):
         """ Return the maximum value in the array. """ 
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
         
     @_returnarray
     @_convert
     @schemed(BACKEND_PREFIX)
     def take(self, indices):
-        """ Return the values at the given indices. """                           
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_convert
     @_vcheckother
     @schemed(BACKEND_PREFIX)
     def dot(self, other):
         """ Return the dot product"""
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
     
     @schemed(BACKEND_PREFIX)
     def _getvalue(self, index):
         """Helper function to return a single value from an array. May be very
            slow if the memory is on a gpu.
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
 
     @_memoize_single
     @_returntype
@@ -733,7 +807,7 @@ class Array(object):
         if new_size == len(self):
             return
         else:
-            self._saved = {}
+            self._saved = LimitedSizeDict(size_limit=2**5)
             new_arr = zeros(new_size, dtype=self.dtype)
             if len(self) <= new_size:
                 new_arr[0:len(self)] = self
@@ -746,7 +820,7 @@ class Array(object):
     def roll(self, shift):
         """shift vector
         """
-        self._saved = {}
+        self._saved = LimitedSizeDict(size_limit=2**5)
         new_arr = zeros(len(self), dtype=self.dtype)
 
         if shift == 0:
@@ -772,6 +846,9 @@ class Array(object):
         """Helper function to copy between two arrays. The arrays references
            should be bare array types and not `Array` class instances. 
         """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
                 
     @_convert
     def __setitem__(self, index, other):
@@ -833,6 +910,9 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def ptr(self):
         """ Returns a pointer to the memory of this array """
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
         
     @property
     def itemsize(self):
@@ -855,6 +935,9 @@ class Array(object):
     @schemed(BACKEND_PREFIX)
     def numpy(self):
         """ Returns a Numpy Array that contains this data """     
+        err_msg = "This function is a stub that should be overridden using "
+        err_msg += "the scheme. You shouldn't be seeing this error!"
+        raise ValueError(err_msg)
     
     @_convert
     def lal(self):
@@ -945,6 +1028,21 @@ class Array(object):
     def copy(self):
         """ Return copy of this array """
         return self._return(self.data.copy())
+        
+    def __lt__(self, other):
+        return self.numpy().__lt__(other)
+        
+    def __le__(self, other):
+        return self.numpy().__le__(other)
+        
+    def __ne__(self, other):
+        return self.numpy().__ne__(other)
+        
+    def __gt__(self, other):
+        return self.numpy().__gt__(other)
+        
+    def __ge__(self, other):
+        return self.numpy().__ge__(other)
             
 # Convenience functions for determining dtypes
 def real_same_precision_as(data):
@@ -968,7 +1066,9 @@ def _return_array(fn, *args, **kwds):
 def zeros(length, dtype=float64):
     """ Return an Array filled with zeros.
     """
-    return
+    err_msg = "This function is a stub that should be overridden using "
+    err_msg += "the scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 def load_array(path, group=None):
     """

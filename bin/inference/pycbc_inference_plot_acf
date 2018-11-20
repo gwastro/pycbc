@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright (C) 2016 Christopher M. Biwer
 #
@@ -17,45 +17,44 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import argparse
-import h5py
-import pycbc
 import logging
-import matplotlib as mpl; mpl.use("Agg")
-import matplotlib.pyplot as plt
-import numpy
 import sys
+
+from matplotlib import use
+use('agg')
+from matplotlib import pyplot as plt
+
+import pycbc
 from pycbc import results
+from pycbc.inference import io
+
+from pycbc import __version__
 from pycbc.inference import option_utils
+from pycbc.inference.sampler import samplers
 
 # command line usage
-parser = argparse.ArgumentParser(
-    description="Plots autocorrelation function from inference samples.")
-
+# turn off thin-interval since it won't be used
+parser = io.ResultsArgumentParser(skip_args='thin-interval',
+                                  description="Plots autocorrelation function "
+                                              "from inference samples.")
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
     help="Print logging info.")
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
 # output plot options
 parser.add_argument("--output-file", type=str, required=True,
-    help="Path to output plot.")
+                    help="Path to output plot.")
 # add plotting options
 parser.add_argument("--ymin", type=float,
     help="Minimum value to plot on y-axis.")
 parser.add_argument("--ymax", type=float,
     help="Maximum value to plot on y-axis.")
-# add results group
-option_utils.add_inference_results_option_group(parser)
 parser.add_argument("--per-walker", action="store_true", default=False,
     help="Plot the ACF for each walker separately. Default is to average "
          "parameter values over the walkers, then compute the ACF for the "
          "averaged chain. Warning: turning this option on can significantly "
          "increase the run time.")
-parser.add_argument("--walkers", type=int, nargs="+", default=None,
-    help="Only include the given walkers when computing the ACF.")
-parser.add_argument("--temps", nargs="+", default=None,
-    help="For multi-tempered samplers, plot the given temperatures. May "
-         "provide either a sequence of integers specifying the temperatures "
-         "to plot, or 'all' for all temperatures. Default is to only plot "
-         "the coldest (= 0) temperature chain.")
 parser.add_argument("--no-legend", action="store_true", default=False,
     help="Do not add a legend to the plot.")
 
@@ -65,37 +64,39 @@ opts = parser.parse_args()
 # setup log
 pycbc.init_logging(opts.verbose)
 
-# add the temperature args if it is specified
+# add the temperature args if it exists
 additional_args = {}
-if opts.temps is not None:
-    if 'all' in opts.temps:
-        temps = 'all'
-    else:
-        temps = map(int, opts.temps)
-    additional_args['temps'] = temps 
+try:
+    additional_args['temps'] = opts.temps
+except AttributeError:
+    pass
 
 # load the results
-fp, parameters, labels, _ = option_utils.results_from_cli(opts,
-    load_samples=False)
+logging.info('Loading parameters')
+fp, parameters, labels, _ = io.results_from_cli(opts, load_samples=False)
+
 
 # calculate autocorrelation function
 logging.info("Calculating autocorrelation functions")
-acfs = fp.sampler_class.compute_acfs(fp, start_index=opts.thin_start,
-                                     end_index=opts.thin_end,
-                                     per_walker=opts.per_walker,
-                                     walkers=opts.walkers,
-                                     parameters=parameters,
-                                     **additional_args)
+acfs = samplers[fp.sampler].compute_acf(fp.filename,
+                                        start_index=opts.thin_start,
+                                        end_index=opts.thin_end,
+                                        per_walker=opts.per_walker,
+                                        walkers=opts.walkers,
+                                        parameters=parameters,
+                                        **additional_args)
 
 # check if we have multiple temperatures
 if opts.per_walker:
-    multi_tempered = acfs.ndim == 3
+    multi_tempered = acfs.values()[0].ndim == 3
 else:
-    multi_tempered = acfs.ndim == 2
+    multi_tempered = acfs.values()[0].ndim == 2
 try:
     temps = additional_args['temps']
     if temps == 'all':
-        temps = range(acfs.shape[0])
+        temps = range(acfs.values()[0].shape[0])
+    if isinstance(temps, int):
+        temps = [temps]
 except KeyError:
     temps = [0]
 fig_height = max(6, 3*len(temps))
@@ -108,7 +109,7 @@ for kk,tk in enumerate(temps):
         logging.info("Temperature {}".format(tk))
     axnum = len(temps) - kk
     ax = fig.add_subplot(len(temps), 1, axnum)
-    for pi,param in enumerate(parameters):
+    for param in parameters:
         logging.info("Parameter {}".format(param))
         if multi_tempered:
             acf = acfs[param][kk,...]
@@ -118,11 +119,11 @@ for kk,tk in enumerate(temps):
             lbl = '{}, walker {}'
             for wi in range(acf.shape[0]):
                 wnum = opts.walkers[wi] if opts.walkers is not None else wi
-                ax.plot(acf[wi,:], label=lbl.format(labels[pi], wnum))
+                ax.plot(acf[wi,:], label=lbl.format(labels[param], wnum))
         else:
-            ax.plot(acf, label=labels[pi])
+            ax.plot(acf, label=labels[param])
     if multi_tempered:
-        t = 1./fp.attrs['betas'][tk]
+        t = 1./fp[fp.sampler_group].attrs['betas'][tk]
         ax.set_title(r'$T = {}$ (chain {})'.format(t, tk))
     if axnum == len(temps):
         ax.set_xlabel("iteration")

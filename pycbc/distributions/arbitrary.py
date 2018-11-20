@@ -40,7 +40,7 @@ class Arbitrary(bounded.BoundedDist):
     """
     name = 'arbitrary'
 
-    def __init__(self, bounds=None, **kwargs):
+    def __init__(self, bounds=None, bandwidth="scott", **kwargs):
         # initialize the bounds
         if bounds is None:
             bounds = {}
@@ -72,6 +72,7 @@ class Arbitrary(bounded.BoundedDist):
                                  "be finite")
         # build the kde
         self._kde = self.get_kde_from_arrays(*[kwargs[p] for p in self.params])
+        self.set_bandwidth(bandwidth)
 
     @property
     def params(self):
@@ -129,6 +130,9 @@ class Arbitrary(bounded.BoundedDist):
             return -numpy.inf
         else:
             return numpy.log(self._pdf(**kwargs))
+
+    def set_bandwidth(self, set_bw="scott"):
+        self._kde.set_bandwidth(set_bw)
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from the kde.
@@ -234,8 +238,9 @@ class FromFile(Arbitrary):
             ps = None
         else:
             ps = params.keys()
-        param_vals = self.get_arrays_from_file(filename, params=ps)
-        super(FromFile, self).__init__(bounds=params, **param_vals)
+        param_vals, bw = self.get_arrays_from_file(filename, params=ps)
+        super(FromFile, self).__init__(bounds=params, bandwidth=bw,
+                                       **param_vals)
 
     @property
     def filename(self):
@@ -272,8 +277,13 @@ class FromFile(Arbitrary):
         else:
             params = [str(k) for k in f.keys()]
         params_values = {p:f[p][:] for p in params}
+        try:
+            bandwidth = f.attrs["bandwidth"]
+        except KeyError:
+            bandwidth = "scott"
+
         f.close()
-        return params_values
+        return params_values, bandwidth
 
     @classmethod
     def from_config(cls, cp, section, variable_args):

@@ -96,8 +96,6 @@ parser.add_argument("--cluster-function", choices=["findchirp", "symmetric"],
 parser.add_argument("--cluster-window", type=float, default = -1,
                     help="Length of clustering window in seconds."
                     " Set to 0 to disable clustering.")
-parser.add_argument("--maximization-interval", type=float, default=0,
-                    help="Maximize triggers over the template bank (ms)")
 parser.add_argument("--bank-veto-bank-file", type=str, help="FIXME: ADD")
 parser.add_argument("--chisq-snr-threshold", type=float,
                     help="Minimum SNR to calculate the power chisq")
@@ -417,6 +415,7 @@ with ctx:
         event_mgr.cluster_template_events("time_index", "snr", cluster_window)
         event_mgr.finalize_template_events()
 
+event_mgr.finalize_events()
 logging.info("Found %s triggers" % str(len(event_mgr.events)))
 
 if opt.chisq_threshold and opt.chisq_bins:
@@ -441,12 +440,6 @@ if opt.keep_loudest_interval:
 if opt.injection_window and hasattr(gwstrain, 'injections'):
     logging.info("Keeping triggers within %s seconds of injection" % opt.injection_window)
     event_mgr.keep_near_injection(opt.injection_window, gwstrain.injections)
-    logging.info("%d remaining triggers" % len(event_mgr.events))
-
-if opt.maximization_interval:
-    logging.info("Maximizing triggers over %s ms window" % opt.maximization_interval)
-    window = int(opt.maximization_interval * gwstrain.sample_rate / 1000)
-    event_mgr.maximize_over_bank("time_index", "snr", window)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
 tstop = time.time()

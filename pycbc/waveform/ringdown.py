@@ -29,6 +29,7 @@ import numpy, lal
 import lalsimulation as lalsim
 from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
+from pycbc.conversions import get_lm_f0tau_allmodes
 
 default_qnm_args = {'t_0':0}
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
@@ -113,34 +114,6 @@ def lm_freqs_taus(**kwargs):
                 raise ValueError('tau_%d%d%d is required' %(l,m,n))
 
     return freqs, taus
-
-# Functions to obtain f_0 and tau from mass and spin #########################
-
-def get_lm_f0tau(mass, spin, l, m, nmodes):
-    """Return the f_0 and the tau of each overtone for a given lm mode
-    """
-    qnmfreq = lal.CreateCOMPLEX16Vector(nmodes)
-    lalsim.SimIMREOBGenerateQNMFreqV2fromFinal(qnmfreq, mass, spin, l, m, nmodes)
-
-    f_0 = [qnmfreq.data[n].real / (2 * pi) for n in range(nmodes)]
-    tau = [1. / qnmfreq.data[n].imag for n in range(nmodes)]
-
-    return f_0, tau
-
-def get_lm_f0tau_allmodes(mass, spin, modes):
-    """Return a dictionary with the f_0 and tau for all the modes
-    in the list lmns (list of strings)
-    """
-
-    f_0, tau = {}, {}
-    for lmn in modes:
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        tmp_f0, tmp_tau = get_lm_f0tau(mass, spin, l, m, nmodes)
-        for n in range(nmodes):
-            f_0['%d%d%d' %(l,m,n)] = tmp_f0[n]
-            tau['%d%d%d' %(l,m,n)] = tmp_tau[n]
-
-    return f_0, tau
 
 # Functions to obtain t_final and f_final #####################################
 

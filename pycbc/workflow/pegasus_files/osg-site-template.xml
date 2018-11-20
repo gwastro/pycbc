@@ -1,8 +1,8 @@
   <!-- a separate staging site is added else, the intermediate files are symlinked from the home
        directory since symlinking is turned on -->
   <site handle="osg-scratch" arch="x86_64" os="LINUX">
-   <directory  path="$LOCAL_SITE_PATH/osg-scratch" type="shared-scratch" free-size="null" total-size="null">
-        <file-server  operation="all" url="${REMOTE_STAGING_URL}/osg-scratch">
+   <directory  path="${REMOTE_SITE_SCRATCH_PATH}/osg-scratch" type="shared-scratch" free-size="null" total-size="null">
+        <file-server  operation="all" url="${REMOTE_SITE_SCRATCH_URL}/osg-scratch">
         </file-server>
     </directory>
   </site>
@@ -13,5 +13,3 @@
     <profile namespace="condor" key="should_transfer_files">YES</profile>
     <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
     <profile namespace="condor" key="+OpenScienceGrid">True</profile>
-    <profile namespace="env" key="NO_TMPDIR">1</profile>
-    <profile namespace="env" key="LAL_DATA_PATH">/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/lalsuite-extra/e02dab8c/share/lalsimulation</profile>

@@ -217,6 +217,18 @@ def export_double_wisdom_to_filename(filename):
     if retval == 0:
         raise RuntimeError("Could not export wisdom to file {0}".format(filename))
 
+def set_planning_limit(time):
+    if not _fftw_threaded_set:
+        set_threads_backend()
+
+    f = double_lib.fftw_set_timelimit
+    f.argtypes = [ctypes.c_double]
+    f(time)
+
+    f = float_lib.fftwf_set_timelimit
+    f.argtypes = [ctypes.c_double]
+    f(time)
+
 # Create function maps for the dtypes
 plan_function = {'float32': {'complex64': float_lib.fftwf_plan_dft_r2c_1d},
                  'float64': {'complex128': double_lib.fftw_plan_dft_r2c_1d},
@@ -293,8 +305,16 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     # We don't need ip or op anymore
     del ip, op
 
-    # And done...
-    return theplan
+    # Make the destructors
+    if idtype.char in ['f', 'F']:
+        destroy = float_lib.fftwf_destroy_plan
+    else:
+        destroy = double_lib.fftw_destroy_plan 
+
+    destroy.argtypes = [ctypes.c_void_p]
+
+
+    return theplan, destroy
 
 
 # Note that we don't need to check whether we've set the threading backend
@@ -306,16 +326,18 @@ def execute(plan, invec, outvec):
     f(plan, invec.ptr, outvec.ptr)
 
 def fft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
+    theplan, destroy = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
                    get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
+    destroy(theplan)
 
 def ifft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
+    theplan, destroy = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
                    get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
+    destroy(theplan)
 
 # Class based API
 

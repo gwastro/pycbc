@@ -10,9 +10,6 @@ else
     PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
 fi
 
-# set the lalsuite checkout to use
-LALSUITE_CODE="--lalsuite-commit=8cbd1b7187ce3ed9a825d6ed11cc432f3cfde9a5"
-
 echo -e "\\n>> [`date`] Ubuntu build"
 
 # store the travis test directory
@@ -26,7 +23,7 @@ export XDG_CACHE_HOME=${BUILD}/.cache
 
 # run the einstein at home build and test script
 pushd ${BUILD}
-${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh ${LALSUITE_CODE} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/710a51f4770cbba77f61dfb798472bebe6c43d38/travis
+${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/efd37637fbb568936dfb92bc7aa8a77359c9aa36/travis
 popd
 
 # setup the pycbc environment to run the additional travis tests
@@ -67,15 +64,10 @@ else
     echo -e "...seems gone"
 fi
 
-pip install http://download.pegasus.isi.edu/pegasus/4.7.5/pegasus-python-source-4.7.5.tar.gz
+# Install graphviz so building docs will work
+sudo apt-get install graphviz
 
-# install the segment database tools
-pip install dqsegdb
-
-# install the packges needed to build the documentation
-pip install "Sphinx>=1.5.0"
-pip install sphinx-rtd-theme
-pip install sphinxcontrib-programoutput
+pip install -r requirements.txt
 
 # get library needed to build documentation
 wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"

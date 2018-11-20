@@ -25,21 +25,7 @@ from __future__ import division
 import re
 import os
 from argparse import ArgumentParser
-import matplotlib
-# Only if a backend is not already set ... This should really *not* be done
-# here, but in the executables you should set matplotlib.use()
-# This matches the check that matplotlib does internally, but this *may* be
-# version dependenant. If this is a problem then remove this and control from
-# the executables directly.
-import sys
-if 'matplotlib.backends' not in sys.modules:
-    matplotlib.use('agg')
-import matplotlib.pyplot as plt
 from glue import markup, segments
-from matplotlib.patches import Rectangle
-from matplotlib.lines import Line2D
-from matplotlib.ticker import ScalarFormatter
-from pycbc.results.color import ifo_color
 
 def initialize_page(title, style, script, header=None):
     """
@@ -329,20 +315,26 @@ def write_offsource(page, args, grbtag, onsource=False):
 
     th = ['Re-weighted SNR', 'Coherent SNR']
 
-    if onsource:
-        dir = 'ALL_TIMES'
+    if args.time_slides:
+        if onsource:
+            out_dir = 'ZEROLAG_ALL'
+        else:
+            out_dir = 'ZEROLAG_OFF'
     else:
-        dir = 'OFFSOURCE'
+        if onsource:
+            out_dir = 'ALL_TIMES'
+        else:
+            out_dir = 'OFFSOURCE'
 
     plot = markup.page()
-    p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (dir, grbtag)
-    plot.a(href=p, title="Coherent SNR versus time")
+    p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (out_dir, grbtag)
+    plot.a(href=p, title="Detection statistic versus time")
     plot.img(src=p)
     plot.a.close()
     td = [ plot() ]
 
     plot = markup.page()
-    p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % (dir, grbtag)
+    p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % (out_dir, grbtag)
     plot.a(href=p, title="Coherent SNR versus time")
     plot.img(src=p)
     plot.a.close()
@@ -353,7 +345,7 @@ def write_offsource(page, args, grbtag, onsource=False):
         th.append('%s SNR' % ifo)
         plot = markup.page()
         p = "%s/plots_clustered/GRB%s_%s_triggers_vs_time_noinj.png"\
-            % (dir, grbtag, ifo)
+            % (out_dir, grbtag, ifo)
         plot.a(href=p, title="%s SNR versus time" % ifo)
         plot.img(src=p)
         plot.a.close()
@@ -658,6 +650,11 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
 def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
                            out_dir, coherent_seg=None, fail_criterion=None):
 
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+    from matplotlib.lines import Line2D
+    from pycbc.results.color import ifo_color
+
     ifos = wkflow.ifos
     if len(science_segs.keys()) == 0:
         extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
@@ -677,6 +674,8 @@ def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
 
     # Make plot
     fig, subs = plt.subplots(len(ifos), sharey=True)
+    if len(ifos) == 1:
+        subs = [subs]
     plt.xticks(rotation=20, ha='right')
     for sub, ifo in zip(subs, ifos):
         for seg in science_segs[ifo]:

@@ -26,9 +26,10 @@
 """ This module provides thin wrappers around Pegasus.DAX3 functionality that
 provides additional abstraction and argument handling.
 """
-import Pegasus.DAX3 as dax
 import os
-import urlparse
+import urlparse, urllib
+from Pegasus.catalogs.transformation_catalog import TransformationCatalog
+import Pegasus.DAX3 as dax
 
 class ProfileShortcuts(object):
     """ Container of common methods for setting pegasus profile information
@@ -68,12 +69,18 @@ class Executable(ProfileShortcuts):
     """
     id = 0
     def __init__(self, name, namespace=None, os='linux',
-                       arch='x86_64', installed=True, version=None):
+                       arch='x86_64', installed=True, version=None,
+                       container=None):
         self.logical_name = name + "_ID%s" % str(Executable.id)
         Executable.id += 1
         self.namespace = namespace
         self.version = version
-        self._dax_executable = dax.Executable(self.logical_name,
+        if container:
+            self._dax_executable = dax.Executable(self.logical_name,
+                   namespace=self.namespace, version=version, os=os,
+                   arch=arch, installed=installed, container=container)
+        else:
+            self._dax_executable = dax.Executable(self.logical_name,
                    namespace=self.namespace, version=version, os=os,
                    arch=arch, installed=installed)
         self.in_workflow = False
@@ -362,7 +369,7 @@ class Workflow(object):
             raise TypeError('Cannot add type %s to this workflow' % type(other))
 
 
-    def save(self, filename=None):
+    def save(self, filename=None, tc=None):
         """ Write this workflow to DAX file
         """
         if filename is None:
@@ -371,8 +378,36 @@ class Workflow(object):
         for sub in self.sub_workflows:
             sub.save()
 
+        # FIXME this is ugly as pegasus 4.9.0 does not support the full
+        # transformation catalog in the DAX. I have asked Karan to fix this so
+        # that executables and containers can be specified in the DAX itself.
+        # Karan says that XML is going away in Pegasus 5.x and so this code
+        # will need to be re-written anyway.
+        #
+        # the transformation catalog is written in the same directory as the
+        # DAX.  pycbc_submit_dax needs to know this so that the right
+        # transformation catalog is used when the DAX is planned.
+        if tc is None:
+            tc = '{}.tc.txt'.format(filename)
+        p = os.path.dirname(tc)
+        f = os.path.basename(tc)
+        if not p:
+            p = '.'
+
+        tc = TransformationCatalog(p, f)
+
+        for e in self._adag.executables.copy():
+            tc.add(e)
+            try:
+                tc.add_container(e.container)
+            except:
+                pass
+            self._adag.removeExecutable(e)
+
         f = open(filename, "w")
         self._adag.writeXML(f)
+        tc.write()
+
 
 class DataStorage(object):
     """ A workflow representation of a place to store and read data from.
@@ -452,6 +487,8 @@ class File(DataStorage, dax.File):
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
             if os.path.isfile(urlparts.path):
                 path = os.path.abspath(urlparts.path)
+                path = urlparse.urljoin('file:',
+                                        urllib.pathname2url(path)) 
                 site = 'local'
 
         fil = File(os.path.basename(path))

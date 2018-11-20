@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright (C) 2016 Christopher M. Biwer
 #
@@ -16,55 +16,75 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import matplotlib as mpl; mpl.use("Agg")
-import matplotlib.pyplot as plt
 import argparse
-import corner
 import itertools
 import logging
-import numpy
 import sys
-from pycbc import distributions
-from pycbc import inference
-from pycbc import results
+
+import numpy
+
+from matplotlib import use
+use('agg')
+from matplotlib import pyplot as plt
+
+import pycbc
+from pycbc import __version__
+from pycbc import (distributions, results)
+from pycbc.inference.option_utils import ParseParametersArg
 from pycbc.workflow import WorkflowConfigParser
+from pycbc.results.scatter_histograms import create_multidim_plot
+
 
 def cartesian(arrays):
     """ Returns a cartesian product from a list of iterables.
     """
-    return numpy.array([numpy.array(element) for element in itertools.product(*arrays)])
+    return numpy.array([numpy.array(element)
+                        for element in itertools.product(*arrays)])
 
 # command line usage
-parser = argparse.ArgumentParser(usage="pycbc_inference_plot_prior [--options]",
+parser = argparse.ArgumentParser(
+    usage="pycbc_inference_plot_prior [--options]",
     description="Plots prior distributions.")
-
 # add input options
 parser.add_argument("--config-files", type=str, nargs="+", required=True,
-    help="A file parsable by pycbc.workflow.WorkflowConfigParser.")
+                    help="A file parsable by "
+                         "pycbc.workflow.WorkflowConfigParser.")
+parser.add_argument("--parameters", nargs="+", action=ParseParametersArg,
+                    metavar="PARAM[:LABEL]",
+                    help="Only plot the given parameters. May also provide a "
+                         "label for each parameter. If provided, the "
+                         "parameters can be any of parameters in the "
+                         "[variable_params] section, derived parameters from "
+                         "them, or any function of them. Syntax for "
+                         "functions is python; any math functions in the "
+                         "numpy libary may be used. Can optionally also "
+                         "specify a LABEL for each parameter. If no LABEL is "
+                         "provided, PARAM will used as the LABEL. If LABEL "
+                         "is the same as a parameter in "
+                         "pycbc.waveform.parameters, the label "
+                         "property of that parameter will be used. If not "
+                         "provided, will plot all of the parameters in the "
+                         "[variable_params] section of the config file.")
 parser.add_argument("--sections", type=str, nargs="+", default=["prior"],
-    help="Name of section plus subsection with distribution configurations, eg. prior-mass1.")
-
-# add prior options
-parser.add_argument("--bins", type=int, default=20,
-    help="Number of points to grid a parameter. Need at least 20 bins to fill in the plot.")
-
+                    help="Name of section plus subsection with distribution "
+                         "configurations, eg. prior-mass1.")
 # add output options
+parser.add_argument("--nsamples", type=int, default=10000,
+                    help="The number of samples to draw from the prior for "
+                         "plotting. Defaults is 10000.")
 parser.add_argument("--output-file", type=str, required=True,
-    help="Path to output plot.")
-
+                    help="Path to output plot.")
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
-    help="")
+                    help="")
+parser.add_argument("--version", action="version", version=__version__,
+                    help="show version number and exit")
 
 # parse the command line
 opts = parser.parse_args()
 
 # setup log
-if opts.verbose:
-    log_level = logging.DEBUG
-else:
-    log_level = logging.WARN
-logging.basicConfig(format="%(asctime)s : %(message)s", level=log_level)
+pycbc.init_logging(opts.verbose)
 
 # read configuration file
 logging.info("Reading configuration files")
@@ -75,7 +95,7 @@ cp = WorkflowConfigParser(opts.config_files)
 # if only section then look for subsections
 # and add distributions to list
 logging.info("Constructing prior")
-variable_args = []
+variable_params = []
 dists = []
 for sec in opts.sections:
     section = sec.split("-")[0]
@@ -88,67 +108,42 @@ for sec in opts.sections:
         name = cp.get_opt_tag(section, "name", subsection)
         dist = distributions.distribs[name].from_config(
                                             cp, section, subsection)
-        variable_args += dist.params
+        variable_params += dist.params
         dists.append(dist)
-variable_args = sorted(variable_args)
-ndim = len(variable_args)
+variable_params = sorted(variable_params)
+ndim = len(variable_params)
 
 # construct class that will return draws from the prior
-prior = distributions.JointDistribution(variable_args, *dists)
+logging.info("Drawing samples")
+prior = distributions.JointDistribution(variable_params, *dists)
+samples = prior.rvs(opts.nsamples)
 
-# get all points in space to calculate PDF
-logging.info("Getting grid of points")
-vals = numpy.zeros(shape=(ndim,opts.bins))
-bounds = [{}] * ndim
-for dist in dists:
-    for param in dist.params:
-        idx = variable_args.index(param)
-        step = float(dist.bounds[param][1]-dist.bounds[param][0]) / opts.bins
-        vals[idx,:] = numpy.arange(dist.bounds[param][0],dist.bounds[param][1],step)
-        bounds[idx] = dist.bounds
-pts = cartesian(vals)
-
-# evaulate PDF between the bounds
-logging.info("Calculating PDF")
-pdf = []
-for pt in pts:
-    pt_dict = dict([(param,pt[j]) for j,param in enumerate(variable_args)])
-    pdf.append(sum([dist.pdf(**pt_dict) for dist in dists]))
-pdf = numpy.array(pdf)
-
-# check if only one parameter to plot PDF
-logging.info("Plotting") 
-if len(variable_args) == 1:
-    x = vals[0,:]
-    xmax = x.max()
-    xmin = x.min()
-    pad = 0.1*(xmax-xmin)
-    fig = plt.figure()
-    plt.plot(x, pdf, "k", label="Prior")
-    plt.xlim(xmin-pad, xmax+pad)
-    plt.ylabel("Probability Density Function")
-    plt.xlabel(variable_args[0])
-    plt.legend()
-
-# else make corner plot of all PDF
+# figure out what parameters to plot
+if opts.parameters is None:
+    parameters = variable_params
+    labels = {param: param for param in variable_params}
 else:
-    fig = corner.corner(pts, weights=pdf, labels=variable_args,
-                       plot_contours=False, plot_datapoints=False)
+    parameters = opts.parameters
+    labels = opts.parameters_labels
 
-    # remove the 1-D histograms
-    delaxs = fig.axes[::ndim+1]
-    [fig.delaxes(ax) for ax in delaxs]
+logging.info("Plotting")
+fig, axis_dict = create_multidim_plot(
+    parameters, samples,
+    labels=labels,
+    plot_marginal=True,
+    marginal_percentiles=[5, 50, 95],
+    plot_scatter=False,
+    plot_density=True,
+    plot_contours=True,
+    contour_percentiles=[50, 90],)
 
-    # adjust size of remaining plots to cover entire canvas
-    fig.subplots_adjust(top=1+1.0/(ndim))
-    fig.subplots_adjust(right=1+1.0/(ndim))
-    for ax in fig.axes:
-        ax.yaxis.get_label().set_position((-0.2,0.5))
-        ax.xaxis.get_label().set_position((0.5,-0.2))
+
+# set DPI
+fig.set_dpi(200)
 
 # save figure with meta-data
 caption_kwargs = {
-    "parameters" : ", ".join([param for param in variable_args])
+    "parameters" : ", ".join([param for param in variable_params])
 }
 caption = """This plot shows the probability density function (PDF) from the 
 prior distributions."""

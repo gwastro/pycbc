@@ -16,6 +16,7 @@
 from __future__ import division
 import re
 import numpy
+from six.moves import range
 from lal import MTSUN_SI, PI, CreateREAL8Vector
 import lalsimulation
 
@@ -264,7 +265,7 @@ def get_chirp_params(mass1, mass2, spin1z, spin2z, f0, order,
     lambda_str = '^Lambda([0-9]+)'
     loglambda_str = '^LogLambda([0-9]+)'
     logloglambda_str = '^LogLogLambda([0-9]+)'
-    for idx in xrange(len(mapping.keys())):
+    for idx in range(len(mapping.keys())):
         # RE magic engage!
         rematch = re.match(lambda_str, mapping[idx])
         if rematch:

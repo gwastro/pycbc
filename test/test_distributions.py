@@ -33,7 +33,7 @@ from pycbc.workflow import WorkflowConfigParser
 EXCLUDE_DIST_NAMES = ["fromfile", "arbitrary",
                       "uniform_solidangle", "uniform_sky",
                       "independent_chip_chieff",
-                      "uniform_component_masses"]
+                      "uniform_component_masses", "uniform_f0_tau"]
 
 # tests only need to happen on the CPU
 parse_args_cpu_only("Distributions")
@@ -64,14 +64,16 @@ class TestDistributions(unittest.TestCase):
 
         # read configuration files
         self.cp = WorkflowConfigParser.from_cli(self.opts)
-        args = distributions.read_args_from_config(self.cp)
-        self.variable_args, self.static_args, self.contraints = args
+        self.variable_args, self.static_args = \
+            distributions.read_params_from_config(self.cp)
+        self.constraints = distributions.read_constraints_from_config(self.cp)
 
         # read distributions
         self.dists = distributions.read_distributions_from_config(self.cp)
 
         # check that all distriubtions will be tested
-        for dname, dclass in distributions.distribs.iteritems():
+        for dname in distributions.distribs:
+            dclass = distributions.distribs[dname]
             if (not numpy.any([isinstance(dist, dclass)
                                for dist in self.dists])
                     and dname not in EXCLUDE_DIST_NAMES):

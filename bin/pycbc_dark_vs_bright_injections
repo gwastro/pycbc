@@ -34,8 +34,8 @@ import numpy
 import pycbc
 import pycbc.inject
 import pycbc.tmpltbank.em_progenitors
-from pycbc.ligolw import utils as ligolw_utils
-from pycbc.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import lsctables
 from random import sample
 from copy import deepcopy
 

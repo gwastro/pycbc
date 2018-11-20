@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 # Copyright (C) 2016 Christopher M. Biwer, Alexander Harvey Nitz
 #
@@ -24,10 +24,8 @@ import logging
 import os
 import Pegasus.DAX3 as dax
 import pycbc.workflow as wf
-import pycbc.workflow.inference_followups as inffu
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
-import pycbc.version
 import socket
 import sys
 from glue import segments
@@ -36,6 +34,12 @@ from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.types import MultiDetOptionAppendAction
 from pycbc.workflow import WorkflowConfigParser
+
+from pycbc import __version__
+
+# FIXME see https://github.com/gwastro/pycbc/issues/2349
+import pycbc.workflow.inference_followups as inffu
+
 
 def to_file(path, ifo=None):
     """ Takes a str and returns a pycbc.workflow.pegasus_workflow.File
@@ -61,8 +65,7 @@ def symlink_path(f, path):
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
 # version option
-parser.add_argument("--version", action="version",
-                    version=pycbc.version.git_verbose_msg, 
+parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
 
 # workflow options
@@ -74,6 +77,8 @@ parser.add_argument("--output-dir", default=None,
                     help="Path to output directory.")
 parser.add_argument("--output-map", required=True,
                     help="Path to output map file.")
+parser.add_argument("--transformation-catalog", required=True,
+                    help="Path to transformation catalog file.")
 parser.add_argument("--output-file", required=True,
                     help="Path to DAX file.")
 
@@ -94,9 +99,9 @@ parser.add_argument("--gps-end-time", type=float, nargs="+", default=None,
                          "this option is ignored.")
 
 # input configuration file options
-parser.add_argument("--inference-config-file", type=str, required=True,
+parser.add_argument("--inference-config-file", type=str, nargs='+', required=True,
                     help="workflow.WorkflowConfigParser parsable file with "
-                         "proir information.")
+                         "prior information.")
 parser.add_argument("--prior-section", type=str, default="prior",
                     help="Name of the section in inference configuration file "
                          "that contains priors.")
@@ -154,9 +159,6 @@ workflow_options = opts.bank_file != None \
 if not workflow_options and not (opts.gps_end_time != None):
     raise ValueError("Must use either workflow options or --gps-end-time")
 
-# typecast str from command line to File instances
-config_file = to_file(opts.inference_config_file)
-
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
                             ["detector_sensitivity", "priors", "posteriors",
@@ -193,9 +195,6 @@ workflow_options = opts.bank_file != None \
                    and opts.single_detector_triggers != None
 if not workflow_options and not (opts.gps_end_time != None):
     raise ValueError("Must use either workflow options or --gps-end-time")
-
-# typecast str from command line to File instances
-config_file = to_file(opts.inference_config_file)
 
 # if using workflow files to find analysis times
 if workflow_options:
@@ -239,7 +238,11 @@ inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
                               out_dir=opts.output_dir)
 
 # read inference configuration file
-cp = WorkflowConfigParser([opts.inference_config_file])
+# typecast str from command line to File instances
+cp = WorkflowConfigParser(opts.inference_config_file)
+with open('inference.ini', 'w') as ff:
+    cp.write(ff)
+config_file = to_file('inference.ini')
 
 # get channel names
 channel_names = {}
@@ -320,7 +323,7 @@ for num_event in range(num_events):
     base = "posteriors"
     post_table_files = inffu.make_inference_summary_table(
                           workflow, inference_file, rdir[base],
-                          variable_args=all_parameters,
+                          variable_params=all_parameters,
                           analysis_seg=analysis_time,
                           tags=opts.tags + [str(num_event)])
     post_files = inffu.make_inference_posterior_plot(
@@ -401,7 +404,8 @@ dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
 
 # write dax
-container.save(filename=opts.output_file, output_map_path=opts.output_map)
+container.save(filename=opts.output_file, output_map_path=opts.output_map,
+               transformation_catalog_path=args.transformation_catalog)
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]

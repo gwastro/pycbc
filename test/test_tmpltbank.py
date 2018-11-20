@@ -35,6 +35,7 @@ from pycbc import pnutils
 from pycbc.types import Array
 from pycbc.filter import match
 from pycbc.waveform import get_fd_waveform
+from six.moves import range
 import difflib
 import sys
 import matplotlib
@@ -74,7 +75,7 @@ def update_mass_parameters(tmpltbank_class):
     max_iter_idx = num_comp_masses * num_tot_masses *\
                    num_chirp_masses * num_etas
 
-    for idx in xrange(max_iter_idx):
+    for idx in range(max_iter_idx):
         comp_masses_idx = idx % num_comp_masses
         tmpltbank_class.min_mass1 = min_mass1[comp_masses_idx]
         tmpltbank_class.max_mass1 = max_mass1[comp_masses_idx]

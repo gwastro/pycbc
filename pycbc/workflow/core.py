@@ -26,7 +26,7 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string, urlparse
+import sys, os, stat, subprocess, logging, math, string, urlparse, urllib
 import ConfigParser, copy
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations
@@ -37,10 +37,10 @@ import lal.utils
 import Pegasus.DAX3
 from glue import lal as gluelal
 from glue import segments
-from pycbc.ligolw import table, lsctables, ligolw
-from pycbc.ligolw import utils as ligolw_utils
-from pycbc.ligolw.utils import segments as ligolw_segments
-from pycbc.ligolw.utils import process as ligolw_process
+from glue.ligolw import table, lsctables, ligolw
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw.utils import segments as ligolw_segments
+from glue.ligolw.utils import process as ligolw_process
 from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
 from pycbc.workflow import pegasus_workflow
 
@@ -166,6 +166,8 @@ class Executable(pegasus_workflow.Executable):
             self.ifo_string = None
         self.cp = cp
         self.universe=universe
+        self.container_cls = None
+        self.container_type = None
 
         try:
             self.installed = cp.getboolean('pegasus_profile-%s' % name, 'pycbc|installed')
@@ -181,8 +183,43 @@ class Executable(pegasus_workflow.Executable):
         # Determine the level at which output files should be kept
         self.update_current_retention_level(self.current_retention_level)
 
-        super(Executable, self).__init__(self.tagged_name,
-                                         installed=self.installed)
+        # Determine if this executables should be run in a container
+        try:
+            self.container_type = cp.get('pegasus_profile-%s' % name,
+                                         'container|type')
+        except:
+            pass
+
+        if self.container_type is not None:
+            self.container_img = cp.get('pegasus_profile-%s' % name,
+                                        'container|image')
+            try:
+                self.container_site = cp.get('pegasus_profile-%s' % name,
+                                             'container|image_site')
+            except:
+                self.container_site = 'local'
+
+            try:
+                self.container_mount = cp.get('pegasus_profile-%s' % name,
+                                             'container|mount').split(',')
+            except:
+                self.container_mount = None
+
+
+            self.container_cls = Pegasus.DAX3.Container("{}-container".format(
+                                                    name),
+                                                    self.container_type,
+                                                    self.container_img,
+                                                    imagesite=self.container_site,
+                                                    mount=self.container_mount)
+
+            super(Executable, self).__init__(self.tagged_name,
+                                             installed=self.installed,
+                                             container=self.container_cls)
+
+        else:
+            super(Executable, self).__init__(self.tagged_name,
+                                             installed=self.installed)
 
         self._set_pegasus_profile_options()
 
@@ -233,6 +270,7 @@ class Executable(pegasus_workflow.Executable):
 
         if hasattr(self, "group_jobs"):
             self.add_profile('pegasus', 'clusters.size', self.group_jobs)
+
     @property
     def ifo(self):
         """Return the ifo.
@@ -259,7 +297,7 @@ class Executable(pegasus_workflow.Executable):
         """
         for opt in cp.options(sec):
             namespace = opt.split('|')[0]
-            if namespace == 'pycbc':
+            if namespace == 'pycbc' or namespace == 'container':
                 continue
 
             value = string.strip(cp.get(sec, opt))
@@ -285,26 +323,36 @@ class Executable(pegasus_workflow.Executable):
             opt = '--%s' %(opt,)
             if opt in self.file_input_options:
                 # This now expects the option to be a file
+                # Check is we have a list of files
+                values = [path for path in value.split(' ') if path]
+                dax_reprs = []
+
                 # Get LFN and PFN
-                curr_lfn = os.path.basename(value)
+                for path in values:
+                    curr_lfn = os.path.basename(path)
 
-                # If the file exists make sure to use.
-                if os.path.isfile(value):
-                    curr_pfn = os.path.abspath(value)
-                else:
-                    curr_pfn = value
+                    # If the file exists make sure to use the
+                    # fill path as a file:// URL
+                    if os.path.isfile(path):
+                        curr_pfn = urlparse.urljoin('file:',
+                                    urllib.pathname2url(
+                                    os.path.abspath(path))) 
+                    else:
+                        curr_pfn = value
 
-                if curr_lfn in file_input_from_config_dict.keys():
-                    file_pfn = file_input_from_config_dict[curr_lfn][0]
-                    assert(file_pfn == curr_pfn)
-                    curr_file = file_input_from_config_dict[curr_lfn][1]
-                else:
-                    curr_file = File.from_path(value)
-                    tuple_val = (curr_pfn, curr_file)
-                    file_input_from_config_dict[curr_lfn] = tuple_val
-                self.common_input_files.append(curr_file)
-                value = curr_file.dax_repr
-            self.common_options += [opt, value]
+                    if curr_lfn in file_input_from_config_dict.keys():
+                        file_pfn = file_input_from_config_dict[curr_lfn][0]
+                        assert(file_pfn == curr_pfn)
+                        curr_file = file_input_from_config_dict[curr_lfn][1]
+                    else:
+                        curr_file = File.from_path(value)
+                        tuple_val = (curr_pfn, curr_file)
+                        file_input_from_config_dict[curr_lfn] = tuple_val
+                    self.common_input_files.append(curr_file)
+                    dax_reprs.append(curr_file.dax_repr)
+                self.common_options += [opt] + dax_reprs
+            else:
+                self.common_options += [opt, value]
 
     def add_opt(self, opt, value=None):
         """Add option to job.
@@ -571,6 +619,15 @@ class Workflow(pegasus_workflow.Workflow):
         return path
 
     @property
+    def transformation_catalog(self):
+        if self.in_workflow is not False:
+            name = self.name + '.tc.txt'
+        else:
+            name = 'tc.txt'
+        path =  os.path.join(os.getcwd(), name)
+        return path
+
+    @property
     def staging_site(self):
         if self.in_workflow is not False:
             workflow_section = 'workflow-%s' % self.name
@@ -600,7 +657,9 @@ class Workflow(pegasus_workflow.Workflow):
 
             resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             node.executable.clear_pfns()
-            node.executable.add_pfn(resolved, site='local')
+            node.executable.add_pfn(urlparse.urljoin('file:',
+                                    urllib.pathname2url(
+                                    resolved)), site='local')
 
         cmd_list = node.get_command_line()
 
@@ -617,14 +676,27 @@ class Workflow(pegasus_workflow.Workflow):
 
         for fil in node._outputs:
             fil.node = None
-            fil.PFN(fil.storage_path, site='local')
+            fil.PFN(urlparse.urljoin('file:', 
+                    urllib.pathname2url(fil.storage_path)),
+                    site='local')
 
     @staticmethod
-    def set_job_properties(job, output_map_file, staging_site=None):
+    def set_job_properties(job, output_map_file, transformation_catalog_file,
+                           staging_site=None):
+
         job.addArguments('-Dpegasus.dir.storage.mapper.replica.file=%s' %
                          os.path.basename(output_map_file.name))
         job.uses(output_map_file, link=Pegasus.DAX3.Link.INPUT)
         job.addArguments('-Dpegasus.dir.storage.mapper.replica=File')
+
+        # FIXME this is an ugly hack to connect the right transformation
+        # catalog to the right DAX beacuse Pegasus 4.9 does not support
+        # the full transformation catalog syntax in the DAX. This will go
+        # away in Pegasus 5.x when this code is re-written.
+
+        job.addArguments('-Dpegasus.catalog.transformation.file=%s' %
+                         os.path.basename(transformation_catalog_file.name))
+        job.uses(transformation_catalog_file, link=Pegasus.DAX3.Link.INPUT)
 
         job.addArguments('--output-site local')
         job.addArguments('--cleanup inplace')
@@ -639,7 +711,9 @@ class Workflow(pegasus_workflow.Workflow):
         if staging_site:
             job.addArguments('--staging-site %s' % staging_site)
 
-    def save(self, filename=None, output_map_path=None, staging_site=None):
+    def save(self, filename=None, output_map_path=None,
+             transformation_catalog_path=None, staging_site=None):
+
         if output_map_path is None:
             output_map_path = self.output_map
         output_map_file = Pegasus.DAX3.File(os.path.basename(output_map_path))
@@ -647,9 +721,21 @@ class Workflow(pegasus_workflow.Workflow):
         if self.in_workflow is not False:
             self.in_workflow._adag.addFile(output_map_file)
 
-        staging_site = self.staging_site
+        if transformation_catalog_path is None:
+            transformation_catalog_path = self.transformation_catalog
+        transformation_catalog_file = Pegasus.DAX3.File(os.path.basename(
+                                                        transformation_catalog_path))
+        transformation_catalog_file.addPFN(Pegasus.DAX3.PFN(
+            transformation_catalog_path, 'local'))
+        if self.in_workflow is not False:
+            self.in_workflow._adag.addFile(transformation_catalog_file)
 
-        Workflow.set_job_properties(self.as_job, output_map_file, staging_site)
+        if staging_site is None:
+            staging_site = self.staging_site
+
+        Workflow.set_job_properties(self.as_job, output_map_file,
+                                    transformation_catalog_file,
+                                    staging_site)
 
         # add executable pfns for local site to dax
         for exe in self._executables:
@@ -674,7 +760,8 @@ class Workflow(pegasus_workflow.Workflow):
         fp.close()
 
         # save the dax file
-        super(Workflow, self).save(filename=filename)
+        super(Workflow, self).save(filename=filename,
+                                   tc=transformation_catalog_path)
 
         # add workflow storage locations to the output mapper
         f = open(output_map_path, 'w')
@@ -1612,7 +1699,9 @@ class SegFile(File):
         if not file_exists:
             instnc.to_segment_xml()
         else:
-            instnc.PFN(instnc.storage_path, site='local')
+            instnc.PFN(urlparse.urljoin('file:',
+                       urllib.pathname2url(
+                       instnc.storage_path)), site='local')
         return instnc
 
     @classmethod
@@ -1735,16 +1824,19 @@ class SegFile(File):
                          for seg in self.seg_summ_dict[key]]
 
             # Add using glue library to set all segment tables
-            with ligolw_segments.LigolwSegments(outdoc, process) as xmlsegs:
-                xmlsegs.insert_from_segmentlistdict({ifo : fsegs}, name,
-                                                    version = 1,
-                                                    valid = {ifo : vsegs})
+            with ligolw_segments.LigolwSegments(outdoc, process) as x:
+                x.add(ligolw_segments.LigolwSegmentList(active=fsegs,
+                                    instruments=set([ifo]), name=name,
+                                    version=1, valid=vsegs))
+
         # write file
         if override_file_if_exists and \
                                  self.has_pfn(self.storage_path, site='local'):
             pass
         else:
-            self.PFN(self.storage_path, site='local')
+            self.PFN(urlparse.urljoin('file:', 
+                     urllib.pathname2url(self.storage_path)),
+                     site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
@@ -1828,7 +1920,7 @@ class CalledProcessErrorMod(Exception):
         self.outFile = outFile
         self.cmdFile = cmdFile
     def __str__(self):
-        msg = "Command '%s' returned non-zero exit pycbc_submit_dax --dax gw.dax --accounting-group ligo.dev.o1.cbc.bns.pycbcofflinestatus %d.\n" \
+        msg = "Command '%s' returned non-zero exit status %d.\n" \
               %(self.cmd, self.returncode)
         if self.errFile:
             msg += "Stderr can be found in %s .\n" %(self.errFile)

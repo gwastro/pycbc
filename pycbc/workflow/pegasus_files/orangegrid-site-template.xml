@@ -1,0 +1,16 @@
+  <!-- a separate staging site is added else, the intermediate files are symlinked from the home
+       directory since symlinking is turned on -->
+  <site handle="orangegrid-scratch" arch="x86_64" os="LINUX">
+   <directory  path="${REMOTE_SITE_SCRATCH_PATH}/orangegrid-scratch" type="shared-scratch" free-size="null" total-size="null">
+        <file-server  operation="all" url="${REMOTE_SITE_SCRATCH_URL}/orangegrid-scratch">
+        </file-server>
+    </directory>
+  </site>
+
+  <site handle="orangegrid" arch="x86_64" os="LINUX">
+    <profile namespace="pegasus" key="style">condor</profile>
+    <profile namespace="condor" key="should_transfer_files">YES</profile>
+    <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
+    <profile namespace="condor" key="+OrangeGrid">True</profile>
+    <profile namespace="condor" key="run_as_owner">False</profile>
+    <profile namespace="condor" key="getenv">False</profile>

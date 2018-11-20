@@ -106,6 +106,30 @@ class PyCBCFindCoincExecutable(Executable):
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
 
+class PyCBCFindMultiifoCoincExecutable(Executable):
+    """Find coinc triggers using a folded interval method"""
+    current_retention_level = Executable.ALL_TRIGGERS
+    file_input_options = ['--statistic-files']
+    def create_node(self, trig_files, bank_file, stat_files, veto_file,
+                    veto_name, template_str, pivot_ifo, fixed_ifo, tags=None):
+        if tags is None:
+            tags = []
+        segs = trig_files.get_times_covered_by_files()
+        seg = segments.segment(segs[0][0], segs[-1][1])
+        node = Node(self)
+        node.add_input_opt('--template-bank', bank_file)
+        node.add_input_list_opt('--trigger-files', trig_files)
+        if len(stat_files) > 0:
+            node.add_input_list_opt('--statistic-files', stat_files)
+        if veto_file is not None:
+            node.add_input_opt('--veto-files', veto_file)
+            node.add_opt('--segment-name', veto_name)
+        node.add_opt('--pivot-ifo', pivot_ifo)
+        node.add_opt('--fixed-ifo', fixed_ifo)
+        node.add_opt('--template-fraction-range', template_str)
+        node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
+        return node
+
 class PyCBCStatMapExecutable(Executable):
     """Calculate FAP, IFAR, etc"""
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -493,3 +517,43 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
 
     logging.info('...leaving coincidence ')
     return statmap_files
+
+def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
+                         veto_files, veto_names, out_dir, pivot_ifo, fixed_ifo, tags=None):
+    """
+    This function sets up exact match multiifo coincidence
+    """
+    if tags is None:
+        tags = []
+    make_analysis_dir(out_dir)
+    logging.info('Setting up coincidence')
+
+    if len(hdfbank) != 1:
+        raise ValueError('Must use exactly 1 bank file for this coincidence '
+                         'method, I got %i !' % len(hdfbank))
+    hdfbank = hdfbank[0]
+
+    ifos, _ = trig_files.categorize_by_attr('ifo')
+    findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp, 'multiifo_coinc',
+                                             ifos=ifos,
+                                             tags=tags, out_dir=out_dir)
+
+    # Wall time knob and memory knob
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+
+    bg_files = []
+    for veto_file, veto_name in zip(veto_files, veto_names):
+        for i in range(factor):
+            group_str = '%s/%s' % (i, factor)
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                                   stat_files,
+                                                   veto_file, veto_name,
+                                                   group_str,
+                                                   pivot_ifo,
+                                                   fixed_ifo,
+                                                   tags=[veto_name, str(i)])
+            bg_files += coinc_node.output_files
+            workflow.add_node(coinc_node)
+
+    logging.info('...leaving coincidence ')
+    return bg_files

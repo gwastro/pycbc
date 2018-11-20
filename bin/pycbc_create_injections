@@ -123,7 +123,7 @@ from pycbc.workflow import WorkflowConfigParser
 import h5py
 
 # stuff for writing xml files... remove this when we drop xml
-from pycbc.ligolw import ligolw, lsctables, table, utils as ligolw_utils
+from glue.ligolw import ligolw, lsctables, table, utils as ligolw_utils
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -200,14 +200,20 @@ parser.add_argument('--ninjections', required=True, type=int,
 parser.add_argument('--seed', type=int, default=0,
                     help='Seed to use for the random number generator. '
                          'Default is 0.')
-parser.add_argument('--dist-section', default='distribution',
-                    help='What section in the config-file to load '
-                          'distributions from. Default is "distribution".')
 parser.add_argument('--output-file', required=True,
                     help='Output file to save to. If ends in ".xml[.gz]", '
                          'injections will be written to a sim_inspiral table '
                          'in an xml file. Otherwise, results will be written '
                          'to an hdf file.')
+parser.add_argument('--dist-section', default='distribution',
+                    help='What section in the config file to load '
+                          'distributions from. Default is distribution.')
+parser.add_argument('--variable-params-section', default='variable_args',
+                    help='What section in the config file to load the '
+                         'parameters to vary. Default is variable_args.')
+parser.add_argument('--static-args-section', default="static_args",
+                    help='What section to load the static args from. Default '
+                         'is static_args.')
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an OSError is raised.")
@@ -227,8 +233,11 @@ logging.info("Loading config file")
 cp = WorkflowConfigParser.from_cli(opts)
 
 # get the vairable and static arguments from the config file
-variable_args, static_args, constraints = \
-    distributions.read_args_from_config(cp, prior_section=opts.dist_section)
+variable_args, static_args = distributions.read_params_from_config(cp,
+    prior_section=opts.dist_section,
+    vargs_section=opts.variable_params_section,
+    sargs_section=opts.static_args_section)
+constraints = distributions.read_constraints_from_config(cp)
 
 if any(cp.get_subsections('waveform_transforms')):
     waveform_transforms = transforms.read_transforms_from_config(cp,

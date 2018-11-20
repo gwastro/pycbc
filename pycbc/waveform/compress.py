@@ -371,7 +371,7 @@ _linear_decompress_code = r"""
     }
 
     // zero out the beginning
-    memset(outptr, 0, sizeof(*outptr)*2*kmin);
+    memset(outptr, 0, sizeof(*outptr)*2*(kmin+1));
 
     // move to the start position
     outptr += 2*kmin;
@@ -441,7 +441,9 @@ _linear_decompress_code = r"""
     }
 
     // zero out the rest of the array
-    memset(outptr, 0, sizeof(*outptr)*2*(hlen-kmax));
+    if (hlen - (kmax+1) > 0) {
+        memset(outptr, 0, sizeof(*outptr)*2*(hlen - (kmax+1)));
+    }
 """
 # for single precision
 _linear_decompress_code32 = _linear_decompress_code.replace('double', 'float')

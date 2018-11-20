@@ -23,6 +23,7 @@ RESULT=0
 # this is needed for test_inference.py
 pip uninstall -y numpy
 pip install -r requirements.txt
+pip install markupsafe --upgrade
 
 # Using python setup.py test has two issues:
 #     Some tests fail for reasons not necessarily related to PyCBC
@@ -61,7 +62,8 @@ do
 done
 
 # Run Inference Scripts
-./tools/inference_test.sh
+pushd examples/inference/analytic-normal2d
+bash -e run.sh
 if test $? -ne 0 ; then
     RESULT=1
     echo -e "    FAILED!"
@@ -69,6 +71,7 @@ if test $? -ne 0 ; then
 else
     echo -e "    Pass."
 fi
+popd
 
 echo -e "\\n>> [`date`] Building documentation"
 

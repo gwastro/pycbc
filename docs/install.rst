@@ -4,6 +4,32 @@
 Installing PyCBC
 ################
 
+%%%%%%%%%%%%%%%%%%%%%%%%
+Simple Installation
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+PyCBC is available through the PyPI. For straightforward use of the PyCBC library
+and executables, we recommend installing with the following command. If you 
+are not running in a specialized computing environment, this is probably the
+appropriate thing to do. Note, that at this time, PyCBC supports Python2. Python3
+support is under development.
+
+.. code-block:: bash
+    
+    pip install lalsuite pycbc
+    
+PyCBC depends on `lalsuite` for a lot of functionality, however, if you are
+getting lalsuite through another means, you may ommit this part of the command.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Full Virtualenv for Development and Production
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The following instructions are appropriate for development use on LDG clusters, 
+and goes through some special case scenarios appropriate for these environments
+as they generally contain older reference operating systems. Other users may find
+useful tips here, but in most cases, we suggest using the simpler instructions.
+
 This document explains how to set up a virtual environment to install PyCBC
 either for development or use in a production analysis with a release. The
 code build will be a standard Python install which requires that the
@@ -155,7 +181,7 @@ Install unittest2, python-cjson, and numpy with the command:
 
 .. code-block:: bash
 
-    pip install "numpy>=1.6.4" unittest2 python-cjson Cython decorator
+    pip install "numpy>=1.13.0" python-cjson Cython decorator
 
 Once you have these packages installed, you can now install lalsuite following the instructions at:
 
@@ -178,8 +204,8 @@ Next install the Pegasus WMS python libraries needed to build the workflows with
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.7.3/pegasus-python-source-4.7.3.tar.gz
-
+    pip install http://download.pegasus.isi.edu/pegasus/4.8.1/pegasus-python-source-4.8.1.tar.gz
+    
 To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. Install the 1.4.1 pre-release of these tools, run the command:
 
 .. code-block:: bash

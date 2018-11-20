@@ -1,6 +1,7 @@
 from __future__ import division
 import copy
 import numpy
+from six.moves import range
 from pycbc.tmpltbank.coord_utils import get_cov_params
 
 
@@ -85,12 +86,12 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
                                   scaleFactor, massRangeParams, metricParams,
                                   fUpper)
         cDist = (new_xis[0] - xis[0])**2
-        for j in xrange(1,xi_size):
+        for j in range(1,xi_size):
             cDist += (new_xis[j] - xis[j])**2
         if (cDist.min() < req_match):
             idx = cDist.argmin()
             scaleFactor = origScaleFactor
-            new_xis_list = [new_xis[ldx][idx] for ldx in xrange(len(new_xis))]
+            new_xis_list = [new_xis[ldx][idx] for ldx in range(len(new_xis))]
             return mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], count, \
                    cDist.min(), new_xis_list
         if (cDist.min() < currDist):
@@ -110,7 +111,7 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
             diff = (bestMasses[0]*bestMasses[0] * (1-4*bestMasses[1]))**0.5
             mass1 = (bestMasses[0] + diff)/2.
             mass2 = (bestMasses[0] - diff)/2.
-            new_xis_list = [new_xis[ldx][0] for ldx in xrange(len(new_xis))]
+            new_xis_list = [new_xis[ldx][0] for ldx in range(len(new_xis))]
             return mass1, mass2, bestMasses[2], bestMasses[3], count, \
                    currDist, new_xis_list
         if not unFixedCount % 100:
@@ -483,7 +484,7 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
     else:
         xiextrema = -100000000000
 
-    for _ in xrange(numIterations):
+    for _ in range(numIterations):
         # Evaluate extrema of the xi direction specified
         totmass, eta, spin1z, spin2z, _, _, new_xis = \
             get_mass_distribution([bestChirpmass,bestMasses[1],bestMasses[2],
@@ -491,7 +492,7 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
                                   scaleFactor, massRangeParams, metricParams,
                                   fUpper)
         cDist = (new_xis[0] - xis[0])**2
-        for j in xrange(1, xi_size):
+        for j in range(1, xi_size):
             cDist += (new_xis[j] - xis[j])**2
         redCDist = cDist[cDist < req_match]
         if len(redCDist):

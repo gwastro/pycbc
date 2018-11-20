@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright (C) 2017 Christopher M. Biwer
 #
@@ -24,17 +24,22 @@ import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import pycbc
 from pycbc import results
-from pycbc.inference import geweke
-from pycbc.inference import option_utils
 import sys
 
-# command line usage
-parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
-                                 description=__doc__)
+from pycbc import __version__
+from pycbc.inference import (io, geweke, option_utils)
+
+# add options to command line
+parser = io.ResultsArgumentParser(skip_args=['walkers'])
+
+# program-specific
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
     help="Print logging info.")
+
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -60,8 +65,6 @@ parser.add_argument("--reference-end", type=int, required=True,
                     help="End of reference segment for "
                          "calculating statistic.")
 
-# add results group
-option_utils.add_inference_results_option_group(parser)
 
 # parse the command line
 opts = parser.parse_args()
@@ -75,9 +78,8 @@ if opts.iteration is not None:
     raise ValueError("Cannot use --iteration")
 
 # load the results
-fp, params, labels, _ = option_utils.results_from_cli(
-                                         opts, load_samples=False,
-                                         walkers=None)
+fp, params, labels, _ = io.results_from_cli(
+                                         opts, load_samples=False)
 
 # get walkers to plot
 walkers = range(fp.nwalkers) if opts.walkers is None else opts.walkers
@@ -89,16 +91,12 @@ fig = plt.figure()
 # loop over each parameter
 for param, label in zip(params, labels):
     logging.info("Plotting parameter %s", param)
-
     # loop over walkers
     for j in walkers:
         logging.info("Plotting walker %d of %d", j, nwalkers)
 
         # plot each walker
-        y = fp.read_samples(param, walkers=j,
-                            thin_start=opts.thin_start,
-                            thin_interval=opts.thin_interval,
-                            thin_end=opts.thin_end)
+        y = fp.samples_from_cli(opts, parameters=param, walkers=j)
 
         # get samples for this parameter
         vals = y[param]

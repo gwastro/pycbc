@@ -6,6 +6,7 @@ for i in $*; do
   case $i in
     --pycbc-container=*) PYCBC_CONTAINER="`echo $i|sed 's/^--pycbc-container=//'`";;
     --pull-request=*) TRAVIS_PULL_REQUEST="`echo $i|sed 's/^--pull-request=//'`";;
+    --lalsuite-hash=*) LALSUITE_HASH="`echo $i|sed 's/^--lalsuite-hash=//'`";;
     --commit=*) TRAVIS_COMMIT="`echo $i|sed 's/^--commit=//'`";;
     --secure=*) TRAVIS_SECURE_ENV_VARS="`echo $i|sed 's/^--secure=//'`";;
     --tag=*) TRAVIS_TAG="`echo $i|sed 's/^--tag=//'`";;
@@ -21,7 +22,6 @@ else
 fi
 
 # set the lalsuite checkout to use
-LALSUITE_HASH="8cbd1b7187ce3ed9a825d6ed11cc432f3cfde9a5"
 
 if [ "x$TRAVIS_TAG" == "x" ] ; then
   TRAVIS_TAG="master"
@@ -54,6 +54,23 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   export PYTHONUSERBASE=${BUILD}/.local
   export XDG_CACHE_HOME=${BUILD}/.cache
 
+  # Autoconf needs m4
+  wget -O m4-1.4.9.tar.gz http://ftp.gnu.org/gnu/m4/m4-1.4.9.tar.gz
+  tar -zvxf m4-1.4.9.tar.gz
+  cd m4-1.4.9
+  ./configure
+  make
+  make install
+  cd ..
+
+  # Build new autoconf
+  curl -L -O http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
+  tar zxf autoconf-2.69.tar.gz
+  cd autoconf-2.69
+  ./configure
+  make && make install
+  cd ..
+
   # get library to build optimized pycbc_inspiral bundle
   wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
   primary_url="https://git.ligo.org/ligo-cbc/pycbc-software/raw/"
@@ -70,7 +87,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
   # run the einstein at home build and test script
   echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
   pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/710a51f4770cbba77f61dfb798472bebe6c43d38/travis --with-extra-approximant='SPAtmplt:mtotal<4' --with-extra-approximant='SEOBNRv4_ROM:else'  --with-extra-approximant=--use-compressed-waveforms --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl --with-extra-bank=/pycbc/testbank_TF2v4ROM.hdf
+  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/efd37637fbb568936dfb92bc7aa8a77359c9aa36/travis --with-extra-approximant='SPAtmplt:mtotal<4' --with-extra-approximant='SEOBNRv4_ROM:else'  --with-extra-approximant=--use-compressed-waveforms --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl --with-extra-bank=/pycbc/testbank_TF2v4ROM.hdf
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle"
@@ -118,6 +135,11 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     apt-get update
     apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
     apt-get update
+    apt-get -y remove --purge openjdk-\*
+    echo "deb http://httpredir.debian.org/debian jessie-backports main non-free" > /etc/apt/sources.list.d/backports.list
+    echo "deb-src http://httpredir.debian.org/debian jessie-backports main non-free" >> /etc/apt/sources.list.d/backports.list
+    apt-get update
+    apt-get -y install -t jessie-backports openjdk-8-jre-headless ca-certificates-java
     curl -s -o pegasus-gpg.txt https://download.pegasus.isi.edu/pegasus/gpg.txt
     apt-key add pegasus-gpg.txt
     echo 'deb http://download.pegasus.isi.edu/wms/download/debian jessie main' > /etc/apt/sources.list.d/pegasus.list
@@ -151,14 +173,14 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   pip install --upgrade setuptools
 
   echo -e "\\n>> [`date`] Installing base python packages required to build lalsuite"
-  pip install "numpy>=1.6.4" "h5py>=2.5" unittest2 python-cjson Cython decorator
+  pip install "numpy>=1.6.4" "h5py>=2.5" python-cjson Cython decorator
   echo -e "\\n>> [`date`] Installing scipy"
   pip install "scipy>=0.13.0" &>/dev/null
 
   echo -e "\\n>> [`date`] Installing LAL"
   mkdir -p ${VIRTUAL_ENV}/src
   cd ${VIRTUAL_ENV}/src
-  git clone --depth 1 https://git.ligo.org/lscsoft/lalsuite-archive.git lalsuite
+  git clone https://git.ligo.org/lscsoft/lalsuite.git lalsuite
   cd ${VIRTUAL_ENV}/src/lalsuite
   git checkout ${LALSUITE_HASH}
   ./00boot
@@ -241,13 +263,11 @@ EOF
 
   deactivate
 
-  if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
-    echo -e "\\n>> [`date`] Running test_coinc_search_workflow.sh"
-    mkdir -p /pycbc/workflow-test
-    pushd /pycbc/workflow-test
-    /pycbc/tools/test_coinc_search_workflow.sh ${VENV_PATH} ${TRAVIS_TAG}
-    popd
-  fi
+  echo -e "\\n>> [`date`] Running test_coinc_search_workflow.sh"
+  mkdir -p /pycbc/workflow-test
+  pushd /pycbc/workflow-test
+  /pycbc/tools/test_coinc_search_workflow.sh ${VENV_PATH} ${TRAVIS_TAG}
+  popd
 
   if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
     echo -e "\\n>> [`date`] Setting virtual environment permissions for deployment"

@@ -67,7 +67,7 @@ def get_pycbc_psd_list():
         Returns a list of names of all reference PSD functions coded in PyCBC.
     """
     pycbc_analytical_psd_list = pycbc_analytical_psds.keys()
-    pycbc_analytical_psd_list.sort()
+    pycbc_analytical_psd_list = sorted(pycbc_analytical_psd_list)
     return pycbc_analytical_psd_list
 
 def from_string(psd_name, length, delta_f, low_freq_cutoff):

@@ -34,7 +34,7 @@ import os, copy
 import urlparse
 import logging
 from glue import segments, lal
-from pycbc.ligolw import utils, table, lsctables, ligolw
+from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
 
@@ -706,7 +706,7 @@ def convert_cachelist_to_filelist(datafindcache_list):
             if frame.url.startswith('file://'):
                 currFile.PFN(frame.url, site='local')
                 if frame.url.startswith(
-                    'file:///cvmfs/oasis.opensciencegrid.org/'):
+                    'file:///cvmfs/oasis.opensciencegrid.org/ligo/frames'):
                     # Datafind returned a URL valid on the osg as well
                     # so add the additional PFNs to allow OSG access.
                     currFile.PFN(frame.url, site='osg')
@@ -719,6 +719,13 @@ def convert_cachelist_to_filelist(datafindcache_list):
                     currFile.PFN(frame.url.replace(
                         'file:///cvmfs/oasis.opensciencegrid.org/',
                         'gsiftp://ldas-grid.ligo.caltech.edu/hdfs/'), site='osg')
+                elif frame.url.startswith(
+                    'file:///cvmfs/gwosc.osgstorage.org/'):
+                    # Datafind returned a URL valid on the osg as well
+                    # so add the additional PFNs to allow OSG access.
+                    for s in ['osg', 'orangegrid', 'osgconnect']:
+                        currFile.PFN(frame.url, site=s)
+                        currFile.PFN(frame.url, site="{}-scratch".format(s))
             else:
                 currFile.PFN(frame.url, site='notlocal')
 

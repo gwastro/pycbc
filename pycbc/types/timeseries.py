@@ -17,7 +17,7 @@
 """
 Provides a class representing a time series.
 """
-
+from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, complex_same_precision_as, zeros
 from pycbc.types.array import _nocomplex
@@ -102,7 +102,8 @@ class TimeSeries(Array):
             new_epoch = self._epoch
         else:
             if index.start < 0:
-                raise ValueError('Negative start index not supported')
+                raise ValueError(('Negative start index ({})'
+                                  ' not supported').format(index.start))
             new_epoch = self._epoch + index.start * self._delta_t
 
         if index.step is not None:
@@ -196,6 +197,11 @@ class TimeSeries(Array):
             return Array(range(len(self))) * self._delta_t + float(self._epoch)
     sample_times = property(get_sample_times,
                             doc="Array containing the sample times.")
+
+    def at_time(self, time):
+        """ Return the value at the specified gps time
+        """
+        return self[int((time-self.start_time)*self.sample_rate)]
 
     def __eq__(self,other):
         """
@@ -444,13 +450,14 @@ class TimeSeries(Array):
         """
         from pycbc.psd import welch
         seg_len = int(segment_duration * self.sample_rate)
-        seg_stride = seg_len / 2
+        seg_stride = int(seg_len / 2)
         return welch(self, seg_len=seg_len,
                            seg_stride=seg_stride,
                            **kwds)
 
     def whiten(self, segment_duration, max_filter_duration, trunc_method='hann',
-                     remove_corrupted=True, low_frequency_cutoff=None, **kwds):
+                     remove_corrupted=True, low_frequency_cutoff=None,
+                     return_psd=False, **kwds):
         """ Return a whitened time series
 
         Parameters
@@ -470,6 +477,9 @@ class TimeSeries(Array):
             Low frequency cutoff to pass to the inverse spectrum truncation.
             This should be matched to a known low frequency cutoff of the
             data if there is one.
+        return_psd : {False, Boolean}
+            Return the estimated and conditioned PSD that was used to whiten
+            the data.
         kwds : keywords
             Additional keyword arguments are passed on to the `pycbc.psd.welch` method.
             
@@ -491,10 +501,13 @@ class TimeSeries(Array):
                    trunc_method=trunc_method)
 
         # Whiten the data by the asd
-        white = (self.to_frequencyseries() / psd ** 0.5).to_timeseries()
+        white = (self.to_frequencyseries() / psd**0.5).to_timeseries()
 
         if remove_corrupted:
-            white = white[max_filter_len/2:len(self)-max_filter_len/2]
+            white = white[int(max_filter_len/2):int(len(self)-max_filter_len/2)]
+
+        if return_psd:
+            return white, psd
 
         return white
 
@@ -731,7 +744,7 @@ class TimeSeries(Array):
 
         # add 0.5 to round integer
         tlen  = int(1.0 / delta_f / self.delta_t + 0.5)
-        flen = tlen / 2 + 1
+        flen = int(tlen / 2 + 1)
 
         if tlen < len(self):
             raise ValueError("The value of delta_f (%s) would be "

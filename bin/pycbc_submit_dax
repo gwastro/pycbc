@@ -26,9 +26,10 @@ SHARED_FILESYSTEM=0
 SITE_LIST=""
 STAGING_SITES=""
 TRANSFORMATION_CATALOG=""
-LOCAL_GSIFTP_SERVER=""
+LOCAL_STAGING_SERVER="file://"
 REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
+NO_GRID=""
 SUBMIT_DAX="--submit"
 
 # These will be changed by the bundle builder
@@ -47,7 +48,7 @@ rm -f _reuse.cache
 touch _reuse.cache
 rm -f *-extra-site-properties.xml
 
-GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:h --long dax:,cache-file:,local-gsiftp-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,help -n 'pycbc_submit_dax' -- "$@"`
+GETOPT_CMD=`getopt -o d:c:g:r:a:u:p:P:es:S:k:t:Fknl:Gh --long dax:,cache-file:,local-staging-server:,remote-staging-server:,accounting-group:,accounting-group-user:,pegasus-properties:,append-pegasus-property:,enable-shared-filesystem,execution-sites:,staging-sites:,append-site-profile:,transformation-catalog:,force-no-accounting-group,no-create-proxy,no-submit,local-dir:,no-grid,help -n 'pycbc_submit_dax' -- "$@"`
 eval set -- "$GETOPT_CMD"
 
 while true ; do
@@ -85,10 +86,10 @@ while true ; do
            set -e
            shift 2 ;;
       esac ;;
-    -g|--local-gsiftp-server)
+    -g|--local-staging-server)
       case "$2" in
         "") shift 2 ;;
-        *) LOCAL_GSIFTP_SERVER=$2 ; shift 2 ;;
+        *) LOCAL_STAGING_SERVER=$2 ; shift 2 ;;
       esac ;;
     -r|--remote-staging-server)
       case "$2" in
@@ -155,13 +156,14 @@ while true ; do
         *) TRANSFORMATION_CATALOG=$2 ; shift 2 ;;
       esac ;;
     -F|--force-no-accounting-group) NO_ACCOUNTING_GROUP=1 ; shift ;;
-    -k|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
+    -K|--no-create-proxy) NO_CREATE_PROXY=1 ; shift ;;
     -n|--no-submit) SUBMIT_DAX="" ; shift ;;
     -l|--local-dir)
       case "$2" in
         "") shift 2 ;;
         *) LOCAL_PEGASUS_DIR=$2 ; shift 2 ;;
       esac ;;
+    -G|--no-grid) NO_GRID="--forward nogrid" ; shift ;;
     -h|--help)
       echo "usage: pycbc_submit_dax [-h] --dax DAX [optional arguments]"
       echo
@@ -178,12 +180,11 @@ while true ; do
       echo "optional arguments:"
       echo "  -h, --help              show this help message and exit"
       echo "  -c, --cache-file FILE   replica cache file for data reuse"
-      echo "  -g, --local-gsiftp-server HOST provide a gsiftp url on HOST"
-      echo "                                 for the local site storage"
-      echo "                                 and scratch directories" 
-      echo "  -r, --remote-staging-server HOST provide a gsiftp url on HOST"
-      echo "                                 for the remote site storage"
-      echo "                                 and scratch directories" 
+      echo "  -g, --local-staging-server uri://host provide a uri on host"
+      echo "                                 for the local site scratch"
+      echo "                                 (default is file://)"
+      echo "  -r, --remote-staging-server uri://host provide a uri on host"
+      echo "                                 for the remote site scratch."
       echo "  -p, --pegasus-properties FILE use the specified file as"
       echo "                               the pegasus properties file"
       echo "  -P, --append-pegasus-property STRING add the extra property"
@@ -201,10 +202,12 @@ while true ; do
       echo "                               site catalog entry for SITE"
       echo "  -t, --transformation-catalog FILE pass the specified"
       echo "                                   transformation catalog to Pegasus"
-      echo "  -k, --no-create-proxy   Do not run ligo-proxy-init and assume"
+      echo "  -K, --no-create-proxy   Do not run ligo-proxy-init and assume"
       echo "                             that the user has a valid grid proxy"
       echo "  -n, --no-submit         Plan the DAX but do not submit it"
       echo "  -l, --local-dir         Directory to put condor files under"
+      echo "  -G, --no-grid           Disable checks for grid proxy and"
+      echo "                             GLOBUS_LOCATION in pegasus-plan"
       echo
       echo "If the environment variable TMPDIR is set then this is prepended to the "
       echo "path to the temporary workflow execute directory passed to pegasus-plan."
@@ -262,26 +265,27 @@ else
   fi
 fi
 
-#Check that the proxy is valid
-set +e
-grid-proxy-info -exists
-RESULT=$?
-set -e
-if [ ${RESULT} -eq 0 ] ; then
-  PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
-  if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
-    grid-proxy-info
+if [ -z "${NO_GRID}" ] ; then
+  #Check that the proxy is valid
+  set +e
+  grid-proxy-info -exists
+  RESULT=$?
+  set -e
+  if [ ${RESULT} -eq 0 ] ; then
+    PROXY_TYPE=`grid-proxy-info -type | tr -d ' '`
+    if [ x${PROXY_TYPE} == 'xRFC3820compliantimpersonationproxy' ] ; then
+      grid-proxy-info
+    else
+      cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
+      grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
+      rm -f /tmp/x509up_u`id -u`.orig
+      grid-proxy-info
+    fi
   else
-    cp /tmp/x509up_u`id -u` /tmp/x509up_u`id -u`.orig
-    grid-proxy-init -cert /tmp/x509up_u`id -u`.orig -key /tmp/x509up_u`id -u`.orig
-    rm -f /tmp/x509up_u`id -u`.orig
-    grid-proxy-info
+    echo "Error: Could not find a valid grid proxy to submit workflow."
+    exit 1
   fi
-else
-  echo "Error: Could not find a valid grid proxy to submit workflow."
-  exit 1
 fi
-
 
 #Make a directory for the submit files
 SUBMIT_DIR=`mktemp --tmpdir=${LOCAL_PEGASUS_DIR} -d pycbc-tmp.XXXXXXXXXX`
@@ -299,18 +303,22 @@ fi
 
 # Create the site catalog
 export LOCAL_SITE_PATH=${PWD}
-if [ -z $LOCAL_GSIFTP_SERVER ] ; then
-  LOCAL_SITE_URL="file://${LOCAL_SITE_PATH}"
+LOCAL_SITE_STORAGE_PATH=${LOCAL_SITE_PATH}
+LOCAL_SITE_STORAGE_URL='file://'${LOCAL_SITE_PATH}
+if [[ "$LOCAL_STAGING_SERVER" == stash://* ]] ; then
+  LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
+  LOCAL_SITE_SCRATCH_URL='stash://'`echo ${LOCAL_SITE_SCRATCH_PATH} | sed 's+^/stash++g'`
 else
-  LOCAL_SITE_URL="gsiftp://${LOCAL_GSIFTP_SERVER}${LOCAL_SITE_PATH}"
+  LOCAL_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
+  LOCAL_SITE_SCRATCH_URL=${LOCAL_STAGING_SERVER}${LOCAL_SITE_PATH}
 fi
-export LOCAL_SITE_URL
+export LOCAL_SITE_SCRATCH_PATH LOCAL_SITE_SCRATCH_URL
+export LOCAL_SITE_STORAGE_PATH LOCAL_SITE_STORAGE_URL
 
 # add the local site
 # Set remote staging url to local
 if [ -z $SITE_LIST ] ; then
   SITE_LIST="local"
-  REMOTE_STAGING_URL=${LOCAL_SITE_URL}
 else
   SITE_LIST="local,${SITE_LIST}"
 fi
@@ -323,15 +331,32 @@ fi
 # Don't overwrite remote staging URL if site list is local
 if [ ${SITE_LIST} != "local" ] ; then
   if [ -z $REMOTE_STAGING_SERVER ] ; then
-    REMOTE_STAGING_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
+    REMOTE_SITE_SCRATCH_URL="REMOTE_STAGING_SERVER_UNSET"   # this will be used as an error flag
   else
-    REMOTE_STAGING_URL="gsiftp://${REMOTE_STAGING_SERVER}${LOCAL_SITE_PATH}"
+    if [[ "${REMOTE_STAGING_SERVER}" == stash://* ]] ; then
+      REMOTE_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
+      REMOTE_SITE_SCRATCH_URL='stash://'`echo ${REMOTE_SITE_SCRATCH_PATH} | sed 's+^/stash++g'`
+    else
+      REMOTE_SITE_SCRATCH_PATH=${LOCAL_SITE_PATH}
+      REMOTE_SITE_SCRATCH_URL="${REMOTE_STAGING_SERVER}${REMOTE_SITE_SCRATCH_PATH}"
+    fi
   fi
 fi
-export REMOTE_STAGING_URL
+export REMOTE_SITE_SCRATCH_PATH REMOTE_SITE_SCRATCH_URL
 
 
 # create the site catalog template
+if [ $NO_ACCOUNTING_GROUP == 0 ] ; then
+  cat >> local-extra-site-properties.xml << EOF
+    <profile namespace="condor" key="accounting_group">$ACCOUNTING_GROUP</profile>
+    <profile namespace="condor" key="accounting_group_user">$ACCOUNTING_GROUP_USER</profile>
+EOF
+fi
+
+if [ -z "${NO_GRID}" ] ; then
+  echo '    <profile namespace="condor" key="use_x509userproxy">True</profile>' >> local-extra-site-properties.xml
+fi
+
 echo 'cat <<END_OF_TEXT' > site-catalog.sh
 
 cat << EOF >> site-catalog.sh
@@ -398,7 +423,7 @@ cat extra-properties.conf >> pegasus-properties.conf
 # then don't add another one
 if ! grep -q pegasus.data.configuration= pegasus-properties.conf
 then
-  # No option specified, append nonshared unless user said 
+  # No option specified, append nonshared unless user said
   # not to
   if [ $SHARED_FILESYSTEM == 0 ]
   then
@@ -409,9 +434,9 @@ fi
 
 
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
 fi
 
 echo
@@ -419,16 +444,17 @@ echo
 rm -f submitdir
 ln -sf $SUBMIT_DIR submitdir
 
-echo pegasus-status $SUBMIT_DIR/work > status
+echo pegasus-status --verbose --long $SUBMIT_DIR/work > status
 chmod 755 status
 
-echo pegasus-analyzer $SUBMIT_DIR/work > debug
+echo pegasus-analyzer -r -v $SUBMIT_DIR/work > debug
 chmod 755 debug
 
 echo pegasus-remove $SUBMIT_DIR/work > stop
 chmod 755 stop
 
-cat << EOF > start
+if [ -z "${NO_GRID}" ] ; then
+  cat << EOF > start
 #!/bin/bash
 
 if [ -f /tmp/x509up_u\`id -u\` ] ; then
@@ -461,9 +487,9 @@ else
 fi
 
 EOF
-echo pegasus-run $SUBMIT_DIR/work >> start
+fi
 
-
+echo pegasus-run $SUBMIT_DIR/work > start
 
 chmod 755 start
 
@@ -485,7 +511,7 @@ if [ -e output.map ] ; then
 fi
 
 # ugly shell to extract the sub-dax names from the uberdax xml
-for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do 
+for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk -F= '{print $2}' | tr -d '">'` ; do
   if [ -e ${dax} ] ; then
     cp ${dax} workflow/dax
   fi
@@ -495,7 +521,7 @@ for dax in `egrep '<[[:blank:]]*dax' ${DAX_FILE} | tr ' ' \\\n | grep file | awk
   fi
 done
 
-if [ -z ${SUBMIT_DAX} ] ; then 
+if [ -z ${SUBMIT_DAX} ] ; then
   echo
   echo "WARNING: DAX planned but not submitted. No dashboard entry has been created and"
   echo "         the workflow section of results page will not show a dashboard URL."
@@ -531,7 +557,7 @@ touch pegasus_db.log
 # querying the database sometimes fails, so allow retries
 set +e
 until [ $DB_TRY -ge 15 ]
-do 
+do
   /bin/echo -n "."
   WORKFLOW_ID_STRING=`eval $WORKFLOW_DB_CMD 2>> pegasus_db.log`
   if [ $? -eq 0 ] && [ ! -z $WORKFLOW_ID_STRING ] ; then
@@ -591,7 +617,7 @@ fi
 shopt -u nullglob
 
 echo "Workflow submission completed successfully."
-echo 
+echo
 echo "The Pegasus dashboard URL for this workflow is:"
 echo "  ${DASHBOARD_URL}"
 echo

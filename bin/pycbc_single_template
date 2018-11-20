@@ -142,6 +142,9 @@ parser.add_argument("--spin2y", type=float, default=0,
 parser.add_argument("--inclination", type=float, default=0,
                   help="The inclination of the source w.r.t the observer. "
                     "Default = 0")
+parser.add_argument("--coa-phase", type=float, default=0,
+                  help="The orbital azimuth of the source w.r.t the observer. "
+                    "Default = 0")
 parser.add_argument("--u-val", type=float, default=None,
                   help="The ratio between hplus and hcross to use in the "
                     "template, according to h(t) = hplus * u_val + hcross. "
@@ -270,6 +273,14 @@ with ctx:
                                           method='ldas')
         td_template = td_template * pycbc.DYN_RANGE_FAC
         td_template._epoch -= inj.get_end(site=opt.channel_name[0])
+        # Check if waveform is too long
+        tlen = (flen-1) * 2
+        # FIXME: Hardcoded 7./8. factor here, but I'm not too bothered by this.
+        if len(td_template) > (7 * tlen /8):
+            new_start_idx = len(td_template) - (7 * tlen /8)
+            td_template = td_template[new_start_idx:]
+            taper_func = pycbc.waveform.utils.taper_timeseries
+            td_template = taper_func(td_template, tapermethod='TAPER_START')
         approximant = inj.waveform
         template = waveform.td_waveform_to_fd_waveform(td_template, length=flen)
         template = template.astype(complex_same_precision_as(segments[0]))
@@ -282,6 +293,7 @@ with ctx:
                                     approximant=approximant,
                                     template=row[0],
                                     inclination=opt.inclination,
+                                    coa_phase=opt.coa_phase,
                                     taper=opt.taper_template,
                                     f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t,
@@ -292,6 +304,7 @@ with ctx:
                                     zeros(flen, dtype=complex64), row[0],
                                     approximant=approximant,
                                     inclination=opt.inclination,
+                                    coa_phase=opt.coa_phase,
                                     taper=opt.taper_template,
                                     f_lower=template_flow, delta_f=delta_f,
                                     delta_t=gwstrain.delta_t)

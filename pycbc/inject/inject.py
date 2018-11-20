@@ -33,8 +33,8 @@ import lalsimulation as sim
 import h5py
 from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
-from pycbc.ligolw import utils as ligolw_utils
-from pycbc.ligolw import ligolw, table, lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import ligolw, table, lsctables
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import pycbc.io
@@ -108,7 +108,18 @@ class _HDFInjectionSet(object):
         # we'll expand the static args to be arrays with the same size as
         # the other values
         for param in self.static_args:
-            injvals[param] = np.repeat(group.attrs[param], numinj)
+            val = group.attrs[param]
+            # if val is a list or numpy array, we need to store it as an
+            # object; otherwise, we'll get a shape mismatch between fields
+            if isinstance(val, (np.ndarray, list, tuple)):
+                arr = np.empty(numinj, dtype=object)
+                for ii in range(numinj):
+                    arr[ii] = val
+            else:
+                # otherwise, we can just repeat the value the needed number of
+                # times
+                arr = np.repeat(val, numinj)
+            injvals[param] = arr
         # make sure a coalescence time is specified for injections
         if 'tc' not in injvals:
             raise ValueError("no tc found in the given injection file; "

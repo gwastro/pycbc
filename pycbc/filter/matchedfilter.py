@@ -40,11 +40,15 @@ BACKEND_PREFIX="pycbc.filter.matchedfilter_"
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def correlate(x, y, z):
-    pass
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 @pycbc.scheme.schemed(BACKEND_PREFIX)
 def _correlate_factory(x, y, z):
-    return
+    err_msg = "This class is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 class BatchCorrelator(object):
     """ Create a batch correlation engine
@@ -1133,14 +1137,28 @@ def get_cutoff_indices(flow, fhigh, df, N):
     """
     if flow:
         kmin = int(flow / df)
+        if kmin < 0:
+            err_msg = "Start frequency cannot be negative. "
+            err_msg += "Supplied value and kmin {} and {}".format(flow, kmin)
+            raise ValueError(err_msg)
     else:
         kmin = 1
     if fhigh:
         kmax = int(fhigh / df )
+        if kmax > int((N + 1)/2.):
+            kmax = int((N + 1)/2.)
     else:
         # int() truncates towards 0, so this is
         # equivalent to the floor of the float
         kmax = int((N + 1)/2.)
+
+    if kmax <= kmin:
+        err_msg = "Kmax cannot be less than or equal to kmin. "
+        err_msg += "Provided values of freqencies (min,max) were "
+        err_msg += "{} and {} ".format(flow, fhigh)
+        err_msg += "corresponding to (kmin, kmax) of "
+        err_msg += "{} and {}.".format(kmin, kmax)
+        raise ValueError(err_msg)
 
     return kmin,kmax
 
@@ -1696,7 +1714,8 @@ class LiveBatchMatchedFilter(object):
         return result, veto_info
 
 def compute_followup_snr_series(data_reader, htilde, trig_time,
-                                duration=0.095, check_state=True):
+                                duration=0.095, check_state=True,
+                                coinc_window=0.05):
     """Given a StrainBuffer, a template frequency series and a trigger time,
     compute a portion of the SNR time series centered on the trigger for its
     rapid sky localization and followup.
@@ -1725,15 +1744,15 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
         If True, and the detector was offline or flagged for bad data quality
         at any point during the inspiral, then return (None, None) instead.
 
+    coinc_window : float (optional)
+        Maximum possible time between coincident triggers at different
+        detectors. This is needed to properly determine data padding.
+
     Returns
     -------
     snr : TimeSeries
         The portion of SNR around the trigger. None if the detector is offline
         or has bad data quality, and check_state is True.
-
-    psd : FrequencySeries
-        The noise PSD corresponding to the trigger time. None if the detector
-        is offline or has bad data quality, and check_state is True.
     """
     if check_state:
         # was the detector observing for the full amount of involved data?
@@ -1743,7 +1762,7 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
         if data_reader.state is not None \
                 and not data_reader.state.is_extent_valid(
                         state_start_time, state_duration):
-            return None, None
+            return None
 
         # was the data quality ok for the full amount of involved data?
         dq_start_time = state_start_time - data_reader.dq_padding
@@ -1751,39 +1770,48 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
         if data_reader.dq is not None \
                 and not data_reader.dq.is_extent_valid(
                         dq_start_time, dq_duration):
-            return None, None
+            return None
 
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
     norm = 4.0 * htilde.delta_f * htilde.sigmasq(stilde.psd) ** (-0.5)
 
+    sr = data_reader.sample_rate
+    dt = 1. / sr
+
     qtilde = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
     correlate(htilde, stilde, qtilde)
-    snr = qtilde * 0
+    snr = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
     ifft(qtilde, snr)
 
-    valid_end = int(len(qtilde) - data_reader.trim_padding)
-    valid_start = int(valid_end - data_reader.blocksize * data_reader.sample_rate)
+    valid_end = int(len(snr) - data_reader.trim_padding)
+    valid_start = int(valid_end - data_reader.blocksize * sr)
 
-    half_dur_samples = int(data_reader.sample_rate * duration / 2)
-    valid_start -= half_dur_samples
+    half_dur_samples = int(sr * duration / 2)
+    coinc_samples = int(sr * coinc_window)
+    valid_start -= half_dur_samples + coinc_samples
     valid_end += half_dur_samples
     if valid_start < 0 or valid_end > len(snr)-1:
-        raise ValueError('Requested SNR duration ({0} s) too long'.format(duration))
+        raise ValueError(('Requested SNR duration ({0} s)'
+                          ' too long').format(duration))
 
-    snr = snr[slice(valid_start, valid_end)]
-    snr_dt = 1. / data_reader.sample_rate
-    snr_epoch = data_reader.start_time - half_dur_samples * snr_dt
-    snr = TimeSeries(snr, delta_t=snr_dt, epoch=snr_epoch)
+    epoch = data_reader.start_time - (half_dur_samples + coinc_samples) * dt
+    snr = TimeSeries(snr[slice(valid_start, valid_end)],
+                     delta_t=dt, epoch=epoch)
 
-    onsource_idx = int(round(float(trig_time - snr.start_time) * snr.sample_rate))
+    onsource_idx = int(round(float(trig_time - snr.start_time) * sr))
     onsource_slice = slice(onsource_idx - half_dur_samples,
                            onsource_idx + half_dur_samples + 1)
-    return snr[onsource_slice] * norm, stilde.psd
+    return snr[onsource_slice] * norm
 
 __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
-           'sigmasq_series', 'make_frequency_series', 'overlap', 'overlap_cplx',
-           'matched_filter_core', 'correlate', 'MatchedFilterControl', 'LiveBatchMatchedFilter',
-           'MatchedFilterSkyMaxControl','MatchedFilterSkyMaxControlNoPhase','compute_max_snr_over_sky_loc_stat_no_phase', 'compute_max_snr_over_sky_loc_stat',
-           'compute_followup_snr_series','compute_u_val_for_sky_loc_stat_no_phase','compute_u_val_for_sky_loc_stat']
+           'sigmasq_series', 'make_frequency_series', 'overlap',
+           'overlap_cplx', 'matched_filter_core', 'correlate',
+           'MatchedFilterControl', 'LiveBatchMatchedFilter',
+           'MatchedFilterSkyMaxControl', 'MatchedFilterSkyMaxControlNoPhase',
+           'compute_max_snr_over_sky_loc_stat_no_phase',
+           'compute_max_snr_over_sky_loc_stat',
+           'compute_followup_snr_series',
+           'compute_u_val_for_sky_loc_stat_no_phase',
+           'compute_u_val_for_sky_loc_stat']
 

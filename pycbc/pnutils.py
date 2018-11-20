@@ -35,7 +35,7 @@ from pycbc import conversions
 def nearest_larger_binary_number(input_len):
     """ Return the nearest binary number larger than input_len.
     """
-    return 2**numpy.ceil(numpy.log2(input_len))
+    return int(2**numpy.ceil(numpy.log2(input_len)))
 
 def chirp_distance(dist, mchirp, ref_mass=1.4):
     return conversions.chirp_distance(dist, mchirp, ref_mass=ref_mass)
@@ -193,10 +193,10 @@ def megaparsecs_to_meters(distance):
     return parsecs_to_meters(distance) * 1e6
 
 def velocity_to_frequency(v, M):
-    return v**(3.0) / (M * lal.MTSUN_SI * lal.PI)
+    return conversions.velocity_to_frequency(v, M)
 
 def frequency_to_velocity(f, M):
-    return (lal.PI * M * lal.MTSUN_SI * f)**(1.0/3.0)
+    return conversions.frequency_to_velocity(f, M)
 
 def f_SchwarzISCO(M):
     """
@@ -213,7 +213,7 @@ def f_SchwarzISCO(M):
     f : float or numpy.array
         Frequency in Hz
     """
-    return velocity_to_frequency((1.0/6.0)**(0.5), M)
+    return conversions.f_schwarzchild_isco(M)
 
 def f_BKLISCO(m1, m2):
     """

@@ -17,7 +17,7 @@
 """
 Provides a class representing a frequency series.
 """
-
+from __future__ import division
 import os as _os, h5py
 from pycbc.types.array import Array, _convert, zeros, _noreal
 import lal as _lal
@@ -124,6 +124,12 @@ class FrequencySeries(Array):
                                delta_f=new_delta_f,
                                epoch=self._epoch,
                                copy=False)
+
+    def at_frequency(self, freq):
+        """ Return the value at the specified frequency
+        """
+        return self[int(freq / self.delta_f)]
+
     @property
     def start_time(self):
         """Return the start time of this vector
@@ -396,7 +402,7 @@ class FrequencySeries(Array):
             _numpy.savetxt(path, output)
         elif ext == '.xml' or path.endswith('.xml.gz'):
             from pycbc.io.live import make_psd_xmldoc
-            from pycbc.ligolw import utils
+            from glue.ligolw import utils
 
             if self.kind != 'real':
                 raise ValueError('XML only supports real frequency series')
@@ -448,7 +454,7 @@ class FrequencySeries(Array):
 
         # add 0.5 to round integer
         tlen  = int(1.0 / self.delta_f / delta_t + 0.5)
-        flen = tlen / 2 + 1
+        flen = int(tlen / 2 + 1)
         
         if flen < len(self):
             raise ValueError("The value of delta_t (%s) would be "
@@ -569,7 +575,7 @@ def load_frequencyseries(path, group=None):
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
         key = 'data' if group is None else group
-        f = h5py.File(path)
+        f = h5py.File(path, 'r')
         data = f[key][:]
         series = FrequencySeries(data, delta_f=f[key].attrs['delta_f'],
                                        epoch=f[key].attrs['epoch']) 

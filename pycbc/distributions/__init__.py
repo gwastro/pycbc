@@ -32,6 +32,7 @@ from pycbc.distributions.uniform import Uniform
 from pycbc.distributions.uniform_log import UniformLog10
 from pycbc.distributions.masses import UniformComponentMasses
 from pycbc.distributions.spins import IndependentChiPChiEff
+from pycbc.distributions.qnm import UniformF0Tau
 from pycbc.distributions.joint import JointDistribution
 
 # a dict of all available distributions
@@ -50,6 +51,7 @@ distribs = {
     UniformSolidAngle.name : UniformSolidAngle,
     UniformSky.name : UniformSky,
     UniformLog10.name : UniformLog10,
+    UniformF0Tau.name : UniformF0Tau,
 }
 
 def read_distributions_from_config(cp, section="prior"):
@@ -97,21 +99,23 @@ def _convert_liststring_to_list(lstring):
     return lstring
 
 
-def read_args_from_config(cp, section_group=None, prior_section='prior'):
-    """Loads static and variable arguments from a configuration file.
+def read_params_from_config(cp, prior_section='prior',
+                            vargs_section='variable_args',
+                            sargs_section='static_args'):
+    """Loads static and variable parameters from a configuration file.
 
     Parameters
     ----------
     cp : WorkflowConfigParser
         An open config parser to read from.
-    section_group : {None, str}
-        When reading the config file, only read from sections that begin with
-        `{section_group}_`. For example, if `section_group='foo'`, the
-        variable arguments will be retrieved from section
-        `[foo_variable_args]`. If None, no prefix will be appended to section
-        names.
     prior_section : str, optional
         Check that priors exist in the given section. Default is 'prior.'
+    vargs_section : str, optional
+        The section to get the parameters that will be varied/need priors
+        defined for them. Default is 'variable_args'.
+    sargs_section : str, optional
+        The section to get the parameters that will remain fixed. Default is
+        'static_args'.
 
     Returns
     -------
@@ -120,30 +124,23 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
     static_args : dict
         Dictionary of names -> values giving the parameters to keep fixed.
     """
-    if section_group is not None:
-        section_prefix = '{}_'.format(section_group)
-    else:
-        section_prefix = ''
-
     # sanity check that each parameter in [variable_args] has a priors section
-    variable_args = cp.options("{}variable_args".format(section_prefix))
-    subsections = cp.get_subsections("{}{}".format(section_prefix,
-                                                   prior_section))
+    variable_args = cp.options(vargs_section)
+    subsections = cp.get_subsections(prior_section)
     tags = set([p for tag in subsections for p in tag.split('+')])
     missing_prior = set(variable_args) - tags
     if any(missing_prior):
         raise KeyError("You are missing a priors section in the config file "
                        "for parameter(s): {}".format(', '.join(missing_prior)))
-
-    # get parameters that do not change in sampler
+    # get static args
     try:
-        static_args = dict([(key,cp.get_opt_tags(
-            "{}static_args".format(section_prefix), key, []))
-            for key in cp.options("{}static_args".format(section_prefix))])
+        static_args = dict([(key, cp.get_opt_tags(sargs_section, key, []))
+                           for key in cp.options(sargs_section)])
     except _ConfigParser.NoSectionError:
         static_args = {}
     # try converting values to float
-    for key,val in static_args.iteritems():
+    for key in static_args:
+        val = static_args[key]
         try:
             # the following will raise a ValueError if it cannot be cast to
             # float (as we would expect for string arguments)
@@ -152,27 +149,49 @@ def read_args_from_config(cp, section_group=None, prior_section='prior'):
             # try converting to a list of strings; this function will just
             # return val if it does not begin (end) with [ (])
             static_args[key] = _convert_liststring_to_list(val)
+    return variable_args, static_args
 
-    # get additional constraints to apply in prior
+
+def read_constraints_from_config(cp, transforms=None,
+                                 constraint_section='constraint'):
+    """Loads parameter constraints from a configuration file.
+
+    Parameters
+    ----------
+    cp : WorkflowConfigParser
+        An open config parser to read from.
+    transforms : list, optional
+        List of transforms to apply to parameters before applying constraints.
+    constraint_section : str, optional
+        The section to get the constraints from. Default is 'constraint'.
+
+    Returns
+    -------
+    list
+        List of ``Constraint`` objects. Empty if no constraints were provided.
+    """
     cons = []
-    section = "{}constraint".format(section_prefix)
-    for subsection in cp.get_subsections(section):
-        name = cp.get_opt_tag(section, "name", subsection)
-        constraint_arg = cp.get_opt_tag(section, "constraint_arg", subsection)
+    for subsection in cp.get_subsections(constraint_section):
+        name = cp.get_opt_tag(constraint_section, "name", subsection)
+        constraint_arg = cp.get_opt_tag(
+            constraint_section, "constraint_arg", subsection)
+        # get any other keyword arguments
         kwargs = {}
-        for key in cp.options(section + "-" + subsection):
-            if key in ["name", "constraint_arg"]:
-                continue
-            val = cp.get_opt_tag(section, key, subsection)
+        section = constraint_section + "-" + subsection
+        extra_opts = [key for key in cp.options(section)
+                      if key not in ["name", "constraint_arg"]]
+        for key in extra_opts:
+            val = cp.get(section, key)
             if key == "required_parameters":
-                kwargs["required_parameters"] = val.split(_VARARGS_DELIM)
-                continue
-            try:
-                val = float(val)
-            except ValueError:
-                pass
+                val = val.split(_VARARGS_DELIM)
+            else:
+                try:
+                    val = float(val)
+                except ValueError:
+                    pass
             kwargs[key] = val
-        cons.append(constraints.constraints[name](variable_args,
-                                                  constraint_arg, **kwargs))
+        cons.append(constraints.constraints[name](constraint_arg,
+                                                  transforms=transforms,
+                                                  **kwargs))
 
-    return variable_args, static_args, cons
+    return cons

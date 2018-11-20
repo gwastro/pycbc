@@ -29,10 +29,10 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 
 import os, sys, shutil, stat, copy, itertools
 import logging
-import urlparse
+import urlparse, urllib
 import lal
 from glue import segments, segmentsUtils
-from pycbc.ligolw import table, lsctables, ligolw
+from glue.ligolw import table, lsctables, ligolw
 from pycbc.workflow.core import Executable, FileList, Node, SegFile, make_analysis_dir, make_external_call, File
 from pycbc.workflow.core import resolve_url
 from pycbc.workflow.jobsetup import LigolwAddExecutable, LigoLWCombineSegsExecutable
@@ -882,7 +882,9 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
             cum_node.executed = True
             for fil in cum_node._outputs:
                 fil.node = None
-                fil.PFN(fil.storage_path, site='local')
+                fil.PFN(urlparse.urljoin('file:',
+                                         urllib.pathname2url(fil.storage_path)),
+                        site='local')
         add_inputs += cum_node.output_files
 
     # add cumulative files for each ifo together
@@ -903,7 +905,9 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
         add_node.executed = True
         for fil in add_node._outputs:
             fil.node = None
-            fil.PFN(fil.storage_path, site='local')
+            fil.PFN(urlparse.urljoin('file:',
+                                     urllib.pathname2url(fil.storage_path)),
+                    site='local')
     return outfile
 
 def add_cumulative_files(workflow, output_file, input_files, out_dir,
@@ -944,7 +948,9 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
         add_node.executed = True
         for fil in add_node._outputs:
             fil.node = None
-            fil.PFN(fil.storage_path, site='local')
+            fil.PFN(urlparse.urljoin('file:',
+                                     urllib.pathname2url(fil.storage_path)),
+                    site='local')
     return add_node.output_files[0]
 
 def find_playground_segments(segs):
@@ -1039,6 +1045,9 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
                                           'on-after')))
     padding = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'pad-data')))
+    if cp.has_option("workflow-condition_strain", "do-gating"):
+        padding += int(os.path.basename(cp.get("condition_strain",
+                                               "pad-data")))
     quanta = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                          'quanta')))
 
@@ -1165,6 +1174,9 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                                           'on-after')))
     padding = int(os.path.basename(cp.get('workflow-exttrig_segments',
                                           'pad-data')))
+    if cp.has_option("workflow-condition_strain", "do-gating"):
+        padding += int(os.path.basename(cp.get("condition_strain",
+                                               "pad-data")))
 
     # How many IFOs meet minimum data requirements?
     min_seg = segments.segment(triggertime - onbefore - minbefore - padding,

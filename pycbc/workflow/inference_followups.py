@@ -92,6 +92,8 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
                                      tags=tags)
     node.new_output_file_opt(workflow.analysis_time, ".dax.map",
                                      "--output-map", tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, ".tc.txt",
+                                     "--transformation-catalog", tags=tags)
 
     # get dax name and use it for the workflow name
     name = node.output_files[0].name
@@ -101,6 +103,9 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     map_file = node.output_files[1]
     node.add_opt("--output-dir", out_dir)
 
+    # get the transformation catalog name
+    tc_file = node.output_files[2]
+
     # add this node to the workflow
     workflow += node
 
@@ -109,7 +114,7 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     fil = node.output_files[0]
     job = dax.DAX(fil)
     job.addArguments("--basename %s" % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file)
+    Workflow.set_job_properties(job, map_file, tc_file)
     workflow._adag.addJob(job)
 
     # make dax a child of the inference workflow generator node
@@ -283,11 +288,11 @@ def make_inference_1d_posterior_plots(
                     analysis_seg=None, tags=None):
     parameters = [] if parameters is None else parameters
     files = FileList([])
-    for parameter in parameters:
+    for (ii, parameter) in enumerate(parameters):
         files += make_inference_posterior_plot(
                     workflow, inference_file, output_dir,
                     parameters=[parameter], analysis_seg=analysis_seg,
-                    tags=tags + [parameter])
+                    tags=tags + ['param{}'.format(ii)])
     return files
 
 def make_inference_samples_plot(
@@ -405,9 +410,10 @@ def make_inference_inj_plots(workflow, inference_files, output_dir,
     makedir(output_dir)
 
     # add command line options
-    for param in parameters:
+    for (ii, param) in enumerate(parameters):
         plot_exe = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                                  out_dir=output_dir, tags=tags + [param])
+                                  out_dir=output_dir,
+                                  tags=tags+['param{}'.format(ii)])
         node = plot_exe.create_node()
         node.add_input_list_opt("--input-file", inference_files)
         node.new_output_file_opt(analysis_seg, ".png", "--output-file")

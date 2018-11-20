@@ -217,6 +217,9 @@ secondary_mass = Parameter("secondary_mass",
 chi_eff = Parameter("chi_eff",
                 dtype=float, label=r"$\chi_\mathrm{eff}$",
                 description="Effective spin of the binary.")
+chi_p = Parameter("chi_p",
+                dtype=float, label=r"$\chi_p$",
+                description="Effective precessing spin of the binary.")
 spin_px = Parameter("spin_px",
                 dtype=float, label=r"$\chi_{1x}$",
                 description="The x component of the dimensionless spin of the "
@@ -438,7 +441,7 @@ side_bands = Parameter("side_bands",
                 dtype=int, default=0,
                 description="Flag for generating sidebands")
 mode_array = Parameter("mode_array",
-                dtype=int, default=0,
+                dtype=list, default=None,
                 description="Choose which (l,m) modes to include when "
                             "generating a waveform. "
                             "Only if approximant supports this feature."

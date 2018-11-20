@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, os.path
-import urlparse
+import urlparse, urllib
 import distutils.spawn
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
@@ -78,7 +78,8 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(config_path, 'local')
+    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
+                    site='local')
 
     exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 
@@ -92,9 +93,11 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
+    tc_file = node.output_files[2]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -104,9 +107,16 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
+    # determine if a staging site has been specified
+    try:
+        staging_site = workflow.cp.get('workflow-foreground_minifollowups',
+                                       'staging-site')
+    except:
+        staging_site = None
+
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file)
+    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
@@ -162,7 +172,8 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(config_path, 'local')
+    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
+                    site='local')
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
                      ifos=curr_ifo, out_dir=dax_output, tags=tags)
@@ -184,9 +195,11 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         node.add_opt('--veto-segment-name', veto_segment_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
+    tc_file = node.output_files[2]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -196,10 +209,17 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
+    # determine if a staging site has been specified
+    try:
+        staging_site = workflow.cp.get('workflow-sngl_minifollowups',
+                                       'staging-site')
+    except:
+        staging_site = None
+
     job = dax.DAX(fil)
     job.addArguments('--basename %s' \
                      % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file)
+    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)
@@ -254,7 +274,8 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(config_path, 'local')
+    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
+                    site='local')
 
     exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 
@@ -269,9 +290,11 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
+    tc_file = node.output_files[2]
 
     node.add_opt('--workflow-name', name)
     node.add_opt('--output-dir', out_dir)
@@ -281,9 +304,16 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     # execute this in a sub-workflow
     fil = node.output_files[0]
 
+    # determine if a staging site has been specified
+    try:
+        staging_site = workflow.cp.get('workflow-injection_minifollowups',
+                                       'staging-site')
+    except:
+        staging_site = None
+
     job = dax.DAX(fil)
     job.addArguments('--basename %s' % os.path.splitext(os.path.basename(name))[0])
-    Workflow.set_job_properties(job, map_file)
+    Workflow.set_job_properties(job, map_file, tc_file, staging_site=staging_site)
     workflow._adag.addJob(job)
     dep = dax.Dependency(parent=node._dax_node, child=job)
     workflow._adag.addDependency(dep)

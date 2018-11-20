@@ -144,14 +144,11 @@ class IndependentChiPChiEff(Arbitrary):
         bool
             Whether or not the values satisfy physical
         """
-        mass1, _ = conversions.ensurearray(values['mass1'])
-        mass2, _ = conversions.ensurearray(values['mass2'])
-        phi_a, _ = conversions.ensurearray(values['phi_a'])
-        phi_s, _ = conversions.ensurearray(values['phi_s'])
-        chi_eff, _ = conversions.ensurearray(values['chi_eff'])
-        chi_a, _ = conversions.ensurearray(values['chi_a'])
-        xi1, _ = conversions.ensurearray(values['xi1'])
-        xi2, _ = conversions.ensurearray(values['xi2'])
+        mass1, mass2, phi_a, phi_s, chi_eff, chi_a, xi1, xi2, _ = \
+            conversions.ensurearray(values['mass1'], values['mass2'],
+                                    values['phi_a'], values['phi_s'],
+                                    values['chi_eff'], values['chi_a'],
+                                    values['xi1'], values['xi2'])
         s1x = conversions.spin1x_from_xi1_phi_a_phi_s(xi1, phi_a, phi_s)
         s2x = conversions.spin2x_from_mass1_mass2_xi2_phi_a_phi_s(mass1, mass2,
             xi2, phi_a, phi_s)

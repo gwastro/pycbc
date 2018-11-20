@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # Copyright (C) 2017 Christopher M. Biwer
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -19,19 +19,21 @@
 
 import argparse
 import logging
-from pycbc import results
-from pycbc.inference import gelman_rubin
-from pycbc.inference import option_utils
+import matplotlib as mpl; mpl.use("Agg")
 import matplotlib.pyplot as plt
 import sys
+from pycbc import results
+from pycbc import __version__ 
+from pycbc.inference import (gelman_rubin, io, option_utils)
 
-# command line usage
-parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
-                                 description=__doc__)
+# add options to command line
+parser = io.ResultsArgumentParser(skip_args=['walkers'])
 
 # verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Print logging info.")
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
 
 # output options
 parser.add_argument("--output-file", type=str, required=True,
@@ -48,8 +50,6 @@ parser.add_argument("--segment-end", type=int, required=True,
 parser.add_argument("--segment-step", type=int, required=True,
                     help="Step size in chain to next calculation.")
 
-# add results group
-option_utils.add_inference_results_option_group(parser)
 
 # parse the command line
 opts = parser.parse_args()
@@ -66,7 +66,7 @@ if opts.iteration is not None:
     raise ValueError("Cannot use --iteration")
 
 # load the results
-fp, params, labels, _ = option_utils.results_from_cli(
+fp, params, labels, _ = io.results_from_cli(
                                          opts, load_samples=False,
                                          walkers=None)
 
@@ -83,7 +83,6 @@ for param, label in zip(params, labels):
 
     # get samples for each chain
     chains = [fp.read_samples(param, walkers=i,
-                              samples_group=opts.parameters_group,
                               thin_start=opts.thin_start,
                               thin_interval=opts.thin_interval,
                               thin_end=opts.thin_end)[param] for i in walkers]
