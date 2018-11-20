@@ -25,8 +25,10 @@
 from public sources as well as dqsegdb.
 """
 
+import numpy
+import json
+import urllib
 from glue.segments import segmentlist, segment
-import json, urllib
 
 def parse_veto_definer(veto_def_filename):
     """ Parse a veto definer file from the filename and return a dictionary 
@@ -63,8 +65,19 @@ def parse_veto_definer(veto_def_filename):
         if ifo[i] not in data:
             data[ifo[i]] = {}
         
-        if category[i] not in data[ifo[i]]:
-            data[ifo[i]][category[i]] = []
+        # The veto-definer categories are weird! Hardware injections are stored
+        # in "3" and numbers above that are bumped up by one (although not
+        # often used any more). So we remap 3 to H and anything above 3 to
+        # N-1. 2 and 1 correspond to 2 and 1 (YAY!)
+        if category[i] > 3:
+            curr_cat = "CAT_{}".format(category[i]-1)
+        elif category[i] == 3:
+            curr_cat = "CAT_H"
+        else:
+            curr_cat = "CAT_{}".format(category[i])
+
+        if curr_cat not in data[ifo[i]]:
+            data[ifo[i]][curr_cat] = []
             
         veto_info = {'name': name[i],
                      'version': version[i],
@@ -73,7 +86,7 @@ def parse_veto_definer(veto_def_filename):
                      'start_pad': start_pad[i],
                      'end_pad': end_pad[i],
                      }
-        data[ifo[i]][category[i]].append(veto_info)
+        data[ifo[i]][curr_cat].append(veto_info)
     return data
 
 def query_flag(ifo, segment_name, start_time, end_time,
@@ -130,7 +143,8 @@ def query_flag(ifo, segment_name, start_time, end_time,
             msg = "Unable to find segments in GWOSC, check flag name or times"
             if source == 'any':
                 return query_flag(ifo, segment_name, start_time, end_time,
-                                  source=='dqsegdb')
+                                  source='dqsegdb', server=server,
+                                  veto_definer=veto_definer)
             else:
                 raise ValueError(msg)
     elif source == 'dqsegdb':
@@ -169,6 +183,11 @@ def query_flag(ifo, segment_name, start_time, end_time,
                 raise ValueError("Could not query flag, check name (%s) or times",
                                  segment_name)
 
+    else:
+        err_msg = "source must be dgseqdb or GWOSC. "
+        err_msg += "Got {}".format(source)
+        raise ValueError(err_msg)
+
     return segmentlist(flag_segments).coalesce()
 
 def query_cumulative_flags(ifo, segment_names, start_time, end_time, 
@@ -200,15 +219,12 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
     segments: glue.segments.segmentlist
         List of segments
     """
-    total_segs = None
+    total_segs = segmentlist([])
     for flag_name in segment_names:
         segs = query_flag(ifo, flag_name, start_time, end_time,                                       
                           source=source, server=server,
                           veto_definer=veto_definer)
-        if total_segs is not None:
-            total_segs = (total_segs + segs).coalesce()
-        else:
-            total_segs = segs
+        total_segs = (total_segs + segs).coalesce()
     return total_segs
 
 def query_combined_flags(ifo, up_flags, start_time, end_time, down_flags=None,               
@@ -226,7 +242,7 @@ def query_combined_flags(ifo, up_flags, start_time, end_time, down_flags=None,
         The starting gps time to begin querying from LOSC
     end_time: int 
         The end gps time of the query
-    down flags: list of strings
+    down_flags: list of strings
         Flags which indicate times to subtract from the combined segments
     source: str, Optional
         Choice between "GWOSC" or "dqsegdb". If dqsegdb, the server option may
@@ -247,6 +263,8 @@ def query_combined_flags(ifo, up_flags, start_time, end_time, down_flags=None,
                                       veto_definer=veto_definer)
     down_flags = [] if down_flags is None else down_flags
     for flag_name in down_flags:
-        mseg = query_flag(ifo, flag_name, start_time, end_time)
+        mseg = query_flag(ifo, flag_name, start_time, end_time,
+                          source=source, server=server,
+                          veto_definer=veto_definer)
         segments = (segments - mseg).coalesce()
     return segments

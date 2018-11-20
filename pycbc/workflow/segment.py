@@ -1438,8 +1438,8 @@ def get_segments_file(workflow, name, option_name, out_dir):
         down = [x[1:] for x in flags if x[0] == '-']        
 
         key = ifo + ':' + name
-        segments[key] = query_combined_flags(ifo, up, start, end, down,
-                                             server=server,
+        segments[key] = query_combined_flags(ifo, up, start, end,
+                                             down_flags=down, server=server,
                                              veto_definer=veto_definer)
         logging.info("%s: got %s flags", ifo, option_name) 
 
