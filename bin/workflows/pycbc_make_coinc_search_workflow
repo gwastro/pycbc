@@ -197,7 +197,7 @@ inj_files, inj_tags = wf.setup_injection_workflow(workflow,
 
 ######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
-ctags = [tag, 'full']
+ctags = [tag]
 
 # setup the matchedfilter jobs
 ind_insps = insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
