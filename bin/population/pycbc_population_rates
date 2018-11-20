@@ -88,7 +88,7 @@ opts = parser.parse_args()
 path = opts.output_file
 
 assert opts.min_tmplt_mchirp < opts.max_tmplt_mchirp, \
-             "Mininum chirp mass should be less than the maximum chirp mass"
+             "Minimum chirp mass should be less than the maximum chirp mass"
 
 # Read the simulation files
 injections = si.read_injections(opts.sim_files,
@@ -116,7 +116,7 @@ vt = si.estimate_vt(injections, mchirp_sampler, prob,
 vol_time, sig_vt = vt['VT'], vt['VT_err']
 inj_falloff = vt['thr_falloff']
 
-#Include the calibration uncertainity
+# Include the calibration uncertainity
 vol, vol_err, cal_err = vol_time, sig_vt, opts.cal_err
 sigma_w_cal_uncrt = np.sqrt((3*cal_err/100.)**2 + (vol_err/vol)**2)
 
