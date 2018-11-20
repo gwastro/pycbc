@@ -76,18 +76,8 @@ class SingleTemplate(BaseModel):
                                               high_frequency_cutoff=f_upper)
         self.time = None
 
-    def _lognl(self):
-        """Computes the log likelihood assuming the data is noise.
-
-        Since this is a constant for Gaussian noise, this is only computed once
-        then stored.
-        """
-        # we won't bother calculating this for now since it is a
-        # constant in this model.
-        return 0
-
-    def loglr(self):
-        r"""Computes the log likelihood ratio,
+    def _loglikelihood(self):
+        r"""Computes the log likelihood ratio
 
         Returns
         -------
@@ -116,9 +106,3 @@ class SingleTemplate(BaseModel):
             vloglr += self.hh[ifo] * abs(htf) ** 2.0
 
         return float(vloglr)
-
-    def _loglikelihood(self):
-        r"""Computes the log likelihood of the paramaters,
-
-        """
-        return self.loglr()
