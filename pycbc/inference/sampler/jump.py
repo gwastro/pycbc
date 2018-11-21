@@ -39,18 +39,24 @@ def get_jump_from_config(section, cp):
     if not cp.has_option(section, 'jump'):
         return None
 
-    name = cp.get(section, 'jump')
+    names = cp.get(section, 'jump').strip().split(',')
+    jumps = []
+    for name in names:
+        jump_section = 'jump-{}'.format(name)
+        options = {}
+        weight = 1
+        if cp.has_section(jump_section):
+            options = cp.items(jump_section)
+        kwds = {}
+        for key, value in options:
+            try:
+                kwds[key] = float(value)
+            except:
+                kwds[key] = value
 
-    jump_section = 'jump-{}'.format(name)
-    options = {}
-    if cp.has_section(jump_section):
-        options = cp.items(jump_section)
+        if 'weight' in kwds:
+            weight = kwds.pop('weight')
 
-    kwds = {}
-    for key, value in options:
-        try:
-            kwds[key] = float(value)
-        except:
-            kwds[key] = value
-    return _jump_proposals[name](**kwds)
+        inst = _jump_proposals[name](**kwds)
+    jumps.append((inst, weight))
 
