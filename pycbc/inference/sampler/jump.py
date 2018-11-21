@@ -25,15 +25,27 @@
 The format will follow the emcee format.
 """
 from __future__ import absolute_import
-from emcee.moves import MHMove, StretchMove, WalkMove, KDEMove
+from emcee.moves import (GaussianMove, StretchMove, WalkMove,
+                        KDEMove, DEMove, DESnookerMove)
 
 _jump_proposals = {'stretch': StretchMove,
                    'walk': WalkMove,
-                   'kde': KDEMove}
+                   'de': DEMove,
+                   'desnooker':DESnookerMove,
+                   'kde': KDEMove,
+                   'gaussian':GaussianMove}
 
 def get_jump_from_config(section, cp):
+    if not cp.has_option(section, 'jump'):
+        return None
+
     name = cp.get(section, 'jump')
-    options = cp.items('jump-{}'.format(name))
+
+    jump_section = 'jump-{}'.format(name)
+    options = {}
+    if cp.has_section(jump_section):
+        options = cp.items(jump_section)
+
     kwds = {}
     for key, value in options:
         try:
