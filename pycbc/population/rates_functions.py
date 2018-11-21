@@ -10,8 +10,9 @@ import scipy.stats as ss
 import bisect
 from pycbc.conversions import mchirp_from_mass1_mass2
 
-def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
-    """Read the zero and time-lagged triggers identified by BBH templates.
+def process_full_data(fname, rhomin, mass1, mass2, lo_mchirp, hi_mchirp):
+    """Read the zero-lag and time-lag triggers identified by templates in
+       a specified range of chirp mass.
 
        Parameters
        ----------
@@ -23,8 +24,10 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
               First mass of the waveform in the template bank
        mass2: array
               Second mass of the waveform in the template bank
-       min_bh_mass: float
-              Minimimum mass for the black hole
+       lo_mchirp: float
+              Minimum chirp mass for the template
+       hi_mchirp: float
+              Maximum chirp mass for the template
 
        Returns
        -------
@@ -36,12 +39,12 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
         id_bkg = bulk['background_exc/template_id'][:]
         id_fg = bulk['foreground/template_id'][:]
 
-        bound = np.sign((mass1[id_bkg] - lo_tlt_mass) * (hi_tlt_mass - mass1[id_bkg]))
-        bound += np.sign((mass2[id_bkg] - lo_tlt_mass) * (hi_tlt_mass - mass2[id_bkg]))
-        idx_bkg = np.where(bound == 2)
-        bound = np.sign((mass1[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass1[id_fg]))
-        bound += np.sign((mass2[id_fg] - lo_tlt_mass) * (hi_tlt_mass - mass2[id_fg]))
-        idx_fg = np.where(bound == 2)
+        mchirp_bkg = mchirp_from_mass1_mass2(mass1[id_bkg], mass2[id_bkg])
+        bound = np.sign((mchirp_bkg - lo_mchirp) * (hi_mchirp - mchirp_bkg))
+        idx_bkg = np.where(bound == 1)
+        mchirp_fg = mchirp_from_mass1_mass2(mass1[id_fg], mass2[id_fg])
+        bound = np.sign((mchirp_fg - lo_mchirp) * (hi_mchirp - mchirp_fg))
+        idx_fg = np.where(bound == 1)
 
         zerolagstat = bulk['foreground/stat'][:][idx_fg]
         cstat_back_exc = bulk['background_exc/stat'][:][idx_bkg]
@@ -51,7 +54,8 @@ def process_full_data(fname, rhomin, mass1, mass2, lo_tlt_mass, hi_tlt_mass):
            'dec_factors': dec_factors[cstat_back_exc > rhomin],
            'cstat_back_exc': cstat_back_exc[cstat_back_exc > rhomin]}
 
-def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tlt_mass):
+
+def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_mchirp, hi_mchirp):
     ''' Read the STATMAP files to derive snr falloff for the background events.
         Save the output to a txt file
         Bank file is also provided to restrict triggers to BBH templates.
@@ -66,17 +70,17 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tl
                Destination where txt file is saved
         rhomin: float
                Minimum value of SNR threhold (will need including ifar)
-        lo_tlt_mass: float
-               Low mass for template for trigger to be considered
-        hi_tlt_mass: float
-               High mass for template for trigger to be considered
+        lo_mchirp: float
+               Minimum chirp mass for the template
+        hi_mchirp: float
+               Maximum chirp mass for template
     '''
 
     with h5py.File(fname_bank, 'r') as bulk:
         mass1_bank = bulk['mass1'][:]
         mass2_bank = bulk['mass2'][:]
         full_data = process_full_data(fname_statmap, rhomin,
-                           mass1_bank, mass2_bank, lo_tlt_mass, hi_tlt_mass)
+                           mass1_bank, mass2_bank, lo_mchirp, hi_mchirp)
 
     max_bg_stat = np.max(full_data['cstat_back_exc'])
     bg_bins = np.linspace(rhomin, max_bg_stat, 76)
@@ -86,13 +90,9 @@ def save_bkg_falloff(fname_statmap, fname_bank, path, rhomin, lo_tlt_mass, hi_tl
     zerolagstat = full_data['zerolagstat']
     coincs = zerolagstat[zerolagstat >= rhomin]
 
-    np.savetxt(path+"/background_bins.txt",
-               np.column_stack([bg_bins[:-1],
-               bg_bins[1:], bg_counts]), fmt='%.4e',
-               header="bin min, bin max, count")
+    bkg = (bg_bins[:-1], bg_bins[1:], bg_counts)
 
-    np.savetxt(path+"/coincs.txt", coincs,
-               fmt='%.4e', header="coincs above threshold %.2f" % rhomin)
+    return bkg, coincs
 
 def log_rho_bg(trigs, bins, counts):
     ''' Calculate the log of background fall-off
@@ -115,13 +115,14 @@ def log_rho_bg(trigs, bins, counts):
 
     N = sum(counts)
 
-    assert np.all(trigs >= np.min(bins)), 'triggers can not besmaller than bin lower limit'
+    assert np.all(trigs >= np.min(bins)), \
+        'Trigger SNR values cannot all be below the lowest bin limit!'
 
     # If there are any triggers that are louder than the max bin, put one
-    # fictituous count in a bin that extends from the limits of the slide
+    # fictitious count in a bin that extends from the limits of the slide
     # triggers out to the loudest trigger.
 
-    # If there is no counts for a foreground trigger put a fictious count
+    # If there is no counts for a foreground trigger put a fictitious count
     # in the background bin
     if np.any(trigs >= np.max(bins)):
         N = N + 1
@@ -139,7 +140,7 @@ def log_rho_bg(trigs, bins, counts):
             log_rhos.append(log(counts[i]) - log(bins[i+1] - bins[i]) - log(N))
     return np.array(log_rhos)
 
-def log_rho_fg_mc(t, injstats, bins):
+def log_rho_fgmc(t, injstats, bins):
     counts, bins = np.histogram(injstats, bins)
 
     N = sum(counts)
@@ -152,7 +153,7 @@ def log_rho_fg_mc(t, injstats, bins):
 
     return log(dens[tinds])
 
-def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
+def fgmc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
     '''
     Function to fit the likelihood Fixme
     '''
@@ -173,12 +174,11 @@ def fg_mc(log_fg_ratios, mu_log_vt, sigma_log_vt, Rf, maxfg):
 
         plR = 0
         for lfr in log_fg_ratios:
-
             plR += np.logaddexp(lfr + log_Lf, log_Lb)
 
         plR -= (Lf + Lb)
-
         plRn = plR - max(plR)
+
         idx = np.exp(plRn) > np.random.random(len(plRn))
 
         pquit = ss.stats.ks_2samp(Lb, Lb[idx])[1]
@@ -209,11 +209,11 @@ def fit(R):
             The standard deviation
     '''
 
-    R = np.log(R)
-    mu_norm, sigma_norm = np.mean(R), np.std(R)
+    lR = np.log(R)
+    mu_norm, sigma_norm = np.mean(lR), np.std(lR)
 
-    xs = np.linspace(min(R), max(R), 200)
-    kde = ss.gaussian_kde(R)
+    xs = np.linspace(min(lR), max(lR), 200)
+    kde = ss.gaussian_kde(lR)
     pxs = kde(xs)
 
     # Initial guess has been taken as the mean and std-dev of the data
@@ -254,7 +254,7 @@ def skew_lognormal_samples(alpha, mu, sigma, minrp, maxrp):
 
 # The flat in log and power-law mass distribution models  #
 
-# PDF for the two caninical models
+# PDF for the two canonical models plus flat in mass model
 def prob_lnm(m1, m2, s1z, s2z, **kwargs):
     ''' Return probability density for uniform in log
         Parameters
@@ -342,7 +342,40 @@ def prob_imf(m1, m2, s1z, s2z, **kwargs):
 
     return p_m1_m2/2.
 
-# Functions to generate samples for the two canonical models
+def prob_flat(m1, m2, s1z, s2z, **kwargs):
+    ''' Return probability density for uniform in component mass
+        Parameters
+        ----------
+        m1: array
+            Component masses 1
+        m2: array
+            Component masses 2
+        s1z: array
+            Aligned spin 1 (not in use currently)
+        s2z:
+            Aligned spin 2 (not in use currently)
+        **kwargs: string
+            Keyword arguments as model parameters
+
+        Returns
+        -------
+        p_m1_m2: array
+           the probability density for m1, m2 pair
+    '''
+
+    min_mass = kwargs.get('min_mass', 1.)
+    max_mass = kwargs.get('max_mass', 2.)
+
+    bound = np.sign(m1 - m2)
+    bound += np.sign(max_mass - m1) * np.sign(m2 - min_mass)
+    idx = np.where(bound != 2)
+
+    p_m1_m2 = 2. / (max_mass - min_mass)**2
+    p_m1_m2[idx] = 0
+
+    return p_m1_m2
+
+# Generate samples for the two canonical models plus flat in mass model
 def draw_imf_samples(**kwargs):
     ''' Draw samples for power-law model
 
@@ -410,6 +443,32 @@ def draw_lnm_samples(**kwargs):
 
     return np.resize(m1, nsamples), np.resize(m2, nsamples)
 
+def draw_flat_samples(**kwargs):
+    ''' Draw samples for uniform in mass
+
+        Parameters
+        ----------
+        **kwargs: string
+           Keyword arguments as model parameters and number of samples
+
+        Returns
+        -------
+        array
+           The first mass
+        array
+           The second mass
+    '''
+
+    #PDF doesnt match with sampler
+    nsamples = kwargs.get('nsamples', 1)
+    min_mass = kwargs.get('min_mass', 1.)
+    max_mass = kwargs.get('max_mass', 2.)
+
+    m1 = np.random.uniform(min_mass, max_mass, nsamples)
+    m2 = np.random.uniform(min_mass, max_mass, nsamples)
+
+    return np.maximum(m1, m2), np.minimum(m1, m2)
+
 # Functions to generate chirp mass samples for the two canonical models
 def mchirp_sampler_lnm(**kwargs):
     ''' Draw chirp mass samples for uniform-in-log model
@@ -443,6 +502,24 @@ def mchirp_sampler_imf(**kwargs):
            The chirp mass samples for the population
     '''
     m1, m2 = draw_imf_samples(**kwargs)
+    mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
+
+    return mchirp_astro
+
+def mchirp_sampler_flat(**kwargs):
+    ''' Draw chirp mass samples for flat in mass model
+
+        Parameters
+        ----------
+        **kwargs: string
+           Keyword arguments as model parameters and number of samples
+
+        Returns
+        -------
+        mchirp-astro: array
+           The chirp mass samples for the population
+    '''
+    m1, m2 = draw_flat_samples(**kwargs)
     mchirp_astro = mchirp_from_mass1_mass2(m1, m2)
 
     return mchirp_astro
