@@ -91,7 +91,7 @@ class SingleTemplate(BaseModel):
         if self.time is None:
             self.time = p['tc']
 
-        vloglr = 0
+        shloglr = hhloglr = 0
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                          p['polarization'], self.time)
@@ -101,8 +101,10 @@ class SingleTemplate(BaseModel):
             ic = 0.5 * (1.0 + ip * ip)
             htf = (fp * ip - 1.0j * fc * ic) / p['distance']
 
-            sh = abs((self.sh[ifo].at_time(p['tc'] + dt) * htf))
-            vloglr += numpy.log(scipy.special.i0e(sh)) + sh
-            vloglr += self.hh[ifo] * abs(htf) ** 2.0
+            sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
+            shloglr += sh
+            hhloglr += self.hh[ifo] * abs(htf) ** 2.0
+
+        vloglr = numpy.log(scipy.special.i0e(abs(shloglr))) + abs(shloglr) + hhloglr
 
         return float(vloglr)
