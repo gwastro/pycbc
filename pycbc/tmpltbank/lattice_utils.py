@@ -46,9 +46,9 @@ def generate_hexagonal_lattice(maxv1, minv1, maxv2, minv2, mindist):
         Array of positions in the second dimension
     """
     if minv1 > maxv1:
-      raise ValueError("Invalid input to function.")
+        raise ValueError("Invalid input to function.")
     if minv2 > maxv2:
-      raise ValueError("Invalid input to function.")
+        raise ValueError("Invalid input to function.")
     # Place first point
     v1s = [minv1]
     v2s = [minv2]
@@ -72,7 +72,7 @@ def generate_hexagonal_lattice(maxv1, minv1, maxv2, minv2, mindist):
     tmpv2_2 = initLine2[0,1]
     while tmpv2_1 < maxv2 and tmpv2_2 < maxv2:
         tmpv2_1 = tmpv2_1 + 3.0 * (mindist)**0.5
-        tmpv2_2 = tmpv2_2 + 3.0 * (mindist)**0.5 
+        tmpv2_2 = tmpv2_2 + 3.0 * (mindist)**0.5
         initLine[:,1] = tmpv2_1
         initLine2[:,1] = tmpv2_2
         for i in xrange(len(initLine)):
@@ -134,8 +134,13 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
     a.data[0,0] = 1
     a.data[1,1] = 1
     a.data[2,2] = 1
-    lalpulsar.SetTilingLatticeAndMetric(tiling, lalpulsar.TILING_LATTICE_ANSTAR,
-                                        a, mindist)
+    try:
+        # old versions of lalpulsar used an enumeration
+        lattice = lalpulsar.TILING_LATTICE_ANSTAR
+    except AttributeError:
+        # newer versions of lalpulsar use a string
+        lattice = 'An-star'
+    lalpulsar.SetTilingLatticeAndMetric(tiling, lattice, a, mindist)
     try:
         iterator = lalpulsar.CreateLatticeTilingIterator(tiling, 3)
     except TypeError:
@@ -146,7 +151,6 @@ def generate_anstar_3d_lattice(maxv1, minv1, maxv2, minv2, maxv3, minv3, \
     vs1 = []
     vs2 = []
     vs3 = []
-    count = 0
     curr_point = lal.gsl_vector(3)
     while (lalpulsar.NextLatticeTilingPoint(iterator, curr_point) > 0):
         vs1.append(curr_point.data[0])

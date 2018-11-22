@@ -25,11 +25,14 @@ Workflow module documentation
 
 The following contains a list of the sub-modules in pycbc's workflow module, a bried description of what each does, and a link to documentation on how to use each module. Collectively these pages should provide complete details on how to set up a workflow from scratch.
 
---------------------
-Initialization
---------------------
+---------------------
+Basics and overview
+---------------------
 
-Take in command line input and the configuration file.
+The following page gives a description of how the workflow module expects
+configuration files to be layed out and how the basic command-line interface
+functions. If writing a workflow for the first time we recommend you read
+through this page!
 
 .. toctree::
    :maxdepth: 1
@@ -71,17 +74,6 @@ Generate injection files for use later in the analysis
    workflow/injections
 
 ----------------------------------
-Time-slide generation
-----------------------------------
-
-Generate the time-slide files used for describing time slides to be performed later in the analysis
-
-.. toctree::
-   :maxdepth: 1
-
-   workflow/time_slides
-
-----------------------------------
 Template bank
 ----------------------------------
 
@@ -121,28 +113,7 @@ Determine if "triggers" seen in one detector are also seen in other detectors. A
 
 .. toctree::   :maxdepth: 1 
 
-   workflow/coincidence
    workflow/hdf_coincidence
-
-----------------------------------
-Post processing preparation
-----------------------------------
-
-Prepare output files for the post-processing stage
-
-.. toctree:: :maxdepth: 1
-
-   workflow/postprocprep
-
-----------------------------------
-Post-processing
-----------------------------------
-
-Assess the significance of all triggers and calculate any rate statements
-
-.. toctree:: :maxdepth: 1
-
-   workflow/postproc
 
 ====================
 Method documentation

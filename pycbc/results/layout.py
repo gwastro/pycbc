@@ -18,9 +18,9 @@
 import os.path
 from itertools import izip_longest
 
-def two_column_layout(path, cols):
+def two_column_layout(path, cols, **kwargs):
     """ Make a well layout in a two column format
-    
+
     Parameters
     ----------
     path: str
@@ -32,27 +32,27 @@ def two_column_layout(path, cols):
     """
     path = os.path.join(os.getcwd(), path, 'well.html')
     from pycbc.results.render import render_workflow_html_template
-    render_workflow_html_template(path, 'two_column.html', cols)
+    render_workflow_html_template(path, 'two_column.html', cols, **kwargs)
 
-def single_layout(path, files):
+def single_layout(path, files, **kwargs):
     """ Make a well layout in  single column format
-    
+
     path: str
         Location to make the well html file
     files: list of pycbc.workflow.core.Files
         This list of images to show in order within the well layout html file.
     """
-    two_column_layout(path, [(f,) for f in files])
+    two_column_layout(path, [(f,) for f in files], **kwargs)
 
 def grouper(iterable, n, fillvalue=None):
     """ Group items into chunks of n length
     """
     args = [iter(iterable)] * n
     return izip_longest(*args, fillvalue=fillvalue)
-    
-def group_layout(path, files):
+
+def group_layout(path, files, **kwargs):
     """ Make a well layout in chunks of two from a list of files
-    
+
     path: str
         Location to make the well html file
     files: list of pycbc.workflow.core.Files
@@ -60,32 +60,32 @@ def group_layout(path, files):
         Every two are placed on the same row.
     """
     if len(files) > 0:
-        two_column_layout(path, list(grouper(files, 2)))      
- 
+        two_column_layout(path, list(grouper(files, 2)), **kwargs)
+
 class SectionNumber(object):
     """ Class to help with numbering sections in an output page.
     """
     def __init__(self, base, secs):
         """ Create section numbering instance
-        
+
         Parameters
         ----------
         base: path
             The path of the of output html results directory
         secs: list of strings
-            List of the subsections of the output html page        
+            List of the subsections of the output html page
         """
         self.base = base
         self.secs = secs
         self.name = {}
         self.count = {}
         self.num = {}
-        
+
         for num, sec in enumerate(secs):
-            self.name[sec] = '%s._%s' % (num, sec)  
+            self.name[sec] = '%s._%s' % (num + 1, sec)
             self.num[sec] = num
             self.count[sec] = 1
-    
+
     def __getitem__ (self, path):
         """ Return the path to use for the given subsection with numbering
         included. The numbering increments for each new subsection request. If
@@ -97,7 +97,7 @@ class SectionNumber(object):
             sec, subsec = path.split('/')
             subnum = self.count[sec]
             num = self.num[sec]
-            name = '%s/%s.%s_%s' % (self.name[sec], num, subnum, subsec)
+            name = '%s/%s.%02d_%s' % (self.name[sec], num + 1, subnum, subsec)
             self.count[sec] += 1
             self.name[path] = name
         path = os.path.join(os.getcwd(), self.base, name)

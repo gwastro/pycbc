@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import logging
+from matplotlib import use
+use('agg')
+import matplotlib.pyplot as plt
+import numpy
+import pycbc
+import pycbc.version
+from pycbc import results
+from pycbc import __version__
+from pycbc.inference import io
+import sys
+
+# add options to command line
+parser = argparse.ArgumentParser(
+            usage="pycbc_inference_plot_acceptance_rate [--options]",
+            description="Plots histogram of the fractions of steps "
+                        "accepted by walkers.")
+parser.add_argument("--input-file", type=str, required=True,
+                    help="Path to input HDF file.")
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
+# output plot options
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Path to output plot.")
+# add walkers to plot
+parser.add_argument("--walkers", type=int, nargs='+', default=None,
+                    help="Specify walkers whose acceptance fraction would "
+                    "be plotted. The acceptance fraction for a walker is the "
+                    "fraction of steps accepted by it. Default is plot for "
+                    "all walkers.")
+parser.add_argument("--temps", type=int, nargs="+", default=None,
+                    help="Specify temperatures whose acceptance fraction "
+                         "would be plotted (if available). [default=None] "
+                         "specifies that all temperatures will be plotted. "
+                         "This will create N histograms on the plot for N "
+                         "temperatures in file.")
+# add number of bins for histogram
+parser.add_argument("--bins", type=int, default=10,
+                    help="Specify number of bins for the histogram plot.")
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="")
+
+# parse the command line
+opts = parser.parse_args()
+
+# setup log
+pycbc.init_logging(opts.verbose)
+
+# load the samples
+logging.info("Reading input file")
+fp = io.loadfile(opts.input_file, "r")
+
+# if using a parallel-tempered sampler, then
+# add the temperature arguments if it is specified
+additional_args = {}
+if opts.temps is not None:
+    additional_args['temps'] = opts.temps
+
+acceptance_fraction = fp.read_acceptance_fraction(walkers=opts.walkers,
+                                                  **additional_args)
+# Close the file
+fp.close()
+
+# plot acceptance rate and drawn values
+logging.info("Plotting acceptance fraction")
+fig = plt.figure()
+
+plt.hist(acceptance_fraction.transpose(), opts.bins, histtype="step", lw=2)
+
+plt.ylabel("Number of walkers")
+plt.xlabel("Mean Acceptance Rate")
+
+# save figure with meta-data
+caption = """This plot shows a histogram of the acceptance rate of the
+walkers. The acceptance rate of a walker is the fraction of steps accepted
+by it."""
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title="Acceptance Rate",
+                               caption=caption)
+plt.close()
+
+# exit
+logging.info("Done")

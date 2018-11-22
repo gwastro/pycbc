@@ -20,27 +20,27 @@
 
 __author__ = 'Adam Mercer <adam.mercer@ligo.org>'
 
-import exceptions
 import os
 import time
 import subprocess
 import re
+import distutils.version
 
 
 class GitInfo(object):
     def __init__(self):
-        date = None
-        hash = None
-        branch = None
-        tag = None
-        author = None
-        committer = None
-        status = None
-        builder = None
-        build_date = None
+        self.date = None
+        self.hash = None
+        self.branch = None
+        self.tag = None
+        self.author = None
+        self.committer = None
+        self.status = None
+        self.builder = None
+        self.build_date = None
 
 
-class GitInvocationError(exceptions.LookupError):
+class GitInvocationError(LookupError):
     pass
 
 
@@ -138,6 +138,30 @@ def get_git_status(git_path='git'):
         else:
             return 'CLEAN: All modifications committed'
 
+def determine_latest_release_version():
+    """Query the git repository for the last released version of the code.
+    """
+    git_path = call(('which', 'git'))
+
+    # Get all tags
+    tag_list = call((git_path, 'tag')).split('\n')
+
+    # Reduce to only versions
+    tag_list = [t[1:] for t in tag_list if t.startswith('v')]
+
+    # Determine if indeed a tag and store largest
+    latest_version = None
+    latest_version_string = None
+    re_magic = re.compile("\d+\.\d+\.\d+$")
+    for tag in tag_list:
+        # Is this a version string
+        if re_magic.match(tag):
+            curr_version = distutils.version.StrictVersion(tag)
+            if latest_version is None or curr_version > latest_version:
+                latest_version = curr_version
+                latest_version_string = tag
+
+    return latest_version_string
 
 def generate_git_version_info():
     """Query the git repository information to generate a version module.
@@ -166,6 +190,9 @@ def generate_git_version_info():
     else:
         info.version = info.hash[:6]
         info.release = False
+
+    # Determine *last* stable release
+    info.last_release = determine_latest_release_version()
 
     # refresh index
     call((git_path, 'update-index', '-q', '--refresh'))

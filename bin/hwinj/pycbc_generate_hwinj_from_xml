@@ -52,6 +52,8 @@ parser.add_argument('--injection-file', type=str, required=True,
              help='Path to the LIGOLW XML file that contains a sim_inspiral table.')
 parser.add_argument('--sample-rate', type=int, required=True,
              help='Sample rate that waveforms will be generated.')
+parser.add_argument("--tag", type=str, default='hwinjcbcsimid',
+                    help="Prefix added to output filenames.")
 
 # parse command line
 opts = parser.parse_args()
@@ -102,7 +104,7 @@ for sim in injections.table:
         injections.apply(output, ifo, simulation_ids=[sim.simulation_id])
 
         # set output filename
-        txt_filename = ifo + '-' + 'HWINJ_CBC_FROM_SIMULATION_ID_' + str(sim_id) + '-' + str(start_time) + '-' + str(end_time-start_time) + '.txt'
+        txt_filename = opts.tag + str(sim_id) + '_' + str(start_time) + '_' + ifo + '.txt'
 
         # check if filename does not exist
         if os.path.exists(txt_filename):

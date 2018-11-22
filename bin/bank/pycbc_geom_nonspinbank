@@ -1,0 +1,392 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2013 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Template bank generator for placing a bank of non-spinning templates.
+"""
+
+from __future__ import division
+import argparse
+import math
+import copy
+import numpy
+import logging
+import pycbc
+import pycbc.version
+import pycbc.psd
+import pycbc.strain
+import pycbc.types
+from pycbc import tmpltbank
+from pycbc import pnutils
+
+
+__author__  = "Ian Harry <ian.harry@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_geom_nonspinbank"
+
+# Read command line options
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(
+    description=_desc,
+    formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
+
+# Begin with code specific options
+parser.add_argument('--version', action='version', version=__version__)
+parser.add_argument("-V", "--verbose", action="store_true", default=False,
+                    help="verbose output")
+parser.add_argument("--random-seed", action="store", type=int,
+                    default=None,
+                    help="""Random seed to use when calling numpy.random
+                            functions used in obtaining the principal 
+                            components and when translating points back to 
+                            physical space.  
+                            If given, the code should give the same output 
+                            when run with the same random seed.""")
+
+tmpltbank.insert_base_bank_options(parser)
+
+# Insert the metric calculation options
+tmpltbank.insert_metric_calculation_options(parser)
+
+# Insert the mass range options
+tmpltbank.insert_mass_range_option_group(parser, nonSpin=True)
+
+# Insert the PSD options
+pycbc.psd.insert_psd_option_group(parser)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
+
+# Add the ethinca calculation options
+tmpltbank.insert_ethinca_metric_options(parser)
+
+opts = parser.parse_args()
+
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
+opts.max_mismatch = 1 - opts.min_match
+tmpltbank.verify_metric_calculation_options(opts, parser)
+metricParams=tmpltbank.metricParameters.from_argparse(opts)
+tmpltbank.verify_mass_range_options(opts, parser, nonSpin=True)
+massRangeParams=tmpltbank.massRangeParameters.from_argparse(opts,nonSpin=True)
+pycbc.psd.verify_psd_options(opts, parser)
+if opts.psd_estimation:
+    pycbc.strain.verify_strain_options(opts, parser)
+tmpltbank.verify_ethinca_metric_options(opts, parser)
+ethincaParams=tmpltbank.ethincaParameters.from_argparse(opts)
+
+# Ensure consistency of ethinca and bank metric parameters
+tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
+
+# Set random seed if needed
+if opts.random_seed is not None:
+    numpy.random.seed(opts.random_seed)
+
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if opts.psd_estimation:
+    logging.info("Obtaining h(t) for PSD generation")
+    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+else:
+    strain = None
+
+# Get the PSD using the pycbc interface
+logging.info("Obtaining PSD")
+# FIXME: Revisit the following!
+# Want the number of samples to be a binary number and Nyquist must be above
+# opts.f_upper. All this assumes that 1 / deltaF is a binary number
+nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
+numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+
+psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f,
+                         low_frequency_cutoff=opts.f_low, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
+metricParams.psd = psd
+
+logging.info("Calculating metric")
+
+# Begin by calculating a metric
+metricParams = tmpltbank.determine_eigen_directions(
+    metricParams, vary_fmax=ethincaParams.doEthinca,
+    vary_density=ethincaParams.freqStep)
+
+# This is used to calculate evalsCV and evecsCV with describe the rotations
+# needed to move into the principal component directions. evalsCV will be 1s.
+logging.info("Calculating covariance matrix")
+
+vals = tmpltbank.estimate_mass_range(1000000, massRangeParams, metricParams,
+                                     metricParams.fUpper, covary=False)
+cov = numpy.cov(vals)
+evalsCV, evecsCV = numpy.linalg.eig(cov)
+evecsCVdict = {}
+evecsCVdict[metricParams.fUpper] = evecsCV
+metricParams.evecsCV = evecsCVdict
+
+
+logging.info("Estimating extent of parameter space")
+
+# This is to get an estimate of the largest values of \chi1 and \chi2
+vals = tmpltbank.estimate_mass_range(5000000, massRangeParams, metricParams,
+                                     metricParams.fUpper, covary=True)
+
+chi1Max = vals[0].max()
+chi1Min = vals[0].min()
+chi1Diff = chi1Max - chi1Min
+chi2Max = vals[1].max()
+chi2Min = vals[1].min()
+chi2Diff = chi2Max - chi2Min
+
+# Generate a lattice of points in \chi1 \chi2 coordinates
+logging.info("Calculating lattice")
+
+# When placing the lattice we transition from 1D lattice to a hexagonal
+# lattice and then back to 1D lattice
+# Assume that once 2D is needed it will be needed until the end. 
+# Ie. We have 1D region then 2D region then 1D region. Nothing else
+# Length of the 1D region can be 0
+
+# We start by figuring out the 1D lattice regions and placing these 1D lattices
+# Start from the start going forward.
+
+lower1DBoundary = None
+spacing1D = opts.max_mismatch**0.5 * 2
+v1s = []
+v2s = []
+for i in range(100):
+    tempChi1Lower = chi1Min + i * chi1Diff/100.
+    tempChi1Upper = chi1Min + (i+1) * chi1Diff/100.
+    lgc = (vals[0] > tempChi1Lower) & (vals[0] < tempChi1Upper)
+    tempChi1 = vals[0][lgc]
+    tempChi2 = vals[1][lgc]
+    tempChi2Max = tempChi2.max()
+    tempChi2Min = tempChi2.min()
+    if (tempChi2Max - tempChi2Min) < 0.2:
+        # 1D lattice through here
+        chi2Loc = (tempChi2Max + tempChi2Min) / 2.
+        currIter = 0
+        startPoint = chi1Min - 0.02 * chi1Diff 
+        while(1):
+            currChi1 = startPoint + currIter * spacing1D
+            if (currChi1 < tempChi1Lower) and (i != 0):
+                currIter = currIter + 1
+                continue
+            elif (currChi1 > tempChi1Upper) and (i != 99):
+                break
+            elif (currChi1 > tempChi1Upper + 0.02*chi1Diff):
+                break
+            v1s.append(currChi1)
+            v2s.append(chi2Loc)
+            currIter = currIter + 1
+    else:
+        # Now we need 2D lattice
+        lower1DBoundary = i
+        break
+
+# Next we start from the end and work backwards
+for i in range(99,-1,-1):
+    # Only need to do this if there is a lower boundary
+    if lower1DBoundary is None:
+        break
+    # FIXME: Move this to a function, duplicated above!
+    # FIXME: Maybe move all this to a generate_NS_lattice function
+    tempChi1Lower = chi1Min + i * chi1Diff/100.
+    tempChi1Upper = chi1Min + (i+1) * chi1Diff/100.
+    lgc = (vals[0] > tempChi1Lower) & (vals[0] < tempChi1Upper)
+    tempChi1 = vals[0][lgc]
+    tempChi2 = vals[1][lgc]
+    tempChi2Max = tempChi2.max()
+    tempChi2Min = tempChi2.min()
+    if (tempChi2Max - tempChi2Min) < 0.2:
+        # 1D lattice through here
+        chi2Loc = (tempChi2Max + tempChi2Min) / 2.
+        currIter = 0  
+        startPoint = chi1Min - 0.02 * chi1Diff
+        while(1):
+            currChi1 = startPoint + currIter * spacing1D
+            if (currChi1 < tempChi1Lower) and (i != 0):
+                currIter = currIter + 1
+                continue
+            elif (currChi1 > tempChi1Upper) and (i != 99):
+                break
+            elif (currChi1 > tempChi1Upper + 0.02*chi1Diff):
+                break
+            v1s.append(currChi1) 
+            v2s.append(chi2Loc)
+            currIter = currIter + 1
+    else:
+        # Now we need 2D lattice
+        upper1DBoundary = i + 1
+        break
+
+# TESTING CODE: USE THIS TO TURN OFF THE 1D LATTICE, IE DO 2D EVERYWHERE
+#lower1DBoundary = 0
+#upper1DBoundary = 100
+#v1s = []
+#v2s = []
+
+# Anything left is covered with a 2D hexagonal array
+if lower1DBoundary is not None:
+    # Need some 2D parts in the bank
+    if lower1DBoundary == 0:
+        lowerChi1 = chi1Min - 0.02*chi1Diff
+    else:
+        lowerChi1 = chi1Min + lower1DBoundary*chi1Diff/100.
+    if upper1DBoundary == 100:
+        upperChi1 = chi1Max + 0.02*chi1Diff
+    else:
+        upperChi1 = chi1Min + upper1DBoundary*chi1Diff/100.
+    tempv1s, tempv2s = tmpltbank.generate_hexagonal_lattice(
+        upperChi1, lowerChi1, chi2Max + 0.02*chi2Diff,
+        chi2Min - 0.02*chi2Diff, opts.max_mismatch)
+    v1s.extend(tempv1s)
+    v2s.extend(tempv2s)
+
+v1s = numpy.array(v1s)
+v2s = numpy.array(v2s)
+
+logging.info("%d points in the lattice" % len(v1s))
+
+# What follows is used to 
+#   1) Check if the points are close to the physical space, if not reject
+#   2) If the point is *within* the physical space find a physical point that
+#      matches the position.
+#   3) If the point is "close" to the physical space find a "close" physical
+#      point within the allowed range. Close means within the specified
+#      minimal mismatch.
+
+# FIXME: Most of this should probably move to a function in pycbc.tmpltbank
+
+# Choose an initial set of points to begin comparing points to physical space
+rMass1, rMass2, rSpin1z, rSpin2z = \
+        tmpltbank.get_random_mass(2000000, massRangeParams)
+rTotmass, rEta = pnutils.mass1_mass2_to_mtotal_eta(rMass1, rMass2)
+# Here we have a set of m1s,m2s and mapped to Xis below
+rXis = tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z, metricParams,
+                                metricParams.fUpper)
+
+xis = (numpy.array(rXis)).T
+physMasses = numpy.array([rTotmass, rEta, rSpin1z, rSpin2z])
+physMasses = physMasses.T
+
+# Sort the xis for easy access
+v1smin = v1s.min()
+v1smax = v1s.max()
+v1sdiff = v1smax - v1smin
+numv1bins = int(math.ceil(v1sdiff / 1.))
+v2smin = v2s.min()
+v2smax = v2s.max()
+v2sdiff = v2smax - v2smin
+numv2bins = int(math.ceil(v2sdiff / 1.))
+
+sortedBins = {}
+
+#for i in xrange(numv1bins):
+#    print i
+#    sortedBins[i] = {}
+#    for j in xrange(numv2bins):
+#        sortedBins[i][j] = []
+
+logging.info("Sorting guide points")
+
+bin_size = (opts.max_mismatch)**0.5 * 6.
+
+for iter, currXi in enumerate(xis):
+    xi1 = currXi[0]
+    xi2 = currXi[1]
+    x1bin = int((xi1 - v1smin)/bin_size)
+    x2bin = int((xi2 - v2smin)/bin_size)
+    if not sortedBins.has_key(x1bin):
+        sortedBins[x1bin] = {}
+    if not sortedBins[x1bin].has_key(x2bin):
+        sortedBins[x1bin][x2bin] = []
+    if len(sortedBins[x1bin][x2bin]) < 100:
+        sortedBins[x1bin][x2bin].append( (iter, xi1, xi2) )
+
+logging.info("Converting to physical points")
+
+# Now we start looping through all the points and either accept it, with a
+# physical representation *or* accept it nudged toward the physical space
+# *or* reject it if it is outside the physically allowed region. 
+
+tempBank = []
+temp_number = 0
+req_match = 0.0001
+# This can be used for debugging
+#fileP = open('bank_file.dat','w')
+for iter, (v1, v2) in enumerate(zip(v1s, v2s)):
+    # First check if point is within the physical space
+    # and find some example nearby physical points if it is.
+    v1bin = int((v1 - v1smin)/bin_size)
+    v2bin = int((v2 - v2smin)/bin_size)
+    physBin = None
+    for i in [v1bin, v1bin+1, v1bin-1]:
+        if not sortedBins.has_key(i):
+            continue
+        for j in [v2bin, v2bin+1, v2bin-1]:
+            if not sortedBins[i].has_key(j):
+                continue
+            physBin = [i,j]
+            points = numpy.array(sortedBins[physBin[0]][physBin[1]])
+            dist = (v1 - points[:,1])**2 + (v2 - points[:,2])**2
+            break
+        if physBin:
+            break
+    else:
+        # No nearby physical points found: continue
+        continue
+    iters = points[:,0]
+    bestXis = points[dist.argmin(),1:]
+    bestMasses = physMasses[int(points[dist.argmin(),0] + 0.5)]
+    
+    # Reject point if it is too far from physical space
+    masses = tmpltbank.get_physical_covaried_masses([v1,v2],\
+               copy.deepcopy(bestMasses), copy.deepcopy(bestXis), req_match, \
+               massRangeParams, metricParams, metricParams.fUpper, \
+               giveUpThresh=20)
+
+    # If point is still not close enough to desired space, remove it
+    if masses[5] > opts.max_mismatch:
+        continue
+    # Add the two masses (masses[0],masses[1]) to the list. For consistency
+    # we also add spin1z and spin2z (masses[2] and masses[3]) but here these
+    # will always be 0.
+
+    tempBank.append([masses[0], masses[1], masses[2], masses[3]])
+
+    # This can be used for debugging
+    # print >>fileP, masses[0],masses[1],masses[2],masses[3],masses[4],\
+    #  masses[5],masses[6],masses[7],masses[8],masses[9],v1,v2
+
+logging.info("Writing output")
+
+# Currently this is hardcoded to dump as a sngl_inspiral table. But this is
+# easily changed.
+
+tmpltbank.output_sngl_inspiral_table(
+    opts.output_file, tempBank, metricParams, ethincaParams, 
+    programName=__program__, optDict=opts.__dict__, comment="",
+    version=pycbc.version.git_hash, 
+    cvs_repository='pycbc/'+pycbc.version.git_branch,
+    cvs_entry_time=pycbc.version.date)
+
+logging.info("Done")
+

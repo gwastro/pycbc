@@ -39,8 +39,8 @@ parser.add_argument("--newsnr-threshold", type=float, metavar='THRESHOLD',
 parser.add_argument("--low-frequency-cutoff", type=float,
                   help="The low frequency cutoff to use for filtering (Hz)")
 
-parser.add_argument("--approximant", type=str,
-                  help="The name of the approximant to use for filtering")
+# add approximant arg
+waveform.bank.add_approximant_arg(parser)
 parser.add_argument("--order", type=str,
                   help="The integer half-PN order at which to generate"
                        " the approximant.")
@@ -142,19 +142,30 @@ with ctx:
         del strain_segments_dict[ifo]
 
     logging.info("Computing noise PSD")
-    psd = psd.from_cli_multi_ifos(opt, flen_dict, delta_f_dict, flow_dict,
+    psds = psd.from_cli_multi_ifos(opt, flen_dict, delta_f_dict, flow_dict,
                                   opt.instruments, strain_dict=strain_dict, 
                                   dyn_range_factor=DYN_RANGE_FAC)
     for ifo in opt.instruments:
-        psd[ifo] = psd[ifo].astype(float32)
-        del strain_dict[ifo]
+        psds[ifo] = psds[ifo].astype(float32)
+
+    psd.associate_psds_to_multi_ifo_segments(opt, segments, strain_dict, flen,
+            delta_f, flow, opt.instruments, dyn_range_factor=DYN_RANGE_FAC,
+            precision='single')
 
     # Currently we are using the same matched-filter parameters for all ifos.
     # Therefore only one MatchedFilterControl needed. Maybe this can change if
     # needed. Segments is only used to get tlen etc. which is same for all
     # ifos, so just send the first ifo
+    template_mem = zeros(tlen, dtype=complex64)
+    if opt.cluster_window == 0:
+        use_cluster = False
+    else:
+        use_cluster = True
+
     matched_filter = MatchedFilterControl(opt.low_frequency_cutoff, None,
                                    opt.snr_threshold, tlen, delta_f, complex64,
+                                   segments[segments.keys()[0]], template_mem,
+                                   use_cluster,
                                    downsample_factor=opt.downsample_factor,
                                    upsample_threshold=opt.upsample_threshold,
                                    upsample_method=opt.upsample_method)
@@ -165,9 +176,10 @@ with ctx:
     power_chisq = vetoes.SingleDetPowerChisq(opt.chisq_bins)
     # The existing SingleDetBankVeto can calculate the single detector
     # bank veto for multiple ifos, so we just use it directly.
-    bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file,
-                                         opt.approximant, flen, delta_f, flow,
-                                         complex64, phase_order=opt.order)
+    bank_chisq = vetoes.SingleDetBankVeto(opt.bank_veto_bank_file, flen,
+                                          delta_f, flow, complex64,
+                                          phase_order=opt.order,
+                                          approximant=opt.approximant)
     # Same here
     autochisq = vetoes.SingleDetAutoChisq(opt.autochi_stride,
                                          opt.autochi_number_points,
@@ -176,41 +188,43 @@ with ctx:
     logging.info("Overwhitening frequency-domain data segments")
     for ifo in opt.instruments:
         for seg in segments[ifo]:
-            seg /= psd[ifo]
+            seg /= psds[ifo]
 
     out_types = {
-        'time_index' : int,
-        'ifo'        : int, # IFO is stored as an int internally!
-        'snr'        : complex64,
-        'chisq'      : float32,
-        'chisq_dof'  : int,
-        'bank_chisq' : float32,
-        'cont_chisq' : float32
+        'time_index'     : int,
+        'ifo'            : int, # IFO is stored as an int internally!
+        'snr'            : complex64,
+        'chisq'          : float32,
+        'chisq_dof'      : int,
+        'bank_chisq'     : float32,
+        'bank_chisq_dof' : int,
+        'cont_chisq'     : float32
                 }
     out_vals = {
-        'time_index' : None,
-        'ifo'        : None,
-        'snr'        : None,
-        'chisq'      : None,
-        'chisq_dof'  : None,
-        'bank_chisq' : None,
-        'cont_chisq' : None
+        'time_index'     : None,
+        'ifo'            : None,
+        'snr'            : None,
+        'chisq'          : None,
+        'chisq_dof'      : None,
+        'bank_chisq'     : None,
+        'bank_chisq_dof' : None,
+        'cont_chisq'     : None
                }
     names = sorted(out_vals.keys())
 
     event_mgr = events.EventManagerMultiDet(opt, opt.instruments, names,
-                                        [out_types[n] for n in names], psd=psd)
+                                        [out_types[n] for n in names], psd=psds)
 
     logging.info("Read in template bank")
-    bank = waveform.FilterBank(opt.bank_file, opt.approximant,
-                flen, delta_f, flow, complex64, 
-                phase_order=opt.order, taper=opt.taper_template,
-                out=zeros(tlen, dtype=complex64))
+    bank = waveform.FilterBank(opt.bank_file, flen, delta_f, complex64,
+                               low_frequency_cutoff=flow, phase_order=opt.order,
+                               taper=opt.taper_template,
+                               approximant=opt.approximant, out=template_mem)
 
     for t_num, template in enumerate(bank):
         sigmasq = {}
         for ifo in opt.instruments:
-            sigmasq[ifo] = template.sigmasq(psd[ifo])
+            sigmasq[ifo] = template.sigmasq(psds[ifo])
 
         event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
         for ifo in opt.instruments:
@@ -225,35 +239,33 @@ with ctx:
                               len(segments[ifo])))       
 
                 snr, norm, corr, idx, snrv = \
-                        matched_filter.matched_filter_and_cluster(template,
-                            template.sigmasq(psd[ifo]), stilde, cluster_window)
+                        matched_filter.matched_filter_and_cluster(s_num,
+                            template.sigmasq(stilde.psd), cluster_window)
 
                 if len(idx) == 0:
                     continue
 
-                out_vals['bank_chisq'] = bank_chisq.values(template, psd[ifo],
-                                  stilde, snrv, norm, idx+stilde.analyze.start)
+                out_vals['bank_chisq'], out_vals['bank_chisq_dof'] = \
+                        bank_chisq.values(template, stilde.psd, stilde, snrv,
+                                          norm, idx+stilde.analyze.start)
+
                 out_vals['chisq'], out_vals['chisq_dof'] =\
-                                  power_chisq.values(corr, snr, snrv, norm,
-                                                     psd[ifo],
-                                                     idx+stilde.analyze.start,
-                                                     template)
+                        power_chisq.values(corr, snrv, norm, stilde.psd,
+                                           idx+stilde.analyze.start, template)
 
-                snrv *= norm
-
-                out_vals['cont_chisq'] = autochisq.values(snr, corr,
-                                  idx+stilde.analyze.start, template, psd[ifo],
-                                  norm, low_frequency_cutoff=flow)
+                out_vals['cont_chisq'] = autochisq.values(snr,
+                        idx+stilde.analyze.start, template, stilde.psd, norm,
+                        stilde=stilde, low_frequency_cutoff=flow)
 
                 idx += stilde.cumulative_index
 
                 out_vals['time_index'] = idx
-                out_vals['snr'] = snrv
+                out_vals['snr'] = snrv * norm
                 # IFO is stored as an int
                 out_vals['ifo'] = event_mgr.ifo_dict[ifo]
 
                 event_mgr.add_template_events_to_ifo(ifo, names,
-                                                  [out_vals[n] for n in names])
+                        [out_vals[n] for n in names])
 
             event_mgr.cluster_template_events_single_ifo("time_index",
                                                     "snr", cluster_window, ifo)

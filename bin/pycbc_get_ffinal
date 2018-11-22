@@ -14,7 +14,7 @@ import optparse
 from pycbc import waveform
 
 from glue.ligolw import lsctables
-from glue.ligolw import utils
+from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import table
 from glue.ligolw.utils import process
 
@@ -123,7 +123,7 @@ phi0 = 0.
 
 # load the xml file
 if infile is not None:
-    xmldoc = utils.load_filename(infile, gz=infile.endswith('.gz'),
+    xmldoc = ligolw_utils.load_filename(infile, gz=infile.endswith('.gz'),
         verbose=opts.verbose)
     this_process = process.register_to_xmldoc(xmldoc, __prog__, opts.__dict__)
     sngl_insp_table = table.get_table(xmldoc, 'sngl_inspiral')
@@ -204,7 +204,7 @@ if infile is not None:
         sys.stdout.flush()
 
     # write the xml file
-    utils.write_filename(xmldoc, outfile, gz = outfile.endswith('.gz'))
+    ligolw_utils.write_filename(xmldoc, outfile, gz = outfile.endswith('.gz'))
 
     if opts.verbose:
         print >> sys.stdout, "Finished!"

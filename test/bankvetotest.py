@@ -10,10 +10,10 @@ sr = 4096.0
 dt = 1.0/sr
 bl = 256
 df = 1.0/bl
-N = sr * bl
+N = int(sr * bl)
 n = N/2 + 1
 
-psd = pycbc.psd.from_txt("ZERO_DET_high_P.txt", n, df, 14)
+psd = pycbc.psd.from_string("aLIGOZeroDetHighPower", n, df, 14)
 strain = noise_from_psd(N, dt, psd, seed=0)
 
 htildep, htildec = get_fd_waveform(approximant="TaylorF2", mass1=10, mass2=10, f_lower=15, delta_f=df)
@@ -52,7 +52,7 @@ for bank_template in bank_veto_bank:
              low_frequency_cutoff=15))
 
 bank_veto = bank_chisq_from_filters(snr,norm,bank_snrs,bank_norms,bank_veto_curr_overlaps)
-numpy.savetxt('BV_TEST1.txt',bank_veto)
+#numpy.savetxt('BV_TEST1.txt',bank_veto)
 
 # TEST 2
 bank_tilde1,_ = get_fd_waveform(approximant="TaylorF2", mass1=9.9, mass2=9.9, f_lower=15, delta_f=df)
@@ -89,5 +89,5 @@ for bank_template in bank_veto_bank:
     sigmasq2 = sigmasq(bank_template, psd, 15, None)
 
 bank_veto = bank_chisq_from_filters(snr,norm,bank_snrs,bank_norms,bank_veto_curr_overlaps)
-numpy.savetxt('BV_TEST2.txt',bank_veto)
+#numpy.savetxt('BV_TEST2.txt',bank_veto)
 

@@ -1,0 +1,68 @@
+#! /user/bin/env python
+
+# Copyright (C) 2017 Collin Capano
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+"""Extracts some or all samples from an InferenceFile, writing results to a new
+InferenceFile.
+"""
+
+import os
+import argparse
+import logging
+import numpy
+import pycbc
+from pycbc.inference.io import ResultsArgumentParser, results_from_cli
+
+parser = ResultsArgumentParser(description=__doc__)
+
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Output file to create.")
+parser.add_argument("--force", action="store_true", default=False,
+                    help="If the output-file already exists, overwrite it. "
+                         "Otherwise, an IOError is raised.")
+parser.add_argument("--posterior-only", action="store_true", default=False,
+                    help="Write copied parameter samples and likelihood stats "
+                         "as flattened arrays. Default is "
+                         "for the copied file to have the same structure "
+                         "as the input file.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Be verbose")
+
+opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
+
+# check that the output doesn't already exist
+if os.path.exists(opts.output_file) and not opts.force:
+    raise IOError("output file already exists; use --force if you wish to "
+                  "overwrite.")
+
+fp, params, labels, samples = results_from_cli(opts)
+
+if not opts.posterior_only:
+    raise ValueError("Program not yet able to produce "
+                     "anything but hte posterior output.")
+else:
+    fp.write_posterior(opts.output_file)

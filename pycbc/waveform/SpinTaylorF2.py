@@ -114,11 +114,31 @@ spintaylorf2_text = """
     const double gamma02 = gamma0 * gamma0;
     const double gamma03 = gamma02 *gamma0;
 
-    const double alpha =prec_fac0*(  logfac2 *( dtdv2*gamma0 + dtdv3*kappa - dtdv5*kappa/(2.*gamma02) + dtdv4/(2.*gamma0) - dtdv4*kappa2/(2.*gamma0) + (dtdv5*kappa3)/(2.*gamma02) )  +  logfac1*( - dtdv2*gamma0*kappa - dtdv3 + kappa*gamma03/2. - gamma03*kappa3/2. ) + logv *( dtdv2*gamma0*kappa + dtdv3 - kappa*gamma03/2. + gamma03*kappa3/2. ) + sqrtfac *( dtdv3 + dtdv4*v/2. + dtdv5/gamma02/3. + dtdv4*kappa/(2.*gamma0) + dtdv5*kappa*v/(6.*gamma0) - dtdv5*kappa2/(2.*gamma02) - 1/(3.*v3) - gamma0*kappa/(6.*v2) - dtdv2/v - gamma02/(3.*v) + gamma02*kappa2/(2.*v) + dtdv5*v2/3. )) - alpha_ref;
+    const double alpha = prec_fac0*(  logfac2 *( dtdv2*gamma0 + dtdv3*kappa -
+        dtdv5*kappa/(2.*gamma02) + dtdv4/(2.*gamma0) -
+        dtdv4*kappa2/(2.*gamma0) + (dtdv5*kappa3)/(2.*gamma02) )  +
+        logfac1*( - dtdv2*gamma0*kappa - dtdv3 + kappa*gamma03/2. -
+        gamma03*kappa3/2. ) + logv *( dtdv2*gamma0*kappa + dtdv3 -
+        kappa*gamma03/2. + gamma03*kappa3/2. ) + sqrtfac *( dtdv3 +
+        dtdv4*v/2. + dtdv5/gamma02/3. + dtdv4*kappa/(2.*gamma0) +
+        dtdv5*kappa*v/(6.*gamma0) - dtdv5*kappa2/(2.*gamma02) - 1/(3.*v3) -
+        gamma0*kappa/(6.*v2) - dtdv2/v - gamma02/(3.*v) +
+        gamma02*kappa2/(2.*v) + dtdv5*v2/3. )) - alpha_ref;
 
     const double beta = acos((1. + kappa*gamma0*v)/sqrt(1. + 2.*kappa*gamma0*v + gamma0*gamma0*v*v));
 
-    const double zeta = prec_fac0*( dtdv3*gamma0*kappa*v + dtdv4*v + logfac2 *(-dtdv2*gamma0 - dtdv3*kappa + dtdv5*kappa/(2.*gamma02) - dtdv4/(2.*gamma0) + dtdv4*kappa2/(2.*gamma0) - dtdv5*kappa3/(2.*gamma02) ) + logv *( kappa*gamma03/2. - gamma03*kappa3/2. ) + logfac1 *( dtdv2*gamma0*kappa + dtdv3 - kappa*gamma03/2. + gamma03*kappa3/2. ) - 1/(3.*v3) - gamma0*kappa/(2.*v2) - dtdv2/v + dtdv4*gamma0*kappa*v2/2. + dtdv5*v2/2. + sqrtfac *( -dtdv3 - dtdv4*v/2. - dtdv5/(3.*gamma02) - dtdv4*kappa/(2.*gamma0) - dtdv5*kappa*v/(6.*gamma0) + dtdv5*kappa2/(2.*gamma02) + 1/(3.*v3) + gamma0*kappa/(6.*v2) + dtdv2/v + gamma02/(3.*v) - gamma02*kappa2/(2.*v) - dtdv5*v2/3. ) + dtdv5*gamma0*kappa*v3/3. ) - zeta_ref;
+    const double zeta = prec_fac0*( dtdv3*gamma0*kappa*v + dtdv4*v +
+        logfac2 *(-dtdv2*gamma0 - dtdv3*kappa + dtdv5*kappa/(2.*gamma02) -
+        dtdv4/(2.*gamma0) + dtdv4*kappa2/(2.*gamma0) -
+        dtdv5*kappa3/(2.*gamma02) ) + logv *( kappa*gamma03/2. -
+        gamma03*kappa3/2. ) + logfac1 *( dtdv2*gamma0*kappa + dtdv3 -
+        kappa*gamma03/2. + gamma03*kappa3/2. ) - 1/(3.*v3) -
+        gamma0*kappa/(2.*v2) - dtdv2/v + dtdv4*gamma0*kappa*v2/2. +
+        dtdv5*v2/2. + sqrtfac *( -dtdv3 - dtdv4*v/2. - dtdv5/(3.*gamma02) -
+        dtdv4*kappa/(2.*gamma0) - dtdv5*kappa*v/(6.*gamma0) +
+        dtdv5*kappa2/(2.*gamma02) + 1/(3.*v3) + gamma0*kappa/(6.*v2) +
+        dtdv2/v + gamma02/(3.*v) - gamma02*kappa2/(2.*v) - dtdv5*v2/3. ) +
+        dtdv5*gamma0*kappa*v3/3. ) - zeta_ref;
 
     double CBeta;
     double SBeta;
@@ -290,7 +310,7 @@ def spintaylorf2(**kwds):
     psiJ_C =psiJ + psi + lal.PI/4.
 
     #####Calculate the Coefficients#####
-    quadparam = 1.
+    #quadparam = 1.
     gamma0 = mass1*chi/mass2
     #Calculate the spin corrections
     # FIXME should use pycbc's function, but sigma has different expression
@@ -319,7 +339,7 @@ def spintaylorf2(**kwds):
     gamma02 = gamma0 * gamma0
     gamma03 = gamma02 *gamma0
 
-    alpha_ref =prec_fac0*(  logfac2 *( dtdv2*gamma0 + dtdv3*kappa - dtdv5*kappa/(2.*gamma02) + dtdv4/(2.*gamma0) - dtdv4*kappa2/(2.*gamma0) + (dtdv5*kappa3)/(2.*gamma02) )  +  logfac1*( - dtdv2*gamma0*kappa - dtdv3 + kappa*gamma03/2. - gamma03*kappa3/2. ) + logv0 *( dtdv2*gamma0*kappa + dtdv3 - kappa*gamma03/2. + gamma03*kappa3/2. ) + sqrtfac *( dtdv3 + dtdv4*v0/2. + dtdv5/gamma02/3. + dtdv4*kappa/(2.*gamma0) + dtdv5*kappa*v0/(6.*gamma0) - dtdv5*kappa2/(2.*gamma02) - 1/(3.*v03) - gamma0*kappa/(6.*v02) - dtdv2/v0 - gamma02/(3.*v0) + gamma02*kappa2/(2.*v0) + dtdv5*v02/3. ))  - alpha0
+    alpha_ref = prec_fac0*(  logfac2 *( dtdv2*gamma0 + dtdv3*kappa - dtdv5*kappa/(2.*gamma02) + dtdv4/(2.*gamma0) - dtdv4*kappa2/(2.*gamma0) + (dtdv5*kappa3)/(2.*gamma02) )  +  logfac1*( - dtdv2*gamma0*kappa - dtdv3 + kappa*gamma03/2. - gamma03*kappa3/2. ) + logv0 *( dtdv2*gamma0*kappa + dtdv3 - kappa*gamma03/2. + gamma03*kappa3/2. ) + sqrtfac *( dtdv3 + dtdv4*v0/2. + dtdv5/gamma02/3. + dtdv4*kappa/(2.*gamma0) + dtdv5*kappa*v0/(6.*gamma0) - dtdv5*kappa2/(2.*gamma02) - 1/(3.*v03) - gamma0*kappa/(6.*v02) - dtdv2/v0 - gamma02/(3.*v0) + gamma02*kappa2/(2.*v0) + dtdv5*v02/3. ))  - alpha0
 
     zeta_ref = prec_fac0*( dtdv3*gamma0*kappa*v0 + dtdv4*v0 + logfac2 *(-dtdv2*gamma0 - dtdv3*kappa + dtdv5*kappa/(2.*gamma02) - dtdv4/(2.*gamma0) + dtdv4*kappa2/(2.*gamma0) - dtdv5*kappa3/(2.*gamma02) ) + logv0 *( kappa*gamma03/2. - gamma03*kappa3/2. ) + logfac1 *( dtdv2*gamma0*kappa + dtdv3 - kappa*gamma03/2. + gamma03*kappa3/2. ) - 1/(3.*v03) - gamma0*kappa/(2.*v02) - dtdv2/v0 + dtdv4*gamma0*kappa*v02/2. + dtdv5*v02/2. + sqrtfac *( -dtdv3 - dtdv4*v0/2. - dtdv5/(3.*gamma02) - dtdv4*kappa/(2.*gamma0) - dtdv5*kappa*v0/(6.*gamma0) + dtdv5*kappa2/(2.*gamma02) + 1/(3.*v03) + gamma0*kappa/(6.*v02) + dtdv2/v0 + gamma02/(3.*v0) - gamma02*kappa2/(2.*v0) - dtdv5*v02/3. ) + dtdv5*gamma0*kappa*v03/3. )
 

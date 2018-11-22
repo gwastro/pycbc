@@ -94,13 +94,17 @@ def power_chisq_bins(htilde, num_bins, psd, low_frequency_cutoff=None,
 
 @schemed(BACKEND_PREFIX)
 def chisq_accum_bin(chisq, q):
-    pass
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 @schemed(BACKEND_PREFIX)
 def shift_sum(v1, shifts, bins):
     """ Calculate the time shifted sum of the FrequencySeries
     """
-    pass
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     """Calculate the chisq timeseries from precomputed values for only select points.
@@ -127,15 +131,14 @@ def power_chisq_at_points_from_precomputed(corr, snr, snr_norm, bins, indices):
     chisq: Array
         An array containing only the chisq at the selected points.
     """
-    logging.info('doing fast point chisq')
     num_bins = len(bins) - 1
-    chisq = shift_sum(corr, indices, bins)
+    chisq = shift_sum(corr, indices, bins) # pylint:disable=assignment-from-no-return
     return (chisq * num_bins - (snr.conj() * snr).real) * (snr_norm ** 2.0)
 
 _q_l = None
 _qtilde_l = None
 _chisq_l = None
-def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
+def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None, return_bins=False):
     """Calculate the chisq timeseries from precomputed values.
 
     This function calculates the chisq at all times by performing an
@@ -155,6 +158,8 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
     indices: {Array, None}, optional
         Index values into snr that indicate where to calculate
         chisq values. If none, calculate chisq for all possible indices.
+    return_bins: {boolean, False}, optional
+        Return a list of the SNRs for each chisq bin.
 
     Returns
     -------
@@ -162,6 +167,8 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
     """
     # Get workspace memory
     global _q_l, _qtilde_l, _chisq_l
+
+    bin_snrs = []
 
     if _q_l is None or len(_q_l) != len(snr):
         q = zeros(len(snr), dtype=complex_same_precision_as(snr))
@@ -192,6 +199,11 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
         pycbc.fft.ifft(qtilde, q)
         qtilde[k_min:k_max].clear()
 
+        if return_bins:
+            bin_snrs.append(TimeSeries(q  * snr_norm *  num_bins ** 0.5,
+                                      delta_t=snr.delta_t,
+                                      epoch=snr.start_time))
+
         if indices is not None:
             chisq_accum_bin(chisq, q.take(indices))
         else:
@@ -199,11 +211,13 @@ def power_chisq_from_precomputed(corr, snr, snr_norm, bins, indices=None):
 
     chisq = (chisq * num_bins - snr.squared_norm()) * (snr_norm ** 2.0)
 
-    if indices is not None:
-        return chisq
-    else:
-        return TimeSeries(chisq, delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
+    if indices is None:
+        chisq = TimeSeries(chisq, delta_t=snr.delta_t, epoch=snr.start_time, copy=False)
 
+    if return_bins:
+        return chisq, bin_snrs
+    else:
+        return chisq
 
 def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
     """Calculate the chisq values for only selected points.
@@ -243,7 +257,9 @@ def fastest_power_chisq_at_points(corr, snr, snrv, snr_norm, bins, indices):
 
 
 def power_chisq(template, data, num_bins, psd,
-                low_frequency_cutoff=None, high_frequency_cutoff=None):
+                low_frequency_cutoff=None,
+                high_frequency_cutoff=None,
+                return_bins=False):
     """Calculate the chisq timeseries
 
     Parameters
@@ -262,6 +278,8 @@ def power_chisq(template, data, num_bins, psd,
         The low frequency cutoff for the filter
     high_frequency_cutoff: {None, float}, optional
         The high frequency cutoff for the filter
+    return_bins: {boolean, False}, optional
+        Return a list of the individual chisq bins
 
     Returns
     -------
@@ -278,7 +296,7 @@ def power_chisq(template, data, num_bins, psd,
                            low_frequency_cutoff, high_frequency_cutoff,
                            corr_out=corra)
 
-    return power_chisq_from_precomputed(corr, total_snr, tnorm, bins)
+    return power_chisq_from_precomputed(corr, total_snr, tnorm, bins, return_bins=return_bins)
 
 
 class SingleDetPowerChisq(object):
@@ -294,7 +312,6 @@ class SingleDetPowerChisq(object):
         else:
             self.do = False
         self.snr_threshold = snr_threshold
-        self._bin_cache = {}
 
     @staticmethod
     def parse_option(row, arg):
@@ -305,22 +322,29 @@ class SingleDetPowerChisq(object):
         return eval(arg, {"__builtins__":None}, safe_dict)
 
     def cached_chisq_bins(self, template, psd):
-        key = (id(template.params), id(psd))
-        if key not in self._bin_cache:
+        from pycbc.opt import LimitedSizeDict
+
+        key = id(psd)
+        if not hasattr(psd, '_chisq_cached_key'):
+            psd._chisq_cached_key = {}
+
+        if not hasattr(template, '_bin_cache'):
+            template._bin_cache = LimitedSizeDict(size_limite=2**2)
+
+        if key not in template._bin_cache or id(template.params) not in psd._chisq_cached_key:
+            psd._chisq_cached_key[id(template.params)] = True
             num_bins = int(self.parse_option(template, self.num_bins))
 
             if hasattr(psd, 'sigmasq_vec') and template.approximant in psd.sigmasq_vec:
-                logging.info("...Calculating fast power chisq bins")
                 kmin = int(template.f_lower / psd.delta_f)
                 kmax = template.end_idx
                 bins = power_chisq_bins_from_sigmasq_series(
                     psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax)
             else:
-                logging.info("...Calculating power chisq bins")
                 bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
-            self._bin_cache[key] = bins
+            template._bin_cache[key] = bins
 
-        return self._bin_cache[key]
+        return template._bin_cache[key]
 
     def values(self, corr, snrv, snr_norm, psd, indices, template):
         """ Calculate the chisq at points given by indices.
@@ -336,8 +360,6 @@ class SingleDetPowerChisq(object):
         """
 
         if self.do:
-            logging.info("...Doing power chisq")
-
             num_above = len(indices)
             if self.snr_threshold:
                 above = abs(snrv * snr_norm) > self.snr_threshold
@@ -356,6 +378,122 @@ class SingleDetPowerChisq(object):
                 dof = (len(bins) - 1) * 2 - 2
                 chisq = power_chisq_at_points_from_precomputed(corr,
                                      above_snrv, snr_norm, bins, above_indices)
+
+            if self.snr_threshold:
+                if num_above > 0:
+                    rchisq[above] = chisq
+            else:
+                rchisq = chisq
+
+            return rchisq, numpy.repeat(dof, len(indices))# dof * numpy.ones_like(indices)
+        else:
+            return None, None
+
+class SingleDetSkyMaxPowerChisq(SingleDetPowerChisq):
+    """Class that handles precomputation and memory management for efficiently
+    running the power chisq in a single detector inspiral analysis when
+    maximizing analytically over sky location.
+    """
+    def __init__(self, **kwds):
+        super(SingleDetSkyMaxPowerChisq, self).__init__(**kwds)
+        self.template_mem = None
+        self.corr_mem = None
+
+    def calculate_chisq_bins(self, template, psd):
+        """ Obtain the chisq bins for this template and PSD.
+        """
+        num_bins = int(self.parse_option(template, self.num_bins))
+        if hasattr(psd, 'sigmasq_vec') and \
+                                       template.approximant in psd.sigmasq_vec:
+            kmin = int(template.f_lower / psd.delta_f)
+            kmax = template.end_idx
+            bins = power_chisq_bins_from_sigmasq_series(
+                   psd.sigmasq_vec[template.approximant], num_bins, kmin, kmax)
+        else:
+            bins = power_chisq_bins(template, num_bins, psd, template.f_lower)
+        return bins
+
+
+    def values(self, corr_plus, corr_cross, snrv, psd,
+               indices, template_plus, template_cross, u_vals,
+               hplus_cross_corr, hpnorm, hcnorm):
+        """ Calculate the chisq at points given by indices.
+
+        Returns
+        -------
+        chisq: Array
+            Chisq values, one for each sample index
+
+        chisq_dof: Array
+            Number of statistical degrees of freedom for the chisq test
+            in the given template
+        """
+        if self.do:
+            num_above = len(indices)
+            if self.snr_threshold:
+                above = abs(snrv) > self.snr_threshold
+                num_above = above.sum()
+                logging.info('%s above chisq activation threshold' % num_above)
+                above_indices = indices[above]
+                above_snrv = snrv[above]
+                rchisq = numpy.zeros(len(indices), dtype=numpy.float32)
+                dof = -100
+            else:
+                above_indices = indices
+                above_snrv = snrv
+
+            if num_above > 0:
+                chisq = []
+                curr_tmplt_mult_fac = 0.
+                curr_corr_mult_fac = 0.
+                if self.template_mem is None or \
+                        (not len(self.template_mem) == len(template_plus)):
+                    self.template_mem = zeros(len(template_plus),
+                                dtype=complex_same_precision_as(corr_plus))
+                if self.corr_mem is None or \
+                                (not len(self.corr_mem) == len(corr_plus)):
+                    self.corr_mem = zeros(len(corr_plus),
+                                dtype=complex_same_precision_as(corr_plus))
+
+                tmplt_data = template_cross.data
+                corr_data = corr_cross.data
+                numpy.copyto(self.template_mem.data, template_cross.data)
+                numpy.copyto(self.corr_mem.data, corr_cross.data)
+                template_cross._data = self.template_mem.data
+                corr_cross._data = self.corr_mem.data
+
+                for lidx, index in enumerate(above_indices):
+                    above_local_indices = numpy.array([index])
+                    above_local_snr = numpy.array([above_snrv[lidx]])
+                    local_u_val = u_vals[lidx]
+                    # Construct template from _plus and _cross
+                    # Note that this modifies in place, so we store that and
+                    # revert on the next pass.
+                    template = template_cross.multiply_and_add(template_plus,
+                                               local_u_val-curr_tmplt_mult_fac)
+                    curr_tmplt_mult_fac = local_u_val
+
+                    template.f_lower = template_plus.f_lower
+                    template.params = template_plus.params
+                    # Construct the corr vector
+                    norm_fac = local_u_val*local_u_val + 1
+                    norm_fac += 2 * local_u_val * hplus_cross_corr
+                    norm_fac = hcnorm / (norm_fac**0.5)
+                    hp_fac = local_u_val * hpnorm / hcnorm
+                    corr = corr_cross.multiply_and_add(corr_plus,
+                                                   hp_fac - curr_corr_mult_fac)
+                    curr_corr_mult_fac = hp_fac
+
+                    bins = self.calculate_chisq_bins(template, psd)
+                    dof = (len(bins) - 1) * 2 - 2
+                    curr_chisq = power_chisq_at_points_from_precomputed(corr,
+                                          above_local_snr/ norm_fac, norm_fac,
+                                          bins, above_local_indices)
+                    chisq.append(curr_chisq[0])
+                chisq = numpy.array(chisq)
+                # Must reset corr and template to original values!
+                template_cross._data = tmplt_data
+                corr_cross._data = corr_data
 
             if self.snr_threshold:
                 if num_above > 0:

@@ -1,0 +1,200 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2013 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Programe for concatenating the output of the geometric aligned bank dagman.
+This will gather all the meta-output files and create a valid template bank
+xml file.
+"""
+import logging
+import fileinput
+import glob
+import argparse
+import numpy
+import pycbc.version
+import h5py
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils
+from pycbc import tmpltbank
+from numpy import loadtxt
+import pycbc
+import pycbc.psd
+import pycbc.strain
+import pycbc.version
+import pycbc.tmpltbank
+from pycbc.waveform import get_waveform_filter_length_in_time
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_aligned_bank_cat"
+
+# Read command line options
+usage = """usage: %prog [options]"""
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc,
+           formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
+
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="verbose output")
+parser.add_argument("-i", "--input-glob",
+                    help="file glob the list of paramters")
+parser.add_argument("-I", "--input-files", nargs='+',
+                    help="Explicit list of input files.")
+parser.add_argument("-o", "--output-file",  help="Output file name")
+parser.add_argument('--f-low-column', type=str, metavar='NAME',
+                    help='If given, store the lower frequency cutoff into '
+                         'column NAME of the single-inspiral table.')
+parser.add_argument("-m", "--metadata-file", metavar="METADATA_FILE",
+                  help="XML file containing the process and process_params "
+                  "tables that the aligned_bank code was run with.")
+
+# Insert the metric calculation options
+tmpltbank.insert_metric_calculation_options(parser)
+
+# Insert the PSD options
+pycbc.psd.insert_psd_option_group(parser)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
+
+# Add the ethinca calculation options
+tmpltbank.insert_ethinca_metric_options(parser)
+
+options = parser.parse_args()
+
+if options.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
+# Sanity check options
+if not options.output_file:
+    parser.error("Must supply --output-file.")
+
+tmpltbank.verify_metric_calculation_options(options, parser)
+metricParams=tmpltbank.metricParameters.from_argparse(options)
+pycbc.psd.verify_psd_options(options, parser)
+if options.psd_estimation:
+    pycbc.strain.verify_strain_options(options, parser)
+tmpltbank.verify_ethinca_metric_options(options, parser)
+ethincaParams=tmpltbank.ethincaParameters.from_argparse(options)
+# delete default ethinca frequency step if calculation is not done
+if ethincaParams.doEthinca==False:
+    ethincaParams.freqStep = None
+
+# Ensure consistency of ethinca and bank metric parameters
+tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
+
+# Ethinca calculation should currently only be done for non-spin templates
+if ethincaParams.full_ethinca and (massRangeParams.maxNSSpinMag>0.0 or
+                                massRangeParams.maxBHSpinMag>0.0):
+    parser.error("Ethinca metric calculation is currently not valid for "
+                 "nonzero spins!")
+
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if options.psd_estimation:
+    logging.info("Obtaining h(t) for PSD generation")
+    strain = pycbc.strain.from_cli(options, pycbc.DYN_RANGE_FAC)
+else:
+    strain = None
+
+# Get the PSD using the pycbc interface
+logging.info("Obtaining PSD")
+# Want the number of samples to be a binary number and Nyquist must be above
+# opts.f_upper. All this assumes that 1 / deltaF is a binary number
+nyquistFreq = 2**numpy.ceil(numpy.log2(options.f_upper))
+numSamples = int(round(nyquistFreq / options.delta_f)) + 1
+psd = pycbc.psd.from_cli(options, length=numSamples, delta_f=options.delta_f,
+                         low_frequency_cutoff=options.f_low, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
+metricParams.psd = psd
+
+# Begin by calculating a metric
+logging.info("Calculating metric")
+metricParams = tmpltbank.determine_eigen_directions(metricParams,
+    vary_fmax=ethincaParams.doEthinca, vary_density=ethincaParams.freqStep)
+
+# Read in template params
+# NOTE: Files must be set out so that the columns are:
+# Mass1, Mass2, Spin1z, Spin2z
+if options.input_files:
+    input_files = options.input_files
+else:
+    input_files = glob.glob(options.input_glob)
+
+mass1 = []
+mass2 = []
+spin1z = []
+spin2z = []
+for inp_file in input_files:
+    inp_fp = h5py.File(inp_file, 'r')
+    data = inp_fp['accepted_templates'][:]
+    if len(data) == 0:
+        continue
+    mass1.extend(data[:,0])
+    mass2.extend(data[:,1])
+    spin1z.extend(data[:,2])
+    spin2z.extend(data[:,3])
+    inp_fp.close()
+
+temp_bank = numpy.array([mass1,mass2,spin1z,spin2z]).T
+
+# FIXME: Currently the aligned spin bank will not output the ethinca components.
+# They are not meaningful for an aligned spin bank anyway. If these values are
+# needed for any reason, this code would have to be able to recalculate the
+# moments (or read them in) and use the correct value of f0 and pn-order
+if options.metadata_file:
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+    lsctables.use_in(LIGOLWContentHandler)
+    outdoc = utils.load_filename(options.metadata_file,\
+                                     gz = options.metadata_file.endswith("gz"),
+                                     contenthandler=LIGOLWContentHandler)
+else:
+    outdoc = None
+if options.output_file.endswith(('.xml','.xml.gz','.xmlgz')):
+    tmpltbank.output_sngl_inspiral_table(options.output_file, temp_bank,
+        metricParams, ethincaParams, programName=__program__,
+        optDict=options.__dict__,
+        outdoc=outdoc, comment="", version=pycbc.version.git_hash,
+        cvs_repository='pycbc/'+pycbc.version.git_branch,
+        cvs_entry_time=pycbc.version.date)
+elif options.output_file.endswith(('.h5','.hdf','.hdf5')):
+    out_fp = h5py.File(options.output_file, 'w')
+    out_fp['mass1'] = temp_bank[:,0]
+    out_fp['mass2'] = temp_bank[:,1]
+    out_fp['spin1z'] = temp_bank[:,2]
+    out_fp['spin2z'] = temp_bank[:,3]
+    out_fp['f_lower'] = [options.f_low] * len(temp_bank[:,0])
+    tmplt_durations = []
+    for i in xrange(len(temp_bank[:,0])):
+        gwflit = get_waveform_filter_length_in_time
+        wfrm_length = gwflit('SPAtmplt', mass1=temp_bank[i,0],
+                             mass2=temp_bank[i,1], f_lower=options.f_low,
+                             phase_order=7)
+        tmplt_durations.append(wfrm_length)
+    out_fp['template_duration'] = tmplt_durations
+    out_fp['approximant'] = ['TaylorF2'] * len(temp_bank[:,0])
+    out_fp.close()
+else:
+    err_msg = "Unrecognized extension for file {}.".format(options.output_file)
+    raise ValueError(err_msg)

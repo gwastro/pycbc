@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+""" Plots the fraction of injections with their parameter value recovered
+within a credible interval versus credible interval.
+"""
+
+import sys
+import argparse
+import logging
+
+import numpy
+
+from scipy import stats
+
+from matplotlib import use
+use('agg')
+from matplotlib import pyplot as plt
+
+import pycbc
+from pycbc.results import save_fig_with_metadata
+from pycbc.inference import (option_utils, io)
+
+from pycbc import __version__
+
+# parse command line
+parser = io.ResultsArgumentParser(description="Plots fraction of injections with their parameter value recovered "
+                                               "within a credible interval versus credible interval.")
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
+parser.add_argument("--output-file", required=True, type=str,
+                    help="Path to save output plot.")
+parser.add_argument("--verbose", action="store_true",
+                    help="Allows print statements.")
+parser.add_argument("--injection-hdf-group", default="H1/injections",
+                    help="HDF group that contains injection values.")
+option_utils.add_scatter_option_group(parser)
+opts = parser.parse_args()
+
+# set logging
+pycbc.init_logging(opts.verbose)
+
+# read results
+logging.info('Loading parameters')
+_, parameters, labels, samples = io.results_from_cli(opts)
+
+# typecast to list for iteration
+samples = [samples] if not isinstance(samples, list) else samples
+
+# loop over input files and its samples
+logging.info("Plotting")
+measured_percentiles = {}
+
+for input_file, input_samples in zip(
+                                        opts.input_file, samples):
+    # load the injections
+    opts.input_file = input_file
+    inj_parameters = io.injections_from_cli(opts)
+
+    for p in parameters:
+        inj_val = inj_parameters[p]
+        sample_vals = input_samples[p]
+        measured = stats.percentileofscore(sample_vals, inj_val, kind='weak')
+        try:
+            measured_percentiles[p].append(measured)
+        except KeyError:
+            measured_percentiles[p] = []
+            measured_percentiles[p].append(measured)
+
+# create figure for plotting
+fig = plt.figure()
+ax = fig.add_subplot(111)
+
+# calculate the expected percentile for each injection and plot
+
+for param in parameters:
+    label = labels[param]
+    meas = numpy.array(measured_percentiles[param])
+    meas.sort()
+    expected = numpy.array([stats.percentileofscore(meas, x, kind='weak')
+                            for x in meas])
+    # perform ks test
+    ks, p = stats.kstest(meas/100., 'uniform')
+    ax.plot(meas/100., expected/100.,
+                label='{} $D_{{KS}}$: {:.3f} p-value: {:.3f}'.format(label, ks, p))
+
+
+# set legend
+ax.legend()
+
+# set labels
+ax.set_ylabel(r"Fraction of Injections Recovered in Credible Interval")
+ax.set_xlabel(r"Credible Interval")
+
+# add grid to plot
+ax.grid()
+
+# add 1:1 line to plot
+ax.plot([0, 1], [0, 1], linestyle="dashed", color="gray", zorder=9)
+
+# save plot
+caption = ('Percentile-percentile plot. The value of the KS statistic '
+           '$D_{KS}$ is given in the legend. This gives the maximum distance '
+           'between the observed line and the expected (dashed) line; i.e., '
+           'it gives the maximum distance between the measured CDF and the '
+           'expected (uniform) CDF. The associated two-tailed p-value gives '
+           'the probability of getting a maximum distance (either above '
+           'or below the expected line) larger than the observed $D_{KS}$ '
+           'assuming that the measured CDF is the same as the expected. '
+           'In other words, the larger (smaller) the p-value ($D_{KS}$), the '
+           'more likely the measured distribution is the same as the '
+           'expected.')
+save_fig_with_metadata(fig, opts.output_file,
+    caption=caption,
+    cmd=' '.join(sys.argv))
+
+# done
+logging.info("Done")
+

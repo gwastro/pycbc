@@ -1,0 +1,316 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2011 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Test that a template bank covers a provided parameter space using a provided
+metric approximation to the parameter space.
+"""
+
+from __future__ import division
+
+import pycbc
+import pycbc.version
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_bank_verification"
+
+import argparse
+import os, sys
+import copy
+import logging
+import numpy
+import h5py
+from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
+from pycbc import tmpltbank, psd, strain, pnutils
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+
+# Read command line option
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc,
+           formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
+
+# Begin with code specific options
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="verbose output")
+parser.add_argument("--histogram-output-file", action="store", default=None,
+                    help="Output a histogram of fitting factors to the "
+                    "supplied file. If not given no histogram is produced.")
+parser.add_argument("--print-distances", action="store_true", default=False,
+                    help="Print details about the match of each point.")
+parser.add_argument("-B", "--input-bank", action="store", required=True,
+                    help="The template bank to use an input.")
+parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
+                    help="Use a variable upper frequency cutoff in laying "
+                    "out the bank.  OPTIONAL.")
+parser.add_argument("--bank-fupper-step", type=float, default=10.,
+                    help="Size of discrete frequency steps used when varying "
+                    "the fupper. If --calculate-ethinca-metric and "
+                    "--ethinca-freq-step are also given, the code will use "
+                    "the smaller of the two step values. This option will do "
+                    "nothing if the --vary-fupper flag is not given. "
+                    "OPTIONAL, default=10. Units=Hz")
+parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
+                    choices=["SchwarzISCO","LightRing","ERD"],
+                    help="Frequency cutoff formula for varying fupper. "
+                    "Frequencies will be rounded to the nearest discrete "
+                    "step. This option will do nothing if --vary-fupper is "
+                    "not given. OPTIONAL, default='SchwarzISCO'.")
+parser.add_argument("-N", "--num-points", action="store", type=int,
+                    default=100000, help="Number of points used to test ")
+parser.add_argument("-P", "--point-file", action="store", default=None,
+                    help="List of points to test bank against. Should be a "
+                    "space-separated ASCII file where the columns correspond "
+                    "to mass1, mass2, spin1z and spin2z respectively.")
+parser.add_argument("--random-seed", action="store", type=int,
+                    default=None,
+                    help="Random seed to use when calling numpy.random "
+                    "functions used in obtaining the principal components in "
+                    "parameter space and when translating points back to "
+                    "physical space.  If given, the code should give the "
+                    "same output when run with the same random seed.")
+parser.add_argument("--bin-spacing", action="store", type=float,
+                    default=0.03,
+                    help="When read in, the template bank is placed into 2D "
+                    "bins according to the points' location in the 'natural' "
+                    "xi coordinate system. When computing matches points are "
+                    "only compared against points in their own bin and "
+                    "neighbouring bins. This argument specifies, in terms of "
+                    "mismatch, the width of these bins. Note that metric "
+                    "distance is proportional to the square root of the "
+                    "mismatch.")
+
+# Insert the metric calculation options
+tmpltbank.insert_metric_calculation_options(parser)
+
+# Insert the mass range options
+tmpltbank.insert_mass_range_option_group(parser)
+
+# Insert the PSD options
+pycbc.psd.insert_psd_option_group(parser)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
+
+opts = parser.parse_args()
+
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+logging.basicConfig(format='%(asctime)s %(message)s', level=log_level)
+
+# Sanity check options
+tmpltbank.verify_metric_calculation_options(opts, parser)
+metricParams=tmpltbank.metricParameters.from_argparse(opts)
+tmpltbank.verify_mass_range_options(opts, parser)
+massRangeParams=tmpltbank.massRangeParameters.from_argparse(opts)
+psd.verify_psd_options(opts, parser)
+if opts.psd_estimation:
+    pycbc.strain.verify_strain_options(opts, parser)
+
+# Set random seed if needed
+if opts.random_seed is not None:
+    numpy.random.seed(opts.random_seed)
+
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if opts.psd_estimation:
+    logging.info("Obtaining h(t) for PSD generation")
+    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+else:
+    strain = None
+
+# Get the PSD using the pycbc interface
+logging.info("Obtaining PSD")
+# Want the number of samples to be a binary number and Nyquist must be above
+# opts.f_upper. All this assumes that 1 / deltaF is a binary number
+nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
+numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f,
+                         low_frequency_cutoff=opts.f_low, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
+metricParams.psd = psd
+
+# Begin by calculating a metric
+logging.info("Calculating metric")
+metricParams = tmpltbank.determine_eigen_directions(metricParams,
+    vary_fmax=opts.vary_fupper, vary_density=opts.bank_fupper_step)
+
+# Choose the frequency values to use for metric calculation
+if opts.vary_fupper==False:
+    refFreq = metricParams.fUpper
+else:
+    # determine upper frequency cutoffs corresponding to the min and max 
+    # total masses
+    fs = numpy.array(metricParams.evals.keys(), dtype=float)
+    fs.sort()
+    lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
+                              opts.bank_fupper_formula, massRangeParams, fs)
+    refFreq = lowEve
+    fs = fs[fs >= lowEve]
+    fs = fs[fs <= highEve]
+
+logging.info("Calculating covariance matrix")
+
+vals = tmpltbank.estimate_mass_range(
+    1000000, massRangeParams, metricParams, refFreq, covary=False)
+cov = numpy.cov(vals)
+evalsCV,evecsCV = numpy.linalg.eig(cov)
+metricParams.evecsCV = {}
+metricParams.evecsCV[refFreq] = evecsCV
+
+# Initialize the class for generating the partitioned bank
+logging.info("Initialize the PartitionedTmpltbank class")
+
+partitioned_bank_object = tmpltbank.PartitionedTmpltbank(massRangeParams,
+                               metricParams, refFreq, (opts.bin_spacing)**0.5,
+                               bin_range_check=1)
+
+# Map the frequency values to idx if --vary-fupper is used
+if opts.vary_fupper:
+    partitioned_bank_object.get_freq_map_and_normalizations(fs,
+                                                      opts.bank_fupper_formula)
+
+# Reading in the template bank
+logging.info("Reading template bank.")
+
+
+if opts.input_bank.endswith(('.xml','.xml.gz','.xmlgz')):
+    # dummy class needed for loading LIGOLW files
+    class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+
+    lsctables.use_in(LIGOLWContentHandler)
+
+    indoc = ligolw_utils.load_filename(opts.input_bank,
+                                       contenthandler=LIGOLWContentHandler)
+    template_list = table.get_table(indoc,
+                                    lsctables.SnglInspiralTable.tableName)
+
+    partitioned_bank_object.add_tmpltbank_from_xml_table\
+        (template_list, vary_fupper=opts.vary_fupper)
+
+elif opts.input_bank.endswith(('.h5','.hdf','.hdf5')):
+    h5_fp = h5py.File(opts.input_bank, 'r')
+    partitioned_bank_object.add_tmpltbank_from_hdf_file\
+        (h5_fp, vary_fupper=opts.vary_fupper)
+else:
+    err_msg = "Don't know how to read extension {}.".format(opts.input_bank)
+    raise NotImplementedError(err_msg)
+
+logging.info("Bank read in and sorted")
+# Okay, now lets test a bunch of matches
+points_mass1 = []
+points_mass2 = []
+points_spin1z = []
+points_spin2z = []
+points_xis = []
+points_fittingfactor = []
+points_closestidxes = []
+outbins = [[0,0],[0,1],[1,0],[0,-1],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]]
+
+if opts.point_file:
+    temp_data = numpy.loadtxt(opts.point_file)
+    rMass1 = temp_data[:,0]
+    rMass2 = temp_data[:,1]
+    rSpin1z = temp_data[:,2]
+    rSpin2z = temp_data[:,3]
+    opts.num_points = len(rMass1)
+else:
+    rMass1, rMass2, rSpin1z, rSpin2z =\
+        tmpltbank.get_random_mass(100000, massRangeParams)
+
+if opts.vary_fupper:
+    mass_dict = {}
+    mass_dict['m1'] = rMass1
+    mass_dict['m2'] = rMass2
+    mass_dict['s1z'] = rSpin1z
+    mass_dict['s2z'] = rSpin2z
+    refEve = tmpltbank.return_nearest_cutoff(
+                                       opts.bank_fupper_formula, mass_dict, fs)
+    lambdas = tmpltbank.get_chirp_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                         metricParams.f0, metricParams.pnOrder)
+    mus = []
+    for freq in fs:
+        if freq >= lowEve and freq <= highEve:
+            mus.append(tmpltbank.get_mu_params(lambdas, metricParams, freq))
+    mus = numpy.array(mus)
+else:
+    refEve = numpy.zeros(100000)
+    mus = numpy.zeros([1,1,100000])
+vecs = tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                metricParams, refFreq)
+vecs = numpy.array(vecs)
+
+for idx_curr in xrange(opts.num_points):
+    vs = vecs[:,idx_curr]
+    if opts.vary_fupper:
+        min_mismatch, idxes = partitioned_bank_object.calc_point_distance_vary(\
+                                       vs, refEve[idx_curr], mus[:,:,idx_curr])
+    else:
+        min_mismatch, idxes = partitioned_bank_object.calc_point_distance(vs)
+
+    # Store the data
+    points_mass1.append(rMass1[idx_curr])
+    points_mass2.append(rMass2[idx_curr])
+    points_spin1z.append(rSpin1z[idx_curr])
+    points_spin2z.append(rSpin2z[idx_curr])
+    points_xis.append(vs)
+    if min_mismatch > 1:
+        min_mismatch = 1
+    points_fittingfactor.append(1 - min_mismatch)
+    points_closestidxes.append(idxes)
+
+# Convert to numpy arrays
+points_mass1 = numpy.array(points_mass1)
+points_mass2 = numpy.array(points_mass2)
+points_spin1z = numpy.array(points_spin1z)
+points_spin2z = numpy.array(points_spin2z)
+points_fittingfactor = numpy.array(points_fittingfactor)
+
+logging.info("Distances calculated.")
+
+if opts.histogram_output_file:
+    pylab.hist(points_fittingfactor, 100)
+    pylab.xlabel("Fitting factor")
+    pylab.ylabel("# of signals")
+    pylab.savefig(opts.histogram_output_file)
+
+if opts.print_distances:
+    print
+    for idx in xrange(len(points_mass1)):
+        print "The test point with the following parameters (m1,m2,S1z,S2z)"
+        print "%e %e %e %e" %(points_mass1[idx], points_mass2[idx],\
+                              points_spin1z[idx], points_spin2z[idx])
+        print "Was recovered with an overlap of %e" %(points_fittingfactor[idx])
+        if points_closestidxes[idx] is None:
+            print "No template was within a metric distance of 1."
+            print
+            continue
+        print "The point in the bank with this overlap had (m1,m2,S1z,S2z)"
+        curr_m1, curr_m2, curr_spin1, curr_spin2 = \
+                partitioned_bank_object.get_point_from_bins_and_idx(\
+                      points_closestidxes[idx][0], points_closestidxes[idx][1],
+                       points_closestidxes[idx][2])
+        print "%e %e %e %e" %(curr_m1, curr_m2, curr_spin1, curr_spin2)
+        print
+        

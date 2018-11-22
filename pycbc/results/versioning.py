@@ -21,76 +21,73 @@ import os
 import subprocess
 from pycbc.results import save_fig_with_metadata, html_escape
 
+import lal, lalframe, lalsimulation
+import pycbc.version, glue.git_version
+
 def get_library_version_info():
     """This will return a list of dictionaries containing versioning
     information about the various LIGO libraries that PyCBC will use in an
     analysis run."""
     library_list = []
-    import lal, lalframe, lalmetaio, lalinspiral, lalsimulation
-    import glue.git_version, pylal.git_version, pycbc.version
+
+    def add_info_new_version(info_dct, curr_module, extra_str):
+        vcs_object = getattr(curr_module, extra_str +'VCSInfo')
+        info_dct['ID'] =  vcs_object.vcsId
+        info_dct['Status'] = vcs_object.vcsStatus
+        info_dct['Version'] = vcs_object.version
+        info_dct['Tag'] = vcs_object.vcsTag
+        info_dct['Author'] = vcs_object.vcsAuthor
+        info_dct['Branch'] = vcs_object.vcsBranch
+        info_dct['Committer'] = vcs_object.vcsCommitter
+        info_dct['Date'] = vcs_object.vcsDate
 
     lalinfo = {}
     lalinfo['Name'] = 'LAL'
-    lalinfo['ID'] = lal.VCSId
-    lalinfo['Status'] = lal.VCSStatus
-    lalinfo['Version'] = lal.VCSVersion
-    lalinfo['Tag'] = lal.VCSTag
-    lalinfo['Author'] = lal.VCSAuthor
-    lalinfo['Branch'] = lal.VCSBranch
-    lalinfo['Committer'] = lal.VCSCommitter
-    lalinfo['Date'] = lal.VCSDate
+    try:
+        lalinfo['ID'] = lal.VCSId
+        lalinfo['Status'] = lal.VCSStatus
+        lalinfo['Version'] = lal.VCSVersion
+        lalinfo['Tag'] = lal.VCSTag
+        lalinfo['Author'] = lal.VCSAuthor
+        lalinfo['Branch'] = lal.VCSBranch
+        lalinfo['Committer'] = lal.VCSCommitter
+        lalinfo['Date'] = lal.VCSDate
+    except AttributeError:
+        add_info_new_version(lalinfo, lal, '')
     library_list.append(lalinfo)
 
     lalframeinfo = {}
-    lalframeinfo['Name'] = 'LALFrame'
-    lalframeinfo['ID'] = lalframe.FrameVCSId
-    lalframeinfo['Status'] = lalframe.FrameVCSStatus
-    lalframeinfo['Version'] = lalframe.FrameVCSVersion
-    lalframeinfo['Tag'] = lalframe.FrameVCSTag
-    lalframeinfo['Author'] = lalframe.FrameVCSAuthor
-    lalframeinfo['Branch'] = lalframe.FrameVCSBranch
-    lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
-    lalframeinfo['Date'] = lalframe.FrameVCSDate
+    try:
+        lalframeinfo['Name'] = 'LALFrame'
+        lalframeinfo['ID'] = lalframe.FrameVCSId
+        lalframeinfo['Status'] = lalframe.FrameVCSStatus
+        lalframeinfo['Version'] = lalframe.FrameVCSVersion
+        lalframeinfo['Tag'] = lalframe.FrameVCSTag
+        lalframeinfo['Author'] = lalframe.FrameVCSAuthor
+        lalframeinfo['Branch'] = lalframe.FrameVCSBranch
+        lalframeinfo['Committer'] = lalframe.FrameVCSCommitter
+        lalframeinfo['Date'] = lalframe.FrameVCSDate
+    except AttributeError:
+        add_info_new_version(lalframeinfo, lalframe, 'Frame')
     library_list.append(lalframeinfo)
-
-    lalmetaioinfo = {}
-    lalmetaioinfo['Name'] = 'LALMetaIO'
-    lalmetaioinfo['ID'] = lalmetaio.MetaIOVCSId
-    lalmetaioinfo['Status'] = lalmetaio.MetaIOVCSStatus
-    lalmetaioinfo['Version'] = lalmetaio.MetaIOVCSVersion
-    lalmetaioinfo['Tag'] = lalmetaio.MetaIOVCSTag
-    lalmetaioinfo['Author'] = lalmetaio.MetaIOVCSAuthor
-    lalmetaioinfo['Branch'] = lalmetaio.MetaIOVCSBranch
-    lalmetaioinfo['Committer'] = lalmetaio.MetaIOVCSCommitter
-    lalmetaioinfo['Date'] = lalmetaio.MetaIOVCSDate
-    library_list.append(lalmetaioinfo)
-
-    lalinspiralinfo = {}
-    lalinspiralinfo['Name'] = 'LALInspiral'
-    lalinspiralinfo['ID'] = lalinspiral.InspiralVCSId
-    lalinspiralinfo['Status'] = lalinspiral.InspiralVCSStatus
-    lalinspiralinfo['Version'] = lalinspiral.InspiralVCSVersion
-    lalinspiralinfo['Tag'] = lalinspiral.InspiralVCSTag
-    lalinspiralinfo['Author'] = lalinspiral.InspiralVCSAuthor
-    lalinspiralinfo['Branch'] = lalinspiral.InspiralVCSBranch
-    lalinspiralinfo['Committer'] = lalinspiral.InspiralVCSCommitter
-    lalinspiralinfo['Date'] = lalinspiral.InspiralVCSDate
-    library_list.append(lalinspiralinfo)
 
     lalsimulationinfo = {}
     lalsimulationinfo['Name'] = 'LALSimulation'
-    lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
-    lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
-    lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
-    lalsimulationinfo['Tag'] = lalsimulation.SimulationVCSTag
-    lalsimulationinfo['Author'] = lalsimulation.SimulationVCSAuthor
-    lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
-    lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
-    lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
+    try:
+        lalsimulationinfo['ID'] = lalsimulation.SimulationVCSId
+        lalsimulationinfo['Status'] = lalsimulation.SimulationVCSStatus
+        lalsimulationinfo['Version'] = lalsimulation.SimulationVCSVersion
+        lalsimulationinfo['Tag'] = lalsimulation.SimulationVCSTag
+        lalsimulationinfo['Author'] = lalsimulation.SimulationVCSAuthor
+        lalsimulationinfo['Branch'] = lalsimulation.SimulationVCSBranch
+        lalsimulationinfo['Committer'] = lalsimulation.SimulationVCSCommitter
+        lalsimulationinfo['Date'] = lalsimulation.SimulationVCSDate
+    except AttributeError:
+        add_info_new_version(lalsimulationinfo, lalsimulation, 'Simulation')
     library_list.append(lalsimulationinfo)
 
     glueinfo = {}
-    glueinfo['Name'] = 'Glue'
+    glueinfo['Name'] = 'LSCSoft-Glue'
     glueinfo['ID'] = glue.git_version.id
     glueinfo['Status'] = glue.git_version.status
     glueinfo['Version'] = glue.git_version.version
@@ -101,21 +98,6 @@ def get_library_version_info():
     glueinfo['Committer'] = glue.git_version.committer
     glueinfo['Date'] = glue.git_version.date
     library_list.append(glueinfo)
-
-    # NOTE: We hope to remove pylal dependance in the future, but it will be
-    # used in O1.
-    pylalinfo = {}
-    pylalinfo['Name'] = 'Pylal'
-    pylalinfo['ID'] = pylal.git_version.id
-    pylalinfo['Status'] = pylal.git_version.status
-    pylalinfo['Version'] = pylal.git_version.version
-    pylalinfo['Tag'] = pylal.git_version.tag
-    pylalinfo['Author'] = pylal.git_version.author
-    pylalinfo['Builder'] = pylal.git_version.builder
-    pylalinfo['Branch'] = pylal.git_version.branch
-    pylalinfo['Committer'] = pylal.git_version.committer
-    pylalinfo['Date'] = pylal.git_version.date
-    library_list.append(pylalinfo)
 
     pycbcinfo = {}
     pycbcinfo['Name'] = 'PyCBC'
@@ -156,43 +138,30 @@ def get_code_version_numbers(cp):
         A dictionary keyed by the executable name with values giving the
         version string for each executable.
     """
-    from pycbc.workflow.core import check_output_error_and_retcode
     code_version_dict = {}
-    for item, value in cp.items('executables'):
-        path, exe_name = os.path.split(value)
+    for _, value in cp.items('executables'):
+        _, exe_name = os.path.split(value)
         version_string = None
-        try:
-            # FIXME: Replace with this version when python 2.7 is guaranteed
-            # version_output = subprocess.check_output([value, '--version'],
-            #                                         stderr=subprocess.STDOUT) 
-            # Start of legacy block
-            output, error, retcode = \
-                           check_output_error_and_retcode([value, '--version'])
-            if not retcode == 0:
-                raise subprocess.CalledProcessError(retcode, '')
-            # End of legacy block
-            version_output = (output + error).replace('\n', ' ').split()
-            # Look for a version
-            if "Id:" in version_output:
-                index = version_output.index("Id:") + 1
-                version_string = 'Version is %s.' %(version_output[index],)
-            elif "LALApps:" in version_output:
-                index = version_output.index("LALApps:") + 3
-                version_string = 'Version (lalapps) is %s.' %(version_output[index],)
-            if version_string is None:
-                version_string = "Cannot identify version string in output."
-        except subprocess.CalledProcessError:
-            version_string = "Executable fails on %s --version" %(value)
-        except OSError:
-            version_string = "Executable doesn't seem to exist(!)"
-        code_version_dict[exe_name] = version_string
+        if value.startswith('gsiftp://') or value.startswith('http://'):
+            code_version_dict[exe_name] = "Using bundle downloaded from %s" % value
+        else:
+            try:
+                if value.startswith('file://'):
+                    value = value[7:]
+                version_string = subprocess.check_output([value, '--version'],
+                                                        stderr=subprocess.STDOUT) 
+            except subprocess.CalledProcessError:
+                version_string = "Executable fails on %s --version" % (value)
+            except OSError:
+                version_string = "Executable doesn't seem to exist(!)"
+            code_version_dict[exe_name] = version_string
     return code_version_dict
 
 def write_code_versions(path, cp):
     code_version_dict = get_code_version_numbers(cp)
     html_text = ''
     for key,value in code_version_dict.items():
-        html_text+= '<li><b>%s</b>: %s </li>\n' %(key,value.replace('@', '&#64;'))
+        html_text+= '<li><b>%s</b>:<br><pre>%s</pre></li><hr><br><br>\n' %(key,value.replace('@', '&#64;'))
     kwds = {'render-function' : 'render_text',
             'title' : 'Version Information from Executables',
     }

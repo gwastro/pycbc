@@ -69,7 +69,7 @@ class TestUtils(unittest.TestCase):
         # with no spin
         result = mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(1.4, 1.4,
                                                                0., 0.)
-        for i in xrange(3):
+        for i in range(3):
             self.assertAlmostEqual(result[i], 0, places=6)
         # with spin
         result = mass1_mass2_spin1z_spin2z_to_beta_sigma_gamma(10., 1.4,

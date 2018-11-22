@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+import argparse
+import logging
+import h5py
+import numpy as np
+import matplotlib; matplotlib.use('Agg')
+import pylab as pl
+from pycbc.results.color import ifo_color
+import pycbc.version
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--input-file', nargs='+', required=True,
+                    help='Single-detector inspiral HDF5 files to get '
+                    'templates per core.')
+parser.add_argument('--output-file', required=True,
+                    help='Destination file for the plot.')
+args = parser.parse_args()
+
+fig, (ax1, ax2, ax3) = pl.subplots(3,1,figsize=(10,10))
+
+for pa in args.input_file:
+    f = h5py.File(pa, 'r')
+    ifo = f.keys()[0]
+    if 'templates_per_core' in f['%s/search' % ifo].keys():
+        tpc = f['%s/search/templates_per_core' % ifo][:]
+    else:
+        tpc = None
+    if 'filter_rate_per_core' in f['%s/search' % ifo].keys():
+        fpc = f['%s/search/filter_rate_per_core' % ifo][:]
+    else:
+        fpc = None
+    if 'setup_time_fraction' in f['%s/search' % ifo].keys():
+        stf = f['%s/search/setup_time_fraction' % ifo][:]
+    else:
+        stf = None
+    if tpc is not None:
+        label = str(ifo) + ': Mean average - ' + str(tpc.mean())
+        ax1.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label)
+        #ax1.set_title('Templates per Core')
+        ax1.set_xlabel('Templates per Core')
+        ax1.legend(loc = 'upper right')
+        ax1.grid(True)
+    if fpc is not None:
+        label = str(ifo) + ': Mean average - ' + str(fpc.mean())
+        ax2.hist(fpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label)
+        #ax2.set_title('Filter rate per core')
+        ax2.set_xlabel('Filter rate per core (# FFTs per second per core)')
+        ax2.legend(loc = 'upper right')
+        ax2.grid(True)
+    if stf is not None:
+        label = str(ifo) + ': Mean average - ' + str(stf.mean())
+        ax3.hist(stf, 100, color=ifo_color(ifo), alpha = 0.65, label = label)
+        #ax2.set_title('Filter rate per core')
+        ax3.set_xlabel('Fraction of time doing setup operations')
+        ax3.legend(loc = 'upper right')
+        ax3.grid(True)
+
+fig.tight_layout()
+fig.savefig(str(args.output_file))
+

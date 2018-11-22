@@ -1,0 +1,208 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Christopher M. Biwer, Collin Capano
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Runs a sampler to find the posterior distributions.
+"""
+
+import os
+import argparse
+import logging
+import shutil
+
+import numpy
+
+import pycbc
+from pycbc import (distributions, transforms, fft,
+                   opt, psd, scheme, strain, weave)
+from pycbc.waveform import generator
+
+from pycbc import __version__
+from pycbc import inference
+from pycbc.inference import (models, burn_in, option_utils)
+from pycbc.strain.calibration import Recalibrate
+
+# command line usage
+parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
+                                 description=__doc__)
+parser.add_argument("--version", action="version", version=__version__,
+                    help="Prints version information.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Print logging messages.")
+# output options
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Output file path.")
+parser.add_argument("--force", action="store_true", default=False,
+                    help="If the output-file already exists, overwrite it. "
+                         "Otherwise, an OSError is raised.")
+parser.add_argument("--save-backup", action="store_true",
+                    default=False,
+                    help="Don't delete the backup file after the run has "
+                         "completed.")
+# parallelization options
+parser.add_argument("--nprocesses", type=int, default=1,
+                    help="Number of processes to use. If not given then only "
+                         "a single core will be used.")
+parser.add_argument("--use-mpi", action='store_true', default=False,
+                    help="Use MPI to parallelize the sampler")
+parser.add_argument("--samples-file", default=None,
+                    help="Use an iteration from an InferenceFile as the "
+                         "initial proposal distribution. The same "
+                         "number of walkers and the same [variable_params] "
+                         "section in the configuration file should be used. "
+                         "The priors must allow encompass the initial "
+                         "positions from the InferenceFile being read.")
+# add data options
+parser.add_argument("--instruments", type=str, nargs="+",
+                    help="IFOs, eg. H1 L1.")
+option_utils.add_low_frequency_cutoff_opt(parser)
+parser.add_argument("--psd-start-time", type=float, default=None,
+                    help="Start time to use for PSD estimation if different "
+                         "from analysis.")
+parser.add_argument("--psd-end-time", type=float, default=None,
+                    help="End time to use for PSD estimation if different "
+                         "from analysis.")
+parser.add_argument("--seed", type=int, default=0,
+                    help="Seed to use for the random number generator that "
+                         "initially distributes the walkers. Default is 0.")
+# add config options
+option_utils.add_config_opts_to_parser(parser)
+# add module pre-defined options
+fft.insert_fft_option_group(parser)
+opt.insert_optimization_option_group(parser)
+psd.insert_psd_option_group_multi_ifo(parser)
+scheme.insert_processing_option_group(parser)
+strain.insert_strain_option_group_multi_ifo(parser)
+weave.insert_weave_option_group(parser)
+strain.add_gate_option_group(parser)
+
+# parse command line
+opts = parser.parse_args()
+
+# setup log
+pycbc.init_logging(opts.verbose)
+
+# verify options are sane
+fft.verify_fft_options(opts, parser)
+opt.verify_optimization_options(opts, parser)
+#psd.verify_psd_options(opts, parser)
+scheme.verify_processing_options(opts, parser)
+#strain.verify_strain_options(opts, parser)
+weave.verify_weave_options(opts, parser)
+
+# set seed
+numpy.random.seed(opts.seed)
+logging.info("Using seed %i", opts.seed)
+
+# we'll silence numpy warnings since they are benign and make for confusing
+# logging output
+numpy.seterr(divide='ignore', invalid='ignore')
+
+# get scheme
+ctx = scheme.from_cli(opts)
+fft.from_cli(opts)
+
+# Set up model arguments
+model_args = {}
+
+# get the data and psd
+strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
+low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
+if stilde_dict:
+    model_args['data'] = stilde_dict
+    model_args['f_lower'] = low_frequency_cutoff_dict.values()[0]
+    model_args['delta_f'] = stilde_dict.values()[0].delta_f
+    model_args['delta_t'] = strain_dict.values()[0].delta_t
+    model_args['psds'] = psd_dict
+
+with ctx:
+
+    # read configuration file
+    cp = option_utils.config_parser_from_cli(opts)
+
+    # get ifo-specific instances of calibration model
+    if cp.has_section('calibration'):
+        logging.info("Initializing calibration model")
+        recalibration = {ifo: Recalibrate.from_config(cp, ifo,
+                                                      section='calibration')
+                         for ifo in opts.instruments}
+        model_args['recalibration'] = recalibration
+
+    # get gates for templates
+    gates = strain.gates_from_cli(opts)
+    if gates:
+        model_args['gates'] = gates
+
+    logging.info("Setting up model")
+
+    # construct class that will return the natural logarithm of likelihood
+    model = models.read_from_config(cp, **model_args)
+
+    logging.info("Setting up sampler")
+
+    # Create sampler that will run.
+    # Note: the pool is created at this point. This means that,
+    # unless you enjoy angering your cluster admins,
+    # NO SAMPLES FILE IO SHOULD BE DONE PRIOR TO THIS POINT!!!
+    sampler = inference.sampler.load_from_config(
+        cp, model, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
+
+    # set up output/checkpoint file
+    # Note: PyCBC's multi-ifo parser uses key:ifo for
+    # the injection file, even though we will use the same
+    # injection file all detectors. This
+    # should be fixed in a future version of PyCBC. Once it is,
+    # update this. Until then, just use the first file.
+    if opts.injection_file:
+        injection_file = opts.injection_file.values()[0]  # None if not set
+    else:
+        injection_file = None
+    sampler.setup_output(opts.output_file, force=opts.force,
+                         injection_file=injection_file)
+
+    # Figure out where to get the initial conditions from: a samples file,
+    # the checkpoint file, the prior, or an initial prior.
+    samples_file = opts.samples_file
+    # use the checkpoint file instead if resume from checkpoint
+    if not sampler.new_checkpoint:
+        samples_file = sampler.checkpoint_file
+    if samples_file is not None:
+        logging.info("Initial positions taken from last iteration in %s",
+                     samples_file)
+        init_prior = None
+    else:
+        # try to load an initial distribution from the config file
+        init_prior = inference.sampler.initial_dist_from_config(
+            cp, sampler.variable_params)
+
+    sampler.set_initial_conditions(initial_distribution=init_prior,
+                                   samples_file=samples_file)
+
+    # Run the sampler
+    sampler.run()
+
+    # Finalize the output 
+    sampler.finalize()
+
+# rename checkpoint to output and delete backup
+logging.info("Moving checkpoint to output")
+os.rename(sampler.checkpoint_file, opts.output_file)
+if not opts.save_backup:
+    logging.info("Deleting backup file")
+    os.remove(sampler.backup_file)
+
+# exit
+logging.info("Done")

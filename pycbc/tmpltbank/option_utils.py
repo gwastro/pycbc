@@ -117,7 +117,7 @@ def insert_base_bank_options(parser):
         err_msg = "must be a number between 0 and 1 excluded, not %r" % s
         try:
             value = float(s)
-        except ValueError, e:
+        except ValueError:
             raise argparse.ArgumentTypeError(err_msg)
         if value <= 0 or value >= 1:
             raise argparse.ArgumentTypeError(err_msg)
@@ -129,6 +129,9 @@ def insert_base_bank_options(parser):
     parser.add_argument(
             '-O', '--output-file', required=True,
             help="Output file name. Required.")
+    parser.add_argument('--f-low-column', type=str, metavar='NAME',
+                        help='If given, store the lower frequency cutoff into '
+                             'column NAME of the single-inspiral table.')
 
 def insert_metric_calculation_options(parser):
     """
@@ -754,8 +757,8 @@ def verify_mass_range_options(opts, parser, nonSpin=False):
             # And this is the bad case
             err_msg = "The maximum eta provided is not possible given "
             err_msg += "restrictions on component masses."
-            print m1_at_min_m2, m2_at_min_m1, m1_at_max_m2, m2_at_max_m1
-            print opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2
+            print(m1_at_min_m2, m2_at_min_m1, m1_at_max_m2, m2_at_max_m1)
+            print(opts.min_mass1, opts.max_mass1, opts.min_mass2, opts.max_mass2)
             raise ValueError(err_msg)
         # Update min_tot_mass if needed
         if min_tot_mass > opts.min_total_mass:
@@ -917,8 +920,8 @@ class massRangeParameters(object):
         self.delta_ns_mass = (
             delta_ns_mass or self.default_delta_ns_mass)
         self.use_eos_max_ns_mass = use_eos_max_ns_mass
-        if not self.remnant_mass_threshold is None:
-            if not self.ns_eos is '2H':
+        if self.remnant_mass_threshold is not None:
+            if self.ns_eos is not '2H':
                 errMsg = """
                          By setting a value for --remnant-mass-threshold
                          you have asked to filter out EM dim NS-BH templates.
@@ -928,7 +931,7 @@ class massRangeParameters(object):
                          """
                 raise ValueError(errMsg)
             if use_eos_max_ns_mass:
-                ns_sequence, max_ns_g_mass = load_ns_sequence(self.ns_eos)
+                _, max_ns_g_mass = load_ns_sequence(self.ns_eos)
                 if(self.maxMass2 > max_ns_g_mass):
                     errMsg = """
                              The maximum NS mass supported by this EOS is
@@ -997,59 +1000,59 @@ class massRangeParameters(object):
         range of parameters allowed by the massParams object.
         """
         # Mass1 test
-        if mass1 < self.minMass1:
+        if mass1 * 1.001 < self.minMass1:
             return 1
-        if mass1 > self.maxMass1:
+        if mass1 > self.maxMass1 * 1.001:
             return 1
         # Mass2 test
-        if mass2 < self.minMass2:
+        if mass2 * 1.001 < self.minMass2:
             return 1
-        if mass2 > self.maxMass2:
+        if mass2 > self.maxMass2 * 1.001:
             return 1
         # Spin1 test
         if self.nsbhFlag:
-            if (abs(spin1z) > self.maxBHSpinMag):
+            if (abs(spin1z) > self.maxBHSpinMag * 1.001):
                 return 1
         else:
             spin1zM = abs(spin1z)
-            if not( (mass1 > self.ns_bh_boundary_mass \
-                     and spin1zM <= self.maxBHSpinMag) \
-                 or (mass1 < self.ns_bh_boundary_mass \
-                     and spin1zM <= self.maxNSSpinMag)):
+            if not( (mass1 * 1.001 > self.ns_bh_boundary_mass \
+                     and spin1zM <= self.maxBHSpinMag * 1.001) \
+                 or (mass1 < self.ns_bh_boundary_mass * 1.001 \
+                     and spin1zM <= self.maxNSSpinMag * 1.001)):
                 return 1
         # Spin2 test
         if self.nsbhFlag:
-            if (abs(spin2z) > self.maxNSSpinMag):
+            if (abs(spin2z) > self.maxNSSpinMag * 1.001):
                 return 1
         else:
             spin2zM = abs(spin2z)
-            if not( (mass2 > self.ns_bh_boundary_mass \
-                     and spin2zM <= self.maxBHSpinMag) \
-                 or (mass2 < self.ns_bh_boundary_mass and \
-                     spin2zM <= self.maxNSSpinMag)):
+            if not( (mass2 * 1.001 > self.ns_bh_boundary_mass \
+                     and spin2zM <= self.maxBHSpinMag * 1.001) \
+                 or (mass2 < self.ns_bh_boundary_mass * 1.001 and \
+                     spin2zM <= self.maxNSSpinMag * 1.001)):
                 return 1
         # Total mass test
         mTot = mass1 + mass2
-        if mTot > self.maxTotMass:
+        if mTot > self.maxTotMass * 1.001:
             return 1
-        if mTot < self.minTotMass:
+        if mTot * 1.001 < self.minTotMass:
             return 1
 
         # Eta test
         eta = mass1 * mass2 / (mTot * mTot)
-        if eta > self.maxEta:
+        if eta > self.maxEta * 1.001:
             return 1
-        if eta < self.minEta:
+        if eta * 1.001 < self.minEta:
             return 1
 
         # Chirp mass test
         chirp_mass = mTot * eta**(3./5.)
-        if self.min_chirp_mass is not None:
-            if chirp_mass < min_chirp_mass:
-                return 1
-        if self.max_chirp_mass is not None:
-            if chirp_mass > max_chirp_mass:
-                return
+        if self.min_chirp_mass is not None \
+                and chirp_mass * 1.001 < self.min_chirp_mass:
+            return 1
+        if self.max_chirp_mass is not None \
+                and chirp_mass > self.max_chirp_mass * 1.001:
+            return 1
 
         return 0
 
@@ -1198,32 +1201,6 @@ def check_ethinca_against_bank_params(ethincaParams, metricParams):
             raise ValueError("Ethinca metric calculation does not currently "
                              "support a f-low value different from the bank "
                              "metric!")
-        if ethincaParams.pnOrder == None:
+        if ethincaParams.pnOrder is None:
             ethincaParams.pnOrder = metricParams.pnOrder
-    else: pass
-
-def check_ethinca_against_bank_opts(opts, parser):
-    """
-    Cross-check the ethinca and bank layout metric options.
-    The Params-level function 'check_ethinca_against_bank_params' is 
-    preferred to this function since it operates directly on the Params
-    objects which are passed to the ethinca metric calculation, and can 
-    change their attributes if desired.
-
-    Parameters
-    ----------
-    opts : argparse.Values instance
-        Result of parsing the input options with OptionParser
-    parser : object
-        The OptionParser instance.
-    """
-    if ethincaParams.doEthinca:
-        if opts.f0 != opts.f_low:
-            parser.error("If calculating ethinca metric, f0 and f-low "
-                         "must be equal!")
-        if opts.ethinca_f_low is not None and (
-                opts.ethinca_f_low != opts.f_low):
-            parser.error("Ethinca metric calculation does not currently "
-                         "support a f-low value different from the bank "
-                         "metric!")
     else: pass

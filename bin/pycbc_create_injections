@@ -1,0 +1,277 @@
+#! /usr/bin/env python
+
+# Copyright (C) 2017 Collin Capano
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""Generates injections drawn from a distribution read from a config file.
+
+Config file syntax
+------------------
+The configuration file should have a [variable_args], a [static_args],
+and one or more [distribution] sections. Multiple [constraint] sections and
+one or more [waveform_transforms] sections may also be provided. An example:
+
+    [variable_args]
+    mass1 =
+    mass2 =
+    spin1_a =
+    spin1_azimuthal =
+    spin1_polar =
+
+    [static_args]
+    approximant = IMRPhenomPv2
+    f_lower = 19
+
+    [distribution-mass1]
+    name = uniform
+    min-mass1 = 3
+    max-mass1 = 12
+
+    [distribution-mass2]
+    name = uniform
+    min-mass2 = 1
+    max-mass2 = 3
+
+    [constraint-1]
+    name = custom
+    constraint_arg = q_from_mass1_mass2(mass1, mass2) <= 4
+
+    [distribution-spin1_a]
+    name = uniform
+    min-spin1_a = 0.0
+    max-spin1_a = 0.9
+
+    [distribution-spin1_polar+spin1_azimuthal]
+    name = uniform_solidangle
+    polar-angle = spin1_polar
+    azimuthal-angle = spin1_azimuthal
+
+    [waveform_transforms-spin1x+spin1y+spin1z]
+    name = spherical_spin_1_to_cartesian_spin_1
+
+This config file would generate injections uniform in mass1 and mass2, with a
+cut on mass ratio (q) <= 4. The spin of the larger body is also varied,
+uniform in magnitude < 0.9, and isotropic in orientation (spin1_polar,
+spin1_azimuthal). Because the waveform module expects spins to be provided in
+cartesian coordinates, the spherical spin coordinates are transformed prior to
+being written out to file.
+
+The [variable_args] section gives the list of waveform parameters to
+randomize.  The [static_args] section gives parameters that are fixed for all
+of the injections.
+
+The [distribution-{tag}] sections provide the arguments needed to initialize
+the distribution for each parameter. Every parameter specified in
+[variable_args] must have a distribution section; the name of the parameter(s)
+used by that distribution must be in the 'tag' part of the section header (the
+bit after the dash). If a distribution covers multiple parameters, the
+parameters should be separated by a '+'.  Any distribution in the distributions
+module may be used.  The rest of the options should provide the necessary
+arguments to initialize that distribution; see the distributions module for
+details.
+
+The variable_args need not be parameters understood by the waveform module.  In
+that case, a [waveform_transforms] sections must be provided that map
+variable_args not understood by the waveform module to parameters that are
+understood. In the above example, spin1_a, spin1_azimuthal, and spin1_polar are
+converted to spin1x, spin1y, and spin1z before being written out. Any transform
+in the transforms module may be used to do this; see that module for details.
+No attempt is made to check that provided parameter names are sensible. It is
+up to the user to ensure that written parameters are understood by the waveform
+approximant that will be used.
+
+One or more constraints may be applied to the distributions; these are
+specified by the [constraint] section(s). Additional constraints may be
+supplied by adding more [constraint-{tag}] sections. Any tag may be used; the
+only requirement is that they be unique. If multiple constaint sections are
+provided, the union of all constraints are applied. Alternatively, multiple
+constraints may be joined in a single argument using numpy's logical operators.
+
+The parameter that constraints are applied to may be any parameter in
+variable_args or any output parameter of the transforms. Functions may be
+applied on these parameters to obtain constraints on derived parameters. Any
+function in the conversions, coordinates, or cosmology module may be used,
+along with any numpy ufunc. So, in the above example, mass ratio (q) is
+constrained to be <= 4 by using a function from the conversions module.
+"""
+
+import os, sys
+import argparse
+import logging
+import numpy
+import pycbc
+import pycbc.version
+from pycbc import distributions
+from pycbc import transforms
+from pycbc.distributions import JointDistribution
+from pycbc.io import record
+from pycbc.waveform import parameters
+from pycbc.workflow import WorkflowConfigParser
+import h5py
+
+# stuff for writing xml files... remove this when we drop xml
+from glue.ligolw import ligolw, lsctables, table, utils as ligolw_utils
+
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+# Map parameter names used in pycbc to names used in the sim_inspiral
+# table, if they are different
+sim_inspiral_map = {
+    'ra': 'longitude',
+    'dec': 'latitude',
+    'approximant': 'waveform',
+    }
+
+def set_sim_data(sim, field, data):
+    """Sets data of a SimInspiral instance."""
+    try:
+        sim_field = sim_inspiral_map[field]
+    except KeyError:
+        sim_field = field
+    # for tc, map to geocentric times
+    if sim_field == 'tc':
+        sim.geocent_end_time = int(data)
+        sim.geocent_end_time_ns = int(1e9*(data % 1))
+    else:
+        setattr(sim, sim_field, data)
+
+def write_to_xml(filename, samples, write_args, static_args=None):
+    """Writes the injection samples to the given xml.
+    """
+    xmldoc = ligolw.Document()
+    xmldoc.appendChild(ligolw.LIGO_LW())
+    simtable = lsctables.New(lsctables.SimInspiralTable)
+    xmldoc.childNodes[0].appendChild(simtable)
+    if static_args is None:
+        static_args = {}
+    for ii in range(samples.size):
+        sim = lsctables.SimInspiral()
+        # initialize all elements to None
+        [setattr(sim, col, None) for col in sim.__slots__]
+        for field in write_args:
+            data = samples[ii][field]
+            set_sim_data(sim, field, data)
+        # set any static args
+        [set_sim_data(sim, field, value)
+         for field,value in static_args.items()]
+        simtable.append(sim)
+    ligolw_utils.write_filename(xmldoc, filename,
+                                           gz=filename.endswith('gz'))
+
+
+def write_to_hdf(filename, samples, write_args, static_args=None):
+    """Writes the injection samples to the given hdf file.
+    """
+    fp = h5py.File(filename, 'w')
+    # write metadata
+    if static_args is None:
+        static_args = {}
+    fp.attrs["cmd"] = " ".join(sys.argv)
+    fp.attrs["static_args"] = static_args.keys()
+    for arg, val in static_args.items():
+        fp.attrs[arg] = val
+    for field in write_args:
+        fp[field] = samples[field]
+    return fp
+
+
+parser = argparse.ArgumentParser(description=__doc__,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
+WorkflowConfigParser.add_config_opts_to_parser(parser)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg,
+                    help='Prints version information.')
+parser.add_argument('--ninjections', required=True, type=int,
+                    help='Number of injections to create.')
+parser.add_argument('--seed', type=int, default=0,
+                    help='Seed to use for the random number generator. '
+                         'Default is 0.')
+parser.add_argument('--output-file', required=True,
+                    help='Output file to save to. If ends in ".xml[.gz]", '
+                         'injections will be written to a sim_inspiral table '
+                         'in an xml file. Otherwise, results will be written '
+                         'to an hdf file.')
+parser.add_argument('--dist-section', default='distribution',
+                    help='What section in the config file to load '
+                          'distributions from. Default is distribution.')
+parser.add_argument('--variable-params-section', default='variable_args',
+                    help='What section in the config file to load the '
+                         'parameters to vary. Default is variable_args.')
+parser.add_argument('--static-args-section', default="static_args",
+                    help='What section to load the static args from. Default '
+                         'is static_args.')
+parser.add_argument("--force", action="store_true", default=False,
+                    help="If the output-file already exists, overwrite it. "
+                         "Otherwise, an OSError is raised.")
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="Print logging messages.")
+opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
+
+if os.path.exists(opts.output_file) and not opts.force:
+    raise OSError("output-file already exists; use --force if you wish to "
+                  "overwrite it.")
+
+numpy.random.seed(opts.seed)
+
+logging.info("Loading config file")
+cp = WorkflowConfigParser.from_cli(opts)
+
+# get the vairable and static arguments from the config file
+variable_args, static_args = distributions.read_params_from_config(cp,
+    prior_section=opts.dist_section,
+    vargs_section=opts.variable_params_section,
+    sargs_section=opts.static_args_section)
+constraints = distributions.read_constraints_from_config(cp)
+
+if any(cp.get_subsections('waveform_transforms')):
+    waveform_transforms = transforms.read_transforms_from_config(cp,
+        'waveform_transforms')
+else:
+    waveform_transforms = None
+    write_args = variable_args
+
+# get prior distribution for each variable parameter
+logging.info("Reading distributions")
+dists = distributions.read_distributions_from_config(cp, opts.dist_section)
+
+# construct class that will draw the samples
+randomsampler = JointDistribution(variable_args, *dists,
+                               **{"constraints" : constraints})
+
+logging.info("Drawing samples")
+samples = randomsampler.rvs(size=opts.ninjections)
+
+if waveform_transforms is not None:
+    logging.info("Transforming to waveform transform parameters")
+    for t in waveform_transforms:
+        if not set(t.inputs).isdisjoint(set(static_args.keys())):
+            for item in list(set(t.inputs) & set(static_args.keys())):
+                samples = samples.add_fields([numpy.repeat(static_args[item],
+                                             opts.ninjections).astype(float)],
+                                             [item])
+    samples = transforms.apply_transforms(samples, waveform_transforms)
+    write_args = [arg for arg in samples.fieldnames
+                  if arg not in static_args.keys()]
+
+# write results
+logging.info("Writing results")
+if opts.output_file.endswith('.xml') or opts.output_file.endswith('.xml.gz'):
+    write_to_xml(opts.output_file, samples, write_args, static_args)
+else:
+    write_to_hdf(opts.output_file, samples, write_args, static_args)

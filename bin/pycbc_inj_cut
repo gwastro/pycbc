@@ -1,0 +1,116 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2015 Stephen Fairhurst
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Given an xml(.gz) table with CBC injections, this script separates them into:
+(1) (potentially) found injections
+(2) injections that we expect to miss
+The two sets are stored into two separate output files. 
+"""
+
+__author__ = "Stephen Fairhurst"
+__email__ = "stephen.fairhurst@ligo.org"
+
+import argparse
+import logging
+import numpy
+import pycbc
+import pycbc.inject
+from glue.ligolw import utils as ligolw_utils
+from pycbc.types import MultiDetOptionAction
+from glue.ligolw import lsctables
+import pycbc.version
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--version', action=pycbc.version.Version)
+parser.add_argument('--input', dest='inj_xml', required=True, help='Input LIGOLW injections file.')
+parser.add_argument('--output-missed', dest='output_missed', required=False,
+                  help="Output LIGOLW file containing injections we expect to miss.")
+parser.add_argument('--output-file', dest='output_inject', required=True,
+                  help="Output LIGOLW file containing injections that we might find.")
+parser.add_argument('--snr-threshold', dest='snr_thresh', required=True, type=float,
+                  help="Select the SNR threshold which is required to keep the injections")
+parser.add_argument('--snr-columns', nargs='+', action=MultiDetOptionAction,
+                        metavar='DETECTOR:COLUMN', required=True,
+                        help='Defines in which column of the sim_inspiral table' \
+                        ' the optimal SNR for each detector has been stored.' \
+                        ' COLUMN should be an existing sim_inspiral column with ' \
+                        ' no useful data in it, good candidates are usually' \
+                        ' alpha1, alpha2 etc.')
+parser.add_argument("-z", "--write-compress", action="store_true", help="Write compressed xml.gz files.")
+parser.add_argument("-v", "--verbose", action="store_true", default=False,
+                    help="Extended standard output.")
+
+opts = parser.parse_args()
+
+log_fmt = '%(asctime)s %(message)s'
+log_date_fmt = '%Y-%m-%d %H:%M:%S'
+logging.basicConfig(level=logging.INFO, format=log_fmt, datefmt=log_date_fmt)
+
+if opts.verbose:
+    logging.info("Loading injections")
+injections = pycbc.inject.InjectionSet(opts.inj_xml)
+
+
+# injections that we should do: table and name of the file that will store it
+output_inject = opts.output_inject
+if opts.write_compress:
+    if not output_inject.endswith('gz'):
+        output_inject = output_inject+'.gz'
+out_sim_inspiral_inject = lsctables.New(lsctables.SimInspiralTable,
+                                 columns=injections.table.columnnames)
+
+# missed injections table 
+out_sim_inspiral_missed = lsctables.New(lsctables.SimInspiralTable,
+                                 columns=injections.table.columnnames)
+if opts.write_compress:
+    if not output_missed.endswith('gz'):
+        output_missed = output_missed+'.gz'
+
+for i, inj in enumerate(injections.table):
+    snrs = numpy.array([getattr(inj, column) for column in opts.snr_columns.values()])
+    if sum(snrs < opts.snr_thresh):
+        out_sim_inspiral_missed.append(inj)
+    else:
+        out_sim_inspiral_inject.append(inj)
+            
+logging.info('Found %d/%d (potentially) found injections.  Storing them to %s.', len(out_sim_inspiral_inject), len(injections.table), output_inject)
+logging.info('Found %d/%d missed injections.', len(out_sim_inspiral_missed), len(injections.table))
+
+if opts.verbose:
+    logging.info('Writing output')
+llw_doc = injections.indoc
+llw_root = llw_doc.childNodes[0]
+llw_root.removeChild(injections.table)
+llw_root.appendChild(out_sim_inspiral_inject)
+ligolw_utils.write_filename(llw_doc, output_inject,
+                                       gz=output_inject.endswith('gz'))
+
+if opts.output_missed:
+    output_missed = opts.output_missed
+    if opts.write_compress:
+        if not output_missed.endswith('gz'):
+            output_missed = output_missed+'.gz'
+    llw_root.removeChild(out_sim_inspiral_inject)
+    llw_root.appendChild(out_sim_inspiral_missed)
+    logging.info('Storing them to %s.', output_missed)
+
+    ligolw_utils.write_filename(llw_doc, output_missed,
+                                           gz=output_missed.endswith('gz'))
+
+logging.info('Done')

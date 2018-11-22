@@ -1,0 +1,114 @@
+#!/bin/env python
+# Copyright (C) 2015 Alexander Harvey Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+""" Make tables describing a sngl event"""
+import sys, h5py, matplotlib, numpy, datetime, argparse
+matplotlib.use('Agg')
+import lal
+import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
+from pycbc.io import hdf
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--single-trigger-file', required=True,
+    help="HDF format single detector trigger files for the full "
+         "data run")
+parser.add_argument('--bank-file', required=True,
+    help="HDF format template bank file")
+parser.add_argument('--output-file')
+# CURRENTLY UNUSED, but may be needed if using foreground censor
+#parser.add_argument('--statmap-file',
+#    help="The HDF format clustered coincident statmap file containing the "
+#         "result triggers.")
+parser.add_argument('--veto-file',
+    help="The veto file to be used if vetoing triggers.  Optional")
+parser.add_argument('--veto-segment-name',
+    help="If using veto file, the name of the segments to use as a veto.")
+parser.add_argument("--instrument", help="Name of ifo (e.g. H1)")
+parser.add_argument("--n-loudest", type=int, default=None,
+    help="Examine the n'th loudest trigger (loudest is n=0). Must supply "
+         "either this or --trigger-id.")
+parser.add_argument("--trigger-id", type=int, default=None,
+    help="Use the trigger with this ID in the HDF file. Must supply either "
+         "this option or --n-loudest.")
+parser.add_argument('--ranking-statistic', default='newsnr',
+    help="How to rank triggers when determining loudest triggers. Default "
+         "'newsnr'")
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+# Get the single-ifo triggers
+sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
+                args.veto_file, args.veto_segment_name, None, args.instrument)
+
+
+if args.trigger_id is not None:
+    sngl_file.mask = numpy.array([args.trigger_id])
+    sngl_file.mask_to_n_loudest_clustered_events(n_loudest=1,
+                                      ranking_statistic=args.ranking_statistic)
+    stat = sngl_file.stat[0]
+elif args.n_loudest is not None:
+    # Cluster by a ranking statistic and retain only the loudest n clustered
+    # triggers
+    sngl_file.mask_to_n_loudest_clustered_events(n_loudest=args.n_loudest+1,
+                                      ranking_statistic=args.ranking_statistic)
+    # Restrict to only the nth loudest, instead of all triggers up to nth
+    # loudest
+    stat = sngl_file.stat[-1]
+    sngl_file.mask = sngl_file.mask[-1]
+else:
+    raise ValueError("Must give --n-loudest or --trigger-id.")
+
+# make a table for the single detector information ############################
+time = sngl_file.end_time 
+utc = lal.GPSToUTC(int(time))[0:6]
+data = [[pycbc.results.dq.get_summary_page_link(args.instrument, utc),
+        str(datetime.datetime(*utc)),
+        '%.3f'  % time,
+        '%5.2f' % sngl_file.snr,
+        '%5.2f' % stat,
+        '%5.2f' % sngl_file.rchisq,            
+        '%i'    % sngl_file.get_column('chisq_dof'),
+        '%5.2f' % sngl_file.get_column('coa_phase'),
+        '%5.2f' % sngl_file.mass1,
+        '%5.2f' % sngl_file.mass2,
+        '%5.2f' % sngl_file.mchirp,
+        '%5.2f' % sngl_file.spin1z,
+        '%5.2f' % sngl_file.spin2z,
+        '%5.2f' % sngl_file.template_duration,
+       ]]
+
+html = pycbc.results.dq.redirect_javascript + \
+        str(pycbc.results.static_table(data, pycbc.results.sngl_table_headers))
+###############################################################################
+
+if args.n_loudest:
+    title = 'Parameters of single-detector event ranked %s' \
+        % (args.n_loudest + 1)
+    caption = 'Parameters of the single-detector event ranked number %s by %s. The figures below show the mini-followup data for this event.' % (args.n_loudest + 1, sngl_file.stat_name)
+else:
+    title = 'Parameters of single-detector event'
+    caption = 'Parameters of the single-detector event. The figures below show the mini-followup data for this event.'
+
+pycbc.results.save_fig_with_metadata(html, args.output_file, {},
+                        cmd = ' '.join(sys.argv),
+                        title = title,
+                        caption = caption)

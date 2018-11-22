@@ -18,14 +18,15 @@
 """
 
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, File
-from pycbc.events import segments_to_file
+from pycbc.workflow.core import SegFile
 from glue.segments import segmentlist
 
 class CalcPSDExecutable(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.ALL_TRIGGERS
+    file_input_options = ['--gating-file']
 
 class MergePSDFiles(Executable):
-    current_retention_level = Executable.CRITICAL
+    current_retention_level = Executable.MERGED_TRIGGERS
 
 def chunks(l, n):
     """ Yield n successive chunks from l.
@@ -44,43 +45,42 @@ def merge_psds(workflow, files, ifo, out_dir, tags=None):
     node.add_input_list_opt('--psd-files', files)
     node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
     workflow += node
-    return node.output_files[0]        
+    return node.output_files[0]
 
 def setup_psd_calculate(workflow, frame_files, ifo, segments,
-                        segment_name, out_dir,
-                        gate_files=None, tags=None):
+                        segment_name, out_dir, tags=None):
     make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     if workflow.cp.has_option_tags('workflow-psd', 'parallelization-factor', tags=tags):
-        num_parts = int(workflow.cp.get_opt_tags('workflow-psd', 
+        num_parts = int(workflow.cp.get_opt_tags('workflow-psd',
                                                  'parallelization-factor',
                                                  tags=tags))
     else:
         num_parts = 1
-        
+
     # get rid of duplicate segments which happen when splitting the bank
-    segments = segmentlist(frozenset(segments))       
-        
-    segment_lists = list(chunks(segments, num_parts)) 
-    
+    segments = segmentlist(frozenset(segments))
+
+    segment_lists = list(chunks(segments, num_parts))
+
     psd_files = FileList([])
     for i, segs in enumerate(segment_lists):
-        seg_file = segments_to_file(segmentlist(segs), 
-                               out_dir + '/%s-INSPIRAL_DATA-%s.xml' % (ifo, i), 
-                               'INSPIRAL_DATA', ifo=ifo)
+        seg_file = SegFile.from_segment_list('%s_%s' %(segment_name, i),
+                         segmentlist(segs), segment_name, ifo,
+                         valid_segment=workflow.analysis_time,
+                         extension='xml', directory=out_dir)
 
         psd_files += [make_psd_file(workflow, frame_files, seg_file,
-                                    segment_name, out_dir, 
-                                    gate_files=gate_files, 
+                                    segment_name, out_dir,
                                     tags=tags + ['PART%s' % i])]
-    
+
     if num_parts > 1:
         return merge_psds(workflow, psd_files, ifo, out_dir, tags=tags)
     else:
         return psd_files[0]
-    
+
 def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
-                  gate_files=None, tags=None):
+                  tags=None):
     make_analysis_dir(out_dir)
     tags = [] if not tags else tags
     exe = CalcPSDExecutable(workflow.cp, 'calculate_psd',
@@ -89,18 +89,10 @@ def make_psd_file(workflow, frame_files, segment_file, segment_name, out_dir,
     node = exe.create_node()
     node.add_input_opt('--analysis-segment-file', segment_file)
     node.add_opt('--segment-name', segment_name)
-    
-    if gate_files is not None:
-        ifo_gate = None
-        for gate_file in gate_files:
-            if gate_file.ifo == segment_file.ifo:
-                ifo_gate = gate_file
-        
-        if ifo_gate is not None:
-            node.add_input_opt('--gating-file', ifo_gate)
-    
-    if not exe.has_opt('frame-type'):
+
+    if frame_files and not exe.has_opt('frame-type'):
         node.add_input_list_opt('--frame-files', frame_files)
+
     node.new_output_file_opt(workflow.analysis_time, '.hdf', '--output-file')
     workflow += node
     return node.output_files[0]
@@ -115,8 +107,10 @@ def make_average_psd(workflow, psd_files, out_dir, tags=None,
     node = AvgPSDExecutable(workflow.cp, 'average_psd', ifos=workflow.ifos,
                             out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--input-files', psd_files)
-    node.new_output_file_opt(workflow.analysis_time, output_fmt,
-                             '--detector-avg-file')
+
+    if len(workflow.ifos) > 1:
+        node.new_output_file_opt(workflow.analysis_time, output_fmt,
+                                 '--detector-avg-file')
 
     node.new_multiifo_output_list_opt('--time-avg-file', workflow.ifos,
                                  workflow.analysis_time, output_fmt, tags=tags)

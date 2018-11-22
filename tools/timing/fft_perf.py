@@ -8,12 +8,12 @@ from math import sin, log
 import gc
 parser = OptionParser()
 
-parser.add_option('--scheme','-s',  type = 'choice', 
-                    choices = ('cpu','cuda','opencl'), 
-                    default = 'cpu', dest = 'scheme', 
+parser.add_option('--scheme','-s',  type = 'choice',
+                    choices = ('cpu','cuda','opencl'),
+                    default = 'cpu', dest = 'scheme',
                     help = 'specifies processing scheme, can be cpu [default], cuda, or opencl')
 
-parser.add_option('--device-num','-d', action='store', type = 'int', 
+parser.add_option('--device-num','-d', action='store', type = 'int',
                     dest = 'devicenum', default=0,
                     help = 'specifies a GPU device to use for CUDA or OpenCL, 0 by default')
 
@@ -27,24 +27,21 @@ parser.add_option('--import-float-wisdom', type=str, help='import an FFTW float 
 parser.add_option('--export-float-wisdom', type=str, help='export an FFTW float wisdom file')
 
 
-(options, args) = parser.parse_args()   
+(options, args) = parser.parse_args()
 
 #Changing the optvalues to a dict makes them easier to read
 _options = vars(options)
 
 if _options['scheme'] == 'cpu':
     ctx = CPUScheme(num_threads=options.num_threads)
-    if options.backend == 'lal':
-        from pycbc.fft.lalfft import set_measure_level
-        set_measure_level(options.measure_level)
-    if options.backend == 'fftw':     
+    if options.backend == 'fftw':
         from pycbc.fft.fftw import set_measure_level, set_threads_backend
         with ctx:
             set_measure_level(options.measure_level)
             if options.num_threads != 1:
                 set_threads_backend('openmp')
-              
-          
+
+
 if _options['scheme'] == 'cuda':
     ctx = CUDAScheme(device_num=_options['devicenum'])
 if _options['scheme'] == 'opencl':

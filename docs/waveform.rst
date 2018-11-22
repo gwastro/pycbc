@@ -17,6 +17,13 @@ Plotting Time Domain Waveforms
 .. plot:: ../examples/waveform/plot_waveform.py
    :include-source:
 
+==============================================
+Generating one waveform in multiple detectors
+==============================================
+
+.. plot:: ../examples/waveform/plot_detwaveform.py
+   :include-source:
+
 =======================================
 Calculating the match between waveforms
 =======================================

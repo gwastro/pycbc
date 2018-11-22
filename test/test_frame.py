@@ -28,12 +28,10 @@ These are the unittests for the pycbc frame/cache reading functions
 
 import pycbc
 import unittest
-from pycbc.types import *
-from pycbc.scheme import *
 import pycbc.frame
 import numpy
 import lal
-#from pylal import Fr
+from pycbc.types import TimeSeries
 from utils import parse_args_cpu_only, simple_exit
 
 # Frame tests only need to happen on the CPU
@@ -104,13 +102,13 @@ class FrameTestBase(unittest.TestCase):
         endind = int(50/self.delta_t)
 
         # Now reading in a specific segment with an integer
-        ts3 = pycbc.frame.read_frame(filename, 'channel1', 
+        ts3 = pycbc.frame.read_frame(filename, 'channel1',
                                                 start_time=int(start),
                                                 end_time=int(end))
 
         # The same, but with a LIGOTimeGPS for the start and end times
-        ts4 = pycbc.frame.read_frame(filename, 'channel1', 
-                                                start_time=start, 
+        ts4 = pycbc.frame.read_frame(filename, 'channel1',
+                                                start_time=start,
                                                  end_time=end)
 
         # Now we will check those two TimeSeries
@@ -125,11 +123,11 @@ class FrameTestBase(unittest.TestCase):
 
         # There must be a span grater than 0
         self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
-                          'channel1', start_time=self.epoch, 
+                          'channel1', start_time=self.epoch,
                           end_time=self.epoch)
         # The start must be before the end
         self.assertRaises(ValueError, pycbc.frame.read_frame, filename,
-                          'channel1', start_time=self.epoch+1, 
+                          'channel1', start_time=self.epoch+1,
                           end_time=self.epoch)
 
 # We take a factory approach so we can test all possible dtypes we support

@@ -1,8 +1,8 @@
 from __future__ import division
 import copy
 import numpy
+from six.moves import range
 from pycbc.tmpltbank.coord_utils import get_cov_params
-from pycbc.pnutils import get_beta_sigma_from_aligned_spins
 
 
 def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
@@ -80,17 +80,18 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
             if currDist > 1 and scaleFactor == origScaleFactor:
                 scaleFactor = origScaleFactor*10
         # Get a set of test points with mass -> xi mappings
-        chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
-              sigma, gamma, chis, new_xis = get_mass_distribution(\
-                    [bestChirpmass,bestMasses[1],bestMasses[2],bestMasses[3]],\
-                    scaleFactor, massRangeParams, metricParams, fUpper)
+        totmass, eta, spin1z, spin2z, mass1, mass2, new_xis = \
+            get_mass_distribution([bestChirpmass, bestMasses[1], bestMasses[2],
+                                   bestMasses[3]],
+                                  scaleFactor, massRangeParams, metricParams,
+                                  fUpper)
         cDist = (new_xis[0] - xis[0])**2
-        for j in xrange(1,xi_size):
+        for j in range(1,xi_size):
             cDist += (new_xis[j] - xis[j])**2
         if (cDist.min() < req_match):
             idx = cDist.argmin()
             scaleFactor = origScaleFactor
-            new_xis_list = [new_xis[ldx][idx] for ldx in xrange(len(new_xis))]
+            new_xis_list = [new_xis[ldx][idx] for ldx in range(len(new_xis))]
             return mass1[idx], mass2[idx], spin1z[idx], spin2z[idx], count, \
                    cDist.min(), new_xis_list
         if (cDist.min() < currDist):
@@ -110,7 +111,7 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
             diff = (bestMasses[0]*bestMasses[0] * (1-4*bestMasses[1]))**0.5
             mass1 = (bestMasses[0] + diff)/2.
             mass2 = (bestMasses[0] - diff)/2.
-            new_xis_list = [new_xis[ldx][0] for ldx in xrange(len(new_xis))]
+            new_xis_list = [new_xis[ldx][0] for ldx in range(len(new_xis))]
             return mass1, mass2, bestMasses[2], bestMasses[3], count, \
                    currDist, new_xis_list
         if not unFixedCount % 100:
@@ -118,7 +119,7 @@ def get_physical_covaried_masses(xis, bestMasses, bestXis, req_match,
         if scaleFactor > 64:
             scaleFactor = 1
     # Shouldn't be here!
-    raise BrokenError
+    raise RuntimeError
 
 def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
                           metricParams, fUpper,
@@ -167,8 +168,6 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
 
     Returns 
     --------
-    Chirpmass : numpy.array
-        chirp mass of the resulting points
     Totmass : numpy.array
         Total mass of the resulting points
     Eta : numpy.array
@@ -183,14 +182,6 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
         Mass1 (mass of heavier body) of the resulting points
     Mass2 : numpy.array
         Mass2 (mass of smaller body) of the resulting points
-    Beta : numpy.array
-        1.5PN spin phasing coefficient of the resulting points
-    Sigma : numpy.array
-        2PN spin phasing coefficient of the resulting points
-    Gamma : numpy.array
-        2.5PN spin phasing coefficient of the resulting points
-    Chis : numpy.array
-        0.5 * (spin1z + spin2z) for the resulting points
     new_xis : list of numpy.array
         Position of points in the xi coordinates
     """
@@ -320,10 +311,6 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
         numplogb = numpy.logical_not(numplogb)
         spin2z[numplogb] = 0
 
-    # Get the various spin-derived quantities
-    beta, sigma, gamma, chis = get_beta_sigma_from_aligned_spins(eta, spin1z,
-                                                                 spin2z)
-
     if (maxSpinMag) and (numploga[0] or numplogb[0]):
         raise ValueError("Cannot remove the guide point!")
 
@@ -351,11 +338,13 @@ def get_mass_distribution(bestMasses, scaleFactor, massRangeParams,
     if totmass[0] < 0.00011:
         raise ValueError("Cannot remove the guide point!")
 
+    mass1[totmass < 0.00011] = 0.0001
+    mass2[totmass < 0.00011] = 0.0001
+
     # Then map to xis
-    new_xis = get_cov_params(totmass, eta, beta, sigma, gamma, chis,
+    new_xis = get_cov_params(mass1, mass2, spin1z, spin2z,
                              metricParams, fUpper)
-    return chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
-           sigma, gamma, chis, new_xis
+    return totmass, eta, spin1z, spin2z, mass1, mass2, new_xis
 
 def stack_xi_direction_brute(xis, bestMasses, bestXis, direction_num,
                              req_match, massRangeParams, metricParams, fUpper,
@@ -489,24 +478,23 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
 
     # Setup
     xi_size = len(xis)
-    origMasses = copy.deepcopy(bestMasses)
     bestChirpmass = bestMasses[0] * (bestMasses[1])**(3./5.)
     if find_minimum:
         xiextrema = 10000000000
     else:
         xiextrema = -100000000000
 
-    for i in xrange(numIterations):
+    for _ in range(numIterations):
         # Evaluate extrema of the xi direction specified
-        chirpmass, totmass, eta, spin1z, spin2z, diff, mass1, mass2, beta, \
-          sigma, gamma, chis, new_xis = get_mass_distribution(\
-               [bestChirpmass,bestMasses[1],bestMasses[2],bestMasses[3]], \
-               scaleFactor, massRangeParams, metricParams, fUpper)
+        totmass, eta, spin1z, spin2z, _, _, new_xis = \
+            get_mass_distribution([bestChirpmass,bestMasses[1],bestMasses[2],
+                                   bestMasses[3]],
+                                  scaleFactor, massRangeParams, metricParams,
+                                  fUpper)
         cDist = (new_xis[0] - xis[0])**2
-        for j in xrange(1, xi_size):
+        for j in range(1, xi_size):
             cDist += (new_xis[j] - xis[j])**2
         redCDist = cDist[cDist < req_match]
-        redXis = (new_xis[direction_num])[cDist < req_match]
         if len(redCDist):
             if not find_minimum:
                 new_xis[direction_num][cDist > req_match] = -10000000
@@ -523,8 +511,6 @@ def find_xi_extrema_brute(xis, bestMasses, bestXis, direction_num, req_match, \
                 bestMasses[1] = eta[idx]
                 bestMasses[2] = spin1z[idx]
                 bestMasses[3] = spin2z[idx]
-                m1 = mass1[idx]
-                m2 = mass2[idx]
                 bestChirpmass = bestMasses[0] * (bestMasses[1])**(3./5.)
     return xiextrema
 

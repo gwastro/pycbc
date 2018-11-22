@@ -1,10 +1,10 @@
-""" This module provides functionality to extend mpld3 
+""" This module provides functionality to extend mpld3
 """
 import mpld3, mpld3.plugins, mpld3.utils
 
 class ClickLink(mpld3.plugins.PluginBase):
     """Plugin for following a link on click"""
-    
+
     JAVASCRIPT = """
     mpld3.register_plugin("clicklink", ClickLink);
     ClickLink.prototype = Object.create(mpld3.Plugin.prototype);
@@ -16,13 +16,13 @@ class ClickLink(mpld3.plugins.PluginBase):
     function ClickLink(fig, props){
         mpld3.Plugin.call(this, fig, props);
     };
-    
+
     ClickLink.prototype.draw = function(){
         var obj = mpld3.get_element(this.props.id);
         var links = this.props.links;
-        
+
         obj.elements().on("mousedown",
-                          function(d, i){ 
+                          function(d, i){
                                            window.open(links[i]);
                                         }
                           );
@@ -33,7 +33,7 @@ class ClickLink(mpld3.plugins.PluginBase):
                       "id": mpld3.utils.get_id(points),
                       "links": links,
                       }
-                 
+
 class MPLSlide(mpld3.plugins.PluginBase):
     JAVASCRIPT = """
          mpld3.Axes.prototype.zoomed = function(propagate) {
@@ -59,7 +59,7 @@ class MPLSlide(mpld3.plugins.PluginBase):
               this.elements[i].zoomed();
             }
           };
-        
+
             mpld3.ZoomPlugin = mpld3_ZoomPlugin;
             mpld3.register_plugin("zoom", mpld3_ZoomPlugin);
             mpld3_ZoomPlugin.prototype = Object.create(mpld3.Plugin.prototype);
@@ -101,14 +101,14 @@ class MPLSlide(mpld3.plugins.PluginBase):
             mpld3_ZoomPlugin.prototype.draw = function() {
                 if (this.props.enabled) this.fig.enable_zoom(); else this.fig.disable_zoom();
             };
-        """   
+        """
     def __init__(self, button=True, enabled=None):
         if enabled is None:
             enabled = not button
         self.dict_ = {"type": "zoom",
                       "button": button,
                       "enabled": enabled}
-                      
+
 class Tooltip(mpld3.plugins.PointHTMLTooltip):
     JAVASCRIPT = ""
     def __init__(self, points, labels=None,

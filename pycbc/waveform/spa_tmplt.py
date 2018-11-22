@@ -1,4 +1,4 @@
-#  Adapted from code in LALSimInspiralTaylorF2.c 
+#  Adapted from code in LALSimInspiralTaylorF2.c
 #
 #  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Thomas Cokelaer
 #  Copyright (C) 2012 Leo Singer, Alex Nitz
@@ -30,7 +30,7 @@ from pycbc.waveform.utils import ceilpow2
 def findchirp_chirptime(m1, m2, fLower, porder):
     # variables used to compute chirp time
     m1 = float(m1)
-    m2 = float(m2) 
+    m2 = float(m2)
     m = m1 + m2
     eta = m1 * m2 / m / m
     c0T = c2T = c3T = c4T = c5T = c6T = c6LogT = c7T = 0.
@@ -43,7 +43,11 @@ def findchirp_chirptime(m1, m2, fLower, porder):
         c7T = lal.PI * (14809.0 * eta * eta / 378.0 - 75703.0 * eta / 756.0 - 15419335.0 / 127008.0)
 
     if porder >= 6:
-        c6T = lal.GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 + lal.PI * lal.PI * 128.0 / 3.0 + eta * (3147553127.0 / 3048192.0 - lal.PI * lal.PI * 451.0 / 12.0) - eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 + numpy.log(4.0) * 6848.0 / 105.0
+        c6T = lal.GAMMA * 6848.0 / 105.0 - 10052469856691.0 / 23471078400.0 +\
+            lal.PI * lal.PI * 128.0 / 3.0 + \
+            eta * (3147553127.0 / 3048192.0 - lal.PI * lal.PI * 451.0 / 12.0) -\
+            eta * eta * 15211.0 / 1728.0 + eta * eta * eta * 25565.0 / 1296.0 +\
+            eta * eta * eta * 25565.0 / 1296.0 + numpy.log(4.0) * 6848.0 / 105.0
         c6LogT = 6848.0 / 105.0
 
     if porder >= 5:
@@ -55,7 +59,7 @@ def findchirp_chirptime(m1, m2, fLower, porder):
         c2T = 743.0 / 252.0 + eta * 11.0 / 3.0
         c0T = 5.0 * m * lal.MTSUN_SI / (256.0 * eta)
 
-    # This is the PN parameter v evaluated at the lower freq. cutoff 
+    # This is the PN parameter v evaluated at the lower freq. cutoff
     xT = pow (lal.PI * m * lal.MTSUN_SI * fLower, 1.0 / 3.0)
     x2T = xT * xT
     x3T = xT * x2T
@@ -65,12 +69,12 @@ def findchirp_chirptime(m1, m2, fLower, porder):
     x7T = x3T * x4T
     x8T = x4T * x4T
 
-    # Computes the chirp time as tC = t(v_low)    
-    # tC = t(v_low) - t(v_upper) would be more    
-    # correct, but the difference is negligble.   
+    # Computes the chirp time as tC = t(v_low)
+    # tC = t(v_low) - t(v_upper) would be more
+    # correct, but the difference is negligble.
 
-    # This formula works for any PN order, because 
-    # higher order coeffs will be set to zero.     
+    # This formula works for any PN order, because
+    # higher order coeffs will be set to zero.
     return c0T * (1 + c2T * x2T + c3T * x3T + c4T * x4T + c5T * x5T + (c6T + c6LogT * numpy.log(xT)) * x6T + c7T * x7T) / x8T
 
 def spa_length_in_time(**kwds):
@@ -93,9 +97,7 @@ def spa_amplitude_factor(**kwds):
     m1 = kwds['mass1']
     m2 = kwds['mass2']
 
-    dist = 10e6 * lal.PC_SI
-
-    mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
+    _, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 
     FTaN = 32.0 * eta*eta / 5.0
     dETaN = 2 * -eta/2.0
@@ -151,9 +153,12 @@ def spa_tmplt_engine(htilde, kmin, phase_order, delta_f, piM, pfaN,
                      pfa6, pfl6, pfa7, amp_factor):
     """ Calculate the spa tmplt phase
     """
+    err_msg = "This function is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 def spa_tmplt(**kwds):
-    """
+    """ Generate a minimal TaylorF2 approximant with optimations for the sin/cos
     """
     # Pull out the input arguments
     f_lower = kwds['f_lower']
@@ -164,7 +169,7 @@ def spa_tmplt(**kwds):
     s1z = kwds['spin1z']
     s2z = kwds['spin2z']
     phase_order = int(kwds['phase_order'])
-    amplitude_order = int(kwds['amplitude_order'])
+    #amplitude_order = int(kwds['amplitude_order'])
     spin_order = int(kwds['spin_order'])
 
     if 'out' in kwds:
@@ -174,10 +179,21 @@ def spa_tmplt(**kwds):
 
     amp_factor = spa_amplitude_factor(mass1=mass1, mass2=mass2) / distance
 
-    #Calculate the PN terms 
-    phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(mass1, 
-                                        mass2, s1z, s2z, 1, 1, spin_order)
-                                           
+    lal_pars = lal.CreateDict()
+    if phase_order != -1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNPhaseOrder(
+            lal_pars, phase_order)
+
+    if spin_order != -1:
+        lalsimulation.SimInspiralWaveformParamsInsertPNSpinOrder(
+            lal_pars, spin_order)
+
+    #Calculate the PN terms
+    phasing = lalsimulation.SimInspiralTaylorF2AlignedPhasing(
+                                    float(mass1), float(mass2),
+                                    float(s1z), float(s2z),
+                                    lal_pars)
+
     pfaN = phasing.v[0]
     pfa2 = phasing.v[2] / pfaN
     pfa3 = phasing.v[3] / pfaN
@@ -185,7 +201,7 @@ def spa_tmplt(**kwds):
     pfa5 = phasing.v[5] / pfaN
     pfa6 = (phasing.v[6] - phasing.vlogv[6] * log(4)) / pfaN
     pfa7 = phasing.v[7] / pfaN
-    
+
     pfl5 = phasing.vlogv[5] / pfaN
     pfl6 = phasing.vlogv[6] / pfaN
 

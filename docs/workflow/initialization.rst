@@ -32,7 +32,7 @@ To attempt to solve this the workflow module has a number of features
 
 * Multiple configuration files: You can now supply multiple configuration files to, for e.g. identify a file containing only injection generation parameters, which a user may want to change often. It is even possible to have sections split across files, so one could have a configuration file of key options, ones that might be changed, and another file of "leave alone" options.
 * Direct command line options: In the workflow module command line options are not drawn from obscure sections, they correspond one-to-one with the executables. Options in the [inspiral] section will be sent to the inspiral executable and *only* to the inspiral executable.
-* Combined sections: To avoid the issue of specifiying common options repeatedly we have allowed the ability of combined sections. So if you have two executables with a large set of shared options you can specify a [exe1&exe2] section to provide the shared options and [exe1] and [exe2] sections to supply the individual options.
+* Combined sections: To avoid the issue of specifiying common options repeatedly we have allowed the ability of combined sections. So if you have two executables with a large set of shared options you can specify a [exe1&exe2] section to provide the shared options and [exe1] and [exe2] sections to supply the individual options. One can also use the [sharedoptions-NAME] sections to acheive the same thing.
 * Interpolation: As in configparser 3.0+ we have the ability to specify an option in one place and use an interpolation string to also provide it in other places, this is described below.
 * Tags/subsections: In some cases options may only need to be sent to certain jobs, or you may want to call individual modules multiple times and do different things. To accomodate this the workflow module includes a tagging (or subsections) system to provide options to only a subset of jobs, or to a specific call to a module. For example, options in [inspiral] are sent to all inspiral jobs, options in [inspiral-h1] would be sent to inspiral jobs running only on h1 data.
 * Executable expanding: The workflow module includes macros to enable the user to more easily specify executable paths. For example $(which:exe1} will be expanded to the location of exe1 in the users path automatically.
@@ -96,6 +96,12 @@ The [workflow] section must contain two entries
 * end-time=END
 
 which are used to tell the workflow that is only to consider times in [START,END) for analysis. These will often be supplied as override options directly on the command line.
+
+Another optional entry in the [workflow] section, that we recommend be used is the:
+
+* file-retention-level = all_files
+
+entry. This can take one of 4 values: "all_files", "all_triggers", "merged_triggers" or "results". These specify how many files produced during the workflow should be stored after the workflow finishes. With "all_files", which is the default value, everything produced in the workflow will be stored. With "results" only the critical result files are stored. "all_triggers" and "merged_triggers" store some subset of the full set of files. Defining whether a file should be stored under each of these levels is the job of the Executable class, which carries a current_retention_level attribute (one of executable.INTERMEDIATE_PRODUCT, executable.ALL_TRIGGERS, executable.MERGED_TRIGGERS or executable.FINAL_RESULT). When building workflows one can set this atrribute when creating executable instances to set under what conditions a file should be stored.
 
 It is okay to store other *important and widely used* values in here. You might often see cases where channel names are given here as these are sent to a number of codes on the command line, and it is easier to refer to them here, at the very top of the .ini file, so that the user can more easily see and change such values.
 
@@ -249,7 +255,39 @@ Similar macros can be added as needed, but these should be limited to avoid name
 Example complete workflow .ini file
 ------------------------------------
 
-Please see the examples on the main workflow module page for some examples of complete .ini files and example workflows.
+Please see individual workflow documentation pages for some examples of complete .ini files and example workflows.
+
+========================
+[sharedoptions] section
+========================
+
+An alternative to the [exe1&exe2] section, especially when options are split
+well into groups of options, is to use the [sharedoptions] section. An example of this follows::
+
+  [sharedoptions]
+  massranges = exe1,exe2,exe3-mass
+  metric = exe1,exe2-range,exe3-metric, exe5
+
+  [sharedoptions-massranges]
+  min-mass1 = 2.0
+  max-mass1 = 48.0
+  min-mass2 = 2.0
+  max-mass2 = 48.0
+  max-total-mass = 4.2
+  min-total-mass = 4.0
+  max-eta = 0.25
+  max-ns-spin-mag = 0.9899
+  max-bh-spin-mag = 0.9899
+
+  [sharedoptions-metric]
+  pn-order = threePointFivePN
+  f0 = 70.0
+  f-low = 30.0
+  f-upper = 1100.0
+  delta-f = 0.01
+
+This will ensure that all options in [sharedoptions-massranges] are added to the [exe1], [exe2] and [exe3-mass] sections. All options in [sharedoptions-metric] are added to [exe1], [exe2-range], [exe-metric] and [exe5].
+
 
 =====================
 Code documentation

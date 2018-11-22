@@ -306,9 +306,9 @@ def load_ns_sequence(eos_name):
         #ns_sequence_path = os.path.join(NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
-        print 'Only the 2H EOS is currently supported!'
-        print 'If you plan to use a different NS EOS, be sure not to filter'
-        print 'too many templates!\n'
+        print('Only the 2H EOS is currently supported!')
+        print('If you plan to use a different NS EOS, be sure not to filter')
+        print('too many templates!\n')
         raise Exception('Unsupported EOS!')
 
     max_ns_g_mass = max(ns_sequence[:,0])
@@ -442,8 +442,8 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     """
     # Sanity checks
     if not (eta>0. and eta<=0.25 and abs(chi)<=1):
-        print 'The BH spin magnitude must be <=1 and eta must be between 0 and 0.25'
-        print 'This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}\n'.format(ns_b_mass, eta, chi, incl)
+        print('The BH spin magnitude must be <=1 and eta must be between 0 and 0.25')
+        print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
         raise Exception('Unphysical parameters!')
 
     # Binary mass ratio define to be > 1
@@ -455,10 +455,10 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 
     # Sanity checks
     if not (ns_compactness>0 and q>=1):
-        print 'A positive NS compactness and a mass ratio that is >1 must be obtained.'
-        print 'This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}'.format(ns_b_mass, eta, chi, incl)
-        print 'and obtained ns_compactness={0} and q={1}.'.format(ns_compactness, q)
-        print 'SOMETHING WENT WRONG!!\n'
+        print('A positive NS compactness and a mass ratio that is >1 must be obtained.')
+        print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}'.format(ns_b_mass, eta, chi, incl))
+        print('and obtained ns_compactness={0} and q={1}.'.format(ns_compactness, q))
+        print('SOMETHING WENT WRONG!!\n')
         raise Exception('Unphysical parameters!')
 
     # Calculate the dimensionless parameter kappa
@@ -469,10 +469,10 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 
     #Sanity checks
     if not abs(chi_eff)<=1:
-        print 'The effective BH spin magnitude must be <=1'
-        print 'This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}'.format(ns_b_mass, eta, chi, incl)
-        print 'and obtained chi_eff={0}.'.format(chi_eff)
-        print 'SOMETHING WENT WRONG!!\n'
+        print('The effective BH spin magnitude must be <=1')
+        print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}'.format(ns_b_mass, eta, chi, incl))
+        print('and obtained chi_eff={0}.'.format(chi_eff))
+        print('SOMETHING WENT WRONG!!\n')
         raise Exception('Unphysical parameters!')
 
     # Taking the 1st element with full_output=1 avoids some annoying messages on stdout
@@ -668,7 +668,7 @@ def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, d
     # making sure maxima and minima are included
     mNS_nsamples = complex(0,int(np.ceil((mNS_max-mNS_min)/delta_mNS)+1))
     sBH_nsamples = complex(0,int(np.ceil((sBH_max-sBH_min)/delta_sBH)+1))
-    mNS_vec, sBH_vec = np.mgrid[mNS_min:mNS_max:mNS_nsamples, sBH_min:sBH_max:sBH_nsamples]
+    mNS_vec, sBH_vec = np.mgrid[mNS_min:mNS_max:mNS_nsamples, sBH_min:sBH_max:sBH_nsamples] # pylint:disable=invalid-slice-index
     mNS_locations = np.array(mNS_vec[:,0])
     sBH_locations = np.array(sBH_vec[0])
     mNS_sBH_grid = zip(mNS_vec.ravel(), sBH_vec.ravel())
@@ -679,7 +679,7 @@ def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, d
     # Until a numpy v>=1.7 is available everywhere, we have to use a silly
     # vectorization of find_em_constraint_data_point and pass to it a bunch of
     # constant arguments as vectors with one entry repeated several times
-    eos_name_vec=[eos_name for i in range(len(mNS_vec))]
+    eos_name_vec=[eos_name for _ in range(len(mNS_vec))]
     eos_name_vec=np.array(eos_name_vec)
     threshold_vec=np.empty(len(mNS_vec))
     threshold_vec.fill(threshold)

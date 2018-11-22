@@ -17,7 +17,6 @@
 import copy
 import numpy
 import logging
-from pycbc import pnutils
 from pycbc.tmpltbank import coord_utils
 
 class PartitionedTmpltbank(object):
@@ -56,11 +55,12 @@ class PartitionedTmpltbank(object):
         bin_spacing : float
             The metric distance to space the bins by. NOTE: If you want to
             place the bins to have a width corresponding to a minimal match of
-            0.97 you would set this to (1 - 0.97)**0.5. Note the square root,
+            0.97 you would set this to :math:`(1 - 0.97)^{0.5}`.
+            Note the square root,
             matches correspond to the square of parameter space distance.
         bin_range_check : int
             When computing matches consider points in the corresponding bin and
-            all bins +/- this value in both chi_1 and chi_2 directions. 
+            all bins +/- this value in both chi_1 and chi_2 directions.
             DEFAULT = 1.
         """
         # Flags to be used in other methods of this class. Initialized here for
@@ -117,22 +117,30 @@ class PartitionedTmpltbank(object):
         self.bin_loop_order = coord_utils.outspiral_loop(self.bin_range_check)
 
     def get_point_from_bins_and_idx(self, chi1_bin, chi2_bin, idx):
-        """
+        """Find masses and spins given bin numbers and index.
+
         Given the chi1 bin, chi2 bin and an index, return the masses and spins
         of the point at that index. Will fail if no point exists there.
 
         Parameters
         -----------
         chi1_bin : int
+            The bin number for chi1.
         chi2_bin : int
+            The bin number for chi2.
         idx : int
+            The index within the chi1, chi2 bin.
 
         Returns
         --------
         mass1 : float
+            Mass of heavier body.
         mass2 : float
+            Mass of lighter body.
         spin1z : float
+            Spin of heavier body.
         spin2z : float
+            Spin of lighter body.
         """
         mass1 = self.massbank[chi1_bin][chi2_bin]['mass1s'][idx]
         mass2 = self.massbank[chi1_bin][chi2_bin]['mass2s'][idx]
@@ -185,7 +193,7 @@ class PartitionedTmpltbank(object):
             Index of the chi_2 bin.
         """
         # Identify bin
-        chi1_bin = int((chi_coords[0] - self.chi1_min) // self.bin_spacing) 
+        chi1_bin = int((chi_coords[0] - self.chi1_min) // self.bin_spacing)
         chi2_bin = int((chi_coords[1] - self.chi2_min) // self.bin_spacing)
         self.check_bin_existence(chi1_bin, chi2_bin)
         return chi1_bin, chi2_bin
@@ -212,12 +220,12 @@ class PartitionedTmpltbank(object):
              (chi2_bin > self.max_chi2_bin-bin_range_check) ):
             for temp_chi1 in xrange(chi1_bin-bin_range_check,
                                                    chi1_bin+bin_range_check+1):
-                if not self.massbank.has_key(temp_chi1):
+                if temp_chi1 not in self.massbank:
                     self.massbank[temp_chi1] = {}
                     self.bank[temp_chi1] = {}
-                for temp_chi2 in xrange(chi2_bin-bin_range_check, 
+                for temp_chi2 in xrange(chi2_bin-bin_range_check,
                                                    chi2_bin+bin_range_check+1):
-                    if not self.massbank[temp_chi1].has_key(temp_chi2):
+                    if temp_chi2 not in self.massbank[temp_chi1]:
                         self.massbank[temp_chi1][temp_chi2] = {}
                         self.massbank[temp_chi1][temp_chi2]['mass1s'] =\
                                                                 numpy.array([])
@@ -253,7 +261,7 @@ class PartitionedTmpltbank(object):
                 if dist < min_dist:
                     min_dist = dist
                     indexes = (curr_chi1_bin, curr_chi2_bin, idx)
-        return min_dist, indexes            
+        return min_dist, indexes
 
     def test_point_distance(self, chi_coords, distance_threshold):
         """
@@ -265,11 +273,11 @@ class PartitionedTmpltbank(object):
         chi_coords : numpy.array
             The position of the point in the chi coordinates.
         distance_threshold : float
-            The **SQUARE ROOT* of the metric distance to test as threshold.
+            The **SQUARE ROOT** of the metric distance to test as threshold.
             E.g. if you want to test to a minimal match of 0.97 you would
             use 1 - 0.97 = 0.03 for this value.
 
-        Returns 
+        Returns
         --------
         Boolean
             True if point is within the distance threshold. False if not.
@@ -332,9 +340,9 @@ class PartitionedTmpltbank(object):
             # vecs1 gives a 2x2 vector: idx0 = stored index, idx1 = mu index
             vecs1 = mus[freq_idxes, :]
             # vecs2 gives a 2x2 vector: idx0 = stored index, idx1 = mu index
-            range_idx = numpy.arange(len(freq_idxes))
-            vecs2 = curr_bank['mus'][range_idx,freq_idx,:]
-            
+            range_idxes = numpy.arange(len(freq_idxes))
+            vecs2 = curr_bank['mus'][range_idxes, freq_idxes, :]
+
             # Now do the sums
             dists = (vecs1 - vecs2)*(vecs1 - vecs2)
             # This reduces to 1D: idx = stored index
@@ -352,7 +360,7 @@ class PartitionedTmpltbank(object):
 
         return min_dist, indexes
 
-    def test_point_distance_vary(self, chi_coords, point_fupper, mus, 
+    def test_point_distance_vary(self, chi_coords, point_fupper, mus,
                                  distance_threshold):
         """
         Test if distance between point and the bank is greater than distance
@@ -373,11 +381,11 @@ class PartitionedTmpltbank(object):
             holds the coordinates in the [not covaried] mu parameter space for
             each value of the upper frequency cutoff.
         distance_threshold : float
-            The **SQUARE ROOT* of the metric distance to test as threshold.
+            The **SQUARE ROOT** of the metric distance to test as threshold.
             E.g. if you want to test to a minimal match of 0.97 you would
             use 1 - 0.97 = 0.03 for this value.
 
-        Returns 
+        Returns
         --------
         Boolean
             True if point is within the distance threshold. False if not.
@@ -427,7 +435,7 @@ class PartitionedTmpltbank(object):
         Add a point to the partitioned template bank. The point_fupper and mus
         kwargs must be provided for all templates if the vary fupper capability
         is desired. This requires that the chi_coords, as well as mus and
-        point_fupper if needed, to be precalculated. If you just have the 
+        point_fupper if needed, to be precalculated. If you just have the
         masses and don't want to worry about translations see
         add_point_by_masses, which will do translations and then call this.
 
@@ -448,12 +456,12 @@ class PartitionedTmpltbank(object):
         mus : numpy.array
             A 2D array where idx 0 holds the upper frequency cutoff and idx 1
             holds the coordinates in the [not covaried] mu parameter space for
-            each value of the upper frequency cutoff.            
+            each value of the upper frequency cutoff.
         """
         chi1_bin, chi2_bin = self.find_point_bin(chi_coords)
         self.bank[chi1_bin][chi2_bin].append(copy.deepcopy(chi_coords))
         curr_bank = self.massbank[chi1_bin][chi2_bin]
-        
+
         if curr_bank['mass1s'].size:
             curr_bank['mass1s'] = numpy.append(curr_bank['mass1s'],
                                                numpy.array([mass1]))
@@ -529,23 +537,25 @@ class PartitionedTmpltbank(object):
             err_msg += "and spins."
             raise ValueError(err_msg)
 
-        # Get beta, sigma, gamma
-        tot_mass = mass1 + mass2
-        eta = mass1 * mass2 / (tot_mass * tot_mass)
-        beta, sigma, gamma, chis = pnutils.get_beta_sigma_from_aligned_spins(\
-                                                           eta, spin1z, spin2z)
-       
         # Get chi coordinates
-        chi_coords = coord_utils.get_cov_params(tot_mass, eta, beta, sigma,
-                               gamma, chis, self.metric_params, self.ref_freq)
+        chi_coords = coord_utils.get_cov_params(mass1, mass2, spin1z, spin2z,
+                                                self.metric_params,
+                                                self.ref_freq)
 
         # Get mus and best fupper for this point, if needed
         if vary_fupper:
+            mass_dict = {}
+            mass_dict['m1'] = numpy.array([mass1])
+            mass_dict['m2'] = numpy.array([mass2])
+            mass_dict['s1z'] = numpy.array([spin1z])
+            mass_dict['s2z'] = numpy.array([spin2z])
+            freqs = numpy.array([self.frequency_map.keys()], dtype=float)
             freq_cutoff = coord_utils.return_nearest_cutoff(\
-                         self.upper_freq_formula, tot_mass, self.frequency_map)
-            lambdas = coord_utils.get_chirp_params(tot_mass, eta, beta, sigma,
-                                           gamma, chis, self.metric_params.f0,
-                                           self.metric_params.pnOrder)
+                                     self.upper_freq_formula, mass_dict, freqs)
+            freq_cutoff = freq_cutoff[0]
+            lambdas = coord_utils.get_chirp_params\
+                (mass1, mass2, spin1z, spin2z, self.metric_params.f0,
+                 self.metric_params.pnOrder)
             mus = []
             for freq in self.frequency_map:
                 mus.append(coord_utils.get_mu_params(lambdas,
@@ -557,7 +567,7 @@ class PartitionedTmpltbank(object):
 
         self.add_point_by_chi_coords(chi_coords, mass1, mass2, spin1z, spin2z,
                                point_fupper=freq_cutoff, mus=mus)
-   
+
 
     def add_tmpltbank_from_xml_table(self, sngl_table, vary_fupper=False):
         """
@@ -576,12 +586,35 @@ class PartitionedTmpltbank(object):
             self.add_point_by_masses(sngl.mass1, sngl.mass2, sngl.spin1z,
                                      sngl.spin2z, vary_fupper=vary_fupper)
 
-    def output_all_points(self):
+    def add_tmpltbank_from_hdf_file(self, hdf_fp, vary_fupper=False):
         """
-        Return all point in the bank as lists of m1, m2, spin1z, spin2z.
+        This function will take a pointer to an open HDF File object containing
+        a list of templates and add them into the partitioned template bank
+        object.
+
+        Parameters
+        -----------
+        hdf_fp : h5py.File object
+            The template bank in HDF5 format.
+        vary_fupper : False
+            If given also include the additional information needed to compute
+            distances with a varying upper frequency cutoff.
+        """
+        mass1s = hdf_fp['mass1'][:]
+        mass2s = hdf_fp['mass2'][:]
+        spin1zs = hdf_fp['spin1z'][:]
+        spin2zs = hdf_fp['spin2z'][:]
+        for idx in xrange(len(mass1s)):
+            self.add_point_by_masses(mass1s[idx], mass2s[idx], spin1zs[idx],
+                                     spin2zs[idx], vary_fupper=vary_fupper)
+
+    def output_all_points(self):
+        """Return all points in the bank.
+
+        Return all points in the bank as lists of m1, m2, spin1z, spin2z.
 
         Returns
-        --------
+        -------
         mass1 : list
             List of mass1 values.
         mass2 : list

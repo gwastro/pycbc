@@ -33,6 +33,9 @@ import pycbc.psd
 import pycbc.pnutils
 from pycbc import pnutils
 from pycbc.types import Array
+from pycbc.filter import match
+from pycbc.waveform import get_fd_waveform
+from six.moves import range
 import difflib
 import sys
 import matplotlib
@@ -72,7 +75,7 @@ def update_mass_parameters(tmpltbank_class):
     max_iter_idx = num_comp_masses * num_tot_masses *\
                    num_chirp_masses * num_etas
 
-    for idx in xrange(max_iter_idx):
+    for idx in range(max_iter_idx):
         comp_masses_idx = idx % num_comp_masses
         tmpltbank_class.min_mass1 = min_mass1[comp_masses_idx]
         tmpltbank_class.max_mass1 = max_mass1[comp_masses_idx]
@@ -91,7 +94,7 @@ def update_mass_parameters(tmpltbank_class):
         tmpltbank_class.max_eta = max_eta[eta_idx]
         tmpltbank_class.min_eta = min_eta[eta_idx]
         yield idx
-   
+
     return
 
 class TmpltbankTestClass(unittest.TestCase):
@@ -109,7 +112,7 @@ class TmpltbankTestClass(unittest.TestCase):
         self.f_upper = 2000
         self.f0 = 70
         self.sampleRate = 4096
-        self.pnOrder = 'taylorF4_45PN'
+        self.pnOrder = 'threePointFivePN'
         self.min_mass1 = 1
         self.min_mass2 = 1
         self.max_mass1 = 5
@@ -133,15 +136,19 @@ class TmpltbankTestClass(unittest.TestCase):
         self.ethincaFreqStep = 10.
 
         self.segLen = 1./self.deltaF
-        self.psdSize = int(self.segLen * self.sampleRate) / 2. + 1
+        self.psdSize = int(self.segLen * self.sampleRate / 2.) + 1
 
         self.psd = pycbc.psd.from_txt('%sZERO_DET_high_P.txt' %(self.dataDir),\
                 self.psdSize, self.deltaF, self.f_low, is_asd_file=True)
+        match_psd_size = int(256 * self.sampleRate / 2.) + 1
+        self.psd_for_match = pycbc.psd.from_txt\
+            ('%sZERO_DET_high_P.txt' %(self.dataDir), match_psd_size,
+             1./256., self.f_low, is_asd_file=True)
 
         metricParams = pycbc.tmpltbank.metricParameters(self.pnOrder,\
                          self.f_low, self.f_upper, self.deltaF, self.f0)
         metricParams.psd = self.psd
-        
+
         massRangeParams = pycbc.tmpltbank.massRangeParameters(self.min_mass1,\
                             self.max_mass1, self.min_mass2, self.max_mass2,\
                             maxNSSpinMag=self.max_ns_spin_mag,\
@@ -152,7 +159,7 @@ class TmpltbankTestClass(unittest.TestCase):
                             min_chirp_mass=self.min_chirp_mass,\
                             maxEta=self.max_eta,\
                             minEta=self.min_eta,\
-                            ns_bh_boundary_mass=self.ns_bh_boundary_mass) 
+                            ns_bh_boundary_mass=self.ns_bh_boundary_mass)
 
         # And again with the nsbh flag
         massRangeParams2 = pycbc.tmpltbank.massRangeParameters(self.min_mass1,\
@@ -195,6 +202,8 @@ class TmpltbankTestClass(unittest.TestCase):
         maxEval = max(evalsStock)
         evalsCurr = Array(self.metricParams.evals[self.f_upper])
         evecsCurr = Array(self.metricParams.evecs[self.f_upper])
+        numpy.savetxt('newEvals.dat', evalsCurr)
+        numpy.savetxt('newEvecs.dat', evecsCurr)
         errMsg = "pycbc.tmpltbank.determine_eigen_directions has failed "
         errMsg += "sanity check."
         evalsDiff = abs(evalsCurr - evalsStock)/maxEval
@@ -249,10 +258,10 @@ class TmpltbankTestClass(unittest.TestCase):
                     pass
                 else:
                     err_msg = "Minimum total mass changed unexpectedly."
-                    print self.min_total_mass, curr_min_mass
-                    print self.min_mass1, self.min_mass2, min_comp_mass
-                    print min_eta, self.min_eta, self.max_eta
-                    print min_chirp_mass, self.min_chirp_mass
+                    print(self.min_total_mass, curr_min_mass)
+                    print(self.min_mass1, self.min_mass2, min_comp_mass)
+                    print(min_eta, self.min_eta, self.max_eta)
+                    print(min_chirp_mass, self.min_chirp_mass)
                     self.fail(err_msg)
             if not self.max_total_mass == curr_max_mass:
                 max_comp_mass = self.max_mass1 + self.max_mass2
@@ -299,20 +308,12 @@ class TmpltbankTestClass(unittest.TestCase):
                                 minEta=self.min_eta,\
                                 nsbhFlag=True)
 
-            mass,eta,beta,sigma,gamma,spin1z,spin2z = \
-                      pycbc.tmpltbank.get_random_mass(100000, massRangeParams)
+            mass1, mass2, spin1z, spin2z = \
+                 pycbc.tmpltbank.get_random_mass(100000, massRangeParams)
+            mass = mass1 + mass2
             errMsg = "pycbc.tmpltbank.get_random_mass returns invalid ranges."
-            if (mass < self.min_total_mass).any():
-                idx = mass.argmin()
-                diff = (mass*mass * (1-4*eta))**0.5
-                mass1 = (mass + diff)/2.
-                mass2 = (mass - diff)/2.
             self.assertTrue(not (mass < self.min_total_mass).any(),msg=errMsg)
             self.assertTrue(not (mass > self.max_total_mass).any(),msg=errMsg)
-            # Get individual masses
-            diff = (mass*mass * (1-4*eta))**0.5
-            mass1 = (mass + diff)/2.
-            mass2 = (mass - diff)/2.
             self.assertTrue(not (mass1 > self.max_mass1 * 1.001).any(),
                             msg=errMsg)
             self.assertTrue(not (mass1 < self.min_mass1 * 0.999).any(),
@@ -340,7 +341,7 @@ class TmpltbankTestClass(unittest.TestCase):
             bhSpin1 = spin1z[mass1 > self.ns_bh_boundary_mass]
             bhSpin2 = spin2z[mass2 > self.ns_bh_boundary_mass]
             self.assertTrue(not (abs(nsSpin1) > 0.5).any(), msg=errMsg)
-            self.assertTrue(not (abs(nsSpin2) > 0.5).any(), msg=errMsg) 
+            self.assertTrue(not (abs(nsSpin2) > 0.5).any(), msg=errMsg)
             self.assertTrue(not (abs(bhSpin1) > 0.9).any(), msg=errMsg)
             self.assertTrue(not (abs(bhSpin2) > 0.9).any(), msg=errMsg)
             # Check that *some* spins are bigger than 0.5
@@ -348,29 +349,59 @@ class TmpltbankTestClass(unittest.TestCase):
                 self.assertTrue((abs(bhSpin1) > 0.5).any(), msg=errMsg)
             if len(bhSpin2):
                 self.assertTrue((abs(bhSpin2) > 0.5).any(), msg=errMsg)
-            # This can be used to test the boundaries are all applied visually
-            # FIXME: This would need to be updated for all of the mass limits
-            #pylab.plot(mass1, mass2, 'b.')
-            #pylab.plot([3.0,5.0],[3.0,1.0],'r-')
-            #pylab.plot([1.7216566400945545,1.9921146662296347,3.4433132801891091,4.01175560949798],[1.1477710933963694,1.0066274466204264,2.2955421867927388,1.002938902374495],'mx')
-            #pylab.ylim([0.8,3.0])
-            #pylab.xlim([1.5,5.0])
-            #pylab.savefig("masses_%d.png" %(idx,))
 
             # Check nsbh flag
-            mass,eta,beta,sigma,gamma,spin1z,spin2z = \
+            mass1, mass2, spin1z, spin2z = \
                  pycbc.tmpltbank.get_random_mass(100000, massRangeParams2)
             self.assertTrue(not (abs(spin1z) > 0.9).any(), msg=errMsg)
             self.assertTrue(not (abs(spin2z) > 0.5).any(), msg=errMsg)
             self.assertTrue((abs(spin1z) > 0.5).any(), msg=errMsg)
 
+    def test_metric_match_prediction(self):
+        mass1a, mass2a, spin1za, spin2za = \
+                 pycbc.tmpltbank.get_random_mass(10, self.massRangeParams)
+        mass1b, mass2b, spin1zb, spin2zb = \
+                 pycbc.tmpltbank.get_random_mass(10, self.massRangeParams)
+        for idx in range(10):
+            masses1 = [mass1a[idx], mass2a[idx], spin1za[idx], spin2za[idx]]
+            masses2 = [mass1b[idx], mass2b[idx], spin1zb[idx], spin2zb[idx]]
+            dist, _, _ = pycbc.tmpltbank.get_point_distance \
+                (masses1,  masses2, self.metricParams, self.f_upper)
+            opt_dist = 0.02
+            while dist > opt_dist * 1.01  or dist < opt_dist * 0.99:
+                dist_fac = opt_dist / dist
+                dist_fac = dist_fac**0.5
+                if dist_fac < 0.01:
+                    dist_fac = 0.01
+                if dist_fac > 2:
+                    dist_fac = 2
+                for idx, curr_mass2 in enumerate(masses2):
+                    masses2[idx] = masses1[idx] + \
+                        (curr_mass2 - masses1[idx]) * dist_fac
+                dist, _, _ = pycbc.tmpltbank.get_point_distance \
+                    (masses1,  masses2, self.metricParams, self.f_upper)
+            self.assertFalse(numpy.isnan(dist))
+
+            htilde1, _ = get_fd_waveform\
+                (approximant='TaylorF2', mass1=masses1[0], mass2=masses1[1],
+                 spin1z=masses1[2], spin2z=masses1[3], delta_f=1.0/256,
+                 f_lower=15, f_final=2000)
+            htilde2, _ = get_fd_waveform\
+                (approximant='TaylorF2', mass1=masses2[0], mass2=masses2[1],
+                 spin1z=masses2[2], spin2z=masses2[3], delta_f=1.0/256,
+                 f_lower=15, f_final=2000)
+            overlap, _ = match(htilde1, htilde2, psd=self.psd_for_match,
+                            low_frequency_cutoff=15)
+            self.assertTrue(overlap > 0.97 and overlap < 0.985)
+
+
     def test_chirp_params(self):
-        chirps=pycbc.tmpltbank.get_chirp_params(4, 0.24 ,0.2 ,0.2 ,0.2 ,0.1, \
+        chirps=pycbc.tmpltbank.get_chirp_params(2.2, 1.8, 0.2, 0.3,
                               self.metricParams.f0, self.metricParams.pnOrder)
         stockChirps = numpy.loadtxt('%sstockChirps.dat'%(self.dataDir))
         diff = (chirps - stockChirps) / stockChirps
         errMsg = "Calculated chirp params differ from that expected."
-        self.assertTrue( not (diff > 1E-4).any(), msg=errMsg)
+        self.assertTrue( not (abs(diff) > 1E-4).any(), msg=errMsg)
 
     def test_hexagonal_placement(self):
         arrz = pycbc.tmpltbank.generate_hexagonal_lattice(10, 0, 10, 0, 0.03)
@@ -403,21 +434,17 @@ class TmpltbankTestClass(unittest.TestCase):
     def test_get_phys_cov_masses(self):
         evecs = self.metricParams.evecs[self.f_upper]
         evals = self.metricParams.evals[self.f_upper]
-        masses1 = [4,0.25,0.4,0.3]
-        masses2 = [4.01,0.249,0.41,0.29]
-        spinSet1 = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
-                     masses1[1], masses1[2], masses1[3])
-        spinSet2 = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
-                     masses2[1], masses2[2], masses2[3])
-        xis1 = pycbc.tmpltbank.get_cov_params(masses1[0], masses1[1], \
-                 spinSet1[0], spinSet1[1], spinSet1[2], spinSet1[3], \
-                 self.metricParams, self.f_upper)
-        xis2 = pycbc.tmpltbank.get_cov_params(masses2[0], masses2[1], \
-                 spinSet2[0], spinSet2[1], spinSet2[2], spinSet2[3], \
-                 self.metricParams, self.f_upper)
+        masses1 = [2.2,1.8,0.4,0.3]
+        masses2 = [2.21,1.79,0.41,0.29]
+        xis1 = pycbc.tmpltbank.get_cov_params(masses1[0], masses1[1],
+                 masses1[2], masses1[3], self.metricParams, self.f_upper)
+        xis2 = pycbc.tmpltbank.get_cov_params(masses2[0], masses2[1],
+                 masses2[2], masses2[3], self.metricParams, self.f_upper)
 
         testXis = [xis1[0],xis1[1]]
-        bestMasses = masses2
+        b_mtot, b_eta = pnutils.mass1_mass2_to_mtotal_eta(masses2[0],
+                                                          masses2[1])
+        bestMasses = [b_mtot, b_eta, masses2[2], masses2[3]]
         bestXis = xis2
         output = pycbc.tmpltbank.get_physical_covaried_masses(testXis, \
                    bestMasses, bestXis, 0.0001, self.massRangeParams, \
@@ -433,9 +460,8 @@ class TmpltbankTestClass(unittest.TestCase):
         etaT = output[0]*output[1] / (massT*massT)
         spinSetT = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
                      etaT, output[2], output[3])
-        xisT = pycbc.tmpltbank.get_cov_params(massT, etaT, \
-                 spinSetT[0], spinSetT[1], spinSetT[2], spinSetT[3], \
-                 self.metricParams, self.f_upper)
+        xisT = pycbc.tmpltbank.get_cov_params(output[0], output[1],
+                 output[2], output[3], self.metricParams, self.f_upper)
         errMsg = "Recovered xis do not agree with those expected."
         self.assertTrue( abs(xisT[0] - output[6][0]) < 1E-5, msg=errMsg)
         self.assertTrue( abs(xisT[1] - output[6][1]) < 1E-5, msg=errMsg)
@@ -453,13 +479,8 @@ class TmpltbankTestClass(unittest.TestCase):
         errMsg += 'failed to find a point within the desired limits.'
         self.assertTrue( diff < 1E-4,msg=errMsg)
         # Test that returned masses and xis agree
-        massT = output[0] + output[1]
-        etaT = output[0]*output[1] / (massT*massT)
-        spinSetT = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
-                     etaT, output[2], output[3])
-        xisT = pycbc.tmpltbank.get_cov_params(massT, etaT, \
-                 spinSetT[0], spinSetT[1], spinSetT[2], spinSetT[3], \
-                 self.metricParams, self.f_upper)
+        xisT = pycbc.tmpltbank.get_cov_params(output[0], output[1],
+                 output[2], output[3], self.metricParams, self.f_upper)
         errMsg = "Recovered xis do not agree with those expected."
         self.assertTrue( abs(xisT[0] - output[6][0]) < 1E-5, msg=errMsg)
         self.assertTrue( abs(xisT[1] - output[6][1]) < 1E-5, msg=errMsg)
@@ -470,20 +491,16 @@ class TmpltbankTestClass(unittest.TestCase):
         # Just run the function, no checking output
         evecs = self.metricParams.evecs[self.f_upper]
         evals = self.metricParams.evals[self.f_upper]
-        masses1 = [4,0.25,0.4,0.3]
-        masses2 = [4.01,0.249,0.41,0.29]
-        spinSet1 = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
-                     masses1[1], masses1[2], masses1[3])
-        spinSet2 = pycbc.pnutils.get_beta_sigma_from_aligned_spins(\
-                     masses2[1], masses2[2], masses2[3])
+        masses1 = [2.2,1.8,0.4,0.3]
+        masses2 = [2.21,1.79,0.41,0.29]
         xis1 = pycbc.tmpltbank.get_cov_params(masses1[0], masses1[1], \
-                 spinSet1[0], spinSet1[1], spinSet1[2], spinSet1[3], \
-                 self.metricParams, self.f_upper)
+                 masses1[2], masses1[3], self.metricParams, self.f_upper)
         xis2 = pycbc.tmpltbank.get_cov_params(masses2[0], masses2[1], \
-                 spinSet2[0], spinSet2[1], spinSet2[2], spinSet2[3], \
-                 self.metricParams, self.f_upper)
+                 masses2[2], masses2[3], self.metricParams, self.f_upper)
         testXis = [xis1[0],xis1[1]]
-        bestMasses = masses2
+        b_mtot, b_eta = pnutils.mass1_mass2_to_mtotal_eta(masses2[0],
+                                                          masses2[1])
+        bestMasses = [b_mtot, b_eta, masses2[2], masses2[3]]
         bestXis = xis2
 
         depths = pycbc.tmpltbank.stack_xi_direction_brute(testXis, \
@@ -495,8 +512,8 @@ class TmpltbankTestClass(unittest.TestCase):
         masses2 = [2.02,1.97,0.41,0.59]
         dist, xis1, xis2 = pycbc.tmpltbank.get_point_distance(masses1, \
                              masses2, self.metricParams, self.f_upper)
-        diff = abs((dist - 23.4019262742) / dist)
-  
+        diff = abs((dist - 23.3681922039) / dist)
+
         errMsg = "Obtained distance does not agree with expected value."
         self.assertTrue( diff < 1E-5, msg=errMsg)
 
@@ -523,7 +540,7 @@ class TmpltbankTestClass(unittest.TestCase):
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TmpltbankTestClass))
- 
+
 if  __name__ == '__main__':
     results = unittest.TextTestRunner(verbosity=2).run(suite)
     simple_exit(results)

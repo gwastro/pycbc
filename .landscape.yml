@@ -1,4 +1,3 @@
-doc-warnings: true
 test-warnings: no
 strictness: medium
 autodetect: yes
@@ -7,3 +6,21 @@ ignore-patterns:
     - test/*
     - docs/*
     - tools/*
+    - build/*
+    - dist/*
+    - PyCBC.egg-info/*
+
+pylint:
+  disable:
+  - too-many-arguments
+  - too-many-locals
+  - too-many-branches
+  - too-many-statements
+
+pyflakes:
+  disable:
+  - F841
+
+mccabe:
+  disable:
+  - MC0001

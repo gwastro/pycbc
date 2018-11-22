@@ -22,14 +22,14 @@ import tempfile
 import lal
 import pycbc
 from pycbc.types import TimeSeries
-from pycbc.detector import Detector
+from pycbc.detector import Detector, get_available_detectors
 from pycbc.inject import InjectionSet
 import unittest
 import numpy
 import itertools
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
-from glue.ligolw import utils
+from glue.ligolw import utils as ligolw_utils
 from utils import parse_args_cpu_only, simple_exit
 
 # Injection tests only need to happen on the CPU
@@ -38,7 +38,7 @@ parse_args_cpu_only("Injections")
 class MyInjection(object):
     def fill_sim_inspiral_row(self, row):
         # using dummy values for many fields, should work for our purposes
-        row.waveform = 'TaylorT4'
+        row.waveform = 'TaylorT4threePointFivePN'
         row.distance = self.distance
         total_mass = self.mass1 + self.mass2
         row.mass1 = self.mass1
@@ -85,6 +85,11 @@ class MyInjection(object):
 
 class TestInjection(unittest.TestCase):
     def setUp(self):
+        available_detectors = get_available_detectors()
+        available_detectors = [a[0] for a in available_detectors]
+        self.assertTrue('H1' in available_detectors)
+        self.assertTrue('L1' in available_detectors)
+        self.assertTrue('V1' in available_detectors)
         self.detectors = [Detector(d) for d in ['H1', 'L1', 'V1']]
         self.sample_rate = 4096.
         self.earth_time = lal.REARTH_SI / lal.C_SI
@@ -93,7 +98,7 @@ class TestInjection(unittest.TestCase):
         self.injections = []
         start_time = float(lal.GPSTimeNow())
         taper_choices = ('TAPER_NONE', 'TAPER_START', 'TAPER_END', 'TAPER_STARTEND')
-        for i, taper in zip(xrange(20), itertools.cycle(taper_choices)):
+        for i, taper in zip(range(20), itertools.cycle(taper_choices)):
             inj = MyInjection()
             inj.end_time = start_time + 40000 * i + \
                     numpy.random.normal(scale=3600)
@@ -115,7 +120,7 @@ class TestInjection(unittest.TestCase):
         # create sim inspiral table, link it to document and fill it
         sim_table = lsctables.New(lsctables.SimInspiralTable)
         xmldoc.childNodes[-1].appendChild(sim_table)
-        for i in xrange(len(self.injections)):
+        for i in range(len(self.injections)):
             row = sim_table.RowType()
             self.injections[i].fill_sim_inspiral_row(row)
             row.process_id = 'process:process_id:0'
@@ -124,14 +129,14 @@ class TestInjection(unittest.TestCase):
 
         # write document to temp file
         self.inj_file = tempfile.NamedTemporaryFile(suffix='.xml')
-        utils.write_fileobj(xmldoc, self.inj_file)
+        ligolw_utils.write_fileobj(xmldoc, self.inj_file)
 
     def test_injection_presence(self):
         """Verify presence of signals at expected times"""
         injections = InjectionSet(self.inj_file.name)
         for det in self.detectors:
             for inj in self.injections:
-                ts = TimeSeries(numpy.zeros(10 * self.sample_rate),
+                ts = TimeSeries(numpy.zeros(int(10 * self.sample_rate)),
                                 delta_t=1/self.sample_rate,
                                 epoch=lal.LIGOTimeGPS(inj.end_time - 5),
                                 dtype=numpy.float64)
@@ -140,7 +145,7 @@ class TestInjection(unittest.TestCase):
                 # FIXME could test amplitude and time more precisely
                 self.assertTrue(max_amp > 0 and max_amp < 1e-10)
                 time_error = ts.sample_times.numpy()[max_loc] - inj.end_time
-                self.assertTrue(abs(time_error) < 1.5 * self.earth_time)
+                self.assertTrue(abs(time_error) < 2 * self.earth_time)
 
     def test_injection_absence(self):
         """Verify absence of signals outside known injection times"""
@@ -151,7 +156,7 @@ class TestInjection(unittest.TestCase):
         injections = InjectionSet(self.inj_file.name)
         for det in self.detectors:
             for epoch in clear_times:
-                ts = TimeSeries(numpy.zeros(10 * self.sample_rate),
+                ts = TimeSeries(numpy.zeros(int(10 * self.sample_rate)),
                                 delta_t=1/self.sample_rate,
                                 epoch=lal.LIGOTimeGPS(epoch),
                                 dtype=numpy.float64)

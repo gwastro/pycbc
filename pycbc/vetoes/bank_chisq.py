@@ -48,9 +48,9 @@ def segment_snrs(filters, stilde, psd, low_frequency_cutoff):
     snrs = []
     norms = []
 
-    for i, bank_template in enumerate(filters):
+    for bank_template in filters:
         # For every template compute the snr against the stilde segment
-        snr, corr, norm = matched_filter_core(
+        snr, _, norm = matched_filter_core(
                 bank_template, stilde, h_norm=bank_template.sigmasq(psd),
                 psd=None, low_frequency_cutoff=low_frequency_cutoff)
         # SNR time series stored here
@@ -183,8 +183,8 @@ class SingleDetBankVeto(object):
             logging.info("Read in bank veto template bank")
             bank_veto_bank = FilterBank(bank_file,
                     self.seg_len_freq,
-                    self.delta_f, f_low,
-                    dtype=self.cdtype,
+                    self.delta_f, self.cdtype,
+                    low_frequency_cutoff=f_low,
                     approximant=approximant, **kwds)
 
             self.filters = list(bank_veto_bank)
@@ -216,7 +216,7 @@ class SingleDetBankVeto(object):
         Returns
         -------
         bank_chisq_from_filters: TimeSeries of bank veto values - if indices
-        is None then evaluated at all time samples, if not then only at 
+        is None then evaluated at all time samples, if not then only at
         requested sample indices
 
         bank_chisq_dof: int, approx number of statistical degrees of freedom
@@ -226,9 +226,23 @@ class SingleDetBankVeto(object):
             overlaps = self.cache_overlaps(template, psd)
             bank_veto_snrs, bank_veto_norms = self.cache_segment_snrs(stilde, psd)
             chisq = bank_chisq_from_filters(snrv, norm, bank_veto_snrs,
-                                            bank_veto_norms, overlaps, indices) 
+                                            bank_veto_norms, overlaps, indices)
             dof = numpy.repeat(self.dof, len(chisq))
             return chisq, dof
         else:
-            return None, None      
-                  
+            return None, None
+
+class SingleDetSkyMaxBankVeto(SingleDetBankVeto):
+    """Stub for precessing bank veto if anyone ever wants to code it up.
+    """
+    def __init__(self, *args, **kwds):
+        super(SingleDetSkyMaxBankVeto, self).__init__(*args, **kwds)
+
+    def values(self, *args, **kwargs):
+        if self.do:
+            err_msg = "Precessing single detector sky-max bank veto has not "
+            err_msg += "been written. If you want to use it, why not help "
+            err_msg += "write it?"
+            raise NotImplementedError(err_msg)
+        else:
+            return None, None

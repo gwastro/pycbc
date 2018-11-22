@@ -1,0 +1,40 @@
+###################################################
+Signal Processing with GW150914
+###################################################
+
+Here are some interesting examples of how to process LIGO data using GW150914
+as an example.
+
+=====================================
+Plotting the whitened strain
+=====================================
+
+.. plot:: ../examples/gw150914/gw150914_shape.py
+   :include-source:
+
+==============================================
+Calculate the signal-to-noise
+==============================================
+
+.. plot:: ../examples/gw150914/gw150914_h1_snr.py
+   :include-source:
+
+==============================================
+Listen to GW150914 in Hanford
+==============================================
+
+
+Here we'll make a frequency shifted and slowed version of GW150914 as
+it can be heard in the Hanford data. 
+
+.. literalinclude:: ../examples/gw150914/audio.py
+
+:download:`The audio <resources/gw150914_h1_chirp.wav>`
+
+Note, google chrome may not play wav files correctly, please download to listen.
+
+.. raw:: html
+    
+    <audio controls><source src='_downloads/gw150914_h1_chirp.wav' type='audio/wav'</audio>
+
+

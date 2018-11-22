@@ -19,9 +19,15 @@ This module provides a simple interface for loading a shared library via ctypes,
 allowing it to be specified in an OS-independent way and searched for preferentially
 according to the paths that pkg-config specifies.
 """
-import os, fnmatch, ctypes, commands, sys
+
+from __future__ import print_function
+import os, fnmatch, ctypes, sys, subprocess
 from ctypes.util import find_library
 from collections import deque
+try:
+    from subprocess import getoutput
+except ImportError:
+    from commands import getoutput
 
 def pkg_config(pkg_libraries):
     """Use pkg-config to query for the location of libraries, library directories,
@@ -34,7 +40,7 @@ def pkg_config(pkg_libraries):
            libraries(list), library_dirs(list), include_dirs(list)
     """
     libraries=[]
-    library_dirs=[] 
+    library_dirs=[]
     include_dirs=[]
 
     # Check that we have the packages
@@ -42,14 +48,14 @@ def pkg_config(pkg_libraries):
         if os.system('pkg-config --exists %s 2>/dev/null' % pkg) == 0:
             pass
         else:
-            print "Could not find library {0}".format(pkg)
+            print("Could not find library {0}".format(pkg))
             sys.exit(1)
 
     # Get the pck-config flags
     if len(pkg_libraries)>0 :
         # PKG_CONFIG_ALLOW_SYSTEM_CFLAGS explicitly lists system paths.
         # On system-wide LAL installs, this is needed for swig to find lalswig.i
-        for token in commands.getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
+        for token in getoutput("PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 pkg-config --libs --cflags %s" % ' '.join(pkg_libraries)).split():
             if token.startswith("-l"):
                 libraries.append(token[2:])
             elif token.startswith("-L"):
@@ -62,14 +68,14 @@ def pkg_config(pkg_libraries):
 def pkg_config_header_strings(pkg_libraries):
     """ Returns a list of header strings that could be passed to a compiler
     """
-    libs, lib_dirs, header_dirs = pkg_config(pkg_libraries)
-  
+    _, _, header_dirs = pkg_config(pkg_libraries)
+
     header_strings = []
 
     for header_dir in header_dirs:
         header_strings.append("-I" + header_dir)
 
-    return header_strings        
+    return header_strings
 
 def pkg_config_check_exists(package):
     return (os.system('pkg-config --exists {0} 2>/dev/null'.format(package)) == 0)
@@ -81,13 +87,28 @@ def pkg_config_libdirs(packages):
     that the package may be found in the standard system locations, irrespective of
     pkg-config.
     """
+
+    # don't try calling pkg-config if NO_PKGCONFIG is set in environment
+    if os.environ.get("NO_PKGCONFIG", None):
+        return []
+
+    # if calling pkg-config failes, don't continue and don't try again.
+    try:
+        FNULL = open(os.devnull, 'w')
+        subprocess.check_call(["pkg-config", "--version"], stdout=FNULL, close_fds=True)
+    except:
+        print("PyCBC.libutils: pkg-config call failed, setting NO_PKGCONFIG=1",
+              file=sys.stderr)
+        os.environ['NO_PKGCONFIG'] = "1"
+        return []
+
     # First, check that we can call pkg-config on each package in the list
     for pkg in packages:
         if not pkg_config_check_exists(pkg):
             raise ValueError("Package {0} cannot be found on the pkg-config search path".format(pkg))
 
     libdirs = []
-    for token in commands.getoutput("PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(' '.join(packages))).split():
+    for token in getoutput("PKG_CONFIG_ALLOW_SYSTEM_LIBS=1 pkg-config --libs-only-L {0}".format(' '.join(packages))).split():
         if token.startswith("-L"):
             libdirs.append(token[2:])
     return libdirs
@@ -110,7 +131,10 @@ def get_libpath_from_dirlist(libname, dirs):
         # Our directory might be no good, so try/except
         try:
             for libfile in os.listdir(nextdir):
-                if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*'):
+                if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or \
+                        fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*') or \
+                        fnmatch.fnmatch(libfile,libname+'.dll') or \
+                        fnmatch.fnmatch(libfile,'cyg'+libname+'-*.dll'):
                     possible.append(libfile)
         except OSError:
             pass

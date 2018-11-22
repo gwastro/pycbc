@@ -1,7 +1,6 @@
 from pycbc.types import zeros, complex64, complex128
 import numpy as _np
 import ctypes
-import functools
 import pycbc.scheme as _scheme
 from pycbc.libutils import get_ctypes_library
 from .core import _BaseFFT, _BaseIFFT
@@ -11,17 +10,6 @@ from .core import _BaseFFT, _BaseIFFT
 # no FFTW function should be called until the user has had the chance
 # to set the threading backend, it is ESSENTIAL that simply loading this
 # module should not actually *call* ANY functions.
-
-def memoize(obj):
-    cache = obj.cache = {}
-
-    @functools.wraps(obj)
-    def memoizer(*args, **kwargs):
-        key = str(args) + str(kwargs)
-        if key not in cache:
-            cache[key] = obj(*args, **kwargs)
-        return cache[key]
-    return memoizer
 
 #FFTW constants, these are pulled from fftw3.h
 FFTW_FORWARD = -1
@@ -69,7 +57,7 @@ def _fftw_plan_with_nthreads(nthreads):
     global _fftw_current_nthreads
     if not HAVE_FFTW_THREADED:
         if (nthreads > 1):
-                raise ValueError("Threading is NOT enabled, but {0} > 1 threads specified".format(nthreads))
+            raise ValueError("Threading is NOT enabled, but {0} > 1 threads specified".format(nthreads))
         else:
             _pycbc_current_threads = nthreads
     else:
@@ -137,7 +125,6 @@ def set_threads_backend(backend=None):
     # This is the user facing function.  If given a backend it just
     # calls _init_threads and lets it do the work.  If not (the default)
     # then it cycles in order through threaded backends,
-    global _fftw_threaded_set
     if backend is not None:
         retval = _init_threads(backend)
         # Since the user specified this backend raise an exception if the above failed
@@ -159,10 +146,10 @@ def import_sys_wisdom():
     float_lib.fftwf_import_system_wisdom()
 
 # We provide an interface for changing the "measure level"
-# By default 1, which does some but not much planning,
+# By default this is 0, which does no planning,
 # but we provide functions to read and set it
 
-_default_measurelvl = 1
+_default_measurelvl = 0
 def get_measure_level():
     """
     Get the current 'measure level' used in deciding how much effort to put into
@@ -230,6 +217,18 @@ def export_double_wisdom_to_filename(filename):
     if retval == 0:
         raise RuntimeError("Could not export wisdom to file {0}".format(filename))
 
+def set_planning_limit(time):
+    if not _fftw_threaded_set:
+        set_threads_backend()
+
+    f = double_lib.fftw_set_timelimit
+    f.argtypes = [ctypes.c_double]
+    f(time)
+
+    f = float_lib.fftwf_set_timelimit
+    f.argtypes = [ctypes.c_double]
+    f(time)
+
 # Create function maps for the dtypes
 plan_function = {'float32': {'complex64': float_lib.fftwf_plan_dft_r2c_1d},
                  'float64': {'complex128': double_lib.fftw_plan_dft_r2c_1d},
@@ -247,7 +246,6 @@ execute_function = {'float32': {'complex64': float_lib.fftwf_execute_dft_r2c},
                                    'complex128': double_lib.fftw_execute_dft}
                    }
 
-@memoize
 def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     if not _fftw_threaded_set:
         set_threads_backend()
@@ -255,7 +253,7 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
         _fftw_plan_with_nthreads(nthreads)
     # Convert a measure-level to flags
     flags = get_flag(mlvl,aligned)
-    
+
     # We make our arrays of the necessary type and size.  Things can be
     # tricky, especially for in-place transforms with one of input or
     # output real.
@@ -307,8 +305,16 @@ def plan(size, idtype, odtype, direction, mlvl, aligned, nthreads, inplace):
     # We don't need ip or op anymore
     del ip, op
 
-    # And done...
-    return theplan
+    # Make the destructors
+    if idtype.char in ['f', 'F']:
+        destroy = float_lib.fftwf_destroy_plan
+    else:
+        destroy = double_lib.fftw_destroy_plan 
+
+    destroy.argtypes = [ctypes.c_void_p]
+
+
+    return theplan, destroy
 
 
 # Note that we don't need to check whether we've set the threading backend
@@ -320,16 +326,18 @@ def execute(plan, invec, outvec):
     f(plan, invec.ptr, outvec.ptr)
 
 def fft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
+    theplan, destroy = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
                    get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
+    destroy(theplan)
 
 def ifft(invec, outvec, prec, itype, otype):
-    theplan = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
+    theplan, destroy = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
                    get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
+    destroy(theplan)
 
 # Class based API
 
@@ -391,41 +399,41 @@ _plan_funcs_dict = { ('complex64', 'complex64') : plan_many_c2c_f,
 # classes.
 
 def _fftw_setup(fftobj):
-        n = _np.asarray([fftobj.size], dtype=_np.int32)
-        inembed = _np.asarray([len(fftobj.invec)], dtype=_np.int32)
-        onembed = _np.asarray([len(fftobj.outvec)], dtype=_np.int32)
-        nthreads = _scheme.mgr.state.num_threads
-        if not _fftw_threaded_set:
-            set_threads_backend()
-        if nthreads != _fftw_current_nthreads:
-            _fftw_plan_with_nthreads(nthreads)  
-        mlvl = get_measure_level()
-        aligned = fftobj.invec.data.isaligned and fftobj.outvec.data.isaligned
-        flags = get_flag(mlvl, aligned)
-        plan_func = _plan_funcs_dict[ (str(fftobj.invec.dtype), str(fftobj.outvec.dtype)) ]
-        tmpin = zeros(len(fftobj.invec), dtype = fftobj.invec.dtype)
-        tmpout = zeros(len(fftobj.outvec), dtype = fftobj.outvec.dtype)
-        # C2C, forward
-        if fftobj.forward and (fftobj.outvec.dtype in [complex64, complex128]):
-            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
-                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
-                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                             FFTW_FORWARD, flags)
-        # C2C, backward
-        elif not fftobj.forward and (fftobj.invec.dtype in [complex64, complex128]):
-            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
-                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
-                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                             FFTW_BACKWARD, flags)
-        # R2C or C2R (hence no direction argument for plan creation)
-        else:
-            plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
-                             tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
-                             tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
-                             flags)
-        del tmpin
-        del tmpout
-        return plan
+    n = _np.asarray([fftobj.size], dtype=_np.int32)
+    inembed = _np.asarray([len(fftobj.invec)], dtype=_np.int32)
+    onembed = _np.asarray([len(fftobj.outvec)], dtype=_np.int32)
+    nthreads = _scheme.mgr.state.num_threads
+    if not _fftw_threaded_set:
+        set_threads_backend()
+    if nthreads != _fftw_current_nthreads:
+        _fftw_plan_with_nthreads(nthreads)
+    mlvl = get_measure_level()
+    aligned = fftobj.invec.data.isaligned and fftobj.outvec.data.isaligned
+    flags = get_flag(mlvl, aligned)
+    plan_func = _plan_funcs_dict[ (str(fftobj.invec.dtype), str(fftobj.outvec.dtype)) ]
+    tmpin = zeros(len(fftobj.invec), dtype = fftobj.invec.dtype)
+    tmpout = zeros(len(fftobj.outvec), dtype = fftobj.outvec.dtype)
+    # C2C, forward
+    if fftobj.forward and (fftobj.outvec.dtype in [complex64, complex128]):
+        plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                         tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                         tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                         FFTW_FORWARD, flags)
+    # C2C, backward
+    elif not fftobj.forward and (fftobj.invec.dtype in [complex64, complex128]):
+        plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                         tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                         tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                         FFTW_BACKWARD, flags)
+    # R2C or C2R (hence no direction argument for plan creation)
+    else:
+        plan = plan_func(1, n.ctypes.data, fftobj.nbatch,
+                         tmpin.ptr, inembed.ctypes.data, 1, fftobj.idist,
+                         tmpout.ptr, onembed.ctypes.data, 1, fftobj.odist,
+                         flags)
+    del tmpin
+    del tmpout
+    return plan
 
 class FFT(_BaseFFT):
     def __init__(self, invec, outvec, nbatch=1, size=None):
@@ -498,7 +506,7 @@ def verify_fft_options(opt,parser):
     if opt.fftw_measure_level not in [0,1,2,3]:
         parser.error("{0} is not a valid FFTW measure level.".format(opt.fftw_measure_level))
 
-    if opt.fftw_import_system_wisdom and ((opt.fftw_input_float_wisdom_file is not None) 
+    if opt.fftw_import_system_wisdom and ((opt.fftw_input_float_wisdom_file is not None)
                                           or (opt.fftw_input_double_wisdom_file is not None)):
         parser.error("If --fftw-import-system-wisdom is given, then you cannot give"
                      " either of --fftw-input-float-wisdom-file or --fftw-input-double-wisdom-file")
@@ -511,17 +519,6 @@ def from_cli(opt):
     # Since opt.fftw_threads_backend defaults to None, the following is always
     # appropriate:
     set_threads_backend(opt.fftw_threads_backend)
-
-    # Import system wisdom.  Should really add error checking and logging to that...
-    if opt.fftw_import_system_wisdom:
-        import_sys_wisdom()
-
-    # Read specified user-provided wisdom files
-    if opt.fftw_input_float_wisdom_file is not None:
-        import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)        
-
-    if opt.fftw_input_double_wisdom_file is not None:
-        import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)        
 
     # Set the user-provided measure level
     set_measure_level(opt.fftw_measure_level)

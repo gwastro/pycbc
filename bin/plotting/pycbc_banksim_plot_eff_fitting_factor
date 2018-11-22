@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+# Copyright (C) 2016 Ian Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Plot effective fitting factor from a bunch of point-source files.
+"""
+
+import sys
+import h5py
+import numpy
+import argparse
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+import pycbc.version
+from pycbc import results
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_banksim_plot_eff_fitting_factor"
+
+parser = argparse.ArgumentParser(usage='',
+    description="Plot effective fitting factor vs mass1 and mass2.")
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument('--input-files', nargs='+', default=None, required=True,
+                    help="List of input files.")
+parser.add_argument('--output-file', default=None, required=True,
+                    help="Output file.")
+parser.add_argument('--filter-injections', action='store_true', default=False,
+                    help="If true only consider and plot injections that are "
+                         "marked in the input HDF file as passing the filter "
+                         "that was supplied when generating the HDF file.")
+# Plotting options
+parser.add_argument('--plot-title',
+                    help="If given, use this as the plot title")
+parser.add_argument('--plot-caption',
+                    help="If given, use this as the plot caption")
+parser.add_argument('--log-axes', action='store_true', default=False,
+                    help="If given, use logarithmic axes instead of linear.")
+parser.add_argument('--log-colorbar', action='store_true', default=False,
+                    help="If given, use logarithmic values for the colorbar, "
+                         "showing 1 - fitting factor.")
+
+opt = parser.parse_args()
+
+m1 = []
+m2 = []
+eff_ff = []
+for file_name in opt.input_files:
+    curr_fp = h5py.File(file_name, 'r')
+    m1.append(curr_fp['inj_params/mass1'][0])
+    m2.append(curr_fp['inj_params/mass2'][0])
+    if opt.filter_injections:
+        eff_ff.append(curr_fp['filtered_eff_fitting_factor'][()])
+    else:
+        eff_ff.append(curr_fp['eff_fitting_factor'][()])
+    curr_fp.close()
+
+if opt.filter_injections:
+    eff_ff = numpy.array(eff_ff)
+    m1 = numpy.array(m1)
+    m2 = numpy.array(m2)
+    bool_arr = eff_ff > -0.5
+    opp_arr = eff_ff < -0.5
+    m1_empty = m1[opp_arr]
+    m2_empty = m2[opp_arr]
+    m1 = m1[bool_arr]
+    m2 = m2[bool_arr]
+    eff_ff = eff_ff[bool_arr]
+
+fig = plt.figure()
+ax = fig.gca()
+cmap = plt.get_cmap('viridis')
+
+
+if not opt.log_colorbar:
+    sctr = ax.scatter(m1, m2, c=eff_ff, cmap=cmap, edgecolors='none',
+                      marker='o', s=40)
+    cb = fig.colorbar(sctr)
+    cb.set_label("Effective fitting factor")
+    if opt.filter_injections:
+        sctr = ax.scatter(m1_empty, m2_empty, c='k', cmap=cmap,
+                          edgecolors='k', marker='x', s=40)
+else:
+    sctr = ax.scatter(m1, m2, c=numpy.log10(1 - numpy.array(eff_ff)),
+                      cmap=cmap, edgecolors='none', marker='o', s=40)
+    cb = fig.colorbar(sctr)
+    cb.set_label("log10(1 - Effective fitting factor)")
+    if opt.filter_injections:
+        sctr = ax.scatter(m1_empty, m2_empty, c='k', cmap=cmap,
+                          edgecolors='k', marker='x', s=40)
+
+ax.set_xlabel('Mass 1 (solar masses)')
+ax.set_ylabel('Mass 2 (solar masses)')
+if opt.log_axes:
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+ax.grid()
+
+if opt.plot_title is None:
+    if opt.filter_injections:
+        opt.plot_title = "Effective fitting factor (filtered)"
+    else:
+        opt.plot_title = "Effective fitting factor"
+if opt.plot_caption is None:
+    opt.plot_caption = ("The effective fitting factor is the signal-strength "
+                        "weighted average fitting factor. This is shown, as "
+                        "a function of masses, for the input injection sets.")
+    if opt.filter_injections:
+        opt.plot_caption += (" Injections are filtered so that only those "
+                             "passing the filter function used when creating "
+                             "the input files are considered. Usually this is "
+                             "used to restrict to only signals that are "
+                             "the parameter space used to create the template "
+                             "bank. Any point marked with a black "
+                             "cross contain no injections that pass the "
+                             "filter function.")
+
+fig_kwds = {}
+if '.png' in opt.output_file:
+    fig_kwds['dpi'] = 200
+
+results.save_fig_with_metadata(fig, opt.output_file,
+                               fig_kwds=fig_kwds, title=opt.plot_title,
+                               cmd=' '.join(sys.argv),
+                               caption=opt.plot_caption)

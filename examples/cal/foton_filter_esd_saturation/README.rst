@@ -1,5 +1,5 @@
 #################################################
-ESD Saturation Example
+ESD/PCAL Saturation Example
 #################################################
 
 .. contents::
@@ -12,9 +12,9 @@ Here we walkthrough an example of using the foton filtering module in pycbc. Thi
 
   examples/cal/foton_filter_esd_saturation
 
-We will generate h(t) for a CBC waveform and filter it will several filterbanks to get ETMY DAC counts.
+We will generate h(t) for a CBC waveform and filter it will several filterbanks to get ETMY DAC counts or PCAL counts.
 
-This example should be run at either the LLO or LHO cluster.
+This example should be run at either the CIT, LLO, or LHO cluster.
 
 =================================================
 Add ROOT and foton to pycbc installation
@@ -23,12 +23,12 @@ Add ROOT and foton to pycbc installation
 Do the following to add both the ROOT and foton python packages to the virtual environment ::
 
   NAME=/path/to/virtualenv
-  cd ${NAME}/lib64/python2.6/site-packages
-  ln -s /usr/lib64/python2.6/site-packages/libPyROOT.so
-  ln -s /usr/lib64/python2.6/site-packages/ROOT.py
-  ln -s /usr/lib64/python2.6/site-packages/ROOTwriter.py
-  cd ${NAME}/lib/python2.6/site-packages
-  ln -s /usr/lib/python2.6/site-packages/foton.py
+  cd ${NAME}/lib64/python2.7/site-packages
+  ln -s /usr/lib64/python2.7/site-packages/libPyROOT.so
+  ln -s /usr/lib64/python2.7/site-packages/ROOT.py
+  ln -s /usr/lib64/python2.7/site-packages/ROOTwriter.py
+  cd ${NAME}/lib/python2.7/site-packages
+  ln -s /usr/lib/python2.7/site-packages/foton.py
 
 =================================================
 Set variables
@@ -74,7 +74,7 @@ Generate a CBC waveform
 
 Now we generate a CBC waveform using the hardware injection executable ::
 
-  pycbc_generate_hwinj --instruments ${IFO} --waveform-low-frequency-cutoff 30 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${IFO}:${FRAME_TYPE} --channel-name ${IFO}:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 26.6637001 --mass2 23.2229004 --inclination 1.04719755 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 18.424 --spin1z -0.963 --spin2z  -0.988 --psd-low-frequency-cutoff 40.0 --sample-rate ${IFO}:${SAMPLE_RATE} --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8
+  pycbc_generate_hwinj --instruments ${IFO} --waveform-low-frequency-cutoff 30 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --frame-type ${IFO}:${FRAME_TYPE} --channel-name ${IFO}:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 26.6637001 --mass2 23.2229004 --inclination 1.04719755 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 18.424 --spin1z -0.963 --spin2z  -0.988 --low-frequency-cutoff 40.0 --sample-rate ${IFO}:${SAMPLE_RATE} --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8
   
 There are a number of command line options you can change. See the hardware injection documentation for more details.
 
@@ -101,8 +101,6 @@ We will need to change the frame type to the frames that contains the ``SWSTAT``
 
   FRAME_TYPE=H1_R
 
-
-
 An example command is ::
 
   sh pycbc_check_esd_saturation.sh --data-file ${PWD}/${IFO}-HWINJ_CBC-*-*.txt --gps-start-time ${GPS_START_TIME} --gps-end-time $((${GPS_START_TIME} + 1)) --ifo ${IFO} --frame-type ${FRAME_TYPE} --sus-filter-file ${PWD}/${SUS_FILTER_FILE} --calcs-filter-file ${PWD}/${CALCS_FILTER_FILE}
@@ -110,7 +108,7 @@ An example command is ::
 The output files will be written to ``${PWD}/esd_output/``. It will contain a single-column ASCII file after each stage of filtering. The final time series will contain ``*ETMY_L3_ESDOUTF_LL*``.
 
 =================================================
-Plotting the output
+Plotting the ESD saturation output
 =================================================
 
 In the example directory (``examples/cal/foton_filter_esd_saturation``) there is a script to use gwpy to make some plots of the output; the script is called ``gwpy_plot_hwinj``. The script ``gwpy_plot_hwinj`` will plot a timeseries and a spectrogram.
@@ -129,25 +127,19 @@ Make the output directory ::
 To plot the h(t) CBC waveform do ::
 
   INPUT_FILE=`ls ${IFO}-HWINJ_CBC-*-*.txt`
-  TIMESERIES_FILE=${HTMLDIR}/${IFO}-TIMESERIES_HWINJ_CBC.png
-  SPECTROGRAM_FILE=${HTMLDIR}/${IFO}-SPECTROGRAM_HWINJ_CBC.png
-  python gwpy_plot_hwinj ${INPUT_FILE} ${TIMESERIES_FILE} ${SPECTROGRAM_FILE} 0 20 -2e-21 2e-21 1e-21 1e-27
+  TIMESERIES_FILE=${HTMLDIR}/${IFO}-TIMESERIES_HOFT.png
+  pycbc_plot_hwinj --input-file ${INPUT_FILE} --output-file ${TIMESERIES_FILE} \
+      --title "HOFT" --y-label "Strain"
 
 To plot the ETMY DAC counts time series do ::
 
   INPUT_FILE=`ls esd_output/${IFO}-FILTER_ETMY_L3_ESDOUTF_LL-*.txt`
-  TIMESERIES_FILE=${HTMLDIR}/${IFO}-TIMESERIES_ETMY_L3_ESDOUTF_LL.png
-  SPECTROGRAM_FILE=${HTMLDIR}/${IFO}-SPECTROGRAM_ETMY_L3_ESDOUTF_LL.png
-  python gwpy_plot_hwinj ${INPUT_FILE} ${TIMESERIES_FILE} ${SPECTROGRAM_FILE} 0 20 -3e4 3e4 1e1 1e-7
+  TIMESERIES_FILE=${HTMLDIR}/${IFO}-TIMESERIES_PINJX_TRANSIENT.png
+  pycbc_plot_hwinj --input-file ${INPUT_FILE} --output-file ${TIMESERIES_FILE} \
+      --title "FILTERED HOFT" --y-label "Counts"
 
-To plot the ETMY DAC counts at the merger do ::
+=================================================
+Run the PCAL saturation script
+=================================================
 
-  INPUT_FILE=`ls esd_output/${IFO}-FILTER_ETMY_L3_ESDOUTF_LL-*.txt`
-  TIMESERIES_FILE=${HTMLDIR}/${IFO}-TIMESERIES_MERGER_ETMY_L3_ESDOUTF_LL.png
-  SPECTROGRAM_FILE=${HTMLDIR}/${IFO}-SPECTROGRAM_MERGER_ETMY_L3_ESDOUTF_LL.png
-  python gwpy_plot_hwinj ${INPUT_FILE} ${TIMESERIES_FILE} ${SPECTROGRAM_FILE} 5.9 6.1 -30000 30000 1e+1 1e-7
-  
-If you have an X11 session open then you can use the interactive hardware injection plotting code called ``pycbc_plot_hwinj``. To use this do ::
-
-  INPUT_FILE=`ls esd_output/${IFO}-FILTER_ETMY_L3_ESDOUTF_LL-*.txt`
-  pycbc_plot_hwinj ${INPUT_FILE}
+In the example directory (``examples/cal/foton_filter_esd_saturation``) there is a bash script called ``pycbc_check_pcal_saturation.sh``. This script will filter the waveform will the PCAL inverse actuation filter. There is a script called ``run_pcal_saturation_example.sh`` that shows how to use the ``pycbc_check_pcal_saturation.sh`` executable.

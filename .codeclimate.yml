@@ -1,0 +1,59 @@
+version: "2"         # required to adjust maintainability checks
+checks:
+  argument-count:
+    config:
+      threshold: 30
+  complex-logic:
+    config:
+      threshold: 4
+  file-lines:
+    config:
+      threshold: 1000
+  method-complexity:
+    config:
+      threshold: 1000000
+  method-count:
+    config:
+      threshold: 50
+  method-lines:
+    config:
+      threshold: 100
+  nested-control-flow:
+    config:
+      threshold: 4
+  return-statements:
+    config:
+      threshold: 4
+  similar-code:
+    config:
+      threshold: # language-specific defaults. an override will affect all languages.
+  identical-code:
+    config:
+      threshold: # language-specific defaults. an override will affect all languages.
+plugins:
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - python
+  fixme:
+    enabled: true
+    config:
+      strings:
+      - FIXME
+      - XXX
+  pylint:
+    enabled: true
+    channel: "beta"
+    checks:
+      import-error:
+        enabled: false
+  pep8:
+    enabled: true
+
+exclude_patterns:
+- docs/*
+- tools/*
+- examples/*
+- test/*
+

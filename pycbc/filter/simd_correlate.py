@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
+from __future__ import absolute_import
 from pycbc.types import float32
-from scipy.weave import inline
+from pycbc.weave import inline
+from pycbc import WEAVE_FLAGS
 import numpy as _np
 import pycbc.opt
 from pycbc.opt import omp_support, omp_libs, omp_flags
@@ -41,8 +42,18 @@ ccorrf_parallel: Runs multicore, but not explicitly vectorized.
 
 corr_common_support = omp_support + pycbc.opt.simd_intel_intrin_support + """
 #include <stdint.h> // For uint32_t, int64_t
-#include <error.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <complex> // Must use C++ header with weave
+
+/* Rough approx of GCC's error function. */
+void error(int status, int errnum, const char *format) {
+  fprintf(stderr, format);
+  if (status != 0) {
+    exit(status);
+  }
+}
 """
 
 corr_support = corr_common_support + """
@@ -420,11 +431,11 @@ ccorrf_simd(htilde, stilde, qtilde, (int64_t) arrlen);
 
 def correlate_simd(ht, st, qt):
     htilde = _np.array(ht.data, copy = False).view(dtype = float32)
-    stilde = _np.array(st.data, copy = False).view(dtype = float32)
-    qtilde = _np.array(qt.data, copy = False).view(dtype = float32)
-    arrlen = len(htilde)
+    stilde = _np.array(st.data, copy = False).view(dtype = float32) # pylint:disable=unused-variable
+    qtilde = _np.array(qt.data, copy = False).view(dtype = float32) # pylint:disable=unused-variable
+    arrlen = len(htilde) # pylint:disable=unused-variable
     inline(corr_simd_code, ['htilde', 'stilde', 'qtilde', 'arrlen'],
-           extra_compile_args = ['-march=native -O3 -w'],
+           extra_compile_args = [WEAVE_FLAGS],
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
            #extra_compile_args = ['-msse3 -O3 -w'],
            support_code = corr_support, auto_downcast = 1)
@@ -453,12 +464,12 @@ else:
 
 def correlate_parallel(ht, st, qt):
     htilde = _np.array(ht.data, copy = False)
-    stilde = _np.array(st.data, copy = False)
-    qtilde = _np.array(qt.data, copy = False)
-    arrlen = len(htilde)
-    segsize = default_segsize
+    stilde = _np.array(st.data, copy = False) # pylint:disable=unused-variable
+    qtilde = _np.array(qt.data, copy = False) # pylint:disable=unused-variable
+    arrlen = len(htilde) # pylint:disable=unused-variable
+    segsize = default_segsize # pylint:disable=unused-variable
     inline(corr_parallel_code, ['htilde', 'stilde', 'qtilde', 'arrlen', 'segsize'],
-           extra_compile_args = ['-march=native -O3 -w'] + omp_flags, libraries = omp_libs,
+           extra_compile_args = [WEAVE_FLAGS] + omp_flags, libraries = omp_libs,
            #extra_compile_args = ['-mno-avx -mno-sse2 -mno-sse3 -mno-ssse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-sse4a -O2 -w'],
            #extra_compile_args = ['-msse3 -O3 -w'],
            support_code = corr_support, auto_downcast = 1)

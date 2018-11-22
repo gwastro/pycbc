@@ -1,0 +1,88 @@
+#! /usr/bin/env python
+
+# Copyright (C) 2016 Christopher M. Biwer
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import argparse
+import h5py
+import logging
+import numpy
+import sys
+import pycbc
+from pycbc import results
+from pycbc.inference.io import ResultsArgumentParser, results_from_cli
+
+# command line usage
+parser = ResultsArgumentParser(
+    description="Makes a table of posterior results.")
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+    help="Print logging info.")
+# output plot options
+parser.add_argument("--output-file", type=str, required=True,
+    help="Path to output plot.")
+# add quantile options
+parser.add_argument("--quantiles", type=float, nargs="+",
+    default=[0.16,0.50,0.84],
+    help="Quantiles to calculate.")
+
+# parse the command line
+opts = parser.parse_args()
+
+pycbc.init_logging(opts.verbose)
+
+
+# load the results
+fp, parameters, labels, samples = results_from_cli(opts)
+
+# get thinned samples for each parameter
+table = []
+for param, label in zip(parameters, labels):
+
+    row = [label]
+
+    # calculate the score at a given percentile
+    # eg. 50 is the median, 16 and 84 correspond to 68 percentile
+    x = samples[param]
+    quantiles = numpy.array([numpy.percentile(x, 100*q)
+        for q in opts.quantiles])
+
+    # add qunatiles to row;
+    # we'll quote using the range of quanitles as the error; if there was
+    # only a single value, then we'll just do 1/100
+    if len(quantiles) > 1:
+        med = numpy.median(x)
+        err = min(abs(quantiles.max()-med), abs(quantiles.min()-med))
+    else:
+        err = quantiles[0]/100.
+    row += ['$%s$' %(results.format_value(val, err, include_error=False,
+        use_scientific_notation=10 if numpy.log10(abs(val)) > 0 else 3))
+        for val in quantiles]
+
+    # add row to table
+    table.append(row)
+
+# make HTML table
+headers = ["Parameter"] + ["%.2f Quantile"%val for val in opts.quantiles]
+# add mathjax header to display latex
+html = results.mathjax_html_header() + '\n%s'%(
+    str( results.static_table(table, headers) ))
+
+# save HTML table
+results.save_fig_with_metadata(html, opts.output_file, {},
+                 cmd=" ".join(sys.argv),
+                 title="Table of Posterior Parameters",
+                 caption="Table with quantiles for variable parameters.")

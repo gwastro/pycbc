@@ -1,0 +1,20 @@
+  <!-- a separate staging site is added else, the intermediate files are symlinked from the home
+       directory since symlinking is turned on -->
+  <site handle="osgconnect-scratch" arch="x86_64" os="LINUX">
+   <directory  path="${REMOTE_SITE_SCRATCH_PATH}/osgconnect-scratch" type="shared-scratch" free-size="null" total-size="null">
+        <file-server  operation="all" url="${REMOTE_SITE_SCRATCH_URL}/osgconnect-scratch">
+        </file-server>
+    </directory>
+  </site>
+
+  <site handle="osgconnect" arch="x86_64" os="LINUX">
+    <profile namespace="pegasus" key="style">condor</profile>
+    <profile namespace="condor" key="accounting_group">$ACCOUNTING_GROUP</profile>
+    <profile namespace="condor" key="should_transfer_files">YES</profile>
+    <profile namespace="condor" key="when_to_transfer_output">ON_EXIT_OR_EVICT</profile>
+    <profile namespace="condor" key="+OpenScienceGrid">True</profile>
+    <profile namespace="condor" key="Requirements">((HAS_CVMFS_oasis_opensciencegrid_org is true) &amp;&amp; (HAS_CVMFS_gwosc_osgstorage_org is true) &amp;&amp; (HAS_CVMFS_gwosc_osgstorage_org is true) &amp;&amp; (HAS_SINGULARITY is TRUE) &amp;&amp; (OSG_GLIDEIN_VERSION >= 346))</profile>
+    <profile namespace="condor" key="+SingularityBindCVMFS">True</profile>
+    <profile namespace="condor" key="+InitializeModulesEnv">False</profile>
+    <profile namespace="env" key="TMPDIR">/srv</profile>
+    <profile namespace="condor" key="getenv">False</profile>

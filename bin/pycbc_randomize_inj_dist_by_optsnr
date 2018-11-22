@@ -1,0 +1,214 @@
+#! /usr/bin/env python
+
+__prog__ = 'pycbc_randr_by_snr'
+__author__ = 'Collin Capano <collin.capano@ligo.org>, Miriam Cabero Mueller <miriam.cabero@ligo.org>'
+__description__ = 'Resets the distance distribution in a sim_inspiral table based on desired SNR. The SNRs are chosen randomly from a given range.'
+
+import numpy
+import os, sys
+import time
+from scipy import stats, special
+from argparse import ArgumentParser
+
+from glue.ligolw import ligolw
+from glue.ligolw import lsctables
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import table
+from glue.ligolw.utils import process
+
+def r_uniform_in_volume(r1, r2, N):
+    xi = numpy.random.uniform(0., 1., size=N)
+    return (xi*r2**3. + (1.-xi)*r1**3.)**(1./3)
+
+def r_uniform_in_distance(r1, r2, N):
+    return numpy.random.uniform(r1, r2, size=N)
+
+def r_uniform_in_logdist(r1, r2, N):
+    return r1*(r2/r1)**numpy.random.uniform(0., 1., size=N)
+
+def r_beta_distribution(rmax, alpha, beta, N=1):
+    return rmax*stats.beta.rvs(alpha, beta, size=N)
+
+def beta_weight(r, rmax, alpha, beta):
+    x = r/rmax
+    return 4.*numpy.pi * rmax**3. * x**(3.-alpha) * (1.-x)**(1.-beta) * \
+        special.beta(alpha, beta)
+    
+def get_weights(distribution, r, r1, r2):
+    if distribution == "volume":
+        min_vol = (4./3)*numpy.pi*r1**3.
+        weight = (4./3)*numpy.pi*(r2**3. - r1**3.)
+    elif distribution == "distance":
+        min_vol = (4./3)*numpy.pi*r1**3.
+        weight = 4.*numpy.pi*(r2-r1) * r**2. 
+    elif distribution == "logdist":
+        min_vol = (4./3)*numpy.pi*r1**3.
+        weight = 4.*numpy.pi * r**3. * numpy.log(r2/r1)
+    else:
+        raise ValueError("unrecognized distribution %s" %(distribution))
+    return min_vol, weight
+
+parser = ArgumentParser(description = __doc__)
+parser.add_argument('--xml-file', required = True, 
+                    help = 'Input LIGOLW file defining injections.')
+parser.add_argument('--output-file', required=True, 
+                    help='Output LIGOLW file.')
+parser.add_argument('--snr-columns', nargs='+', required=True,
+                    help='Defines the columns of the sim_inspiral table that ' \
+                    'store the optimal SNR for each detector. If the optimal ' \
+                    'SNR of an injection is 0 for a detector, that detector ' \
+                    'is assumed to be down during the time of the injection. ' \
+                    'If all the optimal SNRs are 0 for an injection, ' \
+                    'that injection is skipped.')
+parser.add_argument('--min-snr', type = float, 
+                    help = 'Set the minimum single-detector SNR to use. ' \
+                    'This is multipled by N**(1/2), where N is the number ' \
+                    'of non-zero snr-columns for each injection')
+parser.add_argument('--max-snr', type = float, 
+                    help = 'Set the maximum SNR to use; must be larger than min-snr. ' \
+                    'To use an exact snr, set to the same value as min-snr. ' \
+                    'This is multipled by N**(1/2), where N is the number ' \
+                    'of non-zero snr-columns for each injection.')
+parser.add_argument('--fixed-distance-range', metavar='MIN_D,MAX_D', 
+                    help='Instead of using the SNR to determine the limits ' \
+                    'from which to draw the distance, use the given range for all injections.')
+parser.add_argument('--distribution', default='distance', metavar="DISTRIBUTION[:PARAMETERS]", 
+                    help='What distribution to make the injections uniform in. ' \
+                    'Options are "distance", "volume", "logdist", or "beta:${a},${b}". ' \
+                    'If "distance", the distance distribution of the injections ' \
+                    'will be uniform in distance. If "volume", uniform in volume. ' \
+                    'If "logdist", uniform in the log of the distance. If "beta", ' \
+                    'distances will be drawn from the beta distribution ' \
+                    'p(r; a,b,rmax) = 1/(rmax*B(a,b)) * (r/rmax)**(1-a) * (1-r/rmax)**(b-1), ' \
+                    'where B is the beta function. Must provide an a and a b; ' \
+                    'rmax is taken --max-snr, or the upper bound of the fixed ' \
+                    'distance range. Default is %(default)s.')
+parser.add_argument('--scale-by-chirp-dist', action='store_true', 
+                    help='Scale the distance by the chirp distance relative to ' \
+                    'a 1.4/1.4 binary. Only can use if fixed-distance-range is on.')
+parser.add_argument('--seed', type = int, default = int((time.time()*100)% 1e6), 
+                    help = 'Set the seed to use for the random number generator. ' \
+                    'If none specified, will use the current time.')
+parser.add_argument('--verbose', action = 'store_true', help = 'Be verbose.')
+
+opts = parser.parse_args()
+
+# The following is required for reasons
+class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+
+# The XML reading will hang if you forget this line
+lsctables.use_in(LIGOLWContentHandler)
+
+# parse the distributions
+# beta is the only special one
+if opts.distribution in ['volume', 'distance', 'logdist']:
+    distribution = opts.distribution
+elif opts.distribution.startswith('beta'):
+    try:
+        distribution, params = opts.distribution.split(':')
+    except ValueError:
+        raise ValueError("beta distribution requires an a and b to be " +
+            "provided; e.g., 'beta:3,2'; see help")
+    try:
+        alpha, beta = map(float, params.split(','))
+    except ValueError:
+        raise ValueError("beta distribution not formatted correctly; see help")
+else:
+    raise ValueError("unrecognized distribution; see help")
+
+# parse ranges
+if opts.fixed_distance_range is not None and (opts.min_snr is not None or \
+        opts.max_snr is not None):
+    raise ValueError("Please specify a fixed-distance-range *or* a min/max " +
+        "snr, not both.")
+if opts.fixed_distance_range is not None:
+    min_dist, max_dist = map(float, opts.fixed_distance_range.split(','))
+    if distribution == 'beta' and min_dist != 0:
+        raise ValueError("the beta distribution requires the minimum "+
+            "distance to be set to 0.")
+elif opts.scale_by_chirp_dist:
+    raise ValueError("cannot use scale-by-chirp-dist if not using a " +\
+        "fixed-distance-range (scaling by chirp distance doesn't make " +\
+        "sense when using min/max SNR")
+elif opts.min_snr is None or opts.max_snr is None:
+    if opts.min_snr is None or opts.max_snr is None:
+        if opts.min_snr is None:
+            raise ValueError("must provide a min SNR if not specifying a " +
+                "fixed-distance-range")
+        if opts.max_snr is None and distribution != 'beta':
+            raise ValueError("must provide a maximum SNR if not specifying a " +
+                "fixed-distance-range and not using a beta distribution")
+
+numpy.random.seed(opts.seed)
+
+
+# cycle over the injections, calculating results for each
+if opts.verbose:
+    print >> sys.stdout, "Cycling over injections..."
+
+# Read in input file
+xmldoc = ligolw_utils.load_filename\
+    (opts.xml_file, verbose=True, contenthandler=LIGOLWContentHandler)
+tabletype = lsctables.SimInspiralTable
+injections = tabletype.get_table(xmldoc)
+
+
+for ii, inj in enumerate(injections):
+    if opts.verbose:
+        print >> sys.stdout, "Injection %i\r" %(ii+1), 
+        sys.stdout.flush()
+      
+    # calculate the sigmas in each ifo
+    sigmas = numpy.array([getattr(inj,col) for col in opts.snr_columns]) * inj.distance
+    nzidx = sigmas.nonzero()[0]
+    if nzidx.size == 0:
+        continue
+    sigmas = sigmas[nzidx]
+    # calculate the sigmas as the quadrature sum of the sigmas in all
+    # of the ifos
+    sigma = numpy.sqrt((sigmas**2.).sum())
+
+    # get the distance ranges based on the optimal SNR
+    if opts.fixed_distance_range is None:
+        if opts.max_snr is not None:
+            min_dist = sigma / (numpy.sqrt(sigmas.size)*opts.max_snr)
+        max_dist = sigma / (numpy.sqrt(sigmas.size)*opts.min_snr)
+
+    # get a distance to use, and the weights
+    if distribution == "volume":
+        distance = r_uniform_in_volume(min_dist, max_dist, 1)[0]
+    elif distribution == "distance":
+        distance = r_uniform_in_distance(min_dist, max_dist, 1)[0]
+    elif distribution == "logdist":
+        distance = r_uniform_in_logdist(min_dist, max_dist, 1)[0]
+    elif distribution == "beta":
+        distance = r_beta_distribution(max_dist, alpha, beta, 1)[0]
+    else:
+        raise ValueError("unrecognized distribution %s; " %(
+            distribution), "see --help for options")
+
+    # scale by chirp distance if desired
+    if opts.scale_by_chirp_dist:
+        scale_fac = (inj.mchirp/(2.8 * 0.25**0.6))**(5./6)
+    else:
+        scale_fac = 1.
+
+    # save
+    inj.distance = distance * scale_fac
+    inj.alpha5 = min_dist * scale_fac
+    inj.alpha6 = max_dist * scale_fac
+    inj.numrel_data = opts.distribution
+    for kk in range(nzidx.size):
+        setattr(inj, opts.snr_columns[nzidx[kk]], sigmas[kk]/inj.distance)
+
+if opts.verbose:
+    print >> sys.stdout, ""
+    sys.stdout.flush()
+
+ligolw_utils.write_filename(xmldoc, opts.output_file,
+                            gz=opts.output_file.endswith('gz'))
+if opts.verbose:
+    print >> sys.stdout, "Finished!"
+sys.exit(0)
+

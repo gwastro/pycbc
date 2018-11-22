@@ -8,10 +8,10 @@
 #-----------------------------------------------------------------------------
 
 import os
-from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
-
-# Executables that need the html assets
-needs_assets = ['pycbc_make_html_page', 'pycbc_make_coinc_search_workflow']
+try:
+    from PyInstaller.utils.hooks import (collect_data_files, collect_submodules)
+except ImportError:
+    from PyInstaller.hooks.hookutils import (collect_data_files, collect_submodules)
 
 # Executables that need MKL
 needs_mkl = ['pycbc_inspiral','pycbc_single_template']
@@ -31,7 +31,7 @@ def find_lib_path(libname, packages):
         pass
 
     path = get_libpath_from_dirlist(libname, libdirs)
-    
+
     if path is not None:
         return [(path, '')]
     else:
@@ -44,9 +44,9 @@ hiddenimports = ['pycbc.fft.fft_cpu',
                  'pycbc.waveform.spa_tmplt_cpu',
                  'pycbc.types.array_cpu',
                  'pycbc.fft.backend_cpu',
+                 'pycbc.fft.backend_mkl',
                  'pycbc.fft.fftw',
                  'pycbc.fft.mkl',
-                 'pycbc.fft.lalfft',
                  'pycbc.fft.npfft',
                  'pycbc.fft.__init__',
                  'pycbc.events.threshold_cpu',
@@ -59,22 +59,28 @@ hiddenimports = ['pycbc.fft.fft_cpu',
                  'mpld3'
                  ]
 
-datas = [] 
+datas = []
 
-if os.environ["NOW_BUILDING"] in needs_assets:
-    cwd     = os.getcwd()
-    basedir = cwd.replace('tools/static','')
-    rootdir = basedir + 'pycbc/results'
+# Add html assets to all executables
+cwd     = os.environ.get("PYCBC_HOOKS_DIR", os.getcwd())
+basedir = cwd.replace('tools/static','')
+rootdir = basedir + 'pycbc/results'
 
-    for root, subdirs, files in os.walk(rootdir):
-        for filename in files:
-            if not filename.endswith('.py') and not filename.endswith('.pyc'):
-                file_path  = os.path.join(root, filename)
-                store_path = '/'.join(file_path.split('/')[:-1])
-                store_path = store_path.replace(basedir, '')
-                datas.append( (file_path, store_path) )
+for root, subdirs, files in os.walk(rootdir):
+    for filename in files:
+        if not filename.endswith('.py') and not filename.endswith('.pyc'):
+            file_path  = os.path.join(root, filename)
+            store_path = '/'.join(file_path.split('/')[:-1])
+            store_path = store_path.replace(basedir, '')
+            datas.append( (file_path, store_path) )
 
-if os.environ["NOW_BUILDING"] in needs_mkl:
+# Add em-bright data file
+file_path = basedir + 'pycbc/tmpltbank/ns_sequences/equil_2H.dat'
+store_path = '/'.join(file_path.split('/')[:-1])
+store_path = store_path.replace(basedir, '')
+datas.append( (file_path, store_path) )
+
+if os.environ.get("NOW_BUILDING", None) in needs_mkl:
     # pull in all the mkl .so files
     datas += find_lib_path('mkl_rt', [])
     datas += find_lib_path('mkl_core', [])
@@ -82,6 +88,8 @@ if os.environ["NOW_BUILDING"] in needs_mkl:
     datas += find_lib_path('mkl_intel_lp64', [])
     datas += find_lib_path('mkl_avx2', [])
     datas += find_lib_path('mkl_def', [])
+    datas += find_lib_path('iomp5', [])
+    datas += find_lib_path('mkl_mc3', [])
 
 # try to pull in the openmp fftw files
 #datas += find_lib_path('fftw3', ['fftw3'])

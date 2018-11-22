@@ -1,88 +1,87 @@
 #!/bin/bash
 
-set -ev
+set -e
 
-LOCAL=${PWD}
-
-# working dir for downloaded dependencies
-SRC=${HOME}/src
-mkdir -p ${SRC}
-
-# install dir for dependencies
-INST=${HOME}/inst
-
-export LD_LIBRARY_PATH=${INST}/lib:${INST}/lib64
-export PKG_CONFIG_PATH=${INST}/lib/pkgconfig
-export PATH=/usr/lib/ccache:${PATH}:${INST}/bin
-
-if [ -f ${INST}/dep_install.done ]
-then
-    echo "Found cache of installed dependencies, using it"
+# determine the pycbc git branch and origin
+git branch -vvv
+if test x$TRAVIS_PULL_REQUEST = "xfalse" ; then
+    PYCBC_CODE="--pycbc-commit=${TRAVIS_COMMIT}"
 else
-
-    # install the version of swig that for some reason we have to use
-
-    cd ${SRC}
-    wget -q http://download.sourceforge.net/project/swig/swig/swig-2.0.11/swig-2.0.11.tar.gz
-    tar -xzf swig-2.0.11.tar.gz
-    cd swig-2.0.11
-    ./configure -q --prefix=${INST}
-    make -j
-    make install
-
-    # Install metaio
-
-    cd ${SRC}
-    wget -q https://www.lsc-group.phys.uwm.edu/daswg/download/software/source/metaio-8.2.tar.gz
-    tar -xzf metaio-8.2.tar.gz
-    cd metaio-8.2
-    CPPFLAGS=-std=gnu99 ./configure -q --prefix=${INST}
-    make -j
-    make install
-
-    # install framel
-
-    cd ${SRC}
-    wget -q http://lappweb.in2p3.fr/virgo/FrameL/v8r26.tar.gz
-    tar -xzf v8r26.tar.gz
-    cd v8r26
-    autoreconf
-    ./configure -q --prefix=${INST}
-    make -j
-    make install
-
-    # Install lalsuite
-
-    cd ${SRC}
-    git clone -q https://github.com/lscsoft/lalsuite.git
-    cd lalsuite
-    git checkout lalsuite_o1_branch
-
-    ./00boot
-    ./configure -q --prefix=${INST} --enable-swig-python \
-        --disable-lalstochastic --disable-lalinference --disable-laldetchar \
-        --disable-lalxml --disable-lalburst --disable-lalapps
-    make -j
-    make install
-
-    # run lalsimulation tests
-    cd lalsimulation
-    make check
-
-    touch ${INST}/dep_install.done
-
-    cd ${LOCAL}
+    PYCBC_CODE="--pycbc-fetch-ref=refs/pull/${TRAVIS_PULL_REQUEST}/merge"
 fi
 
-source ${INST}/etc/lal-user-env.sh
+echo -e "\\n>> [`date`] Ubuntu build"
 
-# Install needed version of numpy
-pip install 'numpy==1.9.3' --upgrade 
+# store the travis test directory
+LOCAL=${PWD}
 
-# Install Pegasus
-pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
+# create working dir for build script
+BUILD=${HOME}/build
+mkdir -p ${BUILD}
+export PYTHONUSERBASE=${BUILD}/.local
+export XDG_CACHE_HOME=${BUILD}/.cache
 
-# Needed by mock 
+# run the einstein at home build and test script
+pushd ${BUILD}
+${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/efd37637fbb568936dfb92bc7aa8a77359c9aa36/travis
+popd
+
+# setup the pycbc environment to run the additional travis tests
+BUILDDIRNAME="pycbc-build"
+PYCBC="$BUILD/$BUILDDIRNAME"
+PYTHON_PREFIX="$PYCBC"
+ENVIRONMENT="$PYCBC/environment"
+PREFIX="$ENVIRONMENT"
+PATH="$PREFIX/bin:$PYTHON_PREFIX/bin:$PATH"
+export LD_LIBRARY_PATH="$PREFIX/lib:$PREFIX/bin:$PYTHON_PREFIX/lib:/usr/local/lib:$LD_LIBRARY_PATH"
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PYTHON_PREFIX/lib/pkgconfig:/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+source ${BUILD}/pycbc-build/environment/etc/lalsuite-user-env.sh
+source ${BUILD}/pycbc-build/environment/bin/activate
+
+# update setuptools
+pip install --upgrade pip setuptools
+
+# needed by mock 
 pip install 'setuptools==18.2' --upgrade
 
+# FIXME this is a fix for https://github.com/travis-ci/travis-ci/issues/7940
+# as Pegasus pulls in boto which hits this issue
+export BOTO_CONFIG=/dev/null
+
+# install pegasus
+
+# FIXME this is a workaround for a bug in psycopg2 2.6 (required by pegasus)
+# see e.g. https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
+echo -e "Trying to get rid of pg_config"
+sudo apt-get -y purge libpq-dev
+echo -e "Making sure it is really gone..."
+if [ -n "`which pg_config`" ]
+then
+    echo -e "...still here:"
+    which pg_config
+    sudo rm -f `which pg_config`
+else
+    echo -e "...seems gone"
+fi
+
+# Install graphviz so building docs will work
+sudo apt-get install graphviz
+
+pip install -r requirements.txt
+
+# get library needed to build documentation
+wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
+primary_url="https://git.ligo.org/ligo-cbc/pycbc-software/raw/cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090"
+secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown/cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090"
+p="libmkl_rt.so"
+pushd ${BUILD}/pycbc-sources
+set +e
+test -r $p || wget $wget_opts ${primary_url}/${p}
+set -e
+test -r $p || wget $wget_opts ${secondary_url}/${p}
+cp -v $p $PREFIX/lib/$p
+chmod +x $PREFIX/lib/$p
+popd
+
+# re-install pycbc
 python setup.py install

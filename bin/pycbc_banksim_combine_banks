@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Ian W. Harry, Alex Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Program for concatenating output files from pycbc_banksim split over bank
+files. It is assumed that input files have analysed the same set of injections.
+Concatenation of injections is done separately.
+"""
+
+from os.path import isfile
+import argparse
+import logging
+from numpy import *
+import pycbc
+import pycbc.version
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__program__ = "pycbc_banksim_combine_banks"
+
+# Read command line options
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc)
+
+parser.add_argument('--version', action=pycbc.version.Version)
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="verbose output")
+parser.add_argument("-I", "--input-files", nargs='+',
+                    help="Explicit list of input files.")
+parser.add_argument("-o", "--output-file", required=True,
+                    help="Output file name")
+
+options = parser.parse_args()
+
+dtypef={'names': ('match', 'bank', 'bank_i', 'sim', 'sim_i', 'sigmasq'),
+        'formats': ('f8', 'S256', 'i4', 'S256', 'i4', 'f8')}
+
+matches=[]
+maxmatch = []
+for fil in options.input_files:
+    matches.append(loadtxt(fil, dtype=dtypef))
+
+indices = array(matches, dtype=dtypef)['match'].argmax(0)
+for i, j in enumerate(indices):
+    maxmatch.append(matches[j][i])
+
+maxmatch=array(maxmatch, dtype=dtypef)
+savetxt(options.output_file, maxmatch, 
+        fmt=('%5.5f', '%s', '%i', '%s', '%i', '%5.5f'), delimiter=' ')

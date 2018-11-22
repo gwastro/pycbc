@@ -1,48 +1,87 @@
-.. PyCBC documentation master file, created by
-   sphinx-quickstart on Tue Jun 11 17:02:52 2013.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+=======
+PyCBC
+=======
 
-###################
-PyCBC documentation
-###################
+PyCBC is a software package used to explore astrophysical sources of gravitational waves.
+It contains algorithms that can detect coalescing compact binaries and measure
+the astrophysical parameters of detected sources. PyCBC was used 
+in the `first direct detection of gravitational waves (GW150914) by
+LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and 
+is used in the ongoing analysis of LIGO and Virgo data.
+If you use PyCBC in your scientific publications or projects,
+we ask that you acknowlege our work by citing the papers described on the page:
 
-PyCBC is a python toolkit for analysis of data from gravitational-wave laser interferometer detectors with the goal of detecting and studying signals from compact binary coalescences (CBCs).
+.. toctree::
+   :maxdepth: 1
 
-The goals of the PyCBC project are to:
+   credit
 
-- Provide tools for building gravitational-wave search workflows for CBCs
-- Create a flexible, extensible production code for CBC analysis that can be released for the public
-- Enable simple, easy and transparent access for various many-core architectures like GPUs
+===============
+Getting Started
+===============
 
-===========================
-PyCBC Contributors
-===========================
+ -  Get the full PyCBC software suite with one of our Docker Images
 
-Stanislav Babak (1), Christopher M. Biwer (2), Duncan Brown (2), Collin Capano (3), Tito Dal Canton (4), Gergely Debreczeni (5), Thomas Dent (4), Steve Fairhurst (10), Henning Fehrmann (4), Ian Harry (1,2), Marcel Kehl (11), Drew Keppel (4), Badri Krishnan (4), Prayush Kumar (2,11), Amber Lenon (2), Andrew Lundgren (4), Duncan Macleod (6), Thomas Massinger (2), Adam Mercer (7), Andrew Miller (8), Saeed Mirshekari (9), Alex Nitz (1,2), Laura Nuttall (2), Francesco Pannarale (10), Harald Pfeiffer (11), Samantha Usman (2), Karsten Wiesner (4), Andrew Williamson (10), Josh Willis (8).
+    If you have `Docker <https://www.docker.com/community-edition>`_ installed, you can get started using PyCBC with just two commands:
 
-#. AEI, Golm, Germany
-#. Syracuse University, NY, USA
-#. University of Maryland, MD, USA
-#. AEI, Hannover, Germany
-#. Wigner RCP, Budapest, Hungary
-#. Louisiana State University, LA, USA
-#. University of Wisconsin-Milwaukee, WI, USA
-#. Abilene Christian University, TX, USA
-#. Instituto de Fisico Teorica, Sao Paulo, Brazil
-#. Cardiff University, Cardiff, UK
-#. Canadian Institute for Theoretical Astrophysics, Toronto, Canada
+    .. raw:: html
 
-=========================
-Documentation for Users
-=========================
+        <script type="text/javascript">
+            document.addEventListener("DOMContentLoaded", function(){
+                Typed.new(".element", {
+                    strings: ["^500<strong>docker pull pycbc/pycbc-el7:latest</strong><br>$ ^500<strong>docker run -it pycbc/pycbc-el7:latest /bin/bash -l</strong><br>&#40;pycbc-software&#41;&#91;pycbc@37184573e664 &#126;&#93;$ ^500<strong>python</strong><br>Python 2.7.5 &#40;default, Nov  6 2016, 00:28:07&#41;<br>&#91;GCC 4.8.5 20150623 &#40;Red Hat 4.8.5-11&#41;&#93; on linux2<br>&gt;&gt;&gt; ^500<strong>execfile&#40;&quot;/home/pycbc/src/pycbc/examples/waveform/match_waveform.py&quot;&#41;</strong><br>^1000The match is: 0.953<br>&gt;&gt;&gt; ^500<strong>from pycbc.waveform import td_approximants</strong><br>&gt;&gt;&gt; ^500<strong>print td_approximants&#40;&#41;&#91;20:24&#93;</strong><br>['SEOBNRv3', 'SEOBNRv2', 'SpinTaylorT1', 'SEOBNRv4']<br>&gt;&gt;&gt; "],
+                    typeSpeed: 0
+                });
+            });
+        </script>
+        <div class="text-editor-wrap">
+            <div class="title-bar"><span class="title">pycbc &mdash; bash &mdash; 80x<span class="terminal-height">25</span></span></div>
+            <div class="text-body">
+                $ <span class="element"></span>
+            </div>
+        </div>
+        <br>
+        <br>
 
-To install PyCBC and get started, follow the links at:
+    For more details, including instructions on starting a container that can display graphics, see:
+
+    .. toctree::
+       :maxdepth: 1
+
+       docker
+
+
+ - Use the PyCBC Library within your Browser
+
+   We have interactive jupyter notebooks on azure where you can try some of our
+   examples, and use the pycbc library. All from within the browser. 
+   `Give it a try <https://notebooks.azure.com/nitz/libraries/pycbc>`_
+
+=====================
+Installation
+=====================
+
+Note, if you are a LIGO / Virgo member with access to LDG resources, PyCBC is *already*
+installed on your cluster through CVMFS! Instructions to source any release of PyCBC
+is available from the `releases page <https://github.com/ligo-cbc/pycbc/releases>`_. 
+
+You may also install PyCBC directly with pip. You may ommit `lalsuite` if you have
+your own build.
+
+.. code-block:: bash
+
+   pip install lalsuite pycbc
+
+Full detailed installation instructions for users who want to use and develop PyCBC are available at:
 
 .. toctree::
    :maxdepth: 1
 
    install
+
+=======================
+Documentation for Users
+=======================
 
 Users who want to create and run scientific workflows to search for compact
 binaries should read the documentation in the links at:
@@ -52,8 +91,15 @@ binaries should read the documentation in the links at:
 
    workflow/pycbc_make_psd_estimation_workflow
    workflow/pycbc_make_coinc_search_workflow
-   workflow/pycbc_make_sngl_workflow
    workflow/pygrb.rst
+
+Users who want to create and run parameter estimation workflows should read the
+documentation at:
+
+.. toctree::
+   :maxdepth: 2
+
+   inference
 
 Users who are interested in tools that PyCBC provides for various other
 analysis tasks (e.g. template bank generation, hardware injections, and testing
@@ -66,18 +112,40 @@ template banks) should read the documentation at:
    hwinj
    banksim
    faithsim
+   upload_to_gracedb
 
-Users who are intersted in using PyCBC for investigation of CBC waveforms
-should read the documentation at:
+==========================================
+Library Examples and Interactive Tutorials
+==========================================
+
+We have interactive tutorials and examples of using the pycbc library hosted
+on azure jupyter notebooks. `Please give them a try. <https://notebooks.azure.com/nitz/libraries/pycbc>`_ 
+
+In addition we have some examples below.
 
 .. toctree::
    :maxdepth: 2
 
+   catalog
+   gw150914
+   frame
+   detector
+   psd
+   noise
    waveform
+   filter
+   distributions
 
 =============================
 Documentation for Developers
 =============================
+
+Documentation on building stand-alone bundled executables with PyInstaller is available at:
+
+.. toctree::
+   :maxdepth: 1
+
+   building_bundled_executables
 
 PyCBC developers should read the pages below which explain how to write
 documentation, develop the code, and create releases:
@@ -94,7 +162,6 @@ read the documentation at:
 .. toctree::
    :maxdepth: 1
 
-   frame
    formats/hdf_format
 
 Developers who are interested in creating new scientific workflow generation
@@ -105,7 +172,7 @@ scripts should read the documentation at:
 
    workflow
 
-Full Module Documentation is avaialable at:
+Full Module Documentation is available at:
 
 .. toctree::
    :maxdepth: 1

@@ -23,15 +23,9 @@
 from __future__ import division
 
 import re
+import os
 from argparse import ArgumentParser
-from glue import markup
-from pylal import antenna,git_version
-from lal.gpstime import gps_to_utc,LIGOTimeGPS
-
-__author__  = "Andrew Williamson <andrew.williamson@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__    = git_version.date
-
+from glue import markup, segments
 
 def initialize_page(title, style, script, header=None):
     """
@@ -122,6 +116,8 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
     """
         Write summary of information to markup.page object page
     """
+    from pylal import antenna
+    from lal.gpstime import gps_to_utc, LIGOTimeGPS
 
     gps = args.start_time
     grbdate = gps_to_utc(LIGOTimeGPS(gps))\
@@ -137,7 +133,6 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
         td2 = []
         td3 = []
         timedelay = {}
-        deltat = []
         search_file = '../../../S5IPN_GRB%s_search_180deg.txt' % args.grb_name
         for line in open(search_file):
             ra.append(line.split()[0])
@@ -186,12 +181,13 @@ def write_summary(page, args, ifos, skyError=None, ipn=False, ipnError=False):
     return page
 
 
-def write_antenna(page, args, grid=False, ipn=False):
+def write_antenna(page, args, seg_plot=None, grid=False, ipn=False):
 
     """
     Write antenna factors to merkup.page object page and generate John's
     detector response plot.
     """
+    from pylal import antenna
 
     page.h3()
     page.add('Antenna factors and sky locations')
@@ -222,7 +218,6 @@ def write_antenna(page, args, grid=False, ipn=False):
                                                 ifo)
                 antenna_ifo[ifo].append(round(f_q,3))
         dectKeys = antenna_ifo.keys()
-        newList=[]
 
         for elements in range(len(antenna_ifo.values()[0])):
             newDict={}
@@ -231,7 +226,7 @@ def write_antenna(page, args, grid=False, ipn=False):
                                                dectKeys[detectors]][elements]
             for key in newDict.keys():
                 th.append(key)
-            td.append(newDict.values())        
+            td.append(newDict.values())
         page = write_table(page, list(set(th)), td)
     for ifo in ifos:
         _, _, _, f_q = antenna.response(args.start_time, args.ra, args.dec,
@@ -253,15 +248,15 @@ def write_antenna(page, args, grid=False, ipn=False):
 
     page = write_table(page, th, td)
 
-    plot = markup.page()
-    p = "projtens.png"
-    plot.a(href=p, title="Detector response and polarization")
-    plot.img(src=p)
-    plot.a.close()
-    th2 = ['Response Diagram']
-    td2 = [plot() ]
+#    plot = markup.page()
+#    p = "projtens.png"
+#    plot.a(href=p, title="Detector response and polarization")
+#    plot.img(src=p)
+#    plot.a.close()
+#    th2 = ['Response Diagram']
+#    td2 = [plot() ]
 
-        # FIXME: Add these in!!
+# FIXME: Add these in!!
 #    plot = markup.page()
 #    p = "ALL_TIMES/plots_clustered/GRB%s_search.png"\
 #        % args.grb_name
@@ -280,6 +275,15 @@ def write_antenna(page, args, grid=False, ipn=False):
 #    th2.append('Error Box Simulations')
 #    td2.append(plot())
 
+    if seg_plot is not None:
+        plot = markup.page()
+        p = os.path.basename(seg_plot)
+        plot.a(href=p, title="Science Segments")
+        plot.img(src=p)
+        plot.a.close()
+        th2.append('Science Segments')
+        td2.append(plot())
+
     plot = markup.page()
     p = "ALL_TIMES/plots_clustered/GRB%s_sky_grid.png"\
             % args.grb_name
@@ -289,14 +293,14 @@ def write_antenna(page, args, grid=False, ipn=False):
     th2.append('Sky Grid')
     td2.append(plot())
 
-    plot = markup.page()
-    p = "GRB%s_inspiral_horizon_distance.png"\
-            % args.grb_name
-    plot.a(href=p, title="Inspiral Horizon Distance")
-    plot.img(src=p)
-    plot.a.close()
-    th2.append('Inspiral Horizon Distance')
-    td2.append(plot())
+#    plot = markup.page()
+#    p = "GRB%s_inspiral_horizon_distance.png"\
+#            % args.grb_name
+#    plot.a(href=p, title="Inspiral Horizon Distance")
+#    plot.img(src=p)
+#    plot.a.close()
+#    th2.append('Inspiral Horizon Distance')
+#    td2.append(plot())
 
     page = write_table(page, th2, td2)
 
@@ -311,20 +315,26 @@ def write_offsource(page, args, grbtag, onsource=False):
 
     th = ['Re-weighted SNR', 'Coherent SNR']
 
-    if onsource:
-        dir = 'ALL_TIMES'
+    if args.time_slides:
+        if onsource:
+            out_dir = 'ZEROLAG_ALL'
+        else:
+            out_dir = 'ZEROLAG_OFF'
     else:
-        dir = 'OFFSOURCE'
+        if onsource:
+            out_dir = 'ALL_TIMES'
+        else:
+            out_dir = 'OFFSOURCE'
 
     plot = markup.page()
-    p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (dir, grbtag)
-    plot.a(href=p, title="Coherent SNR versus time")
+    p = "%s/plots_clustered/GRB%s_bestnr_vs_time_noinj.png" % (out_dir, grbtag)
+    plot.a(href=p, title="Detection statistic versus time")
     plot.img(src=p)
     plot.a.close()
     td = [ plot() ]
 
     plot = markup.page()
-    p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % (dir, grbtag)
+    p = "%s/plots_clustered/GRB%s_triggers_vs_time_noinj.png" % (out_dir, grbtag)
     plot.a(href=p, title="Coherent SNR versus time")
     plot.img(src=p)
     plot.a.close()
@@ -335,7 +345,7 @@ def write_offsource(page, args, grbtag, onsource=False):
         th.append('%s SNR' % ifo)
         plot = markup.page()
         p = "%s/plots_clustered/GRB%s_%s_triggers_vs_time_noinj.png"\
-            % (dir, grbtag, ifo)
+            % (out_dir, grbtag, ifo)
         plot.a(href=p, title="%s SNR versus time" % ifo)
         plot.img(src=p)
         plot.a.close()
@@ -372,7 +382,7 @@ def write_chisq(page, injList, grbtag):
             plot.img(src=p)
             plot.a.close()
             d.append(plot())
-  
+
         td.append(d)
 
     page = write_table(page, th, td)
@@ -438,6 +448,9 @@ def write_found_missed(page, args, injList):
     plots = []
     text  = {}
     ifos = [args.ifo_tag[i:i+2] for i in range(0, len(args.ifo_tag), 2)]
+    plots.extend(['dist', 'dist_time'])
+    text['dist'] = 'Dist vs Mchirp'
+    text['dist_time'] = 'Dist vs Time'
     for ifo in ifos:
         plots.extend(['effdist_%s' % ifo[0].lower(),\
                       'effdist_time_%s' % ifo[0].lower()])
@@ -556,10 +569,10 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
     FAPS = []
     for line in file:
         line = line.replace('\n','')
-        if float(line) == -2:
+        if line == "-2":
             FAPS.append('No event')
         else:
-            FAPS.append(float(line))
+            FAPS.append(line)
 
     file.close()
 
@@ -572,7 +585,7 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
     page.a.close()
 
     if reduced or not injList:
-        return page  
+        return page
 
     page.h3()
     page.add('Detection efficiency plots - injections louder than loudest '
@@ -612,24 +625,115 @@ def write_exclusion_distances(page , trial, injList, massbins, reduced=False,
 
     page = write_table(page, th, td)
 
-    page.h3()
-    page.add('90% confidence exclusion distances (Mpc)')
-    th = injList
-    td = []
-    d = []
-    for inj in injList:
-        file = open('%s/efficiency_%s/exclusion_distance.txt' % (inj, trial),
-                    'r')
-        for line in file:
-            line = line.replace('\n','')
-            excl_dist = float(line)
-        d.append(excl_dist)
-        file.close()
-    td.append(d)
-
-    page = write_table(page, th, td)
+    for percentile in [90, 50]:
+        page.h3()
+        page.add('%d%% confidence exclusion distances (Mpc)' % percentile)
+        th = injList
+        td = []
+        d = []
+        for inj in injList:
+            file = open('%s/efficiency_%s/exclusion_distance_%d.txt'
+                        % (inj, trial, percentile), 'r')
+            for line in file:
+                line = line.replace('\n','')
+                excl_dist = float(line)
+            d.append(excl_dist)
+            file.close()
+        td.append(d)
+        page = write_table(page, th, td)
 
     page.h3.close()
 
     return page
-    
+
+
+def make_grb_segments_plot(wkflow, science_segs, trigger_time, trigger_name,
+                           out_dir, coherent_seg=None, fail_criterion=None):
+
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+    from matplotlib.lines import Line2D
+    from pycbc.results.color import ifo_color
+
+    ifos = wkflow.ifos
+    if len(science_segs.keys()) == 0:
+        extent = segments.segment(int(wkflow.cp.get("workflow", "start-time")),
+                                  int(wkflow.cp.get("workflow", "end-time")))
+    else:
+        pltpad = [science_segs.extent_all()[1] - trigger_time,
+                  trigger_time - science_segs.extent_all()[0]]
+        extent = segments.segmentlist([science_segs.extent_all(),
+            segments.segment(trigger_time - pltpad[0],
+                             trigger_time + pltpad[1])]).extent()
+
+    ifo_colors = {}
+    for ifo in ifos:
+        ifo_colors[ifo] = ifo_color(ifo)
+        if ifo not in science_segs.keys():
+            science_segs[ifo] = segments.segmentlist([])
+
+    # Make plot
+    fig, subs = plt.subplots(len(ifos), sharey=True)
+    if len(ifos) == 1:
+        subs = [subs]
+    plt.xticks(rotation=20, ha='right')
+    for sub, ifo in zip(subs, ifos):
+        for seg in science_segs[ifo]:
+            sub.add_patch(Rectangle((seg[0], 0.1), abs(seg), 0.8,
+                                    facecolor=ifo_colors[ifo], edgecolor='none'))
+        if coherent_seg:
+            if len(science_segs[ifo]) > 0 and \
+                    coherent_seg in science_segs[ifo]:
+                sub.plot([trigger_time, trigger_time], [0, 1], '-',
+                         c='orange')
+                sub.add_patch(Rectangle((coherent_seg[0], 0),
+                                        abs(coherent_seg), 1, alpha=0.5,
+                                        facecolor='orange', edgecolor='none'))
+            else:
+                sub.plot([trigger_time, trigger_time], [0, 1], ':',
+                         c='orange')
+                sub.plot([coherent_seg[0], coherent_seg[0]], [0, 1], '--',
+                         c='orange', alpha=0.5)
+                sub.plot([coherent_seg[1], coherent_seg[1]], [0, 1], '--',
+                         c='orange', alpha=0.5)
+        else:
+            sub.plot([trigger_time, trigger_time], [0, 1], ':k')
+        if fail_criterion:
+            if len(science_segs[ifo]) > 0:
+                style_str = '--'
+            else:
+                style_str = '-'
+            sub.plot([fail_criterion[0], fail_criterion[0]], [0, 1], style_str,
+                     c='black', alpha=0.5)
+            sub.plot([fail_criterion[1], fail_criterion[1]], [0, 1], style_str,
+                     c='black', alpha=0.5)
+
+        sub.set_frame_on(False)
+        sub.set_yticks([])
+        sub.set_ylabel(ifo, rotation=45)
+        sub.set_ylim([0, 1])
+        sub.set_xlim([float(extent[0]), float(extent[1])])
+        sub.get_xaxis().get_major_formatter().set_useOffset(False)
+        sub.get_xaxis().get_major_formatter().set_scientific(False)
+        sub.get_xaxis().tick_bottom()
+        if sub is subs[-1]:
+            sub.tick_params(labelsize=10, pad=1)
+        else:
+            sub.get_xaxis().set_ticks([])
+            sub.get_xaxis().set_ticklabels([])
+
+    xmin, xmax = fig.axes[-1].get_xaxis().get_view_interval()
+    ymin, _ = fig.axes[-1].get_yaxis().get_view_interval()
+    fig.axes[-1].add_artist(Line2D((xmin, xmax), (ymin, ymin), color='black',
+                                   linewidth=2))
+    fig.axes[-1].set_xlabel('GPS Time')
+
+    fig.axes[0].set_title('Science Segments for GRB%s' % trigger_name)
+    plt.tight_layout()
+    fig.subplots_adjust(hspace=0)
+
+    plot_name = 'GRB%s_segments.png' % trigger_name
+    plot_url = 'file://localhost%s/%s' % (out_dir, plot_name)
+    fig.savefig('%s/%s' % (out_dir, plot_name))
+
+    return [ifos, plot_name, extent, plot_url]

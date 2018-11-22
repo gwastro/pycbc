@@ -28,7 +28,7 @@ def median_bias(n):
     ----------
     n : int
         Number of segments used in PSD estimation.
-    
+
     Returns
     -------
     ans : float
@@ -52,8 +52,8 @@ def median_bias(n):
         ans += 1.0 / (2*i + 1) - 1.0 / (2*i)
     return ans
 
-def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
-        avg_method='median'):
+def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
+          avg_method='median', num_segments=None, require_exact_data_fit=False):
     """PSD estimator based on Welch's method.
 
     Parameters
@@ -64,8 +64,9 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         Segment length in samples.
     seg_stride : int
         Separation between consecutive segments, in samples.
-    window : {'hann'}
-        Function used to window segments before Fourier transforming.
+    window : {'hann', numpy.ndarray}
+        Function used to window segments before Fourier transforming, or
+        a `numpy.ndarray` that specifies the window.
     avg_method : {'median', 'mean', 'median-mean'}
         Method used for averaging individual segment PSDs.
 
@@ -90,9 +91,11 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
     }
 
     # sanity checks
-    if not window in window_map:
-        raise ValueError('Invalid window')
-    if not avg_method in ('mean', 'median', 'median-mean'):
+    if isinstance(window, numpy.ndarray) and window.size != seg_len:
+        raise ValueError('Invalid window: incorrect window length')
+    if not isinstance(window, numpy.ndarray) and window not in window_map:
+        raise ValueError('Invalid window: unknown window {!r}'.format(window))
+    if avg_method not in ('mean', 'median', 'median-mean'):
         raise ValueError('Invalid averaging method')
     if type(seg_len) is not int or type(seg_stride) is not int \
         or seg_len <= 0 or seg_stride <= 0:
@@ -102,22 +105,45 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         fs_dtype = numpy.complex64
     elif timeseries.precision == 'double':
         fs_dtype = numpy.complex128
-        
+
     num_samples = len(timeseries)
-    num_segments = num_samples / seg_stride
-    
-    if (num_segments - 1) * seg_stride + seg_len > num_samples:
-        num_segments -= 1
+    if num_segments is None:
+        num_segments = int(num_samples // seg_stride)
+        # NOTE: Is this not always true?
+        if (num_segments - 1) * seg_stride + seg_len > num_samples:
+            num_segments -= 1
+
+    if not require_exact_data_fit:
+        data_len = (num_segments - 1) * seg_stride + seg_len
+
+        # Get the correct amount of data
+        if data_len < num_samples:
+            diff = num_samples - data_len
+            start = diff // 2
+            end = num_samples - diff // 2
+            # Want this to be integers so if diff is odd, catch it here.
+            if diff % 2:
+                start = start + 1
+
+            timeseries = timeseries[start:end]
+            num_samples = len(timeseries)
+        if data_len > num_samples:
+            err_msg = "I was asked to estimate a PSD on %d " %(data_len)
+            err_msg += "data samples. However the data provided only contains "
+            err_msg += "%d data samples." %(num_samples)
+
     if num_samples != (num_segments - 1) * seg_stride + seg_len:
         raise ValueError('Incorrect choice of segmentation parameters')
-        
-    w = Array(window_map[window](seg_len).astype(timeseries.dtype))
+
+    if not isinstance(window, numpy.ndarray):
+        window = window_map[window](seg_len)
+    w = Array(window.astype(timeseries.dtype))
 
     # calculate psd of each segment
     delta_f = 1. / timeseries.delta_t / seg_len
     segment_tilde = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
         delta_f=delta_f, dtype=fs_dtype)
-        
+
     segment_psds = []
     for i in xrange(num_segments):
         segment_start = i * seg_stride
@@ -126,14 +152,14 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
         assert len(segment) == seg_len
         fft(segment * w, segment_tilde)
         seg_psd = abs(segment_tilde * segment_tilde.conj()).numpy()
-      
+
         #halve the DC and Nyquist components to be consistent with TO10095
         seg_psd[0] /= 2
         seg_psd[-1] /= 2
-        
+
         segment_psds.append(seg_psd)
-        
-    segment_psds = numpy.array(segment_psds)   
+
+    segment_psds = numpy.array(segment_psds)
 
     if avg_method == 'mean':
         psd = numpy.mean(segment_psds, axis=0)
@@ -150,7 +176,8 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann', \
 
     psd *= 2 * delta_f * seg_len / (w*w).sum()
 
-    return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype)
+    return FrequencySeries(psd, delta_f=delta_f, dtype=timeseries.dtype,
+                           epoch=timeseries.start_time)
 
 def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, trunc_method=None):
     """Modify a PSD such that the impulse response associated with its inverse
@@ -194,7 +221,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     inv_asd = FrequencySeries((1. / psd)**0.5, delta_f=psd.delta_f, \
         dtype=complex_same_precision_as(psd))
-        
+
     inv_asd[0] = 0
     inv_asd[N/2] = 0
     q = TimeSeries(numpy.zeros(N), delta_t=(N / psd.delta_f), \
@@ -205,16 +232,19 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
         inv_asd[0:kmin] = 0
 
     ifft(inv_asd, q)
-    
+
     trunc_start = max_filter_len / 2
     trunc_end = N - max_filter_len / 2
+    if trunc_end < trunc_start:
+        raise ValueError('Invalid value in inverse_spectrum_truncation')
 
     if trunc_method == 'hann':
         trunc_window = Array(numpy.hanning(max_filter_len), dtype=q.dtype)
         q[0:trunc_start] *= trunc_window[max_filter_len/2:max_filter_len]
         q[trunc_end:N] *= trunc_window[0:max_filter_len/2]
 
-    q[trunc_start:trunc_end] = 0
+    if trunc_start < trunc_end:
+        q[trunc_start:trunc_end] = 0
     psd_trunc = FrequencySeries(numpy.zeros(len(psd)), delta_f=psd.delta_f, \
                                 dtype=complex_same_precision_as(psd))
     fft(q, psd_trunc)
@@ -239,9 +269,9 @@ def interpolate(series, delta_f):
         A new FrequencySeries that has been interpolated.
     """
     new_n = (len(series)-1) * series.delta_f / delta_f + 1
-    samples = numpy.arange(0, new_n) * delta_f
+    samples = numpy.arange(0, numpy.rint(new_n)) * delta_f
     interpolated_series = numpy.interp(samples, series.sample_frequencies.numpy(), series.numpy())
-    return FrequencySeries(interpolated_series, epoch=series.epoch, 
+    return FrequencySeries(interpolated_series, epoch=series.epoch,
                            delta_f=delta_f, dtype=series.dtype)
 
 def bandlimited_interpolate(series, delta_f):

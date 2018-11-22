@@ -29,7 +29,7 @@ backends for the various schemes.
 import pycbc.fft
 import unittest
 from utils import parse_args_all_schemes, simple_exit
-from fft_base import _BaseTestFFTClass, _test_lalfft
+from fft_base import _BaseTestFFTClass
 
 _scheme, _context = parse_args_all_schemes("FFT")
 
@@ -38,7 +38,7 @@ _scheme, _context = parse_args_all_schemes("FFT")
 
 # Get our list of backends:
 
-backends = pycbc.fft._all_backends_list
+backends = pycbc.fft.get_backend_names()
 
 FFTTestClasses = []
 for backend in backends:
@@ -48,8 +48,6 @@ for backend in backends:
     # of backend.  One such class for each backend is appended
     # to the list
     kdict = {'backends' : [backend], 'scheme' : _scheme, 'context' : _context}
-    if _scheme == 'cpu' and backend == 'lal':
-        kdict.update({"test_lalfft" : _test_lalfft})
     klass = type('{0}_{1}_test'.format(_scheme,backend),
                  (_BaseTestFFTClass,),kdict)
     FFTTestClasses.append(klass)

@@ -92,7 +92,7 @@ def mkdir(dir_name):
         
 def mc_min_max_from_sorted_file(fname):
     from glue.ligolw import lsctables
-    from glue.ligolw.ligolw import LIGOLWContentHandler 
+    from glue.ligolw.ligolw import LIGOLWContentHandler
     class mycontenthandler(LIGOLWContentHandler):
         pass
     lsctables.use_in(mycontenthandler)

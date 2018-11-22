@@ -1,2 +1,2 @@
-from matchedfilter import *
-from resample import *
+from .matchedfilter import *
+from .resample import *

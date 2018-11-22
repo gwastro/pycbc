@@ -15,11 +15,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 """ Plot the output of pycbc_single_template """
-import argparse, pycbc.results, pycbc.events, pycbc.events, sys, h5py, numpy
-import matplotlib; matplotlib.use('Agg')
-import pylab
 
-parser = argparse.ArgumentParser()
+import argparse
+import sys
+import h5py
+import numpy
+import matplotlib
+matplotlib.use('Agg')
+import pylab
+import pycbc.results
+import pycbc.events
+
+
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose')
@@ -33,6 +41,10 @@ parser.add_argument('--event-time', type=float,
 parser.add_argument('--output-file', required=True)
 parser.add_argument('--log-y', action='store_true',
                     help='Use log scale for y-axis')
+parser.add_argument('--plot-title',
+                    help="If given, use this as the plot title")
+parser.add_argument('--plot-caption',
+                    help="If given, use this as the plot caption")
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -63,6 +75,9 @@ center = int((time - start_time) / delta_t)
 left = center - int(args.window / delta_t)
 right = center + int(args.window / delta_t)
 
+left = max(left,0)
+right = min(right,len(f['snr']))
+
 snr = abs(f['snr'][left:right][:])
 chisq = f['chisq'][left:right][:]
 
@@ -85,6 +100,17 @@ if args.log_y:
     ax2.set_yscale('log')
 ax2.legend(loc="upper right")
 
+if args.plot_title is None:
+    args.plot_title = '%s: SNR and chi^2 time series' % ifo
+if args.plot_caption is None:
+    args.plot_caption = ''
+
+if 'command_line' in f.attrs:
+    cmd = f.attrs['command_line'] + '\\n\\n' + ' '.join(sys.argv)
+else:
+    cmd = ' '.join(sys.argv)
+
 pycbc.results.save_fig_with_metadata(fig, args.output_file, 
-                             cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
-                             title='%s: SNR and chi^2 time series' % ifo)
+                             cmd=cmd, fig_kwds={'dpi': 150},
+                             title=args.plot_title,
+                             caption=args.plot_caption)

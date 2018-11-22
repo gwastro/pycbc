@@ -116,7 +116,7 @@ class CUDAScheme(Scheme):
         import pycuda.driver
         pycuda.driver.init()
         self.device = pycuda.driver.Device(device_num)
-        self.context = self.device.make_context(flags=pycuda.driver.ctx_flags.SCHED_YIELD)
+        self.context = self.device.make_context(flags=pycuda.driver.ctx_flags.SCHED_BLOCKING_SYNC)
         import atexit
         atexit.register(clean_cuda,self.context)
 
@@ -148,6 +148,9 @@ class MKLScheme(CPUScheme):
         if not pycbc.HAVE_MKL:
             raise RuntimeError("Can't find MKL libraries")
 
+class NumpyScheme(CPUScheme):
+    pass
+
 class DefaultScheme(CPUScheme):
     pass
 
@@ -156,6 +159,7 @@ mgr.state = default_context
 scheme_prefix = {CUDAScheme: "cuda",
                  CPUScheme: "cpu",
                  MKLScheme: "mkl",
+                 NumpyScheme: "numpy",
                  DefaultScheme: 'cpu'}
 
 def current_prefix():
@@ -172,7 +176,6 @@ def schemed(prefix):
                 try:
                     backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                     schemed_fn = getattr(backend, fn.__name__)
-                    schemed_fn.__doc__ = fn.__doc__
                 except (ImportError, AttributeError):
                     continue
 

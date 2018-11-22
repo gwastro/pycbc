@@ -1,14 +1,47 @@
+.. _installing_pycbc:
+
 ################
 Installing PyCBC
 ################
 
-There are three typical use cases for PyCBC:
+%%%%%%%%%%%%%%%%%%%%%%%%
+Simple Installation
+%%%%%%%%%%%%%%%%%%%%%%%%
 
-1. Installing a release of PyCBC from GitHub for an end user to run the tools.
-2. Installing an editable version from GitHub for development.
-3. Production LIGO astrophysical searches.
+PyCBC is available through the PyPI. For straightforward use of the PyCBC library
+and executables, we recommend installing with the following command. If you 
+are not running in a specialized computing environment, this is probably the
+appropriate thing to do. Note, that at this time, PyCBC supports Python2. Python3
+support is under development.
 
-This page documents the first two use cases. For production analysis, see :ref:`using_production_binaries`.
+.. code-block:: bash
+    
+    pip install lalsuite pycbc
+    
+PyCBC depends on `lalsuite` for a lot of functionality, however, if you are
+getting lalsuite through another means, you may ommit this part of the command.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Full Virtualenv for Development and Production
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The following instructions are appropriate for development use on LDG clusters, 
+and goes through some special case scenarios appropriate for these environments
+as they generally contain older reference operating systems. Other users may find
+useful tips here, but in most cases, we suggest using the simpler instructions.
+
+This document explains how to set up a virtual environment to install PyCBC
+either for development or use in a production analysis with a release. The
+code build will be a standard Python install which requires that the
+installation directory containing the Python libraries is accessible at
+runtime. Some executables also use weave for just-in-time compilation of code
+at runtime. These executables require a gcc and Python build environment on
+the execution machine.
+
+If you wish to run PyCBC executables on a machine that does not have the
+required environment, then you must use PyInstaller to build bundled versions
+of the executables. Documentation on doing this is available on the page
+:ref:`building_bundled_executables`.
 
 .. note::
 
@@ -24,7 +57,6 @@ These instructions walk you through the process of
         * `Installing source from GitHub for development`_.
     * Optional additional installation steps
         * `Building and Installing Documentation`_.
-        * `Modifying pycbc-glue and pycbc-pylal`_.
         * `Use of Intel MKL Optimized FFT libraries`_.
         * `Graphics Processing Unit support with CUDA`_
 
@@ -40,7 +72,7 @@ Make sure that you have at least version 13.1.1 of virtualenv. To do this, you c
 
     virtualenv --version
     
-If this returns ``virtualenv: command not found`` or the command returns a lower version than ``13.1.1`` (as is the case with LIGO Data Grid Scientific Linux 6 systems) then follow the instructions for setting virtualenv at:
+If this returns ``virtualenv: command not found`` or the command returns a lower version than ``13.1.1`` (as is the case with Scientific Linux 6 systems) then follow the instructions for setting virtualenv at:
 
 .. toctree::
     :maxdepth: 1
@@ -69,31 +101,30 @@ Next, you need to choose a directory name where you'd like to make your virtual 
 
     It is very important that your ``virtualenv`` version is at least 13.1.1 before continuing. Read the preceding instructions if you are not sure how to check this, or need to upgrade virtualenv.
 
-You first set up a new virtual environment. A virtual environment is defined by a directory path that will hold the contents of the virtual environment. We will reference this directory path a lot in the instructions below, so we first set a shell variable called ``NAME`` to the value of the path of the new virtual environment. Run with the command:
-
-.. code-block:: bash
-
-    NAME=${HOME}/pycbc-dev
-    
-Now you can initialize the virtual environment. This creates a new directory named by value of the variable ``$NAME`` containing your new virtual environment. To do this, run the command:
+You first set up a new virtual environment. A virtual environment is defined by a directory path that will hold the contents of the virtual environment. In this example, we chose ``~/src/pycbc`` although you can change this to whatever you like by changing the command below. Initialize the virtual environment by running the command:
 
 .. code-block:: bash
     
-    virtualenv $NAME
+    virtualenv ~/src/pycbc
 
-You can create as many different virtual environments as you like, as long as they all have different paths (i.e. different values of ``$NAME``).
+You can create as many different virtual environments as you like, as long as
+they all have different paths. 
 
 .. note::
 
-    Do not run ``virtualenv`` twice with the same value of ``$NAME`` as it will overwrite the existing virtual environment with a new one, destroying the environment.
+    Do not run ``virtualenv`` twice with the same path as it will overwrite the existing virtual environment with a new one, destroying the environment.
 
-To enter your virtual environment run the command
+To enter your virtual environment run the command (replacing the string ``~/src/pycbc/`` if you chose a different path)
 
 .. code-block:: bash
     
-    source $NAME/bin/activate
-    
-You will now be in your virtual environment, and so you can install packages, etc, without conflicting with either the system build, or other builds that you may have sitting around. You may install other programs and libraries, such as lalsuite (:ref:`lalsuite_install`), into this virtual environment.
+    source ~/src/pycbc/bin/activate
+
+After running the ``activate`` script, you will now be in your virtual environment, and so you can install packages without conflicting with either the system build, or other builds that you may have sitting around. You may install other programs and libraries, such as lalsuite (:ref:`lalsuite_install`), into this virtual environment. The ``activate`` script also sets the environment variable ``${VIRTUAL_ENV}`` to the full path to your virtual environment.
+
+.. note::
+
+    Python implements a `per user site packages directory <https://www.python.org/dev/peps/pep-0370/>`_ to install packages in the user's home directory. By default this is ``~/.local`` but the location is controlled by the ``PYTHONUSERBASE`` environment variable. If you make use of the ``~/.local`` directory, you should add the line ``export PYTHONUSERBASE=${VIRTUAL_ENV}/.local`` to the end of your virtual environment's ``activate`` script to prevent conflicts. Similarly, pip caches data in the directory ``~/.caches/pip``. To prevent conflicts with this directory, you can add the line ``export XDG_CACHE_HOME=${VIRTUAL_ENV}/.cache`` to the virtual environment ``activate`` script so that pip uses a cache that is specific to the virtual environment.
 
 To leave this virtual environment type
 
@@ -103,7 +134,8 @@ To leave this virtual environment type
     
 which will return you to a regular shell.
 
-.. installinglalsuite::
+
+.. _installinglalsuite:
 
 ==============================================
 Installing lalsuite into a virtual environment
@@ -113,36 +145,43 @@ Enter the virtual environment that you wish to use for PyCBC development by sour
 
 .. code-block:: bash
 
-    source $NAME/bin/activate
+    source ~/src/pycbc/bin/activate
 
 .. note::
 
    CentOS 6 provides a buggy version of the HDF5 library, so you will need to install a newer version into your virtual environment. If you are using a CentOS 6 cluster, you must install HDF5. If you are using another cluster, then this step is optional.  
 
-If you need to install the HDF5 library (i.e. you are on a CentOS 6 cluster), run the commands: 
+If you are running on a Scientific Linux 6 cluster, you need to install the HDF5 library. To do this, run the commands:
 
 .. code-block:: bash
 
     mkdir -p $VIRTUAL_ENV/src
     cd $VIRTUAL_ENV/src
-    curl https://www.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
+    pip install "nose>=1.0.0"
+    curl https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.12/src/hdf5-1.8.12.tar.gz > hdf5-1.8.12.tar.gz
     tar -zxvf hdf5-1.8.12.tar.gz
     cd hdf5-1.8.12
     ./configure --prefix=$VIRTUAL_ENV/opt/hdf5-1.8.12
     make install
     HDF5_DIR=$VIRTUAL_ENV/opt/hdf5-1.8.12 pip install h5py
 
+
+.. note::
+
+    On a Scientific Linux 6 or Scientific Linux 7 system, if you do not upgrade the version of setuptools that is in your virtual environment, then the PyCBC install will fail to process the required dependencies.
+
+Make sure your versions of ``pip`` and ``setuptools`` are up to date by running the command:
+
+.. code-block:: bash
+
+    pip install --upgrade pip
+    pip install --upgrade setuptools
+
 Install unittest2, python-cjson, and numpy with the command:
 
 .. code-block:: bash
 
-    pip install "numpy>=1.6.4" unittest2 python-cjson Cython
-
-To authenticate with LIGO Data Grid services, you need M2Crypto which you should install with 
-
-.. code-block:: bash
-
-    SWIG_FEATURES="-cpperraswarn -includeall -I/usr/include/openssl" pip install M2Crypto
+    pip install "numpy>=1.13.0" python-cjson Cython decorator
 
 Once you have these packages installed, you can now install lalsuite following the instructions at:
 
@@ -159,19 +198,19 @@ Enter the virtual environment that you wish to use for PyCBC development by sour
 
 .. code-block:: bash
 
-    source $NAME/bin/activate
+    source ~/src/pycbc/bin/activate
 
 Next install the Pegasus WMS python libraries needed to build the workflows with the command:
 
 .. code-block:: bash
 
-    pip install http://download.pegasus.isi.edu/pegasus/4.5.2/pegasus-python-source-4.5.2.tar.gz
-
-To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. At the moment, these are not available from the Python Package Index, so you will need to install them from a branch in Duncan's repository with the command
+    pip install http://download.pegasus.isi.edu/pegasus/4.8.1/pegasus-python-source-4.8.1.tar.gz
+    
+To query the new Advanced LIGO and Advanced Virgo Segment Database, you will need to install the ``dqsegdb`` tools. Install the 1.4.1 pre-release of these tools, run the command:
 
 .. code-block:: bash
 
-    pip install git+https://github.com/duncan-brown/dqsegdb.git@pypi_release#egg=dqsegdb
+    pip install dqsegdb
 
 For uploading triggers to GraceDB at the end of the workflow you will need to have the gracedb client tools installed. The latest release is in pip
 
@@ -189,11 +228,19 @@ Installing a released version of PyCBC
 
     Make sure you have run the commands in the section :ref:`installinglalsuite` above to install unittest2 before installing PyCBC.
 
-To install a release of the code, determine the tag of the release that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
+Releases of PyCBC are available from the `PyPi PyCBC page <https://pypi.python.org/pypi/PyCBC/1.6.0>`_. To install the latest release run the command
 
 .. code-block:: bash
 
-    pip install git+https://github.com/ligo-cbc/pycbc@v1.1.0#egg=pycbc --process-dependency-links
+    pip install PyCBC
+
+To install an older version, use the `pip version specifier <https://packaging.python.org/glossary/#term-version-specifier>`_.
+
+To install a release of the code from GitHub, determine the tag of the release that you want to install from the `list of PyCBC tags <https://github.com/ligo-cbc/pycbc/tags>`_. This example installs the v1.1.0 release. If you want to install a different release, change the command below accordingly:
+
+.. code-block:: bash
+
+    pip install git+https://github.com/ligo-cbc/pycbc@v1.1.0#egg=pycbc
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Installing source from GitHub for development
@@ -212,15 +259,15 @@ Install the PyCBC source code from the GitHub URL using the command:
 
 .. code-block:: bash
 
-    pip install -e git+git@github.com:your-username-here/pycbc.git#egg=pycbc --process-dependency-links
+    pip install -e git+git@github.com:your-username-here/pycbc.git#egg=pycbc
 
-This will fetch the PyCBC source and will also install all the listed dependencies. The ``-e`` option to pip creates a directory called ``$NAME/src/pycbc`` with a git checkout which is fully editable. To prevent pip from removing this source directory run the command
+This will fetch the PyCBC source and will also install all the listed dependencies. The ``-e`` option to pip creates a directory called ``${VIRTUAL_ENV}/src/pycbc`` with a git checkout which is fully editable. To prevent pip from removing this source directory run the command
 
 .. code-block:: bash
 
-    rm -f $NAME/src/pip-delete-this-directory.txt
+    rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
 
-You can then make changes to your PyCBC source code in the directory ``$NAME/src/pycbc``
+You can then make changes to your PyCBC source code in the directory ``${VIRTUAL_ENV}/src/pycbc``
 
 You can also use the repository created by pip as your working repository, creating branches, commits, and `pull requests <https://help.github.com/articles/creating-a-pull-request/>`_ as you need to. To keep your repository in sync with the ligo-cbc/pycbc repository, you can read the GitHub instructions that explain how to `sync a fork of a repository to keep it up-to-date with the upstream repository. <https://help.github.com/articles/syncing-a-fork/>`_.
 
@@ -240,7 +287,14 @@ To build and install any changes that you make to the source code in your virtua
 
     python setup.py install
     
-from the PyCBC source directory in ``$NAME/src/pycbc``
+from the PyCBC source directory in ``${VIRTUAL_ENV}/src/pycbc``
+
+.. note::
+
+    PyCBC no longer requires an installation of the ``pycbc-pylal`` package.
+    If you are running a workflow that needs code from this package, you will
+    need to manually install it with ``pip install pycbc-pylal``.
+
 
 =====================================
 Building and Installing Documentation
@@ -250,57 +304,44 @@ To build the documentation from your virtual environment, first make sure that y
 
 .. code-block:: bash
 
-    pip install "Sphinx>=1.3.1"
+    pip install "Sphinx>=1.5.0"
+    pip install sphinx-rtd-theme
     pip install sphinxcontrib-programoutput
-    pip install numpydoc
     
-To generate the documentation, from the top level of the PyCBC source tree run
+To generate the documentation and push it to your personal GitHub pages, first create a branch names ``gh-pages``, if you do not already have one. Follow the `GitHub branch <https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/>`_ instructions to do this.
+
+To build and publish the documentation, run the following commands from the
+top-level of your PyCBC source tree, replacing ``github-username`` with your
+GitHub user name:
 
 .. code-block:: bash
 
-    python setup.py build_docs
-    
-This will build the documentation in the directory docs/_build/html which can be copied to a web-accessible directory. For example
+    git clone git@github.com:github-username/pycbc.git _gh-pages
+    cd _gh-pages
+    git checkout gh-pages
+    git rm -rf *
+    git commit -a -m "flush documentation"
+    cd ..
+    python setup.py build_gh_pages
+    cd _gh-pages
+    git add --all
+    git commit -a -m "documentation update"
+    git push origin gh-pages
 
-.. code-block:: bash
+The documentation will then be visible at http://github-username.github.io/pycbc/latest/html where ``github-username`` should be replaced with your GitHub username.
 
-    cp -a docs/_build/html/ ~/public_html/pycbc-docs
-    
-will copy the documentation to a directory called ``pycbc-docs`` under your public html pages.
+.. note::
 
-To maintain the documentation under GitHub project pages, see
+    Be careful with the ``git rm -rf *`` command as if you run it in the wrong
+    directory you can delete the contents of your git repository. If you do
+    this by accident, you can use ``git reset`` to undo the commit.
+
+For more details on building and maintaining the documentation under GitHub project pages, see
 
 .. toctree::
     :maxdepth: 1
 
     build_gh_pages
-
-
-====================================
-Modifying pycbc-glue and pycbc-pylal
-====================================
-
-PyCBC depends on the packages pycbc-glue and pycbc-pylal which are forks of the lalsuite development of these packages. The correct versions are automatically installed by pip as part of the main PyCBC install. If you are developing code in these packages, then you can clone them from GitHib into your virtual environment's source directory and build and install them from there.
-
-.. note::
-
-    If you want to develop pycbc-glue and pycbc-pylal, you should follow the instructions to `fork a repository <https://help.github.com/articles/fork-a-repo/>`_ to fork the `ligo-cbc/pycbc-glue <https://github.com/ligo-cbc/pycbc-glue>`_ and `ligo-cbc/pycbc-pylal <https://github.com/ligo-cbc/pycbc-pylal>`_ repositories into your own account.
-
-You can obtain these repositories in the standard way using git, replacing ``ligo-cbc`` with your GitHub user account name
-
-.. code-block:: bash
-
-    cd $NAME/src
-    git clone git@github.com:ligo-cbc/pycbc-glue.git
-    git clone git@github.com:ligo-cbc/pycbc-pylal.git
-
-Once you have the source code cloned, you can run 
-
-.. code-block:: bash
-
-    python setup.py install
-
-to install each of them into your virtual environment.
 
 ========================================
 Use of Intel MKL Optimized FFT libraries
@@ -310,7 +351,7 @@ PyCBC has the ability to use optimized FFT libraries such as FFTW and MKL. If MK
 
 .. code-block:: bash
 
-    echo 'source /opt/intel/bin/compilervars.sh intel64' >> $NAME/bin/activate
+    echo 'source /opt/intel/bin/compilervars.sh intel64' >> ${VIRTUAL_ENV}/bin/activate
 
 changing the path to the ``compilervars.sh`` script appropriately for your cluster. 
 

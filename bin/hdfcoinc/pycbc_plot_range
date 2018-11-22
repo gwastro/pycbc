@@ -63,7 +63,7 @@ for psd_file in args.psd_files:
         wf_key = (m1, m2, apx)
         pylab.errorbar((start+end)/2, ranges[wf_key], xerr=(end-start)/2,
                        ecolor=pycbc.results.ifo_color(ifo), label=label,
-                       fmt=None)
+                       fmt='none')
 pylab.legend(loc="best", fontsize='small')
 
 if len(args.approximant) == 1:

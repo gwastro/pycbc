@@ -1,0 +1,305 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2011 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Stochastic aligned spin bank generator.
+"""
+
+from __future__ import division
+import sys, argparse, copy
+import numpy
+import logging
+import pycbc
+import pycbc.version
+from pycbc import tmpltbank, pnutils
+from pycbc.types import positive_float
+import pycbc.psd
+import pycbc.strain
+
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = pycbc.version.git_verbose_msg
+__date__    = pycbc.version.date
+__program__ = "pycbc_aligned_stoch_bank"
+
+# Read command line option
+_desc = __doc__[1:]
+parser = argparse.ArgumentParser(description=_desc,
+           formatter_class=tmpltbank.IndentedHelpFormatterWithNL)
+
+# Begin with code specific options
+parser.add_argument("--version", action="version", version=__version__)
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="verbose output")
+parser.add_argument("-V", "--vary-fupper", action="store_true", default=False,
+                    help="Use a variable upper frequency cutoff in laying "
+                    "out the bank.  OPTIONAL.")
+parser.add_argument("--bank-fupper-step", type=positive_float, default=10.,
+                    help="Size of discrete frequency steps used when varying "
+                    "the fupper. If --calculate-ethinca-metric and "
+                    "--ethinca-freq-step are also given, the code will use "
+                    "the smaller of the two step values. OPTIONAL. Units=Hz")
+parser.add_argument("--bank-fupper-formula", default="SchwarzISCO",
+                    choices=pnutils.named_frequency_cutoffs.keys(),
+                    help="Frequency cutoff formula for varying fupper. "
+                    "Frequencies will be rounded to the nearest discrete "
+                    "step. OPTIONAL.")
+parser.add_argument("-N", "--num-seeds", action="store", type=int,
+                    default=5000000, help="Number of seed points used in "
+                    "bank construction.  OPTIONAL.")
+parser.add_argument("-n", "--num-failed-cutoff", action="store", type=int,
+                    default=1000000000, 
+                    help="Maximum number of consecutive, not-accepted test "
+                    "points after which bank generation will be stopped.  "
+                    "OPTIONAL.  Default value is really large as --num-seeds"
+                    " is intended to provide the termination condition.")
+parser.add_argument("--random-seed", action="store", type=int,
+                    default=None,
+                    help="Random seed to use when calling numpy.random "
+                    "functions used in obtaining the principal components in "
+                    "parameter space and when translating points back to "
+                    "physical space.  If given, the code should give the "
+                    "same output when run with the same random seed.")
+
+tmpltbank.insert_base_bank_options(parser)
+
+# Insert the metric calculation options
+tmpltbank.insert_metric_calculation_options(parser)
+
+# Insert the mass range options
+tmpltbank.insert_mass_range_option_group(parser)
+
+# Insert the PSD options
+pycbc.psd.insert_psd_option_group(parser)
+
+# Insert the data reading options
+pycbc.strain.insert_strain_option_group(parser)
+
+# Add the ethinca calculation options
+tmpltbank.insert_ethinca_metric_options(parser)
+
+opts = parser.parse_args()
+
+if opts.verbose:
+    log_level = logging.DEBUG
+else:
+    log_level = logging.WARN
+log_format='%(asctime)s %(message)s'
+logging.basicConfig(format=log_format, level=log_level)
+
+# delete defaults for redundant options if not varying fupper
+if not opts.vary_fupper:
+    opts.bank_fupper_step = None
+    opts.bank_fupper_formula = None
+opts.max_mismatch = 1 - opts.min_match
+tmpltbank.verify_metric_calculation_options(opts, parser)
+metricParams=tmpltbank.metricParameters.from_argparse(opts)
+tmpltbank.verify_mass_range_options(opts, parser)
+massRangeParams=tmpltbank.massRangeParameters.from_argparse(opts)
+pycbc.psd.verify_psd_options(opts, parser)
+if opts.psd_estimation:
+    pycbc.strain.verify_strain_options(opts, parser)
+tmpltbank.verify_ethinca_metric_options(opts, parser)
+ethincaParams=tmpltbank.ethincaParameters.from_argparse(opts)
+# delete default ethinca frequency step if calculation is not done
+if ethincaParams.doEthinca==False:
+    ethincaParams.freqStep = None
+
+# Ensure consistency of ethinca and bank metric parameters
+tmpltbank.check_ethinca_against_bank_params(ethincaParams, metricParams)
+# Ethinca calculation should currently only be done for non-spin templates
+if ethincaParams.full_ethinca and (massRangeParams.maxNSSpinMag>0.0 or
+                                massRangeParams.maxBHSpinMag>0.0):
+    parser.error("Ethinca metric calculation is currently not valid for "
+                 "nonzero spins!") 
+
+# Decide the frequency step to be used if varying fupper / calculating ethinca
+if ethincaParams.doEthinca and not opts.vary_fupper:
+    freqStep = ethincaParams.freqStep
+elif not ethincaParams.doEthinca and opts.vary_fupper:
+    freqStep = opts.bank_fupper_step
+elif ethincaParams.doEthinca and opts.vary_fupper:
+    # use the smaller of the two step values
+    freqStep = opts.bank_fupper_step
+    if opts.bank_fupper_step != ethincaParams.freqStep:
+        freqStep = min(ethincaParams.freqStep, opts.bank_fupper_step)
+        logging.warning("Frequency step for varying fupper was not equal "
+                        "to ethinca frequency step! Setting freqStep to "
+                        "the minimum of the two, "+str(freqStep))
+else: freqStep = None
+
+# Set random seed if needed
+if opts.random_seed is not None:
+    numpy.random.seed(opts.random_seed)
+
+# If we are going to use h(t) to estimate a PSD we need h(t)
+if opts.psd_estimation:
+    logging.info("Obtaining h(t) for PSD generation")
+    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+else:
+    strain = None
+
+# Get the PSD using the pycbc interface
+logging.info("Obtaining PSD")
+# Want the number of samples to be a binary number and Nyquist must be above
+# opts.f_upper. All this assumes that 1 / deltaF is a binary number
+nyquistFreq = 2**numpy.ceil(numpy.log2(opts.f_upper))
+numSamples = int(round(nyquistFreq / opts.delta_f)) + 1
+psd = pycbc.psd.from_cli(opts, length=numSamples, delta_f=opts.delta_f,
+                         low_frequency_cutoff=opts.f_low, strain=strain,
+                         dyn_range_factor=pycbc.DYN_RANGE_FAC)
+metricParams.psd = psd
+
+# Begin by calculating a metric
+logging.info("Calculating metric")
+metricParams = tmpltbank.determine_eigen_directions(
+    metricParams,
+    vary_fmax=(opts.vary_fupper or ethincaParams.doEthinca),
+    vary_density=freqStep)
+
+logging.info("Identify limits of frequency.")
+
+# Choose the frequency values to use for metric calculation
+if opts.vary_fupper==False:
+    if ethincaParams.doEthinca==False:
+        refFreq = metricParams.fUpper
+    else:
+        # use the maximum frequency for which the moments were calculated
+        fs = numpy.array(metricParams.evals.keys(), dtype=float)
+        fs.sort()
+        refFreq = fs.max()
+else:
+    # determine upper frequency cutoffs corresponding to the min and max
+    # total masses
+    fs = numpy.array(metricParams.evals.keys(), dtype=float)
+    fs.sort()
+    lowEve, highEve = tmpltbank.find_max_and_min_frequencies(\
+                              opts.bank_fupper_formula, massRangeParams, fs)
+    refFreq = lowEve
+    fs = fs[fs >= lowEve]
+    fs = fs[fs <= highEve]
+
+logging.info("Calculating covariance matrix")
+
+vals = tmpltbank.estimate_mass_range(
+    1000000, massRangeParams, metricParams, refFreq, covary=False)
+cov = numpy.cov(vals)
+evalsCV, evecsCV = numpy.linalg.eig(cov)
+evecsCVdict = {}
+evecsCVdict[refFreq] = evecsCV
+metricParams.evecsCV = evecsCVdict
+
+# Initialize the class for generating the partitioned bank
+logging.info("Initialize the PartitionedTmpltbank class")
+
+partitioned_bank_object = tmpltbank.PartitionedTmpltbank(massRangeParams,
+                               metricParams, refFreq, (opts.max_mismatch)**0.5,
+                               bin_range_check=1)
+
+# Initialise counters
+N = 0
+Np = 0
+Ns = 0
+Nr = 0
+
+# Map the frequency values and normalizations to idx if --vary-fupper is used
+if opts.vary_fupper:
+    partitioned_bank_object.get_freq_map_and_normalizations(fs,
+                                                      opts.bank_fupper_formula)
+
+logging.info("Starting bank placement")
+
+while True:
+    if not (Ns % 100000):
+        # For optimization we generate points in sets of 100000
+        rMass1, rMass2, rSpin1z, rSpin2z = \
+            tmpltbank.get_random_mass(100000, massRangeParams)
+        if opts.vary_fupper:
+            mass_dict = {}
+            mass_dict['m1'] = rMass1
+            mass_dict['m2'] = rMass2
+            mass_dict['s1z'] = rSpin1z
+            mass_dict['s2z'] = rSpin2z
+            refEve = tmpltbank.return_nearest_cutoff(
+                opts.bank_fupper_formula, mass_dict, fs)
+            lambdas = tmpltbank.get_chirp_params(rMass1, rMass2, rSpin1z,
+                                                 rSpin2z, metricParams.f0,
+                                                 metricParams.pnOrder)
+            mus = []
+            idx = 0
+            for freq in fs:
+                mus.append(
+                    tmpltbank.get_mu_params(lambdas, metricParams, freq))
+                idx += 1
+            mus = numpy.array(mus)
+        vecs = tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z,
+                                        metricParams, refFreq)
+        vecs = numpy.array(vecs)
+        Ns = 0
+    # Then we check each point for acceptance
+    if not (Np % 100000):
+        logging.info("%d seeds" % Np)
+    vs = vecs[:,Ns]
+    Np = Np + 1
+    # Stop if we hit break condition
+    if Np > opts.num_seeds:
+        break
+    # Calculate if any existing point is too close (set store to False)
+    if opts.vary_fupper:
+        reject = partitioned_bank_object.test_point_distance_vary(vs,
+                                    refEve[Ns], mus[:,:,Ns], opts.max_mismatch) 
+    else:
+        reject = partitioned_bank_object.test_point_distance(vs, 
+                                                             opts.max_mismatch)
+    # Increment counters, check for break condition and continue if rejected
+    if reject:
+        Ns = Ns + 1
+        Nr = Nr + 1
+        if Nr > opts.num_failed_cutoff:
+            break
+        continue
+    # Add point, increment counters and continue if accepted
+    Nr = 0
+    if opts.vary_fupper:
+        curr_mus = mus[:,:,Ns]
+        point_fupper = refEve[Ns]
+    else:
+        curr_mus = None
+        point_fupper = None
+    partitioned_bank_object.add_point_by_chi_coords(vs, rMass1[Ns], rMass2[Ns],
+                           rSpin1z[Ns], rSpin2z[Ns], point_fupper=point_fupper,
+                           mus=curr_mus) 
+    N = N + 1
+    if not (N % 100000):
+        logging.info("%d templates" % N)
+    Ns = Ns + 1  
+
+logging.info("Outputting bank")
+
+# Put the whole template bank in one list
+mass1, mass2, spin1z, spin2z = partitioned_bank_object.output_all_points()
+tempBank = zip(mass1, mass2, spin1z, spin2z)
+
+# Output to file
+tmpltbank.output_sngl_inspiral_table(
+    opts.output_file, tempBank, metricParams, ethincaParams,
+    programName=__program__, optDict=opts.__dict__, comment="",
+    version=pycbc.version.git_hash,
+    cvs_repository='pycbc/'+pycbc.version.git_branch,
+    cvs_entry_time=pycbc.version.date)
+
