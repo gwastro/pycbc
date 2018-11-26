@@ -24,6 +24,7 @@ emcee==2.2.1
 # For LDG service access
 dqsegdb
 http://download.pegasus.isi.edu/pegasus/4.9.0/pegasus-python-source-4.9.0.tar.gz
+amqplib
 
 # For building documentation
 Sphinx>=1.5.0
