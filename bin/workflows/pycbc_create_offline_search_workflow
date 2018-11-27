@@ -311,26 +311,28 @@ inj_coincs = wf.FileList()
 files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
     output_dir = '%s_coinc' % tag
+    ctags = [tag, 'injections']
 
     if workflow.cp.has_option_tags('workflow-injections',
-                                   'compute-optimal-snr', tags=[tag]):
+                                   'compute-optimal-snr', tags=ctags):
         optimal_snr_file = wf.compute_inj_optimal_snr(
-                workflow, inj_file, psd_files, 'inj_files', tags=[tag])
+                workflow, inj_file, psd_files, 'inj_files', tags=ctags)
         file_for_injfind = optimal_snr_file
     else:
         file_for_injfind = inj_file
 
-    if workflow.cp.has_option_tags('workflow-injections', 'inj-cut', tags=[tag]):
+    if workflow.cp.has_option_tags('workflow-injections', 'inj-cut',
+                                   tags=ctags):
         file_for_vetoes = wf.cut_distant_injections(
-                workflow, file_for_injfind, 'inj_files', tags=[tag])
+                workflow, file_for_injfind, 'inj_files', tags=ctags)
     else:
         file_for_vetoes = inj_file
 
     if workflow.cp.has_option_tags('workflow-injections', 'strip-injections',
-                                   tags=[tag]):
+                                   tags=ctags):
         small_inj_file = wf.veto_injections(workflow, file_for_vetoes,
                              insp_files_seg_file, trig_generated_name,
-                             "inj_files", tags=[tag])
+                             "inj_files", tags=ctags)
     else:
         small_inj_file = file_for_vetoes
 
@@ -340,10 +342,10 @@ for inj_file, tag in zip(inj_files, inj_tags):
     insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
                                      datafind_files, splitbank_files_inj,
                                      output_dir, injection_file=small_inj_file,
-                                     tags = [tag])
+                                     tags=ctags)
 
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
-                                               insps, output_dir, tags=[tag])
+                                               insps, output_dir, tags=ctags)
 
 
 # Create the final log file
