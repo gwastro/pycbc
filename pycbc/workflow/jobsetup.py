@@ -53,6 +53,9 @@ def int_gps_time_to_str(t):
             return str(t.gpsSeconds)
         else:
             raise ValueError('Need an integer GPS time, got %s' % str(t))
+    else:
+        err_msg = "Didn't understand input type {}".format(type(t))
+        raise ValueError(err_msg)
 
 def select_tmpltbank_class(curr_exe):
     """ This function returns a class that is appropriate for setting up
