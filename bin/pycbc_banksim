@@ -324,7 +324,7 @@ with ctx:
     for index, signal_params in enumerate(signal_table):
         if options.verbose:
             update_progress(float(index+1)/len(signal_table))
-        if not options.use_sky_location:
+        if not options.use_sky_location and hasattr(signal_params, 'latitude'):
             signal_params.latitude = 0.
             signal_params.longitude = 0.
         stilde = get_waveform(options.signal_approximant,
