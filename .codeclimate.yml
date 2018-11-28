@@ -48,6 +48,8 @@ plugins:
     checks:
       import-error:
         enabled: false
+      unidiomatic-typecheck:
+        enabled: true
   pep8:
     enabled: true
 
