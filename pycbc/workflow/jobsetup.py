@@ -40,13 +40,22 @@ def int_gps_time_to_str(t):
     converts it to a string. If a LIGOTimeGPS with nonzero decimal part is
     given, raises a ValueError."""
 
-    if type(t) == int:
+    if isinstance(t, int):
         return str(t)
-    elif type(t) == lal.LIGOTimeGPS:
+    elif isinstance(t, float):
+        # Wouldn't this just work generically?
+        int_t = int(t)
+        if abs(t - int_t) > 0.:
+            raise ValueError('Need an integer GPS time, got %s' % str(t))
+        return str(int_t)
+    elif isinstance(t, lal.LIGOTimeGPS):
         if t.gpsNanoSeconds == 0:
             return str(t.gpsSeconds)
         else:
             raise ValueError('Need an integer GPS time, got %s' % str(t))
+    else:
+        err_msg = "Didn't understand input type {}".format(type(t))
+        raise ValueError(err_msg)
 
 def select_tmpltbank_class(curr_exe):
     """ This function returns a class that is appropriate for setting up
