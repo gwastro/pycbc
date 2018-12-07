@@ -304,7 +304,7 @@ def get_inj_param(injfile, param, ifo):
         The calculated parameter values
     """
     det = pycbc.detector.Detector(ifo)
-    
+
     inj = injfile["injections"]
     if param in inj.keys():
         return inj["injections/"+param]
