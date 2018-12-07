@@ -304,9 +304,7 @@ def get_inj_param(injfile, param, ifo):
         The calculated parameter values
     """
     det = pycbc.detector.Detector(ifo)
-    time_delay = numpy.vectorize(#lambda dec, ra, t :
-                                 det.time_delay_from_earth_center)#(dec, ra, t))
-
+    
     inj = injfile["injections"]
     if param in inj.keys():
         return inj["injections/"+param]
@@ -321,7 +319,8 @@ def get_inj_param(injfile, param, ifo):
                                                inj['spin1z'][:],
                                                inj['spin2z'][:]),
         "end_time_"+ifo[0].lower() :
-            inj['end_time'][:] + time_delay(inj['longitude'][:],
+            inj['end_time'][:] + det.time_delay_from_earth_center(
+                                            inj['longitude'][:],
                                             inj['latitude'][:],
                                             inj['end_time'][:]),
     }
