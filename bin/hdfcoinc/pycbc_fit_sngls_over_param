@@ -175,6 +175,8 @@ outfile = h5py.File(args.output, 'w')
 outfile.create_dataset('template_id', data=tid)
 outfile.create_dataset('count_above_thresh', data=nabove_smoothed)
 outfile.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
+outfile.create_dataset('param_val', data=(np.exp(parvals) if args.log_param
+    else parvals))
 
 # add metadata, some is inherited from template level fit
 outfile.attrs.create('ifo', data=ifo)
