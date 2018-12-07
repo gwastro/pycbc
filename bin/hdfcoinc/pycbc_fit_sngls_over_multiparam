@@ -124,6 +124,11 @@ outfile = h5py.File(args.output, 'w')
 outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed
+for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
+    if slog in ['false', 'False', 'FALSE']:
+        outfile[param] = vals
+    elif slog in ['true', 'True', 'TRUE']:
+        outfile[param] = numpy.exp(vals)
 
 # add metadata, some is inherited from template level fit
 outfile.attrs['ifo'] = ifo
