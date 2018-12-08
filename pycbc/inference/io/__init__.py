@@ -34,12 +34,14 @@ from pycbc import waveform as _waveform
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
+from .multinest import MultinestFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
 
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
+    MultinestFile.name: MultinestFile,
     PosteriorFile.name: PosteriorFile
 }
 
