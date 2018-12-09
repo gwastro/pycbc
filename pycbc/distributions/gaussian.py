@@ -17,6 +17,7 @@ This modules provides classes for evaluating Gaussian distributions.
 """
 
 import numpy
+from scipy.special import erf, erfinv
 import scipy.stats
 from pycbc.distributions import bounded
 
@@ -136,6 +137,21 @@ class Gaussian(bounded.BoundedDist):
     @property
     def var(self):
         return self._var
+
+    def _cdfinv(self, param, value):
+        """Return inverse of cdf to map unit interval to parameter bounds.
+        """
+        a = self._bounds[param][0]
+        b = self._bounds[param][1]
+        mu = self._mean[param]
+        sigma = numpy.sqrt(self._var[param])
+        phi_a = erf((a - mu)/sigma)
+        phi_b = erf((b - mu)/sigma)
+        z = phi_b - phi_a
+
+        new_value = mu + sigma * erfinv(value * z + erf((a - mu)/sigma))
+
+        return new_value
 
 
     def _pdf(self, **kwargs):

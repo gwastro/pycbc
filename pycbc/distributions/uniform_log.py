@@ -44,6 +44,14 @@ class UniformLog10(uniform.Uniform):
                                    for bnd in self._bounds.values()])
         self._lognorm = numpy.log(self._norm)
 
+    def _cdfinv(self, param, value):
+        """Return the inverse cdf to map the unit interval to parameter bounds.
+        """
+        a = numpy.log10(self._bounds[param][0])
+        b = numpy.log10(self._bounds[param][1])
+        new_value = 10.**((b-a)*value + a)
+        return new_value
+
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
 
