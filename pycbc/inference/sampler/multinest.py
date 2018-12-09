@@ -49,8 +49,8 @@ from .. import models
 #
 
 class MultinestSampler(BaseSampler):
-    """This class is used to construct an MCMC sampler from the emcee
-    package's EnsembleSampler.
+    """This class is used to construct a nested sampler from
+    the Multinest package.
 
     Parameters
     ----------
@@ -131,6 +131,14 @@ class MultinestSampler(BaseSampler):
         return self._nlivepoints
 
     @property
+    def logz(self):
+        return self._logz
+
+    @property
+    def dlogz(self):
+        return self._dlogz
+
+    @property
     def samples(self):
         """A dict mapping ``variable_params`` to arrays of samples currently
         in memory.
@@ -148,6 +156,20 @@ class MultinestSampler(BaseSampler):
         The returned array has shape ``nwalkers x niterations``.
         """
         stats = self.model.default_stats
+        callfuncs = [self.model._logjacobian, self.model._logprior,
+                     self.model._loglikelihood]
+        if 'loglr' in stats:
+            callfuncs += [self.model._loglr]
+        self._stats = {s: numpy.array([]) for s in stats}
+        # calculate stats for each posterior sample
+        for sample in self._samples:
+            params = dict(zip(self.model.variable_params, sample))
+            self.model.update(**params)
+            for c in callfuncs:
+                c()
+            current_stats = self.model.get_current_stats()
+            for i, s in enumerate(stats):
+                self._stats[s] = numpy.append(self._stats[s], current_stats[i])
         return self._stats
 
     def acceptance_fraction(self):
@@ -155,6 +177,7 @@ class MultinestSampler(BaseSampler):
         return numpy.zeros(self.nlivepoints)
 
     def get_posterior_samples(self):
+        # this is multinest's equal weighted posterior file
         post_file = self.backup_file[:-9]+'-post_equal_weights.dat'
         return numpy.loadtxt(post_file, ndmin=2)
 
@@ -197,8 +220,7 @@ class MultinestSampler(BaseSampler):
         params = self.model._transform_params(**params)
         # update model with current params
         self.model.update(**params)
-        # call model's loglikelihood function
-        return self.model._loglikelihood()
+        return self.model.loglikelihood
 
     def ns_prior(self, cube):
         transformed_cube = numpy.array(cube).copy()
@@ -236,13 +258,19 @@ class MultinestSampler(BaseSampler):
             self.solve(self.ns_loglikelihood, self.ns_prior, self._ndim,
                        n_live_points=self.nlivepoints,
                        evidence_tolerance=self._ztol,
-                            sampling_efficiency=self._eff,
-                            importance_nested_sampling=self._ins,
-                            max_iter=iterinterval,
-                            outputfiles_basename=outputfiles_basename)
+                       sampling_efficiency=self._eff,
+                       importance_nested_sampling=self._ins,
+                       max_iter=iterinterval,
+                       outputfiles_basename=outputfiles_basename,
+                       verbose=True)
             # parse results from multinest output files
-            self._stats = a.get_mode_stats()
-            #self._samples = a.get_equal_weighted_posterior()[:,:-1]
+            nest_stats = a.get_mode_stats()
+            if self._ins:
+                self._logz = nest_stats['nested importance sampling global log-evidence']
+                self._dlogz = nest_stats['nested importance sampling global log-evidence error']
+            else:
+                self._logz = nest_stats['nested sampling global log-evidence']
+                self._dlogz = nest_stats['nested sampling global log-evidence error']
             self._samples = self.get_posterior_samples()[:,:-1]
             logging.info("Have {} posterior samples".format(self._samples.shape[0]))
             # update the itercounter
@@ -303,7 +331,9 @@ class MultinestSampler(BaseSampler):
             # write samples
             fp.write_samples(self.samples, self.model.variable_params)
             # write stats
-            #fp.write_samples(self.model_stats)
+            fp.write_samples(self.model_stats)
+            # write evidence
+            fp.write_logevidence(self.logz, self.dlogz)
             # write acceptance
             fp.write_acceptance_fraction(self.acceptance_fraction())
             # write random state (use default numpy.random_state)
