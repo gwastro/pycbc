@@ -23,11 +23,11 @@ class UniformIntervals(bounded.BoundedDist):
         self._stride.update(dict([[p, 0.]
             for p in params if p not in self._stride]))
 
-        numpy.seterr(divide='ignore')
-        self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
-                                    for bnd in self._bounds.values()])
-        self._norm = numpy.exp(self._lognorm)
-        numpy.seterr(divide='warn')
+#        numpy.seterr(divide='ignore')
+#        self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
+#                                    for bnd in self._bounds.values()])
+#        self._norm = numpy.exp(self._lognorm)
+#        numpy.seterr(divide='warn')
 
 ### FIXME this needs to be reset if multiple calls to rvs will keep shrinking it
     @property
@@ -51,28 +51,30 @@ class UniformIntervals(bounded.BoundedDist):
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
         """
-        for p in self.params:
-            width = self._bounds[p][0] + self._bounds[p][1]
-            print "width of bounds", width
-            print "width of bounds + stride", width + self._stride[p]
-            print "input value", kwargs[p]
-            cond = kwargs[p] % (width + self._stride[p])
-            print "cond", cond
-            print cond > width
-            if cond > width :
-                return 0.
-
-        return self._norm
+        raise NotImplementedError("The pdf for this distribution is not well defined")
+#        for p in self.params:
+#            width = self._bounds[p][0] + self._bounds[p][1]
+#            print "width of bounds", width
+#            print "width of bounds + stride", width + self._stride[p]
+#            print "input value", kwargs[p]
+#            cond = kwargs[p] % (width + self._stride[p])
+#            print "cond", cond
+#            print cond > width
+#            if cond > width :
+#                return 0.
+#
+#        return self._norm
 
     def _logpdf(self, size=1, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
         arguments are ignored.
         """
-        if kwargs in self:
-            return numpy.log(self._pdf(size=size))
-        else:
-            return -numpy.inf
+        raise NotImplementedError("The log pdf for this distribution is not well defined")
+#        if kwargs in self:
+#            return numpy.log(self._pdf(size=size))
+#        else:
+#            return -numpy.inf
 
 
     def rvs(self, size=1, param=None):
