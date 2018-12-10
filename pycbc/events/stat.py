@@ -35,9 +35,9 @@ def get_newsnr(trigs):
 
     Parameters
     ----------
-    trigs: dict of numpy.ndarrays
-        Dictionary holding single detector trigger information.
-    'chisq_dof', 'snr', and 'chisq' are required keys
+    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+        Dictionary-like object holding single detector trigger information.
+        'chisq_dof', 'snr', and 'chisq' are required keys
 
     Returns
     -------
@@ -54,9 +54,9 @@ def get_newsnr_sgveto(trigs):
 
     Parameters
     ----------
-    trigs: dict of numpy.ndarrays
-        Dictionary holding single detector trigger information.
-    'chisq_dof', 'snr', and 'chisq' are required keys
+    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+        Dictionary-like object holding single detector trigger information.
+        'chisq_dof', 'snr', 'sg_chisq' and 'chisq' are required keys
 
     Returns
     -------
@@ -106,7 +106,8 @@ class NewSNRStatistic(Stat):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
 
         Returns
         -------
@@ -160,7 +161,8 @@ class NewSNRSGStatistic(NewSNRStatistic):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
 
         Returns
         -------
@@ -187,9 +189,8 @@ class NewSNRCutStatistic(NewSNRStatistic):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays
-            Dictionary of the single detector trigger information. 'chisq_dof',
-        'snr', and 'chisq' are required keys
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
 
         Returns
         -------
@@ -257,10 +258,10 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays
-            Dictionary holding single detector trigger information.
-        'chisq_dof', 'snr', 'chisq', 'coa_phase', 'end_time', and 'sigmasq'
-        are required keys.
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+            'chisq_dof', 'snr', 'chisq', 'coa_phase', 'end_time', and 'sigmasq'
+            are required keys.
 
         Returns
         -------
@@ -511,10 +512,10 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
         Parameters
         ----------
-        trigs: dict of numpy.ndarrays
-            Dictionary of the single detector trigger information. 'chisq_dof',
-        'snr', 'cont_chisq', 'cont_chisq_dof', and 'chisq' are required arrays
-        for this statistic.
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+            'snr', 'cont_chisq', 'cont_chisq_dof', 'chisq_dof' and 'chisq'
+            are required keys for this statistic.
 
         Returns
         -------
@@ -550,6 +551,11 @@ sngl_statistic_dict = {
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic
 }
+
+# When we have python3 use this to make these immutable in the functions
+# below
+# from types import MappingProxyType
+# sngl_statistic_immut = MappingProxyType(default_config)
 
 def get_statistic(stat, stat_dict=statistic_dict):
     """
