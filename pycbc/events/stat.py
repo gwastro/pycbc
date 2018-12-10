@@ -552,12 +552,7 @@ sngl_statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic
 }
 
-# When we have python3 use this to make these immutable in the functions
-# below
-# from types import MappingProxyType
-# sngl_statistic_immut = MappingProxyType(default_config)
-
-def get_statistic(stat, stat_dict=statistic_dict):
+def get_statistic(stat):
     """
     Error-handling sugar around dict lookup for coincident statistics
 
@@ -577,7 +572,7 @@ def get_statistic(stat, stat_dict=statistic_dict):
         If the string is not recognized as corresponding to a Stat subclass
     """
     try:
-        return stat_dict[stat]
+        return statistic_dict[stat]
     except KeyError:
         raise RuntimeError('%s is not an available detection statistic' % stat)
 
@@ -600,5 +595,8 @@ def get_sngl_statistic(stat):
     RuntimeError
         If the string is not recognized as corresponding to a Stat subclass
     """
-    return get_statistic(stat, stat_dict=sngl_statistic_dict)
+    try:
+        return sngl_statistic_dict[stat]
+    except KeyError:
+        raise RuntimeError('%s is not an available detection statistic' % stat)
 
