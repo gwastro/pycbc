@@ -23,6 +23,7 @@ class UniformIntervals(bounded.BoundedDist):
         self._stride.update(dict([[p, 0.]
             for p in params if p not in self._stride]))
 
+<<<<<<< HEAD
 #        numpy.seterr(divide='ignore')
 #        self._lognorm = -sum([numpy.log(abs(bnd[1]-bnd[0]))
 #                                    for bnd in self._bounds.values()])
@@ -36,17 +37,24 @@ class UniformIntervals(bounded.BoundedDist):
         return self._norm
 
     @property
+    def norm(self):
+        return self._norm
+
+    def get_norm_for_rvs(self, size=1):
+        return self._norm / size
+
+    @property
     def lognorm(self):
         return numpy.log(norm())
+
+    def get_lognorm_for_rvs(self, size=1):
+        return numpy.log(get_norm_for_rvs(size=size))
 
     @property
     def stride(self):
         return self._stride
 
-    def set_size(self, size=1):
-        self._size = size
-
-    def _pdf(self, **kwargs):
+    def _pdf(self, size=1, param=None, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
         ignored.
@@ -64,7 +72,6 @@ class UniformIntervals(bounded.BoundedDist):
 #                return 0.
 #
 #        return self._norm
-
     def _logpdf(self, size=1, **kwargs):
         """Returns the log of the pdf at the given values. The keyword
         arguments must contain all of parameters in self's params. Unrecognized
@@ -75,7 +82,6 @@ class UniformIntervals(bounded.BoundedDist):
 #            return numpy.log(self._pdf(size=size))
 #        else:
 #            return -numpy.inf
-
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
@@ -106,7 +112,6 @@ class UniformIntervals(bounded.BoundedDist):
             a = self.bounds[p][0] + self.stride[p] * x
             arr[p] = numpy.random.uniform(a, b) 
 
-        self.set_size(size)
         return arr
 
     @classmethod
