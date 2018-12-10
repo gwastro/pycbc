@@ -27,6 +27,8 @@ import pycbc.version
 #### DEFINITIONS AND FUNCTIONS ####
 
 def get_stat(statchoice, trigs):
+    # Initialize statclass with an empty file list. In general could feed it
+    # files here for statistics which need that.
     stat_instance = sngl_statistic_dict[statchoice]([])
     return stat_instance.single(trigs)
 
