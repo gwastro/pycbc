@@ -25,7 +25,7 @@ def makedir(path):
 
 def ptof(p, ft):
     return numpy.log(1.0-p) / -ft
-    
+
 def ftop(f, ft):
     return 1 - numpy.exp(-ft * f)
 
@@ -119,7 +119,7 @@ class LiveEventManager(object):
 
         # Determine if the other ifos can contribute to the coincident event
         for ifo in followup_ifos:
-            snr_series, ptime, pvalue = followup_event_significance(ifo, 
+            snr_series, ptime, pvalue = followup_event_significance(ifo,
                             data_readers[ifo], bank, template_id, coinc_times)
 
             if snr_series is not None:
@@ -129,10 +129,10 @@ class LiveEventManager(object):
                                            snr_series, ptime, pvalue)
         return out
 
-    def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series, ptime, pvalue):      
+    def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series, ptime, pvalue):
         # Set new ifar
         triggers['foreground/ifar'] = combine_ifar_pvalue(triggers['foreground/ifar'], pvalue)
-        
+
         # Copy the triggers
         for key in triggers.copy():
             if 'foreground/{}/'.format(coinc_ifo) in key:
@@ -145,11 +145,13 @@ class LiveEventManager(object):
         triggers['foreground/{}/stat'.format(ifo)] = triggers['foreground/{}/snr'.format(ifo)]
         triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series.at_time(ptime))
         triggers['foreground/{}/chisq'.format(ifo)] = 0
-                     
+        triggers['foreground/{}/chisq_dof'.format(ifo)] = 0
+
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
-        """ Save zerolag triggers to a coinc xml file """
-    
+        """ Perform any followup and save zerolag triggers to a coinc xml file
+        """
+
         if 'foreground/ifar' in coinc_results:
             logging.info('computing followup data for coinc')
 
@@ -404,7 +406,7 @@ if args.size_override:
 
 # ifos used for primary analysis (only two at the moment)
 ifos = set(args.channel_name.keys())
-logging.info('Running with: %s ifos', len(ifos))
+logging.info('Running with %s', ', '.join(sorted(ifos)))
 
 # make sure we can talk to GraceDB
 if evnt.rank == 0 and args.enable_gracedb_upload:
@@ -529,8 +531,9 @@ with ctx:
             if data_reader[ifo].psd is not None:
                 dist = data_reader[ifo].psd.dist
                 if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
-                    logging.info("%s PSD outside acceptable sensitivity %s - %s, have %s",
-                                 ifo, args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
+                    logging.info("PSD outside acceptable sensitivity %s - %s, have %s",
+                                 args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
+
                     status = False
 
             if status is True:
@@ -585,7 +588,10 @@ with ctx:
                                    args.low_frequency_cutoff)
 
             # map the results file to an hdf file
-            prefix = '%s-%s-%s-%s' % (''.join(ifos), args.file_prefix, data_end() - args.analysis_chunk, valid_pad)
+            prefix = '{}-{}-{}-{}'.format(''.join(sorted(ifos)),
+                                          args.file_prefix,
+                                          data_end() - args.analysis_chunk,
+                                          valid_pad)
 
             evnt.dump(results, prefix, time_index=data_end(),
                       store_psd=False if args.store_psd is False else psds,

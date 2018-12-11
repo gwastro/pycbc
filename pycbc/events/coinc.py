@@ -24,8 +24,10 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import numpy, logging, pycbc.pnutils, copy, lal
+
+import h5py, numpy, logging, pycbc.pnutils, copy, lal
 from pycbc.detector import Detector
+
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
@@ -797,7 +799,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
-        
+
         self.ifos = ifos
         if len(self.ifos) != 2:
             raise ValueError("Only a two ifo analysis is supported at this time")
@@ -812,15 +814,16 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.singles = {}
 
     # Adding this here as it requires the results format dict as defined by this
-    # class. 
+    # class.
     @classmethod
     def pick_best_coinc(cls, coinc_results):
-        """Choose the best coinc by ifar first, then statistic if needed.
+        """Choose the best two-ifo coinc by ifar first, then statistic if needed.
 
-        This function picks which of the available coincs to use. It chooses
-        first by ifar, and if all else is equal by statistic value. A trails
-        factor is applied if multiple types of coincs were possible at this
-        time.
+        This function picks which of the available double-ifo coincs to use.
+        It chooses the best (highest) ifar. The ranking statistic is used as
+        a tie-breaker.
+        A trials factor is applied if multiple types of coincs are possible
+        at this time given the active ifos.
 
         Parameters
         ----------
@@ -830,8 +833,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         Returns
         -------
         best: coinc results dict
-            Dict containing the results as would be returned by this class.
-            If there is a coinc, this will contain the 'best' one.
+            If there is a coinc, this will contain the 'best' one. Otherwise
+            it will return the provided dict.
         """
         # Choose best by ifar, if equal choose loudest statistic value
         mstat = 0
@@ -842,7 +845,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # maximize over
         trials = 0
         for result in coinc_results:
-            # Check that a coinc was possible
+            # Check that a coinc was possible. This was added in the
+            # 'add_singles' method of this class
             if 'coinc_possible' in result:
                 trials += 1
 
@@ -854,15 +858,16 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                         mifar = ifar
                         mstat = stat
                         mresult = result
-        
+
         # apply trials factor for the best coinc
         if mresult:
             mresult['foreground/ifar'] = mifar / float(trials)
-            logging.info('Found %s coinc with ifar %s', 
+            logging.info('Found %s coinc with ifar %s',
                          mresult['foreground/type'],
                          mresult['foreground/ifar'])
             return mresult
-        # If no coinc, just pick one and return
+        # If no coinc, just return one of the results dictionaries. They will
+        # all contain the same results (i.e. single triggers) in this case.
         else:
             return coinc_results[0]
 
@@ -1170,7 +1175,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         """
         # If there are no results just return
         valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
-        if len(valid_ifos) == 0: return {}        
+        if len(valid_ifos) == 0: return {}
 
         # Add single triggers to the internal buffer
         updated_indices = self._add_singles_to_buffer(results, ifos=valid_ifos)
