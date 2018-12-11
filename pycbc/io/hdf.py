@@ -632,7 +632,7 @@ class ForegroundTriggers(object):
                                                              self.trig_id[ifo]]
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
-                       curr = np.array([])
+                    curr = np.array([])
                 else:
                     raise
             return_dict[ifo] = curr
