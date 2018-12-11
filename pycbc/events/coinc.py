@@ -836,7 +836,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             If there is a coinc, this will contain the 'best' one. Otherwise
             it will return the provided dict.
         """
-        # Choose best by ifar, if equal choose loudest statistic value
         mstat = 0
         mifar = 0
         mresult = None
