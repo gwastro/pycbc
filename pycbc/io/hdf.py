@@ -412,7 +412,7 @@ class SingleDetTriggers(object):
         elif ranking_statistic == "snr":
             self.stat_name = "SNR"
         else:
-            self.stat_name=ranking_statistic
+            self.stat_name = ranking_statistic
 
         times = self.end_time
         index = stat.argsort()[::-1]
@@ -632,7 +632,7 @@ class ForegroundTriggers(object):
                                                              self.trig_id[ifo]]
             except IndexError:
                 if len(self.trig_id[ifo]) == 0:
-                    curr = np.array([])
+                       curr = np.array([])
                 else:
                     raise
             return_dict[ifo] = curr
@@ -821,7 +821,7 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
     elif chisq_choice == 'max_bank_cont_trad':
         chisq = np.maximum(np.maximum(bank_chisq, cont_chisq), trad_chisq)
     else:
-        err_msg="Do not recognized --chisq-choice %s" % chisq_choice
+        err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
 
@@ -855,4 +855,3 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
             recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
         else:
             raise ValueError('Cannot save %s type'%type(item))
-
