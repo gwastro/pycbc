@@ -21,27 +21,17 @@ import copy, numpy as np
 
 from pycbc import io, events
 from pycbc.events import trigger_fits as trstats
+from pycbc.events.stat import sngl_statistic_dict
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
-stat_dict = {
-    "new_snr"       : events.newsnr,
-    "effective_snr" : events.effsnr,
-    "snr"           : lambda snr, rchisq : snr,
-    "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5),
-    "newsnr_sgveto"      : events.newsnr_sgveto,
-}
+def get_stat(statchoice, trigs):
+    # Initialize statclass with an empty file list. In general could feed it
+    # files here for statistics which need that.
+    stat_instance = sngl_statistic_dict[statchoice]([])
+    return stat_instance.single(trigs)
 
-def get_stat(statchoice, snr, rchisq, sgchisq, fac):
-    if fac is not None:
-        if statchoice not in ['new_snr', 'effective_snr']:
-            raise RuntimeError("Can't use --stat-factor with this statistic!")
-        return stat_dict[statchoice](snr, rchisq, fac)
-    elif statchoice == 'newsnr_sgveto':
-        return stat_dict[statchoice](snr, rchisq, sgchisq)
-    else:
-        return stat_dict[statchoice](snr, rchisq)
 #### MAIN ####
 
 parser = argparse.ArgumentParser(usage="",
@@ -74,12 +64,8 @@ parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
 parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=["snr", "snronchi", "effective_snr", "new_snr", "newsnr_sgveto"],
+                    choices=sngl_statistic_dict.keys(),
                     help="Function of SNR and chisq to perform fits with")
-parser.add_argument("--stat-factor", type=float,
-                    help="Adjustable magic number used in some sngl "
-                    "statistics. Values commonly used: 6 for new_snr, 250 "
-                    "or 50 for effective_snr")
 parser.add_argument("--stat-threshold", type=float,
                     help="Only fit triggers with statistic value above this "
                     "threshold.  Required.  Typically 6-6.5")
@@ -137,22 +123,9 @@ logging.info('Opening template file: %s' % args.bank_file)
 templatef = h5py.File(args.bank_file, 'r')
 
 # get the stat values
-chisq = trigf[args.ifo+'/chisq'][:]
-chisq_dof = trigf[args.ifo+'/chisq_dof'][:]
-rchisq = chisq / (2 * chisq_dof - 2)
-try:
-    sgchisq = trigf[args.ifo+'/sg_chisq'][:]
-except KeyError:
-    sgchisq = None
-
-del chisq
-del chisq_dof
-snr = trigf[args.ifo+'/snr'][:]
 logging.info('Calculating stat values')
-stat = get_stat(args.sngl_stat, snr, rchisq, sgchisq, args.stat_factor)
-del snr
-del rchisq
-del sgchisq
+stat = get_stat(args.sngl_stat, trigf[args.ifo])
+
 # do first thresholding operation to reduce trigger numbers
 abovethresh = stat >= args.stat_threshold
 stat = stat[abovethresh]
@@ -300,8 +273,6 @@ if args.save_trig_param:
 outfile.attrs.create("ifo", data=args.ifo)
 outfile.attrs.create("fit_function", data=args.fit_function)
 outfile.attrs.create("sngl_stat", data=args.sngl_stat)
-if args.stat_factor:
-    outfile.attrs.create("stat_factor", data=args.stat_factor)
 if args.save_trig_param:
     outfile.attrs.create("save_trig_param", data=args.save_trig_param)
 outfile.attrs.create("stat_threshold", data=args.stat_threshold)

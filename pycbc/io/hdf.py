@@ -18,6 +18,7 @@ from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
+from pycbc.events.stat import sngl_statistic_dict
 
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
@@ -400,24 +401,19 @@ class SingleDetTriggers(object):
         clustered so that no more than 1 event within +/- cluster-window will
         be considered."""
         # If this becomes memory intensive we can optimize
+        stat_instance = sngl_statistic_dict[ranking_statistic]([])
+        stat = stat_instance.single(self.trigs)[self.mask]
+
+        # Used for naming in plots ... Seems an odd place for this to live!
         if ranking_statistic == "newsnr":
-            stat = self.newsnr
-            # newsnr doesn't return an array if len(stat) == 1
-            if len(self.snr) == 1:
-                stat = np.array([stat])
             self.stat_name = "Reweighted SNR"
         elif ranking_statistic == "newsnr_sgveto":
-            stat = self.newsnr_sgveto
-            # newsnr doesn't return an array if len(stat) == 1
-            if len(self.snr) == 1:
-                stat = np.array([stat])
             self.stat_name = "Reweighted SNR (+sgveto)"
         elif ranking_statistic == "snr":
-            stat = self.snr
             self.stat_name = "SNR"
         else:
-            err_msg = "Don't recognize statistic %s." % (ranking_statistic)
-            raise ValueError(err_msg)
+            self.stat_name = ranking_statistic
+
         times = self.end_time
         index = stat.argsort()[::-1]
         new_times = []
@@ -825,7 +821,7 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
     elif chisq_choice == 'max_bank_cont_trad':
         chisq = np.maximum(np.maximum(bank_chisq, cont_chisq), trad_chisq)
     else:
-        err_msg="Do not recognized --chisq-choice %s" % chisq_choice
+        err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
 
@@ -859,4 +855,3 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
             recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
         else:
             raise ValueError('Cannot save %s type'%type(item))
-

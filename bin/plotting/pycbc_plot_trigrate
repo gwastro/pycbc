@@ -26,27 +26,16 @@ from scipy import stats as scistats
 
 from pycbc import io, events, bin_utils, results
 from pycbc.events import trigger_fits as trstats
+from pycbc.events.stat import sngl_statistic_dict
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
-stat_dict = {
-    "new_snr"       : events.newsnr,
-    "effective_snr" : events.effsnr,
-    "snr"           : lambda snr, rchisq : snr,
-    "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5),
-    "newsnr_sgveto"      : events.newsnr_sgveto,
-}
-
-def get_stat(statchoice, snr, rchisq, sgchisq, fac):
-    if fac is not None:
-        if statchoice not in ['new_snr', 'effective_snr']:
-            raise RuntimeError("Can't use --stat-factor with this statistic!")
-        return stat_dict[statchoice](snr, rchisq, fac)
-    elif statchoice == 'newsnr_sgveto':
-        return stat_dict[statchoice](snr, rchisq, sgchisq)
-    else:
-        return stat_dict[statchoice](snr, rchisq)
+def get_stat(statchoice, trigs):
+    # Initialize statclass with an empty file list. In general could feed it
+    # files here for statistics which need that.
+    stat_instance = sngl_statistic_dict[statchoice]([])
+    return stat_instance.single(trigs)
 
 #### MAIN ####
 
@@ -73,7 +62,7 @@ parser.add_argument("--gps-start-time", type=float,
 parser.add_argument("--gps-end-time", type=float,
                     help="End time up to which to load/plot triggers")
 parser.add_argument("--sngl-stat", default="new_snr",
-                    choices=["snr", "snronchi", "effective_snr", "new_snr", "newsnr_sgveto"],
+                    choices=sngl_statistic_dict.keys(),
                     help="Function of SNR and chisq to threshold on")
 parser.add_argument("--stat-factor", type=float,
                     help="Adjustable magic number used in some sngl "
@@ -148,27 +137,7 @@ logging.info('Opening template file: %s' % args.bank_file)
 templatef = h5py.File(args.bank_file, 'r')
 
 # get the stat values
-snr = trigf[args.ifo+'/snr'][:]
-# SNR cut to reduce memory usage
-logging.info('Applying SNR cut at %f' % args.stat_threshold)
-aboveth = snr >= args.stat_threshold
-snr = snr[aboveth]
-chisq = trigf[args.ifo+'/chisq'][:][aboveth]
-chisq_dof = trigf[args.ifo+'/chisq_dof'][:][aboveth]
-rchisq = chisq / (2 * chisq_dof - 2)
-
-try:
-    sgchisq = trigf[args.ifo+'/sg_chisq'][:][aboveth]
-except KeyError:
-    sgchisq = None
-
-del chisq
-del chisq_dof
-logging.info('Calculating stat values')
-stat = get_stat(args.sngl_stat, snr, rchisq, sgchisq, args.stat_factor)
-del snr
-del rchisq
-del sgchisq
+stat = get_stat(args.sngl_stat, trigf[args.ifo])
 
 # get the duration values if needed
 if args.bin_param == 'template_duration' and not args.f_lower:
@@ -180,10 +149,10 @@ else:
 # stat threshold to reduce trigger numbers
 abovethresh = stat >= args.stat_threshold
 stat = stat[abovethresh]
-tid = trigf[args.ifo+'/template_id'][:][aboveth][abovethresh]
-time = trigf[args.ifo+'/end_time'][:][aboveth][abovethresh]
+tid = trigf[args.ifo+'/template_id'][:][abovethresh]
+time = trigf[args.ifo+'/end_time'][:][abovethresh]
 if trig_dur:
-    tdur = trigf[args.ifo+'/template_duration'][:][aboveth][abovethresh]
+    tdur = trigf[args.ifo+'/template_duration'][:][abovethresh]
 logging.info('%i trigs left after thresholding at %f' % (len(stat), args.stat_threshold))
 del stat
 
