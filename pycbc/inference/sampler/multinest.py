@@ -37,6 +37,7 @@ from .base import BaseSampler
 from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
                         blob_data_to_dict, get_optional_arg_from_config)
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
+from pycbc.distributions import read_constraints_from_config
 from .. import models
 
 
@@ -66,11 +67,10 @@ class MultinestSampler(BaseSampler):
     name = "multinest"
     _io = MultinestFile
 
-    def __init__(self, model, nlivepoints, target_niterations,
-                 checkpoint_interval=None,
+    def __init__(self, model, nlivepoints, checkpoint_interval=1000,
                  logpost_function=None, nprocesses=1, use_mpi=False,
                  importance_nested_sampling=False, evidence_tolerance=0.1,
-                 sampling_efficiency=0.01):
+                 sampling_efficiency=0.01, constraints=None):
 
         self.model = model
         # create a wrapper for calling the model
@@ -88,7 +88,7 @@ class MultinestSampler(BaseSampler):
             pool.count = nprocesses
 
         # set up necessary attributes
-        self._target_niterations = target_niterations
+        self._constraints = constraints
         self._nlivepoints = nlivepoints
         self._ndim = len(model.variable_params)
         rstate = numpy.random.get_state()
@@ -99,9 +99,13 @@ class MultinestSampler(BaseSampler):
         self._ins = importance_nested_sampling
         self._samples = None
         self._stats = None
-        self._seed = 0 # FIXME need to pass in random seed somehow
+        self._seed = 0 # FIXME need to pass in random seed?
         self._itercount = None
         self._lastclear = None
+        self._logz = None
+        self._dlogz = None
+        self._importance_logz = None
+        self._importance_dlogz = None
 
     @property
     def io(self):
@@ -123,10 +127,6 @@ class MultinestSampler(BaseSampler):
         return self._checkpoint_interval
 
     @property
-    def target_niterations(self):
-        return self._target_niterations
-
-    @property
     def nlivepoints(self):
         return self._nlivepoints
 
@@ -137,6 +137,14 @@ class MultinestSampler(BaseSampler):
     @property
     def dlogz(self):
         return self._dlogz
+
+    @property
+    def importance_logz(self):
+        return self._importance_logz
+
+    @property
+    def importance_dlogz(self):
+        return self._importance_dlogz
 
     @property
     def samples(self):
@@ -164,10 +172,13 @@ class MultinestSampler(BaseSampler):
         # calculate stats for each posterior sample
         for sample in self._samples:
             params = dict(zip(self.model.variable_params, sample))
+            if self.model.sampling_transforms is not None:
+                params = self.model.sampling_transforms.apply(params)
             self.model.update(**params)
+            self.model.logposterior # this is necessary to avoid logprior being nan??
             for c in callfuncs:
                 c()
-            current_stats = self.model.get_current_stats()
+            current_stats = self.model.get_current_stats(names=stats)
             for i, s in enumerate(stats):
                 self._stats[s] = numpy.append(self._stats[s], current_stats[i])
         return self._stats
@@ -180,6 +191,13 @@ class MultinestSampler(BaseSampler):
         # this is multinest's equal weighted posterior file
         post_file = self.backup_file[:-9]+'-post_equal_weights.dat'
         return numpy.loadtxt(post_file, ndmin=2)
+
+    def check_if_finished(self):
+        # grab boolean value stored in resume file of multinest output
+        resume_file = self.backup_file[:-9] + '-resume.dat'
+        done = numpy.genfromtxt(resume_file, dtype=str, skip_header=5,
+                                skip_footer=1, usecol=0).data[0] == 'T'
+        return done
 
     def clear_samples(self):
         """Clears the samples and stats from memory.
@@ -212,15 +230,21 @@ class MultinestSampler(BaseSampler):
         # set the numpy random state
         numpy.random.set_state(rstate)
         # set emcee's generator to the same state
-        self._sampler.random_state = rstate
+        self._random_state = rstate
 
     def ns_loglikelihood(self, cube):
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         # apply transforms
-        params = self.model._transform_params(**params)
-        # update model with current params
-        self.model.update(**params)
-        return self.model.loglikelihood
+        if self.model.sampling_transforms is not None:
+            params = self.model.sampling_transforms.apply(params)
+        params = self.model._transform_params(**params) # waveform transforms
+        # apply constraints
+        if self._constraints is not None and not all([c(params) for c in self._constraints]):
+            return -1e90
+        else:
+            # update model with current params
+            self.model.update(**params)
+            return self.model.logposterior
 
     def ns_prior(self, cube):
         transformed_cube = numpy.array(cube).copy()
@@ -246,12 +270,8 @@ class MultinestSampler(BaseSampler):
                                  outputfiles_basename=outputfiles_basename)
         self._itercount = 0
         iterinterval = self.checkpoint_interval
-        if iterinterval is None:
-            iterinterval = self.target_niterations
-        while self.niterations < self.target_niterations:
-            # adjust the interval if we would go past the target niterations
-            if self.niterations + iterinterval > self.target_niterations:
-                iterinterval = self.target_niterations - self.niterations
+        done = False
+        while not done:
             logging.info("Running sampler for {} to {} iterations".format(
                 self.niterations, self.niterations + iterinterval))
             # run multinest
@@ -265,18 +285,19 @@ class MultinestSampler(BaseSampler):
                        verbose=True)
             # parse results from multinest output files
             nest_stats = a.get_mode_stats()
+            self._logz = nest_stats['nested sampling global log-evidence']
+            self._dlogz = nest_stats['nested sampling global log-evidence error']
             if self._ins:
-                self._logz = nest_stats['nested importance sampling global log-evidence']
-                self._dlogz = nest_stats['nested importance sampling global log-evidence error']
-            else:
-                self._logz = nest_stats['nested sampling global log-evidence']
-                self._dlogz = nest_stats['nested sampling global log-evidence error']
+                self._importance_logz = nest_stats['nested importance sampling global log-evidence']
+                self._importance_dlogz = nest_stats['nested importance sampling global log-evidence error']
             self._samples = self.get_posterior_samples()[:,:-1]
             logging.info("Have {} posterior samples".format(self._samples.shape[0]))
             # update the itercounter
             self._itercount = self._itercount + iterinterval
             # dump the current results
             self.checkpoint()
+            # check if we're finished
+            done = self.check_if_finished()
 
     def solve(self, LogLikelihood, Prior, n_dims, **kwargs):
 	kwargs['n_dims'] = n_dims
@@ -333,7 +354,9 @@ class MultinestSampler(BaseSampler):
             # write stats
             fp.write_samples(self.model_stats)
             # write evidence
-            fp.write_logevidence(self.logz, self.dlogz)
+            fp.write_logevidence(self.logz, self.dlogz,
+                                 self.importance_logz,
+                                 self.importance_dlogz)
             # write acceptance
             fp.write_acceptance_fraction(self.acceptance_fraction())
             # write random state (use default numpy.random_state)
@@ -365,8 +388,6 @@ class MultinestSampler(BaseSampler):
         # check name
         assert cp.get(section, "name") == cls.name, (
             "name in section [sampler] must match mine")
-        # get the number of iterations sampler should run
-        target_niterations = int(cp.get(section, "niterations"))
         # get the number of live points to use
         nlivepoints = int(cp.get(section, "nlivepoints"))
         # get the checkpoint interval, if it's specified
@@ -384,13 +405,14 @@ class MultinestSampler(BaseSampler):
         ins = get_optional_arg_from_config(cp, section,
                                            'importance-nested-sampling',
                                            dtype=bool)
+        # get constraints since we can't use the joint prior distribution
+        constraints = read_constraints_from_config(cp)
         # build optional kwarg dict
         kwargnames = ['evidence_tolerance', 'sampling_efficiency',
                       'importance_nested_sampling']
         optional_kwargs = {k: v for k, v in zip(kwargnames, [ztol, eff, ins]) if
                            v is not None}
-        obj = cls(model, nlivepoints, target_niterations,
-                  checkpoint_interval=checkpoint_interval,
+        obj = cls(model, nlivepoints, checkpoint_interval=checkpoint_interval,
                   logpost_function=lnpost, nprocesses=nprocesses,
-                  use_mpi=use_mpi, **optional_kwargs)
+                  use_mpi=use_mpi, constraints=constraints, **optional_kwargs)
         return obj
