@@ -62,6 +62,29 @@ class MultinestFile(BaseInferenceFile):
             except KeyError:
                 self.create_dataset(dataset_name, (1,))
 
+    def write_logevidence(self, lnz, dlnz, importance_lnz, importance_dlnz):
+        """Writes the given log evidence and its error.
+
+        Results are saved to file's 'log_evidence' and 'dlog_evidence'
+        attributes, as well as the importance-weighted versions of these
+        stats if they exist.
+
+        Parameters
+        ----------
+        lnz : float
+            The log of the evidence.
+        dlnz : float
+            The error in the estimate of the log evidence.
+        importance_lnz : float
+            The importance-weighted log of the evidence.
+        importance_dlnz : float
+            The error in the importance-weighted estimate of the log evidence.
+        """
+        self.attrs['log_evidence'] = lnz
+        self.attrs['dlog_evidence'] = dlnz
+        self.attrs['importance_log_evidence'] = importance_lnz
+        self.attrs['importance_dlog_evidence'] = importance_dlnz
+
     def read_raw_samples(self, fields, iteration=None):
         if isinstance(fields, (str, unicode)):
             fields = [fields]
