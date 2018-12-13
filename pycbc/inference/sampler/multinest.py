@@ -298,6 +298,9 @@ class MultinestSampler(BaseSampler):
             logging.info("Have {} posterior samples".format(self._samples.shape[0]))
             # update the itercounter
             self._itercount = self._itercount + iterinterval
+            # make sure there's at least 1 posterior sample
+            if self._samples.shape[0] == 0:
+                continue
             # dump the current results
             self.checkpoint()
             # check if we're finished
@@ -352,9 +355,6 @@ class MultinestSampler(BaseSampler):
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
         """
-        # check to make sure there's at least 1 posterior sample
-        if self._samples.shape[0] == 0:
-            return
         with self.io(filename, 'a') as fp:
             # write samples
             fp.write_samples(self.samples, self.model.variable_params)
