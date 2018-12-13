@@ -8,35 +8,25 @@ from collections import OrderedDict
 import numpy as np
 import argparse
 
-#plt.rc('text', usetex=True)
-#plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-#plt.rc('axes', labelsize=20.0)
-plt.rc('axes.formatter', limits=[-3,4])
-#plt.rc('legend', fontsize=14.0)
-#plt.rc('xtick', labelsize=16.0)
-#plt.rc('ytick', labelsize=16.0)
-plt.rc('figure', dpi=300)
-
 parser = argparse.ArgumentParser()
-parser.add_argument('--comp-1-file',
+parser = argparse.ArgumentParser(usage="",
+    description="Plot ratios of VTs calculated at various IFARs using pycbc_page_sensitivity for two analyses")
+parser.add_argument('--comp-1-file', required=True,
                     help='HDF file containing VT curves, first set of data for comparison')
-parser.add_argument('--comp-2-file',
+parser.add_argument('--comp-2-file', required=True,
                     help='HDF file containing VT curves, second set of data for comparison')
-parser.add_argument('--comp-1-desc', 
+parser.add_argument('--comp-1-desc',  required=True,
                     help='descriptor tag for first set of data (short, for use in subscript)')
-parser.add_argument('--comp-2-desc',
+parser.add_argument('--comp-2-desc', type=str, required=True,
                     help='descriptor tag for second set of data (short, for use in subscript)')
-parser.add_argument('--outfile',
+parser.add_argument('--outfile', type=str, required=True,
                     help='Output file to save to')
-parser.add_argument('--ifars', type=float, nargs='+',
+parser.add_argument('--ifars', type=float, required=True, nargs='+',
                     help='IFAR values to plot VT for')
 
 args = parser.parse_args()
 
-#ffirst_set = h5py.File('H1L1-ANALYSIS123-FULL-DQ-VT-DATA-WITH-ERROR.hdf','r')
-#fsecond_set = h5py.File('H1L1-ANALYSIS123-NO-DQ-VT-DATA-WITH-ERROR.hdf','r')
-
-
+# Load in the two datasets
 ffirst_set = h5py.File(args.comp_1_file)
 fsecond_set = h5py.File(args.comp_2_file)
 
@@ -44,71 +34,66 @@ fsecond_set = h5py.File(args.comp_2_file)
 idxs = [np.argmin(np.abs(ffirst_set['xvals'][:] - ifv)) for ifv in args.ifars]
 
 keys = ffirst_set['data'].keys()
+# sanitise the input a little bit so that the files must have the same 
+assert keys == fsecond_set['data'].keys(), "keys do not match for the two files"
 
-sets_data = []
-sets_errhigh = []
-sets_errlow = []
-sets_2_data = []
-sets_2_errhigh = []
-sets_2_errlow = []
-ys = []
-yerrs = []
-
-count = 0
-
+# make the plot pretty
+plt.rc('axes.formatter', limits=[-3,4])
+plt.rc('figure', dpi=300)
 fig_mi = plt.figure(figsize=(10,4))
 ax_mi = fig_mi.gca()
 
-ax_mi.grid(True)
+ax_mi.grid(True, zorder=1) #add a grid, set zorder to be low so that it is behind the rest
 
+# read in labels for the different plotting points
 labels = ['$ ' + label.split('\\in')[-1] for label in ffirst_set['data'].keys()]
 
-count=0
+# read in the splitting parameter name from the first data set
 x_param = r'$' + ffirst_set['data'].keys()[0].split('\\in')[0].strip('$').strip() + r'$'
-xpos = np.zeros(len(ffirst_set['data'].keys()))
-for l in labels:
-        xpos[count] = float(l.split('[')[1].split(',')[0])
-        count += 1
+
+# read in the positions from the labels
+xpos = np.array([float(l.split('[')[1].split(',')[0]) for l in labels])
+# TODO?: add in argument for equally spaced plotting (e.g. for split-in-log parameters)
+
+# set the x ticks to be the positions given in the labels
 plt.xticks(xpos,labels,rotation='horizontal')
-x_width = xpos.max()-xpos.min()
-xlim_max = xpos.max() + 0.075*x_width
-xlim_min = xpos.min() - 0.075*x_width
-plt.xlim([xlim_min, xlim_max])
-plt.plot([xlim_min, xlim_max],[1,1],'k')
 
-count = 0
+#loop through each IFAR and plot the VT ratio with error bars
 for idv in idxs:
-	data_to_append = np.array([ffirst_set['data'][key][idv] for key in keys])
-	data_2_to_append = np.array([fsecond_set['data'][key][idv] for key in keys])
-	sets_data.append(data_to_append)
-	sets_errhigh.append(np.array([ffirst_set['errorhigh'][key][idv] for key in keys]))
-	sets_errlow.append(np.array([ffirst_set['errorlow'][key][idv] for key in keys]))
-	sets_2_data.append(data_2_to_append)
-        sets_2_errhigh.append(np.array([fsecond_set['errorhigh'][key][idv] for key in keys]))
-        sets_2_errlow.append(np.array([fsecond_set['errorlow'][key][idv] for key in keys]))
+	data = np.array([ffirst_set['data'][key][idv] for key in keys])
+	data_2 = np.array([fsecond_set['data'][key][idv] for key in keys])
+	
+	sets_errhigh = np.array([ffirst_set['errorhigh'][key][idv] for key in keys])
+	sets_errlow = np.array([ffirst_set['errorlow'][key][idv] for key in keys])
+	
+        sets_2_errhigh = np.array([fsecond_set['errorhigh'][key][idv] for key in keys])
+        sets_2_errlow = np.array([fsecond_set['errorlow'][key][idv] for key in keys])
 
-	ys.append(np.divide(data_to_append, data_2_to_append))
-	yerr_errlow = np.multiply(np.sqrt(np.divide(sets_errlow[count],data_to_append)**2 +
-                np.divide(sets_2_errlow[count],data_2_to_append)**2),ys[count])
-	yerr_errhigh = np.multiply(np.sqrt(np.divide(sets_errhigh[count],data_to_append)**2 +
-                np.divide(sets_2_errhigh[count],data_2_to_append)**2),ys[count])
-	ax_mi.errorbar(xpos, ys[count], yerr=[yerr_errlow,yerr_errhigh],
+	ys = np.divide(data, data_2)
+	yerr_errlow = np.multiply(np.sqrt(np.divide(sets_errlow,data)**2 +
+                np.divide(sets_2_errlow,data_2)**2),ys)
+	yerr_errhigh = np.multiply(np.sqrt(np.divide(sets_errhigh,data)**2 +
+                np.divide(sets_2_errhigh,data_2)**2),ys)
+	ax_mi.errorbar(xpos, ys, yerr=[yerr_errlow,yerr_errhigh],
                 fmt='o', markersize=7, alpha=0.6, linewidth=5,
                 label='IFAR = %d yr' % ffirst_set['xvals'][idv], capsize=5, capthick=2, mec='k')
         plt.xticks(xpos,labels,rotation='horizontal')
-#	yerrs.append([np.multiply(np.sqrt(np.divide(first_set_errlow,data_to_append)**2 +
-#                np.divide(second_set_errlow,data_2_to_append)**2),y),
-#                np.multiply(np.sqrt(np.divide(first_set_errhigh,first_set_data)**2 +
-#                np.divide(second_set_errhigh,second_set_data)**2),y)])
-	count += 1
 
+
+# get the limit of the x axes, and draw a black line in order to highlight equal comparison
+xlimits = plt.xlim()
+plt.plot(xlimits,[1,1],'k', lw=3, zorder=0)
+plt.xlim(xlimits) # reassert the x limits so that the plot doesn't expand
+
+# do some stuff to make the plot pretty
 ax_mi.legend(bbox_to_anchor=(0.3,1))
-#ax_mi.legend(title=key, bbox_to_anchor=(1,1))
 ax_mi.get_legend().get_title().set_fontsize('14')
 ax_mi.get_legend().get_frame().set_alpha(0.7)
 ax_mi.set_xlabel(x_param)
 ax_mi.set_ylabel(r'$\frac{VT_\mathrm{' + args.comp_1_desc +'}}{VT_\mathrm{' + args.comp_2_desc +'}}$')
 plt.tight_layout()
+
+# write out to file, save as pdf if requested
 if args.outfile.split('.')[-1] == 'pdf':
     fig_mi.savefig(args.outfile, format='PDF')
 else:
