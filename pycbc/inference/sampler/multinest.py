@@ -193,10 +193,14 @@ class MultinestSampler(BaseSampler):
         return numpy.loadtxt(post_file, ndmin=2)
 
     def check_if_finished(self):
-        # grab boolean value stored in resume file of multinest output
+        # do calculation that multinest does
         resume_file = self.backup_file[:-9] + '-resume.dat'
-        done = numpy.genfromtxt(resume_file, dtype=str, skip_header=5,
-                                skip_footer=1, usecol=0).data[0] == 'T'
+        current_vol, _, _ = numpy.loadtxt(
+            resume_file, skiprows=6, unpack=True)
+        maxloglike = max(self.get_posterior_samples()[:, -1])
+        logz_remain = numpy.exp(maxloglike + numpy.log(current_vol) - self.logz)
+        logging.info("Estimate of remaining logZ is {}".format(logz_remain))
+        done = logz_remain < self._ztol
         return done
 
     def clear_samples(self):
@@ -282,7 +286,7 @@ class MultinestSampler(BaseSampler):
                        importance_nested_sampling=self._ins,
                        max_iter=iterinterval,
                        outputfiles_basename=outputfiles_basename,
-                       verbose=True)
+                       multimodal=False, verbose=True)
             # parse results from multinest output files
             nest_stats = a.get_mode_stats()
             self._logz = nest_stats['nested sampling global log-evidence']
@@ -348,6 +352,9 @@ class MultinestSampler(BaseSampler):
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
         """
+        # check to make sure there's at least 1 posterior sample
+        if self._samples.shape[0] == 0:
+            return
         with self.io(filename, 'a') as fp:
             # write samples
             fp.write_samples(self.samples, self.model.variable_params)
