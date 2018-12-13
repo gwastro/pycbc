@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import h5py
 import matplotlib
 matplotlib.use('Agg')
