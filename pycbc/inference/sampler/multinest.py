@@ -398,7 +398,7 @@ class MultinestSampler(BaseSampler):
         # get the number of live points to use
         nlivepoints = int(cp.get(section, "nlivepoints"))
         # get the checkpoint interval, if it's specified
-        checkpoint_interval = get_optional_arg_from_config(
+        checkpoint = get_optional_arg_from_config(
             cp, section, 'checkpoint-interval', dtype=int)
         # get the logpost function
         lnpost = get_optional_arg_from_config(cp, section, 'logpost-function')
@@ -416,10 +416,12 @@ class MultinestSampler(BaseSampler):
         constraints = read_constraints_from_config(cp)
         # build optional kwarg dict
         kwargnames = ['evidence_tolerance', 'sampling_efficiency',
-                      'importance_nested_sampling']
-        optional_kwargs = {k: v for k, v in zip(kwargnames, [ztol, eff, ins]) if
+                      'importance_nested_sampling',
+                      'checkpoint_interval']
+        optional_kwargs = {k: v for k, v in
+                           zip(kwargnames, [ztol, eff, ins, checkpoint]) if
                            v is not None}
-        obj = cls(model, nlivepoints, checkpoint_interval=checkpoint_interval,
+        obj = cls(model, nlivepoints,
                   logpost_function=lnpost, nprocesses=nprocesses,
                   use_mpi=use_mpi, constraints=constraints, **optional_kwargs)
         return obj
