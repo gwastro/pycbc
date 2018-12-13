@@ -82,8 +82,9 @@ class MultinestFile(BaseInferenceFile):
         """
         self.attrs['log_evidence'] = lnz
         self.attrs['dlog_evidence'] = dlnz
-        self.attrs['importance_log_evidence'] = importance_lnz
-        self.attrs['importance_dlog_evidence'] = importance_dlnz
+        if all([e is not None for e in [importance_lnz, importance_dlnz]]):
+            self.attrs['importance_log_evidence'] = importance_lnz
+            self.attrs['importance_dlog_evidence'] = importance_dlnz
 
     def read_raw_samples(self, fields, iteration=None):
         if isinstance(fields, (str, unicode)):
