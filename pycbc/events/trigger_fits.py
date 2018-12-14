@@ -269,6 +269,10 @@ def get_param(par, args, m1, m2, s1z, s2z):
                                            args.approximant or "SEOBNRv4")
         if args.min_duration:
             parvals += args.min_duration
+    elif par == 'tau_0':
+        parvals = tau0_from_mass1_mass2(m1, m2, args.f_lower)
+    elif par == 'tau_3':
+        parvals = tau3_from_mass1_mass2(m1, m2, args.f_lower)
     elif par in pnutils.named_frequency_cutoffs.keys():
         parvals = pnutils.frequency_cutoff_from_name(par, m1, m2, s1z, s2z)
     else:

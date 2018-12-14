@@ -47,8 +47,9 @@ parser.add_argument("--fit-param",
                     help="Parameter over which to regress the background "
                          "fit coefficients. Required. Either read from "
                          "template fit file or choose from mchirp, mtotal, "
-                         "template_duration, a frequency cutoff in pnutils or "
-                         "a frequency function in LALSimulation.")
+                         "tau_0, tau_3, template_duration, a frequency "
+                         "cutoff in pnutils or a frequency function in "
+                         "LALSimulation.")
 parser.add_argument("--approximant", default="SEOBNRv4",
                     help="Approximant for template duration. Default SEOBNRv4")
 parser.add_argument("--f-lower", type=float, default=0.,
