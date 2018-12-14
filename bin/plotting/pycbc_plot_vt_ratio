@@ -61,7 +61,7 @@ xpos_add_dx = 0.05 * np.append(np.diff(xpos), np.diff(xpos)[-1])
 # set the x ticks to be the positions given in the labels
 plt.xticks(xpos, labels, rotation='horizontal')
 
-colors = ['#7b85d4', '#f37738','#83c995','#d7369e', '#c4c9d8', '#859795']
+colors = ['#7b85d4', '#f37738', '#83c995', '#d7369e', '#c4c9d8', '#859795']
 colorcount = 0
 
 # loop through each IFAR and plot the VT ratio with error bars
