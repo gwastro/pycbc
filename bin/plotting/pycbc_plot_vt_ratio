@@ -38,9 +38,9 @@ keys = ffirst_set['data'].keys()
 assert keys == fsecond_set['data'].keys(), "keys do not match for the two files"
 
 # make the plot pretty
-plt.rc('axes.formatter', limits=[-3,4])
+plt.rc('axes.formatter', limits=[-3, 4])
 plt.rc('figure', dpi=300)
-fig_mi = plt.figure(figsize=(10,4))
+fig_mi = plt.figure(figsize=(10, 4))
 ax_mi = fig_mi.gca()
 
 ax_mi.grid(True, zorder=1)
