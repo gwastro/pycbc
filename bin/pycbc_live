@@ -480,8 +480,8 @@ with ctx:
             if data_reader[ifo].psd is not None:
                 dist = data_reader[ifo].psd.dist
                 if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
-                    logging.info("PSD outside acceptable sensitivity %s - %s, have %s",
-                                 args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
+                    logging.info("%s PSD outside acceptable sensitivity %s - %s, have %s",
+                                 ifo, args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
                     status = False               
 
             if ifo in followup_ifos:
@@ -496,7 +496,7 @@ with ctx:
                 if evnt.rank > 0:
                     results[ifo] = mf.process_data(data_reader[ifo])
             else:
-                logging.info('Insufficient data for analysis')
+                logging.info('Insufficient data for %s analysis', ifo)
 
         if evnt.rank > 0:
             evnt.commit_results((results, data_end()))
@@ -517,7 +517,7 @@ with ctx:
                     idx = data_reader[ifo].dq.indices_of_flag(
                             start, valid_pad, times,
                             padding=data_reader[ifo].dq_padding)
-                    logging.info('Keeping %s triggers out of %s triggers in %s', len(idx), len(times), ifo)
+                    logging.info('Keeping %d/%d %s triggers', len(idx), len(times), ifo)
                     for key in results[ifo]:
                         if len(results[ifo][key]) > 0:
                             results[ifo][key] = results[ifo][key][idx]
