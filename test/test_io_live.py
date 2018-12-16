@@ -97,9 +97,11 @@ class TestIOLive(unittest.TestCase):
         for ifo, k in itertools.product(trig_ifos, self.template):
             results['foreground/' + ifo + '/' + k] = self.template[k]
 
+        channel_names = {ifo: 'TEST' for ifo in all_ifos}
         kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in all_ifos},
                   'low_frequency_cutoff': 20.,
-                  'followup_data': followup_data}
+                  'followup_data': followup_data,
+                  'channel_names': channel_names}
         coinc = SingleCoincForGraceDB(trig_ifos, results, **kwargs)
 
         tempdir = tempfile.mkdtemp()
