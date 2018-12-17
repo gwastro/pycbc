@@ -694,7 +694,7 @@ class BaseModel(object):
     @classmethod
     def _init_args_from_config(cls, cp):
         """Helper function for loading parameters.
-        
+
         This retrieves the prior, variable parameters, static parameterss,
         constraints, and sampling transforms.
 
@@ -702,7 +702,7 @@ class BaseModel(object):
         ----------
         cp : ConfigParser
             Config parser to read.
-        
+
         Returns
         -------
         dict :

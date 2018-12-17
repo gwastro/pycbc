@@ -27,7 +27,6 @@ from pycbc.distributions import read_distributions_from_config
 from pycbc.waveform import generator
 
 from .gaussian_noise import GaussianNoise
-from .base import SamplingTransforms
 
 
 class MarginalizedGaussianNoise(GaussianNoise):
