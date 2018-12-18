@@ -273,10 +273,6 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
         return trigfile[ifo][param][:][foundtrg]
     else:
         b = bankfile
-        #  Note that get_param uses chi_eff rather than efective_spin,
-        #  so we change it for this instance if needed
-        if param == "effective_spin":
-            param = "chi_eff"
         found_param = trstats.get_param(param, args, b['mass1'][:],
                                         b['mass2'][:],
                                         b['spin1z'][:],
@@ -310,11 +306,6 @@ def get_inj_param(injfile, param, ifo, args=None):
     inj = injfile["injections"]
     if param in inj.keys():
         return inj["injections/"+param]
-
-    # Note that get_param uses chi_eff rather than efective_spin,
-    # so we change it for this instance if needed
-    if param == "effective_spin":
-        param = "chi_eff"
 
     if param == "end_time_"+ifo[0].lower():
         inj_param = inj['end_time'][:] + det.time_delay_from_earth_center(
