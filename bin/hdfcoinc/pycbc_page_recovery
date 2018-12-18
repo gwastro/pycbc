@@ -43,7 +43,7 @@ parser.add_argument("--plot-type", choices=["scatter", "err", "fracerr",
                     help="Type of plot to show accuracy of recovery. "
                          "Default='scatter'")
 parser.add_argument("--gradient-far", action="store_true",
-                    help="Show FAR of found injections as a gradient")
+                    help="Show FAR of found injections as a color gradient")
 parser.add_argument("--f-lower", type=int,
                     help="lower frequency value for e.g. calculation of "
                          " tempate duration. Only needed for certain parameters")
@@ -99,7 +99,7 @@ if args.x_param:
         xparam = "end_time_"+site
     if args.x_param == "effective_distance":
         xparam = "eff_dist_"+site
-    inj_xparams = triggers.get_inj_param(injs, xparam, args.ifo)[found]
+    inj_xparams = triggers.get_inj_param(injs, xparam, args.ifo, args)[found]
 # need a string value when defining axis labels even if not used
 args.x_param = args.x_param or "badger"
 
