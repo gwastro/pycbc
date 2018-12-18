@@ -44,6 +44,9 @@ parser.add_argument("--plot-type", choices=["scatter", "err", "fracerr",
                          "Default='scatter'")
 parser.add_argument("--gradient-far", action="store_true",
                     help="Show FAR of found injections as a gradient")
+parser.add_argument("--f-lower", type=int,
+                    help="lower frequency value for e.g. calculation of "
+                         " tempate duration. Only needed for certain parameters")
 parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 
@@ -87,7 +90,7 @@ if args.error_param == "effective_distance":
     param = "eff_dist_"+site
 # calculate the parameter for all injections, then select those found and 
 # above the IFAR threshold
-inj_params = triggers.get_inj_param(injs, param, args.ifo)[found]
+inj_params = triggers.get_inj_param(injs, param, args.ifo, args)[found]
 
 # Get the injected x-axis values
 if args.x_param:
@@ -106,7 +109,7 @@ param = args.error_param
 # calculate parameters for all recovered injection triggers, then select
 # only those above the IFAR threshold
 rec_params = triggers.get_found_param(injs, bank, trig, param,
-                                      args.ifo)[above_min_ifar]
+                                      args.ifo, args)[above_min_ifar]
 
 # calculate needed values
 if "err" in args.plot_type:
