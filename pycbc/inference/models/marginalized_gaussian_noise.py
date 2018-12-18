@@ -27,7 +27,6 @@ from pycbc.distributions import read_distributions_from_config
 from pycbc.waveform import generator
 
 from .gaussian_noise import GaussianNoise
-from .base import SamplingTransforms
 
 
 class MarginalizedGaussianNoise(GaussianNoise):
@@ -306,13 +305,6 @@ class MarginalizedGaussianNoise(GaussianNoise):
         """
         prior_section = "marginalized_prior"
         args = cls._init_args_from_config(cp)
-        # try to load sampling transforms
-        try:
-            sampling_transforms = SamplingTransforms.from_config(
-                cp, args['variable_params'])
-        except ValueError:
-            sampling_transforms = None
-        args['sampling_transforms'] = sampling_transforms
         marg_prior = read_distributions_from_config(cp, prior_section)
         if len(marg_prior) == 0:
             raise AttributeError("No priors are specified for the "

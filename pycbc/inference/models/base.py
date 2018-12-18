@@ -693,7 +693,22 @@ class BaseModel(object):
 
     @classmethod
     def _init_args_from_config(cls, cp):
-        """Helper function for loading parameters."""
+        """Helper function for loading parameters.
+
+        This retrieves the prior, variable parameters, static parameterss,
+        constraints, and sampling transforms.
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            Config parser to read.
+
+        Returns
+        -------
+        dict :
+            Dictionary of the arguments. Has keys ``variable_params``,
+            ``static_params``, ``prior``, and ``sampling_transforms``.
+        """
         section = "model"
         prior_section = "prior"
         vparams_section = 'variable_params'
@@ -714,6 +729,13 @@ class BaseModel(object):
         args = {'variable_params': variable_params,
                 'static_params': static_params,
                 'prior': prior}
+        # try to load sampling transforms
+        try:
+            sampling_transforms = SamplingTransforms.from_config(
+                cp, variable_params)
+        except ValueError:
+            sampling_transforms = None
+        args['sampling_transforms'] = sampling_transforms
         # get any other keyword arguments provided
         args.update(cls.extra_args_from_config(cp, section,
                                                skip_args=['name']))
@@ -732,13 +754,6 @@ class BaseModel(object):
             provided keyword will over ride what is in the config file.
         """
         args = cls._init_args_from_config(cp)
-        # try to load sampling transforms
-        try:
-            sampling_transforms = SamplingTransforms.from_config(
-                cp, args['variable_params'])
-        except ValueError:
-            sampling_transforms = None
-        args['sampling_transforms'] = sampling_transforms
         args.update(kwargs)
         return cls(**args)
 
