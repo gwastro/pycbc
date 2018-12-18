@@ -19,7 +19,7 @@ from the command line.
 
 import h5py
 import numpy
-from pycbc import types, conversions
+from pycbc import types
 from pycbc.events import coinc
 from pycbc.io import hdf
 from pycbc.events import trigger_fits as trstats
@@ -262,8 +262,8 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
     """
     foundtmp = injfile["found_after_vetoes/template_id"][:]
     if trigfile is not None:
-        # get the name of the ifo in the injection file, eg "detector_1"
-        # and the integer from that name
+        #  get the name of the ifo in the injection file, eg "detector_1"
+        #  and the integer from that name
         ifolabel = [name for name, val in injfile.attrs.items() if \
                     "detector" in name and val == ifo][0]
         foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
@@ -273,14 +273,14 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
         return trigfile[ifo][param][:][foundtrg]
     else:
         b = bankfile
-        # Note that get_param uses chi_eff rather than efective_spin,
-        # so we change it for this instance if needed
+        #  Note that get_param uses chi_eff rather than efective_spin,
+        #  so we change it for this instance if needed
         if param == "effective_spin":
             param = "chi_eff"
         found_param = trstats.get_param(param, args, b['mass1'][:],
-                                            b['mass2'][:],
-                                            b['spin1z'][:],
-                                            b['spin2z'][:])[foundtmp]
+                                        b['mass2'][:],
+                                        b['spin1z'][:],
+                                        b['spin2z'][:])[foundtmp]
 
     return found_param
 
@@ -318,12 +318,12 @@ def get_inj_param(injfile, param, ifo, args=None):
 
     if param == "end_time_"+ifo[0].lower():
         inj_param = inj['end_time'][:] + det.time_delay_from_earth_center(
-                                            inj['longitude'][:],
-                                            inj['latitude'][:],
-                                            inj['end_time'][:])
-    else: 
+                                        inj['longitude'][:],
+                                        inj['latitude'][:],
+                                        inj['end_time'][:])
+    else:
         inj_param = trstats.get_param(param, args, inj['mass1'][:],
-                                            inj['mass2'][:],
-                                            inj['spin1z'][:],
-                                            inj['spin2z'][:])
+                                        inj['mass2'][:],
+                                        inj['spin1z'][:],
+                                        inj['spin2z'][:])
     return inj_param
