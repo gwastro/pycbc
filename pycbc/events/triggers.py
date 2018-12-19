@@ -273,12 +273,11 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
         return trigfile[ifo][param][:][foundtrg]
     else:
         b = bankfile
-        found_param = trstats.get_param(param, args, b['mass1'][:],
+        return trstats.get_param(param, args, b['mass1'][:],
                                         b['mass2'][:],
                                         b['spin1z'][:],
                                         b['spin2z'][:])[foundtmp]
 
-    return found_param
 
 def get_inj_param(injfile, param, ifo, args=None):
     """
@@ -313,8 +312,8 @@ def get_inj_param(injfile, param, ifo, args=None):
                                         inj['latitude'][:],
                                         inj['end_time'][:])
     else:
-        inj_param = trstats.get_param(param, args, inj['mass1'][:],
+        return trstats.get_param(param, args, inj['mass1'][:],
                                         inj['mass2'][:],
                                         inj['spin1z'][:],
                                         inj['spin2z'][:])
-    return inj_param
+

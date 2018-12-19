@@ -261,7 +261,7 @@ def get_param(par, args, m1, m2, s1z, s2z):
         parvals = m1 + m2
     elif par =='eta':
         parvals = conversions.eta_from_mass1_mass2(m1, m2)
-    elif par == 'chi_eff' or par =='effective_spin':
+    elif par in ['chi_eff', 'effective_spin']:
         parvals = conversions.chi_eff(m1, m2, s1z, s2z)
     elif par == 'template_duration':
         # default to SEOBNRv4 duration function
