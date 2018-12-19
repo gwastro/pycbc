@@ -262,8 +262,8 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
     """
     foundtmp = injfile["found_after_vetoes/template_id"][:]
     if trigfile is not None:
-        #  get the name of the ifo in the injection file, eg "detector_1"
-        #  and the integer from that name
+        # get the name of the ifo in the injection file, eg "detector_1"
+        # and the integer from that name
         ifolabel = [name for name, val in injfile.attrs.items() if \
                     "detector" in name and val == ifo][0]
         foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
@@ -277,7 +277,6 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
                                         b['mass2'][:],
                                         b['spin1z'][:],
                                         b['spin2z'][:])[foundtmp]
-
 
 def get_inj_param(injfile, param, ifo, args=None):
     """
@@ -316,4 +315,3 @@ def get_inj_param(injfile, param, ifo, args=None):
                                         inj['mass2'][:],
                                         inj['spin1z'][:],
                                         inj['spin2z'][:])
-
