@@ -19,9 +19,10 @@ from the command line.
 
 import h5py
 import numpy
-from pycbc import types, conversions
+from pycbc import types
 from pycbc.events import coinc
 from pycbc.io import hdf
+from pycbc.events import trigger_fits as trstats
 import pycbc.detector
 
 def insert_bank_bins_option_group(parser):
@@ -234,7 +235,7 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
 
     return bin_names, bin_results
 
-def get_found_param(injfile, bankfile, trigfile, param, ifo):
+def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
     """
     Translates some popular trigger parameters into functions that calculate
     them from an hdf found injection file
@@ -251,6 +252,8 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo):
         Parameter to be calculated for the recovered triggers
     ifo: string or None
         Standard ifo name, ex. 'L1'
+    args : Namespace object returned from ArgumentParser instance
+        Calling code command line options, used for f_lower value
 
     Returns
     -------
@@ -270,21 +273,12 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo):
         return trigfile[ifo][param][:][foundtrg]
     else:
         b = bankfile
-        found_param_dict = {
-          "mtotal" : (b['mass1'][:] + b['mass2'][:])[foundtmp],
-          "mchirp" : conversions.mchirp_from_mass1_mass2(b['mass1'][:],
-                     b['mass2'][:])[foundtmp],
-          "eta"    : conversions.eta_from_mass1_mass2(b['mass1'][:],
-                     b['mass2'][:])[foundtmp],
-          "effective_spin" : conversions.chi_eff(b['mass1'][:],
-                                                 b['mass2'][:],
-                                                 b['spin1z'][:],
-                                                 b['spin2z'][:])[foundtmp]
-        }
+        return trstats.get_param(param, args, b['mass1'][:],
+                                        b['mass2'][:],
+                                        b['spin1z'][:],
+                                        b['spin2z'][:])[foundtmp]
 
-    return found_param_dict[param]
-
-def get_inj_param(injfile, param, ifo):
+def get_inj_param(injfile, param, ifo, args=None):
     """
     Translates some popular injection parameters into functions that calculate
     them from an hdf found injection file
@@ -297,6 +291,8 @@ def get_inj_param(injfile, param, ifo):
         Parameter to be calculated for the injected signals
     ifo: string
         Standard detector name, ex. 'L1'
+    args: Namespace object returned from ArgumentParser instance
+        Calling code command line options, used for f_lower value
 
     Returns
     -------
@@ -304,25 +300,18 @@ def get_inj_param(injfile, param, ifo):
         The calculated parameter values
     """
     det = pycbc.detector.Detector(ifo)
-    time_delay = numpy.vectorize(#lambda dec, ra, t :
-                                 det.time_delay_from_earth_center)#(dec, ra, t))
 
     inj = injfile["injections"]
     if param in inj.keys():
         return inj["injections/"+param]
-    inj_param_dict = {
-        "mtotal" : inj['mass1'][:] + inj['mass2'][:],
-        "mchirp" : conversions.mchirp_from_mass1_mass2(inj['mass1'][:],
-                                                     inj['mass2'][:]),
-        "eta" : conversions.eta_from_mass1_mass2(inj['mass1'][:],
-                                                  inj['mass2'][:]),
-        "effective_spin" : conversions.chi_eff(inj['mass1'][:],
-                                               inj['mass2'][:],
-                                               inj['spin1z'][:],
-                                               inj['spin2z'][:]),
-        "end_time_"+ifo[0].lower() :
-            inj['end_time'][:] + time_delay(inj['longitude'][:],
-                                            inj['latitude'][:],
-                                            inj['end_time'][:]),
-    }
-    return inj_param_dict[param]
+
+    if param == "end_time_"+ifo[0].lower():
+        return inj['end_time'][:] + det.time_delay_from_earth_center(
+                                        inj['longitude'][:],
+                                        inj['latitude'][:],
+                                        inj['end_time'][:])
+    else:
+        return trstats.get_param(param, args, inj['mass1'][:],
+                                        inj['mass2'][:],
+                                        inj['spin1z'][:],
+                                        inj['spin2z'][:])

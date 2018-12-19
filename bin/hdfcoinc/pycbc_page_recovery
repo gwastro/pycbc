@@ -43,7 +43,10 @@ parser.add_argument("--plot-type", choices=["scatter", "err", "fracerr",
                     help="Type of plot to show accuracy of recovery. "
                          "Default='scatter'")
 parser.add_argument("--gradient-far", action="store_true",
-                    help="Show FAR of found injections as a gradient")
+                    help="Show FAR of found injections as a color gradient")
+parser.add_argument("--f-lower", type=int,
+                    help="lower frequency value for e.g. calculation of "
+                         "template duration. Only needed for certain parameters")
 parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 
@@ -87,7 +90,7 @@ if args.error_param == "effective_distance":
     param = "eff_dist_"+site
 # calculate the parameter for all injections, then select those found and 
 # above the IFAR threshold
-inj_params = triggers.get_inj_param(injs, param, args.ifo)[found]
+inj_params = triggers.get_inj_param(injs, param, args.ifo, args)[found]
 
 # Get the injected x-axis values
 if args.x_param:
@@ -96,7 +99,7 @@ if args.x_param:
         xparam = "end_time_"+site
     if args.x_param == "effective_distance":
         xparam = "eff_dist_"+site
-    inj_xparams = triggers.get_inj_param(injs, xparam, args.ifo)[found]
+    inj_xparams = triggers.get_inj_param(injs, xparam, args.ifo, args)[found]
 # need a string value when defining axis labels even if not used
 args.x_param = args.x_param or "badger"
 
@@ -106,7 +109,7 @@ param = args.error_param
 # calculate parameters for all recovered injection triggers, then select
 # only those above the IFAR threshold
 rec_params = triggers.get_found_param(injs, bank, trig, param,
-                                      args.ifo)[above_min_ifar]
+                                      args.ifo, args)[above_min_ifar]
 
 # calculate needed values
 if "err" in args.plot_type:
