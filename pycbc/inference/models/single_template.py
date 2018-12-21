@@ -48,7 +48,10 @@ class SingleTemplate(BaseModel):
         p = self.static_params.copy()
         if 'distance' in p:
             p.pop('distance')
-        hp, _ = get_fd_waveform(delta_f=df, distance=1, **p)
+        if 'inclination' in p:
+            p.pop('inclination')
+
+        hp, _ = get_fd_waveform(delta_f=df, distance=1, inclination=0, **p)
 
         if f_upper is None:
             f_upper = len(data[data.keys()[0]]-1) * df
@@ -99,7 +102,7 @@ class SingleTemplate(BaseModel):
                                          p['dec'], self.time)
             ip = numpy.cos(p['inclination'])
             ic = 0.5 * (1.0 + ip * ip)
-            htf = (fp * ip - 1.0j * fc * ic) / p['distance']
+            htf = (fp * ip + 1.0j * fc * ic) / p['distance']
 
             sh = self.sh[ifo].at_time(p['tc'] + dt) * htf
             shloglr += sh
