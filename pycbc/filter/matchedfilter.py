@@ -51,12 +51,16 @@ class BatchCorrelator(object):
     def __init__(self, xs, zs, size):
         """ Correlate x and y, store in z. Arrays need not be equal length, but
         must be at least size long and of the same dtype. No error checking
-        will be performed, so be careful. All dtypes must be the same.
+        will be performed, so be careful. All dtypes must be complex64.
         Note, must be created within the processing context that it will be used in.
         """
         self.size = int(size)
         self.dtype = xs[0].dtype
         self.num_vectors = len(xs)
+        
+        # keep reference to arrays 
+        self.xs = xs
+        self.zs = zs
 
         # Store each pointer as in integer array
         self.x = Array([v.ptr for v in xs], dtype=numpy.int)
