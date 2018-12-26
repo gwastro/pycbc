@@ -44,11 +44,6 @@ def correlate(x, y, z):
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
-@pycbc.scheme.schemed(BACKEND_PREFIX)
-def _correlate_factory(x, y, z):
-    err_msg = "This class is a stub that should be overridden using the "
-    err_msg += "scheme. You shouldn't be seeing this error!"
-    raise ValueError(err_msg)
 
 class BatchCorrelator(object):
     """ Create a batch correlation engine
@@ -72,6 +67,13 @@ class BatchCorrelator(object):
         pass
 
     execute = batch_correlate_execute
+
+
+@pycbc.scheme.schemed(BACKEND_PREFIX)
+def _correlate_factory(x, y, z):
+    err_msg = "This class is a stub that should be overridden using the "
+    err_msg += "scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
 
 
 class Correlator(object):

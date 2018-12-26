@@ -25,10 +25,10 @@ hp.resize(tlen)
 
 # Generate the aLIGO ZDHP PSD
 delta_f = 1.0 / sp.duration
-flen = tlen/2 + 1
+flen = tlen//2 + 1
 psd = aLIGOZeroDetHighPower(flen, delta_f, f_low)
 
 # Note: This takes a while the first time as an FFT plan is generated
 # subsequent calls are much faster.
 m, i = match(hp, sp, psd=psd, low_frequency_cutoff=f_low)
-print 'The match is: %1.3f' % m
+print('The match is: {:.4f}'.format(m))
