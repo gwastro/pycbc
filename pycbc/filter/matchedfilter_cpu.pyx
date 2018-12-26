@@ -28,6 +28,7 @@ from pycbc import WEAVE_FLAGS
 from pycbc.weave import inline
 from .simd_correlate import default_segsize, corr_parallel_code, corr_support
 from .matchedfilter import _BaseCorrelator
+cimport numpy, cython
 
 batch_correlator_code = """
     #pragma omp parallel for
@@ -61,10 +62,6 @@ support = """
     #include <stdio.h>
     #include <math.h>
 """
-
-def correlate_numpy(x, y, z):
-    z.data[:] = numpy.conjugate(x.data)[:]
-    z *= y
 
 code_batch = """
 #pragma omp parallel for
@@ -100,42 +97,26 @@ def correlate_batch_inline(x, y, z):
                     libraries=omp_libs
           )
 
-code = """
-#pragma omp parallel for
-for (int i=0; i<N; i++){
-    TYPE xr, yr, xi, yi, re, im;
-    xr = xa[i].real();
-    xi = xa[i].imag();
-    yr = ya[i].real();
-    yi = ya[i].imag();
 
-    re = xr*yr + xi*yi;
-    im = xr*yi - xi*yr;
+ctypedef fused COMPLEXTYPE:
+    float complex
+    double complex
 
-    za[i] = std::complex<TYPE>(re, im);
-}
-"""
-single_code = code.replace('TYPE', 'float')
-double_code = code.replace('TYPE', 'double')
+def correlate_numpy(x, y, z):
+    z.data[:] = numpy.conjugate(x.data)[:]
+    z *= y
+        
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _correlate(numpy.ndarray [COMPLEXTYPE, ndim=1] x,
+               numpy.ndarray [COMPLEXTYPE, ndim=1] y,
+               numpy.ndarray [COMPLEXTYPE, ndim=1] z):
+    cdef unsigned int xmax = x.shape[0]
+    for i in range(xmax):
+        z[i] = x[i].conjugate() * y[i]        
 
-def correlate_inline(x, y, z):
-    if z.precision == 'single':
-        the_code = single_code
-    else:
-        the_code = double_code
-
-    za = numpy.array(z.data, copy=False) # pylint:disable=unused-variable
-    xa = numpy.array(x.data, copy=False) # pylint:disable=unused-variable
-    ya = numpy.array(y.data, copy=False) # pylint:disable=unused-variable
-    N = len(x)  # pylint:disable=unused-variable
-    inline(the_code, ['xa', 'ya', 'za', 'N'],
-                    extra_compile_args=[WEAVE_FLAGS] + omp_flags,
-                    support_code = support,
-                    libraries=omp_libs
-          )
-
-#correlate = correlate_inline
-correlate = correlate_inline
+def correlate(x, y, z):
+    _correlate(x.data, y.data, z.data)
 
 class CPUCorrelator(_BaseCorrelator):
     def __init__(self, x, y, z):
