@@ -33,6 +33,7 @@ from pycbc.scheme import *
 from pycbc.filter import *
 import pycbc.fft
 from utils import parse_args_all_schemes, simple_exit
+from pycbc.filter.matchedfilter import BatchCorrelator, Correlator
 
 _scheme, _context = parse_args_all_schemes("correlate")
 
@@ -58,6 +59,26 @@ class Testcorrelate(unittest.TestCase):
             z = zeros(2**20, dtype=complex64)
             correlate(self.x, self.y, z)
             self.assertTrue(self.z.almost_equal_elem(z, self.tolerance))
+
+    def test_correlator(self):
+        x = self.x * 1
+        y = self.y * 1
+        z = self.z * 1
+        corr = Correlator(x, y, z)
+        corr.correlate()
+        
+        self.assertTrue(z.almost_equal_elem(self.z, self.tolerance))
+
+    def test_batch_correlate(self):
+        size = len(self.x)
+        xs = [self.x+0, self.x+1, self.x+2, self.x+3]
+        zs = [self.z+0, self.z*1, self.z*2, self.z*3]
+        b = BatchCorrelator(xs, zs, size)
+        b.execute(self.y)
+        
+        for i in range(len(xs)):
+            trusted_correlate(xs[i], self.y, self.z)
+            self.assertTrue(self.z.almost_equal_elem(zs[i], self.tolerance)) 
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Testcorrelate))
