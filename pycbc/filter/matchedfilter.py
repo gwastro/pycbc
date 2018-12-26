@@ -57,8 +57,8 @@ class BatchCorrelator(object):
         self.size = int(size)
         self.dtype = xs[0].dtype
         self.num_vectors = len(xs)
-        
-        # keep reference to arrays 
+
+        # keep reference to arrays
         self.xs = xs
         self.zs = zs
 
