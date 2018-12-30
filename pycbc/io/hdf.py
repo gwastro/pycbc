@@ -221,7 +221,7 @@ class MultiifoStatmapData(DictArray):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None, ifos=None):
         groups = ['stat', 'template_id', 'decimation_factor', 'timeslide_id']
-        
+
         for ifo in ifos:
             groups += ['%s/time' % ifo]
             groups += ['%s/trigger_id' % ifo]

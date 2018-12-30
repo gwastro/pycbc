@@ -336,12 +336,12 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
 
 def setup_multiifo_statmap(workflow, ifos, coinc_files, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
-    
+
     statmap_exe = PyCBCMultiifoStatMapExecutable(workflow.cp, 'multiifo_statmap',
                                               ifos=ifos,
                                               tags=tags, out_dir=out_dir)
 
-    
+
     ifolist = ' '.join(ifos)
     stat_node = statmap_exe.create_node(coinc_files, ifolist)
     workflow.add_node(stat_node)
@@ -584,7 +584,7 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                                                    tags=[veto_name, str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
-            
+
         statmap_files += [setup_multiifo_statmap(workflow, ifos, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
 
     logging.info('...leaving coincidence ')
