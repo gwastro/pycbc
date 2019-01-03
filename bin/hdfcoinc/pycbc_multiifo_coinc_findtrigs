@@ -320,11 +320,6 @@ if args.cluster_window and len(data['stat']) > 0:
                                data['timeslide_id'], args.timeslide_interval,
                                args.cluster_window)
 
-ifolist = ''
-for ifo in detectors:
-    ifolist += '%s ' % ifo
-ifolist = ifolist.rstrip()
-
 logging.info('saving coincident triggers')
 f = h5py.File(args.output_file, 'w')
 if len(data['stat']) > 0:
@@ -347,7 +342,7 @@ f.attrs['fixed'] = args.fixed_ifo
 for ifo in detectors:
     f.attrs['%s_foreground_time' % ifo] = abs(trigs[ifo].segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
-f.attrs['ifos'] = ifolist
+f.attrs['ifos'] = ' '.join(sorted(detectors))
 if args.timeslide_interval:
     maxtrigs=abs(trigs[args.pivot_ifo].segs)
     for ifo in trigs:
