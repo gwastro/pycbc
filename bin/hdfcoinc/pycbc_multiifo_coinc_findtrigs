@@ -320,11 +320,6 @@ if args.cluster_window and len(data['stat']) > 0:
                                data['timeslide_id'], args.timeslide_interval,
                                args.cluster_window)
 
-ifolist = ''
-for ifo in detectors:
-    ifolist += '%s ' % ifo
-ifolist = ifolist.rstrip()
-
 logging.info('saving coincident triggers')
 f = h5py.File(args.output_file, 'w')
 if len(data['stat']) > 0:
