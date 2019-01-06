@@ -217,15 +217,16 @@ class StatmapData(DictArray):
             f['segments/%s/end' % key] = self.seg[key]['end'][:]
         f.close()
 
-class MultiifoStatmapData(DictArray):
+class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None, ifos=None):
         groups = ['stat', 'template_id', 'decimation_factor', 'timeslide_id']
-
         for ifo in ifos:
             groups += ['%s/time' % ifo]
             groups += ['%s/trigger_id' % ifo]
-        super(MultiifoStatmapData, self).__init__(data=data, files=files, groups=groups)
+
+        super(StatmapData, self).__init__(data=data, files=files,
+                                                  groups=groups)
 
         if data:
             self.seg=seg
@@ -237,7 +238,8 @@ class MultiifoStatmapData(DictArray):
 
     def _return(self, data):
         ifolist = self.attrs['ifos'].split(' ')
-        return self.__class__(data=data, attrs=self.attrs, seg=self.seg, ifos=ifolist)
+        return self.__class__(data=data, attrs=self.attrs, seg=self.seg,
+                              ifos=ifolist)
 
     def cluster(self, window):
         """ Cluster the dict array, assuming it has the relevant Coinc colums,
@@ -250,26 +252,13 @@ class MultiifoStatmapData(DictArray):
             return self
         from pycbc.events import cluster_coincs
         interval = self.attrs['timeslide_interval']
-        cid = cluster_coincs(self.stat, self.data['%s/time' % pivot_ifo], self.data['%s/time' % fixed_ifo],
-                                 self.timeslide_id, interval, window)
+        cid = cluster_coincs(self.stat,
+                             self.data['%s/time' % pivot_ifo],
+                             self.data['%s/time' % fixed_ifo],
+                             self.timeslide_id,
+                             interval,
+                             window)
         return self.select(cid)
-
-    def save(self, outname):
-        f = HFile(outname, "w")
-        for k in self.attrs:
-            f.attrs[k] = self.attrs[k]
-
-        for k in self.data:
-            f.create_dataset(k, data=self.data[k],
-                      compression='gzip',
-                      compression_opts=9,
-                      shuffle=True)
-
-
-        for key in self.seg.keys():
-            f['segments/%s/start' % key] = self.seg[key]['start'][:]
-            f['segments/%s/end' % key] = self.seg[key]['end'][:]
-        f.close()
 
 class FileData(object):
 
