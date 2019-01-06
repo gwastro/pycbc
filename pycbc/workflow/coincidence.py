@@ -584,7 +584,7 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
 
-        statmap_files += [setup_multiifo_statmap(workflow, ifos, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
+        statmap_files += [setup_multiifo_statmap(workflow, ifos, bg_files, out_dir, tags=tags + [veto_name])]
 
     logging.info('...leaving coincidence ')
     return statmap_files
