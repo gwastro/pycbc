@@ -31,68 +31,80 @@ class PTEmceeFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
     name = 'ptemcee_file'
 
     @property
-    def betas(self):
-        """The betas that were used."""
-        return self[self.sampler_group].attrs["betas"]
+    def starting_betas(self):
+        """The starting betas that were used."""
+        return self[self.sampler_group].attrs["starting_betas"]
 
     def write_sampler_metadata(self, sampler):
-        """Adds writing betas to MultiTemperedMCMCIO.
+        """Adds writing ptemcee-specific metadata to MultiTemperedMCMCIO.
         """
         super(PTEmceeFile, self).write_sampler_metadata(sampler)
-        self[self.sampler_group].attrs["betas"] = sampler.betas
+        group = self[self.sampler_group]
+        group.attrs["starting_betas"] = sampler.starting_betas
+        group.attrs["adaptive"] = sampler.adaptive
+        group.attrs["adaptation_lag"] = sampler.adaptation_lag
+        group.attrs["adaptation_time"] = sampler.adaptation_time
+        group.attrs["scale_factor"] = sampler.scale_factor
 
-    def read_acceptance_fraction(self, temps=None, walkers=None):
-        """Reads the acceptance fraction.
+    def write_betas(self, betas):
+        """Writes the betas to sampler group.
+
+        As the betas may change with iterations, this writes the betas as
+        a ntemps x niterations array to the file.
+        """
+        group = self[self.sampler_group]
+        ntemps, niterations = betas.shape
+        try:
+            fp_ntemps, fp_nitertaions = group['betas'].shape
+            # check that the number of temps matches
+            assert ntemps == fp_ntemps, ("length of betas' first axis must "
+                                         "match the betas array in the file")
+            istart = fp_niterations
+            istop = istart + niterations
+            # resize the dataset to accomodate the new temps
+            group['betas'].resize(istop, axis=1)
+        except KeyError:
+            # dataset doesn't exist yet
+            istart = 0
+            istop = niterations
+            group.create_dataset('betas', (ntemps, istop),
+                                 maxshape=(ntemps, None),
+                                 dtype=float, fletcher32=True)
+        group['betas'][:, istart:istop] = betas
+
+    def read_betas(self, thin_start=None, thin_interval=None, thin_end=None,
+                   iteration=None):
+        """Reads betas from the file.
 
         Parameters
-        -----------
-        temps : (list of) int, optional
-            The temperature index (or a list of indices) to retrieve. If None,
-            acfs from all temperatures and all walkers will be retrieved.
-        walkers : (list of) int, optional
-            The walker index (or a list of indices) to retrieve. If None,
-            samples from all walkers will be obtained.
+        ----------
+        thin_start : int, optional
+            Start reading from the given iteration. Default is start from the
+            first iteration.
+        thin_interval : int, optional
+            Ony read every ``thin_interval`` -th sample. Default is 1.
+        thin_end : int, optional
+            Stop reading at the given iteration. Default is to end at the last
+            iteration.
+        iteration : int, optional
+            Only read betas from the given iteration. If provided, overrides
+            the ``thin_(start|interval|end)`` options.
 
         Returns
         -------
         array
-            Array of acceptance fractions with shape (requested temps,
-            requested walkers).
+            A ntemps x niterations array of the betas.
         """
-        group = self.sampler_group + '/acceptance_fraction'
-        if walkers is None:
-            wmask = numpy.ones(self.nwalkers, dtype=bool)
+        group = self[self.sampler_group]
+        if iteration is not None:
+            get_index = int(iteration)
+            niterations = 1
         else:
-            wmask = numpy.zeros(self.nwalkers, dtype=bool)
-            wmask[walkers] = True
-        if temps is None:
-            tmask = numpy.ones(self.ntemps, dtype=bool)
-        else:
-            tmask = numpy.zeros(self.ntemps, dtype=bool)
-            tmask[temps] = True
-        return self[group][:][numpy.ix_(tmask, wmask)]
-
-    def write_acceptance_fraction(self, acceptance_fraction):
-        """Write acceptance_fraction data to file.
-
-        Results are written to ``[sampler_group]/acceptance_fraction``; the
-        resulting dataset has shape (ntemps, nwalkers).
-
-        Parameters
-        -----------
-        acceptance_fraction : numpy.ndarray
-            Array of acceptance fractions to write. Must have shape
-            ntemps x nwalkers.
-        """
-        # check
-        assert acceptance_fraction.shape == (self.ntemps, self.nwalkers), (
-            "acceptance fraction must have shape ntemps x nwalker")
-        group = self.sampler_group + '/acceptance_fraction'
-        try:
-            self[group][:] = acceptance_fraction
-        except KeyError:
-            # dataset doesn't exist yet, create it
-            self[group] = acceptance_fraction
+            get_index = self.get_slice(thin_start=thin_start,
+                                       thin_end=thin_end,
+                                       thin_interval=thin_interval)
+            niterations = None
+        return group['betas'][:, get_index]
 
     def write_posterior(self, filename, **kwargs):
         """Write posterior only file
