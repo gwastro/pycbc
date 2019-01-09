@@ -128,9 +128,9 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         self._nwalkers = nwalkers
         self._ntemps = len(self._sampler.betas)
         self._checkpoint_interval = checkpoint_interval
-        # we'll initialize the chain to None, then call _setupchain on first
-        # call
+        # we'll initialize ensemble and chain to None
         self._chain = None
+        self._ensemble = None
 
     @property
     def io(self):
@@ -150,80 +150,73 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     def starting_betas(self):
         # the initial betas that were used
         return self._sampler.betas
-        
-    @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
-        """Loads the sampler from the given config file.
-    
-        The following arguments are searched for, and passed to the specified
-        argument when initializing the class:
 
-         * ``nwalkers = INT``: used for the ``nwalkers`` argument
-         * ``checkpoint-interval = INT``: used for ``checkpoint_interval``
-         * ``logl-function = STR``: used for ``loglikelihood_function``
-         * ``ntemps = INT``: used for ``ntemps``
-         * ``Tmax = FLOAT``: used for ``Tmax``
-         * ``betas = FLOAT1, FLOAT2, [...]``: used for the ``betas``
-         * ``no-adaption =``: sets the ``adaptive`` argument to False if listed
-         * ``adaption-time = INT``: sets the ``adaption_time``
-         * ``adaption-lag = INT``: sets the ``adaption_lag``
-         * ``scale-factor = FLOAT``: sets the ``scale_factor``
+    @property
+    def adaptive(self):
+        return self._sampler.adaptive
 
-        Parameters
-        ----------
-        cp : ConfigParser
-            ConfigParser instance to read.
-        model : Model instance
-            Model instance to use.
-        nprocesses : int, optional
-            The number of processors to use. Default is 1.
-        use_mpi : bool, optional
-            Use MPI pool for parallelization. Default is False.
+    @property
+    def adaptation_lag(self):
+        return self._sampler.adaptation_lag
+
+    @property
+    def adaptation_time(self):
+        return self._sampler.adaptation_time
+
+    @property
+    def scale_factor(self):
+        return self._sampler.scale_factor
+
+    @property
+    def ensemble(self):
+        """Returns the current ptemcee ensemble.
+
+        The ensemble stores the current location of and temperatures of the
+        walkers. If the ensemble hasn't been setup yet, will set one up
+        using p0 for the positions. If set_p0 hasn't been run yet, this will
+        result in a ValueError.
         """
-        section = "sampler"
-        # check name
-        assert cp.get(section, "name") == cls.name, (
-            "name in section [sampler] must match mine")
-        # get the number of walkers to use
-        nwalkers = int(cp.get(section, "nwalkers"))
-        # get the checkpoint interval, if it's specified
-        checkpoint_interval = cls.checkpoint_from_config(cp, section)
-        # get the loglikelihood function
-        logl = get_optional_arg_from_config(cp, section, 'logl-function')
-        # get optional args
-        ntemps = get_optional_arg_from_config(cp, section, 'ntemps', int)
-        tmax = get_optional_arg_from_config(cp, section, 'Tmax', float)
-        betas = get_optional_arg_from_config(cp, section, 'betas')
-        if betas is not None:
-            # convert to list
-            betas = map(float, betas.split(','))
-        if cp.has_option(section, 'no-adaption'):
-            adaptive = False
-        adaption_lag = get_optional_arg_from_config(cp, section,
-                                                    'adaption-lag', int)
-        adaption_time = get_optional_arg_from_config(cp, section,
-                                                     'adaption-time', int)
-        scale_factor = get_optional_arg_from_config(cp, section,
-                                                    'scale-factor', float)
-        obj = cls(model, nwalkers, loglikelihood_function=logl,
-                  ntemps=ntemps, Tmax=tmax, betas=betas,
-                  adaptive=adaptive, adaption_lag=adaption_lag,
-                  adaption_time=adaption_time, scale_factor=scale_factor,
-                  checkpoint_interval=checkpoint_interval,
-                  nprocesses=nprocesses, use_mpi=use_mpi)
-        # set target
-        obj.set_target_from_config(cp, section)
-        # add burn-in if it's specified
-        obj.set_burn_in_from_config(cp)
-        return obj
+        if self._ensemble is None:
+            if self._p0 is None:
+                raise ValueError("initial positions not set; run set_p0")
+            # use the global numpy random state
+            rstate = numpy.random.mtrand._rand
+            # self._p0 has base_shape x ndim = ntemps x nwalkers x ndim (see
+            # BaseMCMC.set_p0). ptemcee's Ensemble expects
+            # ntemps x nwalkers x ndim... so we're good
+            self._ensemble = self._sampler.ensemble(self._p0, rstate)
+        return self._ensemble
 
-    def _setupchain(self):
-        """Sets up a chain using the current position (pos).
-        
-        If the sampler hasn't been run yet, will use p0 for the current
-        position.
+    @property
+    def _pos(self):
+        """Uses the ensemble for the position."""
+        # BaseMCMC expects _pos to have shape ntemps x nwalkers x ndim,
+        # which is the same shape as ensemble.x
+        return self.ensemble.x
+
+    @property
+    def chain(self):
+        """The current chain of samples in memory.
+
+        The chain is returned as a :py:mod:`ptemcee.chain.Chain` instance. If
+        no chain has been created yet (``_chain`` is None), then will create
+        a new chain using the current ``ensemble``.
         """
-        self._chain = self._sampler.chain(self.pos)
+        if self._chain is None:
+            # create a chain
+            self._chain = ptemcee.chain.Chain(self.ensemble)
+        return self._chain
+
+    def clear_samples(self):
+        """Clears the chain and blobs from memory.
+        """
+        # store the iteration that the clear is occuring on
+        self._lastclear = self.niterations
+        self._itercounter = 0
+        # set _chain to None; this will both cause the current chain to
+        # get garbage collected, and will cause a new chain to be created
+        # the next time self.chain is called
+        self._chain = None
 
     @property
     def samples(self):
@@ -269,23 +262,6 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         return {'loglikelihood': logl, 'logprior': logp,
                 'logjacobian': logjacobian}
 
-    def clear_samples(self):
-        """Clears the chain and blobs from memory.
-        """
-        # store the iteration that the clear is occuring on
-        self._lastclear = self.niterations
-        self._itercounter = 0
-        # make sure we store the last position, betas, etc.
-        if self._chain is not None:
-            self._pos = self._chain.x[-1, :, :, :]
-            # store the last betas
-            last_betas = self._chain.betas[-1, :]
-
-        # now clear the chain
-        self._setupchain()
-        # set the starting to former
-        self._chain.betas = 
-
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.
         """
@@ -302,11 +278,7 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         niterations : int
             Number of samples to get from sampler.
         """
-        if self._chain is None:
-            self._setupchain()
-        self._chain.run(niterations)
-        # update the positions
-        self._pos = self._chain.x[-1, :, :, :]
+        self.chain.run(niterations)
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
@@ -323,8 +295,8 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             fp.write_samples(self.samples, self.model.variable_params)
             # write stats
             fp.write_samples(self.model_stats)
-            # write accpetance
-            fp.write_acceptance_fraction(self._sampler.acceptance_fraction)
+            # write betas
+            fp.write_betas(self.betas)
             # write random state
             fp.write_random_state()
 
@@ -398,3 +370,70 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:
                 fp.write_logevidence(logz, dlogz)
+
+    @classmethod
+    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+        """Loads the sampler from the given config file.
+    
+        The following arguments are searched for, and passed to the specified
+        argument when initializing the class:
+
+         * ``nwalkers = INT``: used for the ``nwalkers`` argument
+         * ``checkpoint-interval = INT``: used for ``checkpoint_interval``
+         * ``logl-function = STR``: used for ``loglikelihood_function``
+         * ``ntemps = INT``: used for ``ntemps``
+         * ``Tmax = FLOAT``: used for ``Tmax``
+         * ``betas = FLOAT1, FLOAT2, [...]``: used for the ``betas``
+         * ``no-adaption =``: sets the ``adaptive`` argument to False if listed
+         * ``adaption-time = INT``: sets the ``adaption_time``
+         * ``adaption-lag = INT``: sets the ``adaption_lag``
+         * ``scale-factor = FLOAT``: sets the ``scale_factor``
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            ConfigParser instance to read.
+        model : Model instance
+            Model instance to use.
+        nprocesses : int, optional
+            The number of processors to use. Default is 1.
+        use_mpi : bool, optional
+            Use MPI pool for parallelization. Default is False.
+        """
+        section = "sampler"
+        # check name
+        assert cp.get(section, "name") == cls.name, (
+            "name in section [sampler] must match mine")
+        # get the number of walkers to use
+        nwalkers = int(cp.get(section, "nwalkers"))
+        # get the checkpoint interval, if it's specified
+        checkpoint_interval = cls.checkpoint_from_config(cp, section)
+        # get the loglikelihood function
+        logl = get_optional_arg_from_config(cp, section, 'logl-function')
+        # get optional args
+        ntemps = get_optional_arg_from_config(cp, section, 'ntemps', int)
+        tmax = get_optional_arg_from_config(cp, section, 'Tmax', float)
+        betas = get_optional_arg_from_config(cp, section, 'betas')
+        if betas is not None:
+            # convert to list
+            betas = map(float, betas.split(','))
+        if cp.has_option(section, 'no-adaption'):
+            adaptive = False
+        adaption_lag = get_optional_arg_from_config(cp, section,
+                                                    'adaption-lag', int)
+        adaption_time = get_optional_arg_from_config(cp, section,
+                                                     'adaption-time', int)
+        scale_factor = get_optional_arg_from_config(cp, section,
+                                                    'scale-factor', float)
+        obj = cls(model, nwalkers, loglikelihood_function=logl,
+                  ntemps=ntemps, Tmax=tmax, betas=betas,
+                  adaptive=adaptive, adaption_lag=adaption_lag,
+                  adaption_time=adaption_time, scale_factor=scale_factor,
+                  checkpoint_interval=checkpoint_interval,
+                  nprocesses=nprocesses, use_mpi=use_mpi)
+        # set target
+        obj.set_target_from_config(cp, section)
+        # add burn-in if it's specified
+        obj.set_burn_in_from_config(cp)
+        return obj
+
