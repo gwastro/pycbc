@@ -303,14 +303,15 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     @classmethod
     def calculate_logevidence(cls, filename, thin_start=None, thin_end=None,
                               thin_interval=None):
-        """Calculates the log evidence from the given file using ``emcee_pt``'s
-        thermodynamic integration.
+        """Calculates the log evidence from the given file.
+        
+        This uese ``ptemcee``'s thermodynamic integration.
 
         Parameters
         ----------
         filename : str
             Name of the file to read the samples from. Should be an
-            ``EmceePTFile``.
+            ``PTEmceeFile``.
         thin_start : int
             Index of the sample to begin returning stats. Default is to read
             stats after burn in. To start from the beginning set thin_start
@@ -338,16 +339,27 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                                         temps='all', flatten=False)
             logls = logls['loglikelihood']
             # we need the betas that were used
-            betas = fp.betas
-            # annoyingly, theromdynaimc integration in PTSampler is an instance
-            # method, so we'll implement a dummy one
-            ntemps = fp.ntemps
-            nwalkers = fp.nwalkers
-            ndim = len(fp.variable_params)
-        dummy_sampler = emcee.PTSampler(ntemps, nwalkers, ndim, None,
-                                        None, betas=betas)
-        return dummy_sampler.thermodynamic_integration_log_evidence(
-            logls=logls, fburnin=0.)
+            betas = fp.read_betas(thin_start=thin_start,
+                                  thin_interval=thin_interval,
+                                  thin_end=thin_end)
+            # we'll separate betas out by their unique temperatures
+            # there's probably a faster way to do this...
+            mean_logls = []
+            unique_betas = []
+            ntemps = betas.shape[0]
+            for ti in range(ntemps):
+                unique_betas, idx = numpy.unique(betas[ti,:],
+                                                 return_inverse=True)
+                unique_idx = numpy.unique(idx)
+                loglsti = logls[ti, :, :]
+                for ii in unique_idx:
+                    # average over the walkers and iterations with the same
+                    # betas
+                    getiters = numpy.where(ii == unique_idx)[0]
+                    mean_logls.append(loglsti[:, getiters].mean())
+                    unique_betas.append(unique_betas[ii])
+        return ptemcee.util.thermodynamic_integration_log_evidence(
+            numpy.array(unique_betas), numpy.array(mean_logls))
 
     def finalize(self):
         """Calculates the log evidence and writes to the checkpoint file.
