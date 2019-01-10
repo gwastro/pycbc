@@ -55,7 +55,7 @@ class PTEmceeFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         group = self[self.sampler_group]
         ntemps, niterations = betas.shape
         try:
-            fp_ntemps, fp_nitertaions = group['betas'].shape
+            fp_ntemps, fp_niterations = group['betas'].shape
             # check that the number of temps matches
             assert ntemps == fp_ntemps, ("length of betas' first axis must "
                                          "match the betas array in the file")

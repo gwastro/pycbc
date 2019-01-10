@@ -62,9 +62,9 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         are not given. Will override ``ntemps`` and ``Tmax`` if provided.
     adaptive : bool, optional
         Whether or not to use adaptive temperature levels. Default is True.
-    adaption_lag : int, optional
+    adaptation_lag : int, optional
         See :py:mod:`ptemcee.Sampler` for details. Default is 1000.
-    adaption_time : int, optional
+    adaptation_time : int, optional
         See :py:mod:`ptemcee.Sampler` for details. Default is 100.
     scale_factor : float, optional
         See :py:mod:`ptemcee.Sampler` for details.
@@ -82,7 +82,7 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
     def __init__(self, model, nwalkers, ntemps=None, Tmax=None, betas=None,
                  loglikelihood_function=None,
-                 adaptive=True, adaption_lag=1000, adaption_time=100,
+                 adaptive=True, adaptation_lag=1000, adaptation_time=100,
                  scale_factor=None,
                  checkpoint_interval=None,
                  nprocesses=1, use_mpi=False):
@@ -106,8 +106,8 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         kwargs = {}
         kwargs['adaptive'] = adaptive
         kwargs['betas'] = betas
-        kwargs['adaption_lag'] = adaption_lag
-        kwargs['adaption_time'] = adaption_time
+        kwargs['adaptation_lag'] = adaptation_lag
+        kwargs['adaptation_time'] = adaptation_time
         if scale_factor is not None:
             kwargs['scale_factor'] = scale_factor
         # Set up the pool
@@ -244,7 +244,7 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # niterations x ntemps x nwalkers; we'll tranpose to have shape
         # ntemps x nwalkers x niterations
         logl = self._chain.logl.transpose((1, 2, 0))
-        logp = self._chain.logp.transpose((1, 2, 0))
+        logp = self._chain.logP.transpose((1, 2, 0))
         logjacobian = numpy.zeros(logp.size)
         # if different coordinates were used for sampling, get the jacobian
         if self.model.sampling_transforms is not None:
@@ -348,8 +348,7 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             unique_betas = []
             ntemps = betas.shape[0]
             for ti in range(ntemps):
-                unique_betas, idx = numpy.unique(betas[ti,:],
-                                                 return_inverse=True)
+                ubti, idx = numpy.unique(betas[ti,:], return_inverse=True)
                 unique_idx = numpy.unique(idx)
                 loglsti = logls[ti, :, :]
                 for ii in unique_idx:
@@ -357,7 +356,7 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                     # betas
                     getiters = numpy.where(ii == unique_idx)[0]
                     mean_logls.append(loglsti[:, getiters].mean())
-                    unique_betas.append(unique_betas[ii])
+                    unique_betas.append(ubti[ii])
         return ptemcee.util.thermodynamic_integration_log_evidence(
             numpy.array(unique_betas), numpy.array(mean_logls))
 
@@ -396,9 +395,10 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
          * ``ntemps = INT``: used for ``ntemps``
          * ``Tmax = FLOAT``: used for ``Tmax``
          * ``betas = FLOAT1, FLOAT2, [...]``: used for the ``betas``
-         * ``no-adaption =``: sets the ``adaptive`` argument to False if listed
-         * ``adaption-time = INT``: sets the ``adaption_time``
-         * ``adaption-lag = INT``: sets the ``adaption_lag``
+         * ``no-adaptation =``: sets the ``adaptive`` argument to False
+           if listed
+         * ``adaptation-time = INT``: sets the ``adaptation_time``
+         * ``adaptation-lag = INT``: sets the ``adaptation_lag``
          * ``scale-factor = FLOAT``: sets the ``scale_factor``
 
         Parameters
@@ -423,26 +423,34 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
         # get optional args
+        optargs = {}
         ntemps = get_optional_arg_from_config(cp, section, 'ntemps', int)
+        if ntemps is not None:
+            optargs['ntemps'] = ntemps
         tmax = get_optional_arg_from_config(cp, section, 'Tmax', float)
+        if tmax is not None:
+            optargs['Tmax'] = tmax
         betas = get_optional_arg_from_config(cp, section, 'betas')
         if betas is not None:
             # convert to list
-            betas = map(float, betas.split(','))
-        if cp.has_option(section, 'no-adaption'):
-            adaptive = False
-        adaption_lag = get_optional_arg_from_config(cp, section,
-                                                    'adaption-lag', int)
-        adaption_time = get_optional_arg_from_config(cp, section,
-                                                     'adaption-time', int)
+            optargs['betas'] = map(float, betas.split(','))
+        optargs['adaptive'] = not cp.has_option(section, 'no-adaptation')
+        adaptation_lag = get_optional_arg_from_config(cp, section,
+                                                      'adaptation-lag', int)
+        if adaptation_lag is not None:
+            optargs['adaptation_lag'] = adaptation_lag
+        adaptation_time = get_optional_arg_from_config(cp, section,
+                                                       'adaptation-time', int)
+        if adaptation_time is not None:
+            optargs['adaptation_time'] = adaptation_time
         scale_factor = get_optional_arg_from_config(cp, section,
                                                     'scale-factor', float)
+        if scale_factor is not None:
+            optargs['scale_factor'] = scale_factor
         obj = cls(model, nwalkers, loglikelihood_function=logl,
-                  ntemps=ntemps, Tmax=tmax, betas=betas,
-                  adaptive=adaptive, adaption_lag=adaption_lag,
-                  adaption_time=adaption_time, scale_factor=scale_factor,
                   checkpoint_interval=checkpoint_interval,
-                  nprocesses=nprocesses, use_mpi=use_mpi)
+                  nprocesses=nprocesses, use_mpi=use_mpi,
+                  **optargs)
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
