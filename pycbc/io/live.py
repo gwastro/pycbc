@@ -100,6 +100,9 @@ class SingleCoincForGraceDB(object):
             be `followup_data['H1']['snr_series']`. More detectors can be
             present than given in `ifos`. If so, the extra detectors will only
             be used for sky localization.
+        channel_names: dict of strings, optional
+            Strain channel names for each detector.
+            Will be recorded in the sngl_inspiral table.
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
 
@@ -183,6 +186,8 @@ class SingleCoincForGraceDB(object):
             if sngl.snr:
                 sngl.eff_distance = (sngl.sigmasq)**0.5 / sngl.snr
                 network_snrsq += sngl.snr ** 2.0
+            if 'channel_names' in kwargs and ifo in kwargs['channel_names']:
+                sngl.channel = kwargs['channel_names'][ifo]
             sngl_inspiral_table.append(sngl)
 
             # Set up coinc_map entry

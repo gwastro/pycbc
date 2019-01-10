@@ -114,7 +114,8 @@ class LiveEventManager(object):
                                              bank, followup_ifos)
             event = SingleCoincForGraceDB(ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
-                                          low_frequency_cutoff=f_low)
+                                          low_frequency_cutoff=f_low,
+                                          channel_names=args.channel_name)
 
             end_time = int(coinc_results['foreground/%s/end_time' % ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml.gz' % end_time)
@@ -141,7 +142,8 @@ class LiveEventManager(object):
                                                  bank, followup_ifos)
                 event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                               psds=psds, followup_data=fud,
-                                              low_frequency_cutoff=f_low)
+                                              low_frequency_cutoff=f_low,
+                                              channel_names=args.channel_name)
 
                 end_time = int(single['foreground/%s/end_time' % ifo])
                 fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
@@ -480,8 +482,8 @@ with ctx:
             if data_reader[ifo].psd is not None:
                 dist = data_reader[ifo].psd.dist
                 if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
-                    logging.info("PSD outside acceptable sensitivity %s - %s, have %s",
-                                 args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
+                    logging.info("%s PSD outside acceptable sensitivity %s - %s, have %s",
+                                 ifo, args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
                     status = False               
 
             if ifo in followup_ifos:
@@ -496,7 +498,7 @@ with ctx:
                 if evnt.rank > 0:
                     results[ifo] = mf.process_data(data_reader[ifo])
             else:
-                logging.info('Insufficient data for analysis')
+                logging.info('Insufficient data for %s analysis', ifo)
 
         if evnt.rank > 0:
             evnt.commit_results((results, data_end()))
@@ -517,7 +519,7 @@ with ctx:
                     idx = data_reader[ifo].dq.indices_of_flag(
                             start, valid_pad, times,
                             padding=data_reader[ifo].dq_padding)
-                    logging.info('Keeping %s triggers out of %s triggers in %s', len(idx), len(times), ifo)
+                    logging.info('Keeping %d/%d %s triggers', len(idx), len(times), ifo)
                     for key in results[ifo]:
                         if len(results[ifo][key]) > 0:
                             results[ifo][key] = results[ifo][key][idx]
@@ -542,20 +544,20 @@ with ctx:
                       store_loudest_index=args.store_loudest_index,
                       raw_results=coinc_results,
                      )     
-                     
-            logging.info('Finished Analyzing up to %s', data_end())
+
+            logging.info('Finished analyzing up to %s', data_end())
 
         if args.sync:
             evnt.barrier()
         tdiff = time() - t1
-        logging.info('%s: Took %1.2f, duty factor of %.2f',
-                     evnt.rank, tdiff, tdiff / valid_pad)
+        lag = float(lal.GPSTimeNow() - data_end())
+        logging.info('%s: Took %1.2f, duty factor of %.2f, lag %.2f s',
+                     evnt.rank, tdiff, tdiff / valid_pad, lag)
 
         if args.output_status is not None and evnt.rank == 0:
-            latency = data_end() - lal.GPSTimeNow()
-            if latency > 120:
+            if lag > 120:
                 status_intervals = [{'num_status': 2,
-                                     'txt_status': 'CRITICAL: latency >2 minutes',
+                                     'txt_status': 'CRITICAL: lag >2 minutes',
                                      'start_sec': 0}]
             else:
                 status_intervals = [{'num_status': 0,
