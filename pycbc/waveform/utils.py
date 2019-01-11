@@ -30,11 +30,8 @@ import lal
 import lalsimulation as sim
 from math import frexp
 import numpy
-import copy
-from pycbc.opt import omp_libs, omp_flags
-from pycbc import WEAVE_FLAGS
-from pycbc.weave import inline
 from pycbc.scheme import schemed
+from scipy import signal
 
 def ceilpow2(n):
     """convenience function to determine a power-of-2 upper frequency limit"""

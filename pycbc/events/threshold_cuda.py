@@ -22,7 +22,6 @@
 # =============================================================================
 #
 import numpy, mako.template
-from pycuda import gpuarray
 from pycuda.tools import dtype_to_ctype
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.compiler import SourceModule

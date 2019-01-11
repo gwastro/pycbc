@@ -23,11 +23,8 @@
 #
 import numpy, mako.template
 from pycuda import gpuarray
-from pycuda.tools import dtype_to_ctype
-from pycuda.elementwise import ElementwiseKernel
 from pycuda.compiler import SourceModule
 import pycbc.scheme
-import pycuda.driver as drv
 from pycbc.types import zeros
 
 # The interpolation is the result of the call of two kernels.
@@ -274,7 +271,6 @@ def get_dckernel(slen):
         fn2.prepare("PfiffiPP", texrefs=[freq_tex, amp_tex, phase_tex])
         dckernel_cache[nb] = (fn1, fn2, freq_tex, amp_tex, phase_tex, nt, nb)
         return dckernel_cache[nb]
-    
     
 class CUDALinearInterpolate(object):
     def __init__(self, output):

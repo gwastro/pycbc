@@ -27,8 +27,7 @@ from __future__ import absolute_import
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from weave import inline
-from scipy import interpolate
-from pycbc.types import FrequencySeries, zeros, complex_same_precision_as, real_same_precision_as
+from pycbc.types import zeros, complex_same_precision_as
 import numpy
 
 _linear_decompress_code = r"""
@@ -174,10 +173,10 @@ def inline_linear_interp(amp, phase, sample_frequencies, output,
     sample_frequencies = numpy.array(sample_frequencies)
     amp = numpy.array(amp)
     phase = numpy.array(phase)
-    sflen = len(sample_frequencies)
-    h = numpy.array(output.data, copy=False)
-    hlen = len(output)
-    delta_f = float(df)
+    sflen = len(sample_frequencies) # pylint:disable=unused-variable
+    h = numpy.array(output.data, copy=False) # pylint:disable=unused-variable
+    hlen = len(output) # pylint:disable=unused-variable
+    delta_f = float(df) # pylint:disable=unused-variable
     inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
                   'amp', 'phase', 'start_index', 'imin'],
            extra_compile_args=[WEAVE_FLAGS] +\

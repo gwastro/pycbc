@@ -27,7 +27,6 @@
 """
 from __future__ import absolute_import
 from pycbc.types import FrequencySeries
-import pycuda.gpuarray
 from mako.template import Template
 from pycuda.compiler import SourceModule
 import numpy
