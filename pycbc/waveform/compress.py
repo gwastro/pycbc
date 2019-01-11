@@ -384,6 +384,7 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
     if f_lower is None:
         imin = 0 # pylint:disable=unused-variable
         f_lower = sample_frequencies[0]
+        start_index = 0
     else:
         if f_lower >= sample_frequencies.max():
             raise ValueError("f_lower is > than the maximum sample frequency")
@@ -391,8 +392,8 @@ def fd_decompress(amp, phase, sample_frequencies, out=None, df=None,
             raise ValueError("f_lower is < than the minimum sample frequency")
         imin = int(numpy.searchsorted(sample_frequencies, f_lower,
             side='right')) - 1 # pylint:disable=unused-variable
-    kmin = int(numpy.ceil(f_lower/df))
-    if kmin >= hlen:
+        start_index = int(numpy.ceil(f_lower/df))
+    if start_index >= hlen:
         raise ValueError('requested f_lower >= largest frequency in out')
     # interpolate the amplitude and the phase
     if interpolation == "inline_linear":

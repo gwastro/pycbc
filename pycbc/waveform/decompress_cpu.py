@@ -43,7 +43,7 @@ _linear_decompress_code = r"""
     //      the length of h
     // start_index: int
     //      the index to start the waveform in the output
-    //      frequency series; i.e., floor(f_lower*df)
+    //      frequency series; i.e., ceil(f_lower/df)
     // sample_frequencies: array of real doubles
     //      the frequencies at which the compressed waveform is sampled
     // amp: array of real doubles
@@ -160,6 +160,7 @@ _linear_decompress_code = r"""
     // zero out the rest of the array
     memset(outptr, 0, sizeof(*outptr)*2*(hlen-findex));
 """
+
 # for single precision
 _linear_decompress_code32 = _linear_decompress_code.replace('double', 'float')
 
