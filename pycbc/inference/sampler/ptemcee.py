@@ -21,10 +21,12 @@ packages for parameter estimation.
 
 from __future__ import absolute_import
 
+import logging
 import numpy
 import ptemcee
-import logging
+
 from pycbc.pool import choose_pool
+from pycbc.inference.io import PTEmceeFile
 
 from .base import BaseSampler
 from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
@@ -32,7 +34,6 @@ from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
 from .base_multitemper import (MultiTemperedSupport,
                                MultiTemperedAutocorrSupport)
 from ..burn_in import MultiTemperedMCMCBurnInTests
-from pycbc.inference.io import PTEmceeFile
 from .. import models
 
 
@@ -142,29 +143,35 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
     @property
     def betas(self):
+        """Returns the beta history currently in memory."""
         # chain betas has shape niterations x ntemps; transpose to
         # ntemps x niterations
         return self._chain.betas.transpose()
 
     @property
     def starting_betas(self):
+        """Returns the betas that were used at startup."""
         # the initial betas that were used
         return self._sampler.betas
 
     @property
     def adaptive(self):
+        """Whether or not the betas are adapted."""
         return self._sampler.adaptive
 
     @property
     def adaptation_lag(self):
+        """The adaptation lag for the beta evolution."""
         return self._sampler.adaptation_lag
 
     @property
     def adaptation_time(self):
+        """The adaptation time for the beta evolution."""
         return self._sampler.adaptation_time
 
     @property
     def scale_factor(self):
+        """The scale factor used by ptemcee."""
         return self._sampler.scale_factor
 
     @property
@@ -356,7 +363,7 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             unique_betas = []
             ntemps = betas.shape[0]
             for ti in range(ntemps):
-                ubti, idx = numpy.unique(betas[ti,:], return_inverse=True)
+                ubti, idx = numpy.unique(betas[ti, :], return_inverse=True)
                 unique_idx = numpy.unique(idx)
                 loglsti = logls[ti, :, :]
                 for ii in unique_idx:
@@ -442,4 +449,3 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # add burn-in if it's specified
         obj.set_burn_in_from_config(cp)
         return obj
-

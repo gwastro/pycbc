@@ -30,7 +30,8 @@ class PTEmceeFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
 
     # attributes for setting up an ensemble from file
     _ensemble_attrs = ['jumps_proposed', 'jumps_accepted', 'swaps_proposed',
-                      'swaps_accepted', 'logP', 'logl']
+                       'swaps_accepted', 'logP', 'logl']
+
     @property
     def starting_betas(self):
         """The starting betas that were used."""

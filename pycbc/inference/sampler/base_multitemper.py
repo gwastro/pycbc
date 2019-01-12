@@ -26,8 +26,9 @@ samplers."""
 
 from __future__ import absolute_import
 from abc import ABCMeta, abstractmethod
-
+import logging
 import numpy
+
 from pycbc.filter import autocorrelation
 
 
@@ -67,7 +68,7 @@ class MultiTemperedSupport(object):
         logz, dlogz = self.calculate_logevidence(
             self.checkpoint_file, thin_start=thin_start, thin_end=thin_end,
             thin_interval=thin_interval)
-        logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
+        logging.info("log Z, dlog Z: %f, %f", logz, dlogz)
         # write to both the checkpoint and backup
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:
