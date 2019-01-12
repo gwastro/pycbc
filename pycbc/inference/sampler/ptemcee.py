@@ -21,7 +21,6 @@ packages for parameter estimation.
 
 from __future__ import absolute_import
 
-import logging
 import numpy
 import ptemcee
 

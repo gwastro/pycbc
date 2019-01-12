@@ -23,7 +23,7 @@
 #
 """Provides IO for the emcee sampler.
 """
-import h5py, numpy
+import numpy
 from .base_hdf import BaseInferenceFile
 from .base_mcmc import (MCMCMetadataIO, SingleTempMCMCIO)
 

@@ -365,5 +365,5 @@ class SingleTempMCMCIO(object):
         # Copy and squash fields into one dimensional arrays
         for field_name in fields:
             fvalue = self[self.samples_group][field_name][:]
-            thin = fvalue[:,self.thin_start:self.thin_end:self.thin_interval]
+            thin = fvalue[:, self.thin_start:self.thin_end:self.thin_interval]
             s[field_name] = thin.flatten()
