@@ -267,8 +267,14 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """
         with self.io(filename, 'r') as fp:
             rstate = fp.read_random_state()
-        # set the numpy random state
-        numpy.random.set_state(rstate)
+            # set the numpy random state
+            numpy.random.set_state(rstate)
+            # set the ensemble to its last state
+            ensemble = self.ensemble
+            for attr, val in fp.read_ensemble_attrs().items():
+                setattr(ensemble, attr, val)
+            ensemble.betas = fp.read_betas(iteration=-1)
+            ensemble.time = fp.niterations
 
     def run_mcmc(self, niterations):
         """Advance the ensemble for a number of samples.
@@ -299,6 +305,8 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             fp.write_betas(self.betas)
             # write random state
             fp.write_random_state()
+            # write attributes of the ensemble
+            fp.write_ensemble_attrs(self.ensemble)
 
     @classmethod
     def calculate_logevidence(cls, filename, thin_start=None, thin_end=None,

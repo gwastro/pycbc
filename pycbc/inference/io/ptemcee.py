@@ -30,6 +30,9 @@ class PTEmceeFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
 
     name = 'ptemcee_file'
 
+    # attributes for setting up an ensemble from file
+    _ensemble_attrs = ['jumps_proposed', 'jumps_accepted', 'swaps_proposed',
+                      'swaps_accepted', 'logP', 'logl']
     @property
     def starting_betas(self):
         """The starting betas that were used."""
@@ -105,6 +108,34 @@ class PTEmceeFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
                                        thin_interval=thin_interval)
             niterations = None
         return group['betas'][:, get_index]
+
+    def write_ensemble_attrs(self, ensemble):
+        """Writes ensemble attributes necessary to restart from checkpoint.
+
+        Paramters
+        ---------
+        ensemble : ptemcee.Ensemble
+            The ensemble to write attributes for.
+        """
+        group = self[self.sampler_group]
+        for attr in self._ensemble_attrs:
+            vals = getattr(ensemble, attr)
+            try:
+                group[attr][:] = vals
+            except KeyError:
+                group[attr] = vals
+
+    def read_ensemble_attrs(self):
+        """Reads ensemble attributes from the file.
+
+        Returns
+        -------
+        dict :
+            Dictionary of the ensemble attributes.
+        """
+        group = self[self.sampler_group]
+        out = {}
+        return {attr: group[attr][:] for attr in self._ensemble_attrs}
 
     def write_posterior(self, filename, **kwargs):
         """Write posterior only file
