@@ -274,25 +274,3 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                                         None, betas=betas)
         return dummy_sampler.thermodynamic_integration_log_evidence(
             logls=logls, fburnin=0.)
-
-    def finalize(self):
-        """Calculates the log evidence and writes to the checkpoint file.
-
-        The thin start/interval/end for calculating the log evidence are
-        retrieved from the checkpoint file's thinning attributes.
-        """
-        logging.info("Calculating log evidence")
-        # get the thinning settings
-        with self.io(self.checkpoint_file, 'r') as fp:
-            thin_start = fp.thin_start
-            thin_interval = fp.thin_interval
-            thin_end = fp.thin_end
-        # calculate
-        logz, dlogz = self.calculate_logevidence(
-            self.checkpoint_file, thin_start=thin_start, thin_end=thin_end,
-            thin_interval=thin_interval)
-        logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
-        # write to both the checkpoint and backup
-        for fn in [self.checkpoint_file, self.backup_file]:
-            with self.io(fn, "a") as fp:
-                fp.write_logevidence(logz, dlogz)

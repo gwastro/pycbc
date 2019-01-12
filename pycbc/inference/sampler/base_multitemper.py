@@ -25,6 +25,7 @@
 samplers."""
 
 from __future__ import absolute_import
+from abc import ABCMeta, abstractmethod
 
 import numpy
 from pycbc.filter import autocorrelation
@@ -33,12 +34,44 @@ from pycbc.filter import autocorrelation
 class MultiTemperedSupport(object):
     """Provides methods for supporting multi-tempered samplers.
     """
+    __metaclass__ = ABCMeta
     _ntemps = None
 
     @property
     def ntemps(self):
         """The number of temeratures that are set."""
         return self._ntemps
+
+    @abstractmethod
+    def calculate_logevidence(cls, filename, thin_start=None, thin_end=None,
+                              thin_interval=None):
+        """Method to calculate log evidence using thermodynamic integration.
+
+        This is needed by finalize.
+        """
+        pass
+
+    def finalize(self):
+        """Calculates the log evidence and writes to the checkpoint file.
+
+        The thin start/interval/end for calculating the log evidence are
+        retrieved from the checkpoint file's thinning attributes.
+        """
+        logging.info("Calculating log evidence")
+        # get the thinning settings
+        with self.io(self.checkpoint_file, 'r') as fp:
+            thin_start = fp.thin_start
+            thin_interval = fp.thin_interval
+            thin_end = fp.thin_end
+        # calculate
+        logz, dlogz = self.calculate_logevidence(
+            self.checkpoint_file, thin_start=thin_start, thin_end=thin_end,
+            thin_interval=thin_interval)
+        logging.info("log Z, dlog Z: {}, {}".format(logz, dlogz))
+        # write to both the checkpoint and backup
+        for fn in [self.checkpoint_file, self.backup_file]:
+            with self.io(fn, "a") as fp:
+                fp.write_logevidence(logz, dlogz)
 
 
 class MultiTemperedAutocorrSupport(object):
