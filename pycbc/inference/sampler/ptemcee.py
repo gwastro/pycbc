@@ -393,7 +393,7 @@ class PTEmceeSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     @classmethod
     def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
         """Loads the sampler from the given config file.
-    
+
         The following arguments are searched for, and passed to the specified
         argument when initializing the class:
 

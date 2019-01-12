@@ -18,7 +18,6 @@
 """
 
 from __future__ import absolute_import
-import h5py, numpy
 from .base_hdf import BaseInferenceFile
 from .base_multitemper import (MultiTemperedMetadataIO, MultiTemperedMCMCIO)
 from .posterior import PosteriorFile
@@ -101,12 +100,10 @@ class PTEmceeFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         group = self[self.sampler_group]
         if iteration is not None:
             get_index = int(iteration)
-            niterations = 1
         else:
             get_index = self.get_slice(thin_start=thin_start,
                                        thin_end=thin_end,
                                        thin_interval=thin_interval)
-            niterations = None
         return group['betas'][:, get_index]
 
     def write_ensemble_attrs(self, ensemble):
@@ -134,7 +131,6 @@ class PTEmceeFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
             Dictionary of the ensemble attributes.
         """
         group = self[self.sampler_group]
-        out = {}
         return {attr: group[attr][:] for attr in self._ensemble_attrs}
 
     def write_posterior(self, filename, **kwargs):
