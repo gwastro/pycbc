@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 import numpy
 import argparse
+from .posterior import PosteriorFile
 
 
 class MCMCMetadataIO(object):
@@ -342,3 +343,27 @@ class SingleTempMCMCIO(object):
                 arr = arr.reshape((nwalkers, niterations))
             arrays[name] = arr
         return arrays
+
+    def write_posterior(self, filename, **kwargs):
+        """Write posterior only file
+
+        Parameters
+        ----------
+        filename : str
+            Name of output file to store posterior
+        """
+        f = h5py.File(filename, 'w')
+
+        # Preserve top-level metadata
+        for key in self.attrs:
+            f.attrs[key] = self.attrs[key]
+
+        f.attrs['filetype'] = PosteriorFile.name
+        s = f.create_group('samples')
+        fields = self[self.samples_group].keys()
+
+        # Copy and squash fields into one dimensional arrays
+        for field_name in fields:
+            fvalue = self[self.samples_group][field_name][:]
+            thin = fvalue[:,self.thin_start:self.thin_end:self.thin_interval]
+            s[field_name] = thin.flatten()

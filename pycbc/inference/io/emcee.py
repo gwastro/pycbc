@@ -26,7 +26,7 @@
 import h5py, numpy
 from .base_hdf import BaseInferenceFile
 from .base_mcmc import (MCMCMetadataIO, SingleTempMCMCIO)
-from .posterior import PosteriorFile
+
 
 class EmceeFile(SingleTempMCMCIO, MCMCMetadataIO, BaseInferenceFile):
     """Class to handle file IO for the ``emcee`` sampler."""
@@ -70,27 +70,3 @@ class EmceeFile(SingleTempMCMCIO, MCMCMetadataIO, BaseInferenceFile):
         except KeyError:
             # dataset doesn't exist yet, create it
             self[group] = acceptance_fraction
-
-    def write_posterior(self, filename, **kwargs):
-        """Write posterior only file
-
-        Parameters
-        ----------
-        filename : str
-            Name of output file to store posterior
-        """
-        f = h5py.File(filename, 'w')
-
-        # Preserve top-level metadata
-        for key in self.attrs:
-            f.attrs[key] = self.attrs[key]
-
-        f.attrs['filetype'] = PosteriorFile.name
-        s = f.create_group('samples')
-        fields = self[self.samples_group].keys()
-
-        # Copy and squash fields into one dimensional arrays
-        for field_name in fields:
-            fvalue = self[self.samples_group][field_name][:]
-            thin = fvalue[:,self.thin_start:self.thin_end:self.thin_interval]
-            s[field_name] = thin.flatten()
