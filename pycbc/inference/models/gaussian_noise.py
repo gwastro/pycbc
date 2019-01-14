@@ -17,8 +17,6 @@
 """
 
 import numpy
-from scipy import special
-from scipy import interpolate
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
@@ -217,7 +215,8 @@ class GaussianNoise(BaseDataModel):
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, waveform_generator,
-                 lower_frequency_cutoff=None, psds=None, f_upper=None, norm=None,
+                 lower_frequency_cutoff=None, psds=None, 
+                 f_upper=None, norm=None,
                  **kwargs):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
@@ -250,12 +249,13 @@ class GaussianNoise(BaseDataModel):
         except (ValueError, TypeError):
             if lower_frequency_cutoff is None:
                 raise KeyError("lower frequency cutoff "
-                                "needs to be specified in config (.ini) file")
+                               "needs to be specified in config (.ini) file")
             else:
                 raise ValueError("lower frequency cutoff must be convertable "
-                    "to float but type is {}".format(type(lower_frequency_cutoff)))
-        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper, d.delta_f,
-                                               (N-1)*2)
+                                 "to float but type is "
+                                 "{}".format(type(lower_frequency_cutoff)))
+        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper, 
+                                                 d.delta_f, (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
         if norm is None:
@@ -276,7 +276,6 @@ class GaussianNoise(BaseDataModel):
         # whiten the data
         for det in self._data:
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
-
 
     @property
     def _extra_stats(self):
@@ -470,4 +469,3 @@ class GaussianNoise(BaseDataModel):
         attrs['lognl'] = self.lognl
         for det in self.detectors:
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
-    
