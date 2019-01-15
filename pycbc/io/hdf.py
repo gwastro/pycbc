@@ -168,12 +168,23 @@ class DictArray(object):
             data[k] = np.delete(self.data[k], idx)
         return self._return(data=data)
 
+    def save(self, outname):
+        f = HFile(outname, "w")
+        for k in self.attrs:
+            f.attrs[k] = self.attrs[k]
+
+        for k in self.data:
+            f.create_dataset(k, data=self.data[k],
+                      compression='gzip',
+                      compression_opts=9,
+                      shuffle=True)
+        f.close()
+
 
 class StatmapData(DictArray):
-    def __init__(self, data=None, seg=None, attrs=None,
-                       files=None):
-        groups = ['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2',
-               'template_id', 'decimation_factor', 'timeslide_id']
+    def __init__(self, data=None, seg=None, attrs=None, files=None, 
+                 groups=['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2',
+                         'template_id', 'decimation_factor', 'timeslide_id']):
         super(StatmapData, self).__init__(data=data, files=files, groups=groups)
 
         if data:
@@ -201,21 +212,11 @@ class StatmapData(DictArray):
         return self.select(cid)
 
     def save(self, outname):
-        f = HFile(outname, "w")
-        for k in self.attrs:
-            f.attrs[k] = self.attrs[k]
-
-        for k in self.data:
-            f.create_dataset(k, data=self.data[k],
-                      compression='gzip',
-                      compression_opts=9,
-                      shuffle=True)
-
-
-        for key in self.seg.keys():
-            f['segments/%s/start' % key] = self.seg[key]['start'][:]
-            f['segments/%s/end' % key] = self.seg[key]['end'][:]
-        f.close()
+        super(StatmapData, self).save(outname)
+        with HFile(outname, "w") as f:
+            for key in self.seg.keys():
+                f['segments/%s/start' % key] = self.seg[key]['start'][:]
+                f['segments/%s/end' % key] = self.seg[key]['end'][:]
 
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
@@ -225,16 +226,8 @@ class MultiifoStatmapData(StatmapData):
             groups += ['%s/time' % ifo]
             groups += ['%s/trigger_id' % ifo]
 
-        super(StatmapData, self).__init__(data=data, files=files,
-                                                  groups=groups)
-
-        if data:
-            self.seg=seg
-            self.attrs=attrs
-        elif files:
-            f = HFile(files[0], "r")
-            self.seg = f['segments']
-            self.attrs = f.attrs
+        super(MultiifoStatmapData, self).__init__(data=data, files=files,
+                                                  groups=groups, attrs=attrs, seg=seg)
 
     def _return(self, data):
         ifolist = self.attrs['ifos'].split(' ')
