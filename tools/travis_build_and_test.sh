@@ -10,7 +10,10 @@ RESULT=0
 #     Some tests fail for reasons not necessarily related to PyCBC
 #     Setup.py seems to returns 0 even when tests fail
 # So we rather run specific tests manually
-for prog in `find test -name '*.py' -print | egrep -v '(long|lalsim|test_waveform)'`
+#
+# test_psd disabled because analytic files not included in lalsuite wheel
+
+for prog in `find test -name '*.py' -print | egrep -v '(long|lalsim|test_waveform|test_psd)'`
 do
     echo -e ">> [`date`] running unit test for $prog"
     python $prog &> $LOG_FILE

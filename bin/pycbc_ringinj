@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Copyright (C) 2016 Miriam Cabero Mueller
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -50,7 +51,7 @@ def mode_info_from_input(all_modes, option, input):
 parser = argparse.ArgumentParser()
 parser.add_argument('--output', required=True,
                     help='Path to output hdf file.')
-parser.add_argument('--approximant', required=True, 
+parser.add_argument('--approximant', required=True,
                     help='Name of the ringdown approximant.')
 parser.add_argument('--tc', required=True, type=float,
                     help='Geocentric coalescence time '
@@ -83,7 +84,7 @@ parser.add_argument('--t-final', type=float,
 parser.add_argument('--f-lower', type=float,
                     help='Starting frequency of the output freqeucny series '
                          'for frequency domain approximants.')
-parser.add_argument('--f-final', type=float, 
+parser.add_argument('--f-final', type=float,
                     help='Ending frequency of the output frequency series '
                          'for frequency domain approximants.')
 parser.add_argument('--ra', required=True, type=float,

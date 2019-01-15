@@ -29,3 +29,6 @@ pip install lalsuite
 echo -e ">> [`date`] installing pycbc"
 pip install .
 
+# LAL extra data files
+wget https://git.ligo.org/lscsoft/lalsuite-extra/raw/master/data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5
+export LAL_DATA_PATH=$PWD
