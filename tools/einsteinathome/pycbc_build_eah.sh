@@ -1067,22 +1067,14 @@ if test "x$pycbc_fetch_ref" != "x" ; then
     git checkout FETCH_HEAD
 fi
 
-echo -e "[`date`] install pkgconfig and six beforehand"
-pip install `grep -w ^pkgconfig requirements.txt||echo pkgconfig==1.1.0`
-pip install `grep -w ^six requirements.txt||echo 'six>=1.9.0'`
-pip install matplotlib
-if $pyinstaller21_hacks; then
-    echo -e "[`date`] install matplotlib beforehand"
-    pip install `grep ^matplotlib== requirements.txt||echo matplotlib==1.4.3`
-    p="`grep -w ^setuptools requirements.txt||true`"
-    if test ".$p" != "."; then
-        echo -e "[`date`] downgrade setuptools"
-        pip install --upgrade $p
-    fi
-fi
+
 echo -e "[`date`] git HEAD: `git log -1 --pretty=oneline --abbrev-commit`"
 pycbc_tag="`git describe --tags --exact-match HEAD 2>/dev/null||true`"
+
+pip install requirements.txt
 pip install .
+
+
 hooks="$PWD/tools/static"
 cd ..
 test -r "$PREFIX/etc/pycbc-user-env.sh" && source "$PREFIX/etc/pycbc-user-env.sh"
