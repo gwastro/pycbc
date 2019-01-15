@@ -219,9 +219,6 @@ export PKG_CONFIG_PATH\\
   make -j 2 2>&1 | grep Entering
   make install 2>&1 | grep Entering
 
-  echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
-  pip install 'matplotlib==1.5.3'
-
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
   pip install -r requirements.txt
