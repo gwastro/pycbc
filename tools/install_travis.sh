@@ -23,12 +23,13 @@ pip install --upgrade setuptools pip
 echo -e ">> [`date`] installing requirements"
 pip install -r requirements.txt
 
-echo -e ">> [`date`] installing lalsuite"
-pip install lalsuite
-
 echo -e ">> [`date`] installing pycbc"
 pip install .
 
 # LAL extra data files
-wget https://git.ligo.org/lscsoft/lalsuite-extra/raw/master/data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5
-export LAL_DATA_PATH=$PWD
+# FIXME, should be a way to make reduced package (with subset of data files)
+git clone -n git clone -n https://git.ligo.org/lscsoft/lalsuite-extra.git
+git lfs fetch -I data/lalsimulation/SEOBNRv2ROM_*.dat
+git lfs fetch -I data/lalsimulation/*ChirpTime*.dat
+git lfs fetch -I data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5
+mv data/lalsimulation/* ./
