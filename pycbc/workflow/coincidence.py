@@ -145,6 +145,22 @@ class PyCBCStatMapExecutable(Executable):
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
 
+class PyCBCMultiifoStatMapExecutable(Executable):
+    """Calculate FAP, IFAR, etc"""
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, coinc_files, ifos, tags=None):
+        if tags is None:
+            tags = []
+        segs = coinc_files.get_times_covered_by_files()
+        seg = segments.segment(segs[0][0], segs[-1][1])
+
+        node = Node(self)
+        node.set_memory(5000)
+        node.add_input_list_opt('--coinc-files', coinc_files)
+        node.add_opt('--ifos', ifos)
+        node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
+        return node
+
 class PyCBCStatMapInjExecutable(Executable):
     """Calculate FAP, IFAR, etc"""
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -317,6 +333,18 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
             workflow.add_node(trig2hdf_node)
             trig_files += trig2hdf_node.output_files
     return trig_files
+
+def setup_multiifo_statmap(workflow, ifos, coinc_files, out_dir, tags=None):
+    tags = [] if tags is None else tags
+
+    statmap_exe = PyCBCMultiifoStatMapExecutable(workflow.cp, 'multiifo_statmap',
+                                              ifos=ifos,
+                                              tags=tags, out_dir=out_dir)
+
+    ifolist = ' '.join(ifos)
+    stat_node = statmap_exe.create_node(coinc_files, ifolist)
+    workflow.add_node(stat_node)
+    return stat_node.output_files[0], stat_node.output_files
 
 def setup_statmap(workflow, coinc_files, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -541,8 +569,9 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
-    bg_files = []
+    statmap_files = []
     for veto_file, veto_name in zip(veto_files, veto_names):
+        bg_files = FileList()
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
             coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
@@ -555,5 +584,7 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
 
+        statmap_files += [setup_multiifo_statmap(workflow, ifos, bg_files, out_dir, tags=tags + [veto_name])]
+
     logging.info('...leaving coincidence ')
-    return bg_files
+    return statmap_files
