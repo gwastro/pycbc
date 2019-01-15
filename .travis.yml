@@ -65,7 +65,7 @@ matrix:
     sudo: required
     services:
     - docker
-  - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR
+  - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR
     language: python
   allow_failures:
   - env: PYCBC_CONTAINER=pycbc_rhel_virtualenv DOCKER_IMG=ligo/lalsuite-dev:el7
