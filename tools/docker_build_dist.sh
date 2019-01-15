@@ -166,11 +166,10 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   mkdir -p ${VIRTUAL_ENV}/.local
   echo -e "[easy_install]\\nzip_ok = false\\n" > ~/.pydistutils.cfg
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
-    
+
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
-  pip install --upgrade pip
+  pip install --upgrade pip setuptools
   pip install six packaging appdirs
-  pip install --upgrade setuptools
 
   echo -e "\\n>> [`date`] Installing base python packages required to build lalsuite"
   pip install "numpy>=1.6.4" "h5py>=2.5" python-cjson Cython decorator
@@ -285,7 +284,7 @@ EOF
     fi
     echo -e "\\n>> [`date`] virtualenv deployment complete"
   fi
-fi 
+fi
 
 echo -e "\\n>> [`date`] Docker script exiting"
 

@@ -34,7 +34,7 @@ from setuptools import find_packages
 PY3 = sys.version_info[0] == 3
 
 requires = []
-setup_requires = ['numpy>=1.13.0',]
+setup_requires = ['numpy>=1.15.4',]
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'cython',
                       'decorator>=3.4.2',

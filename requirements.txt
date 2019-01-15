@@ -4,7 +4,7 @@ Mako>=1.0.1
 decorator>=3.4.2
 scipy>=0.16.0
 matplotlib>=1.5.1
-numpy>=1.13.0,<1.15.3
+numpy>=1.15.4
 pillow
 h5py>=2.5
 jinja2
