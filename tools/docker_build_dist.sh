@@ -228,7 +228,7 @@ export PKG_CONFIG_PATH\\
   pip install -r companion.txt
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
-  python setup.py install
+  pip install .
 
   echo -e "\\n>> [`date`] Installing modules needed to build documentation"
   pip install "Sphinx>=1.5.0"
