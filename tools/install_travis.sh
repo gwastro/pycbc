@@ -21,6 +21,21 @@ mkdir -p ${BUILD}
 export PYTHONUSERBASE=${BUILD}/.local
 export XDG_CACHE_HOME=${BUILD}/.cache
 
+
+# FIXME this is a workaround for a bug in psycopg2 2.6 (required by pegasus)
+# see e.g. https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
+echo -e "Trying to get rid of pg_config"
+sudo apt-get -y purge libpq-dev
+echo -e "Making sure it is really gone..."
+if [ -n "`which pg_config`" ]
+then
+    echo -e "...still here:"
+    which pg_config
+    sudo rm -f `which pg_config`
+else
+    echo -e "...seems gone"
+fi
+
 # run the einstein at home build and test script
 pushd ${BUILD}
 ${LOCAL}/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/efd37637fbb568936dfb92bc7aa8a77359c9aa36/travis
@@ -47,22 +62,6 @@ pip install 'setuptools==18.2' --upgrade
 # FIXME this is a fix for https://github.com/travis-ci/travis-ci/issues/7940
 # as Pegasus pulls in boto which hits this issue
 export BOTO_CONFIG=/dev/null
-
-# install pegasus
-
-# FIXME this is a workaround for a bug in psycopg2 2.6 (required by pegasus)
-# see e.g. https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
-echo -e "Trying to get rid of pg_config"
-sudo apt-get -y purge libpq-dev
-echo -e "Making sure it is really gone..."
-if [ -n "`which pg_config`" ]
-then
-    echo -e "...still here:"
-    which pg_config
-    sudo rm -f `which pg_config`
-else
-    echo -e "...seems gone"
-fi
 
 # Install graphviz so building docs will work
 sudo apt-get install graphviz
