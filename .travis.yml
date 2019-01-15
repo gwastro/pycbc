@@ -13,6 +13,7 @@ addons:
     - libfreetype6-dev
     - libdb-dev
     - libopenblas-dev
+    - graphviz
 env:
   global:
   # This is the global version of lalsuite that will be used and included
