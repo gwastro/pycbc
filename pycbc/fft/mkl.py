@@ -100,7 +100,7 @@ def fft(invec, outvec, prec, itype, otype):
     f = lib.DftiComputeForward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
-    lib.DftiFreeDescriptor(descr)
+    lib.DftiFreeDescriptor(ctypes.byref(descr))
     check_status(status)
 
 def ifft(invec, outvec, prec, itype, otype):
@@ -109,7 +109,7 @@ def ifft(invec, outvec, prec, itype, otype):
     f = lib.DftiComputeBackward
     f.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
     status = f(descr, invec.ptr, outvec.ptr)
-    lib.DftiFreeDescriptor(descr)
+    lib.DftiFreeDescriptor(ctypes.byref(descr))
     check_status(status)
 
 # Class based API
