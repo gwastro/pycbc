@@ -17,6 +17,7 @@ else
     echo -e "...seems gone"
 fi
 
+#
 echo -e ">> [`date`] upgrading setuptools and pip"
 pip install --upgrade setuptools pip
 
@@ -29,9 +30,10 @@ pip install .
 # LAL extra data files
 # FIXME, should be a way to make reduced package (with subset of data files)
 git clone -n https://git.ligo.org/lscsoft/lalsuite-extra.git
-pushd lalsuite-extra
+cd lalsuite-extra
 git lfs fetch -I data/lalsimulation/SEOBNRv2ROM_*.dat
 git lfs fetch -I data/lalsimulation/*ChirpTime*.dat
 git lfs fetch -I data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5
-popd
-mv data/lalsimulation/* ./
+mv data/lalsimulation/* ../
+cd ../
+
