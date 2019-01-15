@@ -464,7 +464,7 @@ if test -r "$SOURCE/$BUILDDIRNAME-preinst.tgz" -o -r "$SOURCE/$BUILDDIRNAME-prei
     unset PYTHONPATH
     source "$ENVIRONMENT/bin/activate"
     echo -e "\\n\\n>> [`date`] pip install --upgrade pip" >&3
-    pip install --upgrade pip
+    pip install --upgrade pip setuptools
     # workaround to make the virtualenv accept .pth files
     export PYTHONPATH="$PREFIX/lib/python2.7/site-packages:$PYTHONPATH"
     cd "$SOURCE"
@@ -517,7 +517,7 @@ else # if $BUILDDIRNAME-preinst.tgz
 	python -m ensurepip
 	hash -r
 	echo -e "\\n\\n>> [`date`] pip install --upgrade pip" >&3
-	pip install --upgrade pip
+	pip install --upgrade pip setuptools
 	echo -e "\\n\\n>> [`date`] pip install virtualenv" >&3
 	pip install virtualenv
     fi
@@ -729,9 +729,6 @@ Libs: -L${libdir} -lhdf5' |
 	cd ..
 	$cleanup && rm -rf $p
     fi
-
-    echo -e "\\n\\n>> [`date`] pip install --upgrade distribute" >&3
-    pip install --upgrade distribute
 
     if $build_framecpp; then
 
