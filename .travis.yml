@@ -113,7 +113,7 @@ script:
 # FIXME this hard codes the version of lalsuite-extra that is installed
 # into the container. This should be set at a global level.
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
-    ./tools/travis_build_and_test.sh ;
+    ./tools/pycbc_test_suite.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
     df -h ;
     sudo chown -R 1000:1000 . ;

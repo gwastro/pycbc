@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+########################Workarounds and Hacks #################################
 # FIXME this is a workaround for a bug in psycopg2 2.6 (required by pegasus)
 # see e.g. https://stackoverflow.com/questions/47044854/error-installing-psycopg2-2-6-2
 # We should ask pegasus to update their requirement to psycopg2 2.7 which fixes
@@ -17,6 +18,7 @@ else
     echo -e "...seems gone"
 fi
 
+# Fixme replace with apt-get from intel repo
 # get library needed to build documentation
 wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30"
 primary_url="https://git.ligo.org/ligo-cbc/pycbc-software/raw/cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090"
@@ -28,16 +30,6 @@ set -e
 test -r $p || wget $wget_opts ${secondary_url}/${p}
 chmod +x $p
 
-#
-echo -e ">> [`date`] upgrading setuptools and pip"
-pip install --upgrade setuptools pip
-
-echo -e ">> [`date`] installing requirements"
-pip install -r requirements.txt
-
-echo -e ">> [`date`] installing pycbc"
-pip install .
-
 # LAL extra data files
 # FIXME, should be a way to make reduced package (with subset of data files)
 GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
@@ -47,4 +39,15 @@ git lfs pull -I "data/lalsimulation/*ChirpTime*.dat"
 git lfs pull -I "data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5"
 mv data/lalsimulation/* ../
 cd ../
+
+###############################################################################
+
+echo -e ">> [`date`] upgrading setuptools and pip"
+pip install --upgrade setuptools pip
+
+echo -e ">> [`date`] installing requirements"
+pip install -r requirements.txt
+
+echo -e ">> [`date`] installing pycbc"
+pip install .
 
