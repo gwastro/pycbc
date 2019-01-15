@@ -29,11 +29,11 @@ pip install .
 
 # LAL extra data files
 # FIXME, should be a way to make reduced package (with subset of data files)
-git clone -n https://git.ligo.org/lscsoft/lalsuite-extra.git
+GIT_LFS_SKIP_SMUDGE=1 git clone https://git.ligo.org/lscsoft/lalsuite-extra
 cd lalsuite-extra
-git lfs fetch -I data/lalsimulation/SEOBNRv2ROM_*.dat
-git lfs fetch -I data/lalsimulation/*ChirpTime*.dat
-git lfs fetch -I data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5
+git lfs pull -I data/lalsimulation/SEOBNRv2ROM_*.dat
+git lfs pull -I data/lalsimulation/*ChirpTime*.dat
+git lfs pull -I data/lalsimulation/SEOBNRv4ROM_v2.0.hdf5
 mv data/lalsimulation/* ../
 cd ../
 
