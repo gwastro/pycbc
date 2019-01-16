@@ -100,15 +100,23 @@ pycbc.init_logging(args.verbose)
 logging.info("Loading coinc triggers")
 logging.info("IFO input: %s" % args.ifos)
 all_trigs = pycbc.io.MultiifoStatmapData(files=args.coinc_files, ifos = args.ifos)
-ifos = all_trigs.attrs['ifos'].split(' ')
+print(args.ifos)
+if 'ifos' in all_trigs.attrs:
+    ifos = all_trigs.attrs['ifos'].split(' ')
+    logging.info('using ifos from file {}'.format(args.coinc_files[0]))
+else: 
+    ifos = [a.decode('utf-8') for a in args.ifos]
+    logging.info('using ifos from command line input')
+
+print(ifos)
 logging.info("We have %s triggers" % len(all_trigs.stat))
 fore_locs = all_trigs.timeslide_id == 0
-
+print(all_trigs.data['%s/time' % ifos[0]])
 # Foreground trigger times for ifo.
 fore_time = {}
 for ifo in ifos:
     fore_time[ifo] = all_trigs.data['%s/time' % ifo][fore_locs]
-
+print(all_trigs.data)
 # Average times of triggers from ifo1 and ifo2
 ave_fore_time = 0
 for ifo in ifos:
