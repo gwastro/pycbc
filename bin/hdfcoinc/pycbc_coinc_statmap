@@ -12,7 +12,7 @@ import lal, logging, numpy
 from pycbc.events import veto, coinc
 import pycbc.version, pycbc.pnutils, pycbc.io
 import sys
-import conversions as conv
+import pycbc.conversions as conv
 
 class fw(object):
     def __init__(self, name):
