@@ -16,9 +16,10 @@
 """This module provides model classes that assume the noise is Gaussian.
 """
 
-import numpy
 import logging
-from ConfigParser import NoSectionError, NoOptionError 
+from ConfigParser import NoSectionError, NoOptionError
+
+import numpy
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
@@ -244,7 +245,7 @@ class GaussianNoise(BaseDataModel):
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
-        # Set low frequency cutoff 
+        # Set low frequency cutoff
         self._f_lower = low_frequency_cutoff
         kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper,
                                                  d.delta_f, (N-1)*2)
@@ -467,17 +468,17 @@ class GaussianNoise(BaseDataModel):
         """Adds loading low_frequency_cutoff to parent function.
         """
         args = super(GaussianNoise, cls)._init_args_from_config(cp)
-        # add low_frequency_cutoff to the arguments 
-        try: 
+        # add low_frequency_cutoff to the arguments
+        try:
             low_frequency_cutoff = float(cp.get('model', 'low_frequency_cutoff'))
         except (NoOptionError, NoSectionError) as e:
             logging.warning("Low frequency cutoff for calculation of inner product "
                             "needs to be specified in config file under "
                             "section 'model'")
-            raise e 
+            raise e
         except Exception as e:
             # everything the float() can throw
-            logging.warning("Low frequency cutoff could not be converted to float ") 
+            logging.warning("Low frequency cutoff could not be converted to float ")
             raise e 
         args['low_frequency_cutoff'] = low_frequency_cutoff
         return args
