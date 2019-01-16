@@ -215,7 +215,7 @@ class GaussianNoise(BaseDataModel):
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, waveform_generator,
-                 lower_frequency_cutoff=None, psds=None, 
+                 lower_frequency_cutoff=None, psds=None,
                  f_upper=None, norm=None,
                  **kwargs):
         # set up the boiler-plate attributes; note: we'll compute the
@@ -254,7 +254,7 @@ class GaussianNoise(BaseDataModel):
                 raise ValueError("lower frequency cutoff must be convertable "
                                  "to float but type is "
                                  "{}".format(type(lower_frequency_cutoff)))
-        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper, 
+        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper,
                                                  d.delta_f, (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
@@ -469,3 +469,4 @@ class GaussianNoise(BaseDataModel):
         attrs['lognl'] = self.lognl
         for det in self.detectors:
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
+
