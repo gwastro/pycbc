@@ -351,7 +351,7 @@ class BaseModel(object):
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,
-                 sampling_transforms=None, **kwargs):
+                 sampling_transforms=None):
         # store variable and static args
         if isinstance(variable_params, basestring):
             variable_params = (variable_params,)
@@ -737,8 +737,7 @@ class BaseModel(object):
             sampling_transforms = None
         args['sampling_transforms'] = sampling_transforms
         # get any other keyword arguments provided
-        args.update(cls.extra_args_from_config(cp, section,
-            skip_args=['name'], dtypes={'lower_frequency_cutoff': float}))
+        args.update(cls.extra_args_from_config(cp, section,skip_args=['name']))
         return args
 
     @classmethod
