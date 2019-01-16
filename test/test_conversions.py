@@ -150,6 +150,36 @@ class TestParams(unittest.TestCase):
                 failinputs = None
             self.assertTrue(passed, msg.format(func, compval, maxdiff, failinputs))
 
+    def test_chip_compare_lalsuite(self):
+        """Compares effective precession parameter bewteen
+        the pycbc implementation and the lalsuite implementation.
+        """
+        import lal
+        import lalsimulation as lalsim
+
+        msg = '{} does not recover same {}; max difference: {}; inputs: {}'
+
+        f_ref = self.f_lower
+        chip_lal = []
+        for i in range(len(self.m1)):
+            _,_,tmp,_,_,_,_ = lalsim.SimIMRPhenomPCalculateModelParametersFromSourceFrame(
+                self.m1[i]*lal.MSUN_SI, self.m2[i]*lal.MSUN_SI,
+                f_ref, 0., 0.,
+                self.spin1x[i], self.spin1y[i], self.spin1z[i],
+                self.spin2x[i], self.spin2y[i], self.spin2z[i], lalsim.IMRPhenomPv2_V)
+            chip_lal.append(tmp)
+
+        chip_pycbc = conversions.chi_p(
+            self.m1,self.m2,self.spin1x,self.spin1y,self.spin2x,self.spin2y)
+
+        passed, maxdiff, maxidx = almost_equal(chip_lal, chip_pycbc, self.precision)
+        failinputs = (
+            self.m1[maxidx], self.m2[maxidx],
+            self.spin1x[maxidx], self.spin1y[maxidx],
+            self.spin2x[maxidx],self.spin2y[maxidx]
+            )
+        self.assertTrue(passed, msg.format("conversions.chi_p", "chi_p", maxdiff, failinputs))
+
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(TestParams))
 
