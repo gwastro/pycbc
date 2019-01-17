@@ -737,7 +737,8 @@ class BaseModel(object):
             sampling_transforms = None
         args['sampling_transforms'] = sampling_transforms
         # get any other keyword arguments provided
-        args.update(cls.extra_args_from_config(cp, section, skip_args=['name']))
+        args.update(
+                cls.extra_args_from_config(cp, section, skip_args=['name']))
         return args
 
     @classmethod

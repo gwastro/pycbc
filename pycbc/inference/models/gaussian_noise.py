@@ -470,15 +470,17 @@ class GaussianNoise(BaseDataModel):
         args = super(GaussianNoise, cls)._init_args_from_config(cp)
         # add low_frequency_cutoff to the arguments
         try:
-            low_frequency_cutoff = float(cp.get('model', 'low_frequency_cutoff'))
+            low_frequency_cutoff = float(
+                    cp.get('model', 'low_frequency_cutoff'))
         except (NoOptionError, NoSectionError) as e:
-            logging.warning("Low frequency cutoff for calculation of inner product "
-                            "needs to be specified in config file under "
-                            "section 'model'")
+            logging.warning("Low frequency cutoff for calculation of inner " 
+                            "product needs to be specified in config file "
+                            "under section 'model'")
             raise e
         except Exception as e:
             # everything the float() can throw
-            logging.warning("Low frequency cutoff could not be converted to float ")
-            raise e 
+            logging.warning("Low frequency cutoff could not be "
+                            "converted to float ")
+            raise e
         args['low_frequency_cutoff'] = low_frequency_cutoff
         return args
