@@ -471,9 +471,9 @@ class GaussianNoise(BaseDataModel):
         # add low_frequency_cutoff to the arguments
         try:
             low_frequency_cutoff = float(
-                    cp.get('model', 'low_frequency_cutoff'))
+                cp.get('model', 'low_frequency_cutoff'))
         except (NoOptionError, NoSectionError) as e:
-            logging.warning("Low frequency cutoff for calculation of inner " 
+            logging.warning("Low frequency cutoff for calculation of inner "
                             "product needs to be specified in config file "
                             "under section 'model'")
             raise e
