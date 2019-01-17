@@ -182,10 +182,12 @@ class DictArray(object):
 
 
 class StatmapData(DictArray):
-    def __init__(self, data=None, seg=None, attrs=None, files=None, 
-                 groups=['stat', 'time1', 'time2', 'trigger_id1', 'trigger_id2',
-                         'template_id', 'decimation_factor', 'timeslide_id']):
-        super(StatmapData, self).__init__(data=data, files=files, groups=groups)
+    def __init__(self, data=None, seg=None, attrs=None, files=None,
+                 groups=['stat', 'time1', 'time2', 'trigger_id1',
+                         'trigger_id2', 'template_id', 'decimation_factor',
+                         'timeslide_id']):
+        super(StatmapData, self).__init__(data=data, files=files,
+                                          groups=groups)
 
         if data:
             self.seg=seg
