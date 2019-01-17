@@ -223,14 +223,14 @@ class StatmapData(DictArray):
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None, ifos=None):
-        groups = ['stat', 'template_id', 'decimation_factor', 'timeslide_id']
+        groups = ('stat', 'template_id', 'decimation_factor', 'timeslide_id')
         for ifo in ifos:
-            groups += ['%s/time' % ifo]
-            groups += ['%s/trigger_id' % ifo]
+            groups += ('%s/time' % ifo,)
+            groups += ('%s/trigger_id' % ifo,)
 
         super(MultiifoStatmapData, self).__init__(data=data, files=files,
                                                   groups=groups, attrs=attrs, seg=seg)
-
+        
     def _return(self, data):
         ifolist = self.attrs['ifos'].split(' ')
         return self.__class__(data=data, attrs=self.attrs, seg=self.seg,
