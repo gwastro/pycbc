@@ -86,7 +86,7 @@ def calculate_acf(data, delta_t=1.0, unbiased=False):
 
     # correlate
     # do not need to give the congjugate since correlate function does it
-    cdata = FrequencySeries(zeros(len(fdata), dtype=numpy.complex64),
+    cdata = FrequencySeries(zeros(len(fdata), dtype=fdata.dtype),
                            delta_f=fdata.delta_f, copy=False)
     correlate(fdata, fdata, cdata)
 
