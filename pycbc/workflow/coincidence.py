@@ -603,6 +603,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
                                                    tags=[veto_name, str(i)])
 
             bg_files[ctag] += coinc_node.output_files
+    return bg_files
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          veto_files, veto_names, out_dir, pivot_ifo, fixed_ifo, tags=None):
