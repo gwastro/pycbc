@@ -578,13 +578,13 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     fullinjFilelist = FileList()
     for ifo in ifos:
         if ifo == pivot_ifo:
-            injinjFileList.Add(ifiles[ifo])
-            injfullFileList.Add(ifiles[ifo])
-            fullinjFileList.Add(ffiles[ifo])
+            injinjFileList.append(ifiles[ifo])
+            injfullFileList.append(ifiles[ifo])
+            fullinjFileList.append(ffiles[ifo])
         else:
-            injinjFileList.Add(ifiles[ifo])
-            injfullFileList.Add(ffiles[ifo])
-            fullinjFileList.Add(ifiles[ifo])
+            injinjFileList.append(ifiles[ifo])
+            injfullFileList.append(ffiles[ifo])
+            fullinjFileList.append(ifiles[ifo])
     combo = [(injinjFileList, "injinj"),
              (injfullFileList, "injfull"),
              (fullinjFileList, "fullinj"),
