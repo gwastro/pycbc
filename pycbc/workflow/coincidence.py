@@ -547,7 +547,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     return statmap_files
 
 def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
-                                      stat_files, background_file, veto_file, veto_name,
+                                      stat_files, veto_file, veto_name,
                                       out_dir, pivot_ifo, fixed_ifo, tags=None):
     """
     This function sets up exact match multiifo coincidence for injections
