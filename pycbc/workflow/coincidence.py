@@ -575,7 +575,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
 
     injinjFileList = FileList()
     injfullFileList = FileList()
-    fullinjFilelist = FileList()
+    fullinjFileList = FileList()
     for ifo in ifos:
         if ifo == pivot_ifo:
             injinjFileList.append(ifiles[ifo])
