@@ -585,9 +585,6 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
             injinjFileList.append(ifiles[ifo])
             injfullFileList.append(ffiles[ifo])
             fullinjFileList.append(ifiles[ifo])
-    print(injinjFileList)
-    print(injfullFileList)
-    print(fullinjFileList)
     combo = {'injinj':injinjFileList,'injfull':injfullFileList,'fullinj':fullinjFileList}
     bg_files = {'injinj':[],'injfull':[],'fullinj':[]}
 
@@ -597,7 +594,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
                                              tags=tags + [ctag], out_dir=out_dir)
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
-            coinc_node = findcoinc_exe.create_node(trig_files[ctag], hdfbank,
+            coinc_node = findcoinc_exe.create_node(combo[ctag], hdfbank,
                                                    stat_files,
                                                    veto_file, veto_name,
                                                    group_str,
