@@ -573,9 +573,9 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     for ifo, file in zip(ifos, files):
         ifiles[ifo] = file[0]
 
-    injinjFileList = Filelist()
-    injfullFileList = Filelist()
-    fullinjFilelist = Filelist()
+    injinjFileList = FileList()
+    injfullFileList = FileList()
+    fullinjFilelist = FileList()
     for ifo in ifos:
         if ifo == pivot_ifo:
             injinjFileList.Add(ifiles[ifo])
