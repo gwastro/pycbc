@@ -546,6 +546,67 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     logging.info('...leaving coincidence ')
     return statmap_files
 
+def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
+                                      stat_files, background_file, veto_file, veto_name,
+                                      out_dir, pivot_ifo, fixed_ifo, tags=None):
+    """
+    This function sets up exact match multiifo coincidence for injections
+    """
+    if tags is None:
+        tags = []
+    make_analysis_dir(out_dir)
+    logging.info('Setting up coincidence')
+
+    if len(hdfbank) != 1:
+        raise ValueError('Must use exactly 1 bank file for this coincidence '
+                         'method, I got %i !' % len(hdfbank))
+    hdfbank = hdfbank[0]
+    # Wall time knob and memory knob
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+
+    ffiles = {}
+    ifiles = {}
+    ifos, files = full_data_trig_files.categorize_by_attr('ifo')
+    for ifo, file in zip(ifos, files):
+        ffiles[ifo] = file[0]
+    ifos, files = inj_trig_files.categorize_by_attr('ifo')
+    for ifo, file in zip(ifos, files):
+        ifiles[ifo] = file[0]
+
+    injinjFileList = Filelist()
+    injfullFileList = Filelist()
+    fullinjFilelist = Filelist()
+    for ifo in ifos:
+        if ifo == pivot_ifo:
+            injinjFileList.Add(ifiles[ifo])
+            injfullFileList.Add(ifiles[ifo])
+            fullinjFileList.Add(ffiles[ifo])
+        else:
+            injinjFileList.Add(ifiles[ifo])
+            injfullFileList.Add(ffiles[ifo])
+            fullinjFileList.Add(ifiles[ifo])
+    combo = [(injinjFileList, "injinj"),
+             (injfullFileList, "injfull"),
+             (fullinjFileList, "fullinj"),
+            ]
+    bg_files = {'injinj':[],'injfull':[],'fullinj':[]}
+
+    for trig_files, ctag in combo:
+        findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp, 'multiifo_coinc',
+                                             ifos=ifos,
+                                             tags=tags + [ctag], out_dir=out_dir)
+        for i in range(factor):
+            group_str = '%s/%s' % (i, factor)
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                                   stat_files,
+                                                   veto_file, veto_name,
+                                                   group_str,
+                                                   pivot_ifo,
+                                                   fixed_ifo,
+                                                   tags=[veto_name, str(i)])
+
+            bg_files[ctag] += coinc_node.output_files
+
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          veto_files, veto_names, out_dir, pivot_ifo, fixed_ifo, tags=None):
     """
