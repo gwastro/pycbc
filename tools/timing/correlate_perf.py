@@ -7,7 +7,7 @@ niter = 2000
 
 
 for N in [2**10, 2**15, 2**18]:
-    a = zeros(N, dtype=complex64) 
+    a = zeros(N, dtype=complex64)
     a.data += uniform(-1, 1, size=len(a))
     b = a * 0.5
     c = a * 1.5
@@ -26,12 +26,12 @@ for N in [2**10, 2**15, 2**18]:
 
 for dtp in [complex64, complex128]:
     for N in [2**10, 2**15, 2**20]:
-        a = zeros(N, dtype=dtp) 
+        a = zeros(N, dtype=dtp)
         a += Array(uniform(-1, 1, size=N) * (1 + -.5j), dtype=a.dtype)
         b = zeros(N, dtype=dtp)
         c = zeros(N, dtype=dtp)
         correlate(a, b, c)
-        
+
         t1 = time()
         for i in range(niter):
             correlate(a, b, c)
@@ -47,5 +47,4 @@ for dtp in [complex64, complex128]:
             t2 = time()
             print("Correlator Perf Type:{} Size:{} Time:{:3.3f}".format(repr(dtp),
                   N, (t2-t1)*1000 / niter))
-
 

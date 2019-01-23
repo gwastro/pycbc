@@ -66,7 +66,7 @@ class Testcorrelate(unittest.TestCase):
         z = self.z * 1
         corr = Correlator(x, y, z)
         corr.correlate()
-        
+
         self.assertTrue(z.almost_equal_elem(self.z, self.tolerance))
 
     def test_batch_correlate(self):
@@ -75,10 +75,10 @@ class Testcorrelate(unittest.TestCase):
         zs = [self.z+0, self.z*1, self.z*2, self.z*3]
         b = BatchCorrelator(xs, zs, size)
         b.execute(self.y)
-        
+
         for i in range(len(xs)):
             trusted_correlate(xs[i], self.y, self.z)
-            self.assertTrue(self.z.almost_equal_elem(zs[i], self.tolerance)) 
+            self.assertTrue(self.z.almost_equal_elem(zs[i], self.tolerance))
 
 suite = unittest.TestSuite()
 suite.addTest(unittest.TestLoader().loadTestsFromTestCase(Testcorrelate))
