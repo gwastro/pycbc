@@ -28,6 +28,7 @@ from .base import BaseModel
 # In this model we only calculate terms up to a constant.
 # We are primarily interested in the posterior result
 
+
 class SingleTemplate(BaseModel):
     r"""Model that assumes we know all the intrinsic parameters.
 
@@ -114,6 +115,7 @@ class SingleTemplate(BaseModel):
             shloglr += sh
             hhloglr += self.hh[ifo] * abs(htf) ** 2.0
 
-        vloglr = numpy.log(scipy.special.i0e(abs(shloglr))) + abs(shloglr) + hhloglr
+        vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
+        vloglr += abs(shloglr) + hhloglr
 
         return float(vloglr)
