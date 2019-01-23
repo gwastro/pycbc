@@ -71,16 +71,16 @@ class SingleTemplate(BaseModel):
         for ifo in data:
             self.det[ifo] = Detector(ifo)
             snr, _, _ = pyfilter.matched_filter_core(
-                                            hp, data[ifo],
-                                            psd=psds[ifo],
-                                            low_frequency_cutoff=f_lower,
-                                            high_frequency_cutoff=f_upper)
+                hp, data[ifo],
+                psd=psds[ifo],
+                low_frequency_cutoff=f_lower,
+                high_frequency_cutoff=f_upper)
 
             self.sh[ifo] = 4 * df * snr
             self.hh[ifo] = -0.5 * pyfilter.sigmasq(
-                                            hp, psd=psds[ifo],
-                                            low_frequency_cutoff=f_lower,
-                                            high_frequency_cutoff=f_upper)
+                hp, psd=psds[ifo],
+                low_frequency_cutoff=f_lower,
+                high_frequency_cutoff=f_upper)
         self.time = None
 
     def _loglikelihood(self):
