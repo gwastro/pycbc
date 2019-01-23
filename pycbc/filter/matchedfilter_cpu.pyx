@@ -21,6 +21,7 @@
 #
 # =============================================================================
 #
+# cython: embedsignature=True
 from __future__ import absolute_import
 import numpy
 from .matchedfilter import _BaseCorrelator
@@ -30,16 +31,16 @@ ctypedef fused COMPLEXTYPE:
     float complex
     double complex
 
-def _batch_correlate(numpy.ndarray [long, ndim=1] x, 
+def _batch_correlate(numpy.ndarray [long, ndim=1] x,
                      numpy.ndarray [float complex, ndim=1] y,
-                     numpy.ndarray [long, ndim=1] z, 
+                     numpy.ndarray [long, ndim=1] z,
                      size, num_vectors):
     cdef unsigned int nvec = num_vectors
     cdef unsigned int vsize = size
 
     cdef float complex* xp
     cdef float complex* zp
-    
+
     for i in range(nvec):
         xp = <float complex*> x[i]
         zp = <float complex*> z[i]
@@ -54,7 +55,7 @@ def batch_correlate_execute(self, y):
 def correlate_numpy(x, y, z):
     z.data[:] = numpy.conjugate(x.data)[:]
     z *= y
-        
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def _correlate(numpy.ndarray [COMPLEXTYPE, ndim=1] x,
@@ -62,7 +63,7 @@ def _correlate(numpy.ndarray [COMPLEXTYPE, ndim=1] x,
                numpy.ndarray [COMPLEXTYPE, ndim=1] z):
     cdef unsigned int xmax = x.shape[0]
     for i in range(xmax):
-        z[i] = x[i].conjugate() * y[i]        
+        z[i] = x[i].conjugate() * y[i]
 
 def correlate(x, y, z):
     _correlate(x.data, y.data, z.data)
