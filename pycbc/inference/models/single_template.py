@@ -42,6 +42,7 @@ class SingleTemplate(BaseModel):
                  f_upper=None,
                  sample_rate=32768,
                  **kwargs):
+        #pylint: disable=unused-argument
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(SingleTemplate, self).__init__(**kwargs)
