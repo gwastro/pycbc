@@ -50,4 +50,3 @@ pip install -r requirements.txt
 
 echo -e ">> [`date`] installing pycbc"
 pip install .
-
