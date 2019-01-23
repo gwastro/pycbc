@@ -41,7 +41,7 @@ class SingleTemplate(BaseModel):
     def __init__(self, data, psds, f_lower,
                  f_upper=None,
                  sample_rate=32768,
-                 **_kwargs):
+                 **kwargs):
 
         super(SingleTemplate, self).__init__(**kwargs)
 
