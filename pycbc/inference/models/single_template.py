@@ -37,11 +37,13 @@ class SingleTemplate(BaseModel):
     """
     name = 'single_template'
 
-    def __init__(self, data, psds, f_lower, f_upper=None, **kwargs):
+    def __init__(self, data, psds, f_lower,
+                 f_upper=None,
+                 sample_rate=32768,
+                 **kwargs):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
         super(SingleTemplate, self).__init__(**kwargs)
-        sample_rate = 32768
 
         # Generate template waveforms
         df = data[data.keys()[0]].delta_f
@@ -75,8 +77,8 @@ class SingleTemplate(BaseModel):
 
             self.sh[ifo] = 4 * df * snr
             self.hh[ifo] = -0.5 * pyfilter.sigmasq(hp, psd=psds[ifo],
-                                              low_frequency_cutoff=f_lower,
-                                              high_frequency_cutoff=f_upper)
+                                            low_frequency_cutoff=f_lower,
+                                            high_frequency_cutoff=f_upper)
         self.time = None
 
     def _loglikelihood(self):
@@ -97,9 +99,11 @@ class SingleTemplate(BaseModel):
         shloglr = hhloglr = 0
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
-                                         p['polarization'], self.time)
+                                                   p['polarization'],
+                                                   self.time)
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'],
-                                         p['dec'], self.time)
+                                                            p['dec'],
+                                                            self.time)
             ip = numpy.cos(p['inclination'])
             ic = 0.5 * (1.0 + ip * ip)
             htf = (fp * ip + 1.0j * fc * ic) / p['distance']
