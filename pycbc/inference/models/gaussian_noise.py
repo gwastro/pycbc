@@ -76,7 +76,7 @@ class GaussianNoise(BaseDataModel):
     normalization using the ``norm`` keyword argument.
 
     For more details on initialization parameters and definition of terms, see
-    ``BaseModel``.
+    :py:class:`models.BaseDataModel`.
 
     Parameters
     ----------
@@ -217,37 +217,26 @@ class GaussianNoise(BaseDataModel):
     """
     name = 'gaussian_noise'
 
-    def __init__(self, variable_params, data, waveform_generator,
-                 low_frequency_cutoff, psds=None,
-                 f_upper=None, norm=None,
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, norm=None,
                  **kwargs):
-        # set up the boiler-plate attributes; note: we'll compute the
-        # log evidence later
-        super(GaussianNoise, self).__init__(variable_params, data,
-                                            waveform_generator, **kwargs)
-        # check that the data and waveform generator have the same detectors
-        if (sorted(waveform_generator.detectors.keys()) !=
-                sorted(self._data.keys())):
-            raise ValueError(
-                "waveform generator's detectors ({0}) does not "
-                "match data ({1})".format(
-                    ','.join(sorted(waveform_generator.detector_names)),
-                    ','.join(sorted(self._data.keys()))))
-        # check that the data and waveform generator have the same epoch
-        if any(waveform_generator.epoch != d.epoch
-               for d in self._data.values()):
-            raise ValueError("waveform generator does not have the same epoch "
-                             "as all of the data sets.")
+        # set up the boiler-plate attributes
+        super(GaussianNoise, self).__init__(variable_params, data, **kwargs)
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data, recalibration=self.recalibartion,
+            gates=self.gates, **self.static_params)
         # check that the data sets all have the same lengths
-        dlens = numpy.array([len(d) for d in data.values()])
+        dlens = numpy.array([len(d) for d in self.data.values()])
         if not all(dlens == dlens[0]):
             raise ValueError("all data must be of the same length")
         # we'll use the first data set for setting values
-        d = data.values()[0]
+        d = list(self.data.values())[0]
         N = len(d)
         # Set low frequency cutoff
-        self._f_lower = low_frequency_cutoff
-        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper,
+        self.f_lower = low_frequency_cutoff
+        self.f_upper = high_frequency_cutoff
+        kmin, kmax = pyfilter.get_cutoff_indices(self.f_lower, self.f_upper,
                                                  d.delta_f, (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
@@ -450,7 +439,9 @@ class GaussianNoise(BaseDataModel):
             The inference file to write to.
         """
         super(GaussianNoise, self).write_metadata(fp)
-        fp.attrs['f_lower'] = self._f_lower
+        fp.attrs['f_lower'] = self.f_lower
+        if self.f_upper is not None
+            fp.attrs['f_upper'] = self.f_upper
         if self._psds is not None:
             fp.write_psd(self._psds)
         try:
@@ -463,15 +454,13 @@ class GaussianNoise(BaseDataModel):
         for det in self.detectors:
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
 
-    @classmethod
-    def _init_args_from_config(cls, cp):
-        """Adds loading low_frequency_cutoff to parent function.
+    @staticmethod
+    def low_frequency_cutoff_from_config(cp):
+        """Gets the low and frequency cutoff from the given config file.
         """
-        args = super(GaussianNoise, cls)._init_args_from_config(cp)
-        # add low_frequency_cutoff to the arguments
         try:
             low_frequency_cutoff = float(
-                cp.get('model', 'low_frequency_cutoff'))
+                cp.get('model', 'low-frequency-cutoff'))
         except (NoOptionError, NoSectionError) as e:
             logging.warning("Low frequency cutoff for calculation of inner "
                             "product needs to be specified in config file "
@@ -482,5 +471,88 @@ class GaussianNoise(BaseDataModel):
             logging.warning("Low frequency cutoff could not be "
                             "converted to float ")
             raise e
-        args['low_frequency_cutoff'] = low_frequency_cutoff
-        return args
+        return low_frequency_cutoff
+
+    @staticmethod
+    def high_frequency_cutoff_from_config(cp):
+        """Gets the high frequency cutoff, if provided, from the config file.
+        """
+        if cp.has_option('model', 'high-frequency-cutoff'):
+            high_frequency_cutoff = float(
+                cp.get('model', 'high-frequency-cutoff'))
+        else:
+            high_frequency_cutoff = None
+        return high_frequency_cutoff
+
+    @classmethod
+    def from_config(cls, cp, **kwargs):
+        """Initializes an instance of this class from the given config file.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser
+            Config file parser to read.
+        \**kwargs :
+            All additional keyword arguments are passed to the class. Any
+            provided keyword will over ride what is in the config file.
+        """
+        args = cls._init_args_from_config(cp)
+        args['low_frequency_cutoff'] = cls.low_frequency_cutoff_from_config(cp)
+        args['high_frequency_cutoff'] = \
+            cls.high_frequency_cutoff_from_config(cp)
+        args.update(kwargs)
+        return cls(**args)
+
+
+def create_waveform_generator(variable_params, data,
+                              recalibration=None, gates=None,
+                              **static_params):
+    """Creates a waveform generator for use with a model.
+
+    Parameters
+    ----------
+    variable_params : list of str
+        The names of the parameters varied.
+    data : dict
+        Dictionary mapping detector names to either a
+        :py:class:`<pycbc.types.TimeSeries TimeSeries>` or
+        :py:class:`<pycbc.types.FrequencySeries FrequencySeries>`.
+    recalibration : dict, optional
+        Dictionary mapping detector names to
+        :py:class:`<pycbc.calibration.Recalibrate>` instances for
+        recalibrating data.
+    gates : dict of tuples, optional
+        Dictionary of detectors -> tuples of specifying gate times. The
+        sort of thing returned by :py:func:`pycbc.gate.gates_from_cli`.
+
+    Returns
+    -------
+    pycbc.waveform.FDomainDetFrameGenerator
+        A waveform generator for frequency domain generation.
+    """
+    # figure out what generator to use based on the approximant
+    try:
+        approximant = static_params['approximant']
+    except KeyError:
+        raise ValueError("no approximant provided in the static args")
+    generator_function = generator.select_waveform_generator(approximant)
+    # get data parameters; we'll just use one of the data to get the
+    # values, then check that all the others are the same
+    delta_f = None
+    for (det, d) in data.items():
+        if delta_f is None:
+            delta_f = d.delta_f
+            delta_t = d.delta_t
+            start_time = d.start_time
+        else:
+            if not all(d.delta_f == delta_f, d.delta_t == delta_t,
+                       d.start_time == epoch):
+                raise ValueError("data must all have the same delta_t, "
+                                 "delta_f, and start_time")
+    waveform_generator = generator.FDomainDetFrameGenerator(
+        generator_function, epoch=start_time,
+        variable_args=variable_params, detectors=list(data.keys()),
+        delta_f=delta_f, delta_t=delta_t,
+        recalib=recalibration, gates=gates,
+        **static_params)
+    return waveform_generator
