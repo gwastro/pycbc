@@ -16,6 +16,9 @@
 """This module provides model classes that assume the noise is Gaussian.
 """
 
+import logging
+from ConfigParser import NoSectionError, NoOptionError
+
 import numpy
 
 from pycbc import filter as pyfilter
@@ -90,8 +93,9 @@ class GaussianNoise(BaseDataModel):
         values are the data (assumed to be unwhitened). The list of keys must
         match the waveform generator's detectors keys, and the epoch of every
         data set must be the same as the waveform generator's epoch.
-    f_lower : float
+    low_frequency_cutoff : float
         The starting frequency to use for computing inner products.
+        Must be specified in the config file under section [model].
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
@@ -214,7 +218,8 @@ class GaussianNoise(BaseDataModel):
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, waveform_generator,
-                 f_lower, psds=None, f_upper=None, norm=None,
+                 low_frequency_cutoff, psds=None,
+                 f_upper=None, norm=None,
                  **kwargs):
         # set up the boiler-plate attributes; note: we'll compute the
         # log evidence later
@@ -240,10 +245,10 @@ class GaussianNoise(BaseDataModel):
         # we'll use the first data set for setting values
         d = data.values()[0]
         N = len(d)
-        # figure out the kmin, kmax to use
-        self._f_lower = f_lower
-        kmin, kmax = pyfilter.get_cutoff_indices(f_lower, f_upper, d.delta_f,
-                                                 (N-1)*2)
+        # Set low frequency cutoff
+        self._f_lower = low_frequency_cutoff
+        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, f_upper,
+                                                 d.delta_f, (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
         if norm is None:
@@ -457,3 +462,25 @@ class GaussianNoise(BaseDataModel):
         attrs['lognl'] = self.lognl
         for det in self.detectors:
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
+
+    @classmethod
+    def _init_args_from_config(cls, cp):
+        """Adds loading low_frequency_cutoff to parent function.
+        """
+        args = super(GaussianNoise, cls)._init_args_from_config(cp)
+        # add low_frequency_cutoff to the arguments
+        try:
+            low_frequency_cutoff = float(
+                cp.get('model', 'low_frequency_cutoff'))
+        except (NoOptionError, NoSectionError) as e:
+            logging.warning("Low frequency cutoff for calculation of inner "
+                            "product needs to be specified in config file "
+                            "under section 'model'")
+            raise e
+        except Exception as e:
+            # everything the float() can throw
+            logging.warning("Low frequency cutoff could not be "
+                            "converted to float ")
+            raise e
+        args['low_frequency_cutoff'] = low_frequency_cutoff
+        return args
