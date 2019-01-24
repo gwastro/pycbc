@@ -100,8 +100,8 @@ def _convert_liststring_to_list(lstring):
 
 
 def read_params_from_config(cp, prior_section='prior',
-                            vargs_section='variable_args',
-                            sargs_section='static_args'):
+                            vargs_section='variable_params',
+                            sargs_section='static_params'):
     """Loads static and variable parameters from a configuration file.
 
     Parameters
