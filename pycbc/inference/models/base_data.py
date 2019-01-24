@@ -30,7 +30,6 @@ import logging
 from abc import (ABCMeta, abstractmethod)
 
 from pycbc import transforms
-from pycbc.waveform import generator
 
 from .base import BaseModel
 
@@ -142,11 +141,6 @@ class BaseDataModel(BaseModel):
             return logp
         else:
             return logp + self.loglr
-
-    @property
-    def data(self):
-        """Returns the data that was set."""
-        return self._data
 
     @property
     def detectors(self):
