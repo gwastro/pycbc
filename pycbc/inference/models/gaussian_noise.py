@@ -23,6 +23,7 @@ import numpy
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
+from pycbc.waveform import generator
 from pycbc.types import Array
 
 from .base_data import BaseDataModel
@@ -82,12 +83,6 @@ class GaussianNoise(BaseDataModel):
     ----------
     variable_params : (tuple of) string(s)
         A tuple of parameter names that will be varied.
-    waveform_generator : generator class
-        A generator class that creates waveforms. This must have a ``generate``
-        function which takes parameter values as keyword arguments, a
-        detectors attribute which is a dictionary of detectors keyed by their
-        names, and an epoch which specifies the start time of the generated
-        waveform.
     data : dict
         A dictionary of data, in which the keys are the detector names and the
         values are the data (assumed to be unwhitened). The list of keys must
@@ -101,7 +96,7 @@ class GaussianNoise(BaseDataModel):
         dictionary must have a psd for each detector specified in the data
         dictionary. If provided, the inner products in each detector will be
         weighted by 1/psd of that detector.
-    f_upper : {None, float}
+    high_frequency_cutoff : float, optional
         The ending frequency to use for computing inner products. If not
         provided, the minimum of the largest frequency stored in the data
         and a given waveform will be used.
@@ -109,6 +104,8 @@ class GaussianNoise(BaseDataModel):
         An extra normalization weight to apply to the inner products. Can be
         either a float or an array. If ``None``, ``4*data.values()[0].delta_f``
         will be used.
+    static_params : dict, optional
+        A dictionary of parameter names -> values to keep fixed.
     **kwargs :
         All other keyword arguments are passed to ``BaseDataModel``.
 
@@ -117,28 +114,28 @@ class GaussianNoise(BaseDataModel):
     Create a signal, and set up the model using that signal:
 
     >>> from pycbc import psd as pypsd
+    >>> from pycbc.inference.models import GaussianNoise
     >>> from pycbc.waveform.generator import (FDomainDetFrameGenerator,
     ...                                       FDomainCBCGenerator)
-    >>> import pycbc.inference
     >>> seglen = 4
     >>> sample_rate = 2048
     >>> N = seglen*sample_rate/2+1
     >>> fmin = 30.
-    >>> m1, m2, s1z, s2z, tsig, ra, dec, pol, dist = (
-    ...     38.6, 29.3, 0., 0., 3.1, 1.37, -1.26, 2.76, 3*500.)
+    >>> static_params = {'approximant': 'IMRPhenomD', 'f_lower': fmin,
+    ...                  'mass1': 38.6, 'mass2': 29.3, 
+    ...                  'spin1z': 0., 'spin2z': 0., 'ra': 1.37, 'dec': -1.26,
+    ...                  'polarization': 2.76, 'distance': 3*500.}
     >>> variable_params = ['tc']
+    >>> tsig = 3.1
     >>> generator = FDomainDetFrameGenerator(
-    ...     FDomainCBCGenerator, 0.,
-    ...     variable_args=variable_params, detectors=['H1', 'L1'],
-    ...     delta_f=1./seglen, f_lower=fmin,
-    ...     approximant='SEOBNRv2_ROM_DoubleSpin',
-    ...     mass1=m1, mass2=m2, spin1z=s1z, spin2z=s2z,
-    ...     ra=ra, dec=dec, polarization=pol, distance=dist)
+    ...     FDomainCBCGenerator, 0., detectors=['H1', 'L1'],
+    ...     variable_args=variable_params,
+    ...     delta_f=1./seglen, **static_params)
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
-    >>> model = pycbc.inference.models.GaussianNoise(
-    ...     variable_params, signal, generator, fmin, psds=psds)
+    >>> model = GaussianNoise(variable_params, signal, fmin, psds=psds,
+    ...                       static_params=static_params)
 
     Set the current position to the coalescence time of the signal:
 
@@ -148,21 +145,21 @@ class GaussianNoise(BaseDataModel):
     since we have not provided a prior, these should be equal to each other:
 
     >>> print('{:.2f}'.format(model.loglr))
-    278.96
+    282.29
     >>> print('{:.2f}'.format(model.logplr))
-    278.96
+    282.29
 
     Print all of the default_stats:
 
     >>> print(',\n'.join(['{}: {:.2f}'.format(s, v)
     ...                   for (s, v) in sorted(model.current_stats.items())]))
-    H1_cplx_loglr: 175.57+0.00j,
-    H1_optimal_snrsq: 351.13,
-    L1_cplx_loglr: 103.40+0.00j,
-    L1_optimal_snrsq: 206.79,
+    H1_cplx_loglr: 177.66+0.00j,
+    H1_optimal_snrsq: 355.33,
+    L1_cplx_loglr: 104.63+0.00j,
+    L1_optimal_snrsq: 209.26,
     logjacobian: 0.00,
     loglikelihood: 0.00,
-    loglr: 278.96,
+    loglr: 282.29,
     logprior: 0.00
 
     Compute the SNR; for this system and PSD, this should be approximately 24:
@@ -170,7 +167,7 @@ class GaussianNoise(BaseDataModel):
     >>> from pycbc.conversions import snr_from_loglr
     >>> x = snr_from_loglr(model.loglr)
     >>> print('{:.2f}'.format(x))
-    23.62
+    23.76
 
     Since there is no noise, the SNR should be the same as the quadrature sum
     of the optimal SNRs in each detector:
@@ -178,20 +175,20 @@ class GaussianNoise(BaseDataModel):
     >>> x = (model.det_optimal_snrsq('H1') +
     ...      model.det_optimal_snrsq('L1'))**0.5
     >>> print('{:.2f}'.format(x))
-    23.62
+    23.76
 
     Using the same model, evaluate the log likelihood ratio at several points
     in time and check that the max is at tsig:
 
     >>> import numpy
-    >>> times = numpy.arange(seglen*sample_rate)/float(sample_rate)
+    >>> times = numpy.linspace(tsig-1, tsig+1, num=101)
     >>> loglrs = numpy.zeros(len(times))
     >>> for (ii, t) in enumerate(times):
     ...     model.update(tc=t)
     ...     loglrs[ii] = model.loglr
-    >>> print('tsig: {:.3f}, time of max loglr: {:.3f}'.format(
+    >>> print('tsig: {:.2f}, time of max loglr: {:.2f}'.format(
     ...     tsig, times[loglrs.argmax()]))
-    tsig: 3.100, time of max loglr: 3.100
+    tsig: 3.10, time of max loglr: 3.10
 
     Create a prior and use it (see distributions module for more details):
 
@@ -202,29 +199,31 @@ class GaussianNoise(BaseDataModel):
     ...     signal, generator, 20., psds=psds, prior=prior)
     >>> model.update(tc=tsig)
     >>> print('{:.2f}'.format(model.logplr))
-    279.88
+    283.21
     >>> print(',\n'.join(['{}: {:.2f}'.format(s, v)
     ...                   for (s, v) in sorted(model.current_stats.items())]))
-    H1_cplx_loglr: 175.57+0.00j,
-    H1_optimal_snrsq: 351.13,
-    L1_cplx_loglr: 103.40+0.00j,
-    L1_optimal_snrsq: 206.79,
+    H1_cplx_loglr: 177.66+0.00j,
+    H1_optimal_snrsq: 355.33,
+    L1_cplx_loglr: 104.63+0.00j,
+    L1_optimal_snrsq: 209.26,
     logjacobian: 0.00,
     loglikelihood: 0.00,
-    loglr: 278.96,
+    loglr: 282.29,
     logprior: 0.92
 
     """
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
-                 high_frequency_cutoff=None, norm=None,
+                 high_frequency_cutoff=None, norm=None, static_params=None,
                  **kwargs):
         # set up the boiler-plate attributes
-        super(GaussianNoise, self).__init__(variable_params, data, **kwargs)
+        super(GaussianNoise, self).__init__(variable_params, data,
+                                            static_params=static_params,
+                                            **kwargs)
         # create the waveform generator
-        self.waveform_generator = create_waveform_generator(
-            self.variable_params, self.data, recalibration=self.recalibartion,
+        self._waveform_generator = create_waveform_generator(
+            self.variable_params, self.data, recalibration=self.recalibration,
             gates=self.gates, **self.static_params)
         # check that the data sets all have the same lengths
         dlens = numpy.array([len(d) for d in self.data.values()])
@@ -234,9 +233,9 @@ class GaussianNoise(BaseDataModel):
         d = list(self.data.values())[0]
         N = len(d)
         # Set low frequency cutoff
-        self.f_lower = low_frequency_cutoff
-        self.f_upper = high_frequency_cutoff
-        kmin, kmax = pyfilter.get_cutoff_indices(self.f_lower, self.f_upper,
+        self._f_lower = low_frequency_cutoff
+        self._f_upper = high_frequency_cutoff
+        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, self._f_upper,
                                                  d.delta_f, (N-1)*2)
         self._kmin = kmin
         self._kmax = kmax
@@ -258,6 +257,18 @@ class GaussianNoise(BaseDataModel):
         # whiten the data
         for det in self._data:
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
+
+    @property
+    def waveform_generator(self):
+        return self._waveform_generator
+
+    @property
+    def low_frequency_cutoff(self):
+        return self._f_lower
+
+    @property
+    def high_frequency_cutoff(self):
+        return self._f_upper
 
     @property
     def _extra_stats(self):
@@ -439,9 +450,9 @@ class GaussianNoise(BaseDataModel):
             The inference file to write to.
         """
         super(GaussianNoise, self).write_metadata(fp)
-        fp.attrs['f_lower'] = self.f_lower
-        if self.f_upper is not None
-            fp.attrs['f_upper'] = self.f_upper
+        fp.attrs['low_frequency_cutoff'] = self.low_frequency_cutoff
+        if self.high_frequency_cutoff is not None:
+            fp.attrs['high_frequency_cutoff'] = self.high_frequency_cutoff
         if self._psds is not None:
             fp.write_psd(self._psds)
         try:
@@ -545,8 +556,8 @@ def create_waveform_generator(variable_params, data,
             delta_t = d.delta_t
             start_time = d.start_time
         else:
-            if not all(d.delta_f == delta_f, d.delta_t == delta_t,
-                       d.start_time == epoch):
+            if not all([d.delta_f == delta_f, d.delta_t == delta_t,
+                       d.start_time == start_time]):
                 raise ValueError("data must all have the same delta_t, "
                                  "delta_f, and start_time")
     waveform_generator = generator.FDomainDetFrameGenerator(
