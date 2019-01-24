@@ -330,6 +330,13 @@ class BaseModel(object):
     sampling_transforms : list, optional
         List of transforms to use to go between the ``variable_params`` and the
         sampling parameters. Required if ``sampling_params`` is not None.
+    waveform_transforms : list, optional
+        A list of transforms to convert the ``variable_params`` into something
+        understood by the likelihood model. This is useful if the prior is
+        more easily parameterized in parameters that are different than what
+        the likelihood is most easily defined in. Since these are used solely
+        for converting parameters, and not for rescaling the parameter space,
+        a Jacobian is not required for these transforms.
 
     Properties
     ----------
@@ -351,7 +358,7 @@ class BaseModel(object):
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,
-                 sampling_transforms=None):
+                 sampling_transforms=None, waveform_transforms=None):
         # store variable and static args
         if isinstance(variable_params, basestring):
             variable_params = (variable_params,)
@@ -368,8 +375,9 @@ class BaseModel(object):
             assert prior.variable_args == variable_params, (
                 "variable params of prior and model must be the same")
             self.prior_distribution = prior
-        # store sampling transforms
+        # store transforms
         self.sampling_transforms = sampling_transforms
+        self.waveform_transforms = waveform_transforms
         # initialize current params to None
         self._current_params = None
         # initialize a model stats
@@ -615,6 +623,11 @@ class BaseModel(object):
         # variable args
         if self.sampling_transforms is not None:
             params = self.sampling_transforms.apply(params, inverse=True)
+        # apply waveform transforms
+        if self.waveform_transforms is not None:
+            params = transforms.apply_transforms(params,
+                                                 self.waveform_transforms,
+                                                 inverse=False)
         # apply boundary conditions
         params = self.prior_distribution.apply_boundary_conditions(**params)
         return params
@@ -736,6 +749,12 @@ class BaseModel(object):
         except ValueError:
             sampling_transforms = None
         args['sampling_transforms'] = sampling_transforms
+        # get any waveform transforms
+        if any(cp.get_subsections('waveform_transforms')):
+            logging.info("Loading waveform transforms")
+            args['waveform_transforms'] = \
+                transforms.read_transforms_from_config(
+                    cp, 'waveform_transforms')
         # get any other keyword arguments provided
         args.update(
                 cls.extra_args_from_config(cp, section, skip_args=['name']))
