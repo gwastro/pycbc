@@ -120,10 +120,8 @@ model_args = {}
 
 # get the data and psd
 strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
-low_frequency_cutoff_dict = option_utils.low_frequency_cutoff_from_cli(opts)
 if stilde_dict:
     model_args['data'] = stilde_dict
-    # model_args['f_lower'] = low_frequency_cutoff_dict.values()[0]
     model_args['delta_f'] = stilde_dict.values()[0].delta_f
     model_args['delta_t'] = strain_dict.values()[0].delta_t
     model_args['psds'] = psd_dict
@@ -150,15 +148,6 @@ with ctx:
 
     # construct class that will return the natural logarithm of likelihood
     model = models.read_from_config(cp, **model_args)
-
-    # Check if lower frequency cutoff on the command line and in config file are the same
-    if model._f_lower != low_frequency_cutoff_dict.values()[0]:
-        warnmsg = ("Lower frequency cutoff {} specified in config file does not "
-                   "equal specification {} in command-line argument"
-                   .format(model._f_lower, low_frequency_cutoff_dict.values()[0]))
-        logging.warn(warnmsg)
-
-
 
     logging.info("Setting up sampler")
 
