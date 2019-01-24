@@ -465,36 +465,6 @@ class GaussianNoise(BaseDataModel):
         for det in self.detectors:
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
 
-    @staticmethod
-    def low_frequency_cutoff_from_config(cp):
-        """Gets the low and frequency cutoff from the given config file.
-        """
-        try:
-            low_frequency_cutoff = float(
-                cp.get('model', 'low-frequency-cutoff'))
-        except (NoOptionError, NoSectionError) as e:
-            logging.warning("Low frequency cutoff for calculation of inner "
-                            "product needs to be specified in config file "
-                            "under section 'model'")
-            raise e
-        except Exception as e:
-            # everything the float() can throw
-            logging.warning("Low frequency cutoff could not be "
-                            "converted to float ")
-            raise e
-        return low_frequency_cutoff
-
-    @staticmethod
-    def high_frequency_cutoff_from_config(cp):
-        """Gets the high frequency cutoff, if provided, from the config file.
-        """
-        if cp.has_option('model', 'high-frequency-cutoff'):
-            high_frequency_cutoff = float(
-                cp.get('model', 'high-frequency-cutoff'))
-        else:
-            high_frequency_cutoff = None
-        return high_frequency_cutoff
-
     @classmethod
     def from_config(cls, cp, **kwargs):
         """Initializes an instance of this class from the given config file.
@@ -508,11 +478,19 @@ class GaussianNoise(BaseDataModel):
             provided keyword will over ride what is in the config file.
         """
         args = cls._init_args_from_config(cp)
-        args['low_frequency_cutoff'] = cls.low_frequency_cutoff_from_config(cp)
-        args['high_frequency_cutoff'] = \
-            cls.high_frequency_cutoff_from_config(cp)
+        args['low_frequency_cutoff'] = low_frequency_cutoff_from_config(cp)
+        args['high_frequency_cutoff'] = high_frequency_cutoff_from_config(cp)
         args.update(kwargs)
         return cls(**args)
+
+
+#
+# =============================================================================
+#
+#                               Support functions
+#
+# =============================================================================
+#
 
 
 def create_waveform_generator(variable_params, data,
@@ -567,3 +545,61 @@ def create_waveform_generator(variable_params, data,
         recalib=recalibration, gates=gates,
         **static_params)
     return waveform_generator
+
+
+def low_frequency_cutoff_from_config(cp):
+    """Gets the low frequency cutoff from the given config file.
+
+    This looks for ``low-frequency-cutoff`` in the ``[model]`` section and
+    casts it to float. If none is found, or the casting to float fails, an
+    error is raised.
+
+    Parameters
+    ----------
+    cp : WorkflowConfigParser
+        Config file parser to read.
+
+    Returns
+    -------
+    float :
+        The low frequency cutoff.
+    """
+    try:
+        low_frequency_cutoff = float(
+            cp.get('model', 'low-frequency-cutoff'))
+    except (NoOptionError, NoSectionError) as e:
+        logging.warning("Low frequency cutoff for calculation of inner "
+                        "product needs to be specified in config file "
+                        "under section 'model'")
+        raise e
+    except Exception as e:
+        # everything the float() can throw
+        logging.warning("Low frequency cutoff could not be "
+                        "converted to float ")
+        raise e
+    return low_frequency_cutoff
+
+
+def high_frequency_cutoff_from_config(cp):
+    """Gets the high frequency cutoff from the given config file.
+
+    This looks for ``high-frequency-cutoff`` in the ``[model]`` section and
+    casts it to float. If none is found, will just return ``None``.
+
+    Parameters
+    ----------
+    cp : WorkflowConfigParser
+        Config file parser to read.
+
+    Returns
+    -------
+    float or None :
+        The high frequency cutoff.
+    """
+    if cp.has_option('model', 'high-frequency-cutoff'):
+        high_frequency_cutoff = float(
+            cp.get('model', 'high-frequency-cutoff'))
+    else:
+        high_frequency_cutoff = None
+    return high_frequency_cutoff
+
