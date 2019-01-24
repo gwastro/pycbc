@@ -122,7 +122,7 @@ class GaussianNoise(BaseDataModel):
     >>> N = seglen*sample_rate/2+1
     >>> fmin = 30.
     >>> static_params = {'approximant': 'IMRPhenomD', 'f_lower': fmin,
-    ...                  'mass1': 38.6, 'mass2': 29.3, 
+    ...                  'mass1': 38.6, 'mass2': 29.3,
     ...                  'spin1z': 0., 'spin2z': 0., 'ra': 1.37, 'dec': -1.26,
     ...                  'polarization': 2.76, 'distance': 3*500.}
     >>> variable_params = ['tc']
@@ -260,14 +260,17 @@ class GaussianNoise(BaseDataModel):
 
     @property
     def waveform_generator(self):
+        """The waveform generator used."""
         return self._waveform_generator
 
     @property
     def low_frequency_cutoff(self):
+        """The low frequency cutoff of the inner product."""
         return self._f_lower
 
     @property
     def high_frequency_cutoff(self):
+        """The high frequency cutoff of the inner product."""
         return self._f_upper
 
     @property
@@ -528,14 +531,14 @@ def create_waveform_generator(variable_params, data,
     # get data parameters; we'll just use one of the data to get the
     # values, then check that all the others are the same
     delta_f = None
-    for (det, d) in data.items():
+    for d in data.values():
         if delta_f is None:
             delta_f = d.delta_f
             delta_t = d.delta_t
             start_time = d.start_time
         else:
             if not all([d.delta_f == delta_f, d.delta_t == delta_t,
-                       d.start_time == start_time]):
+                        d.start_time == start_time]):
                 raise ValueError("data must all have the same delta_t, "
                                  "delta_f, and start_time")
     waveform_generator = generator.FDomainDetFrameGenerator(
@@ -602,4 +605,3 @@ def high_frequency_cutoff_from_config(cp):
     else:
         high_frequency_cutoff = None
     return high_frequency_cutoff
-

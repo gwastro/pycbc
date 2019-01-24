@@ -26,10 +26,7 @@
 """
 
 import numpy
-import logging
 from abc import (ABCMeta, abstractmethod)
-
-from pycbc import transforms
 
 from .base import BaseModel
 
@@ -78,6 +75,7 @@ class BaseDataModel(BaseModel):
 
     def __init__(self, variable_params, data, recalibration=None, gates=None,
                  **kwargs):
+        self._data = None
         self.data = data
         self.recalibration = recalibration
         self.gates = gates
@@ -85,6 +83,7 @@ class BaseDataModel(BaseModel):
 
     @property
     def data(self):
+        """Dictionary mapping detector names to data."""
         return self._data
 
     @data.setter
