@@ -62,13 +62,18 @@ def get_available_detectors():
 class Detector(object):
     """A gravitational wave detector
     """
-    def __init__(self, detector_name):
+    def __init__(self, detector_name, ):
         self.name = str(detector_name)
         self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(self.name)
         self.response = self.frDetector.response
         self.location = self.frDetector.location
         self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
         self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
+
+    def gmst_estimate(self, gps_time):
+        gmst = Time(gps_time, format='gps',
+                    location=(0, 0)).sidereal_time('mean').rad
+        return gmst
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
@@ -105,8 +110,7 @@ class Detector(object):
         fcross: float or numpy.ndarray
             The cross polarization factor for this sky location / orientation
         """
-        gmst = Time(t_gps, format='gps', location=(0, 0))
-        gha = gmst.sidereal_time('mean').rad - right_ascension
+        gha = self.gmst_estimate(t_gps) - right_ascension
 
         cosgha = cos(gha)
         singha = sin(gha)
@@ -170,9 +174,7 @@ class Detector(object):
         float
             The arrival time difference between the detectors.
         """
-        gmst = Time(t_gps, format='gps',
-                    location=(0, 0)).sidereal_time('mean').rad
-        ra_angle = gmst - right_ascension
+        ra_angle = self.gmst_estimate(t_gps) - right_ascension
         cosd = cos(declination)
 
         e0 = cosd * cos(ra_angle)
@@ -243,9 +245,7 @@ class Detector(object):
         dec: float
             Declination that is optimally oriented for the detector
         """
-        gmst = Time(t_gps, format='gps',
-                    location=(0, 0)).sidereal_time('mean').rad
-        ra = self.longitude + (gmst % (2.0*np.pi))
+        ra = self.longitude + (self.gmst_estimate(t_gps) % (2.0*np.pi))
         dec = self.latitude
         return ra, dec
 
@@ -266,7 +266,7 @@ def overhead_antenna_pattern(right_ascension, declination, polarization):
     Returns
     -------
     f_plus: float
-    f_cros: float   
+    f_cros: float
     """
     # convert from declination coordinate to polar (angle dropped from north axis)
     theta = np.pi / 2.0 - declination
