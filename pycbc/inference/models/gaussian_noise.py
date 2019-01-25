@@ -106,7 +106,7 @@ class GaussianNoise(BaseDataModel):
         will be used.
     static_params : dict, optional
         A dictionary of parameter names -> values to keep fixed.
-    **kwargs :
+    \**kwargs :
         All other keyword arguments are passed to ``BaseDataModel``.
 
     Examples
@@ -470,7 +470,7 @@ class GaussianNoise(BaseDataModel):
 
     @classmethod
     def from_config(cls, cp, **kwargs):
-        """Initializes an instance of this class from the given config file.
+        r"""Initializes an instance of this class from the given config file.
 
         Parameters
         ----------
