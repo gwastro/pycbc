@@ -755,9 +755,6 @@ class BaseModel(object):
             args['waveform_transforms'] = \
                 transforms.read_transforms_from_config(
                     cp, 'waveform_transforms')
-        # get any other keyword arguments provided
-        args.update(
-                cls.extra_args_from_config(cp, section, skip_args=['name']))
         return args
 
     @classmethod
@@ -773,6 +770,9 @@ class BaseModel(object):
             provided keyword will over ride what is in the config file.
         """
         args = cls._init_args_from_config(cp)
+        # get any other keyword arguments provided in the model section
+        args.update(cls.extra_args_from_config(cp, "model",
+                                               skip_args=['name']))
         args.update(kwargs)
         return cls(**args)
 
