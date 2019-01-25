@@ -709,7 +709,8 @@ class BaseModel(object):
         """Helper function for loading parameters.
 
         This retrieves the prior, variable parameters, static parameterss,
-        constraints, and sampling transforms.
+        constraints, sampling transforms, and waveform transforms
+        (if provided).
 
         Parameters
         ----------
@@ -720,7 +721,9 @@ class BaseModel(object):
         -------
         dict :
             Dictionary of the arguments. Has keys ``variable_params``,
-            ``static_params``, ``prior``, and ``sampling_transforms``.
+            ``static_params``, ``prior``, and ``sampling_transforms``. If
+            waveform transforms are in the config file, will also have
+            ``waveform_transforms``.
         """
         section = "model"
         prior_section = "prior"
