@@ -67,14 +67,14 @@ def get_available_detectors():
 class Detector(object):
     """A gravitational wave detector
     """
-    def __init__(self, detector_name, reference_time=1126259462):
+    def __init__(self, detector_name, reference_time=1126259462.0):
         """ Create class representing a gravitational-wave detector
 
         Parameters
         ----------
         detector_name: str
             The two character detector string, i.e. H1, L1, V1, K1, I1
-        reference_time: str
+        reference_time: float
             Default is time of GW150914. In this case, the earth's rotation
         will be estimated from a reference time. If 'None', we will
         calculate the time for each gps time requested explicitly
