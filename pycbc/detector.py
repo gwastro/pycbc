@@ -40,6 +40,10 @@ from numpy import cos, sin
 # Response functions are modelled after those in lalsuite and as also
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
 
+def gmst_accurate(gps_time):
+    gmst = Time(gps_time, format='gps',
+            location=(0, 0)).sidereal_time('mean').rad
+    return gmst
 
 def get_available_detectors():
     """Return list of detectors known in the currently sourced lalsuite.
@@ -71,7 +75,7 @@ class Detector(object):
         detector_name: str
             The two character detector string, i.e. H1, L1, V1, K1, I1
         reference_time: str
-            Default is . In this case, the earth's rotation
+            Default is time of GW150914. In this case, the earth's rotation
         will be estimated from a reference time. If 'None', we will
         calculate the time for each gps time requested explicitly
         using a slower but higher precision method.
@@ -87,20 +91,15 @@ class Detector(object):
         self.reference_time = reference_time
         if reference_time is not None:
             self.sday = float(sday.si.scale)
-            self.gmst_reference = self.gmst_accurate(reference_time)
-
-    def gmst_accurate(self, gps_time):
-        gmst = Time(gps_time, format='gps',
-                location=(0, 0)).sidereal_time('mean').rad
-        return gmst
+            self.gmst_reference = gmst_accurate(reference_time)
 
     def gmst_estimate(self, gps_time):
         if self.reference_time is None:
-            return self.gmst_accurate(gps_time)
-        else:
-            dphase = (gps_time - self.reference_time) / self.sday * (2.0 * np.pi)
-            gmst = (self.gmst_reference + dphase) % (2.0 * np.pi)
-            return gmst
+            return gmst_accurate(gps_time)
+
+        dphase = (gps_time - self.reference_time) / self.sday * (2.0 * np.pi)
+        gmst = (self.gmst_reference + dphase) % (2.0 * np.pi)
+        return gmst
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
