@@ -34,6 +34,7 @@ import lal
 from pycbc.types import TimeSeries
 from astropy.time import Time
 from astropy import constants
+from astropy.units.si import sday
 from numpy import cos, sin
 
 # Response functions are modelled after those in lalsuite and as also
@@ -62,7 +63,20 @@ def get_available_detectors():
 class Detector(object):
     """A gravitational wave detector
     """
-    def __init__(self, detector_name, ):
+    def __init__(self, detector_name, reference_time=1126259462):
+        """ Create class representing a gravitational-wave detector
+
+        Parameters
+        ----------
+        detector_name: str
+            The two character detector string, i.e. H1, L1, V1, K1, I1
+        reference_time: str
+            Default is . In this case, the earth's rotation
+        will be estimated from a reference time. If 'None', we will
+        calculate the time for each gps time requested explicitly
+        using a slower but higher precision method.
+
+        """
         self.name = str(detector_name)
         self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(self.name)
         self.response = self.frDetector.response
@@ -70,10 +84,23 @@ class Detector(object):
         self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
         self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
 
-    def gmst_estimate(self, gps_time):
+        self.reference_time = reference_time
+        if reference_time is not None:
+            self.sday = float(sday.si.scale)
+            self.gmst_reference = self.gmst_accurate(reference_time)
+
+    def gmst_accurate(self, gps_time):
         gmst = Time(gps_time, format='gps',
-                    location=(0, 0)).sidereal_time('mean').rad
+                location=(0, 0)).sidereal_time('mean').rad
         return gmst
+
+    def gmst_estimate(self, gps_time):
+        if self.reference_time is None:
+            return self.gmst_accurate(gps_time)
+        else:
+            dphase = (gps_time - self.reference_time) / self.sday * (2.0 * np.pi)
+            gmst = (self.gmst_reference + dphase) % (2.0 * np.pi)
+            return gmst
 
     def light_travel_time_to_detector(self, det):
         """ Return the light travel time from this detector
