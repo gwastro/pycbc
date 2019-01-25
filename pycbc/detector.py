@@ -42,7 +42,7 @@ from numpy import cos, sin
 
 def gmst_accurate(gps_time):
     gmst = Time(gps_time, format='gps',
-            location=(0, 0)).sidereal_time('mean').rad
+                location=(0, 0)).sidereal_time('mean').rad
     return gmst
 
 def get_available_detectors():
