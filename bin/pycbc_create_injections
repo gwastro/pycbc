@@ -211,7 +211,7 @@ parser.add_argument('--dist-section', default='distribution',
 parser.add_argument('--variable-params-section', default='variable_params',
                     help='What section in the config file to load the '
                          'parameters to vary. Default is variable_params.')
-parser.add_argument('--static-args-section', default="static_params",
+parser.add_argument('--static-params-section', default="static_params",
                     help='What section to load the static args from. Default '
                          'is static_params.')
 parser.add_argument("--force", action="store_true", default=False,

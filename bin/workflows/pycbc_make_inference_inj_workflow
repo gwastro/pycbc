@@ -160,7 +160,6 @@ if 'pp-plot-parameters' in  workflow.cp.options("workflow-inference"):
 else:
     # just use the variable args
     a = cp.options("variable_params")
-    print(a)
     pp_plot_params = cp.options("variable_params")
 
 # get groups of parameters to plot in posterior and samples plots
