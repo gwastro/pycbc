@@ -555,7 +555,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     if tags is None:
         tags = []
     make_analysis_dir(out_dir)
-    logging.info('Setting up coincidence')
+    logging.info('Setting up coincidence for injections')
 
     if len(hdfbank) != 1:
         raise ValueError('Must use exactly 1 bank file for this coincidence '
@@ -567,11 +567,11 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     ffiles = {}
     ifiles = {}
     ifos, files = full_data_trig_files.categorize_by_attr('ifo')
-    for ifo, f in zip(ifos, files):
-        ffiles[ifo] = f[0]
+    for ifo, fi in zip(ifos, files):
+        ffiles[ifo] = fi[0]
     ifos, files = inj_trig_files.categorize_by_attr('ifo')
-    for ifo, f in zip(ifos, files):
-        ifiles[ifo] = f[0]
+    for ifo, fi in zip(ifos, files):
+        ifiles[ifo] = fi[0]
 
     injinj_files = FileList()
     injfull_files = FileList()
@@ -596,9 +596,11 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     bg_files = {'injinj':[],'injfull':[],'fullinj':[]}
 
     for trig_files, ctag in combo:
-        findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp, 'multiifo_coinc',
-                                             ifos=ifos,
-                                             tags=tags + [ctag], out_dir=out_dir)
+        findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp,
+                                                         'multiifo_coinc',
+                                                         ifos=ifos,
+                                                         tags=tags + [ctag],
+                                                         out_dir=out_dir)
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
             coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
@@ -612,7 +614,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
             bg_files[ctag] += coinc_node.output_files
             workflow.add_node(coinc_node)
 
-    logging.info('...leaving coincidence ')
+    logging.info('...leaving coincidence for injections')
     return bg_files
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,

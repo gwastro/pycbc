@@ -356,9 +356,9 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
             # Use only the inspiral files required for the detector combination
             inspcomb = wf.core.FileList()
-            for ifo, f in zip(*insps.categorize_by_attr('ifo')):
+            for ifo, fi in zip(*insps.categorize_by_attr('ifo')):
                 if ifo in combination_prec:
-                    inspcomb += f
+                    inspcomb += fi
 
             # pivot_ifo is the ifo in combination_prec with the smallest precedence value
             pivot_ifo = min(combination_prec, key=combination_prec.get)
