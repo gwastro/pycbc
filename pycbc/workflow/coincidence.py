@@ -573,9 +573,9 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     for ifo, f in zip(ifos, files):
         ifiles[ifo] = f[0]
 
-    injinjFileList = FileList()
-    injfullFileList = FileList()
-    fullinjFileList = FileList()
+    injinj_files = FileList()
+    injfull_files = FileList()
+    fullinj_files = FileList()
 
     # For the injfull and fullinj separation we take the pivot_ifo on one side,
     # and the rest that are attached to the fixed_ifo on the other side
@@ -609,6 +609,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
                                                    tags=[veto_name, str(i)])
 
             bg_files[ctag] += coinc_node.output_files
+    logging.info('...leaving coincidence ')
     return bg_files
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
