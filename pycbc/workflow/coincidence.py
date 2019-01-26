@@ -566,17 +566,17 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
 
     ffiles = {}
     ifiles = {}
-    ifos, files = zip(*full_data_trig_files.categorize_by_attr('ifo'))
+    ifos, files = full_data_trig_files.categorize_by_attr('ifo')
     for ifo, f in zip(ifos, files):
         ffiles[ifo] = f[0]
-    ifos, files = zip(*inj_trig_files.categorize_by_attr('ifo'))
+    ifos, files = inj_trig_files.categorize_by_attr('ifo')
     for ifo, f in zip(ifos, files):
         ifiles[ifo] = f[0]
 
     injinjFileList = FileList()
     injfullFileList = FileList()
     fullinjFileList = FileList()
-    
+
     # For the injfull and fullinj separation we take the pivot_ifo on one side,
     # and the rest that are attached to the fixed_ifo on the other side
     for ifo in ifos:
