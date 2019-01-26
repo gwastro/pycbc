@@ -588,6 +588,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
             injinj_files.append(ifiles[ifo])
             injfull_files.append(ffiles[ifo])
             fullinj_files.append(ifiles[ifo])
+
     combo = [(injinj_files, "injinj"),
              (injfull_files, "injfull"),
              (fullinj_files, "fullinj"),
@@ -609,6 +610,8 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
                                                    tags=[veto_name, str(i)])
 
             bg_files[ctag] += coinc_node.output_files
+            workflow.add_node(coinc_node)
+
     logging.info('...leaving coincidence ')
     return bg_files
 
