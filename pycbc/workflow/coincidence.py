@@ -322,13 +322,12 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
     logging.info('convert single inspiral trigger files to hdf5')
     make_analysis_dir(out_dir)
 
-    ifos, insp_groups = xml_trigger_files.categorize_by_attr('ifo')
     trig_files = FileList()
-    for ifo, insp_group in zip(ifos,  insp_groups):
+    for ifo, insp_group in zip(*xml_trigger_files.categorize_by_attr('ifo')):
         trig2hdf_exe = PyCBCTrig2HDFExecutable(workflow.cp, 'trig2hdf',
                                        ifos=ifo, out_dir=out_dir, tags=tags)
         _, insp_bundles = insp_group.categorize_by_attr('segment')
-        for insps in  insp_bundles:
+        for insps in insp_bundles:
             trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank[0])
             workflow.add_node(trig2hdf_node)
             trig_files += trig2hdf_node.output_files
@@ -465,25 +464,24 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
     hdfbank = hdfbank[0]
 
     if len(workflow.ifos) > 2:
-        raise ValueError('This coincidence method only supports two ifo searches')
+        raise ValueError('This coincidence method only supports two-ifo searches')
 
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
     ffiles = {}
     ifiles = {}
-    ifos, files = full_data_trig_files.categorize_by_attr('ifo')
-    for ifo, file in zip(ifos, files):
-        ffiles[ifo] = file[0]
-    ifos, files = inj_trig_files.categorize_by_attr('ifo')
-    for ifo, file in zip(ifos, files):
-        ifiles[ifo] = file[0]
+    for ifo, ffi in zip(*full_data_trig_files.categorize_by_attr('ifo')):
+        ffiles[ifo] = ffi[0]
+    ifos, files = inj_trig_files.categorize_by_attr('ifo')  # ifos list is used later
+    for ifo, ifi in zip(ifos, files):
+        ifiles[ifo] = ifi[0]
     ifo0, ifo1 = ifos[0], ifos[1]
     combo = [(FileList([ifiles[ifo0], ifiles[ifo1]]), "injinj"),
              (FileList([ifiles[ifo0], ffiles[ifo1]]), "injfull"),
              (FileList([ifiles[ifo1], ffiles[ifo0]]), "fullinj"),
             ]
-    bg_files = {'injinj':[],'injfull':[],'fullinj':[]}
+    bg_files = {'injinj':[], 'injfull':[], 'fullinj':[]}
 
     for trig_files, ctag in combo:
         findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
@@ -519,7 +517,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     hdfbank = hdfbank[0]
 
     if len(workflow.ifos) > 2:
-        raise ValueError('This coincidence method only supports two ifo searches')
+        raise ValueError('This coincidence method only supports two-ifo searches')
 
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
                                              ifos=workflow.ifos,
@@ -545,6 +543,75 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
 
     logging.info('...leaving coincidence ')
     return statmap_files
+
+def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
+                                      stat_files, veto_file, veto_name,
+                                      out_dir, pivot_ifo, fixed_ifo, tags=None):
+    """
+    This function sets up exact match multiifo coincidence for injections
+    """
+    if tags is None:
+        tags = []
+    make_analysis_dir(out_dir)
+    logging.info('Setting up coincidence for injections')
+
+    if len(hdfbank) != 1:
+        raise ValueError('Must use exactly 1 bank file for this coincidence '
+                         'method, I got %i !' % len(hdfbank))
+    hdfbank = hdfbank[0]
+
+    # Wall time knob and memory knob
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+
+    ffiles = {}
+    ifiles = {}
+    for ifo, ffi in zip(*full_data_trig_files.categorize_by_attr('ifo')):
+        ffiles[ifo] = ffi[0]
+    for ifo, ifi in zip(*inj_trig_files.categorize_by_attr('ifo')):
+        ifiles[ifo] = ifi[0]
+
+    injinj_files = FileList()
+    injfull_files = FileList()
+    fullinj_files = FileList()
+    # For the injfull and fullinj separation we take the pivot_ifo on one side,
+    # and the rest that are attached to the fixed_ifo on the other side
+    for ifo in ifiles:  # ifiles is keyed on ifo
+        if ifo == pivot_ifo:
+            injinj_files.append(ifiles[ifo])
+            injfull_files.append(ifiles[ifo])
+            fullinj_files.append(ffiles[ifo])
+        else:
+            injinj_files.append(ifiles[ifo])
+            injfull_files.append(ffiles[ifo])
+            fullinj_files.append(ifiles[ifo])
+
+    combo = [(injinj_files, "injinj"),
+             (injfull_files, "injfull"),
+             (fullinj_files, "fullinj"),
+            ]
+    bg_files = {'injinj':[], 'injfull':[], 'fullinj':[]}
+
+    for trig_files, ctag in combo:
+        findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp,
+                                                         'multiifo_coinc',
+                                                         ifos=ifiles.keys(),
+                                                         tags=tags + [ctag],
+                                                         out_dir=out_dir)
+        for i in range(factor):
+            group_str = '%s/%s' % (i, factor)
+            coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
+                                                   stat_files,
+                                                   veto_file, veto_name,
+                                                   group_str,
+                                                   pivot_ifo,
+                                                   fixed_ifo,
+                                                   tags=[veto_name, str(i)])
+
+            bg_files[ctag] += coinc_node.output_files
+            workflow.add_node(coinc_node)
+
+    logging.info('...leaving coincidence for injections')
+    return bg_files
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          veto_files, veto_names, out_dir, pivot_ifo, fixed_ifo, tags=None):
