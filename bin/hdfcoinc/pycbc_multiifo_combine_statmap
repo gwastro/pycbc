@@ -1,0 +1,176 @@
+#!/bin/env python
+""" Apply a naive mass binning, assuming that each bin is fully independent, which 
+is a conservative estimate. This clusters to find the most significant foreground, but
+leaves the background triggers alone. """
+
+import h5py, numpy, argparse, logging, pycbc, pycbc.events, lal
+import pycbc.version
+import matplotlib as mpl
+mpl.use('agg')
+import matplotlib.pyplot as plt
+
+def com(f, files, group):
+    """ Combine the same column from multiple files and save to a third"""
+    f[group] = numpy.concatenate([fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32) for fi in files])
+
+def all_keys_set(files):
+    key_set = []
+    for f in files:
+        for k in f.keys():
+            if isinstance(f[k], h5py.Dataset):
+                key_set.append(k)
+            else:
+                key_set += get_all_subkeys(f,k)
+    return set(key_set)
+
+def get_all_subkeys(f,k):
+    subkey_set = []
+    for sk in f[k].keys():
+        if isinstance(f[k+'/'+sk], h5py.Dataset):
+            subkey_set.append(k+'/'+sk)
+        else:
+            subkey_set += get_all_subkeys(f,k+'/'+sk)
+    # this will return an empty list if there is no dataset or subgroup within the group - so avoids infinite iterations
+    return subkey_set
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--statmap-files', nargs='+',
+                    help="List of coinc files to be redistributed")
+parser.add_argument('--cluster-window', type=float)
+parser.add_argument('--output-file', help="name of output file")
+parser.add_argument('--ifos',nargs='+', 
+                    help="list of interferometers in the input files - note that this " \
+                         "needs to be in the order of pivot/fixed precedence" )
+parser.add_argument('--plot-output')
+args = parser.parse_args()
+
+pycbc.init_logging(args.verbose)
+
+# We apply a dumb factor of the number of bins only, nothing smart for now, 
+# no clustering of the background
+files = [h5py.File(n,'r') for n in args.statmap_files]
+
+fac = len(args.statmap_files)
+
+# copy over the standard data that is constant
+#TODO: This is no longer constant between files
+f = h5py.File(args.output_file, "w")
+f.attrs['pivot'] = files[0].attrs['pivot']
+f.attrs['fixed'] = files[0].attrs['fixed']
+f.attrs['timeslide_interval'] = files[0].attrs['timeslide_interval']
+
+f.attrs['background_time'] = files[0].attrs['background_time']
+f.attrs['foreground_time'] = files[0].attrs['foreground_time']
+f.attrs['background_time_exc'] = files[0].attrs['background_time_exc']
+f.attrs['foreground_time_exc'] = files[0].attrs['foreground_time_exc']
+
+
+# combine times that are foreground vetoed as they may differ between bins
+
+for fi in files:
+    ifos_in_file = [ifo for ifo in args.ifos if ifo in fi['segments']]
+    print(ifos_in_file)
+    ifo_to_get = 'segments/{}'.format(ifos_in_file[0])
+    print(ifo_to_get)
+    group_to_save = 'segments/coinc_{}'.format(''.join(ifos_in_file))
+    print(group_to_save)
+    f[group_to_save + '/end'] = fi[ifo_to_get + '/end'][:]
+    f[group_to_save + '/start'] = fi[ifo_to_get + '/start'][:]
+
+key_set = all_keys_set(files)
+# copy and concatenate all the columns in the foreground group 
+# from all files /except/ the IFO groups, we recalculate ifar/fap later
+for key in key_set:
+    if key.startswith('foreground') and not any([ifo in key for ifo in args.ifos]):
+        com(f, files, key)
+
+
+#for the ifo-specific groups, copy them over into the new file - if the ifo is not present for each coincident trigger, indicate by including a -1 in the combined file
+trigger_list = []
+all_trig_times = {}
+all_trig_ids = {}
+for ifo in args.ifos:
+    all_trig_times[ifo] = numpy.array([], dtype=numpy.uint32)
+    all_trig_ids[ifo] = numpy.array([], dtype=numpy.uint32)
+# for each file, take the ifos list and see which ifos are present in the file or not
+for f_in in files:
+    for ifo in args.ifos:
+        if ifo in ifo in f_in['foreground']:
+            all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], f_in['foreground/{}/time'.format(ifo)][:]])
+            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo], f_in['foreground/{}/trigger_id'.format(ifo)][:]])
+        else:
+            all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
+            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo], -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
+
+for ifo in args.ifos:
+    f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
+    f['foreground/{}/trigger_id'.format(ifo)] = all_trig_ids[ifo]
+
+# recalculate ifar/fap for the foreground triggers by 
+#  applying a trials factor = num_files(num_bins)
+ifars = []
+ifars_exc = []
+faps = []
+faps_exc = []
+for f_in in files:
+    ifar = f_in['foreground/ifar'][:] / fac
+    coinc_time = f_in.attrs['foreground_time'] / lal.YRJUL_SI
+    ifars = numpy.concatenate([ifars, ifar])
+    faps = numpy.concatenate([faps, 1 - numpy.exp( - coinc_time / ifar)])
+
+    ifar_exc = f_in['foreground/ifar_exc'][:] / fac
+    coinc_time_exc = f_in.attrs['foreground_time_exc'] / lal.YRJUL_SI
+    ifars_exc = numpy.concatenate([ifars_exc, ifar_exc])
+    faps_exc = numpy.concatenate([faps_exc, 1 - numpy.exp( - coinc_time_exc / ifar_exc)])
+
+f['foreground/ifar'][:] = ifars
+f['foreground/ifar_exc'][:] = ifars_exc
+f['foreground/fap'][:] = faps
+f['foreground/fap_exc'][:] = faps_exc
+
+
+
+# cluster for the loudest ifar value 
+exit()
+#TODO Sort the trials factor
+def argmax(v):
+    return numpy.argsort(v)[-1]
+
+stat = numpy.core.records.fromarrays([f['foreground/ifar'][:], 
+                                      f['foreground/stat'][:]],
+                                      names='ifar,stat')
+cidx = pycbc.events.cluster_coincs(stat,
+                                   f['foreground/%s/time' % f.attrs['pivot']][:], 
+                                   f['foreground/%s/time' % f.attrs['fixed']][:], 
+                                   numpy.zeros(len(ifars)),
+                                   0, args.cluster_window, argmax=argmax)
+
+# downsample the foreground columns to only the loudest ifar between the multiple files
+for key in f['foreground'].keys():
+    if key not in args.ifos:
+        dset = f['foreground/%s' % key][:][cidx]
+        del f['foreground/%s' % key]
+        f['foreground/%s' % key] = dset
+    else: # key is an ifo
+        for k in  f['foreground/%s' % key].keys():
+            dset = f['foreground/{}/{}'.format(key,k)][:][cidx]
+            del f['foreground/{}/{}'.format(key,k)]
+            f['foreground/{}/{}'.format(key,k)] = dset
+
+# If there is a background set (full_data as opposed to injection run), then recalculate 
+# the values for its triggers as well
+if 'background' in files[0]:  
+    for key in all_keys:
+        if key.startswith('background') or key.startswith('background_exc'):
+            com(f, files, key)
+     
+    f['background/ifar'][:] =  f['background/ifar'][:] / fac
+    f['background_exc/ifar'][:] = f['background_exc/ifar'][:] / fac
+
+    com(f, files, 'segments/foreground_veto/start')
+    com(f, files, 'segments/foreground_veto/end')
+
+
+f.close()
