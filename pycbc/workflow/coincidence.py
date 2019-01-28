@@ -328,7 +328,7 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
         trig2hdf_exe = PyCBCTrig2HDFExecutable(workflow.cp, 'trig2hdf',
                                        ifos=ifo, out_dir=out_dir, tags=tags)
         _, insp_bundles = insp_group.categorize_by_attr('segment')
-        for insps in  insp_bundles:
+        for insps in insp_bundles:
             trig2hdf_node =  trig2hdf_exe.create_node(insps, hdfbank[0])
             workflow.add_node(trig2hdf_node)
             trig_files += trig2hdf_node.output_files
@@ -465,7 +465,7 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
     hdfbank = hdfbank[0]
 
     if len(workflow.ifos) > 2:
-        raise ValueError('This coincidence method only supports two ifo searches')
+        raise ValueError('This coincidence method only supports two-ifo searches')
 
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
@@ -483,7 +483,7 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
              (FileList([ifiles[ifo0], ffiles[ifo1]]), "injfull"),
              (FileList([ifiles[ifo1], ffiles[ifo0]]), "fullinj"),
             ]
-    bg_files = {'injinj':[],'injfull':[],'fullinj':[]}
+    bg_files = {'injinj':[], 'injfull':[], 'fullinj':[]}
 
     for trig_files, ctag in combo:
         findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
@@ -519,7 +519,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     hdfbank = hdfbank[0]
 
     if len(workflow.ifos) > 2:
-        raise ValueError('This coincidence method only supports two ifo searches')
+        raise ValueError('This coincidence method only supports two-ifo searches')
 
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
                                              ifos=workflow.ifos,
@@ -566,11 +566,9 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
 
     ffiles = {}
     ifiles = {}
-    ifos, files = full_data_trig_files.categorize_by_attr('ifo')
-    for ifo, fi in zip(ifos, files):
+    for ifo, fi in zip(*full_data_trig_files.categorize_by_attr('ifo')):
         ffiles[ifo] = fi[0]
-    ifos, files = inj_trig_files.categorize_by_attr('ifo')
-    for ifo, fi in zip(ifos, files):
+    for ifo, fi in zip(*inj_trig_files.categorize_by_attr('ifo')):
         ifiles[ifo] = fi[0]
 
     injinj_files = FileList()
