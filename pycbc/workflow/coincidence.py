@@ -322,9 +322,8 @@ def convert_trig_to_hdf(workflow, hdfbank, xml_trigger_files, out_dir, tags=None
     logging.info('convert single inspiral trigger files to hdf5')
     make_analysis_dir(out_dir)
 
-    ifos, insp_groups = xml_trigger_files.categorize_by_attr('ifo')
     trig_files = FileList()
-    for ifo, insp_group in zip(ifos,  insp_groups):
+    for ifo, insp_group in zip(*xml_trigger_files.categorize_by_attr('ifo')):
         trig2hdf_exe = PyCBCTrig2HDFExecutable(workflow.cp, 'trig2hdf',
                                        ifos=ifo, out_dir=out_dir, tags=tags)
         _, insp_bundles = insp_group.categorize_by_attr('segment')
@@ -472,12 +471,11 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
 
     ffiles = {}
     ifiles = {}
-    ifos, files = full_data_trig_files.categorize_by_attr('ifo')
-    for ifo, file in zip(ifos, files):
-        ffiles[ifo] = file[0]
-    ifos, files = inj_trig_files.categorize_by_attr('ifo')
-    for ifo, file in zip(ifos, files):
-        ifiles[ifo] = file[0]
+    for ifo, ffi in zip(*full_data_trig_files.categorize_by_attr('ifo')):
+        ffiles[ifo] = ffi[0]
+    ifos, files = inj_trig_files.categorize_by_attr('ifo')  # ifos list is used later
+    for ifo, ifi in zip(ifos, files):
+        ifiles[ifo] = ifi[0]
     ifo0, ifo1 = ifos[0], ifos[1]
     combo = [(FileList([ifiles[ifo0], ifiles[ifo1]]), "injinj"),
              (FileList([ifiles[ifo0], ffiles[ifo1]]), "injfull"),
@@ -567,17 +565,17 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
 
     ffiles = {}
     ifiles = {}
-    for ifo, fi in zip(*full_data_trig_files.categorize_by_attr('ifo')):
-        ffiles[ifo] = fi[0]
-    for ifo, fi in zip(*inj_trig_files.categorize_by_attr('ifo')):
-        ifiles[ifo] = fi[0]
+    for ifo, ffi in zip(*full_data_trig_files.categorize_by_attr('ifo')):
+        ffiles[ifo] = ffi[0]
+    for ifo, ifi in zip(*inj_trig_files.categorize_by_attr('ifo')):
+        ifiles[ifo] = ifi[0]
 
     injinj_files = FileList()
     injfull_files = FileList()
     fullinj_files = FileList()
     # For the injfull and fullinj separation we take the pivot_ifo on one side,
     # and the rest that are attached to the fixed_ifo on the other side
-    for ifo in ifiles.keys():
+    for ifo in ifiles:  # ifiles is keyed on ifo
         if ifo == pivot_ifo:
             injinj_files.append(ifiles[ifo])
             injfull_files.append(ifiles[ifo])
