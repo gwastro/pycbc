@@ -161,6 +161,25 @@ class PyCBCMultiifoStatMapExecutable(Executable):
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
 
+class PyCBCMultiifoStatMapInjExecutable(Executable):
+    """Calculate FAP, IFAR, etc"""
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, zerolag, full_data, injfull, fullinj, ifos, tags=None):
+        if tags is None:
+            tags = []
+        segs = zerolag.get_times_covered_by_files()
+        seg = segments.segment(segs[0][0], segs[-1][1])
+
+        node = Node(self)
+        node.set_memory(5000)
+        node.add_input_list_opt('--zero-lag-coincs', zerolag)
+        node.add_input_list_opt('--full-data-background', full_data)
+        node.add_input_list_opt('--mixed-coincs-inj-full', injfull)
+        node.add_input_list_opt('--mixed-coincs-full-inj', fullinj)
+        node.add_opt('--ifos', ifos)
+        node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
+        return node    
+    
 class PyCBCStatMapInjExecutable(Executable):
     """Calculate FAP, IFAR, etc"""
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -340,11 +359,22 @@ def setup_multiifo_statmap(workflow, ifos, coinc_files, out_dir, tags=None):
                                               ifos=ifos,
                                               tags=tags, out_dir=out_dir)
 
-    ifolist = ' '.join(ifos)
-    stat_node = statmap_exe.create_node(coinc_files, ifolist)
+    stat_node = statmap_exe.create_node(coinc_files, ifos)
     workflow.add_node(stat_node)
     return stat_node.output_files[0], stat_node.output_files
 
+def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file, out_dir, tags=None):
+    tags = [] if tags is None else tags
+    
+    statmap_exe = PyCBCMultiifoStatMapInjExecutable(workflow.cp, 'multiifo_statmap_inj',
+                                              ifos=ifos,
+                                              tags=tags, out_dir=out_dir)
+
+    stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']), background_file,
+                                     FileList(coinc_files['injfull']), FileList(coinc_files['fullinj'], ifos)
+    workflow.add_node(stat_node)
+    return stat_node.output_files[0], stat_node.output_files
+    
 def setup_statmap(workflow, coinc_files, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
     if workflow.cp.has_option_tags('workflow-coincidence', 'background-bins', tags):
@@ -545,7 +575,7 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     return statmap_files
 
 def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
-                                      stat_files, veto_file, veto_name,
+                                      stat_files, background_file, veto_file, veto_name,
                                       out_dir, pivot_ifo, fixed_ifo, tags=None):
     """
     This function sets up exact match multiifo coincidence for injections
@@ -611,7 +641,8 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
             workflow.add_node(coinc_node)
 
     logging.info('...leaving coincidence for injections')
-    return bg_files
+    
+    return setup_multiifo_statmap_inj(workflow, ifos, bg_files, background_file, out_dir, tags=tags + [veto_name])
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          veto_files, veto_names, out_dir, pivot_ifo, fixed_ifo, tags=None):
