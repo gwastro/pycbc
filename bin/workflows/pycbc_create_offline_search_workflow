@@ -389,7 +389,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
             coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
             ctagcomb = [tag, 'inj', coinctag]
             inj_coinc[ordered_ifo_list_str] = wf.setup_multiifo_interval_coinc_inj(workflow, hdfbank,
-                                    full_insps, insps, statfiles, final_bg_files[ordered_ifo_list_str],
+                                    full_insps, insps, statfiles, final_bg_files[ordered_ifo_list_str][0][1],
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
 
