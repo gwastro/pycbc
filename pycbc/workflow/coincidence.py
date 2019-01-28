@@ -642,7 +642,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
 
     logging.info('...leaving coincidence for injections')
 
-    return setup_multiifo_statmap_inj(workflow, ifos, bg_files, background_file, out_dir, tags=tags + [veto_name])
+    return setup_multiifo_statmap_inj(workflow, ifiles.keys(), bg_files, background_file, out_dir, tags=tags + [veto_name])
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          veto_files, veto_names, out_dir, pivot_ifo, fixed_ifo, tags=None):
