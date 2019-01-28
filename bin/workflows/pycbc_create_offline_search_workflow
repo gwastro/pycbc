@@ -255,7 +255,7 @@ for i in range(2, len(insps)+1):
                 nextifo = min(combination_prec, key=combination_prec.get)
                 ordered_ifo_list.append(nextifo)
                 del combination_prec[nextifo]
-        
+
         ordered_ifo_list_str = ' '.join(ordered_ifo_list)
 
         # Create coinc tag, and set up the coinc job for the combination
@@ -375,15 +375,16 @@ for inj_file, tag in zip(inj_files, inj_tags):
             del combination_prec[pivot_ifo]
             # fixed_ifo is the ifo with the next smallest precedence value
             fixed_ifo = min(combination_prec, key=combination_prec.get)
+            del combination_prec[fixed_ifo]
             ordered_ifo_list = [pivot_ifo, fixed_ifo]
             if len(combination_prec)>0:
                 for i in range(len(combination_prec)):
                     nextifo = min(combination_prec, key=combination_prec.get)
                     ordered_ifo_list.append(nextifo)
                     del combination_prec[nextifo]
-        
+
             ordered_ifo_list_str = ' '.join(ordered_ifo_list)
-            
+
             # Create coinc tag, and set up the coinc job for the combination
             coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
             ctagcomb = [tag, 'inj', coinctag]
