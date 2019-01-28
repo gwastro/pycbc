@@ -574,7 +574,6 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     injinj_files = FileList()
     injfull_files = FileList()
     fullinj_files = FileList()
-
     # For the injfull and fullinj separation we take the pivot_ifo on one side,
     # and the rest that are attached to the fixed_ifo on the other side
     for ifo in ifos:
@@ -591,7 +590,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
              (injfull_files, "injfull"),
              (fullinj_files, "fullinj"),
             ]
-    bg_files = {'injinj':[],'injfull':[],'fullinj':[]}
+    bg_files = {'injinj':[], 'injfull':[], 'fullinj':[]}
 
     for trig_files, ctag in combo:
         findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp,
