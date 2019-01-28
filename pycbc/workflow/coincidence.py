@@ -561,6 +561,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
         raise ValueError('Must use exactly 1 bank file for this coincidence '
                          'method, I got %i !' % len(hdfbank))
     hdfbank = hdfbank[0]
+    
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
@@ -576,7 +577,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     fullinj_files = FileList()
     # For the injfull and fullinj separation we take the pivot_ifo on one side,
     # and the rest that are attached to the fixed_ifo on the other side
-    for ifo in ifos:
+    for ifo in ifiles.keys():
         if ifo == pivot_ifo:
             injinj_files.append(ifiles[ifo])
             injfull_files.append(ifiles[ifo])
@@ -595,7 +596,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     for trig_files, ctag in combo:
         findcoinc_exe = PyCBCFindMultiifoCoincExecutable(workflow.cp,
                                                          'multiifo_coinc',
-                                                         ifos=ifos,
+                                                         ifos=ifiles.keys(),
                                                          tags=tags + [ctag],
                                                          out_dir=out_dir)
         for i in range(factor):
