@@ -561,7 +561,7 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
         raise ValueError('Must use exactly 1 bank file for this coincidence '
                          'method, I got %i !' % len(hdfbank))
     hdfbank = hdfbank[0]
-    
+
     # Wall time knob and memory knob
     factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
 
