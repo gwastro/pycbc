@@ -359,7 +359,8 @@ def setup_multiifo_statmap(workflow, ifos, coinc_files, out_dir, tags=None):
                                               ifos=ifos,
                                               tags=tags, out_dir=out_dir)
 
-    stat_node = statmap_exe.create_node(coinc_files, ifos)
+    ifolist = ' '.join(ifos)
+    stat_node = statmap_exe.create_node(coinc_files, ifolist)
     workflow.add_node(stat_node)
     return stat_node.output_files[0], stat_node.output_files
 
@@ -370,8 +371,9 @@ def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file, out
                                               ifos=ifos,
                                               tags=tags, out_dir=out_dir)
 
+    ifolist = ' '.join(ifos)
     stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']), background_file,
-                                     FileList(coinc_files['injfull']), FileList(coinc_files['fullinj']), ifos)
+                                     FileList(coinc_files['injfull']), FileList(coinc_files['fullinj']), ifolist)
     workflow.add_node(stat_node)
     return stat_node.output_files[0], stat_node.output_files
 
