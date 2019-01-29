@@ -5,32 +5,35 @@ leaves the background triggers alone. """
 
 import h5py, numpy, argparse, logging, pycbc, pycbc.events, lal
 import pycbc.version
+from scipy.special import comb
 import matplotlib as mpl
 mpl.use('agg')
 import matplotlib.pyplot as plt
 
 def com(f, files, group):
     """ Combine the same column from multiple files and save to a third"""
-    f[group] = numpy.concatenate([fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32) for fi in files])
+    f[group] = numpy.concatenate([fi[group][:] if group in fi else \
+                                   numpy.array([], dtype=numpy.uint32) for fi in files])
 
 def all_keys_set(files):
     key_set = []
-    for f in files:
-        for k in f.keys():
-            if isinstance(f[k], h5py.Dataset):
+    for fi in files:
+        for k in fi.keys():
+            if isinstance(fi[k], h5py.Dataset):
                 key_set.append(k)
             else:
-                key_set += get_all_subkeys(f,k)
+                key_set += get_all_subkeys(fi,k)
     return set(key_set)
 
-def get_all_subkeys(f,k):
+def get_all_subkeys(fi,k):
     subkey_set = []
-    for sk in f[k].keys():
-        if isinstance(f[k+'/'+sk], h5py.Dataset):
+    for sk in fi[k].keys():
+        if isinstance(fi[k+'/'+sk], h5py.Dataset):
             subkey_set.append(k+'/'+sk)
         else:
-            subkey_set += get_all_subkeys(f,k+'/'+sk)
-    # this will return an empty list if there is no dataset or subgroup within the group - so avoids infinite iterations
+            subkey_set += get_all_subkeys(fi,k+'/'+sk)
+    # this will return an empty list if there is no dataset or subgroup within the group
+    #   - so avoids infinite iterations
     return subkey_set
 
 parser = argparse.ArgumentParser()
@@ -52,11 +55,10 @@ pycbc.init_logging(args.verbose)
 # no clustering of the background
 files = [h5py.File(n,'r') for n in args.statmap_files]
 
-fac = len(args.statmap_files)
-
 # copy over the standard data that is constant
 #TODO: This is no longer constant between files
 f = h5py.File(args.output_file, "w")
+
 f.attrs['pivot'] = files[0].attrs['pivot']
 f.attrs['fixed'] = files[0].attrs['fixed']
 f.attrs['timeslide_interval'] = files[0].attrs['timeslide_interval']
@@ -71,11 +73,8 @@ f.attrs['foreground_time_exc'] = files[0].attrs['foreground_time_exc']
 
 for fi in files:
     ifos_in_file = [ifo for ifo in args.ifos if ifo in fi['segments']]
-    print(ifos_in_file)
     ifo_to_get = 'segments/{}'.format(ifos_in_file[0])
-    print(ifo_to_get)
-    group_to_save = 'segments/coinc_{}'.format(''.join(ifos_in_file))
-    print(group_to_save)
+    group_to_save = 'segments/{}'.format(''.join(ifos_in_file))
     f[group_to_save + '/end'] = fi[ifo_to_get + '/end'][:]
     f[group_to_save + '/start'] = fi[ifo_to_get + '/start'][:]
 
@@ -87,34 +86,50 @@ for key in key_set:
         com(f, files, key)
 
 
-#for the ifo-specific groups, copy them over into the new file - if the ifo is not present for each coincident trigger, indicate by including a -1 in the combined file
+#for the ifo-specific groups, copy them over into the new file
+# - if the ifo is not present for each coincident trigger, 
+#  indicate by including a -1 in the combined file
+
 trigger_list = []
 all_trig_times = {}
 all_trig_ids = {}
 for ifo in args.ifos:
     all_trig_times[ifo] = numpy.array([], dtype=numpy.uint32)
     all_trig_ids[ifo] = numpy.array([], dtype=numpy.uint32)
-# for each file, take the ifos list and see which ifos are present in the file or not
+    # for each file, append the trigger time and id data for each ifo
+    #   - if it isnt there, then fill with -1 values
 for f_in in files:
     for ifo in args.ifos:
         if ifo in ifo in f_in['foreground']:
-            all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], f_in['foreground/{}/time'.format(ifo)][:]])
-            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo], f_in['foreground/{}/trigger_id'.format(ifo)][:]])
+            all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], \
+                                     f_in['foreground/{}/time'.format(ifo)][:]])
+            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo], 
+                                     f_in['foreground/{}/trigger_id'.format(ifo)][:]])
         else:
-            all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
-            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo], -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
+            all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo],
+                                     -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
+            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo],
+                                     -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
 
 for ifo in args.ifos:
     f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
     f['foreground/{}/trigger_id'.format(ifo)] = all_trig_ids[ifo]
 
+#copy across ifar and ifar_exc, etc 
 # recalculate ifar/fap for the foreground triggers by 
 #  applying a trials factor = num_files(num_bins)
+
 ifars = []
 ifars_exc = []
 faps = []
 faps_exc = []
 for f_in in files:
+    #calculate the number of possible combinations of 2 or 
+    #  more IFOs for the number of IFOs in the file (current, bad, implementation of trials factor, need to take into account when get 2-det trigger during triple time)
+    n_ifos = sum([ifo in f_in['foreground'] for ifo in args.ifos])
+    fac = sum([comb(n_ifos, i) for i in range(2, n_ifos + 1)]) 
+
+    #divide by this as the trials factor
     ifar = f_in['foreground/ifar'][:] / fac
     coinc_time = f_in.attrs['foreground_time'] / lal.YRJUL_SI
     ifars = numpy.concatenate([ifars, ifar])
@@ -131,21 +146,28 @@ f['foreground/fap'][:] = faps
 f['foreground/fap_exc'][:] = faps_exc
 
 
-
-# cluster for the loudest ifar value 
-exit()
-#TODO Sort the trials factor
+#cluster for loudest stst value 
 def argmax(v):
     return numpy.argsort(v)[-1]
 
 stat = numpy.core.records.fromarrays([f['foreground/ifar'][:], 
                                       f['foreground/stat'][:]],
                                       names='ifar,stat')
-cidx = pycbc.events.cluster_coincs(stat,
-                                   f['foreground/%s/time' % f.attrs['pivot']][:], 
-                                   f['foreground/%s/time' % f.attrs['fixed']][:], 
-                                   numpy.zeros(len(ifars)),
-                                   0, args.cluster_window, argmax=argmax)
+
+if 1: #currently switching multiifo/standard cluster_coincs on/off manually
+    all_times = ()
+    for ifo in args.ifos:
+        all_times = all_times +  (f['foreground/%s/time' % ifo][:],)
+
+    cidx = pycbc.events.cluster_coincs_multiifo(stat, all_times, 
+                                                numpy.zeros(len(ifars)), 0, 
+                                                args.cluster_window, argmax)
+else:
+    cidx = pycbc.events.cluster_coincs(stat, 
+                                       f['foreground/%s/time' % f.attrs['pivot']][:],
+                                       f['foreground/%s/time' % f.attrs['fixed']][:],
+                                       numpy.zeros(len(ifars)), 0, 
+                                       args.cluster_window, argmax)
 
 # downsample the foreground columns to only the loudest ifar between the multiple files
 for key in f['foreground'].keys():
@@ -162,15 +184,25 @@ for key in f['foreground'].keys():
 # If there is a background set (full_data as opposed to injection run), then recalculate 
 # the values for its triggers as well
 if 'background' in files[0]:  
+    bg_ifar = []
+    bg_exc_ifar = []
     for key in all_keys:
         if key.startswith('background') or key.startswith('background_exc'):
             com(f, files, key)
-     
-    f['background/ifar'][:] =  f['background/ifar'][:] / fac
-    f['background_exc/ifar'][:] = f['background_exc/ifar'][:] / fac
+    for f_in in files:
+        n_ifos = sum([ifo in f_in['background'] for ifo in args.ifos])
+        fac = sum([comb(n_ifos, i) for i in range(2, n_ifos + 1)])
+
+
+        bg_ifar = numpy.concatenate(bg_ifar, f_in['background/ifar'][:] / fac)
+        bg_exc_ifar = numpy.concatenate(bg_exc_ifar,f_in['background_exc/ifar'][:] / fac)
+
+    f['background/ifar'][:] = bg_ifar
+    f['background_exc/ifar'][:] = bg_exc_ifar
 
     com(f, files, 'segments/foreground_veto/start')
     com(f, files, 'segments/foreground_veto/end')
 
-
+for f_in in files:
+    f_in.close()
 f.close()

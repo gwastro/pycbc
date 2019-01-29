@@ -329,14 +329,12 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
 
     return ids, slide
 
-def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy.argmax):
+def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax = numpy.argmax):
     """Cluster coincident events for each timeslide separately, across
     templates, based on the ranking statistic
 
     Parameters
     ----------
-    stat: numpy.ndarray
-        vector of ranking values to maximize
     time1: numpy.ndarray
         first time vector
     time2: numpy.ndarray
@@ -345,8 +343,104 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
         vector that determines the timeslide offset
     slide: float
         length of the timeslides offset interval
+
+    Returns
+    -------
+    time: numpy.ndarray
+        A time vector which shows the avergae time of the trigger in 
+        all detectors, with each timeslide temporally separated
+    """
+
+    if len(time1) == 0 or len(time2) == 0:
+        logging.info('No coinc triggers in one, or both, ifos.')
+        return numpy.array([])
+
+    if numpy.isfinite(slide):
+        time = (time1 + (time2 + timeslide_id * slide))/2
+    else:
+        time = 0.5*(time2 + time1)
+
+    tslide = timeslide_id.astype(numpy.float128)
+    time = time.astype(numpy.float128)
+
+    span = (time.max() - time.min()) + window * 10
+    time = time + span * tslide
+    cidx = cluster_given_mean_times(stat, time, window, argmax)
+    return cidx
+
+def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argmax=numpy.argmax):
+    """Cluster coincident events for each timeslide separately, across
+    templates, based on the ranking statistic
+
+    Parameters
+    ----------
+    time_coincs: tuple of numpy.ndarrays 
+        tuple of numpy.ndarrays for each ifo
+    timeslide_id: numpy.ndarray
+        vector that determines the timeslide offset
+    slide: float
+        length of the timeslides offset interval
+
+    Returns
+    -------
+    time: numpy.ndarray
+        A time vector which shows the average time of the trigger in 
+        all relevant detectors, with each timeslide temporally separated
+    """
+
+    time_coinc_zip = zip(*time_coincs)
+    if len(time_coinc_zip) == 0 or len(timeslide_id) == 0:
+        logging.info('No coinc triggers.')
+        return numpy.array([])
+
+    num_ifos = [len([t for t in tc if t > 0]) for tc in time_coinc_zip]
+
+    time = [mean_if_greater_than_zero(tc) for tc in time_coinc_zip]
+
+    if numpy.isfinite(slide):
+        time = time + ((num_ifos - numpy.ones_like(num_ifos))*timeslide_id * slide)/num_ifos
+
+    tslide = timeslide_id.astype(numpy.float128)
+    time = time.astype(numpy.float128)
+
+    span = (time.max() - time.min()) + window * 10
+    time = time + span * tslide
+    cidx = cluster_given_mean_times(stat, time, window, argmax)
+    return cidx
+
+def mean_if_greater_than_zero(vector):
+    """ Calculate mean of a vector, but ignore it if the value if it is less than zero
+    This is used when the timestamps are marked as zero for 
+
+    Parameters
+    ----------
+    slide: numpy.ndarray
+        vector to be mean averaged
+
+    Returns
+    -------
+    mean: numpy.ndarray
+        A vector which shows the means of the values in the original vector which are 
+        greater than zero
+    """
+    num_above_zero = len([val for val in vector if val > 0])
+    mean = sum([val/num_above_zero if val>0 else 0 for val in vector])
+    return mean
+
+def cluster_given_mean_times(stat, time, window, argmax=numpy.argmax):
+    """Cluster coincident events given separated timeslides, across
+    templates, based on the ranking statistic
+
+    Parameters
+    ----------
+    stat: numpy.ndarray
+        vector of ranking values to maximize
+    time: numpy.ndarray
+        averaged time 
     window: float
         length to cluster over
+    argmax: function
+        the function used to calculate the maximum value
 
     Returns
     -------
@@ -355,22 +449,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
     """
     logging.info('clustering coinc triggers over %ss window' % window)
 
-    if len(time1) == 0 or len(time2) == 0:
-        logging.info('No coinc triggers in one, or both, ifos.')
-        return numpy.array([])
-
     indices = []
-    if numpy.isfinite(slide):
-        time = (time2 + (time1 + timeslide_id * slide)) / 2
-    else:
-        time = 0.5 * (time2 + time1)
-
-    tslide = timeslide_id.astype(numpy.float128)
-    time = time.astype(numpy.float128)
-
-    span = (time.max() - time.min()) + window * 10
-    time = time + span * tslide
-
     time_sorting = time.argsort()
     stat = stat[time_sorting]
     time = time[time_sorting]
