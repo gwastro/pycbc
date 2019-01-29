@@ -46,10 +46,10 @@ zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos = args.ifo
 zdata = zdata.cluster(window)
 
 logging.info("Loading coinc full inj triggers")
-fidata = pycbc.io.MultiifoStatmapData(files=mixed_coincs_full_inj, ifos = args.ifos).cluster(window)
+fidata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_full_inj, ifos = args.ifos).cluster(window)
 
 logging.info("Loading coinc inj full triggers")
-ifdata = pycbc.io.MultiifoStatmapData(files=mixed_coincs_inj_full, ifos = args.ifos).cluster(window)
+ifdata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_inj_full, ifos = args.ifos).cluster(window)
 
 f = h5py.File(args.output_file, "w")
 
