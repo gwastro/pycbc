@@ -351,7 +351,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
     Returns
     -------
     cindex: numpy.ndarray
-        The set of indices corrsponding to the surviving coincidences
+        The set of indices corrsponding to the surviving coincidences.
     """
 
     logging.info('clustering coinc triggers over %ss window' % window)
@@ -361,7 +361,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
         return numpy.array([])
 
     if numpy.isfinite(slide):
-        time = (time1 + (time2 + timeslide_id * slide)) / 2
+        time = (time1 + time2 + timeslide_id * slide) / 2
     else:
         time = 0.5 * (time2 + time1)
 
@@ -393,17 +393,19 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
     Returns
     -------
     cindex: numpy.ndarray
-        The set of indices corrsponding to the surviving coincidences
+        The set of indices corresponding to the surviving coincidences
     """
-
     time_coinc_zip = zip(*time_coincs)
     if len(time_coinc_zip) == 0:
         logging.info('No coincident triggers.')
         return numpy.array([])
 
-    num_ifos = [len([t for t in tc if t > 0]) for tc in time_coinc_zip]
+    time = []
+    #find the mean of each time coincidences, providing that the IFO is on
+    for tc in time_coinc_zip:
+        time.append(mean_if_greater_than_zero(tc))
 
-    time = [mean_if_greater_than_zero(tc) for tc in time_coinc_zip]
+    num_ifos = [len([t for t in tc if t > 0]) for tc in time_coinc_zip]
 
     if numpy.isfinite(slide):
         time = time + ((num_ifos - numpy.ones_like(num_ifos))*timeslide_id * slide)/num_ifos
@@ -418,8 +420,8 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
 def mean_if_greater_than_zero(vector):
     """ Calculate mean of a vector, but ignore it if the value if it is less than zero
-    This is used when the timestamps are marked as -1 when a particular IFO is not
-    included in the particular coinc
+    This is used when the timestamps are marked as -1 when a particular 
+    IFO is not included in the particular coincidence.
 
     Parameters
     ----------
