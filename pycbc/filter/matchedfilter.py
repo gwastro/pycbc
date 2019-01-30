@@ -1764,7 +1764,7 @@ def followup_event_significance(ifo, data_reader, bank,
     htilde = bank.get_template(template_id, min_buffer=bdur)
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
-    snr, corr, norm = matched_filter_core(htilde, stilde,
+    snr, _, norm = matched_filter_core(htilde, stilde,
                                           h_norm=htilde.sigmasq(stilde.psd))
 
     # Find peak in on-source and determine p-value
@@ -1780,14 +1780,16 @@ def followup_event_significance(ifo, data_reader, bank,
 
     window = int((onsource_end - onsource_start) * snr.sample_rate)
     nsamples = int(len(bkg) / window)
-    
+
     peaks = bkg[:nsamples*window].reshape(nsamples, window).max(axis=1)
-    pvalue = (1 + (peaks >= peak_value).sum()) / float(1 + nsamples)  
+    pvalue = (1 + (peaks >= peak_value).sum()) / float(1 + nsamples)
 
-    # Return recentered source SNR for bayestar, along with p-value, and trigger
-    baysnr = snr.time_slice(peak_time - duration / 2.0, peak_time + duration / 2.0)
+    # Return recentered source SNR for bayestar, along with p-value, and trig
+    baysnr = snr.time_slice(peak_time - duration / 2.0,
+                            peak_time + duration / 2.0)
 
-    logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo, pvalue, nsamples)
+    logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
+                 pvalue, nsamples)
 
     return baysnr * norm, peak_time, pvalue
 
@@ -1838,7 +1840,8 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
         state_end_time = trig_time + duration / 2
         state_duration = state_end_time - state_start_time
         if data_reader.state is not None:
-            if not data_reader.state.is_extent_valid(state_start_time, state_duration):
+            if not data_reader.state.is_extent_valid(state_start_time,
+                                                     state_duration):
                 return None
 
         # was the data quality ok for the full amount of involved data?
@@ -1849,9 +1852,8 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
                 return None
 
     stilde = data_reader.overwhitened_data(htilde.delta_f)
-    snr, corr, norm = matched_filter_core(htilde, stilde,
+    snr, _, norm = matched_filter_core(htilde, stilde,
                                           h_norm=htilde.sigmasq(stilde.psd))
-
 
     valid_end = int(len(snr) - data_reader.trim_padding)
     valid_start = int(valid_end - data_reader.blocksize * snr.sample_rate)
@@ -1865,7 +1867,8 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
                           ' too long').format(duration))
 
     # Onsource slice for Bayestar followup
-    onsource_idx = int(round(float(trig_time - snr.start_time) * snr.sample_rate))
+    onsource_idx = float(trig_time - snr.start_time) * snr.sample_rate
+    onsource_idx = int(round(onsource_idx))
     onsource_slice = slice(onsource_idx - half_dur_samples,
                            onsource_idx + half_dur_samples + 1)
     return snr[onsource_slice] * norm

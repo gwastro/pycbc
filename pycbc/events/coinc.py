@@ -776,9 +776,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         return_background: boolean
             If true, background triggers will also be included in the file
             output.
-        save_background_on_interrupt: boolean
-            If true, an interrupt can be given to save a pickled version of
-            the background instance for later restoration. !NOT IMPLEMENTED!
         """
         from pycbc import detector
         from . import stat
