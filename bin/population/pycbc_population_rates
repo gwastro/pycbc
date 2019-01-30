@@ -37,7 +37,6 @@ import pycbc.version
 import h5py
 import numpy as np
 import scipy.stats as ss
-from matplotlib.pyplot import cm
 from pycbc.population import scale_injections as si
 from pycbc.population import rates_functions as rf
 from numpy import logaddexp, log, newaxis, expm1
