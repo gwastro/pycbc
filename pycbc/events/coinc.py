@@ -351,7 +351,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
     Returns
     -------
     cindex: numpy.ndarray
-        The set of indices corrsponding to the surviving coincidences.
+        The set of indices corresponding to the surviving coincidences.
     """
 
     logging.info('clustering coinc triggers over %ss window' % window)
@@ -420,7 +420,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
 def mean_if_greater_than_zero(vector):
     """ Calculate mean of a vector, but ignore it if the value if it is less than zero
-    This is used when the timestamps are marked as -1 when a particular 
+    This is used when the timestamps are marked as -1 when a particular
     IFO is not included in the particular coincidence.
 
     Parameters
