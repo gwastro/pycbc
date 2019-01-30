@@ -1773,7 +1773,6 @@ def followup_event_significance(ifo, data_reader, bank,
     peak_time = peak * snr.delta_t + onsrc.start_time
     peak_value = abs(onsrc[peak])
 
-
     bstart = float(snr.start_time) + htilde.length_in_time + trim_pad
 
     bkg = abs(snr.time_slice(bstart, onsource_start)).numpy()
