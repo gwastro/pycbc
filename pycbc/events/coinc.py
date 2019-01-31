@@ -400,22 +400,27 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
         logging.info('No coincident triggers.')
         return numpy.array([])
 
-    time = []
+    time_avg_num = []
     #find the mean of each time coincidences, providing that the IFO is on
     for tc in time_coinc_zip:
-        time.append(mean_if_greater_than_zero(tc))
+        time_avg_num.append(mean_if_greater_than_zero(tc))
 
-    num_ifos = [len([t for t in tc if t > 0]) for tc in time_coinc_zip]
 
+    time_avg, num_ifos = zip(*time_avg_num)
+
+    time_avg = numpy.array(time_avg)
+    num_ifos = numpy.array(num_ifos)
+
+    # shift all but the pivot ifo - leads to a (num_ifos-1) * timeslide_id * slide shift
     if numpy.isfinite(slide):
-        time = time + ((num_ifos - numpy.ones_like(num_ifos))*timeslide_id * slide)/num_ifos
+        time_avg = time_avg + ((num_ifos - numpy.ones_like(num_ifos))*timeslide_id * slide)/num_ifos
 
     tslide = timeslide_id.astype(numpy.float128)
-    time = time.astype(numpy.float128)
+    time_avg = time_avg.astype(numpy.float128)
 
-    span = (time.max() - time.min()) + window * 10
-    time = time + span * tslide
-    cidx = cluster_given_mean_times(stat, time, window, argmax)
+    span = (time_avg.max() - time_avg.min()) + window * 10
+    time_avg = time_avg + span * tslide
+    cidx = cluster_given_mean_times(stat, time_avg, window, argmax)
     return cidx
 
 def mean_if_greater_than_zero(vector):
@@ -433,10 +438,13 @@ def mean_if_greater_than_zero(vector):
     mean: float
         The mean of the values in the original vector which are
         greater than zero
+    num_above_zero: int
+        The number of entries in the vector which are above zero
     """
-    num_above_zero = len([val for val in vector if val > 0])
-    mean = sum([val / num_above_zero if val > 0 else 0 for val in vector])
-    return mean
+    vals_above_zero = [val for val in vector if val > 0]
+    num_above_zero = len(vals_above_zero)
+    mean = sum(vals_above_zero) / num_above_zero
+    return mean, num_above_zero
 
 def cluster_given_mean_times(stat, time, window, argmax=numpy.argmax):
     """Cluster coincident events given separated timeslides, across
