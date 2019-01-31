@@ -273,7 +273,7 @@ parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
                "to determine when to analyze the hoft data. This somewhat "
                "corresponds to CAT1 information")
 parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'],
-                    help='The flags that must be in the "good" state to analzye data')
+                    help='The flags that must be in the "good" state to analyze data')
 parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
           help="The channel containing data quality information. This is used "
                 "to determine when hoft may be suspect and may be used to veto"
@@ -437,7 +437,6 @@ with ctx:
         print(e)
         exit()
 
-
     maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
     if evnt.rank > 0:
         bank.table.sort(order='mchirp')
@@ -506,7 +505,6 @@ with ctx:
             logging.info('Will calculate %s background', combo)
             estimators.append(Coincer.from_cli(args,
                               len(bank), args.analysis_chunk, list(combo)))
-
 
 
     logging.info('%s: Starting... ', evnt.rank)
