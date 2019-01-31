@@ -82,11 +82,12 @@ all_trig_ids = {}
 for ifo in args.ifos:
     all_trig_times[ifo] = numpy.array([], dtype=numpy.uint32)
     all_trig_ids[ifo] = numpy.array([], dtype=numpy.uint32)
-    # for each file, append the trigger time and id data for each ifo
-    #   - if it isnt there, then fill with -1 values
+
+# for each file, append the trigger time and id data for each ifo
+#   - if it isnt there, then fill with -1 values
 for f_in in files:
     for ifo in args.ifos:
-        if ifo in ifo in f_in['foreground']:
+        if ifo in f_in['foreground']:
             all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], \
                                      f_in['foreground/{}/time'.format(ifo)][:]])
             all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo], 

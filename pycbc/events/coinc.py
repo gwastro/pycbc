@@ -413,7 +413,8 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
     # shift all but the pivot ifo - leads to a (num_ifos-1) * timeslide_id * slide shift
     if numpy.isfinite(slide):
-        time_avg = time_avg + ((num_ifos - numpy.ones_like(num_ifos))*timeslide_id * slide)/num_ifos
+        time_avg = time_avg + ((num_ifos - numpy.ones_like(num_ifos))
+                               *timeslide_id * slide)/num_ifos
 
     tslide = timeslide_id.astype(numpy.float128)
     time_avg = time_avg.astype(numpy.float128)
