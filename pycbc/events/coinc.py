@@ -810,8 +810,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.singles = {}
 
-    # Adding this here as it requires the results format dict as defined by this
-    # class.
     @classmethod
     def pick_best_coinc(cls, coinc_results):
         """Choose the best two-ifo coinc by ifar first, then statistic if needed.
@@ -841,8 +839,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # maximize over
         trials = 0
         for result in coinc_results:
-            # Check that a coinc was possible. This was added in the
-            # 'add_singles' method of this class
+            # Check that a coinc was possible. See the 'add_singles' method
+            # to see where this flag was added into the results dict
             if 'coinc_possible' in result:
                 trials += 1
 

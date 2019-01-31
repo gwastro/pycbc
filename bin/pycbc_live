@@ -24,11 +24,12 @@ def makedir(path):
         os.makedirs(path)
 
 def ptof(p, ft):
-    return numpy.log(1.0-p) / -ft
+    return numpy.log(1.0 - p) / -ft
 
 def ftop(f, ft):
     return 1 - numpy.exp(-ft * f)
 
+# REVISIT THIS WITH BETTER FORMULA
 def combine_ifar_pvalue(ifar, pvalue):
     from scipy.stats import combine_pvalues
     reference_foreground = 0.01 * ifar
@@ -499,7 +500,7 @@ with ctx:
 
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
-        ifo_combos  = itertools.combinations(ifos, 2)
+        ifo_combos = itertools.combinations(ifos, 2)
         estimators = []
         for combo in ifo_combos:
             logging.info('Will calculate %s background', combo)
