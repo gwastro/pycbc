@@ -271,7 +271,7 @@ def get_dckernel(slen):
         fn2.prepare("PfiffiPP", texrefs=[freq_tex, amp_tex, phase_tex])
         dckernel_cache[nb] = (fn1, fn2, freq_tex, amp_tex, phase_tex, nt, nb)
         return dckernel_cache[nb]
-    
+
 class CUDALinearInterpolate(object):
     def __init__(self, output):
         self.output = output.data.gpudata

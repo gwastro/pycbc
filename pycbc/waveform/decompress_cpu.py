@@ -27,7 +27,7 @@ from __future__ import absolute_import
 from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
 from weave import inline
-from pycbc.types import zeros, complex_same_precision_as
+from pycbc.types import zeros
 import numpy
 
 _linear_decompress_code = r"""
