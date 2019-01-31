@@ -78,9 +78,15 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
+ 
 
-# Make coherent network segments
-if wflow.cp.has_option("inspiral", "analyse-segment-end"):
+if wflow.cp.has_option("inspiral", "segment-start-pad"):
+    pad_data = int(wflow.cp.get("inspiral", "pad-data"))
+    start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
+    end_pad = int(wflow.cp.get("inspiral", "segment-end-pad"))
+    wflow.cp.set("workflow-exttrig_segments", "min-before",str(start_pad+pad_data))
+    wflow.cp.set("workflow-exttrig_segments", "min-after",str(end_pad+pad_data))
+elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
     safety = 1
     deadtime = int(wflow.cp.get("inspiral", "segment-length")) / 2
     spec_len = int(wflow.cp.get("inspiral", "inverse-spec-length")) / 2
@@ -144,7 +150,14 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     gate_pad = int(wflow.cp.get("condition_strain", "pad-data"))
     padding += gate_pad
 
-if wflow.cp.has_option("inspiral", "analyse-segment-end"):
+if wflow.cp.has_option("inspiral", "segment-start-pad"):
+    start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
+    end_pad = int(wflow.cp.get("inspiral", "segment-end-pad"))
+    wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + \
+                                                    start_pad + padding,
+                                  int(sciSegs[ifo][0][1]) - \
+                                                      padding - end_pad)
+elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime - \
                                       spec_len + padding - safety,
                                   int(sciSegs[ifo][0][1]) - spec_len - \

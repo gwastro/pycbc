@@ -880,7 +880,13 @@ class PyCBCMultiInspiralExecutable(Executable):
 
     def get_valid_times(self):
         pad_data = int(self.get_opt('pad-data'))
-        if self.has_opt('analyse-segment-end'):
+        if self.has_opt("segment-start-pad"):
+            pad_data = int(self.get_opt("pad-data"))
+            start_pad = int(self.get_opt("segment-start-pad"))
+            end_pad = int(self.get_opt("segment-end-pad"))
+            valid_start = self.data_seg[0] + pad_data +start_pad
+            valid_end = self.data_seg[1] - pad_data - end_pad
+        elif self.has_opt('analyse-segment-end'):
             safety = 1
             deadtime = int(self.get_opt('segment-length')) / 2
             spec_len = int(self.get_opt('inverse-spec-length')) / 2
