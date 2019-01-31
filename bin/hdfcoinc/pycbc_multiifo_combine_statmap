@@ -1,6 +1,6 @@
 #!/bin/env python
-""" Apply a naive mass binning, assuming that each bin is fully independent, which 
-is a conservative estimate. This clusters to find the most significant foreground, but
+""" Apply a trials factor based on the number of available detector combinations at the
+time of coincidence. This clusters to find the most significant foreground, but
 leaves the background triggers alone. """
 
 import h5py, numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
@@ -98,9 +98,38 @@ for f_in in files:
             all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo],
                                      -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
 
+#cluster the triggers before applying trials factor
 for ifo in args.ifos:
     f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
     f['foreground/{}/trigger_id'.format(ifo)] = all_trig_ids[ifo]
+
+#cluster for loudest stat value 
+def argmax(v):
+    return numpy.argsort(v)[-1]
+
+stat = numpy.core.records.fromarrays([f['foreground/ifar'][:],
+                                      f['foreground/stat'][:]],
+                                      names='ifar,stat')
+
+all_times = ()
+for ifo in args.ifos:
+    all_times = all_times +  (f['foreground/%s/time' % ifo][:],)
+
+cidx = pycbc.events.cluster_coincs_multiifo(stat, all_times,
+                                            numpy.zeros(len(stat)), 0,
+                                            args.cluster_window, argmax)
+
+# downsample the foreground columns to only the loudest ifar between the multiple files
+for key in f['foreground'].keys():
+    if key not in args.ifos:
+        dset = f['foreground/%s' % key][:][cidx]
+        del f['foreground/%s' % key]
+        f['foreground/%s' % key] = dset
+    else: # key is an ifo
+        for k in  f['foreground/%s' % key].keys():
+            dset = f['foreground/{}/{}'.format(key,k)][:][cidx]
+            del f['foreground/{}/{}'.format(key,k)]
+            f['foreground/{}/{}'.format(key,k)] = dset
 
 #copy across ifar and ifar_exc, etc 
 # recalculate ifar/fap for the foreground triggers by 
@@ -139,35 +168,6 @@ f['foreground/ifar'][:] = ifars
 f['foreground/ifar_exc'][:] = ifars_exc
 #f['foreground/fap'][:] = faps
 #f['foreground/fap_exc'][:] = faps_exc
-
-
-#cluster for loudest stat value 
-def argmax(v):
-    return numpy.argsort(v)[-1]
-
-stat = numpy.core.records.fromarrays([f['foreground/ifar'][:], 
-                                      f['foreground/stat'][:]],
-                                      names='ifar,stat')
-
-all_times = ()
-for ifo in args.ifos:
-    all_times = all_times +  (f['foreground/%s/time' % ifo][:],)
-
-cidx = pycbc.events.cluster_coincs_multiifo(stat, all_times, 
-                                            numpy.zeros(len(ifars)), 0, 
-                                            args.cluster_window, argmax)
-
-# downsample the foreground columns to only the loudest ifar between the multiple files
-for key in f['foreground'].keys():
-    if key not in args.ifos:
-        dset = f['foreground/%s' % key][:][cidx]
-        del f['foreground/%s' % key]
-        f['foreground/%s' % key] = dset
-    else: # key is an ifo
-        for k in  f['foreground/%s' % key].keys():
-            dset = f['foreground/{}/{}'.format(key,k)][:][cidx]
-            del f['foreground/{}/{}'.format(key,k)]
-            f['foreground/{}/{}'.format(key,k)] = dset
 
 
 #TODO: add in background combinations
