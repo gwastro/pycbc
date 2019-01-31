@@ -21,7 +21,8 @@
 #
 # =============================================================================
 #
-import numpy, mako.template
+import numpy
+import mako.template
 from pycuda import gpuarray
 from pycuda.compiler import SourceModule
 import pycbc.scheme
@@ -189,7 +190,7 @@ __global__ void linear_interp(float2 *h, float df, int hlen,
       Output parameters:
       ==================
 
-      h: array of complex 
+      h: array of complex
 
     */
 
@@ -261,7 +262,7 @@ def get_dckernel(slen):
     try:
         return dckernel_cache[nb]
     except KeyError:
-        mod = SourceModule(kernel_sources.render(ntpb=nt,nblocks=nb))
+        mod = SourceModule(kernel_sources.render(ntpb=nt, nblocks=nb))
         freq_tex = mod.get_texref("freq_tex")
         amp_tex = mod.get_texref("amp_tex")
         phase_tex = mod.get_texref("phase_tex")
@@ -313,7 +314,7 @@ def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_inde
     flow = numpy.float32(flow)
     texlen = numpy.int32(len(freqs))
     fmax = numpy.float32(freqs[texlen-1])
-    hlen = numpy.int32( len(output) )
+    hlen = numpy.int32(len(output))
     (fn1, fn2, ftex, atex, ptex, nt, nb) = get_dckernel(hlen)
     freqs_gpu = gpuarray.to_gpu(freqs)
     freqs_gpu.bind_to_texref_ext(ftex, allow_offset=False)
@@ -331,4 +332,3 @@ def inline_linear_interp(amps, phases, freqs, output, df, flow, imin, start_inde
     fn2((nb, 1), (nt, 1, 1), g_out, df, hlen, flow, fmax, texlen, lower, upper)
     pycbc.scheme.mgr.state.context.synchronize()
     return output
-

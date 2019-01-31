@@ -26,11 +26,11 @@
    convenience utilities for manipulating waveforms
 """
 from __future__ import absolute_import
-from pycbc.types import FrequencySeries
-import numpy
-from pycbc.opt import omp_libs, omp_flags
 from pycbc import WEAVE_FLAGS
+from pycbc.types import FrequencySeries
+from pycbc.opt import omp_libs, omp_flags
 from pycbc.weave import inline
+import numpy
 
 
 _apply_shift_code = r"""

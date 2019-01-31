@@ -111,7 +111,7 @@ __global__ void threshold_and_cluster(float2* in, float2* outv, int* outl, int w
     svr[threadIdx.x] = mvr;
     svi[threadIdx.x] = mvi;
     sl[threadIdx.x] = ml;
-    
+
     __syncthreads();
 
     if (threadIdx.x < 32){

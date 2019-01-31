@@ -178,8 +178,6 @@ def inline_linear_interp(amp, phase, sample_frequencies, output,
     delta_f = float(df) # pylint:disable=unused-variable
     inline(code, ['h', 'hlen', 'sflen', 'delta_f', 'sample_frequencies',
                   'amp', 'phase', 'start_index', 'imin'],
-           extra_compile_args=[WEAVE_FLAGS] +\
-           omp_flags,
+           extra_compile_args=[WEAVE_FLAGS] + omp_flags,
            libraries=omp_libs)
     return output
-
