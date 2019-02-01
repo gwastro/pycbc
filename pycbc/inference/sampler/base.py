@@ -167,7 +167,7 @@ class BaseSampler(object):
         """
         # check for backup file(s)
         checkpoint_file = os.path.join(output_dir,
-                                        output_file + '.checkpoint')
+                                       output_file + '.checkpoint')
         backup_file = os.path.join(output_dir, output_file + '.bkup')
         # check if we have a good checkpoint and/or backup file
         logging.info("Looking for checkpoint file")
