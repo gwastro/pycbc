@@ -37,4 +37,4 @@ def fd_sine_gaussian(amp, quality, central_frequency, fmin, fmax, delta_f):
     d *= (1 + numpy.exp(-quality ** 2.0 * f / central_frequency))
     v = numpy.zeros(kmax, dtype=numpy.complex128)
     v[kmin:kmax] = d[:]
-    return pycbc.types.FrequencySeries(v, delta_f=delta_f, copy=False)
+    return pycbc.types.FrequencySeries(v, delta_f=delta_f)

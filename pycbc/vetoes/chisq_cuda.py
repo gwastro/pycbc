@@ -138,30 +138,24 @@ def get_pchisq_fn(np, fuse_correlate=False):
         _pchisq_cache[np] = (fn, nt)
     return _pchisq_cache[np]
 
-_bcache = {}
 def get_cached_bin_layout(bins):
-    global _bcache
-    key = id(bins)
-    if key not in _bcache:
-        _bcache = {}
-        bv, kmin, kmax = [], [], []
-        for i in range(len(bins)-1):
-            s, e = bins[i], bins[i+1]
-            BS = 4096
-            if (e - s) < BS:
-                bv.append(i)
-                kmin.append(s)
-                kmax.append(e)
-            else:
-                k = list(numpy.arange(s, e, BS/2))
-                kmin += k
-                kmax += k[1:] + [e]
-                bv += [i]*len(k)
-        bv = pycuda.gpuarray.to_gpu_async(numpy.array(bv, dtype=numpy.uint32))
-        kmin = pycuda.gpuarray.to_gpu_async(numpy.array(kmin, dtype=numpy.uint32))
-        kmax = pycuda.gpuarray.to_gpu_async(numpy.array(kmax, dtype=numpy.uint32))
-        _bcache[key] = (kmin, kmax, bv)
-    return _bcache[key]
+    bv, kmin, kmax = [], [], []
+    for i in range(len(bins)-1):
+        s, e = bins[i], bins[i+1]
+        BS = 4096
+        if (e - s) < BS:
+            bv.append(i)
+            kmin.append(s)
+            kmax.append(e)
+        else:
+            k = list(numpy.arange(s, e, BS/2))
+            kmin += k
+            kmax += k[1:] + [e]
+            bv += [i]*len(k)
+    bv = pycuda.gpuarray.to_gpu_async(numpy.array(bv, dtype=numpy.uint32))
+    kmin = pycuda.gpuarray.to_gpu_async(numpy.array(kmin, dtype=numpy.uint32))
+    kmax = pycuda.gpuarray.to_gpu_async(numpy.array(kmax, dtype=numpy.uint32))
+    return kmin, kmax, bv
 
 def shift_sum_points(num, arg_tuple):
     corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
