@@ -8,7 +8,7 @@ from pycbc.types import (FrequencySeries, TimeSeries)
 
 
 class TestFDTimeShift(unittest.TestCase):
-    """Tests ``apply_fd_time_shift``.""" 
+    """Tests ``apply_fd_time_shift``."""
     def setUp(self):
         # we'll use a sine wave time series to do the testing, with the
         # the segment length such that an interger number of cycles fit, so
@@ -43,7 +43,6 @@ class TestFDTimeShift(unittest.TestCase):
         written in C. Otherwise, this will test the numpy version.
         """
         # shift by -pi/2: should be the same as the cosine
-        start_time = self.time_series.start_time
         tshift = 1./(4*self.freq)
         tdshift = self._shift_and_ifft(fdsinx, -tshift, fseries=fseries)
         # check
