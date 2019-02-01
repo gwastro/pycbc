@@ -52,6 +52,10 @@ parser.add_argument("--save-backup", action="store_true",
                     default=False,
                     help="Don't delete the backup file after the run has "
                          "completed.")
+parser.add_argument("--cleanup-files", action="store_true",
+                    help="Clean up the temporary backup and checkpoint files")
+parser.add_argument("--temp-file-dir",
+                    help="Set the output directory for temporary files")
 # parallelization options
 parser.add_argument("--nprocesses", type=int, default=1,
                     help="Number of processes to use. If not given then only "
