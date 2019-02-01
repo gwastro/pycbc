@@ -38,12 +38,19 @@ class SingleTemplate(BaseDataModel):
     """
     name = 'single_template'
 
-    def __init__(self, data, psds, f_lower,
-                 f_upper=None,
+    def __init__(self, data, psds,
+                 low_frequency_cutoff=None,
+                 high_frequency_cutoff=None,
                  sample_rate=32768,
                  **kwargs):
 
-        super(SingleTemplate, self).__init__(**kwargs)
+        super(SingleTemplate, self).__init__(data=data, **kwargs)
+
+        if low_frequency_cutoff is not None:
+            low_frequency_cutoff = float(low_frequency_cutoff)
+
+        if high_frequency_cutoff is not None:
+            high_frequency_cutoff = float(high_frequency_cutoff)
 
         # Generate template waveforms
         df = data[data.keys()[0]].delta_f
@@ -73,14 +80,14 @@ class SingleTemplate(BaseDataModel):
             snr, _, _ = pyfilter.matched_filter_core(
                 hp, data[ifo],
                 psd=psds[ifo],
-                low_frequency_cutoff=f_lower,
-                high_frequency_cutoff=f_upper)
+                low_frequency_cutoff=low_frequency_cutoff,
+                high_frequency_cutoff=high_frequency_cutoff)
 
             self.sh[ifo] = 4 * df * snr
             self.hh[ifo] = -0.5 * pyfilter.sigmasq(
                 hp, psd=psds[ifo],
-                low_frequency_cutoff=f_lower,
-                high_frequency_cutoff=f_upper)
+                low_frequency_cutoff=low_frequency_cutoff,
+                high_frequency_cutoff=high_frequency_cutoff)
         self.time = None
 
     def _loglikelihood(self):
