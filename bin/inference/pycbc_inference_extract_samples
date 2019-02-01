@@ -63,6 +63,6 @@ fp, params, labels, samples = results_from_cli(opts)
 
 if not opts.posterior_only:
     raise ValueError("Program not yet able to produce "
-                     "anything but hte posterior output.")
+                     "anything but the posterior output.")
 else:
     fp.write_posterior(opts.output_file)

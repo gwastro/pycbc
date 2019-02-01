@@ -139,11 +139,12 @@ class BaseSampler(object):
         pass
 
     @abstractmethod
-    def finalize(self):
+    def finalize(self, output_file):
         """Do any finalization to the samples file before exiting."""
         pass
 
-    def setup_output(self, output_file, force=False, injection_file=None):
+    def setup_output(self, output_file, output_dir='./',
+                     force=False, injection_file=None):
         """Sets up the sampler's checkpoint and output files.
 
         The checkpoint file has the same name as the output file, but with
@@ -165,8 +166,9 @@ class BaseSampler(object):
             If an injection was added to the data, write its information.
         """
         # check for backup file(s)
-        checkpoint_file = output_file + '.checkpoint'
-        backup_file = output_file + '.bkup'
+        checkpoint_file = os.path.join(output_dir,
+                                        output_file + '.checkpoint')
+        backup_file = os.path.join(output_dir, output_file + '.bkup')
         # check if we have a good checkpoint and/or backup file
         logging.info("Looking for checkpoint file")
         checkpoint_valid = validate_checkpoint_files(checkpoint_file,

@@ -181,10 +181,11 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
             # write random state
             fp.write_random_state(state=self._sampler.random_state)
 
-    def finalize(self):
+    def finalize(self, output_file):
         """All data is written by the last checkpoint in the run method, so
         this just passes."""
-        pass
+        with self.io(self.checkpoint_file, 'a') as fp:
+            fp.write_posterior(output_file)
 
     @classmethod
     def from_config(cls, cp, model, nprocesses=1, use_mpi=False):

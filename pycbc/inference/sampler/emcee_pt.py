@@ -275,7 +275,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         return dummy_sampler.thermodynamic_integration_log_evidence(
             logls=logls, fburnin=0.)
 
-    def finalize(self):
+    def finalize(self, output_file):
         """Calculates the log evidence and writes to the checkpoint file.
 
         The thin start/interval/end for calculating the log evidence are
@@ -284,6 +284,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         logging.info("Calculating log evidence")
         # get the thinning settings
         with self.io(self.checkpoint_file, 'r') as fp:
+            fp.write_posterior(output_file)
             thin_start = fp.thin_start
             thin_interval = fp.thin_interval
             thin_end = fp.thin_end

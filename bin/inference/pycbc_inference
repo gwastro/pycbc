@@ -54,7 +54,7 @@ parser.add_argument("--save-backup", action="store_true",
                          "completed.")
 parser.add_argument("--cleanup-files", action="store_true",
                     help="Clean up the temporary backup and checkpoint files")
-parser.add_argument("--temp-file-dir",
+parser.add_argument("--tmp-file-dir", default='./',
                     help="Set the output directory for temporary files")
 # parallelization options
 parser.add_argument("--nprocesses", type=int, default=1,
@@ -170,7 +170,8 @@ with ctx:
         injection_file = opts.injection_file.values()[0]  # None if not set
     else:
         injection_file = None
-    sampler.setup_output(opts.output_file, force=opts.force,
+    sampler.setup_output(opts.output_file, output_dir=opts.tmp_file_dir,
+                         force=opts.force,
                          injection_file=injection_file)
 
     # Figure out where to get the initial conditions from: a samples file,
@@ -194,15 +195,16 @@ with ctx:
     # Run the sampler
     sampler.run()
 
-    # Finalize the output 
-    sampler.finalize()
+    # Finalize the output
+    sampler.finalize(opts.output_file)
 
-# rename checkpoint to output and delete backup
-logging.info("Moving checkpoint to output")
-os.rename(sampler.checkpoint_file, opts.output_file)
 if not opts.save_backup:
     logging.info("Deleting backup file")
     os.remove(sampler.backup_file)
+
+if opts.cleanup_files:
+    logging.info("Deleting checkpoint file")
+    os.remove(sampler.checkpoint_file)
 
 # exit
 logging.info("Done")
