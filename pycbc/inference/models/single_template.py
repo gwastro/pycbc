@@ -23,13 +23,13 @@ from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
 
-from .base import BaseModel
+from .base_data import BaseDataModel
 
 # In this model we only calculate terms up to a constant.
 # We are primarily interested in the posterior result
 
 
-class SingleTemplate(BaseModel):
+class SingleTemplate(BaseDataModel):
     r"""Model that assumes we know all the intrinsic parameters.
 
     This model assumes we know all the intrinsic parameters, and are only
@@ -84,6 +84,12 @@ class SingleTemplate(BaseModel):
         self.time = None
 
     def _loglikelihood(self):
+        return self.loglr
+
+    def _lognl(self):
+        return 0
+
+    def _loglr(self):
         r"""Computes the log likelihood ratio
 
         Returns
