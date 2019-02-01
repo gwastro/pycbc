@@ -62,8 +62,8 @@ class SingleTemplate(BaseDataModel):
 
         hp, _ = get_fd_waveform(delta_f=df, distance=1, inclination=0, **p)
 
-        if f_upper is None:
-            f_upper = len(data[data.keys()[0]]-1) * df
+        if high_frequency_cutoff is None:
+            high_frequency_cutoff = len(data[data.keys()[0]]-1) * df
 
         # Extend data and template to high sample rate
         flen = int(sample_rate / df) / 2 + 1
