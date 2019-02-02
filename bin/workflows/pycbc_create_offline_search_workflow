@@ -232,31 +232,7 @@ for ifo, _ in zip(*insps.categorize_by_attr('ifo')):
 for i in range(2, len(insps)+1):
     combinations = itertools.combinations(ifo_ids.keys(), i)
     for ifocomb in combinations:
-        # combination_prec stores precedence info for the detectors in the combination
-        combination_prec = {}
-        for ifo in ifocomb:
-            combination_prec[ifo] = ifo_ids[ifo]
-
-        # Use only the inspiral files required for the detector combination
-        inspcomb = wf.core.FileList()
-        for ifo, f in zip(*insps.categorize_by_attr('ifo')):
-            if ifo in combination_prec:
-                inspcomb += f
-
-        # pivot_ifo is the ifo in combination_prec with the smallest precedence value
-        pivot_ifo = min(combination_prec, key=combination_prec.get)
-        del combination_prec[pivot_ifo]
-        # fixed_ifo is the ifo with the next smallest precedence value
-        fixed_ifo = min(combination_prec, key=combination_prec.get)
-        del combination_prec[fixed_ifo]
-        ordered_ifo_list = [pivot_ifo, fixed_ifo]
-        if len(combination_prec)>0:
-            for i in range(len(combination_prec)):
-                nextifo = min(combination_prec, key=combination_prec.get)
-                ordered_ifo_list.append(nextifo)
-                del combination_prec[nextifo]
-
-        ordered_ifo_list_str = ' '.join(ordered_ifo_list)
+        pivot_ifo, fixed_ifo, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
 
         # Create coinc tag, and set up the coinc job for the combination
         coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
@@ -264,7 +240,7 @@ for i in range(2, len(insps)+1):
         bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
                                cum_veto_files, veto_names,
                                output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
-        final_bg_files[ordered_ifo_list_str] = wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
+        final_bg_files[ordered_ifo_list] = wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
                                final_veto_file, final_veto_name,
                                output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
 
@@ -359,37 +335,13 @@ for inj_file, tag in zip(inj_files, inj_tags):
     for i in range(2, len(insps)+1):
         combinations = itertools.combinations(ifo_ids.keys(), i)
         for ifocomb in combinations:
-            # combination_prec stores precedence info for the detectors in the combination
-            combination_prec = {}
-            for ifo in ifocomb:
-                combination_prec[ifo] = ifo_ids[ifo]
-
-            # Use only the inspiral files required for the detector combination
-            inspcomb = wf.core.FileList()
-            for ifo, fi in zip(*insps.categorize_by_attr('ifo')):
-                if ifo in combination_prec:
-                    inspcomb += fi
-
-            # pivot_ifo is the ifo in combination_prec with the smallest precedence value
-            pivot_ifo = min(combination_prec, key=combination_prec.get)
-            del combination_prec[pivot_ifo]
-            # fixed_ifo is the ifo with the next smallest precedence value
-            fixed_ifo = min(combination_prec, key=combination_prec.get)
-            del combination_prec[fixed_ifo]
-            ordered_ifo_list = [pivot_ifo, fixed_ifo]
-            if len(combination_prec)>0:
-                for i in range(len(combination_prec)):
-                    nextifo = min(combination_prec, key=combination_prec.get)
-                    ordered_ifo_list.append(nextifo)
-                    del combination_prec[nextifo]
-
-            ordered_ifo_list_str = ' '.join(ordered_ifo_list)
+            pivot_ifo, fixed_ifo, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)            
 
             # Create coinc tag, and set up the coinc job for the combination
             coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
             ctagcomb = [tag, 'inj', coinctag]
-            inj_coinc[ordered_ifo_list_str] = wf.setup_multiifo_interval_coinc_inj(workflow, hdfbank,
-                                    full_insps, insps, statfiles, final_bg_files[ordered_ifo_list_str][0][1],
+            inj_coinc[ordered_ifo_list] = wf.setup_multiifo_interval_coinc_inj(workflow, hdfbank,
+                                    full_insps, insps, statfiles, final_bg_files[ordered_ifo_list][0][1],
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
 

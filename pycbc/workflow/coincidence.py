@@ -688,3 +688,31 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
 
     logging.info('...leaving coincidence ')
     return statmap_files
+
+def get_ordered_ifo_list(ifocomb, ifo_ids):
+    # combination_prec stores precedence info for the detectors in the combination
+    combination_prec = {}
+    for ifo in ifocomb:
+        combination_prec[ifo] = ifo_ids[ifo]
+    
+    # Use only the inspiral files required for the detector combination
+    inspcomb = wf.core.FileList()
+    for ifo, fi in zip(*insps.categorize_by_attr('ifo')):
+        if ifo in combination_prec:
+            inspcomb += fi
+
+        # pivot_ifo is the ifo in combination_prec with the smallest precedence value
+        pivot_ifo = min(combination_prec, key=combination_prec.get)
+        del combination_prec[pivot_ifo]
+        # fixed_ifo is the ifo with the next smallest precedence value
+        fixed_ifo = min(combination_prec, key=combination_prec.get)
+        del combination_prec[fixed_ifo]
+        ordered_ifo_list = [pivot_ifo, fixed_ifo]
+        if len(combination_prec)>0:
+            for i in range(len(combination_prec)):
+                nextifo = min(combination_prec, key=combination_prec.get)
+                ordered_ifo_list.append(nextifo)
+                del combination_prec[nextifo]
+
+        return pivot_ifo, fixed_ifo, ordered_ifo_list_str = ''.join(ordered_ifo_list)
+
