@@ -338,7 +338,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
             pivot_ifo, fixed_ifo, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)            
 
             # Create coinc tag, and set up the coinc job for the combination
-            coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
+            coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
             ctagcomb = [tag, 'inj', coinctag]
             inj_coinc[ordered_ifo_list] = wf.setup_multiifo_interval_coinc_inj(workflow, hdfbank,
                                     full_insps, insps, statfiles, final_bg_files[ordered_ifo_list][0][1],
