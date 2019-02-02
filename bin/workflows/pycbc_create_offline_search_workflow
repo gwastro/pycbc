@@ -337,7 +337,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
         for ifocomb in combinations:
             pivot_ifo, fixed_ifo, ordered_ifo_list, inspcomb = wf.get_ordered_ifo_list(ifocomb, ifo_ids, insps)
 
-            full_inspcomb = wf.core.Filelist()
+            full_inspcomb = wf.FileList()
             for ifo, fi in zip(*full_insps.categorize_by_attr('ifo')):
                 if ifo in combination_prec:
                     full_inspcomb += fi
