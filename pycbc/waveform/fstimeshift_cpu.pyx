@@ -28,38 +28,65 @@ cimport numpy, cython
 
 from libc.math cimport (sin, cos)
 
-# automatic switch for complex types
-ctypedef fused COMPLEXTYPE:
-    float complex
-    double complex
-
-# automatic switch for real types
-ctypedef fused REALTYPE:
-    float
-    double
-
-def fstimeshift(numpy.ndarray [COMPLEXTYPE, ndim=1] freqseries,
-                REALTYPE phi,  # this should have same precision as freqseries
+# for double precision
+def fstimeshift(numpy.ndarray [double complex, ndim=1] freqseries,
+                double phi,
                 int kmin,
                 int kmax):
-    cdef REALTYPE re_h
-    cdef REALTYPE im_h
+    cdef double re_h
+    cdef double im_h
     cdef unsigned int update_interval = 100
     cdef unsigned int jj = update_interval
 
-    cdef REALTYPE re_shift
-    cdef REALTYPE im_shift
-    cdef REALTYPE re_lastshift
-    cdef REALTYPE im_lastshift
+    cdef double re_shift
+    cdef double im_shift
+    cdef double re_lastshift
+    cdef double im_lastshift
 
-    cdef REALTYPE re_inc = cos(phi)
-    cdef REALTYPE im_inc = sin(phi)
+    cdef double re_inc = cos(phi)
+    cdef double im_inc = sin(phi)
 
     for kk in range(kmin, kmax):
         if jj == update_interval:
             # recompute the added value to reduce numerical error
-            re_shift = cos(phi * <REALTYPE>kk)
-            im_shift = sin(phi * <REALTYPE>kk)
+            re_shift = cos(phi * <double>kk)
+            im_shift = sin(phi * <double>kk)
+            jj = 0
+        re_h = freqseries[kk].real
+        im_h = freqseries[kk].imag
+        freqseries[kk].real = re_shift * re_h - im_shift * im_h
+        freqseries[kk].imag = re_shift * im_h + im_shift * re_h
+        # increase the shift for the next element
+        re_lastshift = re_shift
+        im_lastshift = im_shift
+        re_shift = re_lastshift * re_inc - im_lastshift * im_inc
+        im_shift = re_lastshift * im_inc + im_lastshift * re_inc
+        jj += 1
+
+
+# for single precision
+def fstimeshift32(numpy.ndarray [float complex, ndim=1] freqseries,
+                float phi,
+                int kmin,
+                int kmax):
+    cdef float re_h
+    cdef float im_h
+    cdef unsigned int update_interval = 100
+    cdef unsigned int jj = update_interval
+
+    cdef float re_shift
+    cdef float im_shift
+    cdef float re_lastshift
+    cdef float im_lastshift
+
+    cdef float re_inc = cos(phi)
+    cdef float im_inc = sin(phi)
+
+    for kk in range(kmin, kmax):
+        if jj == update_interval:
+            # recompute the added value to reduce numerical error
+            re_shift = cos(phi * <float>kk)
+            im_shift = sin(phi * <float>kk)
             jj = 0
         re_h = freqseries[kk].real
         im_h = freqseries[kk].imag

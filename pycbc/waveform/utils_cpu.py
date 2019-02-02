@@ -27,9 +27,8 @@
 """
 from __future__ import absolute_import
 from pycbc.types import FrequencySeries
-#from pycbc.weave import inline
 import numpy
-from .fstimeshift_cpu import fstimeshift
+from .fstimeshift_cpu import (fstimeshift, fstimeshift32)
 
 
 def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
@@ -38,11 +37,13 @@ def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
     """
     out = numpy.array(htilde.data, copy=copy)
     phi = -2 * numpy.pi * dt * htilde.delta_f
+    kmax = len(htilde)
     # make phi have the same precision as htilde
     if htilde.precision == 'single':
         phi = numpy.float32(phi)
-    kmax = len(htilde)
-    fstimeshift(out, phi, kmin, kmax)
+        fstimeshift32(out, phi, kmin, kmax)
+    else:
+        fstimeshift(out, phi, kmin, kmax)
     if copy:
         htilde = FrequencySeries(out, delta_f=htilde.delta_f,
                                  epoch=htilde.epoch, copy=False)
