@@ -47,6 +47,9 @@ class TestFDTimeShift(unittest.TestCase):
         tdshift = self._shift_and_ifft(fdsinx, -tshift, fseries=fseries)
         # check
         comp = numpy.cos(self.time_series)
+        if tdshift.precision == 'single':
+            # cast to single
+            comp = comp.astype(numpy.float32)
         self.assertTrue(numpy.isclose(tdshift, comp).all())
         # shift by +pi/2: should be the same as the -cosine
         tdshift = self._shift_and_ifft(fdsinx, tshift, fseries=fseries)
@@ -57,17 +60,28 @@ class TestFDTimeShift(unittest.TestCase):
         tshift = 193 * self.time_series.delta_t / 3.
         tdshift = self._shift_and_ifft(fdsinx, tshift, fseries=fseries)
         comp = numpy.sin(self.time_series - 2*numpy.pi*self.freq*tshift)
+        if tdshift.precision == 'single':
+            # cast to single
+            comp = comp.astype(numpy.float32)
         self.assertTrue(numpy.isclose(tdshift, comp).all())
         # backward:
         tdshift = self._shift_and_ifft(fdsinx, -tshift, fseries=fseries)
         comp = numpy.sin(self.time_series + 2*numpy.pi*self.freq*tshift)
+        if tdshift.precision == 'single':
+            # cast to single
+            comp = comp.astype(numpy.float32)
         self.assertTrue(numpy.isclose(tdshift, comp).all())
 
     def test_fd_time_shift(self):
-        """Applies shifts to fdsinx using C code, and compares the result to
-        applying the shift directly in the time domain.
+        """Applies shifts to fdsinx using cython code, and compares the
+        result to applying the shift directly in the time domain.
         """
         self._test_apply_fd_time_shift(self.fdsinx)
+
+    def test_fd_time_shift32(self):
+        """Tests the cython code using single precision.
+        """
+        self._test_apply_fd_time_shift(self.fdsinx.astype(numpy.complex64))
 
     def test_fseries_time_shift(self):
         """Applies shifts to fdsinx using numpy code, and compares the result
