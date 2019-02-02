@@ -232,7 +232,7 @@ for ifo, _ in zip(*insps.categorize_by_attr('ifo')):
 for i in range(2, len(insps)+1):
     combinations = itertools.combinations(ifo_ids.keys(), i)
     for ifocomb in combinations:
-        pivot_ifo, fixed_ifo, ordered_ifo_list, inspcomb = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
+        pivot_ifo, fixed_ifo, ordered_ifo_list, inspcomb = wf.get_ordered_ifo_list(ifocomb, ifo_ids, insps)
 
         # Create coinc tag, and set up the coinc job for the combination
         coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
@@ -335,7 +335,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     for i in range(2, len(insps)+1):
         combinations = itertools.combinations(ifo_ids.keys(), i)
         for ifocomb in combinations:
-            pivot_ifo, fixed_ifo, ordered_ifo_list, inspcomb = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
+            pivot_ifo, fixed_ifo, ordered_ifo_list, inspcomb = wf.get_ordered_ifo_list(ifocomb, ifo_ids, insps)
 
             full_inspcomb = wf.core.Filelist()
             for ifo, fi in zip(*full_insps.categorize_by_attr('ifo')):
