@@ -69,6 +69,15 @@ else
 fi
 popd
 
+bash -e tools/inference_gw150914_test.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+
 echo -e "\\n>> [`date`] Building documentation"
 
 python setup.py build_gh_pages &> $LOG_FILE
