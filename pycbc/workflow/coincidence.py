@@ -689,7 +689,7 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     logging.info('...leaving coincidence ')
     return statmap_files
 
-def get_ordered_ifo_list(ifocomb, ifo_ids):
+def get_ordered_ifo_list(ifocomb, ifo_ids, insps):
     # combination_prec stores precedence info for the detectors in the combination
     combination_prec = {}
     for ifo in ifocomb:
@@ -714,5 +714,5 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
             ordered_ifo_list.append(nextifo)
             del combination_prec[nextifo]
 
-    return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list)
+    return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list), inspcomb
 
