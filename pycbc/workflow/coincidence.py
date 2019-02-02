@@ -714,5 +714,5 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
             ordered_ifo_list.append(nextifo)
             del combination_prec[nextifo]
 
-    return pivot_ifo, fixed_ifo, ordered_ifo_list_str = ''.join(ordered_ifo_list)
+    return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list)
 
