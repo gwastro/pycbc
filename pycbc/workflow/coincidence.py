@@ -696,7 +696,7 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
         combination_prec[ifo] = ifo_ids[ifo]
 
     # Use only the inspiral files required for the detector combination
-    inspcomb = wf.core.FileList()
+    inspcomb = FileList()
     for ifo, fi in zip(*insps.categorize_by_attr('ifo')):
         if ifo in combination_prec:
             inspcomb += fi
