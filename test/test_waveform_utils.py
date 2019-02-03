@@ -36,38 +36,65 @@ class TestFDTimeShift(unittest.TestCase):
                                       epoch=fdsinx.epoch)
         return tdshift.to_timeseries()
 
-    def _test_apply_fd_time_shift(self, fdsinx, fseries=None):
+    def _test_apply_fd_time_shift(self, fdsinx, fseries=None, atol=1e-8):
         """Tests ``apply_fd_time_shift`` with the given fdseries.
 
         If ``fdsinx`` is a FrequencySeries, this will test the shift code
         written in C. Otherwise, this will test the numpy version.
+
+        Parameters
+        ----------
+        fdsinx : FrequencySeries
+            The frequency series to shift and test.
+        fseires : array, optional
+            Array of the sample frequencies of ``fdsinx``. This is only needed
+            for the numpy version.
+        atol : float, optional
+            The absolute tolerance for the comparison test. See
+            ``numpy.isclose`` for details.
         """
         # shift by -pi/2: should be the same as the cosine
         tshift = 1./(4*self.freq)
         tdshift = self._shift_and_ifft(fdsinx, -tshift, fseries=fseries)
         # check
         comp = numpy.cos(self.time_series)
-        self.assertTrue(numpy.isclose(tdshift, comp).all())
+        if tdshift.precision == 'single':
+            # cast to single
+            comp = comp.astype(numpy.float32)
+        self.assertTrue(numpy.isclose(tdshift, comp, atol=atol).all())
         # shift by +pi/2: should be the same as the -cosine
         tdshift = self._shift_and_ifft(fdsinx, tshift, fseries=fseries)
-        self.assertTrue(numpy.isclose(tdshift, -1*comp).all())
+        self.assertTrue(numpy.isclose(tdshift, -1*comp, atol=atol).all())
         # shift by a non-integer fraction of the period; we'll do this by
         # shifting by a prime number times dt / 3
         # forward:
         tshift = 193 * self.time_series.delta_t / 3.
         tdshift = self._shift_and_ifft(fdsinx, tshift, fseries=fseries)
         comp = numpy.sin(self.time_series - 2*numpy.pi*self.freq*tshift)
-        self.assertTrue(numpy.isclose(tdshift, comp).all())
+        if tdshift.precision == 'single':
+            # cast to single
+            comp = comp.astype(numpy.float32)
+        self.assertTrue(numpy.isclose(tdshift, comp, atol=atol).all())
         # backward:
         tdshift = self._shift_and_ifft(fdsinx, -tshift, fseries=fseries)
         comp = numpy.sin(self.time_series + 2*numpy.pi*self.freq*tshift)
-        self.assertTrue(numpy.isclose(tdshift, comp).all())
+        if tdshift.precision == 'single':
+            # cast to single
+            comp = comp.astype(numpy.float32)
+        self.assertTrue(numpy.isclose(tdshift, comp, atol=atol).all())
 
     def test_fd_time_shift(self):
-        """Applies shifts to fdsinx using C code, and compares the result to
-        applying the shift directly in the time domain.
+        """Applies shifts to fdsinx using cython code, and compares the
+        result to applying the shift directly in the time domain.
         """
         self._test_apply_fd_time_shift(self.fdsinx)
+
+    def test_fd_time_shift32(self):
+        """Tests the cython code using single precision.
+        """
+        # we need to increase the tolerance on isclose
+        self._test_apply_fd_time_shift(self.fdsinx.astype(numpy.complex64),
+                                       atol=1e-4)
 
     def test_fseries_time_shift(self):
         """Applies shifts to fdsinx using numpy code, and compares the result
