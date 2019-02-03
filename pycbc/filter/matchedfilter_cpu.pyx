@@ -75,7 +75,7 @@ class CPUCorrelator(_BaseCorrelator):
         self.z = numpy.array(z.data, copy=False)
 
     def correlate(self):
-        _correlate(self.x, self.y, self.z)
+        _correlate(self.x, self.y, self.y)
 
 def _correlate_factory(x, y, z):
     return CPUCorrelator
