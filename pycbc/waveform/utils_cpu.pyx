@@ -1,4 +1,5 @@
-# Copyright (C) 2019 Collin Capano
+# Copyright (C) 2018 Collin Capano, Josh Willis
+#
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -21,14 +22,38 @@
 #
 # =============================================================================
 #
-# cython: embedsignature=True
+"""This module contains the CPU-specific code for
+   convenience utilities for manipulating waveforms
+"""
 from __future__ import absolute_import
+from pycbc.types import FrequencySeries
 import numpy
+
+# cython: embedsignature=True
 cimport numpy, cython
 
 from libc.math cimport (sin, cos)
 
-# for double precision
+
+def apply_fseries_time_shift(htilde, dt, kmin=0, copy=True):
+    """Shifts a frequency domain waveform in time. The waveform is assumed to
+    be sampled at equal frequency intervals.
+    """
+    out = numpy.array(htilde.data, copy=copy)
+    phi = -2 * numpy.pi * dt * htilde.delta_f
+    kmax = len(htilde)
+    # make phi have the same precision as htilde
+    if htilde.precision == 'single':
+        phi = numpy.float32(phi)
+        fstimeshift32(out, phi, kmin, kmax)
+    else:
+        fstimeshift(out, phi, kmin, kmax)
+    if copy:
+        htilde = FrequencySeries(out, delta_f=htilde.delta_f,
+                                 epoch=htilde.epoch, copy=False)
+    return htilde
+
+
 def fstimeshift(numpy.ndarray [double complex, ndim=1] freqseries,
                 double phi,
                 int kmin,

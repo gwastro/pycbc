@@ -203,7 +203,7 @@ extras_require = {'cuda': ['pycuda>=2015.1', 'scikit-cuda']}
 VERSION = get_version_info()
 
 cythonext = ['waveform.spa_tmplt',
-             'waveform.fstimeshift',
+             'waveform.utils',
              'types.array',
              'filter.matchedfilter']
 ext = []
