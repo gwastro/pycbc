@@ -45,6 +45,18 @@ do
     fi
 done
 
+#run pycbc inspiral test
+pushd examples/inspiral
+bash -e run.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+popd
+
 # Run Inference Scripts
 pushd examples/inference/analytic-normal2d
 bash -e run.sh
