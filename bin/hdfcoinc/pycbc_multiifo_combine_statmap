@@ -6,27 +6,6 @@ leaves the background triggers alone. """
 import h5py, numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
 import pycbc.version
 
-
-def name_all_datasets(files):
-    datasets= []
-    for fi in files:
-        for k in fi.keys():
-            if isinstance(fi[k], h5py.Dataset):
-                datasets.append(k)
-            else:
-                datasets += get_all_subkeys(fi,k)
-    return set(datasets)
-
-def get_all_subkeys(fi,k):
-    subkey_list = []
-    for sk in fi[k].keys():
-        if isinstance(fi[k+'/'+sk], h5py.Dataset):
-            subkey_list.append(k+'/'+sk)
-        else:
-            subkey_list += get_all_subkeys(fi,k+'/'+sk)
-    # this will return an empty list if there is no dataset or subgroup within the group
-    return subkey_list
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
@@ -46,6 +25,9 @@ files = [h5py.File(n,'r') for n in args.statmap_files]
 
 f = h5py.File(args.output_file, "w")
 
+
+logging.info('copying segments and info to %s' % args.output_file)
+
 for fi in files:
     ifos_in_file = [ifo for ifo in args.ifos if ifo in fi['segments']]
     ifo_to_get = 'segments/{}'.format(ifos_in_file[0])
@@ -64,7 +46,7 @@ for fi in files:
 
     
 
-key_set = name_all_datasets(files)
+key_set = pycbc.io.name_all_datasets(files)
 # copy and concatenate all the columns in the foreground group 
 # from all files /except/ the IFO groups, we recalculate ifar/fap later
 for key in key_set:
@@ -72,6 +54,7 @@ for key in key_set:
         pycbc.io.combine_and_copy(f, files, key)
 
 
+logging.info('collating triggers into single structure')
 #for the ifo-specific groups, copy them over into the new file
 # - if the ifo is not present for each coincident trigger, 
 #  indicate by including a '-1' value in the combined file
@@ -98,6 +81,7 @@ for f_in in files:
             all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo],
                                      -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
 
+logging.info('clustering triggers for loudest stat value')
 #cluster the triggers before applying trials factor
 for ifo in args.ifos:
     f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
@@ -131,6 +115,7 @@ for key in f['foreground'].keys():
             del f['foreground/{}/{}'.format(key,k)]
             f['foreground/{}/{}'.format(key,k)] = dset
 
+logging.info('applying trials factor')
 #copy across ifar and ifar_exc, etc 
 # recalculate ifar/fap for the foreground triggers by 
 #  applying a trials factor = num_files(num_bins)
@@ -194,3 +179,4 @@ f['foreground/ifar_exc'][:] = ifars_exc
 for f_in in files:
     f_in.close()
 f.close()
+logging.info('done')

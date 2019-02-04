@@ -898,3 +898,23 @@ def combine_and_copy(f, files, group):
     """ Combine the same column from multiple files and save to a third"""
     f[group] = np.concatenate([fi[group][:] if group in fi else \
                                    np.array([], dtype=np.uint32) for fi in files])
+
+def name_all_datasets(files):
+    datasets= []
+    for fi in files:
+        for k in fi.keys():
+            if isinstance(fi[k], h5py.Dataset):
+                datasets.append(k)
+            else:
+                datasets += get_all_subkeys(fi,k)
+    return set(datasets)
+
+def get_all_subkeys(fi,k):
+    subkey_list = []
+    for sk in fi[k].keys():
+        if isinstance(fi[k+'/'+sk], h5py.Dataset):
+            subkey_list.append(k+'/'+sk)
+        else:
+            subkey_list += get_all_subkeys(fi,k+'/'+sk)
+    # this will return an empty list if there is no dataset or subgroup within the group
+    return subkey_list
