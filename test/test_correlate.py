@@ -72,7 +72,7 @@ class Testcorrelate(unittest.TestCase):
     def test_batch_correlate(self):
         size = len(self.x)
         xs = [self.x+0, self.x+1, self.x+2, self.x+3]
-        zs = [self.z+0, self.z*1, self.z*2, self.z*3]
+        zs = [self.z*0, self.z*1, self.z*2, self.z*3]
         b = BatchCorrelator(xs, zs, size)
         b.execute(self.y)
 
