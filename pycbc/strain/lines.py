@@ -74,7 +74,7 @@ def matching_line(freq, data, tref, bin_size=1):
     template_line = line_model(freq, data, tref=tref)
     # Measure amplitude and phase of the line in the data
     _, amp, phi = avg_inner_product(data, template_line,
-                                    bin_size=data.duration)
+                                    bin_size=bin_size)
     return line_model(freq, data, tref=tref, amp=amp, phi=phi)
 
 def calibration_lines(freqs, data, tref=None):
@@ -83,7 +83,8 @@ def calibration_lines(freqs, data, tref=None):
     if tref is None:
         tref = float(data.start_time)
     for freq in freqs:
-        measured_line = matching_line(freq, data, tref)
+        measured_line = matching_line(freq, data, tref,
+                                      bin_size=data.duration)
         data -= measured_line.data.real
 
     return data
