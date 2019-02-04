@@ -22,7 +22,7 @@
 # =============================================================================
 #
 """
-These are the unittests for the pycbc.waveform module
+These are the unittests for the correlate functions in pycbc.filter.matchedfilter_cpu
 """
 import sys
 import pycbc
