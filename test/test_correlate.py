@@ -63,7 +63,7 @@ class Testcorrelate(unittest.TestCase):
     def test_correlator(self):
         x = self.x * 1
         y = self.y * 1
-        z = self.z * 1
+        z = self.z * 0
         corr = Correlator(x, y, z)
         corr.correlate()
 
