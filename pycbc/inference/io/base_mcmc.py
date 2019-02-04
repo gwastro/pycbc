@@ -26,6 +26,7 @@
 
 from __future__ import (absolute_import, division)
 
+import logging
 import numpy
 import argparse
 
@@ -116,8 +117,19 @@ class MCMCMetadataIO(object):
         """Returns the iteration of the last sample on disk."""
         # use the first parameter in samples group to get the size of the
         # data stored
-        param = list(self[self.samples_group].keys())[0]
-        return self[self.samples_group][param].shape[-1] * self.thinned_by
+        try:
+            params = list(self[self.samples_group.keys())
+        except KeyError:
+            # samples group doesn't exist yet
+            params = []
+        if params == []:
+            # no samples have been written, just return 0
+            lastiter = 0
+        else:
+            lastiter = self[self.samples_group][params[0]].shape[-1]
+            # account for thinning
+            lastiter *= self.thinned_by
+        return lastiter
 
     @property
     def iterations(self):
@@ -277,48 +289,82 @@ class SingleTempMCMCIO(object):
     only a single temperature.
     """
 
-    def write_samples(self, samples, parameters=None):
+    def write_samples(self, samples, last_iteration, parameters=None):
         """Writes samples to the given file.
 
         Results are written to ``samples_group/{vararg}``, where ``{vararg}``
         is the name of a model params. The samples are written as an
-        ``nwalkers x niterations`` array.
+        ``nwalkers x niterations`` array. If samples already exist, the new
+        samples are appended to the current.
+
+        If the current samples on disk have been thinned (determined by the
+        ``thinned_by`` attribute in the samples group), then the samples
+        will be thinned by the same amount before being written. The thinning
+        is started at the sample in ``samples`` that occured at the iteration
+        equal to the last that's stored iteration on disk + the ``thinned_by``
+        interval. If this iteration is larger than the iteration of the last
+        given sample, then none of the samples will be written.
 
         Parameters
         -----------
         samples : dict
             The samples to write. Each array in the dictionary should have
             shape nwalkers x niterations.
+        last_iteration : int
+            The iteration of the last sample. This is needed to determine how
+            to thin the samples, if the file's ``thinned_by`` is > 1.
         parameters : list, optional
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
+
+        Returns
+        -------
+        dict or None :
+            Dictionary of the samples that were written. If the file's
+            ``thinned_by`` is 1, this is the same as the given samples. If the
+            none of the samples were written, returns None.
         """
-        nwalkers, niterations = samples.values()[0].shape
-        assert all(p.shape == (nwalkers, niterations)
+        nwalkers, nsamples = list(samples.values())[0].shape
+        assert all(p.shape == (nwalkers, nsamples)
                    for p in samples.values()), (
                "all samples must have the same shape")
         group = self.samples_group + '/{name}'
         if parameters is None:
             parameters = samples.keys()
-        # loop over number of dimensions
-        for param in parameters:
-            dataset_name = group.format(name=param)
-            try:
-                fp_niterations = self[dataset_name].shape[-1]
-                istart = fp_niterations
-                istop = istart + niterations
-                if istop > fp_niterations:
-                    # resize the dataset
-                    self[dataset_name].resize(istop, axis=1)
-            except KeyError:
-                # dataset doesn't exist yet
-                istart = 0
-                istop = istart + niterations
-                self.create_dataset(dataset_name, (nwalkers, istop),
-                                    maxshape=(nwalkers, None),
-                                    dtype=samples[param].dtype,
-                                    fletcher32=True)
-            self[dataset_name][:, istart:istop] = samples[param]
+        # determine where to start the thinning from
+        thin_start = self.last_iteration + self.thinned_by \
+                     - (last_iteration - nsamples)
+        if thin_start >= last_iteration:
+            logging.info("Thinning interval of samples on disk such that "
+                         "these samples are skipped over, so not writing "
+                         "anything.")
+            return None
+        else:
+            # thin the samples
+            if self.thinned_by > 1:
+                samples = {param: d[:, thin_start::self.thinned_by]
+                           for (param, d) in samples.items()}
+                nsamples = list(samples.values())[0].shape[1]
+            # loop over number of dimensions
+            for param in parameters:
+                dataset_name = group.format(name=param)
+                try:
+                    fp_nsamples = self[dataset_name].shape[-1]
+                    istart = fp_nsamples
+                    istop = istart + nsamples
+                    if istop > fp_nsamples:
+                        # resize the dataset
+                        self[dataset_name].resize(istop, axis=1)
+                except KeyError:
+                    # dataset doesn't exist yet
+                    istart = 0
+                    istop = istart + nsamples
+                    self.create_dataset(dataset_name, (nwalkers, istop),
+                                        maxshape=(nwalkers, None),
+                                        dtype=samples[param].dtype,
+                                        fletcher32=True)
+                self[dataset_name][:, istart:istop] = samples[param]
+            return samples
 
     def read_raw_samples(self, fields,
                          thin_start=None, thin_interval=None, thin_end=None,
