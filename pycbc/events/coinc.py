@@ -428,10 +428,9 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
     return cidx
 
 def mean_if_greater_than_zero(vals):
-    """ Calculate mean of an iterator of numerical values, but ignore it
-    if the value if it is less than zero. This is used when the timestamps
-    are marked as -1 when a particular IFO is not included in the particular
-    coincidence.
+    """ Calculate mean over numerical values, ignoring values less than zero.
+    E.g. used for mean time over coincident triggers when timestamps are set
+    to -1 for ifos not included in the coincidence.
 
     Parameters
     ----------
@@ -451,14 +450,15 @@ def mean_if_greater_than_zero(vals):
     return vals[above_zero].mean(), above_zero.sum()
 
 def cluster_over_time(stat, time, window, argmax=numpy.argmax):
-    """Cluster events given their times and ranking statistic values
+    """Cluster generalized transient events over time via maximum stat over a
+    symmetric sliding window
 
     Parameters
     ----------
     stat: numpy.ndarray
         vector of ranking values to maximize
     time: numpy.ndarray
-        averaged time
+        time to use for clustering
     window: float
         length to cluster over
     argmax: function
@@ -469,7 +469,7 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
-    logging.info('clustering coinc triggers over %ss window' % window)
+    logging.info('clustering events over %ss window' % window)
 
     indices = []
     time_sorting = time.argsort()
