@@ -460,6 +460,18 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         return (s0 + s1) / (2.**0.5)
 
 
+class ExpFitSGCombinedSNR(ExpFitStatistic):
+
+    """ExpFitCombinedSNR but with sine-Gaussian veto added to the
+
+    single detector ranking
+    """
+
+    def __init__(self, files):
+        ExpFitCombinedSNR.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto
+
+
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
 
     """Statistic combining exponential noise model with signal histogram PDF"""
@@ -536,6 +548,7 @@ statistic_dict = {
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
+    'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
@@ -548,6 +561,7 @@ sngl_statistic_dict = {
     'snr': NetworkSNRStatistic,
     'newsnr_cut': NewSNRCutStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
+    'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic
 }
