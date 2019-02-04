@@ -24,7 +24,7 @@
 """Provides I/O that is specific to MCMC samplers.
 """
 
-from __future__ import absolute_import
+from __future__ import (absolute_import, division)
 
 import numpy
 import argparse
@@ -60,6 +60,88 @@ class MCMCMetadataIO(object):
     def nwalkers(self):
         """Returns the number of walkers used by the sampler."""
         return self[self.sampler_group].attrs['nwalkers']
+
+    @property
+    def prethin_interval(self):
+        """Returns the prethinning interval used.
+
+        The prethinning interval is the interval that the samples are thinned
+        by before writing to disk.
+
+        If ``None``, no prethinning is done.
+        """
+        try:
+            return self[self.sampler_group].attrs['prethin_interval']
+        except KeyError:
+            return None
+
+    @prethin_interval.setter
+    def prethin_interval(self, interval):
+        """Writes the given prethin interval to file."""
+        self[self.sampler_group].attrs['prethin_interval'] = int(interval)
+
+    def thin(self, thin_interval):
+        """Thins the samples on disk using the given thinning interval.
+
+        Parameters
+        ----------
+        thin_interval : int
+            The interval to thin by.
+        """
+        # read thinned samples into memory
+        params = self[self.samples_group].keys()
+        samples = self.read_raw_samples(params, thin_interval=thin_interval,
+                                        flatten=False)
+        # now resize and write the data back to disk
+        for param in params:
+            data = samples[param]
+            # resize the arrays on disk
+            self[self.samples_group].resize(data.shape)
+            # and write
+            self[self.samples_group][:] = data
+        # store the interval that samples were thinned by
+        self.thinned_by *= thin_interval
+        # If a default thin interval and thin start exist, reduce them by the
+        # thinned interval. If the thin interval is not an integer multiple
+        # of the original, we'll round up, to avoid getting samples from
+        # before the burn in / at an interval less than the ACL.
+        self.thin_start = int(numpy.ceil(self.thin_start/thin_interval))
+        self.thin_interval = int(numpy.ceil(self.thin_interval/thin_interval))
+
+    @property
+    def thinned_by(self):
+        """Returns interval samples have been thinned by on disk.
+
+        This looks for ``thinned_by`` in the samples group attrs. If none is
+        found, will just return 1.
+        """
+        try:
+            thinned_by = self[self.samples_group].attrs['thinned_by']
+        except KeyError:
+            thinned_by = 1
+
+    @thinned_by.setter
+    def thinned_by(self, thinned_by):
+        """Sets the thinned_by attribute.
+
+        This is the interval that samples have been thinned by on disk. The
+        given value is written to
+        ``self[self.samples_group].attrs['thinned_by']``.
+        """
+        self[self.samples_group].attrs['thinned_by'] = int(thinned_by)
+
+    @property
+    def last_iteration(self):
+        """Returns the iteration of the last sample on disk."""
+        # use the first parameter in samples group to get the size of the
+        # data stored
+        param = list(self[self.samples_group].keys())[0]
+        return self[self.samples_group][param].shape[-1] * self.thinned_by
+
+    @property
+    def iterations(self):
+        """Returns the iteration each sample occurred at."""
+        return numpy.arange(0, self.last_iteration, self.thinned_by)
 
     def write_sampler_metadata(self, sampler):
         """Writes the sampler's metadata."""
@@ -104,7 +186,7 @@ class MCMCMetadataIO(object):
         self[self.sampler_group].attrs['acl'] = acl
         # set the default thin interval to be the acl (if it is finite)
         if numpy.isfinite(acl):
-            self.attrs['thin_interval'] = int(numpy.ceil(acl))
+            self.thin_interval = int(numpy.ceil(acl))
 
     def read_acls(self):
         """Reads the acls of all the parameters.
@@ -124,7 +206,7 @@ class MCMCMetadataIO(object):
         group.attrs['is_burned_in'] = burn_in.is_burned_in
         group.attrs['burn_in_iteration'] = burn_in.burn_in_iteration
         # set the defaut thin_start to be the burn_in_iteration
-        self.attrs['thin_start'] = burn_in.burn_in_iteration
+        self.thin_start = burn_in.burn_in_iteration
         # write individual test data
         for tst in burn_in.burn_in_data:
             key = 'burn_in_tests/{}'.format(tst)
