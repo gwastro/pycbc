@@ -277,8 +277,7 @@ class SingleTempMCMCIO(object):
     only a single temperature.
     """
 
-    def write_samples(self, samples, parameters=None,
-                      start_iteration=None, max_iterations=None):
+    def write_samples(self, samples, parameters=None):
         """Writes samples to the given file.
 
         Results are written to ``samples_group/{vararg}``, where ``{vararg}``
@@ -293,47 +292,30 @@ class SingleTempMCMCIO(object):
         parameters : list, optional
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
-        start_iteration : int, optional
-            Write results to the file's datasets starting at the given
-            iteration. Default is to append after the last iteration in the
-            file.
-        max_iterations : int, optional
-            Set the maximum size that the arrays in the hdf file may be resized
-            to. Only applies if the samples have not previously been written
-            to file. The default (None) is to use the maximum size allowed by
-            h5py.
         """
         nwalkers, niterations = samples.values()[0].shape
         assert all(p.shape == (nwalkers, niterations)
                    for p in samples.values()), (
                "all samples must have the same shape")
-        if max_iterations is not None and max_iterations < niterations:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
         group = self.samples_group + '/{name}'
         if parameters is None:
             parameters = samples.keys()
         # loop over number of dimensions
         for param in parameters:
             dataset_name = group.format(name=param)
-            istart = start_iteration
             try:
                 fp_niterations = self[dataset_name].shape[-1]
-                if istart is None:
-                    istart = fp_niterations
+                istart = fp_niterations
                 istop = istart + niterations
                 if istop > fp_niterations:
                     # resize the dataset
                     self[dataset_name].resize(istop, axis=1)
             except KeyError:
                 # dataset doesn't exist yet
-                if istart is not None and istart != 0:
-                    raise ValueError("non-zero start_iteration provided, "
-                                     "but dataset doesn't exist yet")
                 istart = 0
                 istop = istart + niterations
                 self.create_dataset(dataset_name, (nwalkers, istop),
-                                    maxshape=(nwalkers, max_iterations),
+                                    maxshape=(nwalkers, None),
                                     dtype=samples[param].dtype,
                                     fletcher32=True)
             self[dataset_name][:, istart:istop] = samples[param]
