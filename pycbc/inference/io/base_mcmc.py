@@ -61,25 +61,6 @@ class MCMCMetadataIO(object):
         """Returns the number of walkers used by the sampler."""
         return self[self.sampler_group].attrs['nwalkers']
 
-    @property
-    def prethin_interval(self):
-        """Returns the prethinning interval used.
-
-        The prethinning interval is the interval that the samples are thinned
-        by before writing to disk.
-
-        If ``None``, no prethinning is done.
-        """
-        try:
-            return self[self.sampler_group].attrs['prethin_interval']
-        except KeyError:
-            return None
-
-    @prethin_interval.setter
-    def prethin_interval(self, interval):
-        """Writes the given prethin interval to file."""
-        self[self.sampler_group].attrs['prethin_interval'] = int(interval)
-
     def thin(self, thin_interval):
         """Thins the samples on disk using the given thinning interval.
 
