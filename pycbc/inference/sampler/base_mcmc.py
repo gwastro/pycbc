@@ -275,7 +275,12 @@ class BaseMCMC(object):
 
     @prethin_interval.setter
     def prethin_interval(self, interval):
-        """Sets the prethin interval to use."""
+        """Sets the prethin interval to use.
+        
+        If ``None`` provided, will default to 1.
+        """
+        if interval is None:
+            interval = 1
         self._prethin_interval = interval
 
     @property
@@ -638,6 +643,31 @@ class BaseMCMC(object):
         except ConfigParser.Error:
             bit = None
         self.set_burn_in(bit)
+
+    def set_prethin_from_config(self, cp, section):
+        """Sets prethinning options from the given config file.
+        """
+        self.prethin = cp.has_option(section, "prethin")
+        if cp.has_option(section, "prethin-interval"):
+            prethin_interval = int(cp.get(section, "prethin-interval"))
+        else:
+            prethin_interval = None
+        if cp.has_option(section, "prethin-factor"):
+            prethin_factor = int(cp.get(section, "prethin-factor"))
+        else:
+            prethin_factor = None
+        # check for consistency
+        if self.prethin and not (prethin_interval or prethin_factor):
+            raise ValueError("prethinning specified, but no prethin-interval "
+                             "or prethin-factor provided")
+        if prethin_interval is not None and prethin_factor is not None:
+            raise ValueError("provide either prethin-interval or "
+                             "prethin-factor, not both")
+        if prethin_factor and not cp.has_option(section, "effective-nsamples"):
+            raise ValueError("prethin_factor requires effective-nsamples "
+                             "to be set")
+        self.prethin_factor = prethin_factor
+        self.prethin_interval = prethin_interval
 
     @abstractmethod
     def compute_acf(cls, filename, **kwargs):
