@@ -204,9 +204,8 @@ class BaseMCMC(object):
     _checkpoint_interval = None
     _target_niterations = None
     _target_eff_nsamples = None
-    _prethin = False
-    _prethin_interval = 1
-    _prethin_factor = None
+    _thin_interval = 1
+    _thin_factor = None
 
     @abstractproperty
     def base_shape(self):
@@ -253,72 +252,56 @@ class BaseMCMC(object):
         return self._target_eff_nsamples
 
     @property
-    def prethin(self):
-        """Whether or not samples are thinned before written to disk."""
-        return self._prethin
+    def thin_interval(self):
+        """Returns the thin interval to use."""
+        return self._thin_interval
 
-    @prethin.setter
-    def prethin(self, prethin):
-        """Sets prethin attribute.
-
-        Parameters
-        ----------
-        prethin : bool
-            Whether or not to prethin.
-        """
-        self._prethin = prethin
-
-    @property
-    def prethin_interval(self):
-        """Returns the prethin interval to use."""
-        return self._prethin_interval
-
-    @prethin_interval.setter
-    def prethin_interval(self, interval):
-        """Sets the prethin interval to use.
+    @thin_interval.setter
+    def thin_interval(self, interval):
+        """Sets the thin interval to use.
         
         If ``None`` provided, will default to 1.
         """
         if interval is None:
             interval = 1
-        self._prethin_interval = interval
+        self._thin_interval = interval
 
     @property
-    def prethin_factor(self):
-        """Returns the prethin factor being used.
+    def thin_factor(self):
+        """Returns the thin factor being used.
 
         This is only used when the target is an effective number of samples.
         """
-        return self._prethin_factor
+        return self._thin_factor
 
-    @prethin_factor.setter
-    def prethin_factor(self, factor):
-        """Sets the prethin factor.
+    @thin_factor.setter
+    def thin_factor(self, factor):
+        """Sets the thin factor.
         """
-        return self._prethin_factor = int(factor)
+        return self._thin_factor = int(factor)
 
     def get_thin_interval(self):
-        """Gets the prethin interval to use.
+        """Gets the thin interval to use.
 
-        If a prethin factor is set, this will figure out what to use based
+        If a thin factor is set, this will figure out what to use based
         on the effective number of samples. Otherwise, it will just return
-        ``prethin_interval``.
+        ``thin_interval``.
         """
-        if self.prethin_factor is not None:
+        if self.thin_factor is not None:
             # check that a target number of effective samples has been
             # specified so that we can estimate the interval to use
             if self.target_eff_nsamples is None:
-                raise ValueError("prethin factor specfied, but target number "
+                raise ValueError("thin factor specfied, but target number "
                                  "of effective samples not set")
             # figure out the interval to use
             thinfac = self.niterations // \
                       (self.target_eff_nsamples//self.nwalkers) // \
-                      self.prethin_factor
+                      self.thin_factor
             # make the new interval a multiple of the previous
-            thin_interval = (thinfac // self.prethin_interval) * \
-                            self.prethin_interval
+            thin_interval = (thinfac // self.thin_interval) * \
+                            self.thin_interval
         else:
-            thin_interval = self.prethin_interval
+            thin_interval = self.thin_interval
         return thin_interval
 
     def set_target(self, niterations=None, eff_nsamples=None):
@@ -535,9 +518,9 @@ class BaseMCMC(object):
             with self.io(fn, "a") as fp:
                 # write the current number of iterations
                 fp.write_niterations(self.niterations)
+                thin_interval = self.get_thin_interval()
                 # thin samples on disk if it changed
-                if self.prethin:
-                    thin_interval = self.get_thin_interval()
+                if thin_interval > 1:
                     # if this is the first time writing, set the file's
                     # thinned_by
                     if fp.last_iteration == 0:
@@ -644,30 +627,26 @@ class BaseMCMC(object):
             bit = None
         self.set_burn_in(bit)
 
-    def set_prethin_from_config(self, cp, section):
-        """Sets prethinning options from the given config file.
+    def set_thin_interval_from_config(self, cp, section):
+        """Sets thinning options from the given config file.
         """
-        self.prethin = cp.has_option(section, "prethin")
-        if cp.has_option(section, "prethin-interval"):
-            prethin_interval = int(cp.get(section, "prethin-interval"))
+        if cp.has_option(section, "thin-interval"):
+            thin_interval = int(cp.get(section, "thin-interval"))
         else:
-            prethin_interval = None
-        if cp.has_option(section, "prethin-factor"):
-            prethin_factor = int(cp.get(section, "prethin-factor"))
+            thin_interval = None
+        if cp.has_option(section, "thin-factor"):
+            thin_factor = int(cp.get(section, "thin-factor"))
         else:
-            prethin_factor = None
+            thin_factor = None
         # check for consistency
-        if self.prethin and not (prethin_interval or prethin_factor):
-            raise ValueError("prethinning specified, but no prethin-interval "
-                             "or prethin-factor provided")
-        if prethin_interval is not None and prethin_factor is not None:
-            raise ValueError("provide either prethin-interval or "
-                             "prethin-factor, not both")
-        if prethin_factor and not cp.has_option(section, "effective-nsamples"):
-            raise ValueError("prethin_factor requires effective-nsamples "
+        if thin_interval is not None and thin_factor is not None:
+            raise ValueError("provide either thin-interval or "
+                             "thin-factor, not both")
+        if thin_factor and not cp.has_option(section, "effective-nsamples"):
+            raise ValueError("thin_factor requires effective-nsamples "
                              "to be set")
-        self.prethin_factor = prethin_factor
-        self.prethin_interval = prethin_interval
+        self.thin_factor = thin_factor
+        self.thin_interval = thin_interval
 
     @abstractmethod
     def compute_acf(cls, filename, **kwargs):

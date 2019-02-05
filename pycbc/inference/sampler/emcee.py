@@ -209,5 +209,5 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         # add burn-in if it's specified
         obj.set_burn_in_from_config(cp)
         # set prethin options
-        obj.set_prethin_from_config(cp, section)
+        obj.set_thin_interval_from_config(cp, section)
         return obj
