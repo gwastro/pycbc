@@ -278,7 +278,9 @@ class BaseMCMC(object):
     def thin_factor(self, factor):
         """Sets the thin factor.
         """
-        return self._thin_factor = int(factor)
+        if factor is not None:
+            factor = int(factor)
+        self._thin_factor = factor
 
     def get_thin_interval(self):
         """Gets the thin interval to use.
@@ -523,14 +525,15 @@ class BaseMCMC(object):
                 if thin_interval > 1:
                     # if this is the first time writing, set the file's
                     # thinned_by
-                    if fp.last_iteration == 0:
+                    if fp.last_iteration() == 0:
                         fp.thinned_by = thin_interval
-                    # check if we need to thin the current samples on disk
-                    thin_by = thin_interval // fp.thinned_by
-                    if thin_by > 1:
-                        logging.info("Thinning samples in %s by a factor of "
-                                     "%i", fn, thin_by)
-                        fp.thin(thin_by)
+                    else:
+                        # check if we need to thin the current samples on disk
+                        thin_by = thin_interval // fp.thinned_by
+                        if thin_by > 1:
+                            logging.info("Thinning samples in %s by a factor "
+                                         "of %i", fn, thin_by)
+                            fp.thin(thin_by)
             logging.info("Writing samples to %s", fn)
             self.write_results(fn)
         # check for burn in, compute the acls

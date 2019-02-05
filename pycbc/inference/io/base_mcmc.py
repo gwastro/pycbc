@@ -101,6 +101,7 @@ class MCMCMetadataIO(object):
             thinned_by = self[self.samples_group].attrs['thinned_by']
         except KeyError:
             thinned_by = 1
+        return thinned_by
 
     @thinned_by.setter
     def thinned_by(self, thinned_by):
@@ -112,29 +113,29 @@ class MCMCMetadataIO(object):
         """
         self[self.samples_group].attrs['thinned_by'] = int(thinned_by)
 
-    @property
-    def last_iteration(self):
-        """Returns the iteration of the last sample on disk."""
-        # use the first parameter in samples group to get the size of the
-        # data stored
+    def last_iteration(self, parameter=None):
+        """Returns the iteration of the last sample of the given parameter.
+        
+        If parameter is ``None``, will just use the first parameter in the
+        samples group.
+        """
+        if parameter is None:
+            try:
+                parameter = list(self[self.samples_group].keys())[0]
+            except (IndexError, KeyError):
+                # nothing has been written yet, just return 0
+                return 0
         try:
-            params = list(self[self.samples_group.keys())
+            lastiter = self[self.samples_group][parameter].shape[-1]
         except KeyError:
-            # samples group doesn't exist yet
-            params = []
-        if params == []:
             # no samples have been written, just return 0
             lastiter = 0
-        else:
-            lastiter = self[self.samples_group][params[0]].shape[-1]
-            # account for thinning
-            lastiter *= self.thinned_by
-        return lastiter
+        # account for thinning
+        return lastiter * self.thinned_by
 
-    @property
-    def iterations(self):
+    def iterations(self, parameter):
         """Returns the iteration each sample occurred at."""
-        return numpy.arange(0, self.last_iteration, self.thinned_by)
+        return numpy.arange(0, self.last_iteration(parameter), self.thinned_by)
 
     def write_sampler_metadata(self, sampler):
         """Writes the sampler's metadata."""
@@ -329,49 +330,42 @@ class SingleTempMCMCIO(object):
         group = self.samples_group + '/{name}'
         if parameters is None:
             parameters = samples.keys()
-        # determine where to start the thinning from
         if self.thinned_by > 1:
             if last_iteration is None:
-                raise ValueError("File's thinned_by attribute is > 1 ({}), but "
-                                 "last_iteration not provided."
+                raise ValueError("File's thinned_by attribute is > 1 ({}), "
+                                 "but last_iteration not provided."
                                  .format(self.thinned_by))
-            thin_start = self.last_iteration + self.thinned_by \
-                         - (last_iteration - nsamples)
-        else:
-            thin_start = 0
-            last_iteration = 1
-        # skip writing
-        if thin_start >= last_iteration:
-            logging.info("Thinning interval of samples on disk such that "
-                         "these samples are skipped over, so not writing "
-                         "anything.")
-            return None
-        else:
-            # thin the samples
+        # loop over number of dimensions
+        for param in parameters:
+            dataset_name = group.format(name=param)
             if self.thinned_by > 1:
-                samples = {param: d[:, thin_start::self.thinned_by]
-                           for (param, d) in samples.items()}
-                nsamples = list(samples.values())[0].shape[1]
-            # loop over number of dimensions
-            for param in parameters:
-                dataset_name = group.format(name=param)
-                try:
-                    fp_nsamples = self[dataset_name].shape[-1]
-                    istart = fp_nsamples
-                    istop = istart + nsamples
-                    if istop > fp_nsamples:
-                        # resize the dataset
-                        self[dataset_name].resize(istop, axis=1)
-                except KeyError:
-                    # dataset doesn't exist yet
-                    istart = 0
-                    istop = istart + nsamples
-                    self.create_dataset(dataset_name, (nwalkers, istop),
-                                        maxshape=(nwalkers, None),
-                                        dtype=samples[param].dtype,
-                                        fletcher32=True)
-                self[dataset_name][:, istart:istop] = samples[param]
-            return samples
+                thin_start = self.last_iteration(param) + self.thinned_by \
+                             - (last_iteration - nsamples)
+                if thin_start >= last_iteration:
+                    # nothing to write, move on
+                    logging.info("Writing 0 samples of %s", param)
+                    continue
+                else:
+                    # thin the samples
+                    data = samples[param][:, thin_start::self.thinned_by]
+            else:
+                data = samples[param]
+            try:
+                fp_nsamples = self[dataset_name].shape[-1]
+                istart = fp_nsamples
+                istop = istart + data.shape[1]
+                if istop > fp_nsamples:
+                    # resize the dataset
+                    self[dataset_name].resize(istop, axis=1)
+            except KeyError:
+                # dataset doesn't exist yet
+                istart = 0
+                istop = istart + data.shape[1]
+                self.create_dataset(dataset_name, (nwalkers, istop),
+                                    maxshape=(nwalkers, None),
+                                    dtype=samples[param].dtype,
+                                    fletcher32=True)
+            self[dataset_name][:, istart:istop] = data
 
     def read_raw_samples(self, fields,
                          thin_start=None, thin_interval=None, thin_end=None,
