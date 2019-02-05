@@ -295,12 +295,12 @@ class SingleTempMCMCIO(object):
         samples are appended to the current.
 
         If the current samples on disk have been thinned (determined by the
-        ``thinned_by`` attribute in the samples group), then the samples
-        will be thinned by the same amount before being written. The thinning
-        is started at the sample in ``samples`` that occured at the iteration
-        equal to the last that's stored iteration on disk + the ``thinned_by``
-        interval. If this iteration is larger than the iteration of the last
-        given sample, then none of the samples will be written.
+        ``thinned_by`` attribute in the samples group), then the samples will
+        be thinned by the same amount before being written. The thinning is
+        started at the sample in ``samples`` that occured at the iteration
+        equal to the last iteration on disk plus the ``thinned_by`` interval.
+        If this iteration is larger than the iteration of the last given
+        sample, then none of the samples will be written.
 
         Parameters
         -----------
