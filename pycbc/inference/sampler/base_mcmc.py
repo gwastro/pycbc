@@ -23,7 +23,7 @@
 #
 """Provides constructor classes and convenience functions for MCMC samplers."""
 
-from __future__ import absolute_import
+from __future__ import (absolute_import, division)
 
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 import logging
@@ -204,6 +204,9 @@ class BaseMCMC(object):
     _checkpoint_interval = None
     _target_niterations = None
     _target_eff_nsamples = None
+    _prethin = False
+    _prethin_interval = 1
+    _prethin_factor = None
 
     @abstractproperty
     def base_shape(self):
@@ -248,6 +251,70 @@ class BaseMCMC(object):
     def target_eff_nsamples(self):
         """The target number of effective samples the sampler should get."""
         return self._target_eff_nsamples
+
+    @property
+    def prethin(self):
+        """Whether or not samples are thinned before written to disk."""
+        return self._prethin
+
+    @prethin.setter
+    def prethin(self, prethin):
+        """Sets prethin attribute.
+
+        Parameters
+        ----------
+        prethin : bool
+            Whether or not to prethin.
+        """
+        self._prethin = prethin
+
+    @property
+    def prethin_interval(self):
+        """Returns the prethin interval to use."""
+        return self._prethin_interval
+
+    @prethin_interval.setter
+    def prethin_interval(self, interval):
+        """Sets the prethin interval to use."""
+        self._prethin_interval = interval
+
+    @property
+    def prethin_factor(self):
+        """Returns the prethin factor being used.
+
+        This is only used when the target is an effective number of samples.
+        """
+        return self._prethin_factor
+
+    @prethin_factor.setter
+    def prethin_factor(self, factor):
+        """Sets the prethin factor.
+        """
+        return self._prethin_factor = int(factor)
+
+    def get_thin_interval(self):
+        """Gets the prethin interval to use.
+
+        If a prethin factor is set, this will figure out what to use based
+        on the effective number of samples. Otherwise, it will just return
+        ``prethin_interval``.
+        """
+        if self.prethin_factor is not None:
+            # check that a target number of effective samples has been
+            # specified so that we can estimate the interval to use
+            if self.target_eff_nsamples is None:
+                raise ValueError("prethin factor specfied, but target number "
+                                 "of effective samples not set")
+            # figure out the interval to use
+            thinfac = self.niterations // \
+                      (self.target_eff_nsamples//self.nwalkers) // \
+                      self.prethin_factor
+            # make the new interval a multiple of the previous
+            thin_interval = (thinfac // self.prethin_interval) * \
+                            self.prethin_interval
+        else:
+            thin_interval = self.prethin_interval
+        return thin_interval
 
     def set_target(self, niterations=None, eff_nsamples=None):
         """Sets the target niterations/nsamples for the sampler.
@@ -458,13 +525,26 @@ class BaseMCMC(object):
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
-        # write new samples
-        logging.info("Writing samples to files")
+        # thin and write new samples
         for fn in [self.checkpoint_file, self.backup_file]:
-            self.write_results(fn)
             with self.io(fn, "a") as fp:
                 # write the current number of iterations
                 fp.write_niterations(self.niterations)
+                # thin samples on disk if it changed
+                if self.prethin:
+                    thin_interval = self.get_thin_interval()
+                    # if this is the first time writing, set the file's
+                    # thinned_by
+                    if fp.last_iteration == 0:
+                        fp.thinned_by = thin_interval
+                    # check if we need to thin the current samples on disk
+                    thin_by = thin_interval // fp.thinned_by
+                    if thin_by > 1:
+                        logging.info("Thinning samples in %s by a factor of "
+                                     "%i", fn, thin_by)
+                        fp.thin(thin_by)
+            logging.info("Writing samples to %s", fn)
+            self.write_results(fn)
         # check for burn in, compute the acls
         self.acls = None
         if self.burn_in is not None:
