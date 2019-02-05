@@ -177,7 +177,7 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
                              last_iteration=self.niterations)
             # write stats
             fp.write_samples(self.model_stats,
-                             last_iteration=sef.niterations)
+                             last_iteration=self.niterations)
             # write accpetance
             fp.write_acceptance_fraction(self._sampler.acceptance_fraction)
             # write random state
