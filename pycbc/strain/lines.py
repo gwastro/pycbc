@@ -17,27 +17,27 @@
 """
 
 import numpy
-from pycbc.types import TimeSeries, FrequencySeries, Array, complex128
-from pycbc.types.array import complex_same_precision_as, zeros
-
+from pycbc.types import TimeSeries, zeros
 
 def imag_median(complex_list):
-    x = numpy.median([complex_number.real for complex_number in complex_list])
-    y = numpy.median([complex_number.imag for complex_number in complex_list])
-    return x + 1.j*y
+    a = numpy.median([complex_number.real \
+                     for complex_number in complex_list])
+    b = numpy.median([complex_number.imag \
+                     for complex_number in complex_list])
+    return a + 1.j*b
 
 def avg_inner_product(data1, data2, bin_size):
     # Calculate the time-domain inner product in each bin of duration bin_size
-    # and return the median from all bins to avoid outliers due to the presence of 
-    # a signal in a particular bin
+    # and return the median from all bins to avoid outliers due to the presence
+    # of a signal in a particular bin
     assert data1.duration == data2.duration
     assert data1.sample_rate == data2.sample_rate
     seglen = int(bin_size * data1.sample_rate)
     inner_prod = []
-    for n in range(int(data1.duration / bin_size)):
-        start, end = n * seglen, (n+1) * seglen
+    for idx in range(int(data1.duration / bin_size)):
+        start, end = idx * seglen, (idx+1) * seglen
         norm = len(data1[start:end])
-        bin_prod = 2 * sum(data1.data[start:end].real * \
+        bin_prod = 2 * sum(data1.data[start:end].real *
                     numpy.conjugate(data2.data[start:end])) / norm
         inner_prod.append(bin_prod)
 
@@ -45,15 +45,15 @@ def avg_inner_product(data1, data2, bin_size):
     return inner_prod, numpy.abs(inner_median), numpy.angle(inner_median)
 
 def line_model(freq, data, tref, amp=1, phi=0):
-    # Simple time-domain model for the frequency line, 
+    # Simple time-domain model for the frequency line,
     # with the same duration as data.
     # The returned data are complex to allow measuring the amplitude and phase
     # of the strain data, for extracting purposes use only the real part
-    t = data.sample_times
-    freq_line = TimeSeries(zeros(len(data)), delta_t=data.delta_t, 
-                                             epoch=data.start_time)
+    freq_line = TimeSeries(zeros(len(data)), delta_t=data.delta_t,
+                           epoch=data.start_time)
 
-    alpha = 2 * numpy.pi * freq * (t - tref) + phi
+    times = data.sample_times - float(tref)
+    alpha = 2 * numpy.pi * freq * times + phi
     freq_line.data = amp * numpy.exp(1.j * alpha)
 
     return freq_line
@@ -79,36 +79,39 @@ def calibration_lines(freqs, data, tref=None):
 
 def clean_data(freqs, data, chunk, avg_bin):
     # In general, noise lines are time-varying (wandering). To account for this
-    # time variation, divide data into chunks of size chunk > bin_size 
+    # time variation, divide data into chunks of size chunk > bin_size
     # (bin_size is the segment duration for averaging the inner product)
     tref = float(data.start_time)
     if avg_bin >= chunk:
-        raise ValueError('The bin size for averaging the inner product must ' \
-                         'be less than the chunk size.')
+        raise ValueError('The bin size for averaging the inner product '
+                         'must be less than the chunk size.')
+    if chunk >= data.duration:
+        raise ValueError('The chunk size must be less than the '
+                         'data duration.')
     steps = numpy.arange(0, int(data.duration/chunk)-0.5, 0.5)
     seglen = chunk * data.sample_rate
 
     for freq in freqs:
-        for n in steps:
-            start, end = int(n*seglen), int((n+1)*seglen)
-            chunk_line = matching_line(freq, data[start:end], 
+        for step in steps:
+            start, end = int(step*seglen), int((step+1)*seglen)
+            chunk_line = matching_line(freq, data[start:end],
                                        tref, bin_size=avg_bin)
-            
+
             # Apply hann window on sides of chunk_line to smooth boundaries
             # and avoid discontinuities
             hann_window = numpy.hanning(len(chunk_line))
-            apply_hann = TimeSeries(numpy.ones(len(chunk_line)), 
-                                    delta_t=chunk_line.delta_t, 
+            apply_hann = TimeSeries(numpy.ones(len(chunk_line)),
+                                    delta_t=chunk_line.delta_t,
                                     epoch=chunk_line.start_time)
-            if n == 0:
+            if step == 0:
                 apply_hann.data[len(hann_window)/2:] *= \
                                 hann_window[len(hann_window)/2:]
-            elif n == steps[-1]:
+            elif step == steps[-1]:
                 apply_hann.data[:len(hann_window)/2] *= \
                                 hann_window[:len(hann_window)/2]
             else:
                 apply_hann.data *= hann_window
             chunk_line.data *= apply_hann.data
             data.data[start:end] -= chunk_line.data.real
-            
+
     return data
