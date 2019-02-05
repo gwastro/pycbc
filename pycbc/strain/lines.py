@@ -20,18 +20,6 @@ import numpy
 from pycbc.types import TimeSeries, FrequencySeries, Array, complex128
 from pycbc.types.array import complex_same_precision_as, zeros
 
-###############################
-# Basic math
-###############################
-
-def argument(complex_number):
-    x, y = complex_number.real, complex_number.imag
-    if x>0:
-        return numpy.arctan(y/x)
-    elif x<0:
-        return numpy.arctan(y/x) + numpy.sign(y)*numpy.pi
-    else:
-        return numpy.sign(y)*numpy.pi/2.
 
 def imag_median(complex_list):
     x = numpy.median([complex_number.real for complex_number in complex_list])
@@ -54,7 +42,7 @@ def avg_inner_product(data1, data2, bin_size):
         inner_prod.append(bin_prod)
 
     inner_median = imag_median(inner_prod)
-    return inner_prod, numpy.abs(inner_median), argument(inner_median)
+    return inner_prod, numpy.abs(inner_median), numpy.angle(inner_median)
 
 def line_model(freq, data, tref, amp=1, phi=0):
     # Simple time-domain model for the frequency line, 
