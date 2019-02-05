@@ -139,9 +139,6 @@ class MCMCMetadataIO(object):
     def write_sampler_metadata(self, sampler):
         """Writes the sampler's metadata."""
         self.attrs['sampler'] = sampler.name
-        if self.sampler_group not in self.keys():
-            # create the sampler group
-            self.create_group(self.sampler_group)
         self[self.sampler_group].attrs['nwalkers'] = sampler.nwalkers
         # write the model's metadata
         sampler.model.write_metadata(self)
@@ -289,7 +286,7 @@ class SingleTempMCMCIO(object):
     only a single temperature.
     """
 
-    def write_samples(self, samples, last_iteration, parameters=None):
+    def write_samples(self, samples, parameters=None, last_iteration=None):
         """Writes samples to the given file.
 
         Results are written to ``samples_group/{vararg}``, where ``{vararg}``
@@ -310,12 +307,13 @@ class SingleTempMCMCIO(object):
         samples : dict
             The samples to write. Each array in the dictionary should have
             shape nwalkers x niterations.
-        last_iteration : int
-            The iteration of the last sample. This is needed to determine how
-            to thin the samples, if the file's ``thinned_by`` is > 1.
         parameters : list, optional
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
+        last_iteration : int, optional
+            The iteration of the last sample. If the file's ``thinned_by``
+            attribute is > 1, this is needed to determine where to start
+            thinning the samples to match what has already been stored on disk.
 
         Returns
         -------
@@ -332,8 +330,17 @@ class SingleTempMCMCIO(object):
         if parameters is None:
             parameters = samples.keys()
         # determine where to start the thinning from
-        thin_start = self.last_iteration + self.thinned_by \
-                     - (last_iteration - nsamples)
+        if self.thinned_by > 1:
+            if last_iteration is None:
+                raise ValueError("File's thinned_by attribute is > 1 ({}), but "
+                                 "last_iteration not provided."
+                                 .format(self.thinned_by))
+            thin_start = self.last_iteration + self.thinned_by \
+                         - (last_iteration - nsamples)
+        else:
+            thin_start = 0
+            last_iteration = 1
+        # skip writing
         if thin_start >= last_iteration:
             logging.info("Thinning interval of samples on disk such that "
                          "these samples are skipped over, so not writing "
