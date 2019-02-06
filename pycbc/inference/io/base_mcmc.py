@@ -75,12 +75,13 @@ class MCMCMetadataIO(object):
         samples = self.read_raw_samples(params, thin_interval=thin_interval,
                                         flatten=False)
         # now resize and write the data back to disk
+        group = self[self.samples_group]
         for param in params:
             data = samples[param]
             # resize the arrays on disk
-            self[self.samples_group].resize(data.shape)
+            group[param].resize(data.shape)
             # and write
-            self[self.samples_group][:] = data
+            group[param][:] = data
         # store the interval that samples were thinned by
         self.thinned_by *= thin_interval
         # If a default thin interval and thin start exist, reduce them by the
