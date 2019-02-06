@@ -532,38 +532,46 @@ class BaseMCMC(object):
                         thin_by = thin_interval // fp.thinned_by
                         if thin_by > 1:
                             logging.info("Thinning samples in %s by a factor "
-                                         "of %i", fn, thin_by)
+                                         "of %i", fn, int(thin_by))
                             fp.thin(thin_by)
+                fp_lastiter = fp.last_iteration()
             logging.info("Writing samples to %s", fn)
             self.write_results(fn)
-        # check for burn in, compute the acls
-        self.acls = None
-        if self.burn_in is not None:
-            logging.info("Updating burn in")
-            self.burn_in.evaluate(self.checkpoint_file)
-            burn_in_iter = self.burn_in.burn_in_iteration
-            logging.info("Is burned in: {}".format(self.burn_in.is_burned_in))
-            if self.burn_in.is_burned_in:
-                logging.info("Burn-in iteration: {}".format(
-                    self.burn_in.burn_in_iteration))
-        else:
-            burn_in_iter = 0
-        # Compute acls; the burn_in test may have calculated an acl and saved
-        # it, in which case we don't need to do it again.
-        if self.acls is None:
-            logging.info("Computing acls")
-            self.acls = self.compute_acl(self.checkpoint_file,
-                                         start_index=burn_in_iter)
-        logging.info("ACL: {}".format(numpy.array(self.acls.values()).max()))
-        # write
-        for fn in [self.checkpoint_file, self.backup_file]:
-            with self.io(fn, "a") as fp:
-                if self.burn_in is not None:
-                    fp.write_burn_in(self.burn_in)
-                if self.acls is not None:
-                    fp.write_acls(self.acls)
-                # write effective number of samples
-                fp.write_effective_nsamples(self.effective_nsamples)
+        # see if we had anything to write after thinning; if not, don't try
+        # to compute anything
+        with self.io(self.checkpoint_file, "r") as fp:
+            nsamples_written = fp.last_iteration() - fp_lastiter
+        if nsamples_written == 0:
+            logging.info("No samples written due to thinning")
+        else: 
+            # check for burn in, compute the acls
+            self.acls = None
+            if self.burn_in is not None:
+                logging.info("Updating burn in")
+                self.burn_in.evaluate(self.checkpoint_file)
+                burn_in_iter = self.burn_in.burn_in_iteration
+                logging.info("Is burned in: %r", self.burn_in.is_burned_in)
+                if self.burn_in.is_burned_in:
+                    logging.info("Burn-in iteration: %i",
+                                 int(self.burn_in.burn_in_iteration))
+            else:
+                burn_in_iter = 0
+            # Compute acls; the burn_in test may have calculated an acl and
+            # saved it, in which case we don't need to do it again.
+            if self.acls is None:
+                logging.info("Computing acls")
+                self.acls = self.compute_acl(self.checkpoint_file,
+                                             start_index=burn_in_iter)
+            logging.info("ACL: %s", str(numpy.array(self.acls.values()).max()))
+            # write
+            for fn in [self.checkpoint_file, self.backup_file]:
+                with self.io(fn, "a") as fp:
+                    if self.burn_in is not None:
+                        fp.write_burn_in(self.burn_in)
+                    if self.acls is not None:
+                        fp.write_acls(self.acls)
+                    # write effective number of samples
+                    fp.write_effective_nsamples(self.effective_nsamples)
         # check validity
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
@@ -648,6 +656,11 @@ class BaseMCMC(object):
         if thin_factor and not cp.has_option(section, "effective-nsamples"):
             raise ValueError("thin_factor requires effective-nsamples "
                              "to be set")
+        # check that the thin interval is < then the checkpoint interval
+        if thin_interval is not None and self.checkpoint_interval is not None \
+                and thin_interval >= self.checkpoint_interval:
+            raise ValueError("thin interval must be less than the checkpoint "
+                             "interval")
         self.thin_factor = thin_factor
         self.thin_interval = thin_interval
 
