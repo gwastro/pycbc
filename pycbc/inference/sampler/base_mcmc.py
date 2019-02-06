@@ -201,6 +201,7 @@ class BaseMCMC(object):
     _p0 = None
     _nwalkers = None
     _burn_in = None
+    _acls = None
     _checkpoint_interval = None
     _target_niterations = None
     _target_eff_nsamples = None
@@ -253,7 +254,7 @@ class BaseMCMC(object):
 
     @property
     def thin_interval(self):
-        """Returns the thin interval to use."""
+        """Returns the thin interval being used."""
         return self._thin_interval
 
     @thin_interval.setter
@@ -501,14 +502,14 @@ class BaseMCMC(object):
         """The effective number of samples post burn-in that the sampler has
         acquired so far."""
         try:
-            acl = numpy.array(self.acls.values()).max()
+            act = numpy.array(list(self.acts.values())).max()
         except (AttributeError, TypeError):
-            acl = numpy.inf
+            act = numpy.inf
         if self.burn_in is None:
-            nperwalker = max(int(self.niterations // acl), 1)
+            nperwalker = max(int(self.niterations // act), 1)
         elif self.burn_in.is_burned_in:
             nperwalker = int(
-                (self.niterations - self.burn_in.burn_in_iteration) // acl)
+                (self.niterations - self.burn_in.burn_in_iteration) // act)
             # after burn in, we always have atleast 1 sample per walker
             nperwalker = max(nperwalker, 1)
         else:
@@ -561,20 +562,20 @@ class BaseMCMC(object):
             if self.burn_in is not None:
                 logging.info("Updating burn in")
                 self.burn_in.evaluate(self.checkpoint_file)
-                burn_in_iter = self.burn_in.burn_in_iteration
+                burn_in_index = self.burn_in.burn_in_index
                 logging.info("Is burned in: %r", self.burn_in.is_burned_in)
                 if self.burn_in.is_burned_in:
                     logging.info("Burn-in iteration: %i",
                                  int(self.burn_in.burn_in_iteration))
             else:
-                burn_in_iter = 0
+                burn_in_index = 0
             # Compute acls; the burn_in test may have calculated an acl and
             # saved it, in which case we don't need to do it again.
             if self.acls is None:
                 logging.info("Computing acls")
                 self.acls = self.compute_acl(self.checkpoint_file,
-                                             start_index=burn_in_iter)
-            logging.info("ACL: %s", str(numpy.array(self.acls.values()).max()))
+                                             start_index=burn_in_index)
+            logging.info("ACT: %s", str(numpy.array(self.acts.values()).max()))
             # write
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
@@ -672,6 +673,27 @@ class BaseMCMC(object):
                              "interval")
         self.thin_interval = thin_interval
         self.max_samples_per_chain = max_samps_per_chain
+
+    @property
+    def acls(self):
+        """The autocorrelation lengths of each parameter's thinned chain."""
+        return self._acls
+
+    @acls.setter
+    def acls(self, acls):
+        """Sets the acls."""
+        self._acls = acls
+
+    @property
+    def acts(self):
+        """The autocorrelation times of each parameter.
+
+        The autocorrelation time is the ACL times the ``thin_interval``; it
+        gives the number of iterations between independent samples.
+        """
+        if self.acls is None:
+            return None
+        return {p: acl * self.thin_interval for (p, acl) in self.acls.items()}
 
     @abstractmethod
     def compute_acf(cls, filename, **kwargs):
