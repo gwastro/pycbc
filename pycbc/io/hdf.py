@@ -900,21 +900,13 @@ def combine_and_copy(f, files, group):
                                    np.array([], dtype=np.uint32) for fi in files])
 
 def name_all_datasets(files):
-    datasets= []
-    for fi in files:
-        for k in fi.keys():
-            if isinstance(fi[k], h5py.Dataset):
-                datasets.append(k)
-            else:
-                datasets += get_all_subkeys(fi,k)
-    return set(datasets)
+    list_of_keys = []
 
-def get_all_subkeys(fi,k):
-    subkey_list = []
-    for sk in fi[k].keys():
-        if isinstance(fi[k+'/'+sk], h5py.Dataset):
-            subkey_list.append(k+'/'+sk)
-        else:
-            subkey_list += get_all_subkeys(fi,k+'/'+sk)
-    # this will return an empty list if there is no dataset or subgroup within the group
-    return subkey_list
+    def append_key_to_list(name, object):
+        if isinstance(fi[name], h5py.Dataset):
+            list_of_keys.append(name)
+
+    for fi in files:
+        fi.visititems(append_key_to_list)
+
+    return set(list_of_keys)

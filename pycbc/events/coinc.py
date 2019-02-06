@@ -361,6 +361,8 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
         return numpy.array([])
 
     if numpy.isfinite(slide):
+        # for a time shifted coinc, time1 is greater than time2 by approximately timeslide_id*slide
+        # adding this quantity gives a mean coinc time located around time1
         time = (time1 + time2 + timeslide_id * slide) / 2
     else:
         time = 0.5 * (time2 + time1)
@@ -370,7 +372,7 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
-    cidx = cluster_given_mean_times(stat, time, window, argmax)
+    cidx = cluster_over_time(stat, time, window, argmax)
     return cidx
 
 def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argmax=numpy.argmax):
@@ -382,13 +384,13 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
     stat: numpy.ndarray
         vector of ranking values to maximize
     time_coincs: tuple of numpy.ndarrays
-        tuple containing time vectors each ifo
+        trigger times for each ifo, or -1 if an ifo does not participate in a coinc
     timeslide_id: numpy.ndarray
         vector that determines the timeslide offset
     slide: float
         length of the timeslides offset interval
     window: float
-        legth to cluster over
+        duration of clustering window in seconds
 
     Returns
     -------
@@ -401,7 +403,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
         return numpy.array([])
 
     time_avg_num = []
-    #find the mean of each time coincidences, providing that the IFO is on
+    #find the number of ifos and mean time over participating ifos for each coinc
     for tc in time_coinc_zip:
         time_avg_num.append(mean_if_greater_than_zero(tc))
 
@@ -411,6 +413,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
     num_ifos = numpy.array(num_ifos)
 
     # shift all but the pivot ifo - leads to a (num_ifos-1) * timeslide_id * slide shift
+    # this leads to a mean coinc time located around pivot time
     if numpy.isfinite(slide):
         nifos_minusone = (num_ifos - numpy.ones_like(num_ifos))
         time_avg = time_avg + (nifos_minusone * timeslide_id * slide)/num_ifos
@@ -420,18 +423,20 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
 
     span = (time_avg.max() - time_avg.min()) + window * 10
     time_avg = time_avg + span * tslide
-    cidx = cluster_given_mean_times(stat, time_avg, window, argmax)
+    cidx = cluster_over_time(stat, time_avg, window, argmax)
+
     return cidx
 
-def mean_if_greater_than_zero(vector):
-    """ Calculate mean of a vector, but ignore it if the value if it is less than zero
-    This is used when the timestamps are marked as -1 when a particular
-    IFO is not included in the particular coincidence.
+def mean_if_greater_than_zero(vals):
+    """ Calculate mean of an iterator of numerical values, but ignore it
+    if the value if it is less than zero. This is used when the timestamps
+    are marked as -1 when a particular IFO is not included in the particular
+    coincidence.
 
     Parameters
     ----------
-    vector: numpy.ndarray
-        vector to be mean averaged
+    vals: iterator of numerical values
+        values to be mean averaged
 
     Returns
     -------
@@ -441,14 +446,12 @@ def mean_if_greater_than_zero(vector):
     num_above_zero: int
         The number of entries in the vector which are above zero
     """
-    vals_above_zero = [val for val in vector if val > 0]
-    num_above_zero = len(vals_above_zero)
-    mean = sum(vals_above_zero) / num_above_zero
-    return mean, num_above_zero
+    vals = numpy.array(vals)
+    above_zero = vals > 0
+    return vals[above_zero].mean(), above_zero.sum()
 
-def cluster_given_mean_times(stat, time, window, argmax=numpy.argmax):
-    """Cluster coincident events given separated timeslides, across
-    templates, based on the ranking statistic
+def cluster_over_time(stat, time, window, argmax=numpy.argmax):
+    """Cluster events given their times and ranking statistic values
 
     Parameters
     ----------
