@@ -315,14 +315,9 @@ class SingleTempMCMCIO(object):
         last_iteration : int, optional
             The iteration of the last sample. If the file's ``thinned_by``
             attribute is > 1, this is needed to determine where to start
-            thinning the samples to match what has already been stored on disk.
-
-        Returns
-        -------
-        dict or None :
-            Dictionary of the samples that were written. If the file's
-            ``thinned_by`` is 1, this is the same as the given samples. If the
-            none of the samples were written, returns None.
+            thinning the samples such that the interval between the last sample
+            currently on disk and the first new sample is the same as all of
+            the other samples.
         """
         nwalkers, nsamples = list(samples.values())[0].shape
         assert all(p.shape == (nwalkers, nsamples)
@@ -331,25 +326,16 @@ class SingleTempMCMCIO(object):
         group = self.samples_group + '/{name}'
         if parameters is None:
             parameters = samples.keys()
-        if self.thinned_by > 1:
-            if last_iteration is None:
-                raise ValueError("File's thinned_by attribute is > 1 ({}), "
-                                 "but last_iteration not provided."
-                                 .format(self.thinned_by))
+        # thin the samples
+        samples = thin_samples_for_writing(self, samples, last_iteration)
         # loop over number of dimensions
         for param in parameters:
             dataset_name = group.format(name=param)
-            if self.thinned_by > 1:
-                thin_start = self.last_iteration(param) + self.thinned_by \
-                             - (last_iteration - nsamples)
-                if thin_start >= last_iteration:
-                    # nothing to write, move on
-                    continue
-                else:
-                    # thin the samples
-                    data = samples[param][:, thin_start::self.thinned_by]
-            else:
-                data = samples[param]
+            data = samples[param]
+            # check that there's something to write after thinning
+            if data.shape[1] == 0:
+                # nothing to write, move along
+                continue
             try:
                 fp_nsamples = self[dataset_name].shape[-1]
                 istart = fp_nsamples
@@ -363,7 +349,7 @@ class SingleTempMCMCIO(object):
                 istop = istart + data.shape[1]
                 self.create_dataset(dataset_name, (nwalkers, istop),
                                     maxshape=(nwalkers, None),
-                                    dtype=samples[param].dtype,
+                                    dtype=data.dtype,
                                     fletcher32=True)
             self[dataset_name][:, istart:istop] = data
 
@@ -434,3 +420,44 @@ class SingleTempMCMCIO(object):
                 arr = arr.reshape((nwalkers, niterations))
             arrays[name] = arr
         return arrays
+
+
+def thin_samples_for_writing(fp, samples, last_iteration):
+    """Thins samples for writing to disk.
+    
+    The thinning interval to use is determined by the given file handler's
+    ``thinned_by`` attribute. If that attribute is 1, just returns the samples.
+
+    Parameters
+    ----------
+    fp : MCMCMetadataIO instance
+        The file the sampels will be written to. Needed to determine the
+        thin interval used on disk.
+    samples : dict
+        Dictionary mapping parameter names to arrays of (unthinned) samples.
+        The arrays are thinned along their last dimension.
+    last_iteration : int
+        The iteration that the last sample in ``samples`` occurred at. This is
+        needed to figure out where to start the thinning in ``samples``, such
+        that the interval between the last sample on disk and the first new
+        sample is the same as all of the other samples.
+
+    Returns
+    -------
+    dict :
+        Dictionary of the thinned samples to write.
+    """
+    if fp.thinned_by > 1:
+        if last_iteration is None:
+            raise ValueError("File's thinned_by attribute is > 1 ({}), "
+                             "but last_iteration not provided."
+                             .format(self.thinned_by))
+        thinned_samples = {}
+        for param, data in samples.items():
+            nsamples = data.shape[-1]
+            thin_start = fp.last_iteration(param) + fp.thinned_by \
+                         - (last_iteration - nsamples)
+            thinned_samples[param] = data[..., thin_start::self.thinned_by]
+    else:
+        thinned_samples = samples[param]
+    return thinned_samples
