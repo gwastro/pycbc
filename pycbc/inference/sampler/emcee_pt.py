@@ -218,9 +218,10 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params)
+            fp.write_samples(self.samples, self.model.variable_params,
+                             last_iteration=self.niterations)
             # write stats
-            fp.write_samples(self.model_stats)
+            fp.write_samples(self.model_stats, last_iteration=self.niterations)
             # write accpetance
             fp.write_acceptance_fraction(self._sampler.acceptance_fraction)
             # write random state
