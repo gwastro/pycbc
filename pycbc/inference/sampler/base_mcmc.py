@@ -205,7 +205,7 @@ class BaseMCMC(object):
     _target_niterations = None
     _target_eff_nsamples = None
     _thin_interval = 1
-    _thin_factor = None
+    _max_samples_per_chain = None
 
     @abstractproperty
     def base_shape(self):
@@ -267,41 +267,53 @@ class BaseMCMC(object):
         self._thin_interval = interval
 
     @property
-    def thin_factor(self):
-        """Returns the thin factor being used.
+    def thin_safety_factor(self):
+        """Safety factor used for max samples per chain."""
+        return 100
 
-        This is only used when the target is an effective number of samples.
-        """
-        return self._thin_factor
+    @property
+    def max_samples_per_chain(self):
+        """The maximum number of samplers per chain that is written to disk."""
+        return self._max_samples_per_chain
 
-    @thin_factor.setter
-    def thin_factor(self, factor):
-        """Sets the thin factor.
-        """
-        if factor is not None:
-            factor = int(factor)
-        self._thin_factor = factor
+    @max_samples_per_chain.setter
+    def max_samples_per_chain(self, n):
+        if n is not None:
+            n = int(n)
+            if n < self.thin_safety_factor:
+                raise ValueError("max samples per chain must be >= {}"
+                                 .format(self.thin_safety_factor))
+            # also check that this is consistent with the target number of
+            # effective samples
+            if self.target_eff_nsamples is not None:
+                target_samps_per_chain = int(numpy.ceil(
+                    self.target_eff_nsamples / self.nwalkers))
+                if n <= target_samps_per_chain:
+                    raise ValueError("max samples per chain must be > target "
+                                     "effective number of samples per walker "
+                                     "({})".format(target_samps_per_chain))
+        self._max_samples_per_chain = n
 
     def get_thin_interval(self):
         """Gets the thin interval to use.
 
-        If a thin factor is set, this will figure out what to use based
-        on the effective number of samples. Otherwise, it will just return
-        ``thin_interval``.
+        If ``max_samples_per_chain`` is set, this will figure out what thin
+        interval to needed to satisfy that criteria. In that case, the thin
+        interval used must be a multiple of the currently used thin interval.
         """
-        if self.thin_factor is not None:
-            # check that a target number of effective samples has been
-            # specified so that we can estimate the interval to use
-            if self.target_eff_nsamples is None:
-                raise ValueError("thin factor specfied, but target number "
-                                 "of effective samples not set")
-            # figure out the interval to use
-            thinfac = self.niterations // \
-                      (self.target_eff_nsamples//self.nwalkers) // \
-                      self.thin_factor
-            # make the new interval a multiple of the previous
-            thin_interval = (thinfac // self.thin_interval) * \
+        if self.max_samples_per_chain is not None:
+            # get the number of samples per walker if we did no thinning
+            samps_per_chain = self.niterations // self.nwalkers
+            # the extra factor of 2 is to account for the fact that the thin
+            # interval will need to be at least twice as large as a previously
+            # used interval
+            thinfactor = samps_per_chain // self.max_samples_per_chain // 2
+            # make the new interval a multiple of the previous, to ensure that
+            # any samples currently on disk can be thinned accordingly
+            thin_interval = (thinfactor // self.thin_interval) * \
                             self.thin_interval
+            # make sure it's at least 1
+            thin_interval = max(thin_interval, 1)
         else:
             thin_interval = self.thin_interval
         return thin_interval
@@ -645,24 +657,21 @@ class BaseMCMC(object):
             thin_interval = int(cp.get(section, "thin-interval"))
         else:
             thin_interval = None
-        if cp.has_option(section, "thin-factor"):
-            thin_factor = int(cp.get(section, "thin-factor"))
+        if cp.has_option(section, "max-samples-per-chain"):
+            max_samps_per_chain = int(cp.get(section, "max-samples-per-chain"))
         else:
-            thin_factor = None
+            max_samps_per_chain = None
         # check for consistency
-        if thin_interval is not None and thin_factor is not None:
+        if thin_interval is not None and max_samps_per_chain is not None:
             raise ValueError("provide either thin-interval or "
-                             "thin-factor, not both")
-        if thin_factor and not cp.has_option(section, "effective-nsamples"):
-            raise ValueError("thin_factor requires effective-nsamples "
-                             "to be set")
+                             "max-samples-per-chain, not both")
         # check that the thin interval is < then the checkpoint interval
         if thin_interval is not None and self.checkpoint_interval is not None \
                 and thin_interval >= self.checkpoint_interval:
             raise ValueError("thin interval must be less than the checkpoint "
                              "interval")
-        self.thin_factor = thin_factor
         self.thin_interval = thin_interval
+        self.max_samples_per_chain = max_samps_per_chain
 
     @abstractmethod
     def compute_acf(cls, filename, **kwargs):
