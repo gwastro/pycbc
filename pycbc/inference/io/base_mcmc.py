@@ -455,9 +455,16 @@ def thin_samples_for_writing(fp, samples, last_iteration):
         thinned_samples = {}
         for param, data in samples.items():
             nsamples = data.shape[-1]
+            # To figure out where to start:
+            # the last iteration in the file + the file's thinning interval
+            # gives the iteration of the next sample that should be written;
+            # last_iteration - nsamples gives the iteration of the first
+            # sample in samples. Subtracting the latter from the former - 1
+            # (-1 to convert from iteration to index) therefore gives the index
+            # in the samples data to start using samples.
             thin_start = fp.last_iteration(param) + fp.thinned_by \
-                         - (last_iteration - nsamples)
-            thinned_samples[param] = data[..., thin_start::self.thinned_by]
+                         - (last_iteration - nsamples) - 1
+            thinned_samples[param] = data[..., thin_start::fp.thinned_by]
     else:
-        thinned_samples = samples[param]
+        thinned_samples = samples
     return thinned_samples
