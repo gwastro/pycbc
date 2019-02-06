@@ -902,8 +902,8 @@ def combine_and_copy(f, files, group):
 def name_all_datasets(files):
     list_of_keys = []
 
-    def append_key_to_list(name, object):
-        if isinstance(fi[name], h5py.Dataset):
+    def append_key_to_list(name, key_obj):
+        if isinstance(key_obj, h5py.Dataset):
             list_of_keys.append(name)
 
     for fi in files:
