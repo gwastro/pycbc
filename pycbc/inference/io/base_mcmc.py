@@ -343,7 +343,6 @@ class SingleTempMCMCIO(object):
                              - (last_iteration - nsamples)
                 if thin_start >= last_iteration:
                     # nothing to write, move on
-                    logging.info("Writing 0 samples of %s", param)
                     continue
                 else:
                     # thin the samples
