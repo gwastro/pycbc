@@ -403,7 +403,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
         return numpy.array([])
 
     time_avg_num = []
-    #find the number of ifos and mean time over participating ifos for each coinc
+    #find number of ifos and mean time over participating ifos for each coinc
     for tc in time_coinc_zip:
         time_avg_num.append(mean_if_greater_than_zero(tc))
 
@@ -412,7 +412,7 @@ def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argm
     time_avg = numpy.array(time_avg)
     num_ifos = numpy.array(num_ifos)
 
-    # shift all but the pivot ifo - leads to a (num_ifos-1) * timeslide_id * slide shift
+    # shift all but the pivot ifo by (num_ifos-1) * timeslide_id * slide
     # this leads to a mean coinc time located around pivot time
     if numpy.isfinite(slide):
         nifos_minusone = (num_ifos - numpy.ones_like(num_ifos))

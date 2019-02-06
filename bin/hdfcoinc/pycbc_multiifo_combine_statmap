@@ -23,7 +23,7 @@ files = [h5py.File(n, 'r') for n in args.statmap_files]
 
 f = h5py.File(args.output_file, "w")
 
-logging.info('copying segments and info to %s' % args.output_file)
+logging.info('copying segments and attributes to %s' % args.output_file)
 #move segments information into the final file - remove some duplication in earlier files
 for fi in files:
     #get a list of which ifos are in the segments of the input data file
@@ -32,23 +32,21 @@ for fi in files:
     ifo_to_get = 'segments/{}'.format(ifos_in_file[0])
     #convert list of IFOs in the file into a identifier string
     ifosstring = ''.join(ifos_in_file)
-    group_to_save = 'segments/{}'.format(ifosstring)
+    group_to_save = '{}/segments'.format(ifosstring)
     #save the segments as a new group in the output file
     f[group_to_save + '/end'] = fi[ifo_to_get + '/end'][:]
     f[group_to_save + '/start'] = fi[ifo_to_get + '/start'][:]
     # use this ID string to save the attributes from the input files in the output
     #also move the attributes with the given ifo combination indicator
-    f.attrs['pivot/{}'.format(ifosstring)] = fi.attrs['pivot']
-    f.attrs['fixed/{}'.format(ifosstring)] = fi.attrs['fixed']
-    f.attrs['timeslide_interval/{}'.format(ifosstring)] = fi.attrs['timeslide_interval']
-    f.attrs['background_time/{}'.format(ifosstring)] = fi.attrs['background_time']
-    f.attrs['foreground_time/{}'.format(ifosstring)] = fi.attrs['foreground_time']
-    f.attrs['background_time_exc/{}'.format(ifosstring)] = fi.attrs['background_time_exc']
-    f.attrs['foreground_time_exc/{}'.format(ifosstring)] = fi.attrs['foreground_time_exc']
+    for attr_name in fi.attrs:
+        f[ifosstring].attrs[attr_name] = fi.attrs[attr_name]
 
+
+logging.info('generating list of datasets in input files')
 
 key_set = pycbc.io.name_all_datasets(files)
 
+logging.info('copying foreground non-ifo-specific data')
 # copy and concatenate all the columns in the foreground group 
 # from all files /except/ the IFO groups
 for key in key_set:
@@ -129,9 +127,11 @@ for ifo in args.ifos:
 trials_factors = numpy.zeros_like(f['foreground/ifar'][:])
 test_times = numpy.array([pycbc.events.mean_if_greater_than_zero(tc)[0] for tc in zip(*all_times)])
 
-for key in f['segments']:
-    end_times = numpy.array(f['segments/%s/end' % key][:])
-    start_times = numpy.array(f['segments/%s/start' % key][:])
+for key in f:
+    if key.startswith('foreground'):
+        continue
+    end_times = numpy.array(f['%s/segments/end' % key][:])
+    start_times = numpy.array(f['%s/segments/start' % key][:])
     idx_within_segment = pycbc.events.indices_within_times(test_times, start_times, end_times)
     trials_factors[idx_within_segment] += numpy.ones_like(idx_within_segment)
 
