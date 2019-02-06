@@ -77,6 +77,7 @@ for f_in in files:
                                      -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
             all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo],
                                      -1*numpy.ones_like(f_in['foreground/fap'][:], dtype=numpy.uint32)])
+    f_in.close()
 
 logging.info('clustering triggers for loudest ifar value')
 #cluster the triggers before applying trials factor
@@ -96,6 +97,7 @@ all_times = ()
 for ifo in args.ifos:
     all_times = all_times + (f['foreground/%s/time' % ifo][:],)
 
+# currently only clustering zerolag, i.e. foreground. so set all timeslide_ids to zero
 cidx = pycbc.events.cluster_coincs_multiifo(ifar_stat, all_times,
                                             numpy.zeros(len(ifar_stat)), 0,
                                             args.cluster_window, argmax)
@@ -103,6 +105,7 @@ cidx = pycbc.events.cluster_coincs_multiifo(ifar_stat, all_times,
 # downsample the foreground columns to only the loudest ifar between the multiple files
 for key in f['foreground'].keys():
     if key not in args.ifos:
+        # dataset needs to be deleted and remade as it is a different size
         dset = f['foreground/%s' % key][:][cidx]
         del f['foreground/%s' % key]
         f['foreground/%s' % key] = dset
@@ -115,14 +118,17 @@ for key in f['foreground'].keys():
 logging.info('applying trials factor')
 
 #recalculate event times for trials factor calculation
-all_times = ()
+clustered_times = ()
 for ifo in args.ifos:
-    all_times = all_times + (f['foreground/%s/time' % ifo][:],)
+    clustered_times = clustered_times + (f['foreground/%s/time' % ifo][:],)
 
-# trials factor is how many possible 2+IFO combinations are 'on' at the time of the coincidence
+# trials factor is how many possible 2+IFO combinations are 'on' 
+# at the time of the coincidence
 trials_factors = numpy.zeros_like(f['foreground/ifar'][:])
-test_times = numpy.array([pycbc.events.mean_if_greater_than_zero(tc)[0] for tc in zip(*all_times)])
+test_times = numpy.array([pycbc.events.mean_if_greater_than_zero(tc)[0] 
+                          for tc in zip(*clustered_times)])
 
+# iterate over different ifo combinations
 for key in f:
     if key.startswith('foreground'):
         continue
@@ -131,50 +137,15 @@ for key in f:
     idx_within_segment = pycbc.events.indices_within_times(test_times, start_times, end_times)
     trials_factors[idx_within_segment] += numpy.ones_like(idx_within_segment)
 
-ifars = [ifar/tf for ifar, tf in zip(f['foreground/ifar'][:], trials_factors)]
-ifars_exc = [ifar_e/tf for ifar_e, tf in zip(f['foreground/ifar_exc'][:], trials_factors)]
-
-f['foreground/ifar'][:] = ifars
-f['foreground/ifar_exc'][:] = ifars_exc
+f['foreground/ifar'][:] = f['foreground/ifar'][:] / trials_factors
+f['foreground/ifar_exc'][:] = f['foreground/ifar_exc'][:] / trials_factors
 
 #TODO: work out how to calculate fap given that coinc_time changes for each detector combination
 #      commented out parts here need re-working out
 
-#coinc_times = []
-#coinc_times_exc = []
-#for fi in files:
-#    coinc_times.append(fi.attrs['foreground_time'] / lal.YRJUL_SI * numpy.ones_like(fi['foreground/ifar'][:]))
-#    coinc_times_exc.append(fi.attrs['foreground_time_exc'] / lal.YRJUL_SI * numpy.ones_like(fi['foreground/ifar'][:]))
-
-#faps = [1 - numpy.exp( - ct / ifar) for ifar, ct in zip(ifars, coinc_times)]
-#faps_exc = [1 - numpy.exp( - ct_exc / ifar_exc) for ifar_exc, ct_exc in zip(ifars_exc, coinc_times_exc)]
-
-#f['foreground/fap'][:] = faps
-#f['foreground/fap_exc'][:] = faps_exc
-
-
 #TODO: add in background combinations
 # If there is a background set (full_data as opposed to injection run), then recalculate 
 # the values for its triggers as well
-#if 'background' in files[0]:  
-#    bg_ifar = []
-#    bg_exc_ifar = []
-#    for key in key_set:
-#        if key.startswith('background') or key.startswith('background_exc'):
-#            pycbc.io.combine_and_copy(f, files, key)
-#    for f_in in files:
-#        n_ifos = sum([ifo in f_in['background'] for ifo in args.ifos])
-#        fac = sum([comb(n_ifos, i) for i in range(2, n_ifos + 1)])
-#        bg_ifar = numpy.concatenate(bg_ifar, f_in['background/ifar'][:] / fac)
-#        bg_exc_ifar = numpy.concatenate(bg_exc_ifar,f_in['background_exc/ifar'][:] / fac)
 
-#    f['background/ifar'][:] = bg_ifar
-#    f['background_exc/ifar'][:] = bg_exc_ifar
-
-#    pycbc.io.combine_and_copy(f, files, 'segments/foreground_veto/start')
-#    pycbc.io.combine_and_copy(f, files, 'segments/foreground_veto/end')
-
-for f_in in files:
-    f_in.close()
 f.close()
 logging.info('done')
