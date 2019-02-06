@@ -185,13 +185,20 @@ class BaseMCMC(object):
 
     Attributes
     ----------
-    p0 : dict
-        A dictionary of the initial position of the walkers. Set by using
-        ``set_p0``. If not set yet, a ``ValueError`` is raised when the
-        attribute is accessed.
-    pos : dict
-        A dictionary of the current walker positions. If the sampler hasn't
-        been run yet, returns p0.
+    p0
+    pos
+    nwalkers
+    niterations
+    checkpoint_interval
+    target_niterations
+    target_eff_nsamples
+    thin_interval
+    max_samples_per_chain
+    thin_safety_factor
+    burn_in
+    effective_nsamples
+    acls
+    acts
     """
     __metaclass__ = ABCMeta
 
@@ -221,14 +228,14 @@ class BaseMCMC(object):
 
     @property
     def nwalkers(self):
-        """Get the number of walkers."""
+        """The number of walkers used."""
         if self._nwalkers is None:
             raise ValueError("number of walkers not set")
         return self._nwalkers
 
     @property
     def niterations(self):
-        """Get the current number of iterations."""
+        """The current number of iterations."""
         itercounter = self._itercounter
         if itercounter is None:
             itercounter = 0
@@ -269,7 +276,7 @@ class BaseMCMC(object):
 
     @property
     def thin_safety_factor(self):
-        """Safety factor used for max samples per chain."""
+        """The minimum value that ``max_samples_per_chain`` may be set to."""
         return 100
 
     @property
@@ -342,9 +349,9 @@ class BaseMCMC(object):
 
     @property
     def pos(self):
-        """The current position of the walkers.
-
-        Returns a dictionary mapping the sampling paramters to the values.
+        """A dictionary of the current walker positions.
+        
+        If the sampler hasn't been run yet, returns p0.
         """
         pos = self._pos
         if pos is None:
@@ -356,10 +363,10 @@ class BaseMCMC(object):
 
     @property
     def p0(self):
-        """The starting position of the walkers in the sampling param space.
-
-        The returned object is a dict mapping the sampling parameters to the
-        values.
+        """A dictionary of the initial position of the walkers.
+        
+        This is set by using ``set_p0``. If not set yet, a ``ValueError`` is
+        raised when the attribute is accessed.
         """
         if self._p0 is None:
             raise ValueError("initial positions not set; run set_p0")
@@ -688,8 +695,9 @@ class BaseMCMC(object):
     def acts(self):
         """The autocorrelation times of each parameter.
 
-        The autocorrelation time is the ACL times the ``thin_interval``; it
-        gives the number of iterations between independent samples.
+        The autocorrelation time is defined as the ACL times the
+        ``thin_interval``. It gives the number of iterations between
+        independent samples.
         """
         if self.acls is None:
             return None
