@@ -113,10 +113,6 @@ for key in f['foreground'].keys():
             f['foreground/{}/{}'.format(key, k)] = dset
 
 logging.info('applying trials factor')
-#copy across ifar and ifar_exc, etc 
-# recalculate ifar/fap for the foreground triggers by 
-#  applying a trials factor = num_files(num_bins)
-
 
 #recalculate event times for trials factor calculation
 all_times = ()
