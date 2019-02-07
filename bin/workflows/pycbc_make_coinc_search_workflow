@@ -154,23 +154,6 @@ final_veto_file, final_veto_name, ind_cats = \
                                             rdir['analysis_time/segment_data'],
                                             execute_now=False)
 
-# setup gating files if provided
-gate_files = wf.setup_gating_workflow(workflow, output_dir="gating")
-
-# add the gate files to the jobs that use them
-for job in ['calculate_psd', 'inspiral', 'single_template', 
-            'plot_singles_timefreq']:
-  for gate_file in gate_files:
-      ifo_gate = gate_file.cache_entry.url
-      try:
-          workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()), 
-                          'gating-file', ifo_gate)
-      except ConfigParser.SectionError:
-          workflow.cp.add_section('{}-{}'.format(job, 
-                                  gate_file.ifo.lower()))
-          workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()), 
-                          'gating-file', ifo_gate)
-
 # Precalculated PSDs
 precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
                                             datafind_files, "psdfiles")
