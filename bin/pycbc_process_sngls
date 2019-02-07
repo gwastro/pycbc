@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+
+"""Reads in and vetoes single ifo triggers, cuts, reranks and clusters them"""
+
+import h5py, numpy, argparse, logging
+from pycbc.io import hdf
+from pycbc.events import stat, coinc
+# required for compatibility with io.hdf filter parsing ?
+#import numpy as np
+
+parser = argparse.ArgumentParser(description=__doc__)
+
+parser.add_argument('--single-trig-file', required=True,
+                    help='Path to file containing single-detector triggers in '
+                         'HDF5 format. Required')
+parser.add_argument('--detector', required=True, 
+                    help='Detector. Required')
+parser.add_argument('--bank-file', required=True,
+                    help='Path to file containing template bank in HDF5 format'
+                         '. Required')
+parser.add_argument('--veto-file',
+                    help='Optional path to file containing veto segments')
+parser.add_argument('--segment-name', default=None,
+                    help='Optional, name of segment list to use for vetoes')
+parser.add_argument('--filter-string', default=None,
+                    help='Optional, boolean expression for filtering triggers '
+                         'e.g. "self.mchirp>5."')
+parser.add_argument('--min-snr', default=0., type=float,
+                    help='Only keep triggers above the given SNR')
+parser.add_argument('--statistic-name', dest='statname',
+                    choices=stat.sngl_statistic_dict.keys(),
+                    help='Name of statistic to evaluate and cluster on. '
+                    'If not supplied, SNR will be used')
+parser.add_argument('--statistic-files', nargs='*', default=[],
+                    help='Files containing ranking statistic info')
+parser.add_argument('--cluster-window', type=float,
+                    help='If supplied, cluster singles by symmetrical time '
+                         'window method, specify window extent from maximum'
+                         'in seconds')
+parser.add_argument('--output-file', required=True)
+
+args = parser.parse_args()
+
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
+outfile = h5py.File(args.output_file, 'w')
+outgroup = outfile.create_group(args.detector)
+
+snr_filter = 'self.snr>%f' % (args.min_snr) if args.min_snr > 0. else None 
+filts = [f for f in [snr_filter, args.filter_string] if f is not None]
+# not clear if this works in practice; use numpy logical_and ?
+#filter_func = ' & '.join(filts) if filts else None
+if len(filts) == 2:  # both an explicit filter and a min-snr
+    # io.hdf uses numpy imported as np
+    filter_func = 'np.logical_and(%s, %s)' % (filts[0], filts[1])
+elif len(filts) == 1:
+    filter_func = filts[0]
+else:
+    filter_func = None
+
+logging.info('Will filter trigs using %s' % filter_func)
+sngls = hdf.SingleDetTriggers(args.single_trig_file, args.bank_file,\
+                              args.veto_file, args.segment_name, filter_func,\
+                              args.detector)
+
+if args.statname is not None:
+    logging.info('Calculating stat')
+    statengine = stat.sngl_statistic_dict[args.statname](args.statistic_files)
+    # sngls.trigs is the h5py group containing trigger datasets
+    stat = statengine.single(sngls.trigs)
+else:
+    logging.info('Using SNR for possible clustering')
+    stat = sngls.snr
+
+logging.info('%i stat values found' % len(stat))
+
+if args.cluster_window is not None:
+    logging.info('Clustering over time')
+    out_idx = coinc.cluster_over_time(stat, sngls.end_time,
+                                            window=args.cluster_window)
+    outgroup['cluster_window'] = args.cluster_window
+else:
+    out_idx = numpy.arange(len(sngls.end_time))
+
+logging.info('Writing %i triggers' % len(out_idx))
+
+# get the columns to copy over
+with h5py.File(args.single_trig_file, 'r') as trigfile:
+    cnames = []
+    # only keep datasets parallel to the original trigger list
+    for n, col in trigfile[args.detector].items():
+        if n.endswith('_template') or isinstance(col, h5py.Group) or\
+                                                   n == u'template_boundaries':
+            continue
+        cnames.append(n)
+for n in cnames:
+    outgroup[n] = sngls.get_column(n)[out_idx]
+
+outgroup.attrs['filter'] = filter_func
+if args.statname is not None:
+    outgroup['stat'] = stat[out_idx]
+    outgroup.attrs['statname'] = args.statname
+    outgroup.attrs['statistic_files'] = args.statistic_files
+outfile.close()
+logging.info('Done!')
