@@ -128,6 +128,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
         obj.set_burn_in_from_config(cp)
+        # set prethin options
+        obj.set_thin_interval_from_config(cp, section)
         return obj
 
     @property
