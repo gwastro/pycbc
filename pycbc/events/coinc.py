@@ -353,15 +353,17 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
+
     logging.info('clustering coinc triggers over %ss window' % window)
 
     if len(time1) == 0 or len(time2) == 0:
         logging.info('No coinc triggers in one, or both, ifos.')
         return numpy.array([])
 
-    indices = []
     if numpy.isfinite(slide):
-        time = (time2 + (time1 + timeslide_id * slide)) / 2
+        # for a time shifted coinc, time1 is greater than time2 by approximately timeslide_id*slide
+        # adding this quantity gives a mean coinc time located around time1
+        time = (time1 + time2 + timeslide_id * slide) / 2
     else:
         time = 0.5 * (time2 + time1)
 
@@ -370,7 +372,106 @@ def cluster_coincs(stat, time1, time2, timeslide_id, slide, window, argmax=numpy
 
     span = (time.max() - time.min()) + window * 10
     time = time + span * tslide
+    cidx = cluster_over_time(stat, time, window, argmax)
+    return cidx
 
+def cluster_coincs_multiifo(stat, time_coincs, timeslide_id, slide, window, argmax=numpy.argmax):
+    """Cluster coincident events for each timeslide separately, across
+    templates, based on the ranking statistic
+
+    Parameters
+    ----------
+    stat: numpy.ndarray
+        vector of ranking values to maximize
+    time_coincs: tuple of numpy.ndarrays
+        trigger times for each ifo, or -1 if an ifo does not participate in a coinc
+    timeslide_id: numpy.ndarray
+        vector that determines the timeslide offset
+    slide: float
+        length of the timeslides offset interval
+    window: float
+        duration of clustering window in seconds
+
+    Returns
+    -------
+    cindex: numpy.ndarray
+        The set of indices corresponding to the surviving coincidences
+    """
+    time_coinc_zip = zip(*time_coincs)
+    if len(time_coinc_zip) == 0:
+        logging.info('No coincident triggers.')
+        return numpy.array([])
+
+    time_avg_num = []
+    #find number of ifos and mean time over participating ifos for each coinc
+    for tc in time_coinc_zip:
+        time_avg_num.append(mean_if_greater_than_zero(tc))
+
+    time_avg, num_ifos = zip(*time_avg_num)
+
+    time_avg = numpy.array(time_avg)
+    num_ifos = numpy.array(num_ifos)
+
+    # shift all but the pivot ifo by (num_ifos-1) * timeslide_id * slide
+    # this leads to a mean coinc time located around pivot time
+    if numpy.isfinite(slide):
+        nifos_minusone = (num_ifos - numpy.ones_like(num_ifos))
+        time_avg = time_avg + (nifos_minusone * timeslide_id * slide)/num_ifos
+
+    tslide = timeslide_id.astype(numpy.float128)
+    time_avg = time_avg.astype(numpy.float128)
+
+    span = (time_avg.max() - time_avg.min()) + window * 10
+    time_avg = time_avg + span * tslide
+    cidx = cluster_over_time(stat, time_avg, window, argmax)
+
+    return cidx
+
+def mean_if_greater_than_zero(vals):
+    """ Calculate mean of an iterator of numerical values, but ignore it
+    if the value if it is less than zero. This is used when the timestamps
+    are marked as -1 when a particular IFO is not included in the particular
+    coincidence.
+
+    Parameters
+    ----------
+    vals: iterator of numerical values
+        values to be mean averaged
+
+    Returns
+    -------
+    mean: float
+        The mean of the values in the original vector which are
+        greater than zero
+    num_above_zero: int
+        The number of entries in the vector which are above zero
+    """
+    vals = numpy.array(vals)
+    above_zero = vals > 0
+    return vals[above_zero].mean(), above_zero.sum()
+
+def cluster_over_time(stat, time, window, argmax=numpy.argmax):
+    """Cluster events given their times and ranking statistic values
+
+    Parameters
+    ----------
+    stat: numpy.ndarray
+        vector of ranking values to maximize
+    time: numpy.ndarray
+        averaged time
+    window: float
+        length to cluster over
+    argmax: function
+        the function used to calculate the maximum value
+
+    Returns
+    -------
+    cindex: numpy.ndarray
+        The set of indices corresponding to the surviving coincidences.
+    """
+    logging.info('clustering coinc triggers over %ss window' % window)
+
+    indices = []
     time_sorting = time.argsort()
     stat = stat[time_sorting]
     time = time[time_sorting]
