@@ -386,9 +386,9 @@ class ExpFitStatistic(NewSNRStatistic):
     def find_fits(self, trigs):
         """Get fit coeffs for a specific ifo and template id(s)"""
         try:
-            tnum = trigs.template_num  #exists if accessed via coinc_findtrigs
+            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
         except AttributeError:
-            tnum = trigs.template_id  #exists for SingleDetTriggers
+            tnum = trigs.template_id  # exists for SingleDetTriggers
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
         alphai = self.fits_by_tid[trigs.ifo]['alpha'][tnum]
