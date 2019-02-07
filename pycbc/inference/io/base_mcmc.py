@@ -26,7 +26,6 @@
 
 from __future__ import (absolute_import, division)
 
-import logging
 import numpy
 import argparse
 
@@ -116,7 +115,7 @@ class MCMCMetadataIO(object):
 
     def last_iteration(self, parameter=None):
         """Returns the iteration of the last sample of the given parameter.
-        
+
         If parameter is ``None``, will just use the first parameter in the
         samples group.
         """
@@ -424,7 +423,7 @@ class SingleTempMCMCIO(object):
 
 def thin_samples_for_writing(fp, samples, last_iteration):
     """Thins samples for writing to disk.
-    
+
     The thinning interval to use is determined by the given file handler's
     ``thinned_by`` attribute. If that attribute is 1, just returns the samples.
 
@@ -451,7 +450,7 @@ def thin_samples_for_writing(fp, samples, last_iteration):
         if last_iteration is None:
             raise ValueError("File's thinned_by attribute is > 1 ({}), "
                              "but last_iteration not provided."
-                             .format(self.thinned_by))
+                             .format(fp.thinned_by))
         thinned_samples = {}
         for param, data in samples.items():
             nsamples = data.shape[-1]
@@ -463,7 +462,7 @@ def thin_samples_for_writing(fp, samples, last_iteration):
             # (-1 to convert from iteration to index) therefore gives the index
             # in the samples data to start using samples.
             thin_start = fp.last_iteration(param) + fp.thinned_by \
-                         - (last_iteration - nsamples) - 1
+                - (last_iteration - nsamples) - 1
             thinned_samples[param] = data[..., thin_start::fp.thinned_by]
     else:
         thinned_samples = samples

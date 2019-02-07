@@ -267,7 +267,7 @@ class BaseMCMC(object):
     @thin_interval.setter
     def thin_interval(self, interval):
         """Sets the thin interval to use.
-        
+
         If ``None`` provided, will default to 1.
         """
         if interval is None:
@@ -319,7 +319,7 @@ class BaseMCMC(object):
             # make the new interval is a multiple of the previous, to ensure
             # that any samples currently on disk can be thinned accordingly
             thin_interval = (thinfactor // self.thin_interval) * \
-                            self.thin_interval
+                self.thin_interval
             # make sure it's at least 1
             thin_interval = max(thin_interval, 1)
         else:
@@ -350,7 +350,7 @@ class BaseMCMC(object):
     @property
     def pos(self):
         """A dictionary of the current walker positions.
-        
+
         If the sampler hasn't been run yet, returns p0.
         """
         pos = self._pos
@@ -364,7 +364,7 @@ class BaseMCMC(object):
     @property
     def p0(self):
         """A dictionary of the initial position of the walkers.
-        
+
         This is set by using ``set_p0``. If not set yet, a ``ValueError`` is
         raised when the attribute is accessed.
         """
@@ -563,7 +563,7 @@ class BaseMCMC(object):
             nsamples_written = fp.last_iteration() - fp_lastiter
         if nsamples_written == 0:
             logging.info("No samples written due to thinning")
-        else: 
+        else:
             # check for burn in, compute the acls
             self.acls = None
             if self.burn_in is not None:
