@@ -47,8 +47,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=__version__)
 _workflow.add_workflow_command_line_group(parser)
 args = parser.parse_args()
-wflow = _workflow.core.Workflow(args, workflow_name)
-all_files = _workflow.core.FileList([])
+wflow = _workflow.Workflow(args, workflow_name)
+all_files = _workflow.FileList([])
 tags = []
 initDir = os.getcwd()
 
