@@ -130,7 +130,7 @@ test_times = numpy.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
 
 # iterate over different ifo combinations
 for key in f:
-    if key.startswith('foreground'):
+    if key.startswith('foreground') or key.startswith('background'):
         continue
     end_times = numpy.array(f['%s/segments/end' % key][:])
     start_times = numpy.array(f['%s/segments/start' % key][:])
