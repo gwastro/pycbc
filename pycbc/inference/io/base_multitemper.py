@@ -153,7 +153,7 @@ class MultiTemperedMCMCIO(object):
                 istop = istart + data.shape[2]
                 self.create_dataset(dataset_name, (ntemps, nwalkers, istop),
                                     maxshape=(ntemps, nwalkers,
-                                              max_iterations),
+                                              None),
                                     dtype=data.dtype,
                                     fletcher32=True)
             self[dataset_name][:, :, istart:istop] = data
