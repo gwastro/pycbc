@@ -316,8 +316,8 @@ class BaseMCMC(object):
             # interval will need to be at least twice as large as a previously
             # used interval
             thinfactor = samps_per_chain // self.max_samples_per_chain // 2
-            # make the new interval a multiple of the previous, to ensure that
-            # any samples currently on disk can be thinned accordingly
+            # make the new interval is a multiple of the previous, to ensure
+            # that any samples currently on disk can be thinned accordingly
             thin_interval = (thinfactor // self.thin_interval) * \
                             self.thin_interval
             # make sure it's at least 1
