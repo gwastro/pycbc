@@ -135,10 +135,16 @@ if args.save_trig_param:
     tparam = trigf[args.ifo+'/'+args.save_trig_param][:][abovethresh]
 logging.info('%i trigs left after thresholding' % len(stat))
 
+# as approximant to total time, make segment between first and last triggers
+all_segments = events.veto.start_end_to_segments([min(time)],[max(time)])
+
 # now do vetoing
 for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     retain, junk = events.veto.indices_outside_segments(time, [veto_file],
                                  ifo=args.ifo, segment_name=veto_segment_name)
+    all_segments -= events.veto.select_segments_by_definer(veto_file,
+                                                           ifo=args.ifo,
+                                                           segment_name=veto_segment_name)
     stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
@@ -146,6 +152,8 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
         tparam = tparam[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
+
+total_time = sum([seg_end - seg_start for seg_start, seg_end in all_segments])
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
@@ -276,6 +284,7 @@ outfile.attrs.create("sngl_stat", data=args.sngl_stat)
 if args.save_trig_param:
     outfile.attrs.create("save_trig_param", data=args.save_trig_param)
 outfile.attrs.create("stat_threshold", data=args.stat_threshold)
+outfile.attrs.create("analysis_time", data=total_time)
 
 outfile.close()
 logging.info('Done!')
