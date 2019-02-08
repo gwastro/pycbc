@@ -663,10 +663,12 @@ class BaseMCMC(object):
         """
         if cp.has_option(section, "thin-interval"):
             thin_interval = int(cp.get(section, "thin-interval"))
+            logging.info("Will thin samples using interval %i", thin_interval)
         else:
             thin_interval = None
         if cp.has_option(section, "max-samples-per-chain"):
             max_samps_per_chain = int(cp.get(section, "max-samples-per-chain"))
+            logging.info("Setting max samples per chain to %i", max_samples_per_chain)
         else:
             max_samps_per_chain = None
         # check for consistency
