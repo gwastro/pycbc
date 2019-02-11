@@ -310,12 +310,10 @@ class BaseMCMC(object):
         interval used must be a multiple of the currently used thin interval.
         """
         if self.max_samples_per_chain is not None:
-            # get the number of samples per walker if we did no thinning
-            samps_per_chain = self.niterations // self.nwalkers
             # the extra factor of 2 is to account for the fact that the thin
             # interval will need to be at least twice as large as a previously
             # used interval
-            thinfactor = samps_per_chain // self.max_samples_per_chain // 2
+            thinfactor = 2 * self.niterations // self.max_samples_per_chain
             # make the new interval is a multiple of the previous, to ensure
             # that any samples currently on disk can be thinned accordingly
             thin_interval = (thinfactor // self.thin_interval) * \
@@ -668,7 +666,7 @@ class BaseMCMC(object):
             thin_interval = None
         if cp.has_option(section, "max-samples-per-chain"):
             max_samps_per_chain = int(cp.get(section, "max-samples-per-chain"))
-            logging.info("Setting max samples per chain to %i", max_samples_per_chain)
+            logging.info("Setting max samples per chain to %i", max_samps_per_chain)
         else:
             max_samps_per_chain = None
         # check for consistency

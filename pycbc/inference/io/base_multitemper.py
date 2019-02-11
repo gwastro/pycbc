@@ -131,7 +131,8 @@ class MultiTemperedMCMCIO(object):
         if parameters is None:
             parameters = samples.keys()
         # thin the samples
-        samples = thin_samples_for_writing(self, samples, last_iteration)
+        samples = thin_samples_for_writing(self, samples, parameters,
+                                           last_iteration)
         # loop over number of dimensions
         for param in parameters:
             dataset_name = group.format(name=param)

@@ -72,7 +72,9 @@ class MCMCMetadataIO(object):
         """
         # read thinned samples into memory
         params = self[self.samples_group].keys()
-        samples = self.read_raw_samples(params, thin_interval=thin_interval,
+        samples = self.read_raw_samples(params, thin_start=0,
+                                        thin_interval=thin_interval,
+                                        thin_end=None,
                                         flatten=False)
         # now resize and write the data back to disk
         group = self[self.samples_group]
@@ -327,7 +329,7 @@ class SingleTempMCMCIO(object):
         if parameters is None:
             parameters = samples.keys()
         # thin the samples
-        samples = thin_samples_for_writing(self, samples, last_iteration)
+        samples = thin_samples_for_writing(self, samples, parameters, last_iteration)
         # loop over number of dimensions
         for param in parameters:
             dataset_name = group.format(name=param)
@@ -422,7 +424,7 @@ class SingleTempMCMCIO(object):
         return arrays
 
 
-def thin_samples_for_writing(fp, samples, last_iteration):
+def thin_samples_for_writing(fp, samples, parameters, last_iteration):
     """Thins samples for writing to disk.
 
     The thinning interval to use is determined by the given file handler's
@@ -436,6 +438,9 @@ def thin_samples_for_writing(fp, samples, last_iteration):
     samples : dict
         Dictionary mapping parameter names to arrays of (unthinned) samples.
         The arrays are thinned along their last dimension.
+    parameters : list of str
+        The parameters to thin in ``samples`` before writing. All listed
+        parameters must be in ``samples``.
     last_iteration : int
         The iteration that the last sample in ``samples`` occurred at. This is
         needed to figure out where to start the thinning in ``samples``, such
@@ -453,7 +458,8 @@ def thin_samples_for_writing(fp, samples, last_iteration):
                              "but last_iteration not provided."
                              .format(fp.thinned_by))
         thinned_samples = {}
-        for param, data in samples.items():
+        for param in parameters:
+            data = samples[param]
             nsamples = data.shape[-1]
             # To figure out where to start:
             # the last iteration in the file + the file's thinning interval
@@ -464,8 +470,9 @@ def thin_samples_for_writing(fp, samples, last_iteration):
             # in the samples data to start using samples.
             thin_start = fp.last_iteration(param) + fp.thinned_by \
                 - (last_iteration - nsamples) - 1
-            logging.info("Thinning samples using interval %i starting "
-                         "from %i before writing", fp.thinned_by, thin_start)
+            logging.info("Thinning %s samples using interval %i starting "
+                         "from %i before writing", param, fp.thinned_by,
+                         thin_start)
             thinned_samples[param] = data[..., thin_start::fp.thinned_by]
     else:
         thinned_samples = samples
