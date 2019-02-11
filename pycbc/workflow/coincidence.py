@@ -164,7 +164,8 @@ class PyCBCMultiifoStatMapExecutable(Executable):
 class PyCBCMultiifoStatMapInjExecutable(Executable):
     """Calculate FAP, IFAR, etc"""
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, zerolag, full_data, injfull, fullinj, ifos, tags=None):
+    def create_node(self, zerolag, full_data,
+                    injfull, fullinj, ifos, tags=None):
         if tags is None:
             tags = []
         segs = zerolag.get_times_covered_by_files()
@@ -367,9 +368,10 @@ def setup_multiifo_statmap(workflow, ifos, coinc_files, out_dir, tags=None):
 def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file, out_dir, tags=None):
     tags = [] if tags is None else tags
 
-    statmap_exe = PyCBCMultiifoStatMapInjExecutable(workflow.cp, 'multiifo_statmap_inj',
-                                              ifos=ifos,
-                                              tags=tags, out_dir=out_dir)
+    statmap_exe = PyCBCMultiifoStatMapInjExecutable(workflow.cp,
+                                                    'multiifo_statmap_inj',
+                                                    ifos=ifos,
+                                                    tags=tags, out_dir=out_dir)
 
     ifolist = ' '.join(ifos)
     stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']), background_file,
@@ -717,4 +719,3 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
     fixed_ifo = ordered_ifo_list[1]
 
     return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list)
-
