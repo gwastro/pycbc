@@ -232,10 +232,11 @@ for ifo, _ in zip(*insps.categorize_by_attr('ifo')):
 for i in range(2, len(insps)+1):
     combinations = itertools.combinations(ifo_ids.keys(), i)
     for ifocomb in combinations:
-        pivot_ifo, fixed_ifo, ordered_ifo_list, inspcomb = wf.get_ordered_ifo_list(ifocomb, ifo_ids, insps)
+        inspcomb = wf.select_files_by_ifo_combination(ifocomb, insps)
+        pivot_ifo, fixed_ifo, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
 
         # Create coinc tag, and set up the coinc job for the combination
-        coinctag = '{}det_'.format(len(ifocomb)) + pivot_ifo + fixed_ifo
+        coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
         ctagcomb = [tag, 'full', coinctag]
         bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
                                cum_veto_files, veto_names,
@@ -335,7 +336,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
     for i in range(2, len(insps)+1):
         combinations = itertools.combinations(ifo_ids.keys(), i)
         for ifocomb in combinations:
-            pivot_ifo, fixed_ifo, ordered_ifo_list, inspcomb = wf.get_ordered_ifo_list(ifocomb, ifo_ids, insps)
+            inspcomb = wf.select_files_by_ifo_combination(ifocomb, insps)
+            pivot_ifo, fixed_ifo, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
 
             # Create coinc tag, and set up the coinc job for the combination
             coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
