@@ -101,7 +101,7 @@ class MCMCMetadataIO(object):
         found, will just return 1.
         """
         try:
-            thinned_by = self[self.samples_group].attrs['thinned_by']
+            thinned_by = self.attrs['thinned_by']
         except KeyError:
             thinned_by = 1
         return thinned_by
@@ -114,7 +114,7 @@ class MCMCMetadataIO(object):
         given value is written to
         ``self[self.samples_group].attrs['thinned_by']``.
         """
-        self[self.samples_group].attrs['thinned_by'] = int(thinned_by)
+        self.attrs['thinned_by'] = int(thinned_by)
 
     def last_iteration(self, parameter=None):
         """Returns the iteration of the last sample of the given parameter.
