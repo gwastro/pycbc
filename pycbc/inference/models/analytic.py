@@ -191,7 +191,7 @@ class TestVolcano(BaseModel):
             numpy.exp(-0.5 * ((r - mu) / sigma) ** 2))
 
 
-class TestZeroLikelihood(BaseModel):
+class TestPrior(BaseModel):
     r"""The test distribution is zero likelihood.
 
     Parameters
@@ -202,13 +202,13 @@ class TestZeroLikelihood(BaseModel):
         All other keyword arguments are passed to ``BaseModel``.
 
     """
-    name = "test_zero_likelihood"
+    name = "test_prior"
 
     def __init__(self, variable_params, **kwargs):
         # set up base likelihood parameters
         super(TestZeroLikelihood, self).__init__(variable_params, **kwargs)
 
     def _loglikelihood(self):
-        """Returns the log prior.
+        """Returns zero.
         """
-        return self.logprior
+        return 0.
