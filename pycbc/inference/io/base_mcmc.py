@@ -28,8 +28,6 @@ from __future__ import (absolute_import, division)
 
 import numpy
 import argparse
-import logging
-
 
 class MCMCMetadataIO(object):
     """Provides functions for reading/writing MCMC metadata to file.
@@ -470,9 +468,6 @@ def thin_samples_for_writing(fp, samples, parameters, last_iteration):
             # in the samples data to start using samples.
             thin_start = fp.last_iteration(param) + fp.thinned_by \
                 - (last_iteration - nsamples) - 1
-            logging.info("Thinning %s samples using interval %i starting "
-                         "from %i before writing", param, fp.thinned_by,
-                         thin_start)
             thinned_samples[param] = data[..., thin_start::fp.thinned_by]
     else:
         thinned_samples = samples

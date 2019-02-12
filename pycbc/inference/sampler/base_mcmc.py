@@ -553,7 +553,8 @@ class BaseMCMC(object):
                                          "of %i", fn, int(thin_by))
                             fp.thin(thin_by)
                 fp_lastiter = fp.last_iteration()
-            logging.info("Writing samples to %s", fn)
+            logging.info("Writing samples to %s with thin interval %i", fn,
+                         thin_interval)
             self.write_results(fn)
         # see if we had anything to write after thinning; if not, don't try
         # to compute anything
