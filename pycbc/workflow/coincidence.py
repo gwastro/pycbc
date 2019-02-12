@@ -693,13 +693,12 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
 
 def select_files_by_ifo_combination(ifocomb, insps):
     """
-    This function selects the inspiral files for a given ifo combination
+    This function selects single-detector files ('insps') for a given ifo combination
     """
-    # Use only the inspiral files required for the detector combination
     inspcomb = FileList()
-    for ifo, fi in zip(*insps.categorize_by_attr('ifo')):
+    for ifo, ifile in zip(*insps.categorize_by_attr('ifo')):
         if ifo in ifocomb:
-            inspcomb += fi
+            inspcomb += ifile
 
     return inspcomb
 
@@ -710,7 +709,7 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
     the second ifo as fixed, and the ordered list joined as a string.
     """
     # combination_prec stores precedence info for the detectors in the combination
-    combination_prec = {ifo : ifo_ids[ifo] for ifo in ifocomb}
+    combination_prec = {ifo: ifo_ids[ifo] for ifo in ifocomb}
     ordered_ifo_list = sorted(combination_prec, key = combination_prec.get)
     pivot_ifo = ordered_ifo_list[0]
     fixed_ifo = ordered_ifo_list[1]
