@@ -31,6 +31,8 @@ parser.add_argument('--veto-window', type=float, default=.1,
 parser.add_argument("--ranking-statistic-threshold", type=float,
                     help="Minimum value of the ranking statistic to calculate"
                          " a unique inclusive background.")
+parser.add_argument('--ifos', nargs='+',
+                    help='List of ifos used in these coincidence files')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
@@ -40,19 +42,20 @@ if args.verbose:
 
 logging.info("Loading coinc zerolag triggers")
 window = args.cluster_window
-zdata = pycbc.io.StatmapData(files=args.zero_lag_coincs)
+zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos = args.ifos)
 zdata = zdata.cluster(window)
 
 logging.info("Loading coinc full inj triggers")
-fidata = pycbc.io.StatmapData(files=args.mixed_coincs_full_inj).cluster(window)
+fidata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_full_inj, ifos = args.ifos).cluster(window)
 
 logging.info("Loading coinc inj full triggers")
-ifdata = pycbc.io.StatmapData(files=args.mixed_coincs_inj_full).cluster(window)
+ifdata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_inj_full, ifos = args.ifos).cluster(window)
 
 f = h5py.File(args.output_file, "w")
 
-f.attrs['detector_1'] = zdata.attrs['detector_1']
-f.attrs['detector_2'] = zdata.attrs['detector_2']
+f.attrs['num_of_ifos'] = zdata.attrs['num_of_ifos']
+f.attrs['pivot'] = zdata.attrs['pivot']
+f.attrs['fixed'] = zdata.attrs['fixed']
 f.attrs['timeslide_interval'] = zdata.attrs['timeslide_interval']
 
 # Copy over the segment for coincs and singles
@@ -71,10 +74,8 @@ else:
 logging.info('calculating statistics excluding zerolag')
 fb = h5py.File(args.full_data_background, "r")
 
-# Allow all time to contribute to injection calculated IFARs, as for zerolag
-# This prevents loud injections from being assigned to a bin where they have
-# bad chisq if that bin has slightly larger exclusive bg livetime due to
-# different censoring
+# we expect the injfull file to contain injection data as pivot
+# and fullinj to contain full data as pivot
 background_time = float(fb.attrs['background_time'])
 coinc_time = float(fb.attrs['foreground_time'])
 back_stat = fb['background_exc/stat'][:]
@@ -93,7 +94,8 @@ if len(zdata) > 0:
     f['foreground/fap_exc'] = fap_exc
 
     logging.info('calculating injection backgrounds')
-    ftimes = (zdata.time1 + zdata.time2) / 2.0
+    ifotimes = zip(zdata.data['%s/time' % ifo] for ifo in args.ifos)
+    ftimes = numpy.concatenate(ifotimes).mean(axis=0)
     start, end = ftimes - args.veto_window, ftimes + args.veto_window
 
     fnlouder = numpy.zeros(len(ftimes), dtype=numpy.float32)
@@ -103,12 +105,13 @@ if len(zdata) > 0:
     # We are relying on the injection data set to be the first one,
     # this is determined
     # by the argument order to pycbc_coinc_findtrigs
-    ifsort = ifdata.time1.argsort()
-    ifsorted = ifdata.time1[ifsort]
+    pivot_ifo = zdata.attrs['pivot']
+    ifsort = ifdata.data['%s/time' % pivot_ifo].argsort()
+    ifsorted = ifdata.data['%s/time' % pivot_ifo][ifsort]
     if_start, if_end = numpy.searchsorted(ifsorted, start), numpy.searchsorted(ifsorted, end)
 
-    fisort = fidata.time1.argsort()
-    fisorted = fidata.time1[fisort]
+    fisort = fidata.data['%s/time' % pivot_ifo].argsort()
+    fisorted = fidata.data['%s/time' % pivot_ifo][fisort]
     fi_start, fi_end = numpy.searchsorted(fisorted, start), numpy.searchsorted(fisorted, end)
 
     # most of the triggers are here so presort to speed up later sorting
