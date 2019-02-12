@@ -306,7 +306,7 @@ class BaseMCMC(object):
         """Gets the thin interval to use.
 
         If ``max_samples_per_chain`` is set, this will figure out what thin
-        interval to needed to satisfy that criteria. In that case, the thin
+        interval is needed to satisfy that criteria. In that case, the thin
         interval used must be a multiple of the currently used thin interval.
         """
         if self.max_samples_per_chain is not None:
@@ -701,7 +701,8 @@ class BaseMCMC(object):
         """
         if self.acls is None:
             return None
-        return {p: acl * self.thin_interval for (p, acl) in self.acls.items()}
+        return {p: acl * self.get_thin_interval()
+                for (p, acl) in self.acls.items()}
 
     @abstractmethod
     def compute_acf(cls, filename, **kwargs):
