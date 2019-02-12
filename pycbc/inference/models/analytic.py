@@ -190,6 +190,7 @@ class TestVolcano(BaseModel):
             numpy.exp(-r/35) + 1 / (sigma * numpy.sqrt(2 * numpy.pi)) *
             numpy.exp(-0.5 * ((r - mu) / sigma) ** 2))
 
+
 class TestZeroLikelihood(BaseModel):
     r"""The test distribution is zero likelihood.
 
