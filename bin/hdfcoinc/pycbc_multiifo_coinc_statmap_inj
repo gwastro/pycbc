@@ -96,7 +96,7 @@ if len(zdata) > 0:
     f['foreground/fap_exc'] = fap_exc
 
     logging.info('calculating injection backgrounds')
-    ifotimes = zip(zdata.data['%s/time' % ifo] for ifo in ifos)
+    ifotimes = zip(zdata.data['%s/time' % ifo] for ifo in args.ifos)
     ftimes = numpy.concatenate(ifotimes).mean(axis=1)
     start, end = ftimes - args.veto_window, ftimes + args.veto_window
 
