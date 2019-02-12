@@ -74,10 +74,8 @@ else:
 logging.info('calculating statistics excluding zerolag')
 fb = h5py.File(args.full_data_background, "r")
 
-# Allow all time to contribute to injection calculated IFARs, as for zerolag
-# This prevents loud injections from being assigned to a bin where they have
-# bad chisq if that bin has slightly larger exclusive bg livetime due to
-# different censoring
+# we expect the injfull file to contain injection data as pivot
+# and fullinj to contain full data as pivot
 background_time = float(fb.attrs['background_time'])
 coinc_time = float(fb.attrs['foreground_time'])
 back_stat = fb['background_exc/stat'][:]
@@ -97,7 +95,7 @@ if len(zdata) > 0:
 
     logging.info('calculating injection backgrounds')
     ifotimes = zip(zdata.data['%s/time' % ifo] for ifo in args.ifos)
-    ftimes = numpy.concatenate(ifotimes).mean(axis=1)
+    ftimes = numpy.concatenate(ifotimes).mean(axis=0)
     start, end = ftimes - args.veto_window, ftimes + args.veto_window
 
     fnlouder = numpy.zeros(len(ftimes), dtype=numpy.float32)

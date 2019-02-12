@@ -710,10 +710,7 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
     the second ifo as fixed, and the ordered list joined as a string.
     """
     # combination_prec stores precedence info for the detectors in the combination
-    combination_prec = {}
-    for ifo in ifocomb:
-        combination_prec[ifo] = ifo_ids[ifo]
-
+    combination_prec = {ifo : ifo_ids[ifo] for ifo in ifocomb}
     ordered_ifo_list = sorted(combination_prec, key = combination_prec.get)
     pivot_ifo = ordered_ifo_list[0]
     fixed_ifo = ordered_ifo_list[1]
