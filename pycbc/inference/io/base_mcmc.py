@@ -199,8 +199,8 @@ class MCMCMetadataIO(object):
         group.attrs['burn_in_test'] = burn_in.burn_in_test
         group.attrs['is_burned_in'] = burn_in.is_burned_in
         group.attrs['burn_in_iteration'] = burn_in.burn_in_iteration
-        # set the defaut thin_start to be the burn_in_iteration
-        self.thin_start = burn_in.burn_in_iteration
+        # set the defaut thin_start to be the burn_in_index
+        self.thin_start = burn_in.burn_in_index
         # write individual test data
         for tst in burn_in.burn_in_data:
             key = 'burn_in_tests/{}'.format(tst)
