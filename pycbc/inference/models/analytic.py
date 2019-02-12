@@ -189,3 +189,26 @@ class TestVolcano(BaseModel):
         return 25 * (
             numpy.exp(-r/35) + 1 / (sigma * numpy.sqrt(2 * numpy.pi)) *
             numpy.exp(-0.5 * ((r - mu) / sigma) ** 2))
+
+
+class TestPrior(BaseModel):
+    r"""Uses the prior as the test distribution.
+
+    Parameters
+    ----------
+    variable_params : (tuple of) string(s)
+        A tuple of parameter names that will be varied. Must have length 2.
+    **kwargs :
+        All other keyword arguments are passed to ``BaseModel``.
+
+    """
+    name = "test_prior"
+
+    def __init__(self, variable_params, **kwargs):
+        # set up base likelihood parameters
+        super(TestPrior, self).__init__(variable_params, **kwargs)
+
+    def _loglikelihood(self):
+        """Returns zero.
+        """
+        return 0.
