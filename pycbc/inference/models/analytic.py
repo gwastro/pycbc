@@ -192,7 +192,7 @@ class TestVolcano(BaseModel):
 
 
 class TestPrior(BaseModel):
-    r"""The test distribution is zero likelihood.
+    r"""Uses the prior as the test distribution.
 
     Parameters
     ----------
@@ -206,7 +206,7 @@ class TestPrior(BaseModel):
 
     def __init__(self, variable_params, **kwargs):
         # set up base likelihood parameters
-        super(TestZeroLikelihood, self).__init__(variable_params, **kwargs)
+        super(TestPrior, self).__init__(variable_params, **kwargs)
 
     def _loglikelihood(self):
         """Returns zero.
