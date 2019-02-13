@@ -158,6 +158,33 @@ the ``[sampler]`` section of the configuration file. They are:
    autocorrelation length, ``max-samples-per-chain`` must be greater than
    or equal to 100.
 
+The thinned interval that was used for thinning samples is saved to the output
+file's ``thinned_by`` attribute (stored in the HDF file's ``.attrs``).  Note
+that this is not the autocorrelation length (ACL), which is the amount that the
+samples need to be further thinned to obtain independent samples.
+
+
+.. note::
+
+    In the output file creates by the MCMC samplers, we adopt the convention
+    that "iteration" means iteration of the sampler, not index of the samples.
+    For example, if a burn in test is used, ``burn_in_iteration`` will be
+    stored to the ``sampler_info`` group in the output file. This gives the
+    iteration of the sampler at which burn in occurred, not the sample on disk.
+    To determine  which samples an iteration corresponds to in the file, divide
+    iteration by ``thinned_by``.
+
+    Likewise, we adopt the convention that autocorrelation **length** (ACL) is
+    the autocorrelation length of the thinned samples (the number of samples on
+    disk that you need to skip to get independent samples) whereas
+    autocorrelation **time** (ACT) is the autocorrelation length in terms of
+    iteration (it is the number of **iterations** that you need to skip to get
+    independent samples); i.e., ``ACT = thinned_by x ACL``. The ACT is (up to
+    measurement resolution) independent of the thinning used, and thus is
+    useful for comparing the performance of the sampler.
+
+
+
 ^^^^^^^^^^^^^^^^^^^^^
 Configuring the prior
 ^^^^^^^^^^^^^^^^^^^^^
