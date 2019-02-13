@@ -186,7 +186,7 @@ if __name__ == '__main__':
                          simulation_ids=[simulation_id])
         return make_frequency_series(strain)
 
-    def compute_optimal_snr(inj, return_found=False):
+    def compute_optimal_snr(inj):
         for det, column in opts.snr_columns.items():
             # geocent time is robust to potentially incomplete sim tables
             injection_time = inj.geocent_end_time
@@ -209,15 +209,6 @@ if __name__ == '__main__':
             logging.debug('Injection %s completed', inj.simulation_id)
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
             setattr(inj, column, sval)
-
-            if return_found:
-                # No need to do any other dets if we just
-                # want to trigger weave
-                return (inj, True)
-
-        if return_found:
-            return (inj, False)
-
         return inj
 
     logging.info("Loading injections")
