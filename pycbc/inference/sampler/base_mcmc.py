@@ -667,7 +667,8 @@ class BaseMCMC(object):
             thin_interval = None
         if cp.has_option(section, "max-samples-per-chain"):
             max_samps_per_chain = int(cp.get(section, "max-samples-per-chain"))
-            logging.info("Setting max samples per chain to %i", max_samps_per_chain)
+            logging.info("Setting max samples per chain to %i",
+                         max_samps_per_chain)
         else:
             max_samps_per_chain = None
         # check for consistency
