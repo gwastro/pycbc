@@ -67,7 +67,10 @@ if args.statname is not None:
     logging.info('Calculating stat')
     statengine = stat.sngl_statistic_dict[args.statname](args.statistic_files)
     # sngls.trigs is the h5py group containing trigger datasets
-    stat = statengine.single(sngls.trigs)
+    # FIXME: This is real inefficient as we are calculating the stat on all
+    # triggers. Might need to do something complicated to fix this, so not
+    # doing that at the moment :-)
+    stat = statengine.single(sngls.trigs)[sngls.mask]
 else:
     logging.info('Using SNR for possible clustering')
     stat = sngls.snr
@@ -93,10 +96,11 @@ with h5py.File(args.single_trig_file, 'r') as trigfile:
                                                    n == u'template_boundaries':
             continue
         cnames.append(n)
+logging.info("Outputting " + ', '.join(cnames))
 for n in cnames:
     outgroup[n] = sngls.get_column(n)[out_idx]
 
-outgroup.attrs['filter'] = filter_func
+outgroup.attrs['filter'] = filter_func if filter_func else 'None'
 if args.statname is not None:
     outgroup['stat'] = stat[out_idx]
     outgroup.attrs['statname'] = args.statname
