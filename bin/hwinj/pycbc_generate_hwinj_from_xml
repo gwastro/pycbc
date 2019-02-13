@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (C) 2015 Christopher M. Biwer
 #
@@ -24,13 +24,11 @@ from glue.ligolw import ligolw, lsctables, table, utils
 from pycbc.inject import InjectionSet, legacy_approximant_name
 from pycbc.types import TimeSeries
 from pycbc.waveform import get_td_waveform
+from pycbc.detector import get_available_detectors
 
 class DefaultContentHandler(ligolw.LIGOLWContentHandler):
     pass
 lsctables.use_in(DefaultContentHandler)
-
-# list IFOs to generate waveforms
-ifos = ['H1', 'L1']
 
 # command line usage
 parser = argparse.ArgumentParser(
@@ -54,7 +52,9 @@ parser.add_argument('--sample-rate', type=int, required=True,
              help='Sample rate that waveforms will be generated.')
 parser.add_argument("--tag", type=str, default='hwinjcbcsimid',
                     help="Prefix added to output filenames.")
-
+parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'], required=True,
+                    choices=zip(*get_available_detectors())[0],
+                    help='List of IFOs to generate injections for.')
 # parse command line
 opts = parser.parse_args()
 
@@ -93,7 +93,7 @@ for sim in injections.table:
     num_samples = (end_time - start_time) * opts.sample_rate
 
     # loop over IFOs for writing waveforms to file
-    for ifo in ifos:
+    for ifo in opts.ifos:
 
         # create a time series of zeroes to inject waveform into
         initial_array = numpy.zeros(num_samples, dtype=h_plus.dtype)
