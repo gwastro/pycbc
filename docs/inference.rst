@@ -155,7 +155,8 @@ the ``[sampler]`` section of the configuration file. They are:
    samples will be thinned on disk, and new samples will be thinned to match.
    The thinning interval will grow with longer runs as a result. To ensure
    that enough samples exist to determine burn in and to measure an
-   autocorrelation length, ``max-samples-per-chain`` must be $\geq$ 100.
+   autocorrelation length, ``max-samples-per-chain`` must be greater than
+   or equal to 100.
 
 ^^^^^^^^^^^^^^^^^^^^^
 Configuring the prior
