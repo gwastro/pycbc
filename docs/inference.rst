@@ -186,7 +186,7 @@ Sampling transforms
 
 One or more of the ``variable_params`` may be transformed to a different
 parameter space for purposes of sampling. This is done by specifying a
-``[sampling_parameters]`` section. This section specifies which
+``[sampling_params]`` section. This section specifies which
 ``variable_params`` to replace with which parameters for sampling. This must be
 followed by one or more ``[sampling_transforms-{sampling_params}]`` sections
 that provide the transform class to use. For example, the following would cause
@@ -195,7 +195,7 @@ of ``mass1`` and ``mass2``:
 
 .. code-block:: ini
 
-   [sampling_parameters]
+   [sampling_params]
    mass1, mass2: mchirp, q
 
    [sampling_transforms-mchirp+q]

@@ -820,6 +820,7 @@ class ForegroundTriggers(object):
 
         ligolw_utils.write_filename(outdoc, file_name)
 
+
 chisq_choices = ['traditional', 'cont', 'bank', 'max_cont_trad', 'sg',
                  'max_bank_cont', 'max_bank_trad', 'max_bank_cont_trad']
 
@@ -863,6 +864,7 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         raise ValueError(err_msg)
     return chisq
 
+
 def save_dict_to_hdf5(dic, filename):
     """
     Parameters
@@ -892,4 +894,27 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
         elif isinstance(item, dict):
             recursively_save_dict_contents_to_group(h5file, path + key + '/', item)
         else:
-            raise ValueError('Cannot save %s type'%type(item))
+            raise ValueError('Cannot save %s type' % type(item))
+
+def combine_and_copy(f, files, group):
+    """ Combine the same column from multiple files and save to a third"""
+    f[group] = np.concatenate([fi[group][:] if group in fi else \
+                                   np.array([], dtype=np.uint32) for fi in files])
+
+def name_all_datasets(files):
+    datasets = []
+    for fi in files:
+        datasets += get_all_subkeys(fi, '/', datasets)
+    return set(datasets)
+
+def get_all_subkeys(fi, k, dset):
+    subkey_list = []
+    for sk in fi[k].keys():
+        path = k + '/' + sk
+        if path not in dset:
+            if isinstance(fi[path], h5py.Dataset):
+                subkey_list.append(path.lstrip('/'))
+            else:
+                subkey_list += get_all_subkeys(fi, path, dset)
+    # returns an empty list if there is no dataset or subgroup within the group
+    return subkey_list

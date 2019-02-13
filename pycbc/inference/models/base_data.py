@@ -26,11 +26,7 @@
 """
 
 import numpy
-import logging
 from abc import (ABCMeta, abstractmethod)
-
-from pycbc import transforms
-from pycbc.waveform import generator
 
 from .base import BaseModel
 
@@ -52,24 +48,20 @@ class BaseDataModel(BaseModel):
     data : dict
         A dictionary of data, in which the keys are the detector names and the
         values are the data.
-    waveform_generator : generator class
-        A generator class that creates waveforms.
-    waveform_transforms : list, optional
-        List of transforms to use to go from the variable args to parameters
-        understood by the waveform generator.
+    recalibration : dict of pycbc.calibration.Recalibrate, optional
+        Dictionary of detectors -> recalibration class instances for
+        recalibrating data.
+    gates : dict of tuples, optional
+        Dictionary of detectors -> tuples of specifying gate times. The
+        sort of thing returned by `pycbc.gate.gates_from_cli`.
 
     \**kwargs :
         All other keyword arguments are passed to ``BaseModel``.
 
     Attributes
     ----------
-    waveform_generator : dict
-        The waveform generator that the class was initialized with.
     data : dict
         The data that the class was initialized with.
-
-    Properties
-    ----------
     lognl :
         Returns the log likelihood of the noise.
     loglr :
@@ -81,14 +73,23 @@ class BaseDataModel(BaseModel):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, variable_params, data, waveform_generator,
-                 waveform_transforms=None, **kwargs):
-        # we'll store a copy of the data
-        self._data = {ifo: d.copy() for (ifo, d) in data.items()}
-        self._waveform_generator = waveform_generator
-        self._waveform_transforms = waveform_transforms
-        super(BaseDataModel, self).__init__(
-            variable_params, **kwargs)
+    def __init__(self, variable_params, data, recalibration=None, gates=None,
+                 **kwargs):
+        self._data = None
+        self.data = data
+        self.recalibration = recalibration
+        self.gates = gates
+        super(BaseDataModel, self).__init__(variable_params, **kwargs)
+
+    @property
+    def data(self):
+        """Dictionary mapping detector names to data."""
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        """Store a copy of the data."""
+        self._data = {det: d.copy() for (det, d) in data.items()}
 
     @property
     def _extra_stats(self):
@@ -141,101 +142,9 @@ class BaseDataModel(BaseModel):
             return logp + self.loglr
 
     @property
-    def waveform_generator(self):
-        """Returns the waveform generator that was set."""
-        return self._waveform_generator
-
-    @property
-    def data(self):
-        """Returns the data that was set."""
-        return self._data
-
-    @property
     def detectors(self):
         """Returns the detectors used."""
         return self._data.keys()
-
-    def _transform_params(self, **params):
-        """Adds waveform transforms to parent's ``_transform_params``."""
-        params = super(BaseDataModel, self)._transform_params(**params)
-        # apply waveform transforms
-        if self._waveform_transforms is not None:
-            params = transforms.apply_transforms(params,
-                                                 self._waveform_transforms,
-                                                 inverse=False)
-        return params
-
-    @classmethod
-    def _init_args_from_config(cls, cp):
-        """Adds loading waveform_transforms to parent function.
-
-        For details on parameters, see ``from_config``.
-        """
-        args = super(BaseDataModel, cls)._init_args_from_config(cp)
-        # add waveform transforms to the arguments
-        if any(cp.get_subsections('waveform_transforms')):
-            logging.info("Loading waveform transforms")
-            args['waveform_transforms'] = \
-                transforms.read_transforms_from_config(
-                    cp, 'waveform_transforms')
-        return args
-
-    @classmethod
-    def from_config(cls, cp, data=None, delta_f=None, delta_t=None,
-                    gates=None, recalibration=None,
-                    **kwargs):
-        """Initializes an instance of this class from the given config file.
-
-        Parameters
-        ----------
-        cp : WorkflowConfigParser
-            Config file parser to read.
-        data : dict
-            A dictionary of data, in which the keys are the detector names and
-            the values are the data. This is not retrieved from the config
-            file, and so must be provided.
-        delta_f : float
-            The frequency spacing of the data; needed for waveform generation.
-        delta_t : float
-            The time spacing of the data; needed for time-domain waveform
-            generators.
-        recalibration : dict of pycbc.calibration.Recalibrate, optional
-            Dictionary of detectors -> recalibration class instances for
-            recalibrating data.
-        gates : dict of tuples, optional
-            Dictionary of detectors -> tuples of specifying gate times. The
-            sort of thing returned by `pycbc.gate.gates_from_cli`.
-        \**kwargs :
-            All additional keyword arguments are passed to the class. Any
-            provided keyword will over ride what is in the config file.
-        """
-        if data is None:
-            raise ValueError("must provide data")
-        args = cls._init_args_from_config(cp)
-        args['data'] = data
-        args.update(kwargs)
-
-        variable_params = args['variable_params']
-        try:
-            static_params = args['static_params']
-        except KeyError:
-            static_params = {}
-
-        # set up waveform generator
-        try:
-            approximant = static_params['approximant']
-        except KeyError:
-            raise ValueError("no approximant provided in the static args")
-        generator_function = generator.select_waveform_generator(approximant)
-        waveform_generator = generator.FDomainDetFrameGenerator(
-            generator_function, epoch=data.values()[0].start_time,
-            variable_args=variable_params, detectors=data.keys(),
-            delta_f=delta_f, delta_t=delta_t,
-            recalib=recalibration, gates=gates,
-            **static_params)
-        args['waveform_generator'] = waveform_generator
-
-        return cls(**args)
 
     def write_metadata(self, fp):
         """Adds data to the metadata that's written.

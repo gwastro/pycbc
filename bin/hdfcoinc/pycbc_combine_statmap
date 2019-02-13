@@ -3,12 +3,8 @@
 is a conservative estimate. This clusters to find the most significant foreground, but
 leaves the background triggers alone. """
 
-import h5py, numpy, argparse, logging, pycbc, pycbc.events, lal
+import h5py, numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
 import pycbc.version
-
-def com(f, files, group):
-    """ Combine the same column from multiple files and saave to a third"""
-    f[group] = numpy.concatenate([fi[group][:] if group in fi else numpy.array([], dtype=numpy.uint32) for fi in files])
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
@@ -51,7 +47,7 @@ for key in files[0]['segments'].keys():
 
 # copy over all the columns in the foreground group, we recalculate ifar/fap later
 for key in files[0]['foreground'].keys():
-    com(f, files, 'foreground/%s' % key)
+    pycbc.io.combine_and_copy(f, files, 'foreground/%s' % key)
     
 # recalculate ifar/fap for the foreground triggers by 
 #  applying a trials factor = num_files(num_bins)
@@ -89,17 +85,17 @@ for key in f['foreground'].keys():
 # the values for its triggers as well
 if 'background' in files[0]:  
     for key in files[0]['background'].keys():
-        com(f, files, 'background/%s' % key)
+        pycbc.io.combine_and_copy(f, files, 'background/%s' % key)
      
     f['background/ifar'][:] =  f['background/ifar'][:] / fac
     
     for key in files[0]['background_exc'].keys():
-        com(f, files, 'background_exc/%s' % key)
+        pycbc.io.combine_and_copy(f, files, 'background_exc/%s' % key)
      
     f['background_exc/ifar'][:] = f['background_exc/ifar'][:] / fac
 
-    com(f, files, 'segments/foreground_veto/start')
-    com(f, files, 'segments/foreground_veto/end')
+    pycbc.io.combine_and_copy(f, files, 'segments/foreground_veto/start')
+    pycbc.io.combine_and_copy(f, files, 'segments/foreground_veto/end')
 
 
 f.close()

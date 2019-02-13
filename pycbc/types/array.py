@@ -823,11 +823,12 @@ class Array(object):
         self._saved = LimitedSizeDict(size_limit=2**5)
         new_arr = zeros(len(self), dtype=self.dtype)
 
+        if shift < 0:
+            shift = shift - len(self) * (shift // len(self))
+        
         if shift == 0:
             return
-        if shift < 0:
-            shift=len(self) + shift
-
+        
         new_arr[0:shift] = self[len(self)-shift: len(self)]
         new_arr[shift:len(self)] = self[0:len(self)-shift]
             

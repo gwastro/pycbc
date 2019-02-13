@@ -1566,7 +1566,8 @@ def get_common_cbc_transforms(requested_params, variable_args,
                 converter.outputs.isdisjoint(requested_params)):
             continue
         intersect = converter.outputs.intersection(requested_params)
-        if len(intersect) < 1 or intersect.issubset(converter.inputs):
+        if (not intersect or intersect.issubset(converter.inputs) or
+                intersect.issubset(variable_args)):
             continue
         requested_params.update(converter.inputs)
         from_base_c.append(converter)

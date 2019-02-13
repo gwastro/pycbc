@@ -29,6 +29,7 @@ for ifo in ['H1', 'L1']:
 
 pylab.legend()
 pylab.xlim(1126259462.21, 1126259462.45)
+pylab.ylim(-150, 150)
 pylab.ylabel('Smoothed-Whitened Strain')
 pylab.grid()
 pylab.xlabel('GPS Time (s)')
