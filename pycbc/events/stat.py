@@ -387,13 +387,17 @@ class ExpFitStatistic(NewSNRStatistic):
         """Get fit coeffs for a specific ifo and template id(s)"""
         try:
             tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            ifo = trigs.ifo
         except AttributeError:
-            tnum = trigs.template_id  # exists for SingleDetTriggers
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            # Should only be one ifo fit file provided
+            assert(len(self.ifos) == 1)
+            ifo = self.ifos[0]
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
-        alphai = self.fits_by_tid[trigs.ifo]['alpha'][tnum]
-        ratei = self.fits_by_tid[trigs.ifo]['rate'][tnum]
-        thresh = self.fits_by_tid[trigs.ifo]['thresh']
+        alphai = self.fits_by_tid[ifo]['alpha'][tnum]
+        ratei = self.fits_by_tid[ifo]['rate'][tnum]
+        thresh = self.fits_by_tid[ifo]['thresh']
         return alphai, ratei, thresh
 
     def lognoiserate(self, trigs):

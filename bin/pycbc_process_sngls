@@ -37,6 +37,9 @@ parser.add_argument('--cluster-window', type=float,
                     help='If supplied, cluster singles by symmetrical time '
                          'window method, specify window extent from maximum'
                          'in seconds')
+parser.add_argument('--store-bank-values', default=False, action='store_true',
+                    help='If given also add the template bank parameters into '
+                         'the output file.')
 parser.add_argument('--output-file', required=True)
 
 args = parser.parse_args()
@@ -67,7 +70,10 @@ if args.statname is not None:
     logging.info('Calculating stat')
     statengine = stat.sngl_statistic_dict[args.statname](args.statistic_files)
     # sngls.trigs is the h5py group containing trigger datasets
-    stat = statengine.single(sngls.trigs)
+    # FIXME: This is real inefficient as we are calculating the stat on all
+    # triggers. Might need to do something complicated to fix this, so not
+    # doing that at the moment :-)
+    stat = statengine.single(sngls.trigs)[sngls.mask]
 else:
     logging.info('Using SNR for possible clustering')
     stat = sngls.snr
@@ -93,10 +99,17 @@ with h5py.File(args.single_trig_file, 'r') as trigfile:
                                                    n == u'template_boundaries':
             continue
         cnames.append(n)
+logging.info("Outputting " + ', '.join(cnames))
 for n in cnames:
     outgroup[n] = sngls.get_column(n)[out_idx]
 
-outgroup.attrs['filter'] = filter_func
+if args.store_bank_values:
+    for n in sngls.bank:
+        if n == 'template_hash':
+            continue
+        outgroup[n] = sngls.get_column(n)[out_idx]
+
+outgroup.attrs['filter'] = filter_func if filter_func else 'None'
 if args.statname is not None:
     outgroup['stat'] = stat[out_idx]
     outgroup.attrs['statname'] = args.statname
