@@ -295,6 +295,44 @@ analysis. E.g. for an analysis using H1 only, the required options would be
 ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``,
 ``h1-transfer-function-d``.
 
+^^^^^^^^^^^
+Constraints
+^^^^^^^^^^^
+
+One or more constraints may be applied to the parameters; these are
+specified by the ``[constraint]`` section(s). Additional constraints may be
+supplied by adding more ``[constraint-{tag}]`` sections. Any tag may be used; the
+only requirement is that they be unique. If multiple constraint sections are
+provided, the union of all constraints is applied. Alternatively, multiple
+constraints may be joined in a single argument using numpy's logical operators.
+
+The parameter that constraints are applied to may be any parameter in
+``variable_params`` or any output parameter of the transforms. Functions may be
+applied to these parameters to obtain constraints on derived parameters. Any
+function in the conversions, coordinates, or cosmology module may be used,
+along with any numpy ufunc. So, in the following example, the mass ratio (q) is
+constrained to be <= 4 by using a function from the conversions module.
+
+.. code-block:: ini
+
+   [variable_params]
+   mass1 =
+   mass2 =
+
+   [prior-mass1]
+   name = uniform
+   min-mass1 = 3
+   max-mass1 = 12
+
+   [prior-mass2]
+   name = uniform
+   min-mass2 = 1
+   min-mass2 = 3
+
+   [constraint-1]
+   name = custom
+   constraint_args = q_from_mass1_mass2(mass1, mass2) <= 4
+
 ------------------------------
 Checkpointing and output files
 ------------------------------
