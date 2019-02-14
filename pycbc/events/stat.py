@@ -391,7 +391,7 @@ class ExpFitStatistic(NewSNRStatistic):
         except AttributeError:
             tnum = trigs['template_id']  # exists for SingleDetTriggers
             # Should only be one ifo fit file provided
-            assert(len(self.ifos) == 1)
+            assert len(self.ifos) == 1
             ifo = self.ifos[0]
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
