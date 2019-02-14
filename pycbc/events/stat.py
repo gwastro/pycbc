@@ -157,7 +157,7 @@ class NewSNRSGStatistic(NewSNRStatistic):
     """ Calculate the NewSNRSG coincident detection statistic """
 
     def single(self, trigs):
-        """Calculate the single detector statistic, here equal to newsnr
+        """Calculate the single detector statistic, here equal to newsnr_sgveto
 
         Parameters
         ----------
@@ -373,41 +373,48 @@ class ExpFitStatistic(NewSNRStatistic):
         coeff_file = self.files[ifo+'-fit_coeffs']
         template_id = coeff_file['template_id'][:]
         alphas = coeff_file['fit_coeff'][:]
-        lambdas = coeff_file['count_above_thresh'][:]
+        rates = coeff_file['count_above_thresh'][:]
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
-        return {'alpha':alphas[tid_sort], 'lambda':lambdas[tid_sort],
+        return {'alpha':alphas[tid_sort], 'rate':rates[tid_sort],
                 'thresh':coeff_file.attrs['stat_threshold']}
 
     def get_ref_vals(self, ifo):
         self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
 
     def find_fits(self, trigs):
-        """Get fit coeffs for a specific ifo and template id"""
-        tnum = trigs.template_num
+        """Get fit coeffs for a specific ifo and template id(s)"""
+        try:
+            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            ifo = trigs.ifo
+        except AttributeError:
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            # Should only be one ifo fit file provided
+            assert len(self.ifos) == 1
+            ifo = self.ifos[0]
         # fits_by_tid is a dictionary of dictionaries of arrays
         # indexed by ifo / coefficient name / template_id
-        alphai = self.fits_by_tid[trigs.ifo]['alpha'][tnum]
-        lambdai = self.fits_by_tid[trigs.ifo]['lambda'][tnum]
-        thresh = self.fits_by_tid[trigs.ifo]['thresh']
-        return alphai, lambdai, thresh
+        alphai = self.fits_by_tid[ifo]['alpha'][tnum]
+        ratei = self.fits_by_tid[ifo]['rate'][tnum]
+        thresh = self.fits_by_tid[ifo]['thresh']
+        return alphai, ratei, thresh
 
     def lognoiserate(self, trigs):
         """
         Calculate the log noise rate density over single-ifo newsnr
 
         Read in single trigger information, make the newsnr statistic
-        and rescale by the fitted coefficients alpha and lambda
+        and rescale by the fitted coefficients alpha and rate
         """
-        alphai, lambdai, thresh = self.find_fits(trigs)
+        alphai, ratei, thresh = self.find_fits(trigs)
         newsnr = self.get_newsnr(trigs)
         # alphai is constant of proportionality between single-ifo newsnr and
         #  negative log noise likelihood in given template
-        # lambdai is rate of trigs in given template compared to average
+        # ratei is rate of trigs in given template compared to average
         # thresh is stat threshold used in given ifo
         lognoisel = - alphai * (newsnr - thresh) + numpy.log(alphai) + \
-                      numpy.log(lambdai)
+                      numpy.log(ratei)
         return numpy.array(lognoisel, ndmin=1, dtype=numpy.float32)
 
     def single(self, trigs):
@@ -458,6 +465,18 @@ class ExpFitCombinedSNR(ExpFitStatistic):
     def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / (2.**0.5)
+
+
+class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
+
+    """ExpFitCombinedSNR but with sine-Gaussian veto added to the
+
+    single detector ranking
+    """
+
+    def __init__(self, files):
+        ExpFitCombinedSNR.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto
 
 
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
@@ -536,6 +555,7 @@ statistic_dict = {
     'phasetd_newsnr': PhaseTDStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
+    'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
@@ -548,6 +568,7 @@ sngl_statistic_dict = {
     'snr': NetworkSNRStatistic,
     'newsnr_cut': NewSNRCutStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
+    'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic
 }

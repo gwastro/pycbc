@@ -375,6 +375,8 @@ class SingleDetTriggers(object):
         logging.info('Loading triggers')
         self.trigs_f = HFile(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
+        self.ifo = detector  # convenience attributes
+        self.detector = detector
         if bank_file:
             logging.info('Loading bank')
             self.bank = HFile(bank_file, 'r')
@@ -400,6 +402,7 @@ class SingleDetTriggers(object):
         if filter_func:
             # get required columns into the namespace with dummy attribute
             # names to avoid confusion with other class properties
+            logging.info('Setting up filter function')
             for c in self.trigs.keys():
                 if c in filter_func:
                     setattr(self, '_'+c, self.trigs[c][:])
