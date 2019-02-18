@@ -1725,6 +1725,12 @@ def followup_event_significance(ifo, data_reader, bank,
                                 lookback=200, duration=0.095):
     """ Followup an event in another detector and determine its significance
     """
+    # Lookback for background must be shorter than the strain buffer
+    if lookback > data_reader.strain.duration:
+        lookback = data_reader.strain.duration / 2
+        logging.warn('Setting lookback for background to '
+                     '%s to ensure data exists' % lookback)
+
     # calculate onsource time range
     from pycbc.detector import Detector
     onsource_start = -numpy.inf
@@ -1754,7 +1760,7 @@ def followup_event_significance(ifo, data_reader, bank,
     # We won't require that all DQ checks be valid for now, except at
     # onsource time.
     if data_reader.dq is not None:
-        if not data_reader.dq.is_extend_valid(onsource_start - duration / 2.0,
+        if not data_reader.dq.is_extent_valid(onsource_start - duration / 2.0,
                                               onsource_end + duration / 2.0):
             return None, None, None
 
