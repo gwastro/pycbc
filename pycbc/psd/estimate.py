@@ -16,6 +16,8 @@
 """Utilites to estimate PSDs from data.
 """
 
+from six.moves import range
+
 import numpy
 from pycbc.types import Array, FrequencySeries, TimeSeries, zeros
 from pycbc.types import real_same_precision_as, complex_same_precision_as
@@ -48,7 +50,7 @@ def median_bias(n):
     if n >= 1000:
         return numpy.log(2)
     ans = 1
-    for i in xrange(1, (n - 1) / 2 + 1):
+    for i in range(1, int((n - 1) / 2 + 1)):
         ans += 1.0 / (2*i + 1) - 1.0 / (2*i)
     return ans
 
@@ -141,11 +143,14 @@ def welch(timeseries, seg_len=4096, seg_stride=2048, window='hann',
 
     # calculate psd of each segment
     delta_f = 1. / timeseries.delta_t / seg_len
-    segment_tilde = FrequencySeries(numpy.zeros(seg_len / 2 + 1), \
-        delta_f=delta_f, dtype=fs_dtype)
+    segment_tilde = FrequencySeries(
+        numpy.zeros(int(seg_len / 2 + 1)),
+        delta_f=delta_f,
+        dtype=fs_dtype,
+    )
 
     segment_psds = []
-    for i in xrange(num_segments):
+    for i in range(num_segments):
         segment_start = i * seg_stride
         segment_end = segment_start + seg_len
         segment = timeseries[segment_start:segment_end]
