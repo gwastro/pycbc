@@ -6,6 +6,30 @@ import numpy
 
 from scipy import stats
 
+def entropy(pdf1, pdf2=None, base=numpy.e):
+    """ Computes the information entropy for a single parameter
+    from one probability density function.
+
+    Parameters
+    ----------
+    pdf1 : numpy.array
+        Probability density function.
+    pdf2 : {None, numpy.array}, optional
+        Probability density function of a second distribution to
+        calculate the Kullback-Leibler divergence.
+    base : {numpy.e, numpy.float64}, optional
+        The logarithmic base to use (choose base 2 for information measured
+        in bits, default is nats).
+
+    Returns
+    -------
+    numpy.float64
+        The information entropy value (or the Kullback-Leibler divergence if
+        two distributions are given).
+    """
+
+    return stats.entropy(pdf1, qk=pdf2, base=base)
+
 
 def kl(samples1, samples2, pdf1=False, pdf2=False,
        bins=30, hist_min=None, hist_max=None, base=numpy.e):
@@ -45,7 +69,8 @@ def kl(samples1, samples2, pdf1=False, pdf2=False,
     if not pdf2:
         samples2, _ = numpy.histogram(samples2, bins=bins,
                                       range=hist_range, normed=True)
-    return stats.entropy(samples1, qk=samples2, base=base)
+    return entropy(samples1, pdf2=samples2, base=base)
+
 
 def js(samples1, samples2, pdf1=False, pdf2=False,
        bins=30, hist_min=None, hist_max=None, base=numpy.e):
@@ -82,9 +107,9 @@ def js(samples1, samples2, pdf1=False, pdf2=False,
     join_samples = numpy.concatenate((samples1, samples2))
     samplesm, _ = numpy.histogram(join_samples, bins=bins,
                                   range=hist_range, normed=True)
-    return (1./2)*kl(samples1, (1./2)*samplesm, pdf1=False, pdf2=True, 
+    return (1./2)*kl(samples1, (1./2)*samplesm, pdf1=pdf1, pdf2=True,
                      bins=bins, hist_min=hist_min, hist_max=hist_max,
                      base=base) + \
-           (1./2)*kl(samples2, (1./2)*samplesm, pdf1=False, pdf2=True,
+           (1./2)*kl(samples2, (1./2)*samplesm, pdf1=pdf2, pdf2=True,
                      bins=bins, hist_min=hist_min, hist_max=hist_max,
                      base=base)
