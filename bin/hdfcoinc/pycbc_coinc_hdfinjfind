@@ -66,8 +66,6 @@ parser.add_argument('--optimal-snr-column', nargs='+',
 parser.add_argument('--redshift-column', default=None,
                     help='Name of sim_inspiral column containing redshift. '
                     'Optional')
-parser.add_argument('--ifos', nargs='+', default=None,
-                    help='List of IFOs involved in coincidences')
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file', required=True)
 args = parser.parse_args()
@@ -83,13 +81,21 @@ for trigger_file, injection_file in zip(args.trigger_files,
     logging.info('Read in the coinc data: %s' % trigger_file)
     f = h5py.File(trigger_file, 'r')
 
+    #detect whether trigger file is two-ifo or multi-ifo style
+    if 'foreground/time1' in f:
+        multi_ifo_style = False
+    else:
+        multi_ifo_style = True
+        # get list of groups which contain subgroup 'time' - these will be the IFOs
+        ifo_list = [key for key in f['foreground'] if 'time' in f['foreground/%s/' % key]]
+
     template_id = f['foreground/template_id'][:]
     stat = f['foreground/stat'][:]
     ifar_exc = f['foreground/ifar_exc'][:]
     ifar = f['foreground/ifar'][:]
     fap = f['foreground/fap'][:]
     fap_exc = f['foreground/fap_exc'][:]
-    if not args.ifos:
+    if not multi_ifo_style:
         # Using the original, non-multiifo-style organisation
         time1 = f['foreground/time1'][:]
         time2 = f['foreground/time2'][:]
@@ -102,7 +108,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
         ifo_times = ()
         time_dict = {}
         trig_dict = {}
-        for ifo in args.ifos:
+        for ifo in ifo_list:
              ifo_times += (f['foreground/%s/time' % ifo][:],)
              time_dict[ifo] = f['foreground/%s/time' % ifo][:]
              trig_dict[ifo] = f['foreground/%s/trigger_id' % ifo][:]
@@ -161,9 +167,9 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  % (len(found_within_time), len(missed_within_time)))
 
     logging.info('Removing injections in vetoed time')
-    if args.ifos:
+    if multi_ifo_style:
         vi = numpy.array([])
-        for ifo in args.ifos:
+        for ifo in ifo_list:
             vi = numpy.append(vi, veto_indices(inj_time, [args.veto_file],
                                     ifo=ifo, segment_name=args.segment_name))
     else:
@@ -193,7 +199,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
     hdf_append(fo, 'injections/end_time', inj_time)
 
     # pick up optimal SNRs
-    if args.ifos:
+    if multi_ifo_style:
         for ifo, column in args.optimal_snr_column.items():
             hdf_append(fo, 'injections/optimal_snr_%s' % ifo,
                        sim_table.get_column(column))
@@ -209,7 +215,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
         hdf_append(fo, 'injections/redshift',
                    sim_table.get_column(args.redshift_column))
 
-    if not args.ifos:
+    if not multi_ifo_style:
         fo.attrs['detector_1'] = f.attrs['detector_1']
         fo.attrs['detector_2'] = f.attrs['detector_2']
         fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
@@ -241,8 +247,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
     hdf_append(fo, 'found_after_vetoes/ifar_exc', ifar_exc[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/fap', fap[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/fap_exc', fap_exc[time_sorting][found_fore_v])
-    if args.ifos:
-        for ifo in args.ifos:
+    if multi_ifo_style:
+        for ifo in ifo_list:
             hdf_append(fo, 'found/%s/time' % ifo,
                        time_dict[ifo][time_sorting][found_fore])
             hdf_append(fo, 'found/%s/trigger_id' % ifo,
