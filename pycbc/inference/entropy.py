@@ -6,6 +6,7 @@ import numpy
 
 from scipy import stats
 
+
 def entropy(pdf1, pdf2=None, base=numpy.e):
     """ Computes the information entropy for a single parameter
     from one probability density function.
