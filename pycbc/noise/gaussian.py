@@ -102,8 +102,8 @@ def noise_from_psd(length, delta_t, psd, seed=None):
     randomness = lal.gsl_rng("ranlux", seed)
 
     N = int (1.0 / delta_t / psd.delta_f)
-    n = N/2+1
-    stride = N/2
+    n = N//2+1
+    stride = N//2
 
     if n > len(psd):
         raise ValueError("PSD not compatible with requested delta_t")

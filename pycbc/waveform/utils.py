@@ -436,13 +436,13 @@ def td_taper(out, start, end, beta=8, side='left'):
     winlen = 2 * int(width / out.delta_t)
     window = Array(signal.get_window(('kaiser', beta), winlen))
     xmin = int((start - out.start_time) / out.delta_t)
-    xmax = xmin + winlen/2
+    xmax = xmin + winlen//2
     if side == 'left':
-        out[xmin:xmax] *= window[:winlen/2]
+        out[xmin:xmax] *= window[:winlen//2]
         if xmin > 0:
             out[:xmin].clear()
     elif side == 'right':
-        out[xmin:xmax] *= window[winlen/2:]
+        out[xmin:xmax] *= window[winlen//2:]
         if xmax < len(out):
             out[xmax:].clear()
     else:
@@ -480,12 +480,12 @@ def fd_taper(out, start, end, beta=8, side='left'):
     winlen = 2 * int(width / out.delta_f)
     window = Array(signal.get_window(('kaiser', beta), winlen))
     kmin = int(start / out.delta_f)
-    kmax = kmin + winlen/2
+    kmax = kmin + winlen//2
     if side == 'left':
-        out[kmin:kmax] *= window[:winlen/2]
+        out[kmin:kmax] *= window[:winlen//2]
         out[:kmin] *= 0.
     elif side == 'right':
-        out[kmin:kmax] *= window[winlen/2:]
+        out[kmin:kmax] *= window[winlen//2:]
         out[kmax:] *= 0.
     else:
         raise ValueError("unrecognized side argument {}".format(side))
