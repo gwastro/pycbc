@@ -84,10 +84,12 @@ for trigger_file, injection_file in zip(args.trigger_files,
     #detect whether trigger file is two-ifo or multi-ifo style
     if 'foreground/time1' in f:
         multi_ifo_style = False
+        ifo_list = ['H1', 'L1']
     else:
         multi_ifo_style = True
         # get list of groups which contain subgroup 'time' - these will be the IFOs
         ifo_list = [key for key in f['foreground'] if 'time' in f['foreground/%s/' % key]]
+        assert len(ifo_list) > 1
 
     template_id = f['foreground/template_id'][:]
     stat = f['foreground/stat'][:]
@@ -95,16 +97,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
     ifar = f['foreground/ifar'][:]
     fap = f['foreground/fap'][:]
     fap_exc = f['foreground/fap_exc'][:]
-    if not multi_ifo_style:
-        # Using the original, non-multiifo-style organisation
-        time1 = f['foreground/time1'][:]
-        time2 = f['foreground/time2'][:]
-        trig1 = f['foreground/trigger_id1'][:]
-        trig2 = f['foreground/trigger_id2'][:]
-        ana_start = f['segments/coinc/start'][:]
-        ana_end = f['segments/coinc/end'][:]
-        time = 0.5 * (time1 + time2)
-    else:
+    if multi_ifo_style:
+        # using multi-ifo-style trigger file input
         ifo_times = ()
         time_dict = {}
         trig_dict = {}
@@ -121,16 +115,20 @@ for trigger_file, injection_file in zip(args.trigger_files,
         for key in f:
             if key == 'foreground':
                 continue
-            elif key == 'segments':
-                for k2 in f['segments']:
-                    starts = f['segments/' + k2 + '/start'][:]
-                    ends = f['segments/' + k2 + '/end'][:]
-                    any_seg += pycbc.events.start_end_to_segments(starts,ends)
             else:
                 starts = f[key + '/segments/start'][:]
                 ends = f[key + '/segments/end'][:]
                 any_seg += pycbc.events.start_end_to_segments(starts,ends)
         ana_start, ana_end = pycbc.events.segments_to_start_end(any_seg)
+    else:
+        # Using the original, non-multiifo-style organisation
+        time1 = f['foreground/time1'][:]
+        time2 = f['foreground/time2'][:]
+        trig1 = f['foreground/trigger_id1'][:]
+        trig2 = f['foreground/trigger_id2'][:]
+        ana_start = f['segments/coinc/start'][:]
+        ana_end = f['segments/coinc/end'][:]
+        time = 0.5 * (time1 + time2)
 
     time_sorting = time.argsort()
 
@@ -167,17 +165,11 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  % (len(found_within_time), len(missed_within_time)))
 
     logging.info('Removing injections in vetoed time')
-    if multi_ifo_style:
-        vi = numpy.array([])
-        for ifo in ifo_list:
-            vi = numpy.append(vi, veto_indices(inj_time, [args.veto_file],
-                                    ifo=ifo, segment_name=args.segment_name))
-    else:
-        i1, v1 = veto_indices(inj_time, [args.veto_file], ifo='H1',
-                                        segment_name=args.segment_name)
-        i2, v2 = veto_indices(inj_time, [args.veto_file], ifo='L1',
-                                         segment_name=args.segment_name)
-        vi = numpy.concatenate([i1, i2])
+
+    vi = numpy.array([])
+    for ifo in ifo_list:
+        vi = numpy.append(vi, veto_indices(inj_time, [args.veto_file],
+                                           ifo=ifo, segment_name=args.segment_name))
 
     found_after_vetoes = numpy.delete(found_within_time,
                                       numpy.where(numpy.in1d(found_within_time, vi))[0])
@@ -215,11 +207,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
         hdf_append(fo, 'injections/redshift',
                    sim_table.get_column(args.redshift_column))
 
-    if not multi_ifo_style:
-        fo.attrs['detector_1'] = f.attrs['detector_1']
-        fo.attrs['detector_2'] = f.attrs['detector_2']
-        fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
-    else:
+    if multi_ifo_style:
         for key in f.keys():
             if key == 'foreground':
                 continue
@@ -228,6 +216,10 @@ for trigger_file, injection_file in zip(args.trigger_files,
             fo[key].attrs['pivot'] = f[key].attrs['pivot']
             fo[key].attrs['fixed'] = f[key].attrs['fixed']
             fo[key].attrs['foreground_time_exc'] = f[key].attrs['foreground_time_exc']
+    else:
+        fo.attrs['detector_1'] = f.attrs['detector_1']
+        fo.attrs['detector_2'] = f.attrs['detector_2']
+        fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
 
     hdf_append(fo, 'missed/all', missed + injection_index)
     hdf_append(fo, 'missed/within_analysis', missed_within_time + injection_index)
