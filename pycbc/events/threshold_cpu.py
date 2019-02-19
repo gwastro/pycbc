@@ -33,8 +33,7 @@ def threshold_numpy(series, value):
     arr = series.data
     locs = numpy.where(arr.real**2 + arr.imag**2 > value**2)[0]
     vals = arr[locs]
-    #return locs, vals
-    return vals, locs
+    return locs, vals
 
 threshold_only = threshold_numpy
 
