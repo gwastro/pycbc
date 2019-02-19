@@ -23,7 +23,6 @@ from pycbc import io, events
 from pycbc.events import trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
 import pycbc.version
-from pycbc.workflow import SegFile
 
 #### DEFINITIONS AND FUNCTIONS ####
 
@@ -136,14 +135,12 @@ if args.save_trig_param:
     tparam = trigf[args.ifo+'/'+args.save_trig_param][:][abovethresh]
 logging.info('%i trigs left after thresholding' % len(stat))
 
-# Calculate total time being analysed from segment
+# Calculate total time being analysed from segment and vetos
 segment_starts = sorted(set(trigf['{}/search/start_time'.format(args.ifo)][:]))
 segment_ends = sorted(set(trigf['{}/search/end_time'.format(args.ifo)][:]))
 
 
 all_segments = events.veto.start_end_to_segments(segment_starts, segment_ends)
-
-total_time_preveto = sum([seg_end - seg_start for seg_start, seg_end in all_segments])
 
 # now do vetoing
 for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
@@ -161,8 +158,6 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
                                                        (len(stat), veto_file))
 
 total_time = sum([seg_end - seg_start for seg_start, seg_end in all_segments])
-
-print(total_time)
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
