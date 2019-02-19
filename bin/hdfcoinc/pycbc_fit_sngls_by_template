@@ -23,6 +23,7 @@ from pycbc import io, events
 from pycbc.events import trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
 import pycbc.version
+from pycbc.workflow import SegFile
 
 #### DEFINITIONS AND FUNCTIONS ####
 
@@ -135,10 +136,22 @@ if args.save_trig_param:
     tparam = trigf[args.ifo+'/'+args.save_trig_param][:][abovethresh]
 logging.info('%i trigs left after thresholding' % len(stat))
 
+# Calculate total time being analysed from segment
+segment_starts = sorted(set(trigf['{}/search/start_time'.format(args.ifo)][:]))
+segment_ends = sorted(set(trigf['{}/search/end_time'.format(args.ifo)][:]))
+
+
+all_segments = events.veto.start_end_to_segments(segment_starts, segment_ends)
+
+total_time_preveto = sum([seg_end - seg_start for seg_start, seg_end in all_segments])
+
 # now do vetoing
 for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     retain, junk = events.veto.indices_outside_segments(time, [veto_file],
                                  ifo=args.ifo, segment_name=veto_segment_name)
+    all_segments -= events.veto.select_segments_by_definer(veto_file,
+                                                           ifo=args.ifo,
+                                                           segment_name=veto_segment_name)
     stat = stat[retain]
     tid = tid[retain]
     time = time[retain]
@@ -146,6 +159,10 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
         tparam = tparam[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
+
+total_time = sum([seg_end - seg_start for seg_start, seg_end in all_segments])
+
+print(total_time)
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
@@ -276,6 +293,7 @@ outfile.attrs.create("sngl_stat", data=args.sngl_stat)
 if args.save_trig_param:
     outfile.attrs.create("save_trig_param", data=args.save_trig_param)
 outfile.attrs.create("stat_threshold", data=args.stat_threshold)
+outfile.attrs.create("analysis_time", data=total_time)
 
 outfile.close()
 logging.info('Done!')
