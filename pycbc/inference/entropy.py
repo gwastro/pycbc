@@ -73,21 +73,17 @@ def kl(samples1, samples2, pdf1=False, pdf2=False,
     return entropy(samples1, pdf2=samples2, base=base)
 
 
-def js(samples1, samples2, pdf1=False, pdf2=False,
-       bins=30, hist_min=None, hist_max=None, base=numpy.e):
+def js(samples1, samples2, bins=30, hist_min=None, hist_max=None,
+       base=numpy.e):
     """ Computes the Jensen-Shannon divergence for a single parameter
     from two distributions.
 
     Parameters
     ----------
     samples1 : numpy.array
-        Samples or probability density function (must also set `pdf1=True`).
+        Samples.
     samples2 : numpy.array
-        Samples or probability density function (must also set `pdf2=True`).
-    pdf1 : bool
-        Set to `True` if `samples1` is a probability density funtion already.
-    pdf2 : bool
-        Set to `True` if `samples2` is a probability density funtion already.
+        Samples.
     bins : int
         Number of bins to use when calculating probability density function
         from a set of samples of the distribution.
@@ -108,9 +104,9 @@ def js(samples1, samples2, pdf1=False, pdf2=False,
     join_samples = numpy.concatenate((samples1, samples2))
     samplesm, _ = numpy.histogram(join_samples, bins=bins,
                                   range=hist_range, normed=True)
-    return (1./2)*kl(samples1, (1./2)*samplesm, pdf1=pdf1, pdf2=True,
+    return (1./2)*kl(samples1, (1./2)*samplesm, pdf1=False, pdf2=True,
                      bins=bins, hist_min=hist_min, hist_max=hist_max,
                      base=base) + \
-           (1./2)*kl(samples2, (1./2)*samplesm, pdf1=pdf2, pdf2=True,
+           (1./2)*kl(samples2, (1./2)*samplesm, pdf1=False, pdf2=True,
                      bins=bins, hist_min=hist_min, hist_max=hist_max,
                      base=base)
