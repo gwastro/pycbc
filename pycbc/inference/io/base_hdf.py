@@ -181,7 +181,8 @@ class BaseInferenceFile(h5py.File):
         # convert to FieldArray
         samples = array_class.from_kwargs(**samples)
         # add the static params
-        for (p, val) in self.static_params.items():
+        for (p, val) in self.static_params.items() + \
+                        self[self.samples_group].attrs.items():
             setattr(samples, p, val)
         return samples
 
