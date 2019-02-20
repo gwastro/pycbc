@@ -330,8 +330,6 @@ if len(data['stat']) > 0:
                          compression_opts=9,
                          shuffle=True)
 
-f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
-
 f['segments/%s/start' % ''.join(sorted(detectors))], f['segments/%s/end' % ''.join(sorted(detectors))] = trigs[args.pivot_ifo].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
