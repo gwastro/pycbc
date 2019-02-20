@@ -158,20 +158,21 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         logl = self._sampler.lnlikelihood
         # get prior from posterior
         logp = self._sampler.lnprobability - logl
-        logjacobian = numpy.zeros(logp.size)
+        logjacobian = numpy.zeros(logp.shape)
+        #logjacobian = numpy.zeros(logp.size)
         # if different coordinates were used for sampling, get the jacobian
-        if self.model.sampling_transforms is not None:
-            samples = self.samples
-            flattened_samples = {param: arr.ravel()
-                                 for param, arr in samples.items()}
-            for ii in range(logp.size):
-                these_samples = {param: vals[ii]
-                                 for param, vals in flattened_samples.items()}
-                self.model.update(**these_samples)
-                logjacobian[ii] = self.model.logjacobian
-        logjacobian = logjacobian.reshape(logp.shape)
+        #if self.model.sampling_transforms is not None:
+        #    samples = self.samples
+        #    flattened_samples = {param: arr.ravel()
+        #                         for param, arr in samples.items()}
+        #    for ii in range(logp.size):
+        #        these_samples = {param: vals[ii]
+        #                         for param, vals in flattened_samples.items()}
+        #        self.model.update(**these_samples)
+        #        logjacobian[ii] = self.model.logjacobian
+        #logjacobian = logjacobian.reshape(logp.shape)
         # put the logprior into the variable_params space
-        logp -= logjacobian
+        #logp -= logjacobian
         return {'loglikelihood': logl, 'logprior': logp,
                 'logjacobian': logjacobian}
 
