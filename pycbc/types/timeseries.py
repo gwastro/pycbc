@@ -145,7 +145,7 @@ class TimeSeries(Array):
     def get_sample_rate(self):
         """Return the sample rate of the time series.
         """
-        return round(1.0/self.delta_t)
+        return int(round(1.0/self.delta_t))
     sample_rate = property(get_sample_rate,
                            doc="The sample rate of the time series.")
 
