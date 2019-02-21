@@ -34,7 +34,7 @@ from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import process as ligolw_process
-from glue.segments import segment, segmentlist
+from ligo.segments import segment, segmentlist
 
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
