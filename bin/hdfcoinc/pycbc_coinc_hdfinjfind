@@ -108,9 +108,9 @@ for trigger_file, injection_file in zip(args.trigger_files,
              trig_dict[ifo] = f['foreground/%s/trigger_id' % ifo][:]
         time = numpy.array([pycbc.events.mean_if_greater_than_zero(vals)[0]
                             for vals in zip(*ifo_times)])
-        # The injections missed because of 'off' time will be in
-        # 'no-coincident-detector' time, so need to combine segments
-        # to give the time when any two detectors are on
+        # We will discard injections which cannot be associated with a
+        # coincident event, thus combine segments over all combinations
+        # of coincident detectors to determine which times to keep
         any_seg = segments.segmentlist([])
         for key in f:
             if key == 'foreground':
@@ -121,7 +121,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
                 any_seg += pycbc.events.start_end_to_segments(starts,ends)
         ana_start, ana_end = pycbc.events.segments_to_start_end(any_seg)
     else:
-        # Using the original, non-multiifo-style organisation
+        # Using the old 2-ifo organisation
         time1 = f['foreground/time1'][:]
         time2 = f['foreground/time2'][:]
         trig1 = f['foreground/trigger_id1'][:]
