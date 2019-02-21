@@ -88,11 +88,13 @@ elif args.ifos:
     for ifo in args.ifos:
         opt_snrs_sqd += (f['injections/optimal_snr_%s' % ifo][:]**2,)
 
-    dvals['comb_optimal_snr'] = [numpy.sqrt(sum(set_opt_snrs_sqd)) for set_opt_snrs_sqd in zip(*opt_snrs_sqd)]
-    dvals['decisive_optimal_snr'] = [numpy.sqrt(sorted(set_opt_snrs_sqd)[-2]) for set_opt_snrs_sqd in zip(*opt_snrs_sqd)]
+    
+
+    dvals['comb_optimal_snr'] = numpy.array([numpy.sqrt(sum(set_opt_snrs_sqd)) for set_opt_snrs_sqd in zip(*opt_snrs_sqd)])
+    dvals['decisive_optimal_snr'] = numpy.array([numpy.sqrt(sorted(set_opt_snrs_sqd)[-2]) for set_opt_snrs_sqd in zip(*opt_snrs_sqd)])
 else:
     logging.error('IFOs not given in command line, and optimal_snr_1 not in input file. Needs one of them')
-
+    exit()
 
 fdvals = dvals[args.distance_type][found]
 mdvals = dvals[args.distance_type][missed]
