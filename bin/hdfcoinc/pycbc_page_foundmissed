@@ -75,23 +75,25 @@ if not args.ifos:
     dvals['dec_chirp_distance'] = pycbc.pnutils.chirp_distance(dvals['decisive_distance'], vals['mchirp'])
 
 dvals['chirp_distance'] = pycbc.pnutils.chirp_distance(dist, vals['mchirp'])
-		if args.distance_type == 'redshift':
-	    dvals['redshift'] = f['injections/redshift'][:]
+if args.distance_type == 'redshift':
+    dvals['redshift'] = f['injections/redshift'][:]
 
-	if 'optimal_snr_1' in f['injections']:
-	    opt_snr_1 = f['injections/optimal_snr_1'][:]
-	    opt_snr_2 = f['injections/optimal_snr_2'][:]
-	    dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2 + opt_snr_2 ** 2)
-	    dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
-	elif args.ifos:
-	    opt_snrs_sqd = ()
-	    for ifo in args.ifos:
-		opt_snrs_sqd += (f['injections/optimal_snr_%s' % ifo][:]**2,)
+if 'optimal_snr_1' in f['injections']:
+    opt_snr_1 = f['injections/optimal_snr_1'][:]
+    opt_snr_2 = f['injections/optimal_snr_2'][:]
+    dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2 + opt_snr_2 ** 2)
+    dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
+elif args.ifos:
+    opt_snrs_sqd = ()
+    for ifo in args.ifos:
+        opt_snrs_sqd += (f['injections/optimal_snr_%s' % ifo][:]**2,)
 
-	    dvals['comb_optimal_snr'] = [numpy.sqrt(sum(set_opt_snrs_sqd)) for set_opt_snrs_sqd in zip(*opt_snrs_sqd)]
-	    dvals['decisive_optimal_snr'] = [numpy.sqrt(sorted(set_opt_snrs_sqd)[-2]) for set_opt_snrs_sqd in zip(*opt_snrs_sqd)]
-	else:
-	    logging.error('IFOs not given in command line, and optimal_snr_1 not in input file. Needs one of them')
+    
+
+    dvals['comb_optimal_snr'] = numpy.array([numpy.sqrt(sum(set_opt_snrs_sqd)) for set_opt_snrs_sqd in zip(*opt_snrs_sqd)])
+    dvals['decisive_optimal_snr'] = numpy.array([numpy.sqrt(sorted(set_opt_snrs_sqd)[-2]) for set_opt_snrs_sqd in zip(*opt_snrs_sqd)])
+else:
+    logging.error('IFOs not given in command line, and optimal_snr_1 not in input file. Needs one of them')
 
 fdvals = dvals[args.distance_type][found]
 mdvals = dvals[args.distance_type][missed]
