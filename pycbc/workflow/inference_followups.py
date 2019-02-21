@@ -141,7 +141,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     name: str
         The name in the [executables] section of the configuration file
         to use.
-    analysis_segs: {None, glue.segments.Segment}
+    analysis_segs: {None, ligo.segments.Segment}
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}
@@ -195,7 +195,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
     name: str
         The name in the [executables] section of the configuration file
         to use.
-    analysis_segs: {None, glue.segments.Segment}
+    analysis_segs: {None, ligo.segments.Segment}
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}
@@ -247,7 +247,7 @@ def make_inference_posterior_plot(
     name: str
         The name in the [executables] section of the configuration file
         to use.
-    analysis_segs: {None, glue.segments.Segment}
+    analysis_segs: {None, ligo.segments.Segment}
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}
@@ -337,7 +337,7 @@ def make_inference_acceptance_rate_plot(workflow, inference_file, output_dir,
     name: str
         The name in the [executables] section of the configuration file
         to use.
-    analysis_segs: {None, glue.segments.Segment}
+    analysis_segs: {None, ligo.segments.Segment}
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}
@@ -388,7 +388,7 @@ def make_inference_inj_plots(workflow, inference_files, output_dir,
     name: str
         The name in the [executables] section of the configuration file
         to use.
-    analysis_segs: {None, glue.segments.Segment}
+    analysis_segs: {None, ligo.segments.Segment}
        The segment this job encompasses. If None then use the total analysis
        time from the workflow.
     tags: {None, optional}

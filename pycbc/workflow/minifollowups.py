@@ -607,7 +607,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
     injection_file: pycbc.workflow.File (optional, default=None)
         If given, add the injections in the file to strain before making the
         plot.
-    data_segments: glue.segments.segmentlist (optional, default=None)
+    data_segments: ligo.segments.segmentlist (optional, default=None)
         The list of segments for which data exists and can be read in. If given
         the start/end times given to singles_timefreq will be adjusted if
         [trig_time - time_window, trig_time + time_window] does not completely
@@ -699,7 +699,7 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
         The amount of data (not including padding) that will be read in by the
         singles_timefreq job. The default value of 10s should be fine for most
         cases.
-    data_segments: glue.segments.segmentlist (optional, default=None)
+    data_segments: ligo.segments.segmentlist (optional, default=None)
         The list of segments for which data exists and can be read in. If given
         the start/end times given to singles_timefreq will be adjusted if
         [trig_time - time_window, trig_time + time_window] does not completely

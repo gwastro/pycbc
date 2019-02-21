@@ -6,7 +6,7 @@ files.
 
 import argparse, h5py, logging, types
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-from glue import segments
+from ligo import segments
 import os.path, numpy
 from pycbc.events import indices_within_segments as veto_indices
 from pycbc.types import MultiDetOptionAction
