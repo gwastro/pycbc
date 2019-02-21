@@ -33,7 +33,7 @@ import sys
 import os
 import shutil
 import urlparse, urllib
-from lal import segments
+from ligo import segments
 from glue.ligolw import ligolw, lsctables, utils, ilwd
 from pycbc.workflow.core import File, FileList, resolve_url
 from pycbc.workflow.jobsetup import select_generic_executable
