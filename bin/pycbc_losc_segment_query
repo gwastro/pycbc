@@ -57,7 +57,7 @@ def query_losc(ifo, segment_name, gps_start_time, duration):
                                                 json_segment_data['start'],
                                                 json_segment_data['end'])])
 
-    segments = ligo..segments.segmentlist([ligo.segments.segment(
+    segments = ligo.segments.segmentlist([ligo.segments.segment(
                                          x[0],x[1]) for x in json_segment_data['segments']])
 
     return summary_segment, segments
