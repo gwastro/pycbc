@@ -31,7 +31,8 @@ import os, sys, shutil, stat, copy, itertools
 import logging
 import urlparse, urllib
 import lal
-from ligo import segments, segmentsUtils
+from ligo import segments
+from ligo.segments import utils as segmentsUtils
 from glue.ligolw import table, lsctables, ligolw
 from pycbc.workflow.core import Executable, FileList, Node, SegFile, make_analysis_dir, make_external_call, File
 from pycbc.workflow.core import resolve_url
