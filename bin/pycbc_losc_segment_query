@@ -53,7 +53,7 @@ def query_losc(ifo, segment_name, gps_start_time, duration):
     logging.info(response.info())
     json_segment_data = json.loads(response.read())
 
-    summary_segment = ligo.segments.segmentlist([ligo..segments.segment(
+    summary_segment = ligo.segments.segmentlist([ligo.segments.segment(
                                                 json_segment_data['start'],
                                                 json_segment_data['end'])])
 
