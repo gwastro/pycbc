@@ -1087,7 +1087,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             zerolag_idx = (offsets == 0)
             bkg_idx = (offsets != 0)
 
-            for ifo in ifos:
+            for ifo in self.ifos:
                 single_expire[ifo] = numpy.concatenate(single_expire[ifo])
                 single_expire[ifo] = single_expire[ifo][cidx][bkg_idx]
 
