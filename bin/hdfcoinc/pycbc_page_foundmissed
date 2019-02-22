@@ -13,10 +13,12 @@ parser.add_argument('--injection-file',
 parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
                     'effective_spin', 'time', 'mtotal', 'mass_ratio'])
 parser.add_argument('--log-x', action='store_true', default=False)
-parser.add_argument('--distance-type', default='decisive_distance',
+parser.add_argument('--distance-type', default='decisive_optimal_snr',
                     choices=['decisive_distance', 'dec_chirp_distance',
                              'chirp_distance', 'comb_optimal_snr',
-                             'decisive_optimal_snr', 'redshift'])
+                             'decisive_optimal_snr', 'redshift'],
+                    help="Variable related to injected distance. Decisive distance and dec"
+                         " chirp distance only available for 2-ifo search")
 parser.add_argument('--plot-all-distance', action='store_true', default=False,
                     help="Plot all values of distance or SNR. If not given, "
                          "the plot will be truncated below 1")
@@ -88,13 +90,14 @@ if 'snr' in args.distance_type:  # only evaluate SNRs if needed
         dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
     elif args.ifos:
         opt_snrsq_arr = (['injections/optimal_snr_%s' % ifo][:] ** 2. for ifo in args.ifos)
-        dvals['comb_optimal_snr'] = numpy.array([numpy.sqrt(sum(opt_snrsq)) 
+        dvals['comb_optimal_snr'] = numpy.array([numpy.sqrt(sum(opt_snrsq))
                                                  for opt_snrsq in zip(*opt_snrsq_arr)])
         # Decisive optimal SNR is the 2nd largest optimal SNR
-        dvals['decisive_optimal_snr'] = numpy.array([numpy.sqrt(sorted(opt_snrsq)[-2]) \
+        dvals['decisive_optimal_snr'] = numpy.array([numpy.sqrt(sorted(opt_snrsq)[-2])
                                                      for opt_snrsq in zip(*opt_snrsq_arr)])
     else:
-        raise RuntimeError('Need either --ifos option or optimal_snr_1 in input file to evaluate optimal SNRs')
+        raise RuntimeError('Need either --ifos option or optimal_snr_1 in input file to evaluate '
+                           'optimal SNRs')
 
 fdvals = dvals[args.distance_type][found]
 mdvals = dvals[args.distance_type][missed]
@@ -156,7 +159,7 @@ else:
                           marker='o', label='found', zorder=zfound)
     caption = (fig_title + ": Red x's are missed injections. "
                "Circles are found injections. The color indicates the value of "
-               "the false alarm rate. " )
+               "the false alarm rate." )
     plot.subplots_adjust(right=0.99)
     try:
         c = plot.colorbar()
