@@ -85,8 +85,11 @@ def get_newsnr_sgveto_psdvar(trigs):
      numpy.ndarray
         Array of newsnr values
     """
-    dof = 2. * trigs['chisq_dof'] - 2.
-    nsnr_sg_psd = events.newsnr_sgveto_psdvar(trigs['snr'], trigs['chisq'] / dof, trigs['sg_chisq'], trigs['psd_var_val'])
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg_psd = \
+        events.newsnr_sgveto_psdvar(trigs['snr'][:], trigs['chisq'][:] / dof,
+                                    trigs['sg_chisq'][:],
+                                    trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
 
 class Stat(object):
@@ -528,6 +531,17 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
         ExpFitCombinedSNR.__init__(self, files)
         self.get_newsnr = get_newsnr_sgveto
 
+class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
+
+    """ExpFitCombinedSNR but with sine-Gaussian veto added to the
+
+    single detector ranking
+    """
+
+    def __init__(self, files):
+        ExpFitCombinedSNR.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto_psdvar
+
 
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
 
@@ -618,6 +632,7 @@ statistic_dict = {
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
+    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
@@ -635,6 +650,8 @@ sngl_statistic_dict = {
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic
+    'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
+    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
 
 def get_statistic(stat):

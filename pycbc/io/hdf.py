@@ -451,10 +451,6 @@ class SingleDetTriggers(object):
         elif ranking_statistic == "newsnr_sgveto":
             self.stat_name = "Reweighted SNR (+sgveto)"
         elif ranking_statistic == "newsnr_sgveto_psdvar":
-            stat = self.newsnr_sgveto_psdvar
-            # newsnr doesn't return an array if len(stat) == 1
-            if len(self.snr) == 1:
-                stat = np.array([stat])
             self.stat_name = "Reweighted SNR (+sgveto+psdvar)"
         elif ranking_statistic == "snr":
             self.stat_name = "SNR"
