@@ -26,6 +26,7 @@ from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd)
 from pycbc import waveform
+from pycbc import distributions
 
 
 # -----------------------------------------------------------------------------
@@ -462,3 +463,31 @@ def add_density_option_group(parser):
              "Default is to use scipy's gaussian_kde.")
 
     return density_group
+
+
+def prior_samples_from_config(cp, sections=None, nsamples=10000):
+    """Creates a set of random samples from the given config file."""
+    # get prior distribution for each variable parameter
+    # parse command line values for section and subsection
+    # if only section then look for subsections
+    # and add distributions to list
+    variable_params = []
+    dists = []
+    if sections is None:
+        sections = ['prior']
+    for sec in sections:
+        section = sec.split("-")[0]
+        subsec = sec.split("-")[1:]
+        if len(subsec):
+            subsections = ["-".join(subsec)]
+        else:
+            subsections = cp.get_subsections(section)
+        for subsection in subsections:
+            name = cp.get_opt_tag(section, "name", subsection)
+            dist = distributions.distribs[name].from_config(
+                                                cp, section, subsection)
+            variable_params += dist.params
+            dists.append(dist)
+    # construct class that will return draws from the prior
+    prior = distributions.JointDistribution(variable_params, *dists)
+    return prior.rvs(nsamples)
