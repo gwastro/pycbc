@@ -4,12 +4,11 @@
 files.
 """
 
-import argparse, h5py, logging, types
+import argparse, h5py, logging, types, numpy, os.path
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
-from glue import segments
-import os.path, numpy
+from ligo import segments
+from pycbc import events
 from pycbc.events import indices_within_segments as veto_indices
-import pycbc.events
 from pycbc.types import MultiDetOptionAction
 import pycbc.version
 
@@ -81,13 +80,13 @@ for trigger_file, injection_file in zip(args.trigger_files,
     logging.info('Read in the coinc data: %s' % trigger_file)
     f = h5py.File(trigger_file, 'r')
 
-    #detect whether trigger file is two-ifo or multi-ifo style
+    # Detect whether trigger file is two-ifo or multi-ifo style
     if 'foreground/time1' in f:
         multi_ifo_style = False
         ifo_list = ['H1', 'L1']
     else:
         multi_ifo_style = True
-        # get list of groups which contain subgroup 'time' - these will be the IFOs
+        # Get list of groups which contain subgroup 'time' - these will be the IFOs
         ifo_list = [key for key in f['foreground'] if 'time' in f['foreground/%s/' % key]]
         assert len(ifo_list) > 1
 
@@ -106,8 +105,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
              ifo_times += (f['foreground/%s/time' % ifo][:],)
              time_dict[ifo] = f['foreground/%s/time' % ifo][:]
              trig_dict[ifo] = f['foreground/%s/trigger_id' % ifo][:]
-        time = numpy.array([pycbc.events.mean_if_greater_than_zero(vals)[0]
-                            for vals in zip(*ifo_times)])
+        time = numpy.array([events.mean_if_greater_than_zero(vals)[0] 
+                                                       for vals in zip(*ifo_times)])
         # We will discard injections which cannot be associated with a
         # coincident event, thus combine segments over all combinations
         # of coincident detectors to determine which times to keep
@@ -118,8 +117,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
             else:
                 starts = f[key + '/segments/start'][:]
                 ends = f[key + '/segments/end'][:]
-                any_seg += pycbc.events.start_end_to_segments(starts,ends)
-        ana_start, ana_end = pycbc.events.segments_to_start_end(any_seg)
+                any_seg += events.start_end_to_segments(starts,ends)
+        ana_start, ana_end = events.segments_to_start_end(any_seg)
     else:
         # Using the old 2-ifo organisation
         time1 = f['foreground/time1'][:]
@@ -134,7 +133,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
 
     logging.info('Read in the injection file')
     indoc = ligolw_utils.load_filename(injection_file, False,
-                                       contenthandler=LIGOLWContentHandler)
+                                            contenthandler=LIGOLWContentHandler)
     sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
     inj_time = numpy.array(sim_table.get_column('geocent_end_time')
                            + 1e-9 * sim_table.get_column('geocent_end_time_ns'),
