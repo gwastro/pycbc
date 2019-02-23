@@ -26,10 +26,7 @@ f = h5py.File(args.output_file, "w")
 logging.info('Copying segments and attributes to %s' % args.output_file)
 # Move segments information into the final file - remove some duplication in earlier files
 for fi in files:
-    if len(fi['segments'].keys()) > 1:
-        logging.info('Incorrect segment format.')
-
-    key = fi['segments'].keys()[0]
+    key = fi.attrs['ifocomb']
     f['%s/segments/end' % key] = fi['segments/%s/end' % key][:]
     f['%s/segments/start' % key] = fi['segments/%s/start' % key][:]
     for attr_name in fi.attrs:

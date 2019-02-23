@@ -59,9 +59,10 @@ f.attrs['fixed'] = zdata.attrs['fixed']
 f.attrs['timeslide_interval'] = zdata.attrs['timeslide_interval']
 
 # Copy over the segment for coincs and singles
-for key in zdata.seg.keys():
-    f['segments/%s/start' % key] = zdata.seg[key]['start'][:]
-    f['segments/%s/end' % key] = zdata.seg[key]['end'][:]
+key = ''.join(zdata.attrs['ifos'].split(' '))
+f['%s/segments/start' % key] = zdata['%s/segments/start'% key][:]
+f['%s/segments/end' % key] = zdata['%s/segments/end'% key][:]
+f.attrs['ifocomb'] = key
 
 logging.info('writing zero lag triggers')
 if len(zdata) > 0:
