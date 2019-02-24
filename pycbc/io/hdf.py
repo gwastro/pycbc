@@ -240,7 +240,7 @@ class MultiifoStatmapData(StatmapData):
             groups += ['%s/time' % ifo]
             groups += ['%s/trigger_id' % ifo]
         
-        key = ''.join(self.attrs['ifos'].split(' '))
+        key = ''.join(sorted(ifos))
         groups += ['%s/segments/start'% key]
         groups += ['%s/segments/end'% key]
         
