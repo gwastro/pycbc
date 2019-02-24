@@ -273,7 +273,7 @@ class MultiifoStatmapData(StatmapData):
 
     def _return(self, data):
         ifolist = self.attrs['ifos'].split(' ')
-        return self.__class__(data=data, attrs=self.attrs, seg=self.seg,
+        return self.__class__(data=data, attrs=self.attrs,
                               ifos=ifolist)
 
     def cluster(self, window):
