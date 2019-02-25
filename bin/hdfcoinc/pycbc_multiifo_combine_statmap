@@ -117,11 +117,11 @@ trials_factors = numpy.zeros_like(f['foreground/ifar'][:])
 test_times = numpy.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
                           for tc in zip(*clustered_times)])
 # Iterate over different ifo combinations
-for key in f:
+for key in f['segments']:
     if key.startswith('foreground') or key.startswith('background'):
         continue
-    end_times = numpy.array(f['%s/segments/end' % key][:])
-    start_times = numpy.array(f['%s/segments/start' % key][:])
+    end_times = numpy.array(f['segments/%s/end' % key][:])
+    start_times = numpy.array(f['segments/%s/start' % key][:])
     idx_within_segment = pycbc.events.indices_within_times(test_times, start_times, end_times)
     trials_factors[idx_within_segment] += numpy.ones_like(idx_within_segment)
 
