@@ -110,12 +110,12 @@ for trigger_file, injection_file in zip(args.trigger_files,
         # coincident event, thus combine segments over all combinations
         # of coincident detectors to determine which times to keep
         any_seg = segments.segmentlist([])
-        for key in f:
+        for key in f['segments']:
             if key == 'foreground':
                 continue
             else:
-                starts = f[key + '/segments/start'][:]
-                ends = f[key + '/segments/end'][:]
+                starts = f['/segments/%s/start' % key][:]
+                ends = f['/segments/%s/end' % key][:]
                 any_seg += events.start_end_to_segments(starts,ends)
         ana_start, ana_end = events.segments_to_start_end(any_seg)
     else:
