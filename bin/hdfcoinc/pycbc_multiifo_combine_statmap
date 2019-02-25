@@ -33,7 +33,7 @@ for fi in files:
     f['segments/%s/end' % key] = fi['segments/%s/end' % key][:]
     f['segments/%s/start' % key] = fi['segments/%s/start' % key][:]
     for attr_name in fi.attrs:
-        f[key].attrs[attr_name] = fi.attrs[attr_name]
+        f['segments/%s' % key].attrs[attr_name] = fi.attrs[attr_name]
 
 logging.info('Generating list of datasets in input files')
 
