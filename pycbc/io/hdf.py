@@ -265,11 +265,6 @@ class MultiifoStatmapData(StatmapData):
         for k in self.data:
             setattr(self, k, self.data[k])
         
-        if data:
-            self.attrs=attrs
-        elif files:
-            f = HFile(files[0], "r")
-            self.attrs = f.attrs
 
     def _return(self, data):
         ifolist = self.attrs['ifos'].split(' ')
