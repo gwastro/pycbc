@@ -331,7 +331,8 @@ if len(data['stat']) > 0:
                          shuffle=True)
 
 # Store coinc segments keyed by detector combination
-f['segments/%s/start' % ''.join(sorted(detectors))], f['segments/%s/end' % ''.join(sorted(detectors))] = trigs[args.pivot_ifo].valid
+key = ''.join(sorted(detectors))
+f['segments/%s/start' % key], f['segments/%s/end' % key] = trigs[args.pivot_ifo].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['num_of_ifos'] = len(args.trigger_files)
