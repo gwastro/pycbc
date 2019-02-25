@@ -587,12 +587,13 @@ class MultiRingBuffer(object):
         count[self.index < self.start] += self.pad_count
         return count
 
-    def buffer_total(self):
-        return self.ring_sizes().sum()
-
     def num_elements(self):
         total = self.ring_sizes().sum()
         return total
+
+    @property
+    def nbytes(self):
+        return self.buffer.nbytes
 
     def discard_last(self, indices):
         """Discard the triggers added in the latest update"""
@@ -682,6 +683,13 @@ class CoincExpireBuffer(object):
         for ifo in self.ifos:
             self.time[ifo] = 0
             self.timer[ifo] = numpy.zeros(initial_size, dtype=numpy.int32)
+
+    def __len__(self):
+        return self.index
+
+    @property
+    def nbytes(self):
+        return self.buffer.nbytes
 
     def increment(self, ifos):
         """Increment without adding triggers"""
@@ -1167,6 +1175,14 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         coinc_results: dict of arrays
             A dictionary of arrays containing the coincident results.
         """
+        # Let's see how large everything is
+        for ifo in self.singles:
+            logging.info('BKG %s singles %s stored %s bytes',
+                         ifo, self.singles[ifo].num_elements(),
+                         self.singles[ifo].nbytes)
+        logging.info('BKG Coincs %s stored %s bytes',
+                     len(self.coincs), self.coincs.nbytes)
+
         # If there are no results just return
         valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
         if len(valid_ifos) == 0: return {}
