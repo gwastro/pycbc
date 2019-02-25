@@ -221,50 +221,15 @@ class StatmapData(DictArray):
                 f['segments/%s/end' % key] = self.seg[key]['end'][:]
 
 class MultiifoStatmapData(StatmapData):
-    def __init__(self, data=None, attrs=None,
-                       files=None, ifos=None):        
-        """ Create a DictArray
-
-        Parameters
-        ----------
-        data: dict, optional
-            Dictionary of equal length numpy arrays
-        files: list of filenames, optional
-            List of hdf5 file filenames. Incompatibile with the `data` option.
-        groups: list of strings
-            List of keys into each file. Required by the files options.
-        """
-        
+    def __init__(self, data=None, seg=None, attrs=None,
+                       files=None, ifos=None):
         groups = ['stat', 'template_id', 'decimation_factor', 'timeslide_id']
         for ifo in ifos:
             groups += ['%s/time' % ifo]
             groups += ['%s/trigger_id' % ifo]
-        
-        key = ''.join(self.attrs['ifos'].split(' '))
-        groups += ['%s/segments/start'% key]
-        groups += ['%s/segments/end'% key]
-        
-        self.data = data
 
-        if files:
-            self.data = {}
-            for g in groups:
-                self.data[g] = []
-
-            for f in files:
-                d = HFile(f)
-                for g in groups:
-                    if g in d:
-                        self.data[g].append(d[g][:])
-                d.close()
-
-            for k in self.data:
-                if not len(self.data[k]) == 0:
-                    self.data[k] = np.concatenate(self.data[k])
-
-        for k in self.data:
-            setattr(self, k, self.data[k])
-        
+        super(MultiifoStatmapData, self).__init__(data=data, files=files,
+                                                  groups=groups, attrs=attrs, seg=seg)
 
     def _return(self, data):
         ifolist = self.attrs['ifos'].split(' ')
@@ -302,8 +267,8 @@ class MultiifoStatmapData(StatmapData):
                       shuffle=True)
 
         key = ''.join(self.attrs['ifos'].split(' '))
-        f['%s/segments/start' % key] = self['%s/segments/start'% key][:]
-        f['%s/segments/end' % key] = self['%s/segments/end'% key][:]
+        f['%s/segments/start' % key] = zdata['%s/segments/start'% key][:]
+        f['%s/segments/end' % key] = zdata['%s/segments/end'% key][:]
         f.close()
 
 class FileData(object):
