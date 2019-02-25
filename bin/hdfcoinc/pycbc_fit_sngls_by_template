@@ -122,6 +122,20 @@ trigf = h5py.File(args.trigger_file, 'r')
 logging.info('Opening template file: %s' % args.bank_file)
 templatef = h5py.File(args.bank_file, 'r')
 
+# Count the number of triggers in each template, for calulation of the true noise rate
+logging.info('Counting number of triggers in each template')
+tb = trigf[args.ifo+'/template_boundaries'][:]
+hash_sort = np.argsort(templatef['template_hash'][:])
+tb_sorted = tb[hash_sort]
+# calculate the differences between the boundary indices, 
+# in order to get the number in each template
+count_in_template = tb_sorted[1:] - tb_sorted[:-1]
+#Add on the last template
+count_in_template = np.append(count_in_template,
+                               [len(trigf[args.ifo+'/template_id'][:]) - tb_sorted[-1]])
+
+tid_sort = np.argsort(hash_sort)
+
 # get the stat values
 logging.info('Calculating stat values')
 stat = get_stat(args.sngl_stat, trigf[args.ifo])
@@ -157,7 +171,7 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
 
-total_time = sum([seg_end - seg_start for seg_start, seg_end in all_segments])
+total_time = abs(all_segments)
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
@@ -250,7 +264,7 @@ trange = range(tmin, tmax)
 
 # initialize result storage
 tids = []
-counts = []
+counts_total = []
 counts_above = []
 fits = []
 tpars = []
@@ -258,6 +272,7 @@ tpars = []
 for tnum in trange:
     stat_in_template = stat[tid == tnum]
     count_above = len(stat_in_template)
+    count_total = count_in_template[tid_sort[tnum]]
     if count_above == 0:
         # 'stupid' value to indicate no data, shouldn't hurt if 1/alpha is averaged
         alpha = -100.
@@ -266,6 +281,7 @@ for tnum in trange:
                       args.fit_function, stat_in_template, args.stat_threshold)
     tids.append(tnum)
     counts_above.append(count_above)
+    counts_total.append(count_total)
     fits.append(alpha)
     if args.save_trig_param:
         # save the param value of the first trig in this template
@@ -281,6 +297,7 @@ outfile.create_dataset("count_above_thresh", data=counts_above)
 outfile.create_dataset("fit_coeff", data=fits)
 if args.save_trig_param:
     outfile.create_dataset("template_param", data=tpars)
+outfile.create_dataset("count_in_template", data=counts_total)
 # add some metadata
 outfile.attrs.create("ifo", data=args.ifo)
 outfile.attrs.create("fit_function", data=args.fit_function)
