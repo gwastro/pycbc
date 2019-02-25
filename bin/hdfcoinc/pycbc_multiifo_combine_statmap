@@ -30,8 +30,8 @@ for fi in files:
         logging.info('Incorrect segment format.')
 
     key = fi['segments'].keys()[0]
-    f['%s/segments/end' % key] = fi['segments/%s/end' % key][:]
-    f['%s/segments/start' % key] = fi['segments/%s/start' % key][:]
+    f['segments/%s/end' % key] = fi['segments/%s/end' % key][:]
+    f['segments/%s/start' % key] = fi['segments/%s/start' % key][:]
     for attr_name in fi.attrs:
         f[key].attrs[attr_name] = fi.attrs[attr_name]
 
