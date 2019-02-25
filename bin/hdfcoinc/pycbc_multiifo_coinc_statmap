@@ -154,10 +154,9 @@ f.attrs['fixed'] = all_trigs.attrs['fixed']
 f.attrs['timeslide_interval'] = all_trigs.attrs['timeslide_interval']
 
 # Copy over the segment for coincs and singles
-key = ''.join(all_trigs.attrs['ifos'].split(' '))
-f['%s/segments/start' % key] = all_trigs['%s/segments/start'% key][:]
-f['%s/segments/end' % key] = all_trigs['%s/segments/end'% key][:]
-f.attrs['ifocomb'] = key
+for key in all_trigs.seg.keys():
+    f['segments/%s/start' % key] = all_trigs.seg[key]['start'][:]
+    f['segments/%s/end' % key] = all_trigs.seg[key]['end'][:]
 
 if fore_locs.sum() > 0:
     f['segments/foreground_veto/start'] = remove_start_time
