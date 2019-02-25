@@ -255,22 +255,6 @@ class MultiifoStatmapData(StatmapData):
                              window)
         return self.select(cid)
 
-    def save(self, outname):
-        f = HFile(outname, "w")
-        for k in self.attrs:
-            f.attrs[k] = self.attrs[k]
-
-        for k in self.data:
-            f.create_dataset(k, data=self.data[k],
-                      compression='gzip',
-                      compression_opts=9,
-                      shuffle=True)
-
-        key = ''.join(self.attrs['ifos'].split(' '))
-        f['%s/segments/start' % key] = zdata['%s/segments/start'% key][:]
-        f['%s/segments/end' % key] = zdata['%s/segments/end'% key][:]
-        f.close()
-
 class FileData(object):
 
     def __init__(self, fname, group=None, columnlist=None, filter_func=None):
