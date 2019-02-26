@@ -26,14 +26,13 @@ f = h5py.File(args.output_file, "w")
 logging.info('Copying segments and attributes to %s' % args.output_file)
 # Move segments information into the final file - remove some duplication in earlier files
 for fi in files:
-    if len(fi['segments'].keys()) > 1:
-        logging.info('Incorrect segment format.')
-
-    key = fi['segments'].keys()[0]
-    f['segments/%s/end' % key] = fi['segments/%s/end' % key][:]
-    f['segments/%s/start' % key] = fi['segments/%s/start' % key][:]
-    for attr_name in fi.attrs:
-        f['segments/%s' % key].attrs[attr_name] = fi.attrs[attr_name]
+    for key in f['segments']:
+        f['segments/%s/end' % key] = fi['segments/%s/end' % key][:]
+        f['segments/%s/start' % key] = fi['segments/%s/start' % key][:]
+        if key.startswith('foreground') or key.startswith('background'):
+            continue
+        for attr_name in fi.attrs:
+            f['segments/%s' % key].attrs[attr_name] = fi.attrs[attr_name]
 
 logging.info('Generating list of datasets in input files')
 
