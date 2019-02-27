@@ -23,7 +23,8 @@ assuming various noise models.
 from .analytic import (TestEggbox, TestNormal, TestRosenbrock, TestVolcano,
                        TestPrior)
 from .gaussian_noise import GaussianNoise
-from .marginalized_gaussian_noise import (MarginalizedPhaseGaussianNoise, MarginalizedGaussianNoise)
+from .marginalized_gaussian_noise import (MarginalizedPhaseGaussianNoise,
+                                          MarginalizedGaussianNoise)
 from .single_template import SingleTemplate
 
 

@@ -157,7 +157,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
             hd += hd_i
         hd = abs(hd)
         self._current_stats.maxl_phase = numpy.angle(hd)
-        return numpy.log(special.i0e(hd)) + hd - 0.5*hh 
+        return numpy.log(special.i0e(hd)) + hd - 0.5*hh
 
 
 class MarginalizedGaussianNoise(GaussianNoise):
