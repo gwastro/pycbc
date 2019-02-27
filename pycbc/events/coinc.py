@@ -541,6 +541,10 @@ class MultiRingBuffer(object):
             self.buffer_expire.append([])
         self.time = 0
 
+    @property
+    def filled_time(self):
+        return min(self.time, self.max_time)
+
     def num_elements(self):
         return sum([len(a) for a in self.buffer])
 
@@ -835,7 +839,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         """Return the amount of background time that the buffers contain"""
         time = 1.0 / self.timeslide_interval
         for ifo in self.singles:
-            time *= len(self.singles[ifo]) * self.analysis_block
+            time *= self.singles[ifo].filled_time * self.analysis_block
         return time
 
     def save_state(self, filename):
