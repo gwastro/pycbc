@@ -467,7 +467,7 @@ def add_density_option_group(parser):
 
 def prior_from_config(cp, sections=None):
     """Loads a prior distribution from the given config file.
-    
+
     Parameters
     ----------
     cp : pycbc.workflow.WorkflowConfigParser
@@ -492,14 +492,14 @@ def prior_from_config(cp, sections=None):
     for sec in sections:
         section = sec.split("-")[0]
         subsec = sec.split("-")[1:]
-        if len(subsec):
+        if len(subsec) > 0:
             subsections = ["-".join(subsec)]
         else:
             subsections = cp.get_subsections(section)
         for subsection in subsections:
             name = cp.get_opt_tag(section, "name", subsection)
             dist = distributions.distribs[name].from_config(
-                                                cp, section, subsection)
+                cp, section, subsection)
             variable_params += dist.params
             dists.append(dist)
     # construct class that will return draws from the prior
