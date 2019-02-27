@@ -211,9 +211,9 @@ for trigger_file, injection_file in zip(args.trigger_files,
                 continue
             if key not in fo:
                  fo.create_group(key)
-            fo[key].attrs['pivot'] = f['segments/%s' % key].attrs['pivot']
-            fo[key].attrs['fixed'] = f['segments/%s' % key].attrs['fixed']
-            fo[key].attrs['foreground_time_exc'] = f['segments/%s' % key].attrs['foreground_time_exc']
+            fo[key].attrs['pivot'] = f[key].attrs['pivot']
+            fo[key].attrs['fixed'] = f[key].attrs['fixed']
+            fo[key].attrs['foreground_time_exc'] = f[key].attrs['foreground_time_exc']
     else:
         fo.attrs['detector_1'] = f.attrs['detector_1']
         fo.attrs['detector_2'] = f.attrs['detector_2']

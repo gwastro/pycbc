@@ -32,7 +32,9 @@ for fi in files:
         if key.startswith('foreground') or key.startswith('background'):
             continue
         for attr_name in fi.attrs:
-            f['segments/%s' % key].attrs[attr_name] = fi.attrs[attr_name]
+            if key not in f:
+                 f.create_group(key)
+            f[key].attrs[attr_name] = fi.attrs[attr_name]
 
 logging.info('Generating list of datasets in input files')
 
