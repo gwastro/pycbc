@@ -548,6 +548,7 @@ class MultiRingBuffer(object):
     def num_elements(self):
         return sum([len(a) for a in self.buffer])
 
+    @property
     def nbytes(self):
         return sum([a.nbytes for a in self.buffer])
 
