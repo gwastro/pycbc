@@ -120,8 +120,9 @@ if opts.plot_prior is not None:
                          "--plot-prior")
     logging.info("Loading prior")
     cp = WorkflowConfigParser(opts.plot_prior)
-    prior_samples = option_utils.prior_samples_from_config(
-        cp, nsamples=opts.prior_nsamples)
+    prior = option_utils.prior_samples_from_config(cp)
+    logging.info("Drawing samples from prior")
+    prior_samples = prior.rvs(opts.prior_nsamples)
     _, ts = transforms.get_common_cbc_transforms(
         opts.parameters, prior_samples.fieldnames)
     # add parameters not included in file

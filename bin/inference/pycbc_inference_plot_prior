@@ -29,9 +29,9 @@ from matplotlib import pyplot as plt
 
 import pycbc
 from pycbc import __version__
-from pycbc import (distributions, results)
+from pycbc import (distributions, results, waveform)
 from pycbc.inference.option_utils import (ParseParametersArg,
-                                          prior_samples_from_config)
+                                          prior_from_config)
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.results.scatter_histograms import create_multidim_plot
 
@@ -91,14 +91,21 @@ pycbc.init_logging(opts.verbose)
 logging.info("Reading configuration files")
 cp = WorkflowConfigParser(opts.config_files)
 
+logging.info("Loading prior")
+prior = prior_from_config(cp, sections=opts.sections)
 logging.info("Drawing samples from prior")
-samples = prior_samples_from_config(cp, sections=opts.sections,
-                                    nsamples=opts.nsamples)
+samples = prior.rvs(opts.nsamples)
 
 # figure out what parameters to plot
 if opts.parameters is None:
-    parameters = variable_params
-    labels = {param: param for param in variable_params}
+    parameters = prior.variable_args
+    labels = {}
+    for param in parameters:
+        # try to get the parameter label from the waveform module
+        try:
+            labels[param] = getattr(waveform.parameters, param).label
+        except AttributeError:
+            labels[param] = param
 else:
     parameters = opts.parameters
     labels = opts.parameters_labels

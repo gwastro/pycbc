@@ -465,8 +465,8 @@ def add_density_option_group(parser):
     return density_group
 
 
-def prior_samples_from_config(cp, sections=None, nsamples=10000):
-    """Creates a set of random samples from the given config file.
+def prior_from_config(cp, sections=None):
+    """Loads a prior distribution from the given config file.
     
     Parameters
     ----------
@@ -475,14 +475,11 @@ def prior_samples_from_config(cp, sections=None, nsamples=10000):
     sections : list of str, optional
         The sections to retrieve the prior from. If ``None`` (the default),
         will look in sections starting with 'prior'.
-    nsamples : int, optional
-        The number of samples to draw for plotting the prior. Default is
-        10000.
 
     Returns
     -------
-    FieldArray :
-        The prior samples, as a ``FieldArray``.
+    distributions.JointDistribution
+        The prior distribution.
     """
     # get prior distribution for each variable parameter
     # parse command line values for section and subsection
@@ -506,5 +503,4 @@ def prior_samples_from_config(cp, sections=None, nsamples=10000):
             variable_params += dist.params
             dists.append(dist)
     # construct class that will return draws from the prior
-    prior = distributions.JointDistribution(variable_params, *dists)
-    return prior.rvs(nsamples)
+    return distributions.JointDistribution(variable_params, *dists)
