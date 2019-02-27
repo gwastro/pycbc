@@ -60,6 +60,8 @@ option_utils.add_plot_posterior_option_group(parser)
 option_utils.add_scatter_option_group(parser)
 # density configuration
 option_utils.add_density_option_group(parser)
+parser.add_argument('--dpi', type=int, default=200,
+                    help="Set the DPI of the plot. Default is 200.")
 
 # parse command line
 opts = parser.parse_args()
@@ -201,7 +203,7 @@ if len(opts.input_file) > 1:
                labels=labels)
 
 # set DPI
-fig.set_dpi(200)
+fig.set_dpi(opts.dpi)
 
 # save
 metadata.save_fig_with_metadata(
