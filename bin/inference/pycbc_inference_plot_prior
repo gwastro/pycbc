@@ -30,7 +30,8 @@ from matplotlib import pyplot as plt
 import pycbc
 from pycbc import __version__
 from pycbc import (distributions, results)
-from pycbc.inference.option_utils import ParseParametersArg
+from pycbc.inference.option_utils import (ParseParametersArg,
+                                          prior_samples_from_config)
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.results.scatter_histograms import create_multidim_plot
 
@@ -90,33 +91,9 @@ pycbc.init_logging(opts.verbose)
 logging.info("Reading configuration files")
 cp = WorkflowConfigParser(opts.config_files)
 
-# get prior distribution for each variable parameter
-# parse command line values for section and subsection
-# if only section then look for subsections
-# and add distributions to list
-logging.info("Constructing prior")
-variable_params = []
-dists = []
-for sec in opts.sections:
-    section = sec.split("-")[0]
-    subsec = sec.split("-")[1:]
-    if len(subsec):
-        subsections = ["-".join(subsec)]
-    else:
-        subsections = cp.get_subsections(section)
-    for subsection in subsections:
-        name = cp.get_opt_tag(section, "name", subsection)
-        dist = distributions.distribs[name].from_config(
-                                            cp, section, subsection)
-        variable_params += dist.params
-        dists.append(dist)
-variable_params = sorted(variable_params)
-ndim = len(variable_params)
-
-# construct class that will return draws from the prior
-logging.info("Drawing samples")
-prior = distributions.JointDistribution(variable_params, *dists)
-samples = prior.rvs(opts.nsamples)
+logging.info("Drawing samples from prior")
+samples = prior_samples_from_config(cp, sections=opts.sections,
+                                    nsamples=opts.nsamples)
 
 # figure out what parameters to plot
 if opts.parameters is None:
