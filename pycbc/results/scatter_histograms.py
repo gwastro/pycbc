@@ -529,6 +529,9 @@ def create_multidim_plot(parameters, samples, labels=None,
         What percentiles to draw lines at on the 1D histograms.
         If None, will draw lines at `[5, 50, 95]` (i.e., the bounds on the
         upper 90th percentile and the median).
+    marginal_title : bool, optional
+        Whether or not to print a title over the marginal plots giving the
+        90% confidence interval. Default is True.
     marginal_linestyle : str, optional
         What line style to use for the marginal histograms.
     contour_percentiles : {None, array}
