@@ -122,8 +122,8 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.13.dev4'
-        vinfo.release = 'False'
+        vinfo.version = '1.13.4'
+        vinfo.release = 'True'
 
     with open('pycbc/version.py', 'w') as f:
         f.write("# coding: utf-8\n")
