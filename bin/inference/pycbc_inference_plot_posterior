@@ -41,6 +41,7 @@ from pycbc.results import metadata
 from pycbc import __version__
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import (option_utils, io)
+from pycbc import transforms
 
 from pycbc.results.scatter_histograms import create_multidim_plot
 
@@ -57,7 +58,7 @@ parser.add_argument("--verbose", action="store_true", default=False,
                     help="Be verbose")
 parser.add_argument("--plot-prior", nargs="+", type=str,
                     help="Plot the prior on the 1D marginal plots using the "
-                         "given config file.")
+                         "given config file(s).")
 parser.add_argument("--prior-nsamples", type=int, default=10000,
                     help="The number of samples to use for plotting the "
                          "prior. Default is 10000.")
@@ -97,17 +98,6 @@ else:
 for fp in fps:
     fp.close()
 
-if opts.plot_prior is not None:
-    logging.info("Loading prior")
-    cp = WorkflowConfigParser(opts.plot_prior)
-    prior_samples = option_utils.prior_samples_from_config(
-        cp, nsamples=opts.prior_nsamples)
-    from pycbc import transforms
-    _, ts = transforms.get_common_cbc_transforms(
-        opts.parameters, prior_samples.fieldnames)
-    # add parameters not included in file
-    prior_samples = transforms.apply_transforms(prior_samples, ts)
-
 # if no plotting options selected, then the default options are based
 # on the number of parameters
 plot_options = [opts.plot_marginal, opts.plot_scatter, opts.plot_density]
@@ -121,6 +111,21 @@ if not numpy.any(plot_options):
         # of give only plot_scatter and that should be the default for
         # two or more parameters
         opts.plot_marginal = True
+
+if opts.plot_prior is not None:
+    # check that we're plotting 1D marginals
+    if not opts.plot_marginal:
+        raise ValueError("prior may only be plotted on 1D marginal plot; "
+                         "either turn on --plot-marginal, or turn off "
+                         "--plot-prior")
+    logging.info("Loading prior")
+    cp = WorkflowConfigParser(opts.plot_prior)
+    prior_samples = option_utils.prior_samples_from_config(
+        cp, nsamples=opts.prior_nsamples)
+    _, ts = transforms.get_common_cbc_transforms(
+        opts.parameters, prior_samples.fieldnames)
+    # add parameters not included in file
+    prior_samples = transforms.apply_transforms(prior_samples, ts)
 
 # get minimum and maximum ranges for each parameter from command line
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
@@ -212,21 +217,13 @@ if opts.plot_prior:
     if len(opts.input_file) > 1:
         hist_color = colors.next()
     fig, axis_dict = create_multidim_plot(
-        parameters, prior_samples,
-        fig=fig, axis_dict=axis_dict,
-        labels=labels,
-        plot_marginal=True,
-        marginal_percentiles=[],
-        plot_scatter=False,
-        plot_density=False,
-        plot_contours=False,
+        parameters, prior_samples, fig=fig, axis_dict=axis_dict,
+        labels=labels, plot_marginal=True, marginal_percentiles=[],
+        plot_scatter=False, plot_density=False, plot_contours=False,
         fill_color=None,
-        marginal_title=False,
-        marginal_linestyle=':',
+        marginal_title=False, marginal_linestyle=':',
         hist_color=hist_color,
-        mins=mins, maxs=maxs,
-        )
-        #contour_percentiles=[50, 90],)
+        mins=mins, maxs=maxs)
 
 # add legend to upper right for input files
 if len(opts.input_file) > 1:
