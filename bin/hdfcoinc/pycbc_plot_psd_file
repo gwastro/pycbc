@@ -17,8 +17,10 @@ parser.add_argument('--hdf-group', default=None,
                     help="Group in the HDF file(s) to read the psd from. "
                          "PSDs will be read from {psd_group}/{ifo}. Default "
                          "is to look in the top level.")
-parser.add_argument('--low-frequency-cutoff', type=float)
-parser.add_argument('--plot-reference', action='store_true')
+parser.add_argument('--low-frequency-cutoff', type=float, 
+                    help="The low frequency cutoff of the PSD. If not "
+                         "provided, will try to retrive it from the "
+                         "hdf-group's attrs.")
 parser.add_argument("--ifos", nargs="+",
                     help="What ifo(s) to plot. If none provided, will look "
                          "for an 'ifo_list' attribute in the hdf file.")
@@ -102,7 +104,7 @@ for psd_file in args.psd_files:
         ax.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
         ax.set_xlim(flow, samples[-1])
 
-if args.plot_reference:
+if args.psd_model or args.psd_file or args.asd_file:
     reference_psd = pycbc.psd.from_cli(args, 2048, 1., 10., None)
     if reference_psd is not None:
         ax.loglog(reference_psd.sample_frequencies, reference_psd ** 0.5,
