@@ -466,7 +466,24 @@ def add_density_option_group(parser):
 
 
 def prior_samples_from_config(cp, sections=None, nsamples=10000):
-    """Creates a set of random samples from the given config file."""
+    """Creates a set of random samples from the given config file.
+    
+    Parameters
+    ----------
+    cp : pycbc.workflow.WorkflowConfigParser
+        The config file to read.
+    sections : list of str, optional
+        The sections to retrieve the prior from. If ``None`` (the default),
+        will look in sections starting with 'prior'.
+    nsamples : int, optional
+        The number of samples to draw for plotting the prior. Default is
+        10000.
+
+    Returns
+    -------
+    FieldArray :
+        The prior samples, as a ``FieldArray``.
+    """
     # get prior distribution for each variable parameter
     # parse command line values for section and subsection
     # if only section then look for subsections
