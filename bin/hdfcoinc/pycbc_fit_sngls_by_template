@@ -127,14 +127,16 @@ logging.info('Counting number of triggers in each template')
 tb = trigf[args.ifo+'/template_boundaries'][:]
 hash_sort = np.argsort(templatef['template_hash'][:])
 tb_sorted = tb[hash_sort]
+tid = np.arange(len(hash_sort))
+tid_hash_sorted = tid[hash_sort]
+tid_order = np.argsort(tid_hash_sorted)
+
 # calculate the differences between the boundary indices, 
 # in order to get the number in each template
 # adding on total number at the end to get number in the last boundary
 total_number = len(trigf[args.ifo+'/template_id'][:])
-count_in_template = np.diff(np.append(tb_sorted,total_number))
-
-# Sort the hash_sort array, to get the ordering info so we can return to original id order
-tid_sort = np.argsort(hash_sort)
+count_in_template_hashorder = np.diff(np.append(tb_sorted,total_number))
+count_in_template = count_in_template_hashorder[tid_order]
 
 # get the stat values
 logging.info('Calculating stat values')
@@ -272,7 +274,7 @@ tpars = []
 for tnum in trange:
     stat_in_template = stat[tid == tnum]
     count_above = len(stat_in_template)
-    count_total = count_in_template[tid_sort[tnum]]
+    count_total = count_in_template[tnum]
     if count_above == 0:
         # 'stupid' value to indicate no data, shouldn't hurt if 1/alpha is averaged
         alpha = -100.
