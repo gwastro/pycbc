@@ -129,11 +129,11 @@ hash_sort = np.argsort(templatef['template_hash'][:])
 tb_sorted = tb[hash_sort]
 # calculate the differences between the boundary indices, 
 # in order to get the number in each template
-count_in_template = np.diff(tb_sorted)
-#Add on the last template
-count_in_template = np.append(count_in_template,
-                               [len(trigf[args.ifo+'/template_id'][:]) - tb_sorted[-1]])
+# adding on total number at the end to get number in the last boundary
+total_number = len(trigf[args.ifo+'/template_id'][:])
+count_in_template = np.diff(np.append(tb_sorted,total_number))
 
+# Sort the hash_sort array, to get the ordering info so we can return to original id order
 tid_sort = np.argsort(hash_sort)
 
 # get the stat values
