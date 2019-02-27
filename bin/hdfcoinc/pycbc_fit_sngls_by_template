@@ -122,21 +122,25 @@ trigf = h5py.File(args.trigger_file, 'r')
 logging.info('Opening template file: %s' % args.bank_file)
 templatef = h5py.File(args.bank_file, 'r')
 
-# Count the number of triggers in each template, for calulation of the true noise rate
 logging.info('Counting number of triggers in each template')
+# template boundaries dataset is in order of template_id
 tb = trigf[args.ifo+'/template_boundaries'][:]
+tid = np.arange(len(tb))
+# template boundary values ascend in the same order as template hash
+# hence sort by hash
 hash_sort = np.argsort(templatef['template_hash'][:])
-tb_sorted = tb[hash_sort]
-tid = np.arange(len(hash_sort))
-tid_hash_sorted = tid[hash_sort]
-tid_order = np.argsort(tid_hash_sorted)
+tb_hashorder = tb[hash_sort]
+# reorder template IDs in parallel to the boundary values
+tid_hashorder = tid[hash_sort]
 
-# calculate the differences between the boundary indices, 
-# in order to get the number in each template
-# adding on total number at the end to get number in the last boundary
-total_number = len(trigf[args.ifo+'/template_id'][:])
-count_in_template_hashorder = np.diff(np.append(tb_sorted,total_number))
-count_in_template = count_in_template_hashorder[tid_order]
+# Calculate the differences between the boundary indices to get the 
+# number in each template
+# adding on total number at the end to get number in the last template
+total_number = len(trigf[args.ifo + '/template_id'][:])
+count_in_template_hashorder = np.diff(np.append(tb_hashorder, total_number))
+# re-reorder values from hash order to tid order
+tid_sort = np.argsort(tid_hashorder)
+count_in_template = count_in_template_hashorder[tid_sort]
 
 # get the stat values
 logging.info('Calculating stat values')
@@ -145,17 +149,16 @@ stat = get_stat(args.sngl_stat, trigf[args.ifo])
 # do first thresholding operation to reduce trigger numbers
 abovethresh = stat >= args.stat_threshold
 stat = stat[abovethresh]
-tid = trigf[args.ifo+'/template_id'][:][abovethresh]
-time = trigf[args.ifo+'/end_time'][:][abovethresh]
+tid = trigf[args.ifo + '/template_id'][:][abovethresh]
+time = trigf[args.ifo + '/end_time'][:][abovethresh]
 if args.save_trig_param:
-    tparam = trigf[args.ifo+'/'+args.save_trig_param][:][abovethresh]
+    tparam = trigf[args.ifo + '/' + args.save_trig_param][:][abovethresh]
 logging.info('%i trigs left after thresholding' % len(stat))
 
-# Calculate total time being analysed from segment and vetos
+# Calculate total time being analysed from segments
+# use set() to eliminate duplicates
 segment_starts = sorted(set(trigf['{}/search/start_time'.format(args.ifo)][:]))
 segment_ends = sorted(set(trigf['{}/search/end_time'.format(args.ifo)][:]))
-
-
 all_segments = events.veto.start_end_to_segments(segment_starts, segment_ends)
 
 # now do vetoing
@@ -172,7 +175,6 @@ for veto_file, veto_segment_name in zip(args.veto_file, args.veto_segment_name):
         tparam = tparam[retain]
     logging.info('%i trigs left after vetoing with %s' %
                                                        (len(stat), veto_file))
-
 total_time = abs(all_segments)
 
 # do pruning (removal of trigs at N loudest times defined over param bins)
@@ -289,8 +291,8 @@ for tnum in trange:
         # save the param value of the first trig in this template
         param_in_template = tparam[tid == tnum]
         tpars.append(param_in_template[0])
-    if (tnum % 100 == 0): logging.info('Fitted template %i / %i' %
-                                                     (tnum - tmin,tmax - tmin))
+    if (tnum % 1000 == 0): logging.info('Fitted template %i / %i' %
+                                                    (tnum - tmin, tmax - tmin))
 
 outfile = h5py.File(args.output, 'w')
 # store template-dependent fit output
