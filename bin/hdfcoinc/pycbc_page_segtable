@@ -160,7 +160,7 @@ for segment_name in opts.segment_names:
             else:
                 for ifo in combo:
                     combo_base_segs = combo_base_segs.coalesce() & base_segs[ifo].coalesce()
-                    combo_comp_segs = combo_comp_segs.coalesce() & comp_segs[ifo].coalesce()
+                    combo_comp_segs = combo_comp_segs.coalesce() + comp_segs[ifo].coalesce()
 
         combo_base_segs.coalesce()
         combo_comp_segs.coalesce()
