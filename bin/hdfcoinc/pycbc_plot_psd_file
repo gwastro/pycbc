@@ -60,7 +60,12 @@ for psd_file in args.psd_files:
         df = f[ifo + '/psds/0'].attrs['delta_f']
         keys = f[ifo + '/psds'].keys()
         if args.low_frequency_cutoff is None:
-            flow = f.attrs['low_frequency_cutoff']
+            try:
+                flow = f.attrs['low_frequency_cutoff']
+            except KeyError:
+                raise ValueError("low_frequency_cutoff not found in hdf file; "
+                                 "please specify a value using the "
+                                 "--low-frequency-cutoff option")
         else:
             flow = args.low_frequency_cutoff
         kmin = int(flow / df)
