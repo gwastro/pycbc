@@ -211,6 +211,10 @@ def spa_tmplt(**kwds):
         kmin = int(f_lower / float(delta_f))
         vISCO = 1. / sqrt(6.)
         fISCO = vISCO * vISCO * vISCO / piM
+
+        if 'f_upper' in kwds:
+            fISCO = kwds['f_upper']
+
         kmax = int(fISCO / delta_f)
         f_max = ceilpow2(fISCO)
         n = int(f_max / delta_f) + 1
