@@ -322,9 +322,11 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         What line style to use for the histogram. Default is '-'.
     linecolor : {'navy', string}
         What color to use for the percentile lines. Default is 'navy'.
-    title : {True, bool}
-        Add a title with the median value +/- uncertainty, with the
-        max(min) `percentile` used for the +(-) uncertainty.
+    title : bool, optional
+        Add a title with a estimated value +/- uncertainty. The estimated value
+        is the pecentile corresponding to the average of ``percentiles`` +/-
+        the max/min of the ``percentiles``. If no percentiles are specified,
+        defaults to quoting the median +/- 95/5 percentiles.
     rotated : {False, bool}
         Plot the histogram on the y-axis instead of the x. Default is False.
     plot_min : {None, float}
@@ -349,9 +351,11 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             density=True)
     if percentiles is None:
         percentiles = [5., 50., 95.]
-    if percentiles:
-        percentiles = numpy.percentile(values, percentiles)
-    for val in percentiles:
+    if len(percentiles) > 0:
+        plotp = numpy.percentile(values, percentiles)
+    else:
+        plotp = []
+    for val in plotp:
         if rotated:
             ax.axhline(y=val, ls='dashed', color=linecolor, lw=2, zorder=3)
         else:
@@ -363,8 +367,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         else:
             ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
     if title:
-        values_med = numpy.median(values)
-        if len(percentiles) >= 2:
+        if len(percentiles) > 0:
             minp = min(percentiles)
             medp = numpy.array(percentiles).mean()
             maxp = max(percentiles)
@@ -539,8 +542,12 @@ def create_multidim_plot(parameters, samples, labels=None,
         If None, will draw lines at `[5, 50, 95]` (i.e., the bounds on the
         upper 90th percentile and the median).
     marginal_title : bool, optional
-        Whether or not to print a title over the marginal plots giving the
-        90% confidence interval. Default is True.
+        Add a title over the 1D marginal plots that gives an estimated value
+        +/- uncertainty. The estimated value is the pecentile corresponding to
+        the average of ``marginal_percentiles`` +/- the max/min of the
+        ``marginal_percentiles``. If no percentiles are specified in
+        ``marginal_percentiles``, defaults to quoting the median +/- 95/5
+        percentiles.
     marginal_linestyle : str, optional
         What line style to use for the marginal histograms.
     contour_percentiles : {None, array}
