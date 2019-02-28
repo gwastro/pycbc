@@ -324,9 +324,10 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         What color to use for the percentile lines. Default is 'navy'.
     title : bool, optional
         Add a title with a estimated value +/- uncertainty. The estimated value
-        is the pecentile corresponding to the average of ``percentiles`` +/-
-        the max/min of the ``percentiles``. If no percentiles are specified,
-        defaults to quoting the median +/- 95/5 percentiles.
+        is the pecentile halfway between the max/min of ``percentiles``, while
+        the uncertainty is given by the max/min of the ``percentiles. If no
+        percentiles are specified, defaults to quoting the median +/- 95/5
+        percentiles.
     rotated : {False, bool}
         Plot the histogram on the y-axis instead of the x. Default is False.
     plot_min : {None, float}
@@ -369,8 +370,8 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     if title:
         if len(percentiles) > 0:
             minp = min(percentiles)
-            medp = numpy.array(percentiles).mean()
             maxp = max(percentiles)
+            medp = (maxp + minp) / 2.
         else:
             minp = 5
             medp = 50
@@ -543,11 +544,11 @@ def create_multidim_plot(parameters, samples, labels=None,
         upper 90th percentile and the median).
     marginal_title : bool, optional
         Add a title over the 1D marginal plots that gives an estimated value
-        +/- uncertainty. The estimated value is the pecentile corresponding to
-        the average of ``marginal_percentiles`` +/- the max/min of the
-        ``marginal_percentiles``. If no percentiles are specified in
-        ``marginal_percentiles``, defaults to quoting the median +/- 95/5
-        percentiles.
+        +/- uncertainty. The estimated value is the pecentile halfway between
+        the max/min of ``maginal_percentiles``, while the uncertainty is given
+        by the max/min of the ``marginal_percentiles. If no
+        ``marginal_percentiles`` are specified, the median +/- 95/5 percentiles
+        will be quoted.
     marginal_linestyle : str, optional
         What line style to use for the marginal histograms.
     contour_percentiles : {None, array}
