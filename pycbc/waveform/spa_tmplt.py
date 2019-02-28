@@ -161,8 +161,6 @@ def spa_tmplt(**kwds):
     """ Generate a minimal TaylorF2 approximant with optimations for the sin/cos
     """
     # Pull out the input arguments
-    f_lower = kwds['f_lower']
-    delta_f = kwds['delta_f']
     distance = kwds['distance']
     mass1 = kwds['mass1']
     mass2 = kwds['mass2']
@@ -207,27 +205,36 @@ def spa_tmplt(**kwds):
 
     piM = lal.PI * (mass1 + mass2) * lal.MTSUN_SI
 
-    kmin = int(f_lower / float(delta_f))
+    if 'sample_points' not in kwds:
+        f_lower = kwds['f_lower']
+        delta_f = kwds['delta_f']
+        kmin = int(f_lower / float(delta_f))
+        vISCO = 1. / sqrt(6.)
+        fISCO = vISCO * vISCO * vISCO / piM
+        kmax = int(fISCO / delta_f)
+        f_max = ceilpow2(fISCO)
+        n = int(f_max / delta_f) + 1
 
-    vISCO = 1. / sqrt(6.)
-    fISCO = vISCO * vISCO * vISCO / piM
-    kmax = int(fISCO / delta_f)
-    f_max = ceilpow2(fISCO)
-    n = int(f_max / delta_f) + 1
+        if not out:
+            htilde = FrequencySeries(zeros(n, dtype=numpy.complex64), delta_f=delta_f, copy=False)
+        else:
+            if type(out) is not Array:
+                raise TypeError("Output must be an instance of Array")
+            if len(out) < kmax:
+                kmax = len(out)
+            if out.dtype != complex64:
+                raise TypeError("Output array is the wrong dtype")
+            htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
 
-    if not out:
-        htilde = FrequencySeries(zeros(n, dtype=numpy.complex64), delta_f=delta_f, copy=False)
+        spa_tmplt_engine(htilde[kmin:kmax], kmin, phase_order, delta_f, piM, pfaN,
+                         pfa2, pfa3, pfa4, pfa5, pfl5,
+                         pfa6, pfl6, pfa7, amp_factor)
     else:
-        if type(out) is not Array:
-            raise TypeError("Output must be an instance of Array")
-        if len(out) < kmax:
-            kmax = len(out)
-        if out.dtype != complex64:
-            raise TypeError("Output array is the wrong dtype")
-        htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
-
-    spa_tmplt_engine(htilde[kmin:kmax], kmin, phase_order, delta_f, piM, pfaN,
-                     pfa2, pfa3, pfa4, pfa5, pfl5,
-                     pfa6, pfl6, pfa7, amp_factor)
+        from .spa_tmplt_cpu import spa_tmplt_inline_sequence
+        htilde = numpy.empty(len(kwds['sample_points']), dtype=numpy.complex64)
+        spa_tmplt_inline_sequence(piM, pfaN,
+                      pfa2, pfa3, pfa4, pfa5, pfl5, pfa6, pfl6, pfa7,
+                      amp_factor, kwds['sample_points'], htilde
+                      )
     return htilde
 

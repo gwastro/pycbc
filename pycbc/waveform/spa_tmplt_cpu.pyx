@@ -27,30 +27,30 @@ from libc.math cimport cbrt, log, M_PI, M_PI_2, M_PI_4, floor, fabs
 def cbrt_lookup(vmax, delta):
     vec = numpy.arange(0, vmax*1.2, delta)
     return FrequencySeries(vec**(1.0/3.0), delta_f=delta).astype(float32)
-    
+
 _cbrt_vec = None
-    
+
 def get_cbrt(vmax, delta):
     global _cbrt_vec
     if _cbrt_vec is None or (_cbrt_vec.delta_f != delta) or (len(_cbrt_vec) < int(vmax/delta)):
         _cbrt_vec = cbrt_lookup(vmax, delta)
-    return _cbrt_vec   
-    
+    return _cbrt_vec
+
 # Precompute log(v) ############################################################
-    
+
 def logv_lookup(vmax, delta):
     vec = numpy.arange(0, vmax*1.2, delta)
     vec[1:len(vec)] = numpy.log(vec[1:len(vec)])
     return FrequencySeries(vec, delta_f=delta).astype(float32)
-    
+
 _logv_vec = None
-    
+
 def get_log(vmax, delta):
     global _logv_vec
     if _logv_vec is None or (_logv_vec.delta_f != delta) or (len(_logv_vec) < int(vmax/delta)):
         _logv_vec = logv_lookup(vmax, delta)
     return _logv_vec
-    
+
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
@@ -70,7 +70,7 @@ cdef spa_tmplt_inline(float piM, float pfaN,
     cdef float log4 = log(4.)
     cdef float two_pi = 2 * M_PI
     cdef float v, logv, v5, phasing, amp
-    
+
     cdef float complex* htilde = &_htilde[0]
     cdef float* kfac = &_kfac[0]
     cdef float* cbrt_vec = &_cbrt_vec[kmin]
@@ -82,7 +82,7 @@ cdef spa_tmplt_inline(float piM, float pfaN,
         logv = logv_vec[i] * 1.0/3.0 + logpiM13
         amp = ampc * kfac[i]
         v5 = v * v * v * v * v
-          
+
         phasing = pfa7 * v
         phasing = (phasing + pfa6 + pfl6 * (logv + log4) ) * v
         phasing = (phasing + pfa5 + pfl5 * logv) * v
@@ -92,28 +92,84 @@ cdef spa_tmplt_inline(float piM, float pfaN,
 
         phasing = phasing * pfaN / v5 - M_PI_4
         phasing -= <int>(phasing / two_pi) * two_pi
-        
+
         if (phasing < -M_PI):
             phasing += two_pi
         if (phasing > M_PI):
             phasing -= two_pi
-       
+
         sinp = 1.273239545 * phasing - .405284735 * phasing * fabs(phasing)
-        sinp = .225 * (sinp * fabs(sinp) - sinp) + sinp  
-        
+        sinp = .225 * (sinp * fabs(sinp) - sinp) + sinp
+
         phasing += M_PI_2
         if phasing > M_PI:
             phasing -= two_pi
 
         cosp = 1.273239545 * phasing - .405284735 * phasing * fabs(phasing)
-        cosp = .225 * (cosp * fabs(cosp) - cosp) + cosp         
+        cosp = .225 * (cosp * fabs(cosp) - cosp) + cosp
 
         htilde[i] = (cosp - sinp * 1j) * amp
 
-def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN, 
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+def spa_tmplt_inline_sequence(float piM, float pfaN,
+                      float pfa2, float pfa3,
+                      float pfa4, float pfa5,
+                      float pfl5, float pfa6,
+                      float pfl6, float pfa7,
+                      float ampc,
+                      numpy.ndarray[numpy.float32_t, ndim=1] _fvals,
+                      numpy.ndarray[numpy.complex64_t, ndim=1] _htilde,
+                      ):
+    cdef float piM13 = cbrt(piM)
+    cdef float logpiM13 = log(piM13)
+    cdef float log4 = log(4.)
+    cdef float two_pi = 2 * M_PI
+    cdef float v, logv, v5, phasing, amp
+
+    cdef float complex* htilde = &_htilde[0]
+    cdef float* fvals = &_fvals[0]
+    cdef unsigned int xmax = len(_fvals)
+
+    for i in range(xmax):
+        f = fvals[i]
+        v = piM13 * f ** (1.0/3.0)
+        logv = log(f) * 1.0/3.0 + logpiM13
+        amp = ampc * f ** (-7.0/6.0)
+        v5 = v * v * v * v * v
+
+        phasing = pfa7 * v
+        phasing = (phasing + pfa6 + pfl6 * (logv + log4) ) * v
+        phasing = (phasing + pfa5 + pfl5 * logv) * v
+        phasing = (phasing + pfa4) * v
+        phasing = (phasing + pfa3) * v
+        phasing = (phasing + pfa2) * v * v + 1
+
+        phasing = phasing * pfaN / v5 - M_PI_4
+        phasing -= <int>(phasing / two_pi) * two_pi
+
+        if (phasing < -M_PI):
+            phasing += two_pi
+        if (phasing > M_PI):
+            phasing -= two_pi
+
+        sinp = 1.273239545 * phasing - .405284735 * phasing * fabs(phasing)
+        sinp = .225 * (sinp * fabs(sinp) - sinp) + sinp
+
+        phasing += M_PI_2
+        if phasing > M_PI:
+            phasing -= two_pi
+
+        cosp = 1.273239545 * phasing - .405284735 * phasing * fabs(phasing)
+        cosp = .225 * (cosp * fabs(cosp) - cosp) + cosp
+
+        htilde[i] = (cosp - sinp * 1j) * amp
+
+def spa_tmplt_engine(htilde,  kmin,  phase_order, delta_f, piM,  pfaN,
                     pfa2,  pfa3,  pfa4,  pfa5,  pfl5,
                     pfa6,  pfl6,  pfa7, amp_factor):
-    """ Calculate the spa tmplt phase 
+    """ Calculate the spa tmplt phase
     """
     kfac = spa_tmplt_precondition(len(htilde), delta_f, kmin).data
     cbrt_vec = get_cbrt(len(htilde)*delta_f + kmin, delta_f).data
