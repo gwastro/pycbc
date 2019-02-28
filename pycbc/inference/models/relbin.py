@@ -16,7 +16,7 @@
 """Implementation of a relative likelihood function
 """
 
-import numpy
+import numpy, logging
 import scipy.special
 
 from pycbc import filter as pyfilter
@@ -34,7 +34,8 @@ def angle(v1, v2):
 
 def frequency_bins(hp, hp2, flow, fhigh, thr):
     ratio = hp / hp2
-    frange = numpy.arange(flow, fhigh, .01)
+    df = 0.01
+    frange = numpy.arange(flow, fhigh, df)
     edges = [frange[0]]
     fref = frange[0]
     for f in frange[1:]:
@@ -58,23 +59,31 @@ class Relative(BaseDataModel):
     maximizing over the extrinsic ones. We also assume a dominant mode waveform
     approximant only and non-precessing.
     """
-    name = 'single_template'
+    name = 'spafocus'
 
     def __init__(self, data, psds,
                  mass1, mass2, spin1z, spin2z,
                  dmass1, dmass2, dphase,
+                 tstart, tend,
                  low_frequency_cutoff,
                  high_frequency_cutoff,
                  sample_rate=32768,
                  **kwargs):
 
-        super(SingleTemplate, self).__init__(data=data, **kwargs)
+        super(Relative, self).__init__(data=data, **kwargs)
 
-        if low_frequency_cutoff is not None:
-            low_frequency_cutoff = float(low_frequency_cutoff)
-
-        if high_frequency_cutoff is not None:
-            high_frequency_cutoff = float(high_frequency_cutoff)
+        low_frequency_cutoff = float(low_frequency_cutoff)
+        high_frequency_cutoff = float(high_frequency_cutoff)
+        mass1 = float(mass1)
+        mass2 = float(mass2)
+        spin1z = float(spin1z)
+        spin2z = float(spin2z)
+        dmass1 = float(dmass2)
+        dmass2 = float(dmass2)
+        dphase = float(dphase)
+        sample_rate = int(sample_rate)
+        tstart = float(tstart)
+        tend = float(tend)
 
         # Generate reference waveform
         df = data[data.keys()[0]].delta_f
@@ -95,9 +104,9 @@ class Relative(BaseDataModel):
                               low_frequency_cutoff,
                               high_frequency_cutoff,
                               dphase)
-        self.hreference = numpy.array([hp.at_frequency(f) for f in edges],
+        self.hreference = numpy.array([hp.at_frequency(f) for f in self.edges],
                                       dtype=numpy.complex64)
-
+        logging.info('Using %s bins for this model', len(self.bins))
         # Extend data and template to high sample rate
         flen = int(sample_rate / df) / 2 + 1
         hp.resize(flen)
@@ -124,22 +133,22 @@ class Relative(BaseDataModel):
 
                 # constant term
                 snr, _, _ = pyfilter.matched_filter_core(
-                    hp, data[ifo],
+                    hp.astype(numpy.complex128), data[ifo],
                     psd=psds[ifo],
                     low_frequency_cutoff=low_frequency_cutoff,
                     high_frequency_cutoff=high_frequency_cutoff)
-                self.sh[ifo].appen(snr * 4.0 * df)
+                self.sh[ifo].append(snr.time_slice(tstart, tend) * 4.0 * df)
 
                 # linear term
                 snrl, _, _ = pyfilter.matched_filter_core(
-                    hpl, data[ifo],
+                    hpl.astype(numpy.complex128), data[ifo],
                     psd=psds[ifo],
                     low_frequency_cutoff=low_frequency_cutoff,
                     high_frequency_cutoff=high_frequency_cutoff)
-                self.shl[ifo].appen(snrl * 4.0 * df)
+                self.shl[ifo].append(snrl.time_slice(tstart, tend) * 4.0 * df)
 
             self.hh[ifo] = -0.5 * pyfilter.sigmasq(
-                hp, psd=psds[ifo],
+                hp.astype(numpy.complex128), psd=psds[ifo],
                 low_frequency_cutoff=low_frequency_cutoff,
                 high_frequency_cutoff=high_frequency_cutoff)
 
