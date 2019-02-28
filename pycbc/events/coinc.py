@@ -523,7 +523,7 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
 class MultiRingBuffer(object):
     """Dynamic size n-dimensional ring buffer that can expire elements."""
 
-    def __init__(self, num_rings, max_time):
+    def __init__(self, num_rings, max_time, dtype):
         """
         Parameters
         ----------
@@ -537,7 +537,7 @@ class MultiRingBuffer(object):
         self.buffer = []
         self.buffer_expire = []
         for _ in range(num_rings):
-            self.buffer.append(numpy.array([]))
+            self.buffer.append(numpy.zeros(0, dtype=dtype))
             self.buffer_expire.append([])
         self.time = 0
 
@@ -574,7 +574,7 @@ class MultiRingBuffer(object):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
         for i, v in zip(indices, values):
-            self.buffer[i] = numpy.concatenate([self.buffer[i], v])
+            self.buffer[i] = numpy.append(self.buffer[i], v)
             self.buffer_expire[i] = numpy.concatenate([self.buffer_expire[i], [self.time]])
         self.advance_time()
 
@@ -891,7 +891,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # Create a ring buffer for each template ifo combination
         for ifo in self.ifos:
             self.singles[ifo] = MultiRingBuffer(self.num_templates,
-                                            self.buffer_size)
+                                            self.buffer_size,
+                                            self.singles_dtype)
 
     def _add_singles_to_buffer(self, results, ifos):
         """Add single detector triggers to the internal buffer
