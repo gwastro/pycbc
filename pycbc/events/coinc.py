@@ -536,8 +536,8 @@ class MultiRingBuffer(object):
         self.max_time = max_time
         self.buffer = []
         self.buffer_expire = []
-        for i in range(num_rings):
-            self.buffer.append([])
+        for _ in range(num_rings):
+            self.buffer.append(numpy.array([]))
             self.buffer_expire.append([])
         self.time = 0
 
@@ -559,7 +559,7 @@ class MultiRingBuffer(object):
             self.buffer[i] = self.buffer[i][:-1]
 
     def advance_time(self):
-        """Advance the internal time inrement by 1, expiring any triggers that
+        """Advance the internal time increment by 1, expiring any triggers that
         are now too old.
         """
         self.time += 1
@@ -575,11 +575,11 @@ class MultiRingBuffer(object):
         """
         for i, v in zip(indices, values):
             self.buffer[i] = numpy.concatenate([self.buffer[i], v])
-            self.buffer_expire[i] = numpy.concatenate([self.buffer[i], [self.time]])
+            self.buffer_expire[i] = numpy.concatenate([self.buffer_expire[i], [self.time]])
         self.advance_time()
 
     def expire_vector(self, buffer_index):
-        """Return the expiration bector of a given ring buffer """
+        """Return the expiration vector of a given ring buffer """
         return self.buffer_expire[buffer_index]
 
     def data(self, buffer_index):
