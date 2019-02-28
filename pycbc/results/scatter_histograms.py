@@ -364,7 +364,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         negerror = values_med - values_min
         poserror = values_max - values_med
         fmt = '${0}$'.format(str_utils.format_value(
-            values_med, negerror, plus_error=poserror, ndecs=2))
+            values_med, negerror, plus_error=poserror))
 
         if rotated:
             ax.yaxis.set_label_position("right")
