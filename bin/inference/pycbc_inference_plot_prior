@@ -67,8 +67,8 @@ parser.add_argument("--parameters", nargs="+", action=ParseParametersArg,
                          "provided, will plot all of the parameters in the "
                          "[variable_params] section of the config file.")
 parser.add_argument("--sections", type=str, nargs="+", default=["prior"],
-                    help="Name of section plus with distribution "
-                         "configurations. Default is 'prior'.")
+                    help="Name of section with distribution configurations. "
+                         "Default is 'prior'.")
 # add output options
 parser.add_argument("--nsamples", type=int, default=10000,
                     help="The number of samples to draw from the prior for "
