@@ -538,7 +538,7 @@ class MultiRingBuffer(object):
         self.buffer_expire = []
         for _ in range(num_rings):
             self.buffer.append(numpy.zeros(0, dtype=dtype))
-            self.buffer_expire.append([])
+            self.buffer_expire.append(numpy.zeros(0, dtype=int))
         self.time = 0
 
     @property
@@ -575,7 +575,7 @@ class MultiRingBuffer(object):
         """
         for i, v in zip(indices, values):
             self.buffer[i] = numpy.append(self.buffer[i], v)
-            self.buffer_expire[i] = numpy.concatenate([self.buffer_expire[i], [self.time]])
+            self.buffer_expire[i] = numpy.append(self.buffer_expire[i], self.time)
         self.advance_time()
 
     def expire_vector(self, buffer_index):
@@ -970,12 +970,13 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         for ifo in ifos:
             trigs = results[ifo]
 
+            oifo = self.ifos[1] if self.ifos[0] == ifo else self.ifos[0]
+
             for i in range(len(trigs['end_time'])):
                 trig_stat = trigs['stat'][i]
                 trig_time = trigs['end_time'][i]
                 template = trigs['template_id'][i]
 
-                oifo = self.ifos[1] if self.ifos[0] == ifo else self.ifos[0]
                 times = self.singles[oifo].data(template)['end_time']
                 stats = self.singles[oifo].data(template)['stat']
 
