@@ -364,8 +364,17 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
             ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
     if title:
         values_med = numpy.median(values)
-        values_min = numpy.percentile(values, 5.)
-        values_max = numpy.percentile(values, 95.)
+        if len(percentiles) >= 2:
+            minp = min(percentiles)
+            medp = numpy.array(percentiles).mean()
+            maxp = max(percentiles)
+        else:
+            minp = 5
+            medp = 50
+            maxp = 95
+        values_min = numpy.percentile(values, minp)
+        values_med = numpy.percentile(values, medp)
+        values_max = numpy.percentile(values, maxp)
         negerror = values_med - values_min
         poserror = values_max - values_med
         fmt = '${0}$'.format(str_utils.format_value(
