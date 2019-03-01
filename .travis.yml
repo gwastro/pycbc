@@ -102,10 +102,9 @@ before_install:
 - sudo apt-get update
 - sudo apt-get install cvmfs cvmfs-config-default
 - rm -f cvmfs-release-latest_all.deb
-- ls -laR /etc/cvmfs
 - sudo mkdir -p /etc/cvmfs
-- ls -laR /etc/cvmfs
-- sudo curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/cvmfs-default.local > /etc/cvmfs/default.local
+- curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/cvmfs-default.local > /etc/cvmfs/default.local
+- sudo mv default.local /etc/cvmfs/default.local
 - sudo /etc/init.d/autofs stop
 - sudo cvmfs_config setup
 - sudo mkdir -p /cvmfs/gwosc.osgstorage.org
