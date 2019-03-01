@@ -143,33 +143,41 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     Examples
     --------
     Given a value and its uncertainty:
+
     >>> val, err
     (3.9278372067613837e-22, 2.2351435286500487e-23)
 
     Format with error quoted:
+
     >>> format_value(val, err)
     '3.93 \\pm 0.22\\times 10^{-22}'
 
     Quote error as a relative error:
+
     >>> format_value(val, err, use_relative_error=True)
     '3.93 \\times 10^{-22} \\pm5.6\\%'
 
     Format without the error and without scientific notation:
+
     >>> format_value(val, err, use_scientific_notation=float('inf'),
                      include_error=False)
     '0.000000000000000000000393'
 
     Given an plus error:
+
     >>> err_plus
     8.2700310560051804e-24
 
     Format with both bounds quoted:
+
     >>> format_value(val, err, plus_error=err_plus)
     '3.928^{+0.083}_{-0.224}\\times 10^{-22}'
 
     Format with both bounds quoted as a relative error:
+
     >>> format_value(val, err, plus_error=err_plus, use_relative_error=True)
     '3.928\\times 10^{-22}\\,^{+2.1\\%}_{-5.7\\%}'
+
     """
     minus_sign = '-' if value < 0. else ''
     value = abs(value)
