@@ -120,6 +120,7 @@ before_install:
 - sudo mkdir -p /cvmfs/gwosc.osgstorage.org
 - ls -lah /bin/fusermount
 - id cvmfs
+- cat /etc/cvmfs/default.conf
 - sudo cvmfs_config chksetup
 - sudo cvmfs_config reload -c
 - sudo strace mount -t cvmfs config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org
