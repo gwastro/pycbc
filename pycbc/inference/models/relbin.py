@@ -33,8 +33,8 @@ def angle(v1, v2):
     return numpy.arccos(p / abs(v1) / abs(v2))
 
 def frequency_bins(hp, hp2, flow, fhigh, thr):
+    df = hp.delta_f
     ratio = hp / hp2
-    df = 0.01
     frange = numpy.arange(flow, fhigh, df)
     edges = [frange[0]]
     fref = frange[0]
@@ -50,7 +50,7 @@ def frequency_bins(hp, hp2, flow, fhigh, thr):
     bins = []
     for i in range(len(edges)-1):
         bins.append((edges[i], edges[i+1]))
-    return edges, numpy.array(bins, numpy.float32)
+    return numpy.array(edges, numpy.float32), numpy.array(bins, numpy.float32)
 
 class Relative(BaseDataModel):
     r"""Model that assumes we know all the intrinsic parameters.
@@ -81,9 +81,11 @@ class Relative(BaseDataModel):
         dmass1 = float(dmass2)
         dmass2 = float(dmass2)
         dphase = float(dphase)
-        sample_rate = int(sample_rate)
-        tstart = float(tstart)
-        tend = float(tend)
+        self.sample_rate = int(sample_rate)
+        self.tstart = float(tstart)
+        self.tend = float(tend)
+        self.psds = psds
+        self.data = data
 
         # Generate reference waveform
         df = data[data.keys()[0]].delta_f
@@ -91,7 +93,7 @@ class Relative(BaseDataModel):
                        mass2=mass2, mass1=mass1, spin1z=spin1z,
                        spin2z=spin2z, phase_order=-1, spin_order=-1,
                        f_lower=low_frequency_cutoff,
-                       f_upper=high_frequency_cutoff)
+                       f_upper=high_frequency_cutoff + 2 * df)
         self.ampf = spa_amplitude_factor(mass1=mass1, mass2=mass2)
 
         # Figure out the frequency bins using another reference
@@ -99,7 +101,7 @@ class Relative(BaseDataModel):
                        mass2=dmass1, mass1=dmass2, spin1z=spin1z,
                        spin2z=spin2z, phase_order=-1, spin_order=-1,
                        f_lower=low_frequency_cutoff,
-                       f_upper=high_frequency_cutoff)
+                       f_upper=high_frequency_cutoff + 2 * df)
         self.edges, self.bins = frequency_bins(hp, hp2,
                               low_frequency_cutoff,
                               high_frequency_cutoff,
@@ -108,7 +110,7 @@ class Relative(BaseDataModel):
                                       dtype=numpy.complex64)
         logging.info('Using %s bins for this model', len(self.bins))
         # Extend data and template to high sample rate
-        flen = int(sample_rate / df) / 2 + 1
+        flen = int(self.sample_rate / df) / 2 + 1
         hp.resize(flen)
         for ifo in data:
             data[ifo].resize(flen)
@@ -125,8 +127,9 @@ class Relative(BaseDataModel):
             # storage for the snr time series of each frequency range
             self.sh[ifo] = []
             self.shl[ifo] = []
-
+            st = 0
             for l, h in self.bins:
+                print l, h
                 kh, kl = int(h / hp.delta_f), int(l / hp.delta_f)
                 hpl = hp.copy()
                 hpl[kl:kh] *= numpy.arange(0, kh - kl) / float(kh - kl)
@@ -135,44 +138,64 @@ class Relative(BaseDataModel):
                 snr, _, _ = pyfilter.matched_filter_core(
                     hp.astype(numpy.complex128), data[ifo],
                     psd=psds[ifo],
-                    low_frequency_cutoff=low_frequency_cutoff,
-                    high_frequency_cutoff=high_frequency_cutoff)
-                self.sh[ifo].append(snr.time_slice(tstart, tend) * 4.0 * df)
+                    low_frequency_cutoff=l,
+                    high_frequency_cutoff=h)
+                self.sh[ifo].append(snr.time_slice(self.tstart, self.tend).numpy().copy() * 4.0 * df)
 
                 # linear term
                 snrl, _, _ = pyfilter.matched_filter_core(
                     hpl.astype(numpy.complex128), data[ifo],
                     psd=psds[ifo],
-                    low_frequency_cutoff=low_frequency_cutoff,
-                    high_frequency_cutoff=high_frequency_cutoff)
-                self.shl[ifo].append(snrl.time_slice(tstart, tend) * 4.0 * df)
+                    low_frequency_cutoff=l,
+                    high_frequency_cutoff=h)
+                self.shl[ifo].append(snrl.time_slice(self.tstart, self.tend).numpy().copy() * 4.0 * df)
+                st = st + snr
 
             self.hh[ifo] = -0.5 * pyfilter.sigmasq(
                 hp.astype(numpy.complex128), psd=psds[ifo],
                 low_frequency_cutoff=low_frequency_cutoff,
                 high_frequency_cutoff=high_frequency_cutoff)
 
+            self.sh[ifo] = numpy.array(self.sh[ifo]).transpose()
+            self.shl[ifo] = numpy.array(self.shl[ifo]).transpose()
+
     def rel_sigmasq(self, m1, m2):
         return (spa_amplitude_factor(mass1=m1, mass2=m2) / self.ampf) ** 2.0
+
+    def slow_likelihood(self, p, ifo, time):
+        m1 = p['mass1']
+        m2 = p['mass2']
+        s1 = p['spin1z']
+        s2 = p['spin2z']
+        hp = spa_tmplt(f_lower=30.0, delta_f=self.psds[ifo].delta_f,
+                            mass1=m1, mass2=m2,
+                            distance=1,
+                            spin1z=s1, spin2z=s2,
+                            phase_order=-1, spin_order=-1)
+        hp.resize(len(self.psds[ifo]))
+        snr, _, _ = pyfilter.matched_filter_core(
+                hp.astype(numpy.complex128), self.data[ifo],
+                psd=self.psds[ifo],
+                low_frequency_cutoff=30.0,
+                high_frequency_cutoff=1000.0)
+        return snr.at_time(time) * 4.0 * snr.delta_f
+
 
     def raw_likelihood(self, p, ifo, time):
         m1 = p['mass1']
         m2 = p['mass2']
         s1 = p['spin1z']
         s2 = p['spin2z']
-        htarget = spa_tmplt(sample_points=self.bins,
+        htarget = spa_tmplt(sample_points=self.edges,
                             mass1=m1, mass2=m2,
                             distance=1,
                             spin1z=s1, spin2z=s2,
                             phase_order=-1, spin_order=-1)
-        ratio = htarget / self.hreference
-        r0 = ratio[:-1]
+        r = (htarget / self.hreference).conj()
+        r0 = r[:-1]
         r1 = (r[1:] - r[:-1])
-
-        rawsh = 0
-        for a, b, x, y in zip(r0, r1, self.sh[ifo], self.shl[ifo]):
-            rawsh += a.conj()*x.at_time(time) + b.conj()*y.at_time(time)
-        return rawsh
+        idx = int((time - self.tstart) * self.sample_rate)
+        return (r0*self.sh[ifo][idx] + r1*self.shl[ifo][idx]).sum()
 
     def _loglikelihood(self):
         return self.loglr
@@ -204,11 +227,10 @@ class Relative(BaseDataModel):
             ic = 0.5 * (1.0 + ip * ip)
             htf = (fp * ip + 1.0j * fc * ic) / p['distance']
 
-            sh = self.raw_likelihood(p, ifo, p['tc'] + dt) * htf
-            shloglr += sh
+            sh = self.raw_likelihood(p, ifo, p['tc'] + dt)
+            shloglr += sh * htf
             hhloglr += self.hh[ifo] * abs(htf) ** 2.0 * relsigsq
 
         vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
         vloglr += abs(shloglr) + hhloglr
-
         return float(vloglr)
