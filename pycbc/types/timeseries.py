@@ -76,7 +76,7 @@ class TimeSeries(Array):
                 else:
                     epoch = _lal.LIGOTimeGPS(0)
             elif epoch is not None:
-                try: 
+                try:
                     epoch = _lal.LIGOTimeGPS(epoch)
                 except:
                     raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
@@ -110,7 +110,7 @@ class TimeSeries(Array):
             new_delta_t = self._delta_t * index.step
         else:
             new_delta_t = self._delta_t
-        
+
         return TimeSeries(Array._getslice(self, index), new_delta_t,
                           new_epoch, copy=False)
 
@@ -141,11 +141,11 @@ class TimeSeries(Array):
         return len(self) * self._delta_t
     duration = property(get_duration,
                         doc="Duration of time series in seconds.")
-    
+
     def get_sample_rate(self):
         """Return the sample rate of the time series.
         """
-        return int(1.0/self.delta_t)
+        return int(round(1.0/self.delta_t))
     sample_rate = property(get_sample_rate,
                            doc="The sample rate of the time series.")
 
@@ -421,7 +421,7 @@ class TimeSeries(Array):
 
     def save_to_wav(self, file_name):
         """ Save this time series to a wav format audio file.
-        
+
         Parameters
         ----------
         file_name : string
@@ -429,20 +429,20 @@ class TimeSeries(Array):
         """
         scaled = _numpy.int16(self.numpy()/max(abs(self)) * 32767)
         write_wav(file_name, self.sample_rate, scaled)
-        
+
     def psd(self, segment_duration, **kwds):
         """ Calculate the power spectral density of this time series.
-        
+
         Use the `pycbc.psd.welch` method to estimate the psd of this time segment.
         For more complete options, please see that function.
-        
+
         Parameters
         ----------
         segment_duration: float
             Duration in seconds to use for each sample of the spectrum.
         kwds : keywords
             Additional keyword arguments are passed on to the `pycbc.psd.welch` method.
-            
+
         Returns
         -------
         psd : FrequencySeries
@@ -482,7 +482,7 @@ class TimeSeries(Array):
             the data.
         kwds : keywords
             Additional keyword arguments are passed on to the `pycbc.psd.welch` method.
-            
+
         Returns
         -------
         whitened_data : TimeSeries
@@ -493,7 +493,7 @@ class TimeSeries(Array):
         psd = self.psd(segment_duration, **kwds)
         psd = interpolate(psd, self.delta_f)
         max_filter_len = int(max_filter_duration * self.sample_rate)
-        
+
         # Interpolate and smooth to the desired corruption length
         psd = inverse_spectrum_truncation(psd,
                    max_filter_len=max_filter_len,
@@ -514,7 +514,7 @@ class TimeSeries(Array):
     def qtransform(self, delta_t=None, delta_f=None, logfsteps=None,
                   frange=None, qrange=(4,64), mismatch=0.2, return_complex=False):
         """ Return the interpolated 2d qtransform of this data
-        
+
         Parameters
         ----------
         delta_t : {self.delta_t, float}
@@ -532,7 +532,7 @@ class TimeSeries(Array):
             Mismatch between frequency tiles
         return_complex: {False, bool}
             return the raw complex series instead of the normalized power.
-         
+
         Returns
         -------
         times : numpy.ndarray
@@ -543,11 +543,11 @@ class TimeSeries(Array):
             The two dimensional interpolated qtransform of this time series.
         """
         from pycbc.filter.qtransform import qtiling, qplane
-        from scipy.interpolate import interp2d       
+        from scipy.interpolate import interp2d
 
         if frange is None:
             frange = (30, int(self.sample_rate / 2 * 8))
-        
+
         q_base = qtiling(self, qrange, frange, mismatch)
         _, times, freqs, q_plane = qplane(q_base, self.to_frequencyseries(),
                                           return_complex=return_complex)
@@ -557,11 +557,11 @@ class TimeSeries(Array):
         # Interpolate if requested
         if delta_f or delta_t or logfsteps:
             if return_complex:
-                interp_amp = interp2d(times, freqs, abs(q_plane))   
-                interp_phase = interp2d(times, freqs, _numpy.angle(q_plane))             
+                interp_amp = interp2d(times, freqs, abs(q_plane))
+                interp_phase = interp2d(times, freqs, _numpy.angle(q_plane))
             else:
                 interp = interp2d(times, freqs, q_plane)
-            
+
         if delta_t:
             times = _numpy.arange(float(self.start_time),
                                     float(self.end_time), delta_t)
@@ -611,7 +611,7 @@ class TimeSeries(Array):
         return ts
 
     def lowpass_fir(self, frequency, order, beta=5.0, remove_corrupted=True):
-        """ Lowpass filter the time series using an FIR filtered generated from 
+        """ Lowpass filter the time series using an FIR filtered generated from
         the ideal response passed through a kaiser window (beta = 5.0)
 
         Parameters
@@ -619,7 +619,7 @@ class TimeSeries(Array):
         Time Series: TimeSeries
             The time series to be low-passed.
         frequency: float
-            The frequency below which is suppressed. 
+            The frequency below which is suppressed.
         order: int
             Number of corrupted samples on each side of the time series
         beta: float
@@ -636,7 +636,7 @@ class TimeSeries(Array):
         return ts
 
     def highpass_fir(self, frequency, order, beta=5.0, remove_corrupted=True):
-        """ Highpass filter the time series using an FIR filtered generated from 
+        """ Highpass filter the time series using an FIR filtered generated from
         the ideal response passed through a kaiser window (beta = 5.0)
 
         Parameters
@@ -644,7 +644,7 @@ class TimeSeries(Array):
         Time Series: TimeSeries
             The time series to be high-passed.
         frequency: float
-            The frequency below which is suppressed. 
+            The frequency below which is suppressed.
         order: int
             Number of corrupted samples on each side of the time series
         beta: float
@@ -662,7 +662,7 @@ class TimeSeries(Array):
 
     def fir_zero_filter(self, coeff):
         """Filter the timeseries with a set of FIR coefficients
-        
+
         Parameters
         ----------
         coeff: numpy.ndarray
@@ -690,7 +690,7 @@ class TimeSeries(Array):
         path: string
             Destination file path. Must end with either .hdf, .npy or .txt.
 
-        group: string 
+        group: string
             Additional name for internal storage use. Ex. hdf storage uses
             this as the key value.
 
@@ -722,21 +722,21 @@ class TimeSeries(Array):
             ds.attrs['delta_t'] = float(self.delta_t)
         else:
             raise ValueError('Path must end with .npy, .txt or .hdf')
-                
+
     @_nocomplex
     def to_frequencyseries(self, delta_f=None):
         """ Return the Fourier transform of this time series
-        
+
         Parameters
         ----------
         delta_f : {None, float}, optional
-            The frequency resolution of the returned frequency series. By 
+            The frequency resolution of the returned frequency series. By
         default the resolution is determined by the duration of the timeseries.
-        
+
         Returns
-        -------        
-        FrequencySeries: 
-            The fourier transform of this time series. 
+        -------
+        FrequencySeries:
+            The fourier transform of this time series.
         """
         from pycbc.fft import fft
         if not delta_f:
@@ -753,11 +753,11 @@ class TimeSeries(Array):
         if not delta_f:
             tmp = self
         else:
-            tmp = TimeSeries(zeros(tlen, dtype=self.dtype), 
+            tmp = TimeSeries(zeros(tlen, dtype=self.dtype),
                              delta_t=self.delta_t, epoch=self.start_time)
             tmp[:len(self)] = self[:]
-        
-        f = FrequencySeries(zeros(flen, 
+
+        f = FrequencySeries(zeros(flen,
                            dtype=complex_same_precision_as(self)),
                            delta_f=delta_f)
         fft(tmp, f)
@@ -796,12 +796,12 @@ class TimeSeries(Array):
     @_nocomplex
     def cyclic_time_shift(self, dt):
         """Shift the data and timestamps by a given number of seconds
-        
-        Shift the data and timestamps in the time domain a given number of 
-        seconds. To just change the time stamps, do ts.start_time += dt. 
+
+        Shift the data and timestamps in the time domain a given number of
+        seconds. To just change the time stamps, do ts.start_time += dt.
         The time shift may be smaller than the intrinsic sample rate of the data.
         Note that data will be cycliclly rotated, so if you shift by 2
-        seconds, the final 2 seconds of your data will now be at the 
+        seconds, the final 2 seconds of your data will now be at the
         beginning of the data set.
 
         Parameters
@@ -876,7 +876,7 @@ def load_timeseries(path, group=None):
     path: string
         source file path. Must end with either .npy or .txt.
 
-    group: string 
+    group: string
         Additional name for internal storage use. Ex. hdf storage uses
         this as the key value.
 
@@ -887,7 +887,7 @@ def load_timeseries(path, group=None):
     """
     ext = _os.path.splitext(path)[1]
     if ext == '.npy':
-        data = _numpy.load(path)    
+        data = _numpy.load(path)
     elif ext == '.txt':
         data = _numpy.loadtxt(path)
     elif ext == '.hdf':
@@ -895,12 +895,12 @@ def load_timeseries(path, group=None):
         f = h5py.File(path)
         data = f[key][:]
         series = TimeSeries(data, delta_t=f[key].attrs['delta_t'],
-                                  epoch=f[key].attrs['start_time']) 
+                                  epoch=f[key].attrs['start_time'])
         f.close()
         return series
     else:
         raise ValueError('Path must end with .npy, .hdf, or .txt')
-        
+
     if data.ndim == 2:
         delta_t = (data[-1][0] - data[0][0]) / (len(data)-1)
         epoch = _lal.LIGOTimeGPS(data[0][0])

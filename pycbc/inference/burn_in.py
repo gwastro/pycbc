@@ -26,6 +26,8 @@ This modules provides classes and functions for determining when Markov Chains
 have burned in.
 """
 
+from __future__ import division
+
 import numpy
 from scipy.stats import ks_2samp
 
@@ -171,6 +173,7 @@ class MCMCBurnInTests(object):
         self.burn_in_data = {t: {} for t in self.do_tests}
         self.is_burned_in = False
         self.burn_in_iteration = NOT_BURNED_IN_ITER
+        self.burn_in_index = NOT_BURNED_IN_ITER
         # Arguments specific to each test...
         # for nacl:
         self._nacls = int(kwargs.pop('nacls', 5))
@@ -192,6 +195,36 @@ class MCMCBurnInTests(object):
             except KeyError:
                 niters = 0
         return niters
+
+    def _getnsamples(self, filename):
+        """Convenience function to get the number of samples saved in the file.
+
+        If no samples have been written to the file yet, just returns 0.
+        """
+        with self.sampler.io(filename, 'r') as fp:
+            try:
+                group = fp[fp.samples_group]
+                # we'll just use the first parameter
+                params = group.keys()
+                nsamples = group[params[0]].shape[-1]
+            except (KeyError, IndexError):
+                nsamples = 0
+        return nsamples
+
+    def _index2iter(self, filename, index):
+        """Converts the index in some samples at which burn in occurs to the
+        iteration of the sampler that corresponds to.
+        """
+        with self.sampler.io(filename, 'r') as fp:
+            thin_interval = fp.thinned_by
+        return index * thin_interval
+
+    def _iter2index(self, filename, iteration):
+        """Converts an iteration to the index it corresponds to.
+        """
+        with self.sampler.io(filename, 'r') as fp:
+            thin_interval = fp.thinned_by
+        return iteration // thin_interval
 
     def _getlogposts(self, filename):
         """Convenience function for retrieving log posteriors.
@@ -220,8 +253,10 @@ class MCMCBurnInTests(object):
         Since we calculate the acls, this will also store it to the sampler.
         """
         acls = self.sampler.compute_acl(filename, start_index=start_index)
-        # since we calculated it, save the acls to the sampler
-        self.sampler.acls = acls
+        # since we calculated it, save the acls to the sampler...
+        # but only do this if this is the only burn in test
+        if len(self.do_tests) == 1:
+            self.sampler.acls = acls
         return acls
 
     def halfchain(self, filename):
@@ -254,11 +289,12 @@ class MCMCBurnInTests(object):
         # required things to store
         data['is_burned_in'] = is_burned_in.all()
         if data['is_burned_in']:
-            data['burn_in_iteration'] = burn_in_idx.max()
+            data['burn_in_iteration'] = self._index2iter(
+                filename, burn_in_idx.max())
         else:
             data['burn_in_iteration'] = NOT_BURNED_IN_ITER
         # additional info
-        data['iteration_per_walker'] = burn_in_idx
+        data['iteration_per_walker'] = self._index2iter(filename, burn_in_idx)
         data['status_per_walker'] = is_burned_in
 
     def posterior_step(self, filename):
@@ -270,9 +306,10 @@ class MCMCBurnInTests(object):
         # this test cannot determine when something will burn in
         # only when it was not burned in in the past
         data['is_burned_in'] = True
-        data['burn_in_iteration'] = burn_in_idx.max()
+        data['burn_in_iteration'] = self._index2iter(
+            filename, burn_in_idx.max())
         # additional info
-        data['iteration_per_walker'] = burn_in_idx
+        data['iteration_per_walker'] = self._index2iter(filename, burn_in_idx)
 
     def nacl(self, filename):
         """Burn in based on ACL.
@@ -283,11 +320,11 @@ class MCMCBurnInTests(object):
 
         2. An ACL is calculated from the second half.
 
-        3. If ``nacls`` times the ACL is < the number of iterations / 2,
+        3. If ``nacls`` times the ACL is < the length of the chain / 2,
            the chain is considered to be burned in at the half-way point.
         """
-        niters = self._getniters(filename)
-        kstart = int(niters / 2.)
+        nsamples = self._getnsamples(filename)
+        kstart = int(nsamples / 2.)
         acls = self._getacls(filename, start_index=kstart)
         is_burned_in = {param: (self._nacls * acl) < kstart
                         for (param, acl) in acls.items()}
@@ -295,7 +332,7 @@ class MCMCBurnInTests(object):
         # required things to store
         data['is_burned_in'] = all(is_burned_in.values())
         if data['is_burned_in']:
-            data['burn_in_iteration'] = kstart
+            data['burn_in_iteration'] = self._index2iter(filename, kstart)
         else:
             data['burn_in_iteration'] = NOT_BURNED_IN_ITER
         # additional information
@@ -303,11 +340,11 @@ class MCMCBurnInTests(object):
 
     def ks_test(self, filename):
         """Applies ks burn-in test."""
+        nsamples = self._getnsamples(filename)
         with self.sampler.io(filename, 'r') as fp:
-            niters = fp.niterations
             # get the samples from the mid point
             samples1 = fp.read_raw_samples(
-                ['loglikelihood', 'logprior'], iteration=int(niters/2.))
+                ['loglikelihood', 'logprior'], iteration=int(nsamples/2.))
             # get the last samples
             samples2 = fp.read_raw_samples(
                 ['loglikelihood', 'logprior'], iteration=-1)
@@ -319,7 +356,8 @@ class MCMCBurnInTests(object):
         # required things to store
         data['is_burned_in'] = all(is_the_same.values())
         if data['is_burned_in']:
-            data['burn_in_iteration'] = int(niters/2.)
+            data['burn_in_iteration'] = self._index2iter(
+                filename, int(nsamples/2.))
         else:
             data['burn_in_iteration'] = NOT_BURNED_IN_ITER
         # additional
@@ -356,8 +394,10 @@ class MCMCBurnInTests(object):
         self.is_burned_in = is_burned_in
         if is_burned_in:
             self.burn_in_iteration = ii
+            self.burn_in_index = self._iter2index(filename, ii)
         else:
             self.burn_in_iteration = NOT_BURNED_IN_ITER
+            self.burn_in_index = NOT_BURNED_IN_ITER
 
     @classmethod
     def from_config(cls, cp, sampler):

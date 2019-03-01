@@ -24,8 +24,10 @@
 """ This modules contains functions for calculating and manipulating
 coincident triggers.
 """
-import numpy, logging, pycbc.pnutils, copy, lal
+
+import h5py, numpy, logging, pycbc.pnutils, copy, lal
 from pycbc.detector import Detector
+
 
 def background_bin_from_string(background_bins, data):
     """ Return template ids for each bin as defined by the format string
@@ -589,6 +591,10 @@ class MultiRingBuffer(object):
         total = self.ring_sizes().sum()
         return total
 
+    @property
+    def nbytes(self):
+        return self.buffer.nbytes
+
     def discard_last(self, indices):
         """Discard the triggers added in the latest update"""
         index = self.index[indices]
@@ -678,6 +684,13 @@ class CoincExpireBuffer(object):
             self.time[ifo] = 0
             self.timer[ifo] = numpy.zeros(initial_size, dtype=numpy.int32)
 
+    def __len__(self):
+        return self.index
+
+    @property
+    def nbytes(self):
+        return self.buffer.nbytes
+
     def increment(self, ifos):
         """Increment without adding triggers"""
         self.add([], [], ifos)
@@ -743,10 +756,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                  stat_files, ifos,
                  ifar_limit=100,
                  timeslide_interval=.035,
-                 ifar_remove_threshold=100,
-                 coinc_threshold=0.002,
-                 return_background=False,
-                 save_background_on_interrupt=False):
+                 coinc_threshold=.002,
+                 return_background=False):
         """
         Parameters
         ----------
@@ -767,27 +778,32 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             calculate.
         timeslide_interval: float
             The time in seconds between consecutive timeslide offsets.
-        ifar_remove_threshold: float
-            The inverse false alarm rate to assume a detection is made and remove
-            from the background estimate. !NOT IMPLEMENTED!
         coinc_threshold: float
             Amount of time allowed to form a coincidence in addition to the
             time of flight in seconds.
         return_background: boolean
             If true, background triggers will also be included in the file
             output.
-        save_background_on_interrupt: boolean
-            If true, an interrupt can be given to save a pickled version of
-            the background instance for later restoration. !NOT IMPLEMENTED!
         """
         from pycbc import detector
         from . import stat
         self.num_templates = num_templates
         self.analysis_block = analysis_block
+
+        # Only pass a valid stat file for this ifo pair
+        for fname in stat_files:
+            f = h5py.File(fname, 'r')
+            ifos_set = set([f.attrs['ifo0'], f.attrs['ifo1']])
+            f.close()
+            if ifos_set == set(ifos):
+                stat_files = [fname]
+                logging.info('Setup ifos %s-%s with file %s and stat %s',
+                             ifos[0], ifos[1], fname, background_statistic)
+
         self.stat_calculator = stat.get_statistic(background_statistic)(stat_files)
+
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
-        self.ifar_remove_threshold = ifar_remove_threshold
 
         self.ifos = ifos
         if len(self.ifos) != 2:
@@ -802,11 +818,60 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         self.singles = {}
 
-        #if save_background_on_interrupt:
-        #    import signal
-        #    def sig_handler(signum, frame):
-        #        pass
-        #    signal.signal(signal.SIGINT, sig_handler)
+    @classmethod
+    def pick_best_coinc(cls, coinc_results):
+        """Choose the best two-ifo coinc by ifar first, then statistic if needed.
+
+        This function picks which of the available double-ifo coincs to use.
+        It chooses the best (highest) ifar. The ranking statistic is used as
+        a tie-breaker.
+        A trials factor is applied if multiple types of coincs are possible
+        at this time given the active ifos.
+
+        Parameters
+        ----------
+        coinc_results: list of coinc result dicts
+            Dictionary by detector pair of coinc result dicts.
+
+        Returns
+        -------
+        best: coinc results dict
+            If there is a coinc, this will contain the 'best' one. Otherwise
+            it will return the provided dict.
+        """
+        mstat = 0
+        mifar = 0
+        mresult = None
+
+        # record the trials factor from the possible coincs we could
+        # maximize over
+        trials = 0
+        for result in coinc_results:
+            # Check that a coinc was possible. See the 'add_singles' method
+            # to see where this flag was added into the results dict
+            if 'coinc_possible' in result:
+                trials += 1
+
+                # Check that a coinc exists
+                if 'foreground/ifar' in result:
+                    ifar = result['foreground/ifar']
+                    stat = result['foreground/stat']
+                    if ifar > mifar or (ifar == mifar and stat > mstat):
+                        mifar = ifar
+                        mstat = stat
+                        mresult = result
+
+        # apply trials factor for the best coinc
+        if mresult:
+            mresult['foreground/ifar'] = mifar / float(trials)
+            logging.info('Found %s coinc with ifar %s',
+                         mresult['foreground/type'],
+                         mresult['foreground/ifar'])
+            return mresult
+        # If no coinc, just return one of the results dictionaries. They will
+        # all contain the same results (i.e. single triggers) in this case.
+        else:
+            return coinc_results[0]
 
     @classmethod
     def from_cli(cls, args, num_templates, analysis_chunk, ifos):
@@ -816,7 +881,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                    return_background=args.store_background,
                    ifar_limit=args.background_ifar_limit,
                    timeslide_interval=args.timeslide_interval,
-                   ifar_remove_threshold=args.ifar_remove_threshold,
                    ifos=ifos)
 
     @staticmethod
@@ -886,7 +950,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         for key in data:
             self.singles_dtype.append((key, data[key].dtype))
-        self.singles_dtype.append(('stat', self.stat_calculator.single_dtype))
+
+        if 'stat' not in data:
+            self.singles_dtype.append(('stat', self.stat_calculator.single_dtype))
 
         # Create a ring buffer for each template ifo combination
         for ifo in self.ifos:
@@ -894,7 +960,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                                             self.buffer_size,
                                             dtype=self.singles_dtype)
 
-    def _add_singles_to_buffer(self, results):
+    def _add_singles_to_buffer(self, results, ifos):
         """Add single detector triggers to the internal buffer
 
         Parameters
@@ -918,7 +984,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         # where chisq is the reduced chisq and chisq_dof is the actual DOF
         logging.info("adding singles to the background estimate...")
         updated_indices = {}
-        for ifo in results:
+        for ifo in ifos:
             trigs = results[ifo]
 
             if len(trigs['snr'] > 0):
@@ -940,7 +1006,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             updated_indices[ifo] = trigs['template_id']
         return updated_indices
 
-    def _find_coincs(self, results):
+    def _find_coincs(self, results, ifos):
         """Look for coincs within the set of single triggers
 
         Parameters
@@ -967,8 +1033,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # Calculate all the permutations of coincident triggers for each
         # new single detector trigger collected
-        for ifo in results:
+        for ifo in ifos:
             trigs = results[ifo]
+
             for i in range(len(trigs['end_time'])):
                 trig_stat = trigs['stat'][i]
                 trig_time = trigs['end_time'][i]
@@ -1007,7 +1074,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         cstat = numpy.concatenate(cstat)
         template_ids = numpy.concatenate(template_ids).astype(numpy.int32)
-        for ifo in self.ifos:
+        for ifo in ifos:
             trigger_ids[ifo] = numpy.concatenate(trigger_ids[ifo]).astype(numpy.int32)
 
         # cluster the triggers we've found
@@ -1032,11 +1099,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 single_expire[ifo] = numpy.concatenate(single_expire[ifo])
                 single_expire[ifo] = single_expire[ifo][cidx][bkg_idx]
 
-            self.coincs.add(cstat[cidx][bkg_idx], single_expire, results.keys())
+            self.coincs.add(cstat[cidx][bkg_idx], single_expire, ifos)
             num_zerolag = zerolag_idx.sum()
             num_background = bkg_idx.sum()
-        elif len(results.keys()) > 0:
-            self.coincs.increment(results.keys())
+        elif len(ifos) > 0:
+            self.coincs.increment(ifos)
 
         ####################################Collect coinc results for saving
         coinc_results = {}
@@ -1054,6 +1121,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 for key in single_data.dtype.names:
                     path = 'foreground/%s/%s' % (ifo, key)
                     zerolag_results[path] = single_data[key]
+
+            zerolag_results['foreground/type'] = '-'.join(self.ifos)
 
             coinc_results.update(zerolag_results)
 
@@ -1106,18 +1175,28 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         coinc_results: dict of arrays
             A dictionary of arrays containing the coincident results.
         """
+        # Let's see how large everything is
+        for ifo in self.singles:
+            logging.info('BKG %s singles %s stored %s bytes',
+                         ifo, self.singles[ifo].num_elements(),
+                         self.singles[ifo].nbytes)
+        logging.info('BKG Coincs %s stored %s bytes',
+                     len(self.coincs), self.coincs.nbytes)
+
         # If there are no results just return
-        valid_ifos = [k for k in results.keys() if results[k]]
+        valid_ifos = [k for k in results.keys() if results[k] and k in self.ifos]
         if len(valid_ifos) == 0: return {}
 
-        # Apply CAT2 data quality here
-        # results = self.veto_singles(results, data_reader)
-
         # Add single triggers to the internal buffer
-        updated_indices = self._add_singles_to_buffer(results)
+        updated_indices = self._add_singles_to_buffer(results, ifos=valid_ifos)
 
         # Calculate zerolag and background coincidences
-        num_background, coinc_results = self._find_coincs(results)
+        num_background, coinc_results = self._find_coincs(results,
+                                                          ifos=valid_ifos)
+
+        # record if a coinc is possible in this chunk
+        if len(valid_ifos) == 2:
+            coinc_results['coinc_possible'] = True
 
         # If there is a hardware injection anywhere near here dump these
         # results and mark the result group as possibly being influenced

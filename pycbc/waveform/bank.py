@@ -528,13 +528,19 @@ class LiveFilterBank(TemplateBank):
         if isinstance(index, slice):
             return self.getslice(index)
 
+        return self.get_template(index)
+
+    def get_template(self, index, min_buffer=None):
+
         approximant = self.approximant(index)
         f_end = self.end_frequency(index)
         flow = self.table[index].f_lower
 
         # Determine the length of time of the filter, rounded up to
         # nearest power of two
-        min_buffer = .5 + self.minimum_buffer
+        if min_buffer is None:
+            min_buffer =  self.minimum_buffer
+        min_buffer += 0.5
 
         from pycbc.waveform.waveform import props
         p = props(self.table[index])
@@ -589,6 +595,7 @@ class LiveFilterBank(TemplateBank):
                                       htilde.params.spin1z,
                                       htilde.params.spin2z)))
         return htilde
+
 
 class FilterBank(TemplateBank):
     def __init__(self, filename, filter_length, delta_f, dtype,

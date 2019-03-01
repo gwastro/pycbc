@@ -173,9 +173,11 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params)
+            fp.write_samples(self.samples, self.model.variable_params,
+                             last_iteration=self.niterations)
             # write stats
-            fp.write_samples(self.model_stats)
+            fp.write_samples(self.model_stats,
+                             last_iteration=self.niterations)
             # write accpetance
             fp.write_acceptance_fraction(self._sampler.acceptance_fraction)
             # write random state
@@ -206,4 +208,6 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
         obj.set_burn_in_from_config(cp)
+        # set prethin options
+        obj.set_thin_interval_from_config(cp, section)
         return obj

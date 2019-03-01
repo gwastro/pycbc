@@ -77,7 +77,7 @@ class ReadByTemplate(object):
 
         # Determine the segments which define the boundaries of valid times
         # to use triggers
-        from glue.segments import segmentlist, segment
+        from ligo.segments import segmentlist, segment
         key = '%s/search/' % self.ifo
         s, e = self.file[key + 'start_time'][:], self.file[key + 'end_time'][:]
         self.segs = veto.start_end_to_segments(s, e).coalesce()
@@ -330,10 +330,9 @@ if len(data['stat']) > 0:
                          compression_opts=9,
                          shuffle=True)
 
-f['segments/coinc/start'], f['segments/coinc/end'] = veto.segments_to_start_end(coinc_segs)
-
-for t in trigs:
-    f['segments/%s/start' % trigs[t].ifo], f['segments/%s/end' % trigs[t].ifo] = trigs[t].valid
+# Store coinc segments keyed by detector combination
+key = ''.join(sorted(detectors))
+f['segments/%s/start' % key], f['segments/%s/end' % key] = trigs[args.pivot_ifo].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['num_of_ifos'] = len(args.trigger_files)

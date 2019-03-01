@@ -36,7 +36,7 @@ import lal
 import lal.utils
 import Pegasus.DAX3
 from glue import lal as gluelal
-from glue import segments
+from ligo import segments
 from glue.ligolw import table, lsctables, ligolw
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import segments as ligolw_segments
@@ -846,7 +846,7 @@ class Node(pegasus_workflow.Node):
 
         Parameters
         -----------
-        valid_seg : glue.segments.segment
+        valid_seg : ligo.segments.segment
             The time span over which the job is valid for.
         extension : string
             The extension to be used at the end of the filename.
@@ -1039,7 +1039,7 @@ class File(pegasus_workflow.File):
         elif isinstance(segs, (segments.segmentlist)):
             self.segment_list = segs
         else:
-            err = "segs input must be either glue.segments.segment or "
+            err = "segs input must be either ligo.segments.segment or "
             err += "segments.segmentlist. Got %s." %(str(type(segs)),)
             raise ValueError(err)
         if tags is not None:
@@ -1555,7 +1555,7 @@ class SegFile(File):
         See File.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
         the optional segment_dict. NOTE that while segment_dict is a
-        glue.segments.segmentlistdict rather than the usual dict[ifo]
+        ligo.segments.segmentlistdict rather than the usual dict[ifo]
         we key by dict[ifo:name].
 
         Parameters
@@ -1564,10 +1564,10 @@ class SegFile(File):
             See File.__init__
         description : string (required)
             See File.__init__
-        segment : glue.segments.segment or glue.segments.segmentlist
+        segment : ligo.segments.segment or ligo.segments.segmentlist
             See File.__init__
-        segment_dict : glue.segments.segmentlistdict (optional, default=None)
-            A glue.segments.segmentlistdict covering the times covered by the
+        segment_dict : ligo.segments.segmentlistdict (optional, default=None)
+            A ligo.segments.segmentlistdict covering the times covered by the
             segmentlistdict associated with this file.
             Can be added by setting self.segment_dict after initializing an
             instance of the class.
@@ -1590,13 +1590,13 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlist : glue.segments.segmentslist
+        segmentlist : ligo.segments.segmentslist
             The segment list that will be stored in this file.
         name : str
             The name of the segment lists to be stored in the file.
         ifo : str
             The ifo of the segment lists to be stored in this file.
-        seg_summ_list : glue.segments.segmentslist (OPTIONAL)
+        seg_summ_list : ligo.segments.segmentslist (OPTIONAL)
             Specify the segment_summary segmentlist that goes along with the
             segmentlist. Default=None, in this case segment_summary is taken
             from the valid_segment of the SegFile class.
@@ -1620,13 +1620,13 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlists : List of glue.segments.segmentslist
+        segmentlists : List of ligo.segments.segmentslist
             List of segment lists that will be stored in this file.
         names : List of str
             List of names of the segment lists to be stored in the file.
         ifos : str
             List of ifos of the segment lists to be stored in this file.
-        seg_summ_lists : glue.segments.segmentslist (OPTIONAL)
+        seg_summ_lists : ligo.segments.segmentslist (OPTIONAL)
             Specify the segment_summary segmentlists that go along with the
             segmentlists. Default=None, in this case segment_summary is taken
             from the valid_segment of the SegFile class.
@@ -1655,18 +1655,18 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlistdict : glue.segments.segmentslistdict
+        segmentlistdict : ligo.segments.segmentslistdict
             See SegFile.__init__
         ifo_list : string or list (optional)
             See File.__init__, if not given a list of all ifos in the
             segmentlistdict object will be used
-        valid_segment : glue.segments.segment or glue.segments.segmentlist
+        valid_segment : ligo.segments.segment or ligo.segments.segmentlist
             See File.__init__, if not given the extent of all segments in the
             segmentlistdict is used.
         file_exists : boolean (default = False)
             If provided and set to True it is assumed that this file already
             exists on disk and so there is no need to write again.
-        seg_summ_dict : glue.segments.segmentslistdict
+        seg_summ_dict : ligo.segments.segmentslistdict
             Optional. See SegFile.__init__.
         """
         if ifo_list is None:
@@ -1708,7 +1708,7 @@ class SegFile(File):
     @classmethod
     def from_segment_xml(cls, xml_file, **kwargs):
         """
-        Read a glue.segments.segmentlist from the file object file containing an
+        Read a ligo.segments.segmentlist from the file object file containing an
         xml segment table.
 
         Parameters
@@ -1938,12 +1938,12 @@ def get_full_analysis_chunk(science_segs):
 
     Parameters
     -----------
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
 
     Returns
     --------
-    fullSegment : glue.segments.segment
+    fullSegment : ligo.segments.segment
         The segment spanning the first and last time point contained in science_segs.
     """
     extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]
