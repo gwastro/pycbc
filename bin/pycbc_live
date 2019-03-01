@@ -320,10 +320,13 @@ parser.add_argument('--increment-update-cache', action=MultiDetOptionAction, nar
 parser.add_argument('--frame-read-timeout', type=float, default=30)
 parser.add_argument('--increment', type=int, default=8)
 
-parser.add_argument('--start-time', type=int, default=lal.GPSTimeNow())
-parser.add_argument('--end-time', type=int, default=numpy.inf)
+parser.add_argument('--start-time', type=int, default=lal.GPSTimeNow(),
+                    help='Start the analysis at the given GPS time')
+parser.add_argument('--end-time', type=int, default=numpy.inf,
+                    help='Stop the analysis at the given GPS time')
 
-parser.add_argument('--output-path')
+parser.add_argument('--output-path', required=True,
+                    help='Path to a directory to store results in')
 parser.add_argument('--output-status', type=str, metavar='PATH',
                     help='If given, PyCBC Live will periodically write JSON '
                          'status info to PATH, so the analysis can be '
@@ -340,32 +343,31 @@ parser.add_argument('--max-triggers-in-batch', type=int)
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')
 
-parser.add_argument('--enable-profiling', type=int,
-                    help="Dump out profiling information from an MPI process at"
-                         " the end of program executrion")
+parser.add_argument('--enable-profiling', type=int, metavar='RANK',
+                    help='Dump out profiling information from the MPI process'
+                         ' with given rank at the end of program execution')
 
 parser.add_argument('--enable-background-estimation', default=False, action='store_true')
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading coincident '
                          'triggers to GraceDB, in years.')
-parser.add_argument('--enable-gracedb-upload', action='store_true', default=False)
+parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
+                    help='Upload triggers to GraceDB')
 parser.add_argument('--file-prefix', default='Live')
-parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False)
+parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False,
+                    help='Do not mark triggers uploaded to GraceDB as test events')
 parser.add_argument('--enable-single-detector-upload', action='store_true', default=False)
-parser.add_argument('--followup-detectors', default=[], nargs='*',
-                    help='List of detectors to use as followup')
 parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
-parser.add_argument('--round-start-time', type=int,
+parser.add_argument('--round-start-time', type=int, metavar='X',
                     help="Round up the start time to the nearest multiple of X"
                          " seconds. This is useful for forcing agreement "
                          " with frame file production.")
-parser.add_argument('--gracedb-server',
-                    help="Location of gracedb server. If not provide, the "
-                         "default location is used. ")
-parser.add_argument('--size-override',
+parser.add_argument('--gracedb-server', metavar='URL',
+                    help='URL of GraceDB server for uploading events. '
+                         'If not provided, the default location is used.')
+parser.add_argument('--size-override', type=int, metavar='N',
                     help="Override the internal MPI size layout. "
-                         " Useful for debugging and running a portion of a bank",
-                    type=int)
+                         " Useful for debugging and running a portion of a bank")
 parser.add_argument('--fftw-planning-limit', type=float,
                     help="Time is seconds to allow for a plan to be created")
 
@@ -644,5 +646,5 @@ if evnt.rank == 1:
     if args.fftw_output_double_wisdom_file:
         fft.fftw.export_double_wisdom_to_filename(args.fftw_output_double_wisdom_file)
 
-    if args.enable_profiling:
-        pr.dump_stats('log')
+if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
+    pr.dump_stats('profiling_rank_{:03d}'.format(evnt.rank))
