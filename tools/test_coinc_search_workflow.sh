@@ -79,6 +79,7 @@ pycbc_make_coinc_search_workflow \
   "inspiral:low-frequency-cutoff:30" \
   "s-mchirp:bins:0.8 1.74 8.07 14.92 21.77 100" \
   "s-mtotal:bins:2 4 27.25 51.5 75.75 100" \
+  "coinc:statistic-files:https://raw.githubusercontent.com/gwastro/pycbc-config/master/O2/pipeline/H1L1-PHASE_TIME_AMP_dummy.hdf" \
 --config-delete \
   "injections-bnsstt2_inj" \
   "injections-nsbhseobnrv4_inj" \
