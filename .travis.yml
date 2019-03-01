@@ -119,10 +119,10 @@ before_install:
 - sudo mkdir -p /cvmfs/config-osg.opensciencegrid.org
 - sudo mkdir -p /cvmfs/oasis.opensciencegrid.org
 - sudo mkdir -p /cvmfs/gwosc.osgstorage.org
-- sudo cvmfs_config chksetup
-- sudo cvmfs_config reload -c
 - ls -lah /usr/bin/fusermount
 - id cvmfs
+- sudo cvmfs_config chksetup
+- sudo cvmfs_config reload -c
 - sudo strace mount -t cvmfs config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org
 - ls /cvmfs/config-osg.opensciencegrid.org
 - sudo mount -t cvmfs oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org
