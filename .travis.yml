@@ -119,11 +119,11 @@ before_install:
 - sudo mkdir -p /cvmfs/config-osg.opensciencegrid.org
 - sudo mkdir -p /cvmfs/oasis.opensciencegrid.org
 - sudo mkdir -p /cvmfs/gwosc.osgstorage.org
-- sudo strace mount -t cvmfs config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org
+- sudo strace -f mount -v -t cvmfs config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org
 - ls /cvmfs/config-osg.opensciencegrid.org
-- sudo mount -t cvmfs oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org
+- sudo mount -v -t cvmfs oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org
 - ls /cvmfs/oasis.opensciencegrid.org
-- sudo mount -t cvmfs gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org
+- sudo mount -v -t cvmfs gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org
 - ls /cvmfs/gwosc.osgstorage.org
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then docker build -t ${DOCKER_IMG}-tmp . ; fi
