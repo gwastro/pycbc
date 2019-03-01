@@ -102,9 +102,18 @@ before_install:
 - sudo apt-get update
 - sudo apt-get install cvmfs cvmfs-config-default
 - rm -f cvmfs-release-latest_all.deb
-- sudo mkdir -p /etc/cvmfs
 - curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/cvmfs-default.local > default.local
+- curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/config-osg.opensciencegrid.org.conf > config-osg.opensciencegrid.org.conf
+- curl https://github.com/gwastro/pycbc/blob/master/tools/osg.conf > 60-osg.conf
+- curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/opensciencegrid.org.pub > opensciencegrid.org.pub
+- sudo mkdir -p /etc/cvmfs
+- sudo mkdir -p /etc/cvmfs/config.d
+- sudo mkdir -p /etc/cvmfs/default.d
+- sudo mkdir -p /etc/cvmfs/keys/opensciencegrid.org
 - sudo mv default.local /etc/cvmfs/default.local
+- sudo mv config-osg.opensciencegrid.org.conf /etc/cvmfs/config.d/config-osg.opensciencegrid.org.conf
+- sudo mv 60-osg.conf /etc/cvmfs/default.d/60-osg.conf
+- sudo mv opensciencegrid.org.pub /etc/cvmfs/keys/opensciencegrid.org
 - sudo /etc/init.d/autofs stop
 - sudo cvmfs_config setup
 - sudo mkdir -p /cvmfs/config-osg.opensciencegrid.org
