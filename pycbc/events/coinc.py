@@ -530,8 +530,10 @@ class MultiRingBuffer(object):
         num_rings: int
             The number of ring buffers to create. They all will have the same
             intrinsic size and will expire at the same time.
-        max_length: int
-            The number of elements that each ring can have.
+        max_time: int
+            The maximum "time" an element can exist in each ring.
+        dtype: numpy.dtype
+            The type of each element in the ring buffer.
         """
         self.max_time = max_time
         self.buffer = []
