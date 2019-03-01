@@ -9,22 +9,23 @@ launched with mpirun.
 
 See https://arxiv.org/abs/1805.11174 for an overview."""
 
+import sys
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
+from time import time
+import os.path
+import itertools
+from mpi4py import MPI as mpi
 from pycbc import fft, version, waveform, scheme, frame
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
-from time import time
-import os.path
-from mpi4py import MPI as mpi
 from pycbc.events import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
 from pycbc.workflow.core import makedir
 import pycbc.waveform.bank
-import itertools
 
 
 def ptof(p, ft):
@@ -223,6 +224,9 @@ class LiveEventManager(object):
             fname = os.path.join(self.path, name) + '.hdf'
 
         with h5py.File(fname, 'w') as f:
+            f.attrs['pycbc_version'] = version.git_verbose_msg
+            f.attrs['command_line'] = sys.argv
+
             for ifo in results:
                 for k in results[ifo]:
                     f['%s/%s' % (ifo, k)] = results[ifo][k]
