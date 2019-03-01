@@ -97,34 +97,6 @@ matrix:
     python: 3.6
 
 before_install:
-- curl https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb > cvmfs-release-latest_all.deb
-- sudo dpkg -i cvmfs-release-latest_all.deb
-- sudo apt-get update
-- sudo apt-get install cvmfs cvmfs-config-default
-- rm -f cvmfs-release-latest_all.deb
-- curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/cvmfs-default.local > default.local
-- curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/config-osg.opensciencegrid.org.conf > config-osg.opensciencegrid.org.conf
-- curl https://github.com/gwastro/pycbc/blob/master/tools/osg.conf > 60-osg.conf
-- curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/opensciencegrid.org.pub > opensciencegrid.org.pub
-- sudo mkdir -p /etc/cvmfs
-- sudo cvmfs_config setup
-- sudo /etc/init.d/autofs stop
-- sudo mkdir -p /etc/cvmfs/config.d
-- sudo mkdir -p /etc/cvmfs/default.d
-- sudo mkdir -p /etc/cvmfs/keys/opensciencegrid.org
-- sudo mv default.local /etc/cvmfs/default.local
-- sudo mv config-osg.opensciencegrid.org.conf /etc/cvmfs/config.d/config-osg.opensciencegrid.org.conf
-- sudo mv 60-osg.conf /etc/cvmfs/default.d/60-osg.conf
-- sudo mv opensciencegrid.org.pub /etc/cvmfs/keys/opensciencegrid.org
-- sudo mkdir -p /cvmfs/config-osg.opensciencegrid.org
-- sudo mkdir -p /cvmfs/oasis.opensciencegrid.org
-- sudo mkdir -p /cvmfs/gwosc.osgstorage.org
-- sudo strace -f mount -v -t cvmfs config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org
-- ls /cvmfs/config-osg.opensciencegrid.org
-- sudo mount -v -t cvmfs oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org
-- ls /cvmfs/oasis.opensciencegrid.org
-- sudo mount -v -t cvmfs gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org
-- ls /cvmfs/gwosc.osgstorage.org
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then docker build -t ${DOCKER_IMG}-tmp . ; fi
 install:
