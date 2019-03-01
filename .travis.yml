@@ -97,6 +97,20 @@ matrix:
     python: 3.6
 
 before_install:
+- curl https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb > cvmfs-release-latest_all.deb
+- sudo dpkg -i cvmfs-release-latest_all.deb
+- sudo apt-get update
+- sudo apt-get install cvmfs cvmfs-config-default
+- rm -f cvmfs-release-latest_all.deb
+- sudo mkdir -p /etc/cvmfs
+- sudo curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/cvmfs-default.local > /etc/cvmfs/default.local
+- sudo /etc/init.d/autofs stop
+- sudo cvmfs_config setup
+- sudo mkdir -p /cvmfs/gwosc.osgstorage.org
+- sudu mkdir -p /cvmfs/oasis.opensciencegrid.org
+- sudo mount -t cvmfs gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org
+- sudo mount -t cvmfs oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org
+- ls /cvmfs/gwosc.osgstorage.org /cvmfs/oasis.opensciencegrid.org
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then docker build -t ${DOCKER_IMG}-tmp . ; fi
 install:
