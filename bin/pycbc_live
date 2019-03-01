@@ -22,16 +22,10 @@ from pycbc.events import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
+from pycbc.workflow.core import makedir
 import pycbc.waveform.bank
 import itertools
 
-def makedir(path):
-    """
-    Make the analysis directory path and any parent directories that don't
-    already exist. Will do nothing if path already exists.
-    """
-    if path is not None and not os.path.exists(path):
-        os.makedirs(path)
 
 def ptof(p, ft):
     return numpy.log(1.0 - p) / -ft
