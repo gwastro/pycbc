@@ -534,9 +534,9 @@ with ctx:
             if data_reader[ifo].psd is not None:
                 dist = data_reader[ifo].psd.dist
                 if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
-                    logging.info("PSD outside acceptable sensitivity %s - %s, have %s",
-                                 args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
-
+                    logging.info("%s PSD dist %s outside acceptable range [%s, %s]",
+                                 ifo, dist, args.min_psd_abort_distance,
+                                 args.max_psd_abort_distance)
                     status = False
 
             if status is True:
