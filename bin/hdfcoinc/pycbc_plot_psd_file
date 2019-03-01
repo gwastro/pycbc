@@ -13,6 +13,14 @@ parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("--psd-files", nargs='+', required=True,
                     help='HDF file(s) containing the PSDs to plot')
+parser.add_argument('--hdf-group', default=None,
+                    help="Group in the HDF file(s) to read the psd from. "
+                         "PSDs will be read from {psd_group}/{ifo}. Default "
+                         "is to look in the top level.")
+parser.add_argument('--low-frequency-cutoff', type=float, 
+                    help="The low frequency cutoff of the PSD. If not "
+                         "provided, will try to retrive it from the "
+                         "hdf-group's attrs.")
 parser.add_argument("--ifos", nargs="+",
                     help="What ifo(s) to plot. If none provided, will look "
                          "for an 'ifo_list' attribute in the hdf file.")
@@ -37,6 +45,8 @@ y_min = None
 
 for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
+    if args.hdf_group is not None:
+        f = f[args.hdf_group]
 
     if args.ifos is not None:
         ifo_list = args.ifos
@@ -49,7 +59,15 @@ for psd_file in args.psd_files:
         fac = 1.0 / pycbc.DYN_RANGE_FAC
         df = f[ifo + '/psds/0'].attrs['delta_f']
         keys = f[ifo + '/psds'].keys()
-        flow = f.attrs['low_frequency_cutoff']
+        if args.low_frequency_cutoff is None:
+            try:
+                flow = f.attrs['low_frequency_cutoff']
+            except KeyError:
+                raise ValueError("low_frequency_cutoff not found in hdf file; "
+                                 "please specify a value using the "
+                                 "--low-frequency-cutoff option")
+        else:
+            flow = args.low_frequency_cutoff
         kmin = int(flow / df)
         kmax = len(f[ifo + '/psds/' + keys[0]][:])
         klen = kmax - kmin
@@ -91,10 +109,11 @@ for psd_file in args.psd_files:
         ax.loglog(samples, middle, linewidth=0.3, color=color, label=ifo)
         ax.set_xlim(flow, samples[-1])
 
-reference_psd = pycbc.psd.from_cli(args, 2048, 1., 10., None)
-if reference_psd is not None:
-    ax.loglog(reference_psd.sample_frequencies, reference_psd ** 0.5,
-              '-k', lw=0.3, label='Reference')
+if args.psd_model or args.psd_file or args.asd_file:
+    reference_psd = pycbc.psd.from_cli(args, 2048, 1., 10., None)
+    if reference_psd is not None:
+        ax.loglog(reference_psd.sample_frequencies, reference_psd ** 0.5,
+                  '-k', lw=0.3, label='Reference')
 
 ax.set_ylim(y_min * 0.5, y_min * 100)
 

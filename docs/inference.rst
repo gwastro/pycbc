@@ -127,6 +127,64 @@ max_postrior`` would instead consider the sampler to be burned in when either
 the ``nacl`` *or* ``max_posterior`` tests were satisfied. For more information
 on what tests are available, see the :py:mod:`pycbc.inference.burn_in` module.
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thinning samples (MCMC only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The default behavior for the MCMC samplers (``emcee``, ``emcee_pt``) is to save
+every iteration of the Markov chains to the output file. This can quickly lead
+to very large files. For example, a BBH analysis (~15 parameters) with 200
+walkers, 20 temperatures may take ~50 000 iterations to acquire ~5000
+independent samples. This will lead to a file that is ~ 50 000 iterations x 200
+walkers x 20 temperatures x 15 parameters x 8 bytes ~ 20GB.  Quieter signals
+can take an order of magnitude more iterations to converge, leading to O(100GB)
+files. Clearly, since we only obtain 5000 independent samples from such a run,
+the vast majority of these samples are of little interest.
+
+To prevent large file size growth, samples may be thinned before they are
+written to disk. Two thinning options are available, both of which are set in
+the ``[sampler]`` section of the configuration file. They are:
+
+ * ``thin-interval``: This will thin the samples by the given integer before
+   writing the samples to disk. File sizes can still grow unbounded, but at
+   a slower rate. The interval must be less than the checkpoint interval.
+ * ``max-samples-per-chain``: This will cap the maximum number of samples per
+   walker and per temperature to the given integer. This ensures that file
+   sizes never exceed ~ ``max-samples-per-chain`` x ``nwalkers`` x ``ntemps``
+   x ``nparameters`` x 8 bytes. Once the limit is reached,
+   samples will be thinned on disk, and new samples will be thinned to match.
+   The thinning interval will grow with longer runs as a result. To ensure
+   that enough samples exist to determine burn in and to measure an
+   autocorrelation length, ``max-samples-per-chain`` must be greater than
+   or equal to 100.
+
+The thinned interval that was used for thinning samples is saved to the output
+file's ``thinned_by`` attribute (stored in the HDF file's ``.attrs``).  Note
+that this is not the autocorrelation length (ACL), which is the amount that the
+samples need to be further thinned to obtain independent samples.
+
+
+.. note::
+
+    In the output file creates by the MCMC samplers, we adopt the convention
+    that "iteration" means iteration of the sampler, not index of the samples.
+    For example, if a burn in test is used, ``burn_in_iteration`` will be
+    stored to the ``sampler_info`` group in the output file. This gives the
+    iteration of the sampler at which burn in occurred, not the sample on disk.
+    To determine  which samples an iteration corresponds to in the file, divide
+    iteration by ``thinned_by``.
+
+    Likewise, we adopt the convention that autocorrelation **length** (ACL) is
+    the autocorrelation length of the thinned samples (the number of samples on
+    disk that you need to skip to get independent samples) whereas
+    autocorrelation **time** (ACT) is the autocorrelation length in terms of
+    iteration (it is the number of **iterations** that you need to skip to get
+    independent samples); i.e., ``ACT = thinned_by x ACL``. The ACT is (up to
+    measurement resolution) independent of the thinning used, and thus is
+    useful for comparing the performance of the sampler.
+
+
+
 ^^^^^^^^^^^^^^^^^^^^^
 Configuring the prior
 ^^^^^^^^^^^^^^^^^^^^^

@@ -30,7 +30,7 @@ import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
 import os, argparse, ConfigParser, logging
-from glue import segments
+from ligo import segments
 import numpy, lal, datetime
 from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata

@@ -57,8 +57,7 @@ parser.add_argument("--min-duration", type=float, default=0.,
                          "values of template_duration: add to duration values"
                          " before fitting. Units seconds.")
 parser.add_argument("--log-param", nargs='+',
-                    help="Take the log of the fit param before smoothing. "
-)
+                    help="Take the log of the fit param before smoothing.")
 parser.add_argument("--smoothing-width", type=float, nargs='+', required=True,
                     help="Distance in the space of fit param values (or the "
                          "logs of them) to smooth over. Required. For log "
@@ -96,10 +95,16 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'true', or 'false'")
 
+if 'count_in_template' in fits.keys():  # recently introduced dataset
+    tcount = True
+else:
+    tcount = False
+
 # for an exponential fit 1/alpha is linear in the trigger statistic values
 # so taking weighted sums/averages of 1/alpha is appropriate
 nabove = fits['count_above_thresh'][:]
 nabove = nabove / numpy.mean(nabove)
+if tcount: ntotal = fits['count_in_template'][:]
 
 invalpha = 1. / fits['fit_coeff'][:] 
 invalphan = invalpha * nabove
@@ -111,12 +116,14 @@ def dist(i1, i2):
     return dsq ** 0.5
 
 nabove_smoothed = []
+if tcount: ntotal_smoothed = []
 alpha_smoothed = []
 rang = numpy.arange(0, len(nabove))
 for i in range(len(nabove)):
     dsq = dist(i, rang)
     l = (dsq < 1)
     
+    if tcount: ntotal_smoothed.append(ntotal[l].mean())
     nabove_smoothed.append(nabove[l].mean())
     alpha_smoothed.append(nabove_smoothed[i] / invalphan[l].mean())
 
@@ -125,6 +132,8 @@ outfile = h5py.File(args.output, 'w')
 outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed
+if tcount: outfile['count_total'] = ntotal_smoothed
+
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
     if slog in ['false', 'False', 'FALSE']:
         outfile[param] = vals

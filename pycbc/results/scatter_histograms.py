@@ -294,6 +294,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
 def create_marginalized_hist(ax, values, label, percentiles=None,
                              color='k', fillcolor='gray', linecolor='navy',
+                             linestyle='-',
                              title=True, expected_value=None,
                              expected_color='red', rotated=False,
                              plot_min=None, plot_max=None):
@@ -317,11 +318,16 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     fillcolor : {'gray', string, or None}
         What color to fill the histogram with. Set to None to not fill the
         histogram. Default is 'gray'.
+    linestyle : str, optional
+        What line style to use for the histogram. Default is '-'.
     linecolor : {'navy', string}
         What color to use for the percentile lines. Default is 'navy'.
-    title : {True, bool}
-        Add a title with the median value +/- uncertainty, with the
-        max(min) `percentile` used for the +(-) uncertainty.
+    title : bool, optional
+        Add a title with a estimated value +/- uncertainty. The estimated value
+        is the pecentile halfway between the max/min of ``percentiles``, while
+        the uncertainty is given by the max/min of the ``percentiles``. If no
+        percentiles are specified, defaults to quoting the median +/- 95/5
+        percentiles.
     rotated : {False, bool}
         Plot the histogram on the y-axis instead of the x. Default is False.
     plot_min : {None, float}
@@ -342,11 +348,15 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     else:
         orientation = 'vertical'
     ax.hist(values, bins=50, histtype=htype, orientation=orientation,
-            facecolor=fillcolor, edgecolor=color, lw=2, density=True)
+            facecolor=fillcolor, edgecolor=color, ls=linestyle, lw=2,
+            density=True)
     if percentiles is None:
         percentiles = [5., 50., 95.]
-    values = numpy.percentile(values, percentiles)
-    for val in values:
+    if len(percentiles) > 0:
+        plotp = numpy.percentile(values, percentiles)
+    else:
+        plotp = []
+    for val in plotp:
         if rotated:
             ax.axhline(y=val, ls='dashed', color=linecolor, lw=2, zorder=3)
         else:
@@ -358,14 +368,21 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         else:
             ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
     if title:
-        values_med = numpy.median(values)
-        values_min = values.min()
-        values_max = values.max()
+        if len(percentiles) > 0:
+            minp = min(percentiles)
+            maxp = max(percentiles)
+            medp = (maxp + minp) / 2.
+        else:
+            minp = 5
+            medp = 50
+            maxp = 95
+        values_min = numpy.percentile(values, minp)
+        values_med = numpy.percentile(values, medp)
+        values_max = numpy.percentile(values, maxp)
         negerror = values_med - values_min
         poserror = values_max - values_med
         fmt = '${0}$'.format(str_utils.format_value(
-            values_med, negerror, plus_error=poserror, ndecs=2))
-
+            values_med, negerror, plus_error=poserror))
         if rotated:
             ax.yaxis.set_label_position("right")
 
@@ -482,6 +499,7 @@ def create_multidim_plot(parameters, samples, labels=None,
                          expected_parameters_color='r',
                          plot_marginal=True, plot_scatter=True,
                          marginal_percentiles=None, contour_percentiles=None,
+                         marginal_title=True, marginal_linestyle='-',
                          zvals=None, show_colorbar=True, cbar_label=None,
                          vmin=None, vmax=None, scatter_cmap='plasma',
                          plot_density=False, plot_contours=True,
@@ -523,6 +541,15 @@ def create_multidim_plot(parameters, samples, labels=None,
         What percentiles to draw lines at on the 1D histograms.
         If None, will draw lines at `[5, 50, 95]` (i.e., the bounds on the
         upper 90th percentile and the median).
+    marginal_title : bool, optional
+        Add a title over the 1D marginal plots that gives an estimated value
+        +/- uncertainty. The estimated value is the pecentile halfway between
+        the max/min of ``maginal_percentiles``, while the uncertainty is given
+        by the max/min of the ``marginal_percentiles. If no
+        ``marginal_percentiles`` are specified, the median +/- 95/5 percentiles
+        will be quoted.
+    marginal_linestyle : str, optional
+        What line style to use for the marginal histograms.
     contour_percentiles : {None, array}
         What percentile contours to draw on the scatter plots. If None,
         will plot the 50th and 90th percentiles.
@@ -650,8 +677,9 @@ def create_multidim_plot(parameters, samples, labels=None,
                 expected_value = None
             create_marginalized_hist(
                 ax, samples[param], label=labels[param],
-                color=hist_color, fillcolor=fill_color, linecolor=line_color,
-                title=True, expected_value=expected_value,
+                color=hist_color, fillcolor=fill_color,
+                linestyle=marginal_linestyle, linecolor=line_color,
+                title=marginal_title, expected_value=expected_value,
                 expected_color=expected_parameters_color,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param],
                 percentiles=marginal_percentiles)
