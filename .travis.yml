@@ -107,6 +107,7 @@ before_install:
 - curl https://github.com/gwastro/pycbc/blob/master/tools/osg.conf > 60-osg.conf
 - curl https://raw.githubusercontent.com/gwastro/pycbc/master/tools/opensciencegrid.org.pub > opensciencegrid.org.pub
 - sudo mkdir -p /etc/cvmfs
+- sudo cvmfs_config setup
 - sudo /etc/init.d/autofs stop
 - sudo mkdir -p /etc/cvmfs/config.d
 - sudo mkdir -p /etc/cvmfs/default.d
@@ -118,11 +119,6 @@ before_install:
 - sudo mkdir -p /cvmfs/config-osg.opensciencegrid.org
 - sudo mkdir -p /cvmfs/oasis.opensciencegrid.org
 - sudo mkdir -p /cvmfs/gwosc.osgstorage.org
-- ls -lah /bin/fusermount
-- id cvmfs
-- cat /etc/cvmfs/default.conf
-- sudo cvmfs_config chksetup
-- sudo cvmfs_config reload -c
 - sudo strace mount -t cvmfs config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org
 - ls /cvmfs/config-osg.opensciencegrid.org
 - sudo mount -t cvmfs oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org
