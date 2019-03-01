@@ -108,7 +108,7 @@ before_install:
 - sudo /etc/init.d/autofs stop
 - sudo cvmfs_config setup
 - sudo mkdir -p /cvmfs/gwosc.osgstorage.org
-- sudu mkdir -p /cvmfs/oasis.opensciencegrid.org
+- sudo mkdir -p /cvmfs/oasis.opensciencegrid.org
 - sudo mount -t cvmfs gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org
 - sudo mount -t cvmfs oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org
 - ls /cvmfs/gwosc.osgstorage.org /cvmfs/oasis.opensciencegrid.org
