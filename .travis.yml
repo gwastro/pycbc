@@ -110,7 +110,7 @@ before_install:
 - cat /etc/auto.master
 - ls -l /etc/auto.cvmfs
 - sudo mkdir -p /cvmfs/config-osg.opensciencegrid.org
-- sudo mount -t cvmfs config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org
+- sudo strace mount -t cvmfs config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org
 - ls /cvmfs/config-osg.opensciencegrid.org
 - sudo mkdir -p /cvmfs/oasis.opensciencegrid.org
 - sudo mount -t cvmfs oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org
