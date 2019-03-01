@@ -226,6 +226,7 @@ class LiveEventManager(object):
         with h5py.File(fname, 'w') as f:
             f.attrs['pycbc_version'] = version.git_verbose_msg
             f.attrs['command_line'] = sys.argv
+            f.attrs['num_live_detectors'] = self.num_live_detectors
 
             for ifo in results:
                 for k in results[ifo]:
@@ -527,6 +528,7 @@ with ctx:
         t1 = time()
         logging.info('%s: Analyzing from %s', evnt.rank, data_end())
         results = {}
+        evnt.num_live_detectors = 0
 
         for ifo in ifos:
             results[ifo] = False
@@ -544,6 +546,7 @@ with ctx:
                     status = False
 
             if status is True:
+                evnt.num_live_detectors += 1
                 if evnt.rank > 0:
                     logging.info('%s: Filtering %s', evnt.rank, ifo)
                     results[ifo] = mf.process_data(data_reader[ifo])
@@ -603,8 +606,7 @@ with ctx:
             evnt.dump(results, prefix, time_index=data_end(),
                       store_psd=False if args.store_psd is False else psds,
                       store_loudest_index=args.store_loudest_index,
-                      raw_results=best_coinc,
-                     )
+                      raw_results=best_coinc)
 
             logging.info('Finished Analyzing up to %s', data_end())
 
@@ -612,8 +614,10 @@ with ctx:
             evnt.barrier()
         tdiff = time() - t1
         lag = float(lal.GPSTimeNow() - data_end())
-        logging.info('%s: Took %1.2f, duty factor of %.2f, lag %.2f s',
-                     evnt.rank, tdiff, tdiff / valid_pad, lag)
+        logging.info('%s: Took %1.2f, duty factor of %.2f, '
+                     'lag %.2f s, %d live detectors',
+                     evnt.rank, tdiff, tdiff / valid_pad, lag,
+                     evnt.num_live_detectors)
 
         if args.output_status is not None and evnt.rank == 0:
             if lag > 120:
