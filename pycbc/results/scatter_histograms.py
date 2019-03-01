@@ -325,7 +325,7 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     title : bool, optional
         Add a title with a estimated value +/- uncertainty. The estimated value
         is the pecentile halfway between the max/min of ``percentiles``, while
-        the uncertainty is given by the max/min of the ``percentiles. If no
+        the uncertainty is given by the max/min of the ``percentiles``. If no
         percentiles are specified, defaults to quoting the median +/- 95/5
         percentiles.
     rotated : {False, bool}
