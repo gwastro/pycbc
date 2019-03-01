@@ -1,4 +1,14 @@
 #!/usr/bin/env python
+
+"""Detect compact-binary-merger gravitational-wave signals in low latency. This
+program takes a fixed template bank and performs matched filtering on a
+continuous stream of strain data in fixed short blocks of time. It is capable
+of reading from low latency data directories on the LDG clusters. Work is
+parallelized through the use of MPI, so this script should typically be
+launched with mpirun.
+
+See https://arxiv.org/abs/1805.11174 for an overview."""
+
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 from pycbc import fft, version, waveform, scheme, frame
 from pycbc.types import MultiDetOptionAction
@@ -245,25 +255,21 @@ class LiveEventManager(object):
                 if store_psd[ifo] is not None:
                     store_psd[ifo].save(fname, group='%s/psd' % ifo)
 
-    def ingest(self, ifo, results):
-        pass
 
-parser = argparse.ArgumentParser(description="Look for CBC signals in low "
-    "latency. This program takes a fixed template bank and analyzes in fixed "
-    "short blocks of time. It is capable of reading from low latency data "
-    "directories on the ldg clusters. Work is parallelized through the use "
-    "of MPI, so this script should typically be launched with mpirun")
+parser = argparse.ArgumentParser(description=__doc__)
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--version', action='version', version=version.git_verbose_msg)
-parser.add_argument('--bank-file', required=True, help="Template bank xml file")
+parser.add_argument('--bank-file', required=True,
+                    help="Template bank file in XML or HDF format")
 parser.add_argument('--low-frequency-cutoff', help="low frequency cutoff", type=int)
 parser.add_argument('--sample-rate', help="output sample rate", type=int)
 parser.add_argument('--chisq-bins', help="Number of chisq bins")
 parser.add_argument('--analysis-chunk', type=int, required=True,
                         help="Amount of data to produce triggers in a  block")
 
-parser.add_argument('--snr-threshold', type=float)
+parser.add_argument('--snr-threshold', type=float,
+                    help='SNR threshold for generating a trigger')
 parser.add_argument('--snr-abort-threshold', type=float)
 
 parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+',
@@ -507,7 +513,7 @@ with ctx:
                               len(bank), args.analysis_chunk, list(combo)))
 
 
-    logging.info('%s: Starting... ', evnt.rank)
+    logging.info('%s: Starting...', evnt.rank)
 
     if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
         pr = cProfile.Profile()
@@ -536,8 +542,8 @@ with ctx:
                     status = False
 
             if status is True:
-                logging.info('%s: Filtering: %s', evnt.rank, ifo)
                 if evnt.rank > 0:
+                    logging.info('%s: Filtering %s', evnt.rank, ifo)
                     results[ifo] = mf.process_data(data_reader[ifo])
             else:
                 logging.info('Insufficient data for %s analysis', ifo)
