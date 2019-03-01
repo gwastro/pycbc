@@ -355,7 +355,9 @@ parser.add_argument('--enable-gracedb-upload', action='store_true', default=Fals
                     help='Upload triggers to GraceDB')
 parser.add_argument('--file-prefix', default='Live')
 parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False,
-                    help='Do not mark triggers uploaded to GraceDB as test events')
+                    help='Do not mark triggers uploaded to GraceDB as test '
+                         'events. This option should *only* be enabled in '
+                         'production analyses!')
 parser.add_argument('--enable-single-detector-upload', action='store_true', default=False)
 parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
 parser.add_argument('--round-start-time', type=int, metavar='X',
@@ -363,8 +365,8 @@ parser.add_argument('--round-start-time', type=int, metavar='X',
                          " seconds. This is useful for forcing agreement "
                          " with frame file production.")
 parser.add_argument('--gracedb-server', metavar='URL',
-                    help='URL of GraceDB server for uploading events. '
-                         'If not provided, the default location is used.')
+                    help='URL of GraceDB server API for uploading events. '
+                         'If not provided, the default URL is used.')
 parser.add_argument('--size-override', type=int, metavar='N',
                     help="Override the internal MPI size layout. "
                          " Useful for debugging and running a portion of a bank")
