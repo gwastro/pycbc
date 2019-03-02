@@ -354,7 +354,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                                      tags=combctags)
     
     found_inj = wf.find_injections_in_hdf_coinc(workflow, combined_inj_bg_file,
-                                    file_for_injfind,
+                                    [file_for_injfind],
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, tags=combctags)
     
