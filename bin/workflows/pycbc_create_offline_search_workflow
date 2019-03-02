@@ -346,7 +346,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     combctags = [tag, 'inj', 'combine_statmap']
     final_inj_bg_file_list = wf.FileList()
     for key in inj_coinc:
-        final_inj_bg_file_list += inj_coinc[key]
+        final_inj_bg_file_list += inj_coinc[key][0][1]
         
     combined_inj_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      final_inj_bg_file_list,
