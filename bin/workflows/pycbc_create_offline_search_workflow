@@ -238,7 +238,7 @@ for i in range(2, len(insps)+1):
 combctags = [tag, 'full', 'combine_statmap']
 final_bg_file_list = wf.FileList()
 for key in final_bg_files:
-    final_bg_file_list += final_bg_files[key]
+    final_bg_file_list += final_bg_files[key][0][1]
 combined_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      final_bg_file_list,
                                                      output_dir,
