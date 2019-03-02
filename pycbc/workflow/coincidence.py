@@ -390,7 +390,7 @@ def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file, out
     stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']), background_file,
                                      FileList(coinc_files['injfull']), FileList(coinc_files['fullinj']), ifolist)
     workflow.add_node(stat_node)
-    return stat_node.output_files[0], stat_node.output_files
+    return stat_node.output_files[0]
 
 def setup_statmap(workflow, coinc_files, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
