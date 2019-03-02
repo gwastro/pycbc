@@ -41,6 +41,7 @@ from glue.ligolw import table, lsctables, ligolw
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import segments as ligolw_segments
 from glue.ligolw.utils import process as ligolw_process
+from pycbc import makedir
 from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
 from pycbc.workflow import pegasus_workflow
 
@@ -78,14 +79,6 @@ def make_analysis_dir(path):
     """
     if path is not None:
         makedir(os.path.join(path, 'logs'))
-
-def makedir(path):
-    """
-    Make the analysis directory path and any parent directories that don't
-    already exist. Will do nothing if path already exists.
-    """
-    if path is not None and not os.path.exists(path):
-        os.makedirs(path)
 
 def is_condor_exec(exe_path):
     """

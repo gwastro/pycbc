@@ -15,7 +15,7 @@ from time import time
 import os.path
 import itertools
 from mpi4py import MPI as mpi
-from pycbc import fft, version, waveform, scheme, frame
+from pycbc import fft, version, waveform, scheme, frame, makedir
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
@@ -24,7 +24,6 @@ from pycbc.events import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
-from pycbc.workflow.core import makedir
 import pycbc.waveform.bank
 
 
