@@ -235,14 +235,14 @@ for i in range(2, len(insps)+1):
                                                                             fixed_ifo,
                                                                             tags=ctagcomb)
 
-ctags = [tag, 'full', 'combine_statmap']
+combctags = [tag, 'full', 'combine_statmap']
 final_bg_file_list = wf.FileList()
 for key in final_bg_files:
     final_bg_file_list.append(final_bg_files[key])
 combined_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      final_bg_file_list,
                                                      output_dir,
-                                                     tags=ctags)
+                                                     tags=combctags)
 
 # Calculate the inspiral psds and make plots
 psd_files = []
@@ -343,7 +343,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
     
-    ctags = [tag, 'inj', 'combine_statmap']
+    combctags = [tag, 'inj', 'combine_statmap']
     final_inj_bg_file_list = wf.FileList()
     for key in inj_coinc:
         final_inj_bg_file_list.append(inj_coinc[key])
@@ -351,12 +351,12 @@ for inj_file, tag in zip(inj_files, inj_tags):
     combined_inj_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      final_inj_bg_file_list,
                                                      output_dir,
-                                                     tags=ctags)
+                                                     tags=combctags)
     
     found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([combined_inj_bg_file]),
                                     wf.FileList([file_for_injfind]),
                                     final_veto_file[0], final_veto_name[0],
-                                    output_dir, tags=ctags)
+                                    output_dir, tags=combctags)
     
     inj_coincs += [combined_inj_bg_file]
 
