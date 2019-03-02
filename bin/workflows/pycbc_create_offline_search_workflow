@@ -346,17 +346,15 @@ for inj_file, tag in zip(inj_files, inj_tags):
     combctags = [tag, 'inj', 'combine_statmap']
     final_inj_bg_file_list = wf.FileList()
     for key in inj_coinc:
-        print(inj_coinc[key])
         final_inj_bg_file_list += [inj_coinc[key]]
-        print(final_inj_bg_file_list)
         
     combined_inj_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      final_inj_bg_file_list,
                                                      output_dir,
                                                      tags=combctags)
     
-    found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([combined_inj_bg_file]),
-                                    wf.FileList([file_for_injfind]),
+    found_inj = wf.find_injections_in_hdf_coinc(workflow, [combined_inj_bg_file],
+                                    [file_for_injfind],
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, tags=combctags)
     
