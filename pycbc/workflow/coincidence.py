@@ -729,7 +729,7 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
 
     return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list)
 
-def setup_multiifo_combine_statmap(workflow, final_bg_file_list, tags):
+def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
     """
     Combine the multiifo statmap files into one background file
     """
