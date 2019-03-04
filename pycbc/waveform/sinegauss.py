@@ -28,9 +28,9 @@ def fd_sine_gaussian(amp, quality, central_frequency, fmin, fmax, delta_f):
     sg: pycbc.types.Frequencyseries
         A Fourier domain sine-Gaussian
     """
-    f = numpy.arange(fmin, fmax, delta_f)
-    kmax = int(fmax / delta_f)
-    kmin = int(fmin / delta_f)
+    kmin = int(round(fmin / delta_f))
+    kmax = int(round(fmax / delta_f))
+    f = numpy.arange(kmin, kmax) * delta_f
     tau = quality / 2 / numpy.pi / central_frequency
     A = amp * numpy.pi ** 0.5 / 2 * tau
     d = A * numpy.exp(-(numpy.pi  * tau  * (f - central_frequency))**2.0)
