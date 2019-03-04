@@ -1465,7 +1465,7 @@ class LiveBatchMatchedFilter(object):
 
     """Calculate SNR and signal consistency tests in a batched progression"""
 
-    def __init__(self, templates, snr_threshold, chisq_bins, sgchisq,
+    def __init__(self, templates, snr_threshold, chisq_bins, sg_chisq,
                  maxelements=2**27,
                  snr_abort_threshold=None,
                  newsnr_threshold=None,
@@ -1481,8 +1481,8 @@ class LiveBatchMatchedFilter(object):
         chisq_bins: str
             Str that determines how the number of chisq bins varies as a
             function of the template bank parameters.
-        sgchisq: pycbc.vetoes.SingleDetSGChisq
-            Instance of the sgchisq class to calculate sgchisq with.
+        sg_chisq: pycbc.vetoes.SingleDetSGChisq
+            Instance of the sg_chisq class to calculate sg_chisq with.
         maxelements: {int, 2**27}
             Maximum size of a batched fourier transform.
         snr_abort_threshold: {float, None}
@@ -1617,7 +1617,7 @@ class LiveBatchMatchedFilter(object):
                                ndmin=1)
         results['chisq'] = chisq
         results['chisq_dof'] = dof
-        results['sgchisq'] = sgchisq
+        results['sg_chisq'] = sg_chisq
 
         keep = []
         for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info):
@@ -1627,7 +1627,7 @@ class LiveBatchMatchedFilter(object):
             chisq[i] = c[0] / d[0]
             dof[i] = d[0]
 
-            sgchisq = self.sg_chisq.values\
+            results['sg_chisq'] = self.sg_chisq.values\
                 (stilde, htilde, stilde.psd, snrv, norm, c, d, [l])
 
             if self.newsnr_threshold:
