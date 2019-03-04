@@ -224,9 +224,25 @@ for i in range(2, len(insps)+1):
         bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
                                cum_veto_files, veto_names,
                                output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
-        final_bg_files[ordered_ifo_list] = wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
-                               final_veto_file, final_veto_name,
-                               output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
+        final_bg_files[ordered_ifo_list] = wf.setup_multiifo_interval_coinc(workflow,
+                                                                            hdfbank,
+                                                                            inspcomb,
+                                                                            statfiles,
+                                                                            final_veto_file,
+                                                                            final_veto_name,
+                                                                            output_dir,
+                                                                            pivot_ifo,
+                                                                            fixed_ifo,
+                                                                            tags=ctagcomb)
+
+combctags = [tag, 'full', 'combine_statmap']
+final_bg_file_list = wf.FileList()
+for key in final_bg_files:
+    final_bg_file_list += final_bg_files[key][0][1]
+combined_bg_file = wf.setup_multiifo_combine_statmap(workflow,
+                                                     final_bg_file_list,
+                                                     output_dir,
+                                                     tags=combctags)
 
 # Calculate the inspiral psds and make plots
 psd_files = []
@@ -278,7 +294,6 @@ layout.two_column_layout(rdir['detector_sensitivity'],
 
 inj_coincs = wf.FileList()
 inj_coinc = {}
-files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
     ctags = [tag, 'inj']
     output_dir = '%s_coinc' % tag
@@ -305,8 +320,6 @@ for inj_file, tag in zip(inj_files, inj_tags):
     else:
         small_inj_file = file_for_vetoes
 
-    files_for_combined_injfind.append(file_for_injfind)
-
     # setup the matchedfilter jobs
     insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
                                      datafind_files, splitbank_files_inj,
@@ -329,6 +342,23 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                     full_insps, inspcomb, statfiles, final_bg_files[ordered_ifo_list][0][1],
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
+    
+    combctags = [tag, 'inj', 'combine_statmap']
+    final_inj_bg_file_list = wf.FileList()
+    for key in inj_coinc:
+        final_inj_bg_file_list += [inj_coinc[key]]
+        
+    combined_inj_bg_file = wf.setup_multiifo_combine_statmap(workflow,
+                                                     final_inj_bg_file_list,
+                                                     output_dir,
+                                                     tags=combctags)
+    
+    found_inj = wf.find_injections_in_hdf_coinc(workflow, combined_inj_bg_file,
+                                    [file_for_injfind],
+                                    final_veto_file[0], final_veto_name[0],
+                                    output_dir, tags=combctags)
+    
+    inj_coincs += [combined_inj_bg_file]
 
 # Create the final log file
 log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
