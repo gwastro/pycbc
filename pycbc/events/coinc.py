@@ -471,17 +471,15 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
     cindex: numpy.ndarray
         The set of indices corresponding to the surviving coincidences.
     """
-    logging.info('clustering events over %ss window' % window)
+    logging.info('Clustering events over %s s window', window)
 
     indices = []
     time_sorting = time.argsort()
     stat = stat[time_sorting]
     time = time[time_sorting]
 
-    logging.info('sorting...')
     left = numpy.searchsorted(time, time - window)
     right = numpy.searchsorted(time, time + window)
-    logging.info('done sorting')
     indices = numpy.zeros(len(left), dtype=numpy.uint32)
 
     # i is the index we are inspecting, j is the next one to save
@@ -516,7 +514,7 @@ def cluster_over_time(stat, time, window, argmax=numpy.argmax):
 
     indices = indices[:j]
 
-    logging.info('done clustering coinc triggers: %s triggers remaining' % len(indices))
+    logging.info('%d triggers remaining', len(indices))
     return time_sorting[indices]
 
 class MultiRingBuffer(object):
