@@ -365,7 +365,7 @@ parser.add_argument('--enable-production-gracedb-upload', action='store_true', d
                          'events. This option should *only* be enabled in '
                          'production analyses!')
 parser.add_argument('--enable-single-detector-upload', action='store_true', default=False)
-parser.add_argument('--pvalue-combination-livetime', type=float,
+parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
                     help="Livetime used for p-value combination with followup "
                          "detectors, in years")
 parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
