@@ -103,9 +103,6 @@ class SingleCoincForGraceDB(object):
         channel_names: dict of strings, optional
             Strain channel names for each detector.
             Will be recorded in the sngl_inspiral table.
-        cli_args: object, optional
-            Command line arguments to be registered in the process_params
-            table. Pass the object returned by argparse.parse_args() here.
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
 
@@ -127,9 +124,8 @@ class SingleCoincForGraceDB(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        cli_args = kwargs['cli_args'].__dict__ if 'cli_args' in kwargs else {}
         proc_id = ligolw_process.register_to_xmldoc(
-            outdoc, 'pycbc', cli_args, ifos=usable_ifos, comment='',
+            outdoc, 'pycbc', {}, ifos=usable_ifos, comment='',
             version=pycbc_version.git_hash,
             cvs_repository='pycbc/'+pycbc_version.git_branch,
             cvs_entry_time=pycbc_version.date).process_id

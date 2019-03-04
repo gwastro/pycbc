@@ -169,8 +169,7 @@ class LiveEventManager(object):
             event = SingleCoincForGraceDB(coinc_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
-                                          channel_names=args.channel_name,
-                                          cli_args=args)
+                                          channel_names=args.channel_name)
 
             end_time = int(coinc_results['foreground/%s/end_time' % coinc_ifos[0]])
             fname = os.path.join(self.path, 'coinc-%s.xml.gz' % end_time)
@@ -197,8 +196,7 @@ class LiveEventManager(object):
                 event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                               psds=psds, followup_data=fud,
                                               low_frequency_cutoff=f_low,
-                                              channel_names=args.channel_name,
-                                              cli_args=args)
+                                              channel_names=args.channel_name)
 
                 end_time = int(single['foreground/%s/end_time' % ifo])
                 fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
