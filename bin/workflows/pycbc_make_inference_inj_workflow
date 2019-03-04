@@ -66,7 +66,12 @@ parser.add_argument(
 parser.add_argument(
     "--inference-config-file",
     type=str, required=True,
-    help="WorkflowConfigParser parsable file with proir information.")
+    help="WorkflowConfigParser parsable file with prior information.")
+
+parser.add_argument(
+    "--input-injection-file", 
+    type=str, 
+    help="hdf file containing injections.")
 
 # input data for workflow options
 parser.add_argument(
@@ -193,6 +198,9 @@ for i in range(n_injections):
                                                                  seed=i,
                                                                  tags=[str(i)])
         workflow += node
+    else if opts.input_injection_file:
+        injection_file = input_injection_file[i]
+        #How are multiple injections stored in one file; how to read one, then make one injection file from it?
     else:
         injection_file = None
 
