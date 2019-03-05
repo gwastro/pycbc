@@ -23,6 +23,7 @@ from __future__ import absolute_import
 
 import numpy
 import emcee
+import h5py
 import logging
 from pycbc.pool import choose_pool
 
@@ -49,6 +50,11 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         Number of temeratures to use in the sampler.
     nwalkers : int
         Number of walkers to use in sampler.
+    betas : array
+        An array of inverse temperature values to be used in emcee_pt's
+        temperature ladder. If not provided, emcee_pt will use the number of
+        temperatures and the number of dimensions of the parameter space to
+        construct the ladder with geometrically spaced temperatures.
     pool : function with map, Optional
         A provider of a map function that allows a function call to be run
         over multiple sets of arguments and possibly maps them to
@@ -116,16 +122,18 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             "name in section [sampler] must match mine")
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
-        # get the number of temps
-        import h5py
         if cp.has_option(section, "ntemps") and \
-                cp.has_option(section, "inverse_temperatures_input_file"):
+                cp.has_option(section, "inverse-temperatures-input-file"):
             raise ValueError("Must specify either ntemps or "
                              "inverse-temperatures-input-file, not both.")
-        if cp.has_option(section, "inverse_temperatures_input_file"):
+        if cp.has_option(section, "inverse-temperatures-input-file"):
+            # get the path of the file containing inverse temperatures values
+            # to be provided to emcee_pt for the temperature ladder. This
+            # should be an hdf file having an attribute named 'betas' storing
+            # the list of inverse temperature values.
             inverse_temperatures_input_file = cp.get(
                                          section,
-                                         "inverse_temperatures_input_file")
+                                         "inverse-temperatures-input-file")
             with h5py.File(inverse_temperatures_input_file, "r") as fp:
                 try:
                     betas = numpy.array(fp.attrs['betas'])
@@ -133,6 +141,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                 except KeyError:
                     raise AttributeError("No attribute called betas")
         else:
+            # get the number of temperatures from the "ntemps" option in the
+            # config file
             betas = None
             ntemps = int(cp.get(section, "ntemps"))
         # get the checkpoint interval, if it's specified
