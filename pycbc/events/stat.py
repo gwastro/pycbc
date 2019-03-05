@@ -649,7 +649,7 @@ sngl_statistic_dict = {
     'exp_fit_csnr': ExpFitCombinedSNR,
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
-    'newsnr_sgveto': NewSNRSGStatistic
+    'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
