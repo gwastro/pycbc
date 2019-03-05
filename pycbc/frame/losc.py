@@ -16,10 +16,13 @@
 """
 This modules contains functions for getting data from the LOSC
 """
+from astropy.utils.data import download_file
 
 _losc_url = "https://losc.ligo.org/archive/links/%s/%s/%s/%s/json/"
 
 def _get_run(time):
+    if 1164556817 <= time <= 1187733618:
+        return 'O2_16KHZ_R1'
     if 1126051217 <= time <= 1137254417:
         return 'O1'
     elif 815011213 <= time <= 875318414:
@@ -102,7 +105,6 @@ def read_frame_losc(channels, start_time, end_time):
     ts: TimeSeries
         Returns a timeseries or list of timeseries with the requested data.
     """
-    import urllib
     from pycbc.frame import read_frame
     if not isinstance(channels, list):
         channels = [channels]
@@ -117,7 +119,7 @@ def read_frame_losc(channels, start_time, end_time):
     fnames = {ifo:[] for ifo in ifos}
     for ifo in ifos:
         for url in urls[ifo]:
-            fname, _ = urllib.urlretrieve(url)
+            fname = download_file(url, cache=True)
             fnames[ifo].append(fname)
 
     ts = [read_frame(fnames[channel[0:2]], channel,
