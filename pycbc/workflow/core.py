@@ -318,10 +318,31 @@ class Executable(pegasus_workflow.Executable):
                 # This now expects the option to be a file
                 # Check is we have a list of files
                 values = [path for path in value.split(' ') if path]
-                dax_reprs = []
+
+                self.common_raw_options.append(opt)
+                self.common_raw_options.append(' ')
 
                 # Get LFN and PFN
                 for path in values:
+                    # Here I decide if the path is URL or
+                    # IFO:/path/to/file or IFO:url://path/to/file
+                    # That's somewhat tricksy as we used : as delimiter
+                    split_path = path.split(':', 1)
+                    if len(split_path) == 1:
+                        # Simple case: path to file
+                        ifo = None
+                        path = path
+                    else:
+                        # Have I split a URL or not?
+                        if split_path[1].startswith('//'):
+                            # URL
+                            ifo = None
+                            path = path
+                        else:
+                            #IFO:path or IFO:URL
+                            ifo = split_path[0]
+                            path = split_path[1]
+
                     curr_lfn = os.path.basename(path)
 
                     # If the file exists make sure to use the
@@ -331,7 +352,7 @@ class Executable(pegasus_workflow.Executable):
                                     urllib.pathname2url(
                                     os.path.abspath(path))) 
                     else:
-                        curr_pfn = value
+                        curr_pfn = path
 
                     if curr_lfn in file_input_from_config_dict.keys():
                         file_pfn = file_input_from_config_dict[curr_lfn][2]
@@ -343,8 +364,12 @@ class Executable(pegasus_workflow.Executable):
                         tuple_val = (local_file_path, curr_file, curr_pfn)
                         file_input_from_config_dict[curr_lfn] = tuple_val
                     self.common_input_files.append(curr_file)
-                    dax_reprs.append(curr_file.dax_repr)
-                self.common_options += [opt] + dax_reprs
+                    if ifo:
+                        self.common_raw_options.append(ifo + ':')
+                        self.common_raw_options.append(curr_file.dax_repr)
+                    else:
+                        self.common_raw_options.append(curr_file.dax_repr)
+                    self.common_raw_options.append(' ')
             else:
                 self.common_options += [opt, value]
 
@@ -520,6 +545,7 @@ class Executable(pegasus_workflow.Executable):
         # collect the options and profile information
         # from the ini file section(s)
         self.common_options = []
+        self.common_raw_options = []
         self.common_input_files = []
         for sec in sections:
             if self.cp.has_section(sec):
@@ -806,6 +832,7 @@ class Node(pegasus_workflow.Node):
             self.add_profile('hints', 'execution.site', executable.execution_site)
 
         self._options += self.executable.common_options
+        self._raw_options += self.executable.common_raw_options
         for inp in self.executable.common_input_files:
             self._add_input(inp)
 
