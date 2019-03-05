@@ -36,7 +36,7 @@ gwtc1_url = "https://www.gw-openscience.org/catalog/GWTC-1-confident/filelist/"
 def get_source(source):
     if source == 'gwtc-1':
         fname = download_file(gwtc1_url, cache=True)
-        json = json.load(fname)
-        return json
+        data = json.load(open(fname, 'r'))
+        return data['data']
     else:
         raise ValueError('Unkown catalog source {}'.format(source))

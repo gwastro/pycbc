@@ -42,12 +42,10 @@ class Merger(object):
 
         # Set some basic params from the dataset
         for key in self.data:
-            if 'best' in self.data[key]
-                if key == 'tc':
-                    setattr(self, key, self.data['time']['best'])
+            if 'best' in self.data[key]:
                 setattr(self, key, self.data[key]['best'])
 
-        self.time = self.data['time']
+        self.time = self.data['tc']['best']
 
     def median1d(self, name, return_errors=False):
         """ Return median 1d marginalized parameters
@@ -66,11 +64,13 @@ class Merger(object):
             The requested parameter
         """
         if return_errors:
-            return self.data['median1d'][name]
+            mid = self.data[name]['best']
+            low, high = self.data[name]['err']
+            return (mid, low, high)
         else:
-            return self.data['median1d'][name][0]
+            return self.data[name]['best']
 
-    def strain(self, ifo):
+    def strain(self, ifo, duration=32, sample_rate=4096):
         """ Return strain around the event
 
         Currently this will return the strain around the event in the smallest
@@ -89,10 +89,22 @@ class Merger(object):
         from astropy.utils.data import download_file
         from pycbc.frame import read_frame
 
-        channel = '%s:LOSC-STRAIN' % ifo
-        url = self.data['frames'][ifo]
+        # Information is currently wrong on GWOSC!
+        #channels = self.data['files']['FrameChannels']
+        #for channel in channels:
+        #    if ifo in channel:
+        #        break
+
+        length = "{}sec".format(duration)
+        if sample_rate == 4096:
+            sampling = "4KHz"
+        elif sample_rate == 16384:
+            sampling = "16KHz"
+
+        channel = "{}:GWOSC-{}_R1_STRAIN".format(ifo, sampling.upper())
+        url = self.data['files'][ifo][length][sampling]['GWF']
         filename = download_file(url, cache=True)
-        return read_frame(filename, channel)
+        return read_frame(str(filename), str(channel))
 
 class Catalog(object):
     """Manage a set of binary mergers"""
