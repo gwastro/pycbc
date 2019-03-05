@@ -1685,7 +1685,8 @@ class PycbcInferenceExecutable(Executable):
                                                        ifo, out_dir, tags)
 
     def create_node(self, channel_names, config_file, injection_file=None,
-                    seed=None, fake_strain_seed=None, tags=None):
+                    seed=None, fake_strain_seed=None, 
+                    ringdown_injection_file=Nonetags=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_inference``.
 
         Parameters
@@ -1740,6 +1741,8 @@ class PycbcInferenceExecutable(Executable):
             node.add_input_opt("--injection-file", injection_file)
         if seed:
             node.add_opt("--seed", seed)
+        if ringdown_injection_file:
+            node.add_opt("--ringdown-injection-file", ringdown_injection_file)
         inference_file = node.new_output_file_opt(analysis_time,
                                                   ".hdf", "--output-file",
                                                   tags=tags)

@@ -26,6 +26,7 @@ import Pegasus.DAX3 as dax
 import pycbc.version
 import socket
 import sys
+import h5py
 from pycbc.results import layout
 from pycbc.results import metadata
 from pycbc.results import versioning
@@ -69,9 +70,14 @@ parser.add_argument(
     help="WorkflowConfigParser parsable file with prior information.")
 
 parser.add_argument(
-    "--input-injection-file", 
+    "--injection-file", 
     type=str, 
     help="hdf file containing injections.")
+
+parser.add_argument(
+    "--ringdown-injection-file", 
+    type=str, 
+    help="hdf file containing ringdown-only injections.")
 
 # input data for workflow options
 parser.add_argument(
@@ -109,6 +115,10 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # read inference configuration file
 cp = configuration.WorkflowConfigParser([opts.inference_config_file])
+
+## if given, read injections file
+#if opts.ringdown_injection_file: 
+#    ringdown_injection_file = core.File.from_path(opts.ringdown_injection_file)
 
 # typecast str from command line to File instances
 config_file = core.File.from_path(opts.inference_config_file)
@@ -190,19 +200,44 @@ post_group_files = {g : core.FileList([]) for g in plot_groups.keys()}
 post_table_files = core.FileList([])
 accept_files = core.FileList([])
 sample_group_files = {g : core.FileList([]) for g in plot_groups.keys()}
-for i in range(n_injections):
 
+injection_file = None
+ringdown_injection_file = None
+
+if opts.injection_file or opts.ringdown_injection_file:
+    if opts.injection_file and opts.ringdown_injection_file:
+        raise ValueError('Ringdown injections and other injections cannot \
+                            be given simultaneously.')
+    injection_files = core.FileList([])
+    os.mkdir("injections")
+    
+    # split injections into one file per injection
+    with h5py.File(opts.injection_file, "r") as inputfile:
+        for i in range(n_injections):
+            with h5py.File('injections/injection%s.hdf' %i, 'w') as inj:
+                for k in inputfile.keys():
+                    inj.create_dataset(k,data=inputfile[k][i])
+            injection_files.append(
+                core.File.from_path('injections/injection%s.hdf' %i))
+
+for i in range(n_injections):
+    
+    # if injection file is given, extract one injection
+    if opts.injection_file:
+        injection_file = injection_files[i]
+    
+    elif opts.ringdown_injection_file:
+        ringdown_injection_file = injection_files[i]
+    
     # make node for drawing injection parameter values
-    if not opts.data_type == "analytical":
+    elif not opts.data_type == "analytical":
         node, injection_file = create_injections_exe.create_node(config_file,
                                                                  seed=i,
                                                                  tags=[str(i)])
         workflow += node
-    else if opts.input_injection_file:
-        injection_file = input_injection_file[i]
-        #How are multiple injections stored in one file; how to read one, then make one injection file from it?
-    else:
-        injection_file = None
+
+#    else:
+#        injection_file = None
 
     # set fake strain seed
     if opts.data_type == "simulated_data":
@@ -217,6 +252,8 @@ for i in range(n_injections):
                                      config_file,
                                      injection_file=injection_file,
                                      seed=i, fake_strain_seed=fake_strain_seed,
+                                     ringdown_injection_file= \
+                                     ringdown_injection_file, 
                                      tags=[str(i)])
     inference_files.append(inference_file)
     workflow += node
