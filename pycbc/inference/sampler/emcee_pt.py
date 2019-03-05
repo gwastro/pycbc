@@ -58,8 +58,9 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     _io = EmceePTFile
     burn_in_class = MultiTemperedMCMCBurnInTests
 
-    def __init__(self, model, ntemps, nwalkers, checkpoint_interval=None,
-                 loglikelihood_function=None, nprocesses=1, use_mpi=False):
+    def __init__(self, model, ntemps, nwalkers, betas=None,
+                 checkpoint_interval=None, loglikelihood_function=None,
+                 nprocesses=1, use_mpi=False):
 
         self.model = model
 
@@ -88,7 +89,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # functions separately
         ndim = len(model.variable_params)
         self._sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                        model_call, prior_call, pool=pool)
+                                        model_call, prior_call, pool=pool,
+                                        betas=betas)
         self._nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
@@ -115,12 +117,29 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
         # get the number of temps
-        ntemps = int(cp.get(section, "ntemps"))
+        import h5py
+        if cp.has_option(section, "ntemps") and \
+                cp.has_option(section, "inverse_temperatures_input_file"):
+            raise ValueError("Must specify either ntemps or "
+                             "inverse-temperatures-input-file, not both.")
+        if cp.has_option(section, "inverse_temperatures_input_file"):
+            inverse_temperatures_input_file = cp.get(
+                                         section,
+                                         "inverse_temperatures_input_file")
+            with h5py.File(inverse_temperatures_input_file, "r") as fp:
+                try:
+                    betas = numpy.array(fp.attrs['betas'])
+                    ntemps = betas.shape[0]
+                except KeyError:
+                    raise AttributeError("No attribute called betas")
+        else:
+            betas = None
+            ntemps = int(cp.get(section, "ntemps"))
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
-        obj = cls(model, ntemps, nwalkers,
+        obj = cls(model, ntemps, nwalkers, betas=betas,
                   checkpoint_interval=checkpoint_interval,
                   loglikelihood_function=logl, nprocesses=nprocesses,
                   use_mpi=use_mpi)
