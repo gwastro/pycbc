@@ -30,7 +30,7 @@ from . import catalog
 
 class Merger(object):
     """Informaton about a specific compact binary merger"""
-    def __init__(self, name):
+    def __init__(self, name, source='gwtc-1'):
         """ Return the information of a merger
 
         Parameters
@@ -38,11 +38,14 @@ class Merger(object):
         name: str
             The name (GW prefixed date) of the merger event.
         """
-        self.data = catalog.data[name]
+        self.data = catalog.get_source(source)[name]
 
         # Set some basic params from the dataset
-        for key in self.data['median1d']:
-            setattr(self, key, self.data['median1d'][key][0])
+        for key in self.data:
+            if 'best' in self.data[key]
+                if key == 'tc':
+                    setattr(self, key, self.data['time']['best'])
+                setattr(self, key, self.data[key]['best'])
 
         self.time = self.data['time']
 
@@ -93,13 +96,14 @@ class Merger(object):
 
 class Catalog(object):
     """Manage a set of binary mergers"""
-    def __init__(self):
+    def __init__(self, source='gwtc-1'):
         """ Return the set of detected mergers
 
         The set of detected mergers. At some point this may have some selection
         abilities.
         """
-        self.mergers = {name: Merger(name) for name in catalog.data}
+        self.data = catalog.get_source(source=source)
+        self.mergers = {name: Merger(name, source=source) for name in self.data}
         self.names = self.mergers.keys()
 
     def __len__(self):
