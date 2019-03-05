@@ -224,7 +224,10 @@ def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
     """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD 
     variation statistic """
     nsnr = newsnr_sgveto(snr, bchisq, sgchisq)
-    nsnr_psd = nsnr / numpy.sqrt(psd_var_val)
+    if psd_var_val >= 1.8:
+        nsnr_psd = nsnr / numpy.sqrt(psd_var_val)
+    else:
+        nsnr_psd = nsnr
 
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
