@@ -28,11 +28,12 @@ class LiveSingleFarThreshold(object):
 
     @classmethod
     def from_cli(cls, args, ifo):
-        return cls(ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
-                   reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
-                   fixed_ifar=args.single_fixed_ifar[ifo],
-                   duration_threshold=args.single_duration_threshold[ifo],
-                   )
+        return cls(
+           ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
+           reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
+           fixed_ifar=args.single_fixed_ifar[ifo],
+           duration_threshold=args.single_duration_threshold[ifo],
+           )
 
     def check(self, triggers, data_reader):
         """ Look for a single detector trigger that passes the thresholds in
