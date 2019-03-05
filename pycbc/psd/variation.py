@@ -1,6 +1,7 @@
 """ PSD Variation """
 
 import numpy
+import pycbc.psd
 
 from pycbc.types import TimeSeries, FrequencySeries, zeros
 
