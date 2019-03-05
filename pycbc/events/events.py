@@ -224,16 +224,17 @@ def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
     """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD 
     variation statistic """
     nsnr = newsnr_sgveto(snr, bchisq, sgchisq)
-    if psd_var_val >= 1.8:
-        nsnr_psd = nsnr / numpy.sqrt(psd_var_val)
-    else:
-        nsnr_psd = nsnr
+    nsnr = numpy.array(nsnr, ndmin=1)
+    psd_var_val = numpy.array(psd_var_val, ndmin=1)
+    t = numpy.array(psd_var_val >= 1.8, ndmin=1)
+    if len(t) > 0:
+        nsnr[t] = nsnr[t] / numpy.sqrt(psd_var_val[t])
 
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
-        return nsnr_psd
+        return nsnr
     else:
-        return nsnr_psd[0]
+        return nsnr[0]
 
 def effsnr(snr, reduced_x2, fac=250.):
     """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
