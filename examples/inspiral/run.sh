@@ -5,12 +5,9 @@ albert=albert.phys.uwm.edu/download
 echo -e "\\n\\n>> [`date`] Getting template bank"
 wget -nc $albert/H1L1-SBANK_FOR_GW150914ER10.xml.gz
 
-echo -e "\\n\\n>> [`date`] Getting frame data"
-wget -nc $albert/H-H1_LOSC_4_V1-1126257414-4096.gwf
-
 echo -e "\\n\\n>> [`date`] Running pycbc inspiral"
 pycbc_inspiral \
---frame-files H-H1_LOSC_4_V1-1126257414-4096.gwf \
+--frame-type LOSC \
 --sample-rate 2048 \
 --sgchisq-snr-threshold 6.0 \
 --sgchisq-locations "mtotal>40:20-30,20-45,20-60,20-75,20-90,20-105,20-120" \
