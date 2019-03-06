@@ -90,8 +90,8 @@ class Merger(object):
         from pycbc.frame import read_frame
 
         # Information is currently wrong on GWOSC!
-        #channels = self.data['files']['FrameChannels']
-        #for channel in channels:
+        # channels = self.data['files']['FrameChannels']
+        # for channel in channels:
         #    if ifo in channel:
         #        break
 
@@ -115,7 +115,8 @@ class Catalog(object):
         abilities.
         """
         self.data = catalog.get_source(source=source)
-        self.mergers = {name: Merger(name, source=source) for name in self.data}
+        self.mergers = {name: Merger(name, 
+                                     source=source) for name in self.data}
         self.names = self.mergers.keys()
 
     def __len__(self):
