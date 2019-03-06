@@ -115,7 +115,7 @@ class Catalog(object):
         abilities.
         """
         self.data = catalog.get_source(source=source)
-        self.mergers = {name: Merger(name, 
+        self.mergers = {name: Merger(name,
                                      source=source) for name in self.data}
         self.names = self.mergers.keys()
 
