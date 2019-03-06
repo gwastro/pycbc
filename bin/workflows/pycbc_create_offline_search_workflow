@@ -352,7 +352,7 @@ hist_summ = []
 for insp in full_insps:
     outdir = rdir['single_triggers/%s_binned_triggers' % insp.ifo]
     wf.make_singles_plot(workflow, [insp], hdfbank[0], censored_veto,
-                         outdir, tags=[tag])
+                         'closed_box', outdir, tags=[tag])
     # make non-summary hists using the bank file
     # currently, none of these are made
     outdir = rdir['single_triggers/%s_trigger_histograms' % insp.ifo]
