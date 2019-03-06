@@ -25,8 +25,8 @@
 """ This modules contains information about the announced LIGO/Virgo
 compact binary mergers
 """
-from astropy.utils.data import download_file
 import json
+from astropy.utils.data import download_file
 
 # For the time being all quantities are the 1-d median value
 # FIXME with posteriors when available and we can just post-process that
@@ -39,6 +39,6 @@ def get_source(source):
     if source == 'gwtc-1':
         fname = download_file(gwtc1_url, cache=True)
         data = json.load(open(fname, 'r'))
-        return data['data']
     else:
         raise ValueError('Unkown catalog source {}'.format(source))
+    return data['data']
