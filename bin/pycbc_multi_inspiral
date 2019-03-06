@@ -114,7 +114,7 @@ SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()
 
 generate_histograms = False
-generate_snr_plots = True
+generate_snr_plots = False
 generate_chi2_plots = False
 pol = 0
 t_gps = (opt.trig_end_time[0] + opt.trig_start_time[0])/2
@@ -514,13 +514,13 @@ with ctx:
                 #before the time delay, so we need to undo it. Same for normalisation)
                 for ifo in ifo_list:
 		    ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] = \
-			bank_chisq.values(template, stilde[ifo].psd, stilde[ifo], coherent_ifo_triggers[ifo]*norm_dict[ifo],
+			bank_chisq.values(template, stilde[ifo].psd, stilde[ifo], coherent_ifo_triggers[ifo]/norm_dict[ifo],
 					  norm_dict[ifo], coinc_idx+stilde[ifo].analyze.start)
 		    ifo_out_vals['cont_chisq'] = autochisq.values(snr[ifo],
 			coinc_idx+stilde[ifo].analyze.start, template, stilde[ifo].psd, norm_dict[ifo],
 			stilde=stilde[ifo], low_frequency_cutoff=flow)
 		    ifo_out_vals['chisq'], ifo_out_vals['chisq_dof'] =\
-			power_chisq.values(corr_dict[ifo], coherent_ifo_triggers[ifo]*norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,coinc_idx+stilde[ifo].analyze.start, template)
+			power_chisq.values(corr_dict[ifo], coherent_ifo_triggers[ifo]/norm_dict[ifo], norm_dict[ifo], stilde[ifo].psd,coinc_idx+stilde[ifo].analyze.start, template)
 		    ifo_out_vals['time_index'] = coinc_idx_det_frame[ifo] + stilde[ifo].cumulative_index #I'm not sure what the cumulative index is for
                     ifo_out_vals['snr'] = coherent_ifo_triggers[ifo]
 		    ifo_out_vals['ifo'] = [event_mgr.ifo_dict[ifo]] # IFO is stored as an int
@@ -541,6 +541,7 @@ with ctx:
 
 	        #event_mgr.cluster_template_events_single_ifo("time_index",
                 #					    "snr", cluster_window, ifo)
+ 
         event_mgr.finalize_template_events()
 event_mgr.write_events(opt.output)
 
@@ -654,8 +655,10 @@ if generate_histograms == True:
 if generate_chi2_plots == True:
     #Plot the chi2                
     for ifo in ifo_list:
+        power_chisq_ts,power_chisq_dof = power_chisq.values(corr_dict[ifo], coherent_ifo_triggers[ifo]/norm_dict[ifo], norm_dict[ifo],\
+                                         stilde[ifo].psd,coinc_idx+stilde[ifo].analyze.start, template)
         plt.figure()
-        plt.plot(coinc_idx[0][0],power_chisq_ts[ifo]/power_chisq_dof[ifo])
+        plt.plot(coinc_idx,power_chisq_ts/power_chisq_dof)
         plt.xlabel("Trigger idx")
         plt.ylabel("chi2 per DOF")
         plt.savefig("/home/c1551011/public_html/"+ifo+"chi2.png")
