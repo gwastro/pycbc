@@ -362,7 +362,7 @@ class MatchedFilterControl(object):
         norm = (4.0 * self.delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         self.ifft.execute()
-        snrv, idx = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
+        idx, snrv = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
                                           self.snr_threshold / norm)
         logging.info("%s points above threshold" % str(len(idx)))
 
