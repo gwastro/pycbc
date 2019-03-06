@@ -298,20 +298,20 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         exe_class = select_matchedfilter_class(match_fltr_exe)
         cp.set('inspiral', 'longitude', str(radians(float(cp.get('workflow', 'ra')))))
         cp.set('inspiral', 'latitude', str(radians(float(cp.get('workflow', 'dec')))))
-        #from pycbc.workflow.grb_utils import get_sky_grid_scale
-        #if cp.has_option("jitter_skyloc", "apply-fermi-error"):
-        #    cp.set('inspiral', 'sky-error',
-        #           str(get_sky_grid_scale(float(cp.get('workflow',
-        #                                               'sky-error')))))
-        #else:
-        #    cp.set('inspiral', 'sky-error',
-        #           str(get_sky_grid_scale(float(cp.get('workflow',
-        #                                               'sky-error')),
-        #                                  sigma_sys=0.0)))
-        #cp.set('inspiral', 'trigger-time', cp.get('workflow', 'trigger-time'))
-        #cp.set('inspiral', 'block-duration',
-        #       str(abs(science_segs[ifos[0]][0]) - \
-        #               2 * int(cp.get('inspiral', 'pad-data'))))
+        # from pycbc.workflow.grb_utils import get_sky_grid_scale
+        # if cp.has_option("jitter_skyloc", "apply-fermi-error"):
+        #     cp.set('inspiral', 'sky-error',
+        #            str(get_sky_grid_scale(float(cp.get('workflow',
+        #                                                'sky-error')))))
+        # else:
+        #     cp.set('inspiral', 'sky-error',
+        #            str(get_sky_grid_scale(float(cp.get('workflow',
+        #                                                'sky-error')),
+        #                                   sigma_sys=0.0)))
+        # cp.set('inspiral', 'trigger-time', cp.get('workflow', 'trigger-time'))
+        # cp.set('inspiral', 'block-duration',
+        #        str(abs(science_segs[ifos[0]][0]) - \
+        #                2 * int(cp.get('inspiral', 'pad-data'))))
 
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
