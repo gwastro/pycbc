@@ -89,7 +89,7 @@ if 'snr' in args.distance_type:  # only evaluate SNRs if needed
         dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2. + opt_snr_2 ** 2.)
         dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
     elif args.ifos:
-        opt_snrsq_arr = (['injections/optimal_snr_%s' % ifo][:] ** 2. for ifo in args.ifos)
+        opt_snrsq_arr = [f['injections/optimal_snr_%s' % ifo][:] ** 2. for ifo in args.ifos]
         dvals['comb_optimal_snr'] = numpy.array([numpy.sqrt(sum(opt_snrsq))
                                                  for opt_snrsq in zip(*opt_snrsq_arr)])
         # Decisive optimal SNR is the 2nd largest optimal SNR
