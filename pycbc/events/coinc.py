@@ -719,7 +719,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             If true, background triggers will also be included in the file
             output.
         """
-        from pycbc import detector
         from . import stat
         self.num_templates = num_templates
         self.analysis_block = analysis_block
@@ -746,7 +745,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.lookback_time = (ifar_limit * lal.YRJUL_SI * timeslide_interval) ** 0.5
         self.buffer_size = int(numpy.ceil(self.lookback_time / analysis_block))
 
-        det0, det1 = detector.Detector(ifos[0]), detector.Detector(ifos[1])
+        det0, det1 = Detector(ifos[0]), Detector(ifos[1])
         self.time_window = det0.light_travel_time_to_detector(det1) + coinc_threshold
         self.coincs = CoincExpireBuffer(self.buffer_size, self.ifos)
 
@@ -819,8 +818,11 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     @staticmethod
     def insert_args(parser):
+        from . import stat
+
         group = parser.add_argument_group('Coincident Background Estimation')
         group.add_argument('--background-statistic', default='newsnr',
+            choices=sorted(stat.statistic_dict.keys()),
             help="Ranking statistic to use for candidate coincident events")
         group.add_argument('--background-statistic-files', nargs='+',
             help="Files containing precalculate values to calculate ranking"

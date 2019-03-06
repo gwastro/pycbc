@@ -1627,8 +1627,10 @@ class LiveBatchMatchedFilter(object):
             chisq[i] = c[0] / d[0]
             dof[i] = d[0]
 
-            sg_chisq[i] = self.sg_chisq.values\
-                (stilde, htilde, stilde.psd, snrv, norm, c, d, [l])[0]
+            sgv = self.sg_chisq.values(stilde, htilde, stilde.psd,
+                                       snrv, norm, c, d, [l])
+            if sgv is not None:
+                sg_chisq[i] = sgv[0]
 
             if self.newsnr_threshold:
                 newsnr = events.newsnr(results['snr'][i], chisq[i])

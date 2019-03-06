@@ -1,7 +1,8 @@
-""" Chisq based on sine-gaussian tiles """
+"""Chisq based on sine-gaussian tiles.
+See https://arxiv.org/abs/1709.08974 for a discussion.
+"""
 
 import numpy
-import logging
 
 from pycbc.waveform.utils import apply_fseries_time_shift
 from pycbc.filter import sigma
@@ -173,6 +174,5 @@ class SingleDetSGChisq(SingleDetPowerChisq):
                 chisq[i] = 1
             else:
                 chisq[i] /= dof
-            logging.info('Found chisq %s', chisq[i])
         return chisq
 
