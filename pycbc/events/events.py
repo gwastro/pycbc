@@ -551,7 +551,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, network_column, network_column_types, psd=None, **kwargs):
         super(EventManagerCoherent, self).__init__(opt, ifos, column, column_types, psd=None, **kwargs)
         self.network_event_dtype = [ (ifo + '_event_id', int) for ifo in self.ifos ]
-        self.network_event_dtype.append(('template_id', int)) 
+        self.network_event_dtype.append(('template_id', int))
         self.network_event_dtype.append(('event_id', int))
         for column, coltype in zip (network_column, network_column_types):
             self.network_event_dtype.append( (column, coltype) )
@@ -623,7 +623,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             #First add the ifo event ids to the network branch
             f[ifo + '_event_id'] = network_events[ifo + '_event_id']
         #Individual ifo stuff
-        for i,ifo in enumerate(self.ifos):
+        for i, ifo in enumerate(self.ifos):
             f.prefix = ifo
             ifo_events = numpy.array([e for e in self.events if \
                     e['ifo'] == self.ifo_dict[ifo]], dtype=self.event_dtype)
@@ -671,7 +671,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                         dtype=numpy.float32)[tid]
 
                 # FIXME: Can we get this value from the autochisq instance?
-                cont_dof = self.opt.autochi_number_points
+                #cont_dof = self.opt.autochi_number_points
                 #if self.opt.autochi_onesided is None:
                 #    cont_dof = cont_dof * 2
                 #if self.opt.autochi_two_phase:
@@ -732,7 +732,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
     def finalize_template_events(self):
-        #Check that none of the template events have the same time index as an 
+        #Check that none of the template events have the same time index as an
         #existing event in events. i.e. don't list the same ifo event multiple times
         #when looping over sky points and time slides.
         existing_times = {}
@@ -742,7 +742,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         existing_events_mask = {}
         new_template_event_mask = {}
         existing_template_event_mask = {}
-        for i,ifo in enumerate(self.ifos):
+        for i, ifo in enumerate(self.ifos):
             existing_times[ifo] = self.events['time_index'][numpy.where(self.events['ifo']==i)]
             new_times[ifo] = self.template_event_dict[ifo]['time_index']
             existing_template_id[ifo] = self.events['template_id'][numpy.where(self.events['ifo']==i)]
@@ -977,8 +977,8 @@ class EventManagerMultiDet(EventManager):
                         f['gating/' + gate_type + '/pad'] = \
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
-__all__ = ['threshold_only', 'threshold_and_cluster', 'newsnr', 'effsnr','newsnr_sgveto',
+__all__ = ['threshold_only', 'threshold_and_cluster', 'newsnr', 'effsnr', 'newsnr_sgveto',
            'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
            'threshold_real_numpy', 'threshold_only',
-           'EventManager', 'EventManagerMultiDet','EventManagerCoherent']
+           'EventManager', 'EventManagerMultiDet', 'EventManagerCoherent']
