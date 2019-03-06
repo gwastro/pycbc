@@ -743,9 +743,10 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         new_template_event_mask = {}
         existing_template_event_mask = {}
         for i, ifo in enumerate(self.ifos):
-            existing_times[ifo] = self.events['time_index'][numpy.where(self.events['ifo']==i)]
+            ifo_events = numpy.where(self.events['ifo']==i)
+            existing_times[ifo] = self.events['time_index'][ifo_events]
             new_times[ifo] = self.template_event_dict[ifo]['time_index']
-            existing_template_id[ifo] = self.events['template_id'][numpy.where(self.events['ifo']==i)]
+            existing_template_id[ifo] = self.events['template_id'][ifo_events]
             new_template_id[ifo] = self.template_event_dict[ifo]['template_id']
             #This is true for each existing event that has the same time index and template id as a template trigger.
             existing_events_mask[ifo] = numpy.argwhere(numpy.logical_and(numpy.isin(existing_times[ifo], new_times[ifo]),\
