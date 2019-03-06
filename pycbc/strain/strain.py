@@ -1600,7 +1600,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                     corrupt_time=self.autogating_pad)
             if len(glitch_times) > 0:
                 logging.info('Autogating at %s',
-                                 ', '.join(['%.3f' % gt for gt in glitch_times]))
+                             ', '.join(['%.3f' % gt for gt in glitch_times]))
                 gate_params = [[gt, self.autogating_window, self.autogating_pad] \
                                for gt in glitch_times]
                 strain = gate_data(strain, gate_params)
