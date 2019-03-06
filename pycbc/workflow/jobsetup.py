@@ -785,6 +785,7 @@ class PyCBCMultiInspiralExecutable(Executable):
     pycbc_multi_inspiral executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
+    #file_input_options = ['--gating-file']
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  gate_files=None, out_dir=None, tags=None):
         if tags is None:
@@ -897,7 +898,7 @@ class PyCBCMultiInspiralExecutable(Executable):
             overlap = int(self.get_opt('segment-length')) / 4
             valid_start = self.data_seg[0] + overlap + pad_data
             valid_end = self.data_seg[1] - overlap - pad_data
-        
+
         return self.data_seg, segments.segment(valid_start, valid_end)
 
 class PyCBCTmpltbankExecutable(Executable):
