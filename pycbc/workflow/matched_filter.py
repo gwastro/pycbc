@@ -294,7 +294,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
 
-    if (match_fltr_exe == 'pycbc_multi_inspiral'):
+    if match_fltr_exe == 'pycbc_multi_inspiral':
         from pycbc.workflow.grb_utils import get_sky_grid_scale
         from pycbc.workflow.jobsetup import select_matchedfilter_class
         exe_class = select_matchedfilter_class(match_fltr_exe)
