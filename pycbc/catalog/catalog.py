@@ -34,6 +34,8 @@ import json
 # GWTC-1 catalog
 gwtc1_url = "https://www.gw-openscience.org/catalog/GWTC-1-confident/filelist/"
 def get_source(source):
+    """Get the source data for a particular GW catalog
+    """
     if source == 'gwtc-1':
         fname = download_file(gwtc1_url, cache=True)
         data = json.load(open(fname, 'r'))
