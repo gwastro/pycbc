@@ -785,7 +785,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                                                     dtype=self.network_event_dtype)
 
 
-class EventManagerMultiDet(EventManager):
+class EventManagerMultiDet(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
         super(EventManagerMultiDet, self).__init__(opt, ifos, column, column_types, psd=None, **kwargs)
         self.event_index = 0
