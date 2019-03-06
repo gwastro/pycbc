@@ -612,7 +612,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         f['event_id'] = network_events['event_id']
         f['network_snr'] = network_events['network_snr']
         f['null_snr'] = network_events['null_snr']
-        f['end_time_gc'] = network_events['time_index']/\
+        f['end_time_gc'] = network_events['time_index'] / \
                 float(self.opt.sample_rate[self.ifos[0].lower()]) + \
                         self.opt.gps_start_time[self.ifos[0].lower()]
         f['nifo'] = network_events['nifo']
