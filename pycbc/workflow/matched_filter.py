@@ -31,11 +31,11 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 from __future__ import division
 
 import os, logging
+from math import radians
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (select_matchedfilter_class,
         select_tmpltbank_class, sngl_ifo_job_setup,
         multi_ifo_coherent_job_setup)
-from math import radians
 
 def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
                                tmplt_banks, output_dir=None,
