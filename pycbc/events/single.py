@@ -1,6 +1,7 @@
 """ utilities for assigning FAR to single detector triggers
 """
 from pycbc.events import newsnr
+from pycbc.types import MultiDetOptionAction
 
 class LiveSingleFarThreshold(object):
     def __init__(self, ifo,
@@ -16,18 +17,23 @@ class LiveSingleFarThreshold(object):
 
     @staticmethod
     def insert_args(parser):
-        parser.add_argument('--single-newsnr-threshold', type=float)
-        parser.add_argument('--single-reduced-chisq-threshold', type=float)
-        parser.add_argument('--single-fixed-ifar', type=float)
-        parser.add_argument('--single-duration-threshold', type=float)
+        parser.add_argument('--single-newsnr-threshold',
+                            type=float, action=MultiDetOptionAction)
+        parser.add_argument('--single-reduced-chisq-threshold',
+                            type=float, action=MultiDetOptionAction)
+        parser.add_argument('--single-fixed-ifar',
+                            type=float, action=MultiDetOptionAction)
+        parser.add_argument('--single-duration-threshold',
+                            type=float, action=MultiDetOptionAction)
 
     @classmethod
     def from_cli(cls, args, ifo):
-        return cls(ifo, newsnr_threshold=args.single_newsnr_threshold,
-                   reduced_chisq_threshold=args.single_reduced_chisq_threshold,
-                   fixed_ifar=args.single_fixed_ifar,
-                   duration_threshold=args.single_duration_threshold,
-                   )
+        return cls(
+           ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
+           reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
+           fixed_ifar=args.single_fixed_ifar[ifo],
+           duration_threshold=args.single_duration_threshold[ifo],
+           )
 
     def check(self, triggers, data_reader):
         """ Look for a single detector trigger that passes the thresholds in
