@@ -508,8 +508,8 @@ class EventManager(object):
                     f['gating/' + gate_type + '/pad'] = \
                             numpy.array([g[2] for g in gating_info[gate_type]])
 
-class EventManagerCoherent(EventManager):
-    def __init__(self, opt, ifos, column, column_types, network_column, network_column_types, psd=None, **kwargs):
+class EventManagerMultiDetBase(EventManager):
+    def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
         self.opt = opt
         self.ifos = ifos
         self.global_params = kwargs
@@ -528,19 +528,8 @@ class EventManagerCoherent(EventManager):
         for column, coltype in zip (column, column_types):
             self.event_dtype.append( (column, coltype) )
 
-        self.network_event_dtype = [ (ifo + '_event_id', int) for ifo in self.ifos ]
-        self.network_event_dtype.append(('template_id', int)) 
-        self.network_event_dtype.append(('event_id', int))
-        for column, coltype in zip (network_column, network_column_types):
-            self.network_event_dtype.append( (column, coltype) )
-        
         self.events = numpy.array([], dtype=self.event_dtype)
-        self.network_events = numpy.array([], dtype=self.network_event_dtype)
         self.event_id_map = {}
-        self.event_index = {}
-        for ifo in self.ifos:
-            self.event_index[ifo] = 0
-        self.event_index['network'] = 0
         self.template_params = []
         self.template_index = -1
         self.template_event_dict = {}
@@ -549,6 +538,28 @@ class EventManagerCoherent(EventManager):
         for ifo in ifos:
             self.template_event_dict[ifo] = numpy.array([],
                                                         dtype=self.event_dtype)
+
+    def add_template_events_to_ifo(self, ifo, columns, vectors):
+        """ Add a vector indexed """
+        # Just call through to the standard function
+        self.template_events = self.template_event_dict[ifo]
+        self.add_template_events(columns, vectors)
+        self.template_event_dict[ifo] = self.template_events
+        self.template_events = None
+
+class EventManagerCoherent(EventManagerMultiDetBase):
+    def __init__(self, opt, ifos, column, column_types, network_column, network_column_types, psd=None, **kwargs):
+        super(EventManagerCoherent, self).__init__(opt, ifos, column, column_types, psd=None, **kwargs)
+        self.network_event_dtype = [ (ifo + '_event_id', int) for ifo in self.ifos ]
+        self.network_event_dtype.append(('template_id', int)) 
+        self.network_event_dtype.append(('event_id', int))
+        for column, coltype in zip (network_column, network_column_types):
+            self.network_event_dtype.append( (column, coltype) )
+        self.network_events = numpy.array([], dtype=self.network_event_dtype)
+        self.event_index = {}
+        for ifo in self.ifos:
+            self.event_index[ifo] = 0
+        self.event_index['network'] = 0
         self.template_event_dict['network'] = numpy.array([],
                                                         dtype=self.network_event_dtype)
 
@@ -568,14 +579,6 @@ class EventManagerCoherent(EventManager):
                 else:
                     new_events[c] = v
         self.template_events = numpy.append(self.template_events, new_events)
-
-    def add_template_events_to_ifo(self, ifo, columns, vectors):
-        """ Add a vector indexed """
-        # Just call through to the standard function
-        self.template_events = self.template_event_dict[ifo]
-        self.add_template_events(columns, vectors)
-        self.template_event_dict[ifo] = self.template_events
-        self.template_events = None
 
     def add_template_events_to_network(self, columns, vectors):
         """ Add a vector indexed """
@@ -784,43 +787,8 @@ class EventManagerCoherent(EventManager):
 
 class EventManagerMultiDet(EventManager):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
-        self.opt = opt
-        self.ifos = ifos
-        self.global_params = kwargs
-        if psd is not None:
-            self.global_params['psd'] = psd[ifos[0]]
-
-        # The events array does not like holding the ifo as string,
-        # so create a mapping dict and hold as an int
-        self.ifo_dict = {}
-        self.ifo_reverse = {}
-        for i, ifo in enumerate(ifos):
-            self.ifo_dict[ifo] = i
-            self.ifo_reverse[i] = ifo
-
-        self.event_dtype = [ ('template_id', int), ('event_id', int) ]
-        for column, coltype in zip (column, column_types):
-            self.event_dtype.append( (column, coltype) )
-
-        self.events = numpy.array([], dtype=self.event_dtype)
-        self.event_id_map = {}
+        super(EventManagerMultiDet, self).__init__(opt, ifos, column, column_types, psd=None, **kwargs)
         self.event_index = 0
-        self.template_params = []
-        self.template_index = -1
-        self.template_event_dict = {}
-        self.coinc_list = []
-        self.write_performance = False
-        for ifo in ifos:
-            self.template_event_dict[ifo] = numpy.array([],
-                                                        dtype=self.event_dtype)
-
-    def add_template_events_to_ifo(self, ifo, columns, vectors):
-        """ Add a vector indexed """
-        # Just call through to the standard function
-        self.template_events = self.template_event_dict[ifo]
-        self.add_template_events(columns, vectors)
-        self.template_event_dict[ifo] = self.template_events
-        self.template_events = None
 
     def cluster_template_events_single_ifo(self, tcolumn, column, window_size,
                                           ifo):
