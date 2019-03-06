@@ -367,7 +367,8 @@ for insp in full_insps:
     # currently, 1 per ifo split by template duration
     outdir = rdir['single_triggers/%s_binned_histograms' % insp.ifo]
     binhists = wf.make_binned_hist(workflow, insp, final_veto_file[0],
-                                   outdir, hdfbank[0], tags=[tag])
+                                   'closed_box', outdir, hdfbank[0],
+                                   tags=[tag])
     # put raw SNR and binned newsnr hist in summary
     hist_summ += list(layout.grouper([allhists[0], binhists[0]], 2))
 
