@@ -16,7 +16,12 @@
 """ This module contains result page layout and numbering helper functions
 """
 import os.path
-from itertools import izip_longest
+try:
+    # FIXME Python 2
+    from itertools import izip_longest
+except ImportError:
+    # FIXME Python 3
+    from itertools import zip_longest as izip_longest
 
 def two_column_layout(path, cols, **kwargs):
     """ Make a well layout in a two column format
