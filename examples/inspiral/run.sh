@@ -1,9 +1,7 @@
 #!/bin/bash
 # Test pycbc inspiral by running over GW150914 with a limited template bank
-albert=albert.phys.uwm.edu/download
-
 echo -e "\\n\\n>> [`date`] Getting template bank"
-wget -nc $albert/H1L1-SBANK_FOR_GW150914ER10.xml.gz
+wget -nc https://github.com/gwastro/pycbc-config/raw/master/test/inspiral/H1L1-SBANK_FOR_GW150914ER10.xml.gz
 
 echo -e "\\n\\n>> [`date`] Running pycbc inspiral"
 pycbc_inspiral \
