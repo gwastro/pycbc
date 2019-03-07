@@ -138,6 +138,17 @@ class LiveEventManager(object):
 
             self.combine_far_with_followup(ifos[0], ifo, triggers,
                                            snr_series, ptime, pvalue)
+
+        sample_rates = set([out[ifo]['snr_series'].sample_rate for ifo in out])
+        assert len(sample_rates) <= 1
+
+        for ifo in out:
+            trig_snr = triggers['foreground/{}/snr'.format(ifo)]
+            trig_time = triggers['foreground/{}/end_time'.format(ifo)]
+            series_snr = abs(out[ifo]['snr_series'].at_time(trig_time))
+            assert abs(series_snr - trig_snr) < 0.1, '{} series {} trigger {}'.format(ifo, series_snr, trig_snr)
+            assert len(out[ifo]['snr_series']) % 2, '{} series has even length'.format(ifo)
+
         return out
 
     def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series, ptime, pvalue):
