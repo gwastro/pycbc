@@ -548,10 +548,10 @@ class EventManagerMultiDetBase(EventManager):
         self.template_events = None
 
 class EventManagerCoherent(EventManagerMultiDetBase):
-    def __init__(self, opt, ifos, column, column_types, network_column, 
+    def __init__(self, opt, ifos, column, column_types, network_column,
                  network_column_types, psd=None, **kwargs):
-        super(EventManagerCoherent, self).__init__(opt, ifos, column, 
-              column_types, psd=None, **kwargs)
+        super(EventManagerCoherent, self).__init__(
+            opt, ifos, column, column_types, psd=None, **kwargs)
         self.network_event_dtype = \
             [(ifo + '_event_id', int) for ifo in self.ifos]
         self.network_event_dtype.append(('template_id', int))
@@ -706,7 +706,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 search_start_time = float(self.opt.trig_start_time[ifo])
             else:
                 f['search/start_time'] = numpy.array([
-                    self.opt.gps_start_time[ifo] + 
+                    self.opt.gps_start_time[ifo] +
                     self.opt.segment_start_pad[ifo]],dtype=numpy.int32
                 )
                 search_start_time = float(self.opt.gps_start_time[ifo] + \
@@ -717,7 +717,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 search_end_time = float(self.opt.trig_end_time[ifo])
             else:
                 f['search/end_time'] = numpy.array(
-                    [self.opt.gps_end_time[ifo] - 
+                    [self.opt.gps_end_time[ifo] -
                      self.opt.segment_end_pad[ifo]], dtype=numpy.int32
                 )
                 search_end_time = float(self.opt.gps_end_time[ifo] - \
@@ -725,7 +725,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
 
             if self.write_performance:
                 self.analysis_time = search_end_time - search_start_time
-                time_ratio = numpy.array([float(self.analysis_time) / 
+                time_ratio = numpy.array([float(self.analysis_time) /
                                          float(self.run_time)])
                 temps_per_core = float(self.ntemplates) / float(self.ncores)
                 filters_per_core = float(self.nfilters) / float(self.ncores)
@@ -810,7 +810,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         #Move template events for each ifo to the events list
         for ifo in self.ifos:
             self.events = numpy.append(
-                self.events, 
+                self.events,
                 self.template_event_dict[ifo][new_template_event_mask[ifo]]
             )
             self.template_event_dict[ifo] = numpy.array([],
@@ -828,7 +828,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
         self.event_index = 0
 
     def cluster_template_events_single_ifo(
-        self, tcolumn, column, window_size,ifo):
+            self, tcolumn, column, window_size, ifo):
         """ Cluster the internal events over the named column
         """
         # Just call through to the standard function
@@ -992,7 +992,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
 
             if self.write_performance:
                 self.analysis_time = search_end_time - search_start_time
-                time_ratio = numpy.array([float(self.analysis_time) / 
+                time_ratio = numpy.array([float(self.analysis_time) /
                                          float(self.run_time)])
                 temps_per_core = float(self.ntemplates) / float(self.ncores)
                 filters_per_core = float(self.nfilters) / float(self.ncores)
