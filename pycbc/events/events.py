@@ -505,7 +505,7 @@ class EventManager(object):
                             numpy.array([float(g[0]) for g in gating_info[gate_type]])
                     f['gating/' + gate_type + '/width'] = \
                             numpy.array([g[1] for g in gating_info[gate_type]])
-                    f['gating/' + gate_type + '/pad'] = numpy.array([g[2] for g in gating_info[gate_type]])
+                    f['gating/' + gate_type + '/pad'] = \
                             numpy.array([g[2] for g in gating_info[gate_type]])
 
 class EventManagerMultiDetBase(EventManager):
