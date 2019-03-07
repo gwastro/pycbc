@@ -505,7 +505,7 @@ class EventManager(object):
                             numpy.array([float(g[0]) for g in gating_info[gate_type]])
                     f['gating/' + gate_type + '/width'] = \
                             numpy.array([g[1] for g in gating_info[gate_type]])
-                    f['gating/' + gate_type + '/pad'] = \
+                    f['gating/' + gate_type + '/pad'] = numpy.array([g[2] for g in gating_info[gate_type]])
                             numpy.array([g[2] for g in gating_info[gate_type]])
 
 class EventManagerMultiDetBase(EventManager):
@@ -536,8 +536,8 @@ class EventManagerMultiDetBase(EventManager):
         self.coinc_list = []
         self.write_performance = False
         for ifo in ifos:
-            self.template_event_dict[ifo] = numpy.array([],
-                                                        dtype=self.event_dtype)
+            self.template_event_dict[ifo] = numpy.array(
+                [], dtype=self.event_dtype)
 
     def add_template_events_to_ifo(self, ifo, columns, vectors):
         """ Add a vector indexed """
@@ -548,9 +548,12 @@ class EventManagerMultiDetBase(EventManager):
         self.template_events = None
 
 class EventManagerCoherent(EventManagerMultiDetBase):
-    def __init__(self, opt, ifos, column, column_types, network_column, network_column_types, psd=None, **kwargs):
-        super(EventManagerCoherent, self).__init__(opt, ifos, column, column_types, psd=None, **kwargs)
-        self.network_event_dtype = [ (ifo + '_event_id', int) for ifo in self.ifos ]
+    def __init__(self, opt, ifos, column, column_types, network_column, 
+                 network_column_types, psd=None, **kwargs):
+        super(EventManagerCoherent, self).__init__(opt, ifos, column, 
+              column_types, psd=None, **kwargs)
+        self.network_event_dtype = \
+            [(ifo + '_event_id', int) for ifo in self.ifos]
         self.network_event_dtype.append(('template_id', int))
         self.network_event_dtype.append(('event_id', int))
         for column, coltype in zip (network_column, network_column_types):
@@ -568,7 +571,10 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         # initialize with zeros - since vectors can be None, look for the
         # longest one that isn't
         new_events = None
-        new_events = numpy.zeros(max([len(v) for v in vectors if v is not None]), dtype=self.network_event_dtype)
+        new_events = numpy.zeros(
+            max([len(v) for v in vectors if v is not None]),
+            dtype=self.network_event_dtype
+        )
         # they shouldn't all be None
         assert new_events is not None
         new_events['template_id'] = self.template_index
@@ -608,7 +614,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         f = fw(outname)
         #Output network stuff
         f.prefix = 'network'
-        network_events = numpy.array([e for e in self.network_events], dtype=self.network_event_dtype)
+        network_events = numpy.array([e for e in self.network_events],
+                                     dtype=self.network_event_dtype)
         f['event_id'] = network_events['event_id']
         f['network_snr'] = network_events['network_snr']
         f['null_snr'] = network_events['null_snr']
@@ -648,11 +655,15 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 f['time_index'] = ifo_events['time_index']
                 try:
                     # Precessing
-                    template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t \
-                            in self.template_params], dtype=numpy.float32)
+                    template_sigmasq_plus = numpy.array(
+                        [t['sigmasq_plus'] for t in self.template_params],
+                        dtype=numpy.float32
+                    )
                     f['sigmasq_plus'] = template_sigmasq_plus[tid]
-                    template_sigmasq_cross = numpy.array([t['sigmasq_cross'] for t \
-                            in self.template_params], dtype=numpy.float32)
+                    template_sigmasq_cross = numpy.array(
+                        [t['sigmasq_cross'] for t in self.template_params],
+                        dtype=numpy.float32
+                    )
                     f['sigmasq_cross'] = template_sigmasq_cross[tid]
                     # FIXME: I want to put something here, but I haven't yet
                     #        figured out what it should be. I think we would also
@@ -661,8 +672,10 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                     f['sigmasq'] = template_sigmasq_plus[tid]
                 except Exception:
                     # Not precessing
-                    template_sigmasq = numpy.array([t['sigmasq'][ifo] for t in \
-                            self.template_params], dtype=numpy.float32)
+                    template_sigmasq = numpy.array(
+                        [t['sigmasq'][ifo] for t in self.template_params],
+                        dtype=numpy.float32
+                    )
                     f['sigmasq'] = template_sigmasq[tid]
 
                 template_durations = [p['tmplt'].template_duration for p in \
@@ -692,9 +705,10 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                         self.opt.trig_start_time[ifo]], dtype=numpy.int32)
                 search_start_time = float(self.opt.trig_start_time[ifo])
             else:
-                f['search/start_time'] = numpy.array([\
-                        self.opt.gps_start_time[ifo] + \
-                        self.opt.segment_start_pad[ifo]], dtype=numpy.int32)
+                f['search/start_time'] = numpy.array([
+                    self.opt.gps_start_time[ifo] + 
+                    self.opt.segment_start_pad[ifo]],dtype=numpy.int32
+                )
                 search_start_time = float(self.opt.gps_start_time[ifo] + \
                                           self.opt.segment_start_pad[ifo])
             if self.opt.trig_end_time:
@@ -702,14 +716,17 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                         self.opt.trig_end_time[ifo]], dtype=numpy.int32)
                 search_end_time = float(self.opt.trig_end_time[ifo])
             else:
-                f['search/end_time'] = numpy.array([self.opt.gps_end_time[ifo] \
-                        - self.opt.segment_end_pad[ifo]], dtype=numpy.int32)
+                f['search/end_time'] = numpy.array(
+                    [self.opt.gps_end_time[ifo] - 
+                     self.opt.segment_end_pad[ifo]], dtype=numpy.int32
+                )
                 search_end_time = float(self.opt.gps_end_time[ifo] - \
                         self.opt.segment_end_pad[ifo])
 
             if self.write_performance:
                 self.analysis_time = search_end_time - search_start_time
-                time_ratio = numpy.array([float(self.analysis_time) / float(self.run_time)])
+                time_ratio = numpy.array([float(self.analysis_time) / 
+                                         float(self.run_time)])
                 temps_per_core = float(self.ntemplates) / float(self.ncores)
                 filters_per_core = float(self.nfilters) / float(self.ncores)
                 f['search/templates_per_core'] = \
@@ -748,51 +765,70 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             new_times[ifo] = self.template_event_dict[ifo]['time_index']
             existing_template_id[ifo] = self.events['template_id'][ifo_events]
             new_template_id[ifo] = self.template_event_dict[ifo]['template_id']
-            #This is true for each existing event that has the same time index and template id as a template trigger.
-            existing_events_mask[ifo] = numpy.argwhere(numpy.logical_and(numpy.isin(existing_times[ifo], new_times[ifo]),\
-                                                      numpy.isin(existing_template_id[ifo],new_template_id[ifo]))).reshape(-1,)
-            #This is true for each template event that has either a new trigger time or a new template id.
-            new_template_event_mask[ifo] = numpy.argwhere(numpy.logical_or(~numpy.isin(new_times[ifo], existing_times[ifo]),\
-                                                     ~numpy.isin(new_template_id[ifo], existing_template_id[ifo]))).reshape(-1,)
-            #This is true for each template event that has the same time index and template id as an exisitng event trigger.
-            existing_template_event_mask[ifo] = numpy.argwhere(numpy.logical_and(numpy.isin(new_times[ifo], existing_times[ifo]),\
-                                                      numpy.isin(new_template_id[ifo],existing_template_id[ifo]))).reshape(-1,)
-            # Set ids (These show how each trigger in the single ifo trigger list correspond to the network triggers)
+            # This is true for each existing event that has the same time index
+            # and template id as a template trigger.
+            existing_events_mask[ifo] = numpy.argwhere(numpy.logical_and(
+                numpy.isin(existing_times[ifo], new_times[ifo]),
+                numpy.isin(existing_template_id[ifo],new_template_id[ifo])
+            )).reshape(-1,)
+            # This is true for each template event that has either a new
+            # trigger time or a new template id.
+            new_template_event_mask[ifo] = numpy.argwhere(numpy.logical_or(
+                ~numpy.isin(new_times[ifo], existing_times[ifo]),
+                ~numpy.isin(new_template_id[ifo], existing_template_id[ifo]),
+            )).reshape(-1,)
+            # This is true for each template event that has the same time index
+            # and template id as an exisitng event trigger.
+            existing_template_event_mask[ifo] = numpy.argwhere(
+                numpy.logical_and(numpy.isin(new_times[ifo],
+                existing_times[ifo]), numpy.isin(new_template_id[ifo],
+                existing_template_id[ifo]))
+            ).reshape(-1,)
+            # Set ids (These show how each trigger in the single ifo trigger
+            # list correspond to the network triggers)
             num_events = len(new_template_event_mask[ifo])
             new_event_ids = numpy.arange(self.event_index[ifo],
                                               self.event_index[ifo]+num_events)
-            #Every template event that corresponds to a new trigger gets a new id. Triggers that have been found before are not saved.
-            self.template_event_dict[ifo]['event_id'][new_template_event_mask[ifo]] = new_event_ids
-            self.template_event_dict['network'][ifo + '_event_id'][new_template_event_mask[ifo]] = new_event_ids
-            #Template events that have been found before get the event id of the first time they were found.
-            self.template_event_dict['network'][ifo + '_event_id'][existing_template_event_mask[ifo]] = \
-                                                 self.events[self.events['ifo']==i][existing_events_mask[ifo]]['event_id']
+            # Every template event that corresponds to a new trigger gets a new
+            # id. Triggers that have been found before are not saved.
+            self.template_event_dict[ifo]['event_id']\
+                [new_template_event_mask[ifo]] = new_event_ids
+            self.template_event_dict['network'][ifo + '_event_id']\
+                [new_template_event_mask[ifo]] = new_event_ids
+            # Template events that have been found before get the event id of
+            # the first time they were found.
+            self.template_event_dict['network'][ifo + '_event_id']\
+                [existing_template_event_mask[ifo]] = \
+                self.events[self.events['ifo']==i]\
+                [existing_events_mask[ifo]]['event_id']
             self.event_index[ifo] = self.event_index[ifo]+num_events
 
         num_events = len(self.template_event_dict['network'])
         new_event_ids = numpy.arange(self.event_index['network'],
-                                              self.event_index['network']+num_events)
+                                     self.event_index['network']+num_events)
         self.template_event_dict['network']['event_id'] = new_event_ids
         #Move template events for each ifo to the events list
         for ifo in self.ifos:
-            self.events = numpy.append(self.events,
-                                       self.template_event_dict[ifo][new_template_event_mask[ifo]])
+            self.events = numpy.append(
+                self.events, 
+                self.template_event_dict[ifo][new_template_event_mask[ifo]]
+            )
             self.template_event_dict[ifo] = numpy.array([],
                                                         dtype=self.event_dtype)
         #Move the template events for the network to the network events list
         self.network_events = numpy.append(self.network_events,
                                    self.template_event_dict['network'])
-        self.template_event_dict['network'] = numpy.array([],
-                                                    dtype=self.network_event_dtype)
-
+        self.template_event_dict['network'] = numpy.array(
+            [], dtype=self.network_event_dtype)
 
 class EventManagerMultiDet(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
-        super(EventManagerMultiDet, self).__init__(opt, ifos, column, column_types, psd=None, **kwargs)
+        super(EventManagerMultiDet, self).__init__(
+            opt, ifos, column, column_types, psd=None, **kwargs)
         self.event_index = 0
 
-    def cluster_template_events_single_ifo(self, tcolumn, column, window_size,
-                                          ifo):
+    def cluster_template_events_single_ifo(
+        self, tcolumn, column, window_size,ifo):
         """ Cluster the internal events over the named column
         """
         # Just call through to the standard function
@@ -807,7 +843,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
         for ifo in self.ifos:
             num_events = len(self.template_event_dict[ifo])
             new_event_ids = numpy.arange(self.event_index,
-                                                   self.event_index+num_events)
+                                         self.event_index+num_events)
             self.template_event_dict[ifo]['event_id'] = new_event_ids
             self.event_index = self.event_index+num_events
 
@@ -956,7 +992,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
 
             if self.write_performance:
                 self.analysis_time = search_end_time - search_start_time
-                time_ratio = numpy.array([float(self.analysis_time) / float(self.run_time)])
+                time_ratio = numpy.array([float(self.analysis_time) / 
+                                         float(self.run_time)])
                 temps_per_core = float(self.ntemplates) / float(self.ncores)
                 filters_per_core = float(self.nfilters) / float(self.ncores)
                 f['search/templates_per_core'] = \
@@ -978,8 +1015,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                         f['gating/' + gate_type + '/pad'] = \
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
-__all__ = ['threshold_only', 'threshold_and_cluster', 'newsnr', 'effsnr', 'newsnr_sgveto',
-           'findchirp_cluster_over_window',
+__all__ = ['threshold_only', 'threshold_and_cluster', 'newsnr', 'effsnr',
+           'newsnr_sgveto', 'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
            'threshold_real_numpy', 'threshold_only',
            'EventManager', 'EventManagerMultiDet', 'EventManagerCoherent']
