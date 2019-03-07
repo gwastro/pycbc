@@ -791,16 +791,16 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                                               self.event_index[ifo]+num_events)
             # Every template event that corresponds to a new trigger gets a new
             # id. Triggers that have been found before are not saved.
-            self.template_event_dict[ifo]['event_id']\
-                [new_template_event_mask[ifo]] = new_event_ids
-            self.template_event_dict['network'][ifo + '_event_id']\
-                [new_template_event_mask[ifo]] = new_event_ids
+            self.template_event_dict[ifo]['event_id'][\
+                new_template_event_mask[ifo]] = new_event_ids
+            self.template_event_dict['network'][ifo + '_event_id'][\
+                new_template_event_mask[ifo]] = new_event_ids
             # Template events that have been found before get the event id of
             # the first time they were found.
-            self.template_event_dict['network'][ifo + '_event_id']\
-                [existing_template_event_mask[ifo]] = \
-                self.events[self.events['ifo']==i]\
-                [existing_events_mask[ifo]]['event_id']
+            self.template_event_dict['network'][ifo + '_event_id'][\
+                existing_template_event_mask[ifo]] = \
+                self.events[self.events['ifo']==i][\
+                existing_events_mask[ifo]]['event_id']
             self.event_index[ifo] = self.event_index[ifo]+num_events
 
         num_events = len(self.template_event_dict['network'])
