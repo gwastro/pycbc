@@ -179,12 +179,13 @@ class LiveEventManager(object):
             logging.info('computing followup data for coinc')
 
             coinc_ifos = coinc_results['foreground/type'].split('-')
-            followup_ifos = [ifo for ifo in ifos if ifo not in coinc_ifos]
+            followup_ifos = list(set(ifos) - set(coinc_ifos))
 
-            fud = self.compute_followup_data(coinc_ifos, coinc_results, data_readers,
-                                             bank, followup_ifos)
+            fud = self.compute_followup_data(coinc_ifos, coinc_results,
+                                             data_readers, bank, followup_ifos)
 
-            event = SingleCoincForGraceDB(coinc_ifos, coinc_results, bank=bank,
+            live_ifos = [ifo for ifo in ifos if 'snr_series' in fud[ifo]]
+            event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name)
