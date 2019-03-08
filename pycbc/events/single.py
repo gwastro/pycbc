@@ -17,13 +17,13 @@ class LiveSingleFarThreshold(object):
 
     @staticmethod
     def insert_args(parser):
-        parser.add_argument('--single-newsnr-threshold',
+        parser.add_argument('--single-newsnr-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--single-reduced-chisq-threshold',
+        parser.add_argument('--single-reduced-chisq-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--single-fixed-ifar',
+        parser.add_argument('--single-fixed-ifar', nargs='+',
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--single-duration-threshold',
+        parser.add_argument('--single-duration-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
 
     @classmethod
