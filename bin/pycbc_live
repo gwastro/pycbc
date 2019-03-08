@@ -139,9 +139,11 @@ class LiveEventManager(object):
             self.combine_far_with_followup(ifos[0], ifo, triggers,
                                            snr_series, ptime, pvalue)
 
-        sample_rates = set([out[ifo]['snr_series'].sample_rate for ifo in out])
-        assert len(sample_rates) <= 1
+        # verify that all series have the same sampling
+        dts = set([out[ifo]['snr_series'].delta_t for ifo in out])
+        assert len(dts) <= 1, str(dts)
 
+        # verify that all series match their peak estimates
         for ifo in out:
             trig_snr = triggers['foreground/{}/snr'.format(ifo)]
             trig_time = triggers['foreground/{}/end_time'.format(ifo)]
