@@ -145,7 +145,7 @@ class LiveEventManager(object):
         for ifo in out:
             trig_snr = triggers['foreground/{}/snr'.format(ifo)]
             trig_time = triggers['foreground/{}/end_time'.format(ifo)]
-            series_snr = abs(out[ifo]['snr_series'].at_time(trig_time))
+            series_snr = abs(out[ifo]['snr_series'].at_time(trig_time, nearest_sample=True))
             assert abs(series_snr - trig_snr) < 0.1, '{} series {} trigger {}'.format(ifo, series_snr, trig_snr)
             assert len(out[ifo]['snr_series']) % 2, '{} series has even length'.format(ifo)
 
@@ -164,9 +164,9 @@ class LiveEventManager(object):
 
         # Set the critical stats manually
         triggers['foreground/{}/end_time'.format(ifo)] = float(ptime)
-        triggers['foreground/{}/snr'.format(ifo)] = abs(snr_series.at_time(ptime))
+        triggers['foreground/{}/snr'.format(ifo)] = abs(snr_series.at_time(ptime, nearest_sample=True))
         triggers['foreground/{}/stat'.format(ifo)] = triggers['foreground/{}/snr'.format(ifo)]
-        triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series.at_time(ptime))
+        triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series.at_time(ptime, nearest_sample=True))
         triggers['foreground/{}/chisq'.format(ifo)] = 0
         triggers['foreground/{}/chisq_dof'.format(ifo)] = 0
 
