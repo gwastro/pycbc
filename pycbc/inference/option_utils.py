@@ -502,5 +502,7 @@ def prior_from_config(cp, sections=None):
                 cp, section, subsection)
             variable_params += dist.params
             dists.append(dist)
+    constraints = distributions.read_constraints_from_config(cp)
     # construct class that will return draws from the prior
-    return distributions.JointDistribution(variable_params, *dists)
+    return distributions.JointDistribution(variable_params, *dists,
+                                        **{"constraints" : constraints})
