@@ -1,46 +1,55 @@
 #!/usr/bin/env python
+
+"""Detect compact-binary-merger gravitational-wave signals in low latency. This
+program takes a fixed template bank and performs matched filtering on a
+continuous stream of strain data in fixed short blocks of time. It is capable
+of reading from low latency data directories on the LDG clusters. Work is
+parallelized through the use of MPI, so this script should typically be
+launched with mpirun.
+
+See https://arxiv.org/abs/1805.11174 for an overview."""
+
+import sys
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
-from pycbc import fft, version, waveform, scheme, frame
+from time import time
+import os.path
+import itertools
+from mpi4py import MPI as mpi
+from pycbc import fft, version, waveform, scheme, frame, makedir
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
-from time import time
-import os.path
-from mpi4py import MPI as mpi
 from pycbc.events import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
-import itertools
+from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
-def makedir(path):
-    """
-    Make the analysis directory path and any parent directories that don't
-    already exist. Will do nothing if path already exists.
-    """
-    if path is not None and not os.path.exists(path):
-        os.makedirs(path)
 
 def ptof(p, ft):
+    # convert p-value to FAR via foreground time 'ft'
     return numpy.log(1.0 - p) / -ft
 
 def ftop(f, ft):
+    # convert FAR to p-value via foreground time 'ft'
     return 1 - numpy.exp(-ft * f)
 
-# REVISIT THIS WITH BETTER FORMULA
-def combine_ifar_pvalue(ifar, pvalue):
+def combine_ifar_pvalue(ifar, pvalue, livetime):
+    # convert original IFAR to p-value and combine with followup p-value
     from scipy.stats import combine_pvalues
-    reference_foreground = 0.01 * ifar
-    _, pnew = combine_pvalues([ftop(1.0/ifar, reference_foreground), pvalue])
-    nifar = 1.0 / ptof(pnew, reference_foreground)
-    return nifar
+    # NB units of ifar and livetime must be the same
+    _, pnew = combine_pvalues([ftop(1. / ifar, livetime), pvalue])
+    nifar = 1. / ptof(pnew, livetime)
+    # take max of original IFAR and combined IFAR & apply trials factor
+    return numpy.maximum(ifar, nifar) / 2.
 
 class LiveEventManager(object):
     def __init__(self, output_path,
                        use_date_prefix=False,
                        ifar_upload_threshold=None,
+                       pval_livetime=None,
                        enable_gracedb_upload=False,
                        gracedb_testing=True,
                  ):
@@ -53,6 +62,7 @@ class LiveEventManager(object):
 
         self.use_date_prefix = use_date_prefix
         self.ifar_upload_threshold = ifar_upload_threshold
+        self.pvalue_livetime = pval_livetime
         self.gracedb_testing = gracedb_testing
         self.enable_gracedb_upload = enable_gracedb_upload
 
@@ -131,8 +141,9 @@ class LiveEventManager(object):
         return out
 
     def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series, ptime, pvalue):
-        # Set new ifar
-        triggers['foreground/ifar'] = combine_ifar_pvalue(triggers['foreground/ifar'], pvalue)
+        # Calculate new ifar
+        triggers['foreground/ifar'] = combine_ifar_pvalue(triggers['foreground/ifar'],
+                                                          pvalue, self.pvalue_livetime)
 
         # Copy the triggers
         for key in triggers.copy():
@@ -219,6 +230,10 @@ class LiveEventManager(object):
             fname = os.path.join(self.path, name) + '.hdf'
 
         with h5py.File(fname, 'w') as f:
+            f.attrs['pycbc_version'] = version.git_verbose_msg
+            f.attrs['command_line'] = sys.argv
+            f.attrs['num_live_detectors'] = self.num_live_detectors
+
             for ifo in results:
                 for k in results[ifo]:
                     f['%s/%s' % (ifo, k)] = results[ifo][k]
@@ -245,67 +260,63 @@ class LiveEventManager(object):
                 if store_psd[ifo] is not None:
                     store_psd[ifo].save(fname, group='%s/psd' % ifo)
 
-    def ingest(self, ifo, results):
-        pass
 
-parser = argparse.ArgumentParser(description="Look for CBC signals in low "
-    "latency. This program takes a fixed template bank and analyzes in fixed "
-    "short blocks of time. It is capable of reading from low latency data "
-    "directories on the ldg clusters. Work is parallelized through the use "
-    "of MPI, so this script should typically be launched with mpirun")
+parser = argparse.ArgumentParser(description=__doc__)
 pycbc.waveform.bank.add_approximant_arg(parser)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--version', action='version', version=version.git_verbose_msg)
-parser.add_argument('--bank-file', required=True, help="Template bank xml file")
+parser.add_argument('--bank-file', required=True,
+                    help="Template bank file in XML or HDF format")
 parser.add_argument('--low-frequency-cutoff', help="low frequency cutoff", type=int)
 parser.add_argument('--sample-rate', help="output sample rate", type=int)
 parser.add_argument('--chisq-bins', help="Number of chisq bins")
 parser.add_argument('--analysis-chunk', type=int, required=True,
-                        help="Amount of data to produce triggers in a  block")
+                        help="Amount of data to produce triggers in a block")
 
-parser.add_argument('--snr-threshold', type=float)
+parser.add_argument('--snr-threshold', type=float,
+                    help='SNR threshold for generating a trigger')
 parser.add_argument('--snr-abort-threshold', type=float)
 
 parser.add_argument('--channel-name', action=MultiDetOptionAction, nargs='+',
                     required=True)
 parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
-          help="The channel containing frame status information. This is used "
-               "to determine when to analyze the hoft data. This somewhat "
-               "corresponds to CAT1 information")
+                    help="Channel containing frame status information. Used "
+                         "to determine when to analyze the hoft data. This somewhat "
+                         "corresponds to CAT1 information")
 parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'],
                     help='The flags that must be in the "good" state to analyze data')
 parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
-          help="The channel containing data quality information. This is used "
-                "to determine when hoft may be suspect and may be used to veto"
-                "triggers or not analyze a segment of data. This roughly "
-                "corresponds to CAT2 information")
+                    help="Channel containing data quality information. Used "
+                         "to determine when hoft may be suspect and may be used to veto"
+                         "triggers or not analyze a segment of data. This roughly "
+                         "corresponds to CAT2 information")
 parser.add_argument('--data-quality-flags', action=MultiDetOptionAction, nargs='+',
-          help='The flags used to determine when to throw triggers away. '
-               'For each detector, give a comma-separated list of flags.')
+                    help='Flags used to determine when to throw triggers away. '
+                         'For each detector, give a comma-separated list of flags.')
 parser.add_argument('--data-quality-padding', type=float, default=0,
-	  help='Time in seconds around a bad dq time to additionally remove triggers')
+                    help='Time in seconds around a bad dq time to additionally remove triggers')
 parser.add_argument('--frame-src', action=MultiDetOptionAction, nargs='+')
 parser.add_argument('--frame-type', action=MultiDetOptionAction, nargs='+')
 parser.add_argument('--force-update-cache', action='store_true')
 parser.add_argument('--highpass-frequency', type=float,
-                        help="Frequency to apply highpass filtering")
+                    help="Frequency to apply highpass filtering")
 parser.add_argument('--highpass-reduction', type=float,
-                        help="DB to reduce low frequencies")
+                    help="DB to reduce low frequencies")
 parser.add_argument('--highpass-bandwidth', type=float,
-                        help="Width of the highpass turnover region in Hz")
+                    help="Width of the highpass turnover region in Hz")
 parser.add_argument('--psd-recalculate-difference', type=float, default=.01)
 parser.add_argument('--psd-abort-difference', type=float, default=.20)
 parser.add_argument('--psd-samples', type=int, required=True,
-                        help="Number of PSD segments to use in the rolling estimate")
+                    help="Number of PSD segments to use in the rolling estimate")
 parser.add_argument('--psd-segment-length', type=int, required=True,
-                        help="Length in seconds of each PSD segment")
+                    help="Length in seconds of each PSD segment")
 parser.add_argument('--psd-inverse-length', type=float,
-                        help="Lenght in time for the equivelant FIR filter")
+                    help="Length in time for the equivalent FIR filter")
 parser.add_argument('--trim-padding', type=float, default=0.25,
-                        help="Padding around the overwhitened analysis block")
+                    help="Padding around the overwhitened analysis block")
 parser.add_argument("--enable-bank-start-frequency", action='store_true',
-                  help="Read the starting frequency of template waveforms"
-                       " from the template bank.")
+                    help="Read the starting frequency of template waveforms"
+                         " from the template bank")
 parser.add_argument('--autogating-threshold', type=float, default=100)
 parser.add_argument('--autogating-pad', type=float, default=.25)
 parser.add_argument('--autogating-window', type=float, default=0.5)
@@ -316,10 +327,13 @@ parser.add_argument('--increment-update-cache', action=MultiDetOptionAction, nar
 parser.add_argument('--frame-read-timeout', type=float, default=30)
 parser.add_argument('--increment', type=int, default=8)
 
-parser.add_argument('--start-time', type=int, default=lal.GPSTimeNow())
-parser.add_argument('--end-time', type=int, default=numpy.inf)
+parser.add_argument('--start-time', type=int, default=lal.GPSTimeNow(),
+                    help='Start the analysis at the given GPS time')
+parser.add_argument('--end-time', type=int, default=numpy.inf,
+                    help='Stop the analysis at the given GPS time')
 
-parser.add_argument('--output-path')
+parser.add_argument('--output-path', required=True,
+                    help='Path to a directory to store results in')
 parser.add_argument('--output-status', type=str, metavar='PATH',
                     help='If given, PyCBC Live will periodically write JSON '
                          'status info to PATH, so the analysis can be '
@@ -336,39 +350,44 @@ parser.add_argument('--max-triggers-in-batch', type=int)
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')
 
-parser.add_argument('--enable-profiling', type=int,
-                    help="Dump out profiling information from an MPI process at"
-                         " the end of program executrion")
+parser.add_argument('--enable-profiling', type=int, metavar='RANK',
+                    help='Dump out profiling information from the MPI process'
+                         ' with given rank at the end of program execution')
 
 parser.add_argument('--enable-background-estimation', default=False, action='store_true')
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading coincident '
                          'triggers to GraceDB, in years.')
-parser.add_argument('--enable-gracedb-upload', action='store_true', default=False)
+parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
+                    help='Upload triggers to GraceDB')
 parser.add_argument('--file-prefix', default='Live')
-parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False)
+parser.add_argument('--enable-production-gracedb-upload', action='store_true', default=False,
+                    help='Do not mark triggers uploaded to GraceDB as test '
+                         'events. This option should *only* be enabled in '
+                         'production analyses!')
 parser.add_argument('--enable-single-detector-upload', action='store_true', default=False)
-parser.add_argument('--followup-detectors', default=[], nargs='*',
-                    help='List of detectors to use as followup')
+parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
+                    help="Livetime used for p-value combination with followup "
+                         "detectors, in years")
 parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
-parser.add_argument('--round-start-time', type=int,
+parser.add_argument('--round-start-time', type=int, metavar='X',
                     help="Round up the start time to the nearest multiple of X"
                          " seconds. This is useful for forcing agreement "
                          " with frame file production.")
-parser.add_argument('--gracedb-server',
-                    help="Location of gracedb server. If not provide, the "
-                         "default location is used. ")
-parser.add_argument('--size-override',
+parser.add_argument('--gracedb-server', metavar='URL',
+                    help='URL of GraceDB server API for uploading events. '
+                         'If not provided, the default URL is used.')
+parser.add_argument('--size-override', type=int, metavar='N',
                     help="Override the internal MPI size layout. "
-                         " Useful for debugging and running a portion of a bank",
-                    type=int)
+                         " Useful for debugging and running a portion of a bank")
 parser.add_argument('--fftw-planning-limit', type=float,
-                    help="Time is seconds to allow for a plan to be created")
+                    help="Time in seconds to allow for a plan to be created")
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
 fft.insert_fft_option_group(parser)
 Coincer.insert_args(parser)
+SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
@@ -398,9 +417,12 @@ bank = waveform.LiveFilterBank(args.bank_file, sr, total_pad,
 evnt = LiveEventManager(args.output_path,
                         use_date_prefix=args.day_hour_output_prefix,
                         ifar_upload_threshold=args.ifar_upload_threshold,
+                        pval_livetime=args.pvalue_combination_livetime,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
                        )
+
+sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
 if args.size_override:
     evnt.size=args.size_override
@@ -417,7 +439,7 @@ if evnt.rank == 0 and args.enable_gracedb_upload:
     gdb_client.ping()
     del gdb_client
 
-# I'm not the root, so do some actually filtering.
+# I'm not the root, so do some actual filtering.
 with ctx:
     try:
         # Import system wisdom.
@@ -444,11 +466,12 @@ with ctx:
         lengths = numpy.array([1.0 / waveform.delta_f for waveform in waveforms])
         psd_len = args.psd_segment_length * (args.psd_samples / 2 + 1)
         maxlen = max(lengths.max(), psd_len)
-        mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold, args.chisq_bins,
-                                     snr_abort_threshold=args.snr_abort_threshold,
-                                     newsnr_threshold=args.newsnr_threshold,
-                                     max_triggers_in_batch=args.max_triggers_in_batch,
-                                     maxelements=args.max_batch_size)
+        mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
+                                    args.chisq_bins, sg_chisq,
+                                    snr_abort_threshold=args.snr_abort_threshold,
+                                    newsnr_threshold=args.newsnr_threshold,
+                                    max_triggers_in_batch=args.max_triggers_in_batch,
+                                    maxelements=args.max_batch_size)
     if args.max_length is not None:
         maxlen = args.max_length
     maxlen = int(maxlen)
@@ -507,7 +530,7 @@ with ctx:
                               len(bank), args.analysis_chunk, list(combo)))
 
 
-    logging.info('%s: Starting... ', evnt.rank)
+    logging.info('%s: Starting...', evnt.rank)
 
     if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
         pr = cProfile.Profile()
@@ -519,6 +542,7 @@ with ctx:
         t1 = time()
         logging.info('%s: Analyzing from %s', evnt.rank, data_end())
         results = {}
+        evnt.num_live_detectors = 0
 
         for ifo in ifos:
             results[ifo] = False
@@ -530,14 +554,15 @@ with ctx:
             if data_reader[ifo].psd is not None:
                 dist = data_reader[ifo].psd.dist
                 if dist < args.min_psd_abort_distance or dist > args.max_psd_abort_distance:
-                    logging.info("PSD outside acceptable sensitivity %s - %s, have %s",
-                                 args.min_psd_abort_distance, args.max_psd_abort_distance, dist)
-
+                    logging.info("%s PSD dist %s outside acceptable range [%s, %s]",
+                                 ifo, dist, args.min_psd_abort_distance,
+                                 args.max_psd_abort_distance)
                     status = False
 
             if status is True:
-                logging.info('%s: Filtering: %s', evnt.rank, ifo)
+                evnt.num_live_detectors += 1
                 if evnt.rank > 0:
+                    logging.info('%s: Filtering %s', evnt.rank, ifo)
                     results[ifo] = mf.process_data(data_reader[ifo])
             else:
                 logging.info('Insufficient data for %s analysis', ifo)
@@ -595,8 +620,7 @@ with ctx:
             evnt.dump(results, prefix, time_index=data_end(),
                       store_psd=False if args.store_psd is False else psds,
                       store_loudest_index=args.store_loudest_index,
-                      raw_results=best_coinc,
-                     )
+                      raw_results=best_coinc)
 
             logging.info('Finished Analyzing up to %s', data_end())
 
@@ -604,8 +628,10 @@ with ctx:
             evnt.barrier()
         tdiff = time() - t1
         lag = float(lal.GPSTimeNow() - data_end())
-        logging.info('%s: Took %1.2f, duty factor of %.2f, lag %.2f s',
-                     evnt.rank, tdiff, tdiff / valid_pad, lag)
+        logging.info('%s: Took %1.2f, duty factor of %.2f, '
+                     'lag %.2f s, %d live detectors',
+                     evnt.rank, tdiff, tdiff / valid_pad, lag,
+                     evnt.num_live_detectors)
 
         if args.output_status is not None and evnt.rank == 0:
             if lag > 120:
@@ -640,5 +666,5 @@ if evnt.rank == 1:
     if args.fftw_output_double_wisdom_file:
         fft.fftw.export_double_wisdom_to_filename(args.fftw_output_double_wisdom_file)
 
-    if args.enable_profiling:
-        pr.dump_stats('log')
+if args.enable_profiling is not None and evnt.rank == args.enable_profiling:
+    pr.dump_stats('profiling_rank_{:03d}'.format(evnt.rank))

@@ -615,7 +615,7 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
 
     # Resize to the right sample rate
     tsize = int(1.0 / params['delta_t'] /  nparams['delta_f'])
-    fsize = tsize / 2 + 1
+    fsize = tsize // 2 + 1
     hp.resize(fsize)
     hc.resize(fsize)
 

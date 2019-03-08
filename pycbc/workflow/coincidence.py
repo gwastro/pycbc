@@ -249,6 +249,19 @@ class PyCBCCombineStatmap(Executable):
                                  '--output-file', tags=tags)
         return node
 
+class PyCBCMultiifoCombineStatmap(Executable):
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, statmap_files, ifos, cluster_window, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        node.add_input_list_opt('--statmap-files', statmap_files)
+        node.new_output_file_opt(statmap_files[0].segment, '.hdf',
+                                 '--output-file', tags=tags)
+        node.add_opt('--ifos', ifos)
+        node.add_opt('--cluster-window', cluster_window)
+        return node
+
 class MergeExecutable(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
 
@@ -377,7 +390,7 @@ def setup_multiifo_statmap_inj(workflow, ifos, coinc_files, background_file, out
     stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']), background_file,
                                      FileList(coinc_files['injfull']), FileList(coinc_files['fullinj']), ifolist)
     workflow.add_node(stat_node)
-    return stat_node.output_files[0], stat_node.output_files
+    return stat_node.output_files[0]
 
 def setup_statmap(workflow, coinc_files, bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
@@ -715,3 +728,29 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
     fixed_ifo = ordered_ifo_list[1]
 
     return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list)
+
+def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
+    """
+    Combine the multiifo statmap files into one background file
+    """
+    if tags is None:
+        tags = []
+    make_analysis_dir(out_dir)
+    logging.info('Setting up multiifo combine statmap')
+
+    cstat_exe = PyCBCMultiifoCombineStatmap(workflow.cp,
+                                            'combine_statmap',
+                                            ifos=workflow.ifos,
+                                            tags=tags,
+                                            out_dir=out_dir)
+
+    ifolist = ' '.join(workflow.ifos)
+    cluster_window = float(workflow.cp.get_opt_tags('combine_statmap',
+                                                    'cluster-window',
+                                                    tags))
+    combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
+                                                 ifolist,
+                                                 cluster_window,
+                                                 tags)
+    workflow.add_node(combine_statmap_node)
+    return combine_statmap_node.output_files
