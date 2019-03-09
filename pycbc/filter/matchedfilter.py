@@ -1761,16 +1761,17 @@ def followup_event_significance(ifo, data_reader, bank,
 
     # Require all strain be valid within lookback time
     if data_reader.state is not None:
-        state_end = data_reader.strain.end_time - data_reader.reduced_pad
-        state_start = state_end - lookback
-        if not data_reader.state.is_extent_valid(state_start, state_end):
+        state_start_time = data_reader.strain.end_time \
+                - data_reader.reduced_pad - lookback
+        if not data_reader.state.is_extent_valid(state_start_time, lookback):
             return None, None, None
 
     # We won't require that all DQ checks be valid for now, except at
     # onsource time.
     if data_reader.dq is not None:
-        if not data_reader.dq.is_extent_valid(onsource_start - duration / 2.0,
-                                              onsource_end + duration / 2.0):
+        dq_start_time = onsource_start - duration / 2.0
+        dq_duration = onsource_end - onsource_start + duration
+        if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
             return None, None, None
 
     # Calculate SNR time series for this duration
