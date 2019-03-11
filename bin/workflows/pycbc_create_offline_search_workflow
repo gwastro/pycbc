@@ -200,7 +200,7 @@ statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
 # final_bg_files contains coinc results using vetoes final_veto_files
 # ifo_ids will store an (integer) index for each ifo in the precedence list
 full_insps = insps
-ctags = [tag, 'full']
+ctags = [tag]
 bg_files = []
 final_bg_files = {}
 ifo_ids = {}
@@ -235,7 +235,7 @@ for i in range(2, len(insps)+1):
                                                                             fixed_ifo,
                                                                             tags=ctagcomb)
 
-combctags = [tag, 'full', 'combine_statmap']
+combctags = [tag]
 final_bg_file_list = wf.FileList()
 for key in final_bg_files:
     final_bg_file_list += final_bg_files[key][0][1]
@@ -485,28 +485,28 @@ for key in final_bg_files:
 inj_coincs = wf.FileList()
 inj_coinc = {}
 for inj_file, tag in zip(inj_files, inj_tags):
-    ctags = [tag, 'inj']
+    ctags = [tag, 'injections']
     output_dir = '%s_coinc' % tag
 
     if workflow.cp.has_option_tags('workflow-injections',
-                                   'compute-optimal-snr', tags=[tag]):
+                                   'compute-optimal-snr', tags=ctags):
         optimal_snr_file = wf.compute_inj_optimal_snr(
-                workflow, inj_file, psd_files, 'inj_files', tags=[tag])
+                workflow, inj_file, psd_files, 'inj_files', tags=ctags)
         file_for_injfind = optimal_snr_file
     else:
         file_for_injfind = inj_file
 
-    if workflow.cp.has_option_tags('workflow-injections', 'inj-cut', tags=[tag]):
+    if workflow.cp.has_option_tags('workflow-injections', 'inj-cut', tags=ctags):
         file_for_vetoes = wf.cut_distant_injections(
-                workflow, file_for_injfind, 'inj_files', tags=[tag])
+                workflow, file_for_injfind, 'inj_files', tags=ctags)
     else:
         file_for_vetoes = inj_file
 
     if workflow.cp.has_option_tags('workflow-injections', 'strip-injections',
-                                   tags=[tag]):
+                                   tags=ctags):
         small_inj_file = wf.veto_injections(workflow, file_for_vetoes,
                              insp_files_seg_file, trig_generated_name,
-                             "inj_files", tags=[tag])
+                             "inj_files", tags=ctags)
     else:
         small_inj_file = file_for_vetoes
 
@@ -514,10 +514,10 @@ for inj_file, tag in zip(inj_files, inj_tags):
     insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
                                      datafind_files, splitbank_files_inj,
                                      output_dir, injection_file=small_inj_file,
-                                     tags = [tag])
+                                     tags=ctags)
 
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
-                                               insps, output_dir, tags=[tag])
+                                               insps, output_dir, tags=ctags)
     # multiifo coincidence for injections
     for i in range(2, len(insps)+1):
         combinations = itertools.combinations(ifo_ids.keys(), i)
@@ -527,13 +527,13 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
             # Create coinc tag, and set up the coinc job for the combination
             coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
-            ctagcomb = [tag, 'inj', coinctag]
+            ctagcomb = [tag, 'injections', coinctag]
             inj_coinc[ordered_ifo_list] = wf.setup_multiifo_interval_coinc_inj(workflow, hdfbank,
                                     full_insps, inspcomb, statfiles, final_bg_files[ordered_ifo_list][0][1],
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
     
-    combctags = [tag, 'inj', 'combine_statmap']
+    combctags = [tag, 'injections']
     final_inj_bg_file_list = wf.FileList()
     for key in inj_coinc:
         final_inj_bg_file_list += [inj_coinc[key]]
