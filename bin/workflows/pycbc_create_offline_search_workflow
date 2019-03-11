@@ -171,8 +171,8 @@ splitbank_files_inj = wf.setup_splittable_workflow(workflow, hdfbank,
                                                    out_dir="bank",
                                                    tags=['injections'])
 
-bank_plot = [(wf.make_template_plot(workflow, hdfbank[0],
-              rdir['coincident_triggers']),)]
+bank_plot = wf.make_template_plot(workflow, hdfbank[0],
+                                  rdir['coincident_triggers'])
 
 # setup the injection files
 inj_files, inj_tags = wf.setup_injection_workflow(workflow,
@@ -398,6 +398,86 @@ for insp_file in full_insps:
              # FIXME: Add censored_veto when it exists
              #veto_file=censored_veto, veto_segment_name='closed_box',
              tags=insp_file.tags + [subsec])
+
+##################### COINC FULL_DATA plots ###################################
+
+# Main results with combined file (we mix open and closed box here, but
+# separate them in the result page)
+
+snrifar = wf.make_snrifar_plot(workflow, combined_bg_file,
+                               rdir['open_box_result'],
+                               tags=combined_bg_file.tags)
+snrifar_cb = wf.make_snrifar_plot(workflow, combined_bg_file,
+                                  rdir['coincident_triggers'], closed_box=True,
+                                  tags=combined_bg_file.tags + ['closed'])
+ratehist = wf.make_snrratehist_plot(workflow, combined_bg_file,
+                                    rdir['open_box_result'],
+                                    tags=combined_bg_file.tags)
+snrifar_ifar = wf.make_snrifar_plot(workflow, combined_bg_file,
+                                    rdir['open_box_result/significance'],
+                                    cumulative=False,
+                                    tags=combined_bg_file.tags + ['ifar'])
+ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
+                            rdir['open_box_result/significance'],
+                            tags=combined_bg_file.tags + ['open_box'])
+ifar_cb = wf.make_ifar_plot(workflow, combined_bg_file,
+                            rdir['coincident_triggers'],
+                            tags=combined_bg_file.tags + ['closed_box'])
+table = wf.make_foreground_table(workflow, combined_bg_file,
+                                 hdfbank[0], rdir['open_box_result'],
+                                 singles=insps,  extension='.html',
+                                 tags=["html"])
+symlink_result(snrifar, 'open_box_result/significance')
+symlink_result(ratehist, 'open_box_result/significance')
+symlink_result(table, 'open_box_result/significance')
+
+# Set html pages
+main_page = [(snrifar, ratehist),(table,)]
+layout.two_column_layout(rdir['open_box_result'], main_page)
+
+detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
+layout.two_column_layout(rdir['open_box_result/significance'], detailed_page)
+
+closed_page = [(snrifar_cb, ifar_cb), (bank_plot,)]
+layout.two_column_layout(rdir['coincident_triggers'], closed_page)
+
+# run minifollowups on the output of the loudest events
+mfup_dir = rdir['open_box_result/loudest_events_followup']
+wf.setup_foreground_minifollowups(workflow, combined_bg_file,
+                                  full_insps,  hdfbank[0], insp_files_seg_file,
+                                  data_analysed_name, trig_generated_name,
+                                  'daxes', mfup_dir,
+                                  tags=combined_bg_file.tags)
+
+# Sub-pages for each ifo combination
+
+for key in final_bg_files:
+    bg_file = final_bg_files[key][0][1]
+    open_dir = rdir['open_box_result/{}_coincidences'.format(key)]
+    closed_dir = rdir['coincident_triggers/{}_coincidences'.format(key)]
+    snrifar = wf.make_snrifar_plot(workflow, bg_file, open_dir,
+                                   tags=bg_file.tags)
+    snrifar_cb = wf.make_snrifar_plot(workflow, bg_file, closed_dir,
+                                      closed_box=True,
+                                      tags=bg_file.tags + ['closed'])
+    ratehist = wf.make_snrratehist_plot(workflow, bg_file, open_dir,
+                                        tags=bg_file.tags)
+    snrifar_ifar = wf.make_snrifar_plot(workflow, bg_file, open_dir,
+                                        cumulative=False,
+                                        tags=bg_file.tags + ['ifar'])
+    ifar_ob = wf.make_ifar_plot(workflow, bg_file, open_dir,
+                                tags=bg_file.tags + ['open_box'])
+    ifar_cb = wf.make_ifar_plot(workflow, bg_file, closed_dir,
+                                tags=bg_file.tags + ['closed_box'])
+    table = wf.make_foreground_table(workflow, bg_file, hdfbank[0], open_dir,
+                                     singles=insps,  extension='.html',
+                                     tags=["html"])
+
+    detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
+    layout.two_column_layout(open_dir, detailed_page)
+
+    closed_page = [(snrifar_cb, ifar_cb)]
+    layout.two_column_layout(closed_dir, closed_page)
 
 
 ############################## Setup the injection runs #######################
