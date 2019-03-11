@@ -8,17 +8,17 @@ from pycbc.workflow import SegFile
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--foreground-triggers', 
+parser.add_argument('--foreground-triggers',
                     help="HDF file containing the zerolag foreground triggers "
                          "from the analysis")
 parser.add_argument('--veto-file',
                     help="Baseline veto information that is added to the outptut")
-parser.add_argument('--segment-name', 
+parser.add_argument('--segment-name',
                     help="Segment name to use from the input veto file")
 parser.add_argument('--output-file', help='Name of the output segment file')
 parser.add_argument('--strict-coinc-time', action='store_true',
                     help="Veto any time that is vetoed in either detector")
-parser.add_argument('--output-segment-name',    
+parser.add_argument('--output-segment-name',
                     help="(optional), Name of output segment file list",
                     default="censor_foreground")
 args = parser.parse_args()
@@ -28,26 +28,55 @@ pycbc.init_logging(args.verbose)
 logging.info('start')
 
 f = h5py.File(args.foreground_triggers, 'r')
-start = f['segments/foreground_veto/start'][:]
-end = f['segments/foreground_veto/end'][:]
-vsegs = pycbc.events.start_end_to_segments(start, end)
 
-ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
+if 'segments/foreground_veto/start' in f:
+    start = f['segments/foreground_veto/start'][:]
+    end = f['segments/foreground_veto/end'][:]
+    vsegs = pycbc.events.start_end_to_segments(start, end)
 
-ifos, fsegs, names = [], [], []
-for ifo in [ifo1, ifo2]:
-    segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
-    fsegs += [(segs.coalesce() + vsegs.coalesce()).coalesce()]
-    names += [args.output_segment_name]
-    ifos += [ifo]
+    ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
 
-if args.strict_coinc_time:
-    fsegs[0] = (fsegs[0].coalesce() + fsegs[1].coalesce()).coalesce()
-    fsegs[1] = fsegs[0]
+    ifos, fsegs, names = [], [], []
+    for ifo in [ifo1, ifo2]:
+        segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
+        fsegs += [(segs.coalesce() + vsegs.coalesce()).coalesce()]
+        names += [args.output_segment_name]
+        ifos += [ifo]
 
-# FIXME: Don't use URL once Larne supports taking file paths directly in the
-#        workflow File class
-file_url = urlparse.urlunparse(['file', 'localhost',
+    if args.strict_coinc_time:
+        fsegs[0] = (fsegs[0].coalesce() + fsegs[1].coalesce()).coalesce()
+        fsegs[1] = fsegs[0]
+
+    # FIXME: Don't use URL once Larne supports taking file paths directly in the
+    #        workflow File class
+    file_url = urlparse.urlunparse(['file', 'localhost',
                           os.path.abspath(args.output_file), None, None, None])
-SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
+    SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
+else:
+    for key in fi['segments']:
+        start = f['segments/%s/foreground_veto/start' % key][:]
+        end = f['segments/%s/foreground_veto/end' % key][:]
+        vsegs = pycbc.events.start_end_to_segments(start, end)
+        mvsegs = (mvgsegs & vsegs).coalesce()
+
+    ifolist = f.attrs['ifos'].split(' ')
+    ifos, fsegs, names = [], [], []
+    for ifo in ifolist:
+        segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
+        fsegs += [(segs.coalesce() + mvsegs.coalesce()).coalesce()]
+        names += [args.output_segment_name]
+        ifos += [ifo]
+
+    if args.strict_coinc_time:
+        combfseg = fsegs[0]
+        for fseg in fsegs:
+            combfseg = (combfseg & fseg).coalesce()
+
+        for fseg in fsegs:
+            fseg = combfseg
+
+    file_url = urlparse.urlunparse(['file', 'localhost',
+                          os.path.abspath(args.output_file), None, None, None])
+    SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
+
 logging.info('done')

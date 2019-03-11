@@ -103,7 +103,7 @@ all_trigs = pycbc.io.MultiifoStatmapData(files=args.coinc_files, ifos = args.ifo
 if 'ifos' in all_trigs.attrs:
     ifos = all_trigs.attrs['ifos'].split(' ')
     logging.info('using ifos from file {}'.format(args.coinc_files[0]))
-else: 
+else:
     ifos = args.ifos
     logging.info('using ifos from command line input')
 
@@ -151,6 +151,7 @@ f = fw(args.output_file)
 f.attrs['num_of_ifos'] = all_trigs.attrs['num_of_ifos']
 f.attrs['pivot'] = all_trigs.attrs['pivot']
 f.attrs['fixed'] = all_trigs.attrs['fixed']
+f.attrs['ifos'] = all_trigs.attrs['ifos']
 f.attrs['timeslide_interval'] = all_trigs.attrs['timeslide_interval']
 
 # Copy over the segment for coincs and singles
