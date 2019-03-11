@@ -127,7 +127,7 @@ def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
 
-def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
+def make_foreground_table(workflow, trig_file, bank_file, out_dir,
                           singles=None, extension='.html', tags=None,
                           hierarchical_level=None):
 
@@ -143,7 +143,6 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
     node = PlotExecutable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--bank-file', bank_file)
-    node.add_opt('--foreground-tag', ftag)
     node.add_input_opt('--trigger-file', trig_file)
     if hierarchical_level is not None:
         node.add_opt('--use-hierarchical-level', hierarchical_level)
