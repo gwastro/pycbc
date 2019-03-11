@@ -452,7 +452,8 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
 # Sub-pages for each ifo combination
 
 for key in final_bg_files:
-    bg_file = final_bg_files[key][0][1]
+    # FIXME: Stop obfuscating this file!
+    bg_file = final_bg_files[key][0][1][0]
     open_dir = rdir['open_box_result/{}_coincidences'.format(key)]
     closed_dir = rdir['coincident_triggers/{}_coincidences'.format(key)]
     snrifar = wf.make_snrifar_plot(workflow, bg_file, open_dir,
