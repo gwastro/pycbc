@@ -397,8 +397,7 @@ for insp_file in full_insps:
         wf.setup_single_det_minifollowups\
             (workflow, insp_file, hdfbank[0], insp_files_seg_file,
              data_analysed_name, trig_generated_name, 'daxes', currdir,
-             # FIXME: Add censored_veto when it exists
-             #veto_file=censored_veto, veto_segment_name='closed_box',
+             veto_file=censored_veto, veto_segment_name='closed_box',
              tags=insp_file.tags + [subsec])
 
 
