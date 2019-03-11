@@ -810,8 +810,8 @@ class PyCBCMultiInspiralExecutable(Executable):
 
         # If doing single IFO search, make sure slides are disabled
         if len(self.ifo_list) < 2 and \
-                ('--do-short-slides' in node._options or \
-                 '--short-slide-offset' in node._options):
+                (node.get_opt('--do-short-slides') is not None or \
+                 node.get_opt('--short-slide-offset') is not None):
             raise ValueError("Cannot run with time slides in a single IFO "
                              "configuration! Please edit your configuration "
                              "file accordingly.")
@@ -848,8 +848,8 @@ class PyCBCMultiInspiralExecutable(Executable):
         # TODO: isn't there a cleaner way of doing this?
         if dfParents is not None:
             node.add_arg('--frame-cache %s' % \
-                " ".join([":".join([frameCache.ifo, frameCache.name]) \
-                for frameCache in dfParents]))
+                         " ".join([":".join([frameCache.ifo, frameCache.name])\
+                         for frameCache in dfParents]))
             for frameCache in dfParents:
                 node._add_input(frameCache)
             #node.add_input_list_opt('--frame-cache', dfParents)
@@ -858,8 +858,8 @@ class PyCBCMultiInspiralExecutable(Executable):
             node.add_input_opt('--sky-positions-file', ipn_file)
 
         if inj_file is not None:
-            if ('--do-short-slides' in node._options or \
-                    '--short-slide-offset' in node._options):
+            if self.get_opt('--do-short-slides') is not None or \
+                    self.get_opt('--short-slide-offset') is not None:
                 raise ValueError("Cannot run with short slides in an "
                                  "injection job. Please edit your "
                                  "configuration file accordingly.")
@@ -874,7 +874,8 @@ class PyCBCMultiInspiralExecutable(Executable):
         for ifo in self.ifo_list:
             channel_names[ifo] = self.cp.get_opt_tags(
                                "workflow", "%s-channel-name" % ifo.lower(), "")
-        channel_names_str = " ".join([val for key, val in channel_names.iteritems()])
+        channel_names_str = \
+            " ".join([val for key, val in channel_names.iteritems()])
         node.add_opt("--channel-name", channel_names_str)
 
         return node
@@ -885,14 +886,14 @@ class PyCBCMultiInspiralExecutable(Executable):
             pad_data = int(self.get_opt("pad-data"))
             start_pad = int(self.get_opt("segment-start-pad"))
             end_pad = int(self.get_opt("segment-end-pad"))
-            valid_start = self.data_seg[0] + pad_data +start_pad
+            valid_start = self.data_seg[0] + pad_data + start_pad
             valid_end = self.data_seg[1] - pad_data - end_pad
         elif self.has_opt('analyse-segment-end'):
             safety = 1
             deadtime = int(self.get_opt('segment-length')) / 2
             spec_len = int(self.get_opt('inverse-spec-length')) / 2
             valid_start = self.data_seg[0] + deadtime - spec_len + pad_data \
-                    - safety
+                          - safety
             valid_end = self.data_seg[1] - spec_len - pad_data - safety
         else:
             overlap = int(self.get_opt('segment-length')) / 4
