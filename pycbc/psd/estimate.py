@@ -228,7 +228,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
         dtype=complex_same_precision_as(psd))
 
     inv_asd[0] = 0
-    inv_asd[N/2] = 0
+    inv_asd[N//2] = 0
     q = TimeSeries(numpy.zeros(N), delta_t=(N / psd.delta_f), \
         dtype=real_same_precision_as(psd))
 
@@ -238,15 +238,15 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     ifft(inv_asd, q)
 
-    trunc_start = max_filter_len / 2
-    trunc_end = N - max_filter_len / 2
+    trunc_start = max_filter_len // 2
+    trunc_end = N - max_filter_len // 2
     if trunc_end < trunc_start:
         raise ValueError('Invalid value in inverse_spectrum_truncation')
 
     if trunc_method == 'hann':
         trunc_window = Array(numpy.hanning(max_filter_len), dtype=q.dtype)
-        q[0:trunc_start] *= trunc_window[max_filter_len/2:max_filter_len]
-        q[trunc_end:N] *= trunc_window[0:max_filter_len/2]
+        q[0:trunc_start] *= trunc_window[max_filter_len//2:max_filter_len]
+        q[trunc_end:N] *= trunc_window[0:max_filter_len//2]
 
     if trunc_start < trunc_end:
         q[trunc_start:trunc_end] = 0
@@ -300,14 +300,14 @@ def bandlimited_interpolate(series, delta_f):
     delta_t = 1.0 / series.delta_f / N
 
     new_N = int(1.0 / (delta_t * delta_f))
-    new_n = new_N / 2 + 1
+    new_n = new_N // 2 + 1
 
     series_in_time = TimeSeries(zeros(N), dtype=real_same_precision_as(series), delta_t=delta_t)
     ifft(series, series_in_time)
 
     padded_series_in_time = TimeSeries(zeros(new_N), dtype=series_in_time.dtype, delta_t=delta_t)
-    padded_series_in_time[0:N/2] = series_in_time[0:N/2]
-    padded_series_in_time[new_N-N/2:new_N] = series_in_time[N/2:N]
+    padded_series_in_time[0:N//2] = series_in_time[0:N//2]
+    padded_series_in_time[new_N-N//2:new_N] = series_in_time[N//2:N]
 
     interpolated_series = FrequencySeries(zeros(new_n), dtype=series.dtype, delta_f=delta_f)
     fft(padded_series_in_time, interpolated_series)

@@ -252,6 +252,8 @@ class PhaseTDStatistic(NewSNRStatistic):
                     ('sigmasq', numpy.float32),
                     ('snr', numpy.float32)]
 
+        self.get_newsnr = get_newsnr
+
     def single(self, trigs):
         """
         Calculate the single detector statistic and assemble other parameters
@@ -268,7 +270,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         numpy.ndarray
             Array of single detector parameter values
         """
-        sngl_stat = get_newsnr(trigs)
+        sngl_stat = self.get_newsnr(trigs)
         singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
         singles['snglstat'] = sngl_stat
         singles['coa_phase'] = trigs['coa_phase'][:]
@@ -340,6 +342,17 @@ class PhaseTDStatistic(NewSNRStatistic):
         cstat = rstat + 2. * self.logsignalrate(s0, s1, slide, step)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
+
+
+class PhaseTDSGStatistic(PhaseTDStatistic):
+    """PhaseTDStatistic but with sine-Gaussian veto added to the
+
+    single detector ranking
+    """
+
+    def __init__(self, files):
+        PhaseTDStatistic.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto
 
 
 class ExpFitStatistic(NewSNRStatistic):
@@ -553,6 +566,7 @@ statistic_dict = {
     'network_snr': NetworkSNRStatistic,
     'newsnr_cut': NewSNRCutStatistic,
     'phasetd_newsnr': PhaseTDStatistic,
+    'phasetd_newsnr_sgveto': PhaseTDSGStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,

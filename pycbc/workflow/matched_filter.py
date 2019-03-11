@@ -53,7 +53,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     -----------
     Workflow : pycbc.workflow.core.Workflow
         The workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
     datafind_outs : pycbc.workflow.core.FileList
         An FileList of the datafind files that are needed to obtain the
@@ -153,7 +153,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
     datafind_outs : pycbc.workflow.core.FileList
         An FileList of the datafind files that are needed to obtain the
@@ -253,7 +253,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
     datafind_outs : pycbc.workflow.core.FileList
         An FileList of the datafind files that are needed to obtain the

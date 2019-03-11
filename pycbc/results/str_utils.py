@@ -68,7 +68,7 @@ def get_signum(val, err, max_sig=numpy.inf):
         if round(float(coeff)) == 10.:
             pwr -= 1
         pwr = min(pwr, max_sig)
-        tmplt = '%.' + str(pwr) + 'f'
+        tmplt = '%.' + str(pwr+1) + 'f'
         return tmplt % val
     else:
         pwr = int(pwr[1:])
@@ -77,13 +77,13 @@ def get_signum(val, err, max_sig=numpy.inf):
         # if the error is large, we can sometimes get 0;
         # adjust the round until we don't get 0 (assuming the actual
         # value isn't 0)
-        return_val = round(val, -pwr)
+        return_val = round(val, -pwr+1)
         if val != 0.:
             loop_count = 0
             max_recursion = 100
             while return_val == 0.:
                 pwr -= 1
-                return_val = round(val, -pwr)
+                return_val = round(val, -pwr+1)
                 loop_count += 1
                 if loop_count > max_recursion:
                     raise ValueError("Maximum recursion depth hit! Input " +\
@@ -114,13 +114,13 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
         the negative; i.e., value +plus_error -error. The number of
         significant figures printed is determined from min(error,
         plus_error).
-    use_scientific_notation : {3, int}
-        If ``abs(log10(value))`` is greater than the given, the return string will be
-        formated to "\%.1f \\times 10^{p}", where p is the powers of 10 needed
-        for the leading number in the value to be in the singles spot.
-        Otherwise will return "\%.(p+1)f". Default is 3.  To turn off,
-        set to 0. Note: using scientific notation assumes that the returned
-        value will be enclosed in LaTeX math mode.
+    use_scientific_notation : int, optional
+        If ``abs(log10(value))`` is greater than the given, the return string
+        will be formated to "\%.1f \\times 10^{p}", where p is the powers of 10
+        needed for the leading number in the value to be in the singles spot.
+        Otherwise will return "\%.(p+1)f". Default is 3.  To turn off, set to
+        ``numpy.inf``. Note: using scientific notation assumes that the
+        returned value will be enclosed in LaTeX math mode.
     include_error : {True, bool}
         Include the error in the return string; the output will be formated
         val \\pm err, where err is the error rounded to the same
@@ -143,32 +143,41 @@ def format_value(value, error, plus_error=None, use_scientific_notation=3,
     Examples
     --------
     Given a value and its uncertainty:
+
     >>> val, err
     (3.9278372067613837e-22, 2.2351435286500487e-23)
 
     Format with error quoted:
+
     >>> format_value(val, err)
-    '3.9 \\pm 0.2\\times 10^{-22}'
+    '3.93 \\pm 0.22\\times 10^{-22}'
 
     Quote error as a relative error:
+
     >>> format_value(val, err, use_relative_error=True)
-    '3.9 \\times 10^{-22} \\pm5\\%'
+    '3.93 \\times 10^{-22} \\pm5.6\\%'
 
     Format without the error and without scientific notation:
-    >>> format_value(val, err, use_scientific_notation=0, include_error=False)
-    '0.00000000000000000000039'
+
+    >>> format_value(val, err, use_scientific_notation=float('inf'),
+                     include_error=False)
+    '0.000000000000000000000393'
 
     Given an plus error:
+
     >>> err_plus
     8.2700310560051804e-24
 
     Format with both bounds quoted:
+
     >>> format_value(val, err, plus_error=err_plus)
-    '3.93^{+0.08}_{-0.22}\\times 10^{-22}'
+    '3.928^{+0.083}_{-0.224}\\times 10^{-22}'
 
     Format with both bounds quoted as a relative error:
+
     >>> format_value(val, err, plus_error=err_plus, use_relative_error=True)
-    '3.93\\times 10^{-22}\\,^{+2\\%}_{-6\\%}'
+    '3.928\\times 10^{-22}\\,^{+2.1\\%}_{-5.7\\%}'
+
     """
     minus_sign = '-' if value < 0. else ''
     value = abs(value)

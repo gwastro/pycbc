@@ -151,19 +151,21 @@ def check_integrity(filename):
     with loadfile(filename, 'r') as fp:
         # check that all datasets in samples have the same shape
         parameters = fp[fp.samples_group].keys()
-        group = fp.samples_group + '/{}'
-        # use the first parameter as a reference shape
-        ref_shape = fp[group.format(parameters[0])].shape
-        if not all(fp[group.format(param)].shape == ref_shape
-                   for param in parameters):
-            raise IOError("not all datasets in the samples group have the "
-                          "same shape")
-        # check that we can read the first/last sample
-        firstidx = tuple([0]*len(ref_shape))
-        lastidx = tuple([-1]*len(ref_shape))
-        for param in parameters:
-            _ = fp[group.format(param)][firstidx]
-            _ = fp[group.format(param)][lastidx]
+        # but only do the check if parameters have been written
+        if len(parameters) > 0:
+            group = fp.samples_group + '/{}'
+            # use the first parameter as a reference shape
+            ref_shape = fp[group.format(parameters[0])].shape
+            if not all(fp[group.format(param)].shape == ref_shape
+                       for param in parameters):
+                raise IOError("not all datasets in the samples group have the "
+                              "same shape")
+            # check that we can read the first/last sample
+            firstidx = tuple([0]*len(ref_shape))
+            lastidx = tuple([-1]*len(ref_shape))
+            for param in parameters:
+                _ = fp[group.format(param)][firstidx]
+                _ = fp[group.format(param)][lastidx]
 
 
 def validate_checkpoint_files(checkpoint_file, backup_file):

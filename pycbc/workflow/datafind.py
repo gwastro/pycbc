@@ -33,7 +33,8 @@ from __future__ import print_function
 import os, copy
 import urlparse
 import logging
-from glue import segments, lal
+from ligo import segments
+from glue import lal
 from glue.ligolw import utils, table, lsctables, ligolw
 from pycbc.workflow.core import SegFile, File, FileList, make_analysis_dir
 from pycbc.frame import datafind_connection
@@ -845,7 +846,7 @@ def get_segment_summary_times(scienceFile, segmentName):
 
     Returns
     ---------
-    summSegList : glue.segments.segmentlist
+    summSegList : ligo.segments.segmentlist
         The times that are covered in the segment summary table.
     """
     # Parse the segmentName

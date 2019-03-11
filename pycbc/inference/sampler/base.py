@@ -230,6 +230,9 @@ def create_new_output_file(sampler, filename, force=False, injection_file=None,
                           "wish to overwrite it.")
     logging.info("Creating file {}".format(filename))
     with sampler.io(filename, "w") as fp:
+        # create the samples group and sampler info group
+        fp.create_group(fp.samples_group)
+        fp.create_group(fp.sampler_group)
         # save the sampler's metadata
         fp.write_sampler_metadata(sampler)
         # save injection parameters

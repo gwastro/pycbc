@@ -31,7 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 import logging
 import math, os
 import lal
-from glue import segments
+from ligo import segments
 import Pegasus.DAX3 as dax
 from pycbc.workflow.core import Executable, File, FileList, Node
 
@@ -209,7 +209,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
         to this list, and it does not need to be empty when supplied.
     curr_exe_job : Job
         An instanced of the Job class that has a get_valid times method.
-    science_segs : glue.segments.segmentlist
+    science_segs : ligo.segments.segmentlist
         The list of times that the jobs should cover
     datafind_outs : pycbc.workflow.core.FileList
         The file list containing the datafind files.

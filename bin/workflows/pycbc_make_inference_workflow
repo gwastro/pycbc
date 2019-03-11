@@ -28,7 +28,7 @@ import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import socket
 import sys
-from glue import segments
+from ligo import segments
 from pycbc import results
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction

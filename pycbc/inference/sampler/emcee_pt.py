@@ -128,6 +128,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
         obj.set_burn_in_from_config(cp)
+        # set prethin options
+        obj.set_thin_interval_from_config(cp, section)
         return obj
 
     @property
@@ -149,27 +151,23 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         The returned array has shape ntemps x nwalkers x niterations.
 
         Unfortunately, because ``emcee_pt`` does not have blob support, this
-        will only return the loglikelihood, logprior, and logjacobian,
-        regardless of what stats the model can return.
+        will only return the loglikelihood and logprior (with the logjacobian
+        set to zero) regardless of what stats the model can return.
+
+
+        .. warning::
+            Since the `logjacobian` is not saved by `emcee_pt`, the `logprior`
+            returned here is the log of the prior pdf in the sampling
+            coordinate frame rather than the variable params frame. This
+            differs from the variable params frame by the log of the Jacobian
+            of the transform from one frame to the other. If no sampling
+            transforms were used, then the `logprior` is the same.
         """
         # likelihood has shape ntemps x nwalkers x niterations
         logl = self._sampler.lnlikelihood
         # get prior from posterior
         logp = self._sampler.lnprobability - logl
-        logjacobian = numpy.zeros(logp.size)
-        # if different coordinates were used for sampling, get the jacobian
-        if self.model.sampling_transforms is not None:
-            samples = self.samples
-            flattened_samples = {param: arr.ravel()
-                                 for param, arr in samples.items()}
-            for ii in range(logp.size):
-                these_samples = {param: vals[ii]
-                                 for param, vals in flattened_samples.items()}
-                self.model.update(**these_samples)
-                logjacobian[ii] = self.model.logjacobian
-        logjacobian = logjacobian.reshape(logp.shape)
-        # put the logprior into the variable_params space
-        logp -= logjacobian
+        logjacobian = numpy.zeros(logp.shape)
         return {'loglikelihood': logl, 'logprior': logp,
                 'logjacobian': logjacobian}
 
@@ -218,9 +216,10 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params)
+            fp.write_samples(self.samples, self.model.variable_params,
+                             last_iteration=self.niterations)
             # write stats
-            fp.write_samples(self.model_stats)
+            fp.write_samples(self.model_stats, last_iteration=self.niterations)
             # write accpetance
             fp.write_acceptance_fraction(self._sampler.acceptance_fraction)
             # write random state

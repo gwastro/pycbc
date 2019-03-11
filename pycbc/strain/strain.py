@@ -1434,14 +1434,14 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         htilde: FrequencySeries
             Overwhited strain data
         """
-        # we haven't alread computed htilde for this delta_f
+        # we haven't already computed htilde for this delta_f
         if delta_f not in self.segments:
             buffer_length = int(1.0 / delta_f)
             e = len(self.strain)
             s = int(e - buffer_length * self.sample_rate - self.reduced_pad * 2)
             fseries = make_frequency_series(self.strain[s:e])
 
-            # we haven't calculate a resample psd for this delta_f
+            # we haven't calculated a resample psd for this delta_f
             if delta_f not in self.psds:
                 psdt = pycbc.psd.interpolate(self.psd, fseries.delta_f)
                 psdt = pycbc.psd.inverse_spectrum_truncation(psdt,
@@ -1473,6 +1473,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 fseries_trimmed = FrequencySeries(zeros(len(overwhite2) / 2 + 1,
                                                   dtype=fseries.dtype), delta_f=delta_f)
                 pycbc.fft.fft(overwhite2, fseries_trimmed)
+                fseries_trimmed.start_time = fseries.start_time + self.reduced_pad * self.strain.delta_t
             else:
                 fseries_trimmed = fseries
 
@@ -1485,11 +1486,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
     def near_hwinj(self):
         """Check that the current set of triggers could be influenced by
         a hardware injection.
-
-        Parameters
-        ----------
-        data_reader: dict of StrainBuffers
-            A dict of StrainBuffer instances, indexed by ifos.
         """
         if not self.state:
             return False

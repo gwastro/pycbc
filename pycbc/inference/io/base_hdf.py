@@ -180,8 +180,10 @@ class BaseInferenceFile(h5py.File):
         samples = self.read_raw_samples(loadfields, **kwargs)
         # convert to FieldArray
         samples = array_class.from_kwargs(**samples)
-        # add the static params
-        for (p, val) in self.static_params.items():
+        # add the static params and attributes
+        addatrs = (self.static_params.items() +
+                   self[self.samples_group].attrs.items())
+        for (p, val) in addatrs:
             setattr(samples, p, val)
         return samples
 
@@ -339,6 +341,17 @@ class BaseInferenceFile(h5py.File):
         except KeyError:
             return 0
 
+    @thin_start.setter
+    def thin_start(self, thin_start):
+        """Sets the thin start attribute.
+
+        Parameters
+        ----------
+        thin_start : int or None
+            Value to set the thin start to.
+        """
+        self.attrs['thin_start'] = thin_start
+
     @property
     def thin_interval(self):
         """The default interval to use when reading samples.
@@ -351,6 +364,17 @@ class BaseInferenceFile(h5py.File):
         except KeyError:
             return 1
 
+    @thin_interval.setter
+    def thin_interval(self, thin_interval):
+        """Sets the thin start attribute.
+
+        Parameters
+        ----------
+        thin_interval : int or None
+            Value to set the thin interval to.
+        """
+        self.attrs['thin_interval'] = thin_interval
+
     @property
     def thin_end(self):
         """The defaut end index to use when reading samples.
@@ -362,6 +386,17 @@ class BaseInferenceFile(h5py.File):
             return self.attrs['thin_end']
         except KeyError:
             return None
+
+    @thin_end.setter
+    def thin_end(self, thin_end):
+        """Sets the thin end attribute.
+
+        Parameters
+        ----------
+        thin_end : int or None
+            Value to set the thin end to.
+        """
+        self.attrs['thin_end'] = thin_end
 
     @property
     def cmd(self):

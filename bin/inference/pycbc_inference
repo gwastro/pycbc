@@ -93,6 +93,11 @@ strain.add_gate_option_group(parser)
 opts = parser.parse_args()
 
 # setup log
+# If we're running in MPI mode, only allow the parent to print
+if opts.use_mpi:
+    from mpi4py import MPI
+    rank = MPI.COMM_WORLD.Get_rank()
+    opts.verbose &= rank == 0
 pycbc.init_logging(opts.verbose)
 
 # verify options are sane

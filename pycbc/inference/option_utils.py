@@ -26,6 +26,7 @@ from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd)
 from pycbc import waveform
+from pycbc import distributions
 
 
 # -----------------------------------------------------------------------------
@@ -462,3 +463,44 @@ def add_density_option_group(parser):
              "Default is to use scipy's gaussian_kde.")
 
     return density_group
+
+
+def prior_from_config(cp, sections=None):
+    """Loads a prior distribution from the given config file.
+
+    Parameters
+    ----------
+    cp : pycbc.workflow.WorkflowConfigParser
+        The config file to read.
+    sections : list of str, optional
+        The sections to retrieve the prior from. If ``None`` (the default),
+        will look in sections starting with 'prior'.
+
+    Returns
+    -------
+    distributions.JointDistribution
+        The prior distribution.
+    """
+    # get prior distribution for each variable parameter
+    # parse command line values for section and subsection
+    # if only section then look for subsections
+    # and add distributions to list
+    variable_params = []
+    dists = []
+    if sections is None:
+        sections = ['prior']
+    for sec in sections:
+        section = sec.split("-")[0]
+        subsec = sec.split("-")[1:]
+        if len(subsec) > 0:
+            subsections = ["-".join(subsec)]
+        else:
+            subsections = cp.get_subsections(section)
+        for subsection in subsections:
+            name = cp.get_opt_tag(section, "name", subsection)
+            dist = distributions.distribs[name].from_config(
+                cp, section, subsection)
+            variable_params += dist.params
+            dists.append(dist)
+    # construct class that will return draws from the prior
+    return distributions.JointDistribution(variable_params, *dists)
