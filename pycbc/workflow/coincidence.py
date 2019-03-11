@@ -753,4 +753,4 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
                                                  cluster_window,
                                                  tags)
     workflow.add_node(combine_statmap_node)
-    return combine_statmap_node.output_files[0]
+    return combine_statmap_node.output_file
