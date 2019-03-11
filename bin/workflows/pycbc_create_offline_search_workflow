@@ -244,6 +244,11 @@ combined_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      output_dir,
                                                      tags=combctags)
 
+censored_veto = wf.make_foreground_censored_veto(workflow,
+                       combined_bg_file, final_veto_file[0], final_veto_name[0],
+                       'closed_box', 'segments')
+
+
 # Calculate the inspiral psds and make plots
 psd_files = []
 trig_generated_name = 'TRIGGERS_GENERATED'
@@ -340,9 +345,6 @@ layout.single_layout(rdir['analysis_time/veto_definer'], ([vetodef_table]))
 
 #################### Plotting on FULL_DATA results ##########################
 ##################### SINGLES plots first ###################################
-
-# FIXME: This should be created and set!
-censored_veto = None
 
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto,
                             'closed_box', rdir['single_triggers'], tags=[tag])
