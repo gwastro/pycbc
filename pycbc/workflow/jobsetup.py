@@ -875,7 +875,7 @@ class PyCBCMultiInspiralExecutable(Executable):
             channel_names[ifo] = self.cp.get_opt_tags(
                                "workflow", "%s-channel-name" % ifo.lower(), "")
         channel_names_str = \
-            " ".join([val for key, val in channel_names.iteritems()])
+            " ".join([val for key, val in channel_names.items()])
         node.add_opt("--channel-name", channel_names_str)
 
         return node
@@ -892,8 +892,8 @@ class PyCBCMultiInspiralExecutable(Executable):
             safety = 1
             deadtime = int(self.get_opt('segment-length')) / 2
             spec_len = int(self.get_opt('inverse-spec-length')) / 2
-            valid_start = self.data_seg[0] + deadtime - spec_len + pad_data \
-                           - safety
+            valid_start = (self.data_seg[0] + deadtime - spec_len + pad_data -
+                           safety)
             valid_end = self.data_seg[1] - spec_len - pad_data - safety
         else:
             overlap = int(self.get_opt('segment-length')) / 4
