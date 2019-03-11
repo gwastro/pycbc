@@ -32,6 +32,11 @@ def _get_run(time):
     else:
         raise ValueError('Time %s not available in a public dataset' % time)
 
+def _get_channel(time):
+    if 1164556817 <= time <= 1187733618:
+        return 'GWOSC-16KHZ_R1_STRAIN'
+    else:
+        return 'LOSC-STRAIN'
 
 def losc_frame_json(ifo, start_time, end_time):
     """ Get the information about the public data files in a duration of time
@@ -63,7 +68,8 @@ def losc_frame_json(ifo, start_time, end_time):
 
     try:
         return json.loads(urllib.urlopen(url).read())
-    except Exception:
+    except Exception as e:
+        print(e)
         raise ValueError('Failed to find gwf files for '
             'ifo=%s, run=%s, between %s-%s' % (ifo, run, start_time, end_time))
 
@@ -146,5 +152,6 @@ def read_strain_losc(ifo, start_time, end_time):
     ts: TimeSeries
         Returns a timeseries with the strain data.
     """
-    return read_frame_losc('%s:LOSC-STRAIN' % ifo, start_time, end_time)
+    channel = _get_channel(start_time)
+    return read_frame_losc('%s:%s' % (ifo, channel), start_time, end_time)
 
