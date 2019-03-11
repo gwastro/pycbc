@@ -296,8 +296,10 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     if match_fltr_exe == 'pycbc_multi_inspiral':
         exe_class = select_matchedfilter_class(match_fltr_exe)
-        cp.set('inspiral', 'longitude', str(radians(float(cp.get('workflow', 'ra')))))
-        cp.set('inspiral', 'latitude', str(radians(float(cp.get('workflow', 'dec')))))
+        cp.set('inspiral', 'longitude',\
+               str(radians(float(cp.get('workflow', 'ra')))))
+        cp.set('inspiral', 'latitude',\
+               str(radians(float(cp.get('workflow', 'dec')))))
         # from pycbc.workflow.grb_utils import get_sky_grid_scale
         # if cp.has_option("jitter_skyloc", "apply-fermi-error"):
         #     cp.set('inspiral', 'sky-error',
@@ -308,7 +310,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
         #            str(get_sky_grid_scale(float(cp.get('workflow',
         #                                                'sky-error')),
         #                                   sigma_sys=0.0)))
-        # cp.set('inspiral', 'trigger-time', cp.get('workflow', 'trigger-time'))
+        # cp.set('inspiral', 'trigger-time',\
+        #        cp.get('workflow', 'trigger-time'))
         # cp.set('inspiral', 'block-duration',
         #        str(abs(science_segs[ifos[0]][0]) - \
         #                2 * int(cp.get('inspiral', 'pad-data'))))

@@ -849,7 +849,7 @@ class PyCBCMultiInspiralExecutable(Executable):
         if dfParents is not None:
             node.add_arg('--frame-cache %s' % \
                          " ".join([":".join([frameCache.ifo, frameCache.name])\
-                         for frameCache in dfParents]))
+                                   for frameCache in dfParents]))
             for frameCache in dfParents:
                 node._add_input(frameCache)
             #node.add_input_list_opt('--frame-cache', dfParents)
@@ -893,7 +893,7 @@ class PyCBCMultiInspiralExecutable(Executable):
             deadtime = int(self.get_opt('segment-length')) / 2
             spec_len = int(self.get_opt('inverse-spec-length')) / 2
             valid_start = self.data_seg[0] + deadtime - spec_len + pad_data \
-                          - safety
+                           - safety
             valid_end = self.data_seg[1] - spec_len - pad_data - safety
         else:
             overlap = int(self.get_opt('segment-length')) / 4
