@@ -481,15 +481,15 @@ def prior_from_config(cp, sections=None):
     distributions.JointDistribution
         The prior distribution.
     """
-    # get prior distribution for each variable parameter
-    # parse command line values for section and subsection
-    # if only section then look for subsections
-    # and add distributions to list
+    # Read variable and static parameters from the config file
     variable_params, static_params = distributions.read_params_from_config(
                                              cp,
                                              vargs_section='variable_params',
                                              sargs_section='static_params')
+    # Read constraints to apply to priors from the config file
     constraints = distributions.read_constraints_from_config(cp)
+    # Get PyCBC distribution instances for each variable parameter in the
+    # config file
     dists = distributions.read_distributions_from_config(cp)
     # construct class that will return draws from the prior
     return distributions.JointDistribution(variable_params, *dists,
