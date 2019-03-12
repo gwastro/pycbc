@@ -227,7 +227,7 @@ def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
     nsnr = numpy.array(nsnr, ndmin=1)
     psd_var_val = numpy.array(psd_var_val, ndmin=1)
     lgc = psd_var_val >= 1.8
-        nsnr[lgc] = nsnr[lgc] / numpy.sqrt(psd_var_val[lgc])
+    nsnr[lgc] = nsnr[lgc] / numpy.sqrt(psd_var_val[lgc])
 
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
