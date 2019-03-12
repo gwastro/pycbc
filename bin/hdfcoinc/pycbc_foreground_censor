@@ -64,7 +64,7 @@ else:
         start = f['segments/%s/foreground_veto/start' % key][:]
         end = f['segments/%s/foreground_veto/end' % key][:]
         vsegs = pycbc.events.start_end_to_segments(start, end)
-        mvsegs = (mvgsegs & vsegs).coalesce()
+        mvsegs = (mvsegs & vsegs).coalesce()
 
     ifos, fsegs, names = [], [], []
     for ifo in ifolist:
