@@ -485,24 +485,12 @@ def prior_from_config(cp, sections=None):
     # parse command line values for section and subsection
     # if only section then look for subsections
     # and add distributions to list
-    variable_params = []
-    dists = []
-    if sections is None:
-        sections = ['prior']
-    for sec in sections:
-        section = sec.split("-")[0]
-        subsec = sec.split("-")[1:]
-        if len(subsec) > 0:
-            subsections = ["-".join(subsec)]
-        else:
-            subsections = cp.get_subsections(section)
-        for subsection in subsections:
-            name = cp.get_opt_tag(section, "name", subsection)
-            dist = distributions.distribs[name].from_config(
-                cp, section, subsection)
-            variable_params += dist.params
-            dists.append(dist)
+    variable_params, static_params = distributions.read_params_from_config(
+                                             cp,
+                                             vargs_section='variable_params',
+                                             sargs_section='static_params')
     constraints = distributions.read_constraints_from_config(cp)
+    dists = distributions.read_distributions_from_config(cp)
     # construct class that will return draws from the prior
     return distributions.JointDistribution(variable_params, *dists,
-                                        **{"constraints" : constraints})
+                                           **{"constraints":constraints})
