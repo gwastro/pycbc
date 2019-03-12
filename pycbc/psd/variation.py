@@ -8,11 +8,9 @@ from pycbc.types import TimeSeries, FrequencySeries, zeros
 def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
                        short_psd_duration, short_psd_stride, psd_avg_method,
                        low_freq, high_freq):
-
-
     """Calculates time series of PSD variability
 
-    This function first splits the segment up in to 512 second chunks. It
+    This function first splits the segment up into 512 second chunks. It
     then calculates the PSD over this 512 second period as well as in 4
     second chunks throughout each 512 second period. Next the function
     estimates how different the 4 second PSD is to the 512 second PSD and
