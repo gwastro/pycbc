@@ -590,11 +590,8 @@ with ctx:
                 network_out_vals['longitude'] = [opt.longitude]
                 event_mgr.add_template_events_to_network( network_names,
                                 [network_out_vals[n] for n in network_names])
-
-                #event_mgr.cluster_template_events_single_ifo("time_index",
-                #                                            "snr", cluster_window, ifo)
-
         event_mgr.finalize_template_events()
 event_mgr.write_events(opt.output)
 
+logging.info("Finished")
 logging.info("Time to complete analysis: %s" % str(time.time() - time_init))
