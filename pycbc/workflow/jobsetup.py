@@ -785,7 +785,7 @@ class PyCBCMultiInspiralExecutable(Executable):
     pycbc_multi_inspiral executable.
     """
     current_retention_level = Executable.MERGED_TRIGGERS
-    #file_input_options = ['--gating-file']
+    file_input_options = ['--gating-file']
     def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
                  gate_files=None, out_dir=None, tags=None):
         if tags is None:
