@@ -53,7 +53,7 @@ if 'segments/foreground_veto/start' in f:
                           os.path.abspath(args.output_file), None, None, None])
     SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
 else:
-    for key in fi['segments']:
+    for key in f['segments']:
         start = f['segments/%s/foreground_veto/start' % key][:]
         end = f['segments/%s/foreground_veto/end' % key][:]
         vsegs = pycbc.events.start_end_to_segments(start, end)
