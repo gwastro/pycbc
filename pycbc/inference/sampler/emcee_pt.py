@@ -23,6 +23,7 @@ from __future__ import absolute_import
 
 import numpy
 import emcee
+import h5py
 import logging
 from pycbc.pool import choose_pool
 
@@ -49,6 +50,11 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         Number of temeratures to use in the sampler.
     nwalkers : int
         Number of walkers to use in sampler.
+    betas : array
+        An array of inverse temperature values to be used in emcee_pt's
+        temperature ladder. If not provided, emcee_pt will use the number of
+        temperatures and the number of dimensions of the parameter space to
+        construct the ladder with geometrically spaced temperatures.
     pool : function with map, Optional
         A provider of a map function that allows a function call to be run
         over multiple sets of arguments and possibly maps them to
@@ -58,8 +64,9 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     _io = EmceePTFile
     burn_in_class = MultiTemperedMCMCBurnInTests
 
-    def __init__(self, model, ntemps, nwalkers, checkpoint_interval=None,
-                 loglikelihood_function=None, nprocesses=1, use_mpi=False):
+    def __init__(self, model, ntemps, nwalkers, betas=None,
+                 checkpoint_interval=None, loglikelihood_function=None,
+                 nprocesses=1, use_mpi=False):
 
         self.model = model
 
@@ -88,7 +95,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # functions separately
         ndim = len(model.variable_params)
         self._sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                        model_call, prior_call, pool=pool)
+                                        model_call, prior_call, pool=pool,
+                                        betas=betas)
         self._nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
@@ -107,20 +115,47 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
     @classmethod
     def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
-        """Loads the sampler from the given config file."""
+        """
+        Loads the sampler from the given config file.
+
+        For generating the temperature ladder to be used by emcee_pt, either
+        the number of temperatures (provided by the option 'ntemps'),
+        or the path to a file storing inverse temperature values (provided
+        under a subsection inverse-temperatures-file) can be loaded from the
+        config file. If the latter, the file should be of hdf format, having
+        an attribute named 'betas' storing the list of inverse temperature
+        values to be provided to emcee_pt. If the former, emcee_pt will
+        construct the ladder with "ntemps" geometrically spaced temperatures.
+        """
         section = "sampler"
         # check name
         assert cp.get(section, "name") == cls.name, (
             "name in section [sampler] must match mine")
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
-        # get the number of temps
-        ntemps = int(cp.get(section, "ntemps"))
+        if cp.has_option(section, "ntemps") and \
+                cp.has_option(section, "inverse-temperatures-file"):
+            raise ValueError("Must specify either ntemps or "
+                             "inverse-temperatures-file, not both.")
+        if cp.has_option(section, "inverse-temperatures-file"):
+            # get the path of the file containing inverse temperatures values.
+            inverse_temperatures_file = cp.get(section,
+                                               "inverse-temperatures-file")
+            with h5py.File(inverse_temperatures_file, "r") as fp:
+                try:
+                    betas = numpy.array(fp.attrs['betas'])
+                    ntemps = betas.shape[0]
+                except KeyError:
+                    raise AttributeError("No attribute called betas")
+        else:
+            # get the number of temperatures
+            betas = None
+            ntemps = int(cp.get(section, "ntemps"))
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
-        obj = cls(model, ntemps, nwalkers,
+        obj = cls(model, ntemps, nwalkers, betas=betas,
                   checkpoint_interval=checkpoint_interval,
                   loglikelihood_function=logl, nprocesses=nprocesses,
                   use_mpi=use_mpi)
