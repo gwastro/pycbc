@@ -318,14 +318,6 @@ with ctx:
     segments = {ifo : strain_segments_dict[ifo].fourier_segments()
                for ifo in opt.instruments}
     del strain_segments_dict
-    """
-    logging.info("Computing noise PSD")
-    psds = psd.from_cli_multi_ifos(opt, flen_dict, delta_f_dict, flow_dict,
-                                  opt.instruments, strain_dict=strain_dict,
-                                  dyn_range_factor=DYN_RANGE_FAC)
-    for ifo in opt.instruments:
-        psds[ifo] = psds[ifo].astype(float32)
-    """
     psd.associate_psds_to_multi_ifo_segments(opt, segments, strain_dict, flen,
             delta_f, flow, opt.instruments, dyn_range_factor=DYN_RANGE_FAC,
             precision='single')
