@@ -48,5 +48,8 @@ pip install --upgrade setuptools pip
 echo -e ">> [`date`] installing requirements"
 pip install -r requirements.txt
 
+echo -e ">> [`date`] installing mpi4py"
+pip install mpi4py
+
 echo -e ">> [`date`] installing pycbc"
 pip install .
