@@ -211,14 +211,16 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              metavar="SECONDS", help="Length of long segment "
                              "when calculating the PSD variability.")
     psd_options.add_argument("--psdvar-short-psd-duration", type=float,
-                              metavar="SECONDS", help="Duration of the "
-                              "segments for PSD estimation.")
+                             metavar="SECONDS", help="Duration of short "
+                             "segments for PSD estimation.")
     psd_options.add_argument("--psdvar-short-psd-stride", type=float,
-                              metavar="SECONDS", help="Separation between PSD "
-                              "estimation segments.")
-    psd_options.add_argument("--psdvar-low-freq", type=float, metavar="HERTZ",                               help="Minimum frequency to consider in PSD "
+                             metavar="SECONDS", help="Separation between PSD "
+                             "estimation segments.")
+    psd_options.add_argument("--psdvar-low-freq", type=float, metavar="HERTZ",
+                             help="Minimum frequency to consider in PSD "
                              "comparison.")
-    psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",                              help="Maximum frequency to consider in PSD "
+    psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",
+                             help="Maximum frequency to consider in PSD "
                              "comparison.")
 
     if include_data_options :
@@ -312,14 +314,16 @@ def insert_psd_option_group_multi_ifo(parser):
                              metavar="SECONDS", help="Length of long segment "
                              "when calculating the PSD variability.")
     psd_options.add_argument("--psdvar-short-psd-duration", type=float,
-                              metavar="SECONDS", help="Duration of the "
-                              "segments for PSD estimation.")
+                             metavar="SECONDS", help="Duration of short "
+                             "segments for PSD estimation.")
     psd_options.add_argument("--psdvar-short-psd-stride", type=float,
-                              metavar="SECONDS", help="Separation between PSD "
-                              "estimation segments.")
-    psd_options.add_argument("--psdvar-low-freq", type=float, metavar="HERTZ",                               help="Minimum frequency to consider in PSD "
+                             metavar="SECONDS", help="Separation between PSD "
+                             "estimation segments.")
+    psd_options.add_argument("--psdvar-low-freq", type=float, metavar="HERTZ",
+                             help="Minimum frequency to consider in PSD "
                              "comparison.")
-    psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",                              help="Maximum frequency to consider in PSD "
+    psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",
+                             help="Maximum frequency to consider in PSD "
                              "comparison.")
 
     return psd_options
