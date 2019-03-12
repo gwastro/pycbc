@@ -465,7 +465,7 @@ def add_density_option_group(parser):
     return density_group
 
 
-def prior_from_config(cp, sections=None):
+def prior_from_config(cp, sections='prior'):
     """Loads a prior distribution from the given config file.
 
     Parameters
@@ -483,12 +483,13 @@ def prior_from_config(cp, sections=None):
     """
     # Read variable and static parameters from the config file
     variable_params, _ = distributions.read_params_from_config(
-        cp, vargs_section='variable_params', sargs_section='static_params')
+        cp, prior_section=sections, vargs_section='variable_params',
+        sargs_section='static_params')
     # Read constraints to apply to priors from the config file
     constraints = distributions.read_constraints_from_config(cp)
     # Get PyCBC distribution instances for each variable parameter in the
     # config file
-    dists = distributions.read_distributions_from_config(cp)
+    dists = distributions.read_distributions_from_config(cp, sections)
     # construct class that will return draws from the prior
     return distributions.JointDistribution(variable_params, *dists,
-                                           **{"constraints":constraints})
+                                           **{"constraints": constraints})
