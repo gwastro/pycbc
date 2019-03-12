@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013 Ian W. Harry, Alex Nitz
+# Copyright (C) 2013-2019 Ian W. Harry, Alex Nitz, Marton Tapai
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -36,6 +36,7 @@ from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
 
+
 def symlink_path(f, path):
     if f is None:
         return
@@ -46,6 +47,7 @@ def symlink_path(f, path):
 
 def symlink_result(f, rdir_path):
     symlink_path(f, rdir[rdir_path])
+
 
 # Log to the screen until we know where the output file is
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
@@ -248,7 +250,6 @@ censored_veto = wf.make_foreground_censored_veto(workflow,
                        combined_bg_file[0], final_veto_file[0], final_veto_name[0],
                        'closed_box', 'segments')
 
-
 # Calculate the inspiral psds and make plots
 psd_files = []
 trig_generated_name = 'TRIGGERS_GENERATED'
@@ -284,7 +285,7 @@ insp_files_seg_file = wf.SegFile.from_segment_list_dict('INSP_SEGMENTS',
                  insp_files_seg_dict, valid_segment=workflow.analysis_time,
                  extension='xml', directory=rdir['analysis_time/segment_data'])
 
-################### Range,spectrum and segments plots #######################
+################### Range, spectrum and segments plots #######################
 
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'],
                           precalc_psd_files=precalc_psd_files)
