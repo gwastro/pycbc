@@ -119,8 +119,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         Loads the sampler from the given config file.
 
         For generating the temperature ladder to be used by emcee_pt, either
-        the number of temperatures (provided under a subsection 'ntemps'),
-        or the path to a file storing inverse temperature values (provided 
+        the number of temperatures (provided by the option 'ntemps'),
+        or the path to a file storing inverse temperature values (provided
         under a subsection inverse-temperatures-file) can be loaded from the
         config file. If the latter, the file should be of hdf format, having
         an attribute named 'betas' storing the list of inverse temperature
@@ -139,9 +139,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                              "inverse-temperatures-file, not both.")
         if cp.has_option(section, "inverse-temperatures-file"):
             # get the path of the file containing inverse temperatures values.
-            inverse_temperatures_file = cp.get(
-                                         section,
-                                         "inverse-temperatures-file")
+            inverse_temperatures_file = cp.get(section,
+                                               "inverse-temperatures-file")
             with h5py.File(inverse_temperatures_file, "r") as fp:
                 try:
                     betas = numpy.array(fp.attrs['betas'])
