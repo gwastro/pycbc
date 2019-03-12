@@ -28,7 +28,7 @@ pycbc.init_logging(args.verbose)
 logging.info('start')
 
 f = h5py.File(args.foreground_triggers, 'r')
-
+# Check if using old version, if yes use the old code
 if 'segments/foreground_veto/start' in f:
     start = f['segments/foreground_veto/start'][:]
     end = f['segments/foreground_veto/end'][:]
@@ -49,10 +49,9 @@ if 'segments/foreground_veto/start' in f:
 
     # FIXME: Don't use URL once Larne supports taking file paths directly in the
     #        workflow File class
-    file_url = urlparse.urlunparse(['file', 'localhost',
-                          os.path.abspath(args.output_file), None, None, None])
-    SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
+
 else:
+    # Version used for multi-ifo results
     ifolist = f.attrs['ifos'].split(' ')
     ifokey = ''.join(sorted(ifolist))
 
@@ -73,16 +72,7 @@ else:
         names += [args.output_segment_name]
         ifos += [ifo]
 
-    if args.strict_coinc_time:
-        combfseg = fsegs[0]
-        for fseg in fsegs:
-            combfseg = (combfseg & fseg).coalesce()
-
-        for fseg in fsegs:
-            fseg = combfseg
-
-    file_url = urlparse.urlunparse(['file', 'localhost',
+file_url = urlparse.urlunparse(['file', 'localhost',
                           os.path.abspath(args.output_file), None, None, None])
-    SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
-
+SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
 logging.info('done')
