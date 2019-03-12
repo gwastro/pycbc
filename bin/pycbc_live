@@ -138,6 +138,7 @@ class LiveEventManager(object):
 
             self.combine_far_with_followup(ifos[0], ifo, triggers,
                                            snr_series, ptime, pvalue)
+
         return out
 
     def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series, ptime, pvalue):
@@ -152,10 +153,11 @@ class LiveEventManager(object):
                 triggers['foreground/{}/{}'.format(ifo, name)] = triggers[key]
 
         # Set the critical stats manually
+        snr_series_peak = snr_series.at_time(ptime, nearest_sample=True)
         triggers['foreground/{}/end_time'.format(ifo)] = float(ptime)
-        triggers['foreground/{}/snr'.format(ifo)] = abs(snr_series.at_time(ptime))
+        triggers['foreground/{}/snr'.format(ifo)] = abs(snr_series_peak)
         triggers['foreground/{}/stat'.format(ifo)] = triggers['foreground/{}/snr'.format(ifo)]
-        triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series.at_time(ptime))
+        triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series_peak)
         triggers['foreground/{}/chisq'.format(ifo)] = 0
         triggers['foreground/{}/chisq_dof'.format(ifo)] = 0
 
@@ -168,12 +170,13 @@ class LiveEventManager(object):
             logging.info('computing followup data for coinc')
 
             coinc_ifos = coinc_results['foreground/type'].split('-')
-            followup_ifos = [ifo for ifo in ifos if ifo not in coinc_ifos]
+            followup_ifos = list(set(ifos) - set(coinc_ifos))
 
-            fud = self.compute_followup_data(coinc_ifos, coinc_results, data_readers,
-                                             bank, followup_ifos)
+            fud = self.compute_followup_data(coinc_ifos, coinc_results,
+                                             data_readers, bank, followup_ifos)
 
-            event = SingleCoincForGraceDB(coinc_ifos, coinc_results, bank=bank,
+            live_ifos = [ifo for ifo in ifos if 'snr_series' in fud[ifo]]
+            event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name)
