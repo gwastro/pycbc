@@ -20,7 +20,8 @@
 import logging
 from collections import defaultdict
 import argparse
-from pycbc import vetoes, psd, waveform, events, strain, scheme, fft, DYN_RANGE_FAC
+from pycbc import vetoes, psd, waveform, events, strain, scheme, fft,\
+    DYN_RANGE_FAC
 from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
@@ -90,13 +91,17 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
 parser.add_argument("--longitude", type=float)
 parser.add_argument("--latitude", type=float)
 parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
-                    Triggers with coincident/coherent snr below this value will be discarded""")
+                    Triggers with coincident/coherent snr below this value will
+                    be discarded""")
 parser.add_argument("--null-min", type=float, default=5.25, help="""
-                    Triggers with null_snr above this value with be discarded""")
+                    Triggers with null_snr above this value with be 
+                    discarded""")
 parser.add_argument("--null-grad", type=float, default=0.2, help="""
-                    The gradient of the line defining the null cut after the null step""")
-parser.add_argument("--null-step", type=float, default=20., help="""Triggers with coherent snr 
-                    above null_step will be cut according to the null_grad and null_min""")
+                    The gradient of the line defining the null cut after the 
+                    null step""")
+parser.add_argument("--null-step", type=float, default=20., help="""
+                    Triggers with coherent snr above null_step will be cut 
+                    according to the null_grad and null_min""")
 
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
@@ -116,12 +121,17 @@ opt = parser.parse_args()
 generate_histograms = False
 generate_snr_plots = False
 generate_chi2_plots = False
+# Polarisation doesn't matter for coherent matched filter so set to zero.
 pol = 0
+# Use the time in the middle of the segment to calculate the antenna patterns.
 t_gps = (opt.trig_end_time[0] + opt.trig_start_time[0])/2
 
+# Set sky position being searched.
 ra = opt.longitude 
 dec = opt.latitude
 
+# Put the ifos in alphabetical order so they are always called in
+# the same order.
 opt.instruments.sort()
 
 strain.verify_strain_options_multi_ifo(opt, parser, opt.instruments)
@@ -138,14 +148,14 @@ ctx = scheme.from_cli(opt)
 
 def get_weighted_antenna_patterns(Fp_dict,Fc_dict,sigma_dict):
     """
-    Output: wp: 1 x nifo of the weighted antenna response fuctions to plus polarisation\
-                 for each ifo
-            wc: 1 x nifo of the weighted antenna response fuctions to cross polarisation\
-                 for each ifo
-    Input:  Fp_dict: Dictionary of the antenna response fuctions to plus polarisation\
-                     for each ifo
-            Fc_dict: Dictionary of the antenna response fuctions to cross polarisation\
-                     for each ifo
+    Output: wp: 1 x nifo of the weighted antenna response fuctions to plus 
+                polarisation for each ifo
+            wc: 1 x nifo of the weighted antenna response fuctions to cross
+                polarisation for each ifo
+    Input:  Fp_dict: Dictionary of the antenna response fuctions to plus
+                     polarisation for each ifo
+            Fc_dict: Dictionary of the antenna response fuctions to cross
+                     polarisation for each ifo
            sigma_dict: Sigma dictionary for each ifo (sensitivity of each ifo)
     """
     #Need the keys to be in alphabetical order
@@ -157,12 +167,14 @@ def get_weighted_antenna_patterns(Fp_dict,Fc_dict,sigma_dict):
 def get_projection_matrix(wp,wc):
     """
     Output: projection_matrix: Projects the data onto the signal space
-    Input:  wp,wc: The weighted antenna response fuctions to plus and cross\
+    Input:  wp,wc: The weighted antenna response fuctions to plus and cross
                    polarisations respectively
     """
     denominator = np.dot(wp,wp) * np.dot(wc,wc) - np.dot(wp,wc)**2
-    projection_matrix = (np.dot(wc,wc)*np.outer(wp,wp)+ np.dot(wp,wp)*np.outer(wc,wc)\
-                    - np.dot(wp,wc)*(np.outer(wp,wc) + np.outer(wc,wp))) / denominator
+    projection_matrix = (np.dot(wc,wc)*np.outer(wp,wp) + 
+                         np.dot(wp,wp)*np.outer(wc,wc) -
+                         np.dot(wp,wc)*(np.outer(wp,wc) + 
+                         np.outer(wc,wp))) / denominator
     return projection_matrix
 
 def coherent_snr(snr_triggers,index,threshold,projection_matrix,coinc_snr=[]):
@@ -170,13 +182,15 @@ def coherent_snr(snr_triggers,index,threshold,projection_matrix,coinc_snr=[]):
     Output: rho_coh: an array of the coherent snr for the detector network
             index  : Indexes that survive cuts
             snrv   : Dictionary of individual ifo triggers that survive cuts
-            coinc_snr: The coincident snr value for triggers surviving the coherent cut
-    Inputs: snr_triggers: is a dictionary of the normalised complex snr time series for 
-                      each ifo. The keys are the ifos (e.g. 'L1','H1', and 'V1')
-            index  : An array of the indexes you want to analyse. Not used for 
+            coinc_snr: The coincident snr value for triggers surviving the 
+                       coherent cut
+    Inputs: snr_triggers: is a dictionary of the normalised complex snr time 
+                          series for each ifo. The keys are the ifos (e.g. 
+                          'L1','H1', and 'V1')
+            index  : An array of the indexes you want to analyse. Not used for
                      calculations, just for book keeping
             threshold: Triggers with rho_coh<threshold are cut
-            projection_matrix 
+            projection_matrix: Produced by get_projection_matrix.
             coinc_snr: Optional- The coincident snr for each trigger. 
     """
     #Calculate rho_coh
@@ -187,7 +201,8 @@ def coherent_snr(snr_triggers,index,threshold,projection_matrix,coinc_snr=[]):
     #Apply thresholds
     index = index[rho_coh>threshold]
     if len(coinc_snr)!=0: coinc_snr = coinc_snr[rho_coh>threshold]
-    snrv = {ifo : snr_triggers[ifo][rho_coh>threshold] for ifo in snr_triggers.keys()}
+    snrv = {ifo : snr_triggers[ifo][rho_coh>threshold]
+           for ifo in snr_triggers.keys()}
     rho_coh = rho_coh[rho_coh>threshold]
     return rho_coh,index,snrv,coinc_snr
 
@@ -204,7 +219,8 @@ def coincident_snr(snr_dict,index,threshold):
     #Restrict the snr timeseries to just the interesting points
     coinc_triggers = {ifo : snr_dict[ifo][index] for ifo in snr_dict.keys()}
     #Calculate the coincident snr
-    snr_array = np.array([coinc_triggers[ifo] for ifo in coinc_triggers.keys()])
+    snr_array = np.array([coinc_triggers[ifo]
+                        for ifo in coinc_triggers.keys()])
     rho_coinc = np.sqrt(np.sum(snr_array*snr_array.conj(),axis=0))
     #Apply threshold
     index = index[rho_coinc>opt.coinc_threshold]
@@ -212,7 +228,8 @@ def coincident_snr(snr_dict,index,threshold):
     rho_coinc = rho_coinc[rho_coinc>threshold]
     return rho_coinc, index, coinc_triggers
 
-def null_snr(rho_coh,rho_coinc,null_min=5.25,null_grad=0.2,null_step=20.,index={},snrv={}):
+def null_snr(rho_coh,rho_coinc,null_min=5.25,null_grad=0.2,null_step=20.,
+             index={},snrv={}):
     """
     Output: null: null snr for surviving triggers
             rho_coh: Coherent snr for surviving triggers
@@ -222,19 +239,25 @@ def null_snr(rho_coh,rho_coinc,null_min=5.25,null_grad=0.2,null_step=20.,index={
     Input:  rho_coh: Numpy array of coherent snr triggers
             rho_coinc: Numpy array of coincident snr triggers
             null_min: Any trigger with null snr below this is cut
-            null_grad: Any trigger with null snr<(null_grad*rho_coh+null_min) is cut
-            null_step: The value for required for coherent snr to start increasing the null threshold
-            index: Optional- Indexes of triggers. If given, will remove triggers that fail cuts
-            snrv: Optional- Individual ifo snr for triggers. If given will remove triggers that fail cut
+            null_grad: Any trigger with null snr<(null_grad*rho_coh+null_min)
+                       is cut
+            null_step: The value for required for coherent snr to start
+                       increasing the null threshold
+            index: Optional- Indexes of triggers. If given, will remove
+                   triggers that fail cuts
+            snrv: Optional- Individual ifo snr for triggers. If given will 
+                  remove triggers that fail cut
     """
     null2 = rho_coinc**2 - rho_coh**2
-    #Numerical errors may make this negative and break the sqrt, so set negaitive values to 0
+    # Numerical errors may make this negative and break the sqrt, so set
+    # negative values to 0.
     null2[null2<0] = 0 
     null = null2**0.5
-    # Make cut on null
-    keep1 = np.logical_and(null<null_min,rho_coh<=null_step)
-    keep2 = np.logical_and(null<(rho_coh*null_grad + null_min), rho_coh>null_step)
-    keep = np.logical_or(keep1,keep2)
+    # Make cut on null.
+    keep1 = np.logical_and(null < null_min, rho_coh <= null_step)
+    keep2 = np.logical_and(null < (rho_coh * null_grad + null_min),
+                          rho_coh > null_step)
+    keep = np.logical_or(keep1, keep2)
     index = index[keep]
     rho_coh  = rho_coh[keep] 
     snrv = {ifo : snrv[ifo][keep] for ifo in snrv.keys()}
@@ -242,36 +265,42 @@ def null_snr(rho_coh,rho_coinc,null_min=5.25,null_grad=0.2,null_step=20.,index={
     null = null[keep]
     return null, rho_coh, rho_coinc, index, snrv
 
-def get_coinc_indexes(idx_dict,time_delay_idx):
+def get_coinc_indexes(idx_dict, time_delay_idx):
     """
-    Output: coinc_idx: list of indexes for triggers in geocent time that\
+    Output: coinc_idx: list of indexes for triggers in geocent time that
                        appear in multiple detectors 
-    Input: idx_dict: Dictionary of indexes of triggers above threshold in each detector
-           time_delay_idx: Dictionary giving time delay index (time_delay*sample_rate) for each ifo 
+    Input: idx_dict: Dictionary of indexes of triggers above threshold in
+                     each detector
+           time_delay_idx: Dictionary giving time delay index 
+                           (time_delay*sample_rate) for each ifo 
     """
     coinc_list = np.array([],dtype=int)
     for ifo in opt.instruments:
-        #Create list of indexes above threshold in single detector in 
-        #geocent time. Can then search for triggers that appear in multiple 
-        #detectors later.
-        if len(idx_dict[ifo]) != 0: coinc_list = np.hstack([coinc_list,idx_dict[ifo] - time_delay_idx[ifo]])
+        """
+        Create list of indexes above threshold in single detector in 
+        geocent time. Can then search for triggers that appear in multiple
+        detectors later.
+        """
+        if len(idx_dict[ifo]) != 0: 
+            coinc_list = np.hstack([coinc_list, 
+                                   idx_dict[ifo] - time_delay_idx[ifo]])
     #Search through coinc_idx for repeated indexes. These must have
     #been loud in at least 2 detectors.
-    coinc_idx = np.unique(coinc_list,return_counts=True)[0]\
-                   [np.unique(coinc_list,return_counts=True)[1]>1]
+    coinc_idx = np.unique(coinc_list,return_counts=True)[0][
+                   np.unique(coinc_list,return_counts=True)[1]>1]
     return coinc_idx
 
 strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments, 
                                          dyn_range_fac=DYN_RANGE_FAC)
-strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(opt, 
-  				         strain_dict, opt.instruments)
+strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
+                         opt, strain_dict, opt.instruments)
 with ctx:
     fft.from_cli(opt)
     # Set some often used variables for easy access
     flow = opt.low_frequency_cutoff
     flow_dict = defaultdict(lambda : flow)
     for count, ifo in enumerate(opt.instruments):
-	if count == 0:
+        if count == 0:
 	    sample_rate = strain_dict[ifo].sample_rate
 	    sample_rate_dict = defaultdict(lambda : sample_rate)
 	    flen = strain_segments_dict[ifo].freq_len
