@@ -190,6 +190,7 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     logging.info("Creating gating jobs.")
     wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
                                            int(sciSegs[ifo][0][1]))
+    """
     gate_files = _workflow.setup_gate_pregenerated(wflow, output_dir=dfDir)
     for gate_file in gate_files:
         ifo_gate = gate_file.cache_entry.url
@@ -201,6 +202,7 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
                     gate_file.ifo.lower()))
             wflow.cp.set('condition_strain-{}'.format(
                     gate_file.ifo.lower()), 'gating-file', ifo_gate)
+    """
     gating_nodes, gated_files = _workflow.make_gating_node(wflow,
             datafind_files, outdir=dfDir)
     gating_method = wflow.cp.get("workflow-condition_strain",

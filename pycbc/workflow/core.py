@@ -324,13 +324,9 @@ class Executable(pegasus_workflow.Executable):
 
                 # Get LFN and PFN
                 for path in values:
-                    # Here I decide if the path is URL or
-                    # IFO:/path/to/file or IFO:url://path/to/file
-                    # That's somewhat tricksy as we used : as delimiter
-                    split_path = path.split(':', 1)
+                    split_path = path.split(':',1)
                     if len(split_path) == 1:
-                        # Simple case: path to file
-                        ifo = None
+                        ifo=None
                         path = path
                     else:
                         # Have I split a URL or not?
@@ -342,12 +338,17 @@ class Executable(pegasus_workflow.Executable):
                             #IFO:path or IFO:URL
                             ifo = split_path[0]
                             path = split_path[1]
+                    print(ifo)
+                    print(path)
+                    print(split_path)
+                    print(value)
 
                     curr_lfn = os.path.basename(path)
 
                     # If the file exists make sure to use the
                     # fill path as a file:// URL
                     if os.path.isfile(path):
+                        print("Path is file")
                         curr_pfn = urlparse.urljoin('file:',
                                     urllib.pathname2url(
                                     os.path.abspath(path)))
