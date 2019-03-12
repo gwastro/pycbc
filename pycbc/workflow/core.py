@@ -1851,13 +1851,9 @@ class SegFile(File):
                                     version=1, valid=vsegs))
 
         # write file
-        if override_file_if_exists and \
-                                 self.has_pfn(self.storage_path, site='local'):
-            pass
-        else:
-            self.PFN(urlparse.urljoin('file:',
-                     urllib.pathname2url(self.storage_path)),
-                     site='local')
+        pfn = urlparse.urljoin('file:', urllib.pathname2url(self.storage_path))
+        if not override_file_if_exists or not self.has_pfn(pfn, site='local'):
+            self.PFN(pfn, site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
