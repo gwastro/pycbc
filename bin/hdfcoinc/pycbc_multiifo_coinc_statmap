@@ -151,7 +151,11 @@ f = fw(args.output_file)
 f.attrs['num_of_ifos'] = all_trigs.attrs['num_of_ifos']
 f.attrs['pivot'] = all_trigs.attrs['pivot']
 f.attrs['fixed'] = all_trigs.attrs['fixed']
-f.attrs['ifos'] = all_trigs.attrs['ifos']
+if 'ifos' in all_trigs.attrs:
+    f.attrs['ifos'] = all_trigs.attrs['ifos']
+else:
+    f.attrs['ifos'] = ' '.join(sorted(args.ifos))
+
 f.attrs['timeslide_interval'] = all_trigs.attrs['timeslide_interval']
 
 # Copy over the segment for coincs and singles
