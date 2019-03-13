@@ -28,7 +28,8 @@ pycbc.init_logging(args.verbose)
 logging.info('start')
 
 f = h5py.File(args.foreground_triggers, 'r')
-# Check if using old version, if yes use the old code
+
+# Check if using input files from old (2-ifo) coinc code
 if 'segments/foreground_veto/start' in f:
     start = f['segments/foreground_veto/start'][:]
     end = f['segments/foreground_veto/end'][:]
@@ -47,11 +48,10 @@ if 'segments/foreground_veto/start' in f:
         fsegs[0] = (fsegs[0].coalesce() + fsegs[1].coalesce()).coalesce()
         fsegs[1] = fsegs[0]
 
-    # FIXME: Don't use URL once Larne supports taking file paths directly in the
-    #        workflow File class
-
 else:
-    # Version used for multi-ifo results
+    # Version used for multi-ifo coinc code
+    if args.strict_coinc_time:
+        raise RuntimeError("Can't use strict coinc time option with multi-ifo pipeline!")
     ifolist = f.attrs['ifos'].split(' ')
     ifokey = ''.join(sorted(ifolist))
 
