@@ -72,9 +72,6 @@ class LiveEventManager(object):
     def barrier(self):
         self.comm.Barrier()
 
-    def broadcast(self, value):
-        self.comm.bcast(value, root=0)
-
     def barrier_status(self, status):
         return self.comm.allreduce(status, op=mpi.LAND)
 
@@ -477,11 +474,12 @@ with ctx:
 
     # Synchronize start time if not provided on the command line
     if not args.start_time:
-        if rank == 0:
+        evnt.barrier()
+        if evnt.rank == 0:
             tnow = lal.GPSTimeNow()
         else:
             tnow = None
-        args.start_time = evnt.broadcast(tnow)
+        args.start_time = evnt.comm.bcast(tnow, root=0)
 
     if args.round_start_time:
         args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
