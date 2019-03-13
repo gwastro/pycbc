@@ -24,10 +24,8 @@
 """ This modules contains functions for calculating coincident ranking
 statistic values
 """
-
 import numpy
 from . import events
-
 
 def get_newsnr(trigs):
     """
@@ -91,6 +89,7 @@ def get_newsnr_sgveto_psdvar(trigs):
                                     trigs['sg_chisq'][:],
                                     trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+
 
 class Stat(object):
 
@@ -212,6 +211,7 @@ class NewSNRSGPSDStatistic(NewSNRSGStatistic):
         """
         return get_newsnr_sgveto_psdvar(trigs)
 
+    
 class NetworkSNRStatistic(NewSNRStatistic):
 
     """Same as the NewSNR statistic, but just sum of squares of SNRs"""
@@ -597,6 +597,7 @@ class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
         PhaseTDExpFitSGStatistic.__init__(self, files)
         self.get_newsnr = get_newsnr_sgveto_psdvar
 
+
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
     """Combination of NewSNR with the power chisq and auto chisq"""
@@ -701,4 +702,3 @@ def get_sngl_statistic(stat):
         return sngl_statistic_dict[stat]
     except KeyError:
         raise RuntimeError('%s is not an available detection statistic' % stat)
-
