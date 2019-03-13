@@ -623,7 +623,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
             _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
 
             for inj_insp, trig_insp in zip(inspcomb, fdinspcmb):
-                final_bg_file = final_bg_files[ordered_ifo_list][0][1]
+                final_bg_file = final_bg_files[ordered_ifo_list][0][1][0]
                 curr_tags = [tag, ordered_ifo_list]
                 f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp,
                                                final_bg_file, trig_insp,
