@@ -192,7 +192,7 @@ elif args.regression_method == 'tricube':
 outfile = h5py.File(args.output, 'w')
 outfile.create_dataset('template_id', data=tid)
 outfile.create_dataset('count_above_thresh', data=nabove_smoothed)
-if tcount: outfile.create_dataset('count_total', data=ntotal_smoothed)
+if tcount: outfile.create_dataset('count_in_template', data=ntotal_smoothed)
 outfile.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
 outfile.create_dataset('param_val', data=(np.exp(parvals) if args.log_param
     else parvals))
@@ -205,6 +205,8 @@ outfile.attrs.create('regression_method', data=args.regression_method)
 if args.num_neighbors > 0:
     outfile.attrs.create('n_neighbors', data=args.num_neighbors)
 outfile.attrs.create('smoothing_width', data=args.smoothing_width)
+if 'analysis_time' in fits.attrs:    
+    outfile.attrs['analysis_time'] = fits.attrs['analysis_time']
 
 # add a magic file attribute so that coinc_findtrigs can parse it
 outfile.attrs.create('stat', data=ifo+'-fit_coeffs')

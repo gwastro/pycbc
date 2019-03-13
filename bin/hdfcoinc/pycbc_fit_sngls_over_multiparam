@@ -132,7 +132,7 @@ outfile = h5py.File(args.output, 'w')
 outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed
-if tcount: outfile['count_total'] = ntotal_smoothed
+if tcount: outfile['count_in_template'] = ntotal_smoothed
 
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
     if slog in ['false', 'False', 'FALSE']:
@@ -143,6 +143,8 @@ for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
 # add metadata, some is inherited from template level fit
 outfile.attrs['ifo'] = ifo
 outfile.attrs['stat_threshold'] = fits.attrs['stat_threshold']
+if 'analysis_time' in fits.attrs:
+    outfile.attrs['analysis_time'] = fits.attrs['analysis_time']
 
 # add a magic file attribute so that coinc_findtrigs can parse it
 outfile.attrs['stat'] = ifo + '-fit_coeffs'
