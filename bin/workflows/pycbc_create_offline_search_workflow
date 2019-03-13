@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013 Ian W. Harry, Alex Nitz
+# Copyright (C) 2013-2019 Ian W. Harry, Alex Nitz, Marton Tapai
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -36,6 +36,7 @@ from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
 from pycbc.results.metadata import html_escape
 
+
 def symlink_path(f, path):
     if f is None:
         return
@@ -46,6 +47,7 @@ def symlink_path(f, path):
 
 def symlink_result(f, rdir_path):
     symlink_path(f, rdir[rdir_path])
+
 
 # Log to the screen until we know where the output file is
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
@@ -244,6 +246,10 @@ combined_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      output_dir,
                                                      tags=combctags)
 
+censored_veto = wf.make_foreground_censored_veto(workflow,
+                       combined_bg_file[0], final_veto_file[0], final_veto_name[0],
+                       'closed_box', 'segments')
+
 # Calculate the inspiral psds and make plots
 psd_files = []
 trig_generated_name = 'TRIGGERS_GENERATED'
@@ -279,7 +285,7 @@ insp_files_seg_file = wf.SegFile.from_segment_list_dict('INSP_SEGMENTS',
                  insp_files_seg_dict, valid_segment=workflow.analysis_time,
                  extension='xml', directory=rdir['analysis_time/segment_data'])
 
-################### Range,spectrum and segments plots #######################
+################### Range, spectrum and segments plots #######################
 
 s = wf.make_spectrum_plot(workflow, psd_files, rdir['detector_sensitivity'],
                           precalc_psd_files=precalc_psd_files)
@@ -341,9 +347,6 @@ layout.single_layout(rdir['analysis_time/veto_definer'], ([vetodef_table]))
 #################### Plotting on FULL_DATA results ##########################
 ##################### SINGLES plots first ###################################
 
-# FIXME: This should be created and set!
-censored_veto = None
-
 snrchi = wf.make_snrchi_plot(workflow, insps, censored_veto,
                             'closed_box', rdir['single_triggers'], tags=[tag])
 layout.group_layout(rdir['single_triggers'], snrchi)
@@ -395,8 +398,7 @@ for insp_file in full_insps:
         wf.setup_single_det_minifollowups\
             (workflow, insp_file, hdfbank[0], insp_files_seg_file,
              data_analysed_name, trig_generated_name, 'daxes', currdir,
-             # FIXME: Add censored_veto when it exists
-             #veto_file=censored_veto, veto_segment_name='closed_box',
+             veto_file=censored_veto, veto_segment_name='closed_box',
              tags=insp_file.tags + [subsec])
 
 ##################### COINC FULL_DATA plots ###################################
