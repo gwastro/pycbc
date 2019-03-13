@@ -136,9 +136,7 @@ def findchirp_cluster_over_window(times, values, window_length):
     indices: Array
         The reduced list of indices of the SNR values
     """
-    #Commented out the below assert statement to allow for no clustering
-    #in the coherent matched_filter codes
-    #assert window_length > 0, 'Clustering window length is not positive'
+    assert window_length > 0, 'Clustering window length is not positive'
 
     from weave import inline
     indices = numpy.zeros(len(times), dtype=int)
