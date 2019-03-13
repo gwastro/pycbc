@@ -192,6 +192,7 @@ class NewSNRSGStatistic(NewSNRStatistic):
         """
         return get_newsnr_sgveto(trigs)
 
+
 class NewSNRSGPSDStatistic(NewSNRSGStatistic):
 
     """ Calculate the NewSNRSGPSD coincident detection statistic """
@@ -211,7 +212,7 @@ class NewSNRSGPSDStatistic(NewSNRSGStatistic):
         """
         return get_newsnr_sgveto_psdvar(trigs)
 
-    
+
 class NetworkSNRStatistic(NewSNRStatistic):
 
     """Same as the NewSNR statistic, but just sum of squares of SNRs"""
@@ -531,11 +532,12 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
         ExpFitCombinedSNR.__init__(self, files)
         self.get_newsnr = get_newsnr_sgveto
 
+
 class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
 
-    """ExpFitCombinedSNR but with sine-Gaussian veto added to the
+    """ExpFitCombinedSNR but with sine-Gaussian veto and PSD variation added to
 
-    single detector ranking
+    the single detector ranking
     """
 
     def __init__(self, files):
@@ -589,7 +591,7 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
 class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
 
     """Statistic combining exponential noise model with signal histogram PDF
-       and adding the sine-Gaussian veto and PSD variation statistic to the 
+       and adding the sine-Gaussian veto and PSD variation statistic to the
        single detector ranking
     """
 
