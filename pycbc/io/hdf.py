@@ -220,6 +220,7 @@ class StatmapData(DictArray):
                 f['segments/%s/start' % key] = self.seg[key]['start'][:]
                 f['segments/%s/end' % key] = self.seg[key]['end'][:]
 
+
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None, ifos=None):
@@ -254,6 +255,7 @@ class MultiifoStatmapData(StatmapData):
                              interval,
                              window)
         return self.select(cid)
+
 
 class FileData(object):
 
@@ -365,6 +367,7 @@ class DataFromFiles(object):
             d.close()
         logging.info('- got %i values' % sum(len(v) for v in vals))
         return np.concatenate(vals)
+
 
 class SingleDetTriggers(object):
     """
@@ -605,7 +608,8 @@ class SingleDetTriggers(object):
 
     @property
     def newsnr_sgveto_psdvar(self):
-        return events.newsnr_sgveto_psdvar(self.snr, self.rchisq, self.sgchisq, self.psd_var_val)
+        return events.newsnr_sgveto_psdvar(self.snr, self.rchisq,
+                                           self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):
         if hasattr(self, cname):
@@ -876,7 +880,6 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
-
 
 def save_dict_to_hdf5(dic, filename):
     """
