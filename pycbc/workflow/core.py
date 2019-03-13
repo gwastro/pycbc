@@ -510,6 +510,12 @@ class Executable(pegasus_workflow.Executable):
         tags = [tag.upper() for tag in tags]
         self.tags = tags
 
+        if len(tags) > 6:
+            warn_msg = "This job has way too many tags. "
+            warn_msg += "Current tags are {}. ".format(' '.join(tags))
+            warn_msg += "Current executable {}.".format(self.name)
+            logging.info(warn_msg)
+
         if len(tags) != 0:
             self.tagged_name = "{0}-{1}".format(self.name, '_'.join(tags))
         else:

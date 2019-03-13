@@ -242,7 +242,7 @@ for bin_file in bin_files:
     
 # Open box table
 table = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
+                    hdfbank[0], rdir['open_box_result'], singles=insps,
                     extension='.html', tags=["html"])
 
 symlink_result(table, 'open_box_result/significance')
