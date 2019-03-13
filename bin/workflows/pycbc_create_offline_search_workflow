@@ -563,6 +563,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                                      output_dir,
                                                      tags=combctags)
     
+    # FIXME: Shouldn't this be censored_veto
     found_inj = wf.find_injections_in_hdf_coinc\
         (workflow, [combined_inj_bg_file], [file_for_injfind],
          final_veto_file[0], final_veto_name[0], output_dir, tags=combctags)
@@ -575,10 +576,11 @@ for inj_file, tag in zip(inj_files, inj_tags):
     small_inj_file_dict[tag] = small_inj_file
 
 # Make combined injection file
+# FIXME: Shouldn't this be censored_veto
 if len(files_for_combined_injfind) > 0:
     found_inj_comb = wf.find_injections_in_hdf_coinc\
-        (workflow, inj_coincs, files_for_combined_injfind, censored_veto,
-         'closed_box', 'allinj', tags=['ALLINJ'])
+        (workflow, inj_coincs, files_for_combined_injfind, final_veto_file[0],
+         final_veto_name[0], 'allinj', tags=['ALLINJ'])
 
 
 ############################ Injection plots #################################
