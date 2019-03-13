@@ -72,6 +72,9 @@ class LiveEventManager(object):
     def barrier(self):
         self.comm.Barrier()
 
+    def broadcast(self, value):
+        self.comm.bcast(value, root=0)
+
     def barrier_status(self, status):
         return self.comm.allreduce(status, op=mpi.LAND)
 
@@ -330,7 +333,7 @@ parser.add_argument('--increment-update-cache', action=MultiDetOptionAction, nar
 parser.add_argument('--frame-read-timeout', type=float, default=30)
 parser.add_argument('--increment', type=int, default=8)
 
-parser.add_argument('--start-time', type=int, default=lal.GPSTimeNow(),
+parser.add_argument('--start-time', type=int, default=None,
                     help='Start the analysis at the given GPS time')
 parser.add_argument('--end-time', type=int, default=numpy.inf,
                     help='Stop the analysis at the given GPS time')
@@ -405,10 +408,6 @@ fft.from_cli(args)
 sr = args.sample_rate
 flow = args.low_frequency_cutoff
 
-if args.round_start_time:
-    args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
-    logging.info('Starting from: %s', args.start_time)
-
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
 total_pad = args.trim_padding * 2 + valid_pad
@@ -475,8 +474,22 @@ with ctx:
                                     newsnr_threshold=args.newsnr_threshold,
                                     max_triggers_in_batch=args.max_triggers_in_batch,
                                     maxelements=args.max_batch_size)
+
+    # Synchronize start time if not provided on the command line
+    if not args.start_time:
+        if rank == 0:
+            tnow = lal.GPSTimeNow()
+        else:
+            tnow = None
+        args.start_time = evnt.broadcast(tnow)
+
+    if args.round_start_time:
+        args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
+        logging.info('Starting from: %s', args.start_time)
+
     if args.max_length is not None:
         maxlen = args.max_length
+
     maxlen = int(maxlen)
     data_reader = {}
     sngl_estimator = {}
