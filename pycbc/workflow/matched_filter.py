@@ -300,6 +300,8 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
                str(radians(float(cp.get('workflow', 'ra')))))
         cp.set('inspiral', 'latitude',\
                str(radians(float(cp.get('workflow', 'dec')))))
+        # At the moment we aren't using sky grids, but when we do this code
+        # might be used then. 
         # from pycbc.workflow.grb_utils import get_sky_grid_scale
         # if cp.has_option("jitter_skyloc", "apply-fermi-error"):
         #     cp.set('inspiral', 'sky-error',
