@@ -1,0 +1,57 @@
+==========population.ini==========
+
+[workflow-population]
+
+[calculate_rate_posterior]
+
+min-tmplt-mchirp = 4.32
+max-tmplt-mchirp = 4000
+ min-mass = 5.0
+max-mass = 50.
+max-mtotal = 100.
+
+thr-var = 'stat'
+thr-val = 8.0
+calibration-error = 3.0
+
+prior-samples = some_url
+
+[calculate_rate_posterior-imf]
+
+[calculate_rate_posterior-lnm]
+
+[plot_rate_posterior]
+
+==========executable.ini==========
+
+calculate_rate_posterior=${which:pycbc_population_rates}
+plot_rate_posterior=${which:pycbc_population_plots}
+
+==========Command Line==========
+pycbc_population_rates --sim-files
+log_dist/H1L1-HDFINJFIND_BBH1_INJ_INJ_INJ-1164556817-1929600.hdf
+log_dist/H1L1-HDFINJFIND_BBH2_INJ_INJ_INJ-1164556817-1929600.hdf
+log_dist/H1L1-HDFINJFIND_BBH3_INJ_INJ_INJ-1164556817-1929600.hdf
+log_dist/H1L1-HDFINJFIND_BBH4_INJ_INJ_INJ-1164556817-1929600.hdf
+log_dist/H1L1-HDFINJFIND_BBH5_INJ_INJ_INJ-1164556817-1929600.hdf
+log_dist/H1L1-HDFINJFIND_BBH6_INJ_INJ_INJ-1164556817-1929600.hdf
+--m_dist 'log' 'log' 'log' 'log' 'log' 'log' --s_dist 'aligned'
+'aligned' 'aligned' 'aligned' 'aligned' 'aligned' --d_dist 'dchirp'
+'dchirp' 'dchirp' 'dchirp' 'dchirp' 'dchirp' --bank-file
+log_dist/bkg_and_rates_prior/H1L1-BANK2HDF-1164556817-1929600.hdf
+--statmap-file log_dist/bkg_and_rates_prior/H1L1-STATMAP_FULL_DATA_FULL_CUMULATIVE_CAT_12H_FULL_DATA_FULL-1164556817-1929600.hdf
+--prior-samples log_dist/bkg_and_rates_prior/pycbc_astro_prior.hdf5
+--output-file 'astro_output/rate-posterior_imf.hdf5' --thr-var 'stat'
+--thr-val 8.0 --population-model 'imf' --min-mass 5.0 --max-mass 50.
+--max-mtotal 100. --min-tmplt-mchirp 4.32 --max-tmplt-mchirp 4000
+--calibration-error 3.0
+
+
+pycbc_population_plots --prior-samples
+log_dist/bkg_and_rates_prior/pycbc_astro_prior.hdf5
+--posterior-samples astro_output/rate-posterior_lnm.hdf5
+astro_output/rate-posterior_imf.hdf5 --population-models 'lnm' 'imf'
+--output-rates astro_output/rates_post_chunk3.hdf5 --rates-figure
+astro_output/rate_prior_posterior.png --pastro-figure p_astro.png
+--plot-labels 'lnm' 'imf'
+
