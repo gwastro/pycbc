@@ -240,8 +240,8 @@ combined_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      tags=combctags)
 
 censored_veto = wf.make_foreground_censored_veto(workflow,
-                      combined_bg_file, final_veto_file[0], final_veto_name[0],
-                      'closed_box', 'segments')
+                       combined_bg_file, final_veto_file, final_veto_name[0],
+                       'closed_box', 'segments')
 
 # Calculate the inspiral psds and make plots
 psd_files = []
