@@ -220,6 +220,7 @@ class StatmapData(DictArray):
                 f['segments/%s/start' % key] = self.seg[key]['start'][:]
                 f['segments/%s/end' % key] = self.seg[key]['end'][:]
 
+
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None, ifos=None):
@@ -254,6 +255,7 @@ class MultiifoStatmapData(StatmapData):
                              interval,
                              window)
         return self.select(cid)
+
 
 class FileData(object):
 
@@ -366,6 +368,7 @@ class DataFromFiles(object):
         logging.info('- got %i values' % sum(len(v) for v in vals))
         return np.concatenate(vals)
 
+
 class SingleDetTriggers(object):
     """
     Provides easy access to the parameters of single-detector CBC triggers.
@@ -450,6 +453,8 @@ class SingleDetTriggers(object):
             self.stat_name = "Reweighted SNR"
         elif ranking_statistic == "newsnr_sgveto":
             self.stat_name = "Reweighted SNR (+sgveto)"
+        elif ranking_statistic == "newsnr_sgveto_psdvar":
+            self.stat_name = "Reweighted SNR (+sgveto+psdvar)"
         elif ranking_statistic == "snr":
             self.stat_name = "SNR"
         else:
@@ -590,12 +595,21 @@ class SingleDetTriggers(object):
             / (np.array(self.trigs['chisq_dof'])[self.mask] * 2 - 2)
 
     @property
+    def psd_var_val(self):
+        return np.array(self.trigs['psd_var_val'])[self.mask]
+
+    @property
     def newsnr(self):
         return events.newsnr(self.snr, self.rchisq)
 
     @property
     def newsnr_sgveto(self):
         return events.newsnr_sgveto(self.snr, self.rchisq, self.sgchisq)
+
+    @property
+    def newsnr_sgveto_psdvar(self):
+        return events.newsnr_sgveto_psdvar(self.snr, self.rchisq,
+                                           self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):
         if hasattr(self, cname):
@@ -866,7 +880,6 @@ def get_chisq_from_file_choice(hdfile, chisq_choice):
         err_msg = "Do not recognize --chisq-choice %s" % chisq_choice
         raise ValueError(err_msg)
     return chisq
-
 
 def save_dict_to_hdf5(dic, filename):
     """
