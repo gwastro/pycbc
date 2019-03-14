@@ -172,6 +172,11 @@ class LiveEventManager(object):
             coinc_ifos = coinc_results['foreground/type'].split('-')
             followup_ifos = list(set(ifos) - set(coinc_ifos))
 
+            double_ifar = coinc_results['foreground/ifar']
+            if double_ifar < args.ifar_double_followup_threshold:
+                coinc_results['foreground/NO_FOLLOWUP'] = True
+                return
+
             fud = self.compute_followup_data(coinc_ifos, coinc_results,
                                              data_readers, bank, followup_ifos)
 
@@ -361,6 +366,9 @@ parser.add_argument('--enable-background-estimation', default=False, action='sto
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading coincident '
                          'triggers to GraceDB, in years.')
+parser.add_argument('--ifar-double-followup-threshold', type=float, required=True,
+                    help='Inverse-FAR threshold to followup double coincs with'
+                         'additional detectors')
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
                     help='Upload triggers to GraceDB')
 parser.add_argument('--file-prefix', default='Live')
