@@ -537,8 +537,8 @@ class EventManagerMultiDetBase(EventManager):
         self.coinc_list = []
         self.write_performance = False
         for ifo in ifos:
-            self.template_event_dict[ifo] = numpy.array(
-                [], dtype=self.event_dtype)
+            self.template_event_dict[ifo] = \
+                numpy.array([], dtype=self.event_dtype)
 
     def add_template_events_to_ifo(self, ifo, columns, vectors):
         """ Add a vector indexed """
