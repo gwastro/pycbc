@@ -1733,15 +1733,9 @@ class LiveBatchMatchedFilter(object):
 def followup_event_significance(ifo, data_reader, bank,
                                 template_id, coinc_times,
                                 coinc_threshold=0.005,
-                                lookback=200, duration=0.095):
+                                lookback=150, duration=0.095):
     """ Followup an event in another detector and determine its significance
     """
-    # Lookback for background must be shorter than the strain buffer
-    if lookback > data_reader.strain.duration:
-        lookback = data_reader.strain.duration / 2
-        logging.warn('Setting lookback for background to '
-                     '%s to ensure data exists' % lookback)
-
     # calculate onsource time range
     from pycbc.detector import Detector
     onsource_start = -numpy.inf
@@ -1761,11 +1755,17 @@ def followup_event_significance(ifo, data_reader, bank,
     onsource_start -= coinc_threshold
     onsource_end += coinc_threshold
 
+    # Calculate how much time needed to calculate significance
+    trim_pad = (data_reader.trim_padding * data_reader.strain.delta_t)
+    bdur = int(lookback + 2.0 * trim_pad + htilde.length_in_time)
+    if bdur > data_reader.strain.duration * .75:
+        bdur = data_reader.strain.duration * .75
+
     # Require all strain be valid within lookback time
     if data_reader.state is not None:
         state_start_time = data_reader.strain.end_time \
-                - data_reader.reduced_pad - lookback
-        if not data_reader.state.is_extent_valid(state_start_time, lookback):
+                - data_reader.reduced_pad - bdur
+        if not data_reader.state.is_extent_valid(state_start_time, bdur):
             return None, None, None
 
     # We won't require that all DQ checks be valid for now, except at
@@ -1777,8 +1777,6 @@ def followup_event_significance(ifo, data_reader, bank,
             return None, None, None
 
     # Calculate SNR time series for this duration
-    trim_pad = (data_reader.trim_padding * data_reader.strain.delta_t)
-    bdur = lookback + 2.0 * trim_pad
     htilde = bank.get_template(template_id, min_buffer=bdur)
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
@@ -1792,7 +1790,6 @@ def followup_event_significance(ifo, data_reader, bank,
     peak_value = abs(onsrc[peak])
 
     bstart = float(snr.start_time) + htilde.length_in_time + trim_pad
-
     bkg = abs(snr.time_slice(bstart, onsource_start)).numpy()
 
     window = int((onsource_end - onsource_start) * snr.sample_rate)
