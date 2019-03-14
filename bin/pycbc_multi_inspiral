@@ -59,7 +59,7 @@ parser.add_argument("--taper-template", choices=taper_choices,
                        "end of the waveform before FFTing.")
 parser.add_argument("--cluster-method", choices=["template", "window"])
 parser.add_argument("--cluster-window", type=float, default = -1,
-                  help="Length of clustering window in seconds")
+                  help="Length of clustering window in seconds.")
 
 parser.add_argument("--bank-veto-bank-file", type=str)
 
@@ -92,16 +92,18 @@ parser.add_argument("--longitude", type=float)
 parser.add_argument("--latitude", type=float)
 parser.add_argument("--coinc-threshold", type=float, default=0.0, help="""
                     Triggers with coincident/coherent snr below this value will
-                    be discarded""")
+                    be discarded.""")
 parser.add_argument("--null-min", type=float, default=5.25, help="""
                     Triggers with null_snr above this value with be
-                    discarded""")
+                    discarded.""")
 parser.add_argument("--null-grad", type=float, default=0.2, help="""
                     The gradient of the line defining the null cut after the
-                    null step""")
+                    null step.""")
 parser.add_argument("--null-step", type=float, default=20., help="""
                     Triggers with coherent snr above null_step will be cut
-                    according to the null_grad and null_min""")
+                    according to the null_grad and null_min.""")
+parser.add_argument("--trigger-time", type=int, help="""
+                    Time of the GRB, used to set the antenna patterns.""")
 
 # Add options groups
 strain.insert_strain_option_group_multi_ifo(parser)
@@ -117,7 +119,7 @@ SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()
 
 # Use the time in the middle of the segment to calculate the antenna patterns.
-t_gps = (opt.trig_end_time[0] + opt.trig_start_time[0])/2
+t_gps = opt.trigger_time
 
 # Set sky position being searched.
 ra = opt.longitude
