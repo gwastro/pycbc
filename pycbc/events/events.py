@@ -221,7 +221,7 @@ def newsnr_sgveto(snr, bchisq, sgchisq):
         return nsnr[0]
 
 def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
-    """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD 
+    """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD
     variation statistic """
     nsnr = newsnr_sgveto(snr, bchisq, sgchisq)
     nsnr = numpy.array(nsnr, ndmin=1)
@@ -308,7 +308,7 @@ class EventManager(object):
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
         self.events = self.events[i]
 
-    def keep_loudest_in_interval(self, window, num_keep):
+    def keep_loudest_in_interval(self, window, num_keep, log_chirp_width=None):
         if len(self.events) == 0:
             return
 
@@ -319,11 +319,29 @@ class EventManager(object):
         wtime = (time / window).astype(numpy.int32)
         bins = numpy.unique(wtime)
 
+        if log_chirp_width:
+            from pycbc.conversions import mchirp_from_mass1_mass2
+            m1 = numpy.array([p['tmplt'].mass1 for p in self.template_params])
+            m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params])
+
+            # chirp mass of each template
+            mc = mchirp_from_mass1_mass2(m1, m2)[e['template_id']]
+            lmc = numpy.log(mc)
+            imc = (lmc / log_chirp_width).astype(numpy.int32)
+            cbins = numpy.unique(imc)
+
         keep = []
         for b in bins:
-            bloc = numpy.where((wtime == b))[0]
-            bloudest = stat[bloc].argsort()[-num_keep:]
-            keep.append(bloc[bloudest])
+            if log_chirp_width:
+                for b2 in cbins:
+                    bloc = numpy.where((wtime == b) & (imc == b2))[0]
+                    bloudest = stat[bloc].argsort()[-num_keep:]
+                    keep.append(bloc[bloudest])
+            else:
+                bloc = numpy.where((wtime == b))[0]
+                bloudest = stat[bloc].argsort()[-num_keep:]
+                keep.append(bloc[bloudest])
+
         keep = numpy.concatenate(keep)
         self.events = e[keep]
 

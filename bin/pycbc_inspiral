@@ -161,6 +161,8 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     This is used to identify FULL_DATA jobs for
                     compatibility with pipedown post-processing.
                     Option will be removed when no longer needed.""")
+parser.add_argument("--keep-loudest-log-chirp-window", type=float,
+                    help="Keep loudest triggers within log chirp mass window")
 parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
 parser.add_argument("--keep-loudest-num", type=int,
@@ -214,10 +216,10 @@ with ctx:
 
     # Read specified user-provided wisdom files
     if opt.fftw_input_float_wisdom_file is not None:
-        import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)        
+        import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
 
     if opt.fftw_input_double_wisdom_file is not None:
-        import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)    
+        import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)
 
     flow = opt.low_frequency_cutoff
     flen = strain_segments.freq_len
@@ -344,7 +346,7 @@ with ctx:
     # from the bank.
     for t_num in xrange(len(bank)):
         tmplt_generated = False
-       
+
         for s_num, stilde in enumerate(segments):
             # Filter check checks the 'inj_filter_rejector' options to
             # determine whether
@@ -433,8 +435,10 @@ if opt.keep_loudest_interval:
     logging.info("Removing triggers that are not within the top %s loudest"
                  " of a %s second interval" % (opt.keep_loudest_num,
                                                opt.keep_loudest_interval))
-    event_mgr.keep_loudest_in_interval(opt.keep_loudest_interval * opt.sample_rate,
-                                       opt.keep_loudest_num)
+    event_mgr.keep_loudest_in_interval(
+        opt.keep_loudest_interval * opt.sample_rate,
+        opt.keep_loudest_num,
+        log_chirp_width=opt.keep_loudest_log_chirp_window)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
 if opt.injection_window and hasattr(gwstrain, 'injections'):
