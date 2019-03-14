@@ -87,6 +87,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
         multi_ifo_style = True
         # Get list of groups which contain subgroup 'time' - these will be the IFOs
         ifo_list = [key for key in f['foreground'] if 'time' in f['foreground/%s/' % key]]
+        fo.attrs['ifos'] = ' '.join(sorted(ifo_list))
         assert len(ifo_list) > 1
 
     template_id = f['foreground/template_id'][:]
