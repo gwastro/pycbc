@@ -58,6 +58,7 @@ fi
 popd
 
 # Run Inference Scripts
+## Run inference on 2D-normal analytic likelihood function
 pushd examples/inference/analytic-normal2d
 bash -e run.sh
 if test $? -ne 0 ; then
@@ -69,7 +70,14 @@ else
 fi
 popd
 
-bash -e tools/inference_gw150914_test.sh
+## Run inference on GW150914 data
+wget -nc https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf
+wget -nc https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf
+cp examples/inference/gw150914/run.sh .
+sed 's/nwalkers = 200/nwalkers = 30/g' -e 's/ntemps = 20/ntemps = 2/g' -e 's/effective-nsamples = 1000/niterations = 20/g' -e 's/checkpoint-interval = 2000/checkpoint-interval = 10/g' -e '/max-samples-per-chain = 1000/d' examples/inference/gw150914/inference.ini > inference.ini
+export FRAMES="--frame-files H1:H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf L1:L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf"
+export CHANNELS="H1:GWOSC-4KHZ_R1_STRAIN L1:GWOSC-4KHZ_R1_STRAIN"
+bash -e run.sh
 if test $? -ne 0 ; then
     RESULT=1
     echo -e "    FAILED!"
@@ -77,6 +85,8 @@ if test $? -ne 0 ; then
 else
     echo -e "    Pass."
 fi
+rm H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf run.sh inference.ini
+
 
 echo -e "\\n>> [`date`] Building documentation"
 
