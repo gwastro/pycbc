@@ -587,6 +587,7 @@ if len(files_for_combined_injfind) > 0:
 
 # Per injection run plots
 for inj_file, tag in zip(inj_files, inj_tags):
+    s = []
     found_inj = found_inj_dict[tag]
     insps = insps_dict[tag]
     small_inj_file = small_inj_file_dict[tag]
