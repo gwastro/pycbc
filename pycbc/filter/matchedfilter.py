@@ -1736,6 +1736,11 @@ def followup_event_significance(ifo, data_reader, bank,
                                 lookback=150, duration=0.095):
     """ Followup an event in another detector and determine its significance
     """
+    from pycbc.waveform import get_waveform_filter_length_in_time
+    tmplt = bank.table[template_id]
+    length_in_time = get_waveform_filter_length_in_time(tmplt['approximant'],
+                                                        tmplt)
+
     # calculate onsource time range
     from pycbc.detector import Detector
     onsource_start = -numpy.inf
@@ -1757,7 +1762,7 @@ def followup_event_significance(ifo, data_reader, bank,
 
     # Calculate how much time needed to calculate significance
     trim_pad = (data_reader.trim_padding * data_reader.strain.delta_t)
-    bdur = int(lookback + 2.0 * trim_pad + htilde.length_in_time)
+    bdur = int(lookback + 2.0 * trim_pad + length_in_time)
     if bdur > data_reader.strain.duration * .75:
         bdur = data_reader.strain.duration * .75
 
@@ -1789,7 +1794,7 @@ def followup_event_significance(ifo, data_reader, bank,
     peak_time = peak * snr.delta_t + onsrc.start_time
     peak_value = abs(onsrc[peak])
 
-    bstart = float(snr.start_time) + htilde.length_in_time + trim_pad
+    bstart = float(snr.start_time) + length_in_time + trim_pad
     bkg = abs(snr.time_slice(bstart, onsource_start)).numpy()
 
     window = int((onsource_end - onsource_start) * snr.sample_rate)
