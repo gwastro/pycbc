@@ -91,6 +91,8 @@ if center_time == -1.0:
     ax.set_xlabel('Time - %.3f (s)' % center_time)
     ax.set_ylabel('Frequency (Hz)')
     ax.set_title(title)
+    pc = ax.pcolormesh(t + opts.gps_start_time - center_time, freq, Pxx,
+                   vmin=1, vmax=1000, norm=norm, cmap='afmhot_r')
     cb = fig.colorbar(pc, fraction=0.04, pad=0.01,
                       ticks=LogLocator(subs=range(10)))
     cb.set_label('Power density (normalized to its median over time)')
