@@ -96,7 +96,7 @@ if center_time == -1.0:
     cb = fig.colorbar(pc, fraction=0.04, pad=0.01,
                       ticks=LogLocator(subs=range(10)))
     cb.set_label('Power density (normalized to its median over time)')
-    
+
     caption = ("This plot shows the power spectrogram of the strain data, "
                "normalized to its median over time, as a heatmap. The "
                "time-frequency evolution of each single trigger is shown as a blue "
@@ -108,7 +108,7 @@ if center_time == -1.0:
         fig, opts.output_file, cmd=' '.join(sys.argv),
         title='Strain spectrogram and inspiral tracks for %s' % opts.detector,
         caption=caption, fig_kwds={'dpi': 100})
-    
+
     logging.info('Done')
 
 logging.info('Plotting strain spectrogram')

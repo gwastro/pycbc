@@ -646,7 +646,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
                 node.add_opt('--gps-start-time', int(trig_time))
                 node.add_opt('--gps-end-time', int(trig_time))
                 node.add_opt('--center-time', trig_time)
-                
+
                 node.add_opt('--ifo', single.ifo)
                 node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
                 workflow += node
@@ -745,15 +745,15 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
                 node.add_opt('--gps-start-time', int(trig_time))
                 node.add_opt('--gps-end-time', int(trig_time))
                 node.add_opt('--center-time', trig_time)
-                
+
                 if veto_file:
                     node.add_input_opt('--veto-file', veto_file)
-                
+
                 node.add_opt('--detector', single.ifo)
                 node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
                 workflow += node
                 return node.output_files
-            else:       
+            else:
                 err_msg = "Trig time {} ".format(trig_time)
                 err_msg += "does not seem to lie within any data segments. "
                 err_msg += "This shouldn't be possible, please ask for help!"
