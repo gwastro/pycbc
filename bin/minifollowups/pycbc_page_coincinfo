@@ -81,7 +81,7 @@ if 'time1' in f.attrs:
 else:
     # Version used for multi-ifo coinc code
     # TODO: Figure out what to do for timedelays
-        headers = ["Coincident ranking statistic",
+    headers = ["Coincident ranking statistic",
                "Inclusive IFAR (yr)",
                "Inclusive FAP", 
                "Exclusive IFAR (yr)",
