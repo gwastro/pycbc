@@ -642,6 +642,15 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
             if trig_time in seg:
                 data_seg = seg
                 break
+            elif trig_time == -1.0:
+                node.add_opt('--gps-start-time', int(trig_time))
+                node.add_opt('--gps-end-time', int(trig_time))
+                node.add_opt('--center-time', trig_time)
+                
+                node.add_opt('--ifo', single.ifo)
+                node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+                workflow += node
+                return node.output_files
         else:
             err_msg = "Trig time {} ".format(trig_time)
             err_msg += "does not seem to lie within any data segments. "

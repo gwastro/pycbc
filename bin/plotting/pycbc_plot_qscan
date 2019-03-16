@@ -76,7 +76,7 @@ parser.add_argument('--qtransform-qrange-upper', default=64, type=float,
 parser.add_argument('--qtransform-mismatch', default=0.2, type=float,
                     help='Mismatch between frequency tiles, default=0.2')
 
-parser.add_argument('--linear-y-axis', dest='log_y', default=True, 
+parser.add_argument('--linear-y-axis', dest='log_y', default=True,
                     action='store_false',
                     help='Use a linear y-axis. By default a log axis is used.')
 parser.add_argument('--linear-colorbar', dest='log_colorbar', default=True,
@@ -92,94 +92,110 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-#opts.low_frequency_cutoff = opts.f_low
-strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
 else:
     center_time = opts.center_time
 
-if opts.qtransform_frange_upper is None and \
-        opts.qtransform_frange_lower is None:
-    curr_frange = (30, opts.sample_rate / 4.)
-elif opts.qtransform_frange_upper is None or \
-        opts.qtransform_frange_lower is None:
-    err_msg = 'Must provide either both --qtransfor-frange-upper and '
-    err_msg += '--qtransfor-frange-lower or neither option.'
-    raise ValueError(err_msg)
+if center_time == -1.0:
+    fig, axes = plt.subplots(1,1)
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
+                    right='off')
+    plt.grid(False)
+    plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
+    plt.ylabel('Frequency (Hz)')
+    title = '%s: no triggers' % opts.ifo
+    caption = "This shows the Q-transform as a function of time and "
+                        "frequency"
+    pycbc.results.save_fig_with_metadata\
+    (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
+     title=title, caption=caption)
 else:
-    curr_frange = (opts.qtransform_frange_lower, opts.qtransform_frange_upper)
+    #opts.low_frequency_cutoff = opts.f_low
+    strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
-rem_corrupted = True
-if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
-    rem_corrupted = False
+    if opts.qtransform_frange_upper is None and \
+    opts.qtransform_frange_lower is None:
+        curr_frange = (30, opts.sample_rate / 4.)
+        elif opts.qtransform_frange_upper is None or \
+        opts.qtransform_frange_lower is None:
+            err_msg = 'Must provide either both --qtransfor-frange-upper and '
+            err_msg += '--qtransfor-frange-lower or neither option.'
+            raise ValueError(err_msg)
+    else:
+        curr_frange = (opts.qtransform_frange_lower, opts.qtransform_frange_upper)
 
-strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
+    rem_corrupted = True
+    if (center_time - strain.start_time) < 2 or (strain.end_time - center_time) < 2:
+        rem_corrupted = False
 
-wins = opts.time_windows
-fig, axes = plt.subplots(len(wins),1)
-times_all = []
-freqs_all = []
-qvals_all = []
+    strain = strain.whiten(4, 4, remove_corrupted=rem_corrupted)
 
-for curr_idx in range(len(wins)):
-    curr_win = wins[curr_idx]
-    # Catch the case that not enough data is available.
-    if opts.center_time - curr_win[0] < strain.start_time:
-        curr_win[0] = float(opts.center_time - strain.start_time - 0.01)
-    if opts.center_time + curr_win[1] > strain.end_time:
-        curr_win[1] = float(strain.end_time - opts.center_time - 0.01)
-    strain_zoom = strain.time_slice(opts.center_time - curr_win[0],
-                                    opts.center_time + curr_win[1])
+    wins = opts.time_windows
+    fig, axes = plt.subplots(len(wins),1)
+    times_all = []
+    freqs_all = []
+    qvals_all = []
 
-    times, freqs, qvals = strain_zoom.qtransform\
+    for curr_idx in range(len(wins)):
+        curr_win = wins[curr_idx]
+        # Catch the case that not enough data is available.
+        if opts.center_time - curr_win[0] < strain.start_time:
+            curr_win[0] = float(opts.center_time - strain.start_time - 0.01)
+        if opts.center_time + curr_win[1] > strain.end_time:
+            curr_win[1] = float(strain.end_time - opts.center_time - 0.01)
+        strain_zoom = strain.time_slice(opts.center_time - curr_win[0],
+                                        opts.center_time + curr_win[1])
+
+        times, freqs, qvals = strain_zoom.qtransform\
         (delta_t=opts.qtransform_delta_t, delta_f = opts.qtransform_delta_f,
          logfsteps=opts.qtransform_logfsteps, frange=curr_frange,
          qrange=(opts.qtransform_qrange_lower, opts.qtransform_qrange_upper),
          mismatch=opts.qtransform_mismatch)
-    times_all.append(times)
-    freqs_all.append(freqs)
-    qvals_all.append(qvals)
+        times_all.append(times)
+        freqs_all.append(freqs)
+        qvals_all.append(qvals)
 
-max_qval = max([qvals.max() for qvals in qvals_all])
+    max_qval = max([qvals.max() for qvals in qvals_all])
 
-for curr_idx in range(len(wins)):
-    ax = axes[curr_idx]
-    times = times_all[curr_idx]
-    freqs = freqs_all[curr_idx]
-    qvals = qvals_all[curr_idx]
-    curr_win = wins[curr_idx]
+    for curr_idx in range(len(wins)):
+        ax = axes[curr_idx]
+        times = times_all[curr_idx]
+        freqs = freqs_all[curr_idx]
+        qvals = qvals_all[curr_idx]
+        curr_win = wins[curr_idx]
 
-    norm=None
-    if opts.log_colorbar:
-        norm=LogNorm(vmin=1, vmax=max_qval)
+        norm=None
+        if opts.log_colorbar:
+            norm=LogNorm(vmin=1, vmax=max_qval)
 
-    im = ax.pcolormesh(times - opts.center_time, freqs, qvals, norm=norm)
-    ax.set_xlim(-curr_win[0], curr_win[1])
-    ax.set_ylim(curr_frange[0], curr_frange[1])
-    if opts.log_y:
-        ax.set_yscale('log')
+        im = ax.pcolormesh(times - opts.center_time, freqs, qvals, norm=norm)
+        ax.set_xlim(-curr_win[0], curr_win[1])
+        ax.set_ylim(curr_frange[0], curr_frange[1])
+        if opts.log_y:
+            ax.set_yscale('log')
 
-# https://stackoverflow.com/questions/6963035/pyplot-axes-labels-for-subplots
-fig.add_subplot(111, frameon=False)
-plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
-                right='off')
-plt.grid(False)
-plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
-plt.ylabel('Frequency (Hz)')
+    # https://stackoverflow.com/questions/6963035/pyplot-axes-labels-for-subplots
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
+                    right='off')
+    plt.grid(False)
+    plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
+    plt.ylabel('Frequency (Hz)')
 
-# https://stackoverflow.com/questions/13784201/matplotlib-2-subplots-1-colorbar
-cb = fig.colorbar(im, ax=axes.ravel().tolist())
-cb.set_label('Normalized power')
+    # https://stackoverflow.com/questions/13784201/matplotlib-2-subplots-1-colorbar
+    cb = fig.colorbar(im, ax=axes.ravel().tolist())
+    cb.set_label('Normalized power')
 
-if opts.plot_title is None:
-    opts.plot_title = 'Q-transform plot around {:.3f}'.format(opts.center_time)
-if opts.plot_caption is None:
-    # FIXME: Someone please improve!
-    opts.plot_caption = ("This shows the Q-transform as a function of time and "
+    if opts.plot_title is None:
+        opts.plot_title = 'Q-transform plot around {:.3f}'.format(opts.center_time)
+    if opts.plot_caption is None:
+        # FIXME: Someone please improve!
+        opts.plot_caption = ("This shows the Q-transform as a function of time and "
                         "frequency")
 
-pycbc.results.save_fig_with_metadata\
+    pycbc.results.save_fig_with_metadata\
     (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
      title=opts.plot_title, caption=opts.plot_caption)
