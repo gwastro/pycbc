@@ -646,8 +646,8 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
                 node.add_opt('--gps-start-time', int(trig_time))
                 node.add_opt('--gps-end-time', int(trig_time))
                 node.add_opt('--center-time', trig_time)
-
-                node.add_opt('--ifo', ifo)
+                caption_string = 'No trigger in %s' % ifo
+                node.add_opt('--plot-caption', caption_string)
                 node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
                 workflow += node
                 return node.output_files
