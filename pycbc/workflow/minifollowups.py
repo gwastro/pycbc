@@ -408,6 +408,8 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     files = FileList([])
     for tag in secs:
         for ifo in workflow.ifos:
+            if params['%s_end_time' % ifo] == -1.0:
+                continue
             # Reanalyze the time around the trigger in each detector
             node = SingleTemplateExecutable(workflow.cp, 'single_template',
                                             ifos=[ifo], out_dir=out_dir,
