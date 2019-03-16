@@ -118,11 +118,11 @@ else:
     if opts.qtransform_frange_upper is None and \
     opts.qtransform_frange_lower is None:
         curr_frange = (30, opts.sample_rate / 4.)
-        elif opts.qtransform_frange_upper is None or \
-        opts.qtransform_frange_lower is None:
-            err_msg = 'Must provide either both --qtransfor-frange-upper and '
-            err_msg += '--qtransfor-frange-lower or neither option.'
-            raise ValueError(err_msg)
+    elif opts.qtransform_frange_upper is None or \
+    opts.qtransform_frange_lower is None:
+        err_msg = 'Must provide either both --qtransfor-frange-upper and '
+        err_msg += '--qtransfor-frange-lower or neither option.'
+        raise ValueError(err_msg)
     else:
         curr_frange = (opts.qtransform_frange_lower, opts.qtransform_frange_upper)
 
