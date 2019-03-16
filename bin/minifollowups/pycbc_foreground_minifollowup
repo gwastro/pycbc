@@ -119,8 +119,8 @@ else:
     # Version used for multi-ifo coinc code
     ifo_list = f.attrs['ifos'].split(' ')
     for ifo in ifo_list:
-        times[ifo] = f['foreground/%s/time' % ifo][:]
-        tids[ifo] = f['foreground/%s/trigger_id' % ifo][:]
+        times[ifo] = f['foreground/%s/time' % ifo][:][sorting][0:num_events]
+        tids[ifo] = f['foreground/%s/trigger_id' % ifo][:][sorting][0:num_events]
 
 bank_data = h5py.File(args.bank_file, 'r')
 
