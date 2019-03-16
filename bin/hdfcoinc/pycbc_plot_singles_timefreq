@@ -72,8 +72,6 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-opts.low_frequency_cutoff = opts.f_low
-strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
@@ -111,6 +109,8 @@ if center_time == -1.0:
 
     logging.info('Done')
 
+opts.low_frequency_cutoff = opts.f_low
+strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 logging.info('Plotting strain spectrogram')
 Pxx, freq, t = mlab.specgram(strain, NFFT=1024, noverlap=1000,
                              Fs=opts.sample_rate, mode='psd')
