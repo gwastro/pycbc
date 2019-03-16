@@ -753,11 +753,11 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
                 node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
                 workflow += node
                 return node.output_files
-            else:
-                err_msg = "Trig time {} ".format(trig_time)
-                err_msg += "does not seem to lie within any data segments. "
-                err_msg += "This shouldn't be possible, please ask for help!"
-                raise ValueError(err_msg)
+        else:
+            err_msg = "Trig time {} ".format(trig_time)
+            err_msg += "does not seem to lie within any data segments. "
+            err_msg += "This shouldn't be possible, please ask for help!"
+            raise ValueError(err_msg)
         # Check for pad-data
         if curr_exe.has_opt('pad-data'):
             pad_data = int(curr_exe.get_opt('pad-data'))
