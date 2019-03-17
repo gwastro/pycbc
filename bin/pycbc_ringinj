@@ -66,6 +66,9 @@ parser.add_argument('--final-mass', type=float,
 parser.add_argument('--final-spin', type=float,
                     help='Spin of the final black hole for '
                          'MassSpin approximants.')
+parser.add_argument('--distance', type=float,
+                    help='Luminosity distance of the final black hole in Mpc '
+                         'for MassSpin approximants (optional).')
 parser.add_argument('--freqs-taus', nargs='+',
                     help='Central frequency (Hz) and damping time (s) of the '
                          'ringdown for each mode (FreqTau approximants).'
@@ -123,17 +126,17 @@ injection.create_dataset('lmns', data=opts.lmns)
 injection.create_dataset('ra', data=opts.ra)
 injection.create_dataset('dec', data=opts.dec)
 injection.create_dataset('polarization', data=opts.polarization)
-if opts.inclination is not None:
+if opts.inclination:
     injection.create_dataset('inclination', data=opts.inclination)
 if opts.approximant in ringdown.ringdown_fd_approximants:
-    if opts.f_lower is not None:
+    if opts.f_lower:
         injection.create_dataset('f_lower', data=opts.f_lower)
-    if opts.f_final is not None:
+    if opts.f_final:
         injection.create_dataset('f_final', data=opts.f_final)
 else:
-    if opts.taper is not None:
+    if opts.taper:
         injection.create_dataset('taper', data=opts.taper)
-    if opts.t_final is not None:
+    if opts.t_final:
         injection.create_dataset('t_final', data=opts.t_final)
 
 # Amplitudes and phases for each mode have to be given
@@ -161,6 +164,8 @@ or opts.approximant=='TdQNMfromFinalMassSpin':
             raise ValueError('%s is required' %parameter)
     injection.create_dataset('final_mass', data=opts.final_mass)
     injection.create_dataset('final_spin', data=opts.final_spin)
+    if opts.distance:
+        injection.create_dataset('distance', data=opts.distance)
 
 if opts.approximant=='FdQNMfromFreqTau' \
 or opts.approximant=='TdQNMfromFreqTau':

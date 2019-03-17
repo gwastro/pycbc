@@ -25,6 +25,7 @@ from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
+from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
 
 def ptof(p, ft):
@@ -137,6 +138,7 @@ class LiveEventManager(object):
 
             self.combine_far_with_followup(ifos[0], ifo, triggers,
                                            snr_series, ptime, pvalue)
+
         return out
 
     def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series, ptime, pvalue):
@@ -151,10 +153,11 @@ class LiveEventManager(object):
                 triggers['foreground/{}/{}'.format(ifo, name)] = triggers[key]
 
         # Set the critical stats manually
+        snr_series_peak = snr_series.at_time(ptime, nearest_sample=True)
         triggers['foreground/{}/end_time'.format(ifo)] = float(ptime)
-        triggers['foreground/{}/snr'.format(ifo)] = abs(snr_series.at_time(ptime))
+        triggers['foreground/{}/snr'.format(ifo)] = abs(snr_series_peak)
         triggers['foreground/{}/stat'.format(ifo)] = triggers['foreground/{}/snr'.format(ifo)]
-        triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series.at_time(ptime))
+        triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series_peak)
         triggers['foreground/{}/chisq'.format(ifo)] = 0
         triggers['foreground/{}/chisq_dof'.format(ifo)] = 0
 
@@ -167,12 +170,18 @@ class LiveEventManager(object):
             logging.info('computing followup data for coinc')
 
             coinc_ifos = coinc_results['foreground/type'].split('-')
-            followup_ifos = [ifo for ifo in ifos if ifo not in coinc_ifos]
+            followup_ifos = list(set(ifos) - set(coinc_ifos))
 
-            fud = self.compute_followup_data(coinc_ifos, coinc_results, data_readers,
-                                             bank, followup_ifos)
+            double_ifar = coinc_results['foreground/ifar']
+            if double_ifar < args.ifar_double_followup_threshold:
+                coinc_results['foreground/NO_FOLLOWUP'] = True
+                return
 
-            event = SingleCoincForGraceDB(coinc_ifos, coinc_results, bank=bank,
+            fud = self.compute_followup_data(coinc_ifos, coinc_results,
+                                             data_readers, bank, followup_ifos)
+
+            live_ifos = [ifo for ifo in ifos if 'snr_series' in fud[ifo]]
+            event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name)
@@ -326,7 +335,7 @@ parser.add_argument('--increment-update-cache', action=MultiDetOptionAction, nar
 parser.add_argument('--frame-read-timeout', type=float, default=30)
 parser.add_argument('--increment', type=int, default=8)
 
-parser.add_argument('--start-time', type=int, default=lal.GPSTimeNow(),
+parser.add_argument('--start-time', type=int, default=None,
                     help='Start the analysis at the given GPS time')
 parser.add_argument('--end-time', type=int, default=numpy.inf,
                     help='Stop the analysis at the given GPS time')
@@ -357,6 +366,9 @@ parser.add_argument('--enable-background-estimation', default=False, action='sto
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading coincident '
                          'triggers to GraceDB, in years.')
+parser.add_argument('--ifar-double-followup-threshold', type=float, required=True,
+                    help='Inverse-FAR threshold to followup double coincs with'
+                         'additional detectors')
 parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
                     help='Upload triggers to GraceDB')
 parser.add_argument('--file-prefix', default='Live')
@@ -365,7 +377,7 @@ parser.add_argument('--enable-production-gracedb-upload', action='store_true', d
                          'events. This option should *only* be enabled in '
                          'production analyses!')
 parser.add_argument('--enable-single-detector-upload', action='store_true', default=False)
-parser.add_argument('--pvalue-combination-livetime', type=float,
+parser.add_argument('--pvalue-combination-livetime', type=float, required=True,
                     help="Livetime used for p-value combination with followup "
                          "detectors, in years")
 parser.add_argument('--enable-single-detector-background', action='store_true', default=False)
@@ -386,6 +398,7 @@ scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
 fft.insert_fft_option_group(parser)
 Coincer.insert_args(parser)
+SingleDetSGChisq.insert_option_group(parser)
 args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
@@ -399,10 +412,6 @@ fft.from_cli(args)
 
 sr = args.sample_rate
 flow = args.low_frequency_cutoff
-
-if args.round_start_time:
-    args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
-    logging.info('Starting from: %s', args.start_time)
 
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
@@ -419,6 +428,8 @@ evnt = LiveEventManager(args.output_path,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
                        )
+
+sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
 if args.size_override:
     evnt.size=args.size_override
@@ -462,13 +473,29 @@ with ctx:
         lengths = numpy.array([1.0 / waveform.delta_f for waveform in waveforms])
         psd_len = args.psd_segment_length * (args.psd_samples / 2 + 1)
         maxlen = max(lengths.max(), psd_len)
-        mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold, args.chisq_bins,
-                                     snr_abort_threshold=args.snr_abort_threshold,
-                                     newsnr_threshold=args.newsnr_threshold,
-                                     max_triggers_in_batch=args.max_triggers_in_batch,
-                                     maxelements=args.max_batch_size)
+        mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
+                                    args.chisq_bins, sg_chisq,
+                                    snr_abort_threshold=args.snr_abort_threshold,
+                                    newsnr_threshold=args.newsnr_threshold,
+                                    max_triggers_in_batch=args.max_triggers_in_batch,
+                                    maxelements=args.max_batch_size)
+
+    # Synchronize start time if not provided on the command line
+    if not args.start_time:
+        evnt.barrier()
+        if evnt.rank == 0:
+            tnow = lal.GPSTimeNow()
+        else:
+            tnow = None
+        args.start_time = evnt.comm.bcast(tnow, root=0)
+
+    if args.round_start_time:
+        args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
+        logging.info('Starting from: %s', args.start_time)
+
     if args.max_length is not None:
         maxlen = args.max_length
+
     maxlen = int(maxlen)
     data_reader = {}
     sngl_estimator = {}

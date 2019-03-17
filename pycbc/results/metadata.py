@@ -3,8 +3,8 @@ This Module contains generic utility functions for creating plots within
 PyCBC.
 """
 import os.path, pycbc.version
-import ConfigParser
-from HTMLParser import HTMLParser
+from six.moves import configparser as ConfigParser
+from six.moves.html_parser import HTMLParser
 from xml.sax.saxutils import escape, unescape
 
 escape_table = {

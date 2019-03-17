@@ -16,7 +16,7 @@
 """ This module contains result page layout and numbering helper functions
 """
 import os.path
-from itertools import izip_longest
+from six.moves import zip_longest
 
 def two_column_layout(path, cols, **kwargs):
     """ Make a well layout in a two column format
@@ -48,7 +48,7 @@ def grouper(iterable, n, fillvalue=None):
     """ Group items into chunks of n length
     """
     args = [iter(iterable)] * n
-    return izip_longest(*args, fillvalue=fillvalue)
+    return zip_longest(*args, fillvalue=fillvalue)
 
 def group_layout(path, files, **kwargs):
     """ Make a well layout in chunks of two from a list of files

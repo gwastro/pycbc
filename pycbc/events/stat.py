@@ -24,10 +24,8 @@
 """ This modules contains functions for calculating coincident ranking
 statistic values
 """
-
 import numpy
 from . import events
-
 
 def get_newsnr(trigs):
     """
@@ -68,6 +66,29 @@ def get_newsnr_sgveto(trigs):
                                    trigs['chisq'][:] / dof,
                                    trigs['sg_chisq'][:])
     return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
+
+def get_newsnr_sgveto_psdvar(trigs):
+    """
+    Calculate newsnr re-weighted by the sine-gaussian veto and psd variation
+    statistic
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', 'chisq' and 'psd_var_val' are required keys
+
+    Returns
+    -------
+     numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg_psd = \
+        events.newsnr_sgveto_psdvar(trigs['snr'][:], trigs['chisq'][:] / dof,
+                                    trigs['sg_chisq'][:],
+                                    trigs['psd_var_val'][:])
+    return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
 
 
 class Stat(object):
@@ -172,6 +193,26 @@ class NewSNRSGStatistic(NewSNRStatistic):
         return get_newsnr_sgveto(trigs)
 
 
+class NewSNRSGPSDStatistic(NewSNRSGStatistic):
+
+    """ Calculate the NewSNRSGPSD coincident detection statistic """
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr
+           combined with sgveto and psdvar statistic
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return get_newsnr_sgveto_psdvar(trigs)
+
+
 class NetworkSNRStatistic(NewSNRStatistic):
 
     """Same as the NewSNR statistic, but just sum of squares of SNRs"""
@@ -252,6 +293,8 @@ class PhaseTDStatistic(NewSNRStatistic):
                     ('sigmasq', numpy.float32),
                     ('snr', numpy.float32)]
 
+        self.get_newsnr = get_newsnr
+
     def single(self, trigs):
         """
         Calculate the single detector statistic and assemble other parameters
@@ -268,7 +311,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         numpy.ndarray
             Array of single detector parameter values
         """
-        sngl_stat = get_newsnr(trigs)
+        sngl_stat = self.get_newsnr(trigs)
         singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
         singles['snglstat'] = sngl_stat
         singles['coa_phase'] = trigs['coa_phase'][:]
@@ -340,6 +383,17 @@ class PhaseTDStatistic(NewSNRStatistic):
         cstat = rstat + 2. * self.logsignalrate(s0, s1, slide, step)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
+
+
+class PhaseTDSGStatistic(PhaseTDStatistic):
+    """PhaseTDStatistic but with sine-Gaussian veto added to the
+
+    single detector ranking
+    """
+
+    def __init__(self, files):
+        PhaseTDStatistic.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto
 
 
 class ExpFitStatistic(NewSNRStatistic):
@@ -479,6 +533,18 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
         self.get_newsnr = get_newsnr_sgveto
 
 
+class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
+
+    """ExpFitCombinedSNR but with sine-Gaussian veto and PSD variation added to
+
+    the single detector ranking
+    """
+
+    def __init__(self, files):
+        ExpFitCombinedSNR.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto_psdvar
+
+
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
 
     """Statistic combining exponential noise model with signal histogram PDF"""
@@ -522,6 +588,18 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
         self.get_newsnr = get_newsnr_sgveto
 
 
+class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
+
+    """Statistic combining exponential noise model with signal histogram PDF
+       and adding the sine-Gaussian veto and PSD variation statistic to the
+       single detector ranking
+    """
+
+    def __init__(self, files):
+        PhaseTDExpFitSGStatistic.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto_psdvar
+
+
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
     """Combination of NewSNR with the power chisq and auto chisq"""
@@ -553,13 +631,17 @@ statistic_dict = {
     'network_snr': NetworkSNRStatistic,
     'newsnr_cut': NewSNRCutStatistic,
     'phasetd_newsnr': PhaseTDStatistic,
+    'phasetd_newsnr_sgveto': PhaseTDSGStatistic,
     'exp_fit_stat': ExpFitStatistic,
     'exp_fit_csnr': ExpFitCombinedSNR,
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
+    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
-    'newsnr_sgveto': NewSNRSGStatistic
+    'newsnr_sgveto': NewSNRSGStatistic,
+    'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
+    'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic
 }
 
 sngl_statistic_dict = {
@@ -570,7 +652,9 @@ sngl_statistic_dict = {
     'exp_fit_csnr': ExpFitCombinedSNR,
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
-    'newsnr_sgveto': NewSNRSGStatistic
+    'newsnr_sgveto': NewSNRSGStatistic,
+    'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
+    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
 
 def get_statistic(stat):
@@ -620,4 +704,3 @@ def get_sngl_statistic(stat):
         return sngl_statistic_dict[stat]
     except KeyError:
         raise RuntimeError('%s is not an available detection statistic' % stat)
-

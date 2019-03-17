@@ -198,9 +198,11 @@ class TimeSeries(Array):
     sample_times = property(get_sample_times,
                             doc="Array containing the sample times.")
 
-    def at_time(self, time):
+    def at_time(self, time, nearest_sample=False):
         """ Return the value at the specified gps time
         """
+        if nearest_sample:
+            time += self.delta_t / 2.0
         return self[int((time-self.start_time)*self.sample_rate)]
 
     def __eq__(self,other):
