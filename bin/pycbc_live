@@ -181,6 +181,9 @@ class LiveEventManager(object):
                                              data_readers, bank, followup_ifos)
 
             live_ifos = [ifo for ifo in ifos if 'snr_series' in fud[ifo]]
+            for ifo1, ifo2 in itertools.combinations(live_ifos, 2):
+                assert fud[ifo1]['snr_series'].delta_t == fud[ifo2]['snr_series'].delta_t
+
             event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
