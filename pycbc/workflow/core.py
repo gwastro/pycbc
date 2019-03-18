@@ -329,7 +329,6 @@ class Executable(pegasus_workflow.Executable):
                     # That's somewhat tricksy as we used : as delimiter
                     split_path = path.split(':', 1)
                     if len(split_path) == 1:
-                        # Simple case: path to file
                         ifo = None
                         path = path
                     else:
@@ -1857,13 +1856,9 @@ class SegFile(File):
                                     version=1, valid=vsegs))
 
         # write file
-        if override_file_if_exists and \
-                                 self.has_pfn(self.storage_path, site='local'):
-            pass
-        else:
-            self.PFN(urlparse.urljoin('file:',
-                     urllib.pathname2url(self.storage_path)),
-                     site='local')
+        url = urlparse.urljoin('file:', urllib.pathname2url(self.storage_path))
+        if not override_file_if_exists or not self.has_pfn(url, site='local'):
+            self.PFN(url, site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
