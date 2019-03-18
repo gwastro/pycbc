@@ -203,7 +203,7 @@ class TimeSeries(Array):
         """
         if nearest_sample:
             time += self.delta_t / 2.0
-        return self[int(round((time-self.start_time)*self.sample_rate))]
+        return self[int((time-self.start_time)*self.sample_rate)]
 
     def __eq__(self,other):
         """
