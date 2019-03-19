@@ -74,7 +74,8 @@ def add_low_frequency_cutoff_opt(parser):
     # now. We should allow for different frequency cutoffs to be used; that
     # will require (minor) changes to the Likelihood class
     parser.add_argument("--low-frequency-cutoff", type=float,
-                        help="Low frequency cutoff for each IFO.")
+                        help="Low frequency cutoff to use for each IFO's PSD "
+                             "estimate.")
 
 
 def low_frequency_cutoff_from_cli(opts):
