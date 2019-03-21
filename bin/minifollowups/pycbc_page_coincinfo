@@ -123,7 +123,7 @@ for fname in args.single_trigger_files:
 bank = h5py.File(args.bank_file, 'r')
 statmapfile = d
 for ifo in files.keys():
-    if statmapfile['%s/time' % ifo] == -1.0:
+    if statmapfile['%s/time' % ifo][n] == -1.0:
         continue
     d = files[ifo]
     i = idx[ifo]
