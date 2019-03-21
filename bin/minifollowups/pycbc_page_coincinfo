@@ -123,6 +123,9 @@ for fname in args.single_trigger_files:
 bank = h5py.File(args.bank_file, 'r')
 
 for ifo in files.keys():
+    d = f[args.statmap_file_subspace_name]
+    if d['%s/time' % ifo] == -1.0:
+        continue
     d = files[ifo]
     i = idx[ifo]
     tid = d['template_id'][i]
