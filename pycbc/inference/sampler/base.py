@@ -143,7 +143,8 @@ class BaseSampler(object):
         """Do any finalization to the samples file before exiting."""
         pass
 
-    def setup_output(self, output_file, force=False, injection_file=None):
+    def setup_output(self, output_file, force=False, injection_file=None, 
+                     ringdown_injection_file = None):
         """Sets up the sampler's checkpoint and output files.
 
         The checkpoint file has the same name as the output file, but with
@@ -163,6 +164,8 @@ class BaseSampler(object):
             If the output file already exists, overwrite it.
         injection_file : str, optional
             If an injection was added to the data, write its information.
+        ringdown_injection_file : str, optional
+            If ringdown injection was added to the data, write its information. 
         """
         # check for backup file(s)
         checkpoint_file = output_file + '.checkpoint'
@@ -177,7 +180,9 @@ class BaseSampler(object):
         if not checkpoint_valid:
             logging.info("Checkpoint not found or not valid")
             create_new_output_file(self, checkpoint_file, force=force,
-                                   injection_file=injection_file)
+                                   injection_file=injection_file, 
+                                   ringdown_injection_file = \
+                                            ringdown_injection_file)
             # now the checkpoint is valid
             self.new_checkpoint = True
             # copy to backup
@@ -202,7 +207,7 @@ class BaseSampler(object):
 #
 
 def create_new_output_file(sampler, filename, force=False, injection_file=None,
-                           **kwargs):
+                           ringdown_injection_file=None, **kwargs):
     """Creates a new output file.
 
     If the output file already exists, an ``OSError`` will be raised. This can
@@ -218,6 +223,8 @@ def create_new_output_file(sampler, filename, force=False, injection_file=None,
         Create the file even if it already exists. Default is False.
     injection_file : str, optional
         If an injection was added to the data, write its information.
+    ringdown_injection_file : str, optional
+        If ringdown injection was added to the data, write its information.
     \**kwargs :
         All other keyword arguments are passed through to the file's
         ``write_metadata`` function.
@@ -240,6 +247,9 @@ def create_new_output_file(sampler, filename, force=False, injection_file=None,
             logging.info("Writing injection file to output")
             # just use the first one
             fp.write_injections(injection_file)
+        if ringdown_injection_file is not None: 
+            logging.info("Writing ringdown injection file to output.")
+            fp.write_injections(ringdown_injection_file)
 
 
 def initial_dist_from_config(cp, variable_params):

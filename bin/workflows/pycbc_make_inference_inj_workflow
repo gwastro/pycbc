@@ -27,6 +27,7 @@ import pycbc.version
 import socket
 import sys
 import h5py
+import numpy
 from pycbc.results import layout
 from pycbc.results import metadata
 from pycbc.results import versioning
@@ -120,6 +121,18 @@ cp = configuration.WorkflowConfigParser([opts.inference_config_file])
 #if opts.ringdown_injection_file: 
 #    ringdown_injection_file = core.File.from_path(opts.ringdown_injection_file)
 
+injection_file = None
+ringdown_injection_file = None
+
+if opts.injection_file or opts.ringdown_injection_file:
+    if opts.injection_file and opts.ringdown_injection_file:
+        raise ValueError('Ringdown injections and other injections cannot \
+                            be given simultaneously.')
+    if opts.injection_file: 
+        injection_input = os.path.abspath(opts.injection_file)
+    else: 
+        injection_input = os.path.abspath(opts.ringdown_injection_file)
+
 # typecast str from command line to File instances
 config_file = core.File.from_path(opts.inference_config_file)
 
@@ -169,12 +182,12 @@ for ifo in workflow.ifos:
                                "workflow", "%s-channel-name" % ifo.lower(), "")
 
 # get what parameters to plot in the PP and recovery plots
-if 'pp-plot-parameters' in  workflow.cp.options("workflow-inference"):
+if 'pp-plot-parameters' in workflow.cp.options("workflow-inference"):
     pp_plot_params = shlex.split(workflow.cp.get_opt_tag("workflow",
         'pp-plot-parameters', 'inference'))
 else:
-    # just use the variable args
-    pp_plot_params = workflow.cp.options(cp.options("variable_args"))
+    # just use the variable params
+    pp_plot_params = cp.options("variable_params")
 
 # get groups of parameters to plot in posterior and samples plots
 plot_groups = {}
@@ -200,19 +213,13 @@ post_group_files = {g : core.FileList([]) for g in plot_groups.keys()}
 post_table_files = core.FileList([])
 accept_files = core.FileList([])
 sample_group_files = {g : core.FileList([]) for g in plot_groups.keys()}
-
-injection_file = None
-ringdown_injection_file = None
-
-if opts.injection_file or opts.ringdown_injection_file:
-    if opts.injection_file and opts.ringdown_injection_file:
-        raise ValueError('Ringdown injections and other injections cannot \
-                            be given simultaneously.')
+        
+if injection_input:
     injection_files = core.FileList([])
     os.mkdir("injections")
     
     # split injections into one file per injection
-    with h5py.File(opts.injection_file, "r") as inputfile:
+    with h5py.File(injection_input, "r") as inputfile:
         for i in range(n_injections):
             with h5py.File('injections/injection%s.hdf' %i, 'w') as inj:
                 for k in inputfile.keys():
@@ -261,7 +268,7 @@ for i in range(n_injections):
     # make node for writing HTML table of parameters
     post_table_files += inference_followups.make_inference_summary_table(
                           workflow, inference_file, rdir["posteriors"],
-                          variable_args=unique_plot_parameters,
+                          variable_params=unique_plot_parameters,
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
 

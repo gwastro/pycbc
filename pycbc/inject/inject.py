@@ -93,7 +93,66 @@ class _HDFInjectionSet(object):
         # get parameters
         parameters = group.keys()
         # get all injection parameter values
-        injvals = {param: group[param][:] for param in parameters}
+        injvals = {param: group[param].value for param in parameters}
+        # We assume injvals are either (floats and 1D-arrays) for a single
+        # injection or (1D-arrays and 2D-arrays) for multiple. 
+        contains_floats_strings = False
+        contains_1d_arrays = False
+        contains_2d_arrays = False
+        print(injvals)
+        for param in parameters:
+            if not isinstance(injvals[param], np.ndarray):
+                contains_floats_strings = True
+            else:
+#                contains_arrays = True
+                if injvals[param].ndim == 1:
+                    contains_1d_arrays = True
+                elif injvals[param].ndim == 2:
+                    contains_2d_arrays = True
+                else:
+                    print(param, type(injvals[param]))
+                    raise ValueError("Expect float, 1d or 2d injection array.")
+        if contains_2d_arrays and contains_floats_strings: 
+            raise ValueError("Cannot interpret floats and 2d injection arrays.")
+#        elif not contains_arrays: all floats, nothing to do
+#        if contains_2d_arrays and not contains_floats: all 1d arrays, nothing to do
+        elif contains_1d_arrays and contains_floats_strings:
+            for param in parameters: 
+                if isinstance(injvals[param],np.ndarray):
+                    arr = np.empty(1, dtype=object)
+                    arr[0] = injvals[params]
+                    injvals[param] = arr
+        elif contains_1d_arrays and contains_2d_arrays: 
+            for param in parameters:
+                if injvals[param].shape != injvals[0].shape:
+                    raise ValueError("Unequal first dimension size, "
+                                     "should be number of injections.")
+                elif injvals[param].ndim == 2:
+                    arr = np.empty(injvals[param].shape[0], dtype=object)
+                    for ii in range(injvals[param].shape[0]):
+                        arr[ii] = injvals[param][ii,:]
+                    injvals[param] = arr
+        
+        # enforce equal first dimension (should be number of injections).
+        # Note: this does not accept injections with shape ()
+        # This does not work for injection parameters that are not arrays.
+        # Treat single injection (mostly single floats) and multi injection (mostly 1-d arrays) separately?
+#        for param in parameters:
+#            if injvals[param].shape[0] != injvals[parameters[0]].shape[0]:
+#                raise ValueError("Unequal first dimension size"
+#                                 "of injection parameters.")
+##            if injvals[param].shape != (injvals[parameters[0]].shape[0],):
+#            if isinstance(injvals[param][0],np.ndarray):
+#                arr = np.empty(injvals[param].shape[0], dtype=object)
+#                for ii in range(injvals[param].shape[0]):
+#                    arr[ii] = injvals[param][ii]
+#            injvals[param] = arr
+#        for param in parameters:
+#            if isinstance(injvals[param], np.ndarray):
+#                arr = np.empty(1, dtype=object)
+#                arr[0] = injvals[param]
+#                injvals[param] = arr
+                
         # if there were no variable args, then we only have a single injection
         if len(parameters) == 0:
             numinj = 1

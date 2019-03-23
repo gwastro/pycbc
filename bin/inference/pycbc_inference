@@ -24,6 +24,7 @@ import logging
 import shutil
 
 import numpy
+import h5py
 
 import pycbc
 from pycbc import (distributions, transforms, fft,
@@ -133,7 +134,44 @@ with ctx:
 
     # read configuration file
     cp = option_utils.config_parser_from_cli(opts)
+    
+    # Note: PyCBC's multi-ifo parser uses key:ifo for
+    # the injection file, even though we will use the same
+    # injection file all detectors. This
+    # should be fixed in a future version of PyCBC. Once it is,
+    # update this. Until then, just use the first file.
 
+    if opts.injection_file and opts.ringdown_injection_file:
+        raise ValueError('Ringdown injections and other injections cannot \
+                            be given simultaneously.')
+    
+    if opts.injection_file:
+        injection_file = opts.injection_file.values()[0]  # None if not set
+        input_injection_file = injection_file
+    else:
+        injection_file = None
+        input_injection_file = None
+    
+    if opts.ringdown_injection_file: 
+        ringdown_injection_file = opts.ringdown_injection_file.values()[0]
+        input_injection_file = ringdown_injection_file
+    else:
+        ringdown_injection_file = None
+        input_injection_file = None
+
+    # If injection placeholders for static params are set in config file, 
+    # insert injected parameters.
+    if input_injection_file \
+            and "injection" in dict(cp.items('static_params')).values():
+        with h5py.File(input_injection_file, 'r') as rd_inj:
+            for opt in cp.options(section='static_params'):
+                if cp.get('static_params', opt) == "injection" \
+                                            and opt not in rd_inj.keys():
+                    raise ValueError("Static param placeholder \"injection\" \
+                            has no counterpart in injection file.")
+                elif cp.get('static_params', opt) == "injection":
+                    cp.set('static_params', opt, str(rd_inj[opt][()]))
+        
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
         logging.info("Initializing calibration model")
@@ -160,20 +198,12 @@ with ctx:
     # NO SAMPLES FILE IO SHOULD BE DONE PRIOR TO THIS POINT!!!
     sampler = inference.sampler.load_from_config(
         cp, model, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
-
-    # set up output/checkpoint file
-    # Note: PyCBC's multi-ifo parser uses key:ifo for
-    # the injection file, even though we will use the same
-    # injection file all detectors. This
-    # should be fixed in a future version of PyCBC. Once it is,
-    # update this. Until then, just use the first file.
-    if opts.injection_file:
-        injection_file = opts.injection_file.values()[0]  # None if not set
-    else:
-        injection_file = None
+    
+    # set up output/checkpoint file    
     sampler.setup_output(opts.output_file, force=opts.force,
-                         injection_file=injection_file)
-
+                         injection_file=injection_file, \
+                         ringdown_injection_file = ringdown_injection_file)
+        
     # Figure out where to get the initial conditions from: a samples file,
     # the checkpoint file, the prior, or an initial prior.
     samples_file = opts.samples_file
