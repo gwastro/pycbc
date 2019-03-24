@@ -115,7 +115,15 @@ def locations_to_cache(locations, latest=False):
     for source in locations:
         flist = glob.glob(source)
         if latest:
-            flist = [max(flist, key=os.path.getctime)]
+            def relaxed_getctime(fn):
+                # when building a cache from a directory of temporary
+                # low-latency frames, files might disappear between
+                # the glob() and getctime() calls
+                try:
+                    return os.path.getctime(fn)
+                except OSError:
+                    return 0
+            flist = [max(flist, key=relaxed_getctime)]
 
         for file_path in flist:
             dir_name, file_name = os.path.split(file_path)

@@ -19,7 +19,7 @@ import h5py, argparse, logging, pycbc.version, pycbc.events, pycbc.results, sys
 from pycbc.types import MultiDetOptionAction
 import matplotlib; matplotlib.use('Agg'); import pylab
 import numpy
-    
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
@@ -34,7 +34,7 @@ parser.add_argument('--times', nargs='+', type=float,
     action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
     help="The gps times to plot around in multi-ifo argument format, "
          "H1:132341323 L1:132423422")
-parser.add_argument('--special-trigger-ids', nargs='+', type=int, 
+parser.add_argument('--special-trigger-ids', nargs='+', type=int,
     action=MultiDetOptionAction, metavar="IFO:GPS_TIME",
     help="The set of special trigger ids to plot a star at")
 parser.add_argument('--plot-type', choices=['snr', 'newsnr'], default='snr',
@@ -51,17 +51,17 @@ any_data = False
 fig = pylab.figure()
 for ifo in args.single_trigger_files.keys():
     t = args.times[ifo]
-    
+
     if args.special_trigger_ids:
         id_loud = args.special_trigger_ids[ifo]
-    
+
     data = h5py.File(args.single_trigger_files[ifo], 'r')[ifo]
     times = data['end_time'][:]
     idx = numpy.logical_and(times < t + args.window, times > t - args.window)
-                                              
+
     # center times on the trigger/chosen time
     times = times[idx] - t
-    
+
     if args.plot_type == 'snr':
         val = data['snr'][idx]
 
@@ -110,5 +110,5 @@ pycbc.results.save_fig_with_metadata(fig, args.output_file,
             cmd = ' '.join(sys.argv),
             title = 'Single Detector Trigger Timeseries (%s)' % args.plot_type,
             caption = 'Time series showing the single detector triggers'
-                      ' centered around the time of the trigger of interest.',           
+                      ' centered around the time of the trigger of interest.',
          )

@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--single-trigger-files', nargs='+', 
+parser.add_argument('--single-trigger-files', nargs='+',
     help="HDF format single detector trigger files for the full data run")
 parser.add_argument('--bank-file',
     help="HDF format template bank file")
@@ -60,29 +60,56 @@ else:
     # It shouldn't be possible to get here!
     raise ValueError()
 
-# make a table for the coincident information #################################
-headers = ["Coincident ranking statistic",
-           "Inclusive IFAR (yr)",
-           "Inclusive FAP", 
-           "Exclusive IFAR (yr)",
-           "Exclusive FAP",
-           "Time delay (s)"
-          ]
+# Check if using input files from old (2-ifo) coinc code
+if 'time1' in f.attrs:
+    # make a table for the coincident information #################################
+    headers = ["Coincident ranking statistic",
+               "Inclusive IFAR (yr)",
+               "Inclusive FAP",
+               "Exclusive IFAR (yr)",
+               "Exclusive FAP",
+               "Time delay (s)"
+              ]
 
-table = numpy.array([['%5.2f' % d['stat'][n], 
-                      '%5.2f' % d['ifar'][n], 
-                      '%5.2e' % d['fap'][n],
-                      '%5.2f' % d['ifar_exc'][n], 
-                      '%5.2e' % d['fap_exc'][n],
-                      '%5.4f' % (d['time2'][n] - d['time1'][n])
-                    ]], dtype=str)
+    table = numpy.array([['%5.2f' % d['stat'][n],
+                          '%5.2f' % d['ifar'][n],
+                          '%5.2e' % d['fap'][n],
+                          '%5.2f' % d['ifar_exc'][n],
+                          '%5.2e' % d['fap_exc'][n],
+                          '%5.4f' % (d['time2'][n] - d['time1'][n])
+                         ]], dtype=str)
+else:
+    # Version used for multi-ifo coinc code
+    # TODO: Figure out what to do for timedelays
+    headers = ["Coincident ranking statistic",
+               "Inclusive IFAR (yr)",
+               "Inclusive FAP",
+               "Exclusive IFAR (yr)",
+               "Exclusive FAP"
+              ]
+
+    table = numpy.array([['%5.2f' % d['stat'][n],
+                          '%5.2f' % d['ifar'][n],
+                          '%5.2e' % d['fap'][n],
+                          '%5.2f' % d['ifar_exc'][n],
+                          '%5.2e' % d['fap_exc'][n]
+                         ]], dtype=str)
 
 html = pycbc.results.dq.redirect_javascript + \
                                 str(pycbc.results.static_table(table, headers))
 
 # make a table for the single detector information ############################
-ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
-idx = {ifo1:d['trigger_id1'][n], ifo2:d['trigger_id2'][n]}
+idx = {}
+# Check if using input files from old (2-ifo) coinc code
+if 'time1' in f.attrs:
+    # 2 detector version
+    ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
+    idx = {ifo1:d['trigger_id1'][n], ifo2:d['trigger_id2'][n]}
+else:
+    # Version used for multi-ifo coinc code
+    ifo_list = f.attrs['ifos'].split(' ')
+    for ifo in ifo_list:
+        idx[ifo] = d['%s/trigger_id' % ifo][n]
 
 # Store the single detector trigger files keyed by ifo in a dictionary
 table = []
@@ -94,24 +121,26 @@ for fname in args.single_trigger_files:
         files[ifo] = f[ifo]
 
 bank = h5py.File(args.bank_file, 'r')
-
+statmapfile = d
 for ifo in files.keys():
+    if statmapfile['%s/time' % ifo][n] == -1.0:
+        continue
     d = files[ifo]
     i = idx[ifo]
     tid = d['template_id'][i]
     rchisq =  d['chisq'][i] / (d['chisq_dof'][i] * 2 - 2)
-    mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][tid], 
-                                                      bank['mass2'][tid]))[0]  
-                                                      
+    mchirp = (pycbc.pnutils.mass1_mass2_to_mchirp_eta(bank['mass1'][tid],
+                                                      bank['mass2'][tid]))[0]
+
     time = d['end_time'][:][i]
     utc = lal.GPSToUTC(int(time))[0:6]
-                                                                            
+
     data = [pycbc.results.dq.get_summary_page_link(ifo, utc),
             str(datetime.datetime(*utc)),
             '%.3f'  % time,
             '%5.2f' % d['snr'][i],
             '%5.2f' % pycbc.events.newsnr(d['snr'][i], rchisq),
-            '%5.2f' % rchisq,            
+            '%5.2f' % rchisq,
             '%i'    % d['chisq_dof'][i],
             '%5.2f' % d['coa_phase'][i],
             '%5.2f' % bank['mass1'][tid],
@@ -121,7 +150,7 @@ for ifo in files.keys():
             '%5.2f' % bank['spin2z'][tid],
             '%5.2f' % d['template_duration'][i]
            ]
-    table.append(data)    
+    table.append(data)
 
 html += str(pycbc.results.static_table(table, pycbc.results.sngl_table_headers))
 ###############################################################################

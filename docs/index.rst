@@ -4,9 +4,9 @@ PyCBC
 
 PyCBC is a software package used to explore astrophysical sources of gravitational waves.
 It contains algorithms that can detect coalescing compact binaries and measure
-the astrophysical parameters of detected sources. PyCBC was used 
+the astrophysical parameters of detected sources. PyCBC was used
 in the `first direct detection of gravitational waves (GW150914) by
-LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and 
+LIGO <https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.116.061102>`_ and
 is used in the ongoing analysis of LIGO and Virgo data.
 If you use PyCBC in your scientific publications or projects,
 we ask that you acknowlege our work by citing the papers described on the page:
@@ -54,7 +54,7 @@ Getting Started
  - Use the PyCBC Library within your Browser
 
    We have interactive jupyter notebooks on azure where you can try some of our
-   examples, and use the pycbc library. All from within the browser. 
+   examples, and use the pycbc library. All from within the browser.
    `Give it a try <https://notebooks.azure.com/nitz/libraries/pycbc>`_
 
 =====================
@@ -63,7 +63,7 @@ Installation
 
 Note, if you are a LIGO / Virgo member with access to LDG resources, PyCBC is *already*
 installed on your cluster through CVMFS! Instructions to source any release of PyCBC
-is available from the `releases page <https://github.com/ligo-cbc/pycbc/releases>`_. 
+is available from the `releases page <https://github.com/ligo-cbc/pycbc/releases>`_.
 
 You may also install PyCBC directly with pip. You may ommit `lalsuite` if you have
 your own build.
@@ -119,7 +119,7 @@ Library Examples and Interactive Tutorials
 ==========================================
 
 We have interactive tutorials and examples of using the pycbc library hosted
-on azure jupyter notebooks. `Please give them a try. <https://notebooks.azure.com/nitz/libraries/pycbc>`_ 
+on azure jupyter notebooks. `Please give them a try. <https://notebooks.azure.com/nitz/libraries/pycbc>`_
 
 In addition we have some examples below.
 
@@ -127,8 +127,9 @@ In addition we have some examples below.
    :maxdepth: 2
 
    catalog
-   gw150914
+   dataquality
    frame
+   gw150914
    detector
    psd
    noise
@@ -152,7 +153,7 @@ documentation, develop the code, and create releases:
 
 .. toctree::
    :maxdepth: 1
-    
+
    documentation
    release
 

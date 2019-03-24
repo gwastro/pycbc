@@ -39,6 +39,7 @@ import pycbc.version
 from pycbc.results import metadata
 
 from pycbc import __version__
+from pycbc import conversions
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import (option_utils, io)
 from pycbc import transforms
@@ -87,11 +88,15 @@ samples = samples if isinstance(samples, list) else [samples]
 # if a z-arg is specified, load samples for it
 if opts.z_arg is not None:
     logging.info("Getting samples for colorbar")
+    z_arg = 'loglikelihood' if opts.z_arg == 'snr' else opts.z_arg
     zlbl = opts.z_arg_labels[opts.z_arg]
     zvals = []
     for fp in fps:
-        zsamples = fp.samples_from_cli(opts, parameters=opts.z_arg)
-        zvals.append(zsamples[opts.z_arg])
+        zsamples = fp.samples_from_cli(opts, parameters=z_arg)
+        if opts.z_arg == 'snr':
+            loglr = zsamples[z_arg] - zsamples.lognl
+            zsamples[z_arg] = conversions.snr_from_loglr(loglr)
+        zvals.append(zsamples[z_arg])
 else:
     zvals = None
     zlbl = None

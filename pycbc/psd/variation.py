@@ -1,14 +1,16 @@
 """ PSD Variation """
 
 import numpy
+import pycbc.psd
 
 from pycbc.types import TimeSeries, FrequencySeries, zeros
 
 def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
-                       overlap, low_freq, high_freq):
+                       short_psd_duration, short_psd_stride, psd_avg_method,
+                       low_freq, high_freq):
     """Calculates time series of PSD variability
 
-    This function first splits the segment up in to 512 second chunks. It
+    This function first splits the segment up into 512 second chunks. It
     then calculates the PSD over this 512 second period as well as in 4
     second chunks throughout each 512 second period. Next the function
     estimates how different the 4 second PSD is to the 512 second PSD and
@@ -18,15 +20,19 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
     ----------
     strain : TimeSeries
         Input strain time series to estimate PSDs
-    psd_short_segment : {float, 4}
+    psd_short_segment : {float, 8}
         Duration of the short segments for PSD estimation in seconds.
     psd_long_segment : {float, 512}
         Duration of the long segments for PSD estimation in seconds.
-    overlap : {float, 0.5}
-        Duration in seconds to use for each sample of the PSD.
+    short_psd_duration : {float, 4}
+        Duration of the segments for PSD estimation in seconds.
+    short_psd_stride : {float, 2}
+        Separation between PSD estimation segments in seconds.
+    psd_avg_method : {string, 'median'}
+        Method for averaging PSD estimation segments.
     low_freq : {float, 20}
         Minimum frequency to consider the comparison between PSDs.
-    high_freq : {float, 512}
+    high_freq : {float, 480}
         Maximum frequency to consider the comparison between PSDs.
 
     Returns
@@ -59,24 +65,47 @@ def calc_psd_variation(strain, psd_short_segment, psd_long_segment,
         # Calculate PSD for long segment and separate the long segment in to
         # overlapping shorter segments
         if tlong + psd_long_segment <= end_time:
-            psd_long = strain.time_slice(tlong,
-                          tlong + psd_long_segment).psd(overlap)
+            psd_long = pycbc.psd.welch(
+                           strain.time_slice(tlong, tlong + psd_long_segment),
+                           seg_len=int(short_psd_duration * strain.sample_rate),
+                           seg_stride=int(short_psd_stride *
+                                          strain.sample_rate),
+                           avg_method=psd_avg_method)
             times_short = numpy.arange(tlong, tlong + psd_long_segment,
                                        psd_short_segment)
         else:
-            psd_long = strain.time_slice(end_time - psd_long_segment,
-                                         end_time).psd(overlap)
+            psd_long = pycbc.psd.welch(
+                           strain.time_slice(end_time - psd_long_segment,
+                                             end_time),
+                           seg_len=int(short_psd_duration * strain.sample_rate),
+                           seg_stride=int(short_psd_stride *
+                                          strain.sample_rate),
+                           avg_method=psd_avg_method)
             times_short = numpy.arange(tlong, end_time, psd_short_segment)
+
         # Calculate the PSD of the shorter segments
         psd_short = []
         for tshort in times_short:
-            if tshort + psd_short_segment*2 <= end_time:
-                pshort = strain.time_slice(tshort,
-                             tshort + psd_short_segment*2).psd(overlap)
+            if tshort + psd_short_segment <= end_time:
+                pshort = pycbc.psd.welch(
+                            strain.time_slice(tshort, tshort +
+                                              psd_short_segment),
+                            seg_len=int(short_psd_duration *
+                                        strain.sample_rate),
+                            seg_stride=int(short_psd_stride *
+                                           strain.sample_rate),
+                            avg_method=psd_avg_method)
             else:
-                pshort = strain.time_slice(tshort - psd_short_segment,
-                                           end_time).psd(overlap)
+                pshort = pycbc.psd.welch(
+                            strain.time_slice(tshort - psd_short_segment,
+                                              end_time),
+                            seg_len=int(short_psd_duration *
+                                        strain.sample_rate),
+                            seg_stride=int(short_psd_stride *
+                                           strain.sample_rate),
+                            avg_method=psd_avg_method)
             psd_short.append(pshort)
+
         # Estimate the range of the PSD to compare
         kmin = int(low_freq / psd_long.delta_f)
         kmax = int(high_freq / psd_long.delta_f)

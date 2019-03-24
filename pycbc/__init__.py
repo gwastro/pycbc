@@ -70,6 +70,14 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
     logging.getLogger().setLevel(initial_level)
     logging.basicConfig(format=format, level=initial_level)
 
+def makedir(path):
+    """
+    Make the analysis directory path and any parent directories that don't
+    already exist. Will do nothing if path already exists.
+    """
+    if path is not None and not os.path.exists(path):
+        os.makedirs(path)
+
 
 # Check for optional components of the PyCBC Package
 try:

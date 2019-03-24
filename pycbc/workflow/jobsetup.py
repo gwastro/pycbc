@@ -105,7 +105,8 @@ def select_matchedfilter_class(curr_exe):
     """
     exe_to_class_map = {
         'pycbc_inspiral'          : PyCBCInspiralExecutable,
-        'pycbc_inspiral_skymax'   : PyCBCInspiralExecutable
+        'pycbc_inspiral_skymax'   : PyCBCInspiralExecutable,
+        'pycbc_multi_inspiral'    : PyCBCMultiInspiralExecutable,
     }
     try:
         return exe_to_class_map[curr_exe]
@@ -778,6 +779,128 @@ class PyCBCInspiralExecutable(Executable):
             new_data_seg = segments.segment([new_data_start, new_data_end])
             return new_data_seg
 
+class PyCBCMultiInspiralExecutable(Executable):
+    """
+    The class responsible for setting up jobs for the
+    pycbc_multi_inspiral executable.
+    """
+    current_retention_level = Executable.ALL_TRIGGERS
+    file_input_options = ['--gating-file']
+    def __init__(self, cp, name, universe=None, ifo=None, injection_file=None,
+                 gate_files=None, out_dir=None, tags=None):
+        if tags is None:
+            tags = []
+        super(PyCBCMultiInspiralExecutable, self).__init__(cp, name, universe,
+                ifo, out_dir=out_dir, tags=tags)
+        self.injection_file = injection_file
+        self.data_seg = segments.segment(int(cp.get('workflow', 'start-time')),
+                                         int(cp.get('workflow', 'end-time')))
+        self.num_threads = 1
+
+    def create_node(self, data_seg, valid_seg, parent=None, inj_file=None,
+                    dfParents=None, bankVetoBank=None, ipn_file=None,
+                    slide=None, tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+
+        if not dfParents:
+            raise ValueError("%s must be supplied with frame or cache files"
+                              % self.name)
+
+        # If doing single IFO search, make sure slides are disabled
+        if len(self.ifo_list) < 2 and \
+                (node.get_opt('--do-short-slides') is not None or \
+                 node.get_opt('--short-slide-offset') is not None):
+            raise ValueError("Cannot run with time slides in a single IFO "
+                             "configuration! Please edit your configuration "
+                             "file accordingly.")
+
+        # Set instuments
+        node.add_opt("--instruments", " ".join(self.ifo_list))
+
+        pad_data = self.get_opt('pad-data')
+        if pad_data is None:
+            raise ValueError("The option pad-data is a required option of "
+                             "%s. Please check the ini file." % self.name)
+
+        # Feed in bank_veto_bank.xml
+        if self.cp.has_option('inspiral', 'do-bank-veto'):
+            if not bankVetoBank:
+                raise ValueError("%s must be given a bank veto file if the "
+                                 "argument 'do-bank-veto' is given"
+                                 % self.name)
+            node.add_input_opt('--bank-veto-templates', bankVetoBank)
+
+        # Set time options
+        node.add_opt('--gps-start-time', data_seg[0] + int(pad_data))
+        node.add_opt('--gps-end-time', data_seg[1] - int(pad_data))
+        node.add_opt('--trig-start-time', valid_seg[0])
+        node.add_opt('--trig-end-time', valid_seg[1])
+
+        node.add_profile('condor', 'request_cpus', self.num_threads)
+
+        # Set the input and output files
+        node.new_output_file_opt(data_seg, '.hdf', '--output',
+                                 tags=tags, store_file=self.retain_files)
+        node.add_input_opt('--bank-file', parent, )
+
+        # TODO: isn't there a cleaner way of doing this?
+        if dfParents is not None:
+            node.add_arg('--frame-cache %s' % \
+                         " ".join([":".join([frameCache.ifo, frameCache.name])\
+                                   for frameCache in dfParents]))
+            for frameCache in dfParents:
+                node._add_input(frameCache)
+            #node.add_input_list_opt('--frame-cache', dfParents)
+
+        if ipn_file is not None:
+            node.add_input_opt('--sky-positions-file', ipn_file)
+
+        if inj_file is not None:
+            if self.get_opt('--do-short-slides') is not None or \
+                    self.get_opt('--short-slide-offset') is not None:
+                raise ValueError("Cannot run with short slides in an "
+                                 "injection job. Please edit your "
+                                 "configuration file accordingly.")
+            node.add_input_opt('--injection-file', inj_file)
+
+        if slide is not None:
+            for ifo in self.ifo_list:
+                node.add_opt('--%s-slide-segment' % ifo.lower(), slide[ifo])
+
+        # Channels
+        channel_names = {}
+        for ifo in self.ifo_list:
+            channel_names[ifo] = self.cp.get_opt_tags(
+                               "workflow", "%s-channel-name" % ifo.lower(), "")
+        channel_names_str = \
+            " ".join([val for key, val in channel_names.items()])
+        node.add_opt("--channel-name", channel_names_str)
+
+        return node
+
+    def get_valid_times(self):
+        pad_data = int(self.get_opt('pad-data'))
+        if self.has_opt("segment-start-pad"):
+            pad_data = int(self.get_opt("pad-data"))
+            start_pad = int(self.get_opt("segment-start-pad"))
+            end_pad = int(self.get_opt("segment-end-pad"))
+            valid_start = self.data_seg[0] + pad_data + start_pad
+            valid_end = self.data_seg[1] - pad_data - end_pad
+        elif self.has_opt('analyse-segment-end'):
+            safety = 1
+            deadtime = int(self.get_opt('segment-length')) / 2
+            spec_len = int(self.get_opt('inverse-spec-length')) / 2
+            valid_start = (self.data_seg[0] + deadtime - spec_len + pad_data -
+                           safety)
+            valid_end = self.data_seg[1] - spec_len - pad_data - safety
+        else:
+            overlap = int(self.get_opt('segment-length')) / 4
+            valid_start = self.data_seg[0] + overlap + pad_data
+            valid_end = self.data_seg[1] - overlap - pad_data
+
+        return self.data_seg, segments.segment(valid_start, valid_end)
 
 class PyCBCTmpltbankExecutable(Executable):
     """ The class used to create jobs for pycbc_geom_nonspin_bank Executable and

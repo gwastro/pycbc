@@ -127,7 +127,7 @@ def make_throughput_plot(workflow, insp_files, out_dir, tags=None):
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
 
-def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
+def make_foreground_table(workflow, trig_file, bank_file, out_dir,
                           singles=None, extension='.html', tags=None,
                           hierarchical_level=None):
 
@@ -143,7 +143,6 @@ def make_foreground_table(workflow, trig_file, bank_file, ftag, out_dir,
     node = PlotExecutable(workflow.cp, 'page_foreground', ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--bank-file', bank_file)
-    node.add_opt('--foreground-tag', ftag)
     node.add_input_opt('--trigger-file', trig_file)
     if hierarchical_level is not None:
         node.add_opt('--use-hierarchical-level', hierarchical_level)
@@ -311,9 +310,10 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
                         tags=[tag] + tags).create_node()
 
             node.set_memory(15000)
-            node.add_opt('--segment-name', veto_name)
             node.add_input_opt('--trigger-file', trig_file)
-            node.add_input_opt('--veto-file', veto_file)
+            if veto_file is not None:
+                node.add_input_opt('--veto-file', veto_file)
+                node.add_opt('--segment-name', veto_name)
             node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
             workflow += node
             files += node.output_files
@@ -419,8 +419,9 @@ def make_single_hist(workflow, trig_file, veto_file, veto_name,
                     ifos=trig_file.ifo,
                     out_dir=out_dir,
                     tags=[tag] + tags).create_node()
-        node.add_opt('--segment-name', veto_name)
-        node.add_input_opt('--veto-file', veto_file)
+        if veto_file is not None:
+            node.add_opt('--segment-name', veto_name)
+            node.add_input_opt('--veto-file', veto_file)
         node.add_input_opt('--trigger-file', trig_file)
         if bank_file:
             node.add_input_opt('--bank-file', bank_file)
@@ -443,8 +444,9 @@ def make_binned_hist(workflow, trig_file, veto_file, veto_name,
                     out_dir=out_dir,
                     tags=[tag] + tags).create_node()
         node.add_opt('--ifo', trig_file.ifo)
-        node.add_opt('--veto-segment-name', veto_name)
-        node.add_input_opt('--veto-file', veto_file)
+        if veto_file is not None:
+            node.add_opt('--veto-segment-name', veto_name)
+            node.add_input_opt('--veto-file', veto_file)
         node.add_input_opt('--trigger-file', trig_file)
         node.add_input_opt('--bank-file', bank_file)
         node.new_output_file_opt(trig_file.segment, '.png', '--output-file')
@@ -467,9 +469,10 @@ def make_singles_plot(workflow, trig_files, bank_file, veto_file, veto_name,
                         tags=[tag] + tags).create_node()
 
             node.set_memory(15000)
-            node.add_opt('--segment-name', veto_name)
             node.add_input_opt('--bank-file', bank_file)
-            node.add_input_opt('--veto-file', veto_file)
+            if veto_file is not None:
+                node.add_input_opt('--veto-file', veto_file)
+                node.add_opt('--segment-name', veto_name)
             node.add_opt('--detector', trig_file.ifo)
             node.add_input_opt('--single-trig-file', trig_file)
             node.new_output_file_opt(trig_file.segment, '.png', '--output-file')

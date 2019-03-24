@@ -21,7 +21,6 @@ parser.add_argument('--bank-file')
 parser.add_argument('--single-detector-triggers', nargs='+', default=None)
 parser.add_argument('--verbose', action='count')
 parser.add_argument('--output-file')
-parser.add_argument('--foreground-tag')
 parser.add_argument('--num-coincs-to-write', type=int)
 parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which FARs to write to the table '

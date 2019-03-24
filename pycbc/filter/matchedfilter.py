@@ -327,7 +327,7 @@ class MatchedFilterControl(object):
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
 
-    def full_matched_filter_thresh_only(self, segnum, template_norm, window, epoch=None):
+    def full_matched_filter_thresh_only(self, segnum, template_norm, window=None, epoch=None):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
         triggers, and the snr values at the trigger locations. Returns empty
@@ -359,15 +359,11 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
+        norm = (4.0 * self.delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         self.ifft.execute()
-        snrv, idx = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
+        idx, snrv = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
                                           self.snr_threshold / norm)
-
-        if len(idx) == 0:
-            return [], [], [], [], []
-
         logging.info("%s points above threshold" % str(len(idx)))
 
         snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
@@ -1247,10 +1243,9 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
         h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)
 
     norm = (4.0 * stilde.delta_f) / sqrt( h_norm)
-    delta_t = 1.0 / (N * stilde.delta_f)
 
-    return (TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False),
-           FrequencySeries(qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False),
+    return (TimeSeries(_q, epoch=stilde._epoch, delta_t=stilde.delta_t, copy=False),
+           FrequencySeries(qtilde, epoch=stilde._epoch, delta_f=stilde.delta_f, copy=False),
            norm)
 
 def smear(idx, factor):
@@ -1465,7 +1460,7 @@ class LiveBatchMatchedFilter(object):
 
     """Calculate SNR and signal consistency tests in a batched progression"""
 
-    def __init__(self, templates, snr_threshold, chisq_bins,
+    def __init__(self, templates, snr_threshold, chisq_bins, sg_chisq,
                  maxelements=2**27,
                  snr_abort_threshold=None,
                  newsnr_threshold=None,
@@ -1480,7 +1475,9 @@ class LiveBatchMatchedFilter(object):
             Minimum value to record peaks in the SNR time series.
         chisq_bins: str
             Str that determines how the number of chisq bins varies as a
-        function of the template bank parameters.
+            function of the template bank parameters.
+        sg_chisq: pycbc.vetoes.SingleDetSGChisq
+            Instance of the sg_chisq class to calculate sg_chisq with.
         maxelements: {int, 2**27}
             Maximum size of a batched fourier transform.
         snr_abort_threshold: {float, None}
@@ -1500,6 +1497,7 @@ class LiveBatchMatchedFilter(object):
 
         from pycbc import vetoes
         self.power_chisq = vetoes.SingleDetPowerChisq(chisq_bins, None)
+        self.sg_chisq = sg_chisq
 
         durations = numpy.array([1.0 / t.delta_f for t in templates])
 
@@ -1610,8 +1608,11 @@ class LiveBatchMatchedFilter(object):
         """Calculate signal based vetoes"""
         chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32, ndmin=1)
         dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
+        sg_chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32,
+                               ndmin=1)
         results['chisq'] = chisq
         results['chisq_dof'] = dof
+        results['sg_chisq'] = sg_chisq
 
         keep = []
         for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info):
@@ -1620,6 +1621,11 @@ class LiveBatchMatchedFilter(object):
                                            norm, stilde.psd, [l], htilde)
             chisq[i] = c[0] / d[0]
             dof[i] = d[0]
+
+            sgv = self.sg_chisq.values(stilde, htilde, stilde.psd,
+                                       snrv, norm, c, d, [l])
+            if sgv is not None:
+                sg_chisq[i] = sgv[0]
 
             if self.newsnr_threshold:
                 newsnr = events.newsnr(results['snr'][i], chisq[i])
@@ -1752,16 +1758,17 @@ def followup_event_significance(ifo, data_reader, bank,
 
     # Require all strain be valid within lookback time
     if data_reader.state is not None:
-        state_end = data_reader.strain.end_time - data_reader.reduced_pad
-        state_start = state_end - lookback
-        if not data_reader.state.is_extent_valid(state_start, state_end):
+        state_start_time = data_reader.strain.end_time \
+                - data_reader.reduced_pad - lookback
+        if not data_reader.state.is_extent_valid(state_start_time, lookback):
             return None, None, None
 
     # We won't require that all DQ checks be valid for now, except at
     # onsource time.
     if data_reader.dq is not None:
-        if not data_reader.dq.is_extent_valid(onsource_start - duration / 2.0,
-                                              onsource_end + duration / 2.0):
+        dq_start_time = onsource_start - duration / 2.0
+        dq_duration = onsource_end - onsource_start + duration
+        if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
             return None, None, None
 
     # Calculate SNR time series for this duration

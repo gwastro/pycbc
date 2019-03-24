@@ -1282,6 +1282,7 @@ def save_veto_definer(cp, out_dir, tags=None):
 
     # and update location
     cp.set("workflow-segments", "segments-veto-definer-file", veto_def_new_path)
+    return veto_def_new_path
 
 def parse_cat_ini_opt(cat_str):
     """ Parse a cat str from the ini file into a list of sets """
@@ -1390,3 +1391,55 @@ def file_needs_generating(file_path, cp, tags=None):
             err_msg += '"always", "if_not_present", "error_on_duplicate", '
             err_msg += '"never". Got %s.' %(generate_segment_files,)
             raise ValueError(err_msg)
+
+def get_segments_file(workflow, name, option_name, out_dir):
+    """Get cumulative segments from option name syntax for each ifo.
+
+    Use syntax of configparser string to define the resulting segment_file
+    e.x. option_name = +up_flag1,+up_flag2,+up_flag3,-down_flag1,-down_flag2
+    Each ifo may have a different string and is stored separately in the file.
+    Flags which add time must precede flags which subtract time.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+    name: string
+        Name of the segment list being created
+    option_name: str
+        Name of option in the associated config parser to get the flag list
+
+    returns
+    --------
+    seg_file: pycbc.workflow.SegFile
+        SegFile intance that points to the segment xml file on disk.
+    """
+    from pycbc.dq import query_str
+    make_analysis_dir(out_dir)
+    cp = workflow.cp
+    start = workflow.analysis_time[0]
+    end = workflow.analysis_time[1]
+
+    # Check for veto definer file
+    veto_definer = None
+    if cp.has_option("workflow-segments", "segments-veto-definer-url"):
+        veto_definer = save_veto_definer(workflow.cp, out_dir, [])
+
+    # Check for provided server
+    server = "segments.ligo.org"
+    if cp.has_option("workflow-segments", "segments-database-url"):
+        server = cp.get_opt_tags("workflow-segments",
+                                 "segments-database-url", [ifo])
+
+    segs = {}
+    for ifo in workflow.ifos:
+        flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
+        key = ifo + ':' + name
+        segs[key] = query_str(ifo, flag_str, start, end,
+                              server=server,
+                              veto_definer=veto_definer)
+        logging.info("%s: got %s flags", ifo, option_name)
+
+    return SegFile.from_segment_list_dict(name, segs,
+                                          extension='.xml',
+                                          valid_segment=workflow.analysis_time,
+                                          directory=out_dir)
