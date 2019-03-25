@@ -90,6 +90,13 @@ def get_newsnr_sgveto_psdvar(trigs):
                                     trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
 
+def get_newsnr_sgveto_psdvar_scaled(trigs):
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg_psd = \
+        events.newsnr_sgveto(trigs['snr'][:]/numpy.sqrt(trigs['psd_var_val'][:]), trigs['chisq'][:] / dof,
+                                    trigs['sg_chisq'][:])
+    return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+
 
 class Stat(object):
 
@@ -544,6 +551,17 @@ class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
         ExpFitCombinedSNR.__init__(self, files)
         self.get_newsnr = get_newsnr_sgveto_psdvar
 
+class ExpFitSGPSDscaledCombinedSNR(ExpFitCombinedSNR):
+
+    """ExpFitCombinedSNR but with sine-Gaussian veto added to the
+
+    single detector ranking
+    """
+
+    def __init__(self, files):
+        ExpFitCombinedSNR.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto_psdvar_scaled
+
 
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
 
@@ -599,6 +617,17 @@ class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
         PhaseTDExpFitSGStatistic.__init__(self, files)
         self.get_newsnr = get_newsnr_sgveto_psdvar
 
+class PhaseTDExpFitSGPSDScaledStatistic(PhaseTDExpFitSGStatistic):
+
+    """Statistic combining exponential noise model with signal histogram PDF
+       and adding the sine-Gaussian veto and PSD variation statistic to the 
+       single detector ranking
+    """
+
+    def __init__(self, files):
+        PhaseTDExpFitSGStatistic.__init__(self, files)
+        self.get_newsnr = get_newsnr_sgveto_psdvar_scaled
+
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
@@ -636,12 +665,14 @@ statistic_dict = {
     'exp_fit_csnr': ExpFitCombinedSNR,
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR,
+    'exp_fit_sg_csnr_psdvar_scaled': ExpFitSGPSDscaledCombinedSNR,
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
-    'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic
+    'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
+    'phasetd_exp_fit_stat_sgveto_psdvar_scaled':PhaseTDExpFitSGPSDScaledStatistic
 }
 
 sngl_statistic_dict = {
@@ -654,7 +685,8 @@ sngl_statistic_dict = {
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
-    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
+    'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR,
+    'exp_fit_sg_csnr_psdvar_scaled': ExpFitSGPSDscaledCombinedSNR
 }
 
 def get_statistic(stat):
