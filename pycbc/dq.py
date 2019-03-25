@@ -29,7 +29,7 @@ import json
 import numpy
 from astropy.utils.data import download_file
 from ligo.segments import segmentlist, segment
-from pycbc.frame.losc import _get_run
+from pycbc.frame.losc import get_run
 
 def parse_veto_definer(veto_def_filename):
     """ Parse a veto definer file from the filename and return a dictionary
@@ -151,7 +151,7 @@ def query_flag(ifo, name, start_time, end_time,
             return (data - negate).coalesce()
 
         duration = end_time - start_time
-        url = GWOSC_URL.format(_get_run(start_time + duration/2),
+        url = GWOSC_URL.format(get_run(start_time + duration/2),
                                ifo, segment_name,
                                int(start_time), int(duration))
 
