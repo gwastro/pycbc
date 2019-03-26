@@ -380,6 +380,7 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 ########################################################################################
 # Remnant mass for a NS-BH merger [Foucart PRD 86, 124007 (2012)]                      #
 # TODO: I will modify this part                                                        #
+# Using Prd 98, 081501 (2018)                                                          #
 # The result is shifted by a quantity (shift, in solar masses) passed as an argument   #
 # of remnant_mass: this can effectively used as a remnant mass threshold when solving  #
 # the constraint remnant_mass(...)=0.                                                  #
