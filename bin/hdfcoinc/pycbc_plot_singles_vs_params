@@ -35,6 +35,7 @@ import pycbc.results
 import pycbc.io
 import sys
 import pycbc.version
+from pycbc.events.stat import sngl_statistic_dict
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action="version",
@@ -62,8 +63,7 @@ parser.add_argument('--y-var', required=True,
                     choices=pycbc.io.SingleDetTriggers.get_param_names(),
                     help='Parameter to plot on the y-axis. Required')
 parser.add_argument('--z-var', required=True,
-                    help='Quantity to plot on the color scale. Required',
-                    choices=['density', 'max(snr)', 'max(newsnr)', 'max(newsnr_sgveto)', 'max(newsnr_sgveto_psdvar)'])
+                    help='Quantity to plot on the color scale. Required')
 parser.add_argument('--detector', required=True,
                     help='Detector. Required')
 parser.add_argument('--grid-size', type=int, default=80,
@@ -129,18 +129,8 @@ if opts.z_var == 'density':
     fig.colorbar(hb, ticks=LogLocator(subs=range(10)))
 elif opts.z_var in sngl_statistic_dict:
     cb_style = {}
-    z = trigs.'%s'%opts.z_var    
+    z = getattr(trigs, opts.z_var) 
 
-#elif opts.z_var in ['max(snr)', 'max(newsnr)', 'max(newsnr_sgveto)', 'max(newsnr_sgveto_psdvar)']:
-#    cb_style = {}
-#    if opts.z_var == 'max(snr)':
-#        z = trigs.snr
-#    elif opts.z_var == 'max(newsnr)':
-#        z = trigs.newsnr
-#    elif opts.z_var == 'max(newsnr_sgveto)':
-#        z = trigs.newsnr_sgveto
-#    elif opts.z_var == 'max(newsnr_sgveto_psdvar)':
-#        z = trigs.newsnr_sgveto_psdvar
     z = z[mask]
     min_z = z.min() if opts.min_z is None else opts.min_z
     max_z = z.max() if opts.max_z is None else opts.max_z
