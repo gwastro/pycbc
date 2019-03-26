@@ -181,13 +181,7 @@ class LiveEventManager(object):
                                              data_readers, bank, followup_ifos)
 
             live_ifos = [ifo for ifo in ifos if 'snr_series' in fud[ifo]]
-
-            ## FIXME: Assertion is not working with the real data.
-            # assert len({fud[ifo]['snr_series'].delta_t for ifo in live_ifos}) == 1
-            ## Temparary fix:
-            fix_delta_t = fud[live_ifos[-1]]['snr_series'].delta_t
-            for ifo in live_ifos:
-                fud[ifo]['snr_series']._delta_t = fix_delta_t
+            assert len({fud[ifo]['snr_series'].delta_t for ifo in live_ifos}) == 1
 
             event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,

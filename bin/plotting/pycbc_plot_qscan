@@ -76,7 +76,7 @@ parser.add_argument('--qtransform-qrange-upper', default=64, type=float,
 parser.add_argument('--qtransform-mismatch', default=0.2, type=float,
                     help='Mismatch between frequency tiles, default=0.2')
 
-parser.add_argument('--linear-y-axis', dest='log_y', default=True, 
+parser.add_argument('--linear-y-axis', dest='log_y', default=True,
                     action='store_false',
                     help='Use a linear y-axis. By default a log axis is used.')
 parser.add_argument('--linear-colorbar', dest='log_colorbar', default=True,
@@ -92,19 +92,34 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-#opts.low_frequency_cutoff = opts.f_low
-strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
 else:
     center_time = opts.center_time
 
+if center_time == -1.0:
+    fig, axes = plt.subplots(1,1)
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(labelcolor='none', top='off', bottom='off', left='off',
+                    right='off')
+    plt.grid(False)
+    plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
+    plt.ylabel('Frequency (Hz)')
+    title = 'No triggers or this IFO'
+    pycbc.results.save_fig_with_metadata\
+    (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
+     title=title, caption=opts.plot_caption)
+    sys.exit(0)
+
+#opts.low_frequency_cutoff = opts.f_low
+strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
+
 if opts.qtransform_frange_upper is None and \
         opts.qtransform_frange_lower is None:
     curr_frange = (30, opts.sample_rate / 4.)
 elif opts.qtransform_frange_upper is None or \
-        opts.qtransform_frange_lower is None:
+          opts.qtransform_frange_lower is None:
     err_msg = 'Must provide either both --qtransfor-frange-upper and '
     err_msg += '--qtransfor-frange-lower or neither option.'
     raise ValueError(err_msg)
@@ -178,7 +193,7 @@ if opts.plot_title is None:
 if opts.plot_caption is None:
     # FIXME: Someone please improve!
     opts.plot_caption = ("This shows the Q-transform as a function of time and "
-                        "frequency")
+                         "frequency")
 
 pycbc.results.save_fig_with_metadata\
     (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
