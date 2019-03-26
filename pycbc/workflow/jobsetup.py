@@ -1869,7 +1869,7 @@ class PycbcInferenceExecutable(Executable):
 
         if self.cp.has_option("pegasus_profile-inference",
                               "condor|+CheckpointSig"):
-            ckpt_file_name = "{}.checkpoint".format(inference_file)
+            ckpt_file_name = "{}.checkpoint".format(inference_file.name)
             ckpt_file = dax.File(ckpt_file_name)
             node._dax_node.uses(ckpt_file, link=dax.Link.OUTPUT,
                                 register=False, transfer=False)
