@@ -136,10 +136,29 @@ class BaseInferenceFile(h5py.File):
         possible_fields = self.all_params
         return array_class.parse_parameters(parameters, possible_fields)
 
-    @property
-    def all_params(self):
-        """Returns a list of all of the parameters in the samples group."""
-        return self[self.samples_group].keys()
+    def collection(self, collection):
+        """A list of parameter names that are in the given collection.
+        
+        Parameters
+        ----------
+        collection : str
+            Name of collection of parameters to get; e.g.,
+            ``'variable_params'``. If 'all' will return all of the parameters
+            in the samples group. Otherwise, ``collection`` must be a list
+            specified in the file's ``attrs``.
+
+        Returns
+        -------
+        list of str :
+            List of parameter names that are in the given collection.
+        """
+        if collection == 'all':
+            return self[self.samples_group].keys()
+        elif collection in self.attrs:
+            return self.attrs[collection]
+        else:
+            raise ValueError("unknown parameter collection {}"
+                             .format(collection))
 
     def read_samples(self, parameters, array_class=None, **kwargs):
         """Reads samples for the given parameter(s).

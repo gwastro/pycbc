@@ -51,6 +51,27 @@ class GWOSCPosteriorFile(h5py.File):
             dataset = self.samples_dataset
         return self[dataset].dtype.names
 
+    def collection(self, collection):
+        """A list of parameter names that are in the given collection.
+        
+        Parameters
+        ----------
+        collection : {'all', 'variable_params'}
+            Name of collection of parameters to get.
+
+        Returns
+        -------
+        list of str :
+            List of parameter names that are in the given collection.
+        """
+        if collection == 'all':
+            return self.all_params
+        elif collection == 'variable_params':
+            return self.variable_params
+        else:
+            raise ValueError("unknown parameter collection {}"
+                             .format(collection))
+
     @property
     def variable_params(self):
         """Gets the parameters in the default samples dataset."""
