@@ -139,7 +139,8 @@ with ctx:
     cp = option_utils.config_parser_from_cli(opts)
 
     # create an empty checkpoint file, if needed
-    if cp.has_option('sampler', 'checkpoint-signal'):
+    condor_ckpt = cp.has_option('sampler', 'checkpoint-signal')
+    if condor_ckpt:
         logging.info(
             "Sampler will exit with signal {} after checkpointing".format(
                 cp.get('sampler', 'checkpoint-signal')))
@@ -210,9 +211,8 @@ with ctx:
     # Finalize the output 
     sampler.finalize()
 
-if cp.has_option('sampler', 'checkpoint-signal'):
-   # create an empty checkpoint file and unlink the empty output file
-   open(sampler.checkpoint_file, 'a').close()
+if condor_ckpt:
+   # unlink the empty output file
    try:
        os.unlink(opts.output_file)
    except:
@@ -224,6 +224,10 @@ os.rename(sampler.checkpoint_file, opts.output_file)
 if not opts.save_backup:
     logging.info("Deleting backup file")
     os.remove(sampler.backup_file)
+
+if condor_ckpt:
+   # create an empty checkpoint file
+   open(sampler.checkpoint_file, 'a').close()
 
 # exit
 logging.info("Done")
