@@ -93,8 +93,6 @@ class BaseInferenceFile(h5py.File):
 
         Parameters
         ----------
-        fp : open hdf file
-            The file to write to.
         samples : dict
             Samples should be provided as a dictionary of numpy arrays.
         \**kwargs :
@@ -135,8 +133,13 @@ class BaseInferenceFile(h5py.File):
         if array_class is None:
             array_class = FieldArray
         # get the names of fields needed for the given parameters
-        possible_fields = self[self.samples_group].keys()
+        possible_fields = self.all_params
         return array_class.parse_parameters(parameters, possible_fields)
+
+    @property
+    def all_params(self):
+        """Returns a list of all of the parameters in the samples group."""
+        return self[self.samples_group].keys()
 
     def read_samples(self, parameters, array_class=None, **kwargs):
         """Reads samples for the given parameter(s).
@@ -242,44 +245,6 @@ class BaseInferenceFile(h5py.File):
         """
         return parser, []
 
-    @staticmethod
-    def _get_optional_args(args, opts, err_on_missing=False, **kwargs):
-        """Convenience function to retrieve arguments from an argparse
-        namespace.
-
-        Parameters
-        ----------
-        args : list of str
-            List of arguments to retreive.
-        opts : argparse.namespace
-            Namespace to retreive arguments for.
-        err_on_missing : bool, optional
-            If an argument is not found in the namespace, raise an
-            AttributeError. Otherwise, just pass. Default is False.
-        \**kwargs :
-            All other keyword arguments are added to the return dictionary.
-            Any keyword argument that is the same as an argument in ``args``
-            will override what was retrieved from ``opts``.
-
-        Returns
-        -------
-        dict :
-            Dictionary mapping arguments to values retrieved from ``opts``. If
-            keyword arguments were provided, these will also be included in the
-            dictionary.
-        """
-        parsed = {}
-        for arg in args:
-            try:
-                parsed[arg] = getattr(opts, arg)
-            except AttributeError as e:
-                if err_on_missing:
-                    raise AttributeError(e)
-                else:
-                    continue
-        parsed.update(kwargs)
-        return parsed
-
     def samples_from_cli(self, opts, parameters=None, **kwargs):
         """Reads samples from the given command-line options.
 
@@ -301,13 +266,13 @@ class BaseInferenceFile(h5py.File):
             Array of the loaded samples.
         """
         if parameters is None and opts.parameters is None:
-            parameters = self.variable_args
+            parameters = self.variable_params
         elif parameters is None:
             parameters = opts.parameters
         # parse optional arguments
         _, extra_actions = self.extra_args_parser()
         extra_args = [act.dest for act in extra_actions]
-        kwargs = self._get_optional_args(extra_args, opts, **kwargs)
+        kwargs = get_optional_args(extra_args, opts, **kwargs)
         return self.read_samples(parameters, **kwargs)
 
     @property
@@ -807,3 +772,41 @@ class BaseInferenceFile(h5py.File):
                 cls.write_kwargs_to_attrs(attrs, **val)
             else:
                 attrs[arg] = val
+
+
+def get_optional_args(args, opts, err_on_missing=False, **kwargs):
+    """Convenience function to retrieve arguments from an argparse
+    namespace.
+
+    Parameters
+    ----------
+    args : list of str
+        List of arguments to retreive.
+    opts : argparse.namespace
+        Namespace to retreive arguments for.
+    err_on_missing : bool, optional
+        If an argument is not found in the namespace, raise an
+        AttributeError. Otherwise, just pass. Default is False.
+    \**kwargs :
+        All other keyword arguments are added to the return dictionary.
+        Any keyword argument that is the same as an argument in ``args``
+        will override what was retrieved from ``opts``.
+
+    Returns
+    -------
+    dict :
+        Dictionary mapping arguments to values retrieved from ``opts``. If
+        keyword arguments were provided, these will also be included in the
+        dictionary.
+    """
+    parsed = {}
+    for arg in args:
+        try:
+            parsed[arg] = getattr(opts, arg)
+        except AttributeError as e:
+            if err_on_missing:
+                raise AttributeError(e)
+            else:
+                continue
+    parsed.update(kwargs)
+    return parsed
