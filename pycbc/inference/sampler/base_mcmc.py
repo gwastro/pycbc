@@ -25,6 +25,8 @@
 
 from __future__ import (absolute_import, division)
 
+import os
+import signal
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 import logging
 import numpy
