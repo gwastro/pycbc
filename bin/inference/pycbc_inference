@@ -209,5 +209,8 @@ if not opts.save_backup:
     logging.info("Deleting backup file")
     os.remove(sampler.backup_file)
 
+# create an empty checkpoint file, if needed
+if cp.has_option('sampler', 'checkpoint-signal'):
+   open(sampler.checkpoint_file, 'a').close()
 # exit
 logging.info("Done")
