@@ -608,7 +608,7 @@ class BaseMCMC(object):
             # kill myself with the specified signal
             logging.info("Exiting with SIG{}".format(self.checkpoint_signal))
             kill_cmd="os.kill(os.getpid(), signal.SIG{})".format(
-                self.checkpoint_signal))
+                self.checkpoint_signal)
             exec(kill_cmd)
         # clear the in-memory chain to save memory
         logging.info("Clearing samples from memory")
