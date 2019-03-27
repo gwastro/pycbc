@@ -36,11 +36,13 @@ from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
+from .gwosc import GWOSCPosteriorFile
 
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
-    PosteriorFile.name: PosteriorFile
+    PosteriorFile.name: PosteriorFile,
+    GWOSCPosteriorFile.name: GWOSCPosteriorFile
 }
 
 
@@ -58,11 +60,18 @@ def get_file_type(filename):
         The type of inference file object to use.
     """
     txt_extensions = [".txt", ".dat", ".csv"]
-    hdf_extensions = [".hdf", ".h5", ".bkup", ".checkpoint"]
+    hdf_extensions = [".hdf", ".h5", ".hdf5", ".bkup", ".checkpoint"]
     for ext in hdf_extensions:
         if filename.endswith(ext):
             with _h5py.File(filename, 'r') as fp:
-                filetype = fp.attrs['filetype']
+                try:
+                    filetype = fp.attrs['filetype']
+                except KeyError:
+                    # if the file ends in hdf5, guess that it's a GWOSC file
+                    if ext == '.hdf5':
+                        logging.warn("Filetype not found in hdf5 file; "
+                                     "guessing that this is a GWOSC file.")
+                        filetype = GWOSCPosteriorFile.name
             return filetypes[filetype]
     for ext in txt_extensions:
         if filename.endswith(ext):
@@ -280,10 +289,7 @@ def get_common_parameters(input_files, collection=None):
     parameters = []
     for fn in input_files:
         fp = loadfile(fn, 'r')
-        if collection == 'all':
-            ps = fp[fp.samples_group].keys()
-        else:
-            ps = fp.attrs[collection]
+        ps = fp.collection(collection)
         parameters.append(set(ps))
         fp.close()
     parameters = list(set.intersection(*parameters))
