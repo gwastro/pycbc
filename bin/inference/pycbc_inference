@@ -138,6 +138,14 @@ with ctx:
     # read configuration file
     cp = option_utils.config_parser_from_cli(opts)
 
+    # create an empty checkpoint file, if needed
+    if cp.has_option('sampler', 'checkpoint-signal'):
+        logging.info(
+            "Sampler will exit with signal {} after checkpointing".format(
+                cp.get('sampler', 'checkpoint-signal')))
+        # create an empty output file to keep condor happy
+        open(opts.output_file, 'a').close()
+
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
         logging.info("Initializing calibration model")
@@ -202,6 +210,14 @@ with ctx:
     # Finalize the output 
     sampler.finalize()
 
+if cp.has_option('sampler', 'checkpoint-signal'):
+   # create an empty checkpoint file and unlink the empty output file
+   open(sampler.checkpoint_file, 'a').close()
+   try:
+       os.unlink(opts.output_file)
+   except:
+       pass
+
 # rename checkpoint to output and delete backup
 logging.info("Moving checkpoint to output")
 os.rename(sampler.checkpoint_file, opts.output_file)
@@ -209,8 +225,5 @@ if not opts.save_backup:
     logging.info("Deleting backup file")
     os.remove(sampler.backup_file)
 
-# create an empty checkpoint file, if needed
-if cp.has_option('sampler', 'checkpoint-signal'):
-   open(sampler.checkpoint_file, 'a').close()
 # exit
 logging.info("Done")
