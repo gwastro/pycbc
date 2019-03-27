@@ -1769,7 +1769,7 @@ def followup_event_significance(ifo, data_reader, bank,
     # Require all strain be valid within lookback time
     if data_reader.state is not None:
         state_start_time = data_reader.strain.end_time \
-                - data_reader.reduced_pad - bdur
+                - data_reader.reduced_pad * data_reader.strain.delta_t - bdur
         if not data_reader.state.is_extent_valid(state_start_time, bdur):
             return None, None, None
 
