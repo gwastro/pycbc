@@ -180,7 +180,7 @@ total_time = abs(all_segments)
 # do pruning (removal of trigs at N loudest times defined over param bins)
 if args.prune_param:
     logging.info('Getting min and max param values')
-    pars = trstats.get_param(args.prune_param, args,
+    pars = triggers.get_param(args.prune_param, args,
                      templatef['mass1'][:], templatef['mass2'][:],
                      templatef['spin1z'][:], templatef['spin2z'][:])
     minpar = min(pars)
@@ -216,9 +216,9 @@ if args.prune_param:
         lstat = statpruneall[loudest]
         ltid = tidpruneall[loudest]
         ltime = timepruneall[loudest]
-        m1, m2, s1z, s2z = trstats.get_masses(templatef, ltid)
-        lbin = trstats.which_bin(trstats.get_param(args.prune_param, args,
-                                           m1, m2, s1z, s2z),
+        m1, m2, s1z, s2z = triggers.get_mass_spin(templatef, ltid)
+        lbin = trstats.which_bin(triggers.get_param(args.prune_param, args,
+                                                    m1, m2, s1z, s2z),
                                  minpar, maxpar, args.prune_bins,
                                                       log=args.log_prune_param)
         # is the bin where the loudest trigger lives full already?
