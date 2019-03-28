@@ -324,8 +324,6 @@ class EventManager(object):
             from pycbc.conversions import mchirp_from_mass1_mass2
             m1 = numpy.array([p['tmplt'].mass1 for p in self.template_params])
             m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params])
-
-            # chirp mass of each template
             mc = mchirp_from_mass1_mass2(m1, m2)[e['template_id']]
 
             # convert chirp mass to an integer which indicates its cluster bin
