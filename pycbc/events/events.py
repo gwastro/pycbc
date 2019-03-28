@@ -316,6 +316,7 @@ class EventManager(object):
         stat = newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
         time = e['time_index']
 
+        # convert time to time bin index
         wtime = (time / window).astype(numpy.int32)
         bins = numpy.unique(wtime)
 
@@ -326,8 +327,9 @@ class EventManager(object):
 
             # chirp mass of each template
             mc = mchirp_from_mass1_mass2(m1, m2)[e['template_id']]
-            lmc = numpy.log(mc)
-            imc = (lmc / log_chirp_width).astype(numpy.int32)
+
+            # convert chirp mass to an integer which indicates its cluster bin
+            imc = (numpy.log(mc) / log_chirp_width).astype(numpy.int32)
             cbins = numpy.unique(imc)
 
         keep = []
