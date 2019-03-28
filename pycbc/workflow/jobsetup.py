@@ -1873,6 +1873,5 @@ class PycbcInferenceExecutable(Executable):
             ckpt_file = dax.File(ckpt_file_name)
             node._dax_node.uses(ckpt_file, link=dax.Link.OUTPUT,
                                 register=False, transfer=False)
-            node.add_opt("--samples-file", ckpt_file_name)
 
         return node, inference_file
