@@ -301,7 +301,7 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
         results_hier_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
 
     table = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir[hierarchical_level_page],
+                    hdfbank[0], rdir[hierarchical_level_page],
                     singles=insps,
                     extension='.html', tags=["html"],
                     hierarchical_level=hierarchical_level)
