@@ -65,7 +65,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     burn_in_class = MultiTemperedMCMCBurnInTests
 
     def __init__(self, model, ntemps, nwalkers, betas=None,
-                 checkpoint_interval=None, loglikelihood_function=None,
+                 checkpoint_interval=None, checkpoint_signal=None,
+                 loglikelihood_function=None,
                  nprocesses=1, use_mpi=False):
 
         self.model = model
@@ -100,6 +101,7 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         self._nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
+        self._checkpoint_signal = checkpoint_signal
 
     @property
     def io(self):
@@ -153,10 +155,12 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             ntemps = int(cp.get(section, "ntemps"))
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
+        checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
         obj = cls(model, ntemps, nwalkers, betas=betas,
                   checkpoint_interval=checkpoint_interval,
+                  checkpoint_signal=checkpoint_signal,
                   loglikelihood_function=logl, nprocesses=nprocesses,
                   use_mpi=use_mpi)
         # set target
