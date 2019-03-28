@@ -56,11 +56,6 @@ matrix:
     sudo: required
     services:
     - docker
-  - env: PYCBC_CONTAINER=pycbc_inspiral_bundle DOCKER_IMG=pycbc/sl6-travis
-    language: minimal
-    sudo: required
-    services:
-    - docker
   - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
     language: minimal
     sudo: required
@@ -72,22 +67,7 @@ matrix:
     language: python
     python: 3.6
   allow_failures:
-  - env: PYCBC_CONTAINER=pycbc_rhel_virtualenv DOCKER_IMG=ligo/lalsuite-dev:el7
-    language: minimal
-    sudo: required
-    services:
-    - docker
   - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev:jessie
-    language: minimal
-    sudo: required
-    services:
-    - docker
-  - env: PYCBC_CONTAINER=pycbc_inspiral_bundle DOCKER_IMG=pycbc/sl6-travis
-    language: minimal
-    sudo: required
-    services:
-    - docker
-  - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
     language: minimal
     sudo: required
     services:
