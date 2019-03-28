@@ -151,13 +151,14 @@ class MKLScheme(CPUScheme):
 class NumpyScheme(CPUScheme):
     pass
 
+
 scheme_prefix = {
     CUDAScheme: "cuda",
     CPUScheme: "cpu",
     MKLScheme: "mkl",
     NumpyScheme: "numpy",
 }
-_scheme_map = {v: k  for (k, v) in scheme_prefix.items()}
+_scheme_map = {v: k for (k, v) in scheme_prefix.items()}
 
 _default_scheme_prefix = os.getenv("PYCBC_SCHEME", "cpu")
 try:
