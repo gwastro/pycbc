@@ -162,7 +162,7 @@ parser.add_argument("--user-tag", type=str, metavar="TAG", help="""
                     compatibility with pipedown post-processing.
                     Option will be removed when no longer needed.""")
 parser.add_argument("--keep-loudest-log-chirp-window", type=float,
-                    help="Keep loudest triggers within log chirp mass window")
+                    help="Keep loudest triggers within ln chirp mass window")
 parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
 parser.add_argument("--keep-loudest-num", type=int,
