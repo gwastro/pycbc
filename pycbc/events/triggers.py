@@ -339,7 +339,7 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
     else:
         b = bankfile
         return get_param(param, args, b['mass1'][:], b['mass2'][:],
-                                     b['spin1z'][:], b['spin2z'][:])[foundtmp])
+                                     b['spin1z'][:], b['spin2z'][:])[foundtmp]
 
 def get_inj_param(injfile, param, ifo, args=None):
     """

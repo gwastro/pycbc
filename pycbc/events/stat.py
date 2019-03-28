@@ -25,7 +25,7 @@
 statistic values
 """
 import numpy
-from . import events
+from . import ranking
 
 def get_newsnr(trigs):
     """
@@ -43,7 +43,7 @@ def get_newsnr(trigs):
         Array of newsnr values
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
-    newsnr = events.newsnr(trigs['snr'][:], trigs['chisq'][:] / dof)
+    newsnr = ranking.newsnr(trigs['snr'][:], trigs['chisq'][:] / dof)
     return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
 
 def get_newsnr_sgveto(trigs):
@@ -62,9 +62,9 @@ def get_newsnr_sgveto(trigs):
         Array of newsnr values
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
-    nsnr_sg = events.newsnr_sgveto(trigs['snr'][:],
-                                   trigs['chisq'][:] / dof,
-                                   trigs['sg_chisq'][:])
+    nsnr_sg = ranking.newsnr_sgveto(trigs['snr'][:],
+                                    trigs['chisq'][:] / dof,
+                                    trigs['sg_chisq'][:])
     return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
 
 def get_newsnr_sgveto_psdvar(trigs):
@@ -85,9 +85,9 @@ def get_newsnr_sgveto_psdvar(trigs):
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
     nsnr_sg_psd = \
-        events.newsnr_sgveto_psdvar(trigs['snr'][:], trigs['chisq'][:] / dof,
-                                    trigs['sg_chisq'][:],
-                                    trigs['psd_var_val'][:])
+        ranking.newsnr_sgveto_psdvar(trigs['snr'][:], trigs['chisq'][:] / dof,
+                                     trigs['sg_chisq'][:],
+                                     trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
 
 
@@ -621,7 +621,7 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
         """
         chisq_newsnr = get_newsnr(trigs)
         rautochisq = trigs['cont_chisq'][:] / trigs['cont_chisq_dof'][:]
-        autochisq_newsnr = events.newsnr(trigs['snr'][:], rautochisq)
+        autochisq_newsnr = ranking.newsnr(trigs['snr'][:], rautochisq)
         return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
                            dtype=numpy.float32), ndmin=1, copy=False)
 

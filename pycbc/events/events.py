@@ -33,7 +33,7 @@ from pycbc.types import convert_to_process_params_dict
 from pycbc.scheme import schemed
 from pycbc.detector import Detector
 
-from . import coinc
+from . import coinc, ranking
 
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
@@ -73,6 +73,7 @@ def _threshold_cluster_factory(series):
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
+
 class ThresholdCluster(object):
     """Create a threshold and cluster engine
 
@@ -85,6 +86,7 @@ class ThresholdCluster(object):
     def __new__(cls, *args, **kwargs):
         real_cls = _threshold_cluster_factory(*args, **kwargs)
         return real_cls(*args, **kwargs) # pylint:disable=not-callable
+
 
 # The class below should serve as the parent for all schemed classes.
 # The intention is that this class serves simply as the location for
@@ -186,68 +188,6 @@ def cluster_reduce(idx, snr, window_size):
     ind = findchirp_cluster_over_window(idx, snr, window_size)
     return idx.take(ind), snr.take(ind)
 
-def newsnr(snr, reduced_x2, q=6., n=2.):
-    """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
-    reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
-    definition. Previous implementation in glue/ligolw/lsctables.py
-    """
-    newsnr = numpy.array(snr, ndmin=1, dtype=numpy.float64)
-    reduced_x2 = numpy.array(reduced_x2, ndmin=1, dtype=numpy.float64)
-
-    # newsnr is only different from snr if reduced chisq > 1
-    ind = numpy.where(reduced_x2 > 1.)[0]
-    newsnr[ind] *= ( 0.5 * (1. + reduced_x2[ind] ** (q/n)) ) ** (-1./q)
-
-    # If snr input is float, return a float. Otherwise return numpy array.
-    if hasattr(snr, '__len__'):
-        return newsnr
-    else:
-        return newsnr[0]
-
-def newsnr_sgveto(snr, bchisq, sgchisq):
-    """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
-    # Test function
-    nsnr = newsnr(snr, bchisq)
-    nsnr = numpy.array(nsnr, ndmin=1)
-    sgchisq = numpy.array(sgchisq, ndmin=1)
-    t = numpy.array(sgchisq > 4, ndmin=1)
-    if len(t) > 0:
-        nsnr[t] = nsnr[t] / (sgchisq[t] / 4.0) ** 0.5
-
-    # If snr input is float, return a float. Otherwise return numpy array.
-    if hasattr(snr, '__len__'):
-        return nsnr
-    else:
-        return nsnr[0]
-
-def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
-    """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD
-    variation statistic """
-    nsnr = newsnr_sgveto(snr, bchisq, sgchisq)
-    nsnr = numpy.array(nsnr, ndmin=1)
-    psd_var_val = numpy.array(psd_var_val, ndmin=1)
-    lgc = psd_var_val >= 1.8
-    nsnr[lgc] = nsnr[lgc] / numpy.sqrt(psd_var_val[lgc])
-
-    # If snr input is float, return a float. Otherwise return numpy array.
-    if hasattr(snr, '__len__'):
-        return nsnr
-    else:
-        return nsnr[0]
-
-def effsnr(snr, reduced_x2, fac=250.):
-    """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
-    Previous implementation in glue/ligolw/lsctables.py
-    """
-    snr = numpy.array(snr, ndmin=1, dtype=numpy.float64)
-    rchisq = numpy.array(reduced_x2, ndmin=1, dtype=numpy.float64)
-    effsnr = snr / (1 + snr ** 2 / fac) ** 0.25 / rchisq ** 0.25
-
-    # If snr input is float, return a float. Otherwise return numpy array.
-    if hasattr(snr, '__len__'):
-        return effsnr
-    else:
-        return effsnr[0]
 
 class EventManager(object):
     def __init__(self, opt, column, column_types, **kwds):
@@ -293,8 +233,9 @@ class EventManager(object):
         if not self.opt.chisq_bins:
             raise RuntimeError('Chi-square test must be enabled in order to use newsnr threshold')
 
-        remove = [i for i, e in enumerate(self.events) if \
-            newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof']) < threshold]
+        remove = [i for i, e in enumerate(self.events) if
+                  ranking.newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
+                  < threshold]
         self.events = numpy.delete(self.events, remove)
 
     def keep_near_injection(self, window, injections):
@@ -313,10 +254,10 @@ class EventManager(object):
             return
 
         e = self.events
-        stat = newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
+        # FIXME allow statistics that are not newsnr
+        stat = ranking.newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
         time = e['time_index']
-
-        # convert time to time bin index
+        # convert time to integer bin number
         wtime = (time / window).astype(numpy.int32)
         bins = numpy.unique(wtime)
 
@@ -542,6 +483,7 @@ class EventManager(object):
                     f['gating/' + gate_type + '/pad'] = \
                             numpy.array([g[2] for g in gating_info[gate_type]])
 
+
 class EventManagerMultiDetBase(EventManager):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
         self.opt = opt
@@ -580,6 +522,7 @@ class EventManagerMultiDetBase(EventManager):
         self.add_template_events(columns, vectors)
         self.template_event_dict[ifo] = self.template_events
         self.template_events = None
+
 
 class EventManagerCoherent(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, network_column,
@@ -855,6 +798,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.template_event_dict['network'] = numpy.array(
             [], dtype=self.network_event_dtype)
 
+
 class EventManagerMultiDet(EventManagerMultiDetBase):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
         super(EventManagerMultiDet, self).__init__(
@@ -1049,8 +993,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                         f['gating/' + gate_type + '/pad'] = \
                                 numpy.array([g[2] for g in gating_info[gate_type]])
 
-__all__ = ['threshold_and_cluster', 'newsnr', 'effsnr', 'newsnr_sgveto',
-           'newsnr_sgveto_psdvar', 'findchirp_cluster_over_window',
+__all__ = ['threshold_and_cluster', 'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',
            'threshold_real_numpy', 'threshold_only',
            'EventManager', 'EventManagerMultiDet', 'EventManagerCoherent']
