@@ -202,7 +202,7 @@ for bg_file, bg_bins in final_bg_files:
         if bg_file == final_bg_file:
             closed_snrifar.append(snrifar)
 
-max_hierarchical_removal = workflow.cp.get('workflow-results', 
+max_hierarchical_removal = workflow.cp.get('workflow-results',
                                            'max-hierarchical-removal')
 results_page = []
 results_aux_page = []
@@ -239,7 +239,7 @@ for bin_file in bin_files:
                     rdir['coincident_triggers'],
                     tags=bin_file.tags + ['closed_box'])
     closed_box_ifars.append(ifar_cb)
-    
+
 # Open box table
 table = wf.make_foreground_table(workflow, final_bg_file,
                     hdfbank[0], rdir['open_box_result'], singles=insps,
@@ -256,10 +256,10 @@ results_aux_page += [(table,)]
 layout.two_column_layout(rdir['open_box_result/significance'], results_aux_page)
 
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
+                    hdfbank[0], rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlall"])
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
+                    hdfbank[0], rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
 
 # Closed box coincident triggers page
@@ -301,7 +301,7 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
         results_hier_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
 
     table = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir[hierarchical_level_page], 
+                    hdfbank[0], rdir[hierarchical_level_page],
                     singles=insps,
                     extension='.html', tags=["html"],
                     hierarchical_level=hierarchical_level)
