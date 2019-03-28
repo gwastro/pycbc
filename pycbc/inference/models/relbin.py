@@ -217,6 +217,7 @@ class Relative(BaseDataModel):
 
         relsigsq = self.rel_sigmasq(p['mass1'], p['mass2'])
         shloglr = hhloglr = 0
+        shloglr2 = 0
         for ifo in self.sh:
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                    p['polarization'],
@@ -231,6 +232,15 @@ class Relative(BaseDataModel):
             shloglr += sh * htf
             hhloglr += self.hh[ifo] * abs(htf) ** 2.0 * relsigsq
 
+            sh2 = self.slow_likelihood(p, ifo, p['tc'] + dt)
+            shloglr2 += sh2 * htf
+
+
         vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
         vloglr += abs(shloglr) + hhloglr
+
+        vloglr2 = numpy.log(scipy.special.i0e(abs(shloglr2)))
+        vloglr2 += abs(shloglr2) + hhloglr
+        if (vloglr2 > 450) or (vloglr > 450):
+            print vloglr2, vloglr
         return float(vloglr)
