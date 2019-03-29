@@ -112,6 +112,8 @@ class SingleCoincForGraceDB(object):
 
         if 'followup_data' in kwargs:
             fud = kwargs['followup_data']
+            assert len({fud[ifo]['snr_series'].delta_t for ifo in fud}) == 1, \
+                    "delta_t for all ifos do not match"
             self.snr_series = {ifo: fud[ifo]['snr_series'] for ifo in fud}
             usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
