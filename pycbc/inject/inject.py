@@ -120,7 +120,7 @@ class _HDFInjectionSet(object):
             for param in parameters: 
                 if isinstance(injvals[param],np.ndarray):
                     arr = np.empty(1, dtype=object)
-                    arr[0] = injvals[params]
+                    arr[0] = injvals[param]
                     injvals[param] = arr
         elif contains_1d_arrays and contains_2d_arrays: 
             for param in parameters:
