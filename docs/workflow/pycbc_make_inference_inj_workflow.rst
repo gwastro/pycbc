@@ -35,8 +35,7 @@ A sample inference configuration file:
 Generate the workflow
 =====================
 
-To generate a workflow you will need your configuration files. Generate the workflow using following example run script::
-A sample inference configuration file:
+To generate a workflow you will need your configuration files. Generate the workflow using following example run script:
 
 .. literalinclude:: ../../examples/workflow/inference_inj/run_pycbc_make_inference_inj_workflow.sh
    :language: bash
@@ -48,10 +47,12 @@ A sample inference configuration file:
 Plan and execute the workflow
 =============================
 
-Finally plan and submit the workflow with::
+If you are on LDG, you need to define an accounting group. Finally plan and submit the workflow with:
 
     # submit workflow
-    cd ${OUT_DIR}
+    cd ${output_dir}
     pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
+        --no-grid \
+        --enable-shared-filesystem \
         --accounting-group ${ACCOUNTING_GROUP}
 

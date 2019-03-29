@@ -17,4 +17,4 @@ pycbc_make_inference_inj_workflow \
 
 echo "Now run:"
 echo "cd ${output_dir}"
-echo "pycbc_submit_dax --no-create-proxy --no-grid --dax ${workflow_name}.dax --accounting-group aei.dev.pe --enable-shared-filesystem"
+echo "pycbc_submit_dax --no-create-proxy --no-grid --dax ${workflow_name}.dax --accounting-group ${accounting_group} --enable-shared-filesystem"
