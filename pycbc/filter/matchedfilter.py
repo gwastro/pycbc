@@ -33,7 +33,9 @@ from pycbc.types import complex_same_precision_as, real_same_precision_as
 from pycbc.fft import fft, ifft, IFFT
 import pycbc.scheme
 from pycbc import events
+from pycbc.events import ranking
 import pycbc
+from pycbc import events
 import numpy
 
 BACKEND_PREFIX="pycbc.filter.matchedfilter_"
@@ -99,6 +101,7 @@ class Correlator(object):
     def __new__(cls, *args, **kwargs):
         real_cls = _correlate_factory(*args, **kwargs)
         return real_cls(*args, **kwargs) # pylint:disable=not-callable
+
 
 # The class below should serve as the parent for all schemed classes.
 # The intention is that this class serves simply as the location for
@@ -819,6 +822,7 @@ def compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
 
     return u_val, coa_phase
 
+
 class MatchedFilterSkyMaxControl(object):
     # FIXME: This seems much more simplistic than the aligned-spin class.
     #        E.g. no correlators. Is this worth updating?
@@ -967,6 +971,7 @@ class MatchedFilterSkyMaxControl(object):
     def _maximized_extrinsic_params(self, hplus, hcross, hphccorr, **kwargs):
         return compute_u_val_for_sky_loc_stat(hplus, hcross, hphccorr,
                                               **kwargs)
+
 
 class MatchedFilterSkyMaxControlNoPhase(MatchedFilterSkyMaxControl):
     # Basically the same as normal SkyMaxControl, except we use a slight
@@ -1456,6 +1461,7 @@ def quadratic_interpolate_peak(left, middle, right):
     peak_value = middle + 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
 
+
 class LiveBatchMatchedFilter(object):
 
     """Calculate SNR and signal consistency tests in a batched progression"""
@@ -1562,7 +1568,6 @@ class LiveBatchMatchedFilter(object):
                 e += psize
             self.corr.append(BatchCorrelator(tgroup, [t.cout for t in tgroup], len(tgroup[0])))
 
-
     def set_data(self, data):
         """Set the data reader object to use"""
         self.data = data
@@ -1628,7 +1633,7 @@ class LiveBatchMatchedFilter(object):
                 sg_chisq[i] = sgv[0]
 
             if self.newsnr_threshold:
-                newsnr = events.newsnr(results['snr'][i], chisq[i])
+                newsnr = ranking.newsnr(results['snr'][i], chisq[i])
                 if newsnr >= self.newsnr_threshold:
                     keep.append(i)
 

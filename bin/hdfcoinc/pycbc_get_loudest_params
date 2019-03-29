@@ -51,7 +51,7 @@ snr = trigs[args.ifo]['snr'][mask]
 chisq = trigs[args.ifo]['chisq'][mask]
 chisq_dof = trigs[args.ifo]['chisq_dof'][mask]
 reduced_chisq = chisq/(2*chisq_dof - 2)
-newsnr = pycbc.events.newsnr(snr,reduced_chisq)
+newsnr = pycbc.events.ranking.newsnr(snr,reduced_chisq)
 template_ids = trigs[args.ifo]['template_id'][mask]
 end_times = trigs[args.ifo]['end_time'][mask]
 
