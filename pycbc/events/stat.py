@@ -723,7 +723,7 @@ sngl_statistic_dict = {
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR,
-    'exp_fit_sg_csnr_psdvar_scaled': ExpFitSGPSDscaledCombinedSNR
+    'exp_fit_sg_csnr_psdvar_scaled': ExpFitSGPSDScaledCombinedSNR
 }
 
 def get_statistic(stat):
