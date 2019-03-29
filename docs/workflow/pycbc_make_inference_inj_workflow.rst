@@ -1,6 +1,6 @@
-############################################################################
+################################################################################
 ``pycbc_make_inference_inj_workflow``: A parameter estimation workflow generator
-############################################################################
+################################################################################
 
 ===============
 Introduction
@@ -20,9 +20,9 @@ A sample workflow configuration file::
 :download:`Download <../examples/workflow/inference_inj/workflow_config.ini>`
 
 
-===========================
+============================
 Inference configuration file
-===========================
+============================
 A sample inference configuration file::
 .. literalinclude:: ../examples/workflow/inference_inj/inference.ini
    :language: ini
