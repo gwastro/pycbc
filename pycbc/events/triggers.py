@@ -22,7 +22,6 @@ import numpy
 from pycbc import types, conversions, pnutils
 from pycbc.events import coinc
 from pycbc.io import hdf
-from pycbc.events import trigger_fits as trstats
 import pycbc.detector
 
 def insert_bank_bins_option_group(parser):

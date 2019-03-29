@@ -35,7 +35,6 @@ import pycbc.scheme
 from pycbc import events
 from pycbc.events import ranking
 import pycbc
-from pycbc import events
 import numpy
 
 BACKEND_PREFIX="pycbc.filter.matchedfilter_"

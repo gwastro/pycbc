@@ -48,8 +48,6 @@ ks_stat, ks_pval = KS_test('exponential', snrs, alpha, thresh)
 from __future__ import division
 import numpy
 from scipy.stats import kstest
-from pycbc import pnutils
-from pycbc import conversions
 
 fitalpha_dict = {
     'exponential' : lambda vals, thresh : 1. / (numpy.mean(vals) - thresh),
