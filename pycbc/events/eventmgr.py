@@ -841,9 +841,9 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                 raise ValueError(err_msg)
             ifo1 = self.ifos[0]
             ifo2 = self.ifos[1]
-            end_times1 = self.template_event_dict[ifo1]['time_index'] /
+            end_times1 = self.template_event_dict[ifo1]['time_index'] /\
               float(self.opt.sample_rate[ifo1]) + self.opt.gps_start_time[ifo1]
-            end_times2 = self.template_event_dict[ifo2]['time_index'] /
+            end_times2 = self.template_event_dict[ifo2]['time_index'] /\
               float(self.opt.sample_rate[ifo2]) + self.opt.gps_start_time[ifo2]
             light_travel_time = Detector(ifo1).light_travel_time_to_detector(
                                                                 Detector(ifo2))
@@ -913,8 +913,8 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                 f['bank_chisq_dof'] = ifo_events['bank_chisq_dof']
                 f['cont_chisq'] = ifo_events['cont_chisq']
                 f['end_time'] = ifo_events['time_index'] / \
-                        float(self.opt.sample_rate[ifo_str]) + 
-                        self.opt.gps_start_time[ifo_str]
+                        float(self.opt.sample_rate[ifo_str]) + \
+                          self.opt.gps_start_time[ifo_str]
                 try:
                     # Precessing
                     template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for
