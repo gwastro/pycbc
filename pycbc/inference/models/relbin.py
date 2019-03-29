@@ -245,16 +245,15 @@ class Relative(BaseDataModel):
             shloglr += sh * htf
             hhloglr += self.hh[ifo] * abs(htf) ** 2.0 * relsigsq
 
-            #sh2 = self.slow_likelihood(p, ifo, p['tc'] + dt)
-            #shloglr2 += sh2 * htf
+            sh2 = self.slow_likelihood(p, ifo, p['tc'] + dt)
+            shloglr2 += sh2 * htf
 
 
         vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
         vloglr += abs(shloglr) + hhloglr
 
-        #vloglr2 = numpy.log(scipy.special.i0e(abs(shloglr2)))
-        #loglr2 += abs(shloglr2) + hhloglr
-        #if (vloglr2 > 150) or (vloglr > 150):
-        #    print vloglr2, vloglr
-        #print vloglr
+        vloglr2 = numpy.log(scipy.special.i0e(abs(shloglr2)))
+        vloglr2 += abs(shloglr2) + hhloglr
+        if (vloglr2 > 150) or (vloglr > 150):
+            print vloglr2, vloglr
         return float(vloglr)
