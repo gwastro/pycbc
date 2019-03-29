@@ -101,7 +101,7 @@ class LiveEventManager(object):
 
             return combined, data_ends[0]
         else:
-            raise TypeError("Not root process")
+            raise RuntimeError("Not root process")
 
     def compute_followup_data(self, ifos, triggers, data_readers, bank,
                               followup_ifos=None):
@@ -246,7 +246,7 @@ class LiveEventManager(object):
         with h5py.File(fname, 'w') as f:
             f.attrs['pycbc_version'] = version.git_verbose_msg
             f.attrs['command_line'] = sys.argv
-            f.attrs['num_live_detectors'] = self.num_live_detectors
+            f.attrs['num_live_detectors'] = len(self.live_detectors)
 
             for ifo in results:
                 for k in results[ifo]:
@@ -570,7 +570,7 @@ with ctx:
         t1 = time()
         logging.info('%s: Analyzing from %s', evnt.rank, data_end())
         results = {}
-        evnt.num_live_detectors = 0
+        evnt.live_detectors = set()
 
         for ifo in ifos:
             results[ifo] = False
@@ -588,7 +588,7 @@ with ctx:
                     status = False
 
             if status is True:
-                evnt.num_live_detectors += 1
+                evnt.live_detectors.add(ifo)
                 if evnt.rank > 0:
                     logging.info('%s: Filtering %s', evnt.rank, ifo)
                     results[ifo] = mf.process_data(data_reader[ifo])
@@ -604,12 +604,16 @@ with ctx:
             if evnt.size > 1:
                 results, valid_end = evnt.gather_results()
 
+            # protect from situations where master and worker nodes disagree
+            # on the status of detectors: the master process has the last word
+            for ifo in set(results.keys()) - evnt.live_detectors:
+                results.pop(ifo)
+
             # Veto single detector triggers if they fail the DQ vector
             if args.data_quality_channel:
                 logging.info('checking the dq vector')
                 for ifo in results:
                     start = data_reader[ifo].start_time
-                    end = data_reader[ifo].end_time
                     times = results[ifo]['end_time']
                     idx = data_reader[ifo].dq.indices_of_flag(
                             start, valid_pad, times,
@@ -659,7 +663,7 @@ with ctx:
         logging.info('%s: Took %1.2f, duty factor of %.2f, '
                      'lag %.2f s, %d live detectors',
                      evnt.rank, tdiff, tdiff / valid_pad, lag,
-                     evnt.num_live_detectors)
+                     len(evnt.live_detectors))
 
         if args.output_status is not None and evnt.rank == 0:
             if lag > 120:
