@@ -137,7 +137,7 @@ if stilde_dict:
 with ctx:
 
     # read configuration file
-    cp = configuration.WorkflowConfigParser.from_clie(opts)
+    cp = configuration.WorkflowConfigParser.from_cli(opts)
 
     # create an empty checkpoint file, if needed
     condor_ckpt = cp.has_option('sampler', 'checkpoint-signal')
