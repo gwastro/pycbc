@@ -14,7 +14,7 @@ Workflow configuration file
 ===========================
 
 A sample workflow configuration file::
-.. literalinclude:: ../examples/workflow/inference_inj/workflow_config.ini
+.. literalinclude:: ../../examples/workflow/inference_inj/workflow_config.ini
 
 :download:`Download <../examples/workflow/inference_inj/workflow_config.ini>`
 
@@ -23,7 +23,7 @@ A sample workflow configuration file::
 Inference configuration file
 ============================
 A sample inference configuration file::
-.. literalinclude:: ../examples/workflow/inference_inj/inference.ini
+.. literalinclude:: ../../examples/workflow/inference_inj/inference.ini
 
 :download:`Download <../examples/workflow/inference_inj/inference.ini>`
 
@@ -33,7 +33,7 @@ Generate the workflow
 
 To generate a workflow you will need your configuration files. Generate the workflow using following example run script::
 A sample inference configuration file::
-.. literalinclude:: ../examples/workflow/inference_inj/run_pycbc_make_inference_inj_workflow.sh
+.. literalinclude:: ../../examples/workflow/inference_inj/run_pycbc_make_inference_inj_workflow.sh
 
 :download:`Download <../examples/workflow/inference_inj/run_pycbc_make_inference_inj_workflow.sh>`
 
