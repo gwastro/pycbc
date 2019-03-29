@@ -51,7 +51,7 @@ def threshold_only(series, value):
     err_msg += "scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
-#FIXME: This should be under schemed, but I don't understand that yet!
+# FIXME: This should be under schemed, but I don't understand that yet!
 def threshold_real_numpy(series, value):
     arr = series.data
     locs = numpy.where(arr > value)[0]
@@ -99,7 +99,7 @@ class _BaseThresholdCluster(object):
     def threshold_and_cluster(self, threshold, window):
         """
         Threshold and cluster the memory specified at instantiation with the
-        threshold specified at creation and the window size specified at creation.
+        threshold and window size specified at creation.
 
         Parameters
         -----------
@@ -162,8 +162,9 @@ def findchirp_cluster_over_window(times, values, window_length):
         k[0] = j;
     """
     inline(code, ['times', 'absvalues', 'window_length', 'indices', 'tlen', 'k'],
-                 extra_compile_args=[WEAVE_FLAGS])
+           extra_compile_args=[WEAVE_FLAGS])
     return indices[0:k[0]+1]
+
 
 def cluster_reduce(idx, snr, window_size):
     """ Reduce the events by clustering over a window
@@ -193,9 +194,9 @@ class EventManager(object):
         self.opt = opt
         self.global_params = kwds
 
-        self.event_dtype = [ ('template_id', int) ]
-        for column, coltype in zip(column, column_types):
-            self.event_dtype.append((column, coltype))
+        self.event_dtype = [('template_id', int)]
+        for col, coltype in zip(column, column_types):
+            self.event_dtype.append((col, coltype))
 
         self.events = numpy.array([], dtype=self.event_dtype)
         self.accumulate = [self.events]
@@ -221,7 +222,7 @@ class EventManager(object):
     def chisq_threshold(self, value, num_bins, delta=0):
         remove = []
         for i, event in enumerate(self.events):
-            xi = event['chisq'] / (event['chisq_dof'] / 2 + 1 + 
+            xi = event['chisq'] / (event['chisq_dof'] / 2 + 1 +
                                    delta * event['snr'].conj() * event['snr'])
             if xi > value:
                 remove.append(i)
@@ -236,7 +237,7 @@ class EventManager(object):
 
         remove = [i for i, e in enumerate(self.events) if
                   ranking.newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
-                                                                   < threshold]
+                  < threshold]
         self.events = numpy.delete(self.events, remove)
 
     def keep_near_injection(self, window, injections):
@@ -375,8 +376,8 @@ class EventManager(object):
                                       shuffle=True)
 
         self.events.sort(order='template_id')
-        th = numpy.array([p['tmplt'].template_hash for p in 
-                                                         self.template_params])
+        th = numpy.array([p['tmplt'].template_hash for p in
+                          self.template_params])
         tid = self.events['template_id']
         f = fw(outname, self.opt.channel_name[0:2])
 
@@ -399,11 +400,13 @@ class EventManager(object):
                             + self.opt.gps_start_time
             try:
                 # Precessing
-                template_sigmasq_plus = numpy.array([t['sigmasq_plus'] for t
-                                 in self.template_params], dtype=numpy.float32)
+                template_sigmasq_plus = numpy.array(
+                             [t['sigmasq_plus'] for t in self.template_params],
+                                                    dtype=numpy.float32)
                 f['sigmasq_plus'] = template_sigmasq_plus[tid]
-                template_sigmasq_cross = numpy.array([t['sigmasq_cross'] for t
-                                 in self.template_params], dtype=numpy.float32)
+                template_sigmasq_cross = numpy.array(
+                            [t['sigmasq_cross'] for t in self.template_params],
+                                                     dtype=numpy.float32)
                 f['sigmasq_cross'] = template_sigmasq_cross[tid]
                 # FIXME: I want to put something here, but I haven't yet
                 #        figured out what it should be. I think we would also
@@ -412,14 +415,15 @@ class EventManager(object):
                 f['sigmasq'] = template_sigmasq_plus[tid]
             except Exception:
                 # Not precessing
-                template_sigmasq = numpy.array([t['sigmasq'] for t in 
-                                    self.template_params], dtype=numpy.float32)
+                template_sigmasq = numpy.array(
+                                  [t['sigmasq'] for t in self.template_params],
+                                               dtype=numpy.float32)
                 f['sigmasq'] = template_sigmasq[tid]
 
-            template_durations = [p['tmplt'].template_duration for p in 
-                                                          self.template_params]
-            f['template_duration'] = numpy.array(template_durations, 
-                                                      dtype=numpy.float32)[tid]
+            template_durations = [p['tmplt'].template_duration for p in
+                                  self.template_params]
+            f['template_duration'] = numpy.array(template_durations,
+                                                 dtype=numpy.float32)[tid]
 
             # FIXME: Can we get this value from the autochisq instance?
             cont_dof = self.opt.autochi_number_points
@@ -448,18 +452,23 @@ class EventManager(object):
             f['search/start_time'] = numpy.array([self.opt.trig_start_time])
             search_start_time = float(self.opt.trig_start_time)
         else:
-            f['search/start_time'] = numpy.array([self.opt.gps_start_time + self.opt.segment_start_pad])
-            search_start_time = float(self.opt.gps_start_time + self.opt.segment_start_pad)
+            f['search/start_time'] = numpy.array([self.opt.gps_start_time +
+                                                  self.opt.segment_start_pad])
+            search_start_time = float(self.opt.gps_start_time +
+                                      self.opt.segment_start_pad)
         if self.opt.trig_end_time:
             f['search/end_time'] = numpy.array([self.opt.trig_end_time])
             search_end_time = float(self.opt.trig_end_time)
         else:
-            f['search/end_time'] = numpy.array([self.opt.gps_end_time - self.opt.segment_end_pad])
-            search_end_time = float(self.opt.gps_end_time - self.opt.segment_end_pad)
+            f['search/end_time'] = numpy.array([self.opt.gps_end_time -
+                                                self.opt.segment_end_pad])
+            search_end_time = float(self.opt.gps_end_time -
+                                    self.opt.segment_end_pad)
 
         if self.write_performance:
             self.analysis_time = search_end_time - search_start_time
-            time_ratio = numpy.array([float(self.analysis_time) / float(self.run_time)])
+            time_ratio = numpy.array(
+                [float(self.analysis_time) / float(self.run_time)])
             temps_per_core = float(self.ntemplates) / float(self.ncores)
             filters_per_core = float(self.nfilters) / float(self.ncores)
             f['search/templates_per_core'] = \
@@ -511,8 +520,8 @@ class EventManagerMultiDetBase(EventManager):
             self.ifo_reverse[i] = ifo
 
         self.event_dtype = [('template_id', int), ('event_id', int)]
-        for column, coltype in zip(column, column_types):
-            self.event_dtype.append((column, coltype))
+        for col, coltype in zip(column, column_types):
+            self.event_dtype.append((col, coltype))
 
         self.events = numpy.array([], dtype=self.event_dtype)
         self.event_id_map = {}
@@ -543,15 +552,15 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             [(ifo + '_event_id', int) for ifo in self.ifos]
         self.network_event_dtype.append(('template_id', int))
         self.network_event_dtype.append(('event_id', int))
-        for column, coltype in zip(network_column, network_column_types):
-            self.network_event_dtype.append((column, coltype))
+        for col, coltype in zip(network_column, network_column_types):
+            self.network_event_dtype.append((col, coltype))
         self.network_events = numpy.array([], dtype=self.network_event_dtype)
         self.event_index = {}
         for ifo in self.ifos:
             self.event_index[ifo] = 0
         self.event_index['network'] = 0
-        self.template_event_dict['network'] = numpy.array([],
-                                                dtype=self.network_event_dtype)
+        self.template_event_dict['network'] = \
+                                numpy.array([], dtype=self.network_event_dtype)
 
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """
@@ -599,7 +608,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                           self.template_params])
         tid = self.events['template_id']
         f = fw(outname)
-        #Output network stuff
+        # Output network stuff
         f.prefix = 'network'
         network_events = numpy.array([e for e in self.network_events],
                                      dtype=self.network_event_dtype)
@@ -614,13 +623,13 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         f['longitude'] = network_events['longitude']
         f['template_id'] = network_events['template_id']
         for ifo in self.ifos:
-            #First add the ifo event ids to the network branch
+            # First add the ifo event ids to the network branch
             f[ifo + '_event_id'] = network_events[ifo + '_event_id']
-        #Individual ifo stuff
+        # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
             f.prefix = ifo
-            ifo_events = numpy.array([e for e in self.events if \
-                    e['ifo'] == self.ifo_dict[ifo]], dtype=self.event_dtype)
+            ifo_events = numpy.array([e for e in self.events
+                    if e['ifo'] == self.ifo_dict[ifo]], dtype=self.event_dtype)
             if len(ifo_events):
                 ifo_str = ifo.lower()[0] if ifo != 'H1' else ifo.lower()
                 f['snr_%s' % ifo_str] = abs(ifo_events['snr'])
@@ -660,15 +669,14 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 except Exception:
                     # Not precessing
                     template_sigmasq = numpy.array(
-                        [t['sigmasq'][ifo] for t in self.template_params],
-                        dtype=numpy.float32
-                    )
+                             [t['sigmasq'][ifo] for t in self.template_params],
+                                                   dtype=numpy.float32)
                     f['sigmasq'] = template_sigmasq[tid]
 
                 template_durations = [p['tmplt'].template_duration for p in
-                        self.template_params]
+                                      self.template_params]
                 f['template_duration'] = numpy.array(template_durations,
-                        dtype=numpy.float32)[tid]
+                                                     dtype=numpy.float32)[tid]
 
                 # FIXME: Can we get this value from the autochisq instance?
                 # cont_dof = self.opt.autochi_number_points
@@ -689,30 +697,29 @@ class EventManagerCoherent(EventManagerMultiDetBase):
 
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([
-                        self.opt.trig_start_time[ifo]], dtype=numpy.int32)
+                             self.opt.trig_start_time[ifo]], dtype=numpy.int32)
                 search_start_time = float(self.opt.trig_start_time[ifo])
             else:
                 f['search/start_time'] = numpy.array([
                     self.opt.gps_start_time[ifo] +
-                    self.opt.segment_start_pad[ifo]],dtype=numpy.int32
-                )
-                search_start_time = float(self.opt.gps_start_time[ifo] + \
+                    self.opt.segment_start_pad[ifo]], dtype=numpy.int32)
+                search_start_time = float(self.opt.gps_start_time[ifo] +
                                           self.opt.segment_start_pad[ifo])
             if self.opt.trig_end_time:
-                f['search/end_time'] = numpy.array([\
+                f['search/end_time'] = numpy.array([
                         self.opt.trig_end_time[ifo]], dtype=numpy.int32)
                 search_end_time = float(self.opt.trig_end_time[ifo])
             else:
                 f['search/end_time'] = numpy.array(
                     [self.opt.gps_end_time[ifo] -
                      self.opt.segment_end_pad[ifo]], dtype=numpy.int32)
-                search_end_time = float(self.opt.gps_end_time[ifo] - \
-                        self.opt.segment_end_pad[ifo])
+                search_end_time = float(self.opt.gps_end_time[ifo] -
+                                        self.opt.segment_end_pad[ifo])
 
             if self.write_performance:
                 self.analysis_time = search_end_time - search_start_time
                 time_ratio = numpy.array([float(self.analysis_time) /
-                                         float(self.run_time)])
+                                          float(self.run_time)])
                 temps_per_core = float(self.ntemplates) / float(self.ncores)
                 filters_per_core = float(self.nfilters) / float(self.ncores)
                 f['search/templates_per_core'] = \
@@ -720,23 +727,23 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 f['search/filter_rate_per_core'] = \
                     numpy.array([filters_per_core / float(self.run_time)])
                 f['search/setup_time_fraction'] = \
-                    numpy.array([float(self.setup_time) / float(self.run_time)])
+                   numpy.array([float(self.setup_time) / float(self.run_time)])
 
             if 'gating_info' in self.global_params:
                 gating_info = self.global_params['gating_info']
                 for gate_type in ['file', 'auto']:
                     if gate_type in gating_info:
-                        f['gating/' + gate_type + '/time'] = \
-                         numpy.array([float(g[0]) for g in gating_info[gate_type]])
-                        f['gating/' + gate_type + '/width'] = \
-                                numpy.array([g[1] for g in gating_info[gate_type]])
-                        f['gating/' + gate_type + '/pad'] = \
-                                numpy.array([g[2] for g in gating_info[gate_type]])
+                        f['gating/' + gate_type + '/time'] = numpy.array(
+                                 [float(g[0]) for g in gating_info[gate_type]])
+                        f['gating/' + gate_type + '/width'] = numpy.array(
+                                        [g[1] for g in gating_info[gate_type]])
+                        f['gating/' + gate_type + '/pad'] = numpy.array(
+                                        [g[2] for g in gating_info[gate_type]])
 
     def finalize_template_events(self):
-        #Check that none of the template events have the same time index as an
-        #existing event in events. i.e. don't list the same ifo event multiple times
-        #when looping over sky points and time slides.
+        # Check that none of the template events have the same time index as an
+        # existing event in events. I.e. don't list the same ifo event multiple
+        # times when looping over sky points and time slides.
         existing_times = {}
         new_times = {}
         existing_template_id = {}
@@ -753,17 +760,17 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             # This is true for each existing event that has the same time index
             # and template id as a template trigger.
             existing_events_mask[ifo] = numpy.argwhere(
-                  numpy.logical_and(
-                     numpy.isin(existing_times[ifo], new_times[ifo]),
-                     numpy.isin(existing_template_id[ifo],new_template_id[ifo])
-                                   )).reshape(-1,)
+                numpy.logical_and(
+                    numpy.isin(existing_times[ifo], new_times[ifo]),
+                    numpy.isin(existing_template_id[ifo], new_template_id[ifo])
+                                 )).reshape(-1,)
             # This is true for each template event that has either a new
             # trigger time or a new template id.
             new_template_event_mask[ifo] = numpy.argwhere(
-                  numpy.logical_or(
+                numpy.logical_or(
                    ~numpy.isin(new_times[ifo], existing_times[ifo]),
                    ~numpy.isin(new_template_id[ifo], existing_template_id[ifo])
-                                  )).reshape(-1,)
+                                )).reshape(-1,)
             # This is true for each template event that has the same time index
             # and template id as an exisitng event trigger.
             existing_template_event_mask[ifo] = numpy.argwhere(
@@ -775,7 +782,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             # list correspond to the network triggers)
             num_events = len(new_template_event_mask[ifo])
             new_event_ids = numpy.arange(self.event_index[ifo],
-                                              self.event_index[ifo]+num_events)
+                                         self.event_index[ifo] + num_events)
             # Every template event that corresponds to a new trigger gets a new
             # id. Triggers that have been found before are not saved.
             self.template_event_dict[ifo]['event_id'][
@@ -800,13 +807,13 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 self.events,
                 self.template_event_dict[ifo][new_template_event_mask[ifo]]
             )
-            self.template_event_dict[ifo] = numpy.array([],
-                                                        dtype=self.event_dtype)
+            self.template_event_dict[ifo] = \
+                                        numpy.array([], dtype=self.event_dtype)
         # Move the template events for the network to the network events list
         self.network_events = numpy.append(self.network_events,
                                    self.template_event_dict['network'])
-        self.template_event_dict['network'] = numpy.array([],
-                                                dtype=self.network_event_dtype)
+        self.template_event_dict['network'] = \
+                                numpy.array([], dtype=self.network_event_dtype)
 
 
 class EventManagerMultiDet(EventManagerMultiDetBase):
@@ -936,18 +943,18 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     f['sigmasq'] = template_sigmasq[tid]
 
                 template_durations = [p['tmplt'].template_duration for p in
-                                                          self.template_params]
-                f['template_duration'] = numpy.array(template_durations,
-                                                     dtype=numpy.float32)[tid]
+                                      self.template_params]
+                f['template_duration'] = \
+                      numpy.array(template_durations, dtype=numpy.float32)[tid]
 
                 # FIXME: Can we get this value from the autochisq instance?
                 cont_dof = self.opt.autochi_number_points
                 if self.opt.autochi_onesided is None:
                     cont_dof = cont_dof * 2
-                #if self.opt.autochi_two_phase:
-                #    cont_dof = cont_dof * 2
-                #if self.opt.autochi_max_valued_dof:
-                #    cont_dof = self.opt.autochi_max_valued_dof
+                # if self.opt.autochi_two_phase:
+                #     cont_dof = cont_dof * 2
+                # if self.opt.autochi_max_valued_dof:
+                #     cont_dof = self.opt.autochi_max_valued_dof
                 f['cont_chisq_dof'] = numpy.repeat(cont_dof, len(ifo_events))
 
                 if 'chisq_dof' in ifo_events.dtype.names:
@@ -961,29 +968,30 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                     f['psd_var_val'] = ifo_events['psd_var_val']
 
             if self.opt.trig_start_time:
-                f['search/start_time'] = numpy.array([
-                        self.opt.trig_start_time[ifo]], dtype=numpy.int32)
+                f['search/start_time'] = numpy.array(
+                            [self.opt.trig_start_time[ifo]], dtype=numpy.int32)
                 search_start_time = float(self.opt.trig_start_time[ifo])
             else:
-                f['search/start_time'] = numpy.array([
-                        self.opt.gps_start_time[ifo] +
-                        self.opt.segment_start_pad[ifo]], dtype=numpy.int32)
+                f['search/start_time'] = numpy.array(
+                          [self.opt.gps_start_time[ifo] +
+                           self.opt.segment_start_pad[ifo]], dtype=numpy.int32)
                 search_start_time = float(self.opt.gps_start_time[ifo] +
                                           self.opt.segment_start_pad[ifo])
             if self.opt.trig_end_time:
-                f['search/end_time'] = numpy.array([
-                        self.opt.trig_end_time[ifo]], dtype=numpy.int32)
+                f['search/end_time'] = numpy.array(
+                              [self.opt.trig_end_time[ifo]], dtype=numpy.int32)
                 search_end_time = float(self.opt.trig_end_time[ifo])
             else:
-                f['search/end_time'] = numpy.array([self.opt.gps_end_time[ifo]
-                        - self.opt.segment_end_pad[ifo]], dtype=numpy.int32)
+                f['search/end_time'] = numpy.array(
+                            [self.opt.gps_end_time[ifo] -
+                             self.opt.segment_end_pad[ifo]], dtype=numpy.int32)
                 search_end_time = float(self.opt.gps_end_time[ifo] -
-                        self.opt.segment_end_pad[ifo])
+                                        self.opt.segment_end_pad[ifo])
 
             if self.write_performance:
                 self.analysis_time = search_end_time - search_start_time
-                time_ratio = numpy.array([float(self.analysis_time) /
-                                         float(self.run_time)])
+                time_ratio = numpy.array(
+                            [float(self.analysis_time) / float(self.run_time)])
                 temps_per_core = float(self.ntemplates) / float(self.ncores)
                 filters_per_core = float(self.nfilters) / float(self.ncores)
                 f['search/templates_per_core'] = \
@@ -991,18 +999,19 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
                 f['search/filter_rate_per_core'] = \
                     numpy.array([filters_per_core / float(self.run_time)])
                 f['search/setup_time_fraction'] = \
-                    numpy.array([float(self.setup_time) / float(self.run_time)])
+                   numpy.array([float(self.setup_time) / float(self.run_time)])
 
             if 'gating_info' in self.global_params:
                 gating_info = self.global_params['gating_info']
                 for gate_type in ['file', 'auto']:
                     if gate_type in gating_info:
-                        f['gating/' + gate_type + '/time'] = \
-                         numpy.array([float(g[0]) for g in gating_info[gate_type]])
-                        f['gating/' + gate_type + '/width'] = \
-                                numpy.array([g[1] for g in gating_info[gate_type]])
-                        f['gating/' + gate_type + '/pad'] = \
-                                numpy.array([g[2] for g in gating_info[gate_type]])
+                        f['gating/' + gate_type + '/time'] = numpy.array(
+                                 [float(g[0]) for g in gating_info[gate_type]])
+                        f['gating/' + gate_type + '/width'] = numpy.array(
+                                        [g[1] for g in gating_info[gate_type]])
+                        f['gating/' + gate_type + '/pad'] = numpy.array(
+                                        [g[2] for g in gating_info[gate_type]])
+
 
 __all__ = ['threshold_and_cluster', 'findchirp_cluster_over_window',
            'threshold', 'cluster_reduce', 'ThresholdCluster',

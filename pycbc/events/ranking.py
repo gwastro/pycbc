@@ -17,6 +17,7 @@ def effsnr(snr, reduced_x2, fac=250.):
     else:
         return esnr[0]
 
+
 def newsnr(snr, reduced_x2, q=6., n=2.):
     """Calculate the re-weighted SNR statistic ('newSNR') from given SNR and
     reduced chi-squared values. See http://arxiv.org/abs/1208.3491 for
@@ -35,6 +36,7 @@ def newsnr(snr, reduced_x2, q=6., n=2.):
     else:
         return nsnr[0]
 
+
 def newsnr_sgveto(snr, bchisq, sgchisq):
     """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
     nsnr = numpy.array(newsnr(snr, bchisq), ndmin=1)
@@ -49,6 +51,7 @@ def newsnr_sgveto(snr, bchisq, sgchisq):
     else:
         return nsnr[0]
 
+
 def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
     """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD
     variation statistic """
@@ -62,6 +65,7 @@ def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
         return nsnr
     else:
         return nsnr[0]
+
 
 def get_newsnr(trigs):
     """
@@ -81,6 +85,7 @@ def get_newsnr(trigs):
     dof = 2. * trigs['chisq_dof'][:] - 2.
     nsnr = newsnr(trigs['snr'][:], trigs['chisq'][:] / dof)
     return numpy.array(nsnr, ndmin=1, dtype=numpy.float32)
+
 
 def get_newsnr_sgveto(trigs):
     """
@@ -102,6 +107,7 @@ def get_newsnr_sgveto(trigs):
                             trigs['chisq'][:] / dof,
                             trigs['sg_chisq'][:])
     return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
+
 
 def get_newsnr_sgveto_psdvar(trigs):
     """

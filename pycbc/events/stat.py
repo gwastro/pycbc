@@ -230,7 +230,7 @@ class PhaseTDStatistic(NewSNRStatistic):
                     ('sigmasq', numpy.float32),
                     ('snr', numpy.float32)]
 
-        # Assign attribute so that it can be replaced with other functions 
+        # Assign attribute so that it can be replaced with other functions
         self.get_newsnr = ranking.get_newsnr
 
     def single(self, trigs):

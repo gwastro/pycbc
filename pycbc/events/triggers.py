@@ -278,7 +278,7 @@ def get_param(par, args, m1, m2, s1z, s2z):
         parvals = conversions.mchirp_from_mass1_mass2(m1, m2)
     elif par == 'mtotal':
         parvals = m1 + m2
-    elif par =='eta':
+    elif par == 'eta':
         parvals = conversions.eta_from_mass1_mass2(m1, m2)
     elif par in ['chi_eff', 'effective_spin']:
         parvals = conversions.chi_eff(m1, m2, s1z, s2z)
@@ -375,4 +375,3 @@ def get_inj_param(injfile, param, ifo, args=None):
     else:
         return get_param(param, args, inj['mass1'][:], inj['mass2'][:],
                                      inj['spin1z'][:], inj['spin2z'][:])
-
