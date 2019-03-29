@@ -49,10 +49,10 @@ Plan and execute the workflow
 
 If you are on LDG, you need to define an accounting group. Finally plan and submit the workflow with:
 
+::
     # submit workflow
     cd ${output_dir}
     pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
         --no-grid \
         --enable-shared-filesystem \
         --accounting-group ${ACCOUNTING_GROUP}
-
