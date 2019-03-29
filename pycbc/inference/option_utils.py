@@ -20,45 +20,12 @@
 import logging
 import argparse
 
-from pycbc.workflow import WorkflowConfigParser
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd)
 from pycbc import waveform
 from pycbc import distributions
-
-
-# -----------------------------------------------------------------------------
-#
-#                   Utilities for loading config files
-#
-# -----------------------------------------------------------------------------
-
-def add_config_opts_to_parser(parser):
-    """Adds options for the configuration files to the given parser.
-    """
-    parser.add_argument("--config-files", type=str, nargs="+", required=True,
-                        help="A file parsable by "
-                             "pycbc.workflow.WorkflowConfigParser.")
-    parser.add_argument("--config-overrides", type=str, nargs="+",
-                        default=None, metavar="SECTION:OPTION:VALUE",
-                        help="List of section:option:value combinations to "
-                             "add into the configuration file.")
-
-
-def config_parser_from_cli(opts):
-    """Loads a config file from the given options, applying any overrides
-    specified. Specifically, config files are loaded from the `--config-files`
-    options while overrides are loaded from `--config-overrides`.
-    """
-    # read configuration file
-    logging.info("Reading configuration file")
-    if opts.config_overrides is not None:
-        overrides = [override.split(":") for override in opts.config_overrides]
-    else:
-        overrides = None
-    return WorkflowConfigParser(opts.config_files, overrides)
 
 
 # -----------------------------------------------------------------------------

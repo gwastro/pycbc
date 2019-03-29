@@ -299,8 +299,9 @@ def add_workflow_command_line_group(parser):
     parser : argparse.ArgumentParser instance
         The initialized argparse instance to add the workflow option group to.
     """
-    workflowArgs = parser.add_argument_group('workflow',
-                                          'Options needed for workflow setup.')
+    workflowArgs = parser.add_argument_group('Configuration',
+                                             'Options needed for parsing '
+                                             'config file(s).')
     workflowArgs.add_argument("--config-files", nargs="+", action='store',
                            metavar="CONFIGFILE",
                            help="List of config files to be used in "
