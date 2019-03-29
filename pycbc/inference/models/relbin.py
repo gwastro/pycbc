@@ -33,24 +33,28 @@ def angle(v1, v2):
     return numpy.arccos(p / abs(v1) / abs(v2))
 
 def frequency_bins(hp, hp2, flow, fhigh, thr):
-    df = hp.delta_f
     ratio = hp / hp2
-    frange = numpy.arange(flow, fhigh, df)
-    edges = [frange[0]]
-    fref = frange[0]
-    for f in frange[1:]:
-        a = angle(ratio.at_frequency(fref), ratio.at_frequency(f))
-        if a > thr:
-            edges.append(f - df)
-            fref = f - df
 
-    edges.append(fhigh)
+    kmin = int(flow / hp.delta_f)
+    kmax = int(fhigh / hp.delta_f)
+    krange = numpy.arange(kmin, kmax)
+
+    edges = [kmin]
+    kref = kmin
+
+    for k in krange:
+        a = angle(ratio[kref], ratio[k])
+        if a > thr:
+            edges.append(k-1)
+            kref = k - 1
+
+    edges.append(kmax)
     edges = numpy.array(edges)
 
     bins = []
     for i in range(len(edges)-1):
         bins.append((edges[i], edges[i+1]))
-    return numpy.array(edges, numpy.float32), numpy.array(bins, numpy.float32)
+    return edges, bins
 
 class Relative(BaseDataModel):
     r"""Model that assumes we know all the intrinsic parameters.
@@ -106,8 +110,9 @@ class Relative(BaseDataModel):
                               low_frequency_cutoff,
                               high_frequency_cutoff,
                               dphase)
-        self.hreference = numpy.array([hp.at_frequency(f) for f in self.edges],
-                                      dtype=numpy.complex64)
+        self.hreference = hp.take(self.edges)
+        self.fedges = (self.edges * hp.delta_f).astype(numpy.float32)
+
         logging.info('Using %s bins for this model', len(self.bins))
         # Extend data and template to high sample rate
         flen = int(self.sample_rate / df) / 2 + 1
@@ -130,24 +135,32 @@ class Relative(BaseDataModel):
             st = 0
             for l, h in self.bins:
                 print l, h
-                kh, kl = int(h / hp.delta_f), int(l / hp.delta_f)
+
+                # Prepare frequency slice
+                hpc = hp.copy()
+                hpc[:l] = 0
+                hpc[h:] = 0
+
+                # Prepare linear frequency hp
                 hpl = hp.copy()
-                hpl[kl:kh] *= numpy.arange(0, kh - kl) / float(kh - kl)
+                hpl[:l] = 0
+                hpl[l:h] *= numpy.arange(0, h - l) / float(h - l)
+                hpl[h:] = 0
+
+                print len(hpc), len(hpl), len(hp), len(psds[ifo])
 
                 # constant term
                 snr, _, _ = pyfilter.matched_filter_core(
-                    hp.astype(numpy.complex128), data[ifo],
-                    psd=psds[ifo],
-                    low_frequency_cutoff=l,
-                    high_frequency_cutoff=h)
+                    hpc.astype(numpy.complex128), data[ifo],
+                    high_frequency_cutoff=high_frequency_cutoff,
+                    psd=psds[ifo])
                 self.sh[ifo].append(snr.time_slice(self.tstart, self.tend).numpy().copy() * 4.0 * df)
 
                 # linear term
                 snrl, _, _ = pyfilter.matched_filter_core(
                     hpl.astype(numpy.complex128), data[ifo],
-                    psd=psds[ifo],
-                    low_frequency_cutoff=l,
-                    high_frequency_cutoff=h)
+                    high_frequency_cutoff=high_frequency_cutoff,
+                    psd=psds[ifo])
                 self.shl[ifo].append(snrl.time_slice(self.tstart, self.tend).numpy().copy() * 4.0 * df)
                 st = st + snr
 
@@ -186,7 +199,7 @@ class Relative(BaseDataModel):
         m2 = p['mass2']
         s1 = p['spin1z']
         s2 = p['spin2z']
-        htarget = spa_tmplt(sample_points=self.edges,
+        htarget = spa_tmplt(sample_points=self.fedges,
                             mass1=m1, mass2=m2,
                             distance=1,
                             spin1z=s1, spin2z=s2,
@@ -232,15 +245,16 @@ class Relative(BaseDataModel):
             shloglr += sh * htf
             hhloglr += self.hh[ifo] * abs(htf) ** 2.0 * relsigsq
 
-            sh2 = self.slow_likelihood(p, ifo, p['tc'] + dt)
-            shloglr2 += sh2 * htf
+            #sh2 = self.slow_likelihood(p, ifo, p['tc'] + dt)
+            #shloglr2 += sh2 * htf
 
 
         vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
         vloglr += abs(shloglr) + hhloglr
 
-        vloglr2 = numpy.log(scipy.special.i0e(abs(shloglr2)))
-        vloglr2 += abs(shloglr2) + hhloglr
-        if (vloglr2 > 450) or (vloglr > 450):
-            print vloglr2, vloglr
+        #vloglr2 = numpy.log(scipy.special.i0e(abs(shloglr2)))
+        #loglr2 += abs(shloglr2) + hhloglr
+        #if (vloglr2 > 150) or (vloglr > 150):
+        #    print vloglr2, vloglr
+        #print vloglr
         return float(vloglr)
