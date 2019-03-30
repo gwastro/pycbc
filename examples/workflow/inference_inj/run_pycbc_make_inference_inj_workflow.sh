@@ -12,7 +12,7 @@ pycbc_make_inference_inj_workflow \
     --data-type simulated_data \
     --output-file ${workflow_name}.dax \
     --inference-config-file inference.ini \
-    --config-files workflow.ini \
+    --config-files workflow_config.ini \
     --config-overrides results_page:output-path:${PWD}/${output_dir}/results_html
 
 echo "Now run:"
