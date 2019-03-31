@@ -262,7 +262,7 @@ def add_plot_posterior_option_group(parser):
     """
     pgroup = parser.add_argument_group("Options for what plots to create and "
                                        "their formats.")
-    pgroup.add_argument('--plot-marginal', default=None,
+    pgroup.add_argument('--plot-marginal', default=None, type=str,
                         help="Plot 1D marginalized distributions on the "
                              "diagonal axes with lines drawn at the estimated "
                              "value of the respective parameters and the bounds "
