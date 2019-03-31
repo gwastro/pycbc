@@ -351,7 +351,9 @@ def create_marginalized_hist(ax, values, label, estimate_method='percentiles',
         upper 90th percentile and the median).
     hpd_percent : {None, float}
         If `estimate_method=hpd`, percentage probability of values to be
-        included in the HPD credible interval.
+        included in the HPD credible interval. Lines will be drawn at the
+        median(50th percentile) and the upper and lower bounds of the HPD
+        credible interval.
     color : {'k', string}
         What color to make the histogram; default is black.
     fillcolor : {'gray', string, or None}
@@ -603,23 +605,24 @@ def create_multidim_plot(parameters, samples, labels=None,
     marginal_title : bool, optional
         Add a title over the 1D marginal plots that gives an estimated value
         +/- uncertainty. If the input for ``--plot-marginal`` is ``percentiles``,
-        the estimated value is the pecentile halfway between the max/min of
+        the estimated value is the percentile halfway between the max/min of
         ``marginal_percentiles``, while the uncertainty is given by the
         max/min of the ``marginal_percentiles. If the input for
         ``--plot-marginal`` is ``percentiles``, and no ``marginal_percentiles``
-        are specified, the median +/- 95/5 percentiles will be quoted. If the input
-        for ``--plot-marginal`` is ``hpd``, the median +/- the upper/lower bounds
-        of the ``marginal_hpd_percent`` Highest Posterior Density credible 
-        interval will be quoted. If the input for ``--plot-marginal`` is
-        ``hpd``, and no ``marginal_hpd_percent`` is specified, the median +/-
-        upper/lower bounds of 90% HPD credible interval will be quoted.
+        are specified, the median +/- 95/5 percentiles will be quoted. If the
+        input for ``--plot-marginal`` is ``hpd``, the median +/- the
+        upper/lower bounds of the ``marginal_hpd_percent`` Highest Posterior
+        Density (HPD) credible interval will be quoted. If the input for
+        ``--plot-marginal`` is ``hpd``, and no ``marginal_hpd_percent`` is
+        specified, the median +/- upper/lower bounds of 90% HPD credible
+        interval will be quoted.
     marginal_linestyle : str, optional
         What line style to use for the marginal histograms.
     marginal_hpd_percent : {None, float}
         To be used if `plot_marginal=hpd`. What percentage of probability to
-        include in HPD interval if plotting a
-        HPD credible interval on the 1D histograms. If None, will draw lines at
-        the median(50th percentile) and bounds of the 90% HPD credible interval.
+        include in HPD interval if plotting a HPD credible interval on the 1D
+        histograms. If None, will draw lines at the median (50th percentile)
+        and bounds of the 90% HPD credible interval.
     contour_percentiles : {None, array}
         What percentile contours to draw on the scatter plots. If None,
         will plot the 50th and 90th percentiles.

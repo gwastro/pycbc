@@ -267,7 +267,7 @@ def add_plot_posterior_option_group(parser):
                              "diagonal axes with lines drawn at the estimated "
                              "value of the respective parameters and the bounds "
                              "of their uncertainties, calculated using the "
-                             "given method. Choose from percentiles or hpd.")
+                             "given method. Choose from `percentiles` or `hpd`.")
     pgroup.add_argument('--marginal-percentiles', nargs='+', default=None,
                         type=float,
                         help="Percentiles to draw lines at on the 1D "
@@ -275,7 +275,9 @@ def add_plot_posterior_option_group(parser):
                              "option is `percentiles`.")
     pgroup.add_argument('--marginal-hpd-percent', default=None, type=float,
                         help="Percentage probability to include in the HPD "
-                             "credible interval. To be used only if "
+                             "credible interval. Lines will be drawn at the "
+                             "median (50th percentile) and at the lower and "
+                             "upper bounds of the HPD CI. To be used only if "
                              "`--plot-marginal` option is `hpd`.")
     pgroup.add_argument("--plot-scatter", action='store_true', default=False,
                         help="Plot each sample point as a scatter plot.")
