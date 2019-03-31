@@ -585,7 +585,7 @@ class MultiRingBuffer(object):
     def data(self, buffer_index):
         """Return the data vector for a given ring buffer"""
         # Check for expired elements and discard if they exist
-        expired = self.time = self.max_time     
+        expired = self.time - self.max_time     
         exp = self.buffer_expire[buffer_index]
         j = 0
         while j < len(exp):
