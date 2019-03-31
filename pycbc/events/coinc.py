@@ -564,11 +564,11 @@ class MultiRingBuffer(object):
         """
         self.time += 1
 
-        expired = self.time - self.max_time
-        for j, exp in enumerate(self.buffer_expire):
-            if (len(exp) > 0) and (exp[0] < expired):
-                self.buffer_expire[j] = exp[1:].copy()
-                self.buffer[j] = self.buffer[j][1:].copy()
+        #expired = self.time - self.max_time
+        #for j, exp in enumerate(self.buffer_expire):
+        #    if (len(exp) > 0) and (exp[0] < expired):
+        #        self.buffer_expire[j] = exp[1:].copy()
+        #        self.buffer[j] = self.buffer[j][1:].copy()
 
     def add(self, indices, values):
         """Add triggers in 'values' to the buffers indicated by the indices
@@ -584,6 +584,18 @@ class MultiRingBuffer(object):
 
     def data(self, buffer_index):
         """Return the data vector for a given ring buffer"""
+        # Check for expired elements and discard if they exist
+        expired = self.time = self.max_time     
+        exp = self.buffer_expire[buffer_index]
+        j = 0
+        while j < len(exp):
+            # Everything before this j must be expired
+            if exp[j] >= expired:
+                self.buffer_expire[buffer_index] = exp[j:].copy()
+                self.buffer[buffer_index] = self.buffer[buffer_index][j:].copy()
+                break
+            j += 1
+       
         return self.buffer[buffer_index]
 
 class CoincExpireBuffer(object):
@@ -1106,10 +1118,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             A dictionary of arrays containing the coincident results.
         """
         # Let's see how large everything is
-        for ifo in self.singles:
-            logging.info('BKG %s singles %s stored %s bytes',
-                         ifo, self.singles[ifo].num_elements(),
-                         self.singles[ifo].nbytes)
+        #for ifo in self.singles:
+        #    logging.info('BKG %s singles %s stored %s bytes',
+        #                 ifo, self.singles[ifo].num_elements(),
+        #                 self.singles[ifo].nbytes)
         logging.info('BKG Coincs %s stored %s bytes',
                      len(self.coincs), self.coincs.nbytes)
 
