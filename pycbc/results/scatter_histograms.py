@@ -195,7 +195,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
         Minimum value to plot on y-axis.
     ymax : {None, float}
         Maximum value to plot on y-axis.
-    exclue_region : {None, str}
+    exclude_region : {None, str}
         Exclude the specified region when plotting the density or contours.
         Must be a string in terms of `xparam` and `yparam` that is
         understandable by numpy's logical evaluation. For example, if
@@ -291,11 +291,45 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
     return fig, ax
 
+def compute_hpd_credible_interval(samples_array, hpd_percent=None):
+    """Returns an array containing the boundaries of the highest probability
+    density (HPD) credible interval for a set of samples.
 
-def create_marginalized_hist(ax, values, label, percentiles=None,
+    Parameters
+    ----------
+    samples_array : array
+        The samples to plot.
+    hpd_percent : {None, float}
+        Percentage probability to be included in the HPD credible
+        interval.
+    """
+    # Make a copy of the samples and sort it
+    samples_array_sorted = numpy.sort(numpy.copy(samples_array))
+
+    n = len(samples_array)
+
+    # Number of samples that should be included in the HPD
+    num_samples_hpd = int(numpy.floor((hpd_percent/100.) * n))
+
+    # Widths of all intervals in the sorted samples array that contain
+    # "num_samples_hpd" samples.
+    intervals_width = samples_array_sorted[num_samples_hpd:] - \
+        samples_array_sorted[:n-num_samples_hpd]
+
+    # Minimal interval
+    min_interval_idx = numpy.argmin(intervals_width)
+
+    # Boundaries of HPD credible interval
+    hpd_lower_bound = samples_array_sorted[min_interval_idx]
+    hpd_upper_bound = samples_array_sorted[min_interval_idx + num_samples_hpd]
+
+    return numpy.array([hpd_lower_bound, hpd_upper_bound])
+
+
+def create_marginalized_hist(ax, values, label, estimate_method='percentiles',
+                             marginal_percentiles=None, hpd_percent=None,
                              color='k', fillcolor='gray', linecolor='navy',
-                             linestyle='-',
-                             title=True, expected_value=None,
+                             linestyle='-', title=True, expected_value=None,
                              expected_color='red', rotated=False,
                              plot_min=None, plot_max=None):
     """Plots a 1D marginalized histogram of the given param from the given
@@ -309,10 +343,15 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         The parameter values to plot.
     label : str
         A label to use for the title.
-    percentiles : {None, float or array}
-        What percentiles to draw lines at. If None, will draw lines at
-        `[5, 50, 95]` (i.e., the bounds on the upper 90th percentile and the
-        median).
+    estimate_method : {'percentiles', string}
+       Method to compute the uncertainties in the estimated parameter values.   
+    marginal_percentiles : {None, float or array}
+        If `estimate_method=percentiles`, what percentiles to draw lines at.
+        If None, will draw lines at `[5, 50, 95]` (i.e., the bounds on the
+        upper 90th percentile and the median).
+    hpd_percent : {None, float}
+        If `estimate_method=hpd`, percentage probability of values to be
+        included in the HPD credible interval.
     color : {'k', string}
         What color to make the histogram; default is black.
     fillcolor : {'gray', string, or None}
@@ -350,12 +389,22 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
     ax.hist(values, bins=50, histtype=htype, orientation=orientation,
             facecolor=fillcolor, edgecolor=color, ls=linestyle, lw=2,
             density=True)
-    if percentiles is None:
-        percentiles = [5., 50., 95.]
-    if len(percentiles) > 0:
-        plotp = numpy.percentile(values, percentiles)
+    if estimate_method=="hpd":
+        # Plot HPD credible interval
+        if hpd_percent is None:
+            hpd_percent = 90.
+        values_median = numpy.array([numpy.percentile(values, 50.)])
+        hpd_interval_bounds = compute_hpd_credible_interval(
+                                    values, hpd_percent=hpd_percent)
+        plotp = numpy.concatenate((values_median, hpd_interval_bounds))
     else:
-        plotp = []
+        if marginal_percentiles is None:
+            marginal_percentiles = [5., 50., 95.]
+        if len(marginal_percentiles) > 0:
+            plotp = numpy.percentile(values, marginal_percentiles)
+        else:
+            plotp = []
+
     for val in plotp:
         if rotated:
             ax.axhline(y=val, ls='dashed', color=linecolor, lw=2, zorder=3)
@@ -368,17 +417,22 @@ def create_marginalized_hist(ax, values, label, percentiles=None,
         else:
             ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
     if title:
-        if len(percentiles) > 0:
-            minp = min(percentiles)
-            maxp = max(percentiles)
-            medp = (maxp + minp) / 2.
-        else:
-            minp = 5
-            medp = 50
-            maxp = 95
-        values_min = numpy.percentile(values, minp)
-        values_med = numpy.percentile(values, medp)
-        values_max = numpy.percentile(values, maxp)
+        if estimate_method=="hpd":
+            values_med = numpy.percentile(values, 50)
+            values_min = plotp.min()
+            values_max = plotp.max()
+        if estimate_method=="percentiles":
+            if len(marginal_percentiles) > 0:
+                minp = min(marginal_percentiles)
+                maxp = max(marginal_percentiles)
+                medp = (maxp + minp) / 2.
+            else:
+                minp = 5
+                medp = 50
+                maxp = 95
+            values_min = numpy.percentile(values, minp)
+            values_med = numpy.percentile(values, medp)
+            values_max = numpy.percentile(values, maxp)
         negerror = values_med - values_min
         poserror = values_max - values_med
         fmt = '${0}$'.format(str_utils.format_value(
@@ -497,8 +551,9 @@ def set_marginal_histogram_title(ax, fmt, color, label=None, rotated=False):
 def create_multidim_plot(parameters, samples, labels=None,
                          mins=None, maxs=None, expected_parameters=None,
                          expected_parameters_color='r',
-                         plot_marginal=True, plot_scatter=True,
-                         marginal_percentiles=None, contour_percentiles=None,
+                         plot_marginal="percentiles", plot_scatter=True,
+                         marginal_percentiles=None, marginal_hpd_percent=None,
+                         contour_percentiles=None,
                          marginal_title=True, marginal_linestyle='-',
                          zvals=None, show_colorbar=True, cbar_label=None,
                          vmin=None, vmax=None, scatter_cmap='plasma',
@@ -532,24 +587,39 @@ def create_multidim_plot(parameters, samples, labels=None,
         expected parameters on axes that plot any of the expected parameters.
     expected_parameters_color : {'r', string}, optional
         What color to make the expected parameters cross.
-    plot_marginal : {True, bool}
-        Plot the marginalized distribution on the diagonals. If False, the
-        diagonal axes will be turned off.
+    plot_marginal : {None, string}
+        Plot the marginalized distribution on the diagonals, with lines at
+        the `[5, 50, 95]` percentiles if the input option is `percentiles`. 
+        If the input option is `hpd`, lines are drawn at the median (50th
+        percentile), and lower and upper bounds of the HPD credible interval.
+        If None, the diagonal axes will be turned off.
     plot_scatter : {True, bool}
         Plot each sample point as a scatter plot.
     marginal_percentiles : {None, array}
-        What percentiles to draw lines at on the 1D histograms.
+        To be used if `plot_marginal=percentiles`. What percentiles to draw
+        lines at on the 1D histograms.
         If None, will draw lines at `[5, 50, 95]` (i.e., the bounds on the
         upper 90th percentile and the median).
     marginal_title : bool, optional
         Add a title over the 1D marginal plots that gives an estimated value
-        +/- uncertainty. The estimated value is the pecentile halfway between
-        the max/min of ``maginal_percentiles``, while the uncertainty is given
-        by the max/min of the ``marginal_percentiles. If no
-        ``marginal_percentiles`` are specified, the median +/- 95/5 percentiles
-        will be quoted.
+        +/- uncertainty. If the input for ``--plot-marginal`` is ``percentiles``,
+        the estimated value is the pecentile halfway between the max/min of
+        ``marginal_percentiles``, while the uncertainty is given by the
+        max/min of the ``marginal_percentiles. If the input for
+        ``--plot-marginal`` is ``percentiles``, and no ``marginal_percentiles``
+        are specified, the median +/- 95/5 percentiles will be quoted. If the input
+        for ``--plot-marginal`` is ``hpd``, the median +/- the upper/lower bounds
+        of the ``marginal_hpd_percent`` Highest Posterior Density credible 
+        interval will be quoted. If the input for ``--plot-marginal`` is
+        ``hpd``, and no ``marginal_hpd_percent`` is specified, the median +/-
+        upper/lower bounds of 90% HPD credible interval will be quoted.
     marginal_linestyle : str, optional
         What line style to use for the marginal histograms.
+    marginal_hpd_percent : {None, float}
+        To be used if `plot_marginal=hpd`. What percentage of probability to
+        include in HPD interval if plotting a
+        HPD credible interval on the 1D histograms. If None, will draw lines at
+        the median(50th percentile) and bounds of the 90% HPD credible interval.
     contour_percentiles : {None, array}
         What percentile contours to draw on the scatter plots. If None,
         will plot the 50th and 90th percentiles.
@@ -654,14 +724,18 @@ def create_multidim_plot(parameters, samples, labels=None,
                 pass
 
     # create the axis grid
+    if plot_marginal is not None:
+        no_diagonals = False
+    else:
+        no_diagonals = True
     if fig is None and axis_dict is None:
         fig, axis_dict = create_axes_grid(
             parameters, labels=labels,
             width_ratios=width_ratios, height_ratios=height_ratios,
-            no_diagonals=not plot_marginal)
+            no_diagonals=no_diagonals)
 
     # Diagonals...
-    if plot_marginal:
+    if plot_marginal is not None:
         for pi, param in enumerate(parameters):
             ax, _, _ = axis_dict[param, param]
             # if only plotting 2 parameters and on the second parameter,
@@ -682,7 +756,9 @@ def create_multidim_plot(parameters, samples, labels=None,
                 title=marginal_title, expected_value=expected_value,
                 expected_color=expected_parameters_color,
                 rotated=rotated, plot_min=mins[param], plot_max=maxs[param],
-                percentiles=marginal_percentiles)
+                estimate_method=plot_marginal,
+                marginal_percentiles=marginal_percentiles,
+                hpd_percent=marginal_hpd_percent)
 
     # Off-diagonals...
     for px, py in axis_dict:

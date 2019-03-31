@@ -107,23 +107,27 @@ for fp in fps:
 
 # if no plotting options selected, then the default options are based
 # on the number of parameters
-plot_options = [opts.plot_marginal, opts.plot_scatter, opts.plot_density]
+if opts.plot_marginal is not None:
+    marginal = True
+else:
+    marginal = False
+plot_options = [marginal, opts.plot_scatter, opts.plot_density]
 if not numpy.any(plot_options):
     if len(parameters) == 1:
-        opts.plot_marginal = True
+        opts.plot_marginal = "percentiles"
     else:
         opts.plot_scatter = True
         # FIXME: right now if there are two parameters it wants
         # both plot_scatter and plot_marginal. One should have the option
         # of give only plot_scatter and that should be the default for
         # two or more parameters
-        opts.plot_marginal = True
+        opts.plot_marginal = "percentiles"
 
 if opts.plot_prior is not None:
     # check that we're plotting 1D marginals
-    if not opts.plot_marginal:
+    if opts.plot_marginal is None:
         raise ValueError("prior may only be plotted on 1D marginal plot; "
-                         "either turn on --plot-marginal, or turn off "
+                         "either provide --plot-marginal, or turn off "
                          "--plot-prior")
     logging.info("Loading prior")
     cp = WorkflowConfigParser(opts.plot_prior)
@@ -201,6 +205,7 @@ for (i, s) in enumerate(samples):
                     parameters, s, labels=labels, fig=fig, axis_dict=axis_dict,
                     plot_marginal=opts.plot_marginal,
                     marginal_percentiles=opts.marginal_percentiles,
+                    marginal_hpd_percent=opts.marginal_hpd_percent,
                     plot_scatter=opts.plot_scatter,
                     zvals=zvals[i] if zvals is not None else None,
                     show_colorbar=opts.z_arg is not None,
@@ -226,7 +231,7 @@ if opts.plot_prior:
         hist_color = colors.next()
     fig, axis_dict = create_multidim_plot(
         parameters, prior_samples, fig=fig, axis_dict=axis_dict,
-        labels=labels, plot_marginal=True, marginal_percentiles=[],
+        labels=labels, plot_marginal=opts.plot_marginal, marginal_percentiles=[],
         plot_scatter=False, plot_density=False, plot_contours=False,
         fill_color=None,
         marginal_title=False, marginal_linestyle=':',
