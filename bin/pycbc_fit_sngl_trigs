@@ -22,14 +22,15 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from pycbc import io, events, bin_utils
+from pycbc.events import ranking
 from pycbc.events import trigger_fits as trstats
 import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
 stat_dict = {
-    "new_snr"       : events.newsnr,
-    "effective_snr" : events.effsnr,
+    "new_snr"       : ranking.newsnr,
+    "effective_snr" : ranking.effsnr,
     "snr"           : lambda snr, rchisq : snr,
     "snronchi"      : lambda snr, rchisq : snr / (rchisq ** 0.5)
 }
@@ -110,7 +111,7 @@ cuts.add_argument("--trig-filter", default=None,
                   help="Filter function applied to trigger properties: only "
                   "implemented for hdf format.  May include names from math, "
                   "numpy as 'np', pycbc.events and pycbc.pnutils.  Ex. "
-                  "'events.newsnr(self.snr, self.bank_chisq/self.bank_chisq_"
+                  "'ranking.newsnr(self.snr, self.bank_chisq/self.bank_chisq_"
                   "dof) > 6.)'")
 parser.add_argument("--stat-threshold", nargs="+", type=float,
                     help="Only fit triggers with statistic value above this "

@@ -25,7 +25,7 @@ import numpy, mako.template
 from pycuda.tools import dtype_to_ctype
 from pycuda.elementwise import ElementwiseKernel
 from pycuda.compiler import SourceModule
-from .events import _BaseThresholdCluster
+from .eventmgr import _BaseThresholdCluster
 import pycbc.scheme
 
 threshold_op = """

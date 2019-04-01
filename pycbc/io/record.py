@@ -22,8 +22,8 @@
 # =============================================================================
 #
 """
-This modules provides definitions of, and helper functions for, FieldArrays.
-FieldArrays are wrappers of numpy recarrays with additional functionality
+This modules provides definitions of, and helper functions for, FieldArray.
+FieldArray are wrappers of numpy recarrays with additional functionality
 useful for storing and retrieving data created by a search for gravitationa
 waves.
 """
@@ -104,16 +104,16 @@ def lstring_as_obj(true_or_false=None):
 
     Examples
     --------
-    >>> from pycbc.io import FieldArrays
-    >>> FieldArrays.lstring_as_obj()
+    >>> from pycbc.io import FieldArray
+    >>> FieldArray.lstring_as_obj()
         True
-    >>> FieldArrays.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
+    >>> FieldArray.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
     FieldArray([(0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,),
            (0.0,), (0.0,)],
           dtype=[('foo', 'O')])
-    >>> FieldArrays.lstring_as_obj(False)
+    >>> FieldArray.lstring_as_obj(False)
         False
-    >>> FieldArrays.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
+    >>> FieldArray.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
     FieldArray([('0.0',), ('0.0',), ('0.0',), ('0.0',), ('0.0',), ('0.0',),
            ('0.0',), ('0.0',), ('0.0',), ('0.0',)],
           dtype=[('foo', 'S50')])
@@ -295,7 +295,7 @@ def combine_fields(dtypes):
 
 def _ensure_array_list(arrays):
     """Ensures that every element in a list is an instance of a numpy array."""
-    # Note: the isinstance test is needed below so that instances of FieldArrays
+    # Note: the isinstance test is needed below so that instances of FieldArray
     # are not converted to numpy arrays
     return [numpy.array(arr, ndmin=1) if not isinstance(arr, numpy.ndarray)
             else arr for arr in arrays]
@@ -516,7 +516,7 @@ class FieldArray(numpy.recarray):
 
     * **Subfields and '.' indexing**:
       Structured arrays, which are the base class for recarrays and, by
-      inheritance, FieldArrays, allows for fields to themselves have fields. For
+      inheritance, FieldArray, allows for fields to themselves have fields. For
       example, an array ``x`` may have fields ``a`` and ``b``, with ``b`` having
       subfields ``c`` and ``d``. You can access subfields using other index
       notation or attribute notation. So, the subfields ``d`` may be retrieved
@@ -1505,7 +1505,7 @@ def fields_from_names(fields, names=None):
 #
 # =============================================================================
 #
-#                           FieldArrays with default fields
+#                           FieldArray with default fields
 #
 # =============================================================================
 #
