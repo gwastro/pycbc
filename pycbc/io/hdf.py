@@ -18,6 +18,7 @@ from pycbc import version as pycbc_version
 from pycbc.tmpltbank import return_search_summary
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc import events, conversions, pnutils
+from pycbc.events import ranking
 from pycbc.events.stat import sngl_statistic_dict
 
 class HFile(h5py.File):
@@ -600,15 +601,15 @@ class SingleDetTriggers(object):
 
     @property
     def newsnr(self):
-        return events.newsnr(self.snr, self.rchisq)
+        return ranking.newsnr(self.snr, self.rchisq)
 
     @property
     def newsnr_sgveto(self):
-        return events.newsnr_sgveto(self.snr, self.rchisq, self.sgchisq)
+        return ranking.newsnr_sgveto(self.snr, self.rchisq, self.sgchisq)
 
     @property
     def newsnr_sgveto_psdvar(self):
-        return events.newsnr_sgveto_psdvar(self.snr, self.rchisq,
+        return ranking.newsnr_sgveto_psdvar(self.snr, self.rchisq,
                                            self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):

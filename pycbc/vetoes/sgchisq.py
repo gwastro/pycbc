@@ -8,7 +8,7 @@ from pycbc.waveform.utils import apply_fseries_time_shift
 from pycbc.filter import sigma
 from pycbc.waveform import sinegauss
 from pycbc.vetoes.chisq import SingleDetPowerChisq
-from pycbc.events import newsnr
+from pycbc.events import ranking
 
 class SingleDetSGChisq(SingleDetPowerChisq):
     """Class that handles precomputation and memory management for efficiently
@@ -111,7 +111,7 @@ class SingleDetSGChisq(SingleDetPowerChisq):
         for i, snrvi in enumerate(snrv):
             #Skip if newsnr too low
             snr = abs(snrvi * snr_norm)
-            nsnr = newsnr(snr, bchisq[i] / bchisq_dof[i])
+            nsnr = ranking.newsnr(snr, bchisq[i] / bchisq_dof[i])
             if nsnr < self.snr_threshold:
                 continue
 

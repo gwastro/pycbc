@@ -18,7 +18,8 @@
 import h5py, argparse, logging, sys
 import matplotlib; matplotlib.use('Agg')
 import numpy, lal, datetime
-import pycbc.version, pycbc.events, pycbc.results, pycbc.pnutils
+import pycbc.version, pycbc.results, pycbc.pnutils
+from pycbc.events import ranking
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -139,7 +140,7 @@ for ifo in files.keys():
             str(datetime.datetime(*utc)),
             '%.3f'  % time,
             '%5.2f' % d['snr'][i],
-            '%5.2f' % pycbc.events.newsnr(d['snr'][i], rchisq),
+            '%5.2f' % ranking.newsnr(d['snr'][i], rchisq),
             '%5.2f' % rchisq,
             '%i'    % d['chisq_dof'][i],
             '%5.2f' % d['coa_phase'][i],

@@ -155,7 +155,7 @@ if len(indices) > 0:
         rank = snr
     elif opts.rank == 'newsnr':
         rchisq = chisq / (chisq_dof * 2 - 2)
-        rank = pycbc.events.newsnr(snr, rchisq)
+        rank = pycbc.events.ranking.newsnr(snr, rchisq)
         if type(rank) in [np.float32, np.float64]:
             rank = np.array([rank])
         del rchisq

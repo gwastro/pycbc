@@ -19,10 +19,9 @@ from the command line.
 
 import h5py
 import numpy
-from pycbc import types
+from pycbc import types, conversions, pnutils
 from pycbc.events import coinc
 from pycbc.io import hdf
-from pycbc.events import trigger_fits as trstats
 import pycbc.detector
 
 def insert_bank_bins_option_group(parser):
@@ -235,6 +234,71 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
 
     return bin_names, bin_results
 
+def get_mass_spin(bank, tid):
+    """
+    Helper function
+
+    Parameters
+    ----------
+    bank : h5py File object
+        Bank parameter file
+    tid : integer or array of int
+        Indices of the entries to be returned
+
+    Returns
+    -------
+    m1, m2, s1z, s2z : tuple of floats or arrays of floats
+        Parameter values of the bank entries
+    """
+    m1 = bank['mass1'][:][tid]
+    m2 = bank['mass2'][:][tid]
+    s1z = bank['spin1z'][:][tid]
+    s2z = bank['spin2z'][:][tid]
+    return m1, m2, s1z, s2z
+
+def get_param(par, args, m1, m2, s1z, s2z):
+    """
+    Helper function
+
+    Parameters
+    ----------
+    par : string
+        Name of parameter to calculate
+    args : Namespace object returned from ArgumentParser instance
+        Calling code command line options, used for f_lower value
+    m1 : float or array of floats
+        First binary component mass (etc.)
+
+    Returns
+    -------
+    parvals : float or array of floats
+        Calculated parameter values
+    """
+    if par == 'mchirp':
+        parvals = conversions.mchirp_from_mass1_mass2(m1, m2)
+    elif par == 'mtotal':
+        parvals = m1 + m2
+    elif par == 'eta':
+        parvals = conversions.eta_from_mass1_mass2(m1, m2)
+    elif par in ['chi_eff', 'effective_spin']:
+        parvals = conversions.chi_eff(m1, m2, s1z, s2z)
+    elif par == 'template_duration':
+        # default to SEOBNRv4 duration function
+        parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower,
+                                           args.approximant or "SEOBNRv4")
+        if args.min_duration:
+            parvals += args.min_duration
+    elif par == 'tau0':
+        parvals = conversions.tau0_from_mass1_mass2(m1, m2, args.f_lower)
+    elif par == 'tau3':
+        parvals = conversions.tau3_from_mass1_mass2(m1, m2, args.f_lower)
+    elif par in pnutils.named_frequency_cutoffs.keys():
+        parvals = pnutils.frequency_cutoff_from_name(par, m1, m2, s1z, s2z)
+    else:
+        # try asking for a LALSimulation frequency function
+        parvals = pnutils.get_freq(par, m1, m2, s1z, s2z)
+    return parvals
+
 def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
     """
     Translates some popular trigger parameters into functions that calculate
@@ -273,10 +337,8 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
         return trigfile[ifo][param][:][foundtrg]
     else:
         b = bankfile
-        return trstats.get_param(param, args, b['mass1'][:],
-                                        b['mass2'][:],
-                                        b['spin1z'][:],
-                                        b['spin2z'][:])[foundtmp]
+        return get_param(param, args, b['mass1'][:], b['mass2'][:],
+                                     b['spin1z'][:], b['spin2z'][:])[foundtmp]
 
 def get_inj_param(injfile, param, ifo, args=None):
     """
@@ -311,7 +373,5 @@ def get_inj_param(injfile, param, ifo, args=None):
                                         inj['latitude'][:],
                                         inj['end_time'][:])
     else:
-        return trstats.get_param(param, args, inj['mass1'][:],
-                                        inj['mass2'][:],
-                                        inj['spin1z'][:],
-                                        inj['spin2z'][:])
+        return get_param(param, args, inj['mass1'][:], inj['mass2'][:],
+                                     inj['spin1z'][:], inj['spin2z'][:])
