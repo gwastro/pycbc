@@ -291,6 +291,7 @@ def create_density_plot(xparam, yparam, samples, plot_density=True,
 
     return fig, ax
 
+
 def compute_hpd_credible_interval(samples_array, hpd_percent=None):
     """Returns an array containing the boundaries of the highest probability
     density (HPD) credible interval for a set of samples.
@@ -302,6 +303,12 @@ def compute_hpd_credible_interval(samples_array, hpd_percent=None):
     hpd_percent : {None, float}
         Percentage probability to be included in the HPD credible
         interval.
+
+    Returns
+    -------
+    array
+        An array that contains the lower and upper bounds of the HPD
+        credible interval.
     """
     # Make a copy of the samples and sort it
     samples_array_sorted = numpy.sort(numpy.copy(samples_array))
@@ -344,7 +351,7 @@ def create_marginalized_hist(ax, values, label, estimate_method='percentiles',
     label : str
         A label to use for the title.
     estimate_method : {'percentiles', string}
-       Method to compute the uncertainties in the estimated parameter values.   
+       Method to compute the uncertainties in the estimated parameter values.
     marginal_percentiles : {None, float or array}
         If `estimate_method=percentiles`, what percentiles to draw lines at.
         If None, will draw lines at `[5, 50, 95]` (i.e., the bounds on the
@@ -391,7 +398,7 @@ def create_marginalized_hist(ax, values, label, estimate_method='percentiles',
     ax.hist(values, bins=50, histtype=htype, orientation=orientation,
             facecolor=fillcolor, edgecolor=color, ls=linestyle, lw=2,
             density=True)
-    if estimate_method=="hpd":
+    if estimate_method == "hpd":
         # Plot HPD credible interval
         if hpd_percent is None:
             hpd_percent = 90.
@@ -419,11 +426,11 @@ def create_marginalized_hist(ax, values, label, estimate_method='percentiles',
         else:
             ax.axvline(expected_value, color=expected_color, lw=1.5, zorder=2)
     if title:
-        if estimate_method=="hpd":
+        if estimate_method == "hpd":
             values_med = numpy.percentile(values, 50)
             values_min = plotp.min()
             values_max = plotp.max()
-        if estimate_method=="percentiles":
+        if estimate_method == "percentiles":
             if len(marginal_percentiles) > 0:
                 minp = min(marginal_percentiles)
                 maxp = max(marginal_percentiles)
@@ -591,7 +598,7 @@ def create_multidim_plot(parameters, samples, labels=None,
         What color to make the expected parameters cross.
     plot_marginal : {None, string}
         Plot the marginalized distribution on the diagonals, with lines at
-        the `[5, 50, 95]` percentiles if the input option is `percentiles`. 
+        the `[5, 50, 95]` percentiles if the input option is `percentiles`.
         If the input option is `hpd`, lines are drawn at the median (50th
         percentile), and lower and upper bounds of the HPD credible interval.
         If None, the diagonal axes will be turned off.
@@ -604,10 +611,10 @@ def create_multidim_plot(parameters, samples, labels=None,
         upper 90th percentile and the median).
     marginal_title : bool, optional
         Add a title over the 1D marginal plots that gives an estimated value
-        +/- uncertainty. If the input for ``--plot-marginal`` is ``percentiles``,
-        the estimated value is the percentile halfway between the max/min of
-        ``marginal_percentiles``, while the uncertainty is given by the
-        max/min of the ``marginal_percentiles. If the input for
+        +/- uncertainty. If the input for ``--plot-marginal`` is
+        ``percentiles``, the estimated value is the percentile halfway
+        between the max/min of ``marginal_percentiles``, while the uncertainty
+        is given by the max/min of the ``marginal_percentiles. If the input for
         ``--plot-marginal`` is ``percentiles``, and no ``marginal_percentiles``
         are specified, the median +/- 95/5 percentiles will be quoted. If the
         input for ``--plot-marginal`` is ``hpd``, the median +/- the

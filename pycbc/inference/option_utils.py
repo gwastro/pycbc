@@ -262,17 +262,19 @@ def add_plot_posterior_option_group(parser):
     """
     pgroup = parser.add_argument_group("Options for what plots to create and "
                                        "their formats.")
-    pgroup.add_argument('--plot-marginal', default=None, type=str,
+    pgroup.add_argument('--plot-marginal', choices=["percentiles", "hpd"],
+                        default=None, type=str,
                         help="Plot 1D marginalized distributions on the "
-                             "diagonal axes with lines drawn at the estimated "
-                             "value of the respective parameters and the bounds "
-                             "of their uncertainties, calculated using the "
-                             "given method. Choose from `percentiles` or `hpd`.")
+                             "diagonal axes with lines drawn at the "
+                             "estimated value of the respective parameters "
+                             "and the bounds of their uncertainties, "
+                             "calculated using the given method. Choose from "
+                             "`percentiles` or `hpd`.")
     pgroup.add_argument('--marginal-percentiles', nargs='+', default=None,
                         type=float,
                         help="Percentiles to draw lines at on the 1D "
-                             "histograms. To be used only if `--plot-marginal` "
-                             "option is `percentiles`.")
+                             "histograms. To be used only if "
+                             "`--plot-marginal` option is `percentiles`.")
     pgroup.add_argument('--marginal-hpd-percent', default=None, type=float,
                         help="Percentage probability to include in the HPD "
                              "credible interval. Lines will be drawn at the "
