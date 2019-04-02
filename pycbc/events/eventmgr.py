@@ -251,19 +251,20 @@ class EventManager(object):
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
         self.events = self.events[i]
 
-    def keep_loudest_in_interval(self, window, num_keep, stat="newsnr",
+    def keep_loudest_in_interval(self, window, num_keep, statname="newsnr",
                                  log_chirp_width=None):
         if len(self.events) == 0:
             return
 
+        from pycbc.events import stat
         e_copy = self.events
 
         # Messy step because pycbc inspiral's internal 'chisq_dof' is 2p-2
         # but stat.py / ranking.py functions use 'chisq_dof' = p
         e_copy['chisq_dof'] = e_copy['chisq_dof'] / 2 + 1
         # Initialize statclass with an empty file list
-        stat_instance = events.stat.single_statistic_dict(stat)([])
-        stat = stat_instance.single(e_copy)
+        stat_instance = stat.sngl_statistic_dict[statname]([])
+        statv = stat_instance.single(e_copy)
 
         time = e_copy['time_index']
         # convert time to integer bin number
@@ -285,11 +286,11 @@ class EventManager(object):
             if log_chirp_width:
                 for b2 in cbins:
                     bloc = numpy.where((wtime == b) & (imc == b2))[0]
-                    bloudest = stat[bloc].argsort()[-num_keep:]
+                    bloudest = statv[bloc].argsort()[-num_keep:]
                     keep.append(bloc[bloudest])
             else:
                 bloc = numpy.where((wtime == b))[0]
-                bloudest = stat[bloc].argsort()[-num_keep:]
+                bloudest = statv[bloc].argsort()[-num_keep:]
                 keep.append(bloc[bloudest])
 
         keep = numpy.concatenate(keep)
