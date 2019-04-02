@@ -251,14 +251,21 @@ class EventManager(object):
         i = indices_within_times(gpstime, inj_time - window, inj_time + window)
         self.events = self.events[i]
 
-    def keep_loudest_in_interval(self, window, num_keep, log_chirp_width=None):
+    def keep_loudest_in_interval(self, window, num_keep, stat="newsnr",
+                                 log_chirp_width=None):
         if len(self.events) == 0:
             return
 
-        e = self.events
-        # FIXME allow statistics that are not newsnr
-        stat = ranking.newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
-        time = e['time_index']
+        e_copy = self.events
+
+        # Messy step because pycbc inspiral's internal 'chisq_dof' is 2p-2
+        # but stat.py / ranking.py functions use 'chisq_dof' = p
+        e_copy['chisq_dof'] = e_copy['chisq_dof'] / 2 + 1
+        # Initialize statclass with an empty file list
+        stat_instance = events.stat.single_statistic_dict(stat)([])
+        stat = stat_instance.single(e_copy)
+
+        time = e_copy['time_index']
         # convert time to integer bin number
         wtime = (time / window).astype(numpy.int32)
         bins = numpy.unique(wtime)
@@ -267,9 +274,9 @@ class EventManager(object):
             from pycbc.conversions import mchirp_from_mass1_mass2
             m1 = numpy.array([p['tmplt'].mass1 for p in self.template_params])
             m2 = numpy.array([p['tmplt'].mass2 for p in self.template_params])
-            mc = mchirp_from_mass1_mass2(m1, m2)[e['template_id']]
+            mc = mchirp_from_mass1_mass2(m1, m2)[e_copy['template_id']]
 
-            # convert chirp mass to an integer which indicates its cluster bin
+            # convert chirp mass to integer bin number
             imc = (numpy.log(mc) / log_chirp_width).astype(numpy.int32)
             cbins = numpy.unique(imc)
 
@@ -286,7 +293,7 @@ class EventManager(object):
                 keep.append(bloc[bloudest])
 
         keep = numpy.concatenate(keep)
-        self.events = e[keep]
+        self.events = self.events[keep]
 
     def add_template_events(self, columns, vectors):
         """ Add a vector indexed """
