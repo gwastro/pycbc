@@ -295,7 +295,7 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             # one job. If there are no curr_parents it is set to [None] and I
             # make a single job. This catches the case of a split template bank
             # where I run a number of jobs to cover a single range of time.
-            for pnum, parent in enumerate(curr_parent):
+            for pnum, parent in enumerate(sorted(curr_parent)):
                 if len(curr_parent) != 1:
                     tag = ["JOB%d" %(pnum,)]
                 else:
