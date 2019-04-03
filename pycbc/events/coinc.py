@@ -1116,11 +1116,10 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if len(valid_ifos) == 0: return {}
 
         # Add single triggers to the internal buffer
-        updated_indices = self._add_singles_to_buffer(results, ifos=valid_ifos)
+        self._add_singles_to_buffer(results, ifos=valid_ifos)
 
         # Calculate zerolag and background coincidences
-        num_background, coinc_results = self._find_coincs(results,
-                                                          ifos=valid_ifos)
+        _, coinc_results = self._find_coincs(results, ifos=valid_ifos)
 
         # record if a coinc is possible in this chunk
         if len(valid_ifos) == 2:

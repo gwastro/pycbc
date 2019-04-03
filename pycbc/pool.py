@@ -83,7 +83,8 @@ class BroadcastPool(multiprocessing.pool.Pool):
         args: tuple
             The arguments for Pool.map
         """
-        results = self.map(_lockstep_fcn, [(len(self), fcn, arg) for arg in args])
+        results = self.map(_lockstep_fcn,
+                           [(len(self), fcn, arg) for arg in args])
         _numdone.value = 0
         return results
 
