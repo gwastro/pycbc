@@ -628,13 +628,16 @@ with ctx:
             coinc_results = []
             def get_coincs(i):
                 c = estimators[i]
+                r = c.add_singles(results, data_reader)
                 logging.info('Coincs: %s-%s: %s in cbuffer',
                                  c.ifos[0], c.ifos[1], c.coincs.index)
-                return c.add_singles(results, data_reader)
+                return r, c
             
             if args.enable_background_estimation:
                 p = Pool(len(estimators)):
-                coinc_results = p.map(get_coincs, range(len(estimators))
+                res = p.map(get_coincs, range(len(estimators))
+                coinc_results = [r[0] for r in res]
+                estimators = [r[1] for r in res]
                 p.close()
 
                 # Pick the best coinc in this chunk
