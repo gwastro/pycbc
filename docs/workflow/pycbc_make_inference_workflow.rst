@@ -172,58 +172,44 @@ A simple configuration file for parameter estimation on the ringdown is::
 
     [variable_args]
     ; parameters to vary in inference sampler
-    tc =
-    f_0 =
-    tau =
-    amp =
-    phi =
-
-    [labels]
-    ; LaTeX expressions to use in HTML and plotting executables
-    tc = $t_c$
-    f_0 = $f_0$
-    tau = $\tau$
-    amp = $A$
-    phi = $\phi_0$
+    final_mass =
+    final_spin =
+    amp220 =
+    phi220 =
+    inclination =
 
     [static_args]
     ; parameters that do not vary in inference sampler
-    approximant = FdQNM
-    ra = 2.21535724066
-    dec = -1.23649695537
+    approximant = TdQNMfromFinalMassSpin
+    lmns = ['221']
+    tc = 1126259462
+    ra = 2.2
+    dec = -1.24
     polarization = 0.
-    f_lower = 28.0
-    f_final = 512
+    f_lower = 18.
+    f_ref = 20.
 
-    [prior-tc]
-    ; how to construct prior distribution
+    [prior-final_mass]
     name = uniform
-    min-tc = 1126259462.4
-    max-tc = 1126259462.5
+    min-final_mass = 20.
+    max-final_mass = 100.
 
-    [prior-f_0]
-    ; how to construct prior distribution
+    [prior-final_spin]
     name = uniform
-    min-f_0 = 200.
-    max-f_0 = 300.
+    min-final_spin = -0.99
+    max-final_spin = 0.99
 
-    [prior-tau]
-    ; how to construct prior distribution
-    name = uniform
-    min-tau = 0.0008
-    max-tau = 0.020
+    [prior-amp220]
+    name = uniform_log10
+    min-amp220 = 1e-30
+    max-amp220 = 1e-10
 
-    [prior-amp]
-    ; how to construct prior distribution
-    name = uniform
-    min-amp = 0
-    max-amp = 1e-20
+    [prior-phi220]
+    name = uniform_angle
 
-    [prior-phi]
-    ; how to construct prior distribution
-    name = uniform
-    min-phi = 0
-    max-phi = 6.283185307179586
+    [prior-inclination]
+    ; inclination prior
+    name = sin_angle
 
 If you want to use another variable parameter in the inference sampler then add its name to ``[variable_args]`` and add a prior section like shown above.
 
