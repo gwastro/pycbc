@@ -93,7 +93,7 @@ class _HDFInjectionSet(object):
         # get parameters
         parameters = group.keys()
         # get all injection parameter values
-        injvals = {param: group[param][:] for param in parameters}
+        injvals = {param: group[param][()] for param in parameters}
         # if there were no variable args, then we only have a single injection
         if len(parameters) == 0:
             numinj = 1
