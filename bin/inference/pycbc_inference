@@ -33,6 +33,7 @@ from pycbc.waveform import generator
 
 from pycbc import __version__
 from pycbc import inference
+from pycbc.inject import InjectionSet
 from pycbc.inference import (models, burn_in, option_utils)
 from pycbc.strain.calibration import Recalibrate
 
@@ -167,14 +168,14 @@ with ctx:
     # insert injected parameters.
     if input_injection_file \
             and "injection" in dict(cp.items('static_params')).values():
-        with h5py.File(input_injection_file, 'r') as rd_inj:
+        with InjectionSet(input_injection_file) as rd_inj:
             for opt in cp.options(section='static_params'):
                 if cp.get('static_params', opt) == "injection" \
-                                            and opt not in rd_inj.keys():
+                                    and opt not in rd_inj.table.fieldnames:
                     raise ValueError("Static param placeholder \"injection\" \
                             has no counterpart in injection file.")
                 elif cp.get('static_params', opt) == "injection":
-                    cp.set('static_params', opt, str(rd_inj[opt][()]))
+                    cp.set('static_params', opt, str(rd_inj.table[opt][0]))
         
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
