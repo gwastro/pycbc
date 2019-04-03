@@ -73,6 +73,20 @@ class BroadcastPool(multiprocessing.pool.Pool):
         _numdone.value = 0
         return results
 
+    def allmap(self, fcn, args):
+        """ Do a function call on every worker with different arguments
+
+        Parameters
+        ----------
+        fcn: funtion
+            Function to call.
+        args: tuple
+            The arguments for Pool.map
+        """
+        results = self.map(_lockstep_fcn, [(len(self), fcn, arg) for arg in args])
+        _numdone.value = 0
+        return results
+
     def map(self, func, items, chunksize=None):
         """ Catch keyboard interuppts to allow the pool to exit cleanly.
 
