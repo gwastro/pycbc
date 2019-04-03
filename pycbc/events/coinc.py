@@ -1088,7 +1088,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             self.singles[ifo].discard_last(updated_singles[ifo])
         self.coincs.remove(num_coincs)
 
-    def add_singles(self, results, data_reader):
+    def add_singles(self, results):
         """Add singles to the bacckground estimate and find candidates
 
         Parameters
@@ -1097,8 +1097,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
             'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
-        data_reader: dict of StrainBuffers
-            A dict of StrainBuffer instances, indexed by ifos.
 
         Returns
         -------
@@ -1130,9 +1128,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
         # If there is a hardware injection anywhere near here dump these
         # results and mark the result group as possibly being influenced
-        for ifo in valid_ifos:
-            if data_reader[ifo].near_hwinj():
-                self.backout_last(updated_indices, num_background)
-                coinc_results['HWINJ'] = True
-                break
+        #for ifo in valid_ifos:
+        #    if data_reader[ifo].near_hwinj():
+        #        self.backout_last(updated_indices, num_background)
+        #        coinc_results['HWINJ'] = True
+        #        break
         return coinc_results

@@ -15,7 +15,7 @@ from time import time
 import os.path
 import itertools
 from mpi4py import MPI as mpi
-from multiprocessing import Pool
+from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, frame, makedir
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
@@ -557,7 +557,21 @@ with ctx:
             logging.info('Will calculate %s background', combo)
             estimators.append(Coincer.from_cli(args,
                               len(bank), args.analysis_chunk, list(combo)))
-
+                              
+        my_coinc_id = -1
+        def set_coinc_id(i):
+            global my_coinc_id
+            my_coinc_id = i
+        
+        def get_coinc(results):
+            c = estimators[my_coinc_id]
+            r = c.add_singles(results)
+            logging.info('Coincs: %s-%s: %s in cbuffer',
+                         c.ifos[0], c.ifos[1], c.coincs.index)
+            return r
+            
+        coinc_pool = BroadcastPool(len(estimators))
+        coinc_pool.broadcast(set_coinc_id, range(len(estimators))
 
     logging.info('%s: Starting...', evnt.rank)
 
@@ -625,20 +639,10 @@ with ctx:
                             results[ifo][key] = results[ifo][key][idx]
 
             # Look for coincident triggers and do background estimation
-            coinc_results = []
-            def get_coincs(i):
-                c = estimators[i]
-                r = c.add_singles(results, data_reader)
-                logging.info('Coincs: %s-%s: %s in cbuffer',
-                                 c.ifos[0], c.ifos[1], c.coincs.index)
-                return r, c
-            
             if args.enable_background_estimation:
-                p = Pool(len(estimators)):
-                res = p.map(get_coincs, range(len(estimators))
-                coinc_results = [r[0] for r in res]
-                estimators = [r[1] for r in res]
-                p.close()
+                for c in estimators:
+                    coinc_results = coinc_pool.broadcast(get_coinc, results)
+
 
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
