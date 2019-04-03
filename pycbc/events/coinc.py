@@ -1126,11 +1126,4 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if len(valid_ifos) == 2:
             coinc_results['coinc_possible'] = True
 
-        # If there is a hardware injection anywhere near here dump these
-        # results and mark the result group as possibly being influenced
-        #for ifo in valid_ifos:
-        #    if data_reader[ifo].near_hwinj():
-        #        self.backout_last(updated_indices, num_background)
-        #        coinc_results['HWINJ'] = True
-        #        break
         return coinc_results

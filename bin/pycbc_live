@@ -166,6 +166,11 @@ class LiveEventManager(object):
                      data_readers, bank):
         """ Perform any followup and save zerolag triggers to a coinc xml file
         """
+        #check for hardware injection
+        for ifo in ifos:
+            if data_reader[ifo].near_hwinj():
+                coinc_results['HWINJ'] = True
+                break    
 
         if 'foreground/ifar' in coinc_results:
             logging.info('computing followup data for coinc')
@@ -641,8 +646,7 @@ with ctx:
             # Look for coincident triggers and do background estimation
             if args.enable_background_estimation:
                 coinc_results = coinc_pool.broadcast(get_coinc, results)
-
-
+                
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
 
