@@ -15,12 +15,13 @@ from time import time
 import os.path
 import itertools
 from mpi4py import MPI as mpi
+from multiprocessing import Pool
 from pycbc import fft, version, waveform, scheme, frame, makedir
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
-from pycbc.events import newsnr
+from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
 from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
@@ -625,11 +626,16 @@ with ctx:
 
             # Look for coincident triggers and do background estimation
             coinc_results = []
-            if args.enable_background_estimation:
-                for c in estimators:
-                    coinc_results.append(c.add_singles(results, data_reader))
-                    logging.info('Coincs: %s-%s: %s in cbuffer',
+            def get_coincs(i):
+                c = estimators[i]
+                logging.info('Coincs: %s-%s: %s in cbuffer',
                                  c.ifos[0], c.ifos[1], c.coincs.index)
+                return c.add_singles(results, data_reader)
+            
+            if args.enable_background_estimation:
+                p = Pool(len(estimators)):
+                coinc_results = p.map(get_coincs, range(len(estimators))
+                p.close()
 
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
