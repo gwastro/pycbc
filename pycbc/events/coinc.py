@@ -564,12 +564,6 @@ class MultiRingBuffer(object):
         """
         self.time += 1
 
-        #expired = self.time - self.max_time
-        #for j, exp in enumerate(self.buffer_expire):
-        #    if (len(exp) > 0) and (exp[0] < expired):
-        #        self.buffer_expire[j] = exp[1:].copy()
-        #        self.buffer[j] = self.buffer[j][1:].copy()
-
     def add(self, indices, values):
         """Add triggers in 'values' to the buffers indicated by the indices
         """
@@ -1118,10 +1112,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             A dictionary of arrays containing the coincident results.
         """
         # Let's see how large everything is
-        #for ifo in self.singles:
-        #    logging.info('BKG %s singles %s stored %s bytes',
-        #                 ifo, self.singles[ifo].num_elements(),
-        #                 self.singles[ifo].nbytes)
         logging.info('BKG Coincs %s stored %s bytes',
                      len(self.coincs), self.coincs.nbytes)
 
