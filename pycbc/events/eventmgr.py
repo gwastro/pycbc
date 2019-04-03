@@ -259,6 +259,8 @@ class EventManager(object):
         from pycbc.events import stat
         e_copy = self.events.copy()
 
+        # Here self.events['snr'] is the complex SNR
+        e_copy['snr'] = abs(e_copy['snr'])
         # Messy step because pycbc inspiral's internal 'chisq_dof' is 2p-2
         # but stat.py / ranking.py functions use 'chisq_dof' = p
         e_copy['chisq_dof'] = e_copy['chisq_dof'] / 2 + 1
@@ -266,9 +268,9 @@ class EventManager(object):
         stat_instance = stat.sngl_statistic_dict[statname]([])
         statv = stat_instance.single(e_copy)
 
-        time = e_copy['time_index']
-        # convert time to integer bin number
-        wtime = (time / window).astype(numpy.int32)
+        # Convert trigger time to integer bin number
+        # NB time_index and window are in units of samples
+        wtime = (e_copy['time_index'] / window).astype(numpy.int32)
         bins = numpy.unique(wtime)
 
         if log_chirp_width:
