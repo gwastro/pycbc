@@ -640,8 +640,7 @@ with ctx:
 
             # Look for coincident triggers and do background estimation
             if args.enable_background_estimation:
-                for c in estimators:
-                    coinc_results = coinc_pool.broadcast(get_coinc, results)
+                coinc_results = coinc_pool.broadcast(get_coinc, results)
 
 
                 # Pick the best coinc in this chunk
