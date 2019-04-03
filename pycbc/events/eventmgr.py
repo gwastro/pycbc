@@ -257,7 +257,7 @@ class EventManager(object):
             return
 
         from pycbc.events import stat
-        e_copy = self.events
+        e_copy = self.events.copy()
 
         # Messy step because pycbc inspiral's internal 'chisq_dof' is 2p-2
         # but stat.py / ranking.py functions use 'chisq_dof' = p
