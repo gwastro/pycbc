@@ -93,13 +93,13 @@ class _HDFInjectionSet(object):
         # get parameters
         parameters = group.keys()
         # get all injection parameter values
-        injvals = {param: group[param].value for param in parameters}
+        injvals = {param: group[param][()] for param in parameters}
         # We assume injvals are either (floats and 1D-arrays) for a single
         # injection or (1D-arrays and 2D-arrays) for multiple. 
         contains_floats_strings = False
         contains_1d_arrays = False
         contains_2d_arrays = False
-        print(injvals)
+#        print(injvals)
         for param in parameters:
             if not isinstance(injvals[param], np.ndarray):
                 contains_floats_strings = True
@@ -110,7 +110,7 @@ class _HDFInjectionSet(object):
                 elif injvals[param].ndim == 2:
                     contains_2d_arrays = True
                 else:
-                    print(param, type(injvals[param]))
+#                    print(param, type(injvals[param]))
                     raise ValueError("Expect float, 1d or 2d injection array.")
         if contains_2d_arrays and contains_floats_strings: 
             raise ValueError("Cannot interpret floats and 2d injection arrays.")
