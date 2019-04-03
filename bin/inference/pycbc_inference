@@ -168,14 +168,14 @@ with ctx:
     # insert injected parameters.
     if input_injection_file \
             and "injection" in dict(cp.items('static_params')).values():
-        with InjectionSet(input_injection_file) as rd_inj:
-            for opt in cp.options(section='static_params'):
-                if cp.get('static_params', opt) == "injection" \
-                                    and opt not in rd_inj.table.fieldnames:
-                    raise ValueError("Static param placeholder \"injection\" \
+        inj = InjectionSet(input_injection_file)
+        for opt in cp.options(section='static_params'):
+            if cp.get('static_params', opt) == "injection" \
+                                and opt not in inj.table.fieldnames:
+                raise ValueError("Static param placeholder \"injection\" \
                             has no counterpart in injection file.")
-                elif cp.get('static_params', opt) == "injection":
-                    cp.set('static_params', opt, str(rd_inj.table[opt][0]))
+            elif cp.get('static_params', opt) == "injection":
+                cp.set('static_params', opt, str(inj.table[opt][0]))
         
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
