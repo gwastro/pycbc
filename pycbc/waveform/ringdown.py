@@ -25,7 +25,7 @@
 """Generate ringdown templates in the time and frequency domain.
 """
 
-import numpy, lal
+import numpy, lal, re
 import lalsimulation as lalsim
 from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
@@ -37,7 +37,7 @@ lm_required_args = ['freqs','taus','l','m','nmodes']
 mass_spin_required_args = ['final_mass','final_spin', 'lmns', 'inclination']
 freqtau_required_args = ['lmns']
 
-max_freq = 16384.
+max_freq = 16384/2.
 min_dt = 1. / (2 * max_freq)
 pi = numpy.pi
 two_pi = 2 * numpy.pi
@@ -64,6 +64,33 @@ def props(obj, required, **kwargs):
             raise ValueError('Please provide ' + str(arg))
 
     return input_params
+
+def format_lmns(lmns):
+    """ Checks if the format of the parameter lmns is correct, returning the
+    appropriate format if not
+    """
+    # Case 0: the lmns is in the right format, return
+    if len(lmns[0]) == 3:
+        return lmns
+    
+    # Case 1: the list is in a string with or without comma,
+    # "[221, 331]" or "[221 331]"
+    elif lmns[0]=='[' and lmns[-1]==']':
+        lmns = lmns.strip('[]')
+
+    # Case 2: a list with only one string with or without comma,
+    # ["221' '331"] or ["221', '331"]
+    elif len(lmns[0]) > 3:
+        lmns = lmns[0]
+    
+    # Check if there is a comma or not
+    if bool(re.search(',', lmns)):
+        lmns = lmns.split(',')
+    else:
+        lmns = lmns.split()
+
+    # There may still be extra spaces or quotes, loop over items
+    return [lmns[n].strip().strip('\'') for n in range(len(lmns))]
 
 def lm_amps_phases(**kwargs):
     """ Take input_params and return dictionaries with amplitudes and phases
@@ -292,6 +319,58 @@ def taper_shift(waveform, output):
 ######################################################
 #### Basic functions to generate damped sinusoid
 ######################################################
+
+def td_damped_sinusoid(f_0, tau, amp, phi, inclination=None, l=2, m=2,
+                       delta_t=None, t_final=None, taper=None)
+    """Return a time domain damped sinusoid (plus and cross polarizations).
+    If taper, will add a tapering at the beginning of the waveform with
+    duration taper * tau
+    """
+
+    if not delta_t:
+        delta_t = 1. / qnm_freq_decay(f_0, tau, 1./1000)
+        if delta_t < min_dt:
+            delta_t = min_dt
+    if not t_final:
+        t_final = qnm_time_decay(tau, 1./1000)
+    kmax = int(t_final / delta_t) + 1
+    times = numpy.arange(kmax) * delta_t
+
+    if inclination is not None:
+        Y_plus, Y_cross = spher_harms(l, m, inclination)
+    else:
+        Y_plus, Y_cross = 1, 1
+
+    hplus = amp * Y_plus * numpy.exp(-times/tau) * \
+                                numpy.cos(two_pi*f_0*times + phi)
+    hcross = amp * Y_cross * numpy.exp(-times/tau) * \
+                                numpy.sin(two_pi*f_0*times + phi)
+
+    if taper and delta_t < taper*tau:
+        taper_window = int(taper*tau/delta_t)
+        kmax += taper_window
+
+    outplus = TimeSeries(zeros(kmax), delta_t=delta_t)
+    outcross = TimeSeries(zeros(kmax), delta_t=delta_t)
+
+    # If size of tapering window is less than delta_t, do not apply taper.
+    if not taper or delta_t > taper*tau:
+        outplus.data[:kmax] = hplus
+        outcross.data[:kmax] = hcross
+
+        return outplus, outcross
+
+    else:
+        taper_hp, taper_hc = apply_taper(delta_t, taper, f_0, tau, amp,
+                                         phi, l, m, inclination)
+        start = - taper * tau
+        outplus.data[:taper_window] = taper_hp
+        outplus.data[taper_window:] = hplus
+        outcross.data[:taper_window] = taper_hc
+        outcross.data[taper_window:] = hcross
+        outplus._epoch, outcross._epoch = start, start
+
+        return outplus, outcross
 
 def get_td_qnm(template=None, taper=None, **kwargs):
     """Return a time domain damped sinusoid.
@@ -763,7 +842,7 @@ def get_td_from_final_mass_spin(template=None, taper=None,
     # Get required args
     final_mass = input_params['final_mass']
     final_spin = input_params['final_spin']
-    lmns = input_params['lmns']
+    lmns = format_lmns(input_params['lmns'])
     for lmn in lmns:
         if int(lmn[2]) == 0:
             raise ValueError('Number of overtones (nmodes) must be greater '
@@ -867,7 +946,7 @@ def get_fd_from_final_mass_spin(template=None, distance=None, **kwargs):
     # Get required args
     final_mass = input_params['final_mass']
     final_spin = input_params['final_spin']
-    lmns = input_params['lmns']
+    lmns = format_lmns(input_params['lmns'])
     for lmn in lmns:
         if int(lmn[2]) == 0:
             raise ValueError('Number of overtones (nmodes) must be greater '
@@ -960,12 +1039,12 @@ def get_td_from_freqtau(template=None, taper=None, **kwargs):
     input_params = props(template, freqtau_required_args, **kwargs)
 
     # Get required args
-    f_0, tau = lm_freqs_taus(**input_params)
-    lmns = input_params['lmns']
+    lmns = format_lmns(input_params['lmns'])
     for lmn in lmns:
         if int(lmn[2]) == 0:
             raise ValueError('Number of overtones (nmodes) must be greater '
                              'than zero.')
+    f_0, tau = lm_freqs_taus(**input_params)
     # following may not be in input_params
     inc = input_params.pop('inclination', None)
     delta_t = input_params.pop('delta_t', None)
@@ -1056,12 +1135,12 @@ def get_fd_from_freqtau(template=None, **kwargs):
     input_params = props(template, freqtau_required_args, **kwargs)
 
     # Get required args
-    f_0, tau = lm_freqs_taus(**input_params)
-    lmns = input_params['lmns']
+    lmns = format_lmns(input_params['lmns'])
     for lmn in lmns:
         if int(lmn[2]) == 0:
             raise ValueError('Number of overtones (nmodes) must be greater '
                              'than zero.')
+    f_0, tau = lm_freqs_taus(**input_params)
     # The following may not be in input_params
     inc = input_params.pop('inclination', None)
     delta_f = input_params.pop('delta_f', None)
