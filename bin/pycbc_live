@@ -571,7 +571,7 @@ with ctx:
             return r
             
         coinc_pool = BroadcastPool(len(estimators))
-        coinc_pool.broadcast(set_coinc_id, range(len(estimators))
+        coinc_pool.map(set_coinc_id, range(len(estimators)))
 
     logging.info('%s: Starting...', evnt.rank)
 
