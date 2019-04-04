@@ -59,6 +59,7 @@ class TestDistributions(unittest.TestCase):
         # configuration file reading
         class Arguments(object):
             config_overrides = []
+            config_delete = []
             config_files = [config_path]
         self.opts = Arguments()
 
