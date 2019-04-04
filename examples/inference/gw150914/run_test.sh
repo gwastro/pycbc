@@ -52,8 +52,8 @@ pycbc_inference --verbose \
     --instruments ${IFOS} \
     --gps-start-time ${GPS_START_TIME} \
     --gps-end-time ${GPS_END_TIME} \
-    --channel-name ${CHANNELS} \
-    ${FRAMES} \
+    --channel-name H1:LOSC-STRAIN L1:LOSC-STRAIN \
+    --frame-type H1:LOSC L1:LOSC \
     --strain-high-pass ${F_HIGHPASS} \
     --pad-data ${PAD_DATA} \
     --psd-estimation ${PSD_ESTIMATION} \

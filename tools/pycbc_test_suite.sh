@@ -72,10 +72,6 @@ popd
 
 ## Run inference on GW150914 data
 pushd examples/inference/gw150914
-wget -nc https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf
-wget -nc https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf
-export FRAMES="--frame-files H1:H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf L1:L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf"
-export CHANNELS="H1:GWOSC-4KHZ_R1_STRAIN L1:GWOSC-4KHZ_R1_STRAIN"
 bash -e run_test.sh
 if test $? -ne 0 ; then
     RESULT=1
@@ -84,7 +80,6 @@ if test $? -ne 0 ; then
 else
     echo -e "    Pass."
 fi
-rm H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf
 popd
 
 echo -e "\\n>> [`date`] Building documentation"
