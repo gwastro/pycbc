@@ -146,9 +146,11 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
                 hd_i = 0j
             else:
                 # whiten the waveform
-                h[self._kmin[det]:kmax] *= self._weight[det][self._kmin[det]:kmax]
+                h[self._kmin[det]:kmax] *= \
+                    self._weight[det][self._kmin[det]:kmax]
                 # calculate inner products
-                hh_i = h[self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax]).real
+                hh_i = h[self._kmin[det]:kmax].inner(
+                    h[self._kmin[det]:kmax]).real
                 hd_i = self.data[det][self._kmin[det]:kmax].inner(
                     h[self._kmin[det]:kmax])
             # store
@@ -617,8 +619,10 @@ class MarginalizedGaussianNoise(GaussianNoise):
                 hh_i = 0.
                 hd_i = 0j
             else:
-                h[self._kmin[det]:kmax] *= self._weight[det][self._kmin[det]:kmax]
-                hh_i = h[self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax]).real
+                h[self._kmin[det]:kmax] *= \
+                    self._weight[det][self._kmin[det]:kmax]
+                hh_i = h[self._kmin[det]:kmax].inner(
+                    h[self._kmin[det]:kmax]).real
                 hd_i = self._eval_mfsnr(h[self._kmin[det]:kmax],
                                         self.data[det][self._kmin[det]:kmax])
             opt_snr += hh_i

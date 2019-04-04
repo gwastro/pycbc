@@ -43,6 +43,7 @@ def add_low_frequency_cutoff_opt(parser):
                         metavar='IFO:FLOW', dest="low_frequency_cutoff",
                         help="Low frequency cutoff for fake strain.")
 
+
 def data_from_cli(opts):
     """Loads the data needed for a model from the given
     command-line options. Gates specifed on the command line are also applied.

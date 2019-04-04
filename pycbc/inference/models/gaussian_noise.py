@@ -17,10 +17,7 @@
 """
 
 import logging
-from six.moves.configparser import NoSectionError, NoOptionError
-
 import numpy
-
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
 from pycbc.waveform import generator
@@ -89,9 +86,9 @@ class GaussianNoise(BaseDataModel):
         match the waveform generator's detectors keys, and the epoch of every
         data set must be the same as the waveform generator's epoch.
     low_frequency_cutoff : dict
-        A dictionary of starting frequencies, in which the keys are the detector
-        names and the values are the starting frequencies for the respective 
-        detectors to be used for computing inner products.
+        A dictionary of starting frequencies, in which the keys are the
+        detector names and the values are the starting frequencies for the
+        respective detectors to be used for computing inner products.
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
@@ -136,8 +133,8 @@ class GaussianNoise(BaseDataModel):
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
     >>> low_frequency_cutoff = {'H1': fmin, 'L1': fmin}
-    >>> model = GaussianNoise(variable_params, signal, low_frequency_cutoff, psds=psds,
-                              static_params=static_params)
+    >>> model = GaussianNoise(variable_params, signal, low_frequency_cutoff,
+                              psds=psds, static_params=static_params)
     Set the current position to the coalescence time of the signal:
 
     >>> model.update(tc=tsig)
@@ -228,10 +225,10 @@ class GaussianNoise(BaseDataModel):
                            "match IFOs for which low-frequency-cutoff has "
                            "been provided for likelihood inner product "
                            "calculation. If loading the model settings from "
-                           "a config file, please provide a "
-                           "`IFO-low-frequency-cutoff` input for each detector "
-                           "in the `[model]` section, where IFO is the name "
-                           "of the detector.")
+                           "a config file, please provide an "
+                           "`IFO-low-frequency-cutoff` input for each "
+                           "detector in the `[model]` section, where IFO is "
+                           "the name of the detector.")
         # create the waveform generator
         self._waveform_generator = create_waveform_generator(
             self.variable_params, self.data, recalibration=self.recalibration,
@@ -265,7 +262,8 @@ class GaussianNoise(BaseDataModel):
         self._kmax = {}
         for det in self._data:
             # whiten the data
-            kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det], self._f_upper,
+            kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
+                                                     self._f_upper,
                                                      d.delta_f, (N-1)*2)
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
             self._kmin[det] = kmin
@@ -480,8 +478,8 @@ class GaussianNoise(BaseDataModel):
         for det in self.detectors:
             # Save lognl for each IFO as attributes in the samples group
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
-            # Save each IFO's low frequency cutoff used in the likelihood computation
-            # as attributes
+            # Save each IFO's low frequency cutoff used in the likelihood
+            # computation as attributes
             fp.attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
 
     @classmethod
@@ -601,8 +599,8 @@ def low_frequency_cutoff_from_config(cp):
             try:
                 low_frequency_cutoff[ifo] = float(cp.get("model", option))
             except Exception as e:
-                logging.warning("Low frequency cutoff of {} could not be "
-                                "converted to float".format(ifo))
+                logging.warning("Low frequency cutoff of %s could not be "
+                                "converted to float" % ifo)
                 raise e
     return low_frequency_cutoff
 
