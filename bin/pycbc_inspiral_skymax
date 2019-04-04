@@ -138,6 +138,9 @@ parser.add_argument("--keep-loudest-interval", type=float,
                     help="Window in seconds to maximize triggers over bank")
 parser.add_argument("--keep-loudest-num", type=int,
                     help="Number of triggers to keep from each maximization interval")
+parser.add_argument("--keep-loudest-stat", default="newsnr",
+                    choices=events.stat.sngl_statistic_dict.keys(),
+                    help="Statistic used to determine loudest to keep")
 parser.add_argument("--gpu-callback-method", default='none')
 parser.add_argument("--sky-maximization-method", required=True,
                     choices=["precessing", "hom"])
@@ -333,11 +336,13 @@ if opt.newsnr_threshold and opt.chisq_bins:
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
 if opt.keep_loudest_interval:
-    logging.info("Removing triggers that are not within the top %s loudest"
-                 " of a %s second interval" % (opt.keep_loudest_num,
-                                               opt.keep_loudest_interval))
+    logging.info("Removing triggers not within the top %s loudest of a %s "
+                 "second interval by %s" % (opt.keep_loudest_num,
+                                            opt.keep_loudest_interval,
+                                            opt.keep_loudest_stat))
     event_mgr.keep_loudest_in_interval(opt.keep_loudest_interval * opt.sample_rate,
-                                       opt.keep_loudest_num)
+                                       opt.keep_loudest_num,
+                                       statname=opt.keep_loudest_stat)
     logging.info("%d remaining triggers" % len(event_mgr.events))
 
 if opt.injection_window and hasattr(gwstrain, 'injections'):
