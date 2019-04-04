@@ -68,11 +68,11 @@ pycbc_inference --verbose \
     --output-file ${OUTPUT_PATH} \
     --processing-scheme ${PROCESSING_SCHEME} \
     --nprocesses ${NPROCS} \
+    --config-delete "sampler:effective-nsamples" \
+                    "sampler:max-samples-per-chain" \
     --config-overrides sampler:ntemps:2 \
                        sampler:nwalkers:30 \
                        sampler:niterations:20 \
                        sampler:checkpoint-interval:10 \
-    --config-delete sampler:effective-nsamples \
-                    sampler:max-samples-per-chain \
     --force \
 

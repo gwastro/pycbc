@@ -1017,7 +1017,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
     @classmethod
     def from_cli(cls, opts):
-        """Loads a config file from the given options, with overrides applied.
+        """Loads a config file from the given options, with overrides and
+        deletes applied.
         """
         # read configuration file
         logging.info("Reading configuration file")
@@ -1026,4 +1027,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                          for override in opts.config_overrides]
         else:
             overrides = None
-        return cls(opts.config_files, overrides)
+        if opts.config_delete is not None:
+            deletes = [delete.split(":")
+                         for delete in opts.config_delete]
+        else:
+            deletes = None
+        return cls(opts.config_files, overrides, deleteTuples=deletes)
