@@ -20,7 +20,7 @@ lscsoft-glue>=1.59.3
 ligo-segments
 
 # Requirements for ligoxml access needed by some workflows
-ligo-lw
+python-ligo-lw
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
