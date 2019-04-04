@@ -138,19 +138,19 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
         hd = 0j
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
-            kmax = min(len(h), self._kmax)
-            if self._kmin >= kmax:
+            kmax = min(len(h), self._kmax[det])
+            if self._kmin[det] >= kmax:
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, then the loglr is just 0 for this detector
                 hh_i = 0.
                 hd_i = 0j
             else:
                 # whiten the waveform
-                h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
+                h[self._kmin[det]:kmax] *= self._weight[det][self._kmin[det]:kmax]
                 # calculate inner products
-                hh_i = h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
-                hd_i = self.data[det][self._kmin:kmax].inner(
-                    h[self._kmin:kmax])
+                hh_i = h[self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax]).real
+                hd_i = self.data[det][self._kmin[det]:kmax].inner(
+                    h[self._kmin[det]:kmax])
             # store
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh_i)
             hh += hh_i
@@ -607,20 +607,20 @@ class MarginalizedGaussianNoise(GaussianNoise):
         mf_snr = 0j
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
-            kmax = min(len(h), self._kmax)
+            kmax = min(len(h), self._kmax[det])
             # time step
             self._deltat = h.delta_t
-            if self._kmin >= kmax:
+            if self._kmin[det] >= kmax:
                 # if the waveform terminates before the filtering low
                 # frequency cutoff, then the loglr is just 0 for this
                 # detector
                 hh_i = 0.
                 hd_i = 0j
             else:
-                h[self._kmin:kmax] *= self._weight[det][self._kmin:kmax]
-                hh_i = h[self._kmin:kmax].inner(h[self._kmin:kmax]).real
-                hd_i = self._eval_mfsnr(h[self._kmin:kmax],
-                                        self.data[det][self._kmin:kmax])
+                h[self._kmin[det]:kmax] *= self._weight[det][self._kmin[det]:kmax]
+                hh_i = h[self._kmin[det]:kmax].inner(h[self._kmin[det]:kmax]).real
+                hd_i = self._eval_mfsnr(h[self._kmin[det]:kmax],
+                                        self.data[det][self._kmin[det]:kmax])
             opt_snr += hh_i
             mf_snr += hd_i
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh_i)

@@ -24,6 +24,7 @@ from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd)
+from pycbc.types import MultiDetOptionAction
 from pycbc import waveform
 from pycbc import distributions
 
@@ -37,28 +38,10 @@ from pycbc import distributions
 
 def add_low_frequency_cutoff_opt(parser):
     """Adds the low-frequency-cutoff option to the given parser."""
-    # FIXME: this just uses the same frequency cutoff for every instrument for
-    # now. We should allow for different frequency cutoffs to be used; that
-    # will require (minor) changes to the Likelihood class
-    parser.add_argument("--low-frequency-cutoff", type=float,
-                        help="Low frequency cutoff to use for each IFO's PSD "
-                             "estimate.")
-
-
-def low_frequency_cutoff_from_cli(opts):
-    """Parses the low frequency cutoff from the given options.
-
-    Returns
-    -------
-    dict
-        Dictionary of instruments -> low frequency cutoff.
-    """
-    # FIXME: this just uses the same frequency cutoff for every instrument for
-    # now. We should allow for different frequency cutoffs to be used; that
-    # will require (minor) changes to the Likelihood class
-    instruments = opts.instruments if opts.instruments is not None else []
-    return {ifo: opts.low_frequency_cutoff for ifo in instruments}
-
+    parser.add_argument("--data-conditioning-low-freq", type=float,
+                        nargs="+", action=MultiDetOptionAction,
+                        metavar='IFO:FLOW', dest="low_frequency_cutoff",
+                        help="Low frequency cutoff for fake strain.")
 
 def data_from_cli(opts):
     """Loads the data needed for a model from the given
@@ -116,7 +99,6 @@ def data_from_cli(opts):
     stilde_dict = {}
     length_dict = {}
     delta_f_dict = {}
-    low_frequency_cutoff_dict = low_frequency_cutoff_from_cli(opts)
     for ifo in instruments:
         stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
         length_dict[ifo] = len(stilde_dict[ifo])
@@ -124,7 +106,7 @@ def data_from_cli(opts):
 
     # get PSD as frequency series
     psd_dict = psd_from_cli_multi_ifos(
-        opts, length_dict, delta_f_dict, low_frequency_cutoff_dict,
+        opts, length_dict, delta_f_dict, opts.low_frequency_cutoff,
         instruments, strain_dict=psd_strain_dict, precision="double")
 
     # apply any gates to overwhitened data, if desired
