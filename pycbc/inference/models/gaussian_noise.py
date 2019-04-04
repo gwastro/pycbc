@@ -90,8 +90,8 @@ class GaussianNoise(BaseDataModel):
         data set must be the same as the waveform generator's epoch.
     low_frequency_cutoff : dict
         A dictionary of starting frequencies, in which the keys are the detector
-        names and the values are the starting frequency for that detector to be
-        used for computing inner products.
+        names and the values are the starting frequencies for the respective 
+        detectors to be used for computing inner products.
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
