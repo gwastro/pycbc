@@ -1028,8 +1028,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         else:
             overrides = None
         if opts.config_delete is not None:
-            deletes = [delete.split(":")
-                         for delete in opts.config_delete]
+            deletes = [delete.split(":") for delete in opts.config_delete]
         else:
             deletes = None
         return cls(opts.config_files, overrides, deleteTuples=deletes)
