@@ -369,7 +369,7 @@ class SingleCoincForGraceDB(object):
                                  displayName=['SNR timeseries'])
                 gracedb.writeLog(gid, 'PSD plot upload',
                                  filename=psd_series_plot_fname,
-                                 tag_name=['background'], displayName=['PSDs'])
+                                 tag_name=['psd'], displayName=['PSDs'])
 
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
