@@ -316,8 +316,8 @@ class SingleCoincForGraceDB(object):
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
                 # Can't plot log(0) so start from point 1
-                pylab.loglog(self.psds[ifo].sample_frequencies[1:],
-                             self.psds[ifo][1:], label=ifo)
+                pylab.loglog(curr_psd.sample_frequencies[1:],
+                             curr_psd[1:], label=ifo)
             pylab.legend()
             pylab.xlim([20,2000])
             pylab.ylim([1E-47, 1E-43])
