@@ -72,12 +72,12 @@ parser.add_argument(
 
 parser.add_argument(
     "--injection-file", 
-    type=str, 
+    type=str, nargs="+", 
     help="hdf file containing injections.")
 
 parser.add_argument(
     "--ringdown-injection-file", 
-    type=str, 
+    type=str, nargs="+", 
     help="hdf file containing ringdown-only injections.")
 
 # input data for workflow options
@@ -121,17 +121,21 @@ cp = configuration.WorkflowConfigParser([opts.inference_config_file])
 #if opts.ringdown_injection_file: 
 #    ringdown_injection_file = core.File.from_path(opts.ringdown_injection_file)
 
-injection_file = None
-ringdown_injection_file = None
+injection_file = []
+ringdown_injection_file = []
 
 if opts.injection_file or opts.ringdown_injection_file:
     if opts.injection_file and opts.ringdown_injection_file:
         raise ValueError('Ringdown injections and other injections cannot \
                             be given simultaneously.')
     if opts.injection_file: 
-        injection_input = os.path.abspath(opts.injection_file)
-    else: 
-        injection_input = os.path.abspath(opts.ringdown_injection_file)
+        for injfile in opts.injection_file:
+            injection_file.append(os.path.abspath(injfile))
+        injection_input = injection_file
+    else:
+        for injfile in opts.ringdown_injection_file:
+            ringdown_injection_file.append(os.path.abspath(injfile))
+        injection_input = ringdown_injection_file
 
 # typecast str from command line to File instances
 config_file = core.File.from_path(opts.inference_config_file)
@@ -219,13 +223,24 @@ if injection_input:
     os.mkdir("injections")
     
     # split injections into one file per injection
-    with h5py.File(injection_input, "r") as inputfile:
-        for i in range(n_injections):
-            with h5py.File('injections/injection%s.hdf' %i, 'w') as inj:
-                for k in inputfile.keys():
-                    inj.create_dataset(k,data=inputfile[k][i])
-            injection_files.append(
-                core.File.from_path('injections/injection%s.hdf' %i))
+    n_total_injections = 0
+    for i_injfile in range(len(injection_input)):
+        with h5py.File(injection_input[i_injfile], "r") as inputfile:
+            if isinstance(inputfile['tc'][()], int):
+                local_n_injections = 1
+            elif isinstance(inputfile['tc'][()], numpy.ndarray):
+                local_n_injections = len(inputfile['tc'][()])
+            for i in range(local_n_injections):
+                with h5py.File(
+                    'injections/injection%s.hdf' %(i+n_total_injections), 'w'
+                    ) as inj:
+                    for k in inputfile.keys():
+                        inj.create_dataset(k,data=inputfile[k][i])
+                injection_files.append(
+                    core.File.from_path(
+                    'injections/injection%s.hdf' %(i+n_total_injections)
+                    ))
+            n_total_injections += local_n_injections
 
 for i in range(n_injections):
     
