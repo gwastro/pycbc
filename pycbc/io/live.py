@@ -13,6 +13,7 @@ from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc.types import FrequencySeries
+from pycbc.results import ifo_color
 
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
@@ -106,6 +107,8 @@ class SingleCoincForGraceDB(object):
             Will be recorded in the sngl_inspiral table.
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
+        self.coinc_results = coinc_results
+        self.ifos = ifos
 
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
@@ -300,7 +303,12 @@ class SingleCoincForGraceDB(object):
             for ifo in self.snr_series:
                 curr_snrs = self.snr_series[ifo]
                 curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
-                pylab.plot(curr_snrs.sample_times, abs(curr_snrs), label=ifo)
+                pylab.plot(curr_snrs.sample_times, abs(curr_snrs), 
+                           c=ifo_color(ifo), label=ifo)
+                if ifo in self.ifos:
+                    snr = coinc_results['foreground/%s/%s' % (ifo, 'snr')]
+                    endt = coinc_results['foreground/%s/%s' % (ifo, 'end_time')]
+                    pylab.plot([endt], [snr], c=ifo_color(ifo), marker='x')
 
             pylab.legend()
             pylab.xlabel('GPS time (s)')
@@ -317,7 +325,7 @@ class SingleCoincForGraceDB(object):
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
                 # Can't plot log(0) so start from point 1
                 pylab.loglog(curr_psd.sample_frequencies[1:],
-                             curr_psd[1:], label=ifo)
+                             curr_psd[1:], c=ifo_color(ifo), label=ifo)
             pylab.legend()
             pylab.xlim([20,2000])
             pylab.ylim([1E-47, 1E-43])
