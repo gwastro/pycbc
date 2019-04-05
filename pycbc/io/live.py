@@ -306,8 +306,10 @@ class SingleCoincForGraceDB(object):
                 pylab.plot(curr_snrs.sample_times, abs(curr_snrs), 
                            c=ifo_color(ifo), label=ifo)
                 if ifo in self.ifos:
-                    snr = coinc_results['foreground/%s/%s' % (ifo, 'snr')]
-                    endt = coinc_results['foreground/%s/%s' % (ifo, 'end_time')]
+                    snr = self.coinc_results['foreground/%s/%s' %
+                                             (ifo, 'snr')]
+                    endt = self.coinc_results['foreground/%s/%s' %
+                                              (ifo, 'end_time')]
                     pylab.plot([endt], [snr], c=ifo_color(ifo), marker='x')
 
             pylab.legend()
