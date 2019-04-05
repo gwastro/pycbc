@@ -1604,12 +1604,28 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             strain = gate_data(strain, [(strain.start_time, 0., self.autogating_pad)])
             self.taper_immediate_strain = False
 
+        # apply gating if needed
+        if self.autogating_threshold is not None:
+            # the + 0 is for making a copy
+            glitch_times = detect_loud_glitches(
+                    strain + 0., psd_duration=1., psd_stride=.5,
+                    threshold=self.autogating_threshold,
+                    cluster_window=self.autogating_cluster,
+                    low_freq_cutoff=self.highpass_frequency,
+                    high_freq_cutoff=self.sample_rate/2,
+                    corrupt_time=self.autogating_pad)
+            if len(glitch_times) > 0:
+                logging.info('Autogating at %s',
+                             ', '.join(['%.3f' % gt for gt in glitch_times]))
+                gate_params = [[gt, self.autogating_window, self.autogating_pad] \
+                               for gt in glitch_times]
+                strain = gate_data(strain, gate_params)
+
         # Stitch into continuous stream
         self.strain.roll(-sample_step)
         self.strain[len(self.strain) - csize + self.corruption:] = strain[:]
         self.strain.start_time += blocksize
 
-        # apply gating if need be: NOT YET IMPLEMENTED
         if self.psd is None and self.wait_duration <=0:
             self.recalculate_psd()
 
