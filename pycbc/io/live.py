@@ -278,6 +278,9 @@ class SingleCoincForGraceDB(object):
             test trigger (True) or a production trigger (False).
         """
         from ligo.gracedb.rest import GraceDb
+        import matplotlib
+        matplotlib.use('Agg')
+        import pylab
 
         # first of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
@@ -288,11 +291,36 @@ class SingleCoincForGraceDB(object):
                 snr_series_fname = fname.replace('.xml.gz', '.hdf')
             else:
                 snr_series_fname = fname.replace('.xml', '.hdf')
+            snr_series_plot_fname = snr_series_fname.replace('.hdf',
+                                                             '_snr.png')
+            psd_series_plot_fname = snr_series_fname.replace('.hdf', 
+                                                             '_psd.png')
+            pylab.figure()
             for ifo in self.snr_series:
-                self.snr_series[ifo].save(snr_series_fname,
-                                          group='%s/snr' % ifo)
+                curr_snrs = self.snr_series[ifo]
+                curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
+                pylab.plot(curr_snrs.sample_times, abs(curr_snrs), label=ifo)
+
+            pylab.legend()
+            pylab.xlabel('GPS time (s)')
+            pylab.ylabel('SNR')
+            pylab.savefig(snr_series_plot_fname)
+            pylab.close()
+
+            pylab.figure()
+            for ifo in self.snr_series:
                 self.psds[ifo].save(snr_series_fname,
                                     group='%s/psd' % ifo)
+                # Can't plot log(0) so start from point 1
+                pylab.loglog(self.psds[ifo].sample_frequencies[1:],
+                             self.psds[ifo][1:], label=ifo)
+            pylab.legend()
+            pylab.xlim([20,2000])
+            pylab.ylim([1E-47, 1E-43])
+            pylab.xlabel('Frequency (Hz)')
+            pylab.ylabel('PSD')
+            pylab.savefig(psd_series_plot_fname)
+
 
         gid = None
         try:
@@ -327,9 +355,18 @@ class SingleCoincForGraceDB(object):
             for text in extra_strings:
                 gracedb.writeLog(gid, text)
 
-            # upload SNR series in HDF format
+            # upload SNR series in HDF format and plots
             if self.snr_series is not None:
-                gracedb.writeFile(gid, snr_series_fname)
+                gracedb.writeLog(gid, 'SNR timeseries HDF file upload',
+                                 filename=snr_series_fname)
+                gracedb.writeLog(gid, 'SNR timeseries plot upload',
+                                 filename=snr_series_plot_fname,
+                                 tag_name=['background'],
+                                 displayName=['SNR timeseries'])
+                gracedb.writeLog(gid, 'PSD plot upload',
+                                 filename=psd_series_plot_fname,
+                                 tag_name=['background'], displayName=['PSDs'])
+
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
                           'event %s on GraceDB. The event may not have been '
