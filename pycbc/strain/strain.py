@@ -1201,7 +1201,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  psd_segment_length=4,
                  psd_inverse_length=3.5,
                  trim_padding=0.25,
-                 autogating_threshold=100,
+                 autogating_threshold=None,
                  autogating_cluster=0.25,
                  autogating_window=0.5,
                  autogating_pad=0.25,
@@ -1248,7 +1248,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         trim_padding: {float, 0.25}, Optional
             Amount of padding in seconds to give for truncated the overwhitened
             data stream.
-        autogating_threshold: {float, 100}, Optional
+        autogating_threshold: {float, None}, Optional
             Sigma deviation required to cause gating of data
         autogating_cluster: {float, 0.25}, Optional
             Seconds to cluster possible gating locations

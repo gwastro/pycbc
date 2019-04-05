@@ -351,7 +351,7 @@ parser.add_argument('--trim-padding', type=float, default=0.25,
 parser.add_argument("--enable-bank-start-frequency", action='store_true',
                     help="Read the starting frequency of template waveforms"
                          " from the template bank")
-parser.add_argument('--autogating-threshold', type=float, default=100)
+parser.add_argument('--autogating-threshold', type=float, default=None)
 parser.add_argument('--autogating-pad', type=float, default=.25)
 parser.add_argument('--autogating-window', type=float, default=0.5)
 parser.add_argument('--autogating-cluster', type=float, default=.25)
