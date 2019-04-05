@@ -297,13 +297,13 @@ class SingleCoincForGraceDB(object):
                 snr_series_fname = fname.replace('.xml', '.hdf')
             snr_series_plot_fname = snr_series_fname.replace('.hdf',
                                                              '_snr.png')
-            psd_series_plot_fname = snr_series_fname.replace('.hdf', 
+            psd_series_plot_fname = snr_series_fname.replace('.hdf',
                                                              '_psd.png')
             pylab.figure()
             for ifo in self.snr_series:
                 curr_snrs = self.snr_series[ifo]
                 curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
-                pylab.plot(curr_snrs.sample_times, abs(curr_snrs), 
+                pylab.plot(curr_snrs.sample_times, abs(curr_snrs),
                            c=ifo_color(ifo), label=ifo)
                 if ifo in self.ifos:
                     snr = self.coinc_results['foreground/%s/%s' %
@@ -329,12 +329,11 @@ class SingleCoincForGraceDB(object):
                 pylab.loglog(curr_psd.sample_frequencies[1:],
                              curr_psd[1:], c=ifo_color(ifo), label=ifo)
             pylab.legend()
-            pylab.xlim([20,2000])
+            pylab.xlim([20, 2000])
             pylab.ylim([1E-47, 1E-43])
             pylab.xlabel('Frequency (Hz)')
             pylab.ylabel('PSD')
             pylab.savefig(psd_series_plot_fname)
-
 
         gid = None
         try:
