@@ -58,8 +58,21 @@ fi
 popd
 
 # Run Inference Scripts
+## Run inference on 2D-normal analytic likelihood function
 pushd examples/inference/analytic-normal2d
 bash -e run.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+popd
+
+## Run inference on GW150914 data
+pushd examples/inference/gw150914
+bash -e run_test.sh
 if test $? -ne 0 ; then
     RESULT=1
     echo -e "    FAILED!"
