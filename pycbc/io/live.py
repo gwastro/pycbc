@@ -12,6 +12,7 @@ from glue.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
+from pycbc.types import FrequencySeries
 
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
@@ -310,9 +311,10 @@ class SingleCoincForGraceDB(object):
             pylab.figure()
             for ifo in self.snr_series:
                 # Undo dynamic range factor
-                self.psds[ifo] /= pycbc.DYN_RANGE_FAC ** 2.0
-                self.psds[ifo].save(snr_series_fname,
-                                    group='%s/psd' % ifo)
+                curr_psd = FrequencySeries(self.psds[ifo],
+                                           dtype=numpy.float64)
+                curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
+                curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
                 # Can't plot log(0) so start from point 1
                 pylab.loglog(self.psds[ifo].sample_frequencies[1:],
                              self.psds[ifo][1:], label=ifo)
