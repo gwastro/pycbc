@@ -1094,7 +1094,7 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             self.singles[ifo].discard_last(updated_singles[ifo])
         self.coincs.remove(num_coincs)
 
-    def add_singles(self, results, data_reader):
+    def add_singles(self, results):
         """Add singles to the bacckground estimate and find candidates
 
         Parameters
@@ -1103,8 +1103,6 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             Dictionary of dictionaries indexed by ifo and keys such as 'snr',
             'chisq', etc. The specific format it determined by the
             LiveBatchMatchedFilter class.
-        data_reader: dict of StrainBuffers
-            A dict of StrainBuffer instances, indexed by ifos.
 
         Returns
         -------
@@ -1120,21 +1118,13 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         if len(valid_ifos) == 0: return {}
 
         # Add single triggers to the internal buffer
-        updated_indices = self._add_singles_to_buffer(results, ifos=valid_ifos)
+        self._add_singles_to_buffer(results, ifos=valid_ifos)
 
         # Calculate zerolag and background coincidences
-        num_background, coinc_results = self._find_coincs(results,
-                                                          ifos=valid_ifos)
+        _, coinc_results = self._find_coincs(results, ifos=valid_ifos)
 
         # record if a coinc is possible in this chunk
         if len(valid_ifos) == 2:
             coinc_results['coinc_possible'] = True
 
-        # If there is a hardware injection anywhere near here dump these
-        # results and mark the result group as possibly being influenced
-        for ifo in valid_ifos:
-            if data_reader[ifo].near_hwinj():
-                self.backout_last(updated_indices, num_background)
-                coinc_results['HWINJ'] = True
-                break
         return coinc_results
