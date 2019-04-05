@@ -309,6 +309,8 @@ class SingleCoincForGraceDB(object):
 
             pylab.figure()
             for ifo in self.snr_series:
+                # Undo dynamic range factor
+                self.psds[ifo] /= pycbc.DYN_RANGE_FAC ** 2.0
                 self.psds[ifo].save(snr_series_fname,
                                     group='%s/psd' % ifo)
                 # Can't plot log(0) so start from point 1
