@@ -84,8 +84,8 @@ eff_dist_map['V1'] = 'eff_dist_v'
 try:
     eff_dists = [f['injections/{}'.format(eff_dist_map[ifo])][:]\
                  for ifo in ifos]
-    dvals['decisive_distance'] = numpy.sort(eff_dists)[1]
-    dvals['decisive_distance'] = eff_dists[0]
+    eff_dists = numpy.array(eff_dists).T 
+    dvals['decisive_distance'] = numpy.sort(eff_dists)[:,1]
     dvals['dec_chirp_distance'] = \
         pycbc.pnutils.chirp_distance(dvals['decisive_distance'],
                                      vals['mchirp'])
