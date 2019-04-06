@@ -33,9 +33,10 @@ from pycbc.conversions import get_lm_f0tau_allmodes
 
 default_qnm_args = {'t_0':0}
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
-lm_required_args = ['freqs','taus','l','m','nmodes']
 mass_spin_required_args = ['final_mass','final_spin', 'lmns', 'inclination']
 freqtau_required_args = ['lmns']
+td_required_args = ['delta_t', 't_final', 'taper']
+fd_required_args = ['delta_f', 'f_lower', 'f_final']
 
 max_freq = 16384/2.
 min_dt = 1. / (2 * max_freq)
@@ -45,7 +46,7 @@ pi_sq = numpy.pi * numpy.pi
 
 # Input parameters ############################################################
 
-def props(obj, required, **kwargs):
+def props(obj, required, domain_args, **kwargs):
     """ Return a dictionary built from the combination of defaults, kwargs,
     and the attributes of the given object.
     """
@@ -62,6 +63,11 @@ def props(obj, required, **kwargs):
     for arg in required:
         if arg not in input_params:
             raise ValueError('Please provide ' + str(arg))
+
+    # If the td or fd args are not given, set to None
+    for arg in domain_args:
+        if arg not in input_params:
+            input_params[arg] = None
 
     return input_params
 
@@ -105,7 +111,7 @@ def lm_amps_phases(**kwargs):
     """ Take input_params and return dictionaries with amplitudes and phases
     of each overtone of a specific lm mode, checking that all of them are given.
     """
-    l, m = kwargs['l'], kwargs['m']
+    lmns = kwargs['lmns']
     amps, phis = {}, {}
     # amp220 is always required, because the amplitudes of subdominant modes
     # are given as fractions of amp220.
@@ -115,17 +121,19 @@ def lm_amps_phases(**kwargs):
         raise ValueError('amp220 is always required')
 
     # Get amplitudes of subdominant modes and all phases
-    for n in range(kwargs['nmodes']):
-        # If it is the 22 mode, skip 220
-        if (l, m, n) != (2, 2, 0):
+    for lmn in lmns:
+        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        for n in range(nmodes):
+            # If it is the 22 mode, skip 220 amplitude
+            if (l, m, n) != (2, 2, 0):
+                try:
+                    amps['%d%d%d' %(l,m,n)] = kwargs['amp%d%d%d' %(l,m,n)] * amps['220']
+                except KeyError:
+                    raise ValueError('amp%d%d%d is required' %(l,m,n))
             try:
-                amps['%d%d%d' %(l,m,n)] = kwargs['amp%d%d%d' %(l,m,n)] * amps['220']
+                phis['%d%d%d' %(l,m,n)] = kwargs['phi%d%d%d' %(l,m,n)]
             except KeyError:
-                raise ValueError('amp%d%d%d is required' %(l,m,n))
-        try:
-            phis['%d%d%d' %(l,m,n)] = kwargs['phi%d%d%d' %(l,m,n)]
-        except KeyError:
-            raise ValueError('phi%d%d%d is required' %(l,m,n))
+                raise ValueError('phi%d%d%d is required' %(l,m,n))
 
     return amps, phis
 
@@ -209,10 +217,7 @@ def lm_tfinal(damping_times):
 
     t_max = {}
     for lmn in damping_times.keys():
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        for n in range(nmodes):
-            t_max['%d%d%d' %(l,m,n)] = \
-            qnm_time_decay(damping_times['%d%d%d' %(l,m,n)], 1./1000)
+        t_max[lmn] = qnm_time_decay(damping_times[lmn], 1./1000)
 
     return max(t_max.values())
 
@@ -224,10 +229,8 @@ def lm_deltat(freqs, damping_times):
 
     dt = {}
     for lmn in freqs.keys():
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        for n in range(nmodes):
-            dt['%d%d%d' %(l,m,n)] = 1. / qnm_freq_decay(freqs['%d%d%d' %(l,m,n)],
-                                       damping_times['%d%d%d' %(l,m,n)], 1./1000)
+        dt[lmn] = 1. / qnm_freq_decay(freqs[lmn],
+                               damping_times[lmn], 1./1000)
 
     delta_t = min(dt.values())
     if delta_t < min_dt:
@@ -242,10 +245,8 @@ def lm_ffinal(freqs, damping_times):
 
     f_max = {}
     for lmn in freqs.keys():
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        for n in range(nmodes):
-            f_max['%d%d%d' %(l,m,n)] = qnm_freq_decay(freqs['%d%d%d' %(l,m,n)],
-                                      damping_times['%d%d%d' %(l,m,n)], 1./1000)
+        f_max[lmn] = qnm_freq_decay(freqs[lmn],
+                              damping_times[lmn], 1./1000)
 
     f_final = max(f_max.values())
     if f_final > max_freq:
@@ -261,51 +262,46 @@ def lm_deltaf(damping_times):
 
     df = {}
     for lmn in damping_times.keys():
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        for n in range(nmodes):
-            df['%d%d%d' %(l,m,n)] = \
-                1. / qnm_time_decay(damping_times['%d%d%d' %(l,m,n)], 1./1000)
+        df[lmn] = 1. / qnm_time_decay(damping_times[lmn], 1./1000)
 
     return min(df.values())
 
 def td_output_vector(freqs, damping_times, taper=None,
                      delta_t=None, t_final=None):
     """Return an empty TimeSeries with the appropriate size to fit all
-    the quasi-normal modes present in freqs, taus
+    the quasi-normal modes present in freqs, damping_times
     """
 
     if not delta_t:
-        delta_t = lm_deltat(freqs,taus)
+        delta_t = lm_deltat(freqs, damping_times)
     if not t_final:
-        t_final = lm_tfinal(freqs, damping_times)
+        t_final = lm_tfinal(damping_times)
     kmax = int(t_final / delta_t) + 1
 
     # Different modes will have different tapering window-size
     # Find maximum window size to create long enough output vector
     if taper:
-        taper_window = int(taper*max(tau.values())/delta_t)
+        max_tau = max(damping_times.values())
+        taper_window = int(taper*max_tau/delta_t)
         kmax += taper_window
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     if taper:
-        start = - taper * max(tau.values())
+        start = - taper * max_tau
         outplus._epoch, outcross._epoch = start, start
 
     return outplus, outcross
 
-def fd_output_vector(freqs, damping_times, delta_f=None,
-                     f_lower=None, f_final=None):
+def fd_output_vector(freqs, damping_times, delta_f=None, f_final=None):
     """Return an empty FrequencySeries with the appropriate size to fit all
-    the quasi-normal modes present in freqs, taus
+    the quasi-normal modes present in freqs, damping_times
     """
 
     if not delta_f:
-        delta_f = lm_deltaf(taus)
+        delta_f = lm_deltaf(damping_times)
     if not f_final:
         f_final = lm_ffinal(freqs, damping_times)
-    if not f_lower:
-        f_lower = delta_f
     kmax = int(f_final / delta_f) + 1
 
     outplus = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
@@ -375,7 +371,7 @@ def taper_shift(waveform, output):
 ######################################################
 
 def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
-                       l=2, m=2, inclination=None, taper=None)
+                       taper=None, l=2, m=2, inclination=None):
     """Return a time domain damped sinusoid (plus and cross polarizations)
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
     The l, m, and inclination parameters are used for the spherical harmonics.
@@ -386,7 +382,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     # Create output vector with appropriate size
     outplus, outcross = td_output_vector(f_0, tau, taper, delta_t, t_final)
 
-    times = outplut.sample_times
+    times = outplus.sample_times.data
 
     if inclination is not None:
         Y_plus, Y_cross = spher_harms(l, m, inclination)
@@ -399,7 +395,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     hplus = Y_plus * common_factor * numpy.cos(common_angle)
     hcross = Y_cross * common_factor * numpy.sin(common_angle)
 
-    if taper:
+    if taper and delta_t > taper*tau:
         taper_hp, taper_hc = apply_taper(delta_t, taper, f_0, tau, amp,
                                          phi, l, m, inclination)
         outplus.data[:taper_window] = taper_hp
@@ -407,25 +403,26 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
         outcross.data[:taper_window] = taper_hc
         outcross.data[taper_window:] = hcross
     else:
-        outplus.data[:kmax] = hplus
-        outcross.data[:kmax] = hcross
+        outplus.data = hplus
+        outcross.data = hcross
 
     return outplus, outcross
 
-def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final,
-                       l=2, m=2, inclination=None)
+def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
+                       l=2, m=2, inclination=None):
     """Return a frequency domain damped sinusoid (plus and cross polarizations)
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
     The l, m, and inclination parameters are used for the spherical harmonics.
     """
 
-    if f_lower == delta_f:
+    if not f_lower:
+        f_lower = delta_f
         kmin = 0
     else:
         kmin = int(f_lower / delta_f)
 
     # Create output vector with appropriate size
-    outplus, outcross = fd_output_vector(f_0, tau, delta_f, f_lower, f_final)
+    outplus, outcross = fd_output_vector(f_0, tau, delta_f, f_final)
     freqs = outplus.sample_frequencies[kmin:]
 
     if inclination is not None:
@@ -452,12 +449,57 @@ def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final,
     return outplus, outcross
 
 ######################################################
+#### Base multi-mode for all approximants
+######################################################
+
+def multimode_base(input_params):
+    lmns = format_lmns(input_params['lmns'])
+    amps, phis = lm_amps_phases(**input_params)
+    if 'final_mass' in input_params.keys():
+        freqs, taus = get_lm_f0tau_allmodes(input_params['final_mass'],
+                        input_params['final_spin'], lmns)
+        norm = Kerr_factor(input_params['final_mass'], input_params['distance']) \
+                if 'distance' in input_params.keys() else 1.
+    else:
+        freqs, taus = lm_freqs_taus(**input_params)
+        norm = 1.
+
+    for lmn in freqs.keys():
+        if 'delta_t' in input_params.keys():
+            outplus, outcross = td_output_vector(freqs, taus,
+                                input_params['taper'], input_params['delta_t'],
+                                input_params['t_final'])
+            hplus, hcross = td_damped_sinusoid(freqs[lmn], taus[lmn],
+                                amps[lmn], phis[lmn], outplus.delta_t,
+                                outplus.sample_times[-1],
+                                input_params['taper'],
+                                int(lmn[0]), int(lmn[1]),
+                                input_params['inclination'])
+        elif 'delta_f' in input_params.keys():
+            outplus, outcross = fd_output_vector(freqs, taus,
+                                input_params['delta_f'],
+                                input_params['f_final'])
+            hplus, hcross = fd_damped_sinusoid(freqs[lmn], taus[lmn],
+                                amps[lmn], phis[lmn], outplus.delta_f,
+                                input_params['f_lower'],
+                                outplus.sample_frequencies[-1],
+                                int(lmn[0]), int(lmn[1]),
+                                input_params['inclination'])
+        if isinstance(outplus, TimeSeries) and input_params['taper']:
+            outplus = taper_shift(hplus, outplus)
+            outcross = taper_shift(hcross, outcross)
+        else:
+            outplus.data += hplus.data
+            outcross.data += hcross.data
+
+    return norm * outplus, norm * outcross
+
+######################################################
 #### Approximants
 ######################################################
 
-def get_td_from_freqtau(template=None, taper=None, **kwargs):
+def get_td_from_final_mass_spin(template=None, **kwargs):
     """Return time domain ringdown with all the modes specified.
-
     Parameters
     ----------
     template: object
@@ -475,6 +517,128 @@ def get_td_from_freqtau(template=None, taper=None, **kwargs):
     distance : {None, float}, optional
         Luminosity distance of the system. If specified, the returned ringdown
         will include the Kerr factor (final_mass/distance).
+    final_mass : float
+        Mass of the final black hole in solar masses.
+    final_spin : float
+        Dimensionless spin of the final black hole.
+    lmns : list
+        Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
+        The n specifies the number of overtones desired for the corresponding
+        lm pair (maximum n=8).
+        Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
+    amp220 : float
+        Amplitude of the fundamental 220 mode. Note that if distance is given,
+        this parameter will have a completely different order of magnitude.
+        See table II in https://arxiv.org/abs/1107.0854 for an estimate.
+        Always required, even if 220 mode has not been selected.
+    amplmn : float
+        Fraction of the amplitude of the lmn overtone relative to the
+        fundamental mode, i.e. amplmn/amp220. Provide as many as the number
+        of selected subdominant modes.
+    philmn : float
+        Phase of the lmn overtone, as many as the number of modes. Should also
+        include the information from the azimuthal angle, philmn=(phi + m*Phi).
+    inclination : float
+        Inclination of the system in radians (for the spherical harmonics).
+    delta_t : {None, float}, optional
+        The time step used to generate the ringdown.
+        If None, it will be set to the inverse of the frequency at which the
+        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
+    t_final : {None, float}, optional
+        The ending time of the output frequency series.
+        If None, it will be set to the time at which the amplitude
+        is 1/1000 of the peak amplitude (the maximum of all modes).
+    Returns
+    -------
+    hplus: TimeSeries
+        The plus phase of a ringdown with the lm modes specified and
+        n overtones in time domain.
+    hcross: TimeSeries
+        The cross phase of a ringdown with the lm modes specified and
+        n overtones in time domain.
+    """
+
+    input_params = props(template, mass_spin_required_args, 
+                         td_required_args, **kwargs)
+
+    return multimode_base(input_params)
+
+def get_fd_from_final_mass_spin(template=None, **kwargs):
+    """Return frequency domain ringdown with all the modes specified.
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table.
+    distance : {None, float}, optional
+        Luminosity distance of the system. If specified, the returned ringdown
+        will include the Kerr factor (final_mass/distance).
+    final_mass : float
+        Mass of the final black hole in solar masses.
+    final_spin : float
+        Dimensionless spin of the final black hole.
+    lmns : list
+        Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
+        The n specifies the number of overtones desired for the corresponding
+        lm pair (maximum n=8).
+        Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
+    amp220 : float
+        Amplitude of the fundamental 220 mode. Note that if distance is given,
+        this parameter will have a completely different order of magnitude.
+        See table II in https://arxiv.org/abs/1107.0854 for an estimate.
+        Always required, even if 220 mode has not been selected.
+    amplmn : float
+        Fraction of the amplitude of the lmn overtone relative to the
+        fundamental mode, i.e. amplmn/amp220. Provide as many as the number
+        of selected subdominant modes.
+    philmn : float
+        Phase of the lmn overtone, as many as the number of modes. Should also
+        include the information from the azimuthal angle, philmn=(phi + m*Phi).
+    inclination : float
+        Inclination of the system in radians (for the spherical harmonics).
+    delta_f : {None, float}, optional
+        The frequency step used to generate the ringdown.
+        If None, it will be set to the inverse of the time at which the
+        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
+    f_lower: {None, float}, optional
+        The starting frequency of the output frequency series.
+        If None, it will be set to delta_f.
+    f_final : {None, float}, optional
+        The ending frequency of the output frequency series.
+        If None, it will be set to the frequency at which the amplitude
+        is 1/1000 of the peak amplitude (the maximum of all modes).
+    Returns
+    -------
+    hplustilde: FrequencySeries
+        The plus phase of a ringdown with the lm modes specified and
+        n overtones in frequency domain.
+    hcrosstilde: FrequencySeries
+        The cross phase of a ringdown with the lm modes specified and
+        n overtones in frequency domain.
+    """
+
+    input_params = props(template, mass_spin_required_args,
+                         fd_required_args, **kwargs)
+
+    return multimode_base(input_params)
+
+def get_td_from_freqtau(template=None, **kwargs):
+    """Return time domain ringdown with all the modes specified.
+
+    Parameters
+    ----------
+    template: object
+        An object that has attached properties. This can be used to substitute
+        for keyword arguments. A common example would be a row in an xml table.
+    taper: {None, float}, optional
+        Tapering at the beginning of the waveform with duration taper * tau.
+        This option is recommended with timescales taper=1./2 or 1.0 for
+        time-domain ringdown-only injections.
+        The abrupt turn on of the ringdown can cause issues on the waveform
+        when doing the fourier transform to the frequency domain. Setting
+        taper will add a rapid ringup with timescale tau/10.
+        Each mode and overtone will have a different taper depending on its tau,
+        the final taper being the superposition of all the tapers.
     lmns : list
         Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
         The n specifies the number of overtones desired for the corresponding
@@ -518,299 +682,10 @@ def get_td_from_freqtau(template=None, taper=None, **kwargs):
         n overtones in time domain.
     """
 
-def get_td_from_final_mass_spin(template=None, taper=None,
-                                distance=None, **kwargs):
-    """Return time domain ringdown with all the modes specified.
-    Parameters
-    ----------
-    template: object
-        An object that has attached properties. This can be used to substitute
-        for keyword arguments. A common example would be a row in an xml table.
-    taper: {None, float}, optional
-        Tapering at the beginning of the waveform with duration taper * tau.
-        This option is recommended with timescales taper=1./2 or 1.0 for
-        time-domain ringdown-only injections.
-        The abrupt turn on of the ringdown can cause issues on the waveform
-        when doing the fourier transform to the frequency domain. Setting
-        taper will add a rapid ringup with timescale tau/10.
-        Each mode and overtone will have a different taper depending on its tau,
-        the final taper being the superposition of all the tapers.
-    distance : {None, float}, optional
-        Luminosity distance of the system. If specified, the returned ringdown
-        will include the Kerr factor (final_mass/distance).
-    final_mass : float
-        Mass of the final black hole in solar masses.
-    final_spin : float
-        Dimensionless spin of the final black hole.
-    lmns : list
-        Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
-        The n specifies the number of overtones desired for the corresponding
-        lm pair (maximum n=8).
-        Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
-    amp220 : float
-        Amplitude of the fundamental 220 mode. Note that if distance is given,
-        this parameter will have a completely different order of magnitude.
-        See table II in https://arxiv.org/abs/1107.0854 for an estimate.
-        Always required, even if 220 mode has not been selected.
-    amplmn : float
-        Fraction of the amplitude of the lmn overtone relative to the
-        fundamental mode, i.e. amplmn/amp220. Provide as many as the number
-        of selected subdominant modes.
-    philmn : float
-        Phase of the lmn overtone, as many as the number of modes. Should also
-        include the information from the azimuthal angle, philmn=(phi + m*Phi).
-    inclination : float
-        Inclination of the system in radians (for the spherical harmonics).
-    delta_t : {None, float}, optional
-        The time step used to generate the ringdown.
-        If None, it will be set to the inverse of the frequency at which the
-        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
-    t_final : {None, float}, optional
-        The ending time of the output frequency series.
-        If None, it will be set to the time at which the amplitude
-        is 1/1000 of the peak amplitude (the maximum of all modes).
-    Returns
-    -------
-    hplus: TimeSeries
-        The plus phase of a ringdown with the lm modes specified and
-        n overtones in time domain.
-    hcross: TimeSeries
-        The cross phase of a ringdown with the lm modes specified and
-        n overtones in time domain.
-    """
+    input_params = props(template, freqtau_required_args,
+                         td_required_args, **kwargs)
 
-    input_params = props(template, mass_spin_required_args, **kwargs)
-
-    # Get required args
-    final_mass = input_params['final_mass']
-    final_spin = input_params['final_spin']
-    lmns = format_lmns(input_params['lmns'])
-    amps, phis = lm_amps_phases(**input_params)
-
-    # Get frequencies and damping times for damped sinusoid function
-    freqs, taus = get_lm_f0tau_allmodes(final_mass, final_spin, lmns)
-
-    # Following may not be in input_params
-    delta_t = input_params.pop('delta_t', None)
-    t_final = input_params.pop('t_final', None)
-
-    # Create TimeSeries with appropriate size
-    outplus, outcross = td_output_vector(freqs, taus, taper, delta_t, t_final)
-
-    for lmn in lmns:
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        for n in range(nmodes):
-            # If taper duration is smaller than delta_t, do not apply taper
-            this_taper = taper
-            if outplus.delta_t > taper*taus['%d%d%d' %(l,m,n)]:
-                this_taper = None
-            hplus, hcross = td_damped_sinusoid(freqs['%d%d%d' %(l,m,n)],
-                              taus['%d%d%d' %(l,m,n)], amps['%d%d%d' %(l,m,n)],
-                              phis['%d%d%d' %(l,m,n)], delta_t, t_final,
-                              l, m, inclination, this_taper)
-            if not this_taper:
-                outplus.data += hplus.data
-                outcross.data += hcross.data
-            else:
-                outplus = taper_shift(hplus, outplus)
-                outcross = taper_shift(hcross, outcross)
-
-    norm = Kerr_factor(final_mass, distance) if distance else 1.
-    return norm*outplus, norm*outcross
-
-def get_fd_from_final_mass_spin(template=None, distance=None, **kwargs):
-    """Return frequency domain ringdown with all the modes specified.
-    Parameters
-    ----------
-    template: object
-        An object that has attached properties. This can be used to substitute
-        for keyword arguments. A common example would be a row in an xml table.
-    distance : {None, float}, optional
-        Luminosity distance of the system. If specified, the returned ringdown
-        will include the Kerr factor (final_mass/distance).
-    final_mass : float
-        Mass of the final black hole in solar masses.
-    final_spin : float
-        Dimensionless spin of the final black hole.
-    lmns : list
-        Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
-        The n specifies the number of overtones desired for the corresponding
-        lm pair (maximum n=8).
-        Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
-    amp220 : float
-        Amplitude of the fundamental 220 mode. Note that if distance is given,
-        this parameter will have a completely different order of magnitude.
-        See table II in https://arxiv.org/abs/1107.0854 for an estimate.
-        Always required, even if 220 mode has not been selected.
-    amplmn : float
-        Fraction of the amplitude of the lmn overtone relative to the
-        fundamental mode, i.e. amplmn/amp220. Provide as many as the number
-        of selected subdominant modes.
-    philmn : float
-        Phase of the lmn overtone, as many as the number of modes. Should also
-        include the information from the azimuthal angle, philmn=(phi + m*Phi).
-    inclination : float
-        Inclination of the system in radians (for the spherical harmonics).
-    delta_f : {None, float}, optional
-        The frequency step used to generate the ringdown.
-        If None, it will be set to the inverse of the time at which the
-        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
-    f_lower: {None, float}, optional
-        The starting frequency of the output frequency series.
-        If None, it will be set to delta_f.
-    f_final : {None, float}, optional
-        The ending frequency of the output frequency series.
-        If None, it will be set to the frequency at which the amplitude
-        is 1/1000 of the peak amplitude (the maximum of all modes).
-    Returns
-    -------
-    hplustilde: FrequencySeries
-        The plus phase of a ringdown with the lm modes specified and
-        n overtones in frequency domain.
-    hcrosstilde: FrequencySeries
-        The cross phase of a ringdown with the lm modes specified and
-        n overtones in frequency domain.
-    """
-
-    input_params = props(template, mass_spin_required_args, **kwargs)
-
-    # Get required args
-    final_mass = input_params['final_mass']
-    final_spin = input_params['final_spin']
-    lmns = format_lmns(input_params['lmns'])
-    amps, phis = lm_amps_phases(**input_params)
-
-    # Get frequencies and damping times for damped sinusoid function
-    freqs, taus = get_lm_f0tau_allmodes(final_mass, final_spin, lmns)
-
-    # The following may not be in input_params
-    delta_f = input_params.pop('delta_f', None)
-    f_lower = input_params.pop('f_lower', None)
-    f_final = input_params.pop('f_final', None)
-
-    # Create FrequencySeries with appropriate size
-    outplustilde, outcrosstilde = fd_output_vector(freqs, taus, delta_f,
-                                                   f_lower, f_final)
-
-    for lmn in lmns:
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        for n in range(nmodes):
-            hplustilde, hcrosstilde = fd_damped_sinusoid(freqs['%d%d%d' %(l,m,n)],
-                            taus['%d%d%d' %(l,m,n)], amps['%d%d%d' %(l,m,n)],
-                            phis['%d%d%d' %(l,m,n)], delta_f, f_lower, f_final,
-                            l, m, inclination)
-            outplustilde.data += hplustilde.data
-            outcrosstilde.data += hcrosstilde.data
-
-    norm = Kerr_factor(final_mass, distance) if distance else 1.
-    return norm*outplustilde, norm*outcrosstilde
-
-
-
-
-#############################################################################
-
-def get_td_from_freqtau(template=None, taper=None, **kwargs):
-    """Return time domain ringdown with all the modes specified.
-
-    Parameters
-    ----------
-    template: object
-        An object that has attached properties. This can be used to substitute
-        for keyword arguments. A common example would be a row in an xml table.
-    taper: {None, float}, optional
-        Tapering at the beginning of the waveform with duration taper * tau.
-        This option is recommended with timescales taper=1./2 or 1. for
-        time-domain ringdown-only injections.
-        The abrupt turn on of the ringdown can cause issues on the waveform
-        when doing the fourier transform to the frequency domain. Setting
-        taper will add a rapid ringup with timescale tau/10.
-        Each mode and overtone will have a different taper depending on its tau,
-        the final taper being the superposition of all the tapers.
-    lmns : list
-        Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
-        The n specifies the number of overtones desired for the corresponding
-        lm pair (maximum n=8).
-        Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
-    f_lmn: float
-        Central frequency of the lmn overtone, as many as number of modes.
-    tau_lmn: float
-        Damping time of the lmn overtone, as many as number of modes.
-    amp220 : float
-        Amplitude of the fundamental 220 mode.
-    amplmn : float
-        Fraction of the amplitude of the lmn overtone relative to the
-        fundamental mode, as many as the number of subdominant modes.
-    philmn : float
-        Phase of the lmn overtone, as many as the number of modes. Should also
-        include the information from the azimuthal angle (phi + m*Phi).
-    inclination : {None, float}, optional
-        Inclination of the system in radians. If None, the spherical harmonics
-        will be set to 1.
-    delta_t : {None, float}, optional
-        The time step used to generate the ringdown.
-        If None, it will be set to the inverse of the frequency at which the
-        amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
-    t_final : {None, float}, optional
-        The ending time of the output frequency series.
-        If None, it will be set to the time at which the amplitude
-        is 1/1000 of the peak amplitude (the maximum of all modes).
-
-    Returns
-    -------
-    hplustilde: FrequencySeries
-        The plus phase of a ringdown with the lm modes specified and
-        n overtones in frequency domain.
-    hcrosstilde: FrequencySeries
-        The cross phase of a ringdown with the lm modes specified and
-        n overtones in frequency domain.
-    """
-
-    input_params = props(template, freqtau_required_args, **kwargs)
-
-    # Get required args
-    lmns = format_lmns(input_params['lmns'])
-    for lmn in lmns:
-        if int(lmn[2]) == 0:
-            raise ValueError('Number of overtones (nmodes) must be greater '
-                             'than zero.')
-    f_0, tau = lm_freqs_taus(**input_params)
-    # following may not be in input_params
-    inc = input_params.pop('inclination', None)
-    delta_t = input_params.pop('delta_t', None)
-    t_final = input_params.pop('t_final', None)
-
-    if not delta_t:
-        delta_t = lm_deltat(f_0, tau, lmns)
-    if not t_final:
-        t_final = lm_tfinal(tau, lmns)
-
-    kmax = int(t_final / delta_t) + 1
-    # Different overtones will have different tapering window-size
-    # Find maximum window size to create long enough output vector
-    if taper:
-        taper_window = int(taper*max(tau.values())/delta_t)
-        kmax += taper_window
-
-    outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
-    outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
-    if taper:
-        start = - taper * max(tau.values())
-        outplus._epoch, outcross._epoch = start, start
-
-    for lmn in lmns:
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        hplus, hcross = get_td_lm(freqs=f_0, taus=tau, l=l, m=m, nmodes=nmodes,
-                             taper=taper, inclination=inc, delta_t=delta_t,
-                             t_final=t_final, **input_params)
-        if not taper:
-            outplus.data += hplus.data
-            outcross.data += hcross.data
-        else:
-            outplus = taper_shift(hplus, outplus)
-            outcross = taper_shift(hcross, outcross)
-
-    return outplus, outcross
+    return multimode_base(input_params)
 
 def get_fd_from_freqtau(template=None, **kwargs):
     """Return frequency domain ringdown with all the modes specified.
@@ -830,10 +705,12 @@ def get_fd_from_freqtau(template=None, **kwargs):
     tau_lmn: float
         Damping time of the lmn overtone, as many as number of modes.
     amp220 : float
-        Amplitude of the fundamental 220 mode.
+        Amplitude of the fundamental 220 mode. Always required, even if 220
+        mode has not been selected.
     amplmn : float
         Fraction of the amplitude of the lmn overtone relative to the
-        fundamental mode, as many as the number of subdominant modes.
+        fundamental mode, i.e. amplmn/amp220. Provide as many as the number
+        of selected subdominant modes.
     philmn : float
         Phase of the lmn overtone, as many as the number of modes. Should also
         include the information from the azimuthal angle (phi + m*Phi).
@@ -862,42 +739,10 @@ def get_fd_from_freqtau(template=None, **kwargs):
         n overtones in frequency domain.
     """
 
-    input_params = props(template, freqtau_required_args, **kwargs)
+    input_params = props(template, freqtau_required_args,
+                         fd_required_args, **kwargs)
 
-    # Get required args
-    lmns = format_lmns(input_params['lmns'])
-    for lmn in lmns:
-        if int(lmn[2]) == 0:
-            raise ValueError('Number of overtones (nmodes) must be greater '
-                             'than zero.')
-    f_0, tau = lm_freqs_taus(**input_params)
-    # The following may not be in input_params
-    inc = input_params.pop('inclination', None)
-    delta_f = input_params.pop('delta_f', None)
-    f_lower = input_params.pop('f_lower', None)
-    f_final = input_params.pop('f_final', None)
-
-    if not delta_f:
-        delta_f = lm_deltaf(tau, lmns)
-    if not f_final:
-        f_final = lm_ffinal(f_0, tau, lmns)
-    if not f_lower:
-        f_lower = delta_f
-    kmax = int(f_final / delta_f) + 1
-
-    outplustilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
-    outcrosstilde = FrequencySeries(zeros(kmax, dtype=complex128), delta_f=delta_f)
-    for lmn in lmns:
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
-        hplustilde, hcrosstilde = get_fd_lm(freqs=f_0, taus=tau,
-                                        l=l, m=m, nmodes=nmodes,
-                                        inclination=inc,
-                                        delta_f=delta_f, f_lower=f_lower,
-                                        f_final=f_final, **input_params)
-        outplustilde.data += hplustilde.data
-        outcrosstilde.data += hcrosstilde.data
-
-    return outplustilde, outcrosstilde
+    return multimode_base(input_params)
 
 # Approximant names ###########################################################
 ringdown_fd_approximants = {'FdQNMfromFinalMassSpin': get_fd_from_final_mass_spin,
