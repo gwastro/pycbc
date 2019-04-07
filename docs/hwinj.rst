@@ -201,10 +201,8 @@ Where ``${START}`` is the start of the injection. We kept the same PSD options (
 
 You can print out the recovered SNR and other parameters as follows ::
 
-  TMPLTBANK_HDF_FILE=hwinjcbc_${START}.hdf
-  pycbc_coinc_bank2hdf --verbose --bank-file ${TMPLTBANK_FILE} --output-file ${TMPLTBANK_HDF_FILE}
   echo `python -c "import numpy;from pycbc.io.hdf import SingleDetTriggers; \
-  h1_triggers=SingleDetTriggers('${INSPIRAL_FILE}','${TMPLTBANK_HDF_FILE}', None, None, None, 'H1'); \
+  h1_triggers=SingleDetTriggers('${INSPIRAL_FILE}',None, None, None, None, 'H1'); \
   imax=numpy.argmax(h1_triggers.snr); max_snr=h1_triggers.snr[imax]; \
   time=h1_triggers.end_time[imax]; print(time, max_snr)"`
 
