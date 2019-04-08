@@ -120,12 +120,13 @@ from pycbc import transforms
 from pycbc.distributions import JointDistribution
 from pycbc.io import record
 from pycbc.waveform import parameters
+from pycbc.workflow import configuration
 from pycbc.workflow import WorkflowConfigParser
 import h5py
 
 parser = argparse.ArgumentParser(description=__doc__,
             formatter_class=argparse.RawDescriptionHelpFormatter)
-WorkflowConfigParser.add_config_opts_to_parser(parser)
+configuration.add_workflow_command_line_group(parser)
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg,
                     help='Prints version information.')
@@ -205,4 +206,5 @@ if waveform_transforms is not None:
 
 # write results
 logging.info("Writing results")
-InjectionSet.write(opts.output_file, samples, write_args, static_args)
+InjectionSet.write(opts.output_file, samples, write_args, static_args,
+                   cmd=" ".join(sys.argv))
