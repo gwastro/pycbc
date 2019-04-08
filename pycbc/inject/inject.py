@@ -401,7 +401,8 @@ class _HDFInjectionSet(object):
         pass
 
     @classmethod
-    def write(cls, filename, samples, write_params=None, static_args=None):
+    def write(cls, filename, samples, write_params=None, static_args=None,
+              **metadata):
         """Writes the injection samples to the given hdf file.
 
         Parameters
@@ -416,14 +417,17 @@ class _HDFInjectionSet(object):
         static_args : dict, optional
             Dictionary mapping static parameter names to values. These are
             written to the ``attrs``.
+        \**metadata :
+            All other keyword arguments will be written to the file's attrs.
         """
         with h5py.File(filename, 'w') as fp:
             # write metadata
             if static_args is None:
                 static_args = {}
-            fp.attrs["cmd"] = " ".join(sys.argv)
             fp.attrs["static_args"] = static_args.keys()
             fp.attrs['injtype'] = cls.injtype
+            for key, val in metadata.items():
+                fp.attrs[key] = val
             if write_params is None:
                 write_params = samples.fieldnames
             for arg, val in static_args.items():
@@ -583,8 +587,11 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
 
     @staticmethod
     def supported_approximants():
-        return list(set(list(waveform.td_wav.values()) +
-                        list(waveform.fd_wav.vlues())))
+        all_apprxs = []
+        for d in [waveform.waveform.td_wav, waveform.waveform.fd_wav]:
+            for key in d:
+                all_apprxs.extend(d[key])
+        return list(set(all_apprxs))
 
 
 class RingdownHDFInjectionSet(_HDFInjectionSet):
@@ -703,8 +710,7 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
 
     @staticmethod
     def supported_approximants():
-        return list(set(list(waveform.ringdown_td_approximants.values()) +
-                        list(waveform.ringdown_fd_approximants.vlues())))
+        return list(set(list(waveform.ringdown_td_approximants.values())))
 
 
 hdfinjtypes = {
@@ -752,7 +758,7 @@ def hdf_injtype_from_approximant(approximant):
     """
     retcls = None
     for injtype, cls in hdfinjtypes.items():
-        if approximant in cls.supported_approximants:
+        if approximant in cls.supported_approximants():
             retcls = cls
     if retcls is None:
         # none were found, raise an error
@@ -797,7 +803,7 @@ class InjectionSet(object):
 
     @staticmethod
     def write(filename, samples, write_params=None, static_args=None,
-              injtype=None):
+              injtype=None, **metadata):
         """Writes the injection samples to the given hdf file.
 
         Parameters
@@ -816,8 +822,11 @@ class InjectionSet(object):
             Specify which `HDFInjectionSet` class to use for writing. If not
             provided, will try to determine it by looking for an approximant in
             the ``static_args``, followed by the ``samples``.
+        \**metadata :
+            All other keyword arguments will be written to the file's attrs.
         """
         ### DELETE the following "if" once xml is dropped
+        ext = os.path.basename(filename)
         if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
             _XMLInjectionSet.write(filename, samples, write_params,
                                    static_args)
@@ -831,7 +840,7 @@ class InjectionSet(object):
                     apprxs = np.unique(samples['approximant'])
                     # make sure they all correspond to the same injection type
                     injcls = [hdf_injtype_from_approximant(a) for a in apprxs]
-                    if not all(c = injcls[0] for c in injcls):
+                    if not all(c == injcls[0] for c in injcls):
                         raise ValueError("injections must all be of the same "
                                          "type")
                     injcls = injcls[0]
@@ -842,7 +851,8 @@ class InjectionSet(object):
                                      "injtype instead.")
             else:
                 injcls = hdfinjtypes[injtype]
-            injcls.write(filename, samples, write_params, static_args)
+            injcls.write(filename, samples, write_params, static_args,
+                         **metadata)
 
 
 class SGBurstInjectionSet(object):

@@ -28,7 +28,7 @@ from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo
 from pycbc.frame import read_frame, query_and_read_frame
-from pycbc.inject import InjectionSet, SGBurstInjectionSet, RingdownInjectionSet
+from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
 from pycbc.waveform.spa_tmplt import spa_distance
