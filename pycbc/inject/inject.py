@@ -647,7 +647,6 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
             injections = injections[list(simulation_ids)]
         for ii in range(injections.size):
             injection = injections[ii]
-
             signal = self.make_strain_from_inj_object(
                 injection, strain.delta_t, detector_name,
                 distance_scale=distance_scale)
@@ -710,7 +709,7 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
 
     @staticmethod
     def supported_approximants():
-        return list(set(list(waveform.ringdown_td_approximants.values())))
+        return list(waveform.ringdown_td_approximants.keys())
 
 
 hdfinjtypes = {
