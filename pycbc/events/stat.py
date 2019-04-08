@@ -441,9 +441,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
     def use_alphamax(self):
         # take reference slope as the harmonic mean of individual ifo slopes
-        inv_alphas = [1./self.alphamax[i] for i in self.ifos]
-        self.alpharef = (sum(inv_alphas)/len(inv_alphas))**-1
-        print(self.alpharef)
+        inv_alphas = [1. / self.alphamax[i] for i in self.ifos]
+        self.alpharef = 1. / (sum(inv_alphas) / len(inv_alphas))
 
     def single(self, trigs):
         logr_n = self.lognoiserate(trigs)
@@ -456,7 +455,11 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
     def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         # scale by 1/sqrt(2) to resemble network SNR
-        return (s0 + s1) / (2.**0.5)
+        return (s0 + s1) / 2.**0.5
+
+    def coinc_multiifo(self, s, slide, step): # pylint:disable=unused-argument
+        # scale by 1/sqrt(number of ifos) to resemble network SNR
+        return sum(x for x in s.values()) / len(s.values())**0.5
 
 
 class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
