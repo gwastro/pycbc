@@ -262,11 +262,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
-        if opt.ringdown_injection_file:
-            logging.info("Applying ringdown-only injection.")
-            injector = RingdownInjectionSet(opt.ringdown_injection_file)
-            injector.apply(strain, opt.channel_name[0:2])
-
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
 
@@ -378,8 +373,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 
         if not opt.channel_name and (opt.injection_file \
-                                     or opt.sgburst_injection_file \
-                                     or opt.ringdown_injection_file):
+                                     or opt.sgburst_injection_file):
             raise ValueError('Please provide channel names with the format '
                              'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
                              'simulated signals into fake strain')
@@ -397,11 +391,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
-
-        if opt.ringdown_injection_file:
-            logging.info("Applying ringdown-only injection.")
-            injector = RingdownInjectionSet(opt.ringdown_injection_file)
-            injector.apply(strain, opt.channel_name[0:2])
 
         if precision == 'single':
             logging.info("Converting to float32")
@@ -526,10 +515,6 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
-
-    data_reading_group.add_argument("--ringdown-injection-file", type=str,
-                      help="(optional) Injection file used to add "
-                           "ringdown-only waveforms into the strain.")
 
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     default=1, help="Divide injections by this factor "
@@ -702,11 +687,6 @@ def insert_strain_option_group_multi_ifo(parser):
                       metavar='IFO:FILE',
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
-
-    data_reading_group_multi.add_argument("--ringdown-injection-file", type=str,
-                    nargs="+", action=MultiDetOptionAction, metavar='IFO:FILE',
-                    help="(optional) Injection file used to add "
-                           "ringdown-only waveforms into the strain.")
 
     data_reading_group_multi.add_argument("--injection-scale-factor",
                     type=float, nargs="+", action=MultiDetOptionAction,
