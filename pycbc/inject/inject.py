@@ -692,8 +692,14 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
         return signal
 
     def end_times(self):
-        """Return the end times of all injections"""
-        return self.table.tc
+        """Return the approximate end times of all injections.
+
+        Currently, this just assumes all ringdowns are 2 seconds long.
+        """
+        # the start times are the tcs
+        tcs = self.table.tc
+        # FIXME: this could be figured out using the ringdown module
+        return tcs + 2
 
     @staticmethod
     def supported_approximants():
@@ -840,7 +846,6 @@ class InjectionSet(object):
 
 
 class SGBurstInjectionSet(object):
-
     """Manages sets of sine-Gaussian burst injections: reads injections
     from LIGOLW XML files and injects them into time series.
 
