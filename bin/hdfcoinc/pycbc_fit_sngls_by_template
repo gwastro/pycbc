@@ -20,7 +20,7 @@ import argparse, logging
 import copy, numpy as np
 
 from pycbc import io, events
-from pycbc.events import trigger_fits as trstats
+from pycbc.events import triggers, trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
 import pycbc.version
 
