@@ -377,13 +377,15 @@ class _HDFInjectionSet(object):
         self.extra_args = kwds
 
     @abstractmethod
-    def apply(self, strain, detector_name, **kwargs):
+    def apply(self, strain, detector_name, distance_scale=1,
+              simulation_ids=None, inj_filter_rejector=None,
+              **kwargs):
         """Adds injections to a detector's time series."""
         pass
 
     @abstractmethod
     def make_strain_from_inj_object(self, inj, delta_t, detector_name,
-                                    **kwargs):
+                                    distance_scale=1, **kwargs):
         """Make a h(t) strain time-series from an injection object.
         """
         pass
@@ -591,7 +593,8 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
     """
     injtype = 'ringdown'
 
-    def apply(self, strain, detector_name, simulation_ids=None):
+    def apply(self, strain, detector_name, distance_scale=1,
+              simulation_ids=None, inj_filter_rejector=None):
         """Add injection (as seen by a particular detector) to a time series.
 
         Parameters
@@ -600,8 +603,14 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
             Time series to inject signals into, of type float32 or float64.
         detector_name : string
             Name of the detector used for projecting injections.
+        distance_scale: float, optional
+            Factor to scale the distance of an injection with. The default (=1)
+            is no scaling.
         simulation_ids: iterable, optional
             If given, only inject signals with the given simulation IDs.
+        inj_filter_rejector: InjFilterRejector instance, optional
+            Not implemented. If not ``None``, a ``NotImplementedError`` will
+            be raised.
 
         Returns
         -------
@@ -609,9 +618,14 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
 
         Raises
         ------
+        NotImplementedError
+            If an ``inj_filter_rejector`` is provided.
         TypeError
             For invalid types of `strain`.
         """
+        if inj_filter_rejector is not None:
+            raise NotImplementedError("Ringdown injections do not support "
+                                      "inj_filter_rejector")
         if strain.dtype not in (float32, float64):
             raise TypeError("Strain dtype must be float32 or float64, not " \
                     + str(strain.dtype))
@@ -628,14 +642,16 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
             injection = injections[ii]
 
             signal = self.make_strain_from_inj_object(
-                injection, strain.delta_t, detector_name)
+                injection, strain.delta_t, detector_name,
+                distance_scale=distance_scale)
             signal = signal.astype(strain.dtype)
             signal_lal = signal.lal()
             add_injection(lalstrain, signal_lal, None)
 
             strain.data[:] = lalstrain.data.data[:]
 
-    def make_strain_from_inj_object(self, inj, delta_t, detector_name):
+    def make_strain_from_inj_object(self, inj, delta_t, detector_name,
+                                    distance_scale=1):
         """Make a h(t) strain time-series from an injection object as read from
         an hdf file.
 
@@ -647,6 +663,9 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
             Sample rate to make injection at.
         detector_name : string
             Name of the detector used for projecting injections.
+        distance_scale: float, optional
+            Factor to scale the distance of an injection with. The default (=1)
+            is no scaling.
 
         Returns
         --------
@@ -661,6 +680,10 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
 
         hp._epoch += inj['tc']
         hc._epoch += inj['tc']
+
+        if distance_scale != 1:
+            hp /= distance_scale
+            hc /= distance_scale
 
         # compute the detector response and add it to the strain
         signal = detector.project_wave(hp, hc,
