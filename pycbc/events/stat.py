@@ -107,7 +107,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             Array of coincident ranking statistic values
         """
-        return (sum([x ** 2. for x in s.values()])) ** 0.5
+        return sum(x ** 2. for x in s.values()) ** 0.5
 
 
 class NewSNRSGStatistic(NewSNRStatistic):
@@ -459,7 +459,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
     def coinc_multiifo(self, s, slide, step): # pylint:disable=unused-argument
         # scale by 1/sqrt(number of ifos) to resemble network SNR
-        return sum(x for x in s.values()) / len(s.values())**0.5
+        return sum(x for x in s.values()) / len(s)**0.5
 
 
 class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
