@@ -1300,7 +1300,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                 valid_mask=valid_mask,
                 force_update_cache=force_update_cache,
                 increment_update_cache=increment_update_cache,
-                veto_nonzero=veto_nonzero)
+                valid_on_zero=veto_nonzero)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
