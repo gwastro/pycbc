@@ -1286,7 +1286,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             if len(self.data_quality_flags) == 1 \
                     and self.data_quality_flags[0] == 'veto_nonzero':
                 veto_nonzero = True
-                logging.info('DQ channel %s interpreted as zero = good')
+                logging.info('DQ channel %s interpreted as zero = good',
+                             data_quality_channel)
             else:
                 veto_nonzero = False
                 valid_mask = pycbc.frame.flag_names_to_bitmask(
