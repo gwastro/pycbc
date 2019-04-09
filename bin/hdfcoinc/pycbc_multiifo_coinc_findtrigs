@@ -3,6 +3,7 @@ import h5py, argparse, logging, numpy, numpy.random
 from pycbc import events, detector
 from pycbc.events import veto, coinc, stat
 import pycbc.version
+from numpy.random import seed, shuffle
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
@@ -209,7 +210,15 @@ if args.timeslide_interval is None:
 
 data = {'stat':[], 'decimation_factor':[], 'timeslide_id':[], 'template_id':[]}
 
-for tnum in range(tmin, tmax):
+if args.randomize_template_order:
+    seed(0)
+    template_ids = numpy.arange(0, num_templates)
+    shuffle(template_ids)
+    template_ids = template_ids[tmin:tmax]
+else:
+    template_ids = range(tmin, tmax)
+
+for tnum in template_ids:
     tids={}
     for ifo in trigs:
         tids[ifo]=trigs[ifo].set_template(tnum)

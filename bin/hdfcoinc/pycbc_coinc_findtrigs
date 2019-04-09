@@ -3,6 +3,7 @@ import h5py, argparse, logging, numpy, numpy.random
 from pycbc import events, detector
 from pycbc.events import veto, coinc, stat
 import pycbc.version
+from numpy.random import seed, shuffle
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
@@ -201,7 +202,15 @@ logging.info('The coincidence window is %3.1f ms' % (time_window * 1000))
 data = {'stat':[], 'decimation_factor':[], 'time1':[], 'time2':[],
         'trigger_id1':[], 'trigger_id2':[], 'timeslide_id':[], 'template_id':[]}
 
-for tnum in range(tmin, tmax):
+if args.randomize_template_order:
+    seed(0)
+    template_ids = numpy.arange(0, num_templates)
+    shuffle(template_ids)
+    template_ids = template_ids[tmin:tmax]
+else:
+    template_ids = range(tmin, tmax)
+
+for tnum in template_ids:
     tid0 = trigs0.set_template(tnum)
     tid1 = trigs1.set_template(tnum)
 
