@@ -293,16 +293,17 @@ class _XMLInjectionSet(object):
         for ii in range(samples.size):
             sim = lsctables.SimInspiral()
             # initialize all elements to None
-            [setattr(sim, col, None) for col in sim.__slots__]
+            for col in sim.__slots__:
+                setattr(sim, col, None)
             for field in write_params:
                 data = samples[ii][field]
                 set_sim_data(sim, field, data)
             # set any static args
-            [set_sim_data(sim, field, value)
-             for field,value in static_args.items()]
+            for (field, value) in static_args.items():
+                set_sim_data(sim, field, value)
             simtable.append(sim)
         ligolw_utils.write_filename(xmldoc, filename,
-                                               gz=filename.endswith('gz'))
+                                    gz=filename.endswith('gz'))
 
 
 # -----------------------------------------------------------------------------
@@ -756,7 +757,7 @@ def hdf_injtype_from_approximant(approximant):
         The type of HDFInjectionSet to use.
     """
     retcls = None
-    for injtype, cls in hdfinjtypes.items():
+    for cls in hdfinjtypes.values():
         if approximant in cls.supported_approximants():
             retcls = cls
     if retcls is None:
@@ -824,7 +825,7 @@ class InjectionSet(object):
         \**metadata :
             All other keyword arguments will be written to the file's attrs.
         """
-        ### DELETE the following "if" once xml is dropped
+        # DELETE the following "if" once xml is dropped
         ext = os.path.basename(filename)
         if ext.endswith(('.xml', '.xml.gz', '.xmlgz')):
             _XMLInjectionSet.write(filename, samples, write_params,
