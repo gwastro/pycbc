@@ -673,7 +673,7 @@ class StatusBuffer(DataBuffer):
                        max_buffer=2048,
                        valid_mask=3,
                        force_update_cache=False,
-                       increment_update_cache=None
+                       increment_update_cache=None,
                        valid_on_zero=False):
         """ Create a rolling buffer of status data from a frame
 
