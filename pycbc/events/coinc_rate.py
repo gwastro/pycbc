@@ -11,7 +11,7 @@ coincident triggers.
 
 import numpy
 import itertools
-import pycbc.detector as detector
+import pycbc.detector
 
 
 def multiifo_noise_coinc_rate(rates, ifos, slop):
@@ -27,8 +27,8 @@ def multiifo_noise_coinc_rate(rates, ifos, slop):
     # multiply the two rates and by the overlap time
     allowed_area = multiifo_noise_coincident_area(ifos, slop)
     rateprod = [numpy.prod(rs) for rs in zip(*rates)]
-    ifostring_all = ''.join(ifos)
-    expected_coinc_rates[ifostring_all] = allowed_area * numpy.array(rateprod)
+    ifostring = ''.join(ifos)
+    expected_coinc_rates[ifostring] = allowed_area * numpy.array(rateprod)
     # if more than one possible coicidence type exists,
     # calculate coincidences for subsets
     if n_ifos > 2:
@@ -36,7 +36,6 @@ def multiifo_noise_coinc_rate(rates, ifos, slop):
         subsets = itertools.combinations(ifos, n_ifos-1)
         for subset in subsets:
             i_set = [numpy.nonzero(ifo == ifos)[0][0] for ifo in subset]
-            ifostring = ''.join(ifos[i_set])
             # calculate coincidence rates in subsets through iteration
             sub_coinc_rates = multiifo_noise_coinc_rate(rates[i_set],
                                                         ifos[i_set], slop)
@@ -55,7 +54,8 @@ def multiifo_noise_coincident_area(ifos, slop):
     # TO DO: add in capability for more than 3 detectors
     n_ifos = len(ifos)
     if n_ifos == 2:
-        det0, det1 = detector.Detector(ifos[0]), detector.Detector(ifos[1])
+        det0 = pycbc.detector.Detector(ifos[0])
+        det1 = pycbc.detector.Detector(ifos[1])
         allowed_area = 2*(det0.light_travel_time_to_detector(det1) + slop)
     elif n_ifos == 3:
         dets = {}
@@ -63,7 +63,7 @@ def multiifo_noise_coincident_area(ifos, slop):
         ifo2_num = []
         # set up detector objects
         for ifo in ifos:
-            dets[ifo] = detector.Detector(ifo)
+            dets[ifo] = pycbc.detector.Detector(ifo)
 
         # calculate travel time between detectors (plus extra for timing error)
         # TO DO: allow for different timing errors between different detectors
@@ -75,7 +75,7 @@ def multiifo_noise_coincident_area(ifos, slop):
 
         # combine these to calculate allowed area
         allowed_area = 0
-        for i,_ in enumerate(ifos):
+        for i, _ in enumerate(ifos):
             allowed_area += 2*tofs[i]*tofs[ifo2_num[i]] - tofs[i]**2
 
     return allowed_area
