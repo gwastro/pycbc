@@ -11,7 +11,7 @@ coincident triggers.
 
 import numpy
 import itertools
-import pycbc.detector
+import pycbc.detector as detector
 
 
 def multiifo_noise_coinc_rate(rates, ifos, slop):
@@ -27,8 +27,8 @@ def multiifo_noise_coinc_rate(rates, ifos, slop):
     # multiply the two rates and by the overlap time
     allowed_area = multiifo_noise_coincident_area(ifos, slop)
     rateprod = [numpy.prod(rs) for rs in zip(*rates)]
-    ifostring = ''.join(ifos)
-    expected_coinc_rates[ifostring] = allowed_area * numpy.array(rateprod)
+    ifostring_all = ''.join(ifos)
+    expected_coinc_rates[ifostring_all] = allowed_area * numpy.array(rateprod)
     # if more than one possible coicidence type exists,
     # calculate coincidences for subsets
     if n_ifos > 2:
@@ -38,9 +38,8 @@ def multiifo_noise_coinc_rate(rates, ifos, slop):
             i_set = [numpy.nonzero(ifo == ifos)[0][0] for ifo in subset]
             ifostring = ''.join(ifos[i_set])
             # calculate coincidence rates in subsets through iteration
-            sub_coinc_rates = \
-                multiifo_noise_coinc_rate(rates[i_set],
-                                          ifos[i_set], slop)
+            sub_coinc_rates = multiifo_noise_coinc_rate(rates[i_set],
+                                                        ifos[i_set], slop)
             # add these sub-coincidences to the overall dictionary
             for sub_coinc in sub_coinc_rates:
                 expected_coinc_rates[sub_coinc] = sub_coinc_rates[sub_coinc]
@@ -61,7 +60,7 @@ def multiifo_noise_coincident_area(ifos, slop):
     elif n_ifos == 3:
         dets = {}
         tofs = numpy.zeros(n_ifos)
-        ifo2_num = numpy.zeros(n_ifos)
+        ifo2_num = []
         # set up detector objects
         for ifo in ifos:
             dets[ifo] = detector.Detector(ifo)
@@ -69,13 +68,15 @@ def multiifo_noise_coincident_area(ifos, slop):
         # calculate travel time between detectors (plus extra for timing error)
         # TO DO: allow for different timing errors between different detectors
         for i, ifo in enumerate(ifos):
-            ifo2_num[i] = numpy.mod(i+1, n_ifos)
+            ifo2_num.append(int(numpy.mod(i+1, n_ifos)))
             det0 = dets[ifo]
-            det1 = dets[ifos[ifo2num[i]]]
+            det1 = dets[ifos[ifo2_num[i]]]
             tofs[i] = det0.light_travel_time_to_detector(det1) + slop
 
         # combine these to calculate allowed area
         allowed_area = 0
-        for i in enumerate(ifos):
-            allowed_area += 2*tofs[i]*tofs[ifo2num[i]] - tofs[i]**2
+        for i,_ in enumerate(ifos):
+            allowed_area += 2*tofs[i]*tofs[ifo2_num[i]] - tofs[i]**2
+
     return allowed_area
+
