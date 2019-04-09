@@ -50,7 +50,8 @@ parser.add_argument("--cluster-window", type=float,
 parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 parser.add_argument("--randomize-template-order", action="store_true",
-                    help="Shuffle which templates are analyze")
+                    help="Random shuffle templates with fixed seed "
+                         "before selecting range to analyze")
 args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
