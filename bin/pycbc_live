@@ -30,15 +30,18 @@ from pycbc.vetoes.sgchisq import SingleDetSGChisq
 
 
 def ptof(p, ft):
-    # convert p-value to FAR via foreground time 'ft'
-    return numpy.log(1.0 - p) / -ft
+    """Convert p-value to FAR via foreground time `ft`.
+    """
+    return numpy.log1p(-p) / -ft
 
 def ftop(f, ft):
-    # convert FAR to p-value via foreground time 'ft'
+    """Convert FAR to p-value via foreground time `ft`.
+    """
     return 1 - numpy.exp(-ft * f)
 
 def combine_ifar_pvalue(ifar, pvalue, livetime):
-    # convert original IFAR to p-value and combine with followup p-value
+    """Convert original IFAR to p-value and combine with followup p-value.
+    """
     from scipy.stats import combine_pvalues
     # NB units of ifar and livetime must be the same
     _, pnew = combine_pvalues([ftop(1. / ifar, livetime), pvalue])
@@ -131,14 +134,12 @@ class LiveEventManager(object):
 
         # Determine if the other ifos can contribute to the coincident event
         for ifo in followup_ifos:
-            snr_series, ptime, pvalue = followup_event_significance(ifo,
-                            data_readers[ifo], bank, template_id, coinc_times)
-
+            snr_series, ptime, pvalue = followup_event_significance(
+                    ifo, data_readers[ifo], bank, template_id, coinc_times)
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
-
-            self.combine_far_with_followup(ifos[0], ifo, triggers,
-                                           snr_series, ptime, pvalue)
+                self.combine_far_with_followup(ifos[0], ifo, triggers,
+                                               snr_series, ptime, pvalue)
 
         return out
 
