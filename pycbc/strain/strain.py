@@ -27,7 +27,6 @@ from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo
-from pycbc.frame import read_frame, query_and_read_frame
 from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
@@ -223,15 +222,17 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             sieve = None
 
         if opt.frame_type:
-            strain = query_and_read_frame(opt.frame_type, opt.channel_name,
-                                          start_time=opt.gps_start_time-opt.pad_data,
-                                          end_time=opt.gps_end_time+opt.pad_data,
-                                          sieve=sieve)
+            strain = pycbc.frame.query_and_read_frame(
+                    opt.frame_type, opt.channel_name,
+                    start_time=opt.gps_start_time-opt.pad_data,
+                    end_time=opt.gps_end_time+opt.pad_data,
+                    sieve=sieve)
         else:
-            strain = read_frame(frame_source, opt.channel_name,
-                            start_time=opt.gps_start_time-opt.pad_data,
-                            end_time=opt.gps_end_time+opt.pad_data,
-                            sieve=sieve)
+            strain = pycbc.frame.read_frame(
+                    frame_source, opt.channel_name,
+                    start_time=opt.gps_start_time-opt.pad_data,
+                    end_time=opt.gps_end_time+opt.pad_data,
+                    sieve=sieve)
 
         if opt.zpk_z and opt.zpk_p and opt.zpk_k:
             logging.info("Highpass Filtering")
@@ -1269,10 +1270,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # State channel
         if state_channel is not None:
-            valid_mask = 0
-            for flag in self.analyze_flags:
-                valid_mask |= getattr(pycbc.frame, flag)
-            logging.info('State channel %s using mask %s',
+            valid_mask = pycbc.frame.flag_names_to_bitmask(self.analyze_flags)
+            logging.info('State channel %s interpreted as mask %s = good',
                          state_channel, bin(valid_mask))
             self.state = pycbc.frame.StatusBuffer(
                 frame_src,
@@ -1284,18 +1283,24 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # low latency dq channel
         if data_quality_channel is not None:
-            valid_mask = 0
-            for flag in self.data_quality_flags:
-                valid_mask |= getattr(pycbc.frame, flag)
-            logging.info('DQ channel %s using mask %s',
-                         data_quality_channel, bin(valid_mask))
+            if len(self.data_quality_flags) == 1 \
+                    and self.data_quality_flags[0] == 'veto_nonzero':
+                veto_nonzero = True
+                logging.info('DQ channel %s interpreted as zero = good')
+            else:
+                veto_nonzero = False
+                valid_mask = pycbc.frame.flag_names_to_bitmask(
+                        self.data_quality_flags)
+                logging.info('DQ channel %s interpreted as mask %s = good',
+                             data_quality_channel, bin(valid_mask))
             self.dq = pycbc.frame.StatusBuffer(
                 frame_src,
                 data_quality_channel, start_time,
                 max_buffer=max_buffer,
                 valid_mask=valid_mask,
                 force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache)
+                increment_update_cache=increment_update_cache,
+                veto_nonzero=veto_nonzero)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction

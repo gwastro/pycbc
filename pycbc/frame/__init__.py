@@ -35,3 +35,12 @@ ETMX_ESD_DAC_OVERFLOW = 16
 # CAT1 bit in the Virgo state vector
 # https://wiki.virgo-gw.eu/DetChar/DetCharVirgoStateVector
 VIRGO_GOOD_DQ = 1 << 10
+
+def flag_names_to_bitmask(flags):
+    """Takes a list of flag names corresponding to bits in a status channel
+    and returns the corresponding bit mask.
+    """
+    mask = 0
+    for flag in flags:
+        mask |= globals()[flag]
+    return mask

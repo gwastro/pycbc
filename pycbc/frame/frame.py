@@ -665,7 +665,7 @@ class DataBuffer(object):
 
 class StatusBuffer(DataBuffer):
 
-    """ Read state vector information from a frame file """
+    """ Read state vector or DQ information from a frame file """
 
     def __init__(self, frame_src,
                        channel_name,
@@ -673,14 +673,15 @@ class StatusBuffer(DataBuffer):
                        max_buffer=2048,
                        valid_mask=3,
                        force_update_cache=False,
-                       increment_update_cache=None):
+                       increment_update_cache=None
+                       valid_on_zero=False):
         """ Create a rolling buffer of status data from a frame
 
         Parameters
         ---------
         frame_src: str of list of strings
             Strings that indicate where to read from files from. This can be a
-        list of frame files, a glob, etc.
+            list of frame files, a glob, etc.
         channel_name: str
             Name of the channel to read from the frame files
         start_time:
@@ -689,6 +690,9 @@ class StatusBuffer(DataBuffer):
             Length of the buffer in seconds
         valid_mask: {int, HOFT_OK | SCIENCE_INTENT}, Optional
             Set of flags that must be on to indicate valid frame data.
+        valid_on_zero: bool
+            If True, `valid_mask` is ignored and the status is considered
+            "good" simply when the channel is zero.
         """
         DataBuffer.__init__(self, frame_src, channel_name, start_time,
                             max_buffer=max_buffer,
@@ -696,6 +700,7 @@ class StatusBuffer(DataBuffer):
                             increment_update_cache=increment_update_cache,
                             dtype=numpy.int32)
         self.valid_mask = valid_mask
+        self.valid_on_zero = valid_on_zero
 
     def check_valid(self, values, flag=None):
         """Check if the data contains any non-valid status information
@@ -713,13 +718,13 @@ class StatusBuffer(DataBuffer):
             Returns True if all of the status information if valid,
              False if any is not.
         """
-        if flag is None:
-            flag = self.valid_mask
-
-        if numpy.any(numpy.bitwise_and(values.numpy(), flag) != flag):
-            return False
+        if self.valid_on_zero:
+            valid = values.numpy() == 0
         else:
-            return True
+            if flag is None:
+                flag = self.valid_mask
+            valid = numpy.bitwise_and(values.numpy(), flag) == flag
+        return bool(numpy.all(valid))
 
     def is_extent_valid(self, start_time, duration, flag=None):
         """Check if the duration contains any non-valid frames
@@ -770,7 +775,12 @@ class StatusBuffer(DataBuffer):
         e = s + int((duration + padding) * sr) + 1
         data = self.raw_buffer[s:e]
         stamps = data.sample_times.numpy()
-        invalid = numpy.bitwise_and(data.numpy(), self.valid_mask) != self.valid_mask
+
+        if self.valid_on_zero:
+            invalid = data.numpy() != 0
+        else:
+            invalid = numpy.bitwise_and(data.numpy(), self.valid_mask) \
+                    != self.valid_mask
 
         starts = stamps[invalid] - padding
         ends = starts + 1.0 / sr + padding * 2.0
