@@ -1271,7 +1271,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if state_channel is not None:
             valid_mask = 0
             for flag in self.analyze_flags:
-                valid_mask = valid_mask | getattr(pycbc.frame, flag)
+                valid_mask |= getattr(pycbc.frame, flag)
+            logging.info('State channel %s using mask %s',
+                         state_channel, bin(valid_mask))
             self.state = pycbc.frame.StatusBuffer(
                 frame_src,
                 state_channel, start_time,
@@ -1284,7 +1286,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if data_quality_channel is not None:
             valid_mask = 0
             for flag in self.data_quality_flags:
-                valid_mask = valid_mask | getattr(pycbc.frame, flag)
+                valid_mask |= getattr(pycbc.frame, flag)
+            logging.info('DQ channel %s using mask %s',
+                         data_quality_channel, bin(valid_mask))
             self.dq = pycbc.frame.StatusBuffer(
                 frame_src,
                 data_quality_channel, start_time,

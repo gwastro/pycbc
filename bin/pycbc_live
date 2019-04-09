@@ -287,6 +287,54 @@ class LiveEventManager(object):
                 if store_psd[ifo] is not None:
                     store_psd[ifo].save(fname, group='%s/psd' % ifo)
 
+def init_data_reader(ifo, args, maxlen):
+    """Initialize a StrainBuffer object (data reader) for a particular
+    detector.
+    """
+    state_channel = analyze_flags = None
+    if args.state_channel and ifo in args.state_channel \
+            and args.analyze_flags and ifo in args.analyze_flags:
+        state_channel = ':'.join([ifo, args.state_channel[ifo]])
+        analyze_flags = args.analyze_flags[ifo].split(',')
+
+    dq_channel = dq_flags = None
+    if args.data_quality_channel and ifo in args.data_quality_channel \
+            and args.data_quality_flags and ifo in args.data_quality_flags:
+        dq_channel = ':'.join([ifo, args.data_quality_channel[ifo]])
+        dq_flags = args.data_quality_flags[ifo].split(',')
+
+    if args.frame_type:
+        frame_src = frame.frame_paths(args.frame_type[ifo], args.start_time,
+                                      args.end_time)
+    else:
+        frame_src = [args.frame_src[ifo]]
+    strain_channel = ':'.join([ifo, args.channel_name[ifo]])
+
+    return StrainBuffer(frame_src, strain_channel,
+                        args.start_time, max_buffer=maxlen * 2,
+                        state_channel=state_channel,
+                        data_quality_channel=dq_channel,
+                        sample_rate=args.sample_rate,
+                        low_frequency_cutoff=args.low_frequency_cutoff,
+                        highpass_frequency=args.highpass_frequency,
+                        highpass_reduction=args.highpass_reduction,
+                        highpass_bandwidth=args.highpass_bandwidth,
+                        psd_samples=args.psd_samples,
+                        trim_padding=args.trim_padding,
+                        psd_segment_length=args.psd_segment_length,
+                        psd_inverse_length=args.psd_inverse_length,
+                        autogating_threshold=args.autogating_threshold,
+                        autogating_cluster=args.autogating_cluster,
+                        autogating_window=args.autogating_window,
+                        autogating_pad=args.autogating_pad,
+                        psd_abort_difference=args.psd_abort_difference,
+                        psd_recalculate_difference=args.psd_recalculate_difference,
+                        force_update_cache=args.force_update_cache,
+                        increment_update_cache=args.increment_update_cache[ifo],
+                        analyze_flags=analyze_flags,
+                        data_quality_flags=dq_flags,
+                        dq_padding=args.data_quality_padding)
+
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.waveform.bank.add_approximant_arg(parser)
@@ -310,7 +358,7 @@ parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
                     help="Channel containing frame status information. Used "
                          "to determine when to analyze the hoft data. This somewhat "
                          "corresponds to CAT1 information")
-parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'],
+parser.add_argument('--analyze-flags', action=MultiDetOptionAction, nargs='+',
                     help='The flags that must be in the "good" state to analyze data')
 parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
                     help="Channel containing data quality information. Used "
@@ -502,64 +550,23 @@ with ctx:
     # Synchronize start time if not provided on the command line
     if not args.start_time:
         evnt.barrier()
-        if evnt.rank == 0:
-            tnow = lal.GPSTimeNow()
-        else:
-            tnow = None
+        tnow = lal.GPSTimeNow() if evnt.rank == 0 else None
         args.start_time = evnt.comm.bcast(tnow, root=0)
 
     if args.round_start_time:
         args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
         logging.info('Starting from: %s', args.start_time)
 
+    # initialize the data readers for all detectors
     if args.max_length is not None:
         maxlen = args.max_length
-
     maxlen = int(maxlen)
-    data_reader = {}
-    sngl_estimator = {}
-    for ifo in ifos:
-        state = dq = dqf = None
-        if args.state_channel and ifo in args.state_channel:
-            state = '%s:%s' % (ifo, args.state_channel[ifo])
-        if args.data_quality_channel and ifo in args.data_quality_channel \
-                and args.data_quality_flags and ifo in args.data_quality_flags:
-            dq ='%s:%s' % (ifo, args.data_quality_channel[ifo])
-            dqf = args.data_quality_flags[ifo].split(',')
+    data_reader = {ifo: init_data_reader(ifo, args, maxlen) for ifo in ifos}
 
-        if args.frame_type:
-            frame_src = frame.frame_paths(args.frame_type[ifo], args.start_time, args.end_time)
-        else:
-            frame_src = [args.frame_src[ifo]]
-
-        if args.enable_single_detector_background and evnt.rank == 0:
-            sngl_estimator[ifo] = LiveSingleFarThreshold.from_cli(args, ifo)
-
-        data_reader[ifo] = StrainBuffer(frame_src,
-                            '%s:%s' % (ifo, args.channel_name[ifo]),
-                            args.start_time, max_buffer=maxlen * 2,
-                            state_channel=state,
-                            data_quality_channel=dq,
-                            sample_rate=args.sample_rate,
-                            low_frequency_cutoff=args.low_frequency_cutoff,
-                            highpass_frequency=args.highpass_frequency,
-                            highpass_reduction=args.highpass_reduction,
-                            highpass_bandwidth=args.highpass_bandwidth,
-                            psd_samples=args.psd_samples,
-                            trim_padding=args.trim_padding,
-                            psd_segment_length=args.psd_segment_length,
-                            psd_inverse_length=args.psd_inverse_length,
-                            autogating_threshold=args.autogating_threshold,
-                            autogating_cluster=args.autogating_cluster,
-                            autogating_window=args.autogating_window,
-                            autogating_pad=args.autogating_pad,
-                            psd_abort_difference=args.psd_abort_difference,
-                            psd_recalculate_difference=args.psd_recalculate_difference,
-                            force_update_cache=args.force_update_cache,
-                            increment_update_cache=args.increment_update_cache[ifo],
-                            analyze_flags=args.analyze_flags,
-                            data_quality_flags=dqf,
-                            dq_padding=args.data_quality_padding)
+    # create single-detector background "estimators"
+    if args.enable_single_detector_background and evnt.rank == 0:
+        sngl_estimator = {ifo: LiveSingleFarThreshold.from_cli(args, ifo)
+                          for ifo in ifos}
 
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
@@ -591,7 +598,7 @@ with ctx:
         pr = cProfile.Profile()
         pr.enable()
 
-    # get more data
+    # main analysis loop
     data_end = lambda: data_reader[data_reader.keys()[0]].end_time
     while data_end() < args.end_time:
         t1 = time()
