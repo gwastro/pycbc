@@ -682,7 +682,7 @@ class RingdownHDFInjectionSet(_HDFInjectionSet):
 
         # compute the waveform time series
         hp, hc = ringdown_td_approximants[inj['approximant']](
-            delta_t=delta_t, **inj)
+            inj, delta_t=delta_t, **self.extra_args)
 
         hp._epoch += inj['tc']
         hc._epoch += inj['tc']
