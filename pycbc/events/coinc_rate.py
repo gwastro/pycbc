@@ -9,8 +9,8 @@
 coincident triggers.
 """
 
-import numpy
 import itertools
+import numpy
 import pycbc.detector
 
 
@@ -80,3 +80,34 @@ def multiifo_noise_coincident_area(ifos, slop):
 
     return allowed_area
 
+def multiifo_signal_coincident_area(ifos):
+    """
+    calculate the area which physically allowed signal time differences will extend to
+    """
+    # TO DO: add in capability for more than 3 detectors
+    n_ifos = len(ifos)
+    if n_ifos == 2:
+        det0 = pycbc.detector.Detector(ifos[0])
+        det1 = pycbc.detector.Detector(ifos[1])
+        allowed_area = 2*det0.light_travel_time_to_detector(det1)
+    elif n_ifos == 3:
+        dets = {}
+        tofs = numpy.zeros(n_ifos)
+        ifo2_num = []
+        # set up detector objects
+        for ifo in ifos:
+            dets[ifo] = pycbc.detector.Detector(ifo)
+
+        # calculate travel time between detectors (plus extra for timing error)
+        # TO DO: allow for different timing errors between different detectors
+        for i, ifo in enumerate(ifos):
+            ifo2_num.append(int(numpy.mod(i+1, n_ifos)))
+            det0 = dets[ifo]
+            det1 = dets[ifos[ifo2_num[i]]]
+            tofs[i] = det0.light_travel_time_to_detector(det1)
+
+        # combine these to calculate allowed area
+        phi_12 = numpy.arccos((tofs[0]**2+tofs[1]**2 - tofs[2]**2)/(2*tofs[0]*tofs[1]))
+        allowed_area = np.pi*tofs[0]*tofs[1]*np.sin(phi_12)
+
+    return allowed_area
