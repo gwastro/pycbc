@@ -2,6 +2,7 @@ import numpy
 cimport numpy
 from libc.math cimport cos, sin # This imports c's sin and cos function from the math library
 from cython import wraparound, boundscheck, cdivision
+from pycbc.types import real_same_precision_as
 
 ctypedef fused REALTYPE:
     float
