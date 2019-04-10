@@ -41,13 +41,22 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
 
     num_parallel_regions = 16
 
+    outr = numpy.zeros(n, dtype=real_type)
+    outi = numpy.zeros(n, dtype=real_type)
+    pr = numpy.zeros(n, dtype=real_type)
+    pi = numpy.zeros(n, dtype=real_type)
+    vsr = numpy.zeros(n, dtype=real_type)
+    vsi = numpy.zeros(n, dtype=real_type)
+    outr_tmp = numpy.zeros(n, dtype=real_type)
+    outi_tmp = numpy.zeros(n, dtype=real_type)
+
     for r in range(blen):
         bstart = bins[r] # int
         bend = bins[r+1] # int
         blen = bend - bstart # int
 
-        outr = numpy.zeros(n, dtype=real_type)
-        outi = numpy.zeros(n, dtype=real_type)
+        #outr = numpy.zeros(n, dtype=real_type)
+        #outi = numpy.zeros(n, dtype=real_type)
 
         # CAN WE MAKE THIS LOOP PARALLEL?!
         for k in range(num_parallel_regions):
@@ -55,12 +64,12 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
             end = blen * (k + 1) / num_parallel_regions + bstart # uint
 
             # start the cumulative rotations at the offset point
-            pr = numpy.zeros(n, dtype=real_type)
-            pi = numpy.zeros(n, dtype=real_type)
-            vsr = numpy.zeros(n, dtype=real_type)
-            vsi = numpy.zeros(n, dtype=real_type)
-            outr_tmp = numpy.zeros(n, dtype=real_type)
-            outi_tmp = numpy.zeros(n, dtype=real_type)
+            #pr = numpy.zeros(n, dtype=real_type)
+            #pi = numpy.zeros(n, dtype=real_type)
+            #vsr = numpy.zeros(n, dtype=real_type)
+            #vsi = numpy.zeros(n, dtype=real_type)
+            #outr_tmp = numpy.zeros(n, dtype=real_type)
+            #outi_tmp = numpy.zeros(n, dtype=real_type)
             
 
             for i in range(n):
