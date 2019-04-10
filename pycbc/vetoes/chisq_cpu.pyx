@@ -57,7 +57,7 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
             pr = numpy.zeros(n, dtype=real_type)
             pi = numpy.zeros(n, dtype=real_type)
             vsr = numpy.zeros(n, dtype=real_type)
-            vsi = numpy.zeros(n, dtype=real_type4)
+            vsi = numpy.zeros(n, dtype=real_type)
             outr_tmp = numpy.zeros(n, dtype=real_type)
             outi_tmp = numpy.zeros(n, dtype=real_type)
             
