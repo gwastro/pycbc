@@ -87,7 +87,7 @@ class TestChisq(unittest.TestCase):
                 matched_filter_core(hp, data[ifo], psd=psd[ifo],
                                     low_frequency_cutoff=20)
             snr[ifo] = snr_unnorm[ifo] * norm[ifo]
-        
+
         self.snr = snr
         self.snr_unnorm = snr_unnorm
         self.norm = norm
