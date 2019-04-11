@@ -57,6 +57,10 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
 
         #outr = numpy.zeros(n, dtype=real_type)
         #outi = numpy.zeros(n, dtype=real_type)
+        for i in range(n):
+            outr[i] = 0.
+            outi[i] = 0.
+
 
         # CAN WE MAKE THIS LOOP PARALLEL?!
         for k in range(num_parallel_regions):
