@@ -1058,6 +1058,148 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
     return (a + b*(1-spin)**c)/(2*numpy.pi*f0*lal.MTSUN_SI)
 
 
+def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
+                           spin2x=0., spin2y=0., spin2z=0.,
+                           approximant='SEOBNRv4'):
+    """Estimates the final mass and spin from the given initial parameters.
+
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
+    Parameters
+    ----------
+    mass1 : float
+        The mass of one of the components, in solar masses.
+    mass2 : float
+        The mass of the other component, in solar masses.
+    spin1x : float, optional
+        The dimensionless x-component of the spin of mass1. Default is 0.
+    spin1y : float, optional
+        The dimensionless y-component of the spin of mass1. Default is 0.
+    spin1z : float, optional
+        The dimensionless z-component of the spin of mass1. Default is 0.
+    spin2x : float, optional
+        The dimensionless x-component of the spin of mass2. Default is 0.
+    spin2y : float, optional
+        The dimensionless y-component of the spin of mass2. Default is 0.
+    spin2z : float, optional
+        The dimensionless z-component of the spin of mass2. Default is 0.
+    approximant : str, optional
+        The waveform approximant to use for the fit function. Default is
+        "SEOBNRv4".
+
+    Returns
+    -------
+    final_mass : float
+        The final mass, in solar masses.
+    final_spin : float
+        The dimensionless final spin.
+    """
+    args = (mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z)
+    args = ensurearray(*args)
+    input_is_array = args[-1]
+    origshape = args[0].shape
+    # flatten inputs for storing results
+    args = [a.ravel() for a in args[:-1]]
+    mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = args
+    final_mass = numpy.zeros(mass1.shape)
+    final_spin = numpy.zeros(mass1.shape)
+    for ii in range(final_mass.size):
+        m1 = mass1[ii]
+        m2 = mass2[ii]
+        spin1 = [spin1x[ii], spin1y[ii], spin1z[ii]]
+        spin2 = [spin2x[ii], spin2y[ii], spin2z[ii]]
+        _, fm, fs = lalsim.SimIMREOBFinalMassSpin(m1, m2, spin1, spin2,
+                                                  getattr(lalsim, approximant))
+        final_mass[ii] = fm * (m1 + m2)
+        final_spin[ii] = fs
+    final_mass = final_mass.reshape(origshape)
+    final_spin = final_spin.reshape(origshape)
+    return (formatreturn(final_mass, input_is_array),
+            formatreturn(final_spin, input_is_array))
+
+
+def final_mass_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
+                            spin2x=0., spin2y=0., spin2z=0.,
+                            approximant='SEOBNRv4'):
+    """Estimates the final mass from the given initial parameters.
+
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
+    Parameters
+    ----------
+    mass1 : float
+        The mass of one of the components, in solar masses.
+    mass2 : float
+        The mass of the other component, in solar masses.
+    spin1x : float, optional
+        The dimensionless x-component of the spin of mass1. Default is 0.
+    spin1y : float, optional
+        The dimensionless y-component of the spin of mass1. Default is 0.
+    spin1z : float, optional
+        The dimensionless z-component of the spin of mass1. Default is 0.
+    spin2x : float, optional
+        The dimensionless x-component of the spin of mass2. Default is 0.
+    spin2y : float, optional
+        The dimensionless y-component of the spin of mass2. Default is 0.
+    spin2z : float, optional
+        The dimensionless z-component of the spin of mass2. Default is 0.
+    approximant : str, optional
+        The waveform approximant to use for the fit function. Default is
+        "SEOBNRv4".
+
+    Returns
+    -------
+    float
+        The final mass, in solar masses.
+    """
+    return get_final_from_initial(mass1, mass2, spin1x, spin1y, spin1z,
+                                  spin2x, spin2y, spin2z, approximant)[0]
+
+
+def final_spin_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
+                            spin2x=0., spin2y=0., spin2z=0.,
+                            approximant='SEOBNRv4'):
+    """Estimates the final spin from the given initial parameters.
+
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
+    Parameters
+    ----------
+    mass1 : float
+        The mass of one of the components, in solar masses.
+    mass2 : float
+        The mass of the other component, in solar masses.
+    spin1x : float, optional
+        The dimensionless x-component of the spin of mass1. Default is 0.
+    spin1y : float, optional
+        The dimensionless y-component of the spin of mass1. Default is 0.
+    spin1z : float, optional
+        The dimensionless z-component of the spin of mass1. Default is 0.
+    spin2x : float, optional
+        The dimensionless x-component of the spin of mass2. Default is 0.
+    spin2y : float, optional
+        The dimensionless y-component of the spin of mass2. Default is 0.
+    spin2z : float, optional
+        The dimensionless z-component of the spin of mass2. Default is 0.
+    approximant : str, optional
+        The waveform approximant to use for the fit function. Default is
+        "SEOBNRv4".
+
+    Returns
+    -------
+    float
+        The dimensionless final spin.
+    """
+    return get_final_from_initial(mass1, mass2, spin1x, spin1y, spin1z,
+                                  spin2x, spin2y, spin2z, approximant)[1]
+
+
 #
 # =============================================================================
 #
@@ -1284,6 +1426,7 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
            'final_spin_from_f0_tau', 'final_mass_from_f0_tau',
+           'final_mass_from_initial', 'final_spin_from_initial',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
            'nltides_gw_phase_diff_isco',
