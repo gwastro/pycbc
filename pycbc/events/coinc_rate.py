@@ -16,7 +16,25 @@ import pycbc.detector
 
 def multiifo_noise_coinc_rate(rates, ifos, slop):
     """
-    Calculate the expected rate of coincidences for multiple detectors
+    Calculate the expected rate of noise coincidences for multiple detectors
+    
+    Parameters
+    ----------
+    rates: list of lists/arrays
+        List of vector of single-detector trigger rates
+        in order of template id
+    ifos: list of strings
+        list of ifos in e.g. 'H1' form
+    slop: float
+        time to be added to time-of-flights between detectors to account
+        for timing error
+
+    Returns
+    -------
+    expected_coinc_rates: dict
+        A dictionary of ifo combined rates keyed on the combination string
+        value is the expected coincidence rate in the combination given the
+        individual detector trigger rates
     """
     ifos = numpy.array(ifos)
     rates = numpy.array(rates)
@@ -50,6 +68,18 @@ def multiifo_noise_coincident_area(ifos, slop):
     """
     calculate the multiplicative factor of the individual detector trigger
     rates in order to calculate combined rates
+
+    Parameters
+    ----------
+    ifos: list of strings
+        list of interferometers for area calculation
+    slop: float
+        extra time to add on to time-of-flight for timing error
+
+    Returns
+    -------
+    allowed_area: float
+        area in units of seconds^(n_ifos-1) that the coincident values can fall in
     """
     # TO DO: add in capability for more than 3 detectors
     n_ifos = len(ifos)
@@ -82,7 +112,17 @@ def multiifo_noise_coincident_area(ifos, slop):
 
 def multiifo_signal_coincident_area(ifos):
     """
-    calculate the area which physically allowed signal time differences will extend to
+    calculate the area in which signal time differences are physically allowed
+
+    Parameters
+    ----------
+    ifos: list of strings
+        list of interferometers for area calculation
+
+    Returns
+    -------
+    allowed_area: float
+        area in units of seconds^(n_ifos-1) that coincident signals will take
     """
     # TO DO: add in capability for more than 3 detectors
     n_ifos = len(ifos)
@@ -107,7 +147,8 @@ def multiifo_signal_coincident_area(ifos):
             tofs[i] = det0.light_travel_time_to_detector(det1)
 
         # combine these to calculate allowed area
-        phi_12 = numpy.arccos((tofs[0]**2+tofs[1]**2 - tofs[2]**2)/(2*tofs[0]*tofs[1]))
-        allowed_area = np.pi*tofs[0]*tofs[1]*np.sin(phi_12)
+        phi_12 = numpy.arccos((tofs[0]**2+tofs[1]**2 -
+                               tofs[2]**2)/(2*tofs[0]*tofs[1]))
+        allowed_area = numpy.pi*tofs[0]*tofs[1]*numpy.sin(phi_12)
 
     return allowed_area
