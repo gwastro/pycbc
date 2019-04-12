@@ -5,7 +5,7 @@
 #
 # =============================================================================
 #
-""" This module contains functions for calculating expected rates of noise 
+""" This module contains functions for calculating expected rates of noise
     and signal coincidences.
 """
 
@@ -37,7 +37,6 @@ def multiifo_noise_coinc_rate(rates, slop):
     ifos = numpy.array(sorted(rates.keys()))
     rates_raw = list(rates[ifo] for ifo in ifos)
     expected_coinc_rates = {}
-    n_ifos = len(ifos)
     # Calculate coincidence for all-ifo combination
     # multiply the product of rates and by the overlap time
     allowed_area = multiifo_noise_coincident_area(ifos, slop)
@@ -47,11 +46,10 @@ def multiifo_noise_coinc_rate(rates, slop):
     expected_coinc_rates[ifostring] = allowed_area * numpy.array(rateprod)
     # if more than one possible coincidence type exists,
     # calculate coincidences for subsets through recursion
-    if n_ifos > 2:
+    if len(ifos) > 2:
         # Calculate rate for each 'miss-one-out' detector combination
-        subsets = itertools.combinations(ifos, n_ifos - 1)
+        subsets = itertools.combinations(ifos, len(ifos) - 1)
         for subset in subsets:
-            i_set = [numpy.nonzero(ifo == ifos)[0][0] for ifo in subset]
             rates_subset = {}
             for ifo in subset:
                 rates_subset[ifo] = rates[ifo]
