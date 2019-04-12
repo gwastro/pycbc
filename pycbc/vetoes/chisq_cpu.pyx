@@ -44,7 +44,7 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
     cdef COMPLEXTYPE v
     cdef REALTYPE vr, vi, t1, t2, k1, k2, k3, vs, va
 
-    num_parallel_regions = 16
+    num_parallel_regions = 1
 
     outr = <REALTYPE *> malloc(n * sizeof(REALTYPE))
     outi = <REALTYPE *> malloc(n * sizeof(REALTYPE))
