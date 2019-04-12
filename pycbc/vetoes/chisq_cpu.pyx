@@ -1,3 +1,4 @@
+# cython: profile=True
 import numpy
 cimport numpy
 from libc.stdlib cimport malloc, free
@@ -35,10 +36,6 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
     cdef REALTYPE *outr, *outi, *pr, *pi, *vsr, *vsi, *outr_tmp, *outi_tmp
     cdef COMPLEXTYPE v
     cdef REALTYPE vr, vi, t1, t2, k1, k2, k3, vs, va
-
-    #real_type = real_same_precision_as(chisq)
-    real_type = chisq.dtype
-    #complex_type = complex_same_precision_as(chisq)
 
     num_parallel_regions = 16
 
