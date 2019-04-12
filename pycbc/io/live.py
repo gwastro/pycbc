@@ -12,7 +12,6 @@ from glue.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
-from pycbc.types import FrequencySeries
 from pycbc.results import ifo_color
 
 
@@ -321,18 +320,17 @@ class SingleCoincForGraceDB(object):
             pylab.figure()
             for ifo in self.snr_series:
                 # Undo dynamic range factor
-                curr_psd = FrequencySeries(self.psds[ifo],
-                                           dtype=numpy.float64)
+                curr_psd = self.psds[ifo].astype(numpy.float64)
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
                 curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
                 # Can't plot log(0) so start from point 1
                 pylab.loglog(curr_psd.sample_frequencies[1:],
-                             curr_psd[1:], c=ifo_color(ifo), label=ifo)
+                             curr_psd[1:]**0.5, c=ifo_color(ifo), label=ifo)
             pylab.legend()
             pylab.xlim([20, 2000])
-            pylab.ylim([1E-47, 1E-43])
+            pylab.ylim([1E-24, 1E-21])
             pylab.xlabel('Frequency (Hz)')
-            pylab.ylabel('PSD')
+            pylab.ylabel('ASD')
             pylab.savefig(psd_series_plot_fname)
 
         gid = None
