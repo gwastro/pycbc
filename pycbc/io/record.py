@@ -1097,8 +1097,6 @@ class FieldArray(numpy.recarray):
                 vals = numpy.array(vals)
             arrays.append(vals)
             names.append(p)
-            print(p)
-            print(vals)
         return cls.from_arrays(arrays, names=names)
 
 
