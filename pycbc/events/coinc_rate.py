@@ -17,7 +17,7 @@ import pycbc.detector
 def multiifo_noise_coinc_rate(rates, ifos, slop):
     """
     Calculate the expected rate of noise coincidences for multiple detectors
-    
+
     Parameters
     ----------
     rates: list of lists/arrays
@@ -79,7 +79,8 @@ def multiifo_noise_coincident_area(ifos, slop):
     Returns
     -------
     allowed_area: float
-        area in units of seconds^(n_ifos-1) that the coincident values can fall in
+        area in units of seconds^(n_ifos-1) that the coincident values
+        can fall in
     """
     # TO DO: add in capability for more than 3 detectors
     n_ifos = len(ifos)
@@ -109,6 +110,7 @@ def multiifo_noise_coincident_area(ifos, slop):
             allowed_area += 2*tofs[i]*tofs[ifo2_num[i]] - tofs[i]**2
 
     return allowed_area
+
 
 def multiifo_signal_coincident_area(ifos):
     """
