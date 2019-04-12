@@ -1,5 +1,6 @@
 import numpy
 cimport numpy
+from libc.stdlib cimport malloc, free
 from libc.math cimport cos, sin # This imports c's sin and cos function from the math library
 from cython import wraparound, boundscheck, cdivision
 from pycbc.types import real_same_precision_as
@@ -31,7 +32,7 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
                      int blen):
     # Do I need to declare UINT vs INT??
     cdef int num_parallel_regions, bstart, bend, i, j, k, r, start, end
-    cdef numpy.ndarray[REALTYPE, ndim=1] outr, outi, pr, pi, vsr, vsi, outr_tmp, outi_tmp
+    cdef REALTYPE *outr, *outi, *pr, *pi, *vsr, *vsi, *outr_tmp, *outi_tmp
     cdef COMPLEXTYPE v
     cdef REALTYPE vr, vi, t1, t2, k1, k2, k3, vs, va
 
@@ -41,14 +42,14 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
 
     num_parallel_regions = 16
 
-    outr = numpy.zeros(n, dtype=real_type)
-    outi = numpy.zeros(n, dtype=real_type)
-    pr = numpy.zeros(n, dtype=real_type)
-    pi = numpy.zeros(n, dtype=real_type)
-    vsr = numpy.zeros(n, dtype=real_type)
-    vsi = numpy.zeros(n, dtype=real_type)
-    outr_tmp = numpy.zeros(n, dtype=real_type)
-    outi_tmp = numpy.zeros(n, dtype=real_type)
+    outr = <REALTYPE *> malloc(n * sizeof(REALTYPE))
+    outi = <REALTYPE *> malloc(n * sizeof(REALTYPE))
+    pr = <REALTYPE *> malloc(n * sizeof(REALTYPE))
+    pi = <REALTYPE *> malloc(n * sizeof(REALTYPE))
+    vsr = <REALTYPE *> malloc(n * sizeof(REALTYPE))
+    vsi = <REALTYPE *> malloc(n * sizeof(REALTYPE))
+    outr_tmp = <REALTYPE *> malloc(n * sizeof(REALTYPE))
+    outi_tmp = <REALTYPE *> malloc(n * sizeof(REALTYPE))
 
     for r in range(blen):
         bstart = bins[r] # int
@@ -74,7 +75,6 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
             #vsi = numpy.zeros(n, dtype=real_type)
             #outr_tmp = numpy.zeros(n, dtype=real_type)
             #outi_tmp = numpy.zeros(n, dtype=real_type)
-            
 
             for i in range(n):
                 pr[i] = cos(2 * 3.141592653 * shifts[i] * (start) / slen)
@@ -116,6 +116,14 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
         for i in range(n):
             chisq[i] += outr[i]*outr[i] + outi[i]*outi[i]
 
+    free(outr)
+    free(outi)
+    free(pr)
+    free(pi)
+    free(vsr)
+    free(vsi)
+    free(outr_tmp)
+    free(outi_tmp)
 
 def chisq_accum_bin_numpy(chisq, q):
     chisq += q.squared_norm()
