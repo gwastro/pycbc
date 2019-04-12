@@ -132,6 +132,8 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
     free(vsi)
     free(outr_tmp)
     free(outi_tmp)
+    free(v1r)
+    free(v1i)
 
 def chisq_accum_bin_numpy(chisq, q):
     chisq += q.squared_norm()
