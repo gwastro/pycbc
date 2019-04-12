@@ -108,6 +108,29 @@ def insert_injfilterrejector_option_group(parser):
     injfilterrejector_group.add_argument(curr_arg, type=int, default=None,
                                          help=_injfilterer_flower_help)
 
+def insert_injfilterrejector_option_group_multi_ifo(parser):
+    """Add options for injfilterrejector to executable."""
+    injfilterrejector_group = \
+        parser.add_argument_group(_injfilterrejector_group_help)
+    curr_arg = "--injection-filter-rejector-chirp-time-window"
+    injfilterrejector_group.add_argument(curr_arg, type=float, default=None,
+        nargs='+', action=MultiDetOptionAction, help=_injfilterer_cthresh_help)
+    curr_arg = "--injection-filter-rejector-match-threshold"
+    injfilterrejector_group.add_argument(curr_arg, type=float, default=None,
+        nargs='+', action=MultiDetOptionAction, help=_injfilterer_mthresh_help)
+    curr_arg = "--injection-filter-rejector-coarsematch-deltaf"
+    injfilterrejector_group.add_argument(curr_arg, type=float, default=1.,
+        nargs='+', action=MultiDetOptionAction, help=_injfilterer_deltaf_help)
+    curr_arg = "--injection-filter-rejector-coarsematch-fmax"
+    injfilterrejector_group.add_argument(curr_arg, type=float, default=256.,
+        nargs='+', action=MultiDetOptionAction, help=_injfilterer_fmax_help)
+    curr_arg = "--injection-filter-rejector-seg-buffer"
+    injfilterrejector_group.add_argument(curr_arg, type=int, default=10,
+        nargs='+', action=MultiDetOptionAction, help=_injfilterer_buffer_help)
+    curr_arg = "--injection-filter-rejector-f-lower"
+    injfilterrejector_group.add_argument(curr_arg, type=int, default=None,
+                                         help=_injfilterer_flower_help)
+
 
 class InjFilterRejector(object):
 
@@ -168,6 +191,40 @@ class InjFilterRejector(object):
                    f_lower, coarsematch_deltaf=coarsematch_deltaf,
                    coarsematch_fmax=coarsematch_fmax,
                    seg_buffer=seg_buffer)
+
+    @classmethod
+    def from_cli_single_ifo(cls, opt, ifo):
+        """Create an InjFilterRejector instance from command-line options."""
+        injection_file = opt.injection_file[ifo]
+        chirp_time_window = \
+            opt.injection_filter_rejector_chirp_time_window[ifo]
+        match_threshold = opt.injection_filter_rejector_match_threshold[ifo]
+        coarsematch_deltaf = \
+            opt.injection_filter_rejector_coarsematch_deltaf[ifo]
+        coarsematch_fmax = opt.injection_filter_rejector_coarsematch_fmax[ifo]
+        seg_buffer = opt.injection_filter_rejector_seg_buffer[ifo]
+        if opt.injection_filter_rejector_f_lower[ifo] is not None:
+            f_lower = opt.injection_filter_rejector_f_lower[ifo]
+        else:
+            # NOTE: Uses main low-frequency cutoff as default option. This may
+            #       need some editing if using this in multi_inspiral, which I
+            #       leave for future work, or if this is being used in another
+            #       code which doesn't have --low-frequency-cutoff
+            f_lower = opt.low_frequency_cutoff[ifo]
+        return cls(injection_file[ifo], chirp_time_window[ifo],
+                   match_threshold[ifo], f_lower[ifo],
+                   coarsematch_deltaf=coarsematch_deltaf[ifo],
+                   coarsematch_fmax=coarsematch_fmax[ifo],
+                   seg_buffer=seg_buffer[ifo])
+
+    @classmethod
+    def from_cli_multi_ifos(cls, opt, ifo):
+        """Create an InjFilterRejector instance from command-line options."""
+        inj_filter_rejectors = {}
+        for ifo in ifos:
+            inj_filter_rejectors[ifo] = cls.from_cli_single_ifo(cls, opt, ifo)
+        return inj_filter_rejectors
+        
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
         """Generate and a store a truncated representation of inj_waveform."""
