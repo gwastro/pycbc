@@ -73,13 +73,8 @@ ifos = f.attrs['ifos'].split(' ')
 
 # NOTE: Effective distance is hardcoded to these values. It's also normally
 #       meaningless for precessing injections.
-eff_dist_map = {}
-eff_dist_map['H1'] = 'eff_dist_h'
-eff_dist_map['H2'] = 'eff_dist_h'
-eff_dist_map['L1'] = 'eff_dist_l'
-eff_dist_map['G1'] = 'eff_dist_g'
-eff_dist_map['T1'] = 'eff_dist_t'
-eff_dist_map['V1'] = 'eff_dist_v'
+eff_dist_map = {'H1': 'eff_dist_h', 'H2', 'eff_dist_h', 'L1': 'eff_dist_l',
+                'G1': 'eff_dist_g', 'T1': 'eff_dist_t', 'V1': 'eff_dist_v'}
 
 try:
     eff_dists = [f['injections/{}'.format(eff_dist_map[ifo])][:]\
