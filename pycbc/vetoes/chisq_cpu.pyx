@@ -104,7 +104,7 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
                     t2 = pi[i]
 
                     # Complex multiply pr[i] * v
-                    k1 = v1r[j] * (t1 + t2)
+                    k1 = vr * (t1 + t2)
                     k2 = t1 * va
                     k3 = t2 * vs
 
