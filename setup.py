@@ -205,7 +205,8 @@ VERSION = get_version_info()
 cythonext = ['waveform.spa_tmplt',
              'waveform.utils',
              'types.array',
-             'filter.matchedfilter']
+             'filter.matchedfilter',
+             'vetoes.chisq']
 ext = []
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,
