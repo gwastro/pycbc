@@ -33,7 +33,14 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
                      int blen):
     # Do I need to declare UINT vs INT??
     cdef int num_parallel_regions, bstart, bend, i, j, k, r, start, end
-    cdef REALTYPE *outr, *outi, *pr, *pi, *vsr, *vsi, *outr_tmp, *outi_tmp
+    cdef REALTYPE *outr
+    cdef REALTYPE *outi
+    cdef REALTYPE *pr
+    cdef REALTYPE *pi
+    cdef REALTYPE *vsr
+    cdef REALTYPE *vsi
+    cdef REALTYPE *outr_tmp
+    cdef REALTYPE *outi_tmp
     cdef COMPLEXTYPE v
     cdef REALTYPE vr, vi, t1, t2, k1, k2, k3, vs, va
 
