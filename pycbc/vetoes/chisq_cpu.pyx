@@ -33,17 +33,9 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
                      int blen):
     # Do I need to declare UINT vs INT??
     cdef int num_parallel_regions, bstart, bend, i, j, k, r, start, end
-    cdef REALTYPE *outr
-    cdef REALTYPE *outi
-    cdef REALTYPE *pr
-    cdef REALTYPE *pi
-    cdef REALTYPE *vsr
-    cdef REALTYPE *vsi
-    cdef REALTYPE *outr_tmp
-    cdef REALTYPE *outi_tmp
-    cdef REALTYPE *v1r
-    cdef REALTYPE *v1i
-    cdef REALTYPE t1, t2, k1, k2, k3, vs, va
+    cdef REALTYPE *outr, *outi, *pr, *pi, *vsr, *vsi, *outr_tmp, *outi_tmp
+    cdef COMPLEXTYPE v
+    cdef REALTYPE vr, vi, t1, t2, k1, k2, k3, vs, va
 
     num_parallel_regions = 16
 
@@ -55,12 +47,6 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
     vsi = <REALTYPE *> malloc(n * sizeof(REALTYPE))
     outr_tmp = <REALTYPE *> malloc(n * sizeof(REALTYPE))
     outi_tmp = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    v1r = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-    v1i = <REALTYPE *> malloc(n * sizeof(REALTYPE))
-
-    for i in range(n):
-        v1r[i] = v1[i].real
-        v1i[i] = v1[i].imag
 
     for r in range(blen):
         bstart = bins[r] # int
@@ -96,8 +82,11 @@ def point_chisq_code(numpy.ndarray[REALTYPE, ndim=1] chisq,
                 outi_tmp[i] = 0
 
             for j in range(start, end): # uint
-                vs = v1r[j] + v1i[j];
-                va = v1i[j] - v1r[j];
+                v = v1[j]
+                vr = v.real
+                vi = v.imag
+                vs = vr + vi;
+                va = vi - vr;
 
                 for i in range(n):
                     t1 = pr[i]
