@@ -594,8 +594,6 @@ for inj_file, tag in zip(inj_files, inj_tags):
     injdir = rdir['injections/%s' % tag]
     sensdir = rdir['search_sensitivity/%s' % tag]
 
-    # FIXME: Ian has some issues with how these sensitivity jobs are created
-    #        The exclude thing is confusing, but not sure ho to improve yet.
     #foundmissed/sensitivity plots
     #s = wf.make_sensitivity_plot(workflow, found_inj, sensdir,
     #                             exclude=['all', 'summ'], require='sub',
