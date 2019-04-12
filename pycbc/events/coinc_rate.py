@@ -85,7 +85,8 @@ def multiifo_noise_coincident_area(ifos, slop):
         dets[ifo] = pycbc.detector.Detector(ifo)
     n_ifos = len(ifos)
     if n_ifos == 2:
-        allowed_area = 2 * (dets[ifos[0]].light_travel_time_to_detector(dets[ifos[1]]) + slop)
+        allowed_area = 2 * (dets[ifos[0]].light_travel_time_to_detector(
+                                                        dets[ifos[1]]) + slop)
     elif n_ifos == 3:
         tofs = numpy.zeros(n_ifos)
         ifo2_num = []
