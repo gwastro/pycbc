@@ -66,7 +66,7 @@ sim_inspiral_map = {
     'approximant': 'waveform',
     }
 
-def set_sim_data(sim, field, data):
+def set_sim_data(inj, field, data):
     """Sets data of a SimInspiral instance."""
     try:
         sim_field = sim_inspiral_map[field]
@@ -74,10 +74,10 @@ def set_sim_data(sim, field, data):
         sim_field = field
     # for tc, map to geocentric times
     if sim_field == 'tc':
-        sim.geocent_end_time = int(data)
-        sim.geocent_end_time_ns = int(1e9*(data % 1))
+        inj.geocent_end_time = int(data)
+        inj.geocent_end_time_ns = int(1e9*(data % 1))
     else:
-        setattr(sim, sim_field, data)
+        setattr(inj, sim_field, data)
 
 
 def legacy_approximant_name(apx):
