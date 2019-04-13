@@ -14,7 +14,7 @@ addons:
     - libdb-dev
     - libopenblas-dev
     - graphviz
-    - mpi-default-dev
+    - mpi-default-bin
 env:
   global:
   # This is the global version of lalsuite that will be used and included
