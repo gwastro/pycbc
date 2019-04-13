@@ -134,34 +134,40 @@ class LiveEventManager(object):
 
         # Determine if the other ifos can contribute to the coincident event
         for ifo in followup_ifos:
-            snr_series, ptime, pvalue = followup_event_significance(
+            snr_series, ptime, pvalue, sigma2 = followup_event_significance(
                     ifo, data_readers[ifo], bank, template_id, coinc_times)
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
                 self.combine_far_with_followup(ifos[0], ifo, triggers,
-                                               snr_series, ptime, pvalue)
+                                               snr_series, ptime, pvalue,
+                                               sigma2)
 
         return out
 
-    def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series, ptime, pvalue):
+    def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series,
+                                  ptime, pvalue, sigma2):
         # Calculate new ifar
         triggers['foreground/ifar'] = combine_ifar_pvalue(triggers['foreground/ifar'],
                                                           pvalue, self.pvalue_livetime)
 
-        # Copy the triggers
-        for key in triggers.copy():
+        # Copy the common fields from the other detector
+        # ignore fields that contain detector-specific data
+        fields_to_ignore = set(['end_time', 'snr', 'stat', 'coa_phase',
+                                'chisq', 'chisq_dof', 'sg_chisq', 'sigmasq'])
+        for key in set(triggers):
             if 'foreground/{}/'.format(coinc_ifo) in key:
                 _, _, name = key.split('/')
+                if name in fields_to_ignore:
+                    continue
                 triggers['foreground/{}/{}'.format(ifo, name)] = triggers[key]
 
-        # Set the critical stats manually
+        # Set the detector-specific fields for which we have data
         snr_series_peak = snr_series.at_time(ptime, nearest_sample=True)
-        triggers['foreground/{}/end_time'.format(ifo)] = float(ptime)
-        triggers['foreground/{}/snr'.format(ifo)] = abs(snr_series_peak)
-        triggers['foreground/{}/stat'.format(ifo)] = triggers['foreground/{}/snr'.format(ifo)]
-        triggers['foreground/{}/coa_phase'.format(ifo)] = numpy.angle(snr_series_peak)
-        triggers['foreground/{}/chisq'.format(ifo)] = None
-        triggers['foreground/{}/chisq_dof'.format(ifo)] = None
+        base = 'foreground/{}/'.format(ifo)
+        triggers[base + 'end_time'] = float(ptime)
+        triggers[base + 'snr'] = triggers[base + 'stat'] = abs(snr_series_peak)
+        triggers[base + 'coa_phase'] = numpy.angle(snr_series_peak)
+        triggers[base + 'sigmasq'] = sigma2
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
