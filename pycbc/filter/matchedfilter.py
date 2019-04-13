@@ -1784,8 +1784,8 @@ def followup_event_significance(ifo, data_reader, bank,
     htilde = bank.get_template(template_id, min_buffer=bdur)
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
-    sigmasq = htilde.sigmasq(stilde.psd)
-    snr, _, norm = matched_filter_core(htilde, stilde, h_norm=sigmasq)
+    sigma2 = htilde.sigmasq(stilde.psd)
+    snr, _, norm = matched_filter_core(htilde, stilde, h_norm=sigma2)
 
     # Find peak in on-source and determine p-value
     onsrc = snr.time_slice(onsource_start, onsource_end)
@@ -1809,7 +1809,7 @@ def followup_event_significance(ifo, data_reader, bank,
     logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
                  pvalue, nsamples)
 
-    return baysnr * norm, peak_time, pvalue, sigmasq
+    return baysnr * norm, peak_time, pvalue, sigma2
 
 def compute_followup_snr_series(data_reader, htilde, trig_time,
                                 duration=0.095, check_state=True,
