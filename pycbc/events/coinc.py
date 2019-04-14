@@ -1034,9 +1034,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             cidx = cluster_coincs(cstat, ctime0, ctime1, offsets,
                                       self.timeslide_interval,
                                       self.analysis_block)
-            offsets = offsets[cidx]
-            zerolag_idx = (offsets == 0)
-            bkg_idx = (offsets != 0)
+            coffsets = offsets[cidx]
+            zerolag_idx = (coffsets == 0)
+            bkg_idx = (coffsets != 0)
 
             for ifo in self.ifos:
                 single_expire[ifo] = numpy.concatenate(single_expire[ifo])
@@ -1058,9 +1058,27 @@ class LiveCoincTimeslideBackgroundEstimator(object):
             zerolag_results['foreground/ifar'] = self.ifar(zerolag_cstat)
             zerolag_results['foreground/stat'] = zerolag_cstat
             template = template_ids[idx]
+
+            # Pick loudest zerolag coinc by network SNR
+            tid = self.template_ids[offsets == 0]
+            tid0 = self.trigger_ids[self.ifos[0]][offsets == 0]            
+            tid1 = self.trigger_ids[self.ifos[1]][offsets == 0]
+            nsnr = 0
+            max_template = 0
+            max_id = {}
+            for t, t0, t1 in zip(tid, tid0, tid1):
+                snr1 = self.singles[self.ifos[1]].data(t)[t1]['snr']
+                snr0 = self.singles[self.ifos[0]].data(t)[t0]['snr']
+                if snr1 ** 2.0 + snr2 ** 2.0 > nsnr:
+                    nsnr = snr1 ** 2.0 + snr2 ** 2.0
+                    max_id[self.ifos[1]] = t1
+                    max_id[self.ifos[0]] = t0
+                    max_template = t
+            
+            # Save single trigger information
             for ifo in self.ifos:
-                trig_id = trigger_ids[ifo][idx]
-                single_data = self.singles[ifo].data(template)[trig_id]
+                trig_id = max_id[ifo]
+                single_data = self.singles[ifo].data(max_template)[trig_id]
                 for key in single_data.dtype.names:
                     path = 'foreground/%s/%s' % (ifo, key)
                     zerolag_results[path] = single_data[key]
