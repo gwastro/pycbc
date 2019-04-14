@@ -1560,12 +1560,11 @@ class _FieldArrayWithDefaults(FieldArray):
         parameters at initialization. Keyword arguments can be passed to this
         to set such dynamic fields.
         """
-        add_fields = {}
+        output = cls._staticfields.copy()
         if include_virtual:
-            add_fields.update(dict([[name, VIRTUALFIELD_DTYPE]
-                for name in cls._virtualfields]))
-        return dict(cls._staticfields.items() + add_fields.items())
-
+            output.update({name: VIRTUALFIELD_DTYPE
+                           for name in cls._virtualfields})
+        return output
 
     def __new__(cls, shape, name=None, additional_fields=None,
                 field_kwargs=None, **kwargs):
