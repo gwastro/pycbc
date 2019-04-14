@@ -49,6 +49,9 @@ parser.add_argument("--output-file",
 parser.add_argument("--randomize-template-order", action="store_true",
                     help="Random shuffle templates with fixed seed "
                          "before selecting range to analyze")
+parser.add_argument("--batch-statistic", default=1000000, type=int,
+                    help="Number of coincicent triggers to calculation statistics"
+                         "for at once")
 args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
@@ -228,12 +231,22 @@ for tnum in template_ids:
     i0, i1, slide = coinc.time_coincidence(t0, t1, time_window, args.timeslide_interval)
 
     logging.info('Coincident Trigs: %s' % (len(i1)))
-
     logging.info('Calculating Single Detector Statistic')
     s0, s1 = rank_method.single(trigs0), rank_method.single(trigs1)
 
-    logging.info('Calculating Multi-Detector Combined Statistic')
-    c = rank_method.coinc(s0[i0], s1[i1], slide, args.timeslide_interval)
+    c = []
+    si = 0
+    while si < len(i0):
+        ei = args.batch_statistic + si
+        if ei > len(i0):
+            ei = len(i0)
+
+        logging.info('Calculating Multi-Detector Combined Statistic: %s', si)
+        c += [rank_method.coinc(s0[i0[si:ei]],
+                                s1[i1[si:ei]],
+                                slide[si:ei], args.timeslide_interval)]
+        si += args.batch_statistic
+    c = numpy.concatenate(c)
 
     #index values of the zerolag triggers
     fi = numpy.where(slide == 0)[0]
