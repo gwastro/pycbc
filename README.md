@@ -18,9 +18,18 @@ For the detailed installation instructions of PyCBC
   
 Quick Installation
 ```
-pip install lalsuite pycbc
+pip install numpy==1.15.2
+pip install lalsuite pycbc mpi4py
+pip uninstall pycbc
+pip install -e git+https://github.com/bhooshan-gadre/pycbc.git#egg=pycbc-dev
+rm -f ${VIRTUAL_ENV}/src/pip-delete-this-directory.txt
 ```
-  
+
+To add remote to follow
+```
+git remote add gwastro https://github.com/gwastro/pycbc.git
+```
+Make sure to keep master upto-date before creating a PR
 You can start up an interactive jupyter notebook with PyCBC using either of the links below.
 
 [![Azure Notebooks](https://notebooks.azure.com/launch.png)](https://notebooks.azure.com/nitz/libraries/pycbc)
