@@ -80,6 +80,7 @@ def multiifo_noise_coincident_area(ifos, slop):
         area in units of seconds^(n_ifos-1) that the coincident values
         can fall in
     """
+    # set up detector objects
     dets = {}
     for ifo in ifos:
         dets[ifo] = pycbc.detector.Detector(ifo)
@@ -90,7 +91,6 @@ def multiifo_noise_coincident_area(ifos, slop):
     elif n_ifos == 3:
         tofs = numpy.zeros(n_ifos)
         ifo2_num = []
-        # set up detector objects
 
         # calculate travel time between detectors (plus extra for timing error)
         # TO DO: allow for different timing errors between different detectors
