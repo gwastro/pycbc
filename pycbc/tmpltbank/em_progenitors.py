@@ -379,8 +379,6 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 
 ########################################################################################
 # Remnant mass for a NS-BH merger [Foucart PRD 86, 124007 (2012)]                      #
-# TODO: I will modify this part                                                        #
-# Using Prd 98, 081501 (2018)                                                          #
 # The result is shifted by a quantity (shift, in solar masses) passed as an argument   #
 # of remnant_mass: this can effectively used as a remnant mass threshold when solving  #
 # the constraint remnant_mass(...)=0.                                                  #
@@ -412,11 +410,12 @@ def xi_eq(x, kappa, chi_eff, q):
     """
     return x**3*(x**2-3*kappa*x+2*chi_eff*kappa*math.sqrt(kappa*x))-3*q*(x**2-2*kappa*x+(chi_eff*kappa)**2)
 
+# TODO: non-zero shift was never used. Remove.
 def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     """
     Function that determines the remnant disk mass of
     an NS-BH system using the fit to numerical-relativity
-    results discussed in Foucart PRD 86, 124007 (2012).
+    results discussed in Foucart+, PRD 98, 081501 (2018).
 
     Parameters
     -----------
@@ -426,8 +425,8 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
         NS gravitational mass (in solar masses)
     ns_sequence: 3D-array
         contains the sequence data in the form NS gravitational
-         mass (in solar masses), NS baryonic mass (in solar
-         masses), NS compactness (dimensionless)
+        mass (in solar masses), NS baryonic mass (in solar
+        masses), NS compactness (dimensionless)
     chi: float
         the BH dimensionless spin parameter
     incl: float
@@ -463,6 +462,7 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
         print('SOMETHING WENT WRONG!!\n')
         raise Exception('Unphysical parameters!')
 
+# TODO: modify from here on using Foucart+, PRD 98, 081501 (2018).
     # Calculate the dimensionless parameter kappa
     kappa = q*ns_compactness
 
@@ -491,11 +491,14 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 
     return remnant_mass
 
+# TODO: functions below were necessary for lalapps_cbc_sbank. Determine whether
+# they are still needed with the new remnant mass fit.
+
 ######################################################################################
 # Calculate an upper limit to the remnant mass by setting the BH spin magnitude to 1 #
 # (its maximum possible value) and allowing the BH spin vector to be tilted so that  #
 # chi_z*cos(tilt) = 1.  An unreasonably large remnant disk mass is returned if the   #
-# maximum possible NS mass is exceeded.  Works with list and single numbers.         #
+# maximum possible NS mass is exceeded.  Works with lists and single numbers.        #
 ######################################################################################
 def remnant_mass_ulim(eta, ns_g_mass, bh_spin_z, ns_sequence, max_ns_g_mass, shift):
     """
@@ -507,7 +510,7 @@ def remnant_mass_ulim(eta, ns_g_mass, bh_spin_z, ns_sequence, max_ns_g_mass, shi
     by setting the BH dimensionless spin magntitude to unity.
     An unreasonably large remnant disk mass (100 solar masses)
     is returned if the maximum possible NS mass is exceeded
-    in applying the model of Foucart PRD 86, 124007 (2012).
+    in applying the model of Foucart+, PRD 98, 081501 (2018).
 
     Parameters
     -----------
