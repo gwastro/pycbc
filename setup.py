@@ -216,6 +216,14 @@ for name in cythonext:
                   compiler_directives={'embedsignature': True})
     ext.append(e)
 
+# Not all modules work like this:
+e = Extension("pycbc.filter.fftw_pruned_cython",
+              ["pycbc/filter/fftw_pruned_cython.pyx",
+              extra_compile_args=['-O3', '-w', '-msse4.2',
+                                  '-ffast-math', '-ffinite-math-only'],
+              compiler_directives={'embedsignature': True})
+ext.append(e)
+
 setup (
     name = 'PyCBC',
     version = VERSION,
