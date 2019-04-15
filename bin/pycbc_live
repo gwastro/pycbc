@@ -243,9 +243,7 @@ class LiveEventManager(object):
                     event.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
-                  store_loudest_index=False,
-                  raw_results=None,
-                  gracedb_results=None):
+             store_loudest_index=False, raw_results=None):
         """ Save the results from this time block to an hdf output file """
         if self.use_date_prefix:
             tm = lal.GPSToUTC(int(time_index))
@@ -682,7 +680,7 @@ with ctx:
                                           valid_pad)
 
             evnt.dump(results, prefix, time_index=data_end(),
-                      store_psd=False if args.store_psd is False else psds,
+                      store_psd=(psds if args.store_psd else False),
                       store_loudest_index=args.store_loudest_index,
                       raw_results=best_coinc)
 
