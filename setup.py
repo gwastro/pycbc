@@ -207,10 +207,18 @@ ext = []
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,
                   ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
-                  extra_compile_args=[ '-O3', '-w', '-msse4.2',
-                                 '-ffast-math', '-ffinite-math-only'],
+                  extra_compile_args=['-O3', '-w', '-msse4.2',
+                                      '-ffast-math', '-ffinite-math-only'],
                   compiler_directives={'embedsignature': True})
     ext.append(e)
+
+# Not all modules work like this:
+e = Extension("pycbc.filter.fftw_pruned_cython",
+              ["pycbc/filter/fftw_pruned_cython.pyx",
+              extra_compile_args=['-O3', '-w', '-msse4.2',
+                                  '-ffast-math', '-ffinite-math-only'],
+              compiler_directives={'embedsignature': True})
+ext.append(e)
 
 setup (
     name = 'PyCBC',
