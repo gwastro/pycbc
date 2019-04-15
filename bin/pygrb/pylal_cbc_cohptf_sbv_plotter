@@ -1,0 +1,1201 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2011 Ian W. Harry
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+from __future__ import division
+
+# set up timer
+import time
+start = int(time.time()*10**6)
+elapsed_time = lambda: int(time.time()*10**6-start)
+
+import os,matplotlib,copy
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib import rc
+from math import sqrt
+import scipy.stats
+from optparse import OptionParser
+from glue import segments
+from pylal import git_version,MultiInspiralUtils
+from pylal.dq import dqSegmentUtils
+from lal import LIGOTimeGPS
+from glue.ligolw import table,lsctables,utils,ligolw
+from pylal.coh_PTF_pyutils import *
+
+__author__  = "Ian Harry <ian.harry@astro.cf.ac.uk>"
+__version__ = "git id %s" % git_version.id
+__date__    = git_version.date
+
+# =============================================================================
+# Parse command line
+# =============================================================================
+
+def parse_command_line():
+
+  usage = """usage: %prog [options] 
+  
+coh_PTF_sbv_plotter will calculate all signal based vetoes and the final detection statistics, whilst plotting a whole bunch of stuff. Required arguments
+
+--trig-file
+--grb-name
+"""
+
+  parser = OptionParser(usage, version=__version__)
+
+  parser.add_option("-v", "--verbose", action="store_true", default=False,\
+                    help="verbose output, default: %default")
+
+  parser.add_option("-t", "--trig-file", action="store", type="string",\
+                    default=None, help="The location of the trigger file")
+
+  parser.add_option("-I", "--inj-file", action="store", type="string",\
+                    default=None, help="The location of the injection file")
+
+  parser.add_option("-n", "--grb-name", action="store", type="string",\
+                    default=None, help="Name of the GRB such as 090802")
+
+  parser.add_option("-o", "--output-path", action="store", type="string",\
+                    default=os.getcwd(), help="output directory, "+\
+                                              "default: %default")
+
+  parser.add_option("-Q", "--chisq-index", action="store", type="float",\
+                    default=4.0, help="chisq_index for newSNR calculation, "+\
+                                      "default: %default")
+
+  parser.add_option("-N", "--chisq-nhigh", action="store", type="float",\
+                    default=3.0, help="nhigh for newSNR calculation, "+\
+                                      "default: %default")
+
+  parser.add_option("-a", "--segment-dir", action="store", type="string",\
+                    help="directory holding buffer, on and off source "+\
+                         "segment files.")
+
+  parser.add_option("-B", "--sngl-snr-threshold", action="store", type="float",\
+                    default=4.0, help="Single detector SNR threshold, the"+\
+                    "two most sensitive detectors should have SNR above this"+\
+                    " default: %default")
+
+  parser.add_option("-d", "--snr-threshold", action="store", type="float",\
+                    default=6.0, help="SNR threshold for recording triggers,"+\
+                                      " default: %default")
+
+  parser.add_option("-c", "--newsnr-threshold", action="store", type="float",\
+                    default=None, help="NewSNR threshold for calculating the "+\
+                    "chisq of triggers (based on value of auto and bank chisq"+\
+                    " values. By default will take the same value as "+\
+                    "snr-threshold")
+
+  parser.add_option("-A", "--null-snr-threshold", action="store",\
+                    type="string", default="4.25,6",\
+                    help="comma separated lower,higher null SNR thresholds, "+\
+                         " for null SNR cut, default: \"%default\"")
+
+  parser.add_option("-C", "--null-grad-thresh", action="store", type="float",\
+                    default=20., help="Threshold above which to increase the,"+\
+                    "values of the null SNR cut. default: %default")
+
+  parser.add_option("-D", "--null-grad-val", action="store", type="float",\
+                    default=0.2, help="Rate the null SNR cut will increase"+\
+                    "above the threshold. default: %default")
+
+  parser.add_option("-l", "--veto-directory",action="store",type="string",\
+                    default=None,\
+                    help="The location of the CATX veto files")
+
+  parser.add_option("-b", "--veto-category",action="store",type="int",\
+                   default=None, help="Apply vetoes up to this level inclusive")
+
+  parser.add_option( "-M", "--max-chirp-mass", action="store", type="float",\
+                     default=8.0,\
+                     help="maximum allowed chirp mass, default %default" )
+
+  (opts,args) = parser.parse_args()
+
+  if not opts.trig_file:
+    parser.error("must provide trig file")
+
+  if not opts.grb_name:
+    parser.error("must provide --grb-name")
+
+  if not opts.segment_dir:
+    parser.error("must provide --segment-dir")
+
+  if opts.veto_directory and not opts.veto_category:
+    parser.error("Must supply veto category if applying vetoes")
+
+  if not opts.newsnr_threshold:
+    opts.newsnr_threshold = opts.snr_threshold
+
+  return opts, args
+
+# =============================================================================
+# SNR timeseries plotter 
+# =============================================================================
+def snr_timeseries_plot(trigTime, trigSNR, grbTime, start, end, ylabel, outdir, fig_tag, injFile, injTime, injSNR):
+  fig = plt.figure()
+  ax = fig.gca()
+  ax.plot(trigTime, trigSNR, 'bx')
+  ax.set_xlabel("Time since %s" % grbTime)
+  ax.set_xlim([start, end])
+  ax.set_ylabel(ylabel)
+  ax.grid()
+  fig.savefig('%s/%s_noinj.png' % (outdir, fig_tag), bbox_inches='tight')
+  if injFile:
+    ax.plot(injTime, injSNR, 'r+')
+    ax.set_xlim([start, end])
+    fig.savefig('%s/%s_inj.png' % (outdir, fig_tag), bbox_inches='tight')
+  plt.close()
+  return
+
+# =============================================================================
+# Main function
+# =============================================================================
+
+def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
+         chisq_nhigh=3.0, null_thresh=[4.25,6], max_mchirp=8.0,\
+         vetoFiles=[],snrThresh=6.0,snglSnrThresh=4.0,newSnrThresh=6.0,\
+         nullGradThresh=20.,nullGradVal=0.2, verbose=False):
+ 
+  if verbose:
+    sys.stdout.write("Imported and ready to go at %d.\n" % elapsed_time())
+ 
+  # set output directory
+  if not os.path.isdir(outdir):
+    os.makedirs(outdir)
+  
+  # get rcParams
+  #makePaperPlots()
+  
+  #
+  # load triggers
+  #
+
+  if verbose:
+    sys.stdout.write("Loading triggers...\n")
+
+  # load file
+  xmldoc = utils.load_filename(trigFile, gz=trigFile.endswith("gz"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
+  searchSumm = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
+
+  # extract IFOS
+  ifos = sorted(map(str, searchSumm[0].get_ifos()))
+  ifoAtt = { 'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t' } 
+
+  tmp, slideDict, segmentDict = \
+          MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trigFile])
+  numSlides = len(slideDict)
+  lsctables.MultiInspiralTable.loadcolumns =\
+          [slot for slot in tmp[0].__slots__ if hasattr(tmp[0], slot)]
+  trigs = lsctables.New(lsctables.MultiInspiralTable,\
+          columns=lsctables.MultiInspiralTable.loadcolumns)
+
+  # Construct veto list
+  vetoes = segments.segmentlistdict()
+  for ifo in ifos:
+    vetoes[ifo] = segments.segmentlist()
+
+  if vetoFiles:
+    for file in vetoFiles:
+      ifo = os.path.basename(file)[:2]
+      if ifo in ifos:
+        # This returns a coalesced list of the vetoes
+        tmpVetoSegs = dqSegmentUtils.fromsegmentxml(open(file,'r'))
+        for entry in tmpVetoSegs:
+          vetoes[ifo].append(entry)
+
+  for ifo in ifos:
+    vetoes[ifo].coalesce()
+  
+  for slideID in range(numSlides):
+    slidVetoes = copy.deepcopy(vetoes)
+    for ifo in ifos:
+      slidVetoes[ifo].shift(-slideDict[slideID][ifo])
+
+    # load triggers
+    vets = slidVetoes.union(slidVetoes.keys())
+    trigs.extend(t for t in tmp.veto(vets) if int(t.time_slide_id) == slideID)
+
+  numtrigs = len(trigs)
+  if numtrigs<1:
+    sys.stderr.write("WARNING: No triggers found.")
+  elif numtrigs >= 1 and verbose:
+    sys.stdout.write("%d triggers found at %d.\n"\
+                     % (numtrigs, elapsed_time()))
+
+
+  #
+  # load injections
+  #
+
+  if injFile:
+    if verbose:
+      sys.stdout.write("\nLoading injections...\n")
+    xmldoc = utils.load_filename(injFile, gz=injFile.endswith("gz"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
+    tmp = table.get_table(xmldoc, lsctables.MultiInspiralTable.tableName)
+    injs = lsctables.New(lsctables.MultiInspiralTable,\
+                        columns=lsctables.MultiInspiralTable.loadcolumns)
+    injs.extend(t for t in tmp if t.get_end() not in vetoes)
+    if verbose:
+      sys.stdout.write("%d injections found at %d.\n"\
+                       % (len(injs), elapsed_time()))
+
+  #
+  # extract trigger data
+  #
+
+
+  # work out if using sngl chisqs
+  i = ifoAtt[ifos[0]]
+  sngl_chisq      = 'chisq_%s' % i\
+                    in lsctables.MultiInspiralTable.loadcolumns
+  sngl_bank_chisq = 'bank_chisq_%s' % i\
+                    in lsctables.MultiInspiralTable.loadcolumns
+  sngl_cont_chisq = 'cont_chisq_%s' % i\
+                    in lsctables.MultiInspiralTable.loadcolumns
+
+  # initiate amplitude generator
+  numAmp  = 4
+  amplitudes = xrange(1,numAmp+1)
+
+  # set basic data
+  trigTime      = numpy.asarray(trigs.get_end())
+  trigSNR       = numpy.asarray(trigs.get_column('snr'))
+  trigBestNR    = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
+                             null_thresh=null_thresh,snr_threshold=snrThresh,\
+                             sngl_snr_threshold = snglSnrThresh,\
+                             chisq_threshold = newSnrThresh,\
+                             null_grad_thresh = nullGradThresh,\
+                             null_grad_val = nullGradVal) for t in trigs]
+  trigBestNR    = numpy.array(trigBestNR)
+  trigNullSNR   = numpy.asarray(trigs.get_null_snr())
+  trigNullstat  = numpy.asarray(trigs.get_column('null_statistic'))
+  trigTraceSNR  = numpy.asarray(trigs.get_column('null_stat_degen'))
+  trigMchirp    = numpy.asarray(trigs.get_column('mchirp'))
+
+  # get chisq data
+  trigChiSquare = numpy.asarray(trigs.get_column('chisq'))
+  trigBankVeto  = numpy.asarray(trigs.get_column('bank_chisq')) 
+  trigAutoVeto  = numpy.asarray(trigs.get_column('cont_chisq'))
+  numpy.putmask(trigChiSquare, trigChiSquare==0, 0.005)
+  numpy.putmask(trigBankVeto, trigBankVeto==0, 0.005)
+  numpy.putmask(trigAutoVeto, trigAutoVeto==0, 0.005)
+   
+  # get single detector data
+  trigCoincSNR  = (trigs.get_column('coinc_snr'))
+  trigIfoSNR    = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
+  tmp           = numpy.sort(trigIfoSNR.values(), 0)
+  if len(ifos) > 0:
+    trigFirstSNR  = tmp[-1,:]
+  if len(ifos) > 1:
+    trigSecondSNR = tmp[-2,:]
+  if len(ifos) > 2:
+    trigThirdSNR  = tmp[-3,:]
+  if sngl_bank_chisq:
+    trigIfobankCS = trigs.get_sngl_bank_chisqs(ifos)
+    for ifo in ifos:
+      trigIfobankCS[ifo] = numpy.asarray(trigIfobankCS[ifo])
+      numpy.putmask(trigIfobankCS[ifo], trigIfobankCS[ifo]==0, 0.005)
+  if sngl_cont_chisq:
+    trigIfoautoCS = trigs.get_sngl_cont_chisqs(ifos)
+    for ifo in ifos:
+      trigIfoautoCS[ifo] = numpy.asarray(trigIfoautoCS[ifo])
+      numpy.putmask(trigIfoautoCS[ifo], trigIfoautoCS[ifo]==0, 0.005)
+  if sngl_chisq:
+    trigIfostanCS = trigs.get_sngl_chisqs(ifos)
+    for ifo in ifos:
+      trigIfostanCS[ifo] = numpy.asarray(trigIfostanCS[ifo])
+      numpy.putmask(trigIfostanCS[ifo], trigIfostanCS[ifo]==0, 0.005)
+  trigSigma  = trigs.get_sigmasqs()
+  trigSigmaTot = numpy.zeros(numtrigs)
+
+  # get amplitude terms
+  trigAmp       = dict((amp,\
+                        numpy.asarray(trigs.get_column('amp_term_%d' % amp)))\
+                       for amp in amplitudes)
+  trigRelAmp1    = numpy.sqrt((trigAmp[1]**2 + trigAmp[2]**2)/\
+                              (trigAmp[3]**2 + trigAmp[4]**2))
+  trigGammaR     = trigAmp[1] - trigAmp[4]
+  trigGammaI     = trigAmp[2] + trigAmp[3]
+  trigDeltaR     = trigAmp[1] + trigAmp[4]
+  trigDeltaI     = trigAmp[3] - trigAmp[2]
+  trigNorm1      = trigDeltaR*trigDeltaR + trigDeltaI*trigDeltaI
+  trigNorm2      = trigGammaR*trigGammaR + trigGammaI*trigGammaI
+  trigNorm3      = ((trigNorm1**0.25) + (trigNorm2**0.25))**2
+  trigAmpPlus    = (trigNorm1)**0.5 + (trigNorm2)**0.5
+  trigAmpCross   = abs((trigNorm1)**0.5 - (trigNorm2)**0.5)
+  trigRelAmp2    = trigAmpPlus/trigAmpCross
+  trigInclination = trigAmpCross/trigNorm3
+
+  # get antenna response based parameters
+  trigLongitude = numpy.degrees(trigs.get_column('ra'))
+  trigLatitude  = numpy.degrees(trigs.get_column('dec'))
+  fResp = dict((ifo, numpy.empty(numtrigs)) for ifo in ifos)
+  for i in xrange(numtrigs):
+    # calculate fResp for each IFO is we haven't done so already
+    fPlus,fCross     = get_det_response(trigLongitude[i], trigLatitude[i],\
+                                        trigTime[i])
+    for ifo in ifos:
+      fResp[ifo][i]    = sum(numpy.array([fPlus[ifo], fCross[ifo]])**2)
+      trigSigmaTot[i] += trigSigma[ifo][i] * fResp[ifo][i]
+
+  for ifo in ifos:
+    fResp[ifo] = fResp[ifo].mean()
+
+  # normalise trigSigma
+  for ifo in ifos:
+    trigSigma[ifo] = numpy.asarray(trigSigma[ifo])
+  trigSigmaTot = numpy.array(trigSigmaTot)
+  for ifo in ifos:
+    trigSigma[ifo] /= trigSigmaTot
+
+  trigSigmaMean = {}
+  trigSigmaMax  = {}
+  trigSigmaMin  = {}
+  for ifo in ifos:
+    try:
+      trigSigmaMean[ifo] = trigSigma[ifo].mean()
+      trigSigmaMax[ifo]  = trigSigma[ifo].max()
+      trigSigmaMin[ifo]  = trigSigma[ifo].min()
+    except ValueError:
+      trigSigmaMean[ifo] = 0
+      trigSigmaMax[ifo]  = 0
+      trigSigmaMin[ifo]  = 0
+
+  if verbose:
+    sys.stdout.write("Trigger parameters extracted at %d\n"\
+                     % elapsed_time())
+
+  #
+  # get injection data
+  #
+
+  # Initialize all injection related variables
+  injTime = None
+  injSNR = None
+  injBestNR = None
+  #injNullSNR = None
+  #injNullstat = None
+  #injTraceSNR = None
+  #injMchirp = None
+  #injChiSquare = None
+  #injBankVeto = None
+  #injAutoVeto = None
+  #injCoincSNR = None
+  injIfoSNR = dict((ifo, None) for ifo in ifos)
+  #injFirstSNR = None
+  #injSecondSNR = None
+  #injThirdSNR = None
+  #injIfobankCS = None
+  #injIfoautoCS = None
+  #injIfostanCS = None
+  #injSigma = None
+  #injAmp = None
+  #injRelAmp1 = None
+  #injGammaR = None
+  #injGammaI = None
+  #injDeltaR = None
+  #injDeltaI = None
+  #injNorm1 = None
+  #injNorm2 = None
+  #injNorm3 = None
+  #injAmpPlus = None
+  #injAmpCross = None
+  #injRelAmp2 = None
+  #injInclination = None
+
+  # Fill in injection related variables (if injection files exist)
+  if injFile:
+
+    # get basics
+    injTime      = numpy.asarray(injs.get_end())
+    injSNR       = numpy.asarray(injs.get_column('snr'))
+    injBestNR    = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
+                             null_thresh=null_thresh,snr_threshold=snrThresh,\
+                             sngl_snr_threshold = snglSnrThresh,\
+                             chisq_threshold = newSnrThresh,\
+                             null_grad_thresh = nullGradThresh,\
+                             null_grad_val = nullGradVal) for t in injs]
+    injBestNR    = numpy.array(injBestNR)
+    injNullSNR   = numpy.asarray(injs.get_null_snr())
+    injNullstat  = numpy.asarray(injs.get_column('null_statistic'))
+    injTraceSNR  = numpy.asarray(injs.get_column('null_stat_degen'))
+    injMchirp    = numpy.asarray(injs.get_column('mchirp'))
+  
+    # get chisq data
+    injChiSquare = numpy.asarray(injs.get_column('chisq'))
+    injBankVeto  = numpy.asarray(injs.get_column('bank_chisq'))
+    injAutoVeto  = numpy.asarray(injs.get_column('cont_chisq'))
+  
+    # get single detector data
+    injCoincSNR  = numpy.asarray(injs.get_column('coinc_snr'))
+    injIfoSNR    = dict((ifo, injs.get_sngl_snr(ifo)) for ifo in ifos)
+    tmp          = numpy.sort(injIfoSNR.values(), 0)
+    if len(ifos) > 0:
+      injFirstSNR  = tmp[-1,:]
+    if len(ifos) > 1:
+      injSecondSNR = tmp[-2,:]
+    if len(ifos) > 2:
+      injThirdSNR  = tmp[-3,:]
+    if sngl_bank_chisq:
+      injIfobankCS = injs.get_sngl_bank_chisqs(ifos)
+    if sngl_cont_chisq:
+      injIfoautoCS = injs.get_sngl_cont_chisqs(ifos)
+    if sngl_chisq:
+      injIfostanCS = injs.get_sngl_chisqs(ifos)
+    injSigma  = injs.get_sigmasqs()
+  
+    # get amplitude terms
+    injAmp    = dict((amp, numpy.asarray(injs.get_column('amp_term_%d' % amp)))\
+                     for amp in amplitudes)
+    injRelAmp1     = numpy.sqrt((injAmp[1]**2 + injAmp[2]**2)/\
+                                (injAmp[3]**2 + injAmp[4]**2))
+    injGammaR      = injAmp[1] - injAmp[4]
+    injGammaI      = injAmp[2] + injAmp[3]
+    injDeltaR      = injAmp[1] + injAmp[4]
+    injDeltaI      = injAmp[3] - injAmp[2]
+    injNorm1       = injDeltaR*injDeltaR + injDeltaI*injDeltaI
+    injNorm2       = injGammaR*injGammaR + injGammaI*injGammaI
+    injNorm3       = ((injNorm1**0.25) + (injNorm2**0.25))**2
+    injAmpPlus     = (injNorm1)**0.5 + (injNorm2)**0.5
+    injAmpCross    = abs((injNorm1)**0.5 - (injNorm2)**0.5)
+    injRelAmp2     = injAmpPlus/injAmpCross
+    injInclination = injAmpCross/injNorm3
+  
+    if verbose:
+      sys.stdout.write("Injection parameters extracted at %d\n"\
+                       % elapsed_time())
+
+  #
+  # generate plots
+  #
+
+  if verbose:
+    sys.stdout.write("\nPlotting...\n")
+  p = 0
+
+  ptfcolormap = plt.cm.spring
+  ptfcolormap.set_over('g')
+       
+  new_snrs = [5.5,6,6.5,7,8,9,10,11]
+  try:
+    cont_value = new_snrs.index(newSnrThresh)
+  except ValueError:
+    new_snrs.append(newSnrThresh)
+    cont_value = -1
+  bank_conts, auto_conts,chi_conts,null_cont,snr_vals, colors =\
+      calculate_contours(q=chisq_index, n=chisq_nhigh,new_snrs=new_snrs,\
+                         new_snr_thresh=newSnrThresh,\
+                         null_thresh=null_thresh[-1],\
+                         null_grad_snr=nullGradThresh,\
+                         null_grad_val=nullGradVal,\
+                         chisq_dof=trigs[0].chisq_dof,\
+                         bank_chisq_dof=trigs[0].bank_chisq_dof,\
+                         cont_chisq_dof=trigs[0].cont_chisq_dof)
+
+  # reset times
+  segs = readSegFiles(segdir)
+  grbTime = segs['on'][1] - 1
+  start = int(min(trigTime)) - grbTime
+  end   = int(max(trigTime)) - grbTime
+  duration = end-start
+  start -= duration*0.05
+  end += duration*0.05
+  trigTime = [t-grbTime for t in trigTime]
+  if injFile:
+    injTime  = [t-grbTime for t in injTime]
+ 
+  # TODO: plots start here – rewriting starts here
+  # no longer tracking number of plots in variable p
+
+  # plot coherent SNR versus time
+  fig_tag = '%s_%s' % (tag, "triggers_vs_time") 
+  snr_timeseries_plot(trigTime, trigSNR, grbTime, start, end, "Coherent SNR", outdir, fig_tag, injFile, injTime, injSNR)
+
+  # plot BestNR versus time
+  fig_tag = '%s_%s' % (tag, "bestnr_vs_time") 
+  snr_timeseries_plot(trigTime, trigBestNR, grbTime, start, end, "BestNR", outdir, fig_tag, injFile, injTime, injBestNR)
+
+  # plot ifo SNR versus time
+  for ifo in ifos:
+    fig_tag = '%s_%s_%s' % (tag, ifo, "triggers_vs_time") 
+    ylabel = "%s SNR" % (ifo)
+    snr_timeseries_plot(trigTime, trigIfoSNR[ifo], grbTime, start, end, ylabel, outdir, fig_tag, injFile, injTime, injIfoSNR[ifo])
+
+  # plot coherent SNR versus mchirp
+  mass_vals = numpy.asarray([max_mchirp]*len(snr_vals))
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigSNR, trigMchirp, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injSNR, injMchirp, 'r+')
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("Chirp mass ($M_{\odot}$)")
+  ax.plot(snr_vals, mass_vals, 'k-')
+  # Shade vetoed area
+  limy = list(ax.get_ylim())
+  limx = list(ax.get_xlim())
+  limy[1] = max(limy[1], 12)
+  polyx = limx
+  polyy = [max_mchirp]*2
+  polyx.extend([limx[1],0])
+  polyy.extend([limy[1], limy[1]])
+  ax.fill(polyx, polyy, color = '#dddddd')
+  fig.savefig("%s/%s_mchirp_vs_snr.png" % (outdir, tag),\
+              bbox_inches='tight' )
+  ax.set_xlim([6,50])
+  ax.set_ylim([0,12])
+  fig.savefig("%s/%s_mchirp_vs_snr_zoom.png" % (outdir, tag),\
+              bbox_inches='tight')
+  plt.close()
+
+  # plot coherent SNR versus null stat
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigSNR, trigNullstat, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injSNR, injNullstat, 'r+')
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("Null statistic")
+  ax.plot(snr_vals,null_cont, 'k-')
+  fig.savefig("%s/%s_null_stat_vs_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+  p+=1
+  ax.plot(snr_vals, numpy.asarray(null_cont) - \
+      (null_thresh[1] - null_thresh[0]), 'g-')
+  if (null_thresh[1] - null_thresh[0] > 1):
+    ax.plot(snr_vals, numpy.asarray(null_cont) - \
+        (null_thresh[1] - null_thresh[0])+1,'m-')
+  ax.set_xlim([6,30])
+  ax.set_ylim([0,30])
+  fig.savefig("%s/%s_null_stat_vs_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+  
+  # plot coherent SNR versus overwhitened null stat
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigSNR, trigNullSNR, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injSNR, injNullSNR, 'r+')
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("Overwhitened null statistic")
+  ax.plot(snr_vals,null_cont, 'k-')
+  # Add shading to vetoed area
+  limy = ax.get_ylim()[1]
+  polyx = copy.deepcopy(snr_vals)
+  polyy = copy.deepcopy(null_cont)
+  polyx = numpy.append(polyx,[max(snr_vals), min(snr_vals)])
+  polyy = numpy.append(polyy,[limy, limy])
+  ax.fill(polyx, polyy, color = '#dddddd')
+
+  fig.savefig("%s/%s_null_stat2_vs_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+  p+=1
+  ax.plot(snr_vals, numpy.asarray(null_cont) - \
+      (null_thresh[1] - null_thresh[0]), 'g-')
+  ax.plot(snr_vals, numpy.asarray(null_cont) - \
+      (null_thresh[1] - null_thresh[0])+1,'m-')
+  ax.set_xlim([6,30])
+  ax.set_ylim([0,30])
+  fig.savefig("%s/%s_null_stat2_vs_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+ 
+  # plot coherent SNR versus coinc SNR
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigSNR, trigCoincSNR, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injSNR, injCoincSNR, 'r+')
+  ax.plot([4,30], [4,30], 'g-')
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("Coincidence SNR")
+  fig.savefig("%s/%s_coinc_snr_vs_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+  p+=1
+  ax.set_xlim([6,30])
+  ax.set_ylim([4,30])
+  fig.savefig("%s/%s_coinc_snr_vs_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+  
+  aT = [6,30]
+  bT = [6,27.5]
+  
+  maxSNR = trigSNR.max()
+  if injFile and injSNR.size and injSNR.max() > maxSNR:
+    maxSNR = injSNR.max()
+  zoomSNR = numpy.arange(0.01,maxSNR,0.01)
+ 
+  # plot SNR versus traceSNR 
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigSNR, trigTraceSNR, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injSNR, injTraceSNR, 'r+')
+  ax.plot(aT, bT, 'g-')
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("Trace SNR")
+  fig.savefig("%s/%s_trace_snr_vs_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+  p+=1
+  ax.set_xlim([6,30])
+  ax.set_ylim([4,30])
+  fig.savefig("%s/%s_trace_snr_vs_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+  
+  # plot coinc SNR versus trace SNR
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigCoincSNR, trigTraceSNR, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injCoincSNR, injTraceSNR, 'r+')
+  ax.set_xlabel("Coincidence SNR")
+  ax.set_ylabel("Trace SNR")
+  fig.savefig("%s/%s_trace_snr_vs_coinc_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+  p+=1
+  ax.set_xlim([0,30])
+  ax.set_ylim([0,30])
+  fig.savefig("%s/%s_trace_snr_vs_coinc_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+  
+  # plot SNR versus bank veto
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.loglog(trigSNR, trigBankVeto, 'bx')
+  ax.grid()
+  if injFile:
+    ax.loglog(injSNR, injBankVeto, 'r+')
+  plot_contours(ax, snr_vals,bank_conts, colors)
+  # Add shading to vetoed area
+  limy = ax.get_ylim()[1]
+  polyx = copy.deepcopy(snr_vals)
+  polyy = copy.deepcopy(bank_conts[cont_value])
+  polyx = numpy.append(polyx,[max(snr_vals), min(snr_vals)])
+  polyy = numpy.append(polyy,[limy, limy])
+  ax.fill(polyx, polyy, color = '#dddddd')
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("Bank Veto")
+  ax.set_xlim([6,1000])
+  fig.savefig("%s/%s_bank_veto_vs_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+  p+=1
+  ax.set_xlim([6,50])
+  ax.set_ylim([1,2000])
+  fig.savefig("%s/%s_bank_veto_vs_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+  
+  # plot SNR versus chisq
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.loglog(trigSNR[trigBestNR != 0], trigChiSquare[trigBestNR != 0],\
+             'bx')
+  ax.grid()
+  if injFile:
+    ax.loglog(injSNR[injBestNR != 0], injChiSquare[injBestNR != 0],\
+               'r+')
+  plot_contours(ax, snr_vals,chi_conts, colors)
+  # Add shading to vetoed area
+  limy = ax.get_ylim()[1]
+  polyx = copy.deepcopy(snr_vals)
+  polyy = copy.deepcopy(chi_conts[cont_value])
+  polyx = numpy.append(polyx,[max(snr_vals), min(snr_vals)])
+  polyy = numpy.append(polyy,[limy, limy])
+  ax.fill(polyx, polyy, color = '#dddddd')
+  ax.set_xlabel("SNR")
+  ax.set_ylabel("Chi Square")
+  ax.set_xlim([6,1000])
+  ax.set_ylim([1,10000])
+  fig.savefig("%s/%s_chi_square_vs_snr.png" % (outdir, tag))
+  p+=1
+  ax.set_xlim([0,50])
+  ax.set_ylim([1,2000])
+  fig.savefig("%s/%s_chi_square_vs_snr_zoom.png" % (outdir, tag))
+  plt.close()
+  p+=1
+
+  # plot SNR versus loudest SNR
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigSNR, trigFirstSNR, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injSNR, injFirstSNR, 'r+')
+  ax.plot([0,50], [4,4], 'g-')
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("First loudest sngl SNR")
+  fig.savefig("%s/%s_first_snr_vs_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+  p+=1
+  ax.set_xlim([6,50])
+  ax.set_ylim([0,20])
+  fig.savefig("%s/%s_first_snr_vs_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+  
+  # plot SNR versus second loudest
+  if len(ifos)>1:
+    fig = plt.figure()
+    ax  = fig.gca()
+    ax.plot(trigSNR, trigSecondSNR, 'bx')
+    ax.grid()
+    if injFile:
+      ax.plot(injSNR, injSecondSNR, 'r+')
+    ax.plot([6,10,50], [2.5,3.5,13.5], 'g-')
+    ax.set_xlabel("Coherent SNR")
+    ax.set_ylabel("Second loudest sngl SNR")
+    fig.savefig("%s/%s_second_snr_vs_snr.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    p+=1
+    ax.set_xlim([6,50])
+    ax.set_ylim([0,20])
+    fig.savefig("%s/%s_second_snr_vs_snr_zoom.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    plt.close()
+    p+=1
+  
+  # plot SNR versus third loudest SNR
+  if len(ifos)>2:
+    fig = plt.figure()
+    ax  = fig.gca()
+    ax.plot(trigSNR, trigThirdSNR, 'bx')
+    ax.grid()
+    if injFile:
+      ax.plot(injSNR, injThirdSNR, 'r+')
+    ax.plot([0,50], [4,4], 'g-')
+    ax.set_xlabel("Coherent SNR")
+    ax.set_ylabel("Third loudest sngl SNR")
+    fig.savefig("%s/%s_third_snr_vs_snr.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    p+=1
+    ax.set_xlim([6,50])
+    ax.set_ylim([0,20])
+    fig.savefig("%s/%s_third_snr_vs_snr_zoom.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    plt.close()
+    p+=1
+  
+  # plot SNR versus IFO SNR
+  sens1 = None
+  sens2 = None
+  for ifo in ifos:
+    if not sens1:
+      sens1 = ifo
+    elif not sens2:
+      senstvty = fResp[ifo]*trigSigmaMean[ifo]
+      if (fResp[ifo]*trigSigmaMean[ifo] > fResp[sens1]*trigSigmaMean[sens1]):
+        sens2 = sens1
+        sens1 = ifo
+      else:
+        sens2 = ifo
+    else:
+      if (fResp[ifo]*trigSigmaMean[ifo] > fResp[sens1]*trigSigmaMean[sens1]):
+        sens2 = sens1
+        sens1 = ifo
+      elif (fResp[ifo]*trigSigmaMean[ifo] > fResp[sens2]*trigSigmaMean[sens2]):
+        sens2 = ifo
+  
+  for ifo in ifos:
+
+    fig = plt.figure()
+    ax  = fig.gca()
+    ax.plot(trigSNR, trigIfoSNR[ifo], 'bx')
+    ax.grid()
+    if injFile:
+      ax.plot(injSNR, injIfoSNR[ifo], 'r+')
+    ax.plot(zoomSNR, ((fResp[ifo]*trigSigmaMean[ifo])**0.5) * zoomSNR, 'g-')
+    ax.plot(zoomSNR, ((fResp[ifo]*trigSigmaMin[ifo])**0.5) * zoomSNR, 'g-')
+    ax.plot(zoomSNR, ((fResp[ifo]*trigSigmaMax[ifo])**0.5) * zoomSNR, 'g-')
+    ax.plot(zoomSNR, scipy.stats.ncx2.ppf(0.0455/2., 2,\
+                                            (fResp[ifo]*trigSigmaMin[ifo])*\
+                                             zoomSNR**2)**0.5, 'm-')
+    ax.plot(zoomSNR, scipy.stats.ncx2.ppf(1-0.0455/2., 2,\
+                                            (fResp[ifo]*trigSigmaMax[ifo])*\
+                                             zoomSNR**2)**0.5, 'm-')
+    ax.plot(zoomSNR, scipy.stats.ncx2.ppf(0.00135/2., 2,\
+                                            (fResp[ifo]*trigSigmaMin[ifo])*\
+                                             zoomSNR**2)**0.5, 'c-')
+    ax.plot(zoomSNR, scipy.stats.ncx2.ppf(1-0.00135/2., 2,\
+                                            (fResp[ifo]*trigSigmaMax[ifo])*\
+                                             zoomSNR**2)**0.5, 'c-')
+    ax.plot([0,50], [4,4], 'k-')
+    if (ifo == sens1) or (ifo == sens2):
+      # Shade vetoed area
+      limy = ax.get_ylim()[0]
+      polyx = [0,50]
+      polyy = [4,4]
+      polyx.extend([50,0])
+      polyy.extend([limy, limy])
+      ax.fill(polyx, polyy, color = '#dddddd')
+
+    ax.set_xlabel("Coherent SNR")
+    ax.set_ylabel("%s sngl SNR" % ifo)
+    fig.savefig("%s/%s_%s_snr_vs_snr.png" % (outdir, tag, ifo),\
+                 bbox_inches='tight')
+    p+=1
+    ax.set_xlim([6,50])
+    ax.set_ylim([0,20])
+    fig.savefig("%s/%s_%s_snr_vs_snr_zoom.png" % (outdir, tag, ifo),\
+                 bbox_inches='tight')
+    plt.close()
+    p+=1
+
+  # Plot single detector chi square plots
+  for ifo in ifos:
+    if sngl_bank_chisq:
+      fig = plt.figure()
+      ax = fig.gca()
+      ax.loglog(trigSNR,trigIfobankCS[ifo], 'bx')
+      ax.grid()
+      if injFile:
+        ax.loglog(injSNR,injIfobankCS[ifo], 'r+')
+      ax.set_xlabel("Coherent SNR")
+      ax.set_ylabel("%s sngl bank veto" % ifo)
+      ax.set_xlim([4,1000])
+      fig.savefig("%s/%s_snr_vs_%s_bankchisq.png" % (outdir, tag,ifo),\
+                   bbox_inches='tight')
+      p+=1
+      ax.set_xlim([4,50])
+      ax.set_ylim([1,2000])
+      fig.savefig("%s/%s_snr_vs_%s_bankchisq_zoom.png" % (outdir,tag, ifo),\
+                   bbox_inches="tight")
+      plt.close()
+      p+=1
+   
+      fig = plt.figure()
+      ax = fig.gca()
+      ax.loglog(trigIfoSNR[ifo],trigIfobankCS[ifo], 'bx')
+      ax.grid()
+      if injFile:
+        ax.loglog(injIfoSNR[ifo],injIfobankCS[ifo], 'r+')
+      ax.set_xlabel("%s sngl SNR" % ifo)
+      ax.set_ylabel("%s sngl bank veto" % ifo)
+      ax.set_xlim([4,1000])
+      fig.savefig("%s/%s_%s_snr_vs_%s_bankchisq.png" % (outdir, tag, ifo,ifo),\
+                   bbox_inches='tight')
+      p+=1
+      ax.set_xlim([4,50])
+      ax.set_ylim([1,2000])
+      fig.savefig("%s/%s_%s_snr_vs_%s_bankchisq_zoom.png"\
+                  % (outdir,tag,ifo,ifo), bbox_inches="tight")
+      plt.close()
+      p+=1
+
+    if sngl_cont_chisq:
+      fig = plt.figure()
+      ax = fig.gca()
+      ax.loglog(trigSNR,trigIfoautoCS[ifo], 'bx')
+      ax.grid()
+      if injFile:
+        ax.loglog(injSNR,injIfoautoCS[ifo], 'r+')
+      ax.set_xlabel("Coherent SNR")
+      ax.set_ylabel("%s sngl auto veto" % ifo)
+      ax.set_xlim([4,1000])
+      fig.savefig("%s/%s_snr_vs_%s_autochisq.png" % (outdir, tag,ifo),\
+                   bbox_inches='tight')
+      p+=1
+      ax.set_xlim([4,50])
+      ax.set_ylim([1,20000])
+      fig.savefig("%s/%s_snr_vs_%s_autochisq_zoom.png" % (outdir,tag, ifo),\
+                  bbox_inches="tight")
+      plt.close()
+      p+=1
+
+      fig = plt.figure()
+      ax = fig.gca()
+      ax.loglog(trigIfoSNR[ifo],trigIfoautoCS[ifo], 'bx')
+      ax.grid()
+      if injFile:
+        ax.loglog(injIfoSNR[ifo],injIfoautoCS[ifo], 'r+')
+      ax.set_xlabel("%s sngl SNR" % ifo)
+      ax.set_ylabel("%s sngl auto veto" % ifo)
+      ax.set_xlim([4,1000])
+      fig.savefig("%s/%s_%s_snr_vs_%s_autochisq.png" % (outdir, tag, ifo,ifo),\
+                   bbox_inches='tight')
+      p+=1
+      ax.set_xlim([4,50])
+      ax.set_ylim([1,20000])
+      fig.savefig("%s/%s_%s_snr_vs_%s_autochisq_zoom.png"\
+                  % (outdir,tag,ifo,ifo), bbox_inches="tight")
+      plt.close()
+      p+=1
+
+    if sngl_chisq:
+      try:
+        fig = plt.figure()
+        ax = fig.gca()
+        ax.loglog(trigSNR,trigIfostanCS[ifo], 'bx')
+        ax.grid()
+        if injFile:
+          ax.loglog(injSNR,injIfostanCS[ifo], 'r+')
+        ax.set_xlabel("Coherent SNR")
+        ax.set_ylabel("%s sngl chi squared" % ifo)
+        ax.set_xlim([4,1000])
+        fig.savefig("%s/%s_snr_vs_%s_chisq.png" % (outdir, tag,ifo),\
+                    bbox_inches='tight')
+        p+=1
+
+        ax.set_xlim([4,50])
+        ax.set_ylim([1,2000])
+        fig.savefig("%s/%s_snr_vs_%s_chisq_zoom.png" % (outdir,tag, ifo),\
+                    bbox_inches="tight")
+        plt.close()
+        p+=1
+      except OverflowError:
+        sys.stderr.write("WARNING: Sngl chisq versus snr "+\
+                         "failed with zeros in a loglog plot\n")
+      try:
+        fig = plt.figure()
+        ax = fig.gca()
+        ax.loglog(trigIfoSNR[ifo],trigIfostanCS[ifo], 'bx')
+        ax.grid()
+        if injFile:
+          ax.loglog(injIfoSNR[ifo],injIfostanCS[ifo], 'r+')
+        ax.set_xlabel("%s sngl SNR" % ifo)
+        ax.set_ylabel("%s sngl chi squared" % ifo)
+        ax.set_xlim([4,1000])
+        fig.savefig("%s/%s_%s_snr_vs_%s_chisq.png" % (outdir, tag, ifo,ifo),\
+                    bbox_inches='tight')
+        ax.set_xlim([4,50])
+        ax.set_ylim([1,2000])
+        fig.savefig("%s/%s_%s_snr_vs_%s_chisq_zoom.png" % (outdir,tag,ifo,ifo),\
+                    bbox_inches="tight")
+        plt.close()
+        p+=1
+      except OverflowError:
+        sys.stderr.write("WARNING: Sngl chisq versus sngl snr"+\
+                         "failed with zeros in a loglog plot\n")
+
+
+  # plot SNR versus auto veto 
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.loglog(trigSNR, trigAutoVeto, 'bx')
+  ax.grid()
+  if injFile:
+    ax.loglog(injSNR, injAutoVeto, 'r+')
+  plot_contours(ax, snr_vals, auto_conts, colors)
+  # Add shading to vetoed area
+  limy = ax.get_ylim()[1]
+  polyx = copy.deepcopy(snr_vals)
+  polyy = copy.deepcopy(auto_conts[cont_value])
+  polyx = numpy.append(polyx,[max(snr_vals), min(snr_vals)])
+  polyy = numpy.append(polyy,[limy, limy])
+  ax.fill(polyx, polyy, color = '#dddddd')
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("Auto Veto")
+  fig.savefig("%s/%s_auto_veto_vs_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+  ax.set_xlim([6,30])
+  ax.set_ylim([10,20000])
+  fig.savefig("%s/%s_auto_veto_vs_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+  
+  # plot SNR versus SNR-traceSNR
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigSNR, trigSNR - trigTraceSNR, 'bx')
+  ax.grid()
+  ax.set_xlabel("Coherent SNR")
+  ax.set_ylabel("SNR - Trace SNR")
+  fig.savefig("%s/%s_tracediff_noinj.png" % (outdir, tag),\
+               bbox_inches='tight')
+  p+=1
+
+  if injFile:
+    ax.plot(injSNR, injSNR - injTraceSNR, 'r+')
+    fig.savefig("%s/%s_trace_diff_vs_snr.png" % (outdir, tag),\
+               bbox_inches='tight')
+    ax.set_xlim([6,20])
+    ax.set_ylim([-5,10])
+    fig.savefig("%s/%s_trace_diff_vs_snr_zoom.png" % (outdir, tag),\
+               bbox_inches='tight')
+    p+=1
+  plt.close()
+  
+  # plot time versus null stat
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.plot(trigTime, trigNullstat, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injTime, injNullstat, 'r+')
+  ax.set_xlabel("Time since %s" % grbTime)
+  ax.set_xlim([start, end])
+  ax.set_ylabel("Null SNR")
+  fig.savefig("%s/%s_null_snr_vs_time.png" % (outdir, tag),\
+               bbox_inches='tight')
+  plt.close()
+  p+=1
+
+  # plot SNR versus rel amp
+  try:
+    fig = plt.figure()
+    ax  = fig.gca()
+    ax.loglog(trigSNR, trigRelAmp1, 'bx')
+    ax.grid()
+    if injFile:
+      ax.loglog(injSNR, injRelAmp1, 'r+')
+    ax.set_xlabel("Coherent SNR")
+    ax.set_ylabel("Relative amplitude")
+    fig.savefig("%s/%s_rel_amp_vs_snr.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    ax.set_xlim([6, 30])
+    fig.savefig("%s/%s_rel_amp_vs_snr_zoom.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    plt.close()
+    p+=1
+  except (OverflowError,ValueError):
+    sys.stderr.write("WARNING: Relative amplitude versus coherent SNR "+\
+                     "failed.\n")
+  
+  # plot SNR versus rel amp 2
+  try:
+    fig = plt.figure()
+    ax  = fig.gca()
+    ax.loglog(trigSNR, trigRelAmp2, 'bx')
+    ax.grid()
+    if injFile:
+      ax.loglog(injSNR, injRelAmp2, 'r+')
+    ax.set_xlabel("Coherent SNR")
+    ax.set_ylabel("Relative amplitude")
+    fig.savefig("%s/%s_rel_amp2_vs_snr.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    ax.set_xlim([6,30])
+    fig.savefig("%s/%s_rel_amp2_vs_snr_zoom.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    plt.close()
+    p+=1
+  except (OverflowError,ValueError):
+    sys.stderr.write("WARNING: Relative amplitude versus coherent SNR "+\
+                     "failed with zeros in a loglog plot\n")
+
+  # plot SNR versus norm 3
+  try:
+    fig = plt.figure()
+    ax  = fig.gca()
+    ax.loglog(trigSNR, trigNorm3, 'bx')
+    ax.grid()
+    if injFile:
+      ax.loglog(injSNR, injNorm3, 'r+')
+    ax.set_xlabel("Coherent SNR")
+    ax.set_ylabel("Amplitude factor")
+    fig.savefig("%s/%s_norm3_vs_snr.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    ax.set_xlim([6,30])
+    fig.savefig("%s/%s_norm3_vs_snr_zoom.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    plt.close()
+    p+=1
+  except (OverflowError,ValueError):
+    sys.stderr.write("WARNING: Amplitude factor versus coherent SNR "+\
+                     "failed with zeros in a loglog plot\n")
+  
+  # plot SNR versus inclination
+  try:
+    fig = plt.figure()
+    ax  = fig.gca()
+    ax.loglog(trigSNR, trigInclination, 'bx')
+    ax.grid()
+    if injFile:
+      ax.loglog(injSNR, injInclination, 'r+')
+    ax.set_xlabel("Coherent SNR")
+    ax.set_ylabel("|cos inclination|")
+    fig.savefig("%s/%s_inclination_vs_snr.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    p+=1
+    ax.set_xlim([6,30])
+    fig.savefig("%s/%s_inclination_vs_snr_zoom.png" % (outdir, tag),\
+                 bbox_inches='tight')
+    plt.close()
+    p+=1
+  except (OverflowError,ValueError):
+    sys.stderr.write("WARNING: cos(inclination) versus coherent SNR "+\
+                     "failed with zeros in a loglog plot\n")
+
+  # plot sky grid
+  fig = plt.figure()
+  ax  = fig.gca()
+  ax.set_title("coh\_PTF %s Sky Grid" % tag, fontsize=18)
+  ax.set_xlabel("Longitude (Degrees)", fontsize=16)
+  ax.set_ylabel("Latitude (Degrees)", fontsize=16)
+  ax.plot(trigLongitude, trigLatitude, 'ko', markerfacecolor='blue')
+  fig.savefig("%s/%s_sky_grid.png" % (outdir, tag))
+  plt.close()
+  p+=1 
+
+  # DONE
+  if verbose:
+    sys.stdout.write("%d plots written at %d.\n" % (p, elapsed_time()))
+
+if __name__=='__main__':
+
+  opts, args = parse_command_line()
+
+  outdir    = os.path.abspath(opts.output_path)
+  verbose   = opts.verbose
+  trigFile  = os.path.abspath(opts.trig_file)
+  injFile   = None
+  if opts.inj_file:
+    injFile = os.path.abspath(opts.inj_file)
+  GRBnum    = 'GRB%s' % opts.grb_name
+  q         = opts.chisq_index
+  n         = opts.chisq_nhigh
+  max_mchirp = opts.max_chirp_mass
+  segdir    = opts.segment_dir
+  nullt     = map(float, opts.null_snr_threshold.split(','))
+  snrThresh = opts.snr_threshold
+  snglSnrThresh = opts.sngl_snr_threshold
+  newSnrThresh = opts.newsnr_threshold
+  nullGradThresh = opts.null_grad_thresh
+  nullGradVal    = opts.null_grad_val
+  vetoFiles = []
+  if opts.veto_directory:
+    vetoString = ','.join([str(i) for i in range(2,opts.veto_category+1)])
+    vetoFiles = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(vetoString))
+
+  rc('font', size=14)
+  main(trigFile, injFile, GRBnum, outdir, segdir, chisq_index=q,\
+       chisq_nhigh=n, null_thresh = nullt, max_mchirp=max_mchirp,\
+       vetoFiles=vetoFiles,snrThresh=snrThresh,snglSnrThresh=snglSnrThresh,\
+       newSnrThresh=newSnrThresh,nullGradThresh=nullGradThresh,\
+       nullGradVal=nullGradVal, verbose=verbose)
+  if verbose: sys.stdout.write("Done at %d.\n" % (elapsed_time()))
