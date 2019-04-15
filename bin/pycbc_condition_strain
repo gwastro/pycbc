@@ -62,6 +62,9 @@ parser.add_argument('--frame-duration', type=int,
 pycbc.strain.insert_strain_option_group(parser)
 args = parser.parse_args()
 
+if args.frame_duration:
+    assert args.frame_duration > 0, "Frame duration should be positive integer, {} given".format(args.frame_duration)
+
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
 # read and condition strain as pycbc_inspiral would do
