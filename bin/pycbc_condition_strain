@@ -57,7 +57,7 @@ parser.add_argument('--low-frequency-cutoff', type=float,
                          'This is only needed if fake-strain or '
                          'fake-strain-from-file is used')
 parser.add_argument('--frame-duration', type=int,
-                    help='Split all data into smaller frame files of the given duration if it is not 0')
+                    help='Split all data into smaller frame files of the given duration if specified.')
 
 pycbc.strain.insert_strain_option_group(parser)
 args = parser.parse_args()
