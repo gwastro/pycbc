@@ -27,12 +27,13 @@ produces event triggers
 from __future__ import absolute_import
 import numpy, copy, os.path
 
-from pycbc import WEAVE_FLAGS
 from pycbc.types import Array
 from pycbc.scheme import schemed
 from pycbc.detector import Detector
 
 from . import coinc, ranking
+
+from .eventmgr_cython import findchirp_cluster_over_window_cython
 
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
@@ -139,31 +140,14 @@ def findchirp_cluster_over_window(times, values, window_length):
     """
     assert window_length > 0, 'Clustering window length is not positive'
 
-    from weave import inline
-    indices = numpy.zeros(len(times), dtype=int)
-    tlen = len(times) # pylint:disable=unused-variable
-    k = numpy.zeros(1, dtype=int)
-    absvalues = abs(values) # pylint:disable=unused-variable
-    times = times.astype(int)
-    code = """
-        int j = 0;
-        int curr_ind = 0;
-        for (int i=0; i < tlen; i++){
-            if ((times[i] - times[curr_ind]) > window_length){
-                j += 1;
-                indices[j] = i;
-                curr_ind = i;
-            }
-            else if (absvalues[i] > absvalues[curr_ind]){
-                indices[j] = i;
-                curr_ind = i;
-            }
-        }
-        k[0] = j;
-    """
-    inline(code, ['times', 'absvalues', 'window_length', 'indices', 'tlen', 'k'],
-           extra_compile_args=[WEAVE_FLAGS])
-    return indices[0:k[0]+1]
+    indices = numpy.zeros(len(times), dtype=numpy.int32)
+    tlen = len(times)
+    absvalues = numpy.array(abs(values), copy=False)
+    times = numpy.array(times, dtype=numpy.int32, copy=False)
+    k = findchirp_cluster_over_window_cython(times, absvalues, window_length,
+                                             indices, tlen)
+
+    return indices[0:k+1]
 
 
 def cluster_reduce(idx, snr, window_size):
