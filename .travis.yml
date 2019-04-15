@@ -53,11 +53,6 @@ matrix:
     sudo: required
     services:
     - docker
-  - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev:jessie
-    language: minimal
-    sudo: required
-    services:
-    - docker
   - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
     language: minimal
     sudo: required
@@ -65,15 +60,11 @@ matrix:
     - docker
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR
     language: python
+    python: 2.7
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
     language: python
     python: 3.6
   allow_failures:
-  - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev:jessie
-    language: minimal
-    sudo: required
-    services:
-    - docker
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
     language: python
     python: 3.6
