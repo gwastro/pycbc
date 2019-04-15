@@ -107,109 +107,19 @@ A simple workflow configuration file::
 Inference configuration file
 ============================
 
-You will also need a configuration file with sections that tells ``pycbc_inference`` how to construct the priors. A simple inference configuration file is::
+You will also need a configuration file with sections that tells ``pycbc_inference`` how to construct the priors. A sample inference configuration file is:
 
-    [variable_args]
-    ; parameters to vary in inference sampler
-    tc =
-    mass1 =
-    mass2 =
-    distance =
-    coa_phase =
-    inclination =
-    ra =
-    dec =
-    polarization =
+.. literalinclude:: ../../examples/workflow/inference_inj/inference.ini
+    :language: ini
 
-    [static_args]
-    ; parameters that do not vary in inference sampler
-    approximant = SEOBNRv2_ROM_DoubleSpin
-    f_lower = 28.0
+:download:`Download <../../examples/workflow/inference_inj/inference.ini>`
 
-    [prior-tc]
-    ; how to construct prior distribution
-    name = uniform
-    min-tc = 1126259462.2
-    max-tc = 1126259462.6
+A sample configuration file for parameter estimation on the ringdown is:
 
-    [prior-mass1]
-    ; how to construct prior distribution
-    name = uniform
-    min-mass1 = 10.
-    max-mass1 = 80.
+.. literalinclude:: ../../examples/workflow/inference_inj/ringdown_inference.ini
+    :language: ini
 
-    [prior-mass2]
-    ; how to construct prior distribution
-    name = uniform
-    min-mass2 = 10.
-    max-mass2 = 80.
-
-    [prior-distance]
-    ; how to construct prior distribution
-    name = uniform
-    min-distance = 10
-    max-distance = 500
-
-    [prior-coa_phase]
-    ; how to construct prior distribution
-    name = uniform_angle
-    ; uniform_angle defaults to [0,2pi), so we
-    ; don't need to specify anything here
-
-    [prior-inclination]
-    ; how to construct prior distribution
-    name = sin_angle
-
-    [prior-ra+dec]
-    ; how to construct prior distribution
-    name = uniform_sky
-
-    [prior-polarization]
-    ; how to construct prior distribution
-    name = uniform_angle
-
-A simple configuration file for parameter estimation on the ringdown is::
-
-    [variable_args]
-    ; parameters to vary in inference sampler
-    final_mass =
-    final_spin =
-    amp220 =
-    phi220 =
-    inclination =
-
-    [static_args]
-    ; parameters that do not vary in inference sampler
-    approximant = TdQNMfromFinalMassSpin
-    lmns = ['221']
-    tc = 1126259462
-    ra = 2.2
-    dec = -1.24
-    polarization = 0.
-    f_lower = 18.
-    f_ref = 20.
-
-    [prior-final_mass]
-    name = uniform
-    min-final_mass = 20.
-    max-final_mass = 100.
-
-    [prior-final_spin]
-    name = uniform
-    min-final_spin = -0.99
-    max-final_spin = 0.99
-
-    [prior-amp220]
-    name = uniform_log10
-    min-amp220 = 1e-30
-    max-amp220 = 1e-10
-
-    [prior-phi220]
-    name = uniform_angle
-
-    [prior-inclination]
-    ; inclination prior
-    name = sin_angle
+:download:`Download <../../examples/workflow/inference_inj/ringdown_inference.ini>`
 
 If you want to use another variable parameter in the inference sampler then add its name to ``[variable_args]`` and add a prior section like shown above.
 
