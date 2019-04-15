@@ -20,6 +20,7 @@ Quick Installation
 ```
 pip install lalsuite pycbc
 ```
+  
 You can start up an interactive jupyter notebook with PyCBC using either of the links below.
 
 [![Azure Notebooks](https://notebooks.azure.com/launch.png)](https://notebooks.azure.com/nitz/libraries/pycbc)
