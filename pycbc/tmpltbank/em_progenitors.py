@@ -403,7 +403,7 @@ def xi_eq(x, kappa, chi_eff, q):
     Returns
     ----------
     float
-        x**3*(x**2-3*kappa*x+2*chi_eff*kappa*sqrt[kappa*x)
+        x**3*(x**2-3*kappa*x+2*chi_eff*kappa*sqrt(kappa*x)
         -3*q*(x**2-2*kappa*x+(chi_eff*kappa)**2)
     
     return x**3*(x**2-3*kappa*x+2*chi_eff*kappa*math.sqrt(kappa*x))-3*q*(x**2-2*kappa*x+(chi_eff*kappa)**2)
