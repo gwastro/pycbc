@@ -483,7 +483,7 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
     gamma = 0.255
     delta = 1.761
     # The remnant mass over the NS rest mass
-    remnant_mass = (max(alpha/eta**(1./3.)*(1-2*ns_compactness)-beta*ns_compactness/eta*PG_ISSO_solver(chi,0)+gamma,0))**delta
+    remnant_mass = (max(alpha/eta**(1./3.)*(1-2*ns_compactness)-beta*ns_compactness/eta*PG_ISSO_solver(chi,incl)+gamma,0.))**delta
     """
     # The remnant mass in the same units as the NS rest mass (presumably solar masses)
     remnant_mass = remnant_mass*ns_b_mass - shift
