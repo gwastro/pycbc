@@ -1271,7 +1271,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # State channel
         if state_channel is not None:
             valid_mask = pycbc.frame.flag_names_to_bitmask(self.analyze_flags)
-            logging.info('State channel %s interpreted as mask %s = good',
+            logging.info('State channel %s interpreted as bitmask %s = good',
                          state_channel, bin(valid_mask))
             self.state = pycbc.frame.StatusBuffer(
                 frame_src,
@@ -1283,25 +1283,21 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # low latency dq channel
         if data_quality_channel is not None:
+            sb_kwargs = dict(max_buffer=max_buffer,
+                             force_update_cache=force_update_cache,
+                             increment_update_cache=increment_update_cache)
             if len(self.data_quality_flags) == 1 \
                     and self.data_quality_flags[0] == 'veto_nonzero':
-                veto_nonzero = True
+                sb_kwargs['valid_on_zero'] = True
                 logging.info('DQ channel %s interpreted as zero = good',
                              data_quality_channel)
             else:
-                veto_nonzero = False
-                valid_mask = pycbc.frame.flag_names_to_bitmask(
+                sb_kwargs['valid_mask'] = pycbc.frame.flag_names_to_bitmask(
                         self.data_quality_flags)
-                logging.info('DQ channel %s interpreted as mask %s = good',
+                logging.info('DQ channel %s interpreted as bitmask %s = good',
                              data_quality_channel, bin(valid_mask))
-            self.dq = pycbc.frame.StatusBuffer(
-                frame_src,
-                data_quality_channel, start_time,
-                max_buffer=max_buffer,
-                valid_mask=valid_mask,
-                force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache,
-                valid_on_zero=veto_nonzero)
+            self.dq = pycbc.frame.StatusBuffer(frame_src, data_quality_channel,
+                                               start_time, **sb_kwargs)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
