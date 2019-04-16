@@ -378,21 +378,19 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 ########################################################################################
 
 ########################################################################################
-# Remnant mass for a NS-BH merger [Foucart PRD 86, 124007 (2012)]                      #
-# The result is shifted by a quantity (shift, in solar masses) passed as an argument   #
-# of remnant_mass: this can effectively used as a remnant mass threshold when solving  #
-# the constraint remnant_mass(...)=0.                                                  #
+# Remnant mass for a NS-BH merger [Foucart PRD 98, 081501(R) (2018)]                   #                                                #
 # Allowing for negative remanant mass to be able to solve remnant mass == 0 if neeeded #
 # THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this)                        #
 ########################################################################################
+"""
 def xi_eq(x, kappa, chi_eff, q):
-    """
+    
     The roots of this equation determine the orbital radius
     at the onset of NS tidal disruption in a nonprecessing
     NS-BH binary [(7) in Foucart PRD 86, 124007 (2012)]
 
     Parameters
-    -----------
+    ----------- 
     x: float
         orbital separation in units of the NS radius
     kappa: float
@@ -407,15 +405,14 @@ def xi_eq(x, kappa, chi_eff, q):
     float
         x**3*(x**2-3*kappa*x+2*chi_eff*kappa*sqrt[kappa*x)
         -3*q*(x**2-2*kappa*x+(chi_eff*kappa)**2)
-    """
+    
     return x**3*(x**2-3*kappa*x+2*chi_eff*kappa*math.sqrt(kappa*x))-3*q*(x**2-2*kappa*x+(chi_eff*kappa)**2)
-
-# TODO: non-zero shift was never used. Remove.
-def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
+"""
+def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
     """
     Function that determines the remnant disk mass of
     an NS-BH system using the fit to numerical-relativity
-    results discussed in Foucart+, PRD 98, 081501 (2018).
+    results discussed in Foucart PRD 86, 124007 (2012).
 
     Parameters
     -----------
@@ -425,8 +422,8 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
         NS gravitational mass (in solar masses)
     ns_sequence: 3D-array
         contains the sequence data in the form NS gravitational
-        mass (in solar masses), NS baryonic mass (in solar
-        masses), NS compactness (dimensionless)
+         mass (in solar masses), NS baryonic mass (in solar
+         masses), NS compactness (dimensionless)
     chi: float
         the BH dimensionless spin parameter
     incl: float
@@ -462,13 +459,13 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
         print('SOMETHING WENT WRONG!!\n')
         raise Exception('Unphysical parameters!')
 
-# TODO: modify from here on using Foucart+, PRD 98, 081501 (2018).
+        """
     # Calculate the dimensionless parameter kappa
     kappa = q*ns_compactness
 
     # Effective equatorial spin parameter needed to determine the torus mass*)
     chi_eff = bh_effective_spin(chi, incl)
-
+    
     #Sanity checks
     if not abs(chi_eff)<=1:
         print('The effective BH spin magnitude must be <=1')
@@ -476,19 +473,21 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
         print('and obtained chi_eff={0}.'.format(chi_eff))
         print('SOMETHING WENT WRONG!!\n')
         raise Exception('Unphysical parameters!')
-
+    
     # Taking the 1st element with full_output=1 avoids some annoying messages on stdout
-    xi = scipy.optimize.fsolve(xi_eq, 100., args=(kappa,chi_eff,q), full_output=1)[0]
-
+    xi = scipy.optimize.fsolve(xi_eq, 100., args=(kappa,chi,q), full_output=1)[0]
+    """
     # Fit parameters and tidal correction
-    alpha = 0.296 # +/- 0.011
-    beta  = 0.171 # +/- 0.008
+    alpha = 0.406 # +/- 0.011
+    beta  = 0.139 # +/- 0.008
+    gamma = 0.255
+    delta = 1.761
     # The remnant mass over the NS rest mass
-    remnant_mass = alpha*xi*(1-2*ns_compactness)-beta*kappa*PG_ISSO_solver(chi_eff,0)
-
+    remnant_mass = (max(alpha/eta**(1./3.)*(1-2*ns_compactness)-beta*ns_compactness/eta*PG_ISSO_solver(chi,0)+gamma,0))**delta
+    """
     # The remnant mass in the same units as the NS rest mass (presumably solar masses)
     remnant_mass = remnant_mass*ns_b_mass - shift
-
+"""
     return remnant_mass
 
 # TODO: functions below were necessary for lalapps_cbc_sbank. Determine whether
@@ -500,260 +499,260 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 # chi_z*cos(tilt) = 1.  An unreasonably large remnant disk mass is returned if the   #
 # maximum possible NS mass is exceeded.  Works with lists and single numbers.        #
 ######################################################################################
-def remnant_mass_ulim(eta, ns_g_mass, bh_spin_z, ns_sequence, max_ns_g_mass, shift):
-    """
-    Function that determines the maximum remnant disk mass
-    for an NS-BH system with given symmetric mass ratio,
-    NS mass, and BH spin parameter component along the
-    orbital angular momentum.  This is a wrapper to
-    the function remnant_mass.  Maximization is achieved
-    by setting the BH dimensionless spin magntitude to unity.
-    An unreasonably large remnant disk mass (100 solar masses)
-    is returned if the maximum possible NS mass is exceeded
-    in applying the model of Foucart+, PRD 98, 081501 (2018).
-
-    Parameters
-    -----------
-    eta: float
-        the symmetric mass ratio of the binary
-    ns_g_mass: float
-        NS gravitational mass (in solar masses)
-    bh_spin_z: float
-        the BH dimensionless spin parameter for the spin projection
-        along the orbital angular momentum
-    ns_sequence: 3D-array
-        contains the sequence data in the form NS gravitational
-         mass (in solar masses), NS baryonic mass (in solar
-         masses), NS compactness (dimensionless)
-    shift: float
-        an amount to be subtracted to the remnant mass upper limit
-        predicted by the model (in solar masses)
-
-    Returns
-    ----------
-    remnant_mass_upper_limit: float
-        The remnant mass upper limit in solar masses
-    """
-    # Sanity checks
-    if not (eta > 0. and eta <=0.25 and abs(bh_spin_z)<=1):
-        raise Exception("""The absolute value of the BH spin z-component must be <=1.
-           Eta must be between 0 and 0.25.
-           The function remnant_mass_ulim was launched with eta={0} and chi_z={1}.
-           Unphysical parameters!""".format(eta, bh_spin_z))
-    # To maximise the remnant mass, allow for the BH spin magnitude to be maximum
-    bh_spin_magnitude = 1.
-    # Unreasonably large remnant disk mass
-    default_remnant_mass = 100.
-    if not ns_g_mass > max_ns_g_mass:
-        bh_spin_inclination = np.arccos(bh_spin_z/bh_spin_magnitude)
-        remnant_mass_upper_limit = pycbc.tmpltbank.em_progenitors.remnant_mass(eta, ns_g_mass, ns_sequence, bh_spin_magnitude, bh_spin_inclination, shift)
-    else:
-        remnant_mass_upper_limit = default_remnant_mass
-
-    return remnant_mass_upper_limit
-
-################################################################################
-# Given a NS mass, a BH spin z-component, and and EOS, find the minimum value  #
-# of the symmetric mass ratio (eta) required to produce and EM counterpart.    #
-# The user must specify the remnant disk mass threshold (thershold) and a      #
-# default value to be assigned to eta if the NS gravitational mass exceeds the #
-# maximum NS mass allowed by the EOS (eta_default).                            #
-################################################################################
-def find_em_constraint_data_point(mNS, sBH, eos_name, threshold, eta_default):
-    """
-    Function that determines the minimum symmetric mass ratio
-    for an NS-BH system with given NS mass, BH spin parameter
-    component along the orbital angular momentum, and NS equation
-    of state (EOS), required for the remnant disk mass to exceed
-    a certain threshold value specified by the user.  A default
-    value specified by the user is returned if the NS gravitational
-    mass exceeds the maximum NS mass allowed by the EOS.
-
-    Parameters
-    -----------
-    mNS: float
-        the NS mass
-    sBH: float
-        BH dimensionless spin parameter for the BH spin
-        component along the orbital angular momentum
-    eos_name: string
-        NS equation of state label ('2H' is the only supported
-        choice at the moment)
-    eta_default: float
-        the value to be returned if the input NS mass is too high
-    threshold: float
-        an amount to be subtracted to the remnant mass upper limit
-        predicted by the model (in solar masses)
-
-    Returns
-    ----------
-    eta_sol: float
-        The miniumum symmetric mass ratio for which the remnant
-        disk mass exceeds the threshold
-    """
-    ns_sequence, max_ns_g_mass = load_ns_sequence(eos_name)
-    if mNS > max_ns_g_mass:
-        eta_sol = eta_default
-    else:
-        eta_min = 0.01 #mBH_max*mNS/(mBH_max+mNS)**2
-        disk_mass_down = remnant_mass_ulim(eta_min, mNS, sBH, ns_sequence, max_ns_g_mass, threshold)
-        eta_max = 0.25 #mBH_min*mNS/(mBH_min+mNS)**2
-        disk_mass_up = remnant_mass_ulim(eta_max, mNS, sBH, ns_sequence, max_ns_g_mass, threshold)
-        if disk_mass_down*disk_mass_up < 0:
-            # Methods that work are (in order of performance speed): brentq, brenth, ridder, bisect
-            eta_sol = scipy.optimize.brentq(remnant_mass_ulim, eta_min, eta_max, args=(mNS, sBH, ns_sequence, max_ns_g_mass, threshold))
-        elif disk_mass_down > 0:
-            eta_sol = 0.        # EM counterpart requires eta<eta_min: penalize this point
-        elif disk_mass_up < 0:
-            eta_sol = 0.2500001 # EM counterpart is impossible
-        elif disk_mass_down == 0:
-            eta_sol = eta_min
-        else:
-            eta_sol = eta_max
-
-    return eta_sol
-
-################################################################################
-# Vectorized version of find_em_constraint_data_point.  Numpy v1.7 and above   #
-# allows one to list the arguments to exclude from vectorization.  An older    #
-# version of numpy is available on several clusters, so for now we will have   #
-# to work around this and make sure we pass all arguments as vectors of the    #
-# same length.                                                                 #
-################################################################################
-find_em_constraint_data_points = np.vectorize(find_em_constraint_data_point)
-
-################################################################################
-# Generate the (bh_spin_z, ns_g_mass, eta) surface above which EM counterparts #
-# are possible.  The user must specify the remnant disk mass threshold (shift) #
-# and the default eta to be assigned to points for which ns_g_mass exceeds the #
-# maximum NS mass allowed by the EOS (eta_default).                            #
-################################################################################
-def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, delta_sBH, eos_name, threshold, eta_default):
-    """
-    Wrapper that calls find_em_constraint_data_point over a grid
-    of points to generate the bh_spin_z x ns_g_mass x eta surface
-    above which NS-BH binaries yield a remnant disk mass that
-    exceeds the threshold required by the user.  The user must also
-    specify the default symmetric mass ratio value to be assigned
-    to points for which the NS mass exceeds the maximum NS mass
-    allowed by the chosend NS equation of state.
-    The 2D surface that is generated is saved to file in two formats:
-    constraint_em_bright.npz and constraint_em_bright.npz.
-
-    Parameters
-    -----------
-    mNS_min: float
-        lower boundary of the grid in the NS mass direction
-    mNS_max: float
-        upper boundary of the grid in the NS mass direction
-    delta_mNS: float
-        grid spacing in the NS mass direction
-    sBH_min: float
-        lower boundary of the grid in the direction of the
-        BH dimensionless spin component along the orbital
-        angular momentum
-    sBH_max: float
-        upper boundary of the grid in the direction of the
-        BH dimensionless spin component along the orbital
-        angular momentum
-    delta_sBH: float
-        grid spacing in the direction of the BH dimensionless
-        spin component along the orbital angular momentum
-    eos_name: string
-        NS equation of state label ('2H' is the only supported
-        choice at the moment)
-    threshold: float
-        an amount to be subtracted to the remnant mass upper limit
-        predicted by the model (in solar masses)
-    eta_default: float
-        the value to be returned for points in the grids in which
-        the NS mass is too high
-    """
-    # Build a grid of points in the mNS x sBHz space,
-    # making sure maxima and minima are included
-    mNS_nsamples = complex(0,int(np.ceil((mNS_max-mNS_min)/delta_mNS)+1))
-    sBH_nsamples = complex(0,int(np.ceil((sBH_max-sBH_min)/delta_sBH)+1))
-    mNS_vec, sBH_vec = np.mgrid[mNS_min:mNS_max:mNS_nsamples, sBH_min:sBH_max:sBH_nsamples] # pylint:disable=invalid-slice-index
-    mNS_locations = np.array(mNS_vec[:,0])
-    sBH_locations = np.array(sBH_vec[0])
-    mNS_sBH_grid = zip(mNS_vec.ravel(), sBH_vec.ravel())
-    mNS_sBH_grid = np.array(mNS_sBH_grid)
-    mNS_vec = np.array(mNS_sBH_grid[:,0])
-    sBH_vec = np.array(mNS_sBH_grid[:,1])
-
-    # Until a numpy v>=1.7 is available everywhere, we have to use a silly
-    # vectorization of find_em_constraint_data_point and pass to it a bunch of
-    # constant arguments as vectors with one entry repeated several times
-    eos_name_vec=[eos_name for _ in range(len(mNS_vec))]
-    eos_name_vec=np.array(eos_name_vec)
-    threshold_vec=np.empty(len(mNS_vec))
-    threshold_vec.fill(threshold)
-    eta_default_vec=np.empty(len(mNS_vec))
-    eta_default_vec.fill(eta_default)
-
-    # Compute the minimum etas at all point in the mNS x sBHz grid
-    eta_sol = find_em_constraint_data_points(mNS_vec, sBH_vec, eos_name_vec, threshold_vec, eta_default_vec)
-    eta_sol = eta_sol.reshape(-1,len(sBH_locations))
-    # Save the results
-    np.savez('constraint_em_bright', mNS_pts=mNS_locations, sBH_pts=sBH_locations, eta_mins=eta_sol)
-    # Cast the results in a format that is quick to plot from textfile
-    constraint_data = zip(mNS_vec.ravel(), sBH_vec.ravel(), eta_sol.ravel())
-    np.savetxt('constraint_em_bright.dat', constraint_data)
-
-################################################################################
-# Given a BH spin z-component and an NS mass, return the minumum symmetric     #
-# mass ratio (eta) required to produce an EM counterpart.  The function uses   #
-# data of a sampled constraint surface eta(bh_spin_z, ns_g_mass).  The remant  #
-# mass threshold to generate a counterpart must be set when generating such    #
-# constraint data (see generate_em_constraint_data).                           #
-################################################################################
-def min_eta_for_em_bright(bh_spin_z, ns_g_mass, mNS_pts, sBH_pts, eta_mins):
-    """
-    Function that uses the end product of generate_em_constraint_data
-    to swipe over a set of NS-BH binaries and determine the minimum
-    symmetric mass ratio required by each binary to yield a remnant
-    disk mass that exceeds a certain threshold.  Each binary passed
-    to this function consists of a NS mass and a BH spin parameter
-    component along the orbital angular momentum.  Unlike
-    find_em_constraint_data_point, which solves the problem at
-    a given point in the paremter space and is more generic, this
-    function interpolates the results produced by
-    generate_em_constraint_data at the desired locations:
-    generate_em_constraint_data must be run once prior to calling
-    min_eta_for_em_bright.
-
-    Parameters
-    -----------
-    bh_spin_z: array
-        desired values of the BH dimensionless spin parameter for the
-        spin projection along the orbital angular momentum
-    ns_g_mass: array
-        desired values of the NS gravitational mass (in solar masses)
-    mNS_pts: array
-        NS mass values (in solar masses) from the output of
-        generate_em_constraint_data
-    sBH_pts: array
-        BH dimensionless spin parameter values along the orbital
-        angular momentum from the output of generate_em_constraint_data
-    eta_mins: array
-        minimum symmetric mass ratio values to exceed a given remnant
-        disk mass threshold from the output of generate_em_constraint_data
-
-    Returns
-    ----------
-    eta_min: array
-        the minimum symmetric mass ratio required by each binary in the
-        input to yield a remnant disk mass that exceeds a certain
-        threshold
-    """
-    f = scipy.interpolate.RectBivariateSpline(mNS_pts, sBH_pts, eta_mins, kx=1, ky=1)
-    # If bh_spin_z is a numpy array (assuming ns_g_mass has the same size)
-    if isinstance(bh_spin_z, np.ndarray):
-        eta_min = np.empty(len(bh_spin_z))
-        for i in range(len(bh_spin_z)):
-            eta_min[i] = f(ns_g_mass[i], bh_spin_z[i])
-    # Else (assuming ns_g_mass and bh_spin_z are single numbers)
-    else:
-        eta_min = f(ns_g_mass, bh_spin_z)
-
-    return eta_min
+# def remnant_mass_ulim(eta, ns_g_mass, bh_spin_z, ns_sequence, max_ns_g_mass, shift):
+#     """
+#     Function that determines the maximum remnant disk mass
+#     for an NS-BH system with given symmetric mass ratio,
+#     NS mass, and BH spin parameter component along the
+#     orbital angular momentum.  This is a wrapper to
+#     the function remnant_mass.  Maximization is achieved
+#     by setting the BH dimensionless spin magntitude to unity.
+#     An unreasonably large remnant disk mass (100 solar masses)
+#     is returned if the maximum possible NS mass is exceeded
+#     in applying the model of Foucart+, PRD 98, 081501 (2018).
+# 
+#     Parameters
+#     -----------
+#     eta: float
+#         the symmetric mass ratio of the binary
+#     ns_g_mass: float
+#         NS gravitational mass (in solar masses)
+#     bh_spin_z: float
+#         the BH dimensionless spin parameter for the spin projection
+#         along the orbital angular momentum
+#     ns_sequence: 3D-array
+#         contains the sequence data in the form NS gravitational
+#          mass (in solar masses), NS baryonic mass (in solar
+#          masses), NS compactness (dimensionless)
+#     shift: float
+#         an amount to be subtracted to the remnant mass upper limit
+#         predicted by the model (in solar masses)
+# 
+#     Returns
+#     ----------
+#     remnant_mass_upper_limit: float
+#         The remnant mass upper limit in solar masses
+#     """
+#     # Sanity checks
+#     if not (eta > 0. and eta <=0.25 and abs(bh_spin_z)<=1):
+#         raise Exception("""The absolute value of the BH spin z-component must be <=1.
+#            Eta must be between 0 and 0.25.
+#            The function remnant_mass_ulim was launched with eta={0} and chi_z={1}.
+#            Unphysical parameters!""".format(eta, bh_spin_z))
+#     # To maximise the remnant mass, allow for the BH spin magnitude to be maximum
+#     bh_spin_magnitude = 1.
+#     # Unreasonably large remnant disk mass
+#     default_remnant_mass = 100.
+#     if not ns_g_mass > max_ns_g_mass:
+#         bh_spin_inclination = np.arccos(bh_spin_z/bh_spin_magnitude)
+#         remnant_mass_upper_limit = pycbc.tmpltbank.em_progenitors.remnant_mass(eta, ns_g_mass, ns_sequence, bh_spin_magnitude, bh_spin_inclination, shift)
+#     else:
+#         remnant_mass_upper_limit = default_remnant_mass
+# 
+#     return remnant_mass_upper_limit
+# 
+# ################################################################################
+# # Given a NS mass, a BH spin z-component, and and EOS, find the minimum value  #
+# # of the symmetric mass ratio (eta) required to produce and EM counterpart.    #
+# # The user must specify the remnant disk mass threshold (thershold) and a      #
+# # default value to be assigned to eta if the NS gravitational mass exceeds the #
+# # maximum NS mass allowed by the EOS (eta_default).                            #
+# ################################################################################
+# def find_em_constraint_data_point(mNS, sBH, eos_name, threshold, eta_default):
+#     """
+#     Function that determines the minimum symmetric mass ratio
+#     for an NS-BH system with given NS mass, BH spin parameter
+#     component along the orbital angular momentum, and NS equation
+#     of state (EOS), required for the remnant disk mass to exceed
+#     a certain threshold value specified by the user.  A default
+#     value specified by the user is returned if the NS gravitational
+#     mass exceeds the maximum NS mass allowed by the EOS.
+# 
+#     Parameters
+#     -----------
+#     mNS: float
+#         the NS mass
+#     sBH: float
+#         BH dimensionless spin parameter for the BH spin
+#         component along the orbital angular momentum
+#     eos_name: string
+#         NS equation of state label ('2H' is the only supported
+#         choice at the moment)
+#     eta_default: float
+#         the value to be returned if the input NS mass is too high
+#     threshold: float
+#         an amount to be subtracted to the remnant mass upper limit
+#         predicted by the model (in solar masses)
+# 
+#     Returns
+#     ----------
+#     eta_sol: float
+#         The miniumum symmetric mass ratio for which the remnant
+#         disk mass exceeds the threshold
+#     """
+#     ns_sequence, max_ns_g_mass = load_ns_sequence(eos_name)
+#     if mNS > max_ns_g_mass:
+#         eta_sol = eta_default
+#     else:
+#         eta_min = 0.01 #mBH_max*mNS/(mBH_max+mNS)**2
+#         disk_mass_down = remnant_mass_ulim(eta_min, mNS, sBH, ns_sequence, max_ns_g_mass, threshold)
+#         eta_max = 0.25 #mBH_min*mNS/(mBH_min+mNS)**2
+#         disk_mass_up = remnant_mass_ulim(eta_max, mNS, sBH, ns_sequence, max_ns_g_mass, threshold)
+#         if disk_mass_down*disk_mass_up < 0:
+#             # Methods that work are (in order of performance speed): brentq, brenth, ridder, bisect
+#             eta_sol = scipy.optimize.brentq(remnant_mass_ulim, eta_min, eta_max, args=(mNS, sBH, ns_sequence, max_ns_g_mass, threshold))
+#         elif disk_mass_down > 0:
+#             eta_sol = 0.        # EM counterpart requires eta<eta_min: penalize this point
+#         elif disk_mass_up < 0:
+#             eta_sol = 0.2500001 # EM counterpart is impossible
+#         elif disk_mass_down == 0:
+#             eta_sol = eta_min
+#         else:
+#             eta_sol = eta_max
+# 
+#     return eta_sol
+# 
+# ################################################################################
+# # Vectorized version of find_em_constraint_data_point.  Numpy v1.7 and above   #
+# # allows one to list the arguments to exclude from vectorization.  An older    #
+# # version of numpy is available on several clusters, so for now we will have   #
+# # to work around this and make sure we pass all arguments as vectors of the    #
+# # same length.                                                                 #
+# ################################################################################
+# find_em_constraint_data_points = np.vectorize(find_em_constraint_data_point)
+# 
+# ################################################################################
+# # Generate the (bh_spin_z, ns_g_mass, eta) surface above which EM counterparts #
+# # are possible.  The user must specify the remnant disk mass threshold (shift) #
+# # and the default eta to be assigned to points for which ns_g_mass exceeds the #
+# # maximum NS mass allowed by the EOS (eta_default).                            #
+# ################################################################################
+# def generate_em_constraint_data(mNS_min, mNS_max, delta_mNS, sBH_min, sBH_max, delta_sBH, eos_name, threshold, eta_default):
+#     """
+#     Wrapper that calls find_em_constraint_data_point over a grid
+#     of points to generate the bh_spin_z x ns_g_mass x eta surface
+#     above which NS-BH binaries yield a remnant disk mass that
+#     exceeds the threshold required by the user.  The user must also
+#     specify the default symmetric mass ratio value to be assigned
+#     to points for which the NS mass exceeds the maximum NS mass
+#     allowed by the chosend NS equation of state.
+#     The 2D surface that is generated is saved to file in two formats:
+#     constraint_em_bright.npz and constraint_em_bright.npz.
+# 
+#     Parameters
+#     -----------
+#     mNS_min: float
+#         lower boundary of the grid in the NS mass direction
+#     mNS_max: float
+#         upper boundary of the grid in the NS mass direction
+#     delta_mNS: float
+#         grid spacing in the NS mass direction
+#     sBH_min: float
+#         lower boundary of the grid in the direction of the
+#         BH dimensionless spin component along the orbital
+#         angular momentum
+#     sBH_max: float
+#         upper boundary of the grid in the direction of the
+#         BH dimensionless spin component along the orbital
+#         angular momentum
+#     delta_sBH: float
+#         grid spacing in the direction of the BH dimensionless
+#         spin component along the orbital angular momentum
+#     eos_name: string
+#         NS equation of state label ('2H' is the only supported
+#         choice at the moment)
+#     threshold: float
+#         an amount to be subtracted to the remnant mass upper limit
+#         predicted by the model (in solar masses)
+#     eta_default: float
+#         the value to be returned for points in the grids in which
+#         the NS mass is too high
+#     """
+#     # Build a grid of points in the mNS x sBHz space,
+#     # making sure maxima and minima are included
+#     mNS_nsamples = complex(0,int(np.ceil((mNS_max-mNS_min)/delta_mNS)+1))
+#     sBH_nsamples = complex(0,int(np.ceil((sBH_max-sBH_min)/delta_sBH)+1))
+#     mNS_vec, sBH_vec = np.mgrid[mNS_min:mNS_max:mNS_nsamples, sBH_min:sBH_max:sBH_nsamples] # pylint:disable=invalid-slice-index
+#     mNS_locations = np.array(mNS_vec[:,0])
+#     sBH_locations = np.array(sBH_vec[0])
+#     mNS_sBH_grid = zip(mNS_vec.ravel(), sBH_vec.ravel())
+#     mNS_sBH_grid = np.array(mNS_sBH_grid)
+#     mNS_vec = np.array(mNS_sBH_grid[:,0])
+#     sBH_vec = np.array(mNS_sBH_grid[:,1])
+# 
+#     # Until a numpy v>=1.7 is available everywhere, we have to use a silly
+#     # vectorization of find_em_constraint_data_point and pass to it a bunch of
+#     # constant arguments as vectors with one entry repeated several times
+#     eos_name_vec=[eos_name for _ in range(len(mNS_vec))]
+#     eos_name_vec=np.array(eos_name_vec)
+#     threshold_vec=np.empty(len(mNS_vec))
+#     threshold_vec.fill(threshold)
+#     eta_default_vec=np.empty(len(mNS_vec))
+#     eta_default_vec.fill(eta_default)
+# 
+#     # Compute the minimum etas at all point in the mNS x sBHz grid
+#     eta_sol = find_em_constraint_data_points(mNS_vec, sBH_vec, eos_name_vec, threshold_vec, eta_default_vec)
+#     eta_sol = eta_sol.reshape(-1,len(sBH_locations))
+#     # Save the results
+#     np.savez('constraint_em_bright', mNS_pts=mNS_locations, sBH_pts=sBH_locations, eta_mins=eta_sol)
+#     # Cast the results in a format that is quick to plot from textfile
+#     constraint_data = zip(mNS_vec.ravel(), sBH_vec.ravel(), eta_sol.ravel())
+#     np.savetxt('constraint_em_bright.dat', constraint_data)
+# 
+# ################################################################################
+# # Given a BH spin z-component and an NS mass, return the minumum symmetric     #
+# # mass ratio (eta) required to produce an EM counterpart.  The function uses   #
+# # data of a sampled constraint surface eta(bh_spin_z, ns_g_mass).  The remant  #
+# # mass threshold to generate a counterpart must be set when generating such    #
+# # constraint data (see generate_em_constraint_data).                           #
+# ################################################################################
+# def min_eta_for_em_bright(bh_spin_z, ns_g_mass, mNS_pts, sBH_pts, eta_mins):
+#     """
+#     Function that uses the end product of generate_em_constraint_data
+#     to swipe over a set of NS-BH binaries and determine the minimum
+#     symmetric mass ratio required by each binary to yield a remnant
+#     disk mass that exceeds a certain threshold.  Each binary passed
+#     to this function consists of a NS mass and a BH spin parameter
+#     component along the orbital angular momentum.  Unlike
+#     find_em_constraint_data_point, which solves the problem at
+#     a given point in the paremter space and is more generic, this
+#     function interpolates the results produced by
+#     generate_em_constraint_data at the desired locations:
+#     generate_em_constraint_data must be run once prior to calling
+#     min_eta_for_em_bright.
+# 
+#     Parameters
+#     -----------
+#     bh_spin_z: array
+#         desired values of the BH dimensionless spin parameter for the
+#         spin projection along the orbital angular momentum
+#     ns_g_mass: array
+#         desired values of the NS gravitational mass (in solar masses)
+#     mNS_pts: array
+#         NS mass values (in solar masses) from the output of
+#         generate_em_constraint_data
+#     sBH_pts: array
+#         BH dimensionless spin parameter values along the orbital
+#         angular momentum from the output of generate_em_constraint_data
+#     eta_mins: array
+#         minimum symmetric mass ratio values to exceed a given remnant
+#         disk mass threshold from the output of generate_em_constraint_data
+# 
+#     Returns
+#     ----------
+#     eta_min: array
+#         the minimum symmetric mass ratio required by each binary in the
+#         input to yield a remnant disk mass that exceeds a certain
+#         threshold
+#     """
+#     f = scipy.interpolate.RectBivariateSpline(mNS_pts, sBH_pts, eta_mins, kx=1, ky=1)
+#     # If bh_spin_z is a numpy array (assuming ns_g_mass has the same size)
+#     if isinstance(bh_spin_z, np.ndarray):
+#         eta_min = np.empty(len(bh_spin_z))
+#         for i in range(len(bh_spin_z)):
+#             eta_min[i] = f(ns_g_mass[i], bh_spin_z[i])
+#     # Else (assuming ns_g_mass and bh_spin_z are single numbers)
+#     else:
+#         eta_min = f(ns_g_mass, bh_spin_z)
+# 
+#     return eta_min
