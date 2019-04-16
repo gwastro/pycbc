@@ -18,8 +18,7 @@ from __future__ import division
 import math
 import numpy as np
 import pycbc
-import pycbc.tmpltbank.em_progenitors
-#from pycbc.tmpltbank import NS_SEQUENCE_FILE_DIRECTORY
+#import pycbc.tmpltbank.em_progenitors
 import os.path
 import scipy.optimize
 import scipy.interpolate
@@ -53,28 +52,28 @@ def ISCO_eq(r, chi):
 
 # Equation that determines the ISCO radius (in BH mass units):
 # arguments and sign are inverted wrt to ISCO_eq
-def ISCO_eq_chi_first(chi,r):
-    """
-    Polynomial that enables the calculation of the Kerr
-    inntermost stable circular orbit (ISCO) radius via its
-    roots.  The arguments of the function and the sign of
-    the polynomial are inverted with respect to ISCO_eq:
-    this facilitates the job of the root-finder that calls
-    this function.
-
-    Parameters
-    -----------
-    chi: float
-        the BH dimensionless spin parameter
-    r: float
-        the radial coordinate in BH mass units
-
-    Returns
-    ----------
-    float
-        -((r*(r-6))**2-chi**2*(2*r*(3*r+14)-9*chi**2))
-    """
-    return -ISCO_eq(r, chi)
+# def ISCO_eq_chi_first(chi,r):
+#     """
+#     Polynomial that enables the calculation of the Kerr
+#     inntermost stable circular orbit (ISCO) radius via its
+#     roots.  The arguments of the function and the sign of
+#     the polynomial are inverted with respect to ISCO_eq:
+#     this facilitates the job of the root-finder that calls
+#     this function.
+# 
+#     Parameters
+#     -----------
+#     chi: float
+#         the BH dimensionless spin parameter
+#     r: float
+#         the radial coordinate in BH mass units
+# 
+#     Returns
+#     ----------
+#     float
+#         -((r*(r-6))**2-chi**2*(2*r*(3*r+14)-9*chi**2))
+#     """
+#     return -ISCO_eq(r, chi)
 
 # Equation that determines the ISSO radius (in BH mass units) at one of the
 # poles
@@ -101,7 +100,7 @@ def ISSO_eq_at_pole(r, chi):
 
 # Equation that determines the ISSO radius (in BH mass units) for a generic
 # orbital inclination
-def PG_ISSO_eq(r, chi, ci):
+def PG_ISSO_eq(r, chi, cos_incl):
     """
     Polynomial that enables the calculation of a generic innermost
     stable spherical orbit (ISSO) radius via its roots.  Physical
@@ -115,14 +114,14 @@ def PG_ISSO_eq(r, chi, ci):
         the radial coordinate in BH mass units
     chi: float
         the BH dimensionless spin parameter
-    ci: float
+    cos_incl: float
         cosine of the inclination angle between the BH spin
         and the orbital angular momentum
 
     Returns
     ----------
     float
-        r**8*Z+chi**2*(1-ci**2)*(chi**2*(1-ci**2)*Y-2*r**4*X)
+        r**8*Z+chi**2*(1-cos_incl**2)*(chi**2*(1-cos_incl**2)*Y-2*r**4*X)
         where
         X=chi**2*(chi**2*(3*chi**2+4*r*(2*r-3))+r**2*(15*r*(r-4)+28))-6*r**4*(r**2-4)
         Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*(chi**2*(3*r+2)+3*r**2*(r-2)))
@@ -132,7 +131,7 @@ def PG_ISSO_eq(r, chi, ci):
     Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*(chi**2*(3*r+2)+3*r**2*(r-2)))
     Z=ISCO_eq(r, chi)
 
-    return r**8*Z+chi**2*(1-ci**2)*(chi**2*(1-ci**2)*Y-2*r**4*X)
+    return r**8*Z+chi**2*(1-cos_incl**2)*(chi**2*(1-cos_incl**2)*Y-2*r**4*X)
 
 # ISSO radius solver
 def PG_ISSO_solver(chi,incl):
@@ -156,8 +155,8 @@ def PG_ISSO_solver(chi,incl):
         the radius of the orbit in BH mass units
     """
     # Auxiliary variables
-    ci=math.cos(incl)
-    sgnchi = np.sign(ci)*chi
+    cos_incl=math.cos(incl)
+    sgnchi = np.sign(cos_incl)*chi
 
     # ISCO radius for the given spin magnitude
     if sgnchi > 0.99:
@@ -184,10 +183,10 @@ def PG_ISSO_solver(chi,incl):
     # Otherwise, find the ISSO radius for a generic inclination
     else:
         initial_guess = max(rISCO_limit,rISSO_at_pole_limit)
-        solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, ci))
+        solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, cos_incl))
         if solution < 1 or solution > 9:
             initial_guess = min(rISCO_limit,rISSO_at_pole_limit)
-            solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, ci))
+            solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, cos_incl))
 
     return solution
 
@@ -196,77 +195,77 @@ def PG_ISSO_solver(chi,incl):
 # in Stone, Loeb, Berger, PRD 87, 084053 (2013)].                          #
 ############################################################################
 # Branch of positive chi solutions to rISCO(chi_eff) = rISSO(chi,incl)
-def pos_branch(incl, chi):
-    """
-    Determines the effective [as defined in Stone, Loeb,
-    Berger, PRD 87, 084053 (2013)] aligned dimensionless
-    spin parameter of a NS-BH binary with tilted BH spin.
-    This means finding the root chi_eff of
-    ISCO_eq_chi_first(chi_eff, PG_ISSO_solver(chi,incl)).
-    The result returned by this function belongs to the
-    branch of the greater solutions, i.e. the greater of
-    the two possible solutions is returned.
-
-    Parameters
-    -----------
-    incl: float
-        the inclination angle between the BH spin and the orbital
-        angular momentum in radians
-    chi: float
-        the BH dimensionless spin parameter
-
-    Returns
-    ----------
-    chi_eff: float
-        the (greater) effective dimensionless spin parameter solution
-    """
-    if incl == 0:
-        chi_eff = chi
-    else:
-        rISSO = PG_ISSO_solver(chi,incl)
-        chi_eff = scipy.optimize.fsolve(ISCO_eq_chi_first, 1.0, args=(rISSO))
-
-    return chi_eff
+# def pos_branch(incl, chi):
+#     """
+#     Determines the effective [as defined in Stone, Loeb,
+#     Berger, PRD 87, 084053 (2013)] aligned dimensionless
+#     spin parameter of a NS-BH binary with tilted BH spin.
+#     This means finding the root chi_eff of
+#     ISCO_eq_chi_first(chi_eff, PG_ISSO_solver(chi,incl)).
+#     The result returned by this function belongs to the
+#     branch of the greater solutions, i.e. the greater of
+#     the two possible solutions is returned.
+# 
+#     Parameters
+#     -----------
+#     incl: float
+#         the inclination angle between the BH spin and the orbital
+#         angular momentum in radians
+#     chi: float
+#         the BH dimensionless spin parameter
+# 
+#     Returns
+#     ----------
+#     chi_eff: float
+#         the (greater) effective dimensionless spin parameter solution
+#     """
+#     if incl == 0:
+#         chi_eff = chi
+#     else:
+#         rISSO = PG_ISSO_solver(chi,incl)
+#         chi_eff = scipy.optimize.fsolve(ISCO_eq_chi_first, 1.0, args=(rISSO))
+# 
+#     return chi_eff
 
 # Solution to rISCO(chi_eff) = rISSO(chi,incl) with the correct sign
-def bh_effective_spin(chi,incl):
-    """
-    Determines the effective [as defined in Stone, Loeb,
-    Berger, PRD 87, 084053 (2013)] aligned dimensionless
-    spin parameter of a NS-BH binary with tilted BH spin.
-    This means finding the root chi_eff of
-    ISCO_eq_chi_first(chi_eff, PG_ISSO_solver(chi,incl))
-    with the correct sign.
-
-    Parameters
-    -----------
-    chi: float
-        the BH dimensionless spin parameter
-    incl: float
-        the inclination angle between the BH spin and the orbital
-        angular momentum in radians
-
-    Returns
-    ----------
-    chi_eff: float
-        the effective dimensionless spin parameter solution
-    """
-    if incl == 0:
-        chi_eff = chi
-    else:
-        # ISSO radius for the given BH spin magnitude and inclination
-        rISSO = PG_ISSO_solver(chi,incl)
-        # Angle at which the branch of positive solutions has its minumum
-        incl_flip = scipy.optimize.fmin(pos_branch, math.pi/4, args=tuple([chi]), full_output=False, disp=False)[-1]
-        # Use incl_flip to determine the initial guess: the sign difference
-        # in the initial_guess ensures that chi_eff has the correct sign
-        if incl>incl_flip:
-            initial_guess = -1.1
-        else:
-            initial_guess = 1.0
-        chi_eff = scipy.optimize.fsolve(ISCO_eq_chi_first, initial_guess, args=(rISSO))
-
-    return chi_eff
+# def bh_effective_spin(chi,incl):
+#     """
+#     Determines the effective [as defined in Stone, Loeb,
+#     Berger, PRD 87, 084053 (2013)] aligned dimensionless
+#     spin parameter of a NS-BH binary with tilted BH spin.
+#     This means finding the root chi_eff of
+#     ISCO_eq_chi_first(chi_eff, PG_ISSO_solver(chi,incl))
+#     with the correct sign.
+# 
+#     Parameters
+#     -----------
+#     chi: float
+#         the BH dimensionless spin parameter
+#     incl: float
+#         the inclination angle between the BH spin and the orbital
+#         angular momentum in radians
+# 
+#     Returns
+#     ----------
+#     chi_eff: float
+#         the effective dimensionless spin parameter solution
+#     """
+#     if incl == 0:
+#         chi_eff = chi
+#     else:
+#         # ISSO radius for the given BH spin magnitude and inclination
+#         rISSO = PG_ISSO_solver(chi,incl)
+#         # Angle at which the branch of positive solutions has its minumum
+#         incl_flip = scipy.optimize.fmin(pos_branch, math.pi/4, args=tuple([chi]), full_output=False, disp=False)[-1]
+#         # Use incl_flip to determine the initial guess: the sign difference
+#         # in the initial_guess ensures that chi_eff has the correct sign
+#         if incl>incl_flip:
+#             initial_guess = -1.1
+#         else:
+#             initial_guess = 1.0
+#         chi_eff = scipy.optimize.fsolve(ISCO_eq_chi_first, initial_guess, args=(rISSO))
+# 
+#     return chi_eff
 
 ############################################################################
 # 2H 2-piecewise polytropic EOS, NS non-rotating equilibrium sequence      #
@@ -303,7 +302,6 @@ def load_ns_sequence(eos_name):
 
     if eos_name == '2H':
         ns_sequence_path = os.path.join(pycbc.tmpltbank.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
-        #ns_sequence_path = os.path.join(NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
         print('Only the 2H EOS is currently supported!')
@@ -374,13 +372,11 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
     return f(ns_g_mass)
 
 ########################################################################################
-# Physical parameters passed to remnant_mass (see later) must not be unphysical        #
-########################################################################################
-
-########################################################################################
-# Remnant mass for a NS-BH merger [Foucart PRD 98, 081501(R) (2018)]                   #                                                #
+# NS-BH merger remnant mass [Foucart, Hinderer, Nissanke PRD 98, 081501(R) (2018)].    #
 # Allowing for negative remanant mass to be able to solve remnant mass == 0 if neeeded #
-# THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this)                        #
+# THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this).                       #
+# Physical parameters passed to remnant_mass (see sanity checks below) must not be     #
+# unphysical.                                                                          #
 ########################################################################################
 def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
     """
@@ -412,42 +408,38 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
     remnant_mass: float
         The remnant mass in solar masses
     """
-    # Sanity checks
-    if not (eta>0. and eta<=0.25 and abs(chi)<=1):
-        print('The BH spin magnitude must be <=1 and eta must be between 0 and 0.25')
-        print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
+
+    # Sanity checks on eta and chi
+    if not (eta>0. and eta<=0.25 and abs(chi)<=1 and ns_g_mass>0):
+        print('The BH spin magnitude must be <=1, eta must be between 0 and 0.25, and the NS mass must be positive.')
+        print('The function remnant_mass was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
         raise Exception('Unphysical parameters!')
 
-    # Sanity checks
-    if not (ns_g_mass>0):
-        print('The NS mass must be positive.')
-        print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}'.format(ns_g_mass, eta, chi, incl))
-        print('SOMETHING WENT WRONG!!\n')
-        raise Exception('Unphysical parameters!')
-
-    # Binary mass ratio define to be > 1
-    q = (1+math.sqrt(1-4*eta)-2*eta)/eta*0.5
+    # Binary mass ratio defined to be > 1
+    #q = (1+math.sqrt(1-4*eta)-2*eta)/eta*0.5
 
     # NS compactness and rest mass
     ns_compactness = ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence)
     ns_b_mass = ns_g_mass_to_ns_b_mass(ns_g_mass, ns_sequence)
 
     # Sanity checks
-    if not (ns_compactness>0 and q>=1):
-        print('A positive NS compactness and a mass ratio that is >1 must be obtained.')
-        print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}'.format(ns_g_mass, eta, chi, incl))
-        print('and obtained ns_compactness={0} and q={1}.'.format(ns_compactness, q))
-        print('SOMETHING WENT WRONG!!\n')
-        raise Exception('Unphysical parameters!')
+    #if not (ns_compactness>0 and q>=1):
+    #    print('A positive NS compactness and a mass ratio that is >1 must be obtained.')
+    #    print('This script was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}'.format(ns_g_mass, eta, chi, incl))
+    #    print('and obtained ns_compactness={0} and q={1}.'.format(ns_compactness, q))
+    #    print('SOMETHING WENT WRONG!!\n')
+    #    raise Exception('Unphysical parameters!')
     #chi_eff = bh_effective_spin(chi, incl)
     
     # Fit parameters and tidal correction
-    alpha = 0.406 # +/- 0.011
-    beta  = 0.139 # +/- 0.008
+    alpha = 0.406
+    beta  = 0.139
     gamma = 0.255
     delta = 1.761
     # The remnant mass over the NS rest mass
     remnant_mass = (max(alpha/eta**(1./3.)*(1-2*ns_compactness)-beta*ns_compactness/eta*PG_ISSO_solver(chi,incl)+gamma,0.))**delta
+    # The remnant mass in solar masses
+    remnant_mass = remnant_mass*ns_b_mass
 
     return remnant_mass
 
