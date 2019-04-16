@@ -378,7 +378,7 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 # Physical parameters passed to remnant_mass (see sanity checks below) must not be     #
 # unphysical.                                                                          #
 ########################################################################################
-def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
+def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     """
     Function that determines the remnant disk mass of
     an NS-BH system using the fit to numerical-relativity
