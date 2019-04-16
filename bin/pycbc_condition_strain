@@ -62,7 +62,6 @@ parser.add_argument('--frame-duration', type=int,
 pycbc.strain.insert_strain_option_group(parser)
 args = parser.parse_args()
 
-<<<<<<< HEAD
 if args.frame_duration is not None and args.frame_duration <= 0:
     parser.error('Frame duration should be positive integer, {} given'.format(args.frame_duration))
 
