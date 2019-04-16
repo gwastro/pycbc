@@ -75,7 +75,7 @@ def ISSO_eq_at_pole(r, chi):
 
 # Equation that determines the ISSO radius (in BH mass units) for a generic
 # orbital inclination
-def PG_ISSO_eq(r, chi, cos_incl):
+def PG_ISSO_eq(r, chi, incl):
     """
     Polynomial that enables the calculation of a generic innermost
     stable spherical orbit (ISSO) radius via its roots.  Physical
@@ -89,9 +89,9 @@ def PG_ISSO_eq(r, chi, cos_incl):
         the radial coordinate in BH mass units
     chi: float
         the BH dimensionless spin parameter
-    cos_incl: float
-        cosine of the inclination angle between the BH spin
-        and the orbital angular momentum
+    incl: float
+        inclination angle between the BH spin and the orbital angular
+        momentum in radians
 
     Returns
     ----------
@@ -102,11 +102,22 @@ def PG_ISSO_eq(r, chi, cos_incl):
         Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*(chi**2*(3*r+2)+3*r**2*(r-2)))
         Z=ISCO_eq(r,chi)
     """
-    X=chi**2*(chi**2*(3*chi**2+4*r*(2*r-3))+r**2*(15*r*(r-4)+28))-6*r**4*(r**2-4)
-    Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*(chi**2*(3*r+2)+3*r**2*(r-2)))
+    chi2 = chi*chi
+    chi4 = chi2*chi2
+    r2 = r*r
+    r4 = r2*r2
+    three_r = 3*r 
+    r_minus_2 = r - 2
+    sin_incl2 = (math.sin(incl))**2
+
+    X=chi2*(chi2*(3*chi2+4*r*(2*r-3))+r2*(15*r*(r-4)+28))-6*r4*(r2-4)
+    Y=chi4*(chi4+r2*(7*r*(three_r-4)+36))+6*r*r_minus_2*(chi4*chi2+2*r2*r*(chi2*(three_r+2)+3*r2*r_minus_2))
+    #X=chi**2*(chi**2*(3*chi**2+4*r*(2*r-3))+r**2*(15*r*(r-4)+28))-6*r**4*(r**2-4)
+    #Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*(chi**2*(3*r+2)+3*r**2*(r-2)))
     Z=ISCO_eq(r, chi)
 
-    return r**8*Z+chi**2*(1-cos_incl**2)*(chi**2*(1-cos_incl**2)*Y-2*r**4*X)
+    #return r**8*Z+chi**2*(1-cos_incl**2)*(chi**2*(1-cos_incl**2)*Y-2*r**4*X)
+    return r4*r4*Z+chi2*sin_incl2*(chi2*sin_incl2*Y-2*r4*X)
 
 # ISSO radius solver
 def PG_ISSO_solver(chi,incl):
@@ -158,10 +169,12 @@ def PG_ISSO_solver(chi,incl):
     # Otherwise, find the ISSO radius for a generic inclination
     else:
         initial_guess = max(rISCO_limit,rISSO_at_pole_limit)
-        solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, cos_incl))
+        #solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, cos_incl))
+        solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, incl))
         if solution < 1 or solution > 9:
             initial_guess = min(rISCO_limit,rISSO_at_pole_limit)
-            solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, cos_incl))
+            #solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, cos_incl))
+            solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, incl))
 
     return solution
 

@@ -225,22 +225,22 @@ def get_random_mass(numPoints, massRangeParams):
     # only systems that can yield (at least) the desired remnant
     # disk mass and that pass the mass and spin range cuts.
     else:
-        _, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
+        ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
 
         # Generate EM constraint surface: minumum eta as a function of BH spin
         # and NS mass required to produce an EM counterpart
-        if not os.path.isfile('constraint_em_bright.npz'):
-            logging.info("""constraint_em_bright.npz not found.
-                        Generating the constraint surface for EM bright binaries
-                        in the physical parameter space.  One day, this will be
-                        made faster, for now be patient and wait a few minutes!""")
-            generate_em_constraint_data(massRangeParams.minMass2, massRangeParams.maxMass2, massRangeParams.delta_ns_mass, \
-                                        -1.0, massRangeParams.maxBHSpinMag, massRangeParams.delta_bh_spin, \
-                                        massRangeParams.ns_eos, massRangeParams.remnant_mass_threshold, 0.0)
-        constraint_datafile = numpy.load('constraint_em_bright.npz')
-        mNS_pts = constraint_datafile['mNS_pts']
-        bh_spin_z_pts = constraint_datafile['sBH_pts']
-        eta_mins = constraint_datafile['eta_mins']
+        #if not os.path.isfile('constraint_em_bright.npz'):
+        #    logging.info("""constraint_em_bright.npz not found.
+        #                Generating the constraint surface for EM bright binaries
+        #                in the physical parameter space.  One day, this will be
+        #                made faster, for now be patient and wait a few minutes!""")
+        #    generate_em_constraint_data(massRangeParams.minMass2, massRangeParams.maxMass2, massRangeParams.delta_ns_mass, \
+        #                                -1.0, massRangeParams.maxBHSpinMag, massRangeParams.delta_bh_spin, \
+        #                                massRangeParams.ns_eos, massRangeParams.remnant_mass_threshold, 0.0)
+        #constraint_datafile = numpy.load('constraint_em_bright.npz')
+        #mNS_pts = constraint_datafile['mNS_pts']
+        #bh_spin_z_pts = constraint_datafile['sBH_pts']
+        #eta_mins = constraint_datafile['eta_mins']
 
         # Empty arrays to store points that pass all cuts
         mass1_out = []
@@ -263,8 +263,14 @@ def get_random_mass(numPoints, massRangeParams):
             # Now proceed with cutting out EM dim systems
             # Logical mask to clean up points by removing EM dim binaries
             mask = numpy.ones(len(mass1), dtype=bool)
+
+
+
+            #TODO: update this block of code
+ 
             # Commpute the minimum eta to generate a counterpart
-            min_eta_em = min_eta_for_em_bright(spin1z, mass2, mNS_pts, bh_spin_z_pts, eta_mins)
+            #min_eta_em = min_eta_for_em_bright(spin1z, mass2, mNS_pts, bh_spin_z_pts, eta_mins)
+            remnant_masses = remnant_mass(eta, mass2, ns_sequence, spin1z, incl, massRangeParams.remnant_mass_threshold):
             # Remove a point if:
             # 1) eta is smaller than the eta threshold required to have a counterpart;
             # 2) the primary is a BH (mass1 >= ns_bh_boundary_mass);
@@ -273,7 +279,10 @@ def get_random_mass(numPoints, massRangeParams):
             # this last condition will always be true, otherwise the user is
             # implicitly asking to keep binaries in which the secondary may be
             # a BH).
-            mask[(mass1 >= massRangeParams.ns_bh_boundary_mass) & (mass2 <= max_ns_g_mass) & (eta < min_eta_em)] = False
+            mask[(mass1 >= massRangeParams.ns_bh_boundary_mass) & (mass2 <= max_ns_g_mass) & (remnant_masses < massRangeParams.remnant_mass_threshold)] = False
+
+
+
             # Keep only binaries that can produce an EM counterpart and add them to
             # the pile of accpeted points to output
             mass1_out = numpy.concatenate((mass1_out, mass1[mask]))
