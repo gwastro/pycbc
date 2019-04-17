@@ -21,7 +21,8 @@ import os.path
 from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
-from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data, load_ns_sequence, min_eta_for_em_bright
+#from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data, load_ns_sequence, min_eta_for_em_bright
+from pycbc.tmpltbank.em_progenitors import load_ns_sequence, remnant_mass
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -260,17 +261,15 @@ def get_random_mass(numPoints, massRangeParams):
                                                 massRangeParams)
             _, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
 
+            #TODO: update this block of code
+
             # Now proceed with cutting out EM dim systems
             # Logical mask to clean up points by removing EM dim binaries
-            mask = numpy.ones(len(mass1), dtype=bool)
+            #mask = numpy.ones(len(mass1), dtype=bool)
+            mask_not_bbh = numpy.zeroes(len(mass1), dtype=bool)
 
-
-
-            #TODO: update this block of code
- 
             # Commpute the minimum eta to generate a counterpart
             #min_eta_em = min_eta_for_em_bright(spin1z, mass2, mNS_pts, bh_spin_z_pts, eta_mins)
-            remnant_masses = remnant_mass(eta, mass2, ns_sequence, spin1z, incl, massRangeParams.remnant_mass_threshold):
             # Remove a point if:
             # 1) eta is smaller than the eta threshold required to have a counterpart;
             # 2) the primary is a BH (mass1 >= ns_bh_boundary_mass);
@@ -279,16 +278,38 @@ def get_random_mass(numPoints, massRangeParams):
             # this last condition will always be true, otherwise the user is
             # implicitly asking to keep binaries in which the secondary may be
             # a BH).
-            mask[(mass1 >= massRangeParams.ns_bh_boundary_mass) & (mass2 <= max_ns_g_mass) & (remnant_masses < massRangeParams.remnant_mass_threshold)] = False
-
-
+            #mask[(mass1 >= massRangeParams.ns_bh_boundary_mass) & (mass2 <= max_ns_g_mass) & (remnant < massRangeParams.remnant_mass_threshold)] = False
+            # Keep a point if:
+            # 1) the secondary mass is a not BH (mass2 < ns_bh_boundary_mass)
+            mask_not_bbh[mass2 < massRangeParams.ns_bh_boundary_mass] = True
+            mass1_not_bbh= mass1[mask_not_bbh]
+            mass2_not_bbh = mass2[mask_not_bbh]
+            spin1z_not_bbh = spin1z[mask_not_bbh]
+            spin2z_not_bbh = spin2z[mask_not_bbh]
+            # 2) and if the primary mass is a NS (i.e., it is a BNS), or...
+            mask_nsbh = numpy.zeroes(len(mass1_not_bbh), dtype=bool)
+            mask_nsbh[mass2_not_bbh > max_ns_g_mass] = True 
+            mash_bns = ~mask_nsbh
+            mass1_bns = mass1_not_bbh[mask_bns]
+            mass2_bns = mass2_not_bbh[mask_bns]
+            spin1z_bns = spin1z_not_bbh[mask_bns]
+            spin2z_bns = spin2z_not_bbh[mask_bns]
+            # 2) ...it is an NS-BH with remnant mass greater than the threshold required to have a counterpart
+            mass1_nsbh = mass1_not_bbh[mask_nbns]
+            mass2_nsbh = mass2_not_bbh[mask_nsbh]
+            spin1z_nsbh = spin1z_not_bbh[mask_nsbh]
+            spin2z_nsbh = spin2z_not_bbh[mask_nsbh]
+            _, eta_nsbh = pnutils.mass1_mass2_to_mtotal_eta(mass1_nsbh, mass2_nsbh)
+            remnant = remnant_mass(eta_nsbh, mass2_nsbh, ns_sequence, spin1z_nsbh, 0., massRangeParams.remnant_mass_threshold)
+            mask_bright_nsbh = numpy.zeroes(len(mass1_nsbh), dtype=bool)
+            mask_bright_nsbh[remnant > massRangeParams.remnant_mass_threshold] = True
 
             # Keep only binaries that can produce an EM counterpart and add them to
             # the pile of accpeted points to output
-            mass1_out = numpy.concatenate((mass1_out, mass1[mask]))
-            mass2_out = numpy.concatenate((mass2_out, mass2[mask]))
-            spin1z_out = numpy.concatenate((spin1z_out,spin1z[mask]))
-            spin2z_out = numpy.concatenate((spin2z_out,spin2z[mask]))
+            mass1_out = numpy.concatenate((mass1_out, mass1_bns, mass1_nsbh[mask_bright_nsbh]))
+            mass2_out = numpy.concatenate((mass2_out, mass2_bns, mass2_nsbh[mask_bright_nsbh]))
+            spin1z_out = numpy.concatenate((spin1z_out, spin1z_bns, spin1z_nsbh[mask_bright_nsbh]))
+            spin2z_out = numpy.concatenate((spin2z_out, spin2z_bns, spin2z_nsbh[mask_bright_nsbh]))
 
             # Number of points that survived all cuts
             numPointsFound = len(mass1_out)
