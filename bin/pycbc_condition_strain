@@ -83,8 +83,8 @@ if not args.dyn_range_factor:
 logging.info('Writing output strain')
 output_channel_name = args.output_channel_name or args.channel_name
 if args.output_strain_file.endswith('.gwf'):
-        pycbc.frame.write_frame(args.output_strain_file, output_channel_name,
-                                out_strain)
+    pycbc.frame.write_frame(args.output_strain_file, output_channel_name,
+                            out_strain)
 else:
     out_strain.save(args.output_strain_file, group=output_channel_name)
 
