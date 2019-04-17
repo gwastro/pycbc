@@ -169,16 +169,9 @@ hdfbank = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
 splitbank_files_fd = wf.setup_splittable_workflow(workflow, hdfbank,
                                                   out_dir="bank",
                                                   tags=['full_data'])
-splitbank_files_inj = wf.setup_splittable_workflow(workflow, hdfbank,
-                                                   out_dir="bank",
-                                                   tags=['injections'])
 
 bank_plot = wf.make_template_plot(workflow, hdfbank[0],
                                   rdir['coincident_triggers'])
-
-# setup the injection files
-inj_files, inj_tags = wf.setup_injection_workflow(workflow,
-                                                  output_dir="inj_files")
 
 ######################## Setup the FULL DATA run ##############################
 tag = output_dir = "full_data"
@@ -247,8 +240,8 @@ combined_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      tags=combctags)
 
 censored_veto = wf.make_foreground_censored_veto(workflow,
-                      combined_bg_file, final_veto_file[0], final_veto_name[0],
-                      'closed_box', 'segments')
+                       combined_bg_file, final_veto_file[0], final_veto_name[0],
+                       'closed_box', 'segments')
 
 # Calculate the inspiral psds and make plots
 psd_files = []
@@ -490,8 +483,21 @@ for key in final_bg_files:
 
 ############################## Setup the injection runs #######################
 
+splitbank_files_inj = wf.setup_splittable_workflow(workflow, hdfbank,
+                                                   out_dir="bank",
+                                                   tags=['injections'])
+
+# setup the injection files
+inj_files, inj_tags = wf.setup_injection_workflow(workflow,
+                                                  output_dir="inj_files")
+
 inj_coincs = wf.FileList()
-inj_coinc = {}
+
+found_inj_dict ={}
+insps_dict = {}
+small_inj_file_dict = {}
+
+files_for_combined_injfind = []
 for inj_file, tag in zip(inj_files, inj_tags):
     ctags = [tag, 'injections']
     output_dir = '%s_coinc' % tag
@@ -510,6 +516,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
     else:
         file_for_vetoes = inj_file
 
+    files_for_combined_injfind.append(file_for_injfind)
+
     if workflow.cp.has_option_tags('workflow-injections', 'strip-injections',
                                    tags=ctags):
         small_inj_file = wf.veto_injections(workflow, file_for_vetoes,
@@ -520,26 +528,30 @@ for inj_file, tag in zip(inj_files, inj_tags):
 
     # setup the matchedfilter jobs
     insps = wf.setup_matchedfltr_workflow(workflow, analyzable_segs,
-                                     datafind_files, splitbank_files_inj,
-                                     output_dir, injection_file=small_inj_file,
-                                     tags=ctags)
+                                         datafind_files, splitbank_files_inj,
+                                         output_dir, tags=ctags,
+                                         injection_file=small_inj_file)
 
     insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
                                                insps, output_dir, tags=ctags)
     # multiifo coincidence for injections
+    inj_coinc = {}
     for i in range(2, len(insps)+1):
         combinations = itertools.combinations(ifo_ids.keys(), i)
         for ifocomb in combinations:
             inspcomb = wf.select_files_by_ifo_combination(ifocomb, insps)
-            pivot_ifo, fixed_ifo, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
+            pivot_ifo, fixed_ifo, ordered_ifo_list = \
+                wf.get_ordered_ifo_list(ifocomb, ifo_ids)
 
             # Create coinc tag, and set up the coinc job for the combination
             coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
             ctagcomb = [tag, 'injections', coinctag]
-            inj_coinc[ordered_ifo_list] = wf.setup_multiifo_interval_coinc_inj(workflow, hdfbank,
-                                    full_insps, inspcomb, statfiles, final_bg_files[ordered_ifo_list][0][1],
-                                    final_veto_file[0], final_veto_name[0],
-                                    output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
+            curr_out = wf.setup_multiifo_interval_coinc_inj\
+                (workflow, hdfbank, full_insps, inspcomb, statfiles,
+                 final_bg_files[ordered_ifo_list][0][1],
+                 final_veto_file[0], final_veto_name[0],
+                 output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
+            inj_coinc[ordered_ifo_list] = curr_out
     
     combctags = [tag, 'injections']
     final_inj_bg_file_list = wf.FileList()
@@ -551,12 +563,99 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                                      output_dir,
                                                      tags=combctags)
     
+    # FIXME: Should this be censored_veto
     found_inj = wf.find_injections_in_hdf_coinc\
         (workflow, [combined_inj_bg_file], [file_for_injfind],
          final_veto_file[0], final_veto_name[0], output_dir, tags=combctags)
     
     inj_coincs += [combined_inj_bg_file]
 
+    # Set files for plots
+    found_inj_dict[tag] = found_inj
+    insps_dict[tag] = insps
+    small_inj_file_dict[tag] = small_inj_file
+
+# Make combined injection file
+# FIXME: Should this be censored_veto?
+if len(files_for_combined_injfind) > 0:
+    found_inj_comb = wf.find_injections_in_hdf_coinc\
+        (workflow, inj_coincs, files_for_combined_injfind, final_veto_file[0],
+         final_veto_name[0], 'allinj', tags=['ALLINJ'])
+
+
+############################ Injection plots #################################
+
+# Per injection run plots
+for inj_file, tag in zip(inj_files, inj_tags):
+    s = []
+    found_inj = found_inj_dict[tag]
+    insps = insps_dict[tag]
+    small_inj_file = small_inj_file_dict[tag]
+    injdir = rdir['injections/%s' % tag]
+    sensdir = rdir['search_sensitivity/%s' % tag]
+
+    #foundmissed/sensitivity plots
+    #s = wf.make_sensitivity_plot(workflow, found_inj, sensdir,
+    #                             exclude=['all', 'summ'], require='sub',
+    #                             tags=ctags)
+    f = wf.make_foundmissed_plot(workflow, found_inj, injdir,
+                                 exclude=['all', 'summ'], require='sub',
+                                 tags=[tag])
+
+    # FIXME: It's not clear to me that this does anything??
+    # Extra foundmissed/sensitivity plots
+    #wf.make_sensitivity_plot(workflow, found_inj, sensdir,
+    #                         exclude=['all', 'summ', 'sub'], tags=ctags)
+    wf.make_foundmissed_plot(workflow, found_inj, injdir,
+                             exclude=['all', 'summ', 'sub'], tags=[tag])
+
+    #found_table = wf.make_inj_table(workflow, found_inj, injdir,
+    #                                singles=insps, tags=[tag + 'found'])
+    missed_table = wf.make_inj_table(workflow, found_inj, injdir,
+                                     missed=True, tags=[tag + 'missed'])
+
+    for i in range(2, len(insps)+1):
+        combinations = itertools.combinations(ifo_ids.keys(), i)
+        for ifocomb in combinations:
+            inspcomb = wf.select_files_by_ifo_combination(ifocomb, insps)
+            fdinspcmb = wf.select_files_by_ifo_combination(ifocomb, full_insps)
+            _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
+
+            for inj_insp, trig_insp in zip(inspcomb, fdinspcmb):
+                final_bg_file = final_bg_files[ordered_ifo_list][0][1][0]
+                curr_tags = [tag, ordered_ifo_list]
+                #f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp,
+                #                               final_bg_file, trig_insp,
+                #                               injdir, tags=curr_tags)
+
+    # Make pages from plots
+    inj_layout = list(layout.grouper(f, 2)) + [(missed_table,)]
+    layout.two_column_layout(rdir['injections/%s' % tag], inj_layout)
+
+    if len(s) > 0:
+        layout.group_layout(rdir['search_sensitivity/%s' % tag], s)
+
+    # Minifollowups
+    curr_dir_nam = 'injections/followup_of_{}'.format(tag)
+    if workflow.cp.has_option_tags('workflow-injection_minifollowups',
+                                   'subsection-suffix', tags=[tag]):
+        suf_str = workflow.cp.get_opt_tags('workflow-injection_minifollowups',
+                                           'subsection-suffix', tags=[tag])
+        curr_dir_nam += '_' + suf_str
+    currdir = rdir[curr_dir_nam]
+    #wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
+    #                                 insps,  hdfbank[0], insp_files_seg_file,
+    #                                 data_analysed_name, trig_generated_name,
+    #                                 'daxes', currdir, tags=[tag])
+
+    # If option given, make throughput plots
+    if workflow.cp.has_option_tags('workflow-matchedfilter',
+                                   'plot-throughput', tags=[tag]):
+        wf.make_throughput_plot(workflow, insps, rdir['workflow/throughput'],
+                                tags=[tag])
+
+
+############################ Finalization ####################################
 
 # Create the final log file
 log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
