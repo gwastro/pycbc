@@ -288,7 +288,7 @@ def get_random_mass(numPoints, massRangeParams):
             spin2z_not_bbh = spin2z[mask_not_bbh]
             # 2) and if the primary mass is a NS (i.e., it is a BNS), or...
             mask_nsbh = numpy.zeros(len(mass1_not_bbh), dtype=bool)
-            mask_nsbh[mass2_not_bbh > max_ns_g_mass] = True 
+            mask_nsbh[mass1_not_bbh > max_ns_g_mass] = True 
             mask_bns = ~mask_nsbh
             mass1_bns = mass1_not_bbh[mask_bns]
             mass2_bns = mass2_not_bbh[mask_bns]
@@ -300,9 +300,10 @@ def get_random_mass(numPoints, massRangeParams):
             spin1z_nsbh = spin1z_not_bbh[mask_nsbh]
             spin2z_nsbh = spin2z_not_bbh[mask_nsbh]
             _, eta_nsbh = pnutils.mass1_mass2_to_mtotal_eta(mass1_nsbh, mass2_nsbh)
-            remnant = remnant_mass(eta_nsbh, mass2_nsbh, ns_sequence, spin1z_nsbh, 0., massRangeParams.remnant_mass_threshold)
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
-            mask_bright_nsbh[remnant > massRangeParams.remnant_mass_threshold] = True
+            if len(eta_nsbh) != 0:
+                remnant = remnant_mass(eta_nsbh, mass2_nsbh, ns_sequence, spin1z_nsbh, 0., massRangeParams.remnant_mass_threshold)
+                mask_bright_nsbh[remnant > massRangeParams.remnant_mass_threshold] = True
 
             # Keep only binaries that can produce an EM counterpart and add them to
             # the pile of accpeted points to output
