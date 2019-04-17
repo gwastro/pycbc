@@ -62,7 +62,7 @@ time_file = pycbc.workflow.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
                                            directory='plots')
 pycbc.workflow.makedir('plots')
-kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
+kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)',
         'caption' : "Wall clock start and end times for this invocation of the workflow. "
                     " The command line button shows the arguments used to invoke the workflow "
                     " creation script.",
