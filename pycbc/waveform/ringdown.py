@@ -215,11 +215,15 @@ def lm_tfinal(damping_times):
     at which the amplitude falls to 1/1000 of the peak amplitude
     """
 
-    t_max = {}
-    for lmn in damping_times.keys():
-        t_max[lmn] = qnm_time_decay(damping_times[lmn], 1./1000)
+    if isinstance(damping_times, dict):
+        t_max = {}
+        for lmn in damping_times.keys():
+            t_max[lmn] = qnm_time_decay(damping_times[lmn], 1./1000)
+        t_final = max(t_max.values())
+    else:
+        t_final = qnm_time_decay(damping_times, 1./1000)
 
-    return max(t_max.values())
+    return t_final
 
 def lm_deltat(freqs, damping_times):
     """Return the minimum delta_t of all the modes given, with delta_t given by
@@ -227,12 +231,19 @@ def lm_deltat(freqs, damping_times):
     1/1000 of the peak amplitude.
     """
 
-    dt = {}
-    for lmn in freqs.keys():
-        dt[lmn] = 1. / qnm_freq_decay(freqs[lmn],
+    if isinstance(freqs, dict) and isinstance(damping_times, dict):
+        dt = {}
+        for lmn in freqs.keys():
+            dt[lmn] = 1. / qnm_freq_decay(freqs[lmn],
                                damping_times[lmn], 1./1000)
+        delta_t = min(dt.values())
+    elif isinstance(freqs, dict) and not isinstance(damping_times, dict):
+        raise ValueError('Mising damping times.')
+    elif isinstance(damping_times, dict) and not isinstance(freqs, dict):
+        raise ValueError('Mising frequencies.')
+    else:
+        delta_t =  1. / qnm_freq_decay(freqs, damping_times, 1./1000)
 
-    delta_t = min(dt.values())
     if delta_t < min_dt:
         delta_t = min_dt
 
@@ -243,12 +254,19 @@ def lm_ffinal(freqs, damping_times):
     at which the amplitude falls to 1/1000 of the peak amplitude
     """
 
-    f_max = {}
-    for lmn in freqs.keys():
-        f_max[lmn] = qnm_freq_decay(freqs[lmn],
+    if isinstance(freqs, dict) and isinstance(damping_times, dict):
+        f_max = {}
+        for lmn in freqs.keys():
+            f_max[lmn] = qnm_freq_decay(freqs[lmn],
                               damping_times[lmn], 1./1000)
+        f_final = max(f_max.values())
+    elif isinstance(freqs, dict) and not isinstance(damping_times, dict):
+        raise ValueError('Mising damping times.')
+    elif isinstance(damping_times, dict) and not isinstance(freqs, dict):
+        raise ValueError('Mising frequencies.')
+    else:
+        f_final = qnm_freq_decay(freqs, damping_times, 1./1000)
 
-    f_final = max(f_max.values())
     if f_final > max_freq:
         f_final = max_freq
 
@@ -260,11 +278,16 @@ def lm_deltaf(damping_times):
     1/1000 of the peak amplitude.
     """
 
-    df = {}
-    for lmn in damping_times.keys():
-        df[lmn] = 1. / qnm_time_decay(damping_times[lmn], 1./1000)
+    if isinstance(damping_times, dict):
+        print damping_times
+        df = {}
+        for lmn in damping_times.keys():
+            df[lmn] = 1. / qnm_time_decay(damping_times[lmn], 1./1000)
+        delta_f = min(df.values())
+    else:
+        delta_f =  1. / qnm_time_decay(damping_times, 1./1000)
 
-    return min(df.values())
+    return delta_f
 
 def td_output_vector(freqs, damping_times, taper=None,
                      delta_t=None, t_final=None):
@@ -281,14 +304,17 @@ def td_output_vector(freqs, damping_times, taper=None,
     # Different modes will have different tapering window-size
     # Find maximum window size to create long enough output vector
     if taper:
-        max_tau = max(damping_times.values())
-        taper_window = int(taper*max_tau/delta_t)
-        kmax += taper_window
+        max_tau = max(damping_times.values()) if \
+                  isinstance(damping_times, dict) else damping_times
+        kmax += int(taper*max_tau/delta_t)
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     if taper:
+        # Change epoch of output vector if tapering will be applied
         start = - taper * max_tau
+        # To ensure that t=0 is still in output vector
+        start -= start%delta_t
         outplus._epoch, outcross._epoch = start, start
 
     return outplus, outcross
@@ -338,31 +364,21 @@ def Kerr_factor(final_mass, distance):
 
 # Functions for tapering ######################################################
 
-def apply_taper(delta_t, taper, f_0, tau, amp, phi, l, m, inclination):
+def apply_taper(f_0, tau, amp, phi, delta_t, taper, l=2, m=2, inclination=None):
     """Return tapering window.
     """
 
-    # Times of tapering do not include t=0
-    taper_times = -numpy.arange(1, int(taper*tau/delta_t))[::-1] * delta_t
-    Y_plus, Y_cross = spher_harms(l, m, inclination)
-    taper_hp = amp * Y_plus * numpy.exp(10*taper_times/tau) * \
-                     numpy.cos(two_pi*f_0*taper_times + phi)
-    taper_hc = amp * Y_cross * numpy.exp(10*taper_times/tau) * \
-                     numpy.sin(two_pi*f_0*taper_times + phi)
+    taper_times = -numpy.arange(0, int(taper*tau/delta_t))[::-1] * delta_t
+    if inclination is not None:
+        Y_plus, Y_cross = spher_harms(l, m, inclination)
+    else:
+        Y_plus, Y_cross = 1, 1
+    hp_amp, hc_amp = amp * Y_plus * numpy.cos(phi), \
+                     amp * Y_cross * numpy.sin(phi)
+    taper_hp = hp_amp * numpy.exp(10*taper_times/tau)
+    taper_hc = hc_amp * numpy.exp(10*taper_times/tau)
 
     return taper_hp, taper_hc
-
-def taper_shift(waveform, output):
-    """Add waveform to output with waveform shifted accordingly (for tapering
-    multi-mode ringdowns)
-    """
-
-    if len(waveform) == len(output):
-        output.data += waveform.data
-    else:
-        output.data[len(output)-len(waveform):] += waveform.data
-
-    return output
 
 # Functions to generate ringdown waveforms ####################################
 
@@ -371,18 +387,14 @@ def taper_shift(waveform, output):
 ######################################################
 
 def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
-                       taper=None, l=2, m=2, inclination=None):
+                       l=2, m=2, inclination=None):
     """Return a time domain damped sinusoid (plus and cross polarizations)
     with central frequency f_0, damping time tau, amplitude amp and phase phi.
     The l, m, and inclination parameters are used for the spherical harmonics.
-    If taper, will add a tapering at the beginning of the waveform with
-    duration taper * tau (if taper duration is greater than delta_t)
     """
 
-    # Create output vector with appropriate size
-    outplus, outcross = td_output_vector(f_0, tau, taper, delta_t, t_final)
-
-    times = outplus.sample_times.data
+    tlen = int(t_final/delta_t) + 1
+    times = numpy.linspace(0, t_final, num=tlen)
 
     if inclination is not None:
         Y_plus, Y_cross = spher_harms(l, m, inclination)
@@ -395,18 +407,7 @@ def td_damped_sinusoid(f_0, tau, amp, phi, delta_t, t_final,
     hplus = Y_plus * common_factor * numpy.cos(common_angle)
     hcross = Y_cross * common_factor * numpy.sin(common_angle)
 
-    if taper and delta_t > taper*tau:
-        taper_hp, taper_hc = apply_taper(delta_t, taper, f_0, tau, amp,
-                                         phi, l, m, inclination)
-        outplus.data[:taper_window] = taper_hp
-        outplus.data[taper_window:] = hplus
-        outcross.data[:taper_window] = taper_hc
-        outcross.data[taper_window:] = hcross
-    else:
-        outplus.data = hplus
-        outcross.data = hcross
-
-    return outplus, outcross
+    return hplus, hcross
 
 def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
                        l=2, m=2, inclination=None):
@@ -458,40 +459,54 @@ def multimode_base(input_params):
     if 'final_mass' in input_params.keys():
         freqs, taus = get_lm_f0tau_allmodes(input_params['final_mass'],
                         input_params['final_spin'], lmns)
-        norm = Kerr_factor(input_params['final_mass'], input_params['distance']) \
-                if 'distance' in input_params.keys() else 1.
+        norm = Kerr_factor(input_params['final_mass'], 
+               input_params['distance']) if 'distance' in input_params.keys() \
+               else 1.
     else:
         freqs, taus = lm_freqs_taus(**input_params)
         norm = 1.
 
-    for lmn in freqs.keys():
-        if 'delta_t' in input_params.keys():
-            outplus, outcross = td_output_vector(freqs, taus,
-                                input_params['taper'], input_params['delta_t'],
-                                input_params['t_final'])
+    if 'delta_t' in input_params.keys():
+        outplus, outcross = td_output_vector(freqs, taus,
+                            input_params['taper'], input_params['delta_t'],
+                            input_params['t_final'])
+        for lmn in freqs.keys():
             hplus, hcross = td_damped_sinusoid(freqs[lmn], taus[lmn],
-                                amps[lmn], phis[lmn], outplus.delta_t,
-                                outplus.sample_times[-1],
-                                input_params['taper'],
-                                int(lmn[0]), int(lmn[1]),
-                                input_params['inclination'])
-        elif 'delta_f' in input_params.keys():
-            outplus, outcross = fd_output_vector(freqs, taus,
-                                input_params['delta_f'],
-                                input_params['f_final'])
+                            amps[lmn], phis[lmn], outplus.delta_t,
+                            outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
+                            input_params['inclination'])
+            if input_params['taper'] and \
+                outplus.delta_t < input_params['taper']*taus[lmn]:
+                taper_hp, taper_hc = apply_taper(freqs[lmn], taus[lmn],
+                                     amps[lmn], phis[lmn], outplus.delta_t,
+                                     input_params['taper'], int(lmn[0]),
+                                     int(lmn[1]), input_params['inclination'])
+                t0 = -int(outplus._epoch * outplus.sample_rate)
+                outplus[t0-len(taper_hp):t0].data += taper_hp
+                outplus[t0:].data += hplus
+                outcross[t0-len(taper_hc):t0].data += taper_hc
+                outcross[t0:].data += hcross
+            elif input_params['taper'] and \
+                outplus.delta_t > input_params['taper']*taus[lmn]:
+                # This mode has taper duration < delta_t, do not apply taper
+                t0 = -int(outplus.start_time * outplus.sample_rate)
+                outplus[t0:].data += hplus
+                outcross[t0:].data += hcross
+            else:
+                outplus.data += hplus
+                outcross.data += hcross
+    elif 'delta_f' in input_params.keys():
+        outplus, outcross = fd_output_vector(freqs, taus,
+                            input_params['delta_f'], input_params['f_final'])
+        for lmn in freqs.keys():
             hplus, hcross = fd_damped_sinusoid(freqs[lmn], taus[lmn],
-                                amps[lmn], phis[lmn], outplus.delta_f,
-                                input_params['f_lower'],
-                                outplus.sample_frequencies[-1],
-                                int(lmn[0]), int(lmn[1]),
-                                input_params['inclination'])
-        if isinstance(outplus, TimeSeries) and input_params['taper']:
-            outplus = taper_shift(hplus, outplus)
-            outcross = taper_shift(hcross, outcross)
-        else:
+                            amps[lmn], phis[lmn], outplus.delta_f,
+                            input_params['f_lower'],
+                            outplus.sample_frequencies[-1], int(lmn[0]),
+                            int(lmn[1]), input_params['inclination'])
             outplus.data += hplus.data
             outcross.data += hcross.data
-
+            
     return norm * outplus, norm * outcross
 
 ######################################################
