@@ -485,12 +485,12 @@ with ctx:
         print(e)
         exit()
 
-    maxlen = args.psd_segment_length * (args.psd_samples / 2 + 1)
+    maxlen = args.psd_segment_length * (args.psd_samples // 2 + 1)
     if evnt.rank > 0:
         bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
         lengths = numpy.array([1.0 / waveform.delta_f for waveform in waveforms])
-        psd_len = args.psd_segment_length * (args.psd_samples / 2 + 1)
+        psd_len = args.psd_segment_length * (args.psd_samples // 2 + 1)
         maxlen = max(lengths.max(), psd_len)
         mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
                                     args.chisq_bins, sg_chisq,
