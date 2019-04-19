@@ -25,8 +25,7 @@
 """Generate ringdown templates in the time and frequency domain.
 """
 
-import numpy, lal, re
-import lalsimulation as lalsim
+import numpy, re, lal
 from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
 from pycbc.conversions import get_lm_f0tau_allmodes
@@ -72,18 +71,18 @@ def format_lmns(lmns):
     # Case 0: the lmns is in the right format
     if len(lmns[0]) == 3:
         lmns = lmns
-    
+
     else:
         # Case 1: the list is in a string with or without comma,
         # "[221, 331]" or "[221 331]"
-        if lmns[0]=='[' and lmns[-1]==']':
+        if lmns[0] == '[' and lmns[-1] == ']':
             lmns = lmns.strip('[]')
 
         # Case 2: a list with only one string with or without comma,
         # ["221' '331"] or ["221', '331"]
         elif len(lmns[0]) > 3:
             lmns = lmns[0]
-    
+
         # Check if there is a comma or not
         if bool(re.search(',', lmns)):
             lmns = lmns.split(',')
@@ -116,18 +115,19 @@ def lm_amps_phases(**kwargs):
 
     # Get amplitudes of subdominant modes and all phases
     for lmn in lmns:
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        lm, nmodes = lmn[0:-1], int(lmn[2])
         for n in range(nmodes):
             # If it is the 22 mode, skip 220 amplitude
-            if (l, m, n) != (2, 2, 0):
+            mode = lm + '{}'.format(n)
+            if mode != '220':
                 try:
-                    amps['%d%d%d' %(l,m,n)] = kwargs['amp%d%d%d' %(l,m,n)] * amps['220']
+                    amps[mode] = kwargs['amp' + mode] * amps['220']
                 except KeyError:
-                    raise ValueError('amp%d%d%d is required' %(l,m,n))
+                    raise ValueError('amp{} is required'.format(mode))
             try:
-                phis['%d%d%d' %(l,m,n)] = kwargs['phi%d%d%d' %(l,m,n)]
+                phis[mode] = kwargs['phi' + mode]
             except KeyError:
-                raise ValueError('phi%d%d%d is required' %(l,m,n))
+                raise ValueError('phi{} is required'.format(mode))
 
     return amps, phis
 
@@ -236,7 +236,7 @@ def lm_deltat(freqs, damping_times):
     elif isinstance(damping_times, dict) and not isinstance(freqs, dict):
         raise ValueError('Mising frequencies.')
     else:
-        delta_t =  1. / qnm_freq_decay(freqs, damping_times, 1./1000)
+        delta_t = 1. / qnm_freq_decay(freqs, damping_times, 1./1000)
 
     if delta_t < min_dt:
         delta_t = min_dt
@@ -278,7 +278,7 @@ def lm_deltaf(damping_times):
             df[lmn] = 1. / qnm_time_decay(damping_times[lmn], 1./1000)
         delta_f = min(df.values())
     else:
-        delta_f =  1. / qnm_time_decay(damping_times, 1./1000)
+        delta_f = 1. / qnm_time_decay(damping_times, 1./1000)
 
     return delta_f
 
@@ -366,8 +366,9 @@ def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None):
         Y_plus, Y_cross = spher_harms(l, m, inclination)
     else:
         Y_plus, Y_cross = 1, 1
-    hp_amp, hc_amp = amp * Y_plus * numpy.cos(phi), \
-                     amp * Y_cross * numpy.sin(phi)
+    hp_amp = amp * Y_plus * numpy.cos(phi)
+    hc_amp = amp * Y_cross * numpy.sin(phi)
+
     taper_hp = hp_amp * numpy.exp(10*taper_times/tau)
     taper_hc = hc_amp * numpy.exp(10*taper_times/tau)
 
@@ -425,7 +426,7 @@ def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
         Y_plus, Y_cross = 1, 1
 
     denominator = 1 + (4j * pi * freqs * tau) - \
-                 (4 * pi_sq * (freqs*freqs - f_0*f_0) * tau*tau)
+        (4 * pi_sq * (freqs*freqs - f_0*f_0) * tau*tau)
     norm = amp * tau / denominator
     if t_0 != 0:
         time_shift = numpy.exp(-1j * two_pi * freqs * t_0)
@@ -447,14 +448,17 @@ def fd_damped_sinusoid(f_0, tau, amp, phi, delta_f, f_lower, f_final, t_0=0.,
 ######################################################
 
 def multimode_base(input_params):
+    """Return a superposition of damped sinusoids in either time or frequency
+    domains with parameters set by input_params.
+    """
     lmns = format_lmns(input_params['lmns'])
     amps, phis = lm_amps_phases(**input_params)
     if 'final_mass' in input_params.keys():
         freqs, taus = get_lm_f0tau_allmodes(input_params['final_mass'],
                         input_params['final_spin'], lmns)
-        norm = Kerr_factor(input_params['final_mass'], 
-               input_params['distance']) if 'distance' in input_params.keys() \
-               else 1.
+        norm = Kerr_factor(input_params['final_mass'],
+            input_params['distance']) if 'distance' in input_params.keys() \
+            else 1.
     else:
         freqs, taus = lm_freqs_taus(**input_params)
         norm = 1.
@@ -463,7 +467,7 @@ def multimode_base(input_params):
         outplus, outcross = td_output_vector(freqs, taus,
                             input_params['taper'], input_params['delta_t'],
                             input_params['t_final'])
-        for lmn in freqs.keys():
+        for lmn in freqs:
             hplus, hcross = td_damped_sinusoid(freqs[lmn], taus[lmn],
                             amps[lmn], phis[lmn], outplus.delta_t,
                             outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
@@ -472,7 +476,7 @@ def multimode_base(input_params):
                 taper_hp, taper_hc = apply_taper(taus[lmn], amps[lmn],
                                      phis[lmn], outplus.delta_t, int(lmn[0]),
                                      int(lmn[1]), input_params['inclination'])
-                t0 = -int(outplus._epoch * outplus.sample_rate)
+                t0 = -int(outplus.start_time * outplus.sample_rate)
                 outplus[t0-len(taper_hp):t0].data += taper_hp
                 outplus[t0:].data += hplus
                 outcross[t0-len(taper_hc):t0].data += taper_hc
@@ -488,7 +492,7 @@ def multimode_base(input_params):
     elif 'delta_f' in input_params.keys():
         outplus, outcross = fd_output_vector(freqs, taus,
                             input_params['delta_f'], input_params['f_final'])
-        for lmn in freqs.keys():
+        for lmn in freqs:
             hplus, hcross = fd_damped_sinusoid(freqs[lmn], taus[lmn],
                             amps[lmn], phis[lmn], outplus.delta_f,
                             input_params['f_lower'],
@@ -496,7 +500,7 @@ def multimode_base(input_params):
                             int(lmn[1]), input_params['inclination'])
             outplus.data += hplus.data
             outcross.data += hcross.data
-            
+
     return norm * outplus, norm * outcross
 
 ######################################################
