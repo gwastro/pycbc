@@ -12,96 +12,12 @@ The executable ``pycbc_make_inference_workflow`` is a workflow generator to setu
 Workflow configuration file
 ===========================
 
-A simple workflow configuration file::
+A sample workflow configuration file:
 
-    [workflow]
-    ; basic information used by the workflow generator
-    file-retention-level = all_triggers
-    h1-channel-name = H1:DCS-CALIB_STRAIN_C02
-    l1-channel-name = L1:DCS-CALIB_STRAIN_C02
+.. literalinclude:: ../../examples/workflow/inference/workflow_config.ini
+    :language: ini
 
-    [workflow-ifos]
-    ; the IFOs to analyze
-    h1 =
-    l1 =
-
-    [workflow-datafind]
-    ; how the workflow generator should get frame data
-    datafind-h1-frame-type = H1_HOFT_C02
-    datafind-l1-frame-type = L1_HOFT_C02
-    datafind-method = AT_RUNTIME_SINGLE_FRAMES
-    datafind-check-segment-gaps = raise_error
-    datafind-check-frames-exist = raise_error
-    datafind-check-segment-summary = no_test
-
-    [workflow-inference]
-    ; how the workflow generator should setup inference nodes
-    num-events = 1
-    plot-1d-mass = mass1 mass2 mchirp q
-    plot-1d-orientation = ra dec tc polarization inclination coa_phase
-    plot-1d-distance = distance redshift
-
-    [executables]
-    ; paths to executables to use in workflow
-    inference = ${which:pycbc_inference}
-    inference_posterior = ${which:pycbc_inference_plot_posterior}
-    inference_prior = ${which:pycbc_inference_plot_prior}
-    inference_rate = ${which:pycbc_inference_plot_acceptance_rate}
-    inference_samples = ${which:pycbc_inference_plot_samples}
-    inference_table = ${which:pycbc_inference_table_summary}
-    plot_spectrum = ${which:pycbc_plot_psd_file}
-    results_page = ${which:pycbc_make_html_page}
-
-    [datafind]
-    ; datafind options
-    urltype = file
-
-    [inference]
-    ; command line options use --help for more information
-    sample-rate = 2048
-    low-frequency-cutoff = 30
-    strain-high-pass = 20
-    pad-data = 8
-    psd-estimation = median
-    psd-segment-length = 16
-    psd-segment-stride = 8
-    psd-inverse-length = 16
-    processing-scheme = mkl
-    sampler = kombine
-    likelihood-evaluator = gaussian
-    nwalkers = 500
-    niterations = 100000
-    save-psd =
-
-    [pegasus_profile-inference]
-    ; pegasus profile for inference nodes
-    condor|request_memory = 20G
-    condor|request_cpus = 12
-
-    [inference_posterior]
-    ; command line options use --help for more information
-    plot-density =
-    plot-contours =
-    plot-marginal =
-
-    [inference_prior]
-    ; command line options use --help for more information
-
-    [inference_rate]
-    ; command line options use --help for more information
-
-    [inference_samples]
-    ; command line options use --help for more information
-
-    [inference_table]
-    ; command line options use --help for more information
-
-    [plot_spectrum]
-    ; command line options use --help for more information
-
-    [results_page]
-    ; command line options use --help for more information
-    analysis-title = "PyCBC Inference Test"
+:download:`Download <../../examples/workflow/inference/workflow_config.ini>`
 
 ============================
 Inference configuration file
@@ -109,17 +25,17 @@ Inference configuration file
 
 You will also need a configuration file with sections that tells ``pycbc_inference`` how to construct the priors. A sample inference configuration file is:
 
-.. literalinclude:: ../../examples/workflow/inference_inj/inference.ini
+.. literalinclude:: ../../examples/workflow/inference/inference.ini
     :language: ini
 
-:download:`Download <../../examples/workflow/inference_inj/inference.ini>`
+:download:`Download <../../examples/workflow/inference/inference.ini>`
 
 A sample configuration file for parameter estimation on the ringdown is:
 
-.. literalinclude:: ../../examples/workflow/inference_inj/ringdown_inference.ini
+.. literalinclude:: ../../examples/workflow/inference/ringdown_inference.ini
     :language: ini
 
-:download:`Download <../../examples/workflow/inference_inj/ringdown_inference.ini>`
+:download:`Download <../../examples/workflow/inference/ringdown_inference.ini>`
 
 If you want to use another variable parameter in the inference sampler then add its name to ``[variable_args]`` and add a prior section like shown above.
 
@@ -127,63 +43,21 @@ If you want to use another variable parameter in the inference sampler then add 
 Generate the workflow
 =====================
 
-To generate a workflow you will need your configuration files. We set the following enviroment variables for this example::
+To generate a workflow you will need your configuration files. If you want to run on the loudest triggers from a PyCBC coincident search workflow then run:
 
-    # name of the workflow
-    WORKFLOW_NAME="r1"
+.. literalinclude:: ../../examples/workflow/inference/run_pycbc_make_inference_workflow.sh
+   :language: bash
 
-    # path to output dir
-    OUTPUT_DIR=output
-
-    # input configuration files
-    CONFIG_PATH=workflow.ini
-    INFERENCE_CONFIG_PATH=inference.ini
-
-Specify a directory to save the HTML pages::
-
-    # directory that will be populated with HTML pages
-    HTML_DIR=${HOME}/public_html/inference_test
-
-If you want to run on the loudest triggers from a PyCBC coincident search workflow then run::
-
-    # run workflow generator on triggers from workflow
-    pycbc_make_inference_workflow --workflow-name ${WORKFLOW_NAME} \
-        --config-files ${CONFIG_PATH} \
-        --inference-config-file ${INFERENCE_CONFIG_PATH} \
-        --output-dir ${OUTPUT_DIR} \
-        --output-file ${WORKFLOW_NAME}.dax \
-        --output-map ${OUTPUT_MAP_PATH} \
-        --bank-file ${BANK_PATH} \
-        --statmap-file ${STATMAP_PATH} \
-        --single-detector-triggers ${SNGL_H1_PATHS} ${SNGL_L1_PATHS}
-        --config-overrides workflow:start-time:${WORKFLOW_START_TIME} \
-                           workflow:end-time:${WORKFLOW_END_TIME} \
-                           workflow-inference:data-seconds-before-trigger:8 \
-                           workflow-inference:data-seconds-after-trigger:8 \
-                           results_page:output-path:${HTML_DIR} \
-                           results_page:analysis-subtitle:${WORKFLOW_NAME}
+:download:`Download <../../examples/workflow/inference/run_pycbc_make_inference_workflow.sh>`
 
 Where ``${BANK_FILE}`` is the path to the template bank HDF file, ``${STATMAP_FILE}`` is the path to the combined statmap HDF file, ``${SNGL_H1_PATHS}`` and ``${SNGL_L1_PATHS}`` are the paths to the merged single-detector HDF files,  and ``${WORKFLOW_START_TIME}`` and ``${WORKFLOW_END_TIME}`` are the start and end time of the coincidence workflow.
 
-Else you can run from a specific GPS end time with the ``--gps-end-time`` option like::
+Else you can run from a specific GPS end time with the ``--gps-end-time`` option like:
 
-    # run workflow generator on specific GPS end time
-    pycbc_make_inference_workflow --workflow-name ${WORKFLOW_NAME} \
-        --config-files ${CONFIG_PATH} \
-        --inference-config-file ${INFERENCE_CONFIG_PATH} \
-        --output-dir ${OUTPUT_DIR} \
-        --output-file ${WORKFLOW_NAME}.dax \
-        --output-map ${OUTPUT_MAP_PATH} \
-        --gps-end-time ${GPS_END_TIME} \
-        --config-overrides workflow:start-time:$((${GPS_END_TIME}-2)) \
-                           workflow:end-time:$((${GPS_END_TIME}+2)) \
-                           workflow-inference:data-seconds-before-trigger:2 \
-                           workflow-inference:data-seconds-after-trigger:2 \
-                           inference:psd-start-time:$((${GPS_END_TIME}-300)) \
-                           inference:psd-end-time:$((${GPS_END_TIME}+1748)) \
-                           results_page:output-path:${HTML_DIR} \
-                           results_page:analysis-subtitle:${WORKFLOW_NAME}
+.. literalinclude:: ../../examples/workflow/inference/run_pycbc_make_inference_workflow_2.sh
+   :language: bash
 
+:download:`Download <../../examples/workflow/inference/run_pycbc_make_inference_workflow_2.sh>`
 
 Where ``${GPS_END_TIME}`` is the GPS end time of the trigger.
 
@@ -193,9 +67,14 @@ For the CBC example above define the environment variables ``GPS_END_TIME=112625
 Plan and execute the workflow
 =============================
 
-Finally plan and submit the workflow with::
+If you are on LDG, you need to define an accounting group. Plan and submit the workflow with::
 
     # submit workflow
+    cd ${OUTPUT_DIR}
     pycbc_submit_dax --dax ${WORKFLOW_NAME}.dax \
-        --accounting-group ligo.dev.o2.cbc.explore.test
+        --no-grid \
+        --enable-shared-filesystem \
+        --accounting-group ${ACCOUNTING_GROUP}
+
+Where ``${ACCOUNTING_GROUP}`` is the appropriate tag for your workflow.
 
