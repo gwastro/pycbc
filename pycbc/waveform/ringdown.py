@@ -31,12 +31,11 @@ from pycbc.types import TimeSeries, FrequencySeries, float64, complex128, zeros
 from pycbc.waveform.waveform import get_obj_attrs
 from pycbc.conversions import get_lm_f0tau_allmodes
 
-default_qnm_args = {'t_0':0}
 qnm_required_args = ['f_0', 'tau', 'amp', 'phi']
 mass_spin_required_args = ['final_mass','final_spin', 'lmns', 'inclination']
 freqtau_required_args = ['lmns']
-td_required_args = ['delta_t', 't_final', 'taper']
-fd_required_args = ['delta_f', 'f_lower', 'f_final']
+td_args = {'delta_t':None, 't_final':None, 'taper':False}
+fd_args = {'t_0':0, 'delta_f':None, 'f_lower':None, 'f_final':None}
 
 max_freq = 16384/2.
 min_dt = 1. / (2 * max_freq)
@@ -55,7 +54,7 @@ def props(obj, required, domain_args, **kwargs):
 
     # Get the parameters to generate the waveform
     # Note that keyword arguments override values in the template object
-    input_params = default_qnm_args.copy()
+    input_params = domain_args.copy()
     input_params.update(pr)
     input_params.update(kwargs)
 
@@ -63,11 +62,6 @@ def props(obj, required, domain_args, **kwargs):
     for arg in required:
         if arg not in input_params:
             raise ValueError('Please provide ' + str(arg))
-
-    # If the td or fd args are not given, set to None
-    for arg in domain_args:
-        if arg not in input_params:
-            input_params[arg] = None
 
     return input_params
 
@@ -279,7 +273,6 @@ def lm_deltaf(damping_times):
     """
 
     if isinstance(damping_times, dict):
-        print damping_times
         df = {}
         for lmn in damping_times.keys():
             df[lmn] = 1. / qnm_time_decay(damping_times[lmn], 1./1000)
@@ -289,7 +282,7 @@ def lm_deltaf(damping_times):
 
     return delta_f
 
-def td_output_vector(freqs, damping_times, taper=None,
+def td_output_vector(freqs, damping_times, taper=False,
                      delta_t=None, t_final=None):
     """Return an empty TimeSeries with the appropriate size to fit all
     the quasi-normal modes present in freqs, damping_times
@@ -306,15 +299,15 @@ def td_output_vector(freqs, damping_times, taper=None,
     if taper:
         max_tau = max(damping_times.values()) if \
                   isinstance(damping_times, dict) else damping_times
-        kmax += int(taper*max_tau/delta_t)
+        kmax += int(max_tau/delta_t)
 
     outplus = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     outcross = TimeSeries(zeros(kmax, dtype=float64), delta_t=delta_t)
     if taper:
         # Change epoch of output vector if tapering will be applied
-        start = - taper * max_tau
+        start = - max_tau
         # To ensure that t=0 is still in output vector
-        start -= start%delta_t
+        start -= start % delta_t
         outplus._epoch, outcross._epoch = start, start
 
     return outplus, outcross
@@ -364,11 +357,11 @@ def Kerr_factor(final_mass, distance):
 
 # Functions for tapering ######################################################
 
-def apply_taper(f_0, tau, amp, phi, delta_t, taper, l=2, m=2, inclination=None):
+def apply_taper(tau, amp, phi, delta_t, l=2, m=2, inclination=None):
     """Return tapering window.
     """
 
-    taper_times = -numpy.arange(0, int(taper*tau/delta_t))[::-1] * delta_t
+    taper_times = -numpy.arange(0, int(tau/delta_t))[::-1] * delta_t
     if inclination is not None:
         Y_plus, Y_cross = spher_harms(l, m, inclination)
     else:
@@ -475,19 +468,16 @@ def multimode_base(input_params):
                             amps[lmn], phis[lmn], outplus.delta_t,
                             outplus.sample_times[-1], int(lmn[0]), int(lmn[1]),
                             input_params['inclination'])
-            if input_params['taper'] and \
-                outplus.delta_t < input_params['taper']*taus[lmn]:
-                taper_hp, taper_hc = apply_taper(freqs[lmn], taus[lmn],
-                                     amps[lmn], phis[lmn], outplus.delta_t,
-                                     input_params['taper'], int(lmn[0]),
+            if input_params['taper'] and outplus.delta_t < taus[lmn]:
+                taper_hp, taper_hc = apply_taper(taus[lmn], amps[lmn],
+                                     phis[lmn], outplus.delta_t, int(lmn[0]),
                                      int(lmn[1]), input_params['inclination'])
                 t0 = -int(outplus._epoch * outplus.sample_rate)
                 outplus[t0-len(taper_hp):t0].data += taper_hp
                 outplus[t0:].data += hplus
                 outcross[t0-len(taper_hc):t0].data += taper_hc
                 outcross[t0:].data += hcross
-            elif input_params['taper'] and \
-                outplus.delta_t > input_params['taper']*taus[lmn]:
+            elif input_params['taper'] and outplus.delta_t > taus[lmn]:
                 # This mode has taper duration < delta_t, do not apply taper
                 t0 = -int(outplus.start_time * outplus.sample_rate)
                 outplus[t0:].data += hplus
@@ -520,13 +510,9 @@ def get_td_from_final_mass_spin(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    taper: {None, float}, optional
-        Tapering at the beginning of the waveform with duration taper * tau.
-        This option is recommended with timescales taper=1./2 or 1.0 for
-        time-domain ringdown-only injections.
-        The abrupt turn on of the ringdown can cause issues on the waveform
-        when doing the fourier transform to the frequency domain. Setting
-        taper will add a rapid ringup with timescale tau/10.
+    taper: {False, bool}, optional
+        Add a rapid ringup with timescale tau/10 at the beginning of the
+        waveform to avoid the abrupt turn on of the ringdown.
         Each mode and overtone will have a different taper depending on its tau,
         the final taper being the superposition of all the tapers.
     distance : {None, float}, optional
@@ -573,8 +559,7 @@ def get_td_from_final_mass_spin(template=None, **kwargs):
         n overtones in time domain.
     """
 
-    input_params = props(template, mass_spin_required_args, 
-                         td_required_args, **kwargs)
+    input_params = props(template, mass_spin_required_args, td_args, **kwargs)
 
     return multimode_base(input_params)
 
@@ -632,8 +617,7 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
         n overtones in frequency domain.
     """
 
-    input_params = props(template, mass_spin_required_args,
-                         fd_required_args, **kwargs)
+    input_params = props(template, mass_spin_required_args, fd_args, **kwargs)
 
     return multimode_base(input_params)
 
@@ -645,13 +629,9 @@ def get_td_from_freqtau(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    taper: {None, float}, optional
-        Tapering at the beginning of the waveform with duration taper * tau.
-        This option is recommended with timescales taper=1./2 or 1.0 for
-        time-domain ringdown-only injections.
-        The abrupt turn on of the ringdown can cause issues on the waveform
-        when doing the fourier transform to the frequency domain. Setting
-        taper will add a rapid ringup with timescale tau/10.
+    taper: {False, bool}, optional
+        Add a rapid ringup with timescale tau/10 at the beginning of the
+        waveform to avoid the abrupt turn on of the ringdown.
         Each mode and overtone will have a different taper depending on its tau,
         the final taper being the superposition of all the tapers.
     lmns : list
@@ -697,8 +677,7 @@ def get_td_from_freqtau(template=None, **kwargs):
         n overtones in time domain.
     """
 
-    input_params = props(template, freqtau_required_args,
-                         td_required_args, **kwargs)
+    input_params = props(template, freqtau_required_args, td_args, **kwargs)
 
     return multimode_base(input_params)
 
@@ -754,8 +733,7 @@ def get_fd_from_freqtau(template=None, **kwargs):
         n overtones in frequency domain.
     """
 
-    input_params = props(template, freqtau_required_args,
-                         fd_required_args, **kwargs)
+    input_params = props(template, freqtau_required_args, fd_args, **kwargs)
 
     return multimode_base(input_params)
 
