@@ -22,7 +22,7 @@ from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
 #from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data, load_ns_sequence, min_eta_for_em_bright
-from pycbc.tmpltbank.em_progenitors import load_ns_sequence, remnant_mass
+from pycbc.tmpltbank.em_progenitors import load_ns_sequence, remnant_masses
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -302,7 +302,7 @@ def get_random_mass(numPoints, massRangeParams):
             _, eta_nsbh = pnutils.mass1_mass2_to_mtotal_eta(mass1_nsbh, mass2_nsbh)
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
             if len(eta_nsbh) != 0:
-                remnant = remnant_mass(eta_nsbh, mass2_nsbh, ns_sequence, spin1z_nsbh, 0., massRangeParams.remnant_mass_threshold)
+                remnant = remnant_masses(eta_nsbh, mass2_nsbh, ns_sequence, spin1z_nsbh, 0., massRangeParams.remnant_mass_threshold)
                 mask_bright_nsbh[remnant > massRangeParams.remnant_mass_threshold] = True
 
             # Keep only binaries that can produce an EM counterpart and add them to
