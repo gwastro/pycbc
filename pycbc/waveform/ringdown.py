@@ -105,7 +105,7 @@ def lm_amps_phases(**kwargs):
     """ Take input_params and return dictionaries with amplitudes and phases
     of each overtone of a specific lm mode, checking that all of them are given.
     """
-    lmns = kwargs['lmns']
+    lmns = format_lmns(kwargs['lmns'])
     amps, phis = {}, {}
     # amp220 is always required, because the amplitudes of subdominant modes
     # are given as fractions of amp220.
