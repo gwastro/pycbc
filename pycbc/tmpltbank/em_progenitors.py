@@ -350,8 +350,7 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 # Vectorized version of remnant_mass.  Numpy v1.7 and above allows one to list #
 # the arguments to exclude from vectorization.                                 #
 ################################################################################
-# remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift)
-remnant_masses = np.vectorize(remnant_mass, excluded=['ns_sequence', 'shift'])
+remnant_masses = np.vectorize(remnant_mass)
 remnant_masses.excluded.add(2)
 remnant_masses.excluded.add(5)
 
