@@ -230,7 +230,7 @@ for tnum in template_ids:
     logging.info('Calculating Single Detector Statistic')
     s0g, s1g = rank_method.single(trigs0), rank_method.single(trigs1)
 
-    # Loop over the single triggers and calculate the coincs they can 
+    # Loop over the single triggers and calculate the coincs they can
     # form
     start0 = 0
     while start0 < len(s0g):
@@ -243,7 +243,7 @@ for tnum in template_ids:
                 end0 = len(s0g)
             if end1 > len(s1g):
                 end1 = len(s1g)
-                
+
             # Set the local parts of the single information we'll use
             tid0 = tid0g[start0:end0]
             tid1 = tid1g[start1:end1]
@@ -261,7 +261,7 @@ for tnum in template_ids:
             logging.info('Calculating Multi-Detector Combined Statistic: %s, %s', end0, end1)
             c = rank_method.coinc(s0[i0], s1[i1], slide,
                                   args.timeslide_interval)
- 
+
             #index values of the zerolag triggers
             fi = numpy.where(slide == 0)[0]
 
@@ -321,6 +321,7 @@ for tnum in template_ids:
 
             start1 += args.batch_singles
         start0 += args.batch_singles
+
 if len(data['stat']) > 0:
     for key in data:
         data[key] = numpy.concatenate(data[key])
