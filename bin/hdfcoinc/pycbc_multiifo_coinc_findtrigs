@@ -232,27 +232,25 @@ for tnum in template_ids:
         if len(tids[ifo] == 0):
             continue
 
-    times_full={}
-    for ifo in trigs:
-        times[ifo]=trigs[ifo]['end_time']
+    times_full = {ifo:trigs[ifo]['end_time'] for ifo in trigs}
     logging.info('Trigs for template %s, '% (tnum))
-    for ifo in times:
-        logging.info('%s:%s' % (ifo, len(times[ifo])))
+    for ifo in times_full:
+        logging.info('%s:%s' % (ifo, len(times_full[ifo])))
 
     logging.info('Calculating Single Detector Statistic')
     sds_full = {ifo:rank_method.single(trigs[ifo]) for ifo in trigs}
 
     # Loop over the single triggers and calculate the coincs they can form
     start0 = 0
-    while start0 < len(sds[args.pivot_ifo]):
+    while start0 < len(sds_full[args.pivot_ifo]):
         start1 = 0
-        while start1 < len(sds[args.fixed_ifo]):
+        while start1 < len(sds_full[args.fixed_ifo]):
             end0 = start0 + args.batch_singles
             end1 = start1 + args.batch_singles
-            if end0 > len(sds[args.pivot_ifo]):
-                end0 = len(sds[args.pivot_ifo])
-            if end1 > len(sds[args.fixed_ifo]):
-                end1 = len(sds[args.fixed_ifo])
+            if end0 > len(sds_full[args.pivot_ifo]):
+                end0 = len(sds_full[args.pivot_ifo])
+            if end1 > len(sds_full[args.fixed_ifo]):
+                end1 = len(sds_full[args.fixed_ifo])
 
             times = times_full.copy()
             times[args.pivot_ifo] = times_full[args.pivot_ifo][start0:end0]
@@ -262,15 +260,14 @@ for tnum in template_ids:
             sds[args.pivot_ifo] = sds_full[args.pivot_ifo][start0:end0]
             sds[args.fixed_ifo] = sds_full[args.fixed_ifo][start1:end1]
 
-            logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
             ids, slide = coinc.time_multi_coincidence(times,
                                                       args.timeslide_interval,
                                                       args.coinc_threshold,
                                                       args.pivot_ifo,
                                                       args.fixed_ifo)
+            logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
 
             logging.info('Calculating Multi-Detector Combined Statistic')
-
             sdswithids={}
             for ifo in sds:
                 sdswithids[ifo]=sds[ifo][ids[ifo]]
@@ -341,6 +338,10 @@ for tnum in template_ids:
             data['decimation_factor'] += [dec_fac]
             data['timeslide_id'] += [slide[ti]]
             data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
+           
+            logging.info('{}-{}'.format(start0, start1))
+            start1 += args.batch_singles
+        start0 += args.batch_singles
 
 if len(data['stat']) > 0:
     for key in data:
