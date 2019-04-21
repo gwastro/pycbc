@@ -1,4 +1,4 @@
-#!/home/tdent/pycbc-aug18/bin/python
+#!/usr/bin/env python
 import h5py, argparse, logging, numpy, numpy.random
 from pycbc.events import veto, coinc, stat
 import pycbc.version
