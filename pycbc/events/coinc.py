@@ -334,7 +334,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
             # slide is array of slide ids attached to pivot ifo
             slide = slide[nz]
 
-            for ifo in ctimes:  # cycle over fixed and pivot 
+            for ifo in ctimes:  # cycle over fixed and pivot
                 # (& previous additional ifos?)
                 # reduce times and IDs to just those forming a coinc with ifo1
                 ctimes[ifo] = ctimes[ifo][nz]
