@@ -14,9 +14,10 @@ import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 from time import time
 import os.path
 import itertools
+import platform
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
-from pycbc import fft, version, waveform, scheme, frame, makedir
+from pycbc import fft, version, waveform, scheme, makedir
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
@@ -193,7 +194,7 @@ class LiveEventManager(object):
             fud = self.compute_followup_data(coinc_ifos, coinc_results,
                                              data_readers, bank, followup_ifos)
 
-            live_ifos = [ifo for ifo in ifos if 'snr_series' in fud[ifo]]
+            live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
             # FIXME delta_t can vary due to rounding errors, force them to be identical
             fix_delta_t = fud[coinc_ifos[0]]['snr_series'].delta_t
@@ -243,9 +244,7 @@ class LiveEventManager(object):
                     event.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
-                  store_loudest_index=False,
-                  raw_results=None,
-                  gracedb_results=None):
+             store_loudest_index=False, raw_results=None):
         """ Save the results from this time block to an hdf output file """
         if self.use_date_prefix:
             tm = lal.GPSToUTC(int(time_index))
@@ -310,7 +309,7 @@ parser.add_argument('--state-channel', action=MultiDetOptionAction, nargs='+',
                     help="Channel containing frame status information. Used "
                          "to determine when to analyze the hoft data. This somewhat "
                          "corresponds to CAT1 information")
-parser.add_argument('--analyze-flags', nargs='+', default=['HOFT_OK', 'SCIENCE_INTENT'],
+parser.add_argument('--analyze-flags', action=MultiDetOptionAction, nargs='+',
                     help='The flags that must be in the "good" state to analyze data')
 parser.add_argument('--data-quality-channel', action=MultiDetOptionAction, nargs='+',
                     help="Channel containing data quality information. Used "
@@ -422,7 +421,6 @@ args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
 
-import platform
 log_format = "%(asctime)s {0} %(message)s".format(platform.node())
 pycbc.init_logging(args.verbose, format=log_format)
 
@@ -489,7 +487,7 @@ with ctx:
     if evnt.rank > 0:
         bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
-        lengths = numpy.array([1.0 / waveform.delta_f for waveform in waveforms])
+        lengths = numpy.array([1.0 / wf.delta_f for wf in waveforms])
         psd_len = args.psd_segment_length * (args.psd_samples // 2 + 1)
         maxlen = max(lengths.max(), psd_len)
         mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
@@ -502,64 +500,24 @@ with ctx:
     # Synchronize start time if not provided on the command line
     if not args.start_time:
         evnt.barrier()
-        if evnt.rank == 0:
-            tnow = lal.GPSTimeNow()
-        else:
-            tnow = None
+        tnow = lal.GPSTimeNow() if evnt.rank == 0 else None
         args.start_time = evnt.comm.bcast(tnow, root=0)
 
     if args.round_start_time:
         args.start_time = int(args.start_time / args.round_start_time + 1) * args.round_start_time
         logging.info('Starting from: %s', args.start_time)
 
+    # initialize the data readers for all detectors
     if args.max_length is not None:
         maxlen = args.max_length
-
     maxlen = int(maxlen)
-    data_reader = {}
-    sngl_estimator = {}
-    for ifo in ifos:
-        state = dq = dqf = None
-        if args.state_channel and ifo in args.state_channel:
-            state = '%s:%s' % (ifo, args.state_channel[ifo])
-        if args.data_quality_channel and ifo in args.data_quality_channel \
-                and args.data_quality_flags and ifo in args.data_quality_flags:
-            dq ='%s:%s' % (ifo, args.data_quality_channel[ifo])
-            dqf = args.data_quality_flags[ifo].split(',')
+    data_reader = {ifo: StrainBuffer.from_cli(ifo, args, maxlen)
+                   for ifo in ifos}
 
-        if args.frame_type:
-            frame_src = frame.frame_paths(args.frame_type[ifo], args.start_time, args.end_time)
-        else:
-            frame_src = [args.frame_src[ifo]]
-
-        if args.enable_single_detector_background and evnt.rank == 0:
-            sngl_estimator[ifo] = LiveSingleFarThreshold.from_cli(args, ifo)
-
-        data_reader[ifo] = StrainBuffer(frame_src,
-                            '%s:%s' % (ifo, args.channel_name[ifo]),
-                            args.start_time, max_buffer=maxlen * 2,
-                            state_channel=state,
-                            data_quality_channel=dq,
-                            sample_rate=args.sample_rate,
-                            low_frequency_cutoff=args.low_frequency_cutoff,
-                            highpass_frequency=args.highpass_frequency,
-                            highpass_reduction=args.highpass_reduction,
-                            highpass_bandwidth=args.highpass_bandwidth,
-                            psd_samples=args.psd_samples,
-                            trim_padding=args.trim_padding,
-                            psd_segment_length=args.psd_segment_length,
-                            psd_inverse_length=args.psd_inverse_length,
-                            autogating_threshold=args.autogating_threshold,
-                            autogating_cluster=args.autogating_cluster,
-                            autogating_window=args.autogating_window,
-                            autogating_pad=args.autogating_pad,
-                            psd_abort_difference=args.psd_abort_difference,
-                            psd_recalculate_difference=args.psd_recalculate_difference,
-                            force_update_cache=args.force_update_cache,
-                            increment_update_cache=args.increment_update_cache[ifo],
-                            analyze_flags=args.analyze_flags,
-                            data_quality_flags=dqf,
-                            dq_padding=args.data_quality_padding)
+    # create single-detector background "estimators"
+    if args.enable_single_detector_background and evnt.rank == 0:
+        sngl_estimator = {ifo: LiveSingleFarThreshold.from_cli(args, ifo)
+                          for ifo in ifos}
 
     # Create double coincident background estimator for every combo
     if args.enable_background_estimation and evnt.rank == 0:
@@ -591,7 +549,7 @@ with ctx:
         pr = cProfile.Profile()
         pr.enable()
 
-    # get more data
+    # main analysis loop
     data_end = lambda: data_reader[data_reader.keys()[0]].end_time
     while data_end() < args.end_time:
         t1 = time()
@@ -636,19 +594,21 @@ with ctx:
             for ifo in set(results.keys()) - evnt.live_detectors:
                 results.pop(ifo)
 
-            # Veto single detector triggers if they fail the DQ vector
-            if args.data_quality_channel:
-                logging.info('checking the dq vector')
-                for ifo in results:
-                    start = data_reader[ifo].start_time
-                    times = results[ifo]['end_time']
-                    idx = data_reader[ifo].dq.indices_of_flag(
-                            start, valid_pad, times,
-                            padding=data_reader[ifo].dq_padding)
-                    logging.info('Keeping %d/%d %s triggers', len(idx), len(times), ifo)
-                    for key in results[ifo]:
-                        if len(results[ifo][key]) > 0:
-                            results[ifo][key] = results[ifo][key][idx]
+            # Veto single detector triggers that fail the DQ vector
+            for ifo in results:
+                if data_reader[ifo].dq is None:
+                    continue
+                logging.info("Checking %s's DQ vector", ifo)
+                start = data_reader[ifo].start_time
+                times = results[ifo]['end_time']
+                idx = data_reader[ifo].dq.indices_of_flag(
+                        start, valid_pad, times,
+                        padding=data_reader[ifo].dq_padding)
+                logging.info('Keeping %d/%d %s triggers',
+                             len(idx), len(times), ifo)
+                for key in results[ifo]:
+                    if len(results[ifo][key]):
+                        results[ifo][key] = results[ifo][key][idx]
 
             # Look for coincident triggers and do background estimation
             if args.enable_background_estimation:
@@ -673,7 +633,7 @@ with ctx:
                                           valid_pad)
 
             evnt.dump(results, prefix, time_index=data_end(),
-                      store_psd=False if args.store_psd is False else psds,
+                      store_psd=(psds if args.store_psd else False),
                       store_loudest_index=args.store_loudest_index,
                       raw_results=best_coinc)
 
