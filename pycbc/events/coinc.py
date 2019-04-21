@@ -325,23 +325,25 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
                 # trigger spacing in ifo1 > time window
                 rlmax = (right - left).max()
                 where = right - left == rlmax
-                print [float(ti) for ti in time1[left[where][0]:right[where][0]]]
-                raise ValueError('Somehow triggers in %s are closer than time-delay window' % ifo1)
+                print([float(ti) for ti in time1[left[where][0]:right[where][0]]])
+                raise ValueError('Triggers in %s are closer than coincidence '
+                                 'window. This should not happen!' % ifo1)
             # identify indices of times in ifo1 that form coincs with ifo2
             # due to check above, at most one trigger in ifo1 per trigger in ifo2
             dep_ids = left[nz]
             # slide is array of slide ids attached to pivot ifo
             slide = slide[nz]
 
-            for ifo in ctimes:  # cycle over fixed and pivot (& previous additional ifos?)
+            for ifo in ctimes:  # cycle over fixed and pivot 
+                # (& previous additional ifos?)
                 # reduce times and IDs to just those forming a coinc with ifo1
                 ctimes[ifo] = ctimes[ifo][nz]
                 ids[ifo] = ids[ifo][nz]
 
         # undo time sorting on indices of ifo1 triggers
         ids[ifo1] = tsort[dep_ids]
-        # FIXME do we want to do this?? add ifo1 times to ctimes which will be further
-        # reduced if more than one additional detector is tested for coincidence
+        # FIXME do we want to do this?? add ifo1 times to ctimes which will be
+        # further reduced if more than one additional detector is tested
         #ctimes[ifo1] = otime[ids[ifo1]]
 
     return ids, slide
