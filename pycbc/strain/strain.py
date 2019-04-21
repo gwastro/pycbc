@@ -1587,3 +1587,53 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             return False
         else:
             return True
+
+    @classmethod
+    def from_cli(cls, ifo, args, maxlen):
+        """Initialize a StrainBuffer object (data reader) for a particular
+        detector.
+        """
+        state_channel = analyze_flags = None
+        if args.state_channel and ifo in args.state_channel \
+                and args.analyze_flags and ifo in args.analyze_flags:
+            state_channel = ':'.join([ifo, args.state_channel[ifo]])
+            analyze_flags = args.analyze_flags[ifo].split(',')
+
+        dq_channel = dq_flags = None
+        if args.data_quality_channel and ifo in args.data_quality_channel \
+                and args.data_quality_flags and ifo in args.data_quality_flags:
+            dq_channel = ':'.join([ifo, args.data_quality_channel[ifo]])
+            dq_flags = args.data_quality_flags[ifo].split(',')
+
+        if args.frame_type:
+            frame_src = pycbc.frame.frame_paths(args.frame_type[ifo],
+                                                args.start_time,
+                                                args.end_time)
+        else:
+            frame_src = [args.frame_src[ifo]]
+        strain_channel = ':'.join([ifo, args.channel_name[ifo]])
+
+        return cls(frame_src, strain_channel,
+                   args.start_time, max_buffer=maxlen * 2,
+                   state_channel=state_channel,
+                   data_quality_channel=dq_channel,
+                   sample_rate=args.sample_rate,
+                   low_frequency_cutoff=args.low_frequency_cutoff,
+                   highpass_frequency=args.highpass_frequency,
+                   highpass_reduction=args.highpass_reduction,
+                   highpass_bandwidth=args.highpass_bandwidth,
+                   psd_samples=args.psd_samples,
+                   trim_padding=args.trim_padding,
+                   psd_segment_length=args.psd_segment_length,
+                   psd_inverse_length=args.psd_inverse_length,
+                   autogating_threshold=args.autogating_threshold,
+                   autogating_cluster=args.autogating_cluster,
+                   autogating_window=args.autogating_window,
+                   autogating_pad=args.autogating_pad,
+                   psd_abort_difference=args.psd_abort_difference,
+                   psd_recalculate_difference=args.psd_recalculate_difference,
+                   force_update_cache=args.force_update_cache,
+                   increment_update_cache=args.increment_update_cache[ifo],
+                   analyze_flags=analyze_flags,
+                   data_quality_flags=dq_flags,
+                   dq_padding=args.data_quality_padding)

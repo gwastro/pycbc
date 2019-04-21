@@ -14,9 +14,10 @@ import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
 from time import time
 import os.path
 import itertools
+import platform
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
-from pycbc import fft, version, waveform, scheme, frame, makedir
+from pycbc import fft, version, waveform, scheme, makedir
 from pycbc.types import MultiDetOptionAction
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
 from pycbc.filter import followup_event_significance
@@ -285,54 +286,6 @@ class LiveEventManager(object):
                 if store_psd[ifo] is not None:
                     store_psd[ifo].save(fname, group='%s/psd' % ifo)
 
-def init_data_reader(ifo, args, maxlen):
-    """Initialize a StrainBuffer object (data reader) for a particular
-    detector.
-    """
-    state_channel = analyze_flags = None
-    if args.state_channel and ifo in args.state_channel \
-            and args.analyze_flags and ifo in args.analyze_flags:
-        state_channel = ':'.join([ifo, args.state_channel[ifo]])
-        analyze_flags = args.analyze_flags[ifo].split(',')
-
-    dq_channel = dq_flags = None
-    if args.data_quality_channel and ifo in args.data_quality_channel \
-            and args.data_quality_flags and ifo in args.data_quality_flags:
-        dq_channel = ':'.join([ifo, args.data_quality_channel[ifo]])
-        dq_flags = args.data_quality_flags[ifo].split(',')
-
-    if args.frame_type:
-        frame_src = frame.frame_paths(args.frame_type[ifo], args.start_time,
-                                      args.end_time)
-    else:
-        frame_src = [args.frame_src[ifo]]
-    strain_channel = ':'.join([ifo, args.channel_name[ifo]])
-
-    return StrainBuffer(frame_src, strain_channel,
-                        args.start_time, max_buffer=maxlen * 2,
-                        state_channel=state_channel,
-                        data_quality_channel=dq_channel,
-                        sample_rate=args.sample_rate,
-                        low_frequency_cutoff=args.low_frequency_cutoff,
-                        highpass_frequency=args.highpass_frequency,
-                        highpass_reduction=args.highpass_reduction,
-                        highpass_bandwidth=args.highpass_bandwidth,
-                        psd_samples=args.psd_samples,
-                        trim_padding=args.trim_padding,
-                        psd_segment_length=args.psd_segment_length,
-                        psd_inverse_length=args.psd_inverse_length,
-                        autogating_threshold=args.autogating_threshold,
-                        autogating_cluster=args.autogating_cluster,
-                        autogating_window=args.autogating_window,
-                        autogating_pad=args.autogating_pad,
-                        psd_abort_difference=args.psd_abort_difference,
-                        psd_recalculate_difference=args.psd_recalculate_difference,
-                        force_update_cache=args.force_update_cache,
-                        increment_update_cache=args.increment_update_cache[ifo],
-                        analyze_flags=analyze_flags,
-                        data_quality_flags=dq_flags,
-                        dq_padding=args.data_quality_padding)
-
 
 parser = argparse.ArgumentParser(description=__doc__)
 pycbc.waveform.bank.add_approximant_arg(parser)
@@ -468,7 +421,6 @@ args = parser.parse_args()
 scheme.verify_processing_options(args, parser)
 fft.verify_fft_options(args, parser)
 
-import platform
 log_format = "%(asctime)s {0} %(message)s".format(platform.node())
 pycbc.init_logging(args.verbose, format=log_format)
 
@@ -535,7 +487,7 @@ with ctx:
     if evnt.rank > 0:
         bank.table.sort(order='mchirp')
         waveforms = list(bank[evnt.rank-1::evnt.size-1])
-        lengths = numpy.array([1.0 / waveform.delta_f for waveform in waveforms])
+        lengths = numpy.array([1.0 / wf.delta_f for wf in waveforms])
         psd_len = args.psd_segment_length * (args.psd_samples // 2 + 1)
         maxlen = max(lengths.max(), psd_len)
         mf = LiveBatchMatchedFilter(waveforms, args.snr_threshold,
@@ -559,7 +511,8 @@ with ctx:
     if args.max_length is not None:
         maxlen = args.max_length
     maxlen = int(maxlen)
-    data_reader = {ifo: init_data_reader(ifo, args, maxlen) for ifo in ifos}
+    data_reader = {ifo: StrainBuffer.from_cli(ifo, args, maxlen)
+                   for ifo in ifos}
 
     # create single-detector background "estimators"
     if args.enable_single_detector_background and evnt.rank == 0:
