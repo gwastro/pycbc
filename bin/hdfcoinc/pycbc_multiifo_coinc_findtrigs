@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/tdent/pycbc-aug18/bin/python
 import h5py, argparse, logging, numpy, numpy.random
 from pycbc.events import veto, coinc, stat
 import pycbc.version
@@ -217,7 +217,11 @@ else:
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
 # ids in each ifo
+<<<<<<< HEAD
 data = {'stat': [], 'decimation_factor': [], 'timeslide_id': [], 'template_id': []}
+=======
+data = {'stat':[], 'decimation_factor':[], 'timeslide_id':[], 'template_id':[]}
+>>>>>>> deal with edge case where trigger time difference is less than coinc window
 
 for tnum in template_ids:
     tids = {}
@@ -286,6 +290,7 @@ for tnum in template_ids:
             for decstr in args.loudest_keep_values:
                 thresh, factor = decstr.split(':')
                 thresh = float(thresh)
+<<<<<<< HEAD
                 # throws an error if 'factor' is not the string representation
                 # of an integer
                 total_factor *= int(factor)
@@ -296,6 +301,18 @@ for tnum in template_ids:
 
                 # decimate the remaining triggers
                 idx = bi_dec[cstat[bi_dec] < thresh]
+=======
+                intfac = int(factor)
+                assert intfac == factor # don't allow non-integer decimation factor
+                total_factor *= intfac
+
+                # triggers not being further decimated
+                upper = c[bi_dec] >= thresh
+                idx_keep = bi_dec[upper]
+
+                # decimate the remaining triggers
+                idx = bi_dec[c[bi_dec] < thresh]
+>>>>>>> deal with edge case where trigger time difference is less than coinc window
                 idx = idx[slide[idx] % total_factor == 0]
 
                 bi_dec = numpy.concatenate([idx_keep, idx])
@@ -314,6 +331,7 @@ for tnum in template_ids:
             del ids
 
             # In the first for cycle the time and trigger_id keys will not
+<<<<<<< HEAD
             # exist, thus we create them; otherwise add new items to data.
             checkstring = '%s/time' % args.pivot_ifo
             if not(checkstring in data):
@@ -326,12 +344,30 @@ for tnum in template_ids:
                 for ifo in decid:
                     addtime = times[ifo][decid[ifo]]
                     addtriggerid = tids[ifo][decid[ifo]]
+=======
+            # exist, thus we create them; otherwise add new items into data.
+            checkstring = '%s/time' % args.pivot_ifo
+            if not(checkstring in data):
+                for ifo in gs:
+                    addtime = times[ifo][gs[ifo]]
+                    addtriggerid = tids[ifo][gs[ifo]]
+                    data['%s/time' % ifo] = [addtime]
+                    data['%s/trigger_id' % ifo] = [addtriggerid]
+            else:
+                for ifo in gs:
+                    addtime = times[ifo][gs[ifo]]
+                    addtriggerid = tids[ifo][gs[ifo]]
+>>>>>>> deal with edge case where trigger time difference is less than coinc window
                     data['%s/time' % ifo] += [addtime]
                     data['%s/trigger_id' % ifo] += [addtriggerid]
             data['stat'] += [cstat[ti]]
             data['decimation_factor'] += [dec_fac]
             data['timeslide_id'] += [slide[ti]]
+<<<<<<< HEAD
             data['template_id'] += [numpy.repeat(tnum, len(ti))]
+=======
+            data['template_id'] += [numpy.repeat(tnum, len(ti)]
+>>>>>>> deal with edge case where trigger time difference is less than coinc window
 
             start1 += args.batch_singles
         start0 += args.batch_singles
