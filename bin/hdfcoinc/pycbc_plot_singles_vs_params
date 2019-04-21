@@ -63,6 +63,7 @@ parser.add_argument('--y-var', required=True,
                     choices=pycbc.io.SingleDetTriggers.get_param_names(),
                     help='Parameter to plot on the y-axis. Required')
 parser.add_argument('--z-var', required=True,
+                    choices=['density'] + sngl_statistic_dict.keys(),
                     help='Quantity to plot on the color scale. Required')
 parser.add_argument('--detector', required=True,
                     help='Detector. Required')
@@ -139,6 +140,8 @@ elif opts.z_var in sngl_statistic_dict:
         cb_style['ticks'] = LogLocator(subs=range(10))
     hb = ax.hexbin(x, y, C=z, reduce_C_function=max, **hexbin_style)
     fig.colorbar(hb, **cb_style)
+else:
+    raise RuntimeError('z_var = %s is not recognized!' % (opts.z_var))
 
 ax.set_xlabel(opts.x_var)
 ax.set_ylabel(opts.y_var)
