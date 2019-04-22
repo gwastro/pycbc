@@ -161,7 +161,7 @@ def qnm_time_decay(tau, decay):
 
     Parameters
     ----------
-    tau : float
+    tau: float
         The damping time of the sinusoid.
     decay: float
         The fraction of the peak amplitude.
@@ -181,9 +181,9 @@ def qnm_freq_decay(f_0, tau, decay):
 
     Parameters
     ----------
-    f_0 : float
+    f_0: float
         The ringdown-frequency, which gives the peak amplitude.
-    tau : float
+    tau: float
         The damping time of the sinusoid.
     decay: float
         The fraction of the peak amplitude.
@@ -519,37 +519,37 @@ def get_td_from_final_mass_spin(template=None, **kwargs):
         waveform to avoid the abrupt turn on of the ringdown.
         Each mode and overtone will have a different taper depending on its tau,
         the final taper being the superposition of all the tapers.
-    distance : {None, float}, optional
+    distance: {None, float}, optional
         Luminosity distance of the system. If specified, the returned ringdown
         will include the Kerr factor (final_mass/distance).
-    final_mass : float
+    final_mass: float
         Mass of the final black hole in solar masses.
-    final_spin : float
+    final_spin: float
         Dimensionless spin of the final black hole.
-    lmns : list
+    lmns: list
         Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
         The n specifies the number of overtones desired for the corresponding
         lm pair (maximum n=8).
         Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
-    amp220 : float
-        Amplitude of the fundamental 220 mode. Note that if distance is given,
+    amp220: float
+        Amplitude of the fundamental 220 mode.  Always required, even if 220
+        mode has not been selected. Note that if distance is given,
         this parameter will have a completely different order of magnitude.
         See table II in https://arxiv.org/abs/1107.0854 for an estimate.
-        Always required, even if 220 mode has not been selected.
-    amplmn : float
+    amplmn: float
         Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, i.e. amplmn/amp220. Provide as many as the number
         of selected subdominant modes.
-    philmn : float
+    philmn: float
         Phase of the lmn overtone, as many as the number of modes. Should also
         include the information from the azimuthal angle, philmn=(phi + m*Phi).
-    inclination : float
+    inclination: float
         Inclination of the system in radians (for the spherical harmonics).
-    delta_t : {None, float}, optional
+    delta_t: {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
         amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
-    t_final : {None, float}, optional
+    t_final: {None, float}, optional
         The ending time of the output frequency series.
         If None, it will be set to the time at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
@@ -571,49 +571,49 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
     """Return frequency domain ringdown with all the modes specified.
     Parameters
     ----------
-    template : object
+    template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    distance : {None, float}, optional
+    distance: {None, float}, optional
         Luminosity distance of the system. If specified, the returned ringdown
         will include the Kerr factor (final_mass/distance).
-    final_mass : float
+    final_mass: float
         Mass of the final black hole in solar masses.
-    final_spin : float
+    final_spin: float
         Dimensionless spin of the final black hole.
-    lmns : list
+    lmns: list
         Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
         The n specifies the number of overtones desired for the corresponding
         lm pair (maximum n=8).
         Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
-    amp220 : float
-        Amplitude of the fundamental 220 mode. Always required, even if 220
+    amp220: float
+        Amplitude of the fundamental 220 mode.  Always required, even if 220
         mode has not been selected. Note that if distance is given,
         this parameter will have a completely different order of magnitude.
         See table II in https://arxiv.org/abs/1107.0854 for an estimate.
-    amplmn : float
+    amplmn: float
         Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, i.e. amplmn/amp220. Provide as many as the number
         of selected subdominant modes.
-    philmn : float
+    philmn: float
         Phase of the lmn overtone, as many as the number of modes. Should also
         include the information from the azimuthal angle, philmn=(phi + m*Phi).
-    inclination : float
+    inclination: float
         Inclination of the system in radians (for the spherical harmonics).
-    delta_f : {None, float}, optional
+    delta_f: {None, float}, optional
         The frequency step used to generate the ringdown.
         If None, it will be set to the inverse of the time at which the
         amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
     f_lower: {None, float}, optional
         The starting frequency of the output frequency series.
         If None, it will be set to delta_f.
-    f_final : {None, float}, optional
+    f_final: {None, float}, optional
         The ending frequency of the output frequency series.
         If None, it will be set to the frequency at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
     Returns
     -------
-    hplustilde: FrequencySeries
+    hplustile: FrequencySeries
         The plus phase of a ringdown with the lm modes specified and
         n overtones in frequency domain.
     hcrosstilde: FrequencySeries
@@ -638,7 +638,7 @@ def get_td_from_freqtau(template=None, **kwargs):
         waveform to avoid the abrupt turn on of the ringdown.
         Each mode and overtone will have a different taper depending on its tau,
         the final taper being the superposition of all the tapers.
-    lmns : list
+    lmns: list
         Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
         The n specifies the number of overtones desired for the corresponding
         lm pair (maximum n=8).
@@ -647,26 +647,26 @@ def get_td_from_freqtau(template=None, **kwargs):
         Central frequency of the lmn overtone, as many as number of modes.
     tau_lmn: float
         Damping time of the lmn overtone, as many as number of modes.
-    amp220 : float
+    amp220: float
         Amplitude of the fundamental 220 mode. Note that if distance is given,
         this parameter will have a completely different order of magnitude.
         See table II in https://arxiv.org/abs/1107.0854 for an estimate.
         Always required, even if 220 mode has not been selected.
-    amplmn : float
+    amplmn: float
         Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, i.e. amplmn/amp220. Provide as many as the number
         of selected subdominant modes.
-    philmn : float
+    philmn: float
         Phase of the lmn overtone, as many as the number of modes. Should also
         include the information from the azimuthal angle, philmn=(phi + m*Phi).
-    inclination : float
+    inclination: float
         Inclination of the system in radians (for the spherical harmonics).
         If None, the spherical harmonics will be set to 1.
-    delta_t : {None, float}, optional
+    delta_t: {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
         amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
-    t_final : {None, float}, optional
+    t_final: {None, float}, optional
         The ending time of the output frequency series.
         If None, it will be set to the time at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
@@ -693,7 +693,7 @@ def get_fd_from_freqtau(template=None, **kwargs):
     template: object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
-    lmns : list
+    lmns: list
         Desired lmn modes as strings (lm modes available: 22, 21, 33, 44, 55).
         The n specifies the number of overtones desired for the corresponding
         lm pair (maximum n=8).
@@ -702,27 +702,27 @@ def get_fd_from_freqtau(template=None, **kwargs):
         Central frequency of the lmn overtone, as many as number of modes.
     tau_lmn: float
         Damping time of the lmn overtone, as many as number of modes.
-    amp220 : float
+    amp220: float
         Amplitude of the fundamental 220 mode. Always required, even if 220
         mode has not been selected.
-    amplmn : float
+    amplmn: float
         Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, i.e. amplmn/amp220. Provide as many as the number
         of selected subdominant modes.
-    philmn : float
+    philmn: float
         Phase of the lmn overtone, as many as the number of modes. Should also
         include the information from the azimuthal angle (phi + m*Phi).
-    inclination : {None, float}, optional
+    inclination: {None, float}, optional
         Inclination of the system in radians. If None, the spherical harmonics
         will be set to 1.
-    delta_f : {None, float}, optional
+    delta_f: {None, float}, optional
         The frequency step used to generate the ringdown.
         If None, it will be set to the inverse of the time at which the
         amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
     f_lower: {None, float}, optional
         The starting frequency of the output frequency series.
         If None, it will be set to delta_f.
-    f_final : {None, float}, optional
+    f_final: {None, float}, optional
         The ending frequency of the output frequency series.
         If None, it will be set to the frequency at which the amplitude
         is 1/1000 of the peak amplitude (the maximum of all modes).
