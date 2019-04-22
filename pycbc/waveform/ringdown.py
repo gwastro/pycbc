@@ -571,7 +571,7 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
     """Return frequency domain ringdown with all the modes specified.
     Parameters
     ----------
-    template: object
+    template : object
         An object that has attached properties. This can be used to substitute
         for keyword arguments. A common example would be a row in an xml table.
     distance : {None, float}, optional
@@ -587,10 +587,10 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
         lm pair (maximum n=8).
         Example: lmns = ['223','331'] are the modes 220, 221, 222, and 330
     amp220 : float
-        Amplitude of the fundamental 220 mode. Note that if distance is given,
+        Amplitude of the fundamental 220 mode. Always required, even if 220
+        mode has not been selected. Note that if distance is given,
         this parameter will have a completely different order of magnitude.
         See table II in https://arxiv.org/abs/1107.0854 for an estimate.
-        Always required, even if 220 mode has not been selected.
     amplmn : float
         Fraction of the amplitude of the lmn overtone relative to the
         fundamental mode, i.e. amplmn/amp220. Provide as many as the number
