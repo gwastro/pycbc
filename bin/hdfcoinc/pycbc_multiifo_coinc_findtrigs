@@ -196,7 +196,7 @@ for ifo in trigs:
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
 
 detectors={}
-for ifo in trigs:  # what are these Detector objects used for?/
+for ifo in trigs:  # what are these Detector objects used for?
     detectors[ifo] = detector.Detector(trigs[ifo].ifo)
 
 # Sanity check, time slide interval should be larger than twice the
