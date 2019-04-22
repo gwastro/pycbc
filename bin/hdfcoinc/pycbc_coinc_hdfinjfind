@@ -33,6 +33,7 @@ def keep_ind(times, start, end):
     time_sorting = times.argsort()
     times = times[time_sorting]
     indices = numpy.array([], dtype=numpy.uint32)
+    left = numpy.searchsorted(times, start, side='left')
     right = numpy.searchsorted(times, end, side='right')
 
     for li, ri in zip(left, right):
@@ -105,7 +106,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
              ifo_times += (f['foreground/%s/time' % ifo][:],)
              time_dict[ifo] = f['foreground/%s/time' % ifo][:]
              trig_dict[ifo] = f['foreground/%s/trigger_id' % ifo][:]
-        time = numpy.array([events.mean_if_greater_than_zero(vals)[0] 
+        time = numpy.array([events.mean_if_greater_than_zero(vals)[0]
                                                    for vals in zip(*ifo_times)])
         # We will discard injections which cannot be associated with a
         # coincident event, thus combine segments over all combinations
