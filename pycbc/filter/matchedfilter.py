@@ -1218,6 +1218,7 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
     kmin, kmax = get_cutoff_indices(low_frequency_cutoff,
                                    high_frequency_cutoff, stilde.delta_f, N)
 
+
     if corr_out is not None:
         qtilde = corr_out
     else:
@@ -1241,12 +1242,30 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
         else:
             raise TypeError("PSD must be a FrequencySeries")
 
-    ifft(qtilde, _q)
+
+    from pycbc.fft.core import _check_fft_args
+    from pycbc.fft.npfft import ifft as npifft
+    prec, itype, otype = _check_fft_args(qtilde, _q)
+    npifft(qtilde, _q, prec, itype, otype)
+    invec = qtilde
+    outvec = _q
+    if isinstance(invec, TimeSeries):
+        outvec._epoch = invec._epoch
+        outvec._delta_f = 1.0/(invec._delta_t * len(outvec))
+        outvec *= invec._delta_t
+    elif isinstance(invec, FrequencySeries):
+        outvec._epoch = invec._epoch
+        outvec._delta_t = 1.0/(invec._delta_f * len(outvec))
+        outvec *= invec._delta_f
+
+    #ifft(qtilde, _q)
 
     if h_norm is None:
         h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)
 
+
     norm = (4.0 * stilde.delta_f) / sqrt( h_norm)
+
 
     return (TimeSeries(_q, epoch=stilde._epoch, delta_t=stilde.delta_t, copy=False),
            FrequencySeries(qtilde, epoch=stilde._epoch, delta_f=stilde.delta_f, copy=False),
@@ -1732,7 +1751,8 @@ class LiveBatchMatchedFilter(object):
 def followup_event_significance(ifo, data_reader, bank,
                                 template_id, coinc_times,
                                 coinc_threshold=0.005,
-                                lookback=150, duration=0.095):
+                                lookback=150, duration=0.095,
+                                override_htilde=None):
     """ Followup an event in another detector and determine its significance
     """
     from pycbc.waveform import get_waveform_filter_length_in_time
@@ -1781,7 +1801,10 @@ def followup_event_significance(ifo, data_reader, bank,
             return None, None, None, None
 
     # Calculate SNR time series for this duration
-    htilde = bank.get_template(template_id, min_buffer=bdur)
+    if override_htilde is None:
+        htilde = bank.get_template(template_id, min_buffer=bdur)
+    else:
+        htilde = override_htilde
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
     sigma2 = htilde.sigmasq(stilde.psd)

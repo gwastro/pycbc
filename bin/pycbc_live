@@ -11,16 +11,18 @@ See https://arxiv.org/abs/1805.11174 for an overview."""
 
 import sys
 import argparse, numpy, pycbc, logging, cProfile, h5py, lal, json
+import random
 from time import time
+import types
 import os.path
 import itertools
 import platform
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
-from pycbc.types import MultiDetOptionAction
+from pycbc.types import MultiDetOptionAction, zeros
 from pycbc.filter import LiveBatchMatchedFilter, compute_followup_snr_series
-from pycbc.filter import followup_event_significance
+from pycbc.filter import followup_event_significance, matched_filter_core
 from pycbc.strain import StrainBuffer
 from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
@@ -28,6 +30,29 @@ from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
+from pycbc import DYN_RANGE_FAC
+from pycbc.conversions import mchirp_from_mass1_mass2, eta_from_mass1_mass2
+from pycbc.conversions import mtotal_from_mchirp_eta, mass1_from_mtotal_eta
+from pycbc.conversions import mass2_from_mtotal_eta
+
+import cProfile
+def profile(filename=None, comm=mpi.COMM_WORLD):
+  def prof_decorator(f):
+    def wrap_f(*args, **kwargs):
+      pr = cProfile.Profile()
+      pr.enable()
+      result = f(*args, **kwargs)
+      pr.disable()
+
+      if filename is None:
+        pr.print_stats()
+      else:
+        filename_r = filename + ".{}".format(comm.rank)
+        pr.dump_stats(filename_r)
+
+      return result
+    return wrap_f
+  return prof_decorator
 
 
 def ptof(p, ft):
@@ -49,6 +74,53 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
     nifar = 1. / ptof(pnew, livetime)
     # take max of original IFAR and combined IFAR & apply trials factor
     return numpy.maximum(ifar, nifar) / 2.
+
+# Define the function for computing network snr
+def compute_network_snr(v, *argv):
+    data = argv[0]
+    coinc_times = argv[1]
+    ifos = argv[2]
+    flen = argv[3]
+    approximant = argv[4]
+    flow = argv[5]
+    f_end = argv[6]
+    delta_f = argv[7]
+    sample_rate = argv[8]
+    min_f_lower = argv[9]
+    extra_args = argv[10]
+    distance = 1.0 / DYN_RANGE_FAC
+    mtotal = mtotal_from_mchirp_eta(v[0], v[1])
+    mass1 = mass1_from_mtotal_eta(mtotal, v[1])
+    mass2 = mass2_from_mtotal_eta(mtotal, v[1])
+
+    htilde = pycbc.waveform.get_waveform_filter\
+        (zeros(flen, dtype=numpy.complex64),
+         approximant=approximant,
+         mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3],
+         f_lower=flow, f_final=f_end, delta_f=delta_f,
+         delta_t=1.0/sample_rate, distance=distance,
+         **extra_args)
+    htilde.sigmasq = types.MethodType(pycbc.waveform.bank.sigma_cached,
+                                      htilde)
+    htilde.approximant = approximant
+    htilde.min_f_lower = min_f_lower
+    htilde.end_frequency = f_end
+    htilde.f_lower = flow
+    network_snrsq = 0
+    for ifo in ifos:
+        sigmasq = htilde.sigmasq(data[ifo].psd)
+        snr, _, norm = matched_filter_core(htilde, data[ifo],
+                                           h_norm=sigmasq)
+        duration = 0.095
+        half_dur_samples = int(snr.sample_rate * duration / 2)
+        onsource_idx = float(coinc_times[ifo] - snr.start_time) * snr.sample_rate
+        onsource_idx = int(round(onsource_idx))
+        onsource_slice = slice(onsource_idx - half_dur_samples,
+                               onsource_idx + half_dur_samples + 1)
+        snr_series = snr[onsource_slice] * norm
+        network_snrsq += max(abs(snr_series._data))**2
+    return - (network_snrsq**0.5)
+
 
 class LiveEventManager(object):
     def __init__(self, output_path,
@@ -109,7 +181,7 @@ class LiveEventManager(object):
             raise RuntimeError("Not root process")
 
     def compute_followup_data(self, ifos, triggers, data_readers, bank,
-                              followup_ifos=None):
+                              followup_ifos=None, override_htilde=None):
         """Figure out which of the followup detectors are usable, and compute
         SNR time series for all the available detectors.
         """
@@ -117,7 +189,10 @@ class LiveEventManager(object):
         followup_ifos = [] if followup_ifos is None else followup_ifos
 
         template_id = triggers['foreground/' + ifos[0] + '/template_id']
-        htilde = bank[template_id]
+        if override_htilde is not None:
+            htilde = override_htilde
+        else:
+            htilde = bank[template_id]
 
         coinc_times = {ifo: triggers['foreground/' + ifo + '/end_time'] for ifo in ifos}
 
@@ -170,6 +245,79 @@ class LiveEventManager(object):
         triggers[base + 'coa_phase'] = numpy.angle(snr_series_peak)
         triggers[base + 'sigmasq'] = sigma2
 
+
+    def optimize_snr_timeseries(self, ifos, triggers, data_readers, bank,
+                                followup_ifos=None):
+        from scipy.optimize import differential_evolution, minimize
+        from pycbc.waveform.waveform import props
+
+        coinc_times = {ifo: triggers['foreground/' + ifo + '/end_time'] for ifo in ifos}
+
+        # Define properties for template generation
+        template_id = triggers['foreground/' + ifos[0] + '/template_id']	
+        approximant = 'IMRPhenomD'
+        f_end = bank.end_frequency(template_id)
+        flow = bank.table[template_id].f_lower
+        min_buffer = bank.minimum_buffer + 0.5
+        p = props(bank.table[template_id])
+        p.pop('approximant')
+        buff_size = \
+            pycbc.waveform.get_waveform_filter_length_in_time(approximant, **p)
+        tlen = bank.round_up((buff_size + min_buffer) * bank.sample_rate)
+        flen = int(tlen / 2 + 1)
+        delta_f = bank.sample_rate / float(tlen)
+        if f_end is None or f_end >= (flen * delta_f):
+            f_end = (flen-1) * delta_f
+
+        data = {ifo: data_readers[ifo].overwhitened_data(delta_f) 
+                for ifo in ifos}
+        
+        trig_mchirp = mchirp_from_mass1_mass2(bank.table[template_id].mass1,
+                                              bank.table[template_id].mass2)
+        trig_eta = eta_from_mass1_mass2(bank.table[template_id].mass1,
+                                        bank.table[template_id].mass2)
+        bounds = [(trig_mchirp*0.9, trig_mchirp*1.1),
+                  (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
+        # Might be nice to use chi_eff and chi_a, but then boundaries become
+        # highly non-trivial
+        trig_spin1z = bank.table[template_id].spin1z
+        trig_spin2z = bank.table[template_id].spin2z
+
+        extra_args = (data, coinc_times, ifos, flen,
+                      approximant, flow, f_end, delta_f, bank.sample_rate,
+                      bank.min_f_lower, bank.extra_args)
+
+        results = differential_evolution(compute_network_snr, bounds,
+                                         maxiter=100, seed=1, workers=-1,
+                                         popsize=200, mutation=(1.,1),
+                                         recombination=0.25,
+                                         updating='deferred',
+                                         args=extra_args)
+
+        optimized_vals = results.x
+        mtotal = mtotal_from_mchirp_eta(optimized_vals[0], optimized_vals[1])
+        opt_mass1 = mass1_from_mtotal_eta(mtotal, optimized_vals[1])
+        opt_mass2 = mass2_from_mtotal_eta(mtotal, optimized_vals[1])
+        opt_spin1z = optimized_vals[2]
+        opt_spin2z = optimized_vals[3]
+        opt_htilde = pycbc.waveform.get_waveform_filter\
+            (zeros(flen, dtype=numpy.complex64),
+             approximant=approximant,
+             mass1=opt_mass1, mass2=opt_mass2, spin1z=opt_spin1z,
+             spin2z=opt_spin2z,
+             f_lower=flow, f_final=f_end, delta_f=delta_f,
+             delta_t=1.0/bank.sample_rate, distance=1.0 / DYN_RANGE_FAC,
+             **bank.extra_args)
+        opt_htilde.sigmasq = types.MethodType(pycbc.waveform.bank.sigma_cached,
+                                              opt_htilde)
+        opt_htilde.approximant = approximant
+        opt_htilde.min_f_lower = bank.min_f_lower
+        opt_htilde.end_frequency = f_end
+        opt_htilde.f_lower = flow
+
+        return [opt_mass1, opt_mass2, opt_spin1z, opt_spin2z], opt_htilde
+
+
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
         """ Perform any followup and save zerolag triggers to a coinc xml file
@@ -212,6 +360,66 @@ class LiveEventManager(object):
             comments = ['using ranking statistic: %s' % args.background_statistic]
 
             ifar = coinc_results['foreground/ifar']
+            if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
+                event.upload(fname, gracedb_server=args.gracedb_server,
+                             testing=self.gracedb_testing,
+                             extra_strings=comments)
+            else:
+                event.save(fname)
+
+            new_vals, opt_htilde = \
+                self.optimize_snr_timeseries(coinc_ifos, coinc_results,
+                                             data_readers, bank, followup_ifos)
+
+            fud = self.compute_followup_data(coinc_ifos, coinc_results,
+                                             data_readers, bank, followup_ifos,
+                                             override_htilde=opt_htilde)
+
+            # Now we can override the SNRs and masses
+            network_snrsq = 0.
+            for ifo in coinc_ifos:
+                fppref = 'foreground/{}/'.format(ifo)
+                coinc_results[fppref+'mass1'] = new_vals[0]
+                coinc_results[fppref+'mass2'] = new_vals[1]
+                coinc_results[fppref+'spin1z'] = new_vals[2]
+                coinc_results[fppref+'spin2z'] = new_vals[3]
+                coinc_results[fppref+'approximant'] = 'IMRPhenomD'
+                snrtseries = fud[ifo]['snr_series']
+                maxidx = numpy.argmax(abs(snrtseries))
+                # Subsample interpolation of SNR peak
+                # Following sbank here
+                maxsnrsq = abs(snrtseries[maxidx])**2
+                maxsnrpsq = abs(snrtseries[maxidx+1])**2
+                maxsnrmsq = abs(snrtseries[maxidx-1])**2
+                dy = 0.5 * (maxsnrpsq - maxsnrmsq)
+                d2y = 2. * maxsnrsq - maxsnrmsq - maxsnrpsq
+                maxsnrsq = maxsnrsq + 0.5*dy*dy/d2y
+                maxsnr = maxsnrsq**0.5
+                maxtime = snrtseries.sample_times[maxidx]
+                maxtime += 0.5 * snrtseries.delta_t * (maxsnrmsq - maxsnrpsq) /\
+                    (maxsnrmsq + maxsnrpsq - 2 * maxsnrsq)
+                # Do I need to interpolate this?
+                maxsnrphase = numpy.angle(snrtseries[maxidx])
+                network_snrsq += maxsnr**2
+                coinc_results[fppref+'snr'] = maxsnr
+                coinc_results[fppref+'end_time'] = maxtime
+                coinc_results[fppref+'stat'] = maxsnr
+                coinc_results[fppref+'chisq'] = 0.
+                coinc_results[fppref+'chisq_dof'] = 0
+                coinc_results[fppref+'sg_chisq'] = 0.
+                coinc_results[fppref+'coa_phase'] = maxsnrphase
+
+            coinc_results['foreground/stat'] = numpy.array([network_snrsq**0.5])
+
+            event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
+                                          psds=psds, followup_data=fud,
+                                          low_frequency_cutoff=f_low,
+                                          channel_names=args.channel_name)
+
+            fname = os.path.join(self.path, 'coinc_opt-%s.xml.gz' % end_time)
+            logging.info('Optimized SNR! Saving as %s', fname)
+            comments.append('Optimized SNR time series over masses/spins')
+
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
                 event.upload(fname, gracedb_server=args.gracedb_server,
                              testing=self.gracedb_testing,
