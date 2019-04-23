@@ -3,6 +3,7 @@ import h5py, argparse, logging, numpy, numpy.random
 from pycbc import events, detector
 from pycbc.events import veto, coinc, stat
 import pycbc.version
+from numpy.random import seed, shuffle
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--verbose", action="count")
@@ -48,6 +49,11 @@ parser.add_argument("--cluster-window", type=float,
                     "coincidences over the bank")
 parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
+parser.add_argument("--randomize-template-order", action="store_true",
+                    help="Random shuffle templates with fixed seed "
+                         "before selecting range to analyze")
+parser.add_argument("--batch-singles", default=5000, type=int,
+                    help="Number of single triggers to process at once")
 args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
@@ -209,7 +215,15 @@ if args.timeslide_interval is None:
 
 data = {'stat':[], 'decimation_factor':[], 'timeslide_id':[], 'template_id':[]}
 
-for tnum in range(tmin, tmax):
+if args.randomize_template_order:
+    seed(0)
+    template_ids = numpy.arange(0, num_templates)
+    shuffle(template_ids)
+    template_ids = template_ids[tmin:tmax]
+else:
+    template_ids = range(tmin, tmax)
+
+for tnum in template_ids:
     tids={}
     for ifo in trigs:
         tids[ifo]=trigs[ifo].set_template(tnum)
@@ -218,96 +232,115 @@ for tnum in range(tmin, tmax):
         if len(tids[ifo] == 0):
             continue
 
-    times={}
+    times_full={}
     for ifo in trigs:
         times[ifo]=trigs[ifo]['end_time']
     logging.info('Trigs for template %s, '% (tnum))
     for ifo in times:
         logging.info('%s:%s' % (ifo, len(times[ifo])))
 
-    ids, slide = coinc.time_multi_coincidence(times, args.timeslide_interval,
-                                              args.coinc_threshold,
-                                              args.pivot_ifo,
-                                              args.fixed_ifo)
-
-    logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
-
     logging.info('Calculating Single Detector Statistic')
-    sds={}
-    for ifo in trigs:
-        sds[ifo]=rank_method.single(trigs[ifo])
+    sds_full = {ifo:rank_method.single(trigs[ifo]) for ifo in trigs}
 
-    logging.info('Calculating Multi-Detector Combined Statistic')
+    # Loop over the single triggers and calculate the coincs they can form
+    start0 = 0
+    while start0 < len(sds[args.pivot_ifo]):
+        start1 = 0
+        while start1 < len(sds[args.fixed_ifo]):
+            end0 = start0 + args.batch_singles
+            end1 = start1 + args.batch_singles
+            if end0 > len(sds[args.pivot_ifo]):
+                end0 = len(sds[args.pivot_ifo])
+            if end1 > len(sds[args.fixed_ifo]):
+                end1 = len(sds[args.fixed_ifo])
 
-    sdswithids={}
-    for ifo in sds:
-        sdswithids[ifo]=sds[ifo][ids[ifo]]
-    c = rank_method.coinc_multiifo(sdswithids, slide, args.timeslide_interval)
+            times = times_full.copy()
+            times[args.pivot_ifo] = times_full[args.pivot_ifo][start0:end0]
+            times[args.fixed_ifo] = times_full[args.fixed_ifo][start1:end1]
 
-    #index values of the zerolag triggers
-    fi = numpy.where(slide == 0)[0]
+            sds = sds_full.copy()
+            sds[args.pivot_ifo] = sds_full[args.pivot_ifo][start0:end0]
+            sds[args.fixed_ifo] = sds_full[args.fixed_ifo][start1:end1]
 
-    #index values of the background triggers
-    bi = numpy.where(slide != 0)[0]
-    logging.info('%s foreground triggers' % len(fi))
-    logging.info('%s background triggers' % len(bi))
+            logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
+            ids, slide = coinc.time_multi_coincidence(times,
+                                                      args.timeslide_interval,
+                                                      args.coinc_threshold,
+                                                      args.pivot_ifo,
+                                                      args.fixed_ifo)
 
-    # We split the background triggers into two types which we keep track of
-    # in "bh" (triggers which are *not* decimated, stored in full) and
-    # "bl" (triggers which may not be stored in full, but we keep track of
-    # how many are removed)
-    # "bl_int" keeps track of which triggers are *not* in the bh set. Depending
-    # on the decimation factor option we may not store any of these or we may
-    # keep a fraction of them corresponding to a subset of the timeslides
-    if args.loudest_keep:
-        sep = len(bi) - args.loudest_keep
-        sep = 0 if sep < 0 else sep
+            logging.info('Calculating Multi-Detector Combined Statistic')
 
-        bsort = numpy.argpartition(c[bi], sep)
-        bl_int = bi[bsort[0:sep]]
-        bh = bi[bsort[sep:]]
-        del bsort
-        del bi
-    elif args.loudest_keep_value:
-        bh = bi[c[bi] > args.loudest_keep_value]
-        bl_int = bi[c[bi] <= args.loudest_keep_value]
-    else:
-        bh = bi
+            sdswithids={}
+            for ifo in sds:
+                sdswithids[ifo]=sds[ifo][ids[ifo]]
+            c = rank_method.coinc_multiifo(sdswithids, slide,
+                                           args.timeslide_interval)
 
-    if args.decimation_factor:
-        bl = bl_int[slide[bl_int] % args.decimation_factor == 0]
-    else:
-        bl = []
+            #index values of the zerolag triggers
+            fi = numpy.where(slide == 0)[0]
 
-    ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
-    logging.info('%s after decimation' % len(ti))
+            #index values of the background triggers
+            bi = numpy.where(slide != 0)[0]
+            logging.info('%s foreground triggers' % len(fi))
+            logging.info('%s background triggers' % len(bi))
 
-    gs={}
-    for ifo in ids:
-        gs[ifo]=ids[ifo][ti]
-    del ids
+            # We split the background triggers into two types which we keep track of
+            # in "bh" (triggers which are *not* decimated, stored in full) and
+            # "bl" (triggers which may not be stored in full, but we keep track of
+            # how many are removed)
+            # "bl_int" keeps track of which triggers are *not* in the bh set. Depending
+            # on the decimation factor option we may not store any of these or we may
+            # keep a fraction of them corresponding to a subset of the timeslides
+            if args.loudest_keep:
+                sep = len(bi) - args.loudest_keep
+                sep = 0 if sep < 0 else sep
 
-    # In the first for cycle the time and trigger_id keys will not exist,
-    # we need to create them, otherwise add new items into data.
-    checkstring = '%s/time' % args.pivot_ifo
-    if checkstring in data:
-        for ifo in gs:
-            addtime=times[ifo][gs[ifo]]
-            addtriggerid=tids[ifo][gs[ifo]]
-            data['%s/time' % ifo] += [addtime]
-            data['%s/trigger_id' % ifo] += [addtriggerid]
-    else:
-        for ifo in gs:
-            addtime=times[ifo][gs[ifo]]
-            addtriggerid=tids[ifo][gs[ifo]]
-            data['%s/time' % ifo] = [addtime]
-            data['%s/trigger_id' % ifo] = [addtriggerid]
-    data['stat'] += [c[ti]]
-    dec_fac = numpy.repeat([args.decimation_factor, 1, 1],
-                           [len(bl), len(bh), len(fi)]).astype(numpy.uint32)
-    data['decimation_factor'] += [dec_fac]
-    data['timeslide_id'] += [slide[ti]]
-    data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
+                bsort = numpy.argpartition(c[bi], sep)
+                bl_int = bi[bsort[0:sep]]
+                bh = bi[bsort[sep:]]
+                del bsort
+                del bi
+            elif args.loudest_keep_value:
+                bh = bi[c[bi] > args.loudest_keep_value]
+                bl_int = bi[c[bi] <= args.loudest_keep_value]
+            else:
+                bh = bi
+
+            if args.decimation_factor:
+                bl = bl_int[slide[bl_int] % args.decimation_factor == 0]
+            else:
+                bl = []
+
+            ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
+            logging.info('%s after decimation' % len(ti))
+
+            gs={}
+            for ifo in ids:
+                gs[ifo]=ids[ifo][ti]
+            del ids
+
+            # In the first for cycle the time and trigger_id keys will not exist,
+            # we need to create them, otherwise add new items into data.
+            checkstring = '%s/time' % args.pivot_ifo
+            if checkstring in data:
+                for ifo in gs:
+                    addtime=times[ifo][gs[ifo]]
+                    addtriggerid=tids[ifo][gs[ifo]]
+                    data['%s/time' % ifo] += [addtime]
+                    data['%s/trigger_id' % ifo] += [addtriggerid]
+            else:
+                for ifo in gs:
+                    addtime=times[ifo][gs[ifo]]
+                    addtriggerid=tids[ifo][gs[ifo]]
+                    data['%s/time' % ifo] = [addtime]
+                    data['%s/trigger_id' % ifo] = [addtriggerid]
+            data['stat'] += [c[ti]]
+            dec_fac = numpy.repeat([args.decimation_factor, 1, 1],
+                                   [len(bl), len(bh), len(fi)]).astype(numpy.uint32)
+            data['decimation_factor'] += [dec_fac]
+            data['timeslide_id'] += [slide[ti]]
+            data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
 
 if len(data['stat']) > 0:
     for key in data:
