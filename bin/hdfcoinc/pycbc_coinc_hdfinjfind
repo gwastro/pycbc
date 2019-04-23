@@ -33,10 +33,10 @@ def keep_ind(times, start, end):
     time_sorting = times.argsort()
     times = times[time_sorting]
     indices = numpy.array([], dtype=numpy.uint32)
-    left = numpy.searchsorted(times, start, side='left')
-    right = numpy.searchsorted(times, end, side='right')
+    leftidx = numpy.searchsorted(times, start, side='left')
+    rightidx = numpy.searchsorted(times, end, side='right')
 
-    for li, ri in zip(left, right):
+    for li, ri in zip(leftidx, rightidx):
         seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
         indices=numpy.union1d(seg_indices, indices)
     return time_sorting[indices]
