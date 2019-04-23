@@ -464,11 +464,11 @@ def multimode_base(input_params):
     """Return a superposition of damped sinusoids in either time or frequency
     domains with parameters set by input_params.
     """
-    lmns = format_lmns(input_params['lmns'])
+    input_params['lmns'] = format_lmns(input_params['lmns'])
     amps, phis = lm_amps_phases(**input_params)
     if 'final_mass' in input_params.keys():
         freqs, taus = get_lm_f0tau_allmodes(input_params['final_mass'],
-                        input_params['final_spin'], lmns)
+                        input_params['final_spin'], input_params['lmns'])
         norm = Kerr_factor(input_params['final_mass'],
             input_params['distance']) if 'distance' in input_params.keys() \
             else 1.
