@@ -15,7 +15,7 @@ from __future__ import absolute_import
 import numpy, ctypes, pycbc.types
 from pycbc.libutils import get_ctypes_library
 import logging
-from .fftw_pruned_cython import second_phase_cython, fast_second_phase_cython
+from .fftw_pruned_cython import second_phase_cython
 
 warn_msg = ("The FFTW_pruned module can be used to speed up computing SNR "
             "timeseries by computing first at a low sample rate and then "

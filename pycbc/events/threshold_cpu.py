@@ -28,6 +28,7 @@ from pycbc.weave import inline
 from .simd_threshold import thresh_cluster_support, default_segsize
 from .eventmgr import _BaseThresholdCluster
 from pycbc.opt import omp_libs, omp_flags
+from scipy.signal import find_peaks
 from six import PY3
 
 def threshold_numpy(series, value):
@@ -93,6 +94,7 @@ def threshold_inline(series, value):
     else:
         return numpy.array([], numpy.uint32), numpy.array([], numpy.float32)
 
+
 if PY3:
     threshold = threshold_numpy
 else:
@@ -112,7 +114,7 @@ class CPUThresholdCluster(_BaseThresholdCluster):
               """
         self.support = thresh_cluster_support
 
-    def threshold_and_cluster_weave(self, threshold, window):
+    def threshold_and_cluster_weave(self, threshold, window): # pylint:disable=unused-variable
         series = self.series # pylint:disable=unused-variable
         slen = self.slen # pylint:disable=unused-variable
         values = self.outv
@@ -138,9 +140,9 @@ class CPUThresholdCluster(_BaseThresholdCluster):
         # (e.g. in Cython) if needed
         thresh = threshold*threshold
         abs2_series = self.series.real**2 + self.series.imag**2
-        locs, retdict = find_peaks(abs2_series, height=thresh, distance=window)
+        locs, _ = find_peaks(abs2_series, height=thresh, distance=window)
         return self.series[locs], locs
-        
+
 
 def _threshold_cluster_factory(series):
     return CPUThresholdCluster
