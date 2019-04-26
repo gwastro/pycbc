@@ -1,5 +1,3 @@
-%%cython -a
-
 import numpy
 cimport numpy
 #from libc.stdlib cimport malloc, free
