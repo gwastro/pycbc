@@ -251,9 +251,9 @@ class GaussianNoise(BaseDataModel):
                     self._f_upper[det] = high_frequency_cutoff[det]
                 else:
                     self._f_upper[det] = None
-         else:
-            [self._f_upper[det] = None for det in self.data.keys()]
-        print("self._f_upper", self._f_upper)
+        else:
+            for det in self._data.keys():
+                self._f_upper[det] = None
         if norm is None:
             norm = 4*d.delta_f
         # we'll store the weight to apply to the inner product
@@ -272,7 +272,6 @@ class GaussianNoise(BaseDataModel):
         self._kmin = {}
         self._kmax = {}
         for det in self._data:
-            self._f_upper = high_frequency_cutoff
             # whiten the data
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
                                                      self._f_upper[det],
@@ -280,8 +279,6 @@ class GaussianNoise(BaseDataModel):
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
             self._kmin[det] = kmin
             self._kmax[det] = kmax
-        print("self._kmin", self._kmin)
-        print("self._kmax", self._kmax)
 
     @property
     def waveform_generator(self):
@@ -517,8 +514,8 @@ class GaussianNoise(BaseDataModel):
         # get any other keyword arguments provided in the model section
         ignore_args = ['name']
         for option in cp.options("model"):
-            if option.endswith("-low-frequency-cutoff") or 
-                    option.endswith("-high-frequency-cutoff"):
+            if any([option.endswith("-low-frequency-cutoff"),
+                   option.endswith("-high-frequency-cutoff")]):
                 ignore_args.append(option)
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
