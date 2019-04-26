@@ -13,7 +13,6 @@ twiddle factors.
 """
 from __future__ import absolute_import
 import numpy, ctypes, pycbc.types
-from pycbc import WEAVE_FLAGS
 from pycbc.libutils import get_ctypes_library
 import logging
 from .fftw_pruned_cython import second_phase_cython, fast_second_phase_cython
@@ -26,7 +25,7 @@ warn_msg = ("The FFTW_pruned module can be used to speed up computing SNR "
             "This code would need verification before trusting results. "
             "Please do contribute test cases.")
 
-logging.warn(warn_msg)
+logging.warning(warn_msg)
 
 # FFTW constants
 FFTW_FORWARD = -1
