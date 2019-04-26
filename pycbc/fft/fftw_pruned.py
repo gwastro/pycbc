@@ -160,46 +160,13 @@ def second_phase(invec, indices, N1, N2):
     """
     invec = numpy.array(invec.data, copy=False)
     NI = len(indices) # pylint:disable=unused-variable
-    N1=int(N1)
-    N2=int(N2)
+    N1 = int(N1)
+    N2 = int(N2)
     out = numpy.zeros(len(indices), dtype=numpy.complex64)
-    indices=numpy.array(indices, dtype=numpy.uint32)
-
-    second_phase_cython(N1, N2, NI, indices, out, invec)
-
-    return out
-
-def fast_second_phase(invec, indices, N1, N2):
-    """
-    This is the second phase of the FFT decomposition that actually performs
-    the pruning. It is an explicit calculation for the subset of points. Note
-    that there seem to be some numerical accumulation issues at various values
-    of N1 and N2.
-
-    Parameters
-    ----------
-    invec :
-        The result of the first phase FFT
-    indices : array of ints
-        The index locations to calculate the FFT
-    N1 : int
-        The length of the second phase "FFT"
-    N2 : int
-        The length of the first phase FFT
-
-    Returns
-    -------
-    out : array of floats
-    """
-    invec = numpy.array(invec.data, copy=False)
-    NI = len(indices) # pylint:disable=unused-variable
-    N1=int(N1)
-    N2=int(N2)
-    out = numpy.zeros(len(indices), dtype=numpy.complex64)
-    indices=numpy.array(indices, dtype=numpy.uint32)
+    indices = numpy.array(indices, dtype=numpy.uint32)
 
     # Note, the next step if this needs to be faster is to invert the loops
-    fast_second_phase_cython(N1, N2, NI, indices, out, invec)
+    second_phase_cython(N1, N2, NI, indices, out, invec)
 
     return out
 
@@ -226,24 +193,6 @@ def fft_transpose_fftw(vec):
         _thetransposeplan = plan_transpose(N1, N2)
     ftexecute(_thetransposeplan, vec.ptr, outvec.ptr)
     return  outvec
-
-def fft_transpose_numpy(vec):
-    """
-    Perform a numpy transpose from vec into outvec.
-    (Alex to provide more details in a write-up.)
-
-    Parameters
-    -----------
-    vec : array
-        Input array.
-
-    Returns
-    --------
-    outvec : array
-        Transposed output array.
-    """
-    N1, N2 = splay(vec)
-    return pycbc.types.Array(vec.data.copy().reshape(N2, N1).transpose().reshape(len(vec)).copy())
 
 fft_transpose = fft_transpose_fftw
 
@@ -284,5 +233,5 @@ def pruned_c2cifft(invec, outvec, indices, pretransposed=False):
     if not pretransposed:
         invec = fft_transpose(invec)
     first_phase(invec, outvec, N1=N1, N2=N2)
-    out = fast_second_phase(outvec, indices, N1=N1, N2=N2)
+    out = second_phase(outvec, indices, N1=N1, N2=N2)
     return out
