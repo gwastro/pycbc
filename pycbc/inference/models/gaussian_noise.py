@@ -515,7 +515,7 @@ class GaussianNoise(BaseDataModel):
         ignore_args = ['name']
         for option in cp.options("model"):
             if any([option.endswith("-low-frequency-cutoff"),
-                   option.endswith("-high-frequency-cutoff")]):
+                    option.endswith("-high-frequency-cutoff")]):
                 ignore_args.append(option)
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
@@ -615,7 +615,7 @@ def low_frequency_cutoff_from_config(cp):
                 low_frequency_cutoff[ifo] = float(cp.get("model", option))
             except Exception as e:
                 logging.warning("Low frequency cutoff of %s could not be "
-                                "converted to float" % ifo)
+                                "converted to float", ifo)
                 raise e
     return low_frequency_cutoff
 
@@ -648,6 +648,6 @@ def high_frequency_cutoff_from_config(cp):
                 high_frequency_cutoff[ifo] = float(cp.get("model", option))
             except Exception as e:
                 logging.warning("High frequency cutoff of %s could not be "
-                                "converted to float" % ifo)
+                                "converted to float", ifo)
                 raise e
     return high_frequency_cutoff
