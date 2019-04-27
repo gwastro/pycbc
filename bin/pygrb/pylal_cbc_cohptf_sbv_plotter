@@ -165,6 +165,66 @@ def snr_timeseries_plot(trigTime, trigSNR, grbTime, start, end, ylabel, outdir, 
     fig.savefig('%s/%s_inj.png' % (outdir, fig_tag), bbox_inches='tight')
   plt.close()
   return
+# =============================================================================
+# Veto series plotter 
+def veto_series_plot(x, y, injx, injy, snr_vals, conts, cont_value, colors, xlabel, ylabel, xlim_start, xlim_end, ylim_start, ylim_end, outdir, fig_tag):
+  fig = plt.figure()
+  ax = fig.gca()
+  ax.loglog(x, y, 'bx')
+  ax.grid()
+  if injFile: 
+    ax.loglog(injx, injy, 'r+')
+  plot_contours(ax, snr_vals, conts, colors)
+  #add shading to vetoed area
+  limy = ax.get_ylim()[1]
+  polyx = copy.deepcopy(snr_vals)
+  polyy = copy.deepcopy(conts[cont_value])
+  polyx = numpy.append(polyx,[max(snr_vals), min(snr_vals)])
+  polyy = numpy.append(polyy, [limy, limy])
+  ax.fill(polix, polyy, color='#dddddd')
+  ax.set_xlabel(xlabel)
+  ax.set_ylabel(ylabel)
+  ax.set_xlim([xlim_start, xlim_end])
+  ax.set_ylim([ylim_start, ylim_end])
+  fig.savefig("%s/%s.png" % (outdir, fig_tag), \
+              bbox_inches='tight')
+ #I removed the zoomed picture..
+  fig.close()
+#==============================================================================
+
+#SNR versus loudest plotter
+def snr_loudest_plot(x, y, injx, injy, listx, listy, xlabel, ylabel, outdir, fig_tag):
+  fig = plt.figure()
+  ax = fig.gca()
+  ax.plot(x, y, 'bx')
+  ax.grid()
+  if injFile:
+    ax.plot(injx, injy, 'r+')
+  ax.plot(listx, listy, 'g-')
+  ax.set_xlabel(xlabel)
+  ax.set_ylabel(ylabel)
+  fig.savefig("%s/%s.png" % (outdir, fig_tag))
+  #![removed zoomed picture]!
+  plt.close()
+
+#==============================================================================
+
+#Single detector chi square plotter 
+def single_detect_chi_sq_series(x, y, injx, injy, xlabel, ylabel, start_x, end_x, outdir, fig_tag): 
+	fig = plt.figure()
+	ax = fig.gca()
+	ax.lolog(x, y, 'bx')
+	ax.grid()
+	if injFile: 
+		ax.loglog(injx, injy, 'r+')
+	ax.set_xlabel(xlabel)
+	ax.set_ylabel(ylabel)
+	ax.set_xlim([start_x, end_x])
+	fig.savefig("%s/%s.png" % (outdir, fig_tag) \
+		         bbox_inches='tight')
+	plt.close()
+
+#==============================================================================
 
 # =============================================================================
 # Main function
@@ -490,7 +550,6 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
 
   if verbose:
     sys.stdout.write("\nPlotting...\n")
-  p = 0
 
   ptfcolormap = plt.cm.spring
   ptfcolormap.set_over('g')
@@ -540,33 +599,8 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
     ylabel = "%s SNR" % (ifo)
     snr_timeseries_plot(trigTime, trigIfoSNR[ifo], grbTime, start, end, ylabel, outdir, fig_tag, injFile, injTime, injIfoSNR[ifo])
 
-  # plot coherent SNR versus mchirp
-  mass_vals = numpy.asarray([max_mchirp]*len(snr_vals))
-  fig = plt.figure()
-  ax  = fig.gca()
-  ax.plot(trigSNR, trigMchirp, 'bx')
-  ax.grid()
-  if injFile:
-    ax.plot(injSNR, injMchirp, 'r+')
-  ax.set_xlabel("Coherent SNR")
-  ax.set_ylabel("Chirp mass ($M_{\odot}$)")
-  ax.plot(snr_vals, mass_vals, 'k-')
-  # Shade vetoed area
-  limy = list(ax.get_ylim())
-  limx = list(ax.get_xlim())
-  limy[1] = max(limy[1], 12)
-  polyx = limx
-  polyy = [max_mchirp]*2
-  polyx.extend([limx[1],0])
-  polyy.extend([limy[1], limy[1]])
-  ax.fill(polyx, polyy, color = '#dddddd')
-  fig.savefig("%s/%s_mchirp_vs_snr.png" % (outdir, tag),\
-              bbox_inches='tight' )
-  ax.set_xlim([6,50])
-  ax.set_ylim([0,12])
-  fig.savefig("%s/%s_mchirp_vs_snr_zoom.png" % (outdir, tag),\
-              bbox_inches='tight')
-  plt.close()
+
+
 
   # plot coherent SNR versus null stat
   fig = plt.figure()
@@ -580,7 +614,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   ax.plot(snr_vals,null_cont, 'k-')
   fig.savefig("%s/%s_null_stat_vs_snr.png" % (outdir, tag),\
                bbox_inches='tight')
-  p+=1
+
   ax.plot(snr_vals, numpy.asarray(null_cont) - \
       (null_thresh[1] - null_thresh[0]), 'g-')
   if (null_thresh[1] - null_thresh[0] > 1):
@@ -591,7 +625,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   fig.savefig("%s/%s_null_stat_vs_snr_zoom.png" % (outdir, tag),\
                bbox_inches='tight')
   plt.close()
-  p+=1
+ 
   
   # plot coherent SNR versus overwhitened null stat
   fig = plt.figure()
@@ -613,7 +647,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
 
   fig.savefig("%s/%s_null_stat2_vs_snr.png" % (outdir, tag),\
                bbox_inches='tight')
-  p+=1
+ 
   ax.plot(snr_vals, numpy.asarray(null_cont) - \
       (null_thresh[1] - null_thresh[0]), 'g-')
   ax.plot(snr_vals, numpy.asarray(null_cont) - \
@@ -623,7 +657,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   fig.savefig("%s/%s_null_stat2_vs_snr_zoom.png" % (outdir, tag),\
                bbox_inches='tight')
   plt.close()
-  p+=1
+ 
  
   # plot coherent SNR versus coinc SNR
   fig = plt.figure()
@@ -637,14 +671,15 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   ax.set_ylabel("Coincidence SNR")
   fig.savefig("%s/%s_coinc_snr_vs_snr.png" % (outdir, tag),\
                bbox_inches='tight')
-  p+=1
+ 
   ax.set_xlim([6,30])
   ax.set_ylim([4,30])
   fig.savefig("%s/%s_coinc_snr_vs_snr_zoom.png" % (outdir, tag),\
                bbox_inches='tight')
   plt.close()
-  p+=1
-  
+
+
+
   aT = [6,30]
   bT = [6,27.5]
   
@@ -665,13 +700,13 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   ax.set_ylabel("Trace SNR")
   fig.savefig("%s/%s_trace_snr_vs_snr.png" % (outdir, tag),\
                bbox_inches='tight')
-  p+=1
+ 
   ax.set_xlim([6,30])
   ax.set_ylim([4,30])
   fig.savefig("%s/%s_trace_snr_vs_snr_zoom.png" % (outdir, tag),\
                bbox_inches='tight')
   plt.close()
-  p+=1
+  
   
   # plot coinc SNR versus trace SNR
   fig = plt.figure()
@@ -684,132 +719,41 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   ax.set_ylabel("Trace SNR")
   fig.savefig("%s/%s_trace_snr_vs_coinc_snr.png" % (outdir, tag),\
                bbox_inches='tight')
-  p+=1
+  
   ax.set_xlim([0,30])
   ax.set_ylim([0,30])
   fig.savefig("%s/%s_trace_snr_vs_coinc_snr_zoom.png" % (outdir, tag),\
                bbox_inches='tight')
   plt.close()
-  p+=1
   
-  # plot SNR versus bank veto
-  fig = plt.figure()
-  ax  = fig.gca()
-  ax.loglog(trigSNR, trigBankVeto, 'bx')
-  ax.grid()
-  if injFile:
-    ax.loglog(injSNR, injBankVeto, 'r+')
-  plot_contours(ax, snr_vals,bank_conts, colors)
-  # Add shading to vetoed area
-  limy = ax.get_ylim()[1]
-  polyx = copy.deepcopy(snr_vals)
-  polyy = copy.deepcopy(bank_conts[cont_value])
-  polyx = numpy.append(polyx,[max(snr_vals), min(snr_vals)])
-  polyy = numpy.append(polyy,[limy, limy])
-  ax.fill(polyx, polyy, color = '#dddddd')
-  ax.set_xlabel("Coherent SNR")
-  ax.set_ylabel("Bank Veto")
-  ax.set_xlim([6,1000])
-  fig.savefig("%s/%s_bank_veto_vs_snr.png" % (outdir, tag),\
-               bbox_inches='tight')
-  p+=1
-  ax.set_xlim([6,50])
-  ax.set_ylim([1,2000])
-  fig.savefig("%s/%s_bank_veto_vs_snr_zoom.png" % (outdir, tag),\
-               bbox_inches='tight')
-  plt.close()
-  p+=1
   
-  # plot SNR versus chisq
-  fig = plt.figure()
-  ax  = fig.gca()
-  ax.loglog(trigSNR[trigBestNR != 0], trigChiSquare[trigBestNR != 0],\
-             'bx')
-  ax.grid()
-  if injFile:
-    ax.loglog(injSNR[injBestNR != 0], injChiSquare[injBestNR != 0],\
-               'r+')
-  plot_contours(ax, snr_vals,chi_conts, colors)
-  # Add shading to vetoed area
-  limy = ax.get_ylim()[1]
-  polyx = copy.deepcopy(snr_vals)
-  polyy = copy.deepcopy(chi_conts[cont_value])
-  polyx = numpy.append(polyx,[max(snr_vals), min(snr_vals)])
-  polyy = numpy.append(polyy,[limy, limy])
-  ax.fill(polyx, polyy, color = '#dddddd')
-  ax.set_xlabel("SNR")
-  ax.set_ylabel("Chi Square")
-  ax.set_xlim([6,1000])
-  ax.set_ylim([1,10000])
-  fig.savefig("%s/%s_chi_square_vs_snr.png" % (outdir, tag))
-  p+=1
-  ax.set_xlim([0,50])
-  ax.set_ylim([1,2000])
-  fig.savefig("%s/%s_chi_square_vs_snr_zoom.png" % (outdir, tag))
-  plt.close()
-  p+=1
 
-  # plot SNR versus loudest SNR
-  fig = plt.figure()
-  ax  = fig.gca()
-  ax.plot(trigSNR, trigFirstSNR, 'bx')
-  ax.grid()
-  if injFile:
-    ax.plot(injSNR, injFirstSNR, 'r+')
-  ax.plot([0,50], [4,4], 'g-')
-  ax.set_xlabel("Coherent SNR")
-  ax.set_ylabel("First loudest sngl SNR")
-  fig.savefig("%s/%s_first_snr_vs_snr.png" % (outdir, tag),\
-               bbox_inches='tight')
-  p+=1
-  ax.set_xlim([6,50])
-  ax.set_ylim([0,20])
-  fig.savefig("%s/%s_first_snr_vs_snr_zoom.png" % (outdir, tag),\
-               bbox_inches='tight')
-  plt.close()
-  p+=1
+
+  #plot SNR versus bank veto
+  fig_tag = "%s_%s" %(tag, "bank_veto_vs_snr")
+  veto_series_plot(trigSNR, trigBankVeto, injSNR, injBankVeto, snr_vals, bank_conts, cont_value, colors, "Coherent SNR", "Bank Veto", 6, 1000,1, 2000, outdir, fig_tag)
+
+  #plot  SNR versus chisq
+  fig_tag = "%s_%s" %(tag, "chi_square_vs_snr")
+  veto_series_plot(trigSNR[trigBestNR!=0], trigChiSquare[trigBestNR!=0], injSNR[injBestNR !=0], injChiSquare[injBestNR!=0], snr_vals, chi_conts, colors, "SNR", "Chi Square", 6,1000, 1, 10000, outdir, fig_tag)
+
+  #plot SNR versus auto veto
+  fig_tag = "%s_%s" % (tag, "auto_veto_vs_snr")
+  veto_series_plot(trigSNR, trigAutoVeto, injSnr, injAutoVeto, snr_vals, auto_conts, colors, "Coherent SNR", "Auto Veto", 6, 1000, 1, 10000, outdir, fig_tag)
+
+  #plot SNR versus loudest SNR
+  fig_tag = "%s_%s" % (tag, "first_snr_vs_snr")
+  snr_loudest_plot(trigSNR, trigFirstSNR, injSNR, injFirstSNR, [0,50], [4,4], "Coherent SNR", "First loudest sngl SNR", outdir, fig_tag)
+
+  #plot SNR versus second loudest SNR
+  if(len(ifos)>1): 
+    fig_tag = "%s_%s" % (tag, "second_snr_vs_snr")
+    snr_loudest_plot(trigSNR, trigSecondSNR, injSNR, injSecondSNR, [6,10,50], [2.5,3.5,13.5], "Coherent SNR", "Second loudest sngl SNR", outdir, fig_tag)
   
-  # plot SNR versus second loudest
-  if len(ifos)>1:
-    fig = plt.figure()
-    ax  = fig.gca()
-    ax.plot(trigSNR, trigSecondSNR, 'bx')
-    ax.grid()
-    if injFile:
-      ax.plot(injSNR, injSecondSNR, 'r+')
-    ax.plot([6,10,50], [2.5,3.5,13.5], 'g-')
-    ax.set_xlabel("Coherent SNR")
-    ax.set_ylabel("Second loudest sngl SNR")
-    fig.savefig("%s/%s_second_snr_vs_snr.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    p+=1
-    ax.set_xlim([6,50])
-    ax.set_ylim([0,20])
-    fig.savefig("%s/%s_second_snr_vs_snr_zoom.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    plt.close()
-    p+=1
-  
-  # plot SNR versus third loudest SNR
-  if len(ifos)>2:
-    fig = plt.figure()
-    ax  = fig.gca()
-    ax.plot(trigSNR, trigThirdSNR, 'bx')
-    ax.grid()
-    if injFile:
-      ax.plot(injSNR, injThirdSNR, 'r+')
-    ax.plot([0,50], [4,4], 'g-')
-    ax.set_xlabel("Coherent SNR")
-    ax.set_ylabel("Third loudest sngl SNR")
-    fig.savefig("%s/%s_third_snr_vs_snr.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    p+=1
-    ax.set_xlim([6,50])
-    ax.set_ylim([0,20])
-    fig.savefig("%s/%s_third_snr_vs_snr_zoom.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    plt.close()
-    p+=1
+  #plot SNR versus third loudest SNR
+  if len(ifos)>2: 
+  	fig_tag = "%s_%s" % (tag, "third_snr_vs_snr")
+  	snr_loudest_plot(trigSNR, trigThirdSNR, injSNR, injThirdSNR, [0,50], [4,4], "Coherent SNR", "Third loudest sngl SNR", outdir, fig_tag)
   
   # plot SNR versus IFO SNR
   sens1 = None
@@ -868,167 +812,49 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
     ax.set_ylabel("%s sngl SNR" % ifo)
     fig.savefig("%s/%s_%s_snr_vs_snr.png" % (outdir, tag, ifo),\
                  bbox_inches='tight')
-    p+=1
+    
     ax.set_xlim([6,50])
     ax.set_ylim([0,20])
     fig.savefig("%s/%s_%s_snr_vs_snr_zoom.png" % (outdir, tag, ifo),\
                  bbox_inches='tight')
     plt.close()
-    p+=1
+    
 
-  # Plot single detector chi square plots
+
+#plot single detector chi square plots 
   for ifo in ifos:
-    if sngl_bank_chisq:
-      fig = plt.figure()
-      ax = fig.gca()
-      ax.loglog(trigSNR,trigIfobankCS[ifo], 'bx')
-      ax.grid()
-      if injFile:
-        ax.loglog(injSNR,injIfobankCS[ifo], 'r+')
-      ax.set_xlabel("Coherent SNR")
-      ax.set_ylabel("%s sngl bank veto" % ifo)
-      ax.set_xlim([4,1000])
-      fig.savefig("%s/%s_snr_vs_%s_bankchisq.png" % (outdir, tag,ifo),\
-                   bbox_inches='tight')
-      p+=1
-      ax.set_xlim([4,50])
-      ax.set_ylim([1,2000])
-      fig.savefig("%s/%s_snr_vs_%s_bankchisq_zoom.png" % (outdir,tag, ifo),\
-                   bbox_inches="tight")
-      plt.close()
-      p+=1
-   
-      fig = plt.figure()
-      ax = fig.gca()
-      ax.loglog(trigIfoSNR[ifo],trigIfobankCS[ifo], 'bx')
-      ax.grid()
-      if injFile:
-        ax.loglog(injIfoSNR[ifo],injIfobankCS[ifo], 'r+')
-      ax.set_xlabel("%s sngl SNR" % ifo)
-      ax.set_ylabel("%s sngl bank veto" % ifo)
-      ax.set_xlim([4,1000])
-      fig.savefig("%s/%s_%s_snr_vs_%s_bankchisq.png" % (outdir, tag, ifo,ifo),\
-                   bbox_inches='tight')
-      p+=1
-      ax.set_xlim([4,50])
-      ax.set_ylim([1,2000])
-      fig.savefig("%s/%s_%s_snr_vs_%s_bankchisq_zoom.png"\
-                  % (outdir,tag,ifo,ifo), bbox_inches="tight")
-      plt.close()
-      p+=1
+  	if sngl_bank_chisq:
+  		fig_tag = "%s_%s_%s_%s" % (tag, "snr_vs", ifo, "bankchisq")
+  		single_detect_chi_sq_series(trigSNR, trigIfobankCS[ifo], injSNR, injIfobankCS[ifo], "Coherent SNR", "%s sngl bank veto" % ifo, 4, 1000, outdir, fig_tag)
+
+  		fig_tag = "%s_%s_%s_%s_%s" % (tag, ifo, "snr_vs", ifo, "bankchisq")
+        single_detect_chi_sq_series(trigIfoSNR[ifo], trigIfobankCS[ifo], injIfoSNR[ifo], injIfobankCS[ifo], "%s sngl SNR" % ifo, "%s sngl bank veto" % ifo, 4, 1000, outdir, fig_tag)
 
     if sngl_cont_chisq:
-      fig = plt.figure()
-      ax = fig.gca()
-      ax.loglog(trigSNR,trigIfoautoCS[ifo], 'bx')
-      ax.grid()
-      if injFile:
-        ax.loglog(injSNR,injIfoautoCS[ifo], 'r+')
-      ax.set_xlabel("Coherent SNR")
-      ax.set_ylabel("%s sngl auto veto" % ifo)
-      ax.set_xlim([4,1000])
-      fig.savefig("%s/%s_snr_vs_%s_autochisq.png" % (outdir, tag,ifo),\
-                   bbox_inches='tight')
-      p+=1
-      ax.set_xlim([4,50])
-      ax.set_ylim([1,20000])
-      fig.savefig("%s/%s_snr_vs_%s_autochisq_zoom.png" % (outdir,tag, ifo),\
-                  bbox_inches="tight")
-      plt.close()
-      p+=1
+    	fig_tag = "%s_%s_%s_%s" % (tag, "snr_vs" , ifo, "autochisq")
+    	single_detect_chi_sq_series(trigSNR, trigIfoautoCS[ifo], injSNR, injIfoautoCS[ifo], "Coherent SNR", "%s sngl auto veto" % ifo, 4, 1000, outdir, fig_tag)
 
-      fig = plt.figure()
-      ax = fig.gca()
-      ax.loglog(trigIfoSNR[ifo],trigIfoautoCS[ifo], 'bx')
-      ax.grid()
-      if injFile:
-        ax.loglog(injIfoSNR[ifo],injIfoautoCS[ifo], 'r+')
-      ax.set_xlabel("%s sngl SNR" % ifo)
-      ax.set_ylabel("%s sngl auto veto" % ifo)
-      ax.set_xlim([4,1000])
-      fig.savefig("%s/%s_%s_snr_vs_%s_autochisq.png" % (outdir, tag, ifo,ifo),\
-                   bbox_inches='tight')
-      p+=1
-      ax.set_xlim([4,50])
-      ax.set_ylim([1,20000])
-      fig.savefig("%s/%s_%s_snr_vs_%s_autochisq_zoom.png"\
-                  % (outdir,tag,ifo,ifo), bbox_inches="tight")
-      plt.close()
-      p+=1
+    	fig_tag = "%s_%s_%s_%s_%s" % (tag, ifo, "snr_vs", ifo, "autochisq")
+    	single_detect_chi_sq_series(trigIfoSNR[ifo], trigIfoautoCS[ifo], injIfoSNR[ifo], injIfoautoCS[ifo], "%s sngl SNR" % ifo, "%s sngl auto veto" % ifo, outdir, fig_tag)
 
     if sngl_chisq:
       try:
-        fig = plt.figure()
-        ax = fig.gca()
-        ax.loglog(trigSNR,trigIfostanCS[ifo], 'bx')
-        ax.grid()
-        if injFile:
-          ax.loglog(injSNR,injIfostanCS[ifo], 'r+')
-        ax.set_xlabel("Coherent SNR")
-        ax.set_ylabel("%s sngl chi squared" % ifo)
-        ax.set_xlim([4,1000])
-        fig.savefig("%s/%s_snr_vs_%s_chisq.png" % (outdir, tag,ifo),\
-                    bbox_inches='tight')
-        p+=1
+      	fig_tag = "%s_%s_%s_%s" % (tag, "snr_vs", ifo, "chisq" )
+      	single_detect_chi_sq_series(trigSNR, trigIfostanCS[ifo], injSNR, injIfostanCS[ifo], "Coherent SNR", "%s sngl chi squared" % ifo, 4, 1000, outdir, fig_tag)
 
-        ax.set_xlim([4,50])
-        ax.set_ylim([1,2000])
-        fig.savefig("%s/%s_snr_vs_%s_chisq_zoom.png" % (outdir,tag, ifo),\
-                    bbox_inches="tight")
-        plt.close()
-        p+=1
       except OverflowError:
         sys.stderr.write("WARNING: Sngl chisq versus snr "+\
                          "failed with zeros in a loglog plot\n")
       try:
-        fig = plt.figure()
-        ax = fig.gca()
-        ax.loglog(trigIfoSNR[ifo],trigIfostanCS[ifo], 'bx')
-        ax.grid()
-        if injFile:
-          ax.loglog(injIfoSNR[ifo],injIfostanCS[ifo], 'r+')
-        ax.set_xlabel("%s sngl SNR" % ifo)
-        ax.set_ylabel("%s sngl chi squared" % ifo)
-        ax.set_xlim([4,1000])
-        fig.savefig("%s/%s_%s_snr_vs_%s_chisq.png" % (outdir, tag, ifo,ifo),\
-                    bbox_inches='tight')
-        ax.set_xlim([4,50])
-        ax.set_ylim([1,2000])
-        fig.savefig("%s/%s_%s_snr_vs_%s_chisq_zoom.png" % (outdir,tag,ifo,ifo),\
-                    bbox_inches="tight")
-        plt.close()
-        p+=1
+      	fig_tag = "%s_%s_%s_%s_%s" % (tag, ifo, "snr_vs", ifo, "chisq" )
+      	single_detect_chi_sq_series(trigIfoSNR[ifo], trigIfostanCS[ifo], injIfoSNR[ifo], injIfostanCS[ifo], "%s sngl SNR" %ifo, "%s sngl chi squared" %ifo, 4, 1000, outdir, fig_tag)
+        
       except OverflowError:
         sys.stderr.write("WARNING: Sngl chisq versus sngl snr"+\
                          "failed with zeros in a loglog plot\n")
 
 
-  # plot SNR versus auto veto 
-  fig = plt.figure()
-  ax  = fig.gca()
-  ax.loglog(trigSNR, trigAutoVeto, 'bx')
-  ax.grid()
-  if injFile:
-    ax.loglog(injSNR, injAutoVeto, 'r+')
-  plot_contours(ax, snr_vals, auto_conts, colors)
-  # Add shading to vetoed area
-  limy = ax.get_ylim()[1]
-  polyx = copy.deepcopy(snr_vals)
-  polyy = copy.deepcopy(auto_conts[cont_value])
-  polyx = numpy.append(polyx,[max(snr_vals), min(snr_vals)])
-  polyy = numpy.append(polyy,[limy, limy])
-  ax.fill(polyx, polyy, color = '#dddddd')
-  ax.set_xlabel("Coherent SNR")
-  ax.set_ylabel("Auto Veto")
-  fig.savefig("%s/%s_auto_veto_vs_snr.png" % (outdir, tag),\
-               bbox_inches='tight')
-  ax.set_xlim([6,30])
-  ax.set_ylim([10,20000])
-  fig.savefig("%s/%s_auto_veto_vs_snr_zoom.png" % (outdir, tag),\
-               bbox_inches='tight')
-  plt.close()
-  p+=1
-  
+
   # plot SNR versus SNR-traceSNR
   fig = plt.figure()
   ax  = fig.gca()
@@ -1038,7 +864,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   ax.set_ylabel("SNR - Trace SNR")
   fig.savefig("%s/%s_tracediff_noinj.png" % (outdir, tag),\
                bbox_inches='tight')
-  p+=1
+  
 
   if injFile:
     ax.plot(injSNR, injSNR - injTraceSNR, 'r+')
@@ -1048,7 +874,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
     ax.set_ylim([-5,10])
     fig.savefig("%s/%s_trace_diff_vs_snr_zoom.png" % (outdir, tag),\
                bbox_inches='tight')
-    p+=1
+    
   plt.close()
   
   # plot time versus null stat
@@ -1064,7 +890,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   fig.savefig("%s/%s_null_snr_vs_time.png" % (outdir, tag),\
                bbox_inches='tight')
   plt.close()
-  p+=1
+  
 
   # plot SNR versus rel amp
   try:
@@ -1082,7 +908,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
     fig.savefig("%s/%s_rel_amp_vs_snr_zoom.png" % (outdir, tag),\
                  bbox_inches='tight')
     plt.close()
-    p+=1
+    
   except (OverflowError,ValueError):
     sys.stderr.write("WARNING: Relative amplitude versus coherent SNR "+\
                      "failed.\n")
@@ -1103,7 +929,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
     fig.savefig("%s/%s_rel_amp2_vs_snr_zoom.png" % (outdir, tag),\
                  bbox_inches='tight')
     plt.close()
-    p+=1
+    
   except (OverflowError,ValueError):
     sys.stderr.write("WARNING: Relative amplitude versus coherent SNR "+\
                      "failed with zeros in a loglog plot\n")
@@ -1124,7 +950,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
     fig.savefig("%s/%s_norm3_vs_snr_zoom.png" % (outdir, tag),\
                  bbox_inches='tight')
     plt.close()
-    p+=1
+    
   except (OverflowError,ValueError):
     sys.stderr.write("WARNING: Amplitude factor versus coherent SNR "+\
                      "failed with zeros in a loglog plot\n")
@@ -1141,12 +967,12 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
     ax.set_ylabel("|cos inclination|")
     fig.savefig("%s/%s_inclination_vs_snr.png" % (outdir, tag),\
                  bbox_inches='tight')
-    p+=1
+    
     ax.set_xlim([6,30])
     fig.savefig("%s/%s_inclination_vs_snr_zoom.png" % (outdir, tag),\
                  bbox_inches='tight')
     plt.close()
-    p+=1
+    
   except (OverflowError,ValueError):
     sys.stderr.write("WARNING: cos(inclination) versus coherent SNR "+\
                      "failed with zeros in a loglog plot\n")
@@ -1160,11 +986,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   ax.plot(trigLongitude, trigLatitude, 'ko', markerfacecolor='blue')
   fig.savefig("%s/%s_sky_grid.png" % (outdir, tag))
   plt.close()
-  p+=1 
-
-  # DONE
-  if verbose:
-    sys.stdout.write("%d plots written at %d.\n" % (p, elapsed_time()))
+  
 
 if __name__=='__main__':
 
