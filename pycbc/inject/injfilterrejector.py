@@ -109,6 +109,7 @@ def insert_injfilterrejector_option_group(parser):
     injfilterrejector_group.add_argument(curr_arg, type=int, default=None,
                                          help=_injfilterer_flower_help)
 
+
 def insert_injfilterrejector_option_group_multi_ifo(parser):
     """Add options for injfilterrejector to executable."""
     injfilterrejector_group = \
@@ -175,6 +176,7 @@ class InjFilterRejector(object):
         self._short_psd_storage = {}
         self._short_template_id = None
 
+
     @classmethod
     def from_cli(cls, opt):
         """Create an InjFilterRejector instance from command-line options."""
@@ -197,6 +199,7 @@ class InjFilterRejector(object):
                    f_lower, coarsematch_deltaf=coarsematch_deltaf,
                    coarsematch_fmax=coarsematch_fmax,
                    seg_buffer=seg_buffer)
+
 
     @classmethod
     def from_cli_single_ifo(cls, opt, ifo):
@@ -223,8 +226,9 @@ class InjFilterRejector(object):
                    coarsematch_fmax=coarsematch_fmax[ifo],
                    seg_buffer=seg_buffer[ifo])
 
+
     @classmethod
-    def from_cli_multi_ifos(cls, opt, ifo):
+    def from_cli_multi_ifos(cls, opt, ifos):
         """Create an InjFilterRejector instance from command-line options."""
         inj_filter_rejectors = {}
         for ifo in ifos:
