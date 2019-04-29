@@ -30,8 +30,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 
 from __future__ import division
 
-import os
-import ConfigParser
+import os, six
+from six.moves import configparser as ConfigParser
 import urlparse, urllib
 import logging
 import pycbc

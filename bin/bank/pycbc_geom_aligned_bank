@@ -25,10 +25,11 @@ in a workflow.
 
 from __future__ import division
 import os
+import six
 import copy
 import argparse
 import tempfile
-import ConfigParser
+from six.moves import configparser as ConfigParser
 import numpy
 import logging
 import distutils.spawn

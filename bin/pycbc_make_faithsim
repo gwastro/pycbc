@@ -1,8 +1,8 @@
 #! /usr/bin/env python
-import os
+import os, six
 import logging
 import shutil
-import ConfigParser
+from six.moves import configparser as ConfigParser
 import subprocess
 import glob
 import tempfile

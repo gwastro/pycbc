@@ -27,7 +27,8 @@ creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
 import sys, os, stat, subprocess, logging, math, string, urlparse, urllib
-import ConfigParser, copy
+from six.moves import configparser as ConfigParser
+import copy
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter

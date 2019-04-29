@@ -29,8 +29,8 @@ workflows.
 
 from __future__ import division
 
-import os
-import ConfigParser
+import os, six
+from six.moves import configparser as ConfigParser
 import urlparse, urllib
 import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url

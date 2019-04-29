@@ -16,10 +16,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import os.path, types
+import os.path, types, six
 import codecs
 
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import unescape
 
