@@ -229,7 +229,6 @@ class InjFilterRejector(object):
         for ifo in ifos:
             inj_filter_rejectors[ifo] = cls.from_cli_single_ifo(cls, opt, ifo)
         return inj_filter_rejectors
-        
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
         """Generate and a store a truncated representation of inj_waveform."""
