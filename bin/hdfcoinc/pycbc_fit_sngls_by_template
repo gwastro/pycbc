@@ -37,12 +37,18 @@ def get_stat(statchoice, trigs, threshold):
     s = 0
     while s < size:
         e = s + chunk_size if (s + chunk_size) <= size else size
+
+        # read and format chunk of data so it can be read by key
+        # as the stat classes expect.
         chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
         chunk_stat = stat_instance.single(chunk)
         above = chunk_stat >= threshold
         stat.append(chunk_stat[above])
         select.append(above)
         s += chunk_size
+
+    # Return boolean area that selects the triggers above threshold
+    # along with the stat values above threshold
     return np.concatenate(select), np.concatenate(stat)
 #### MAIN ####
 
