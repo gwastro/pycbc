@@ -24,7 +24,6 @@ from pycbc.events.stat import sngl_statistic_dict
 class HFile(h5py.File):
     """ Low level extensions to the capabilities of reading an hdf5 File
     """
-
     def select(self, fcn, *args, **kwds):
         """ Return arrays from an hdf5 file that satisfy the given function
 
@@ -89,13 +88,13 @@ class HFile(h5py.File):
         if len(args) == 1:
             res = np.concatenate(data[args[0]])
             if return_indices:
-                return indices, res
+                return indices.astype(np.uint64), res
             else:
                 return res
         else:
             res = tuple(np.concatenate(data[arg]) for arg in args)
             if return_indices:
-                return (indices,) + res
+                return (indices.astype(np.uint64),) + res
             else:
                 return res
 
@@ -375,7 +374,8 @@ class SingleDetTriggers(object):
     Provides easy access to the parameters of single-detector CBC triggers.
     """
     # FIXME: Some of these are optional and should be kwargs.
-    def __init__(self, trig_file, bank_file, veto_file, segment_name, filter_func, detector):
+    def __init__(self, trig_file, bank_file, veto_file,
+                 segment_name, filter_func, detector, premask=None):
         logging.info('Loading triggers')
         self.trigs_f = HFile(trig_file, 'r')
         self.trigs = self.trigs_f[detector]
@@ -389,20 +389,28 @@ class SingleDetTriggers(object):
             # empty dict in place of non-existent hdf file
             self.bank = {}
 
+        if premask is not None:
+            self.mask = premask
+        else:
+            self.mask = np.zeros(len(self.trigs['end_time']), dtype=bool)
+
         if veto_file:
             logging.info('Applying veto segments')
             # veto_mask is an array of indices into the trigger arrays
             # giving the surviving triggers
-            logging.info('%i triggers before vetoes',
-                          len(self.trigs['end_time'][:]))
+            logging.info('%i triggers before vetoes', self.mask.sum())
             self.veto_mask, _ = events.veto.indices_outside_segments(
-                self.trigs['end_time'][:], [veto_file],
+                self.end_time, [veto_file],
                 ifo=detector, segment_name=segment_name)
+
+            idx = np.flatnonzero(self.mask)[self.veto_mask]
+            self.mask[:] = False
+            self.mask[idx] = True
             logging.info('%i triggers remain after vetoes',
                           len(self.veto_mask))
-        else:
-            self.veto_mask = np.arange(len(self.trigs['end_time']))
 
+        ### FIXME this should use the hfile select interface to avoid
+        ### memory and processing limitations.
         if filter_func:
             # get required columns into the namespace with dummy attribute
             # names to avoid confusion with other class properties
@@ -415,22 +423,31 @@ class SingleDetTriggers(object):
                     # get template parameters corresponding to triggers
                     setattr(self, '_'+c,
                           np.array(self.bank[c])[self.trigs['template_id'][:]])
+
             self.filter_mask = eval(filter_func.replace('self.', 'self._'))
             # remove the dummy attributes
             for c in self.trigs.keys() + self.bank.keys():
                 if c in filter_func: delattr(self, '_'+c)
-            boolean_veto = np.zeros(len(self.trigs['end_time']), dtype=bool)
-            boolean_veto[self.veto_mask] = True
-            self.mask = np.logical_and(boolean_veto, self.filter_mask)
+
+            self.mask = self.mask & self.filter_mask
             logging.info('%i triggers remain after cut on %s',
                          sum(self.mask), filter_func)
-        else:
-            self.mask = self.veto_mask
 
     def checkbank(self, param):
         if self.bank == {}:
             return RuntimeError("Can't get %s values without a bank file"
                                                                        % param)
+
+    def trig_dict(self):
+        """Returns dict of the masked trigger valuse """
+        mtrigs = {}
+        for k in self.trigs:
+            if len(self.trigs[k]) == len(self.trigs['end_time']):
+                if self.mask is not None:
+                    mtrigs[k] = self.trigs[k][self.mask]
+                else:
+                    mtrigs[k] = self.trigs[k][:]
+        return mtrigs
 
     @classmethod
     def get_param_names(cls):
@@ -447,7 +464,7 @@ class SingleDetTriggers(object):
         be considered."""
         # If this becomes memory intensive we can optimize
         stat_instance = sngl_statistic_dict[ranking_statistic]([])
-        stat = stat_instance.single(self.trigs)[self.mask]
+        stat = stat_instance.single(self.trig_dict())
 
         # Used for naming in plots ... Seems an odd place for this to live!
         if ranking_statistic == "newsnr":
@@ -476,68 +493,69 @@ class SingleDetTriggers(object):
                 new_times.append(curr_time)
             if len(new_index) >= n_loudest:
                 break
+
         index = np.array(new_index)
+        index.sort()
         self.stat = stat[index]
-        if self.mask.dtype == 'bool':
+        if hasattr(self.mask, 'dtype') and self.mask.dtype == 'bool':
             orig_indices = np.flatnonzero(self.mask)[index]
-            self.mask[:] = False
-            self.mask[orig_indices] = True
-        else:
-            self.mask = self.mask[index]
+            self.mask = list(orig_indices)
+        elif isinstance(self.mask, list):
+            self.mask = list(np.array(self.mask)[index])
 
     @property
     def template_id(self):
-        return np.array(self.trigs['template_id'])[self.mask]
+        return self.trigs['template_id'][self.mask]
 
     @property
     def mass1(self):
         self.checkbank('mass1')
-        return np.array(self.bank['mass1'])[self.template_id]
+        return self.bank['mass1'][:][self.template_id]
 
     @property
     def mass2(self):
         self.checkbank('mass2')
-        return np.array(self.bank['mass2'])[self.template_id]
+        return self.bank['mass2'][:][self.template_id]
 
     @property
     def spin1z(self):
         self.checkbank('spin1z')
-        return np.array(self.bank['spin1z'])[self.template_id]
+        return self.bank['spin1z'][:][self.template_id]
 
     @property
     def spin2z(self):
         self.checkbank('spin2z')
-        return np.array(self.bank['spin2z'])[self.template_id]
+        return self.bank['spin2z'][:][self.template_id]
 
     @property
     def spin2x(self):
         self.checkbank('spin2x')
-        return np.array(self.bank['spin2x'])[self.template_id]
+        return self.bank['spin2x'][:][self.template_id]
 
     @property
     def spin2y(self):
         self.checkbank('spin2y')
-        return np.array(self.bank['spin2y'])[self.template_id]
+        return self.bank['spin2y'][:][self.template_id]
 
     @property
     def spin1x(self):
         self.checkbank('spin1x')
-        return np.array(self.bank['spin1x'])[self.template_id]
+        return self.bank['spin1x'][:][self.template_id]
 
     @property
     def spin1y(self):
         self.checkbank('spin1y')
-        return np.array(self.bank['spin1y'])[self.template_id]
+        return self.bank['spin1y'][:][self.template_id]
 
     @property
     def inclination(self):
         self.checkbank('inclination')
-        return np.array(self.bank['inclination'])[self.template_id]
+        return self.bank['inclination'][:][self.template_id]
 
     @property
     def f_lower(self):
         self.checkbank('f_lower')
-        return np.array(self.bank['f_lower'])[self.template_id]
+        return self.bank['f_lower'][:][self.template_id]
 
     @property
     def mtotal(self):
@@ -572,32 +590,32 @@ class SingleDetTriggers(object):
 
     @property
     def end_time(self):
-        return np.array(self.trigs['end_time'])[self.mask]
+        return self.get_column('end_time')
 
     @property
     def template_duration(self):
-        return np.array(self.trigs['template_duration'])[self.mask]
+        return self.get_column('template_duration')
 
     @property
     def snr(self):
-        return np.array(self.trigs['snr'])[self.mask]
+        return self.get_column('snr')
 
     @property
     def sgchisq(self):
-        return np.array(self.trigs['sg_chisq'])[self.mask]
+        return self.get_column('sg_chisq')
 
     @property
     def u_vals(self):
-        return np.array(self.trigs['u_vals'])[self.mask]
+        return self.get_column('u_vals')
 
     @property
     def rchisq(self):
-        return np.array(self.trigs['chisq'])[self.mask] \
-            / (np.array(self.trigs['chisq_dof'])[self.mask] * 2 - 2)
+        return self.get_column('chisq') \
+            / (self.get_column('chisq_dof') * 2 - 2)
 
     @property
     def psd_var_val(self):
-        return np.array(self.trigs['psd_var_val'])[self.mask]
+        return self.get_column('psd_var_val')
 
     @property
     def newsnr(self):
@@ -613,10 +631,10 @@ class SingleDetTriggers(object):
                                            self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):
-        if hasattr(self, cname):
-            return getattr(self, cname)
+        if self.mask is not None:
+            return self.trigs[cname][self.mask]
         else:
-            return np.array(self.trigs[cname])[self.mask]
+            return self.trigs[cname][:]
 
 
 class ForegroundTriggers(object):

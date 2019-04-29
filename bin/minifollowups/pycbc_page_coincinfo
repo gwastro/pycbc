@@ -116,16 +116,20 @@ else:
 table = []
 files = {}
 for fname in args.single_trigger_files:
-    f = h5py.File(fname, 'r')
-    ifos = f.keys()
+    f2 = h5py.File(fname, 'r')
+    ifos = f2.keys()
     for ifo in ifos:
-        files[ifo] = f[ifo]
+        files[ifo] = f2[ifo]
 
 bank = h5py.File(args.bank_file, 'r')
 statmapfile = d
 for ifo in files.keys():
-    if statmapfile['%s/time' % ifo][n] == -1.0:
-        continue
+
+    # ignore ifo if coinc didn't participate (only for multi-ifo workflow)
+    if ('detector_1' not in f.attrs) and \
+       (statmapfile['%s/time' % ifo][n] == -1.0):
+            continue
+
     d = files[ifo]
     i = idx[ifo]
     tid = d['template_id'][i]

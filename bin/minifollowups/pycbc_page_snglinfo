@@ -61,7 +61,7 @@ sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
 
 
 if args.trigger_id is not None:
-    sngl_file.mask = numpy.array([args.trigger_id])
+    sngl_file.mask = [args.trigger_id]
     sngl_file.mask_to_n_loudest_clustered_events(n_loudest=1,
                                       ranking_statistic=args.ranking_statistic)
     stat = sngl_file.stat[0]
@@ -72,20 +72,22 @@ elif args.n_loudest is not None:
                                       ranking_statistic=args.ranking_statistic)
     # Restrict to only the nth loudest, instead of all triggers up to nth
     # loudest
-    stat = sngl_file.stat[-1]
-    sngl_file.mask = sngl_file.mask[-1]
+    stat = sngl_file.stat
+    l = stat.argsort()
+    stat = stat[l[-1]]
+    sngl_file.mask = sngl_file.mask[l[-1]]
 else:
     raise ValueError("Must give --n-loudest or --trigger-id.")
 
 # make a table for the single detector information ############################
-time = sngl_file.end_time 
+time = sngl_file.end_time
 utc = lal.GPSToUTC(int(time))[0:6]
 data = [[pycbc.results.dq.get_summary_page_link(args.instrument, utc),
         str(datetime.datetime(*utc)),
         '%.3f'  % time,
         '%5.2f' % sngl_file.snr,
         '%5.2f' % stat,
-        '%5.2f' % sngl_file.rchisq,            
+        '%5.2f' % sngl_file.rchisq,
         '%i'    % sngl_file.get_column('chisq_dof'),
         '%5.2f' % sngl_file.get_column('coa_phase'),
         '%5.2f' % sngl_file.mass1,
