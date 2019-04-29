@@ -83,6 +83,8 @@ class MultiTemperedSupport(object):
             with h5py.File(inverse_temperatures_file, "r") as fp:
                 try:
                     betas = numpy.array(fp.attrs['betas'])
+                    # betas must be in decending order
+                    betas = numpy.sort(betas)[::-1]
                     ntemps = betas.shape[0]
                 except KeyError:
                     raise AttributeError("No attribute called betas")
