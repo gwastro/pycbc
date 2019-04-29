@@ -124,6 +124,112 @@ class EpsiePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     def betas(self):
         return self._sampler.betas
 
+    @property
+    def samples(self):
+        """A dict mapping ``variable_params`` to arrays of samples currently
+        in memory.
+
+        The arrays have shape ``ntemps x nchains x niterations``.
+
+        The dictionary also contains sampling parameters.
+        """
+        samples = epsie.array2dict(self._sampler.positions)
+        # apply boundary conditions
+        samples = self.model.prior_distribution.apply_boundary_conditions(
+            **samples)
+        # apply transforms to go to model's variable params space
+        if self.model.sampling_transforms is not None:
+            samples = self.model.sampling_transforms.apply(
+                samples, inverse=True)
+        return samples
+
+    @property
+    def model_stats(self):
+        """A dict mapping the model's ``default_stats`` to arrays of values.
+
+        The arrays have shape ``ntemps x nchains x niterations``.
+        """
+        return epsie.array2dict(self._sampler.blobs)
+
+    def clear_samples(self):
+        """Clears the chain and blobs from memory.
+        """
+        # store the iteration that the clear is occuring on
+        self._lastclear = self.niterations
+        self._itercounter = 0
+        # now clear the sampler
+        self._sampler.clear()
+
+    def set_initial_conditions(self, initial_distribution=None,
+                               samples_file=None):
+        """Sets the initial starting point for the MCMC.
+
+        If a starting samples file is provided, will also load the random
+        state from it.
+        """
+        if samples_file is not None:
+            # if a samples file was provided, use it to set the sampler's
+            # state. This includes setting the start position of the sampler to
+            # the last iteration from the file.
+            self.set_state_from_file(samples_file)
+        else:
+            # otherwise, draw samples from the prior to set the start
+            # get the initial samples
+            p0 = self.set_p0(prior=initial_distribution)
+            self._sampler.start_position = p0
+
+    def set_state_from_file(self, filename):
+        """Sets the state of the sampler back to the instance saved in a file.
+        """
+        with self.io(filename, 'r') as fp:
+            rstate = fp.read_random_state()
+            sampler_state = fp.read_sampler_state()
+        # set the global numpy random state for pycbc
+        numpy.random.set_state(rstate)
+        # set the sampler state for epsie
+        self._sampler.set_state(sampler_state)
+
+    @property
+    def pos(self):
+        """A dictionary of the current chain positions."""
+        # we override BaseMCMC's pos property because this can be directly
+        # retrieved from epsie
+        return self._sampler.current_positions
+
+    def run_mcmc(self, niterations):
+        """Advance the chains for a number of iterations.
+
+        Parameters
+        ----------
+        niterations : int
+            Number of samples to get from sampler.
+        """
+        self._sampler.run(niterations)
+
+    def write_results(self, filename):
+        """Writes samples, model stats, acceptance ratios, and random state
+        to the given file.
+
+        Parameters
+        -----------
+        filename : str
+            The file to write to. The file is opened using the ``io`` class
+            in an an append state.
+        """
+        with self.io(filename, 'a') as fp:
+            # write samples
+            fp.write_samples(self.samples, self.model.variable_params,
+                             last_iteration=self.niterations)
+            # write stats
+            fp.write_samples(self.model_stats, last_iteration=self.niterations)
+            # write accpetance ratio
+            acceptance = self._sampler.acceptance
+            fp.write_acceptance_ratio(acceptance['acceptance_ratio'])
+            # write temperature data
+            fp.write_temperature_data(self._sampler.temperature_swaps)
+            # write random state
+            fp.write_state()
+
     @classmethod
     def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
         """Loads the sampler from the given config file.
