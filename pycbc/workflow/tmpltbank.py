@@ -34,7 +34,6 @@ import os
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
-import urlparse, urllib
 import logging
 import pycbc
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
