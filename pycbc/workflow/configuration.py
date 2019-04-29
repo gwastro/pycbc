@@ -151,8 +151,6 @@ def istext(s, text_characters=None, threshold=0.3):
     Code modified from
     https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch01s12.html
     """
-    text_characters = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
-    _null_trans = string.maketrans("", "")
     # if s contains any null, it's not text:
     if "\0" in s:
         return False
