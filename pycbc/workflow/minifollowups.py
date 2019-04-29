@@ -20,7 +20,12 @@ from six.moves.urllib.parse import urljoin
 import distutils.spawn
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
-from itertools import izip_longest
+try:
+    # Python 3
+    from itertools import zip_longest
+except ImportError:
+    # Python 2
+    from itertools import izip_longest as zip_longest
 from Pegasus import DAX3 as dax
 from pycbc.workflow import pegasus_workflow as wdax
 
