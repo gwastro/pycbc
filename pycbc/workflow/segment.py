@@ -29,7 +29,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 
 import os, sys, shutil, stat, copy, itertools
 import logging
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.urlparse import urljoin
 import lal
 from ligo import segments
 from ligo.segments import utils as segmentsUtils
@@ -883,8 +884,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
             cum_node.executed = True
             for fil in cum_node._outputs:
                 fil.node = None
-                fil.PFN(urlparse.urljoin('file:',
-                                         urllib.pathname2url(fil.storage_path)),
+                fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
         add_inputs += cum_node.output_files
 
@@ -906,8 +906,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
         add_node.executed = True
         for fil in add_node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:',
-                                     urllib.pathname2url(fil.storage_path)),
+            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                     site='local')
     return outfile
 
@@ -949,8 +948,7 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
         add_node.executed = True
         for fil in add_node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:',
-                                     urllib.pathname2url(fil.storage_path)),
+            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                     site='local')
     return add_node.output_files[0]
 

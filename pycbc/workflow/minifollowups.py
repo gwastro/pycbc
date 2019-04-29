@@ -15,7 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, os.path
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.urlparse import urljoin
 import distutils.spawn
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
@@ -78,8 +79,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
     exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 
@@ -172,8 +172,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
                      ifos=curr_ifo, out_dir=dax_output, tags=tags)
@@ -274,8 +273,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
     exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 

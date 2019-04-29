@@ -30,8 +30,10 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 
 from __future__ import division
 
-import os, six
+import os
 from six.moves import configparser as ConfigParser
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.urlparse import urljoin
 import urlparse, urllib
 import logging
 import pycbc
@@ -366,7 +368,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
         pre_gen_bank = cp.get_opt_tags('workflow-tmpltbank',
                                            'tmpltbank-pregenerated-bank', tags)
         pre_gen_bank = resolve_url(pre_gen_bank)
-        file_url = urlparse.urljoin('file:', urllib.pathname2url(pre_gen_bank))
+        file_url = urljoin('file:', pathname2url(pre_gen_bank))
         curr_file = File(workflow.ifos, user_tag, global_seg, file_url,
                                                                      tags=tags)
         curr_file.PFN(file_url, site='local')
@@ -379,8 +381,7 @@ def setup_tmpltbank_pregenerated(workflow, tags=None):
                                 'tmpltbank-pregenerated-bank-%s' % ifo.lower(),
                                 tags)
                 pre_gen_bank = resolve_url(pre_gen_bank)
-                file_url = urlparse.urljoin('file:',
-                                             urllib.pathname2url(pre_gen_bank))
+                file_url = urljoin('file:', pathname2url(pre_gen_bank))
                 curr_file = File(ifo, user_tag, global_seg, file_url,
                                                                      tags=tags)
                 curr_file.PFN(file_url, site='local')

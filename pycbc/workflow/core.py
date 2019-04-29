@@ -26,8 +26,11 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string, urlparse, urllib
+import sys, os, stat, subprocess, logging, math, string
 from six.moves import configparser as ConfigParser
+from six.moves import urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.urlparse import urljoin
 import copy
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations
@@ -223,7 +226,7 @@ class Executable(pegasus_workflow.Executable):
         exe_path = cp.get('executables', name)
         self.needs_fetching = False
 
-        exe_url = urlparse.urlparse(exe_path)
+        exe_url = urllib.parse.urlparse(exe_path)
 
         # See if the user specified a list of sites for the executable
         try:
@@ -348,9 +351,8 @@ class Executable(pegasus_workflow.Executable):
                     # If the file exists make sure to use the
                     # fill path as a file:// URL
                     if os.path.isfile(path):
-                        curr_pfn = urlparse.urljoin('file:',
-                                    urllib.pathname2url(
-                                    os.path.abspath(path)))
+                        curr_pfn = urljoin('file:',
+                                           pathname2url(os.path.abspath(path)))
                     else:
                         curr_pfn = path
 
@@ -683,9 +685,8 @@ class Workflow(pegasus_workflow.Workflow):
 
             resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             node.executable.clear_pfns()
-            node.executable.add_pfn(urlparse.urljoin('file:',
-                                    urllib.pathname2url(
-                                    resolved)), site='local')
+            node.executable.add_pfn(urljoin('file:', pathname2url(resolved)),
+                                    site='local')
 
         cmd_list = node.get_command_line()
 
@@ -702,8 +703,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         for fil in node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:',
-                    urllib.pathname2url(fil.storage_path)),
+            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                     site='local')
 
     @staticmethod
@@ -860,7 +860,7 @@ class Node(pegasus_workflow.Node):
 
         # This allows the pfn to be an http(s) URL, which will be
         # downloaded by resolve_url
-        exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+        exe_path = urllib.parse.urlsplit(self.executable.get_pfn()).path
 
         return [exe_path] + arglist
 
@@ -1095,8 +1095,8 @@ class File(pegasus_workflow.File):
             path = os.path.join(directory, filename)
             if not os.path.isabs(path):
                 path = os.path.join(os.getcwd(), path)
-            file_url = urlparse.urlunparse(['file', 'localhost', path, None,
-                                            None, None])
+            file_url = urllib.parse.urlunparse(['file', 'localhost', path,
+                                                None, None, None])
 
         # Let's do a test here
         if use_tmp_subdirs and len(self.segment_list):
@@ -1107,7 +1107,7 @@ class File(pegasus_workflow.File):
         super(File, self).__init__(pegasus_lfn)
 
         if store_file:
-            self.storage_path = urlparse.urlsplit(file_url).path
+            self.storage_path = urllib.parse.urlsplit(file_url).path
         else:
             self.storage_path = None
 
@@ -1161,7 +1161,8 @@ class File(pegasus_workflow.File):
             raise ValueError('This file is temporary and so a lal '
                              'cache entry cannot be made')
 
-        file_url = urlparse.urlunparse(['file', 'localhost', self.storage_path, None,
+        file_url = urllib.parse.urlunparse(['file', 'localhost',
+                                            self.storage_path, None,
                                             None, None])
         cache_entry = lal.utils.CacheEntry(self.ifo_string,
                    self.tagged_description, self.segment_list.extent(), file_url)
@@ -1726,9 +1727,8 @@ class SegFile(File):
         if not file_exists:
             instnc.to_segment_xml()
         else:
-            instnc.PFN(urlparse.urljoin('file:',
-                       urllib.pathname2url(
-                       instnc.storage_path)), site='local')
+            instnc.PFN(urljoin('file:', pathname2url(instnc.storage_path)),
+                       site='local')
         return instnc
 
     @classmethod
@@ -1783,8 +1783,8 @@ class SegFile(File):
 
         xmldoc.unlink()
         fp.close()
-        curr_url = urlparse.urlunparse(['file', 'localhost', xml_file, None,
-                                        None, None])
+        curr_url = urllib.parse.urlunparse(['file', 'localhost', xml_file,
+                                            None, None, None])
 
         return cls.from_segment_list_dict('SEGMENTS', segs, file_url=curr_url,
                                           file_exists=True,
@@ -1857,7 +1857,7 @@ class SegFile(File):
                                     version=1, valid=vsegs))
 
         # write file
-        url = urlparse.urljoin('file:', urllib.pathname2url(self.storage_path))
+        url = urljoin('file:', pathname2url(self.storage_path))
         if not override_file_if_exists or not self.has_pfn(url, site='local'):
             self.PFN(url, site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)

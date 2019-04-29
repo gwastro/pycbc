@@ -25,7 +25,8 @@
 This module is responsible for setting up plotting jobs.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.urlparse import urljoin
 from pycbc.workflow.core import File, FileList, makedir, Executable
 
 def excludestr(tags, substr):
@@ -236,8 +237,7 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
     if vetodef_file is None:
         vetodef_file = workflow.cp.get_opt_tags("workflow-segments",
                                            "segments-veto-definer-file", [])
-        file_url = urlparse.urljoin('file:',
-                                    urllib.pathname2url(vetodef_file))
+        file_url = urljoin('file:', pathname2url(vetodef_file))
         vdf_file = File(workflow.ifos, 'VETO_DEFINER',
                         workflow.analysis_time, file_url=file_url)
         vdf_file.PFN(file_url, site='local')
