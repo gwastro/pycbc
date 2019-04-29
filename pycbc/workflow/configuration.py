@@ -164,8 +164,11 @@ def istext(s, text_characters=None, threshold=0.3):
         # Get the substring of s made up of non-text characters
         t = s.translate(_null_trans, text_characters)
     else:
-        trans = str.maketrans('', '', text_characters)
-        t = s.translate(trans)
+        # Not yet sure how to deal with this in python3. Will need example.
+        return True
+        
+        #trans = str.maketrans('', '', text_characters)
+        #t = s.translate(trans)
 
     # s is 'text' if less than 30% of its characters are non-text ones:
     return len(t)/float(len(s)) <= threshold
