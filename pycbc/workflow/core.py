@@ -31,8 +31,9 @@ from six.moves import configparser as ConfigParser
 from six.moves import urllib
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
+from six.moves import cPickle
 import copy
-import numpy, cPickle, random
+import numpy, random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
 from six import string_types
