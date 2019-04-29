@@ -152,7 +152,7 @@ def istext(s, text_characters=None, threshold=0.3):
     https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch01s12.html
     """
     # if s contains any null, it's not text:
-    if "\0" in s:
+    if six.PY2 and "\0" in s:
         return False
     # an "empty" string is "text" (arbitrary but reasonable choice):
     if not s:
