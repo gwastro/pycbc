@@ -36,10 +36,7 @@ parser.add_argument("--timeslide-interval", type=float,
                          "disabled if the option is omitted.")
 parser.add_argument("--decimation-factor", type=int,
                     help="The factor to reduce the background trigger rate.")
-loudest = parser.add_mutually_exclusive_group()
-loudest.add_argument("--loudest-keep", type=int,
-                     help="Keep this number of loudest triggers from each template.")
-loudest.add_argument("--loudest-keep-value", type=float,
+parser.add_argument("--loudest-keep-value", type=float,
                      help="Keep all coincident triggers above this value.")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
@@ -292,16 +289,7 @@ for tnum in template_ids:
             # "bl_int" keeps track of which triggers are *not* in the bh set. Depending
             # on the decimation factor option we may not store any of these or we may
             # keep a fraction of them corresponding to a subset of the timeslides
-            if args.loudest_keep:
-                sep = len(bi) - args.loudest_keep
-                sep = 0 if sep < 0 else sep
-
-                bsort = numpy.argpartition(c[bi], sep)
-                bl_int = bi[bsort[0:sep]]
-                bh = bi[bsort[sep:]]
-                del bsort
-                del bi
-            elif args.loudest_keep_value:
+            if args.loudest_keep_value:
                 bh = bi[c[bi] > args.loudest_keep_value]
                 bl_int = bi[c[bi] <= args.loudest_keep_value]
             else:
