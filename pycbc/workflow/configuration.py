@@ -241,7 +241,7 @@ def resolve_url(url, directory=None, permissions=None):
                   desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
                     raise ValueError(ecp_cookie_error.format(url))
 
-        output_fp = open(filename, 'w')
+        output_fp = open(filename, 'wb')
         output_fp.write(r.content)
         output_fp.close()
 
