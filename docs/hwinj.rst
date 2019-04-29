@@ -61,7 +61,7 @@ The ``--instruments`` option specifies the IFOs to include in the injection. The
 
 Now let's specify the parameters of the waveform. A full list of the command line options is available with ``pycbc_generate_hwinj --help``. Here we provide an example for generating a coherent 1.4-1.4 component mass binary using the ``EOBNRv2`` approximant. Here is an example of this command line case ::
 
-    --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 
+    --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0
 
 The sample rate of the output ASCII file is given by the ``--sample-rate`` option. The sample rate for each IFO must match, example usage of this option is ::
 
@@ -91,7 +91,7 @@ Here is a full example command for generating an injection in only H1 ::
 
   pycbc_generate_hwinj --high-frequency-cutoff 1000.0 --geocentric-end-time ${GEOCENT_END_TIME} --gps-start-time H1:${GPS_START_TIME} --gps-end-time H1:${GPS_END_TIME} --frame-type H1:${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --approximant SEOBNRv2 --order pseudoFourPN --mass1 25.0 --mass2 25.0 --inclination 0.0 --polarization 0.0 --ra 0.0 --dec 0.0 --taper TAPER_START --network-snr 28 --waveform-low-frequency-cutoff 10.0 --low-frequency-cutoff 40.0 --sample-rate 16384 --pad-data 8 --strain-high-pass 30.0 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --instruments H1
 
-This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``L1-HWINJ_CBC-${START}-${DURATION}.txt`` where ``${START}`` is the start time stamp of the time series and ``${DURATION}`` is the length in seconds of the ASCII waveform file. The LIGOLW XML file will be named ``H1L1-HWINJ_CBC-${START}-${DURATION}.xml.gz``.
+This will generate a single-column ASCII files that contains the h(t) time series for each detector and a LIGOLW XML file with the waveform parameters. The output filenames are not specified on the command line, they are determined internally by ``pycbc_generate_hwinj``. In this example the ASCII file with the waveform will be named ``hwinjcbc_${START}_H1.txt`` where ``${START}`` is the start time stamp of the time series. The LIGOLW XML file will be named ``hwinjcbc_${START}.xml.gz``.
 
 The LIGOLW XML file contains a ``process_params`` table that saves the command line that was used to generate the waveform for future reference. It also includes a ``sim_inspiral`` table and a ``sngl_inspiral`` table. The ``sim_inspiral`` entry allows us to use the parameters of the waveform as a software injection in the PyCBC matched filtering executable ``pycbc_inspiral``. The ``sngl_inspiral`` entry allows us to use the parameters of the waveform as the filter in ``pycbc_inspiral``.
 
@@ -132,9 +132,9 @@ Our inclination distribution will be uniform. The command line option will be ::
   --i-distr uniform
 
 Our source distribution will be random. The command line option will be ::
-  
+
   --l-distr random
-  
+
 We select to use the ``SpinTaylorT4`` approximant and begin the waveforms at 10.0Hz. Here we taper the injection at the start and end of the injection. The command line options will be ::
 
   --waveform SpinTaylorT4threePointFivePN --f-lower 10 --taper-injection startend --band-pass-injection
@@ -177,7 +177,7 @@ Plot ASCII waveform files with ``pycbc_plot_hwinj``
 
 You can plot the ASCII waveform files with an X11 connection. It's strongly recommended to use the X11 connection instead of saving a static image of the entire waveform. The X11 connection allows the user to zoom in and inspect the waveform more closely. A basic inspection would include checking the amplitude, the tapering, and the ringdown  of the waveforms are reasonable. For the ``pycbc_generate_hwinj`` example above one would do ::
 
-  pycbc_plot_hwinj --input-file L1-HWINJ_CBC-${START}-${DURATION}.txt --output-file ${OUTPUT_PATH}
+  pycbc_plot_hwinj --input-file hwinjcbc_${START}_H1.txt --output-file ${OUTPUT_PATH}
 
 where ``${OUTPUT_PATH}`` is the path to the output plot.
 
@@ -193,15 +193,18 @@ The executable ``pycbc_generate_hwinj`` will create an XML file with both a ``si
 
 The analogous software injection command for the example above would be ::
 
-  TMPLTBANK_FILE=H1-HWINJ_CBC-${START}-${DURATION}.xml.gz
-  INSPIRAL_FILE=H1-INSPIRAL_PYCBC-${GPS_START_TIME}-$((${GPS_END_TIME}-${GPS_START_TIME})).xml.gz
+  TMPLTBANK_FILE=hwinjcbc_${START}.xml.gz
+  INSPIRAL_FILE=H1-INSPIRAL_PYCBC-${GPS_START_TIME}-$((${GPS_END_TIME}-${GPS_START_TIME})).hdf
   pycbc_inspiral --segment-end-pad 64  --segment-length 256 --segment-start-pad 64 --psd-estimation median --psd-segment-length 16 --psd-segment-stride 8 --psd-inverse-length 16 --pad-data 8 --sample-rate 4096 --low-frequency-cutoff 40 --strain-high-pass 30 --filter-inj-only --processing-scheme cpu --cluster-method template --approximant SEOBNRv2 --order 8 --snr-threshold 5.5 --chisq-bins 16 --channel-name ${CHANNEL_NAME} --gps-start-time ${GPS_START_TIME} --gps-end-time ${GPS_END_TIME} --trig-start-time $(($GEOCENT_END_TIME - 2)) --trig-end-time $(($GEOCENT_END_TIME + 2)) --frame-type ${FRAME_TYPE} --injection-file ${TMPLTBANK_FILE}  --bank-file ${TMPLTBANK_FILE} --output ${INSPIRAL_FILE} --verbose
 
-Where ``${START}`` is the start of the injection and ``${DURATION}`` is the length of the injection. We kept the same PSD options (eg. ``--psd-segment-length``, etc.), data, high-pass filter, and low-frequency-cutoff.
+Where ``${START}`` is the start of the injection. We kept the same PSD options (eg. ``--psd-segment-length``, etc.), data, high-pass filter, and low-frequency-cutoff.
 
-You can print out the recovered SNR and other parameters with ``lwtprint``, for example ::
+You can print out the recovered SNR and other parameters as follows ::
 
-  lwtprint -t sngl_inspiral -c end_time,snr ${INSPIRAL_FILE}
+  echo `python -c "import numpy;from pycbc.io.hdf import SingleDetTriggers; \
+  h1_triggers=SingleDetTriggers('${INSPIRAL_FILE}',None, None, None, None, 'H1'); \
+  imax=numpy.argmax(h1_triggers.snr); max_snr=h1_triggers.snr[imax]; \
+  time=h1_triggers.end_time[imax]; print(time, max_snr)"`
 
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 Recover ASCII file injection with ``pycbc_inspiral``
@@ -209,10 +212,10 @@ Recover ASCII file injection with ``pycbc_inspiral``
 
 There is an executable ``pycbc_insert_frame_hwinj`` that will read the single-column ASCII file and insert it into frame data. An example command is here ::
 
-  HWINJ_FILE=H1-HWINJ_CBC-${START}-${DURATION}.txt
+  HWINJ_FILE=hwinjcbc_${START}_H1.txt
   pycbc_insert_frame_hwinj --frame-type ${FRAME_TYPE} --channel-name H1:${CHANNEL_NAME} --gps-start-time $((${GPS_START_TIME} - 16)) --gps-end-time $((${GPS_END_TIME} + 16)) --pad-data 8 --strain-high-pass 30.0 --sample-rate 16384 --hwinj-file ${HWINJ_FILE} --hwinj-start-time ${START} --ifo H1 --output-file H1-HWINJ.gwf
 
-Where ``${START}`` is the start of the injection and ``${DURATION}`` is the length of the injection.
+Where ``${START}`` is the start time of the injection.
 
 Then you can run pycbc on the output frame file ``H1-HWINJ.gwf``.
 
