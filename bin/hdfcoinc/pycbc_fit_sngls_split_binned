@@ -87,11 +87,9 @@ parser.add_argument("--veto-file", type=str,
 parser.add_argument("--veto-segment-name", type=str,
                     help="Name(s) of veto segments to apply. Optional, if not "
                     "given all segments for a given ifo will be used")
-parser.add_argument("--stat-fit-threshold", type=float,
+parser.add_argument("--stat-fit-threshold", type=float, required=True,
                     help="Only fit triggers with statistic value above this "
-                    "threshold : can be a space-separated list, then a fit "
-                    "will be done for each threshold.  Required.  Typical "
-                    "values 6.25 6.5 6.75")
+                    "threshold. Required")
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
@@ -206,7 +204,7 @@ boundaries = trigf[args.ifo + '/template_boundaries'][:]
 max_boundary_id = np.argmax(boundaries)
 sorted_boundary_list = np.sort(boundaries)
 
-logging.info('getting stat values from ' + args.trigger_file)
+logging.info('getting stat values from trigger file')
 stat = get_stat(args.sngl_stat, trigf[args.ifo])
 
 logging.info('getting trigger vetoes')
@@ -216,7 +214,7 @@ remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
 
 logging.info('removing vetoed triggers')
 stat[remove] = np.zeros_like(remove)
-logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(len(remove), len(stat), args.veto_segment_name, args.veto_file))
+logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(remove.size, stat.size, args.veto_segment_name, args.veto_file))
 
 # not using trigger file any more
 trigf.close()
@@ -244,18 +242,19 @@ lines = []
 labels = []
 for i, lower, upper in zip(range(args.num_bins), pbins.lower(), pbins.upper()):
     binlabel = r"%.3g - %.3g" % (lower, upper)
-    line1, = axes[0,0].plot([0,0], [0,0], linewidth=2,
+    line, = axes[0,0].plot([0,0], [0,0], linewidth=2,
                      color=histcolors[i], alpha=0.6)
-    line2, = axes[0,0].plot([0,0], [0,0], linestyle='--',
-                     color=histcolors[i], alpha=0.6)
-    lines.append(line1)
-    lines.append(line2)
+    lines.append(line)
     labels.append(binlabel)
-    labels.append(args.fit_function + ' fit to counts')
+
+line_fit, = axes[0,0].plot([0,0], [0,0], linestyle='--',
+                 color='k', alpha=0.6)
+lines.append(line_fit)
+labels.append(args.fit_function + ' fit to counts')
+
 lgd = axes[0,0].legend(lines, labels, labelspacing=0.2,
                        bbox_to_anchor=(-0.5, 0.5), title=args.bin_param)
-
-exit()
+maxyval = 0
 logging.info('starting bin, histogram and plot loop')
 for x in range(args.split_one_nbins):
     logging.info('split {} number {}'.format(args.split_param_one, x))
@@ -316,22 +315,23 @@ for x in range(args.split_one_nbins):
             ax.semilogy(edges[:-1], cum_counts, linewidth=2,
                      color=histcolors[i], alpha=0.6)
             ax.semilogy(fitrange, fitted_cum_counts, "--", color=histcolors[i],
-                     label=r"$\alpha = $%.2f $\pm$ %.2f" % (alpha, sig_alpha))
-            ax.semilogy(fitrange, fitted_cum_counts_plus, ":",
-                        color=histcolors[i])
-            ax.semilogy(fitrange, fitted_cum_counts_minus, ":",
-                        color=histcolors[i])
-            lgd_sub = ax.legend(fontsize='small', framealpha=0.2)
+                     label=r"$\alpha = $%.2f" % alpha)
+            lgd_sub = ax.legend(fontsize='small', framealpha=0.5)
 
             del vals_inbin, vals_above_thresh
 
-        ax.set_xlim(minplot, maxplot)
-        ax.semilogy([args.stat_fit_threshold, args.stat_fit_threshold],
-                    [1,5*cum_counts.max()], 'k', linestyle=':', alpha=0.2)
-        ax.set_ylim(1,5*cum_counts.max())
+        maxyval = max(maxyval, cum_counts.max())
         ax.grid()
 
 logging.info('setting up labels and whatnot')
+
+for i in range(args.split_one_nbins):
+    for j in range(args.split_two_nbins):
+        axes[i,j].semilogy([args.stat_fit_threshold, args.stat_fit_threshold],
+                    [1,5*maxyval], 'k', linestyle=':', alpha=0.2)
+
+axes[0,0].set_ylim(1,5*maxyval)
+axes[0,0].set_xlim(minplot, maxplot)
 
 for j in range(args.split_two_nbins):
     axes[0, j].set_xlabel(args.split_param_two + ': ' + 
