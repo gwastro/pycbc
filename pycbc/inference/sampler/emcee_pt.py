@@ -52,13 +52,18 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         Number of walkers to use in sampler.
     betas : array
         An array of inverse temperature values to be used in emcee_pt's
-        temperature ladder. If not provided, emcee_pt will use the number of
-        temperatures and the number of dimensions of the parameter space to
+        temperature ladder. If not provided, ``emcee_pt`` will use the number
+        of temperatures and the number of dimensions of the parameter space to
         construct the ladder with geometrically spaced temperatures.
-    pool : function with map, Optional
-        A provider of a map function that allows a function call to be run
-        over multiple sets of arguments and possibly maps them to
-        cores/nodes/etc.
+    loglikelihood_function : str, optional
+        Set the function to call from the model for the ``loglikelihood``.
+        Default is ``loglikelihood``.
+    nprocesses : int, optional
+        The number of parallel processes to use. Default is 1
+        (no paralleliztion).
+    use_mpi : bool, optional
+        Use MPI for parallelization. Default (False) will use python's
+        multiprocessing.
     """
     name = "emcee_pt"
     _io = EmceePTFile
@@ -117,17 +122,69 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
     @classmethod
     def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
-        """
-        Loads the sampler from the given config file.
+        """Loads the sampler from the given config file.
 
-        For generating the temperature ladder to be used by emcee_pt, either
-        the number of temperatures (provided by the option 'ntemps'),
-        or the path to a file storing inverse temperature values (provided
-        under a subsection inverse-temperatures-file) can be loaded from the
-        config file. If the latter, the file should be of hdf format, having
-        an attribute named 'betas' storing the list of inverse temperature
-        values to be provided to emcee_pt. If the former, emcee_pt will
-        construct the ladder with "ntemps" geometrically spaced temperatures.
+        The following options are retrieved in the ``[sampler]`` section:
+
+        * ``name`` :
+            Required. This must match the samlper's name.
+        * ``nwalkers`` :
+            Required. The number of walkers to use.
+        * ``ntemps`` :
+            The number of temperatures to use. Either this, or
+            ``inverse-temperatures-file`` must be provided (but not both).
+        * ``inverse-temperatures-file`` :
+            Path to an hdf file containing the inverse temperatures ("betas")
+            to use. The betas will be retrieved from the file's
+            ``.attrs['betas']``. Either this or ``ntemps`` must be provided
+            (but not both).
+        * ``niterations`` :
+            The number of iterations to run the sampler for. Either this or
+            ``effective-nsamples`` must be provided (but not both).
+        * ``effective-nsamples`` :
+            Run the sampler until the given number of effective samples are
+            obtained. A ``checkpoint-interval`` must also be provided in this
+            case. Either this or ``niterations`` must be provided (but not
+            both).
+        * ``thin-interval`` :
+            Thin the samples by the given value before saving to disk. May
+            provide this, or ``max-samples-per-chain``, but not both. If
+            neither options are provided, will save all samples.
+        * ``max-samples-per-chain`` :
+            Thin the samples such that the number of samples per chain per
+            temperature that are saved to disk never exceeds the given value.
+            May provide this, or ``thin-interval``, but not both. If neither
+            options are provided, will save all samples.
+        * ``checkpoint-interval`` :
+            Sets the checkpoint interval to use. Must be provided if using
+            ``effective-nsamples``.
+        * ``checkpoint-signal`` :
+            Set the checkpoint signal, e.g., "USR2". Optional.
+        * ``logl-function`` :
+            The attribute of the model to use for the loglikelihood. If
+            not provided, will default to ``loglikelihood``.
+
+        Settings for burn-in tests are read from ``[sampler-burn_in]``. In
+        particular, the ``burn-in-test`` option is used to set the burn in
+        tests to perform. See
+        :py:func:`MultiTemperedMCMCBurnInTests.from_config` for details. If no
+        ``burn-in-test`` is provided, no burn in tests will be carried out.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser instance
+            Config file object to parse.
+        model : pycbc.inference.model.BaseModel instance
+            The model to use.
+        nprocesses : int, optional
+            The number of parallel processes to use. Default is 1.
+        use_mpi : bool, optional
+            Use MPI for parallelization. Default is False.
+
+        Returns
+        -------
+        EmceePTSampler :
+            The sampler instance.
         """
         section = "sampler"
         # check name
@@ -135,24 +192,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             "name in section [sampler] must match mine")
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
-        if cp.has_option(section, "ntemps") and \
-                cp.has_option(section, "inverse-temperatures-file"):
-            raise ValueError("Must specify either ntemps or "
-                             "inverse-temperatures-file, not both.")
-        if cp.has_option(section, "inverse-temperatures-file"):
-            # get the path of the file containing inverse temperatures values.
-            inverse_temperatures_file = cp.get(section,
-                                               "inverse-temperatures-file")
-            with h5py.File(inverse_temperatures_file, "r") as fp:
-                try:
-                    betas = numpy.array(fp.attrs['betas'])
-                    ntemps = betas.shape[0]
-                except KeyError:
-                    raise AttributeError("No attribute called betas")
-        else:
-            # get the number of temperatures
-            betas = None
-            ntemps = int(cp.get(section, "ntemps"))
+        # get the temps/betas
+        betas, ntemps = cls.betas_from_config(cp, section)
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
