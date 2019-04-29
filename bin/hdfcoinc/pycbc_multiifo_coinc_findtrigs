@@ -34,8 +34,6 @@ parser.add_argument("--coinc-threshold", type=float, default=0.0,
 parser.add_argument("--timeslide-interval", type=float,
                     help="Interval between timeslides in seconds. Timeslides are "
                          "disabled if the option is omitted.")
-parser.add_argument("--decimation-factor", type=int,
-                    help="The factor to reduce the background trigger rate.")
 parser.add_argument("--loudest-keep-values", type=str, nargs='*',
                      help="Apply a sequence of decimations at the givne thresholds"
                           "Ex. 8.5:10 8:10 7.5:10 7:10")
@@ -301,19 +299,20 @@ for tnum in template_ids:
                 total_factor *= factor
 
                 # triggers not being further decimated
-                idxk = bi_dec[c[bi_dec] >= thresh]
+                upper = c[bi_dec] >= thresh
+                idxk = bi_dec[upper]
 
                 # we'll decimate these triggers now
                 idx = bi_dec[c[bi_dec] < thresh]
                 idx = idx[slide[idx] % total_factor == 0]
 
-                bi_dec = numpy.concatenate(idxk, idx)
-                dec = numpy.concatenate([dec[idxk],
+                bi_dec = numpy.concatenate([idxk, idx])
+                dec = numpy.concatenate([dec[upper],
                                         numpy.repeat(total_factor, len(idx))]
                                        )
 
             ti = numpy.concatenate([bi_dec, fi]).astype(numpy.uint32)
-            dec_factor = numpy.concatenate([dec, numpy.ones(len(fi))])
+            dec_fac = numpy.concatenate([dec, numpy.ones(len(fi))])
             logging.info('%s after decimation' % len(ti))
 
             gs={}
