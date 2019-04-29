@@ -28,6 +28,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/initialization_inifile.
 """
 
 import os
+import six
 import re
 import stat
 import string
@@ -158,8 +159,16 @@ def istext(s, text_characters=None, threshold=0.3):
     # an "empty" string is "text" (arbitrary but reasonable choice):
     if not s:
         return True
-    # Get the substring of s made up of non-text characters
-    t = s.translate(_null_trans, text_characters)
+
+    text_characters = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
+    if six.PY2:
+        _null_trans = string.maketrans("", "")
+        # Get the substring of s made up of non-text characters
+        t = s.translate(_null_trans, text_characters)
+    else:
+        trans = str.maketrans('', '', text_characters)
+        t = s.translate(trans)
+
     # s is 'text' if less than 30% of its characters are non-text ones:
     return len(t)/float(len(s)) <= threshold
 
