@@ -643,7 +643,7 @@ container._adag.addDependency(dep)
 container.save()
 
 # Protect the open box results folder
-os.chmod(rdir['open_box_result'], 0700)
+os.chmod(rdir['open_box_result'], 0o0700)
 
 logging.info("Written dax.")
 
