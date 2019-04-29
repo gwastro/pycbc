@@ -30,7 +30,7 @@ import sys, os, stat, subprocess, logging, math, string
 from six.moves import configparser as ConfigParser
 from six.moves import urllib
 from six.moves.urllib.request import pathname2url
-from six.moves.urllib.urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 import copy
 import numpy, cPickle, random
 from itertools import combinations, groupby, permutations

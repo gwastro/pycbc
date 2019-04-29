@@ -30,7 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 import os, sys, shutil, stat, copy, itertools
 import logging
 from six.moves.urllib.request import pathname2url
-from six.moves.urllib.urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 import lal
 from ligo import segments
 from ligo.segments import utils as segmentsUtils

@@ -33,7 +33,7 @@ from __future__ import division
 import os
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.request import pathname2url
-from six.moves.urllib.urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 import urlparse, urllib
 import logging
 import pycbc

@@ -16,7 +16,7 @@
 
 import logging, os.path
 from six.moves.urllib.request import pathname2url
-from six.moves.urllib.urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 import distutils.spawn
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr

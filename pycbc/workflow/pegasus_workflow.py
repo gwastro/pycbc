@@ -28,7 +28,7 @@ provides additional abstraction and argument handling.
 """
 import os
 from six.moves.urllib.request import pathname2url
-from six.moves.urllib.urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 from Pegasus.catalogs.transformation_catalog import TransformationCatalog
 import Pegasus.DAX3 as dax
 
