@@ -25,6 +25,7 @@ from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
 from .base_multitemper import (MultiTemperedSupport,
                                MultiTemperedAutocorrSupport)
 from ..burn_in import MultiTemperedMCMCBurnInTests
+from ..jump_proposals import epsie_proposals_from_config
 
 
 class EpsiePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
@@ -170,27 +171,24 @@ class EpsiePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             The attribute of the model to use for the loglikelihood. If
             not provided, will default to ``loglikelihood``.
 
-        In addition, the following sections are read:
-
-        * ``[sampler-burn_in]``
-            Sets the burn in test and options to do. In particular, the
-            ``burn-in-test`` option is used to set the burn in tests to
-            perform. See :py:func:`MultiTemperedMCMCBurnInTests.from_config`
-            for details. If no ``burn-in-test`` is provided, no burn in tests
-            will be carried out.
-        * ``[jump_proposal-{params}]``
-            Sets the jump proposals and arguments to use for specific
-            sampling parameters. See :py:func:`sampler.proposals.from_config`
-            for details.
-        * ``[jump_proposal-default]``
-            Sets the default jump proposal and arguments to use for all other
-            parameters. See :py:func:`sampler.proposals.from_config` for
-            details. If no default is provided, will use
-            :py:class:`epsie.ParallelTemperedSampler`'s default jump proposal.
+        Jump proposals must be provided for every sampling
+        parameter. These are retrieved from subsections
+        ``[jump_proposal-{params}]``, where params is a
+        :py:const:`pycbc.VARARGS_DELIM` separated list of parameters the
+        proposal should be used for. See
+        :py:func:`inference.jump_proposals.epsie_proposals_from_config` for
+        details.
 
         .. note::
             Jump proposals should be specified for **sampling parameters**,
             not **variable parameters**.
+
+        Settings for burn-in tests are read from ``[sampler-burn_in]``. In
+        particular, the ``burn-in-test`` option is used to set the burn in
+        tests to perform. See
+        :py:func:`MultiTemperedMCMCBurnInTests.from_config` for details. If no
+        ``burn-in-test`` is provided, no burn in tests will be carried out.
+
 
         Parameters
         ----------
@@ -214,33 +212,26 @@ class EpsiePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             "name in section [sampler] must match mine")
         nchains = int(cp.get(section, "nchains"))
         seed = int(cp.get(section, "seed"))
-        if cp.has_option(section, "ntemps") and \
-                cp.has_option(section, "inverse-temperatures-file"):
-            raise ValueError("Must specify either ntemps or "
-                             "inverse-temperatures-file, not both.")
-        if cp.has_option(section, "inverse-temperatures-file"):
-            # get the path of the file containing inverse temperatures values.
-            inverse_temperatures_file = cp.get(section,
-                                               "inverse-temperatures-file")
-            with h5py.File(inverse_temperatures_file, "r") as fp:
-                try:
-                    betas = numpy.array(fp.attrs['betas'])
-                    ntemps = betas.shape[0]
-                except KeyError:
-                    raise AttributeError("No attribute called betas")
-        else:
-            # get the number of temperatures
-            betas = None
-            ntemps = int(cp.get(section, "ntemps"))
+        ntemps, betas = cls.betas_from_config(cp, section)
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
+        # get the proposals
+        proposals = epsie_proposals_from_config(cp)
+        # check that all of the sampling parameters have a specified
+        # proposal
+        sampling_params = set(model.sampling_parameters)
+        proposal_params = set(proposals.keys())
+        missing = sampling_params - proposal_params
+        if missing:
+            raise ValueError("Missing jump proposals for sampling parameters "
+                             "{}".format(', '.join(missing)))
         # initialize
-        obj = cls(model, nchains, ntemps=ntemps, betas=betas,
-                  proposals=None, default_proposal=None,
-                  default_proposal_args=None, seed=seed,
+        obj = cls(model.sampling_params, model, nchains,
+                  ntemps=ntemps, betas=betas,
+                  proposals=proposals, seed=seed,
                   checkpoint_interval=checkpoint_interval,
                   checkpoint_signal=checkpoint_signal,
                   loglikelihood_function=logl,
