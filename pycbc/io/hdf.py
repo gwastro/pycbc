@@ -457,7 +457,7 @@ class SingleDetTriggers(object):
 
     def apply_mask(self, logic_mask):
         """Apply a boolean array to the set of triggers"""
-        if hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool')
+        if hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool'):
             orig_indices = self.mask.nonzero()[0][logic_mask]
             self.mask[:] = False
             self.mask[orig_indices] = True
