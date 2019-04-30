@@ -74,8 +74,8 @@ elif args.n_loudest is not None:
     # loudest
     stat = sngl_file.stat
     l = stat.argsort()
-    stat = stat[l[-1]]
-    sngl_file.mask = sngl_file.mask[l[-1]]
+    stat = stat[l[0]]
+    sngl_file.mask = sngl_file.mask[l[0]]
 else:
     raise ValueError("Must give --n-loudest or --trigger-id.")
 
