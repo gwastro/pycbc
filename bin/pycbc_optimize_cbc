@@ -1,0 +1,99 @@
+#!/bin/env python
+"""Followup a candidate"""
+import h5py, numpy, argparse, logging
+import pycbc.version, pycbc.strain, pycbc.waveform, pycbc.pnutils
+from pycbc.types.optparse import DictWithDefaultReturn
+
+def remove_options(parser, options):
+    for option in options:
+        for action in parser._actions:
+            if vars(action)['option_strings'][0] == option:
+                parser._handle_conflict_resolve(None,[(option,action)])
+                break
+
+def trigger_from_statmap(args):
+    pass
+
+def params_from_waveformstr(wstr):
+    wparams = {}
+    for param in wstr:
+        key, value = param.split(':')
+        try:
+            rvalue = float(value)
+        except ValueError:
+            rvalue = value
+        wparams[key] = rvalue
+    return wparams
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--output-file')
+
+# Options related to getting trigger information from workflow products
+parser.add_argument('--bank-file',
+    help="HDF format template bank file")
+parser.add_argument('--statmap-file',
+    help="HDF format statmap file")
+parser.add_argument('--statmap-ids', nargs='+')
+
+
+# Options to directly supply followup information
+parser.add_argument('--template-parameters', nargs='+')
+parser.add_argument('--trigger-time', type=float)
+parser.add_argument('--instruments', nargs='+',
+    help="Maximum set of instruments which may be used")
+
+# Options related to data / signal processing options
+parser.add_argument('--low-frequency-cutoff', type=float)
+pycbc.strain.insert_strain_option_group_multi_ifo(parser)
+remove_options(parser, ['--gps-start-time', '--gps-end-time'])
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+# Calculate total desired data region
+psdlen = 128
+psdseg = 8
+
+waveparams = params_from_waveformstr(args.template_parameters)
+templatelen = pycbc.waveform.get_waveform_filter_length_in_time(**waveparams)
+filterbuffer = templatelen + 3.0 + psdseg * 2
+filterbuffer = pycbc.pnutils.nearest_larger_binary_number(filterbuffer)
+logging.info('Template duration is %s seconds', templatelen)
+logging.info('We need %s seconds to filter this waveform', filterbuffer)
+
+# Determine what data we need to read
+args.gps_start_time = DictWithDefaultReturn()
+args.gps_end_time = DictWithDefaultReturn()
+for ifo in args.instruments:
+    ctime = int(args.trigger_time)
+
+    filter_end = int(args.trigger_time + psdseg + 2)
+    filter_start = filter_end - filterbuffer
+    logging.info('%s: Filter buffer goes from %s-%s', ifo, filter_start, filter_end)
+
+    psd_start = int(args.trigger_time - psdlen // 2)
+    psd_end = int(args.trigger_time + psdlen // 2)
+    logging.info('%s: PSD data will be %s-%s', ifo, psd_start, psd_end)
+
+    data_start = min(psd_start, filter_start) - args.pad_data[ifo]
+    data_end = max(psd_end, filter_end) + args.pad_data[ifo]
+    logging.info('%s: Will need data from %s-%s', ifo, data_start, data_end)
+
+    args.gps_start_time[ifo] = data_start + args.pad_data[ifo]
+    args.gps_end_time[ifo] = data_end - args.pad_data[ifo]
+
+logging.info('Calculating Strain around trigger')
+strain = pycbc.strain.from_cli_multi_ifos(args, args.instruments,
+                                          dyn_range_fac=pycbc.DYN_RANGE_FAC)
+stilde = {ifo: strain[ifo].to_frequencyseries() for ifo in strain}
+
+logging.info('Calculating PSD around time')
+psd = {ifo: strain[ifo].filter_psd(psdseg,
+                                   stilde[ifo].delta_f,
+                                   args.strain_high_pass[ifo]) for ifo in strain}
+
+logging.info('Optimizing Parameters')
+
