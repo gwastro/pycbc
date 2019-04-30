@@ -176,7 +176,6 @@ class InjFilterRejector(object):
         self._short_psd_storage = {}
         self._short_template_id = None
 
-
     @classmethod
     def from_cli(cls, opt):
         """Create an InjFilterRejector instance from command-line options."""
@@ -199,7 +198,6 @@ class InjFilterRejector(object):
                    f_lower, coarsematch_deltaf=coarsematch_deltaf,
                    coarsematch_fmax=coarsematch_fmax,
                    seg_buffer=seg_buffer)
-
 
     @classmethod
     def from_cli_single_ifo(cls, opt, ifo):
@@ -226,13 +224,12 @@ class InjFilterRejector(object):
                    coarsematch_fmax=coarsematch_fmax[ifo],
                    seg_buffer=seg_buffer[ifo])
 
-
     @classmethod
     def from_cli_multi_ifos(cls, opt, ifos):
         """Create an InjFilterRejector instance from command-line options."""
         inj_filter_rejectors = {}
         for ifo in ifos:
-            inj_filter_rejectors[ifo] = cls.from_cli_single_ifo(cls, opt, ifo)
+            inj_filter_rejectors[ifo] = cls.from_cli_single_ifo(opt, ifo)
         return inj_filter_rejectors
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
