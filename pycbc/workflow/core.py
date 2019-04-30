@@ -298,7 +298,7 @@ class Executable(pegasus_workflow.Executable):
             if namespace == 'pycbc' or namespace == 'container':
                 continue
 
-            value = string.strip(cp.get(sec, opt))
+            value = cp.get(sec, opt).strip()
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value, force=True)
 
@@ -317,7 +317,7 @@ class Executable(pegasus_workflow.Executable):
             The section containing options for this job.
         """
         for opt in cp.options(sec):
-            value = string.strip(cp.get(sec, opt))
+            value = cp.get(sec, opt).strip()
             opt = '--%s' %(opt,)
             if opt in self.file_input_options:
                 # This now expects the option to be a file
