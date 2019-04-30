@@ -224,18 +224,16 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     N = (len(psd)-1)*2
 
-    inv_asd = FrequencySeries((1. / psd)**0.5, delta_f=psd.delta_f, \
+    inv_asd = FrequencySeries(zeros(len(psd)), delta_f=psd.delta_f, \
         dtype=complex_same_precision_as(psd))
 
-    inv_asd[0] = 0
-    inv_asd[N//2] = 0
-    q = TimeSeries(numpy.zeros(N), delta_t=(N / psd.delta_f), \
-        dtype=real_same_precision_as(psd))
-
+    kmin = 1
     if low_frequency_cutoff:
         kmin = int(low_frequency_cutoff / psd.delta_f)
-        inv_asd[0:kmin] = 0
 
+    inv_asd[kmin:N//2] = (1.0 / psd[kmin:N//2]) ** 0.5
+    q = TimeSeries(numpy.zeros(N), delta_t=(N / psd.delta_f), \
+        dtype=real_same_precision_as(psd))
     ifft(inv_asd, q)
 
     trunc_start = max_filter_len // 2
