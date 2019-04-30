@@ -457,6 +457,36 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
+    def filter_psd(self, segment_duration, delta_f, flow):
+        """ Calculate the power spectral density of this time series.
+
+        Use the `pycbc.psd.welch` method to estimate the psd of this time segment.
+        The psd is then truncated in the time domain to the segment duration
+        and interpolated to the requested sample frequency.
+
+        Parameters
+        ----------
+        segment_duration: float
+            Duration in seconds to use for each sample of the spectrum.
+        delta_f : float
+            Frequency spacing to return psd at.
+        flow : float
+            The low frequency cutoff to apply when truncating the inverse
+            spectrum.
+
+        Returns
+        -------
+        psd : FrequencySeries
+            Frequency series containing the estimated PSD.
+        """
+        from pycbc.psd import interpolate, inverse_spectrum_truncation
+        p = self.psd(segment_duration)
+        samples = int(p.sample_rate * segment_duration)
+        p = interpolate(p, delta_f)
+        return inverse_spectrum_truncation(p, samples,
+                                           low_frequency_cutoff=flow,
+                                           trunc_method='hann')
+
     def whiten(self, segment_duration, max_filter_duration, trunc_method='hann',
                      remove_corrupted=True, low_frequency_cutoff=None,
                      return_psd=False, **kwds):
