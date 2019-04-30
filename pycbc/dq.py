@@ -83,6 +83,7 @@ def parse_veto_definer(veto_def_filename):
 
         veto_info = {'name': name[i],
                      'version': version[i],
+                     'full_name': name[i]+':'+str(version[i]),
                      'start': start[i],
                      'end': end[i],
                      'start_pad': start_pad[i],
@@ -177,10 +178,10 @@ def query_flag(ifo, name, start_time, end_time,
     elif source == 'dqsegdb':
         # Let's not hard require dqsegdb to be installed if we never get here.
         try:
-            from dqsegdb.apicalls import dqsegdbQueryTimes as query
+            from dqsegdb2.query import query_segments as query
         except ImportError:
-            raise ValueError("Could not query flag. Install dqsegdb"
-                             ":'pip install dqsegdb'")
+            raise ValueError("Could not query flag. Install dqsegdb2"
+                             ":'pip install dqsegdb2'")
 
         # The veto definer will allow the use of MACRO names
         # These directly correspond the name defined in the veto definer file.
@@ -192,9 +193,8 @@ def query_flag(ifo, name, start_time, end_time,
         if veto_definer is not None and segment_name in veto_def[ifo]:
             for flag in veto_def[ifo][segment_name]:
                 partial = segmentlist([])
-                segs = query("https", server, ifo, flag['name'],
-                             flag['version'], 'active',
-                             int(start_time), int(end_time))[0]['active']
+                segs = query(ifo+':'+flag['full_name'], int(start_time),
+                             int(end_time), host=server)['active']
 
                 # Apply padding to each segment
                 for rseg in segs:
@@ -209,9 +209,9 @@ def query_flag(ifo, name, start_time, end_time,
 
         else:  # Standard case just query directly.
             try:
-                segs = query("https", server, ifo, name, version,
-                             'active', int(start_time),
-                             int(end_time))[0]['active']
+                segs = query(':'.join([ifo, name, str(version)]),
+                             int(start_time), int(end_time),
+                             host=server)['active']
                 for rseg in segs:
                     flag_segments.append(segment(rseg[0], rseg[1]))
             except Exception as e:
