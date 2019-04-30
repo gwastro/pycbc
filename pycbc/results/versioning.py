@@ -161,6 +161,13 @@ def write_code_versions(path, cp):
     code_version_dict = get_code_version_numbers(cp)
     html_text = ''
     for key,value in code_version_dict.items():
+        # value might be a str or a bytes object in python3. python2 is happy
+        # to combine these objects (or uniocde and str, their equivalents)
+        # but python3 is not.
+        try:
+            value = value.decode()
+        except AttributeError:
+            pass
         html_text+= '<li><b>%s</b>:<br><pre>%s</pre></li><hr><br><br>\n' \
             % (key, str(value).replace('@', '&#64;'))
     kwds = {'render-function' : 'render_text',
