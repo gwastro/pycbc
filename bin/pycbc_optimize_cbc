@@ -1,7 +1,9 @@
 #!/bin/env python
 """Followup a candidate"""
 import h5py, numpy, argparse, logging
-import pycbc.version, pycbc.strain, pycbc.waveform, pycbc.pnutils
+import pycbc.version, pycbc.strain, pycbc.waveform, pycbc.pnutils, pycbc.filter
+import pycbc.conversions
+from scipy.optimize import differential_evolution
 from pycbc.types.optparse import DictWithDefaultReturn
 
 def remove_options(parser, options):
@@ -24,6 +26,28 @@ def params_from_waveformstr(wstr):
             rvalue = value
         wparams[key] = rvalue
     return wparams
+
+def network_snr(wparam, trig_time, stilde, psd, fixed):
+    mchirp = wparam[0]
+    q = wparam[1]
+    spin = wparam[2]
+
+    p = fixed.copy()
+    p['mass1'] = pycbc.conversions.mass1_from_mchirp_q(mchirp, q)
+    p['mass2'] = pycbc.conversions.mass2_from_mchirp_q(mchirp, q)
+    p['spin1z'] = spin
+    p['spin2z'] = spin
+    hp, _ = pycbc.waveform.get_fd_waveform(delta_f=stilde.values()[0].delta_f,
+                                           **p)
+    hp = hp.astype(numpy.complex64)
+    hp.resize(len(stilde.values()[0]))
+    nsnr = 0
+    for ifo in strain:
+        snr = pycbc.filter.matched_filter(hp, stilde[ifo], psd=psd[ifo],
+                                         low_frequency_cutoff=fixed['f_lower'])
+        z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
+        nsnr += abs(z).max() ** 2.0
+    return -nsnr ** 0.5
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -59,27 +83,31 @@ psdseg = 8
 
 waveparams = params_from_waveformstr(args.template_parameters)
 templatelen = pycbc.waveform.get_waveform_filter_length_in_time(**waveparams)
-filterbuffer = templatelen + 3.0 + psdseg * 2
+filterbuffer = templatelen + 5.0 + psdseg * 2
 filterbuffer = pycbc.pnutils.nearest_larger_binary_number(filterbuffer)
 logging.info('Template duration is %s seconds', templatelen)
 logging.info('We need %s seconds to filter this waveform', filterbuffer)
 
-# Determine what data we need to read
+# Determine what data we need to read and prepare
 args.gps_start_time = DictWithDefaultReturn()
 args.gps_end_time = DictWithDefaultReturn()
+psd_start = {}
+psd_end = {}
+filter_start = {}
+filter_end = {}
 for ifo in args.instruments:
     ctime = int(args.trigger_time)
 
-    filter_end = int(args.trigger_time + psdseg + 2)
-    filter_start = filter_end - filterbuffer
-    logging.info('%s: Filter buffer goes from %s-%s', ifo, filter_start, filter_end)
+    filter_end[ifo] = int(args.trigger_time + psdseg + 2)
+    filter_start[ifo] = filter_end[ifo] - filterbuffer
+    logging.info('%s: Filter buffer goes from %s-%s', ifo, filter_start[ifo], filter_end[ifo])
 
-    psd_start = int(args.trigger_time - psdlen // 2)
-    psd_end = int(args.trigger_time + psdlen // 2)
-    logging.info('%s: PSD data will be %s-%s', ifo, psd_start, psd_end)
+    psd_start[ifo] = int(args.trigger_time - psdlen // 2)
+    psd_end[ifo] = int(args.trigger_time + psdlen // 2)
+    logging.info('%s: PSD data will be %s-%s', ifo, psd_start[ifo], psd_end[ifo])
 
-    data_start = min(psd_start, filter_start) - args.pad_data[ifo]
-    data_end = max(psd_end, filter_end) + args.pad_data[ifo]
+    data_start = min(psd_start[ifo], filter_start[ifo]) - args.pad_data[ifo]
+    data_end = max(psd_end[ifo], filter_end[ifo]) + args.pad_data[ifo]
     logging.info('%s: Will need data from %s-%s', ifo, data_start, data_end)
 
     args.gps_start_time[ifo] = data_start + args.pad_data[ifo]
@@ -88,12 +116,44 @@ for ifo in args.instruments:
 logging.info('Calculating Strain around trigger')
 strain = pycbc.strain.from_cli_multi_ifos(args, args.instruments,
                                           dyn_range_fac=pycbc.DYN_RANGE_FAC)
-stilde = {ifo: strain[ifo].to_frequencyseries() for ifo in strain}
+
+stilde = {ifo: strain[ifo].time_slice(
+                        filter_start[ifo],
+                        filter_end[ifo]).to_frequencyseries() for ifo in strain}
 
 logging.info('Calculating PSD around time')
-psd = {ifo: strain[ifo].filter_psd(psdseg,
-                                   stilde[ifo].delta_f,
-                                   args.strain_high_pass[ifo]) for ifo in strain}
+psd = {ifo: strain[ifo].time_slice(psd_start[ifo], psd_end[ifo]).filter_psd(
+                       psdseg,
+                       stilde[ifo].delta_f,
+                       args.strain_high_pass[ifo]) for ifo in strain}
 
 logging.info('Optimizing Parameters')
+################# Need better way to specific limits and ensure boundaries#####
+m1, m2 = waveparams['mass1'], waveparams['mass2']
+mchirp = pycbc.conversions.mchirp_from_mass1_mass2(m1, m2)
+minchirp = mchirp * (1 - mchirp / 100.0)
+maxchirp = mchirp * (1 + mchirp / 100.0)
+if minchirp < 1:
+    minchirp = 1
+if maxchirp > 80:
+    maxchirp = 80
 
+q = max(m1 / m2, m2 / m1)
+minq = q * 0.7
+maxq = q * 1.5
+if minq < 1:
+    minq = 1.0
+if maxq > 100:
+    maxq = 100
+
+logging.info('Using chirp mass range %s-%s', minchirp, maxchirp)
+logging.info('Using mass ratio range %s-%s', minq, maxq)
+
+bounds = [(minchirp, maxchirp),
+          (1, 2),
+          (-.98, 0.98), # Range of Spin
+         ]
+result = differential_evolution(network_snr, bounds,
+                                args=(args.trigger_time, stilde, psd, waveparams))
+print result
+logging.info('Done')
