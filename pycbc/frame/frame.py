@@ -140,7 +140,7 @@ def locations_to_cache(locations, latest=False):
     return cum_cache
 
 def read_frame(location, channels, start_time=None,
-               end_time=None, duration=None, check_integrity=True,
+               end_time=None, duration=None, check_integrity=False,
                sieve=None):
     """Read time series from frame data.
 
