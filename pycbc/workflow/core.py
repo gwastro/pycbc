@@ -99,7 +99,7 @@ def is_condor_exec(exe_path):
     truth_value  : boolean
         Return True if the exe is condor compiled, False otherwise.
     """
-    if check_output(['nm', '-a', exe_path]).find('condor') != -1:
+    if str(check_output(['nm', '-a', exe_path])).find('condor') != -1:
         return True
     else:
         return False
