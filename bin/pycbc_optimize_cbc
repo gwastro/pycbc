@@ -2,7 +2,7 @@
 """Followup a candidate"""
 import h5py, numpy, argparse, logging
 import pycbc.version, pycbc.strain, pycbc.waveform, pycbc.pnutils, pycbc.filter
-import pycbc.conversions
+import pycbc.conversions, pycbc.types
 from scipy.optimize import differential_evolution
 from pycbc.types.optparse import DictWithDefaultReturn
 
@@ -37,16 +37,17 @@ def network_snr(wparam, trig_time, stilde, psd, fixed):
     p['mass2'] = pycbc.conversions.mass2_from_mchirp_q(mchirp, q)
     p['spin1z'] = spin
     p['spin2z'] = spin
-    hp, _ = pycbc.waveform.get_fd_waveform(delta_f=stilde.values()[0].delta_f,
-                                           **p)
-    hp = hp.astype(numpy.complex64)
-    hp.resize(len(stilde.values()[0]))
+    out = pycbc.types.zeros(len(psd.values()[0]), dtype=numpy.complex64)
+    hp = pycbc.waveform.get_waveform_filter(out,
+                                            delta_f=stilde.values()[0].delta_f,
+                                             **p)
     nsnr = 0
     for ifo in strain:
         snr = pycbc.filter.matched_filter(hp, stilde[ifo], psd=psd[ifo],
                                          low_frequency_cutoff=fixed['f_lower'])
         z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
         nsnr += abs(z).max() ** 2.0
+        print abs(z).max(), mchirp, q, spin
     return -nsnr ** 0.5
 
 parser = argparse.ArgumentParser()
@@ -82,6 +83,10 @@ psdlen = 128
 psdseg = 8
 
 waveparams = params_from_waveformstr(args.template_parameters)
+m1, m2 = waveparams['mass1'], waveparams['mass2']
+mchirp = pycbc.conversions.mchirp_from_mass1_mass2(m1, m2)
+waveparams['approximant'] = 'SPAtmplt' if mchirp < 3 else 'IMRPhenomD'
+
 templatelen = pycbc.waveform.get_waveform_filter_length_in_time(**waveparams)
 filterbuffer = templatelen + 5.0 + psdseg * 2
 filterbuffer = pycbc.pnutils.nearest_larger_binary_number(filterbuffer)
@@ -129,8 +134,6 @@ psd = {ifo: strain[ifo].time_slice(psd_start[ifo], psd_end[ifo]).filter_psd(
 
 logging.info('Optimizing Parameters')
 ################# Need better way to specific limits and ensure boundaries#####
-m1, m2 = waveparams['mass1'], waveparams['mass2']
-mchirp = pycbc.conversions.mchirp_from_mass1_mass2(m1, m2)
 minchirp = mchirp * (1 - mchirp / 100.0)
 maxchirp = mchirp * (1 + mchirp / 100.0)
 if minchirp < 1:
@@ -145,7 +148,6 @@ if minq < 1:
     minq = 1.0
 if maxq > 100:
     maxq = 100
-
 logging.info('Using chirp mass range %s-%s', minchirp, maxchirp)
 logging.info('Using mass ratio range %s-%s', minq, maxq)
 
