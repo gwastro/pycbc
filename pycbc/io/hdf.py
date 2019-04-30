@@ -409,8 +409,8 @@ class SingleDetTriggers(object):
             logging.info('%i triggers remain after vetoes',
                           len(self.veto_mask))
 
-        ### FIXME this should use the hfile select interface to avoid
-        ### memory and processing limitations.
+        # FIXME this should use the hfile select interface to avoid
+        # memory and processing limitations.
         if filter_func:
             # get required columns into the namespace with dummy attribute
             # names to avoid confusion with other class properties
@@ -454,6 +454,15 @@ class SingleDetTriggers(object):
         """Returns a list of plottable CBC parameter variables"""
         return [m[0] for m in inspect.getmembers(cls) \
             if type(m[1]) == property]
+
+    def apply_mask(self, logic_mask):
+        """Apply a boolean array to the set of triggers"""
+        if hasattr(self.mask, 'dtype') and (self.mask.dtype == 'bool')
+            orig_indices = self.mask.nonzero()[0][logic_mask]
+            self.mask[:] = False
+            self.mask[orig_indices] = True
+        else:
+            self.mask = list(numpy.array(self.mask)[logic_mask])
 
     def mask_to_n_loudest_clustered_events(self, n_loudest=10,
                                            ranking_statistic="newsnr",

@@ -142,11 +142,6 @@ trigs = hdf.SingleDetTriggers(args.single_detector_file, args.bank_file,
                               args.veto_file, args.veto_segment_name,
                               None, args.instrument, premask=snr_mask)
 
-def restrict_triggers_to_logic_mask(triggers, logic_mask):
-    orig_indices = triggers.mask.nonzero()[0][logic_mask]
-    triggers.mask[:] = False
-    triggers.mask[orig_indices] = True
-
 if args.non_coinc_time_only:
     from glue.ligolw.ligolw import LIGOLWContentHandler as h
     lsctables.use_in(h)
@@ -162,20 +157,20 @@ if args.non_coinc_time_only:
             trigs.end_time, [args.inspiral_segments],
             ifo=ifo, segment_name=args.inspiral_data_analyzed_name)
         curr_veto_mask.sort()
-        restrict_triggers_to_logic_mask(trigs, curr_veto_mask)
+        trigs.apply_mask(curr_veto_mask)
 
 if args.minimum_duration is not None:
     logging.info('applying minimum duration')
     durations = trigs.template_duration
     lgc_mask = durations > args.minimum_duration
-    restrict_triggers_to_logic_mask(trigs, lgc_mask)
+    trigs.apply_mask(lgc_mask)
     logging.info('remaining triggers: %s', trigs.mask.sum())
 
 if args.maximum_duration is not None:
     logging.info('applying maximum duration')
     durations = trigs.template_duration
     lgc_mask = durations < args.maximum_duration
-    restrict_triggers_to_logic_mask(trigs, lgc_mask)
+    trigs.apply_mask(lgc_mask)
     logging.info('remaining triggers: %s', trigs.mask.sum())
 
 if len(trigs.snr) == 0:
