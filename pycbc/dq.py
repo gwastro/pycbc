@@ -153,8 +153,8 @@ def query_flag(ifo, name, start_time, end_time,
         duration = end_time - start_time
         try:
             url = GWOSC_URL.format(get_run(start_time + duration/2),
-                               ifo, segment_name,
-                               int(start_time), int(duration))
+                                   ifo, segment_name,
+                                   int(start_time), int(duration))
 
             fname = download_file(url, cache=cache)
             data = json.load(open(fname, 'r'))
