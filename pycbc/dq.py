@@ -191,6 +191,7 @@ def query_flag(ifo, name, start_time, end_time,
         # a process the flags in the veto definer
         if veto_definer is not None and segment_name in veto_def[ifo]:
             for flag in veto_def[ifo][segment_name]:
+                partial = segmentlist([])
                 segs = query("https", server, ifo, flag['name'],
                              flag['version'], 'active',
                              int(start_time), int(end_time))[0]['active']
@@ -199,11 +200,12 @@ def query_flag(ifo, name, start_time, end_time,
                 for rseg in segs:
                     seg_start = rseg[0] + flag['start_pad']
                     seg_end = rseg[1] + flag['end_pad']
-                    flag_segments.append(segment(seg_start, seg_end))
+                    partial.append(segment(seg_start, seg_end))
 
-            # Apply start / end of the veto definer segment
-            send = segmentlist([segment([veto_def['start'], veto_def['end']])])
-            flag_segments = (flag_segments.coalesce() & send)
+                # Apply start / end of the veto definer segment
+                send = segmentlist([segment([flag['start'],
+                                             flag['end']])])
+                flag_segments += (partial.coalesce() & send)
 
         else:  # Standard case just query directly.
             try:
