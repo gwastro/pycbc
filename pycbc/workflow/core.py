@@ -1744,7 +1744,7 @@ class SegFile(File):
             file object for segment xml file
         """
         # load xmldocument and SegmentDefTable and SegmentTables
-        fp = open(xml_file, 'r')
+        fp = open(xml_file, 'rb')
         xmldoc, _ = ligolw_utils.load_fileobj(fp,
                                               gz=xml_file.endswith(".gz"),
                                               contenthandler=ContentHandler)
