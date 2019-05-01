@@ -28,7 +28,7 @@ provides additional abstraction and argument handling.
 """
 import os
 from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
+from six.moves.urllib.parse import urljoin, urlsplit
 from Pegasus.catalogs.transformation_catalog import TransformationCatalog
 import Pegasus.DAX3 as dax
 
@@ -483,7 +483,7 @@ class File(DataStorage, dax.File):
     @classmethod
     def from_path(cls, path):
         """Takes a path and returns a File object with the path as the PFN."""
-        urlparts = urlparse.urlsplit(path)
+        urlparts = urlsplit(path)
         site = 'nonlocal'
         if (urlparts.scheme == '' or urlparts.scheme == 'file'):
             if os.path.isfile(urlparts.path):

@@ -17,7 +17,7 @@
 """
 
 import logging
-from six.moves.configParser import NoSectionError, NoOptionError
+from six.moves.configparser import NoSectionError, NoOptionError
 
 import numpy
 

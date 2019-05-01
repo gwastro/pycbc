@@ -30,10 +30,10 @@ workflows.
 from __future__ import division
 
 import os
+import logging
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
-import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 
 def setup_psd_workflow(workflow, science_segs, datafind_outs,
@@ -122,8 +122,7 @@ def setup_psd_pregenerated(workflow, tags=None):
         pre_gen_file = cp.get_opt_tags('workflow-psd',
                         'psd-pregenerated-file', tags)
         pre_gen_file = resolve_url(pre_gen_file)
-        file_url = urlparse.urljoin('file:',
-                                     urllib.pathname2url(pre_gen_file))
+        file_url = urljoin('file:', pathname2url(pre_gen_file))
         curr_file = File(workflow.ifos, user_tag, global_seg, file_url,
                                                     tags=tags)
         curr_file.PFN(file_url, site='local')
@@ -136,8 +135,7 @@ def setup_psd_pregenerated(workflow, tags=None):
                                 'psd-pregenerated-file-%s' % ifo.lower(),
                                 tags)
                 pre_gen_file = resolve_url(pre_gen_file)
-                file_url = urlparse.urljoin('file:',
-                                             urllib.pathname2url(pre_gen_file))
+                file_url = urljoin('file:', pathname2url(pre_gen_file))
                 curr_file = File(ifo, user_tag, global_seg, file_url,
                                                             tags=tags)
                 curr_file.PFN(file_url, site='local')

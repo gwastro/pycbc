@@ -30,7 +30,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 import os, sys, shutil, stat, copy, itertools
 import logging
 from six.moves.urllib.request import pathname2url
-from six.moves.urllib.parse import urljoin
+from six.moves.urllib.parse import urljoin, urlunparse
 import lal
 from ligo import segments
 from ligo.segments import utils as segmentsUtils
@@ -558,8 +558,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         analysedSegDict[ifo + ':SCIENCE_OK'] = analysedSegs
         analysedXmlFile = os.path.join(out_dir,
                              "%s-SCIENCE_OK_SEGMENTS.xml" %(ifo.upper()) )
-        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
-                          None, None, None])
+        currUrl = urlunparse(['file', 'localhost', analysedXmlFile,
+                              None, None, None])
         if tag:
             currTags = [tag, 'SCIENCE_OK']
         else:
@@ -760,8 +760,8 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
                          %(ifo, category, start_time, end_time-start_time)
     veto_xml_file_path = os.path.abspath(os.path.join(out_dir,
                                          veto_xml_file_name))
-    curr_url = urlparse.urlunparse(['file', 'localhost',
-                                   veto_xml_file_path, None, None, None])
+    curr_url = urlunparse(['file', 'localhost',
+                           veto_xml_file_path, None, None, None])
     if tags:
         curr_tags = tags + ['VETO_CAT%d' %(category)]
     else:

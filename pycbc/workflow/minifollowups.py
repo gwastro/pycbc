@@ -33,7 +33,7 @@ def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
     """
     args = [iter(iterable)] * n
-    return izip_longest(*args, fillvalue=fillvalue)
+    return zip_longest(*args, fillvalue=fillvalue)
 
 def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
                        tmpltbank_file, insp_segs, insp_data_name,

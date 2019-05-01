@@ -16,8 +16,8 @@
 This modules provides classes for evaluating angular distributions.
 """
 
-import numpy
 from six.moves.configparser import Error
+import numpy
 from pycbc import VARARGS_DELIM
 from pycbc import boundaries
 from pycbc.distributions import bounded
