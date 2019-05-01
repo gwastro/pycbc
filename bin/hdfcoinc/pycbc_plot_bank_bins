@@ -113,7 +113,7 @@ pylab.grid()
 for name in locs_dict:
     locs = locs_dict[name]
     pylab.scatter(x_var[locs], y_var[locs], label=name, edgecolor='none', s=1,
-                  c=color.next())
+                  c=next(color))
 
 pylab.legend(loc='upper left', markerscale=5)
 pylab.xlabel(x_var_name)

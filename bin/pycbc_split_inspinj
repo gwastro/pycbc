@@ -56,7 +56,7 @@ new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames) \
 
 table_cycle = cycle(new_inj_tables)
 for inj in sorted(allinjs, key=lambda x: x.get_time_geocent()):
-    table_cycle.next().append(inj)
+    next(table_cycle).append(inj)
 
 if not args.output_files:
     temp = args.input_file.split('-')
