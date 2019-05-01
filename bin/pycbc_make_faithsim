@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import os, six
+import os
 import logging
 import shutil
 from six.moves import configparser as ConfigParser

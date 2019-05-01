@@ -16,7 +16,7 @@
 """This module provides model classes that assume the noise is Gaussian.
 """
 
-import logging, six
+import logging
 from six.moves.configParser import NoSectionError, NoOptionError
 
 import numpy

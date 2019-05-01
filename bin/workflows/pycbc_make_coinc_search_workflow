@@ -29,7 +29,7 @@ __program__ = "pycbc_make_coinc_search_workflow"
 import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
-import os, argparse, six, logging
+import os, argparse, logging
 from six.moves import configparser as ConfigParser
 from ligo import segments
 import numpy, lal, datetime
