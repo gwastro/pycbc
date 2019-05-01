@@ -608,8 +608,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         combined_veto_file = os.path.join(out_dir,
                                '%s-CUMULATIVE_ALL_CATS_SEGMENTS.xml' \
                                %(ifo_string) )
-        curr_url = urlparse.urlunparse(['file', 'localhost',
-                                       combined_veto_file, None, None, None])
+        curr_url = urlunparse(['file', 'localhost',
+                               combined_veto_file, None, None, None])
         curr_file = SegFile(ifo_string, 'SEGMENTS', segValidSeg,
                             file_url=curr_url, tags=currTags)
 

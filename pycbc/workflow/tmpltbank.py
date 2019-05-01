@@ -31,10 +31,10 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/template_bank.html
 from __future__ import division
 
 import os
+import logging
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.request import pathname2url
 from six.moves.urllib.parse import urljoin
-import logging
 import pycbc
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 from pycbc.workflow.jobsetup import select_tmpltbank_class, select_matchedfilter_class, sngl_ifo_job_setup
