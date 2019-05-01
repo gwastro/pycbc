@@ -466,7 +466,7 @@ def insert_strain_option_group(parser, gps_times=True):
 
     data_reading_group.add_argument("--strain-high-pass", type=float,
                             help="High pass frequency")
-    data_reading_group.add_argument("--pad-data",
+    data_reading_group.add_argument("--pad-data", default=8,
               help="Extra padding to remove highpass corruption "
                    "(integer seconds)", type=int)
     data_reading_group.add_argument("--taper-data",
