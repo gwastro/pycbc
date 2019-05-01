@@ -462,7 +462,7 @@ class SingleDetTriggers(object):
             self.mask[:] = False
             self.mask[orig_indices] = True
         else:
-            self.mask = list(numpy.array(self.mask)[logic_mask])
+            self.mask = list(np.array(self.mask)[logic_mask])
 
     def mask_to_n_loudest_clustered_events(self, n_loudest=10,
                                            ranking_statistic="newsnr",
