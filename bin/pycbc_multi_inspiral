@@ -114,7 +114,7 @@ fft.insert_fft_option_group(parser)
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 pycbc.opt.insert_optimization_option_group(parser)
 pycbc.weave.insert_weave_option_group(parser)
-pycbc.inject.insert_injfilterrejector_option_group(parser)
+pycbc.inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()
 
@@ -139,6 +139,7 @@ fft.verify_fft_options(opt,parser)
 log_level = logging.DEBUG if opt.verbose else logging.INFO
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
+inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli_multi_ifos(opt,opt.instruments)
 ctx = scheme.from_cli(opt)
 
 def get_weighted_antenna_patterns(Fp_dict, Fc_dict, sigma_dict):
