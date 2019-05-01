@@ -2,6 +2,7 @@
 """ Calculate psd estimates for analysis segments
 """
 import logging, argparse, numpy, h5py, itertools, multiprocessing, time
+from six.moves import range
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
@@ -98,7 +99,7 @@ if len(segments) > 0:
     # FIXME: https://www.youtube.com/watch?v=DtRNg5uSKQ0
     get_psd( (segments[0], 0) )
 
-    psds = pool.map_async(get_psd, zip(segments, xrange(len(segments))))
+    psds = pool.map_async(get_psd, zip(segments, range(len(segments))))
     psds = psds.get()
 else:
     psds = []

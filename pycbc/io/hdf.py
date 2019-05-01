@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 import logging
 import inspect
+from six.moves import range
 
 from lal import LIGOTimeGPS, YRJUL_SI
 
@@ -787,7 +788,7 @@ class ForegroundTriggers(object):
         for name in sngl_col_names:
             sngl_col_vals[name] = self.get_snglfile_array_dict(name)
 
-        for idx in xrange(len(self.sort_arr)):
+        for idx in range(len(self.sort_arr)):
             # Set up IDs and mapping values
             coinc_id = lsctables.CoincID(idx)
 

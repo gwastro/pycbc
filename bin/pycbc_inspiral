@@ -18,6 +18,7 @@
 
 import sys
 import logging, argparse, numpy, itertools
+from six.moves import range
 import pycbc
 import pycbc.version
 from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, events
@@ -347,7 +348,7 @@ with ctx:
     # within the loop.  Rather, the iteration simply fills the memory specifed in
     # the 'template_mem' argument to MatchedFilterControl with the next template
     # from the bank.
-    for t_num in xrange(len(bank)):
+    for t_num in range(len(bank)):
         tmplt_generated = False
 
         for s_num, stilde in enumerate(segments):
