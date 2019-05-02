@@ -240,12 +240,7 @@ class MultinestSampler(BaseSampler):
         prior_dists = self.model.prior_distribution.distributions
         dist_dict = {d.params[0]: d for d in prior_dists}
         for i, p in enumerate(self.model.variable_params):
-            bounds = dist_dict[p].bounds
-            if dist_dict[p].name in ['uniform', 'uniform_angle']:
-                scale = bounds[p].max - bounds[p].min
-                transformed_cube[i] = cube[i] * scale + bounds[p].min
-            else:
-                transformed_cube[i] = dist_dict[p]._cdfinv(p, cube[i])
+            transformed_cube[i] = dist_dict[p].cdfinv(p, cube[i])
         return transformed_cube
 
     def run(self):

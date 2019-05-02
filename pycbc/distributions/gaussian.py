@@ -138,7 +138,7 @@ class Gaussian(bounded.BoundedDist):
     def var(self):
         return self._var
 
-    def _cdfinv(self, param, value):
+    def cdfinv(self, param, value):
         """Return inverse of cdf to map unit interval to parameter bounds.
         """
         a = self._bounds[param][0]

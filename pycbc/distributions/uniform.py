@@ -109,6 +109,14 @@ class Uniform(bounded.BoundedDist):
     def lognorm(self):
         return self._lognorm
 
+    def cdfinv(self, param, value):
+        """Return the inverse cdf to map the unit interval to parameter bounds.
+        """
+        a = self._bounds[param][0]
+        b = self._bounds[param][1]
+        new_value = (b-a)*value + a
+        return new_value
+
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
