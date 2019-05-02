@@ -240,11 +240,11 @@ class MultinestSampler(BaseSampler):
         params = self.model._transform_params(**params) # waveform transforms
         # apply constraints
         if self._constraints is not None and not all([c(params) for c in self._constraints]):
-            return -1e90
+            return -numpy.inf
         else:
             # update model with current params
             self.model.update(**params)
-            return self.model.logposterior
+            return self.model.loglikelihood
 
     def ns_prior(self, cube):
         transformed_cube = numpy.array(cube).copy()
