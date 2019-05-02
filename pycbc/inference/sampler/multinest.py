@@ -30,7 +30,6 @@ from __future__ import absolute_import
 
 import logging
 import numpy
-import pymultinest
 from pycbc.pool import choose_pool
 
 from .base import BaseSampler
@@ -71,6 +70,10 @@ class MultinestSampler(BaseSampler):
                  logpost_function=None, nprocesses=1, use_mpi=False,
                  importance_nested_sampling=False, evidence_tolerance=0.1,
                  sampling_efficiency=0.01, constraints=None):
+        try:
+            import pymultinest
+        except ImportError:
+            raise ImportError("pymultinest is not installed.")
 
         self.model = model
         # create a wrapper for calling the model
