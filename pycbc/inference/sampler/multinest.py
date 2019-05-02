@@ -360,8 +360,6 @@ class MultinestSampler(BaseSampler):
             fp.write_logevidence(self.logz, self.dlogz,
                                  self.importance_logz,
                                  self.importance_dlogz)
-            # write acceptance
-            fp.write_acceptance_fraction(self.acceptance_fraction())
             # write random state (use default numpy.random_state)
             fp.write_random_state()
 
