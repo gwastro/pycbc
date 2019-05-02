@@ -29,7 +29,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 
 import os, sys, shutil, stat, copy, itertools
 import logging
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin, urlunparse
 import lal
 from ligo import segments
 from ligo.segments import utils as segmentsUtils
@@ -557,8 +558,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         analysedSegDict[ifo + ':SCIENCE_OK'] = analysedSegs
         analysedXmlFile = os.path.join(out_dir,
                              "%s-SCIENCE_OK_SEGMENTS.xml" %(ifo.upper()) )
-        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
-                          None, None, None])
+        currUrl = urlunparse(['file', 'localhost', analysedXmlFile,
+                              None, None, None])
         if tag:
             currTags = [tag, 'SCIENCE_OK']
         else:
@@ -607,8 +608,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         combined_veto_file = os.path.join(out_dir,
                                '%s-CUMULATIVE_ALL_CATS_SEGMENTS.xml' \
                                %(ifo_string) )
-        curr_url = urlparse.urlunparse(['file', 'localhost',
-                                       combined_veto_file, None, None, None])
+        curr_url = urlunparse(['file', 'localhost',
+                               combined_veto_file, None, None, None])
         curr_file = SegFile(ifo_string, 'SEGMENTS', segValidSeg,
                             file_url=curr_url, tags=currTags)
 
@@ -759,8 +760,8 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
                          %(ifo, category, start_time, end_time-start_time)
     veto_xml_file_path = os.path.abspath(os.path.join(out_dir,
                                          veto_xml_file_name))
-    curr_url = urlparse.urlunparse(['file', 'localhost',
-                                   veto_xml_file_path, None, None, None])
+    curr_url = urlunparse(['file', 'localhost',
+                           veto_xml_file_path, None, None, None])
     if tags:
         curr_tags = tags + ['VETO_CAT%d' %(category)]
     else:
@@ -883,8 +884,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
             cum_node.executed = True
             for fil in cum_node._outputs:
                 fil.node = None
-                fil.PFN(urlparse.urljoin('file:',
-                                         urllib.pathname2url(fil.storage_path)),
+                fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
         add_inputs += cum_node.output_files
 
@@ -906,8 +906,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
         add_node.executed = True
         for fil in add_node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:',
-                                     urllib.pathname2url(fil.storage_path)),
+            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                     site='local')
     return outfile
 
@@ -949,8 +948,7 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
         add_node.executed = True
         for fil in add_node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:',
-                                     urllib.pathname2url(fil.storage_path)),
+            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                     site='local')
     return add_node.output_files[0]
 

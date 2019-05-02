@@ -29,7 +29,8 @@ __program__ = "pycbc_offline"
 import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging
+import os, argparse, logging
+from six.moves import configparser as ConfigParser
 from ligo import segments
 import numpy, lal, datetime, itertools
 from pycbc.results import create_versioning_page, static_table, layout
@@ -691,7 +692,7 @@ container._adag.addDependency(dep)
 container.save()
 
 # Protect the open box results folder
-# os.chmod(rdir['open_box_result'], 0700)
+# os.chmod(rdir['open_box_result'], 0o0700)
 logging.info("Written dax.")
 
 # Close the log and flush to the html file

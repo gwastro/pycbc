@@ -853,13 +853,13 @@ class LiveCoincTimeslideBackgroundEstimator(object):
 
     def save_state(self, filename):
         """Save the current state of the background buffers"""
-        import cPickle
+        from six.moves import cPickle
         cPickle.dump(self, filename)
 
     @staticmethod
     def restore_state(filename):
         """Restore state of the background buffers from a file"""
-        import cPickle
+        from six.moves import cPickle
         return cPickle.load(filename)
 
     def ifar(self, coinc_stat):
