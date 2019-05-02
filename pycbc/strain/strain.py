@@ -303,7 +303,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             gating_info['auto'] = gate_params
 
         logging.info("Resampling data")
-        strain = resample_to_delta_t(strain, 1.0/opt.sample_rate, method='ldas')
+        if opt.sample_rate:
+            strain = resample_to_delta_t(strain,
+                                         1.0 / opt.sample_rate,
+                                         method='ldas')
 
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
@@ -334,10 +337,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = stilde.to_timeseries()
 
 
-        logging.info("Remove Padding")
-        start = opt.pad_data*opt.sample_rate
-        end = len(strain)-opt.sample_rate*opt.pad_data
-        strain = strain[start:end]
+        if opt.pad_data:
+            logging.info("Remove Padding")
+            start = opt.pad_data * strain.sample_rate
+            end = len(strain) - strain.sample_rate * opt.pad_data
+            strain = strain[start:end]
 
     if opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
