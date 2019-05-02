@@ -32,8 +32,8 @@ logging.info('Found %s segments, %ss total', len(segs), abs(segs))
 
 f = h5py.File(args.output_file, 'w')
 starts, ends = segments_to_start_end(segs)
-f['segments/start'] = starts
-f['segments/end'] = ends
+f['segments/start'] = starts + args.pad_data
+f['segments/end'] = ends - args.pad_data
 
 for i, seg in enumerate(segs):
     logging.info('Processing science segment %s/%s of duration %ss',
