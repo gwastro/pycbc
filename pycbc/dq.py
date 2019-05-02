@@ -202,7 +202,7 @@ def query_flag(ifo, name, start_time, end_time,
                     seg_end = rseg[1] + flag['end_pad']
                     partial.append(segment(seg_start, seg_end))
 
-                # Apply start / end of the veto definer segment
+                # Limit to the veto definer stated valid region of this flag
                 send = segmentlist([segment([flag['start'],
                                              flag['end']])])
                 flag_segments += (partial.coalesce() & send)
