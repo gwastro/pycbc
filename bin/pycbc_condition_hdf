@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" Calculate psd estimates for analysis segments
+""" Create HDF strain cache file
 """
 import logging, argparse, numpy, h5py
 import pycbc, pycbc.strain, pycbc.dq
@@ -32,14 +32,19 @@ logging.info('Found %s segments, %ss total', len(segs), abs(segs))
 
 f = h5py.File(args.output_file, 'w')
 starts, ends = segments_to_start_end(segs)
-f['segments/start'] = starts + args.pad_data
-f['segments/end'] = ends - args.pad_data
+pad = 0 if args.pad_data is None else args.pad_data
+f['{}/segments/start'.format(args.channel_name)] = starts + pad
+f['{}/segments/end'.format(args.channel_name)] = ends - pad
 
 for i, seg in enumerate(segs):
     logging.info('Processing science segment %s/%s of duration %ss',
                  i, len(segs), abs(seg))
-    args.gps_start_time = seg[0]
-    args.gps_end_time = seg[1]
-    ht = pycbc.strain.from_cli(args, pycbc.DYN_RANGE_FAC)
-    f[str(i)] = ht.data[:]
+
+    args.gps_start_time = seg[0] + pad
+    args.gps_end_time = seg[1] - pad
+
+    logging.info('Reading %s-%s', seg[0], seg[1])
+    ht = pycbc.strain.from_cli(args)
+    f.create_dataset("{}/{}".format(args.channel_name, i), data=ht.data[:],
+                     compression_opts=9, compression='gzip')
 logging.info('Done!')
