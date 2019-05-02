@@ -71,7 +71,12 @@ class MultinestSampler(BaseSampler):
                  importance_nested_sampling=False, evidence_tolerance=0.1,
                  sampling_efficiency=0.01, constraints=None):
         try:
-            import pymultinest
+            loglevel = logging.getLogger().getEffectiveLevel()
+            logging.getLogger().setLevel(logging.WARNING)
+            from pymultinest import Analyzer, run
+            self.ns_run = run
+            self.analyzer = Analyzer
+            logging.getLogger().setLevel(loglevel)
         except ImportError:
             raise ImportError("pymultinest is not installed.")
 
@@ -253,8 +258,8 @@ class MultinestSampler(BaseSampler):
             with self.io(self.checkpoint_file, "r") as fp:
                 self._lastclear = fp.niterations
         outputfiles_basename = self.backup_file[:-9] + '-'
-        a = pymultinest.Analyzer(self._ndim,
-                                 outputfiles_basename=outputfiles_basename)
+        a = self.analyzer(self._ndim,
+                          outputfiles_basename=outputfiles_basename)
         self._itercount = 0
         iterinterval = self.checkpoint_interval
         done = False
@@ -326,7 +331,7 @@ class MultinestSampler(BaseSampler):
 
 	kwargs['LogLikelihood'] = SafeLoglikelihood
 	kwargs['Prior'] = SafePrior
-	pymultinest.run(**kwargs)
+	self.ns_run(**kwargs)
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
