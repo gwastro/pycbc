@@ -160,28 +160,17 @@ class MultinestSampler(BaseSampler):
     @property
     def model_stats(self):
         """A dict mapping the model's ``default_stats`` to arrays of values.
-
-        The returned array has shape ``nwalkers x niterations``.
         """
-        stats = self.model.default_stats
-        callfuncs = [self.model._logjacobian, self.model._logprior,
-                     self.model._loglikelihood]
-        if 'loglr' in stats:
-            callfuncs += [self.model._loglr]
-        self._stats = {s: numpy.array([]) for s in stats}
-        # calculate stats for each posterior sample
+        stats = []
         for sample in self._samples:
             params = dict(zip(self.model.variable_params, sample))
             if self.model.sampling_transforms is not None:
                 params = self.model.sampling_transforms.apply(params)
             self.model.update(**params)
-            self.model.logposterior # this is necessary to avoid logprior being nan??
-            for c in callfuncs:
-                c()
-            current_stats = self.model.get_current_stats(names=stats)
-            for i, s in enumerate(stats):
-                self._stats[s] = numpy.append(self._stats[s], current_stats[i])
-        return self._stats
+            self.model.logposterior
+            stats.append(self.model.get_current_stats())
+        stats = numpy.array(stats)
+        return {s: stats[:, i] for i, s in enumerate(self.model.default_stats)}
 
     def get_posterior_samples(self):
         # this is multinest's equal weighted posterior file
@@ -375,7 +364,6 @@ class MultinestSampler(BaseSampler):
             self.checkpoint_file, self.backup_file)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
-        # FIXME clear memory?
 
     def finalize(self):
         """All data is written by the last checkpoint in the run method, so
