@@ -34,13 +34,9 @@ parser.add_argument("--coinc-threshold", type=float, default=0.0,
 parser.add_argument("--timeslide-interval", type=float,
                     help="Interval between timeslides in seconds. Timeslides are "
                          "disabled if the option is omitted.")
-parser.add_argument("--decimation-factor", type=int,
-                    help="The factor to reduce the background trigger rate.")
-loudest = parser.add_mutually_exclusive_group()
-loudest.add_argument("--loudest-keep", type=int,
-                     help="Keep this number of loudest triggers from each template.")
-loudest.add_argument("--loudest-keep-value", type=float,
-                     help="Keep all coincident triggers above this value.")
+parser.add_argument("--loudest-keep-values", type=str, nargs='*',
+                     help="Apply a sequence of decimations at the givne thresholds"
+                          "Ex. 8.5:10 8:10 7.5:10 7:10")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
                     " PART/NUM_PARTS")
@@ -292,27 +288,31 @@ for tnum in template_ids:
             # "bl_int" keeps track of which triggers are *not* in the bh set. Depending
             # on the decimation factor option we may not store any of these or we may
             # keep a fraction of them corresponding to a subset of the timeslides
-            if args.loudest_keep:
-                sep = len(bi) - args.loudest_keep
-                sep = 0 if sep < 0 else sep
+            bi_dec = bi.copy()
+            dec = numpy.ones(len(bi))
 
-                bsort = numpy.argpartition(c[bi], sep)
-                bl_int = bi[bsort[0:sep]]
-                bh = bi[bsort[sep:]]
-                del bsort
-                del bi
-            elif args.loudest_keep_value:
-                bh = bi[c[bi] > args.loudest_keep_value]
-                bl_int = bi[c[bi] <= args.loudest_keep_value]
-            else:
-                bh = bi
+            total_factor = 1
+            for decstr in args.loudest_keep_values:
+                thresh, factor = decstr.split(':')
+                thresh = float(thresh)
+                factor = int(factor)
+                total_factor *= factor
 
-            if args.decimation_factor:
-                bl = bl_int[slide[bl_int] % args.decimation_factor == 0]
-            else:
-                bl = []
+                # triggers not being further decimated
+                upper = c[bi_dec] >= thresh
+                idxk = bi_dec[upper]
 
-            ti = numpy.concatenate([bl, bh, fi]).astype(numpy.uint32)
+                # we'll decimate these triggers now
+                idx = bi_dec[c[bi_dec] < thresh]
+                idx = idx[slide[idx] % total_factor == 0]
+
+                bi_dec = numpy.concatenate([idxk, idx])
+                dec = numpy.concatenate([dec[upper],
+                                        numpy.repeat(total_factor, len(idx))]
+                                       )
+
+            ti = numpy.concatenate([bi_dec, fi]).astype(numpy.uint32)
+            dec_fac = numpy.concatenate([dec, numpy.ones(len(fi))])
             logging.info('%s after decimation' % len(ti))
 
             gs={}
@@ -336,8 +336,6 @@ for tnum in template_ids:
                     data['%s/time' % ifo] = [addtime]
                     data['%s/trigger_id' % ifo] = [addtriggerid]
             data['stat'] += [c[ti]]
-            dec_fac = numpy.repeat([args.decimation_factor, 1, 1],
-                                   [len(bl), len(bh), len(fi)]).astype(numpy.uint32)
             data['decimation_factor'] += [dec_fac]
             data['timeslide_id'] += [slide[ti]]
             data['template_id'] += [numpy.zeros(len(ti), dtype=numpy.uint32) + tnum]
