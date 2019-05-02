@@ -183,10 +183,6 @@ class MultinestSampler(BaseSampler):
                 self._stats[s] = numpy.append(self._stats[s], current_stats[i])
         return self._stats
 
-    def acceptance_fraction(self):
-        # FIXME maybe get the real acceptance fraction at some point?
-        return numpy.zeros(self.nlivepoints)
-
     def get_posterior_samples(self):
         # this is multinest's equal weighted posterior file
         post_file = self.backup_file[:-9]+'-post_equal_weights.dat'
