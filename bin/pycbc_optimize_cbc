@@ -44,9 +44,13 @@ def network_snr(wparam, trig_time, stilde, psd, fixed):
     nsnr = 0
     for ifo in strain:
         snr = pycbc.filter.matched_filter(hp, stilde[ifo], psd=psd[ifo],
-                                         low_frequency_cutoff=fixed['f_lower'])
+                                          low_frequency_cutoff=fixed['f_lower'])
         z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
         nsnr += abs(z).max() ** 2.0
+        #import pylab
+        #pylab.plot(z)
+        #pylab.show()
+        print abs(z).max(), mchirp, q, spin
     return -nsnr ** 0.5
 
 parser = argparse.ArgumentParser()
@@ -117,12 +121,14 @@ for trigger_time, time_offsets, waveparams in zip(*triggers):
         psd_end[ifo] = int(trigger_time + psdlen // 2)
         logging.info('%s: PSD data will be %s-%s', ifo, psd_start[ifo], psd_end[ifo])
 
-        data_start = min(psd_start[ifo], filter_start[ifo]) - args.pad_data[ifo]
-        data_end = max(psd_end[ifo], filter_end[ifo]) + args.pad_data[ifo]
+        pad = 0 if args.pad_data[ifo] is None else args.pad_data[ifo]
+
+        data_start = min(psd_start[ifo], filter_start[ifo]) - pad
+        data_end = max(psd_end[ifo], filter_end[ifo]) + pad
         logging.info('%s: Will need data from %s-%s', ifo, data_start, data_end)
 
-        args.gps_start_time[ifo] = data_start + args.pad_data[ifo] + time_offsets[ifo]
-        args.gps_end_time[ifo] = data_end - args.pad_data[ifo] + time_offsets[ifo]
+        args.gps_start_time[ifo] = data_start + pad + time_offsets[ifo]
+        args.gps_end_time[ifo] = data_end - pad + time_offsets[ifo]
         logging.info('%s: actually reading %s-%s',
                      ifo, data_start + time_offsets[ifo],
                      data_end + time_offsets[ifo])
@@ -143,7 +149,7 @@ for trigger_time, time_offsets, waveparams in zip(*triggers):
     psd = {ifo: strain[ifo].time_slice(psd_start[ifo], psd_end[ifo]).filter_psd(
                            psdseg,
                            stilde[ifo].delta_f,
-                           args.strain_high_pass[ifo]) for ifo in strain}
+                           args.low_frequency_cutoff) for ifo in strain}
 
     logging.info('Optimizing Parameters')
     ################# Need better way to specific limits and ensure boundaries#
