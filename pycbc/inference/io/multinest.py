@@ -133,59 +133,6 @@ class MultinestFile(BaseInferenceFile):
         # write the model's metadata
         sampler.model.write_metadata(self)
 
-    def read_acceptance_fraction(self, temps=None, walkers=None):
-        """Reads the acceptance fraction.
-
-        Parameters
-        -----------
-        temps : (list of) int, optional
-            The temperature index (or a list of indices) to retrieve. If None,
-            acfs from all temperatures and all walkers will be retrieved.
-        walkers : (list of) int, optional
-            The walker index (or a list of indices) to retrieve. If None,
-            samples from all walkers will be obtained.
-
-        Returns
-        -------
-        array
-            Array of acceptance fractions with shape (requested temps,
-            requested walkers).
-        """
-        group = self.sampler_group + '/acceptance_fraction'
-        if walkers is None:
-            wmask = numpy.ones(self.nwalkers, dtype=bool)
-        else:
-            wmask = numpy.zeros(self.nwalkers, dtype=bool)
-            wmask[walkers] = True
-        if temps is None:
-            tmask = numpy.ones(self.ntemps, dtype=bool)
-        else:
-            tmask = numpy.zeros(self.ntemps, dtype=bool)
-            tmask[temps] = True
-        return self[group][:][numpy.ix_(tmask, wmask)]
-
-    def write_acceptance_fraction(self, acceptance_fraction):
-        """Write acceptance_fraction data to file.
-
-        Results are written to ``[sampler_group]/acceptance_fraction``; the
-        resulting dataset has shape (ntemps, nwalkers).
-
-        Parameters
-        -----------
-        acceptance_fraction : numpy.ndarray
-            Array of acceptance fractions to write. Must have shape
-            ntemps x nwalkers.
-        """
-        # check
-        #assert acceptance_fraction.shape == (self.ntemps, self.nwalkers), (
-        #    "acceptance fraction must have shape ntemps x nwalker")
-        group = self.sampler_group + '/acceptance_fraction'
-        try:
-            self[group][:] = acceptance_fraction
-        except KeyError:
-            # dataset doesn't exist yet, create it
-            self[group] = acceptance_fraction
-
     def write_posterior(self, filename, **kwargs):
         """Write posterior only file
 
