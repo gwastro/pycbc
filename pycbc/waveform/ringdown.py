@@ -127,7 +127,9 @@ def lm_freqs_taus(**kwargs):
     """
     lmns = kwargs['lmns']
     freqs, taus = {}, {}
-
+    
+    lmns = format_lmns(kwargs['lmns'])
+    
     for lmn in lmns:
         l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
         for n in range(nmodes):
