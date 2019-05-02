@@ -210,14 +210,14 @@ class InjFilterRejector(object):
             opt.injection_filter_rejector_coarsematch_deltaf[ifo]
         coarsematch_fmax = opt.injection_filter_rejector_coarsematch_fmax[ifo]
         seg_buffer = opt.injection_filter_rejector_seg_buffer[ifo]
-        if opt.injection_filter_rejector_f_lower[ifo] is not None:
+        if opt.injection_filter_rejector_f_lower is not None:
             f_lower = opt.injection_filter_rejector_f_lower[ifo]
         else:
             # NOTE: Uses main low-frequency cutoff as default option. This may
             #       need some editing if using this in multi_inspiral, which I
             #       leave for future work, or if this is being used in another
             #       code which doesn't have --low-frequency-cutoff
-            f_lower = opt.low_frequency_cutoff[ifo]
+            f_lower = opt.low_frequency_cutoff
         return cls(injection_file[ifo], chirp_time_window[ifo],
                    match_threshold[ifo], f_lower[ifo],
                    coarsematch_deltaf=coarsematch_deltaf[ifo],
