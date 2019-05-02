@@ -18,7 +18,6 @@ parser.add_argument("--instrument")
 parser.add_argument("--output-file", required=True)
 
 pycbc.strain.insert_strain_option_group(parser)
-
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
@@ -42,5 +41,5 @@ for i, seg in enumerate(segs):
     args.gps_start_time = seg[0]
     args.gps_end_time = seg[1]
     ht = pycbc.strain.from_cli(args, pycbc.DYN_RANGE_FAC)
-
+    f[str(i)] = ht.data[:]
 logging.info('Done!')
