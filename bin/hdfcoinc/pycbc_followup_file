@@ -8,6 +8,7 @@ parser.add_argument('--version', action='version',
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-file')
 parser.add_argument('--bank-file')
+parser.add_argument('--min-stat', type=float)
 parser.add_argument('--output-file')
 
 args = parser.parse_args()
@@ -33,6 +34,9 @@ for k in sfile:
     if k in ['background', 'background_exc', 'foreground']:
         t1 = sfile[k]['time1'][:].astype(numpy.float64)
         t2 = sfile[k]['time2'][:].astype(numpy.float64)
+
+
+
         template = sfile[k]['template_id'][:]
 
         value = numpy.zeros(len(t1), dtype=dtype)
@@ -43,6 +47,11 @@ for k in sfile:
 
         value['time'] = 0.5 * (t1 + t2)
         value['template_id'] = template
+
+        if args.min_stat:
+            keep = sfile[k]['stat'][:] > args.min_stat
+            value = value[keep]
+
         values.append(value)
 
 values = numpy.concatenate(values)
