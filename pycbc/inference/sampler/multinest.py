@@ -95,7 +95,6 @@ class MultinestSampler(BaseSampler):
         if pool is not None:
             pool.count = nprocesses
 
-        # set up necessary attributes
         self._constraints = constraints
         self._nlivepoints = nlivepoints
         self._ndim = len(model.variable_params)
@@ -107,7 +106,7 @@ class MultinestSampler(BaseSampler):
         self._ins = importance_nested_sampling
         self._samples = None
         self._stats = None
-        self._seed = 0 # FIXME need to pass in random seed?
+        self._seed = 0
         self._itercount = None
         self._lastclear = None
         self._logz = None
@@ -229,7 +228,7 @@ class MultinestSampler(BaseSampler):
         # set emcee's generator to the same state
         self._random_state = rstate
 
-    def ns_loglikelihood(self, cube):
+    def loglikelihood(self, cube, *args):
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         # apply transforms
         if self.model.sampling_transforms is not None:
@@ -243,13 +242,12 @@ class MultinestSampler(BaseSampler):
             self.model.update(**params)
             return self.model.loglikelihood
 
-    def ns_prior(self, cube):
-        transformed_cube = numpy.array(cube).copy()
+    def transform_prior(self, cube, *args):
         prior_dists = self.model.prior_distribution.distributions
         dist_dict = {d.params[0]: d for d in prior_dists}
         for i, p in enumerate(self.model.variable_params):
-            transformed_cube[i] = dist_dict[p].cdfinv(p, cube[i])
-        return transformed_cube
+            cube[i] = dist_dict[p].cdfinv(p, cube[i])
+        return cube
 
     def run(self):
         if self.new_checkpoint:
@@ -267,14 +265,14 @@ class MultinestSampler(BaseSampler):
             logging.info("Running sampler for {} to {} iterations".format(
                 self.niterations, self.niterations + iterinterval))
             # run multinest
-            self.solve(self.ns_loglikelihood, self.ns_prior, self._ndim,
-                       n_live_points=self.nlivepoints,
-                       evidence_tolerance=self._ztol,
-                       sampling_efficiency=self._eff,
-                       importance_nested_sampling=self._ins,
-                       max_iter=iterinterval,
-                       outputfiles_basename=outputfiles_basename,
-                       multimodal=False, verbose=True)
+            self.ns_run(self.loglikelihood, self.transform_prior, self._ndim,
+                        n_live_points=self.nlivepoints,
+                        evidence_tolerance=self._ztol,
+                        sampling_efficiency=self._eff,
+                        importance_nested_sampling=self._ins,
+                        max_iter=iterinterval,
+                        outputfiles_basename=outputfiles_basename,
+                        multimodal=False, verbose=True)
             # parse results from multinest output files
             nest_stats = a.get_mode_stats()
             self._logz = nest_stats['nested sampling global log-evidence']
@@ -293,45 +291,6 @@ class MultinestSampler(BaseSampler):
             self.checkpoint()
             # check if we're finished
             done = self.check_if_finished()
-
-    def solve(self, LogLikelihood, Prior, n_dims, **kwargs):
-	kwargs['n_dims'] = n_dims
-	files_temporary = False
-	if 'outputfiles_basename' not in kwargs:
-		files_temporary = True
-		tempdir = tempfile.mkdtemp('pymultinest')
-		kwargs['outputfiles_basename'] = tempdir + '/'
-	outputfiles_basename = kwargs['outputfiles_basename']
-	def SafePrior(cube, ndim, nparams):
-	    try:
-	        a = numpy.array([cube[i] for i in range(n_dims)])
-		b = Prior(a)
-		for i in range(n_dims):
-		    cube[i] = b[i]
-	    except Exception as e:
-		import sys
-		sys.stderr.write('ERROR in prior: %s\n' % e)
-	        sys.exit(1)
-
-	def SafeLoglikelihood(cube, ndim, nparams, lnew):
-	    try:
-	        a = numpy.array([cube[i] for i in range(n_dims)])
-	        l = float(LogLikelihood(a))
-		if not numpy.isfinite(l):
-		    import sys
-		    sys.stderr.write('WARNING: loglikelihood not finite: %f\n' % (l))
-		    sys.stderr.write('         for parameters: %s\n' % a)
-		    sys.stderr.write('         returned very low value instead\n')
-		    return -1e100
-		return l
-	    except Exception as e:
-		import sys
-		sys.stderr.write('ERROR in loglikelihood: %s\n' % e)
-		sys.exit(1)
-
-	kwargs['LogLikelihood'] = SafeLoglikelihood
-	kwargs['Prior'] = SafePrior
-	self.ns_run(**kwargs)
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
