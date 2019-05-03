@@ -18,7 +18,7 @@
 """
 
 from __future__ import absolute_import
-import h5py, numpy
+import h5py
 from .base_hdf import BaseInferenceFile
 from .base_multitemper import (MultiTemperedMetadataIO, MultiTemperedMCMCIO)
 from .posterior import PosteriorFile
@@ -29,11 +29,14 @@ class MultinestFile(BaseInferenceFile):
 
     name = 'multinest_file'
 
-    def write_samples(self, samples, parameters=None):
+    def write_samples(self, samples, parameters=None, start_iteration=None,
+                      max_iterations=None):
         niterations = len(samples.values()[0])
-        assert all(len(p) == niterations
-                   for p in samples.values()), (
+        assert all(len(p) == niterations for p in samples.values()), (
                "all samples must have the same shape")
+        if max_iterations is not None and max_iterations < niterations:
+            raise IndexError("The provided max size is less than the "
+                             "number of iterations")
         group = self.samples_group + '/{name}'
         if parameters is None:
             parameters = samples.keys()
@@ -48,19 +51,19 @@ class MultinestFile(BaseInferenceFile):
             except KeyError:
                 # dataset doesn't exist yet
                 self.create_dataset(dataset_name, (niterations,),
-                                    maxshape=(None,),
+                                    maxshape=(max_iterations,),
                                     dtype=samples[param].dtype,
                                     fletcher32=True)
             self[dataset_name][:] = samples[param]
 
-    def write_stats(self, stats):
-        group = 'likelihood_stats' + '/{name}'
-        for k, v in stats.items():
-            dataset_name = group.format(name=k)
-            try:
-                self[dataset_name] = v
-            except KeyError:
-                self.create_dataset(dataset_name, (1,))
+    #def write_stats(self, stats):
+    #    group = 'likelihood_stats' + '/{name}'
+    #    for k, v in stats.items():
+    #        dataset_name = group.format(name=k)
+    #        try:
+    #            self[dataset_name] = v
+    #        except KeyError:
+    #            self.create_dataset(dataset_name, (1,))
 
     def write_logevidence(self, lnz, dlnz, importance_lnz, importance_dlnz):
         """Writes the given log evidence and its error.
@@ -154,5 +157,6 @@ class MultinestFile(BaseInferenceFile):
         # Copy and squash fields into one dimensional arrays
         for field_name in fields:
             fvalue = self[self.samples_group][field_name][:]
-            thin = fvalue[0,:,self.thin_start:self.thin_end:self.thin_interval]
+            thin = fvalue[0, :,
+                          self.thin_start:self.thin_end:self.thin_interval]
             s[field_name] = thin.flatten()
