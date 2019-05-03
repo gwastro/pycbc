@@ -82,7 +82,7 @@ if args.input_file:
     wparams = f['waveparams'][start:end]
     triggers = (f['time'][start:end],
                 f['offsets'][start:end],
-                [dict(wparams.dtype.names, x) for x in wparams],
+                [dict(zip(wparams.dtype.names, x)) for x in wparams],
                 )
 
 elif args.trigger_time:
@@ -92,7 +92,8 @@ elif args.trigger_time:
 
 # Determine what data we need to read and prepare
 stats = []
-for trigger_time, time_offsets, waveparams in zip(*triggers):
+for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
+    logging.info('Starting work on trigger %s: %s', i, trigger_time)
     psdlen = 128
     psdseg = 8
 
@@ -116,8 +117,6 @@ for trigger_time, time_offsets, waveparams in zip(*triggers):
     ifos = [ifo for ifo in args.instruments if time_offsets[ifo] != numpy.inf]
 
     for ifo in ifos:
-        ctime = int(trigger_time)
-
         filter_end[ifo] = int(trigger_time + psdseg + 2)
         filter_start[ifo] = filter_end[ifo] - filterbuffer
         logging.info('%s: Filter buffer goes from %s-%s',
