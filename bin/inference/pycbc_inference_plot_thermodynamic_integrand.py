@@ -37,8 +37,10 @@ import pycbc.version
 rc('text', usetex=True)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--inference-file",)
-parser.add_argument("--thin-start", type=int, default=None)
+parser.add_argument("--inference-file",
+                    help="The PyCBC multi-temper inference file.")
+parser.add_argument("--thin-start", type=int, default=None,
+                    help="MCMC iteration to begin for samples.")
 parser.add_argument("--thin-end", type=int, default=None)
 parser.add_argument("--thin-interval", type=int, default=None)
 parser.add_argument("--beta-log-scale", action="store_true")
