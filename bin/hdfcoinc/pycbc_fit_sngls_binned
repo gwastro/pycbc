@@ -23,9 +23,7 @@ from matplotlib import pyplot as plt
 
 import copy, numpy as np
 
-from scipy.stats import kstest
-
-from pycbc import io, events, bin_utils, results
+from pycbc import events, bin_utils, results
 from pycbc.events import triggers
 from pycbc.events import trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
