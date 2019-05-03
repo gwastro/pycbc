@@ -21,10 +21,8 @@ from matplotlib import use
 use('Agg')
 from matplotlib import pyplot as plt
 import copy, numpy as np
-from pycbc import conversions as conv
-from scipy.stats import kstest
 
-from pycbc import io, events, bin_utils, results
+from pycbc import events, bin_utils, results
 from pycbc.events import triggers as trigs
 from pycbc.events import trigger_fits as trstats
 from pycbc.events.stat import sngl_statistic_dict
@@ -76,11 +74,10 @@ parser.add_argument("--sngl-stat", default="new_snr",
                     choices=sngl_statistic_dict.keys(),
                     help="Function of SNR and chisq to perform fits with")
 parser.add_argument('--ifo', type=str, help="Interferometer")
-parser.add_argument('--plot-max-x',default=1000,
-                    help="Maximum stat value for use in plots, if this "
-                         "is larger than 1.05 times the largest stat value, "
-                         "then that will be used instead. "
-                         "Default: a large value")
+parser.add_argument('--plot-max-x',default=None,
+                    help="Maximum stat value for use in plots, if not given "
+                         "then 1.05 times the largest stat value will be used "
+                         "instead")
 parser.add_argument("--veto-file", type=str,
                     help="File(s) in .xml format with veto segments to apply "
                     "to triggers before fitting")
@@ -124,8 +121,6 @@ full_bank.close()
 # only calculate params that need calculation if they are actually used
 usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
 extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration'] if par in usedparams]
-
-logging.info('calculating extra parameters {} as required'.format(extparams))
 
 for ex_p in extparams:
     logging.info('calculating {}'.format(ex_p))
@@ -225,7 +220,10 @@ minplot = max(stat[np.nonzero(stat)].min(), args.stat_fit_threshold - 1)
 min_fit = max(minplot, args.stat_fit_threshold)
 
 max_fit = 1.05*stat.max()
-maxplot = min(args.plot_max_x, max_fit)
+if args.plot_max_x:
+    maxplot = args.plot_max_x
+else:
+    maxplot = max_fit
 
 fitrange = np.linspace(min_fit, max_fit, 100)
 
@@ -340,15 +338,30 @@ for j in range(args.split_two_nbins):
                                      sp_two_bounds.upper()[j]), size="large")
     axes[0, j].xaxis.set_label_position("top")
     axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_stat, size="large")
+
 for i in range(args.split_one_nbins):
     axes[i, 0].set_ylabel(args.split_param_one + ': ' + 
                           (formats[args.split_param_one] + ' to ' + 
-                           formats[args.split_param_one]).format(sp_one_bounds.lower()[x],
-                                      sp_one_bounds.upper()[x]) + '\ncumulative number',
+                           formats[args.split_param_one]).format(sp_one_bounds.lower()[i],
+                                      sp_one_bounds.upper()[i]) + '\ncumulative number',
                                       size="large")
 
 axes[0,0].add_artist(lgd)
 
-fig.savefig(args.output_file, bbox_extra_artists=(lgd,), bbox_inches='tight')
-plt.close()
+fkwds = {'bbox_extra_artists': (lgd,), 'bbox_inches': 'tight'}
+
+logging.info('saving to file ' + args.output_file)
+
+results.save_fig_with_metadata(
+    fig, args.output_file, fig_kwds=fkwds,
+    title="{}: {} histogram of single detector triggers split by"
+          " {} and {}".format(args.ifo, args.sngl_stat, args.split_param_one,
+                              args.split_param_two),
+    caption=(r"Histogram of {} single detector {} values binned by {}, split by "
+             "{} and {}, with fitted {} distribution parameterized by"
+             " &alpha;".format(args.ifo, args.sngl_stat, args.bin_param,
+                               args.split_param_one, args.split_param_two,
+                               args.fit_function)),
+    cmd=" ".join(sys.argv)
+)
 logging.info('Done!')
