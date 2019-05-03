@@ -17,8 +17,10 @@
 This modules contains functions for reading in data from hdf stores
 """
 from __future__ import division
-import h5py, numpy
+import h5py
+import numpy
 from pycbc.types import TimeSeries
+
 
 def read_store(fname, channel, start_time, end_time):
     """ Read time series data from hdf store

@@ -332,7 +332,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
             strain = stilde.to_timeseries()
 
-
         if opt.pad_data:
             logging.info("Remove Padding")
             start = opt.pad_data * strain.sample_rate
@@ -655,7 +654,6 @@ def insert_strain_option_group_multi_ifo(parser):
                             action=MultiDetOptionAction,
                             metavar='IFO:HDF_STORE_FILE',
                             help="Store of time series data in hdf format")
-
 
     # Use datafind to get frame files
     data_reading_group_multi.add_argument("--frame-type", type=str, nargs="+",
