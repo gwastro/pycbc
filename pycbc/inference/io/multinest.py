@@ -56,15 +56,6 @@ class MultinestFile(BaseInferenceFile):
                                     fletcher32=True)
             self[dataset_name][:] = samples[param]
 
-    #def write_stats(self, stats):
-    #    group = 'likelihood_stats' + '/{name}'
-    #    for k, v in stats.items():
-    #        dataset_name = group.format(name=k)
-    #        try:
-    #            self[dataset_name] = v
-    #        except KeyError:
-    #            self.create_dataset(dataset_name, (1,))
-
     def write_logevidence(self, lnz, dlnz, importance_lnz, importance_dlnz):
         """Writes the given log evidence and its error.
 
