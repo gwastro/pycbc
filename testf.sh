@@ -1,4 +1,4 @@
-python bin/pycbc_optimize_cbc \
+python ./bin/pycbc_optimize_cbc \
 \
 --trigger-time 1187008882.43 \
 --instruments H1 L1 \
@@ -13,4 +13,6 @@ python bin/pycbc_optimize_cbc \
 --channel-name L1:GWOSC-16KHZ_R1_STRAIN H1:GWOSC-16KHZ_R1_STRAIN \
 --low-frequency-cutoff 20.0 \
 --strain-high-pass 15.0 \
+--output-file fstat.hdf \
+--input-file trigs.hdf \
 --verbose

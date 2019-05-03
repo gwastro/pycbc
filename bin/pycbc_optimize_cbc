@@ -79,6 +79,11 @@ if args.input_file:
     f = h5py.File(args.input_file, 'r')
     start = 0 if args.start_index is None else args.start_index
     end = -1 if args.end_index is None else args.end_index
+    wparams = f['waveparams'][start:end]
+    triggers = (f['time'][start:end],
+                f['offsets'][start:end],
+                [dict(wparams.dtype.names, x) for x in wparams],
+                )
 
 elif args.trigger_time:
     waveparams = params_from_waveformstr(args.template_parameters)
@@ -86,6 +91,7 @@ elif args.trigger_time:
     triggers = ([args.trigger_time], [toffset], [waveparams])
 
 # Determine what data we need to read and prepare
+stats = []
 for trigger_time, time_offsets, waveparams in zip(*triggers):
     psdlen = 128
     psdseg = 8
@@ -105,7 +111,11 @@ for trigger_time, time_offsets, waveparams in zip(*triggers):
     psd_end = {}
     filter_start = {}
     filter_end = {}
-    for ifo in args.instruments:
+
+    # Allow an IFO to be excluded using a sentinel value
+    ifos = [ifo for ifo in args.instruments if time_offsets[ifo] != numpy.inf]
+
+    for ifo in ifos:
         ctime = int(trigger_time)
 
         filter_end[ifo] = int(trigger_time + psdseg + 2)
@@ -130,7 +140,7 @@ for trigger_time, time_offsets, waveparams in zip(*triggers):
                      data_end + time_offsets[ifo])
 
     logging.info('Calculating Strain around trigger')
-    strain = pycbc.strain.from_cli_multi_ifos(args, args.instruments,
+    strain = pycbc.strain.from_cli_multi_ifos(args, ifos,
                                               dyn_range_fac=pycbc.DYN_RANGE_FAC)
 
     # Undo any time offsets for slides
@@ -173,6 +183,12 @@ for trigger_time, time_offsets, waveparams in zip(*triggers):
     result = differential_evolution(network_snr, bounds, popsize=20,
                                     args=(trigger_time, stilde,
                                           psd, waveparams),
+                                    disp=args.verbose,
                                     seed=0)
-    print result
+    logging.info(result)
+    stat = result['fun'] * -1.0
+    stats.append(stat)
+
+f = h5py.File('args.output_file', 'w')
+f['stat'] = numpy.array(stats)
 logging.info('Done')
