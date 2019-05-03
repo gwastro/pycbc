@@ -114,7 +114,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
 
     # zero-pad strain to a power-of-2 length
     strain_pad_length = next_power_of_2(len(strain))
-    pad_start = strain_pad_length/2 - len(strain)/2
+    pad_start = int(strain_pad_length/2 - len(strain)/2)
     pad_end = pad_start + len(strain)
     strain_pad = pycbc.types.TimeSeries(
             pycbc.types.zeros(strain_pad_length, dtype=strain.dtype),
