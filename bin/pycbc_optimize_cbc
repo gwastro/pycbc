@@ -47,10 +47,6 @@ def network_snr(wparam, trig_time, stilde, psd, fixed):
                                           low_frequency_cutoff=fixed['f_lower'])
         z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
         nsnr += abs(z).max() ** 2.0
-        #import pylab
-        #pylab.plot(z)
-        #pylab.show()
-        print abs(z).max(), mchirp, q, spin
     return -nsnr ** 0.5
 
 parser = argparse.ArgumentParser()
