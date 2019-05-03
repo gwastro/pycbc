@@ -5,6 +5,7 @@ import pycbc.version, pycbc.strain, pycbc.waveform, pycbc.pnutils, pycbc.filter
 import pycbc.conversions, pycbc.types
 from scipy.optimize import differential_evolution
 from pycbc.types.optparse import DictWithDefaultReturn
+import pycbc.scheme
 
 def remove_options(parser, options):
     for option in options:
@@ -37,16 +38,18 @@ def network_snr(wparam, trig_time, stilde, psd, fixed):
     p['mass2'] = pycbc.conversions.mass2_from_mchirp_q(mchirp, q)
     p['spin1z'] = spin
     p['spin2z'] = spin
-    out = pycbc.types.zeros(len(psd.values()[0]), dtype=numpy.complex64)
-    hp = pycbc.waveform.get_waveform_filter(out,
-                                            delta_f=stilde.values()[0].delta_f,
-                                             **p)
-    nsnr = 0
-    for ifo in strain:
-        snr = pycbc.filter.matched_filter(hp, stilde[ifo], psd=psd[ifo],
-                                          low_frequency_cutoff=fixed['f_lower'])
-        z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
-        nsnr += abs(z).max() ** 2.0
+
+    with ctx:
+        out = pycbc.types.zeros(len(psd.values()[0]), dtype=numpy.complex64)
+        hp = pycbc.waveform.get_waveform_filter(out,
+                                                delta_f=stilde.values()[0].delta_f,
+                                                 **p)
+        nsnr = 0
+        for ifo in strain:
+            snr = pycbc.filter.matched_filter(hp, stilde[ifo], psd=psd[ifo],
+                                              low_frequency_cutoff=fixed['f_lower'])
+            z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
+            nsnr += abs(z).max() ** 2.0
     return -nsnr ** 0.5
 
 parser = argparse.ArgumentParser()
@@ -71,14 +74,17 @@ parser.add_argument('--instruments', nargs='+',
 parser.add_argument('--low-frequency-cutoff', type=float)
 pycbc.strain.insert_strain_option_group_multi_ifo(parser)
 remove_options(parser, ['--gps-start-time', '--gps-end-time'])
+pycbc.scheme.insert_processing_option_group(parser)
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
+ctx = pycbc.scheme.from_cli(args)
+
 if args.input_file:
     f = h5py.File(args.input_file, 'r')
     start = 0 if args.start_index is None else args.start_index
-    end = -1 if args.end_index is None else args.end_index
+    end = len(f['time']) if args.end_index is None else args.end_index
     wparams = f['waveparams'][start:end]
     triggers = (f['time'][start:end],
                 f['offsets'][start:end],
@@ -93,7 +99,7 @@ elif args.trigger_time:
 # Determine what data we need to read and prepare
 stats = []
 for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
-    logging.info('Starting work on trigger %s: %s', i, trigger_time)
+    logging.info('Starting work on trigger %s/%s: %s', i, len(triggers[0]), trigger_time)
     psdlen = 128
     psdseg = 8
 
@@ -144,7 +150,9 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
 
     # Undo any time offsets for slides
     for ifo in strain:
-        strain[ifo].start_time -= time_offsets[ifo]
+        strain[ifo].start_time = round(strain[ifo].start_time - time_offsets[ifo])
+
+        print strain[ifo].start_time, strain[ifo].end_time, strain[ifo].duration
 
     stilde = {ifo: strain[ifo].time_slice(
                             filter_start[ifo],
@@ -158,8 +166,8 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
 
     logging.info('Optimizing Parameters')
     ################# Need better way to specific limits and ensure boundaries#
-    minchirp = mchirp * (1 - mchirp / 100.0)
-    maxchirp = mchirp * (1 + mchirp / 100.0)
+    minchirp = mchirp * (1 - mchirp / 500.0)
+    maxchirp = mchirp * (1 + mchirp / 500.0)
     if minchirp < 1:
         minchirp = 1
     if maxchirp > 80:
@@ -191,3 +199,4 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
 f = h5py.File('args.output_file', 'w')
 f['stat'] = numpy.array(stats)
 logging.info('Done')
+
