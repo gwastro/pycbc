@@ -1,0 +1,68 @@
+#!/bin/env python
+"""Followup a candidate"""
+import h5py, numpy, argparse, logging, pycbc
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--statmap-file')
+parser.add_argument('--bank-file')
+parser.add_argument('--output-file')
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+
+# Currently this expects the 2-ifo format, but the output file format
+# should be ok for multi-ifo as well
+bank = h5py.File(args.bank_file, 'r')
+sfile = h5py.File(args.statmap_file, 'r')
+
+ifo1 = sfile.attrs['detector_1']
+ifo2 = sfile.attrs['detector_2']
+slide = sfile.attrs['timeslide_interval']
+
+odtype = [(ifo1, numpy.float64),
+         (ifo2, numpy.float64),]
+dtype = odtype + [('time', numpy.float64),
+                  ('template_id', numpy.uint64),
+         ]
+
+values = []
+for k in sfile:
+    if k in ['background', 'background_exc', 'foreground']:
+        t1 = sfile[k]['time1'][:]
+        t2 = sfile[k]['time2'][:]
+        template = sfile[k]['template_id'][:]
+
+        value = numpy.zeros(len(t1), dtype=dtype)
+
+        if k is not 'foreground':
+            t2 -= sfile[k]['timeslide_id'][:] * slide
+            value[ifo2] = sfile[k]['timeslide_id'][:] * slide
+
+        value['time'] = 0.5 * (t1 + t2)
+        value['template_id'] = template
+        values.append(value)
+
+values = numpy.concatenate(values)
+values = numpy.unique(values)
+logging.info('%s triggers to follow up', len(values))
+
+f = h5py.File(args.output_file, 'w')
+f['time'] = values
+
+offsets = numpy.zeros(len(values), dtype=odtype)
+offsets[ifo1] = values[ifo1]
+offsets[ifo2] = values[ifo2]
+f['offsets'] = offsets
+
+wdtype = [(k, numpy.float64) for k in bank]
+wparam = numpy.zeros(len(values), dtype=wdtype)
+for k in bank:
+    wparam[k] = bank[k][:][values['template_id']]
+
+f['waveparams'] = wparam
+
+logging.info('Done')
