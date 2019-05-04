@@ -20,7 +20,7 @@ import argparse, logging
 from matplotlib import use
 use('Agg')
 from matplotlib import pyplot as plt
-import copy, numpy as np
+import numpy as np
 
 from pycbc import events, bin_utils, results
 from pycbc.events import triggers as trigs
@@ -48,7 +48,7 @@ parser.add_argument('--bin-param', default='template_duration', type=str,
                     help="parameter for on-plot splitting. Default: template_duration")
 parser.add_argument('--num-bins', type=int, default=6,
                     help="number of bins over which to split bin-param. Default: 6")
-parser.add_argument('--max-bin-param',type=float, default=None,
+parser.add_argument('--max-bin-param', type=float, default=None,
                     help="maximum allowed value of bin-param")
 parser.add_argument('--min-duration', type=float, default=None,
                     help="Fudge factor for templates with tiny or negative "
@@ -76,8 +76,7 @@ parser.add_argument("--sngl-stat", default="new_snr",
 parser.add_argument('--ifo', type=str, help="Interferometer")
 parser.add_argument('--plot-max-x',default=None,
                     help="Maximum stat value for use in plots, if not given "
-                         "then 1.05 times the largest stat value will be used "
-                         "instead")
+                    "1.05 * largest stat value will be used")
 parser.add_argument("--veto-file", type=str,
                     help="File(s) in .xml format with veto segments to apply "
                     "to triggers before fitting")
@@ -92,97 +91,86 @@ parser.add_argument("--fit-function",
                     help="Functional form for the maximum likelihood fit")
 args = parser.parse_args()
 
+# explain or remove
 args.approximant = None
 
-# set up logging
 if args.verbose:
     log_level = logging.DEBUG
 else:
     log_level = logging.WARN
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
-# Open files
 logging.info('Opening trigger file: %s' % args.trigger_file)
 trigf = h5py.File(args.trigger_file, 'r')
 
 logging.info('Opening template file: %s' % args.bank_file)
-full_bank = h5py.File(args.bank_file, 'r')
-
-# store all possible parameters in a single dict for later use
-logging.info('setting up template bank parameters from the parameter file')
+bank = h5py.File(args.bank_file, 'r')
+logging.info('setting up template bank parameters')
 params = {
-        "mass1"  : full_bank['mass1'][:],
-        "mass2"  : full_bank['mass2'][:],
-        "spin1z" : full_bank['spin1z'][:],
-        "spin2z" : full_bank['spin2z'][:]
+        "mass1" : bank['mass1'][:],
+        "mass2" : bank['mass2'][:],
+        "spin1z": bank['spin1z'][:],
+        "spin2z": bank['spin2z'][:]
 }
-full_bank.close()
+bank.close()
 
-# only calculate params that need calculation if they are actually used
+# only calculate params if needed
 usedparams = [args.split_param_two, args.split_param_one, args.bin_param]
-extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration'] if par in usedparams]
+extparams = [par for par in ['mchirp', 'eta', 'chi_eff', 'template_duration']
+             if par in usedparams]
 
 for ex_p in extparams:
     logging.info('calculating {}'.format(ex_p))
     if ex_p == 'template_duration':
         logging.info('using duration from trigger file')
-        params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]\
+        params[ex_p] = np.array([trigf[args.ifo + '/template_duration'][ref][0]
                                  for ref in trigf[args.ifo + '/template_duration_template'][:]])
     else:
         params[ex_p] = trigs.get_param(ex_p, args, params['mass1'],
                                        params['mass2'], params['spin1z'],
                                        params['spin2z'])
 
-#set up formats for use in labels/logging etc
+# string formats for labels, logging etc.
 formats = {
-        "mchirp" : '{:d}',
-        "eta"    : '{:.3f}',
+        "mchirp": '{:d}',
+        "eta": '{:.3f}',
         "chi_eff": '{:.3f}',
-        'template_duration' : '{:.0f}' 
+        'template_duration': '{:.0f}' 
 }
 
 logging.info('setting up {}'.format(usedparams))
-
 sp_one_bin_input = (params[args.split_param_one].min(),
                     params[args.split_param_one].max(), args.split_one_nbins)
 sp_two_bin_input = (params[args.split_param_two].min(),
                     params[args.split_param_two].max(), args.split_two_nbins)
-
 if args.max_bin_param: 
     logging.info(('setting maximum {} value: '
-                   + formats[args.bin_param] ).format(args.bin_param,
-                                                     args.max_bin_param))
+                  + formats[args.bin_param]).format(args.bin_param,
+                                                    args.max_bin_param))
     pbin_upper_lim = float(args.max_bin_param)
 else:
     pbin_upper_lim = params[args.bin_param].max()
-
 bb_input = (params[args.bin_param].min(), pbin_upper_lim, args.num_bins)
 
-logging.info('splitting {} into bins'.format(usedparams[:-1]))
+logging.info('splitting {} into bins'.format(args.bin_param)
+pbins = bin_utils.LogarithmicBins(*bb_input)
+# use sentinel value -1 for templates outside range
+pind = np.array([pbins[par] if par < pbin_upper_lim else -1 for par in params[args.bin_param]])
 
 if args.split_one_log:
     assert params[args.split_param_one].min() > 0
     sp_one_bounds = bin_utils.LogarithmicBins(*sp_one_bin_input)
 else:
     sp_one_bounds = bin_utils.LinearBins(*sp_one_bin_input)
-
 if args.split_two_log:
     assert params[args.split_param_two].min() > 0
     sp_two_bounds = bin_utils.LogarithmicBins(*sp_two_bin_input)
 else:
     sp_two_bounds = bin_utils.LinearBins(*sp_two_bin_input)
 
-# work out which templates are in which bin-param bin
-pbins = bin_utils.LogarithmicBins(*bb_input)
-pind = np.array([pbins[par] if par < pbin_upper_lim else -1 for par in params[args.bin_param]])
-binind = [pbins[c] for c in pbins.centres()]
-
-#for each split-bin work out which template ids are in it
+logging.info('assigning template ids to split-up plots')
 id_in_bin1 = [[]]*args.split_one_nbins
 id_in_bin2 = [[]]*args.split_two_nbins
-
-logging.info('working out which templates are in which split bin')
-
 for i, lower_1, upper_1 in zip(range(args.split_one_nbins),
                                sp_one_bounds.lower(), sp_one_bounds.upper()):
     id_in_bin1[i] = np.intersect1d(np.argwhere(params[args.split_param_one] > lower_1),
@@ -193,8 +181,7 @@ for i, lower_2, upper_2 in zip(range(args.split_two_nbins),
     id_in_bin2[i] = np.intersect1d(np.argwhere(params[args.split_param_two] > lower_2),
                                    np.argwhere(params[args.split_param_two] <= upper_2))
 
-logging.info('getting template boundaries from trigger'
-             ' file into relatable form for template IDs')
+logging.info('getting template boundaries from trigger file')
 boundaries = trigf[args.ifo + '/template_boundaries'][:]
 max_boundary_id = np.argmax(boundaries)
 sorted_boundary_list = np.sort(boundaries)
@@ -202,40 +189,32 @@ sorted_boundary_list = np.sort(boundaries)
 logging.info('getting stat values from trigger file')
 stat = get_stat(args.sngl_stat, trigf[args.ifo])
 
-logging.info('getting trigger vetoes')
+logging.info('applying DQ vetoes')
 time = trigf[args.ifo+'/end_time'][:]
 remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
                      ifo=args.ifo, segment_name=args.veto_segment_name)
-
-logging.info('removing vetoed triggers')
 stat[remove] = np.zeros_like(remove)
-logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(remove.size, stat.size, args.veto_segment_name, args.veto_file))
-
-# not using trigger file any more
+logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
+                  remove.size, stat.size, args.veto_segment_name, args.veto_file))
 trigf.close()
 
 logging.info('setting up plotting and fitting limit values')
-
 minplot = max(stat[np.nonzero(stat)].min(), args.stat_fit_threshold - 1)
 min_fit = max(minplot, args.stat_fit_threshold)
-
 max_fit = 1.05*stat.max()
 if args.plot_max_x:
     maxplot = args.plot_max_x
 else:
     maxplot = max_fit
-
 fitrange = np.linspace(min_fit, max_fit, 100)
 
 logging.info('setting up plotting variables')
-
+histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 fig, axes = plt.subplots(args.split_one_nbins, args.split_two_nbins,
                          sharex=True, sharey=True, 
-                         figsize=(3*args.split_two_nbins,3*args.split_one_nbins))
+                         figsize=(3*args.split_two_nbins, 3*args.split_one_nbins))
 
-histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
-
-#setting up overall legend for use outside of the plots
+# setting up overall legend outside the split-up plots
 lines = []
 labels = []
 for i, lower, upper in zip(range(args.num_bins), pbins.lower(), pbins.upper()):
@@ -246,14 +225,14 @@ for i, lower, upper in zip(range(args.num_bins), pbins.lower(), pbins.upper()):
     labels.append(binlabel)
 
 line_fit, = axes[0,0].plot([0,0], [0,0], linestyle='--',
-                 color='k', alpha=0.6)
+                           color='k', alpha=0.6)
 lines.append(line_fit)
 labels.append(args.fit_function + ' fit to counts')
-
 lgd = axes[0,0].legend(lines, labels, labelspacing=0.2,
                        bbox_to_anchor=(-0.5, 0.5), title=args.bin_param)
-maxyval = 0
+
 logging.info('starting bin, histogram and plot loop')
+maxyval = 0
 for x in range(args.split_one_nbins):
     logging.info('split {} number {}'.format(args.split_param_one, x))
     id_bin1 = id_in_bin1[x]
@@ -261,41 +240,34 @@ for x in range(args.split_one_nbins):
         logging.info('split {} number {}'.format(args.split_param_two, y))
         id_bin2 = id_in_bin2[y]
         ax = axes[x,y]
-        logging.info('getting indices within the {} conditions'.format(usedparams[:-1]))
+        logging.info('getting templates in the {} conditions'.format(args.bin_param)
         id_in_both = np.intersect1d(id_bin1, id_bin2)
         for i, lower, upper in zip(range(args.num_bins), pbins.lower(),
                                    pbins.upper()):
-            logging.info('finding indices which meet all conditions')
+            logging.info('getting templates which meet all conditions')
             indices_all_conditions = np.intersect1d(np.argwhere(pind == i),
                                                     id_in_both)
-            logging.info('{} template indices in this bank split'.format(len(indices_all_conditions)))
+            logging.info('{} templates in this bank split'.format(len(indices_all_conditions)))
             if len(indices_all_conditions) == 0: continue
             vals_inbin = []
             logging.info('{} split {}-{}'.format(args.bin_param, lower, upper))
             for idx in indices_all_conditions:
                 where_idx_start = boundaries[idx]
-
                 if idx == max_boundary_id:
-                    where_idx_end= len(stat)
+                    where_idx_end = len(stat)
                 else:
-                    where_idx_end = sorted_boundary_list[np.argwhere(sorted_boundary_list == where_idx_start)[0][0]+1]
+                    where_idx_end = sorted_boundary_list[
+                        np.argwhere(sorted_boundary_list == where_idx_start)[0][0] + 1]
                 vals_inbin += list(stat[where_idx_start:where_idx_end])
 
             vals_inbin = np.array(vals_inbin)
             vals_above_thresh = vals_inbin[vals_inbin >= args.stat_fit_threshold]
             logging.info('{} out of {} triggers below threshold'.format(
-                           len(vals_inbin) - len(vals_above_thresh),
-                           len(vals_inbin)))
+                           len(vals_inbin) - len(vals_above_thresh), len(vals_inbin)))
             logging.info('fitting stat values above {}'.format(args.stat_fit_threshold))
             alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function,
                                  vals_above_thresh, args.stat_fit_threshold)
-
-            # add histogram to plot
-            histcounts, edges = np.histogram(vals_inbin, bins=50)
-            cum_counts = histcounts[::-1].cumsum()[::-1]
-
-            logging.info('setting up fitted values for comparison')
-
+            logging.info('calculating fitted distributions')
             fitted_cum_counts = len(vals_above_thresh) * \
                                 trstats.cum_fit(args.fit_function, fitrange,
                                                 alpha, args.stat_fit_threshold)
@@ -308,8 +280,10 @@ for x in range(args.split_one_nbins):
                                                       alpha - sig_alpha,
                                                       args.stat_fit_threshold)
 
-
-            # histogram of fitted values
+            # make histogram of fitted values
+            histcounts, edges = np.histogram(vals_inbin, bins=50)
+            cum_counts = histcounts[::-1].cumsum()[::-1]
+            # plot the lines!
             ax.semilogy(edges[:-1], cum_counts, linewidth=2,
                      color=histcolors[i], alpha=0.6)
             ax.semilogy(fitrange, fitted_cum_counts, "--", color=histcolors[i],
@@ -321,14 +295,12 @@ for x in range(args.split_one_nbins):
         maxyval = max(maxyval, cum_counts.max())
         ax.grid()
 
-logging.info('setting up labels and whatnot')
-
+logging.info('setting up labels')
 for i in range(args.split_one_nbins):
     for j in range(args.split_two_nbins):
         axes[i,j].semilogy([args.stat_fit_threshold, args.stat_fit_threshold],
-                    [1,5*maxyval], 'k', linestyle=':', alpha=0.2)
-
-axes[0,0].set_ylim(1,5*maxyval)
+                           [1, 5*maxyval], 'k', linestyle=':', alpha=0.2)
+axes[0,0].set_ylim(1, 5*maxyval)
 axes[0,0].set_xlim(minplot, maxplot)
 
 for j in range(args.split_two_nbins):
@@ -351,7 +323,6 @@ axes[0,0].add_artist(lgd)
 fkwds = {'bbox_extra_artists': (lgd,), 'bbox_inches': 'tight'}
 
 logging.info('saving to file ' + args.output_file)
-
 results.save_fig_with_metadata(
     fig, args.output_file, fig_kwds=fkwds,
     title="{}: {} histogram of single detector triggers split by"
