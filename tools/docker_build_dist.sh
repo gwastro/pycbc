@@ -6,7 +6,6 @@ for i in $*; do
   case $i in
     --pycbc-container=*) PYCBC_CONTAINER="`echo $i|sed 's/^--pycbc-container=//'`";;
     --pull-request=*) TRAVIS_PULL_REQUEST="`echo $i|sed 's/^--pull-request=//'`";;
-    --lalsuite-hash=*) LALSUITE_HASH="`echo $i|sed 's/^--lalsuite-hash=//'`";;
     --commit=*) TRAVIS_COMMIT="`echo $i|sed 's/^--commit=//'`";;
     --secure=*) TRAVIS_SECURE_ENV_VARS="`echo $i|sed 's/^--secure=//'`";;
     --tag=*) TRAVIS_TAG="`echo $i|sed 's/^--tag=//'`";;
@@ -33,7 +32,6 @@ fi
 echo -e "\\n>> [`date`] Inside container ${PYCBC_CONTAINER}"
 echo -e "\\n>> [`date`] Release tag is ${TRAVIS_TAG}"
 echo -e "\\n>> [`date`] Using PyCBC code ${PYCBC_CODE}"
-echo -e "\\n>> [`date`] Using lalsuite hash ${LALSUITE_HASH}"
 echo -e "\\n>> [`date`] Travis pull request is ${TRAVIS_PULL_REQUEST}"
 echo -e "\\n>> [`date`] Travis commit is ${TRAVIS_COMMIT}"
 echo -e "\\n>> [`date`] Travis secure env is ${TRAVIS_SECURE_ENV_VARS}"
@@ -47,24 +45,18 @@ fi
 
 if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
-  if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
-    echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
-    ENV_OS="x86_64_rhel_7"
-    yum -y install python2-pip python-setuptools which
-    yum -y install curl
-    curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
-    yum clean all
-    yum makecache
-    yum -y update
-    yum -y install openssl-devel openssl-static
-    yum -y install pegasus
-    yum -y install ligo-proxy-utils
-    yum -y install ecp-cookie-init
-    yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static
-  else
-    echo -e "\\n>> [`date`] Unknown operating system for virtual environment build"
-    exit 1
-  fi
+  ENV_OS="x86_64_rhel_7"
+  yum -y install python2-pip python-setuptools which
+  yum -y install curl
+  curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
+  yum clean all
+  yum makecache
+  yum -y update
+  yum -y install openssl-devel openssl-static
+  yum -y install pegasus
+  yum -y install ligo-proxy-utils
+  yum -y install ecp-cookie-init
+  yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static
 
   CVMFS_PATH=/cvmfs/oasis.opensciencegrid.org/ligo/sw/pycbc/${ENV_OS}/virtualenv
   mkdir -p ${CVMFS_PATH}
@@ -80,25 +72,8 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
 
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
-  pip install --upgrade pip
+  pip install --upgrade pip setuptools
   pip install six packaging appdirs
-  pip install --upgrade setuptools
-
-  echo -e "\\n>> [`date`] Installing base python packages required to build lalsuite"
-  pip install "numpy>=1.6.4" "h5py>=2.5" python-cjson Cython decorator
-  echo -e "\\n>> [`date`] Installing scipy"
-  pip install "scipy>=0.13.0" &>/dev/null
-
-  echo -e "\\n>> [`date`] Installing LAL"
-  mkdir -p ${VIRTUAL_ENV}/src
-  cd ${VIRTUAL_ENV}/src
-  git clone https://git.ligo.org/lscsoft/lalsuite.git lalsuite
-  cd ${VIRTUAL_ENV}/src/lalsuite
-  git checkout ${LALSUITE_HASH}
-  ./00boot
-  ./configure --prefix=${VIRTUAL_ENV} --enable-swig-python --disable-lalstochastic --disable-lalxml --disable-lalinference --disable-laldetchar --disable-lalapps 2>&1 | grep -v checking
-  make -j 2 2>&1 | grep Entering
-  make install 2>&1 | grep Entering
 
   # write PKG_CONFIG_PATH to activate
   sed -in "s/# unset PYTHONHOME/_OLD_PKG_CONFIG_PATH=\"\${PKG_CONFIG_PATH}\"\\
@@ -117,35 +92,13 @@ export PKG_CONFIG_PATH\\
 
   deactivate
 
-  echo -e "\\n>> [`date`] Installing LALApps"
-  source ${VENV_PATH}/bin/activate
-  cd $VIRTUAL_ENV/src/lalsuite/lalapps
-  if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
-    LIBS="-lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV} --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
-  elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
-    LIBS="-L/usr/lib/x86_64-linux-gnu/hdf5/serial -lhdf5_hl -lhdf5 -lcrypto -lssl -ldl -lz -lstdc++" ./configure --prefix=${VIRTUAL_ENV} --disable-lalxml --disable-lalinference --disable-lalburst --disable-lalpulsar --disable-lalstochastic 2>&1 | grep -v checking
-  fi
-  cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/lalapps
-  make -j 2 2>&1 | grep Entering
-  cd $VIRTUAL_ENV/src/lalsuite/lalapps/src/inspiral
-  make -j 2 2>&1 | grep Entering
-  make install 2>&1 | grep Entering
-
-  echo -e "\\n>> [`date`] Install matplotlib 1.5.3"
-  pip install 'matplotlib==1.5.3'
-
   echo -e "\\n>> [`date`] Installing PyCBC dependencies from requirements.txt"
   cd /pycbc
   pip install -r requirements.txt
   pip install -r companion.txt
 
   echo -e "\\n>> [`date`] Installing PyCBC from source"
-  python setup.py install
-
-  echo -e "\\n>> [`date`] Installing modules needed to build documentation"
-  pip install "Sphinx>=1.5.0"
-  pip install sphinx-rtd-theme
-  pip install sphinxcontrib-programoutput
+  pip install .
 
   echo -e "\\n>> [`date`] Installing ipython and jupyter"
   pip install ipython
