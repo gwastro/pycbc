@@ -29,14 +29,25 @@ class MultinestFile(BaseInferenceFile):
 
     name = 'multinest_file'
 
-    def write_samples(self, samples, parameters=None, start_iteration=None,
-                      max_iterations=None):
+    def write_samples(self, samples, parameters=None):
+        """Writes samples to the given file.
+
+        Results are written to ``samples_group/{vararg}``, where ``{vararg}``
+        is the name of a model params. The samples are written as an
+        array of length ``niterations``.
+
+        Parameters
+        -----------
+        samples : dict
+            The samples to write. Each array in the dictionary should have
+            length niterations.
+        parameters : list, optional
+            Only write the specified parameters to the file. If None, will
+            write all of the keys in the ``samples`` dict.
+        """
         niterations = len(samples.values()[0])
         assert all(len(p) == niterations for p in samples.values()), (
-               "all samples must have the same shape")
-        if max_iterations is not None and max_iterations < niterations:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
+            "all samples must have the same shape")
         group = self.samples_group + '/{name}'
         if parameters is None:
             parameters = samples.keys()
@@ -51,7 +62,7 @@ class MultinestFile(BaseInferenceFile):
             except KeyError:
                 # dataset doesn't exist yet
                 self.create_dataset(dataset_name, (niterations,),
-                                    maxshape=(max_iterations,),
+                                    maxshape=(None,),
                                     dtype=samples[param].dtype,
                                     fletcher32=True)
             self[dataset_name][:] = samples[param]
@@ -69,9 +80,9 @@ class MultinestFile(BaseInferenceFile):
             The log of the evidence.
         dlnz : float
             The error in the estimate of the log evidence.
-        importance_lnz : float
+        importance_lnz : float, optional
             The importance-weighted log of the evidence.
-        importance_dlnz : float
+        importance_dlnz : float, optional
             The error in the importance-weighted estimate of the log evidence.
         """
         self.attrs['log_evidence'] = lnz
