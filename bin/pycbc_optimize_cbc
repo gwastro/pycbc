@@ -2,10 +2,9 @@
 """Followup a candidate"""
 import h5py, numpy, argparse, logging
 import pycbc.version, pycbc.strain, pycbc.waveform, pycbc.pnutils, pycbc.filter
-import pycbc.conversions, pycbc.types, pycbc.dq
+import pycbc.conversions, pycbc.types, pycbc.dq, pycbc.scheme
 from scipy.optimize import differential_evolution
 from pycbc.types.optparse import DictWithDefaultReturn
-import pycbc.scheme
 
 def params_from_waveformstr(wstr):
     wparams = {}
@@ -19,25 +18,20 @@ def params_from_waveformstr(wstr):
     return wparams
 
 def network_snr(wparam, trig_time, stilde, psd, fixed):
-    mchirp = wparam[0]
-    q = wparam[1]
-    spin = wparam[2]
-
+    mchirp, q, spin = wparam
     p = fixed.copy()
     p['mass1'] = pycbc.conversions.mass1_from_mchirp_q(mchirp, q)
     p['mass2'] = pycbc.conversions.mass2_from_mchirp_q(mchirp, q)
-    p['spin1z'] = spin
-    p['spin2z'] = spin
-
+    p['spin1z'] = p['spin2z'] = spin
     with ctx:
         out = pycbc.types.zeros(len(psd.values()[0]), dtype=numpy.complex64)
         hp = pycbc.waveform.get_waveform_filter(out,
-                                                delta_f=stilde.values()[0].delta_f,
-                                                 **p)
+                            delta_f=stilde.values()[0].delta_f, **p)
         nsnr = 0
         for ifo in strain:
-            snr = pycbc.filter.matched_filter(hp, stilde[ifo], psd=psd[ifo],
-                                              low_frequency_cutoff=fixed['f_lower'])
+            snr = pycbc.filter.matched_filter(
+                        hp, stilde[ifo], psd=psd[ifo],
+                        low_frequency_cutoff=p['f_lower'])
             z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
             nsnr += abs(z).max() ** 2.0
     return -nsnr ** 0.5
@@ -53,11 +47,6 @@ parser.add_argument('--input-file',
     help="HDF File which gives the trigger followup information for a set")
 parser.add_argument('--start-index', type=int)
 parser.add_argument('--end-index', type=int)
-
-# Option to shift times based on valid segments
-parser.add_argument("--science-name", help="Science flag definition")
-parser.add_argument("--segment-server")
-parser.add_argument("--veto-definer-file")
 
 # Options to directly supply followup information
 parser.add_argument('--template-parameters', nargs='+')
@@ -86,10 +75,8 @@ if args.input_file:
     ofile.attrs['start_index'] = start
     ofile.attrs['end_index' ] = end
     wparams = f['waveparams'][start:end]
-    triggers = (f['time'][start:end],
-                f['offsets'][start:end],
-                [dict(zip(wparams.dtype.names, x)) for x in wparams],
-                )
+    triggers = (f['time'][start:end], f['offsets'][start:end],
+                [dict(zip(wparams.dtype.names, x)) for x in wparams])
 
 elif args.trigger_time:
     waveparams = params_from_waveformstr(args.template_parameters)
@@ -114,7 +101,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     mchirp = pycbc.conversions.mchirp_from_mass1_mass2(m1, m2)
     waveparams['approximant'] = 'SPAtmplt' if mchirp < 3 else 'IMRPhenomD'
     templatelen = pycbc.waveform.get_waveform_filter_length_in_time(**waveparams)
-    filterbuffer = templatelen + 5.0 + psdseg * 2
+    filterbuffer = templatelen + 4.0 + psdseg * 2
     filterbuffer = pycbc.pnutils.nearest_larger_binary_number(filterbuffer)
     logging.info('Template duration is %s seconds', templatelen)
     logging.info('We need %s seconds to filter this waveform', filterbuffer)
@@ -165,40 +152,33 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
                                               dyn_range_fac=pycbc.DYN_RANGE_FAC)
 
     # Undo any time offsets for slides
+    stilde = {}
+    psd = {}
     for ifo in strain:
         strain[ifo].start_time = round(strain[ifo].start_time - time_offsets[ifo])
 
-    stilde = {ifo: strain[ifo].time_slice(
-                            filter_start[ifo],
-                            filter_end[ifo]).to_frequencyseries() for ifo in strain}
+        spart = strain[ifo].time_slice(filter_start[ifo], filter_end[ifo])
+        stilde[ifo] = spart.to_frequencyseries()
 
-    logging.info('Calculating PSD around time')
-    psd = {ifo: strain[ifo].time_slice(psd_start[ifo], psd_end[ifo]).filter_psd(
-                           psdseg,
-                           stilde[ifo].delta_f,
-                           args.low_frequency_cutoff) for ifo in strain}
+        logging.info('Calculating PSD around time')
+        spart = strain[ifo].time_slice(psd_start[ifo], psd_end[ifo])
+        psd[ifo] = spart.filter_psd(psdseg, stilde[ifo].delta_f,
+                                    args.low_frequency_cutoff)
 
     logging.info('Optimizing Parameters')
     ################# Need better way to specific limits and ensure boundaries#
     minchirp = mchirp * (1 - mchirp / 200.0)
     maxchirp = mchirp * (1 + mchirp / 200.0)
-    if minchirp < 1:
-        minchirp = 1
-    if maxchirp > 80:
-        maxchirp = 80
+    minchirp = 1 if minchirp < 1 else minchirp
+    maxchirp = 80 if maxchirp > 80 else maxchirp
 
     q = max(m1 / m2, m2 / m1)
     minq, maxq = q * 0.7, q * 1.5
-    if minq < 1:
-        minq = 1.0
-    if maxq > 100:
-        maxq = 100
+    minq = 1.0 if minq < 1 else minq
+    maxq = 100 if maxq > 100 else maxq
     logging.info('Using chirp mass range %s-%s', minchirp, maxchirp)
     logging.info('Using mass ratio range %s-%s', minq, maxq)
-    bounds = [(minchirp, maxchirp),
-              (minq, maxq),
-              (-.98, 0.98), # Range of Spin
-             ]
+    bounds = [(minchirp, maxchirp), (minq, maxq), (-.98, 0.98)]
     result = differential_evolution(network_snr, bounds, popsize=20,
                                     args=(trigger_time, stilde,
                                           psd, waveparams),
