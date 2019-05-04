@@ -585,7 +585,7 @@ def insert_strain_option_group(parser, gps_times=True):
 
 # FIXME: This repeats almost all of the options above. Any nice way of reducing
 #        this?
-def insert_strain_option_group_multi_ifo(parser):
+def insert_strain_option_group_multi_ifo(parser, gps_times=True):
     """
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
@@ -606,11 +606,12 @@ def insert_strain_option_group_multi_ifo(parser):
                   "supports reading from multiple ifos simultaneously.")
 
     # Required options
-    data_reading_group_multi.add_argument("--gps-start-time", nargs='+',
+    if gps_times:
+        data_reading_group_multi.add_argument("--gps-start-time", nargs='+',
                             action=MultiDetOptionAction, metavar='IFO:TIME',
                             help="The gps start time of the data "
                                  "(integer seconds)", type=int)
-    data_reading_group_multi.add_argument("--gps-end-time", nargs='+', type=int,
+        data_reading_group_multi.add_argument("--gps-end-time", nargs='+', type=int,
                             action=MultiDetOptionAction, metavar='IFO:TIME',
                             help="The gps end time of the data "
                                  "(integer seconds)")
