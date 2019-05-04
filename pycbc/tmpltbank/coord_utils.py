@@ -294,7 +294,7 @@ def get_random_mass(numPoints, massRangeParams):
             mass2_bns = mass2_not_bbh[mask_bns]
             spin1z_bns = spin1z_not_bbh[mask_bns]
             spin2z_bns = spin2z_not_bbh[mask_bns]
-            # 2) ...it is an NS-BH with remnant mass greater than the threshold required to have a counterpart
+            # 3) ...it is an NS-BH with remnant mass greater than the threshold required to have a counterpart
             mass1_nsbh = mass1_not_bbh[mask_nsbh]
             mass2_nsbh = mass2_not_bbh[mask_nsbh]
             spin1z_nsbh = spin1z_not_bbh[mask_nsbh]
