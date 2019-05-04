@@ -90,7 +90,7 @@ if args.adjust_psd_center:
         segs[ifo] = (f[args.channel_name[ifo]]['segments/start'][:],
                      f[args.channel_name[ifo]]['segments/end'][:])
 
-# Determine what data we need to read and prepare
+
 stats = []
 for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     logging.info('Starting work on trigger %s/%s: %s', i, len(triggers[0]), trigger_time)
@@ -108,14 +108,13 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
 
     args.gps_start_time = DictWithDefaultReturn()
     args.gps_end_time = DictWithDefaultReturn()
-    psd_start = {}
-    psd_end = {}
-    filter_start = {}
-    filter_end = {}
+    psd_start, psd_end = {}, {}
+    filter_start, filter_end = {}, {}
 
     # Allow an IFO to be excluded using a sentinel value
     ifos = [ifo for ifo in args.instruments if time_offsets[ifo] != numpy.inf]
 
+    # Determine what data we need to read and prepare
     for ifo in ifos:
         filter_end[ifo] = int(trigger_time + psdseg + 2)
         filter_start[ifo] = filter_end[ifo] - filterbuffer
@@ -166,8 +165,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
                                     args.low_frequency_cutoff)
 
     logging.info('Optimizing Parameters')
-    ################# Need better way to specific limits and ensure boundaries#
-    minchirp = mchirp * (1 - mchirp / 200.0)
+    minchirp = mchirp * (1 - mchirp / 200.0) # need better way to set limits
     maxchirp = mchirp * (1 + mchirp / 200.0)
     minchirp = 1 if minchirp < 1 else minchirp
     maxchirp = 80 if maxchirp > 80 else maxchirp
