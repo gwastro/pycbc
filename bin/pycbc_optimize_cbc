@@ -76,13 +76,15 @@ pycbc.scheme.insert_processing_option_group(parser)
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
-
 ctx = pycbc.scheme.from_cli(args)
+ofile = h5py.File(args.output_file, 'w')
 
 if args.input_file:
     f = h5py.File(args.input_file, 'r')
     start = 0 if args.start_index is None else args.start_index
     end = len(f['time']) if args.end_index is None else args.end_index
+    ofile.attrs['start_index'] = start
+    ofile.attrs['end_index' ] = end
     wparams = f['waveparams'][start:end]
     triggers = (f['time'][start:end],
                 f['offsets'][start:end],
@@ -166,8 +168,6 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     for ifo in strain:
         strain[ifo].start_time = round(strain[ifo].start_time - time_offsets[ifo])
 
-        print strain[ifo].start_time, strain[ifo].end_time, strain[ifo].duration
-
     stilde = {ifo: strain[ifo].time_slice(
                             filter_start[ifo],
                             filter_end[ifo]).to_frequencyseries() for ifo in strain}
@@ -207,6 +207,5 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     stat = result['fun'] * -1.0
     stats.append(stat)
 
-f = h5py.File('args.output_file', 'w')
-f['stat'] = numpy.array(stats)
+ofile['stat'] = numpy.array(stats)
 logging.info('Done')
