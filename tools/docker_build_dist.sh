@@ -45,70 +45,7 @@ if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
   chmod 600 ~/.ssh/id_rsa
 fi
 
-if [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ] ; then
-  echo -e "\\n>> [`date`] Building pycbc_inspiral bundle for CentOS 6"
-
-  # create working dir for build script
-  BUILD=/pycbc/build
-  mkdir -p ${BUILD}
-  export PYTHONUSERBASE=${BUILD}/.local
-  export XDG_CACHE_HOME=${BUILD}/.cache
-
-  # Autoconf needs m4
-  wget -O m4-1.4.9.tar.gz http://ftp.gnu.org/gnu/m4/m4-1.4.9.tar.gz
-  tar -zvxf m4-1.4.9.tar.gz
-  cd m4-1.4.9
-  ./configure
-  make
-  make install
-  cd ..
-
-  # Build new autoconf
-  curl -L -O http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
-  tar zxf autoconf-2.69.tar.gz
-  cd autoconf-2.69
-  ./configure
-  make && make install
-  cd ..
-
-  # get library to build optimized pycbc_inspiral bundle
-  wget_opts="-c --passive-ftp --no-check-certificate --tries=5 --timeout=30 --no-verbose"
-  primary_url="https://git.ligo.org/ligo-cbc/pycbc-software/raw/"
-  secondary_url="https://www.atlas.aei.uni-hannover.de/~dbrown"
-  pushd /pycbc
-  for p in "cea5bd67440f6c3195c555a388def3cc6d695a5c/x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz" "2d7e4a4f2f1503db5b93d70907fa24ad54bffbcb/travis/testbank_TF2v4ROM.hdf" ; do
-    set +e
-    test -r `basename $p` || wget $wget_opts ${primary_url}/${p}
-    set -e
-    test -r `basename $p` || wget $wget_opts ${secondary_url}/${p}
-  done
-  popd
-
-  # run the einstein at home build and test script
-  echo -e "\\n>> [`date`] Running pycbc_build_eah.sh"
-  pushd ${BUILD}
-  /pycbc/tools/einsteinathome/pycbc_build_eah.sh --lalsuite-commit=${LALSUITE_HASH} ${PYCBC_CODE} --clean-pycbc --silent-build --download-url=https://git.ligo.org/ligo-cbc/pycbc-software/raw/efd37637fbb568936dfb92bc7aa8a77359c9aa36/travis --with-extra-approximant='SPAtmplt:mtotal<4' --with-extra-approximant='SEOBNRv4_ROM:else'  --with-extra-approximant=--use-compressed-waveforms --with-extra-libs=file:///pycbc/composer_xe_2015.0.090.tar.gz --processing-scheme=mkl --with-extra-bank=/pycbc/testbank_TF2v4ROM.hdf
-
-  if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
-    echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle"
-    BUNDLE_DEST=/home/pycbc/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
-    echo -e "\\n>> [`date`] Deploying pycbc_inspiral bundle to sugwg-condor.phy.syr.edu"
-    ssh pycbc@sugwg-condor.phy.syr.edu "mkdir -p ${BUNDLE_DEST}"
-    scp ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral_osg* pycbc@sugwg-condor.phy.syr.edu:${BUNDLE_DEST}/pycbc_inspiral
-    if [ "x${TRAVIS_TAG}" != "xmaster" ] ; then
-      PYCBC_INSPIRAL_SUFFIX="_osg_${TRAVIS_TAG}"
-      BUNDLE_DEST=/home/login/ouser.ligo/ligo/deploy/sw/pycbc/x86_64_rhel_6/bundle/${TRAVIS_TAG}
-      echo -e "\\n>> [`date`] Deploying pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} to CVMFS"
-      ssh ouser.ligo@oasis-login.opensciencegrid.org "mkdir -p ${BUNDLE_DEST}"
-      scp ${BUILD}/pycbc-build/environment/dist/pycbc_inspiral${PYCBC_INSPIRAL_SUFFIX} ouser.ligo@oasis-login.opensciencegrid.org:${BUNDLE_DEST}/pycbc_inspiral
-      ssh ouser.ligo@oasis-login.opensciencegrid.org osg-oasis-update
-    fi
-    echo -e "\\n>> [`date`] pycbc_inspiral deployment complete"
-  fi
-  popd
-fi
-
-if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
+if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
 
   if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then
     echo -e "\\n>> [`date`] Building pycbc virtual environment for CentOS 7"
@@ -124,31 +61,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
     yum -y install ligo-proxy-utils
     yum -y install ecp-cookie-init
     yum -y install hdf5-static libxml2-static zlib-static libstdc++-static cfitsio-static glibc-static fftw-static gsl-static
-  elif [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] ; then
-    echo -e "\\n>> [`date`] Building pycbc virtual environment for Debian"
-    ENV_OS="x86_64_deb_8"
-    apt-get update
-    apt-get -y install python-pip
-    apt-get -y install curl
-    echo "deb http://software.ligo.org/gridtools/debian jessie main" > /etc/apt/sources.list.d/gridtools.list
-    echo "deb http://software.ligo.org/lscsoft/debian jessie contrib" > /etc/apt/sources.list.d/lscsoft.list
-    apt-get update
-    apt-get --assume-yes --allow-unauthenticated install lscsoft-archive-keyring
-    apt-get update
-    apt-get -y remove --purge openjdk-\*
-    echo "deb http://httpredir.debian.org/debian jessie-backports main non-free" > /etc/apt/sources.list.d/backports.list
-    echo "deb-src http://httpredir.debian.org/debian jessie-backports main non-free" >> /etc/apt/sources.list.d/backports.list
-    apt-get update
-    apt-get -y install -t jessie-backports openjdk-8-jre-headless ca-certificates-java
-    curl -s -o pegasus-gpg.txt https://download.pegasus.isi.edu/pegasus/gpg.txt
-    apt-key add pegasus-gpg.txt
-    echo 'deb http://download.pegasus.isi.edu/wms/download/debian jessie main' > /etc/apt/sources.list.d/pegasus.list
-    apt-get update
-    apt-get -y install pegasus
-    apt-get -y install ligo-proxy-utils
-    apt-get -y install ecp-cookie-init
-    apt-get -y install uuid-runtime
-    apt-get -y install openssl swig
   else
     echo -e "\\n>> [`date`] Unknown operating system for virtual environment build"
     exit 1
@@ -166,7 +78,7 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINE
   mkdir -p ${VIRTUAL_ENV}/.local
   echo -e "[easy_install]\\nzip_ok = false\\n" > ~/.pydistutils.cfg
   echo -e "[easy_install]\\nzip_ok = false\\n" > ${VIRTUAL_ENV}/.local/.pydistutils.cfg
-    
+
   echo -e "\\n>> [`date`] Upgrading pip and setuptools"
   pip install --upgrade pip
   pip install six packaging appdirs
@@ -288,7 +200,7 @@ EOF
     fi
     echo -e "\\n>> [`date`] virtualenv deployment complete"
   fi
-fi 
+fi
 
 echo -e "\\n>> [`date`] Docker script exiting"
 
