@@ -3,7 +3,6 @@
 set -e
 
 echo -e "\\n>> [`date`] Starting docker container ${DOCKER_IMG}"
-echo -e "\\n>> [`date`] Using LALSUITE HASH: ${LALSUITE_HASH}"
 
 if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] ; then
   cp -R ~/.ssh .
