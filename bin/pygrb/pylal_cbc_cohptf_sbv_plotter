@@ -670,11 +670,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
               xlims=[6,30], ylims=[4,30], \
               use_logs=False, verbose=verbose)
 
-
-  #Plot coherent SNR versus traceSNR 
-  aT = [6,30]
-  bT = [6,27.5]
-  
+  # Plot coherent SNR versus traceSNR 
   maxSNR = trigSNR.max()
   if injFile and injSNR.size and injSNR.max() > maxSNR:
     maxSNR = injSNR.max()
@@ -683,12 +679,12 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   fig_tag = '%s_%s' % (tag, "trace_snr_vs_snr") 
   plot_vs_snr(trigSNR, trigTraceSNR, injSNR, injTraceSNR, injFile, \
               "Coherent SNR", "Trace SNR", outdir, fig_tag, \
-              snr_vals=aT, conts=[bT], colors=['g-'], \
+              snr_vals=[6,30], conts=[[6,27.5]], colors=['g-'], \
               use_logs=False, verbose=verbose)
   fig_tag = "%s_%s" %(fig_tag, "zoom")
   plot_vs_snr(trigSNR, trigTraceSNR, injSNR, injTraceSNR, injFile, \
               "Coherent SNR", "Trace SNR", outdir, fig_tag, \
-              snr_vals=aT, conts=[bT], colors=['g-'], \
+              snr_vals=[6,30], conts=[[6,27.5]], colors=['g-'], \
               xlims=[6,30], ylims=[4,30], \
               use_logs=False, verbose=verbose)
   
@@ -857,7 +853,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
     plt.close()
     
 
-# Plot single detector chi-square plots 
+  # Plot single detector chi-square plots 
   for ifo in ifos:
     if sngl_bank_chisq:
       fig_tag = "%s_%s_%s_%s" % (tag, "snr_vs", ifo, "bankchisq")
