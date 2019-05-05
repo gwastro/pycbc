@@ -484,18 +484,18 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   injIfostanCS = dict((ifo, None) for ifo in ifos)
   #injSigma = None
   #injAmp = None
-  #injRelAmp1 = None
+  injRelAmp1 = None
   #injGammaR = None
   #injGammaI = None
   #injDeltaR = None
   #injDeltaI = None
   #injNorm1 = None
   #injNorm2 = None
-  #injNorm3 = None
+  injNorm3 = None
   #injAmpPlus = None
   #injAmpCross = None
-  #injRelAmp2 = None
-  #injInclination = None
+  injRelAmp2 = None
+  injInclination = None
 
   # Fill in injection related variables (if injection files exist)
   if injFile:
@@ -671,7 +671,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
               use_logs=False, verbose=verbose)
 
 
-  # TODO: Plot coherent SNR versus traceSNR 
+  #Plot coherent SNR versus traceSNR 
   aT = [6,30]
   bT = [6,27.5]
   
@@ -923,29 +923,22 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
                          "failed with zeros in a loglog plot\n")
 
 
-  # TODO: plot SNR versus SNR-traceSNR
-  fig = plt.figure()
-  ax  = fig.gca()
-  ax.plot(trigSNR, trigSNR - trigTraceSNR, 'bx')
-  ax.grid()
-  ax.set_xlabel("Coherent SNR")
-  ax.set_ylabel("SNR - Trace SNR")
-  fig.savefig("%s/%s_tracediff_noinj.png" % (outdir, tag),\
-               bbox_inches='tight')
-  
+  # plot SNR versus SNR-traceSNR
+  if not injFile:
 
-  if injFile:
-    ax.plot(injSNR, injSNR - injTraceSNR, 'r+')
-    fig.savefig("%s/%s_trace_diff_vs_snr.png" % (outdir, tag),\
-               bbox_inches='tight')
-    ax.set_xlim([6,20])
-    ax.set_ylim([-5,10])
-    fig.savefig("%s/%s_trace_diff_vs_snr_zoom.png" % (outdir, tag),\
-               bbox_inches='tight')
+    fig_tag = "%s_%s" % (tag, "tracediff_noinj") 
+    plot_vs_snr(trigSNR, trigSNR - trigTraceSNR, injSNR,None, injFile, "Coherent SNR", "SNR - TraceSNR", \
+              outdir, fig_tag, use_logs=False, verbose=True)
+
+  else :
+    fig_tag = "%s_%s" (tag, "trace_diff_vs_snr")
+    plot_vs_snr(trigSNR, trigSNR - trigTraceSNR, injSNR, injSNR - injTraceSNR, injFile, "Coherent SNR", "SNR - traceSNR", \
+                outdir, fig_tag, use_logs=False, verbose=True)     
+    fig_tag = "%s_%s" % (tag, "trace_diff_vs_snr_zoom")
+    plot_vs_snr(trigSNR, trigSNR - trigTraceSNR, injSNR, injSNR - injTraceSNR, injFile, "Coherent SNR", "SNR - traceSNR", \
+                outdir, fig_tag,xlims=[6,20], ylims=[-5,10], use_logs=False, verbose=True)     
     
-  plt.close()
-  
-  # TODO: plot time versus null stat
+     # TODO: plot time versus null stat
   fig = plt.figure()
   ax  = fig.gca()
   ax.plot(trigTime, trigNullstat, 'bx')
@@ -960,87 +953,52 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
   plt.close()
   
 
-  # TODO: plot SNR versus rel amp
+  #plot SNR versus rel amp
   try:
-    fig = plt.figure()
-    ax  = fig.gca()
-    ax.loglog(trigSNR, trigRelAmp1, 'bx')
-    ax.grid()
-    if injFile:
-      ax.loglog(injSNR, injRelAmp1, 'r+')
-    ax.set_xlabel("Coherent SNR")
-    ax.set_ylabel("Relative amplitude")
-    fig.savefig("%s/%s_rel_amp_vs_snr.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    ax.set_xlim([6, 30])
-    fig.savefig("%s/%s_rel_amp_vs_snr_zoom.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    plt.close()
-    
+    fig_tag = "%s_%s" % (tag, "rel_amp_vs_snr") 
+    plot_vs_snr(trigSNR, trigRelAmp1, injSNR, injRelAmp1, injFile, "Coherent SNR", "Relative amplitude", \
+                outdir, fig_tag, verbose=True)  
+    fig_tag = "%s_%s" % (tag, "rel_amp_vs_snr_zoom") 
+    plot_vs_snr(trigSNR, trigRelAmp1, injSNR, injRelAmp1, injFile, "Coherent SNR", "Relative amplitude", \
+                outdir, fig_tag, xlims=[6,30], verbose=True)  
+
   except (OverflowError,ValueError):
     sys.stderr.write("WARNING: Relative amplitude versus coherent SNR "+\
                      "failed.\n")
   
-  # TODO: plot SNR versus rel amp 2
+  #plot SNR versus rel amp 2
   try:
-    fig = plt.figure()
-    ax  = fig.gca()
-    ax.loglog(trigSNR, trigRelAmp2, 'bx')
-    ax.grid()
-    if injFile:
-      ax.loglog(injSNR, injRelAmp2, 'r+')
-    ax.set_xlabel("Coherent SNR")
-    ax.set_ylabel("Relative amplitude")
-    fig.savefig("%s/%s_rel_amp2_vs_snr.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    ax.set_xlim([6,30])
-    fig.savefig("%s/%s_rel_amp2_vs_snr_zoom.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    plt.close()
-    
+    fig_tag ="%s_%s" % (tag, "rel_amp2_vs_snr")
+    plot_vs_snr(trigSNR, trigRelAmp2, injSNR, injRelAmp2, injFile, "Coherent SNR", "Relative amplitude", \
+                 outdir, fig_tag, verbose=True)
+    fig_tag ="%s_%s" % (tag, "rel_amp2_vs_snr_zoom")
+    plot_vs_snr(trigSNR, trigRelAmp2, injSNR, injRelAmp2, injFile, "Coherent SNR", "Relative amplitude", \
+                 outdir, fig_tag, xlims=[6,30], verbose=True)
   except (OverflowError,ValueError):
     sys.stderr.write("WARNING: Relative amplitude versus coherent SNR "+\
                      "failed with zeros in a loglog plot\n")
 
-  # TODO: plot SNR versus norm 3
+  # plot SNR versus norm 3
   try:
-    fig = plt.figure()
-    ax  = fig.gca()
-    ax.loglog(trigSNR, trigNorm3, 'bx')
-    ax.grid()
-    if injFile:
-      ax.loglog(injSNR, injNorm3, 'r+')
-    ax.set_xlabel("Coherent SNR")
-    ax.set_ylabel("Amplitude factor")
-    fig.savefig("%s/%s_norm3_vs_snr.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    ax.set_xlim([6,30])
-    fig.savefig("%s/%s_norm3_vs_snr_zoom.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    plt.close()
-    
+    fig_tag = "%s_%s" % (tag, "norm3_vs_snr")
+    plot_vs_snr(trigSNR, trigNorm3, injSNR, injNorm3, injFile, "Coherent SNR", "Amplitude factor", \
+                outdir, fig_tag, verbose=True)
+    fig_tag = "%s_%s" % (tag, "norm3_vs_snr_zoom")
+    plot_vs_snr(trigSNR, trigNorm3, injSNR, injNorm3, injFile, "Coherent SNR", "Amplitude factor", \
+                outdir, fig_tag,xlims=[6,30], verbose=True) 
   except (OverflowError,ValueError):
     sys.stderr.write("WARNING: Amplitude factor versus coherent SNR "+\
                      "failed with zeros in a loglog plot\n")
   
-  # TODO: plot SNR versus inclination
+  #plot SNR versus inclination
   try:
-    fig = plt.figure()
-    ax  = fig.gca()
-    ax.loglog(trigSNR, trigInclination, 'bx')
-    ax.grid()
-    if injFile:
-      ax.loglog(injSNR, injInclination, 'r+')
-    ax.set_xlabel("Coherent SNR")
-    ax.set_ylabel("|cos inclination|")
-    fig.savefig("%s/%s_inclination_vs_snr.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    
-    ax.set_xlim([6,30])
-    fig.savefig("%s/%s_inclination_vs_snr_zoom.png" % (outdir, tag),\
-                 bbox_inches='tight')
-    plt.close()
-    
+    fig_tag = "%s_%s" % (tag, "inclination_vs_snr")
+    plot_vs_snr(trigSNR, trigInclination, injSNR, injInclination, injFile, "Coherent SNR", "|cos inclination|", \
+                outdir, fig_tag, verbose=True)
+    fig_tag = "%s_%s" % (tag, "inclination_vs_snr_zoom")
+    plot_vs_snr(trigSNR, trigInclination, injSNR, injInclination, injFile, "Coherent SNR", "|cos inclination|", \
+                outdir, fig_tag,xlims=[6,30], verbose=True)
+ 
   except (OverflowError,ValueError):
     sys.stderr.write("WARNING: cos(inclination) versus coherent SNR "+\
                      "failed with zeros in a loglog plot\n")
