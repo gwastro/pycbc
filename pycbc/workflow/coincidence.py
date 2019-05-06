@@ -764,6 +764,8 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
         make_analysis_dir('strain_files')
         node = Executable(workflow.cp, 'strain_data_reduce', ifos=[ifo],
                           out_dir='strain_files').create_node()
+        node.add_opt('--gps-start-time', workflow.analysis_time[0])
+        node.add_opt('--gps-end-time', workflow.analysis_time[1])
         fil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                        '--output-file', tags=tags)
         stores.append(fil)
