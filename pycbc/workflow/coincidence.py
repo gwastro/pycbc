@@ -778,12 +778,12 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
                                    '--output-file', tags=tags)
 
     # Parallelize coinc trigger followup
-    factor = workflow.cp.get_opt_tags("workflow-rerank",
-                                      "parallization-factor", tags)
+    factor = int(workflow.cp.get_opt_tags("workflow-rerank",
+                                      "parallelization-factor", tags))
     exe = Executable(workflow.cp, 'coinc_followup', ifos=workflow.ifos,
                      out_dir=out_dir, tags=tags)
     for i in range(factor):
-        node = exe.create_node(tags=[str(i)])
+        node = exe.create_node()
         node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                  '--output-file')
         node.add_multiifo_input_list_opt('--hdf-store', stores)
