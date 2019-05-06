@@ -149,7 +149,7 @@ else:
     pbin_upper_lim = params[args.bin_param].max()
 bb_input = (params[args.bin_param].min(), pbin_upper_lim, args.num_bins)
 
-logging.info('splitting {} into bins'.format(args.bin_param)
+logging.info('splitting {} into bins'.format(args.bin_param))
 pbins = bin_utils.LogarithmicBins(*bb_input)
 # use sentinel value -1 for templates outside range
 pind = np.array([pbins[par] if par < pbin_upper_lim else -1 for par in params[args.bin_param]])
@@ -237,7 +237,7 @@ for x in range(args.split_one_nbins):
         logging.info('split {} number {}'.format(args.split_param_two, y))
         id_bin2 = id_in_bin2[y]
         ax = axes[x,y]
-        logging.info('getting templates in the {} conditions'.format(args.bin_param)
+        logging.info('getting templates in the {} conditions'.format(args.bin_param))
         id_in_both = np.intersect1d(id_bin1, id_bin2)
         for i, lower, upper in zip(range(args.num_bins), pbins.lower(),
                                    pbins.upper()):
