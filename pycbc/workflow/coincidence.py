@@ -772,12 +772,13 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
         workflow += node
 
     # Generate trigger input file
-    node = Executable(workflow.cp, 'rerank_trigger_input', ifos=[ifo],
+    node = Executable(workflow.cp, 'rerank_trigger_input', ifos=workflow.ifos,
                       out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--statmap-file', statmap_file)
     node.add_input_opt('--bank-file', bank_file)
     trigfil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                    '--output-file', tags=tags)
+    workflow += node
 
     # Parallelize coinc trigger followup
     factor = int(workflow.cp.get_opt_tags("workflow-rerank",
@@ -787,11 +788,12 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
     for i in range(factor):
         node = exe.create_node()
         node.new_output_file_opt(workflow.analysis_time, '.hdf',
-                                 '--output-file')
+                                 '--output-file', tags=[str(i)])
         node.add_multiifo_input_list_opt('--hdf-store', stores)
         node.add_input_opt('--input-file', trigfil)
         node.add_opt('--start-index', str(i))
-        node.add_opt('--stride', str(i))
+        node.add_opt('--stride', factor)
+        workflow += node        
 
     # Rerank using results of trigger followup
     # NOOP for now.
