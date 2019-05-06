@@ -47,6 +47,7 @@ parser.add_argument('--input-file',
     help="HDF File which gives the trigger followup information for a set")
 parser.add_argument('--start-index', type=int)
 parser.add_argument('--end-index', type=int)
+parser.add_argument('--stride', type=int, default=1)
 
 # Options to directly supply followup information
 parser.add_argument('--template-parameters', nargs='+')
@@ -72,10 +73,11 @@ if args.input_file:
     f = h5py.File(args.input_file, 'r')
     start = 0 if args.start_index is None else args.start_index
     end = len(f['time']) if args.end_index is None else args.end_index
+    stride = args.stride
     ofile.attrs['start_index'] = start
     ofile.attrs['end_index' ] = end
-    wparams = f['waveparams'][start:end]
-    triggers = (f['time'][start:end], f['offsets'][start:end],
+    wparams = f['waveparams'][start:end:stride]
+    triggers = (f['time'][start:end:stride], f['offsets'][start:end:stride],
                 [dict(zip(wparams.dtype.names, x)) for x in wparams])
 
 elif args.trigger_time:
