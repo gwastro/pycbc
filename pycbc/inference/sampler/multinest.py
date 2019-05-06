@@ -244,8 +244,8 @@ class MultinestSampler(BaseSampler):
             params = self.model.sampling_transforms.apply(params)
         params = self.model._transform_params(**params)  # waveform transforms
         # apply constraints
-        if self._constraints is not None and
-                not all([c(params) for c in self._constraints]):
+        if (self._constraints is not None and
+                not all([c(params) for c in self._constraints])):
             return -numpy.inf
         else:
             # update model with current params
