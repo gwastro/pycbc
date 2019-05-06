@@ -285,7 +285,7 @@ def get_param(par, args, m1, m2, s1z, s2z):
     elif par == 'template_duration':
         if not hasattr(args, approximant):
             args.approximant = None
-            # default to SEOBNRv4 duration function
+        # default to SEOBNRv4 duration function
         parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower,
                                            args.approximant or "SEOBNRv4")
         if args.min_duration:
