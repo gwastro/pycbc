@@ -755,7 +755,7 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
     workflow.add_node(combine_statmap_node)
     return combine_statmap_node.output_file
 
-def rerank_coinc_followup(workflow, statmap_file, out_dir, tags):
+def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
     make_analysis_dir(out_dir)
 
     # Generate reduced data files (maybe this could also be used elsewhere?)
@@ -773,6 +773,7 @@ def rerank_coinc_followup(workflow, statmap_file, out_dir, tags):
     node = Executable(workflow.cp, 'rerank_trigger_input', ifos=[ifo],
                       out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--statmap-file', statmap_file)
+    node.add_input_opt('--bank-file', bank_file)
     trigfil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                    '--output-file', tags=tags)
 
