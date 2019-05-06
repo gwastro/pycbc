@@ -107,8 +107,6 @@ def make_segments_plot(workflow, seg_files, out_dir, tags=None):
     node = PlotExecutable(workflow.cp, 'plot_segments', ifos=workflow.ifos,
                          out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--segment-files', seg_files)
-    ifolist = ' '.join(workflow.ifos)
-    node.add_opt('--ifos', ifolist)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
 
@@ -224,6 +222,7 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None,
     for s in seg_names:
         quoted_seg_names.append("'" + s + "'")
     node.add_opt('--segment-names', ' '.join(quoted_seg_names))
+    node.add_opt('--ifos', ' '.join(workflow.ifos))
     if description:
         node.add_opt('--description', "'" + description + "'")
     if title_text:
