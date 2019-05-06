@@ -91,9 +91,6 @@ parser.add_argument("--fit-function",
                     help="Functional form for the maximum likelihood fit")
 args = parser.parse_args()
 
-# explain or remove
-args.approximant = None
-
 if args.verbose:
     log_level = logging.DEBUG
 else:
@@ -132,7 +129,7 @@ for ex_p in extparams:
 
 # string formats for labels, logging etc.
 formats = {
-        "mchirp": '{:d}',
+        "mchirp": '{:.2f}',
         "eta": '{:.3f}',
         "chi_eff": '{:.3f}',
         'template_duration': '{:.0f}' 
