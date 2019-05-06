@@ -75,8 +75,6 @@ def format_lmns(lmns):
     will return the appropriate list of strings. If a different format is
     given, raise an error.
     """
-#    if len(str(lmns[0])) == 3:
-#        lmns = [str(lmn) for lmn in lmns]
 
     # Case 1: the list is in a string (with or without comma),
     # "[221, 331]" or "[221 331]"
