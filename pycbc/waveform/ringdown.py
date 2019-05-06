@@ -75,43 +75,47 @@ def format_lmns(lmns):
     will return the appropriate list of strings. If a different format is
     given, raise an error.
     """
-    # Case 0: the lmns is in the right format (a list of strings) or a list
-    # of ints
-    if len(str(lmns[0])) == 3:
-        lmns = [str(lmn) for lmn in lmns]
+#    if len(str(lmns[0])) == 3:
+#        lmns = [str(lmn) for lmn in lmns]
 
-    else:
-        # Case 1: the list is in a string with or without comma,
-        # "[221, 331]" or "[221 331]"
-        if lmns[0] == '[' and lmns[-1] == ']':
-            lmns = lmns.strip('[]')
+    # Case 1: the list is in a string (with or without comma),
+    # "[221, 331]" or "[221 331]"
+    if isinstance(lmns, (str, unicode)):
+        # strip off brackets
+        lmns = lmns.strip('[]')
+        # convert to list
+        delimiter = ',' if bool(re.search(',', lmns)) else ' '
+        lmns = lmns.split(delimiter)
 
-        # Case 2: a list with only one string with or without comma,
-        # ["221' '331"] or ["221', '331"]
-        elif len(lmns[0]) > 3:
-            lmns = lmns[0]
+    # Case 2: a list with only one string with a list (with or without comma),
+    # ["221' '331"] or ["221', '331"]
+    elif (len(lmns)==1 and isinstance(lmns[0], (str, unicode)) 
+          and len(lmns[0]) > 3):
+        try:
+            # It could be a single mode list with an extra space, ['221 ']
+            lmns = [str(int(lmn)) for lmn in lmns]
+        except:
+            delimiter = ',' if bool(re.search(',', lmns[0])) else ' '
+            lmns = lmns[0].split(delimiter)
 
-        # Case 3: none of the above
-        else:
+    # Remove any extra spaces or quotes
+    lmns = [lmn.strip().strip('\'') for lmn in lmns]
+
+    out = []
+    # Cycle over the lmns to ensure that we get back a list of strings that
+    # are three digits long, and that nmodes!=0
+    for lmn in lmns:
+        # Try to convert to int and then str, to ensure the right format
+        lmn = str(int(lmn))
+        if len(lmn) != 3:
             raise ValueError('Format of parameter lmns not recognized. See '
                              'approximant documentation for more info.')
-
-        # Check if there is a comma or not
-        if bool(re.search(',', lmns)):
-            lmns = lmns.split(',')
-        else:
-            lmns = lmns.split()
-
-        # There may still be extra spaces or quotes, loop over items
-        lmns = [lmns[n].strip().strip('\'') for n in range(len(lmns))]
-
-    # Check that nmodes != 0
-    for lmn in lmns:
-        if int(lmn[2]) == 0:
+        elif int(lmn[2]) == 0:
             raise ValueError('Number of overtones (nmodes) must be greater '
-                             'than zero.')
+                             'than zero in lmn={}.'.format(lmn))
+        out.append(lmn)
 
-    return lmns
+    return out
 
 def lm_amps_phases(**kwargs):
     """ Take input_params and return dictionaries with amplitudes and phases
