@@ -283,7 +283,7 @@ def get_param(par, args, m1, m2, s1z, s2z):
     elif par in ['chi_eff', 'effective_spin']:
         parvals = conversions.chi_eff(m1, m2, s1z, s2z)
     elif par == 'template_duration':
-        if not hasattr(args, approximant):
+        if not hasattr(args, 'approximant'):
             args.approximant = None
         # default to SEOBNRv4 duration function
         parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower,
