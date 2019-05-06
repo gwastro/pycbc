@@ -186,6 +186,9 @@ final_bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
                                final_veto_file, final_veto_name,
                                output_dir, tags=ctags)
 final_bg_file = final_bg_files[0][0]
+final_bg_file = wf.rerank_coinc_followup(workflow, final_bg_file,
+                                         output_dir, tags=[tag])
+
 bin_files = final_bg_files[0][1]
 
 censored_veto = wf.make_foreground_censored_veto(workflow,
