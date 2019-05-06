@@ -267,6 +267,7 @@ def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     for s in seg_names:
         quoted_seg_names.append("'" + s + "'")
     node.add_opt('--segment-names', ' '.join(quoted_seg_names))
+    node.add_opt('--ifos', ' '.join(workflow.ifos))
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     return node.output_files[0]
