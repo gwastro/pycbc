@@ -87,12 +87,12 @@ def format_lmns(lmns):
 
     # Case 2: a list with only one string with a list (with or without comma),
     # ["221' '331"] or ["221', '331"]
-    elif (len(lmns)==1 and isinstance(lmns[0], (str, unicode)) 
+    elif (len(lmns) == 1 and isinstance(lmns[0], (str, unicode))
           and len(lmns[0]) > 3):
         try:
             # It could be a single mode list with an extra space, ['221 ']
             lmns = [str(int(lmn)) for lmn in lmns]
-        except:
+        except ValueError:
             delimiter = ',' if bool(re.search(',', lmns[0])) else ' '
             lmns = lmns[0].split(delimiter)
 
