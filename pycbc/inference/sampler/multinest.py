@@ -32,11 +32,10 @@ import logging
 import numpy
 from pycbc.pool import choose_pool
 
-from .base import BaseSampler
-from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
-                        blob_data_to_dict, get_optional_arg_from_config)
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
+from .base import BaseSampler
+from .base_mcmc import get_optional_arg_from_config
 from .. import models
 
 
@@ -107,7 +106,7 @@ class MultinestSampler(BaseSampler):
         self._samples = None
         self._stats = None
         self._seed = 0
-        self._itercount = None
+        self._itercount = 0
         self._lastclear = None
         self._logz = None
         self._dlogz = None
@@ -120,7 +119,8 @@ class MultinestSampler(BaseSampler):
 
     @property
     def niterations(self):
-        """Get the current number of iterations."""
+        """Get the current number of iterations.
+        """
         itercount = self._itercount
         if itercount is None:
             itercount = 0
@@ -131,26 +131,40 @@ class MultinestSampler(BaseSampler):
 
     @property
     def checkpoint_interval(self):
+        """Get the number of iterations between checkpoints.
+        """
         return self._checkpoint_interval
 
     @property
     def nlivepoints(self):
+        """Get the number of live points used in sampling.
+        """
         return self._nlivepoints
 
     @property
     def logz(self):
+        """Get the current estimate of the log evidence.
+        """
         return self._logz
 
     @property
     def dlogz(self):
+        """Get the current error estimate of the log evidence.
+        """
         return self._dlogz
 
     @property
     def importance_logz(self):
+        """Get the current importance weighted estimate of the log
+        evidence.
+        """
         return self._importance_logz
 
     @property
     def importance_dlogz(self):
+        """Get the current error estimate of the importance
+        weighted log evidence.
+        """
         return self._importance_dlogz
 
     @property
@@ -180,30 +194,25 @@ class MultinestSampler(BaseSampler):
         return {s: stats[:, i] for i, s in enumerate(self.model.default_stats)}
 
     def get_posterior_samples(self):
-        # this is multinest's equal weighted posterior file
+        """Read posterior samples from ASCII output file created by
+        multinest.
+        """
         post_file = self.backup_file[:-9]+'-post_equal_weights.dat'
         return numpy.loadtxt(post_file, ndmin=2)
 
     def check_if_finished(self):
-        # do calculation that multinest does
+        """Estimate remaining evidence to see if desired evidence-tolerance
+        stopping criterion has been reached.
+        """
         resume_file = self.backup_file[:-9] + '-resume.dat'
         current_vol, _, _ = numpy.loadtxt(
             resume_file, skiprows=6, unpack=True)
         maxloglike = max(self.get_posterior_samples()[:, -1])
-        logz_remain = numpy.exp(maxloglike + numpy.log(current_vol) - self.logz)
-        logging.info("Estimate of remaining logZ is {}".format(logz_remain))
+        logz_remain = numpy.exp(maxloglike +
+                                numpy.log(current_vol) - self.logz)
+        logging.info("Estimate of remaining logZ is %s" % logz_remain)
         done = logz_remain < self._ztol
         return done
-
-    def clear_samples(self):
-        """Clears the samples and stats from memory.
-        """
-        # store the iteration that the clear is occuring on
-        self._lastclear = self.niterations
-        self._itercounter = 0
-        # now clear the chain
-        self._sampler.reset()
-        self._sampler.clear_blobs()
 
     def set_initial_conditions(self, initial_distribution=None,
                                samples_file=None):
@@ -233,9 +242,10 @@ class MultinestSampler(BaseSampler):
         # apply transforms
         if self.model.sampling_transforms is not None:
             params = self.model.sampling_transforms.apply(params)
-        params = self.model._transform_params(**params) # waveform transforms
+        params = self.model._transform_params(**params)  # waveform transforms
         # apply constraints
-        if self._constraints is not None and not all([c(params) for c in self._constraints]):
+        if self._constraints is not None and
+                not all([c(params) for c in self._constraints]):
             return -numpy.inf
         else:
             # update model with current params
@@ -256,14 +266,13 @@ class MultinestSampler(BaseSampler):
             with self.io(self.checkpoint_file, "r") as fp:
                 self._lastclear = fp.niterations
         outputfiles_basename = self.backup_file[:-9] + '-'
-        a = self.analyzer(self._ndim,
-                          outputfiles_basename=outputfiles_basename)
-        self._itercount = 0
+        analyzer = self.analyzer(self._ndim,
+                                 outputfiles_basename=outputfiles_basename)
         iterinterval = self.checkpoint_interval
         done = False
         while not done:
-            logging.info("Running sampler for {} to {} iterations".format(
-                self.niterations, self.niterations + iterinterval))
+            logging.info("Running sampler for %s to %s iterations" %
+                         (self.niterations, self.niterations + iterinterval))
             # run multinest
             self.ns_run(self.loglikelihood, self.transform_prior, self._ndim,
                         n_live_points=self.nlivepoints,
@@ -274,16 +283,19 @@ class MultinestSampler(BaseSampler):
                         outputfiles_basename=outputfiles_basename,
                         multimodal=False, verbose=True)
             # parse results from multinest output files
-            nest_stats = a.get_mode_stats()
-            self._logz = nest_stats['nested sampling global log-evidence']
-            self._dlogz = nest_stats['nested sampling global log-evidence error']
+            nest_stats = analyzer.get_mode_stats()
+            self._logz = nest_stats["nested sampling global log-evidence"]
+            self._dlogz = nest_stats[
+                "nested sampling global log-evidence error"]
             if self._ins:
-                self._importance_logz = nest_stats['nested importance sampling global log-evidence']
-                self._importance_dlogz = nest_stats['nested importance sampling global log-evidence error']
-            self._samples = self.get_posterior_samples()[:,:-1]
-            logging.info("Have {} posterior samples".format(self._samples.shape[0]))
+                self._importance_logz = nest_stats[
+                    "nested importance sampling global log-evidence"]
+                self._importance_dlogz = nest_stats[
+                    "nested importance sampling global log-evidence error"]
+            self._samples = self.get_posterior_samples()[:, :-1]
+            logging.info("Have %s posterior samples" % self._samples.shape[0])
             # update the itercounter
-            self._itercount = self._itercount + iterinterval
+            self._itercount += iterinterval
             # make sure there's at least 1 posterior sample
             if self._samples.shape[0] == 0:
                 continue

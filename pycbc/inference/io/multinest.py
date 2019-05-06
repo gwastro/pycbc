@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 import h5py
 from .base_hdf import BaseInferenceFile
-from .base_multitemper import (MultiTemperedMetadataIO, MultiTemperedMCMCIO)
 from .posterior import PosteriorFile
 
 

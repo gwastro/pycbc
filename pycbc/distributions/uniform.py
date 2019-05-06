@@ -112,9 +112,9 @@ class Uniform(bounded.BoundedDist):
     def cdfinv(self, param, value):
         """Return the inverse cdf to map the unit interval to parameter bounds.
         """
-        a = self._bounds[param][0]
-        b = self._bounds[param][1]
-        new_value = (b-a)*value + a
+        lower_bound = self._bounds[param][0]
+        upper_bound = self._bounds[param][1]
+        new_value = (upper_bound - lower_bound) * value + lower_bound
         return new_value
 
     def _pdf(self, **kwargs):

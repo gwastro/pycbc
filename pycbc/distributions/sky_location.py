@@ -31,5 +31,9 @@ class UniformSky(angular.UniformSolidAngle):
     _default_polar_angle = 'dec'
     _default_azimuthal_angle = 'ra'
 
+    def cdfinv(self, param, value):
+        raise NotImplementedError("This distribution has not been "
+                                  "implemented for multinest.")
+
 
 __all__ = ['UniformSky']
