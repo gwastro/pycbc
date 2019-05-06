@@ -935,6 +935,7 @@ def main(trigFile, injFile, tag, outdir, segdir, chisq_index=4.0,\
                 outdir, fig_tag,xlims=[6,20], ylims=[-5,10], use_logs=False, verbose=True)     
     
      # TODO: plot time versus null stat
+ 
   fig = plt.figure()
   ax  = fig.gca()
   ax.plot(trigTime, trigNullstat, 'bx')
