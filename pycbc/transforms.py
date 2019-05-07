@@ -1020,7 +1020,7 @@ class LambdaFromTOVFile(BaseTransform):
 
     @staticmethod
     def lambda_from_tov_data(m, d, mass_data, lambda_data):
-        r"""Returns Lambda corresponding to a given mass interpolating from the
+        """Returns Lambda corresponding to a given mass interpolating from the
         TOV data.
         Parameters
         ----------
@@ -1042,7 +1042,7 @@ class LambdaFromTOVFile(BaseTransform):
         return lambdav
 
     def transform(self, maps):
-        r"""Computes the transformation of mass to Lambda.
+        """Computes the transformation of mass to Lambda.
         Parameters
         ----------
         maps : dict or FieldArray
