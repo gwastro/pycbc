@@ -54,7 +54,7 @@ parser.add_argument('--title-text', type=str, required=False,
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
 parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'],
-                        help='List of IFOs: default H1, L1.')
+                        help='Space-separated list of detectors. default H1 L1.')
 opts = parser.parse_args()
 
 # setup log
