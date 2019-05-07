@@ -941,8 +941,10 @@ class LambdaFromTOVFile(BaseTransform):
     mass before the Lambda values are extracted from the interpolation. If
     the mass value inputted is in the source frame, then provide distance=0.
     If the transform is read in from a config file, an example code block
-    would be
+    would be:
+
     .. code-block:: ini
+
         [{section}-lambda1]
         name = lambda_from_tov_file
         mass_param = mass1
@@ -953,12 +955,15 @@ class LambdaFromTOVFile(BaseTransform):
     If this transform is used in a parameter estimation analysis where
     distance is a variable parameter, the distance to be used will vary
     with each draw. In that case, the example code block will be:
+
     .. code-block:: ini
+
         [{section}-lambda1]
         name = lambda_from_tov_file
         mass_param = mass1
         lambda_param = lambda1
         mass_lambda_file = filepath
+
     Parameters
     ----------
     mass_param : str
@@ -984,8 +989,8 @@ class LambdaFromTOVFile(BaseTransform):
         logging.info("Loading mass-Lambda data from %s for computing %s",
                      self._mass_lambda_file, self._lambda_param)
         data = numpy.loadtxt(self._mass_lambda_file)
-        self._mass_data = data[:,0]
-        self._lambda_data = data[:,1]
+        self._mass_data = data[:, 0]
+        self._lambda_data = data[:, 1]
         super(LambdaFromTOVFile, self).__init__()
 
     @property
@@ -1023,6 +1028,7 @@ class LambdaFromTOVFile(BaseTransform):
     def lambda_from_tov_data(m, d, mass_data, lambda_data):
         """Returns Lambda corresponding to a given mass interpolating from the
         TOV data.
+
         Parameters
         ----------
         m : float
@@ -1033,6 +1039,7 @@ class LambdaFromTOVFile(BaseTransform):
             Mass array from the Lambda-M curve of an EOS.
         lambda_data : array
             Lambda array from the Lambda-M curve of an EOS.
+
         Returns
         -------
         lambdav : float
@@ -1044,11 +1051,13 @@ class LambdaFromTOVFile(BaseTransform):
 
     def transform(self, maps):
         """Computes the transformation of mass to Lambda.
+
         Parameters
         ----------
         maps : dict or FieldArray
             A dictionary or FieldArray which provides a map between the
             parameter name of the variable to transform and its value(s).
+
         Returns
         -------
         out : dict or FieldArray

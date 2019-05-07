@@ -172,6 +172,7 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
                 break
     return pycbc.conversions.formatreturn(zs, input_is_array)
 
+
 def _redshift(distance, **kwargs):
     r"""Uses astropy to get redshift from the given luminosity distance.
 
