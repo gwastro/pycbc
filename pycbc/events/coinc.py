@@ -269,8 +269,10 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
     Returns
     -------
     ids: dict of arrays of int
-        Dictionary keyed by ifo with ids of trigger times forming coincidences
-        FIXME: Define more precisely when there is >1 additional ifo
+        Dictionary keyed by ifo with ids of trigger times forming coincidences.
+        Coincidence is tested for every pair of ifos that can be formed from
+        the input dict only those tuples of times passing all tests are
+        recorded
     slide: array of int
         Slide ids of coincident triggers in pivot ifo
     """
@@ -333,9 +335,9 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
                 #  discard the second (and any subsequent ones).
                 where = right - left == rlmax
                 logging.warn('Triggers in %s are closer than coincidence window'
-                             ', 1 or more coincs will be discarded. This is '
-                             'a warning, not an error.' % ifo1)
-                print([float(ti) for ti in 
+                             ', 1 or more coincs will be discarded. This is a '
+                             'warning, not an error.' % ifo1)
+                print([float(ti) for ti in
                        time1[left[where][0]:right[where][0]]])
             # identify indices of times in ifo1 that form coincs with ifo2
             dep_ids = left[nz]
