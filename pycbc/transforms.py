@@ -989,12 +989,12 @@ class LambdaFromTOVFile(BaseTransform):
 
     @property
     def mass_param(self):
-        """Returns the input parameter."""
+        """Returns the input mass parameter."""
         return self._mass_param
 
     @property
     def lambda_param(self):
-        """Returns the output parameter."""
+        """Returns the output lambda parameter."""
         return self._lambda_param
 
     @property
@@ -1013,8 +1013,8 @@ class LambdaFromTOVFile(BaseTransform):
 
     @property
     def distance(self):
-        """Returns the fixed distance to transform mass samples from detector to source
-        frame if one is specified.
+        """Returns the fixed distance to transform mass samples from detector
+        to source frame if one is specified.
         """
         return self._distance
 
@@ -1062,9 +1062,9 @@ class LambdaFromTOVFile(BaseTransform):
                 d = maps['distance']
             except KeyError as e:
                 logging.warning("Either provide `distance` samples in the "
-                                "list of samples to be transformed, or provide "
-                                "a fixed `distance` value as input when "
-                                "initializing `LambdaFromTOVFile`.")
+                                "list of samples to be transformed, or "
+                                "provide a fixed `distance` value as input "
+                                "when initializing `LambdaFromTOVFile`.")
                 raise e
         out = {self._lambda_param : self.lambda_from_tov_data(
             m, d, self._mass_data, self._lambda_data)}
