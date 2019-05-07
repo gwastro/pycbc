@@ -931,6 +931,145 @@ class CartesianSpinToChiP(BaseTransform):
         return self.format_output(maps, out)
 
 
+class LambdaFromTOVFile(BaseTransform):
+    """Transforms mass values corresponding to Lambda values for a given EOS
+    interpolating from the mass-Lambda data for that EOS read in from an
+    external ASCII file. The interpolation of the mass-Lambda data is a
+    one-dimensional piecewise linear interpolation. The mass values to be
+    transformed are assumed to be detector frame masses, so a distance should
+    be provided along with the mass for transformation to the source frame
+    mass before the Lambda values are extracted from the interpolation. If
+    the mass value inputted is in the source frame, then provide distance=0.
+    If the transform is read in from a config file, an example code block
+    would be
+    .. code-block:: ini
+        [{section}-lambda1]
+        name = lambda_from_tov_file
+        mass_param = mass1
+        lambda_param = lambda1
+        distance = 40
+        mass_lambda_file = {filepath}
+
+    If this transform is used in a parameter estimation analysis where
+    distance is a variable parameter, the distance to be used will vary
+    with each draw. In that case, the example code block will be:
+    .. code-block:: ini
+        [{section}-lambda1]
+        name = lambda_from_tov_file
+        mass_param = mass1
+        lambda_param = lambda1
+        mass_lambda_file = filepath
+    Parameters
+    ----------
+    mass_param : str
+        The name of the mass parameter to transform.
+    lambda_param : str
+        The name of the tidal deformability parameter that mass_param is to
+        be converted to interpolating from the data in the mass-Lambda file.
+    mass_lambda_file : str
+        Path of the mass-Lambda data file
+    distance : float, optional
+    """
+    name = 'lambda_from_tov_file'
+
+    def __init__(self, mass_param, lambda_param, mass_lambda_file, distance=None):
+        self._mass_lambda_file = mass_lambda_file
+        self._mass_param = mass_param
+        self._lambda_param = lambda_param
+        self._distance = distance
+        self._inputs = [mass_param, 'distance']
+        self._outputs = [lambda_param]
+        logging.info("Loading mass-Lambda data from %s for computing %s",
+                     self._mass_lambda_file, self._lambda_param)
+        data = numpy.loadtxt(self._mass_lambda_file)
+        self._mass_data = data[:,0]
+        self._lambda_data = data[:,1]
+        super(LambdaFromTOVFile, self).__init__()
+
+    @property
+    def mass_param(self):
+        """Returns the input parameter."""
+        return self._mass_param
+
+    @property
+    def lambda_param(self):
+        """Returns the output parameter."""
+        return self._lambda_param
+
+    @property
+    def mass_data(self):
+        """Returns the mass data read from the mass-Lambda data file for
+        an EOS.
+        """
+        return self._mass_data
+
+    @property
+    def lambda_data(self):
+        """Returns the Lambda data read from the mass-Lambda data file for
+        an EOS.
+        """
+        return self._lambda_data
+
+    @property
+    def distance(self):
+        """Returns the fixed distance to transform mass samples from detector to source
+        frame if one is specified.
+        """
+        return self._distance
+
+    @staticmethod
+    def lambda_from_tov_data(m, d, mass_data, lambda_data):
+        r"""Returns Lambda corresponding to a given mass interpolating from the
+        TOV data.
+        Parameters
+        ----------
+        m : float
+            Value of the mass.
+        d : float
+            Value of distance.
+        mass_data : array
+            Mass array from the Lambda-M curve of an EOS.
+        lambda_data : array
+            Lambda array from the Lambda-M curve of an EOS.
+        Returns
+        -------
+        lambdav : float
+            The Lambda corresponding to the mass `m` for the EOS considered.
+        """
+        m_src = m/(1.0 + cosmology.redshift(abs(d)))
+        lambdav = numpy.interp(m_src, mass_data, lambda_data)
+        return lambdav
+
+    def transform(self, maps):
+        r"""Computes the transformation of mass to Lambda.
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+        Returns
+        -------
+        out : dict or FieldArray
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
+        """
+        m = maps[self._mass_param]
+        if self._distance is not None:
+            d = self._distance
+        else:
+            try:
+                d = maps['distance']
+            except KeyError as e:
+                logging.warning("Either provide `distance` samples in the "
+                                "list of samples to be transformed, or provide "
+                                "a fixed `distance` value as input when "
+                                "initializing `LambdaFromTOVFile`.")
+                raise e
+        out = {self._lambda_param : self.lambda_from_tov_data(
+            m, d, self._mass_data, self._lambda_data)}
+        return self.format_output(maps, out)
+
+
 class Logit(BaseTransform):
     """Applies a logit transform from an `inputvar` parameter to an `outputvar`
     parameter. This is the inverse of the logistic transform.
@@ -1496,6 +1635,7 @@ transforms = {
     CartesianSpinToChiP.name : CartesianSpinToChiP,
     Logit.name : Logit,
     Logistic.name : Logistic,
+    LambdaFromTOVFile.name : LambdaFromTOVFile
 }
 
 # standard CBC transforms: these are transforms that do not require input
