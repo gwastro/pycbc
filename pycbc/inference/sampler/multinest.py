@@ -73,7 +73,7 @@ class MultinestSampler(BaseSampler):
             loglevel = logging.getLogger().getEffectiveLevel()
             logging.getLogger().setLevel(logging.WARNING)
             from pymultinest import Analyzer, run
-            self.ns_run = run
+            self.run_multinest = run
             self.analyzer = Analyzer
             logging.getLogger().setLevel(loglevel)
         except ImportError:
@@ -106,7 +106,7 @@ class MultinestSampler(BaseSampler):
         self._samples = None
         self._stats = None
         self._seed = 0
-        self._itercount = 0
+        self._itercount = None
         self._lastclear = None
         self._logz = None
         self._dlogz = None
@@ -236,6 +236,8 @@ class MultinestSampler(BaseSampler):
         self._random_state = rstate
 
     def loglikelihood(self, cube, *args):
+        """Log likelihood evaluator that gets passed to multinest.
+        """
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         # apply transforms
         if self.model.sampling_transforms is not None:
@@ -245,24 +247,29 @@ class MultinestSampler(BaseSampler):
         if (self._constraints is not None and
                 not all([c(params) for c in self._constraints])):
             return -numpy.inf
-        else:
-            # update model with current params
-            self.model.update(**params)
-            return self.model.loglikelihood
+        # update model with current params
+        self.model.update(**params)
+        return self.model.loglikelihood
 
     def transform_prior(self, cube, *args):
+        """Transforms the unit hypercube that multinest makes its draws
+        from, into the prior space defined in the config file.
+        """
         prior_dists = self.model.prior_distribution.distributions
         dist_dict = {d.params[0]: d for d in prior_dists}
-        for i, p in enumerate(self.model.variable_params):
-            cube[i] = dist_dict[p].cdfinv(p, cube[i])
+        for i, param in enumerate(self.model.variable_params):
+            cube[i] = dist_dict[param].cdfinv(param, cube[i])
         return cube
 
     def run(self):
+        """Runs the sampler until the specified evidence tolerance
+        is reached.
+        """
         if self.new_checkpoint:
-            self._lastclear = 0
+            self._itercount = 0
         else:
             with self.io(self.checkpoint_file, "r") as fp:
-                self._lastclear = fp.niterations
+                self._itercount = fp.niterations
         outputfiles_basename = self.backup_file[:-9] + '-'
         analyzer = self.analyzer(self._ndim,
                                  outputfiles_basename=outputfiles_basename)
@@ -272,14 +279,14 @@ class MultinestSampler(BaseSampler):
             logging.info("Running sampler for %s to %s iterations",
                          self.niterations, self.niterations + iterinterval)
             # run multinest
-            self.ns_run(self.loglikelihood, self.transform_prior, self._ndim,
-                        n_live_points=self.nlivepoints,
-                        evidence_tolerance=self._ztol,
-                        sampling_efficiency=self._eff,
-                        importance_nested_sampling=self._ins,
-                        max_iter=iterinterval,
-                        outputfiles_basename=outputfiles_basename,
-                        multimodal=False, verbose=True)
+            self.run_multinest(self.loglikelihood, self.transform_prior,
+                               self._ndim, n_live_points=self.nlivepoints,
+                               evidence_tolerance=self._ztol,
+                               sampling_efficiency=self._eff,
+                               importance_nested_sampling=self._ins,
+                               max_iter=iterinterval,
+                               outputfiles_basename=outputfiles_basename,
+                               multimodal=False, verbose=True)
             # parse results from multinest output files
             nest_stats = analyzer.get_mode_stats()
             self._logz = nest_stats["nested sampling global log-evidence"]
