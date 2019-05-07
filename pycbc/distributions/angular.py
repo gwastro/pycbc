@@ -228,8 +228,8 @@ class SinAngle(UniformAngle):
     def cdfinv(self, arg, value):
         """Return inverse of cdf for mapping unit interval to parameter bounds.
         """
-        scale = numpy.cos(self._bounds[arg][0]) - \
-                numpy.cos(self._bounds[arg][1])
+        scale = (numpy.cos(self._bounds[arg][0])
+                 - numpy.cos(self._bounds[arg][1]))
         offset = 1. + numpy.cos(self._bounds[arg][1]) / scale
         new_value = numpy.arccos(-scale * (value - offset))
         return new_value
