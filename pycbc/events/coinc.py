@@ -104,8 +104,8 @@ def calculate_n_louder(bstat, fstat, dec, skip_background=False):
     ----------
     bstat: numpy.ndarray
         Array of the background statistic values
-    fstat: numpy.ndarray
-        Array of the foreground statitsic values
+    fstat: numpy.ndarray or scalar
+        Array of the foreground statistic values or single value
     dec: numpy.ndarray
         Array of the decimation factors for the background statistics
     skip_background: optional, {boolean, False}
@@ -135,11 +135,11 @@ def calculate_n_louder(bstat, fstat, dec, skip_background=False):
     idx = numpy.searchsorted(bstat, fstat, side='left') - 1
 
     # If the foreground are *quieter* than the background or at the same value
-    # then the search sorted alorithm will choose position -1, which does not exist
+    # then the search sorted algorithm will choose position -1, which does not exist
     # We force it back to zero.
-    if isinstance(idx, numpy.ndarray): # Handle the case where our input is an array
+    if isinstance(idx, numpy.ndarray):  # Case where our input is an array
         idx[idx < 0] = 0
-    else: # Handle the case where we are simply given a scalar value
+    else:  # Case where our input is just a scalar value
         if idx < 0:
             idx = 0
 
@@ -297,7 +297,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
 
     dep_ifos = [ifo for ifo in times.keys() if ifo != fixed and ifo != pivot]
     for ifo1 in dep_ifos:
-        # FIXME - make this into a function?
+        # FIXME - make this loop into a function?
+
         # otime is extra ifo time in original trigger order
         otime = times[ifo1]
         # tsort gives ordering from original order to time sorted order
@@ -305,46 +306,52 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
         time1 = otime[tsort]
 
         # Find coincidences between dependent ifo triggers and existing coincs
-        # cycle over both fixed and pivot
-        # at the 1st iteration, the fixed and pivot times and ids are reduced to
-        #  those for which the first (out of fixed/pivot) forms a coinc with ifo1
-        # at the 2nd iteration, we are left with triggers for which both fixed
-        #  and pivot are coincident with ifo1
+        # - Cycle over fixed and pivot
+        # - At the 1st iteration, the fixed and pivot triggers are reduced to
+        #  those for which the first out of fixed/pivot forms a coinc with ifo1
+        # - At the 2nd iteration, we are left with triggers for which both
+        #  fixed and pivot are coincident with ifo1
+        # - If there is more than 1 dependent ifo, ones that were previously
+        #  tested against fixed and pivot are now present for testing with new
+        #  dependent ifos
         for ifo2 in ids:
             logging.info('added ifo %s, testing against %s' % (ifo1, ifo2))
             w = win(ifo1, ifo2)
             left = numpy.searchsorted(time1, ctimes[ifo2] - w)
             right = numpy.searchsorted(time1, ctimes[ifo2] + w)
-            # any times within time1 coincident with the time in ifo2 have
-            # indices between left and right
-            # nz indexes into times in ifo2 which have coincidences with ifo1
+            # Any times within time1 coincident with the time in ifo2 have
+            # indices between 'left' and 'right'
+            # 'nz' indexes into times in ifo2 which have coincidences with ifo1
             # times
             nz = (right - left).nonzero()
-            if len(nz[0]) and (right - left).max() > 1:
-                # we expect at most one coincident time in ifo1, assuming
-                # trigger spacing in ifo1 > time window
-                rlmax = (right - left).max()
+            rlmax = (right - left).max()
+            if len(nz[0]) and rlmax > 1:
+                # We expect at most one coincident time in ifo1, assuming
+                #  trigger spacing in ifo1 > time window.
+                # However there are rare corner cases at starts/ends of inspiral
+                #  jobs. For these, arbitrarily keep the first trigger and
+                #  discard the second (and any subsequent ones).
                 where = right - left == rlmax
-                print([float(ti) for ti in time1[left[where][0]:right[where][0]]])
-                raise ValueError('Triggers in %s are closer than coincidence '
-                                 'window. This should not happen!' % ifo1)
+                logging.warn('Triggers in %s are closer than coincidence window'
+                             ', 1 or more coincs will be discarded. This is '
+                             'a warning, not an error.' % ifo1)
+                print([float(ti) for ti in 
+                       time1[left[where][0]:right[where][0]]])
             # identify indices of times in ifo1 that form coincs with ifo2
-            # due to check above, at most one trigger in ifo1 per trigger in ifo2
             dep_ids = left[nz]
             # slide is array of slide ids attached to pivot ifo
             slide = slide[nz]
 
-            for ifo in ctimes:  # cycle over fixed and pivot
-                # (& previous additional ifos?)
+            for ifo in ctimes:
+                # cycle over fixed and pivot & any previous additional ifos
                 # reduce times and IDs to just those forming a coinc with ifo1
                 ctimes[ifo] = ctimes[ifo][nz]
                 ids[ifo] = ids[ifo][nz]
 
-        # undo time sorting on indices of ifo1 triggers
+        # undo time sorting on indices of ifo1 triggers, add ifo1 ids and times
+        # to dicts for testing against any additional detectrs
         ids[ifo1] = tsort[dep_ids]
-        # FIXME do we want to do this?? add ifo1 times to ctimes which will be
-        # further reduced if more than one additional detector is tested
-        #ctimes[ifo1] = otime[ids[ifo1]]
+        ctimes[ifo1] = otime[ids[ifo1]]
 
     return ids, slide
 
