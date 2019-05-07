@@ -326,7 +326,8 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
             # 'nz' indexes into times in ifo2 which have coincidences with ifo1
             # times
             nz = (right - left).nonzero()
-            rlmax = (right - left).max()
+            if len(right - left):
+                rlmax = (right - left).max()
             if len(nz[0]) and rlmax > 1:
                 # We expect at most one coincident time in ifo1, assuming
                 #  trigger spacing in ifo1 > time window.

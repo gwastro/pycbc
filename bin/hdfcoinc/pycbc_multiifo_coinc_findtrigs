@@ -292,16 +292,16 @@ for tnum in template_ids:
             for decstr in args.loudest_keep_values:
                 thresh, factor = decstr.split(':')
                 thresh = float(thresh)
-                intfac = int(factor)
-                assert intfac == factor # don't allow non-integer decimation factor
-                total_factor *= intfac
+                # throws an error if 'factor' is not the string representation
+                # of an integer
+                total_factor *= int(factor)
 
                 # triggers not being further decimated
-                upper = c[bi_dec] >= thresh
+                upper = cstat[bi_dec] >= thresh
                 idx_keep = bi_dec[upper]
 
                 # decimate the remaining triggers
-                idx = bi_dec[c[bi_dec] < thresh]
+                idx = bi_dec[cstat[bi_dec] < thresh]
                 idx = idx[slide[idx] % total_factor == 0]
 
                 bi_dec = numpy.concatenate([idx_keep, idx])
@@ -320,18 +320,18 @@ for tnum in template_ids:
             del ids
 
             # In the first for cycle the time and trigger_id keys will not
-            # exist, thus we create them; otherwise add new items into data.
+            # exist, thus we create them; otherwise add new items to data.
             checkstring = '%s/time' % args.pivot_ifo
             if not(checkstring in data):
-                for ifo in gs:
-                    addtime = times[ifo][gs[ifo]]
-                    addtriggerid = tids[ifo][gs[ifo]]
+                for ifo in decid:
+                    addtime = times[ifo][decid[ifo]]
+                    addtriggerid = tids[ifo][decid[ifo]]
                     data['%s/time' % ifo] = [addtime]
                     data['%s/trigger_id' % ifo] = [addtriggerid]
             else:
-                for ifo in gs:
-                    addtime = times[ifo][gs[ifo]]
-                    addtriggerid = tids[ifo][gs[ifo]]
+                for ifo in decid:
+                    addtime = times[ifo][decid[ifo]]
+                    addtriggerid = tids[ifo][decid[ifo]]
                     data['%s/time' % ifo] += [addtime]
                     data['%s/trigger_id' % ifo] += [addtriggerid]
             data['stat'] += [cstat[ti]]
