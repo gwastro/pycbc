@@ -230,10 +230,10 @@ for tnum in template_ids:
 
     times_full={}
     for ifo in trigs:
-        times[ifo]=trigs[ifo]['end_time']
+        times_full[ifo]=trigs[ifo]['end_time']
     logging.info('Trigs for template %s, '% (tnum))
-    for ifo in times:
-        logging.info('%s:%s' % (ifo, len(times[ifo])))
+    for ifo in times_full:
+        logging.info('%s:%s' % (ifo, len(times_full[ifo])))
 
     logging.info('Calculating Single Detector Statistic')
     sds_full = {ifo:rank_method.single(trigs[ifo]) for ifo in trigs}
@@ -258,13 +258,12 @@ for tnum in template_ids:
             sds[args.pivot_ifo] = sds_full[args.pivot_ifo][start0:end0]
             sds[args.fixed_ifo] = sds_full[args.fixed_ifo][start1:end1]
 
-            logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
             ids, slide = coinc.time_multi_coincidence(times,
                                                       args.timeslide_interval,
                                                       args.coinc_threshold,
                                                       args.pivot_ifo,
                                                       args.fixed_ifo)
-
+            logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
             logging.info('Calculating Multi-Detector Combined Statistic')
 
             sdswithids={}
