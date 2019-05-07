@@ -973,7 +973,8 @@ class LambdaFromTOVFile(BaseTransform):
     """
     name = 'lambda_from_tov_file'
 
-    def __init__(self, mass_param, lambda_param, mass_lambda_file, distance=None):
+    def __init__(self, mass_param, lambda_param, mass_lambda_file,
+                 distance=None):
         self._mass_lambda_file = mass_lambda_file
         self._mass_param = mass_param
         self._lambda_param = lambda_param
