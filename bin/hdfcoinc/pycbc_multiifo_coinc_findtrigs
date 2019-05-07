@@ -337,7 +337,7 @@ for tnum in template_ids:
             data['stat'] += [cstat[ti]]
             data['decimation_factor'] += [dec_fac]
             data['timeslide_id'] += [slide[ti]]
-            data['template_id'] += [numpy.repeat(tnum, len(ti)]
+            data['template_id'] += [numpy.repeat(tnum, len(ti))]
 
             start1 += args.batch_singles
         start0 += args.batch_singles
