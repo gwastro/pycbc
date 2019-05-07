@@ -171,8 +171,6 @@ class MultinestSampler(BaseSampler):
     def samples(self):
         """A dict mapping ``variable_params`` to arrays of samples currently
         in memory.
-
-        The arrays have shape ``nwalkers x niterations``.
         """
         samples_dict = {p: self._samples[:, i] for i, p in
                         enumerate(self.model.variable_params)}
@@ -210,7 +208,7 @@ class MultinestSampler(BaseSampler):
         maxloglike = max(self.get_posterior_samples()[:, -1])
         logz_remain = numpy.exp(maxloglike +
                                 numpy.log(current_vol) - self.logz)
-        logging.info("Estimate of remaining logZ is %s" % logz_remain)
+        logging.info("Estimate of remaining logZ is %s", logz_remain)
         done = logz_remain < self._ztol
         return done
 
@@ -271,8 +269,8 @@ class MultinestSampler(BaseSampler):
         iterinterval = self.checkpoint_interval
         done = False
         while not done:
-            logging.info("Running sampler for %s to %s iterations" %
-                         (self.niterations, self.niterations + iterinterval))
+            logging.info("Running sampler for %s to %s iterations",
+                         self.niterations, self.niterations + iterinterval)
             # run multinest
             self.ns_run(self.loglikelihood, self.transform_prior, self._ndim,
                         n_live_points=self.nlivepoints,
@@ -293,7 +291,7 @@ class MultinestSampler(BaseSampler):
                 self._importance_dlogz = nest_stats[
                     "nested importance sampling global log-evidence error"]
             self._samples = self.get_posterior_samples()[:, :-1]
-            logging.info("Have %s posterior samples" % self._samples.shape[0])
+            logging.info("Have %s posterior samples", self._samples.shape[0])
             # update the itercounter
             self._itercount += iterinterval
             # make sure there's at least 1 posterior sample
