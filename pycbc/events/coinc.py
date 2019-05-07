@@ -271,7 +271,7 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
     ids: dict of arrays of int
         Dictionary keyed by ifo with ids of trigger times forming coincidences.
         Coincidence is tested for every pair of ifos that can be formed from
-        the input dict only those tuples of times passing all tests are
+        the input dict: only those tuples of times passing all tests are
         recorded
     slide: array of int
         Slide ids of coincident triggers in pivot ifo
