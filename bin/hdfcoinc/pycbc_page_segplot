@@ -40,7 +40,7 @@ parser.add_argument('--segment-names', type=str, nargs="+", required=False,
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
 parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'],
-                        help='List of IFOs: default H1, L1.')
+                        help='List of IFOs given by a space-separated list: default H1 L1.')
 opts = parser.parse_args()
 
 def timestr(s):
@@ -83,7 +83,6 @@ smin, smax = numpy.inf, -numpy.inf
 # set height of rectangles
 h = .7
 
-#FIXME: set IFO list
 ifos = opts.ifos
 
 # set caption beginning
