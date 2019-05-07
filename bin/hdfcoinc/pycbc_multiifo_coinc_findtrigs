@@ -280,13 +280,6 @@ for tnum in template_ids:
             logging.info('%s foreground triggers' % len(fi))
             logging.info('%s background triggers' % len(bi))
 
-            # We split the background triggers into two types which we keep track of
-            # in "bh" (triggers which are *not* decimated, stored in full) and
-            # "bl" (triggers which may not be stored in full, but we keep track of
-            # how many are removed)
-            # "bl_int" keeps track of which triggers are *not* in the bh set. Depending
-            # on the decimation factor option we may not store any of these or we may
-            # keep a fraction of them corresponding to a subset of the timeslides
             bi_dec = bi.copy()
             dec = numpy.ones(len(bi))
 
