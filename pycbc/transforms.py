@@ -967,7 +967,8 @@ class LambdaFromTOVFile(BaseTransform):
         The name of the tidal deformability parameter that mass_param is to
         be converted to interpolating from the data in the mass-Lambda file.
     mass_lambda_file : str
-        Path of the mass-Lambda data file
+        Path of the mass-Lambda data file. The first column in the data file
+        should contain mass values, and the second column Lambda values.
     distance : float, optional
     """
     name = 'lambda_from_tov_file'
