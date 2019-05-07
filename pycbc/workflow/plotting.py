@@ -222,6 +222,7 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None,
     for s in seg_names:
         quoted_seg_names.append("'" + s + "'")
     node.add_opt('--segment-names', ' '.join(quoted_seg_names))
+    node.add_opt('--ifos', ' '.join(workflow.ifos))
     if description:
         node.add_opt('--description', "'" + description + "'")
     if title_text:
