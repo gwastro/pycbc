@@ -131,6 +131,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
                                      trigger_time + time_offsets[ifo]) - 1
             start = segs[ifo][0][idx] - time_offsets[ifo]
             end = segs[ifo][1][idx] - time_offsets[ifo]
+            logging.info('Must fit within %s-%s', start, end)
             if start > psd_start[ifo] - pad:
                 psd_start[ifo] = start
             if end < psd_start[ifo] + pad + psdlen:
@@ -156,7 +157,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     stilde = {}
     psd = {}
     for ifo in strain:
-        strain[ifo].start_time = round(strain[ifo].start_time - time_offsets[ifo])
+        strain[ifo].start_time = round(strain[ifo].start_time) - time_offsets[ifo]
 
         spart = strain[ifo].time_slice(filter_start[ifo], filter_end[ifo])
         stilde[ifo] = spart.to_frequencyseries()
