@@ -132,6 +132,13 @@ def read_params_from_config(cp, prior_section='prior',
     if any(missing_prior):
         raise KeyError("You are missing a priors section in the config file "
                        "for parameter(s): {}".format(', '.join(missing_prior)))
+    # sanity check that each parameter with a priors section is in
+    # [variable_args]
+    missing_variable = tags - set(variable_args)
+    if any(missing_variable):
+        raise KeyError("Prior section found for parameter(s) {} but not "
+                       "listed as variable parameter(s)."
+                       .format(', '.join(missing_variable)))
     # get static args
     try:
         static_args = dict([(key, cp.get_opt_tags(sargs_section, key, []))
