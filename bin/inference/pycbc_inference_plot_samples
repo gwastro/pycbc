@@ -38,11 +38,11 @@ parser.add_argument("--verbose", action="store_true", default=False,
 parser.add_argument("--version", action="version", version=__version__,
                     help="show version number and exit")
 parser.add_argument("--walkers", nargs='+', default=None,
-                    help="Walker indices from the coldest temperature to "
+                    help="Walker indices from the temperature `--temps`  to "
                          "plot. Options are 'all' or one or more walker "
                          "indices. Default is to plot the average of all "
-                         "walkers from the coldest temperature for the input "
-                         "`--parameters`.")
+                         "walkers from the common temperature `--temps` for "
+                         "the input `--parameters`.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")
 
