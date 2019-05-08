@@ -287,10 +287,12 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
                    np.unique(coinc_list, return_counts=True)[1]>1]
     return coinc_idx
 
-strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments,
-                                         dyn_range_fac=DYN_RANGE_FAC)
+strain_dict = strain.from_cli_multi_ifos(
+    opt, opt.instruments, inj_filter_rejector,
+    dyn_range_fac=DYN_RANGE_FAC
+    )
 strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
-                         opt, strain_dict, opt.instruments)
+                         opt, strain_dict, inj_filter_rejector, opt.instruments)
 with ctx:
     fft.from_cli(opt)
     # Set some often used variables for easy access
@@ -418,6 +420,19 @@ with ctx:
                                low_frequency_cutoff=flow, phase_order=opt.order,
                                taper=opt.taper_template,
                                approximant=opt.approximant, out=template_mem)
+
+    # Use injfilterrejector to reduce the bank to only those templates that
+    # might actually find something
+    ntemplates = len(bank)
+    nfilters = 0
+
+    logging.info("Full template bank size: %s", ntemplates)
+    for ifo in opt.instruments:
+        bank.template_thinning(inj_filter_rejector[ifo])
+    if not len(bank) == ntemplates:
+        logging.info("Template bank size after thinning: %s", len(bank))
+
+
     Fp = {} #Antenna patterns
     Fc = {}
     for ifo in opt.instruments:
@@ -435,6 +450,13 @@ with ctx:
 
         #Loop over segments
         for s_num,stilde in enumerate(segments[opt.instruments[0]]):
+            # Filter check checks the 'inj_filter_rejector' options to
+            # determine whether to filter this template/segment 
+            # if injections are present.
+            for ifo in opt.instruments:
+                if not inj_filter_rejector[ifo].template_segment_checker(
+                        bank, t_num, stilde, opt.gps_start_time):
+                    continue
             logging.info("Analyzing segment %d/%d" % (s_num + 1,
                                                      len(segments[ifo])))
             #Find detector sensitivities (sigma) and make array of normalised
