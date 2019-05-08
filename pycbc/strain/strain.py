@@ -427,20 +427,22 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
     return strain
 
-def from_cli_single_ifo(opt, ifo, **kwargs):
+def from_cli_single_ifo(opt, ifo, inj_filter_rejector, **kwargs):
     """
     Get the strain for a single ifo when using the multi-detector CLI
     """
     single_det_opt = copy_opts_for_single_ifo(opt, ifo)
-    return from_cli(single_det_opt, **kwargs)
+    return from_cli(single_det_opt, 
+        inj_filter_rejector=inj_filter_rejector, **kwargs)
 
-def from_cli_multi_ifos(opt, ifos, **kwargs):
+def from_cli_multi_ifos(opt, ifos, inj_filter_rejector_dict,  **kwargs):
     """
     Get the strain for all ifos when using the multi-detector CLI
     """
     strain = {}
     for ifo in ifos:
-        strain[ifo] = from_cli_single_ifo(opt, ifo, **kwargs)
+        strain[ifo] = from_cli_single_ifo(opt, ifo,
+                          inj_filter_rejector_dict[ifo], **kwargs)
     return strain
 
 
@@ -1108,7 +1110,7 @@ class StrainSegments(object):
 
 
     @classmethod
-    def from_cli_single_ifo(cls, opt, strain, ifo):
+    def from_cli_single_ifo(cls, opt, strain, inj_filter_rejector, ifo):
         """Calculate the segmentation of the strain data for analysis from
         the command line options.
         """
@@ -1121,14 +1123,15 @@ class StrainSegments(object):
                    allow_zero_padding=opt.allow_zero_padding)
 
     @classmethod
-    def from_cli_multi_ifos(cls, opt, strain_dict, ifos):
+    def from_cli_multi_ifos(cls, opt, strain_dict, 
+                            inj_filter_rejector_dict, ifos):
         """Calculate the segmentation of the strain data for analysis from
         the command line options.
         """
         strain_segments = {}
         for ifo in ifos:
-            strain_segments[ifo] = cls.from_cli_single_ifo(opt,
-                                                         strain_dict[ifo], ifo)
+            strain_segments[ifo] = cls.from_cli_single_ifo(
+                opt, strain_dict[ifo], inj_filter_rejector_dict[ifo], ifo)
         return strain_segments
 
     @classmethod
