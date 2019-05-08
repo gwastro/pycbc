@@ -34,7 +34,7 @@ import numpy
 import lal
 import lalsimulation as lalsim
 from pycbc.detector import Detector
-
+import pycbc.cosmology
 from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
 
 #
@@ -402,6 +402,19 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     p1 = (lsum) * (1 + 7. * eta - 31 * eta ** 2.0)
     p2 = (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta ** 2.0) * (ldiff)
     return formatreturn(8.0 / 13.0 * (p1 + p2), input_is_array)
+
+
+def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
+    """Return the lambda parameter(s) corresponding to the input mass(es)
+    interpolating from the mass-Lambda data for a particular EOS read in from
+    an ASCII file.
+    """
+    data = numpy.loadtxt(tov_file)
+    mass_from_file = data[:, 0]
+    lambda_from_file = data[:, 1]
+    mass_src = mass/(1.0 + pycbc.cosmology.redshift(distance))
+    lambdav = numpy.interp(mass_src, mass_from_file, lambda_from_file)
+    return lambdav
 
 #
 # =============================================================================
@@ -1397,7 +1410,8 @@ def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
     return formatreturn(phi_i - phi_l, input_is_array)
 
 
-__all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
+__all__ = ['dquadmon_from_lambda', 'lambda_tilde',
+           'lambda_from_mass_tov_file', 'primary_mass',
            'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
            'eta_from_mass1_mass2', 'mchirp_from_mass1_mass2',
