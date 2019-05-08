@@ -1207,7 +1207,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             # If none, offsource dict will contain segments showing criteria
             # that have not been met, for use in plotting
             if len(offsource.keys()) > 1:
-                seg_lens = {ifos: abs(offsource[ifos].itervalues().next()[0])
+                seg_lens = {ifos: abs(next(offsource[ifos].itervalues())[0])
                             for ifos in offsource.keys()}
                 best_comb = max(seg_lens.iterkeys(),
                                 key=(lambda key: seg_lens[key]))
@@ -1218,7 +1218,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
         else:
             # Identify best analysis segment
             if len(valid_combs) > 1:
-                seg_lens = {ifos: abs(offsource[ifos].itervalues().next()[0])
+                seg_lens = {ifos: abs(next(offsource[ifos].itervalues())[0])
                             for ifos in valid_combs}
                 best_comb = max(seg_lens.iterkeys(),
                                 key=(lambda key: seg_lens[key]))
@@ -1228,11 +1228,11 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
 
             offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
             segmentsUtils.tosegwizard(open(offsourceSegfile, "w"),
-                                      offsource[best_comb].itervalues().next())
+                                      next(offsource[best_comb].itervalues()))
 
             onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
             segmentsUtils.tosegwizard(file(onsourceSegfile, "w"),
-                                      onsource[best_comb].itervalues().next())
+                                      next(onsource[best_comb].itervalues()))
 
             bufferleft = int(cp.get('workflow-exttrig_segments',
                                     'num-buffer-before'))

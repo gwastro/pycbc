@@ -27,6 +27,7 @@ import argparse
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
+from six.moves import range
 import pylab as pl
 import matplotlib.mlab as mlab
 from matplotlib.colors import LogNorm
@@ -167,7 +168,7 @@ if len(indices) > 0:
     sorted_template_ids = template_ids[sorter]
 
     try:
-        max_rank = max([sorted_rank[i] for i in xrange(len(sorted_rank)) \
+        max_rank = max([sorted_rank[i] for i in range(len(sorted_rank)) \
                         if sorted_end_time[i] <= opts.gps_end_time])
     except ValueError:
         max_rank = None

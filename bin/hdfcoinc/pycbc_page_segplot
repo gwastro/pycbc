@@ -114,7 +114,7 @@ for segment_file in opts.segment_files:
         for ifo in ifos:
 
             # get new color for this segment name
-            color = color_cycle[ifo].next()
+            color = next(color_cycle[ifo])
 
             for key in seg_dict.keys():
                 seg_key = ifo+':'+segment_name

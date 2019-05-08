@@ -3,6 +3,7 @@
 """
 import matplotlib
 matplotlib.use('Agg')
+from six.moves import range
 import h5py, numpy, argparse, pylab, pycbc.results, sys
 import pycbc.psd
 import pycbc.version
@@ -84,7 +85,7 @@ for psd_file in args.psd_files:
         middle = numpy.zeros(klen)
         samples = numpy.arange(kmin, kmax) * df
 
-        for split_idx in xrange(num_splits):
+        for split_idx in range(num_splits):
             curr_kmin = kmin + split_idx * num_points_to_read
             curr_kmax = kmin + (split_idx+1) * num_points_to_read
             # klen may not divide by num_gb perfectly

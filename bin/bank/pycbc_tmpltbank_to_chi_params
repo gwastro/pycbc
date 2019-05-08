@@ -36,6 +36,7 @@ import copy
 import logging
 import numpy
 import h5py
+from six.moves import range
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc import tmpltbank, psd, strain, pnutils
 import matplotlib
@@ -174,7 +175,7 @@ else:
     raise NotImplementedError(err_msg)
 
 fP = open(opts.output_file, "w")
-for idx in xrange(len(mass1)):
+for idx in range(len(mass1)):
     chi_coords = tmpltbank.get_cov_params(mass1[idx], mass2[idx], spin1z[idx],
                                           spin2z[idx], metricParams, refFreq)
     vals = " ".join([str(mass1[idx]), str(mass2[idx]), str(spin1z[idx]),

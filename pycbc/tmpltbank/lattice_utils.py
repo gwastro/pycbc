@@ -16,6 +16,7 @@
 
 from __future__ import division
 import copy
+from six.moves import range
 import numpy
 import lal
 
@@ -65,7 +66,7 @@ def generate_hexagonal_lattice(maxv1, minv1, maxv2, minv2, mindist):
     initLine2 = copy.deepcopy(initLine)
     initLine2[:,0] += 0.5 * (3*mindist)**0.5
     initLine2[:,1] += 1.5 * (mindist)**0.5
-    for i in xrange(len(initLine2)):
+    for i in range(len(initLine2)):
         v1s.append(initLine2[i,0])
         v2s.append(initLine2[i,1])
     tmpv2_1 = initLine[0,1]
@@ -75,10 +76,10 @@ def generate_hexagonal_lattice(maxv1, minv1, maxv2, minv2, mindist):
         tmpv2_2 = tmpv2_2 + 3.0 * (mindist)**0.5
         initLine[:,1] = tmpv2_1
         initLine2[:,1] = tmpv2_2
-        for i in xrange(len(initLine)):
+        for i in range(len(initLine)):
             v1s.append(initLine[i,0])
             v2s.append(initLine[i,1])
-        for i in xrange(len(initLine2)):
+        for i in range(len(initLine2)):
             v1s.append(initLine2[i,0])
             v2s.append(initLine2[i,1])
     v1s = numpy.array(v1s)
