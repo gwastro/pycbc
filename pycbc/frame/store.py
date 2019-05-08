@@ -42,17 +42,17 @@ def read_store(fname, channel, start_time, end_time):
         Time series containing the requested data
 
     """
-    f = h5py.File(fname, 'r')
-    if channel not in f:
+    fhandle = h5py.File(fname, 'r')
+    if channel not in fhandle:
         raise ValueError('Could not find channel name {}'.format(channel))
 
     # Determine which segment data lies in (can only read contiguous data now)
-    starts = f[channel]['segments']['start'][:]
-    ends = f[channel]['segments']['end'][:]
+    starts = fhandle[channel]['segments']['start'][:]
+    ends = fhandle[channel]['segments']['end'][:]
 
     diff = start_time - starts
-    l = numpy.where(diff > 0)[0]
-    sidx = l[diff[l].argmin()]
+    loc = numpy.where(diff > 0)[0]
+    sidx = loc[diff[l].argmin()]
 
     stime = starts[sidx]
     etime = ends[sidx]
@@ -60,10 +60,10 @@ def read_store(fname, channel, start_time, end_time):
     if etime < end_time:
         raise ValueError("Cannot read data segment past {}".format(etime))
 
-    data = f[channel][str(sidx)]
+    data = fhandle[channel][str(sidx)]
     sample_rate = len(data) / (etime - stime)
 
-    s = int((start_time - stime) * sample_rate)
-    e = int((end_time - stime) * sample_rate)
-    return TimeSeries(data[s:e], delta_t=1.0/sample_rate,
+    start = int((start_time - stime) * sample_rate)
+    end = int((end_time - stime) * sample_rate)
+    return TimeSeries(data[start:end], delta_t=1.0/sample_rate,
                       epoch=start_time)
