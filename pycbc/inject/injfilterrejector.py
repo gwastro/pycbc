@@ -219,11 +219,10 @@ class InjFilterRejector(object):
             #       leave for future work, or if this is being used in another
             #       code which doesn't have --low-frequency-cutoff
             f_lower = opt.low_frequency_cutoff
-        return cls(injection_file[ifo], chirp_time_window[ifo],
-                   match_threshold[ifo], f_lower[ifo],
-                   coarsematch_deltaf=coarsematch_deltaf[ifo],
-                   coarsematch_fmax=coarsematch_fmax[ifo],
-                   seg_buffer=seg_buffer[ifo])
+        return cls(injection_file, chirp_time_window,
+                   match_threshold, f_lower,
+                   coarsematch_deltaf, coarsematch_fmax,
+                   seg_buffer=seg_buffer)
 
     @classmethod
     def from_cli_multi_ifos(cls, opt, ifos):
