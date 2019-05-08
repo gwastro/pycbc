@@ -41,7 +41,8 @@ def add_low_frequency_cutoff_opt(parser):
     parser.add_argument("--data-conditioning-low-freq", type=float,
                         nargs="+", action=MultiDetOptionAction,
                         metavar='IFO:FLOW', dest="low_frequency_cutoff",
-                        help="Low frequency cutoff for fake strain.")
+                        help="Low frequency cutoff of the data. Needed for "
+                             "PSD estimation and when creating fake strain.")
 
 
 def data_from_cli(opts):
