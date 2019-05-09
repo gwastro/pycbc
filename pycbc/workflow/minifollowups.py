@@ -128,9 +128,10 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     logging.info('Leaving minifollowups module')
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
-                                  insp_segs, insp_data_name, insp_anal_name,
-                                  dax_output, out_dir, veto_file=None,
-                                  veto_segment_name=None, tags=None):
+                                   insp_segs, insp_data_name, insp_anal_name,
+                                   dax_output, out_dir, veto_file=None,
+                                   veto_segment_name=None, statfiles=None,
+                                   tags=None):
     """ Create plots that followup the Nth loudest clustered single detector
     triggers from a merged single detector trigger HDF file.
 
@@ -150,6 +151,9 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         The name of the segmentlist storing data analyzed.
     out_dir: path
         The directory to store minifollowups result plots and files
+    statfiles: FileList (optional, default=None)
+        Supplementary files necessary for computing the single-detector
+        statistic. 
     tags: {None, optional}
         Tags to add to the minifollowups executables
     Returns
@@ -197,6 +201,9 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
         node.add_opt('--veto-segment-name', veto_segment_name)
+    if statfiles is not None:
+        statfiles = statfiles.find_output_with_ifo(curr_ifo)
+        node.add_input_list_opt('--statistic-files', statfiles)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)

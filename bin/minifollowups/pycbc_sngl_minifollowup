@@ -72,7 +72,8 @@ parser.add_argument('--min-snr', type=float, default=6.5,
                     help="Minimum SNR to consider for loudest triggers")
 parser.add_argument('--ranking-statistic',
                 help="How to rank triggers when determining loudest triggers.")
-parser.add_argument('--statistic-files', nargs='+', default=None,
+parser.add_argument('--statistic-files', nargs='+',
+                    action='append', default=[],
                     help='Use this to supply supplementary files that are '
                          'necessary for computing the ranking statistic. For '
                          'example the phase-time consistency file.')

@@ -418,6 +418,7 @@ for insp_file in full_insps:
                                       trig_generated_name, 'daxes', currdir,
                                       veto_file=censored_veto,
                                       veto_segment_name='closed_box',
+                                      statfiles=statfiles,
                                       tags=insp_file.tags + [subsec])
 
 ################## Setup segment / veto related plots #########################
