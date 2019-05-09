@@ -40,11 +40,17 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--inference-file",
                     help="The PyCBC multi-temper inference file.")
 parser.add_argument("--thin-start", type=int, default=None,
-                    help="MCMC iteration to begin for samples.")
-parser.add_argument("--thin-end", type=int, default=None)
-parser.add_argument("--thin-interval", type=int, default=None)
-parser.add_argument("--beta-log-scale", action="store_true")
-parser.add_argument("--integrand-logarithmic", action="store_true")
+                    help="MCMC iteration to begin drawing samples from.")
+parser.add_argument("--thin-end", type=int, default=None,
+                    help="MCMC iteration to end drawing samples from.")
+parser.add_argument("--thin-interval", type=int, default=None,
+                    help="MCMC intervals to downselect samples between"
+                         "thin-start and thin-end.")
+parser.add_argument("--beta-log-scale", action="store_true",
+                    help="Put inverse-temperature axis in logarithm"
+                         "base 10 scale.")
+parser.add_argument("--integrand-logarithmic", action="store_true",
+                    help="Plot the integrand as integrated in log beta.")
 parser.add_argument("--output-file", type=str)
 args = parser.parse_args()
 
@@ -62,16 +68,17 @@ order = numpy.argsort(betas)
 betas = betas[order]
 logl = logl[order]
 
-if args.beta_log_scale:
-    plt.xscale("log")
-
 if args.integrand_logarithmic:
     y = betas * numpy.average(logl, axis=(1,2))
     plt.ylabel(r"$\beta \, \langle ln \, \mathcal{L} \rangle_\beta$")
+    plt.xscale("log")
 
 else:
     y = numpy.average(logl, axis=(1,2))
     plt.ylabel(r"$\langle ln \, \mathcal{L} \rangle_\beta$")
+
+    if args.beta_log_scale:
+        plt.xscale("log")
 
 plt.minorticks_on()
 plt.grid(True, which='minor', axis='y', ls="--", alpha=0.2)
