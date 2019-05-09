@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import h5py, argparse, logging, numpy, numpy.random
-from pycbc import events, detector
 from pycbc.events import veto, coinc, stat
 import pycbc.version
 from numpy.random import seed, shuffle
@@ -174,8 +173,8 @@ num_templates = len(h5py.File(args.template_bank, "r")['template_hash'])
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
-# Create dictionary for trigger files
-trigs={}
+# Create dictionary for trigger files indexed on ifo name
+trigs = {}
 for i in range(len(args.trigger_files)):
     logging.info('Opening trigger file %s: %s' % (i,args.trigger_files[i]))
     reader = ReadByTemplate(args.trigger_files[i],
@@ -184,6 +183,7 @@ for i in range(len(args.trigger_files)):
                                                args.veto_files)
     trigs[reader.ifo] = reader
 
+# Coinc_segs contains only segments where all ifos are analyzed
 coinc_segs = trigs[args.pivot_ifo].segs
 for ifo in trigs:
     coinc_segs = (coinc_segs & trigs[ifo].segs).coalesce()
@@ -192,12 +192,8 @@ for ifo in trigs:
     trigs[ifo].segs = coinc_segs
     trigs[ifo].valid = veto.segments_to_start_end(trigs[ifo].segs)
 
-# initialize a Stat class instance to calculate the coinc ranking statistic
+# Stat class instance to calculate the coinc ranking statistic
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
-
-detectors={}
-for ifo in trigs:  # what are these Detector objects used for?
-    detectors[ifo] = detector.Detector(trigs[ifo].ifo)
 
 # Sanity check, time slide interval should be larger than twice the
 # Earth crossing time, which is approximately 0.085 seconds.
@@ -210,8 +206,6 @@ if args.timeslide_interval is not None and args.timeslide_interval <= TWOEARTH:
 if args.timeslide_interval is None:
     args.timeslide_interval = 0
 
-data = {'stat':[], 'decimation_factor':[], 'timeslide_id':[], 'template_id':[]}
-
 if args.randomize_template_order:
     seed(0)
     template_ids = numpy.arange(0, num_templates)
@@ -223,7 +217,7 @@ else:
 # 'data' will store output of coinc finding
 # in addition to these lists of coinc info, will also store trigger times and
 # ids in each ifo
-data = {'stat':[], 'decimation_factor':[], 'timeslide_id':[], 'template_id':[]}
+data = {'stat': [], 'decimation_factor': [], 'timeslide_id': [], 'template_id': []}
 
 for tnum in template_ids:
     tids = {}
@@ -364,17 +358,17 @@ if len(data['stat']) > 0:
                          shuffle=True)
 
 # Store coinc segments keyed by detector combination
-key = ''.join(sorted(detectors))
+key = ''.join(sorted(trigs))
 f['segments/%s/start' % key], f['segments/%s/end' % key] = trigs[args.pivot_ifo].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['num_of_ifos'] = len(args.trigger_files)
 f.attrs['pivot'] = args.pivot_ifo
 f.attrs['fixed'] = args.fixed_ifo
-for ifo in detectors:
+for ifo in trigs:
     f.attrs['%s_foreground_time' % ifo] = abs(trigs[ifo].segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
-f.attrs['ifos'] = ' '.join(sorted(detectors))
+f.attrs['ifos'] = ' '.join(sorted(trigs))
 
 # What does this code actually calculate?
 if args.timeslide_interval:
