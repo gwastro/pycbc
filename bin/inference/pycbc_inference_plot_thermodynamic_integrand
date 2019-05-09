@@ -37,7 +37,7 @@ import pycbc.version
 rc('text', usetex=True)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--inference-file",
+parser.add_argument("--inference-file", type=str,
                     help="The PyCBC multi-temper inference file.")
 parser.add_argument("--thin-start", type=int, default=None,
                     help="MCMC iteration to begin drawing samples from.")
@@ -45,10 +45,10 @@ parser.add_argument("--thin-end", type=int, default=None,
                     help="MCMC iteration to end drawing samples from.")
 parser.add_argument("--thin-interval", type=int, default=None,
                     help="MCMC intervals to downselect samples between"
-                         "thin-start and thin-end.")
+                         " thin-start and thin-end.")
 parser.add_argument("--beta-log-scale", action="store_true",
                     help="Put inverse-temperature axis in logarithm"
-                         "base 10 scale.")
+                         " base 10 scale.")
 parser.add_argument("--integrand-logarithmic", action="store_true",
                     help="Plot the integrand as integrated in log beta.")
 parser.add_argument("--output-file", type=str)
