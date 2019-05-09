@@ -112,10 +112,10 @@ def thermodynamic_integration(log_likelihood, betas,
 
     Returns
     -------
-    log_evidence   : float
+    log_evidence : float
         Estimation of the log of the evidence.
 
-    mcmc_std       : float
+    mcmc_std : float
         The standard deviation of the log evidence estimate from
         Monte-Carlo spread.
     """
