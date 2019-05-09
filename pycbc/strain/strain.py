@@ -1110,7 +1110,7 @@ class StrainSegments(object):
 
 
     @classmethod
-    def from_cli_single_ifo(cls, opt, strain, inj_filter_rejector, ifo):
+    def from_cli_single_ifo(cls, opt, strain, ifo):
         """Calculate the segmentation of the strain data for analysis from
         the command line options.
         """
@@ -1123,15 +1123,14 @@ class StrainSegments(object):
                    allow_zero_padding=opt.allow_zero_padding)
 
     @classmethod
-    def from_cli_multi_ifos(cls, opt, strain_dict, 
-                            inj_filter_rejector_dict, ifos):
+    def from_cli_multi_ifos(cls, opt, strain_dict, ifos):
         """Calculate the segmentation of the strain data for analysis from
         the command line options.
         """
         strain_segments = {}
         for ifo in ifos:
             strain_segments[ifo] = cls.from_cli_single_ifo(
-                opt, strain_dict[ifo], inj_filter_rejector_dict[ifo], ifo)
+                opt, strain_dict[ifo], ifo)
         return strain_segments
 
     @classmethod
