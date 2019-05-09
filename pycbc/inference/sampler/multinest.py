@@ -34,6 +34,7 @@ from pycbc.pool import choose_pool
 
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
+from pycbc.transforms import apply_transforms
 from .base import BaseSampler
 from .base_mcmc import get_optional_arg_from_config
 from .. import models
@@ -86,13 +87,13 @@ class MultinestSampler(BaseSampler):
         model_call = models.CallModel(model, logpost_function)
 
         # Set up the pool
-        # if nprocesses > 1:
-        #     # these are used to help paralleize over multiple cores / MPI
-        #     models._global_instance = model_call
-        #     model_call = models._call_global_model
-        # pool = choose_pool(mpi=use_mpi, processes=nprocesses)
-        # if pool is not None:
-        #     pool.count = nprocesses
+        if nprocesses > 1:
+            # these are used to help paralleize over multiple cores / MPI
+            models._global_instance = model_call
+            model_call = models._call_global_model
+        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
+        if pool is not None:
+            pool.count = nprocesses
 
         self._constraints = constraints
         self._nlivepoints = nlivepoints
@@ -107,7 +108,6 @@ class MultinestSampler(BaseSampler):
         self._stats = None
         self._seed = 0
         self._itercount = None
-        self._lastclear = None
         self._logz = None
         self._dlogz = None
         self._importance_logz = None
@@ -124,10 +124,7 @@ class MultinestSampler(BaseSampler):
         itercount = self._itercount
         if itercount is None:
             itercount = 0
-        lastclear = self._lastclear
-        if lastclear is None:
-            lastclear = 0
-        return itercount + lastclear
+        return itercount
 
     @property
     def checkpoint_interval(self):
@@ -236,28 +233,26 @@ class MultinestSampler(BaseSampler):
         # set emcee's generator to the same state
         self._random_state = rstate
 
-    def loglikelihood(self, cube, *args):
+    def loglikelihood(self, cube, *extra_args):
         """Log likelihood evaluator that gets passed to multinest.
         """
-        extra_args = args
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         # apply transforms
         if self.model.sampling_transforms is not None:
             params = self.model.sampling_transforms.apply(params)
-        params = self.model._transform_params(**params)  # waveform transforms
+        if self.model.waveform_transforms is not None:
+            params = apply_transforms(params, self.model.waveform_transforms)
         # apply constraints
         if (self._constraints is not None and
                 not all([c(params) for c in self._constraints])):
             return -numpy.inf
-        # update model with current params
         self.model.update(**params)
         return self.model.loglikelihood
 
-    def transform_prior(self, cube, *args):
+    def transform_prior(self, cube, *extra_args):
         """Transforms the unit hypercube that multinest makes its draws
         from, into the prior space defined in the config file.
         """
-        extra_args = args
         prior_dists = self.model.prior_distribution.distributions
         dist_dict = {d.params[0]: d for d in prior_dists}
         for i, param in enumerate(self.model.variable_params):
