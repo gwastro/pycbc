@@ -175,7 +175,7 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
 
 # setup sngl trigger distribution fitting jobs
 # 'statfiles' is list of files used in calculating coinc statistic
-statfiles = []
+statfiles = wf.FileList([])
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name)
 
