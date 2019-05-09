@@ -145,14 +145,14 @@ class MultinestFile(BaseInferenceFile):
         filename : str
             Name of output file to store posterior
         """
-        f = h5py.File(filename, 'w')
+        f_p = h5py.File(filename, 'w')
 
         # Preserve top-level metadata
         for key in self.attrs:
-            f.attrs[key] = self.attrs[key]
+            f_p.attrs[key] = self.attrs[key]
 
-        f.attrs['filetype'] = PosteriorFile.name
-        s = f.create_group('samples')
+        f_p.attrs['filetype'] = PosteriorFile.name
+        s_group = f_p.create_group('samples')
         fields = self[self.samples_group].keys()
 
         # Copy and squash fields into one dimensional arrays
@@ -160,4 +160,4 @@ class MultinestFile(BaseInferenceFile):
             fvalue = self[self.samples_group][field_name][:]
             thin = fvalue[0, :,
                           self.thin_start:self.thin_end:self.thin_interval]
-            s[field_name] = thin.flatten()
+            s_group[field_name] = thin.flatten()

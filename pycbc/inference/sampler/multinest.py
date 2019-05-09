@@ -79,20 +79,20 @@ class MultinestSampler(BaseSampler):
         except ImportError:
             raise ImportError("pymultinest is not installed.")
 
-        self.model = model
+        super(MultinestSampler, self).__init__(model)
         # create a wrapper for calling the model
         if logpost_function is None:
             logpost_function = 'logposterior'
         model_call = models.CallModel(model, logpost_function)
 
         # Set up the pool
-        if nprocesses > 1:
-            # these are used to help paralleize over multiple cores / MPI
-            models._global_instance = model_call
-            model_call = models._call_global_model
-        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
-        if pool is not None:
-            pool.count = nprocesses
+        # if nprocesses > 1:
+        #     # these are used to help paralleize over multiple cores / MPI
+        #     models._global_instance = model_call
+        #     model_call = models._call_global_model
+        # pool = choose_pool(mpi=use_mpi, processes=nprocesses)
+        # if pool is not None:
+        #     pool.count = nprocesses
 
         self._constraints = constraints
         self._nlivepoints = nlivepoints
@@ -219,7 +219,8 @@ class MultinestSampler(BaseSampler):
         If a starting samples file is provided, will also load the random
         state from it.
         """
-        #self.set_p0(samples_file=samples_file, prior=initial_distribution)
+        # self.set_p0(samples_file=samples_file, prior=initial_distribution)
+
         # if a samples file was provided, use it to set the state of the
         # sampler
         if samples_file is not None:
@@ -228,8 +229,8 @@ class MultinestSampler(BaseSampler):
     def set_state_from_file(self, filename):
         """Sets the state of the sampler back to the instance saved in a file.
         """
-        with self.io(filename, 'r') as fp:
-            rstate = fp.read_random_state()
+        with self.io(filename, 'r') as f_p:
+            rstate = f_p.read_random_state()
         # set the numpy random state
         numpy.random.set_state(rstate)
         # set emcee's generator to the same state
@@ -238,6 +239,7 @@ class MultinestSampler(BaseSampler):
     def loglikelihood(self, cube, *args):
         """Log likelihood evaluator that gets passed to multinest.
         """
+        extra_args = args
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         # apply transforms
         if self.model.sampling_transforms is not None:
@@ -255,6 +257,7 @@ class MultinestSampler(BaseSampler):
         """Transforms the unit hypercube that multinest makes its draws
         from, into the prior space defined in the config file.
         """
+        extra_args = args
         prior_dists = self.model.prior_distribution.distributions
         dist_dict = {d.params[0]: d for d in prior_dists}
         for i, param in enumerate(self.model.variable_params):
@@ -268,8 +271,8 @@ class MultinestSampler(BaseSampler):
         if self.new_checkpoint:
             self._itercount = 0
         else:
-            with self.io(self.checkpoint_file, "r") as fp:
-                self._itercount = fp.niterations
+            with self.io(self.checkpoint_file, "r") as f_p:
+                self._itercount = f_p.niterations
         outputfiles_basename = self.backup_file[:-9] + '-'
         analyzer = self.analyzer(self._ndim,
                                  outputfiles_basename=outputfiles_basename)
@@ -319,25 +322,25 @@ class MultinestSampler(BaseSampler):
             The file to write to. The file is opened using the ``io`` class
             in an an append state.
         """
-        with self.io(filename, 'a') as fp:
+        with self.io(filename, 'a') as f_p:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params)
+            f_p.write_samples(self.samples, self.model.variable_params)
             # write stats
-            fp.write_samples(self.model_stats)
+            f_p.write_samples(self.model_stats)
             # write evidence
-            fp.write_logevidence(self.logz, self.dlogz,
-                                 self.importance_logz,
-                                 self.importance_dlogz)
+            f_p.write_logevidence(self.logz, self.dlogz,
+                                  self.importance_logz,
+                                  self.importance_dlogz)
             # write random state (use default numpy.random_state)
-            fp.write_random_state()
+            f_p.write_random_state()
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
         logging.info("Writing samples to files")
-        for fn in [self.checkpoint_file, self.backup_file]:
-            self.write_results(fn)
-            with self.io(fn, "a") as fp:
-                fp.write_niterations(self.niterations)
+        for f_n in [self.checkpoint_file, self.backup_file]:
+            self.write_results(f_n)
+            with self.io(f_n, "a") as f_p:
+                f_p.write_niterations(self.niterations)
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file)
