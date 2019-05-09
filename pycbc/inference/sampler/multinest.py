@@ -85,7 +85,6 @@ class MultinestSampler(BaseSampler):
         self._eff = sampling_efficiency
         self._ins = importance_nested_sampling
         self._samples = None
-        self._seed = 0
         self._itercount = None
         self._logz = None
         self._dlogz = None
@@ -190,7 +189,7 @@ class MultinestSampler(BaseSampler):
 
     def set_initial_conditions(self, initial_distribution=None,
                                samples_file=None):
-        """Sets the initial starting point for the MCMC.
+        """Sets the initial starting point for the sampler.
 
         If a starting samples file is provided, will also load the random
         state from it.
@@ -245,6 +244,7 @@ class MultinestSampler(BaseSampler):
         if self.new_checkpoint:
             self._itercount = 0
         else:
+            self.set_initial_conditions(samples_files=self.checkpoint_file)
             with self.io(self.checkpoint_file, "r") as f_p:
                 self._itercount = f_p.niterations
         outputfiles_basename = self.backup_file[:-9] + '-'
@@ -262,6 +262,7 @@ class MultinestSampler(BaseSampler):
                                sampling_efficiency=self._eff,
                                importance_nested_sampling=self._ins,
                                max_iter=iterinterval,
+                               seed=numpy.random.randint(0, 1e6),
                                outputfiles_basename=outputfiles_basename,
                                multimodal=False, verbose=True)
             # parse results from multinest output files
