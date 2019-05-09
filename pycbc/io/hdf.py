@@ -468,13 +468,16 @@ class SingleDetTriggers(object):
 
     def mask_to_n_loudest_clustered_events(self, n_loudest=10,
                                            ranking_statistic="newsnr",
-                                           cluster_window=10):
+                                           cluster_window=10,
+                                           statistic_files=None):
         """Edits the mask property of the class to point to the N loudest
         single detector events as ranked by ranking statistic. Events are
         clustered so that no more than 1 event within +/- cluster-window will
         be considered."""
+        if statistic_files is None:
+            statistic_files = []
         # If this becomes memory intensive we can optimize
-        stat_instance = sngl_statistic_dict[ranking_statistic]([])
+        stat_instance = sngl_statistic_dict[ranking_statistic](statistic_files)
         stat = stat_instance.single(self.trig_dict())
 
         # Used for naming in plots ... Seems an odd place for this to live!

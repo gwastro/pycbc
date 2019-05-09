@@ -72,6 +72,10 @@ parser.add_argument('--min-snr', type=float, default=6.5,
                     help="Minimum SNR to consider for loudest triggers")
 parser.add_argument('--ranking-statistic',
                 help="How to rank triggers when determining loudest triggers.")
+parser.add_argument('--statistic-files', nargs='+', default=None,
+                    help='Use this to supply supplementary files that are '
+                         'necessary for computing the ranking statistic. For '
+                         'example the phase-time consistency file.')
 parser.add_argument('--non-coinc-time-only', default=False,
                     action='store_true',
                     help="If given remove (veto) single-detector triggers "
@@ -182,8 +186,9 @@ if len(trigs.snr) == 0:
     sys.exit(0)
 
 logging.info('finding loudest clustered events')
-trigs.mask_to_n_loudest_clustered_events(n_loudest=num_events,
-                                      ranking_statistic=args.ranking_statistic)
+trigs.mask_to_n_loudest_clustered_events\
+    (n_loudest=num_events, ranking_statistic=args.ranking_statistic,
+     statistic_files=args.statistic_files)
 if len(trigs.stat) < num_events:
     num_events = len(trigs.stat)
 
