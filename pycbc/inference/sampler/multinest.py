@@ -61,7 +61,7 @@ class MultinestSampler(BaseSampler):
     _io = MultinestFile
 
     def __init__(self, model, nlivepoints, checkpoint_interval=1000,
-                 nprocesses=1, importance_nested_sampling=False,
+                 importance_nested_sampling=False,
                  evidence_tolerance=0.1, sampling_efficiency=0.01,
                  constraints=None):
         try:
@@ -355,6 +355,6 @@ class MultinestSampler(BaseSampler):
         optional_kwargs = {k: v for k, v in
                            zip(kwarg_names, [ztol, eff, ins, checkpoint]) if
                            v is not None}
-        obj = cls(model, nlivepoints, nprocesses=nprocesses,
-                  constraints=constraints, **optional_kwargs)
+        obj = cls(model, nlivepoints, constraints=constraints,
+                  **optional_kwargs)
         return obj
