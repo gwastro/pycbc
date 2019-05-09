@@ -292,7 +292,7 @@ strain_dict = strain.from_cli_multi_ifos(
     dyn_range_fac=DYN_RANGE_FAC
     )
 strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
-                         opt, strain_dict, inj_filter_rejector, opt.instruments)
+                         opt, strain_dict, opt.instruments)
 with ctx:
     fft.from_cli(opt)
     # Set some often used variables for easy access
@@ -450,12 +450,16 @@ with ctx:
 
         #Loop over segments
         for s_num,stilde in enumerate(segments[opt.instruments[0]]):
+            stilde = {ifo : segments[ifo][s_num] for ifo in opt.instruments}
             # Filter check checks the 'inj_filter_rejector' options to
             # determine whether to filter this template/segment 
             # if injections are present.
             for ifo in opt.instruments:
                 if not inj_filter_rejector[ifo].template_segment_checker(
-                        bank, t_num, stilde, opt.gps_start_time):
+                        bank, t_num, stilde[ifo], opt.gps_start_time[ifo]):
+                    logging.info("Skipping segment %d/%d as no detectable "
+                                 "injection is present" % (s_num + 1,
+                                 len(segments[ifo])))
                     continue
             logging.info("Analyzing segment %d/%d" % (s_num + 1,
                                                      len(segments[ifo])))
@@ -463,7 +467,6 @@ with ctx:
             sigmasq = {ifo : template.sigmasq(segments[ifo][s_num].psd)
                       for ifo in opt.instruments}
             sigma = {ifo : np.sqrt(sigmasq[ifo]) for ifo in opt.instruments}
-            stilde = {ifo : segments[ifo][s_num] for ifo in opt.instruments}
             # Every time s_num is zero, we run new template to increment the
             # template index
             if s_num==0:
