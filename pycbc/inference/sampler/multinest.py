@@ -194,10 +194,7 @@ class MultinestSampler(BaseSampler):
         If a starting samples file is provided, will also load the random
         state from it.
         """
-        # self.set_p0(samples_file=samples_file, prior=initial_distribution)
-
-        # if a samples file was provided, use it to set the state of the
-        # sampler
+        # use samples file to set the state of the sampler
         if samples_file is not None:
             self.set_state_from_file(samples_file)
 
@@ -244,7 +241,7 @@ class MultinestSampler(BaseSampler):
         if self.new_checkpoint:
             self._itercount = 0
         else:
-            self.set_initial_conditions(samples_files=self.checkpoint_file)
+            self.set_initial_conditions(samples_file=self.checkpoint_file)
             with self.io(self.checkpoint_file, "r") as f_p:
                 self._itercount = f_p.niterations
         outputfiles_basename = self.backup_file[:-9] + '-'
