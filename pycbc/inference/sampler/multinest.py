@@ -30,14 +30,12 @@ from __future__ import absolute_import
 
 import logging
 import numpy
-from pycbc.pool import choose_pool
 
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
 from pycbc.transforms import apply_transforms
 from .base import BaseSampler
 from .base_mcmc import get_optional_arg_from_config
-from .. import models
 
 
 #
@@ -58,18 +56,14 @@ class MultinestSampler(BaseSampler):
         A model from ``pycbc.inference.models``.
     nlivepoints : int
         Number of live points to use in sampler.
-    pool : function with map, Optional
-        A provider of a map function that allows a function call to be run
-        over multiple sets of arguments and possibly maps them to
-        cores/nodes/etc.
     """
     name = "multinest"
     _io = MultinestFile
 
     def __init__(self, model, nlivepoints, checkpoint_interval=1000,
-                 logpost_function=None, nprocesses=1, use_mpi=False,
-                 importance_nested_sampling=False, evidence_tolerance=0.1,
-                 sampling_efficiency=0.01, constraints=None):
+                 nprocesses=1, importance_nested_sampling=False,
+                 evidence_tolerance=0.1, sampling_efficiency=0.01,
+                 constraints=None):
         try:
             loglevel = logging.getLogger().getEffectiveLevel()
             logging.getLogger().setLevel(logging.WARNING)
@@ -81,31 +75,16 @@ class MultinestSampler(BaseSampler):
             raise ImportError("pymultinest is not installed.")
 
         super(MultinestSampler, self).__init__(model)
-        # create a wrapper for calling the model
-        if logpost_function is None:
-            logpost_function = 'logposterior'
-        model_call = models.CallModel(model, logpost_function)
-
-        # Set up the pool
-        if nprocesses > 1:
-            # these are used to help paralleize over multiple cores / MPI
-            models._global_instance = model_call
-            model_call = models._call_global_model
-        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
-        if pool is not None:
-            pool.count = nprocesses
 
         self._constraints = constraints
         self._nlivepoints = nlivepoints
         self._ndim = len(model.variable_params)
-        rstate = numpy.random.get_state()
-        self._random_state = rstate
+        self._random_state = numpy.random.get_state()
         self._checkpoint_interval = checkpoint_interval
         self._ztol = evidence_tolerance
         self._eff = sampling_efficiency
         self._ins = importance_nested_sampling
         self._samples = None
-        self._stats = None
         self._seed = 0
         self._itercount = None
         self._logz = None
@@ -230,7 +209,7 @@ class MultinestSampler(BaseSampler):
             rstate = f_p.read_random_state()
         # set the numpy random state
         numpy.random.set_state(rstate)
-        # set emcee's generator to the same state
+        # set sampler's generator to the same state
         self._random_state = rstate
 
     def loglikelihood(self, cube, *extra_args):
@@ -359,8 +338,6 @@ class MultinestSampler(BaseSampler):
         # get the checkpoint interval, if it's specified
         checkpoint = get_optional_arg_from_config(
             cp, section, 'checkpoint-interval', dtype=int)
-        # get the logpost function
-        lnpost = get_optional_arg_from_config(cp, section, 'logpost-function')
         # get the evidence tolerance, if specified
         ztol = get_optional_arg_from_config(cp, section, 'evidence-tolerance',
                                             dtype=float)
@@ -374,13 +351,12 @@ class MultinestSampler(BaseSampler):
         # get constraints since we can't use the joint prior distribution
         constraints = read_constraints_from_config(cp)
         # build optional kwarg dict
-        kwargnames = ['evidence_tolerance', 'sampling_efficiency',
-                      'importance_nested_sampling',
-                      'checkpoint_interval']
+        kwarg_names = ['evidence_tolerance', 'sampling_efficiency',
+                       'importance_nested_sampling',
+                       'checkpoint_interval']
         optional_kwargs = {k: v for k, v in
-                           zip(kwargnames, [ztol, eff, ins, checkpoint]) if
+                           zip(kwarg_names, [ztol, eff, ins, checkpoint]) if
                            v is not None}
-        obj = cls(model, nlivepoints,
-                  logpost_function=lnpost, nprocesses=nprocesses,
-                  use_mpi=use_mpi, constraints=constraints, **optional_kwargs)
+        obj = cls(model, nlivepoints, nprocesses=nprocesses,
+                  constraints=constraints, **optional_kwargs)
         return obj
