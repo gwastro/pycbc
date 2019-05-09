@@ -49,11 +49,16 @@ def read_store(fname, channel, start_time, end_time):
     ends = f[channel]['segments']['end'][:]
 
     diff = start_time - starts
-    l = numpy.where(diff > 0)[0]
+    l = numpy.where(diff >= 0)[0]
     sidx = l[diff[l].argmin()]
 
     stime = starts[sidx]
     etime = ends[sidx]
+
+    print stime, etime, start_time, end_time
+
+    if stime > start_time:
+        raise ValueError("Cannot read data segment before {}".format(stime))
 
     if etime < end_time:
         raise ValueError("Cannot read data segment past {}".format(etime))

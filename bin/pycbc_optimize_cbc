@@ -112,12 +112,15 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     args.gps_end_time = DictWithDefaultReturn()
     psd_start, psd_end = {}, {}
     filter_start, filter_end = {}, {}
+    data_start, data_end = {}, {}
+    pad_start, pad_end = {}, {}
 
     # Allow an IFO to be excluded using a sentinel value
     ifos = [ifo for ifo in args.instruments if time_offsets[ifo] != numpy.inf]
 
     # Determine what data we need to read and prepare
     for ifo in ifos:
+        # Choose filtering start / end times
         filter_end[ifo] = int(trigger_time + psdseg + 2)
         filter_start[ifo] = filter_end[ifo] - filterbuffer
         logging.info('%s: Filter buffer goes from %s-%s',
@@ -125,10 +128,10 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
 
         pad = 0 if args.pad_data[ifo] is None else args.pad_data[ifo]
 
+        # Choose psd start / end times and recenter if needed #################
         psd_start[ifo] = int(trigger_time - psdlen // 2)
         if args.adjust_psd_center:
-            idx = numpy.searchsorted(segs[ifo][0],
-                                     trigger_time + time_offsets[ifo]) - 1
+            idx = numpy.searchsorted(segs[ifo][0], trigger_time + time_offsets[ifo]) - 1
             start = segs[ifo][0][idx] - time_offsets[ifo]
             end = segs[ifo][1][idx] - time_offsets[ifo]
             logging.info('Must fit within %s-%s', start, end)
@@ -139,15 +142,25 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
         psd_end[ifo] = psd_start[ifo] + psdlen
         logging.info('%s: PSD data will be %s-%s', ifo, psd_start[ifo], psd_end[ifo])
 
-        data_start = min(psd_start[ifo], filter_start[ifo]) - pad
-        data_end = max(psd_end[ifo], filter_end[ifo]) + pad
-        logging.info('%s: Will need data from %s-%s', ifo, data_start, data_end)
+        # Figure out when we can read data and if zero padding needs to be done
+        data_start[ifo] = min(psd_start[ifo], filter_start[ifo]) - pad
+        data_end[ifo] = max(psd_end[ifo], filter_end[ifo]) + pad
+        logging.info('%s: Will need data from %s-%s', ifo, data_start[ifo], data_end[ifo])
 
-        args.gps_start_time[ifo] = data_start + pad + time_offsets[ifo]
-        args.gps_end_time[ifo] = data_end - pad + time_offsets[ifo]
+        pad_start[ifo], pad_end[ifo] = 0, 0
+        if args.adjust_psd_center:
+            if data_start[ifo] < start + pad:
+                pad_start[ifo] = start - data_start[ifo] + pad
+                data_start[ifo] = start + pad
+            if data_end[ifo] > end - pad:
+                pad_end[ifo] = data_end[ifo] - end + pad
+                data_end[ifo] = end - pad
+            print pad_start[ifo], pad_end[ifo], segs[ifo][0][idx], segs[ifo][1][idx]
+        args.gps_start_time[ifo] = data_start[ifo] + pad + time_offsets[ifo]
+        args.gps_end_time[ifo] = data_end[ifo] - pad + time_offsets[ifo]
         logging.info('%s: actually reading %s-%s',
-                     ifo, data_start + time_offsets[ifo],
-                     data_end + time_offsets[ifo])
+                     ifo, data_start[ifo] + time_offsets[ifo],
+                     data_end[ifo] + time_offsets[ifo])
 
     logging.info('Calculating Strain around trigger')
     strain = pycbc.strain.from_cli_multi_ifos(args, ifos,
@@ -157,7 +170,14 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     stilde = {}
     psd = {}
     for ifo in strain:
-        strain[ifo].start_time = round(strain[ifo].start_time) - time_offsets[ifo]
+        strain[ifo].start_time = data_start[ifo] + pad
+
+        # apply zero padding if needed.
+        tpad = pad_start[ifo] + pad_end[ifo]
+        if tpad > 0:
+            logging.info('Applying zero padding')
+            strain[ifo].resize(len(strain[ifo]) + strain[ifo].sample_rate * tpad)
+            strain[ifo] = strain[ifo].cyclic_time_shift(pad_start[ifo])
 
         spart = strain[ifo].time_slice(filter_start[ifo], filter_end[ifo])
         stilde[ifo] = spart.to_frequencyseries()
