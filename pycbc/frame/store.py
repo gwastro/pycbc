@@ -52,7 +52,7 @@ def read_store(fname, channel, start_time, end_time):
 
     diff = start_time - starts
     loc = numpy.where(diff > 0)[0]
-    sidx = loc[diff[l].argmin()]
+    sidx = loc[diff[loc].argmin()]
 
     stime = starts[sidx]
     etime = ends[sidx]
