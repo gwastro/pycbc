@@ -35,7 +35,7 @@ from scipy import interpolate
 import astropy.cosmology
 from astropy import units
 from astropy.cosmology.core import CosmologyError
-from pycbc.conversions import ensurearray, formatreturn
+import pycbc.conversions
 
 DEFAULT_COSMOLOGY = 'Planck15'
 
@@ -130,7 +130,7 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
     float
         The redshift at the requested values.
     """
-    fval, input_is_array = ensurearray(fval)
+    fval, input_is_array = pycbc.conversions.ensurearray(fval)
     # make sure fval is atleast 1D
     if fval.size == 1 and fval.ndim == 0:
         fval = fval.reshape(1)
@@ -170,7 +170,7 @@ def z_at_value(func, fval, unit, zmax=1000., **kwargs):
                                 "have been set to inf. If you would like "
                                 "better precision, call God.".format(zmax))
                 break
-    return formatreturn(zs, input_is_array)
+    return pycbc.conversions.formatreturn(zs, input_is_array)
 
 
 def _redshift(distance, **kwargs):
@@ -254,7 +254,7 @@ class DistToZ(object):
     def get_redshift(self, dist):
         """Returns the redshift for the given distance.
         """
-        dist, input_is_array = ensurearray(dist)
+        dist, input_is_array = pycbc.conversions.ensurearray(dist)
         try:
             zs = self.nearby_d2z(dist)
         except TypeError:
@@ -275,7 +275,7 @@ class DistToZ(object):
                 raise ValueError("distance must be finite and > 0")
             zs[replacemask] = _redshift(dist[replacemask],
                                         cosmology=self.cosmology)
-        return formatreturn(zs, input_is_array)
+        return pycbc.conversions.formatreturn(zs, input_is_array)
 
     def __call__(self, dist):
         return self.get_redshift(dist)

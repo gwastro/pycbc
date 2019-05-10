@@ -29,7 +29,8 @@ __program__ = "pycbc_make_coinc_search_workflow"
 import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging
+import os, argparse, logging
+from six.moves import configparser as ConfigParser
 from ligo import segments
 import numpy, lal, datetime
 from pycbc.results import create_versioning_page, static_table, layout
@@ -600,7 +601,7 @@ layout.two_column_layout(rdir.base, summ)
 base = rdir['workflow/configuration']
 wf.makedir(base)
 ini_file_path = os.path.join(base, 'configuration.ini')
-with open(ini_file_path, 'wb') as ini_fh:
+with open(ini_file_path, 'w') as ini_fh:
     container.cp.write(ini_fh)
 ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
                         file_url='file://'+ini_file_path)])
@@ -643,7 +644,7 @@ container._adag.addDependency(dep)
 container.save()
 
 # Protect the open box results folder
-os.chmod(rdir['open_box_result'], 0700)
+os.chmod(rdir['open_box_result'], 0o0700)
 
 logging.info("Written dax.")
 

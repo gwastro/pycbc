@@ -25,7 +25,8 @@
 This module is responsible for setting up plotting jobs.
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 """
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin
 from pycbc.workflow.core import File, FileList, makedir, Executable
 
 def excludestr(tags, substr):
@@ -221,6 +222,7 @@ def make_seg_table(workflow, seg_files, seg_names, out_dir, tags=None,
     for s in seg_names:
         quoted_seg_names.append("'" + s + "'")
     node.add_opt('--segment-names', ' '.join(quoted_seg_names))
+    node.add_opt('--ifos', ' '.join(workflow.ifos))
     if description:
         node.add_opt('--description', "'" + description + "'")
     if title_text:
@@ -236,8 +238,7 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
     if vetodef_file is None:
         vetodef_file = workflow.cp.get_opt_tags("workflow-segments",
                                            "segments-veto-definer-file", [])
-        file_url = urlparse.urljoin('file:',
-                                    urllib.pathname2url(vetodef_file))
+        file_url = urljoin('file:', pathname2url(vetodef_file))
         vdf_file = File(workflow.ifos, 'VETO_DEFINER',
                         workflow.analysis_time, file_url=file_url)
         vdf_file.PFN(file_url, site='local')
@@ -267,6 +268,7 @@ def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     for s in seg_names:
         quoted_seg_names.append("'" + s + "'")
     node.add_opt('--segment-names', ' '.join(quoted_seg_names))
+    node.add_opt('--ifos', ' '.join(workflow.ifos))
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
     return node.output_files[0]

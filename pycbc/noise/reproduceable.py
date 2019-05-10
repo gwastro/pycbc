@@ -21,6 +21,7 @@
 #
 # =============================================================================
 #
+from six.moves import range
 import numpy, pycbc.psd
 from pycbc.types import TimeSeries, FrequencySeries, complex_same_precision_as
 from numpy.random import RandomState
@@ -111,7 +112,7 @@ def colored_noise(psd, start_time, end_time, seed=0, low_frequency_cutoff=1.0):
 
     # Want to avoid zeroes in PSD.
     max_val = psd.max()
-    for i in xrange(len(psd)):
+    for i in range(len(psd)):
         if i >= (oldlen-1):
             psd.data[i] = psd[oldlen - 2]
         if psd[i] == 0:

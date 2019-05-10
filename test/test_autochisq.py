@@ -1,4 +1,5 @@
 import sys
+from six.moves import range
 import pycbc
 from pycbc.fft.fftw import set_measure_level
 set_measure_level(0)
@@ -83,7 +84,7 @@ class TestAutochisquare(unittest.TestCase):
         time = np.arange(0, len(hp))*self.del_t
         Nby2 = len(hp)/2
         sngt = np.zeros(len(hp))
-        for i in xrange(len(hp)):
+        for i in range(len(hp)):
             sngt[i] = 9.0e-21*exp(-(time[i]-time[Nby2])**2/self.Q)*sin(self.om*time[i])
 
         self.sig2 = np.zeros(self.seg_len_idx)
@@ -136,7 +137,7 @@ class TestAutochisquare(unittest.TestCase):
 	#self.assertTrue(obt_snr == achi_list[0, 1])
 	#self.assertTrue(obt_ach == achi_list[0, 2])
 
-    #    for i in xrange(1, len(achi_list)):
+    #    for i in range(1, len(achi_list)):
 	#   self.assertTrue(achi_list[i,2] > 4.0)
 
     def test_sg(self):
@@ -186,7 +187,7 @@ class TestAutochisquare(unittest.TestCase):
 	#self.assertTrue(obt_snr == achi_list[0, 1])
 	#self.assertTrue(obt_ach == achi_list[0, 2])
 
-    #    for i in xrange(1, len(achi_list)):
+    #    for i in range(1, len(achi_list)):
 	#   self.assertTrue(achi_list[i,2] > 2.e3)
 
 

@@ -17,6 +17,7 @@
 import copy
 import numpy
 import logging
+from six.moves import range
 from pycbc.tmpltbank import coord_utils
 
 class PartitionedTmpltbank(object):
@@ -92,10 +93,10 @@ class PartitionedTmpltbank(object):
         massbank = {}
         bank = {}
         # Also add a little bit here
-        for i in xrange(-2, int((chi1_max - chi1_min) // bin_spacing + 2)):
+        for i in range(-2, int((chi1_max - chi1_min) // bin_spacing + 2)):
             bank[i] = {}
             massbank[i] = {}
-            for j in xrange(-2, int((chi2_max - chi2_min) // bin_spacing + 2)):
+            for j in range(-2, int((chi2_max - chi2_min) // bin_spacing + 2)):
                 bank[i][j] = []
                 massbank[i][j] = {}
                 massbank[i][j]['mass1s'] = numpy.array([])
@@ -218,12 +219,12 @@ class PartitionedTmpltbank(object):
              (chi1_bin > self.max_chi1_bin-bin_range_check) or
              (chi2_bin < self.min_chi2_bin+bin_range_check) or
              (chi2_bin > self.max_chi2_bin-bin_range_check) ):
-            for temp_chi1 in xrange(chi1_bin-bin_range_check,
+            for temp_chi1 in range(chi1_bin-bin_range_check,
                                                    chi1_bin+bin_range_check+1):
                 if temp_chi1 not in self.massbank:
                     self.massbank[temp_chi1] = {}
                     self.bank[temp_chi1] = {}
-                for temp_chi2 in xrange(chi2_bin-bin_range_check,
+                for temp_chi2 in range(chi2_bin-bin_range_check,
                                                    chi2_bin+bin_range_check+1):
                     if temp_chi2 not in self.massbank[temp_chi1]:
                         self.massbank[temp_chi1][temp_chi2] = {}
@@ -604,7 +605,7 @@ class PartitionedTmpltbank(object):
         mass2s = hdf_fp['mass2'][:]
         spin1zs = hdf_fp['spin1z'][:]
         spin2zs = hdf_fp['spin2z'][:]
-        for idx in xrange(len(mass1s)):
+        for idx in range(len(mass1s)):
             self.add_point_by_masses(mass1s[idx], mass2s[idx], spin1zs[idx],
                                      spin2zs[idx], vary_fupper=vary_fupper)
 
@@ -630,7 +631,7 @@ class PartitionedTmpltbank(object):
         spin2z = []
         for i in self.massbank.keys():
             for j in self.massbank[i].keys():
-                for k in xrange(len(self.massbank[i][j]['mass1s'])):
+                for k in range(len(self.massbank[i][j]['mass1s'])):
                     curr_bank = self.massbank[i][j]
                     mass1.append(curr_bank['mass1s'][k])
                     mass2.append(curr_bank['mass2s'][k])

@@ -29,6 +29,7 @@ waves.
 """
 
 import os, sys, types, re, copy, numpy, inspect
+import six
 from six import string_types
 from glue.ligolw import types as ligolw_types
 from pycbc import coordinates, conversions, cosmology
@@ -784,9 +785,13 @@ class FieldArray(numpy.recarray):
             pass
         # numpy has some issues with dtype field names that are unicode,
         # so we'll force them to strings here
-        if self.dtype.names is not None and \
-                any(isinstance(name, unicode) for name in obj.dtype.names):
-            self.dtype.names = map(str, self.dtype.names)
+        if six.PY2:
+            if self.dtype.names is not None and \
+                    any(isinstance(name, unicode) for name in obj.dtype.names):
+                self.dtype.names = map(str, self.dtype.names)
+            # We don't want to do this in python3 because a str *is* unicode,
+            # but maybe numpy in python3 is more lenient of this. Let's just
+            # wait and see if this becomes a problem in python3
 
     def __copy_attributes__(self, other, default=None):
         """Copies the values of all of the attributes listed in
@@ -1139,7 +1144,7 @@ class FieldArray(numpy.recarray):
         if cast_to_dtypes is not None:
             dtype = [cast_to_dtypes[col] for col in columns]
         else:
-            dtype = columns.items()
+            dtype = list(columns.items())
         # get the values
         if _default_types_status['ilwd_as_int']:
             input_array = \
@@ -1560,12 +1565,11 @@ class _FieldArrayWithDefaults(FieldArray):
         parameters at initialization. Keyword arguments can be passed to this
         to set such dynamic fields.
         """
-        add_fields = {}
+        output = cls._staticfields.copy()
         if include_virtual:
-            add_fields.update(dict([[name, VIRTUALFIELD_DTYPE]
-                for name in cls._virtualfields]))
-        return dict(cls._staticfields.items() + add_fields.items())
-
+            output.update({name: VIRTUALFIELD_DTYPE
+                           for name in cls._virtualfields})
+        return output
 
     def __new__(cls, shape, name=None, additional_fields=None,
                 field_kwargs=None, **kwargs):

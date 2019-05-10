@@ -1770,7 +1770,7 @@ def followup_event_significance(ifo, data_reader, bank,
         state_start_time = data_reader.strain.end_time \
                 - data_reader.reduced_pad * data_reader.strain.delta_t - bdur
         if not data_reader.state.is_extent_valid(state_start_time, bdur):
-            return None, None, None
+            return None, None, None, None
 
     # We won't require that all DQ checks be valid for now, except at
     # onsource time.
@@ -1778,14 +1778,14 @@ def followup_event_significance(ifo, data_reader, bank,
         dq_start_time = onsource_start - duration / 2.0
         dq_duration = onsource_end - onsource_start + duration
         if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
-            return None, None, None
+            return None, None, None, None
 
     # Calculate SNR time series for this duration
     htilde = bank.get_template(template_id, min_buffer=bdur)
     stilde = data_reader.overwhitened_data(htilde.delta_f)
 
-    snr, _, norm = matched_filter_core(htilde, stilde,
-                                          h_norm=htilde.sigmasq(stilde.psd))
+    sigma2 = htilde.sigmasq(stilde.psd)
+    snr, _, norm = matched_filter_core(htilde, stilde, h_norm=sigma2)
 
     # Find peak in on-source and determine p-value
     onsrc = snr.time_slice(onsource_start, onsource_end)
@@ -1809,7 +1809,7 @@ def followup_event_significance(ifo, data_reader, bank,
     logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
                  pvalue, nsamples)
 
-    return baysnr * norm, peak_time, pvalue
+    return baysnr * norm, peak_time, pvalue, sigma2
 
 def compute_followup_snr_series(data_reader, htilde, trig_time,
                                 duration=0.095, check_state=True,

@@ -139,7 +139,6 @@ def insert_injfilterrejector_option_group_multi_ifo(parser):
         curr_arg, type=int, default=None, help=_injfilterer_flower_help,
         metavar='IFO:VALUE', action=MultiDetOptionAction, nargs='+')
 
-
 class InjFilterRejector(object):
 
     """Class for holding parameters for using injection/template pre-filtering.

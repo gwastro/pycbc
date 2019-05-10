@@ -32,6 +32,7 @@ import copy
 import numpy
 import logging
 import h5py
+from six.moves import range
 import pycbc.tmpltbank
 import pycbc.version
 from pycbc import pnutils
@@ -325,7 +326,7 @@ for entry in temp_bank:
         numV3Temps = 1
     else:
         numV3Temps = int(round(vec3_depth // vec3DepthVal)) + 1
-    for ite in xrange(numV3Temps):
+    for ite in range(numV3Temps):
         if not opts.threed_lattice:
             xi3_des = vec3_min + \
                       (vec3_depth) * (2 * ite + 1) / (2. * (numV3Temps))
@@ -358,7 +359,7 @@ for entry in temp_bank:
             vec4_depthT = vec4_maxT - vec4_minT
             # Then loop over necessary templates in 4th direction
             numV4Temps = int(round(vec4_depthT // vec3DepthVal)) + 1
-            for ite in xrange(numV4Temps):
+            for ite in range(numV4Temps):
                 xi4_des = vec4_minT + \
                           (vec4_depthT) * (2 * ite + 1) / (2. * (numV4Temps))
                 dist = (xi1_des - xis[:,0])**2 + (xi2_des - xis[:,1])**2 + \
