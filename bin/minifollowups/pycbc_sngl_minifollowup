@@ -96,6 +96,7 @@ parser.add_argument('--output-file')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
+args.statistic_files = sum(args.statistic_files, [])
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
