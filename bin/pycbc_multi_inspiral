@@ -454,23 +454,25 @@ with ctx:
             # Filter check checks the 'inj_filter_rejector' options to
             # determine whether to filter this template/segment 
             # if injections are present.
+            analyse_segment = True
             for ifo in opt.instruments:
                 if not inj_filter_rejector[ifo].template_segment_checker(
                         bank, t_num, stilde[ifo], opt.gps_start_time[ifo]):
                     logging.info("Skipping segment %d/%d as no detectable "
                                  "injection is present" % (s_num + 1,
                                  len(segments[ifo])))
-                    continue
-            logging.info("Analyzing segment %d/%d" % (s_num + 1,
-                                                     len(segments[ifo])))
+                    analyse_segment = False
             #Find detector sensitivities (sigma) and make array of normalised
             sigmasq = {ifo : template.sigmasq(segments[ifo][s_num].psd)
                       for ifo in opt.instruments}
             sigma = {ifo : np.sqrt(sigmasq[ifo]) for ifo in opt.instruments}
-            # Every time s_num is zero, we run new template to increment the
-            # template index
-            if s_num==0:
+            # Every time s_num is zero or we skip the segment, we run new 
+            # template to increment the template index
+            if s_num==0 or analyse_segment==False:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
+            if not analyse_segment: continue
+            logging.info("Analyzing segment %d/%d" % (s_num + 1,
+                                                     len(segments[ifo])))
             snrv_dict = {}
             norm_dict = {}
             corr_dict = {}
