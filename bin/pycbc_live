@@ -71,6 +71,9 @@ class LiveEventManager(object):
         self.gracedb_testing = gracedb_testing
         self.enable_gracedb_upload = enable_gracedb_upload
 
+        # FIXME: Make CLA
+        self.store_data_and_psds = True
+
     def commit_results(self, results):
         self.comm.gather(results, root=0)
 
@@ -218,6 +221,44 @@ class LiveEventManager(object):
                              extra_strings=comments)
             else:
                 event.save(fname)
+
+            if self.store_data_and_psds:
+                for ifo in ifos:
+                    curr_fname = \
+                        fname.replace('.xml.gz',
+                                      '{}_data_overwhitened.hdf'.format(ifo))
+                    curr_data = data_readers[ifo].overwhitened_data(delta_f)
+                    curr_data.save(curr_fname)
+                    curr_fname = fname.replace('.xml.gz', 
+                                               '{}_psd.hdf'.format(ifo))
+                    curr_psd = curr_data.psd
+                    curr_psd.save(curr_fname)
+
+                curr_fname = fname.replace('.xml.gz', 'attributes.hdf')
+                hdfp = h5py.File(curr_fname, 'w')
+                for ifo in coinc_ifos:
+                    curr_time = \
+                        coinc_results['foreground/{}/end_time'.format(ifo)]
+                    hdfp['coinc_times/{}'.format(ifo)] = curr_time
+                tlen = bank.round_up((buff_size + min_buffer) \
+                    * bank.sample_rate)
+                flen = int(tlen / 2 + 1)
+                delta_f = bank.sample_rate / float(tlen)
+                f_end = bank.end_frequency(template_id)
+                if f_end is None or f_end >= (flen * delta_f):
+                    f_end = (flen-1) * delta_f
+                hdfp['flen'] = flen
+                hdfp['delta_f'] = delta_f
+                hdfp['f_end'] = f_end
+                hdfp['sample_rate'] = bank.sample_Rate
+                template_id = \
+                    triggers['foreground/{}/template_id'.format(ifos[0])]
+                hdfp['flow'] = bank.table[template_id].f_lower
+                hdfp['mass1'] = bank.table[template_id].mass1
+                hdfp['mass2'] = bank.table[template_id].mass2
+                hdfp['spin1z'] = bank.table[template_id].spin1z
+                hdfp['spin2z'] = bank.table[template_id].spin2z
+
 
     def check_singles(self, results, data_reader, psds, f_low):
         active = [k for k in results if results[k] != None]
