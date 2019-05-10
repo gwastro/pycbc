@@ -23,12 +23,14 @@ from .base import (initial_dist_from_config, create_new_output_file)
 from .emcee import EmceeEnsembleSampler
 from .emcee_pt import EmceePTSampler
 from .cpnest import CPNestSampler
+from .multinest import MultinestSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
     EmceeEnsembleSampler,
     EmceePTSampler,
-    CPNestSampler
+    CPNestSampler,
+    MultinestSampler
 )}
 
 
