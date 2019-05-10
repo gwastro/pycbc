@@ -26,7 +26,7 @@ statistic values
 """
 import numpy
 from . import ranking
-
+from . import coinc_rate
 
 class Stat(object):
 
@@ -566,6 +566,110 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
         return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
                            dtype=numpy.float32), ndmin=1, copy=False)
 
+class CoincRateCalcStatistic(NewSNRStatistic):
+
+    """Detection statistic using an exponential falloff noise model.
+    Statistic calculates the log noise coinc rate for each
+    template over single-ifo newsnr values.
+    """
+
+    def __init__(self, files):
+        if not len(files):
+            raise RuntimeError("Can't find any statistic files !")
+        NewSNRStatistic.__init__(self, files)
+        # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
+        parsed_attrs = [f.split('-') for f in self.files.keys()]
+        self.ifos = [at[0] for at in parsed_attrs if
+                     (len(at) == 2 and at[1] == 'fit_coeffs')]
+        if not len(self.ifos):
+            raise RuntimeError("None of the statistic files has the required "
+                               "attribute called {ifo}-fit_coeffs !")
+        self.fits_by_tid = {}
+        self.alphamax = {}
+        for i in self.ifos:
+            self.fits_by_tid[i] = self.assign_fits(i)
+            self.get_ref_vals(i)
+
+        self.get_newsnr = ranking.get_newsnr
+
+    def assign_fits(self, ifo):
+        coeff_file = self.files[ifo+'-fit_coeffs']
+        template_id = coeff_file['template_id'][:]
+        alphas = coeff_file['fit_coeff'][:]
+        rates = coeff_file['count_in_template'][:]/float(coeff_file.attrs['analysis_time'])
+        # the template_ids and fit coeffs are stored in an arbitrary order
+        # create new arrays in template_id order for easier recall
+        tid_sort = numpy.argsort(template_id)
+        return {'alpha':alphas[tid_sort], 'rate':rates[tid_sort],
+                'thresh':coeff_file.attrs['stat_threshold']}
+
+    def get_ref_vals(self, ifo):
+        self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
+
+    def find_fits(self, trigs):
+        """Get fit coeffs for a specific ifo and template id(s)"""
+        try:
+            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            ifo = trigs.ifo
+        except AttributeError:
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            # Should only be one ifo fit file provided
+            assert len(self.ifos) == 1
+            ifo = self.ifos[0]
+        # fits_by_tid is a dictionary of dictionaries of arrays
+        # indexed by ifo / coefficient name / template_id
+        alphai = self.fits_by_tid[ifo]['alpha'][tnum]
+        ratei = self.fits_by_tid[ifo]['rate'][tnum]
+        thresh = self.fits_by_tid[ifo]['thresh']
+        return alphai, ratei, thresh
+
+    def lognoiseratedensity(self, trigs):
+        """
+        Calculate the log noise rate density over single-ifo newsnr
+        Read in single trigger information, make the newsnr statistic
+        and rescale by the fitted coefficients alpha and rate
+        """
+        alphai, ratei, thresh = self.find_fits(trigs)
+        newsnr = self.get_newsnr(trigs)
+        # alphai is constant of proportionality between single-ifo newsnr and
+        #  negative log noise likelihood in given template
+        # ratei is rate of trigs in given template compared to average
+        # thresh is stat threshold used in given ifo
+        lognoisel = numpy.array(numpy.log(alphai) 
+                                - alphai * (newsnr - thresh),
+                                ndmin=1, dtype=numpy.float32)
+        return lognoisel
+
+    def single(self, trigs):
+        """
+        Single-detector statistic, here just equal to the log noise
+        rate density
+        """
+        return self.lognoiseratedensity(trigs)
+
+    def coinc_multiifo(self, s, slide, step, time_addition=0.005): # pylint:disable=unused-argument
+        """Calculate the final coinc ranking statistic"""
+        ifostr = ' '.join(sorted(self.ifos))
+        print('calculating expected rates')
+        rates_input = {}
+        for ifo in self.fits_by_tid:
+            rates_input[ifo] = self.fits_by_tid[ifo]['rate']
+        expected_rates = coinc_rate.multiifo_noise_coinc_rate(
+                              rates_input, time_addition)[ifostr]
+        print(expected_rates)
+        print('min: {:.3e}, max:{:.3e}'.format(expected_rates.min(), expected_rates.max()))
+        print(expected_rates.size)
+        print(sum(numpy.isnan(expected_rates)))
+
+        loglr = np.exp(mean_log_coincidence_rates[ifostr])/expected_rates
+        return loglr
+
+mean_log_coincidence_rates = {
+    'H1 L1': -14.6,
+    'H1 V1': -13.8,
+    'L1 V1': -13.8,
+    'H1 L1 V1': -22.9
+}
 
 statistic_dict = {
     'newsnr': NewSNRStatistic,
@@ -582,7 +686,8 @@ statistic_dict = {
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
-    'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic
+    'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
+    'coinc_rate_calc': CoincRateCalcStatistic
 }
 
 sngl_statistic_dict = {
