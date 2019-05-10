@@ -229,7 +229,9 @@ class MultinestSampler(BaseSampler):
         from, into the prior space defined in the config file.
         """
         prior_dists = self.model.prior_distribution.distributions
-        dist_dict = {d.params[0]: d for d in prior_dists}
+        dist_dict = {}
+        for dist in prior_dists:
+            dist_dict.update({param: dist for param in dist.params})
         for i, param in enumerate(self.model.variable_params):
             cube[i] = dist_dict[param].cdfinv(param, cube[i])
         return cube
