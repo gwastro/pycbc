@@ -46,5 +46,26 @@ class PosteriorFile(BaseInferenceFile):
     def write_sampler_metadata(self, sampler):
         raise NotImplementedError
 
-    def write_samples(self, samples, **kwargs):
-        raise NotImplementedError
+    def write_samples(self, samples, parameters=None):
+        niterations = len(samples.values()[0])
+        assert all(len(p) == niterations
+                   for p in samples.values()), (
+                                        "all samples must have the same shape")
+        group = self.samples_group + '/{name}'
+        if parameters is None:
+            parameters = samples.keys()
+        # loop over number of dimensions
+        for param in parameters:
+            dataset_name = group.format(name=param)
+            try:
+                fp_niterations = len(self[dataset_name])
+                if niterations != fp_niterations:
+                    # resize the dataset
+                    self[dataset_name].resize(niterations, axis=0)
+            except KeyError:
+                # dataset doesn't exist yet
+                self.create_dataset(dataset_name, (niterations,),
+                                    maxshape=(None,),
+                                    dtype=samples[param].dtype,
+                                    fletcher32=True)
+            self[dataset_name][:] = samples[param]
