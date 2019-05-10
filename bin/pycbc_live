@@ -223,6 +223,11 @@ class LiveEventManager(object):
                 event.save(fname)
 
             if self.store_data_and_psds:
+                p = props(bank.table[template_id])
+                apr = p.pop('approximant')
+                buff_size = \
+                    pycbc.waveform.get_waveform_filter_length_in_time(apr, **p)
+
                 tlen = bank.round_up((buff_size + min_buffer) \
                     * bank.sample_rate)
                 flen = int(tlen / 2 + 1)
