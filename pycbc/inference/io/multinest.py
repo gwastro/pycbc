@@ -133,7 +133,7 @@ class MultinestFile(BaseInferenceFile):
         if self.sampler_group not in self.keys():
             # create the sampler group
             self.create_group(self.sampler_group)
-        self[self.sampler_group].attrs['nwalkers'] = sampler.nlivepoints
+        self[self.sampler_group].attrs['nlivepoints'] = sampler.nlivepoints
         # write the model's metadata
         sampler.model.write_metadata(self)
 
