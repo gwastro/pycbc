@@ -62,7 +62,7 @@ else:
     raise ValueError()
 
 # Check if using input files from old (2-ifo) coinc code
-if 'time1' in f.attrs:
+if 'detector_1' in f.attrs:
     # make a table for the coincident information #################################
     headers = ["Coincident ranking statistic",
                "Inclusive IFAR (yr)",
@@ -102,7 +102,7 @@ html = pycbc.results.dq.redirect_javascript + \
 # make a table for the single detector information ############################
 idx = {}
 # Check if using input files from old (2-ifo) coinc code
-if 'time1' in f.attrs:
+if 'detector_1' in f.attrs:
     # 2 detector version
     ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
     idx = {ifo1:d['trigger_id1'][n], ifo2:d['trigger_id2'][n]}
@@ -116,16 +116,20 @@ else:
 table = []
 files = {}
 for fname in args.single_trigger_files:
-    f = h5py.File(fname, 'r')
-    ifos = f.keys()
+    f2 = h5py.File(fname, 'r')
+    ifos = f2.keys()
     for ifo in ifos:
-        files[ifo] = f[ifo]
+        files[ifo] = f2[ifo]
 
 bank = h5py.File(args.bank_file, 'r')
 statmapfile = d
 for ifo in files.keys():
-    if statmapfile['%s/time' % ifo][n] == -1.0:
-        continue
+
+    # ignore ifo if coinc didn't participate (only for multi-ifo workflow)
+    if ('detector_1' not in f.attrs) and \
+       (statmapfile['%s/time' % ifo][n] == -1.0):
+            continue
+
     d = files[ifo]
     i = idx[ifo]
     tid = d['template_id'][i]

@@ -27,9 +27,8 @@
 
 import numpy
 import logging
-
 from abc import (ABCMeta, abstractmethod)
-
+from ConfigParser import NoSectionError
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 
@@ -206,11 +205,14 @@ class SamplingTransforms(object):
         SamplingTransforms
             A sampling transforms class.
         """
-        if not cp.has_section('sampling_params'):
-            raise ValueError("no sampling_params section found in config file")
+        # Check if a sampling_params section is provided
+        try:
+            sampling_params, replace_parameters = \
+                read_sampling_params_from_config(cp)
+        except NoSectionError as e:
+            logging.warning("No sampling_params section read from config file")
+            raise e
         # get sampling transformations
-        sampling_params, replace_parameters = \
-            read_sampling_params_from_config(cp)
         sampling_transforms = transforms.read_transforms_from_config(
             cp, 'sampling_transforms')
         logging.info("Sampling in {} in place of {}".format(
@@ -749,7 +751,7 @@ class BaseModel(object):
         try:
             sampling_transforms = SamplingTransforms.from_config(
                 cp, variable_params)
-        except ValueError:
+        except NoSectionError:
             sampling_transforms = None
         args['sampling_transforms'] = sampling_transforms
         # get any waveform transforms

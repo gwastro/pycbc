@@ -284,8 +284,10 @@ def get_param(par, args, m1, m2, s1z, s2z):
         parvals = conversions.chi_eff(m1, m2, s1z, s2z)
     elif par == 'template_duration':
         # default to SEOBNRv4 duration function
+        if not hasattr(args, 'approximant') or args.approximant is None:
+            args.approximant = "SEOBNRv4"
         parvals = pnutils.get_imr_duration(m1, m2, s1z, s2z, args.f_lower,
-                                           args.approximant or "SEOBNRv4")
+                                           args.approximant)
         if args.min_duration:
             parvals += args.min_duration
     elif par == 'tau0':

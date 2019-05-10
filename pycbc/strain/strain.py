@@ -27,8 +27,7 @@ from pycbc.types import MultiDetOptionActionSpecial
 from pycbc.types import required_opts, required_opts_multi_ifo
 from pycbc.types import ensure_one_opt, ensure_one_opt_multi_ifo
 from pycbc.types import copy_opts_for_single_ifo
-from pycbc.frame import read_frame, query_and_read_frame
-from pycbc.inject import InjectionSet, SGBurstInjectionSet, RingdownInjectionSet
+from pycbc.inject import InjectionSet, SGBurstInjectionSet
 from pycbc.filter import resample_to_delta_t, highpass, make_frequency_series
 from pycbc.filter.zpk import filter_zpk
 from pycbc.waveform.spa_tmplt import spa_distance
@@ -115,7 +114,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
 
     # zero-pad strain to a power-of-2 length
     strain_pad_length = next_power_of_2(len(strain))
-    pad_start = strain_pad_length/2 - len(strain)/2
+    pad_start = int(strain_pad_length/2 - len(strain)/2)
     pad_end = pad_start + len(strain)
     strain_pad = pycbc.types.TimeSeries(
             pycbc.types.zeros(strain_pad_length, dtype=strain.dtype),
@@ -223,15 +222,17 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             sieve = None
 
         if opt.frame_type:
-            strain = query_and_read_frame(opt.frame_type, opt.channel_name,
-                                          start_time=opt.gps_start_time-opt.pad_data,
-                                          end_time=opt.gps_end_time+opt.pad_data,
-                                          sieve=sieve)
+            strain = pycbc.frame.query_and_read_frame(
+                    opt.frame_type, opt.channel_name,
+                    start_time=opt.gps_start_time-opt.pad_data,
+                    end_time=opt.gps_end_time+opt.pad_data,
+                    sieve=sieve)
         else:
-            strain = read_frame(frame_source, opt.channel_name,
-                            start_time=opt.gps_start_time-opt.pad_data,
-                            end_time=opt.gps_end_time+opt.pad_data,
-                            sieve=sieve)
+            strain = pycbc.frame.read_frame(
+                    frame_source, opt.channel_name,
+                    start_time=opt.gps_start_time-opt.pad_data,
+                    end_time=opt.gps_end_time+opt.pad_data,
+                    sieve=sieve)
 
         if opt.zpk_z and opt.zpk_p and opt.zpk_k:
             logging.info("Highpass Filtering")
@@ -261,11 +262,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector = SGBurstInjectionSet(opt.sgburst_injection_file)
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
-
-        if opt.ringdown_injection_file:
-            logging.info("Applying ringdown-only injection.")
-            injector = RingdownInjectionSet(opt.ringdown_injection_file)
-            injector.apply(strain, opt.channel_name[0:2])
 
         logging.info("Highpass Filtering")
         strain = highpass(strain, frequency=opt.strain_high_pass)
@@ -378,8 +374,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 
         if not opt.channel_name and (opt.injection_file \
-                                     or opt.sgburst_injection_file \
-                                     or opt.ringdown_injection_file):
+                                     or opt.sgburst_injection_file):
             raise ValueError('Please provide channel names with the format '
                              'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
                              'simulated signals into fake strain')
@@ -397,11 +392,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
-
-        if opt.ringdown_injection_file:
-            logging.info("Applying ringdown-only injection.")
-            injector = RingdownInjectionSet(opt.ringdown_injection_file)
-            injector.apply(strain, opt.channel_name[0:2])
 
         if precision == 'single':
             logging.info("Converting to float32")
@@ -530,10 +520,6 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--sgburst-injection-file", type=str,
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
-
-    data_reading_group.add_argument("--ringdown-injection-file", type=str,
-                      help="(optional) Injection file used to add "
-                           "ringdown-only waveforms into the strain.")
 
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     default=1, help="Divide injections by this factor "
@@ -706,11 +692,6 @@ def insert_strain_option_group_multi_ifo(parser):
                       metavar='IFO:FILE',
                       help="(optional) Injection file used to add "
                       "sine-Gaussian burst waveforms into the strain")
-
-    data_reading_group_multi.add_argument("--ringdown-injection-file", type=str,
-                    nargs="+", action=MultiDetOptionAction, metavar='IFO:FILE',
-                    help="(optional) Injection file used to add "
-                           "ringdown-only waveforms into the strain.")
 
     data_reading_group_multi.add_argument("--injection-scale-factor",
                     type=float, nargs="+", action=MultiDetOptionAction,
@@ -1293,9 +1274,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # State channel
         if state_channel is not None:
-            valid_mask = 0
-            for flag in self.analyze_flags:
-                valid_mask = valid_mask | getattr(pycbc.frame, flag)
+            valid_mask = pycbc.frame.flag_names_to_bitmask(self.analyze_flags)
+            logging.info('State channel %s interpreted as bitmask %s = good',
+                         state_channel, bin(valid_mask))
             self.state = pycbc.frame.StatusBuffer(
                 frame_src,
                 state_channel, start_time,
@@ -1306,16 +1287,21 @@ class StrainBuffer(pycbc.frame.DataBuffer):
 
         # low latency dq channel
         if data_quality_channel is not None:
-            valid_mask = 0
-            for flag in self.data_quality_flags:
-                valid_mask = valid_mask | getattr(pycbc.frame, flag)
-            self.dq = pycbc.frame.StatusBuffer(
-                frame_src,
-                data_quality_channel, start_time,
-                max_buffer=max_buffer,
-                valid_mask=valid_mask,
-                force_update_cache=force_update_cache,
-                increment_update_cache=increment_update_cache)
+            sb_kwargs = dict(max_buffer=max_buffer,
+                             force_update_cache=force_update_cache,
+                             increment_update_cache=increment_update_cache)
+            if len(self.data_quality_flags) == 1 \
+                    and self.data_quality_flags[0] == 'veto_nonzero':
+                sb_kwargs['valid_on_zero'] = True
+                logging.info('DQ channel %s interpreted as zero = good',
+                             data_quality_channel)
+            else:
+                sb_kwargs['valid_mask'] = pycbc.frame.flag_names_to_bitmask(
+                        self.data_quality_flags)
+                logging.info('DQ channel %s interpreted as bitmask %s = good',
+                             data_quality_channel, bin(valid_mask))
+            self.dq = pycbc.frame.StatusBuffer(frame_src, data_quality_channel,
+                                               start_time, **sb_kwargs)
 
         self.highpass_frequency = highpass_frequency
         self.highpass_reduction = highpass_reduction
@@ -1605,3 +1591,53 @@ class StrainBuffer(pycbc.frame.DataBuffer):
             return False
         else:
             return True
+
+    @classmethod
+    def from_cli(cls, ifo, args, maxlen):
+        """Initialize a StrainBuffer object (data reader) for a particular
+        detector.
+        """
+        state_channel = analyze_flags = None
+        if args.state_channel and ifo in args.state_channel \
+                and args.analyze_flags and ifo in args.analyze_flags:
+            state_channel = ':'.join([ifo, args.state_channel[ifo]])
+            analyze_flags = args.analyze_flags[ifo].split(',')
+
+        dq_channel = dq_flags = None
+        if args.data_quality_channel and ifo in args.data_quality_channel \
+                and args.data_quality_flags and ifo in args.data_quality_flags:
+            dq_channel = ':'.join([ifo, args.data_quality_channel[ifo]])
+            dq_flags = args.data_quality_flags[ifo].split(',')
+
+        if args.frame_type:
+            frame_src = pycbc.frame.frame_paths(args.frame_type[ifo],
+                                                args.start_time,
+                                                args.end_time)
+        else:
+            frame_src = [args.frame_src[ifo]]
+        strain_channel = ':'.join([ifo, args.channel_name[ifo]])
+
+        return cls(frame_src, strain_channel,
+                   args.start_time, max_buffer=maxlen * 2,
+                   state_channel=state_channel,
+                   data_quality_channel=dq_channel,
+                   sample_rate=args.sample_rate,
+                   low_frequency_cutoff=args.low_frequency_cutoff,
+                   highpass_frequency=args.highpass_frequency,
+                   highpass_reduction=args.highpass_reduction,
+                   highpass_bandwidth=args.highpass_bandwidth,
+                   psd_samples=args.psd_samples,
+                   trim_padding=args.trim_padding,
+                   psd_segment_length=args.psd_segment_length,
+                   psd_inverse_length=args.psd_inverse_length,
+                   autogating_threshold=args.autogating_threshold,
+                   autogating_cluster=args.autogating_cluster,
+                   autogating_window=args.autogating_window,
+                   autogating_pad=args.autogating_pad,
+                   psd_abort_difference=args.psd_abort_difference,
+                   psd_recalculate_difference=args.psd_recalculate_difference,
+                   force_update_cache=args.force_update_cache,
+                   increment_update_cache=args.increment_update_cache[ifo],
+                   analyze_flags=analyze_flags,
+                   data_quality_flags=dq_flags,
+                   dq_padding=args.data_quality_padding)

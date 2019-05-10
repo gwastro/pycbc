@@ -26,12 +26,30 @@ import pycbc.version
 
 #### DEFINITIONS AND FUNCTIONS ####
 
-def get_stat(statchoice, trigs):
+def get_stat(statchoice, trigs, threshold):
     # Initialize statclass with an empty file list. In general could feed it
     # files here for statistics which need that.
     stat_instance = sngl_statistic_dict[statchoice]([])
-    return stat_instance.single(trigs)
+    chunk_size = 2**23
+    stat = []
+    select = []
+    size = len(trigs['end_time'])
+    s = 0
+    while s < size:
+        e = s + chunk_size if (s + chunk_size) <= size else size
 
+        # read and format chunk of data so it can be read by key
+        # as the stat classes expect.
+        chunk = {k: trigs[k][s:e] for k in trigs if len(trigs[k]) == size}
+        chunk_stat = stat_instance.single(chunk)
+        above = chunk_stat >= threshold
+        stat.append(chunk_stat[above])
+        select.append(above)
+        s += chunk_size
+
+    # Return boolean area that selects the triggers above threshold
+    # along with the stat values above threshold
+    return np.concatenate(select), np.concatenate(stat)
 #### MAIN ####
 
 parser = argparse.ArgumentParser(usage="",
@@ -133,10 +151,10 @@ tb_hashorder = tb[hash_sort]
 # reorder template IDs in parallel to the boundary values
 tid_hashorder = tid[hash_sort]
 
-# Calculate the differences between the boundary indices to get the 
+# Calculate the differences between the boundary indices to get the
 # number in each template
 # adding on total number at the end to get number in the last template
-total_number = len(trigf[args.ifo + '/template_id'][:])
+total_number = len(trigf[args.ifo + '/template_id'])
 count_in_template_hashorder = np.diff(np.append(tb_hashorder, total_number))
 # re-reorder values from hash order to tid order
 tid_sort = np.argsort(tid_hashorder)
@@ -144,15 +162,12 @@ count_in_template = count_in_template_hashorder[tid_sort]
 
 # get the stat values
 logging.info('Calculating stat values')
-stat = get_stat(args.sngl_stat, trigf[args.ifo])
-
-# do first thresholding operation to reduce trigger numbers
-abovethresh = stat >= args.stat_threshold
-stat = stat[abovethresh]
-tid = trigf[args.ifo + '/template_id'][:][abovethresh]
-time = trigf[args.ifo + '/end_time'][:][abovethresh]
+abovethresh, stat = get_stat(args.sngl_stat, trigf[args.ifo],
+                                 args.stat_threshold)
+tid = trigf[args.ifo + '/template_id'][abovethresh]
+time = trigf[args.ifo + '/end_time'][abovethresh]
 if args.save_trig_param:
-    tparam = trigf[args.ifo + '/' + args.save_trig_param][:][abovethresh]
+    tparam = trigf[args.ifo + '/' + args.save_trig_param][abovethresh]
 logging.info('%i trigs left after thresholding' % len(stat))
 
 # Calculate total time being analysed from segments
@@ -313,3 +328,4 @@ outfile.attrs.create("analysis_time", data=total_time)
 
 outfile.close()
 logging.info('Done!')
+
