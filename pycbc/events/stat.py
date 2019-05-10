@@ -635,7 +635,7 @@ class CoincRateCalcStatistic(NewSNRStatistic):
         #  negative log noise likelihood in given template
         # ratei is rate of trigs in given template compared to average
         # thresh is stat threshold used in given ifo
-        lognoisel = numpy.array(numpy.log(alphai) 
+        lognoisel = numpy.array(numpy.log(alphai) + numpy.log(ratei)
                                 - alphai * (newsnr - thresh),
                                 ndmin=1, dtype=numpy.float32)
         return lognoisel
@@ -650,19 +650,15 @@ class CoincRateCalcStatistic(NewSNRStatistic):
     def coinc_multiifo(self, s, slide, step, time_addition=0.005): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
         ifostr = ' '.join(sorted(self.ifos))
-        print('calculating expected rates')
-        rates_input = {}
-        for ifo in self.fits_by_tid:
-            rates_input[ifo] = self.fits_by_tid[ifo]['rate']
-        expected_rates = coinc_rate.multiifo_noise_coinc_rate(
-                              rates_input, time_addition)[ifostr]
-        print(expected_rates)
-        print('min: {:.3e}, max:{:.3e}'.format(expected_rates.min(), expected_rates.max()))
-        print(expected_rates.size)
-        print(sum(numpy.isnan(expected_rates)))
+        
+        ratesprod = sum(x for x in s.values())
+        ifo_list = [ifo for ifo in self.fits_by_tid]
+        ln_coinc_area = numpy.log(coinc_rate.multiifo_noise_coincident_area(
+                                                     ifo_list, time_addition))
 
-        loglr = np.exp(mean_log_coincidence_rates[ifostr])/expected_rates
-        return loglr
+
+        loglr = mean_log_coincidence_rates[ifostr] - ln_coinc_area - ratesprod
+        return numpy.exp(logl)
 
 mean_log_coincidence_rates = {
     'H1 L1': -14.6,
