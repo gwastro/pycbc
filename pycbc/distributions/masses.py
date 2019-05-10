@@ -76,8 +76,8 @@ class UniformComponentMasses(Uniform):
         super(UniformComponentMasses, self).__init__(mass1=mass2, mass2=mass2)
 
     def cdfinv(self, param, value):
-        raise NotImplementedError("This distribution has not been "
-                                  "implemented for multinest.")
+        raise NotImplementedError("An inverse CDF function has not been "
+                                  "implemented for this distribution.")
 
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
