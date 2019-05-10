@@ -406,8 +406,10 @@ class UniformSolidAngle(bounded.BoundedDist):
         return self._azimuthal_angle
 
     def cdfinv(self, param, value):
-        raise NotImplementedError("This distribution has not been "
-                                  "implemented for multinest.")
+        if param == self.polar_angle:
+            return self._polardist.cdfinv(param, value)
+        elif param == self.azimuthal_angle:
+            return self._azimuthaldist.cdfinv(param, value)
 
     def apply_boundary_conditions(self, **kwargs):
         """Maps the given values to be within the domain of the azimuthal and
