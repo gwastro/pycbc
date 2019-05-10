@@ -75,6 +75,10 @@ class UniformComponentMasses(Uniform):
             raise ValueError("must provide limits for mass2")
         super(UniformComponentMasses, self).__init__(mass1=mass2, mass2=mass2)
 
+    def cdfinv(self, param, value):
+        raise NotImplementedError("An inverse CDF function has not been "
+                                  "implemented for this distribution.")
+
     def rvs(self, size=1, param=None):
         """Gives a set of random values drawn from this distribution.
 

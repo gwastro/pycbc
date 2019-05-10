@@ -225,6 +225,15 @@ class SinAngle(UniformAngle):
             for bnd in self._bounds.values()])
         self._norm = numpy.exp(self._lognorm)
 
+    def cdfinv(self, arg, value):
+        """Return inverse of cdf for mapping unit interval to parameter bounds.
+        """
+        scale = (numpy.cos(self._bounds[arg][0])
+                 - numpy.cos(self._bounds[arg][1]))
+        offset = 1. + numpy.cos(self._bounds[arg][1]) / scale
+        new_value = numpy.arccos(-scale * (value - offset))
+        return new_value
+
     def _pdf(self, **kwargs):
         """Returns the pdf at the given values. The keyword arguments must
         contain all of parameters in self's params. Unrecognized arguments are
@@ -309,6 +318,14 @@ class CosAngle(SinAngle):
     _arcfunc = numpy.arcsin
     _domainbounds = (-numpy.pi/2, numpy.pi/2)
 
+    def cdfinv(self, param, value):
+        a = self._bounds[param][0]
+        b = self._bounds[param][1]
+        scale = numpy.sin(b) - numpy.sin(a)
+        offset = 1. - numpy.sin(b)/(numpy.sin(b) - numpy.sin(a))
+        new_value = numpy.arcsin((value - offset) * scale)
+        return new_value
+
 
 class UniformSolidAngle(bounded.BoundedDist):
     """A distribution that is uniform in the solid angle of a sphere. The names
@@ -388,6 +405,11 @@ class UniformSolidAngle(bounded.BoundedDist):
     def azimuthal_angle(self):
         return self._azimuthal_angle
 
+    def cdfinv(self, param, value):
+        if param == self.polar_angle:
+            return self._polardist.cdfinv(param, value)
+        elif param == self.azimuthal_angle:
+            return self._azimuthaldist.cdfinv(param, value)
 
     def apply_boundary_conditions(self, **kwargs):
         """Maps the given values to be within the domain of the azimuthal and
