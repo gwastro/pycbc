@@ -916,7 +916,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.singles_dtype = []
         data = False
         for ifo in self.ifos:
-            if ifo in results and results[ifo] is not False:
+            if ifo in results and results[ifo] is not False \
+                    and len(results[ifo]['snr']):
                 data = results[ifo]
                 break
 
