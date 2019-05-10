@@ -430,7 +430,7 @@ def from_cli_multi_ifos(opt, ifos, inj_filter_rejector_dict=None, **kwargs):
     Get the strain for all ifos when using the multi-detector CLI
     """
     strain = {}
-    if inj_filter_rejector_dict == None:
+    if inj_filter_rejector_dict is None:
         inj_filter_rejector_dict = {ifo: None for ifo in ifos}
     for ifo in ifos:
         strain[ifo] = from_cli_single_ifo(opt, ifo,
