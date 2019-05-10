@@ -225,7 +225,7 @@ class LiveEventManager(object):
 
             if self.store_data_and_psds:
                 template_id = \
-                    triggers['foreground/{}/template_id'.format(ifos[0])]
+                    coinc_results['foreground/{}/template_id'.format(ifos[0])]
                 p = props(bank.table[template_id])
                 apr = p.pop('approximant')
                 buff_size = \
