@@ -259,7 +259,7 @@ class LiveEventManager(object):
                 hdfp['flen'] = flen
                 hdfp['delta_f'] = delta_f
                 hdfp['f_end'] = f_end
-                hdfp['sample_rate'] = bank.sample_Rate
+                hdfp['sample_rate'] = bank.sample_rate
                 hdfp['flow'] = bank.table[template_id].f_lower
                 hdfp['mass1'] = bank.table[template_id].mass1
                 hdfp['mass2'] = bank.table[template_id].mass2
