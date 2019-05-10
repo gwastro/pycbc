@@ -51,7 +51,7 @@ def read_store(fname, channel, start_time, end_time):
     ends = fhandle[channel]['segments']['end'][:]
 
     diff = start_time - starts
-    loc = numpy.where(diff > 0)[0]
+    loc = numpy.where(diff >= 0)[0]
     sidx = loc[diff[loc].argmin()]
 
     stime = starts[sidx]
