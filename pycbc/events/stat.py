@@ -28,6 +28,7 @@ import numpy
 from . import ranking
 from . import coinc_rate
 
+
 class Stat(object):
 
     """ Base class which should be extended to provide a coincident statistic"""
@@ -566,7 +567,8 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
         return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
                            dtype=numpy.float32), ndmin=1, copy=False)
 
-class CoincRateCalcStatistic(NewSNRStatistic):
+
+class CoincRateCalcStatistic(NewSNRSGStatistic):
 
     """Detection statistic using an exponential falloff noise model.
     Statistic calculates the log noise coinc rate for each
@@ -576,7 +578,7 @@ class CoincRateCalcStatistic(NewSNRStatistic):
     def __init__(self, files):
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
-        NewSNRStatistic.__init__(self, files)
+        NewSNRSGStatistic.__init__(self, files)
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.ifos = [at[0] for at in parsed_attrs if
@@ -596,7 +598,8 @@ class CoincRateCalcStatistic(NewSNRStatistic):
         coeff_file = self.files[ifo+'-fit_coeffs']
         template_id = coeff_file['template_id'][:]
         alphas = coeff_file['fit_coeff'][:]
-        rates = coeff_file['count_in_template'][:]/float(coeff_file.attrs['analysis_time'])
+        rates = coeff_file['count_in_template'][:]/\
+                float(coeff_file.attrs['analysis_time'])
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
@@ -647,18 +650,19 @@ class CoincRateCalcStatistic(NewSNRStatistic):
         """
         return self.lognoiseratedensity(trigs)
 
-    def coinc_multiifo(self, s, slide, step, time_addition=0.005): # pylint:disable=unused-argument
+    def coinc_multiifo(self, s, slide,
+                  step, time_addition=0.005): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
         ifostr = ' '.join(sorted(self.ifos))
-        
+
         ratesprod = sum(x for x in s.values())
         ifo_list = [ifo for ifo in self.fits_by_tid]
         ln_coinc_area = numpy.log(coinc_rate.multiifo_noise_coincident_area(
                                                      ifo_list, time_addition))
 
-
         loglr = mean_log_coincidence_rates[ifostr] - ln_coinc_area - ratesprod
-        return numpy.exp(logl)
+        return numpy.exp(loglr)
+
 
 mean_log_coincidence_rates = {
     'H1 L1': -14.6,
