@@ -223,6 +223,10 @@ class LiveEventManager(object):
                 event.save(fname)
 
             if self.store_data_and_psds:
+                tlen = bank.round_up((buff_size + min_buffer) \
+                    * bank.sample_rate)
+                flen = int(tlen / 2 + 1)
+                delta_f = bank.sample_rate / float(tlen)
                 for ifo in ifos:
                     curr_fname = \
                         fname.replace('.xml.gz',
@@ -240,10 +244,6 @@ class LiveEventManager(object):
                     curr_time = \
                         coinc_results['foreground/{}/end_time'.format(ifo)]
                     hdfp['coinc_times/{}'.format(ifo)] = curr_time
-                tlen = bank.round_up((buff_size + min_buffer) \
-                    * bank.sample_rate)
-                flen = int(tlen / 2 + 1)
-                delta_f = bank.sample_rate / float(tlen)
                 f_end = bank.end_frequency(template_id)
                 if f_end is None or f_end >= (flen * delta_f):
                     f_end = (flen-1) * delta_f
