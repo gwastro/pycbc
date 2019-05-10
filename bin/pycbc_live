@@ -224,6 +224,8 @@ class LiveEventManager(object):
                 event.save(fname)
 
             if self.store_data_and_psds:
+                template_id = \
+                    triggers['foreground/{}/template_id'.format(ifos[0])]
                 p = props(bank.table[template_id])
                 apr = p.pop('approximant')
                 buff_size = \
@@ -257,8 +259,6 @@ class LiveEventManager(object):
                 hdfp['delta_f'] = delta_f
                 hdfp['f_end'] = f_end
                 hdfp['sample_rate'] = bank.sample_Rate
-                template_id = \
-                    triggers['foreground/{}/template_id'.format(ifos[0])]
                 hdfp['flow'] = bank.table[template_id].f_lower
                 hdfp['mass1'] = bank.table[template_id].mass1
                 hdfp['mass2'] = bank.table[template_id].mass2
