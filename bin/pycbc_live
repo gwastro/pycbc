@@ -239,15 +239,15 @@ class LiveEventManager(object):
                 for ifo in ifos:
                     curr_fname = \
                         fname.replace('.xml.gz',
-                                      '{}_data_overwhitened.hdf'.format(ifo))
+                                      '_{}_data_overwhitened.hdf'.format(ifo))
                     curr_data = data_readers[ifo].overwhitened_data(delta_f)
                     curr_data.save(curr_fname)
                     curr_fname = fname.replace('.xml.gz', 
-                                               '{}_psd.hdf'.format(ifo))
+                                               '_{}_psd.hdf'.format(ifo))
                     curr_psd = curr_data.psd
                     curr_psd.save(curr_fname)
 
-                curr_fname = fname.replace('.xml.gz', 'attributes.hdf')
+                curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
                 hdfp = h5py.File(curr_fname, 'w')
                 for ifo in coinc_ifos:
                     curr_time = \
@@ -265,6 +265,7 @@ class LiveEventManager(object):
                 hdfp['mass2'] = bank.table[template_id].mass2
                 hdfp['spin1z'] = bank.table[template_id].spin1z
                 hdfp['spin2z'] = bank.table[template_id].spin2z
+                hdfp['ifar'] = ifar
 
 
     def check_singles(self, results, data_reader, psds, f_low):
