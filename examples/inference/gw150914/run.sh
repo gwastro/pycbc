@@ -63,7 +63,7 @@ pycbc_inference --verbose \
     --psd-segment-stride ${PSD_STRIDE} \
     --psd-inverse-length ${PSD_INVLEN} \
     --sample-rate ${SAMPLE_RATE} \
-    --low-frequency-cutoff ${F_MIN} \
+    --data-conditioning-low-freq ${F_MIN} \
     --config-file ${CONFIG_PATH} \
     --output-file ${OUTPUT_PATH} \
     --processing-scheme ${PROCESSING_SCHEME} \

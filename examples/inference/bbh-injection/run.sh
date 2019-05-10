@@ -36,7 +36,7 @@ pycbc_inference --verbose \
     --fake-strain-seed 44 \
     --strain-high-pass ${F_MIN} \
     --sample-rate ${SAMPLE_RATE} \
-    --low-frequency-cutoff ${F_MIN} \
+    --data-conditioning-low-freq ${F_MIN} \
     --channel-name H1:FOOBAR L1:FOOBAR \
     --injection-file injection.hdf \
     --config-file ${CONFIG_PATH} \
