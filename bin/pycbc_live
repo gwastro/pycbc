@@ -28,6 +28,7 @@ from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
+from pycbc.waveform.waveform import props
 
 
 def ptof(p, ft):
