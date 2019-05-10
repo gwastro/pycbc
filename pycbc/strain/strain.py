@@ -427,19 +427,21 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
     return strain
 
-def from_cli_single_ifo(opt, ifo, inj_filter_rejector, **kwargs):
+def from_cli_single_ifo(opt, ifo, inj_filter_rejector=None, **kwargs):
     """
     Get the strain for a single ifo when using the multi-detector CLI
     """
     single_det_opt = copy_opts_for_single_ifo(opt, ifo)
-    return from_cli(single_det_opt, 
+    return from_cli(single_det_opt,
         inj_filter_rejector=inj_filter_rejector, **kwargs)
 
-def from_cli_multi_ifos(opt, ifos, inj_filter_rejector_dict,  **kwargs):
+def from_cli_multi_ifos(opt, ifos, inj_filter_rejector_dict=None, **kwargs):
     """
     Get the strain for all ifos when using the multi-detector CLI
     """
     strain = {}
+    if inj_filter_rejector_dict == None:
+        inj_filter_rejector_dict = {ifo: None for ifo in ifos}
     for ifo in ifos:
         strain[ifo] = from_cli_single_ifo(opt, ifo,
                           inj_filter_rejector_dict[ifo], **kwargs)
