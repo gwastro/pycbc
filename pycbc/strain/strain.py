@@ -93,13 +93,6 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     output_intermediates : {bool, False}
         Save intermediate time series for debugging.
     """
-    logging.info('Autogating: tapering strain')
-    taper_length = int(corrupt_time * strain.sample_rate)
-    w = numpy.arange(taper_length) / float(taper_length)
-    strain[0:taper_length] *= pycbc.types.Array(w, dtype=strain.dtype)
-    strain[(len(strain)-taper_length):] *= pycbc.types.Array(w[::-1],
-                                                             dtype=strain.dtype)
-
     # don't waste time trying to optimize a single FFT
     pycbc.fft.fftw.set_measure_level(0)
 
@@ -107,6 +100,13 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
         logging.info('Autogating: downsampling strain')
         strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
                                      method='ldas')
+
+    logging.info('Autogating: tapering strain')
+    taper_length = int(corrupt_time * strain.sample_rate)
+    w = numpy.arange(taper_length) / float(taper_length)
+    strain[0:taper_length] *= pycbc.types.Array(w, dtype=strain.dtype)
+    strain[(len(strain)-taper_length):] *= pycbc.types.Array(w[::-1],
+                                                             dtype=strain.dtype)
     if output_intermediates:
         strain.save_to_wav('strain_conditioned.wav')
 
@@ -140,11 +140,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
         psd[kmax:] = numpy.inf
 
     logging.info('Autogating: time -> frequency')
-    strain_tilde = pycbc.types.FrequencySeries(
-            pycbc.types.zeros(len(strain_pad) / 2 + 1,
-                              dtype=pycbc.types.complex_same_precision_as(strain)),
-            delta_f=psd.delta_f, copy=False)
-    pycbc.fft.fft(strain_pad, strain_tilde)
+    strain_tilde = strain_pad.to_frequencyseries()
 
     logging.info('Autogating: whitening')
     if high_freq_cutoff:
@@ -154,15 +150,14 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     strain_tilde *= (psd * norm) ** (-0.5)
 
     logging.info('Autogating: frequency -> time')
-    pycbc.fft.ifft(strain_tilde, strain_pad)
-
-    pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
+    strain_pad = strain_tilde.to_timeseries()
 
     if output_intermediates:
         strain_pad[pad_start:pad_end].save_to_wav('strain_whitened.wav')
 
     logging.info('Autogating: computing magnitude')
     mag = abs(strain_pad[pad_start:pad_end])
+
     if output_intermediates:
         mag.save('strain_whitened_mag.npy')
 
@@ -179,6 +174,9 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
             int(cluster_window*strain.sample_rate))
     times = [idx * strain.delta_t + strain.start_time \
              for idx in indices[cluster_idx]]
+
+    pycbc.fft.fftw.set_measure_level(pycbc.fft.fftw._default_measurelvl)
+
     return times
 
 def from_cli(opt, dyn_range_fac=1, precision='single',
@@ -208,7 +206,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     """
     gating_info = {}
 
-    if opt.frame_cache or opt.frame_files or opt.frame_type:
+    if opt.frame_cache or opt.frame_files or opt.frame_type or opt.hdf_store:
         if opt.frame_cache:
             frame_source = opt.frame_cache
         if opt.frame_files:
@@ -227,12 +225,16 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                     start_time=opt.gps_start_time-opt.pad_data,
                     end_time=opt.gps_end_time+opt.pad_data,
                     sieve=sieve)
-        else:
+        elif opt.frame_files or opt.frame_cache:
             strain = pycbc.frame.read_frame(
                     frame_source, opt.channel_name,
                     start_time=opt.gps_start_time-opt.pad_data,
                     end_time=opt.gps_end_time+opt.pad_data,
                     sieve=sieve)
+        elif opt.hdf_store:
+            strain = pycbc.frame.read_store(opt.hdf_store, opt.channel_name,
+                                            opt.gps_start_time - opt.pad_data,
+                                            opt.gps_end_time + opt.pad_data)
 
         if opt.zpk_z and opt.zpk_p and opt.zpk_k:
             logging.info("Highpass Filtering")
@@ -263,8 +265,9 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
-        logging.info("Highpass Filtering")
-        strain = highpass(strain, frequency=opt.strain_high_pass)
+        if opt.strain_high_pass:
+            logging.info("Highpass Filtering")
+            strain = highpass(strain, frequency=opt.strain_high_pass)
 
         if precision == 'single':
             logging.info("Converting to float32")
@@ -287,13 +290,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                      and (gp[0] - gp[1] - gp[2] <= strain.end_time)]
 
         if opt.autogating_threshold is not None:
-            # the + 0 is for making a copy
             glitch_times = detect_loud_glitches(
-                    strain + 0., threshold=opt.autogating_threshold,
+                    strain.copy(), threshold=opt.autogating_threshold,
                     cluster_window=opt.autogating_cluster,
                     low_freq_cutoff=opt.strain_high_pass,
-                    high_freq_cutoff=opt.sample_rate/2,
-                    corrupt_time=opt.pad_data+opt.autogating_pad)
+                    corrupt_time=opt.pad_data + opt.autogating_pad)
             gate_params = [[gt, opt.autogating_width, opt.autogating_taper] \
                            for gt in glitch_times]
             if len(glitch_times) > 0:
@@ -302,11 +303,15 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = gate_data(strain, gate_params)
             gating_info['auto'] = gate_params
 
-        logging.info("Resampling data")
-        strain = resample_to_delta_t(strain, 1.0/opt.sample_rate, method='ldas')
+        if opt.sample_rate:
+            logging.info("Resampling data")
+            strain = resample_to_delta_t(strain,
+                                         1.0 / opt.sample_rate,
+                                         method='ldas')
 
-        logging.info("Highpass Filtering")
-        strain = highpass(strain, frequency=opt.strain_high_pass)
+        if opt.strain_high_pass:
+            logging.info("Highpass Filtering")
+            strain = highpass(strain, frequency=opt.strain_high_pass)
 
         if hasattr(opt, 'witness_frame_type') and opt.witness_frame_type:
             stilde = strain.to_frequencyseries()
@@ -333,11 +338,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
             strain = stilde.to_timeseries()
 
-
-        logging.info("Remove Padding")
-        start = opt.pad_data*opt.sample_rate
-        end = len(strain)-opt.sample_rate*opt.pad_data
-        strain = strain[start:end]
+        if opt.pad_data:
+            logging.info("Remove Padding")
+            start = opt.pad_data * strain.sample_rate
+            end = len(strain) - strain.sample_rate * opt.pad_data
+            strain = strain[start:end]
 
     if opt.fake_strain or opt.fake_strain_from_file:
         logging.info("Generating Fake Strain")
@@ -466,7 +471,7 @@ def insert_strain_option_group(parser, gps_times=True):
 
     data_reading_group.add_argument("--strain-high-pass", type=float,
                             help="High pass frequency")
-    data_reading_group.add_argument("--pad-data",
+    data_reading_group.add_argument("--pad-data", default=8,
               help="Extra padding to remove highpass corruption "
                    "(integer seconds)", type=int)
     data_reading_group.add_argument("--taper-data",
@@ -485,6 +490,11 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--frame-files",
                             type=str, nargs="+",
                             help="list of frame files")
+
+    #Read from hdf store file
+    data_reading_group.add_argument("--hdf-store",
+                            type=str,
+                            help="Store of time series data in hdf format")
 
     #Use datafind to get frame files
     data_reading_group.add_argument("--frame-type",
@@ -613,7 +623,7 @@ def insert_strain_option_group_multi_ifo(parser):
                             action=MultiDetOptionAction,
                             type=float, metavar='IFO:FREQUENCY',
                             help="High pass frequency")
-    data_reading_group_multi.add_argument("--pad-data", nargs='+',
+    data_reading_group_multi.add_argument("--pad-data", nargs='+', default=8,
                             action=MultiDetOptionAction,
                             type=int, metavar='IFO:LENGTH',
                             help="Extra padding to remove highpass corruption "
@@ -644,6 +654,12 @@ def insert_strain_option_group_multi_ifo(parser):
                             action=MultiDetOptionAppendAction,
                             metavar='IFO:FRAME_FILES',
                             help="list of frame files")
+
+    #Read from hdf store file
+    data_reading_group_multi.add_argument("--hdf-store", type=str, nargs='+',
+                            action=MultiDetOptionAction,
+                            metavar='IFO:HDF_STORE_FILE',
+                            help="Store of time series data in hdf format")
 
     # Use datafind to get frame files
     data_reading_group_multi.add_argument("--frame-type", type=str, nargs="+",
@@ -758,7 +774,10 @@ def insert_strain_option_group_multi_ifo(parser):
 
 
 ensure_one_opt_groups = []
-ensure_one_opt_groups.append(['--frame-cache','--fake-strain','--fake-strain-from-file','--frame-files', '--frame-type'])
+ensure_one_opt_groups.append(['--frame-cache','--fake-strain',
+                              '--fake-strain-from-file',
+                              '--frame-files', '--frame-type',
+                              '--hdf-store'])
 
 required_opts_list = ['--gps-start-time', '--gps-end-time',
                       '--strain-high-pass', '--pad-data', '--sample-rate',
