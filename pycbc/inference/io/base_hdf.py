@@ -301,7 +301,7 @@ class BaseInferenceFile(h5py.File):
             Array of the loaded samples.
         """
         if parameters is None and opts.parameters is None:
-            parameters = self.variable_args
+            parameters = self.variable_params
         elif parameters is None:
             parameters = opts.parameters
         # parse optional arguments
