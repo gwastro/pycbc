@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2019 Ian W. Harry, Gino Contestabile, Francesco Pannarale
-#
+#Copyright (C) 2019 Ian W. Harry, Gino Contestabile, Francesco Pannarale
+
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -155,7 +155,7 @@ def format_single_chisqs(trigIfoCS, trigs, ifos):
     trigIfoCS[ifo] = numpy.asarray(trigIfoCS[ifo])
     numpy.putmask(trigIfoCS[ifo], trigIfoCS[ifo]==0, 0.005)
 
-   return trigIfoCS
+  return trigIfoCS
 
 # =============================================================================
 # Parse command line
@@ -400,7 +400,7 @@ trigBestNR    = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
                            sngl_snr_threshold = snglSnrThresh,\
                            chisq_threshold = newSnrThresh,\
                            null_grad_thresh = nullGradThresh,\
-                           null_grad_val = nullGradVal) for t in trigs]
+                           null_grad_val =  nullGradVal ) for t in trigs]
 trigBestNR    = numpy.array(trigBestNR)
 trigNullSNR   = numpy.asarray(trigs.get_null_snr())
 trigNullstat  = numpy.asarray(trigs.get_column('null_statistic'))
@@ -427,13 +427,13 @@ if len(ifos) > 2:
   trigThirdSNR  = tmp[-3,:]
 if sngl_bank_chisq:
   trigIfobankCS = trigs.get_sngl_bank_chisqs(ifos)
-  trigIfobankCS = format_single_chisqs(trigIfobankCS, trigs, ifos):
+  trigIfobankCS = format_single_chisqs(trigIfobankCS, trigs, ifos)
 if sngl_cont_chisq:
   trigIfoautoCS = trigs.get_sngl_cont_chisqs(ifos)
-  trigIfoautoCS = format_single_chisqs(trigIfoautoCS, trigs, ifos):
+  trigIfoautoCS = format_single_chisqs(trigIfoautoCS, trigs, ifos)
 if sngl_chisq:
   trigIfostanCS = trigs.get_sngl_chisqs(ifos)
-  trigIfostanCS = format_single_chisqs(trigIfostanCS, trigs, ifos):
+  trigIfostanCS = format_single_chisqs(trigIfostanCS, trigs, ifos)
 trigSigma  = trigs.get_sigmasqs()
 trigSigmaTot = numpy.zeros(numtrigs)
 
@@ -642,7 +642,6 @@ for ifo in ifos:
                 "Time since %s" % (grbTime), "%s SNR" % (ifo), outdir, fig_tag,
                 xlims=[start,end], use_logs=False, verbose=verbose)
 
-
 # Coherent SNR versus null stat plots: non-zoomed and zoomed 
 null_stat_colors = ['k-', 'g-', 'm-']
 fig_tag_list = generate_raw_zoom_tags(tag, "null_stat_vs_snr")
@@ -713,104 +712,95 @@ for fig_tag, xlims, ylims in \
                    xlims=xlims, ylims=ylims, use_logs=False, verbose=verbose)
 
 # Plot coincident SNR versus trace SNR
-fig_tag = '%s_%s' % (tag, "trace_snr_vs_coinc_snr") 
-sbv_plot_handler(trigCoincSNR, trigTraceSNR, injCoincSNR, injTraceSNR, injFile, \
+fig_tag_list = generate_raw_zoom_tags(tag, "trace_snr_vs_coinc_snr")
+xlims_list = [None, [0,30]]
+ylims_list = [None, [0,30]]
+for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+  sbv_plot_handler(trigCoincSNR, trigTraceSNR, injCoincSNR, injTraceSNR, injFile, \
             "Coincidence SNR", "Trace SNR", outdir, fig_tag, \
-            use_logs=False, verbose=verbose)
-fig_tag = "%s_%s" %(fig_tag, "zoom")
-sbv_plot_handler(trigCoincSNR, trigTraceSNR, injCoincSNR, injTraceSNR, injFile, \
-            "Coincidence SNR", "Trace SNR", outdir, fig_tag, \
-            xlims=[0,30], ylims=[0,30], \
-            use_logs=False, verbose=verbose)
-
+            use_logs=False, xlims=xlims, ylims=ylims, verbose=verbose)
+ 
 # Plot coherent SNR versus bank veto
-fig_tag = "%s_%s" %(tag, "bank_veto_vs_snr")
-sbv_plot_handler(trigSNR, trigBankVeto, injSNR, injBankVeto, injFile, \
+fig_tag_list = generate_raw_zoom_tags(tag, "bank_veto_vs_snr")
+xlims_list = [[6,1000], [6,50]]
+ylims_list = [None, [1,2000]]
+for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+  
+  sbv_plot_handler(trigSNR, trigBankVeto, injSNR, injBankVeto, injFile, \
             "Coherent SNR", "Bank Veto", outdir, fig_tag, \
             snr_vals=snr_vals, conts=bank_conts, \
             shade_cont_value=cont_value, colors=colors, vert_spike=True, \
-            xlims=[6, 1000], verbose=verbose)
-fig_tag = "%s_%s" %(fig_tag, "zoom")
-sbv_plot_handler(trigSNR, trigBankVeto, injSNR, injBankVeto, injFile, \
-            "Coherent SNR", "Bank Veto", outdir, fig_tag, \
-            snr_vals=snr_vals, conts=bank_conts, \
-            shade_cont_value=cont_value, colors=colors, vert_spike=True, \
-            xlims=[6, 50], ylims=[1, 2000], \
-            verbose=verbose)
-
+            xlims=xlims, ylims=ylims, verbose=verbose)
+ 
 # Plot coherent SNR versus auto veto
-fig_tag = "%s_%s" % (tag, "auto_veto_vs_snr")
-sbv_plot_handler(trigSNR, trigAutoVeto, injSNR, injAutoVeto, injFile, \
+fig_tag_list = generate_raw_zoom_tags(tag, "auto_veto_vs_snr")
+xlims_list = [None, [6,30]]
+ylims_list = [None, [10,20000]]
+for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+ 
+  sbv_plot_handler(trigSNR, trigAutoVeto, injSNR, injAutoVeto, injFile, \
             "Coherent SNR", "Auto Veto", outdir, fig_tag, \
             snr_vals=snr_vals, conts=auto_conts, \
-            shade_cont_value=cont_value, colors=colors, vert_spike=True, \
-            verbose=verbose)
-fig_tag = "%s_%s" %(fig_tag, "zoom")
-sbv_plot_handler(trigSNR, trigAutoVeto, injSNR, injAutoVeto, injFile, \
-            "Coherent SNR", "Auto Veto", outdir, fig_tag, \
-            snr_vals=snr_vals, conts=auto_conts, \
-            shade_cont_value=cont_value, colors=colors, vert_spike=True, \
-            xlims=[6, 30], ylims=[10, 20000], \
+            shade_cont_value=cont_value,xlims=xlims, ylims=ylims, colors=colors, vert_spike=True, \
             verbose=verbose)
 
 # Plot coherent SNR versus chisq veto
-fig_tag = "%s_%s" %(tag, "chi_square_vs_snr")
-sbv_plot_handler(trigSNR[trigBestNR!=0], trigChiSquare[trigBestNR!=0], \
+fig_tag_list = generate_raw_zoom_tags(tag, "chi_square_vs_snr")
+xlims_list = [[6,1000], [0,50]]
+ylims_list = [[1,10000], [1,2000]]
+for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+ 
+  sbv_plot_handler(trigSNR[trigBestNR!=0], trigChiSquare[trigBestNR!=0], \
             injSNR[injBestNR!=0], injChiSquare[injBestNR!=0], injFile, \
             "Coherent SNR", "Chi Square", outdir, fig_tag, \
             snr_vals=snr_vals, conts=chi_conts, vert_spike=True, \
             shade_cont_value=cont_value, colors=colors, \
-            xlims=[6, 1000], ylims=[1, 10000], \
+            xlims=xlims, ylims=ylims, \
             verbose=verbose)
-fig_tag = "%s_%s" %(fig_tag, "zoom")
-sbv_plot_handler(trigSNR[trigBestNR!=0], trigChiSquare[trigBestNR!=0], \
-            injSNR[injBestNR!=0], injChiSquare[injBestNR!=0], injFile, \
-            "Coherent SNR", "Chi Square", outdir, fig_tag, \
-            snr_vals=snr_vals, conts=chi_conts, \
-            shade_cont_value=cont_value, colors=colors, vert_spike=True, \
-            xlims=[0, 50], ylims=[1, 2000], \
-            verbose=verbose)
+          
 
 # Plot coherent SNR versus loudest single SNR
-fig_tag = "%s_%s" % (tag, "first_snr_vs_snr")
-sbv_plot_handler(trigSNR, trigFirstSNR, injSNR, injFirstSNR, injFile, \
+fig_tag_list = generate_raw_zoom_tags(tag, "first_snr_vs_snr")
+xlims_list = [None, [6,50]]
+ylims_list = [None, [0,20]]
+for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+ 
+  sbv_plot_handler(trigSNR, trigFirstSNR, injSNR, injFirstSNR, injFile, \
             "Coherent SNR", "First loudest sngl SNR", outdir, fig_tag, \
             snr_vals=[0,50], conts=[[4,4]], use_logs=False, \
-            colors=['g-'], verbose=verbose)
-fig_tag = "%s_%s" %(fig_tag, "zoom")
-sbv_plot_handler(trigSNR, trigFirstSNR, injSNR, injFirstSNR, injFile, \
-            "Coherent SNR", "First loudest sngl SNR", outdir, fig_tag, \
-            snr_vals=[0,50], conts=[[4,4]], \
-            xlims=[6, 50], ylims=[0, 20], use_logs=False, \
-            colors=['g-'], verbose=verbose)
+            colors=['g-'],xlims=xlims, ylims=ylims, verbose=verbose)
 
-# Plot coherent SNR versus second loudest single SNR
+# Plot coherent SNR versus second loudest single SNR 
 if(len(ifos)>1): 
-  fig_tag = "%s_%s" % (tag, "second_snr_vs_snr")
-  sbv_plot_handler(trigSNR, trigSecondSNR, injSNR, injSecondSNR, injFile, \
+  fig_tag_list = generate_raw_zoom_tags(tag, "second_snr_vs_snr")
+  xlims_list = [None, [6,50]]
+  ylims_list = [None, [0,20]]
+  for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+ 
+
+    sbv_plot_handler(trigSNR, trigSecondSNR, injSNR, injSecondSNR, injFile, \
               "Coherent SNR", "Second loudest sngl SNR", outdir, fig_tag, \
               snr_vals=[6, 10, 50], conts=[[2.5, 3.5, 13.5]], use_logs=False, \
-              colors=['g-'], verbose=verbose)
-  fig_tag = "%s_%s" %(fig_tag, "zoom")
-  sbv_plot_handler(trigSNR, trigSecondSNR, injSNR, injSecondSNR, injFile, \
-              "Coherent SNR", "Second loudest sngl SNR", outdir, fig_tag, \
-              snr_vals=[6, 10, 50], conts=[[2.5, 3.5, 13.5]], \
-              xlims=[6, 50], ylims=[0, 20], use_logs=False, \
-              colors=['g-'], verbose=verbose)
+              colors=['g-'],xlims=xlims, ylims=ylims, verbose=verbose)
 
 # Plot coherent SNR versus third loudest single SNR
 if len(ifos)>2: 
-  fig_tag = "%s_%s" % (tag, "third_snr_vs_snr")
-  sbv_plot_handler(trigSNR, trigThirdSNR, injSNR, injThirdSNR, injFile, \
+
+  fig_tag_list = generate_raw_zoom_tags(tag, "third_snr_vs_snr")
+  xlims_list = [None, [6,50]]
+  ylims_list = [None, [0,20]]
+  for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+ 
+    sbv_plot_handler(trigSNR, trigThirdSNR, injSNR, injThirdSNR, injFile, \
               "Coherent SNR", "Third loudest sngl SNR", outdir, fig_tag, \
               snr_vals=[0, 50], conts=[[4, 4]], use_logs=False, \
-              colors=['g-'], verbose=verbose)
-  fig_tag = "%s_%s" %(fig_tag, "zoom")
-  sbv_plot_handler(trigSNR, trigThirdSNR, injSNR, injThirdSNR, injFile, \
-              "Coherent SNR", "Third loudest sngl SNR", outdir, fig_tag, \
-              snr_vals=[0, 50], conts=[[4, 4]], \
-              xlims=[6, 50], ylims=[0, 20], use_logs=False, \
-              colors=['g-'], verbose=verbose)
 
 # TODO: plot SNR versus IFO SNR
 sens1 = None
@@ -822,6 +812,7 @@ for ifo in ifos:
     senstvty = fResp[ifo]*trigSigmaMean[ifo]
     if (fResp[ifo]*trigSigmaMean[ifo] > fResp[sens1]*trigSigmaMean[sens1]):
       sens2 = sens1
+>>>>>>> refactored some plots and fixed typos
       sens1 = ifo
     else:
       sens2 = ifo
@@ -877,91 +868,97 @@ for ifo in ifos:
   plt.close()
   
 
-# Plot single detector chi-square plots 
+# Plot single detector chi-square plots: non-zoomed and zoomed 
 for ifo in ifos:
   if sngl_bank_chisq:
-    fig_tag = "%s_%s_%s_%s" % (tag, "snr_vs", ifo, "bankchisq")
-    sbv_plot_handler(trigSNR, trigIfobankCS[ifo], injSNR, injIfobankCS[ifo], injFile, \
+   
+    fig_tag_list = generate_raw_zoom_tags(tag, "bankchisq")
+    xlims_list = [[4,1000], [4,50]]
+    ylims_list = [None, [1,2000]]
+    for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+ 
+      sbv_plot_handler(trigSNR, trigIfobankCS[ifo], injSNR, injIfobankCS[ifo], injFile, \
                 "Coherent SNR", "%s sngl bank veto" % ifo, outdir, fig_tag, \
-                xlims=[4,1000], verbose=verbose)
-    fig_tag = "%s_%s" %(fig_tag, "zoom")
-    sbv_plot_handler(trigSNR, trigIfobankCS[ifo], \
+                xlims=xlims, ylims=ylims, verbose=verbose)
+    
+    fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_" + ifo + "_bankchisq")
+    xlims_list = [[4,1000], [4,50]]
+    ylims_list = [None, [1,2000]]
+    for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+  
+      sbv_plot_handler(trigIfoSNR[ifo], trigIfobankCS[ifo], \
                 injIfoSNR[ifo], injIfobankCS[ifo], injFile, \
                 "Coherent SNR", "%s sngl bank veto" % ifo, outdir, fig_tag, \
-                xlims=[4, 50], ylims=[1, 2000], verbose=verbose)
-
-    fig_tag = "%s_%s_%s_%s_%s" % (tag, ifo, "snr_vs", ifo, "bankchisq")
-    sbv_plot_handler(trigIfoSNR[ifo], trigIfobankCS[ifo], \
-                injIfoSNR[ifo], injIfobankCS[ifo], injFile, \
-                "Coherent SNR", "%s sngl bank veto" % ifo, outdir, fig_tag, \
-                xlims=[4,1000], verbose=verbose)
-    fig_tag = "%s_%s" %(fig_tag, "zoom")
-    sbv_plot_handler(trigIfoSNR[ifo], trigIfobankCS[ifo], \
-                injIfoSNR[ifo], injIfobankCS[ifo], injFile, \
-                "Coherent SNR", "%s sngl bank veto" % ifo, outdir, fig_tag, \
-                xlims=[4, 50], ylims=[1, 2000], verbose=verbose)
-
-  if sngl_cont_chisq:
-    fig_tag = "%s_%s_%s_%s" % (tag, "snr_vs" , ifo, "autochisq")
-    sbv_plot_handler(trigSNR, trigIfoautoCS[ifo], injSNR, injIfoautoCS[ifo], injFile, \
+                xlims=xlims, ylims=ylims, verbose=verbose)
+    
+    fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs__autochisq")
+    xlims_list = [[4,1000], [4,50]]
+    ylims_list = [None, [1,2000]]
+    for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+  
+      sbv_plot_handler(trigSNR, trigIfoautoCS[ifo], injSNR, injIfoautoCS[ifo], injFile, \
                 "Coherent SNR", "%s sngl auto veto" % ifo, outdir, fig_tag, \
-                xlims=[4,1000], verbose=verbose)
-    fig_tag = "%s_%s" %(fig_tag, "zoom")
-    sbv_plot_handler(trigSNR, trigIfoautoCS[ifo], injSNR, injIfoautoCS[ifo], injFile, \
-                "Coherent SNR", "%s sngl auto veto" % ifo, outdir, fig_tag, \
-                xlims=[4, 50], ylims=[1, 2000], verbose=verbose)
-
-    fig_tag = "%s_%s_%s_%s_%s" % (tag, ifo, "snr_vs", ifo, "autochisq")
-    sbv_plot_handler(trigIfoSNR[ifo], trigIfoautoCS[ifo], \
+                xlims=xlims, ylims=ylims, verbose=verbose)
+    
+    fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_" + ifo + "_autochisq")
+    xlims_list = [[4,1000], [4,50]]
+    ylims_list = [None, [1,2000]]
+    for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+  
+      sbv_plot_handler(trigIfoSNR[ifo], trigIfoautoCS[ifo], \
                 injIfoSNR[ifo], injIfoautoCS[ifo], injFile, \
                 "Coherent SNR", "%s sngl auto veto" % ifo, outdir, fig_tag, \
-                xlims=[4,1000], verbose=verbose)
-    fig_tag = "%s_%s" %(fig_tag, "zoom")
-    sbv_plot_handler(trigIfoSNR[ifo], trigIfoautoCS[ifo], injSNR, injIfoautoCS[ifo], injFile, \
-                "Coherent SNR", "%s sngl auto veto" % ifo, outdir, fig_tag, \
-                xlims=[4, 50], ylims=[1, 20000], verbose=verbose)
-
+                xlims=xlims, ylims=ylims, verbose=verbose)
   if sngl_chisq:
     try:
-      fig_tag = "%s_%s_%s_%s" % (tag, "snr_vs", ifo, "chisq" )
-      sbv_plot_handler(trigSNR, trigIfostanCS[ifo], injSNR, injIfostanCS[ifo], injFile, \
+      
+      fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_chisq")
+      xlims_list = [[4,1000], [4,50]]
+      ylims_list = [None, [1,2000]]
+      for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+  
+        sbv_plot_handler(trigSNR, trigIfostanCS[ifo], injSNR, injIfostanCS[ifo], injFile, \
                   "Coherent SNR", "%s sngl chi squared veto" % ifo, outdir, fig_tag, \
-                  xlims=[4,1000], verbose=verbose)
-      fig_tag = "%s_%s" %(fig_tag, "zoom")
-      sbv_plot_handler(trigSNR, trigIfostanCS[ifo], injSNR, injIfostanCS[ifo], injFile, \
-                  "Coherent SNR", "%s sngl chi squared veto" % ifo, outdir, fig_tag, \
-                  xlims=[4,50], ylims=[1,2000], verbose=verbose)
+                  xlims=xlims, ylims=ylims, verbose=verbose)
 
     except OverflowError:
       sys.stderr.write("WARNING: Sngl chisq versus snr "+\
                        "failed with zeros in a loglog plot\n")
     try:
-      fig_tag = "%s_%s_%s_%s_%s" % (tag, ifo, "snr_vs", ifo, "chisq" )
-      sbv_plot_handler(trigIfoSNR[ifo], trigIfostanCS[ifo], \
+      fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_" + ifo + "chisq") #Why was it named the same as the one above? 
+      xlims_list = [[4,1000], [4,50]]
+      ylims_list = [None, [1,2000]]
+      for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+  
+        sbv_plot_handler(trigIfoSNR[ifo], trigIfostanCS[ifo], \
                   injIfoSNR[ifo], injIfostanCS[ifo], injFile, \
                   "Coherent SNR", "%s sngl chi squared veto" % ifo, outdir, fig_tag, \
-                  xlims=[4,1000], verbose=verbose)
-      fig_tag = "%s_%s" %(fig_tag, "zoom")
-      sbv_plot_handler(trigIfoSNR[ifo], trigIfostanCS[ifo], \
-                  injIfoSNR[ifo], injIfostanCS[ifo], injFile, \
-                  "Coherent SNR", "%s sngl chi squared veto" % ifo, outdir, fig_tag, \
-                  xlims=[4,50], ylims=[1,2000], verbose=verbose)
+                  xlims=xlims, ylims=ylims, verbose=verbose)
       
     except OverflowError:
       sys.stderr.write("WARNING: Sngl chisq versus sngl snr"+\
                        "failed with zeros in a loglog plot\n")
 
 
-# Plot SNR versus SNR-traceSNR
-fig_tag = "%s_%s" % (tag, "trace_diff_vs_snr")
-inj_y = None
+# Plot SNR versus SNR-traceSNR: con-zoomed and zoomed
+fig_tag_list = generate_raw_zoom_tags(tag, "trace_diff_vs_snr") #Why was it named the same as the one above? 
+xlims_list = [None, [6,20]]
+ylims_list = [None, [-5,10]]
+inj_y=None
 if injFile:
   inj_y = injSNR - injTraceSNR
-sbv_plot_handler(trigSNR, trigSNR - trigTraceSNR, injSNR, inj_y, injFile, "Coherent SNR", "SNR - Trace SNR", \
-            outdir, fig_tag, use_logs=False, verbose=True)
-fig_tag = "%s_%s" % (fig_tag, "zoom")
-sbv_plot_handler(trigSNR, trigSNR - trigTraceSNR, injSNR, inj_y, injFile, "Coherent SNR", "SNR - Trace SNR", \
-            outdir, fig_tag,xlims=[6,20], ylims=[-5,10], use_logs=False, verbose=True)     
+
+for fig_tag, xlims, ylims in \
+         zip(fig_tag_list, xlims_list, ylims_list):
+  
+  sbv_plot_handler(trigSNR, trigSNR - trigTraceSNR, injSNR, inj_y, injFile, "Coherent SNR", "SNR - Trace SNR", \
+            outdir, fig_tag, use_logs=False,xlims=xlims, ylims=ylims, verbose=verbose)
   
 
 # Plot time versus null stat
@@ -972,12 +969,15 @@ sbv_plot_handler(trigTime, trigNullstat, injTime, injNullstat , injFile, \
 
 # Plot SNR versus rel amp 1
 try:
-  fig_tag = "%s_%s" % (tag, "rel_amp1_vs_snr") 
-  sbv_plot_handler(trigSNR, trigRelAmp1, injSNR, injRelAmp1, injFile, "Coherent SNR", "Relative amplitude 1", \
-              outdir, fig_tag, verbose=True)  
-  fig_tag = "%s_%s" %(fig_tag, "zoom")
-  sbv_plot_handler(trigSNR, trigRelAmp1, injSNR, injRelAmp1, injFile, "Coherent SNR", "Relative amplitude 1", \
-              outdir, fig_tag, xlims=[6,30], verbose=True)  
+  fig_tag_list = generate_raw_zoom_tags(tag, "rel_amp1_vs_snr") 
+  xlims_list = [None, [6,30]]
+  ylims_list = [None, None]
+  for fig_tag, xlims, ylims in \
+         zip(fig_tag_list, xlims_list, ylims_list):
+  
+
+    sbv_plot_handler(trigSNR, trigRelAmp1, injSNR, injRelAmp1, injFile, "Coherent SNR", "Relative amplitude 1", \
+              outdir, fig_tag,xlims=xlims, ylims=ylims,  verbose=verbose)  
 
 except (OverflowError,ValueError):
   sys.stderr.write("WARNING: Relative amplitude 1 versus coherent SNR "+\
@@ -985,36 +985,42 @@ except (OverflowError,ValueError):
 
 # Plot SNR versus rel amp 2 TODO: empty!
 try:
-  fig_tag ="%s_%s" % (tag, "rel_amp2_vs_snr")
-  sbv_plot_handler(trigSNR, trigRelAmp2, injSNR, injRelAmp2, injFile, "Coherent SNR", "Relative amplitude 2", \
-               outdir, fig_tag, verbose=True)
-  fig_tag = "%s_%s" %(fig_tag, "zoom")
-  sbv_plot_handler(trigSNR, trigRelAmp2, injSNR, injRelAmp2, injFile, "Coherent SNR", "Relative amplitude 2", \
-               outdir, fig_tag, xlims=[6,30], verbose=True)
+  fig_tag_list = generate_raw_zoom_tags(tag, "rel_amp2_vs_snr")
+  xlims_list = [None, [6,30]]
+  ylims_list = [None, None]
+  for fig_tag, xlims, ylims in \
+         zip(fig_tag_list, xlims_list, ylims_list):
+  
+    sbv_plot_handler(trigSNR, trigRelAmp2, injSNR, injRelAmp2, injFile, "Coherent SNR", "Relative amplitude 2", \
+               outdir, fig_tag,xlims=xlims, ylims=ylims,  verbose=verbose)
 except (OverflowError,ValueError):
   sys.stderr.write("WARNING: Relative amplitude 2 versus coherent SNR "+\
                    "failed with zeros in a loglog plot\n")
 
 # Plot SNR versus norm 3: TODO empty
 try:
-  fig_tag = "%s_%s" % (tag, "norm3_vs_snr")
-  sbv_plot_handler(trigSNR, trigNorm3, injSNR, injNorm3, injFile, "Coherent SNR", "Amplitude factor", \
-              outdir, fig_tag, verbose=True)
-  fig_tag = "%s_%s" % (fig_tag, "zoom")
-  sbv_plot_handler(trigSNR, trigNorm3, injSNR, injNorm3, injFile, "Coherent SNR", "Amplitude factor", \
-              outdir, fig_tag, xlims=[6,30], verbose=True) 
+  fig_tag_list = generate_raw_zoom_tags(tag, "norm3_vs_snr")
+  xlims_list = [None, [6,30]]
+  ylims_list = [None, None]
+  for fig_tag, xlims, ylims in \
+         zip(fig_tag_list, xlims_list, ylims_list):
+   
+    sbv_plot_handler(trigSNR, trigNorm3, injSNR, injNorm3, injFile, "Coherent SNR", "Amplitude factor", \
+              outdir, fig_tag,xlims=xlims, ylims=ylims, verbose=True)
 except (OverflowError,ValueError):
   sys.stderr.write("WARNING: Amplitude factor versus coherent SNR "+\
                    "failed with zeros in a loglog plot\n")
 
 # Plot SNR versus inclination: TODO: empty
 try:
-  fig_tag = "%s_%s" % (tag, "inclination_vs_snr")
-  sbv_plot_handler(trigSNR, trigInclination, injSNR, injInclination, injFile, "Coherent SNR", "|cos inclination|", \
-              outdir, fig_tag, verbose=True)
-  fig_tag = "%s_%s" % (fig_tag, "zoom")
-  sbv_plot_handler(trigSNR, trigInclination, injSNR, injInclination, injFile, "Coherent SNR", "|cos inclination|", \
-              outdir, fig_tag, xlims=[6,30], verbose=True)
+  fig_tag_list = generate_raw_zoom_tags(tag, "inclination_vs_snr")
+  xlims_list = [None, [6,30]]
+  ylims_list = [None, None]
+  for fig_tag, xlims, ylims in \
+         zip(fig_tag_list, xlims_list, ylims_list):
+   
+    sbv_plot_handler(trigSNR, trigInclination, injSNR, injInclination, injFile, "Coherent SNR", "|cos inclination|", \
+              outdir, fig_tag,xlims=xlims, ylims=ylims, verbose=verbose)
 
 except (OverflowError,ValueError):
   sys.stderr.write("WARNING: cos(inclination) versus coherent SNR "+\
