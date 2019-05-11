@@ -47,40 +47,21 @@ class BaseSamplerFile(BaseInferenceFile):
         """
         pass
 
-    @abstractmethod
-    def read_posterior_samples(self, parameters):
-        """Reads posterior samples from the file.
-
-        This is used by ``write_posterior``. It should be a wrapper around
-        ``read_samples`` that automatically sets any arguments needed to
-        extract a posterior from the raw samples.  Since this is
-        sampler-specific, this must be implemented by each sampler file class.
-
-        Parameters
-        ----------
-        parameters : list of str
-            The names of the parameters to read.
-
-        Returns
-        -------
-        FieldArray :
-            The posterior samples, as a 1D ``FieldArray``.
-        """
-        pass
-
-    def write_posterior(self, filename, parameterdict=None, skip_groups=None):
+    def write_posterior(self, filename, samples, labels=None,
+                        skip_groups=None):
         """Write posterior samples to a ``PosteriorFile``.
 
         Parameters
         ----------
         filename : str
             Name of output file to store posterior.
-        parameterdict : dict, optional
-            Dictionary mapping parameters to read to the names they should
+        samples : FieldArray
+            Samples to write. Must be a 1D array.
+        labels : dict, optional
+            Dictionary mapping parameters to the names they should
             be called in the posterior file. The keys may be functions of the
-            parameters in the samples group. If none provided, will just load
-            all of the data sets in the ``samples`` group, writing them out
-            with the same name.
+            fields in ``samples``. If none provided, will write all of the
+            fields in ``samples``, with the same name.
         skip_groups : {None, 'all', list of str}, optional
             Do not write the given list of groups to the posterior file. The
             ``samples`` group is always written. This can be used to specify
@@ -90,14 +71,15 @@ class BaseSamplerFile(BaseInferenceFile):
             skip; or ``'all'``, in which case only the samples group will be
             written. Default is ``None``.
         """
+        if not samples.ndim == 1:
+            raise ValueError("samples must be a 1D array")
         # get the posterior samples
-        if parameterdict is None:
-            # load everything in the samples group
-            parameterdict = {p: p for p in self[self.samples_group].keys()}
-        samples = self.read_posterior_samples(parameterdict.keys())
-        # samples is currently a FieldArray; convert to dict in which the keys
+        if labels is None:
+            # load everything in the samples
+            labels = {p: p for p in samples.fieldnames}
+        # convert samples to a dict in which the keys
         # are the values of the parameter dict
-        samples = {parameterdict[p]: samples[p] for p in parameterdict}
+        samples = {labels[p]: samples[p] for p in labels}
         # now write
         f = PosteriorFile(filename, 'w')
         f.write_samples(samples)
