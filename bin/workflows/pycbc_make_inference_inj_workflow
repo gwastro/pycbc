@@ -41,7 +41,7 @@ parser = argparse.ArgumentParser(description=__doc__[1:])
 # version option
 parser.add_argument(
     "--version", action="version",
-    version=pycbc.version.git_verbose_msg, 
+    version=pycbc.version.git_verbose_msg,
     help="Prints version information.")
 
 # workflow options
@@ -158,8 +158,8 @@ if 'pp-plot-parameters' in  workflow.cp.options("workflow-inference"):
     pp_plot_params = shlex.split(workflow.cp.get_opt_tag("workflow",
         'pp-plot-parameters', 'inference'))
 else:
-    # just use the variable args
-    pp_plot_params = workflow.cp.options(cp.options("variable_args"))
+    # just use the variable params
+    pp_plot_params = workflow.cp.options(cp.options("variable_params"))
 
 # get groups of parameters to plot in posterior and samples plots
 plot_groups = {}
@@ -216,7 +216,7 @@ for i in range(n_injections):
     # make node for writing HTML table of parameters
     post_table_files += inference_followups.make_inference_summary_table(
                           workflow, inference_file, rdir["posteriors"],
-                          variable_args=unique_plot_parameters,
+                          variable_params=unique_plot_parameters,
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
 
