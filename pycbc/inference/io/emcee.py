@@ -23,10 +23,11 @@
 #
 """Provides IO for the emcee sampler.
 """
-import h5py, numpy
+import numpy
+
 from .base_sampler import BaseSamplerFile
 from .base_mcmc import (MCMCMetadataIO, SingleTempMCMCIO)
-from .posterior import PosteriorFile
+
 
 class EmceeFile(SingleTempMCMCIO, MCMCMetadataIO, BaseSamplerFile):
     """Class to handle file IO for the ``emcee`` sampler."""

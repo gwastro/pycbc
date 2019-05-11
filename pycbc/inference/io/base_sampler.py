@@ -13,22 +13,20 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+"""Provides abstract base class for all samplers."""
+
 from __future__ import absolute_import
 
 from abc import (ABCMeta, abstractmethod)
 
 from .base_hdf import BaseInferenceFile
-from .posterior import PosteriorFile
 
-"""Provides abstract base class for all samplers."""
 
 class BaseSamplerFile(BaseInferenceFile):
     """Base HDF class for all samplers.
-    
-    This adds abstract methods ``write_resume_point``,
-    ``write_sampler_metadata``, and ``read_posterior_samples`` to
-    :py:class:`BaseInferenceFile`. Also adds a ``write_posterior`` method that
-    extracts posterior samples and writes them to a ``PosteriorFile``.
+
+    This adds abstract methods ``write_resume_point`` and
+    ``write_sampler_metadata`` to :py:class:`BaseInferenceFile`.
     """
     __metaclass__ = ABCMeta
 

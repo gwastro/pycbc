@@ -429,7 +429,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         ``samples_group``. If 'variable_params' or None (the default) will load
         the variable parameters.
     autoparamlabels : bool, optional
-        Passed to ``add_results_option_group``; see that function for details. 
+        Passed to ``add_results_option_group``; see that function for details.
     \**kwargs :
         All other keyword arguments are passed to ``argparse.ArgumentParser``.
     """

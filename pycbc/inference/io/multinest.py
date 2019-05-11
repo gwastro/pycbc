@@ -18,9 +18,8 @@
 """
 
 from __future__ import absolute_import
-import h5py
+
 from .base_sampler import BaseSamplerFile
-from .posterior import PosteriorFile
 
 
 class MultinestFile(BaseSamplerFile):

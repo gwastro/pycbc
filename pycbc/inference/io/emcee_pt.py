@@ -18,10 +18,11 @@
 """
 
 from __future__ import absolute_import
-import h5py, numpy
+
+import numpy
+
 from .base_sampler import BaseSamplerFile
 from .base_multitemper import (MultiTemperedMetadataIO, MultiTemperedMCMCIO)
-from .posterior import PosteriorFile
 
 
 class EmceePTFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,

@@ -69,6 +69,6 @@ class CPNestFile(BaseSamplerFile):
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
         """
-        # since we're just writing a posterior
-        # use PosteriorFile's write_samples
-        PosteriorFile.write_samples(self, parameters=parameters)
+        # since we're just writing a posterior use
+        # PosteriorFile's write_samples
+        PosteriorFile.write_samples(self, samples, parameters=parameters)
