@@ -20,7 +20,7 @@
 
 Config file syntax
 ------------------
-The configuration file should have a [variable_args], a [static_args],
+The configuration file should have a [variable_params], a [static_params],
 and one or more [distribution] sections. Multiple [constraint] sections and
 one or more [waveform_transforms] sections may also be provided. An example:
 
