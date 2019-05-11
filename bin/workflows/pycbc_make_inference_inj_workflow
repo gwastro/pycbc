@@ -255,8 +255,8 @@ for i in range(n_injections):
                               workflow, inference_file,
                               rdir[sample_group_fmt.format(group)],
                               parameters=[parameter],
-                          analysis_seg=workflow.analysis_time,
-                          tags=[str(i), group, str(j)])
+                              analysis_seg=workflow.analysis_time,
+                              tags=[str(i), group, str(j)])
 
 # add plots to HTML pages
 layout.single_layout(rdir["posteriors"],
