@@ -24,8 +24,9 @@
 #
 # =============================================================================
 #
-"""Extracts some or all samples from an InferenceFile, writing results to a new
-InferenceFile.
+"""Extracts posterior samples from a Sampler HDF file, writing to a
+posterior HDF file. Parameters can be renamed in the output file using the
+--parameters option.
 """
 
 import os
@@ -34,9 +35,10 @@ import logging
 import numpy
 import pycbc
 from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,
-                                loadfile)
+                                PosteriorFile, loadfile)
 
-parser = ResultsArgumentParser(description=__doc__)
+parser = ResultsArgumentParser(defaultparams='all', autoparamlabels=False,
+                               description=__doc__)
 
 parser.add_argument("--output-file", type=str, required=True,
                     help="Output file to create.")
@@ -66,7 +68,15 @@ if os.path.exists(opts.output_file) and not opts.force:
     raise IOError("output file already exists; use --force if you wish to "
                   "overwrite.")
 
-fp, params, labels, samples = results_from_cli(opts)
+# FIXME: MCMC files need the flatten option set to False if not writing to
+# a posterior file. Nested samplers, on the other hand, have no flatten option.
+# So... for now, just trying to set it. For nested samplers, we'll end up with
+# a TypeError, so we fall back to not setting it.
+try:
+    fp, params, labels, samples = results_from_cli(opts,
+                                                   flatten=opts.to_posterior)
+except TypeError:
+    fp, params, labels, samples = results_from_cli(opts)
 
 # convert samples to a dict in which the keys are the labels
 samples = {labels[p]: samples[p] for p in params}
@@ -84,16 +94,23 @@ out = loadfile(opts.output_file, 'w', filetype=outtype)
 out.write_samples(samples)
 
 # Preserve samples group metadata
-for key, val in fp[self.samples_group].attrs.items():
+for key, val in fp[fp.samples_group].attrs.items():
     out[out.samples_group].attrs[key] = val
 
-# Preserve top-level metadata
-for key in self.attrs:
-    out.attrs[key] = fp.attrs[key]
+# Preserve top-level metadata...
+# ...except for: the filetype, since that's set when the file was loaded;
+# the automatic thinning settings, since those will no longer make sense
+skip_attrs = ['filetype', 'thin_start', 'thin_interval', 'thin_end',
+              'thinned_by']
+for key in fp.attrs:
+    if key not in skip_attrs:
+        out.attrs[key] = fp.attrs[key]
 
 # write the other groups
 skip_groups = opts.skip_groups
-if 'all' in opts.skip_groups:
-    skip_groups = [group for group in self.keys()
-                   if group != self.samples_group]
+if skip_groups is not None and 'all' in opts.skip_groups:
+    skip_groups = [group for group in fp.keys()
+                   if group != fp.samples_group]
 fp.copy_info(out, ignore=skip_groups)
+fp.close()
+out.close()
