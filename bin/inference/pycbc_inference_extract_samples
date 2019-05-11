@@ -33,7 +33,8 @@ import argparse
 import logging
 import numpy
 import pycbc
-from pycbc.inference.io import ResultsArgumentParser, results_from_cli
+from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,
+                                loadfile)
 
 parser = ResultsArgumentParser(description=__doc__)
 
@@ -42,11 +43,17 @@ parser.add_argument("--output-file", type=str, required=True,
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an IOError is raised.")
-parser.add_argument("--posterior-only", action="store_true", default=False,
+parser.add_argument("--to-posterior", action="store_true", default=False,
                     help="Write copied parameter samples and likelihood stats "
                          "as flattened arrays. Default is "
                          "for the copied file to have the same structure "
                          "as the input file.")
+parser.add_argument("--skip-groups", default=None, nargs="+",
+                    help="Don't write the specified groups in the output "
+                         "(aside from samples; samples are always written), "
+                         "for example, 'sampler_info'. If 'all' write skip "
+                         "all groups, only writing the samples. Default is "
+                         "to write all groups.")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Be verbose")
 
@@ -61,8 +68,32 @@ if os.path.exists(opts.output_file) and not opts.force:
 
 fp, params, labels, samples = results_from_cli(opts)
 
-if not opts.posterior_only:
-    raise ValueError("Program not yet able to produce "
-                     "anything but hte posterior output.")
+# convert samples to a dict in which the keys are the labels
+samples = {labels[p]: samples[p] for p in params}
+
+# get the file type to write
+if opts.to_posterior:
+    outtype = PosteriorFile.name
 else:
-    fp.write_posterior(opts.output_file)
+    outtype = fp.attrs['filetype']
+
+# create the file
+out = loadfile(opts.output_file, 'w', filetype=outtype) 
+
+# write the samples
+out.write_samples(samples)
+
+# Preserve samples group metadata
+for key, val in fp[self.samples_group].attrs.items():
+    out[out.samples_group].attrs[key] = val
+
+# Preserve top-level metadata
+for key in self.attrs:
+    out.attrs[key] = fp.attrs[key]
+
+# write the other groups
+skip_groups = opts.skip_groups
+if 'all' in opts.skip_groups:
+    skip_groups = [group for group in self.keys()
+                   if group != self.samples_group]
+fp.copy_info(out, ignore=skip_groups)
