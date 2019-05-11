@@ -227,11 +227,12 @@ for i in range(n_injections):
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i)])
 
-    # make node for plotting acceptance rate
-    accept_files += inference_followups.make_inference_acceptance_rate_plot(
-                          workflow, inference_file, rdir["samples"],
-                          analysis_seg=workflow.analysis_time,
-                          tags=[str(i)])
+    if "inference_rate" in workflow.cp.options("executables"):
+        # make node for plotting acceptance rate
+        accept_files += inference_followups.make_inference_acceptance_rate_plot(
+                              workflow, inference_file, rdir["samples"],
+                              analysis_seg=workflow.analysis_time,
+                              tags=[str(i)])
 
     # plot grouped parameters
     for group in plot_groups.keys():
@@ -246,13 +247,14 @@ for i in range(n_injections):
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i), group])
 
-        # make nodes for plotting sample as function of sampler iterations
-        for j, parameter in enumerate(plot_groups[group]):
-            sample_group_files[group] += \
-                    inference_followups.make_inference_samples_plot(
-                          workflow, inference_file,
-                          rdir[sample_group_fmt.format(group)],
-                          parameters=[parameter],
+        if "inference_samples" in workflow.cp.options("executables"):
+            # make nodes for plotting sample as function of sampler iterations
+            for j, parameter in enumerate(plot_groups[group]):
+                sample_group_files[group] += \
+                        inference_followups.make_inference_samples_plot(
+                              workflow, inference_file,
+                              rdir[sample_group_fmt.format(group)],
+                              parameters=[parameter],
                           analysis_seg=workflow.analysis_time,
                           tags=[str(i), group, str(j)])
 
