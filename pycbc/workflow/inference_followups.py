@@ -178,7 +178,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     return node.output_files
 
 def make_inference_summary_table(workflow, inference_file, output_dir,
-                    variable_args=None, name="inference_table",
+                    variable_params=None, name="inference_table",
                     analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -190,8 +190,8 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
         The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
-    variable_args : list
-        A list of parameters to use instead of [variable_args].
+    variable_params : list
+        A list of parameters to use instead of [variable_params].
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -222,7 +222,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".html", "--output-file")
-    node.add_opt("--parameters", " ".join(variable_args))
+    node.add_opt("--parameters", " ".join(variable_params))
 
     # add node to workflow
     workflow += node

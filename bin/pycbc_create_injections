@@ -20,18 +20,18 @@
 
 Config file syntax
 ------------------
-The configuration file should have a [variable_args], a [static_args],
+The configuration file should have a [variable_params], a [static_params],
 and one or more [distribution] sections. Multiple [constraint] sections and
 one or more [waveform_transforms] sections may also be provided. An example:
 
-    [variable_args]
+    [variable_params]
     mass1 =
     mass2 =
     spin1_a =
     spin1_azimuthal =
     spin1_polar =
 
-    [static_args]
+    [static_params]
     approximant = IMRPhenomPv2
     f_lower = 19
 
@@ -69,13 +69,13 @@ spin1_azimuthal). Because the waveform module expects spins to be provided in
 cartesian coordinates, the spherical spin coordinates are transformed prior to
 being written out to file.
 
-The [variable_args] section gives the list of waveform parameters to
-randomize.  The [static_args] section gives parameters that are fixed for all
+The [variable_params] section gives the list of waveform parameters to
+randomize.  The [static_params] section gives parameters that are fixed for all
 of the injections.
 
 The [distribution-{tag}] sections provide the arguments needed to initialize
 the distribution for each parameter. Every parameter specified in
-[variable_args] must have a distribution section; the name of the parameter(s)
+[variable_params] must have a distribution section; the name of the parameter(s)
 used by that distribution must be in the 'tag' part of the section header (the
 bit after the dash). If a distribution covers multiple parameters, the
 parameters should be separated by a '+'.  Any distribution in the distributions
@@ -83,9 +83,9 @@ module may be used.  The rest of the options should provide the necessary
 arguments to initialize that distribution; see the distributions module for
 details.
 
-The variable_args need not be parameters understood by the waveform module.  In
+The variable_params need not be parameters understood by the waveform module.  In
 that case, a [waveform_transforms] sections must be provided that map
-variable_args not understood by the waveform module to parameters that are
+variable_params not understood by the waveform module to parameters that are
 understood. In the above example, spin1_a, spin1_azimuthal, and spin1_polar are
 converted to spin1x, spin1y, and spin1z before being written out. Any transform
 in the transforms module may be used to do this; see that module for details.
@@ -101,7 +101,7 @@ provided, the union of all constraints are applied. Alternatively, multiple
 constraints may be joined in a single argument using numpy's logical operators.
 
 The parameter that constraints are applied to may be any parameter in
-variable_args or any output parameter of the transforms. Functions may be
+variable_params or any output parameter of the transforms. Functions may be
 applied on these parameters to obtain constraints on derived parameters. Any
 function in the conversions, coordinates, or cosmology module may be used,
 along with any numpy ufunc. So, in the above example, mass ratio (q) is
@@ -143,12 +143,12 @@ parser.add_argument('--output-file', required=True,
 parser.add_argument('--dist-section', default='distribution',
                     help='What section in the config file to load '
                           'distributions from. Default is distribution.')
-parser.add_argument('--variable-params-section', default='variable_args',
+parser.add_argument('--variable-params-section', default='variable_params',
                     help='What section in the config file to load the '
-                         'parameters to vary. Default is variable_args.')
-parser.add_argument('--static-args-section', default="static_args",
-                    help='What section to load the static args from. Default '
-                         'is static_args.')
+                         'parameters to vary. Default is variable_params.')
+parser.add_argument('--static-params-section', default="static_params",
+                    help='What section to load the static params from. Default '
+                         'is static_params.')
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an OSError is raised.")
@@ -168,10 +168,10 @@ logging.info("Loading config file")
 cp = WorkflowConfigParser.from_cli(opts)
 
 # get the vairable and static arguments from the config file
-variable_args, static_args = distributions.read_params_from_config(cp,
+variable_params, static_params = distributions.read_params_from_config(cp,
     prior_section=opts.dist_section,
     vargs_section=opts.variable_params_section,
-    sargs_section=opts.static_args_section)
+    sargs_section=opts.static_params_section)
 constraints = distributions.read_constraints_from_config(cp)
 
 if any(cp.get_subsections('waveform_transforms')):
@@ -179,14 +179,14 @@ if any(cp.get_subsections('waveform_transforms')):
         'waveform_transforms')
 else:
     waveform_transforms = None
-    write_args = variable_args
+    write_args = variable_params
 
 # get prior distribution for each variable parameter
 logging.info("Reading distributions")
 dists = distributions.read_distributions_from_config(cp, opts.dist_section)
 
 # construct class that will draw the samples
-randomsampler = JointDistribution(variable_args, *dists,
+randomsampler = JointDistribution(variable_params, *dists,
                                **{"constraints" : constraints})
 
 logging.info("Drawing samples")
@@ -195,16 +195,16 @@ samples = randomsampler.rvs(size=opts.ninjections)
 if waveform_transforms is not None:
     logging.info("Transforming to waveform transform parameters")
     for t in waveform_transforms:
-        if not set(t.inputs).isdisjoint(set(static_args.keys())):
-            for item in list(set(t.inputs) & set(static_args.keys())):
-                samples = samples.add_fields([numpy.repeat(static_args[item],
+        if not set(t.inputs).isdisjoint(set(static_params.keys())):
+            for item in list(set(t.inputs) & set(static_params.keys())):
+                samples = samples.add_fields([numpy.repeat(static_params[item],
                                              opts.ninjections).astype(float)],
                                              [item])
     samples = transforms.apply_transforms(samples, waveform_transforms)
     write_args = [arg for arg in samples.fieldnames
-                  if arg not in static_args.keys()]
+                  if arg not in static_params.keys()]
 
 # write results
 logging.info("Writing results")
-InjectionSet.write(opts.output_file, samples, write_args, static_args,
+InjectionSet.write(opts.output_file, samples, write_args, static_params,
                    cmd=" ".join(sys.argv))
