@@ -15,6 +15,8 @@
 
 from __future__ import absolute_import
 
+from abc import (ABCMeta, abstractmethod)
+
 from .base_hdf import BaseInferenceFile
 from .posterior import PosteriorFile
 
@@ -28,6 +30,7 @@ class BaseSamplerFile(BaseInferenceFile):
     :py:class:`BaseInferenceFile`. Also adds a ``write_posterior`` method that
     extracts posterior samples and writes them to a ``PosteriorFile``.
     """
+    __metaclass__ = ABCMeta
 
     @abstractmethod
     def write_resume_point(self):
