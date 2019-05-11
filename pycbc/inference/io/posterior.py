@@ -28,7 +28,7 @@ from .base_hdf import BaseInferenceFile
 
 
 class PosteriorFile(BaseInferenceFile):
-    """Class to handle file IO for the simplified Posterior file"""
+    """Class to handle file IO for the simplified Posterior file."""
 
     name = 'posterior_file'
 
@@ -40,13 +40,22 @@ class PosteriorFile(BaseInferenceFile):
         """Write me."""
         raise NotImplementedError
 
-    def write_resume_point(self):
-        raise NotImplementedError
-
-    def write_sampler_metadata(self, sampler):
-        raise NotImplementedError
-
     def write_samples(self, samples, parameters=None):
+        """Writes samples to the given file.
+
+        Results are written to ``samples_group/{vararg}``, where ``{vararg}``
+        is the name of a model params. The samples are written as an
+        array of length ``niterations``.
+
+        Parameters
+        -----------
+        samples : dict
+            The samples to write. Each array in the dictionary should have
+            length niterations.
+        parameters : list, optional
+            Only write the specified parameters to the file. If None, will
+            write all of the keys in the ``samples`` dict.
+        """
         niterations = len(samples.values()[0])
         assert all(len(p) == niterations
                    for p in samples.values()), (

@@ -19,11 +19,11 @@
 
 from __future__ import absolute_import
 import h5py
-from .base_hdf import BaseInferenceFile
+from .base_sampler import BaseSamplerFile
 from .posterior import PosteriorFile
 
 
-class MultinestFile(BaseInferenceFile):
+class MultinestFile(BaseSamplerFile):
     """Class to handle file IO for the ``multinest`` sampler."""
 
     name = 'multinest_file'
@@ -36,7 +36,7 @@ class MultinestFile(BaseInferenceFile):
         array of length ``niterations``.
 
         Parameters
-        -----------
+        ----------
         samples : dict
             The samples to write. Each array in the dictionary should have
             length niterations.
@@ -137,27 +137,19 @@ class MultinestFile(BaseInferenceFile):
         # write the model's metadata
         sampler.model.write_metadata(self)
 
-    def write_posterior(self, filename, **kwargs):
-        """Write posterior only file
+    def read_posterior_samples(self, parameters): 
+        """Read posterior samples.
 
         Parameters
         ----------
-        filename : str
-            Name of output file to store posterior
+        parameters : list of str
+            The names of the parameters to read.
+
+        Returns
+        -------
+        FieldArray :
+            The posterior samples, as a 1D ``FieldArray``.
         """
-        f_p = h5py.File(filename, 'w')
-
-        # Preserve top-level metadata
-        for key in self.attrs:
-            f_p.attrs[key] = self.attrs[key]
-
-        f_p.attrs['filetype'] = PosteriorFile.name
-        s_group = f_p.create_group('samples')
-        fields = self[self.samples_group].keys()
-
-        # Copy and squash fields into one dimensional arrays
-        for field_name in fields:
-            fvalue = self[self.samples_group][field_name][:]
-            thin = fvalue[0, :,
-                          self.thin_start:self.thin_end:self.thin_interval]
-            s_group[field_name] = thin.flatten()
+        # only posterior samples are saved, so this is just a thin wrapper
+        # around read_samples
+        return self.read_samples(parameters)
