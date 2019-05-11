@@ -89,6 +89,7 @@ else:
     xint = fp.attrs['thin_interval']
 
 thinned_by = fp.thinned_by*xint
+xmin = xmin*fp.thinned_by
 
 # add the temperature args if it exists
 additional_args = {}
