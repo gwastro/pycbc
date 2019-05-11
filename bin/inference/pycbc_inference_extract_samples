@@ -45,11 +45,6 @@ parser.add_argument("--output-file", type=str, required=True,
 parser.add_argument("--force", action="store_true", default=False,
                     help="If the output-file already exists, overwrite it. "
                          "Otherwise, an IOError is raised.")
-parser.add_argument("--to-posterior", action="store_true", default=False,
-                    help="Write copied parameter samples and likelihood stats "
-                         "as flattened arrays. Default is "
-                         "for the copied file to have the same structure "
-                         "as the input file.")
 parser.add_argument("--skip-groups", default=None, nargs="+",
                     help="Don't write the specified groups in the output "
                          "(aside from samples; samples are always written), "
@@ -68,26 +63,14 @@ if os.path.exists(opts.output_file) and not opts.force:
     raise IOError("output file already exists; use --force if you wish to "
                   "overwrite.")
 
-# FIXME: MCMC files need the flatten option set to False if not writing to
-# a posterior file. Nested samplers, on the other hand, have no flatten option.
-# So... for now, just trying to set it. For nested samplers, we'll end up with
-# a TypeError, so we fall back to not setting it.
-try:
-    fp, params, labels, samples = results_from_cli(opts,
-                                                   flatten=opts.to_posterior)
-except TypeError:
-    fp, params, labels, samples = results_from_cli(opts)
+# load the samples
+fp, params, labels, samples = results_from_cli(opts)
 
 # convert samples to a dict in which the keys are the labels
 samples = {labels[p]: samples[p] for p in params}
 
-# get the file type to write
-if opts.to_posterior:
-    outtype = PosteriorFile.name
-else:
-    outtype = fp.attrs['filetype']
-
 # create the file
+outtype = PosteriorFile.name
 out = loadfile(opts.output_file, 'w', filetype=outtype) 
 
 # write the samples
@@ -106,11 +89,16 @@ for key in fp.attrs:
     if key not in skip_attrs:
         out.attrs[key] = fp.attrs[key]
 
+# store what parameters were renamed
+out.attrs['remapped_params'] = list(labels.items())
+
 # write the other groups
 skip_groups = opts.skip_groups
 if skip_groups is not None and 'all' in opts.skip_groups:
     skip_groups = [group for group in fp.keys()
                    if group != fp.samples_group]
 fp.copy_info(out, ignore=skip_groups)
+
+# close and exit
 fp.close()
 out.close()
