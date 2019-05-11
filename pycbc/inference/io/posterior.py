@@ -36,10 +36,6 @@ class PosteriorFile(BaseInferenceFile):
         samples = self[self.samples_group]
         return {field: samples[field][:] for field in fields}
 
-    def write_posterior(self, filename, **kwargs):
-        """Write me."""
-        raise NotImplementedError
-
     def write_samples(self, samples, parameters=None):
         """Writes samples to the given file.
 
@@ -56,10 +52,14 @@ class PosteriorFile(BaseInferenceFile):
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
         """
-        niterations = len(samples.values()[0])
+        # check data dimensions; we'll just use the first array in samples
+        arr = list(samples.values())[0]
+        if not arr.ndim == 1:
+            raise ValueError("samples must be 1D arrays")
+        niterations = arr.size
         assert all(len(p) == niterations
                    for p in samples.values()), (
-                                        "all samples must have the same shape")
+            "all samples must have the same shape")
         group = self.samples_group + '/{name}'
         if parameters is None:
             parameters = samples.keys()

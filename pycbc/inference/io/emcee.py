@@ -70,27 +70,3 @@ class EmceeFile(SingleTempMCMCIO, MCMCMetadataIO, BaseSamplerFile):
         except KeyError:
             # dataset doesn't exist yet, create it
             self[group] = acceptance_fraction
-
-    def read_posterior_samples(self, parameters):
-        """Read posterior samples.
-
-        These are extracted by starting from the burn in iteration, and thinned
-        by the ACL.
-
-        Parameters
-        ----------
-        parameters : list of str
-            The names of the parameters to read.
-
-        Returns
-        -------
-        FieldArray :
-            The posterior samples, as a 1D ``FieldArray``.
-        """
-        # the burn in and ACL should be stored by the thin_start and
-        # thin_interval attributes, respectively
-        return self.read_samples(parameters,
-                                 thin_start=self.thin_start,
-                                 thin_interval=self.thin_interval,
-                                 thin_end=self.thin_end,
-                                 flatten=True)

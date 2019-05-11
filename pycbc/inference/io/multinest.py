@@ -136,20 +136,3 @@ class MultinestFile(BaseSamplerFile):
         self[self.sampler_group].attrs['nlivepoints'] = sampler.nlivepoints
         # write the model's metadata
         sampler.model.write_metadata(self)
-
-    def read_posterior_samples(self, parameters): 
-        """Read posterior samples.
-
-        Parameters
-        ----------
-        parameters : list of str
-            The names of the parameters to read.
-
-        Returns
-        -------
-        FieldArray :
-            The posterior samples, as a 1D ``FieldArray``.
-        """
-        # only posterior samples are saved, so this is just a thin wrapper
-        # around read_samples
-        return self.read_samples(parameters)
