@@ -278,7 +278,7 @@ class LiveEventManager(object):
                 hdfp['spin2z'] = bank.table[template_id].spin2z
                 hdfp['ifar'] = ifar
 
-                cmd += '--params_file {} '.format(curr_fname)
+                cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant IMRPhenomD '
                 cmd += '--verbose '
                 logging.info('Running {}.'.format(cmd))
