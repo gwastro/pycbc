@@ -18,6 +18,18 @@ from scipy.optimize import differential_evolution
 from pycbc.waveform.waveform import props
 from pycbc.io import live
 from pycbc.detector import Detector
+from pycbc.psd import interpolate
+import time
+
+Nfeval = 0
+start_time = time.time()
+
+def callback_func(Xi, convergence=0):
+    global Nfeval
+    logging.info("CURRENTLY AT {} {}".format(Nfeval, convergence))
+    if (time.time() - start_time) > 120:
+        return True
+    Nfeval += 1
 
 # Define the function for computing network snr
 def compute_network_snr_core(v, *argv):
@@ -95,6 +107,7 @@ parser.add_argument("--snr-threshold", default=4.0,
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 logging.info('Starting optimize SNR')
 
@@ -143,7 +156,7 @@ logging.info('Starting optimization')
 results = differential_evolution(compute_network_snr, bounds,
                                  maxiter=100, workers=-1,
                                  popsize=200, mutation=(0.5,1),
-                                 recombination=0.7,
+                                 recombination=0.7, callback=callback_func,
                                  args=extra_args)
 
 logging.info('Optimization complete')
@@ -210,7 +223,8 @@ for idx, ifo in enumerate(ifos):
     coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
     coinc_results['foreground/'+ifo+'/template_id'] = 0
     followup_data[ifo] = {}
-    followup_data[ifo]['psd'] = data[ifo].psd
+    fseries = interpolate(data[ifo].psd, 0.25)
+    followup_data[ifo]['psd'] = fseries
     followup_data[ifo]['snr_series'] = snr_series_dict[ifo]
 
     # Should this trigger be considered part of the coincidence?
