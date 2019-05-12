@@ -219,10 +219,11 @@ class LiveEventManager(object):
 
             ifar = coinc_results['foreground/ifar']
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-                event.upload(fname, gracedb_server=args.gracedb_server,
-                             testing=self.gracedb_testing,
-                             extra_strings=comments)
+                gid = event.upload(fname, gracedb_server=args.gracedb_server,
+                                   testing=self.gracedb_testing,
+                                   extra_strings=comments)
             else:
+                gid = None
                 event.save(fname)
 
             if self.store_data_and_psds:
@@ -277,6 +278,7 @@ class LiveEventManager(object):
                 hdfp['spin1z'] = bank.table[template_id].spin1z
                 hdfp['spin2z'] = bank.table[template_id].spin2z
                 hdfp['ifar'] = ifar
+                hdfp['gid'] = gid
 
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant IMRPhenomD '

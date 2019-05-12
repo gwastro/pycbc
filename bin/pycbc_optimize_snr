@@ -115,10 +115,11 @@ for ifo in ifos:
 
 coinc_ifos = list(coinc_times.keys())
     
+logging.info("Following up GID {}".format(fp['gid'][()]))
 flen = fp['flen'][()]
 approximant = args.approximant
-flow = fp['flow'][()]
-f_end = fp['f_end'][()]
+flow = float(fp['flow'][()])
+f_end = float(fp['f_end'][()])
 delta_f = fp['delta_f'][()]
 sample_rate = fp['sample_rate'][()]
 
