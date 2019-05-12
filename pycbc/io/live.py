@@ -364,7 +364,7 @@ class SingleCoincForGraceDB(object):
 
             extra_strings = [] if extra_strings is None else extra_strings
             for text in extra_strings:
-                gracedb.writeLog(gid, text)
+                gracedb.writeLog(gid, text, tag_name=['analyst_comments'])
 
             # upload SNR series in HDF format and plots
             if self.snr_series is not None:
