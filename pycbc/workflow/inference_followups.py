@@ -124,8 +124,8 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     logging.info("Leaving inference module")
 
 def make_inference_prior_plot(workflow, config_file, output_dir,
-                    sections=None, name="inference_prior",
-                    parameters=None, analysis_seg=None, tags=None):
+                              sections=None, name="inference_prior",
+                              parameters=None, analysis_seg=None, tags=None):
     """ Sets up the corner plot of the priors in the workflow.
 
     Parameters
