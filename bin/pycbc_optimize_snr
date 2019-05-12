@@ -3,6 +3,7 @@
 import argparse, numpy, h5py
 from time import time
 import types
+import logging
 import pycbc
 from pycbc import version, waveform
 from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
