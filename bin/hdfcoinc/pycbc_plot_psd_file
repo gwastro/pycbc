@@ -18,7 +18,7 @@ parser.add_argument('--hdf-group', default=None,
                     help="Group in the HDF file(s) to read the psd from. "
                          "PSDs will be read from {psd_group}/{ifo}. Default "
                          "is to look in the top level.")
-parser.add_argument('--low-frequency-cutoff', type=float, 
+parser.add_argument('--low-frequency-cutoff', type=float,
                     help="The low frequency cutoff of the PSD. If not "
                          "provided, will try to retrive it from the "
                          "hdf-group's attrs.")
@@ -55,14 +55,15 @@ for psd_file in args.psd_files:
         ifo_list = f.attrs["ifo_list"]
     else:
         ifo_list = [f.keys()[0]]
-
     for ifo in ifo_list:
         fac = 1.0 / pycbc.DYN_RANGE_FAC
         df = f[ifo + '/psds/0'].attrs['delta_f']
         keys = f[ifo + '/psds'].keys()
         if args.low_frequency_cutoff is None:
             try:
-                flow = f.attrs['low_frequency_cutoff']
+                with h5py.File(psd_file, 'r') as base_file:
+                    flow = base_file.attrs[
+                               '{}_likelihood_low_freq'.format(ifo)]
             except KeyError:
                 raise ValueError("low_frequency_cutoff not found in hdf file; "
                                  "please specify a value using the "
