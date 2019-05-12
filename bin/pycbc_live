@@ -278,8 +278,7 @@ class LiveEventManager(object):
                 cmd += '--params_file {} '.format(curr_fname)
                 cmd += '--approximant IMRPhenomD '
                 print cmd
-                DETACHED_PROCESS = 0x00000008
-                subprocess.Popen([cmd], creationflags=DETACHED_PROCESS)
+                subprocess.Popen([cmd])
 
 
     def check_singles(self, results, data_reader, psds, f_low):
