@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-#Copyright (C) 2019 Ian W. Harry, Gino Contestabile, Francesco Pannarale
-
+# Copyright (C) 2019 Ian W. Harry, Gino Contestabile, Francesco Pannarale
+#
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -33,6 +33,7 @@ import numpy
 import os,matplotlib,copy
 matplotlib.use('Agg')
 from matplotlib import rc
+import matplotlib.pyplot as plt
 import scipy.stats
 from optparse import OptionParser
 from glue import segments
@@ -44,107 +45,13 @@ from pycbc.results.pygrb_plotting_utils import sbv_plot_handler
 from pylal import MultiInspiralUtils
 from pylal.dq import dqSegmentUtils
 from pylal.coh_PTF_pyutils import get_bestnr, calculate_contours, readSegFiles, get_det_response
-import matplotlib.pyplot as plt
 ####
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pylal_cbc_cohptf_sbv_plotter"
+__program__ = "pycbc_pygrb_sbv_plotter"
 
-# =============================================================================
-# Create filename tags for zoomed and non-zoomed plots 
-# =============================================================================
-
-def generate_raw_zoom_tags(run_tag, plot_tag):
-  fig_tag_raw = "%s_%s" % (run_tag, plot_tag) 
-  fig_tag_zoom = "%s_%s" % (fig_tag_raw, "zoom")
-
-  return [fig_tag_raw, fig_tag_zoom]
-
-# =============================================================================
-# Extract trigger or injection data
-# =============================================================================
-#def get_data(trigs, ifos):
-#
-#  # Work out if using sngl chisqs
-#  ifoAtt = { 'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t' } 
-#  i = ifoAtt[ifos[0]]
-#  sngl_chisq      = 'chisq_%s' % i\
-#                    in lsctables.MultiInspiralTable.loadcolumns
-#  sngl_bank_chisq = 'bank_chisq_%s' % i\
-#                    in lsctables.MultiInspiralTable.loadcolumns
-#  sngl_cont_chisq = 'cont_chisq_%s' % i\
-#                    in lsctables.MultiInspiralTable.loadcolumns
-#  
-#  # Initiate amplitude generator
-#  numAmp  = 4
-#  amplitudes = xrange(1,numAmp+1)
-#  
-#  # Set basic data
-#  trigTime      = numpy.asarray(trigs.get_end())
-#  trigSNR       = numpy.asarray(trigs.get_column('snr'))
-#  trigBestNR    = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
-#                             null_thresh=null_thresh,snr_threshold=snrThresh,\
-#                             sngl_snr_threshold = snglSnrThresh,\
-#                             chisq_threshold = newSnrThresh,\
-#                             null_grad_thresh = nullGradThresh,\
-#                             null_grad_val = nullGradVal) for t in trigs]
-#  trigBestNR    = numpy.array(trigBestNR)
-#  trigNullSNR   = numpy.asarray(trigs.get_null_snr())
-#  trigNullstat  = numpy.asarray(trigs.get_column('null_statistic'))
-#  trigTraceSNR  = numpy.asarray(trigs.get_column('null_stat_degen'))
-#  trigMchirp    = numpy.asarray(trigs.get_column('mchirp'))
-#  
-#  # Get chisq data
-#  trigChiSquare = numpy.asarray(trigs.get_column('chisq'))
-#  trigBankVeto  = numpy.asarray(trigs.get_column('bank_chisq')) 
-#  trigAutoVeto  = numpy.asarray(trigs.get_column('cont_chisq'))
-#  numpy.putmask(trigChiSquare, trigChiSquare==0, 0.005)
-#  numpy.putmask(trigBankVeto, trigBankVeto==0, 0.005)
-#  numpy.putmask(trigAutoVeto, trigAutoVeto==0, 0.005)
-#   
-#  # Get single detector data
-#  trigCoincSNR  = (trigs.get_column('coinc_snr'))
-#  trigIfoSNR    = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
-#  tmp           = numpy.sort(trigIfoSNR.values(), 0)
-#  if len(ifos) > 0:
-#    trigFirstSNR  = tmp[-1,:]
-#  if len(ifos) > 1:
-#    trigSecondSNR = tmp[-2,:]
-#  if len(ifos) > 2:
-#    trigThirdSNR  = tmp[-3,:]
-#  if sngl_bank_chisq:
-#    trigIfobankCS = trigs.get_sngl_bank_chisqs(ifos)
-#    trigIfobankCS = format_single_chisqs(trigIfobankCS, trigs, ifos):
-#  if sngl_cont_chisq:
-#    trigIfoautoCS = trigs.get_sngl_cont_chisqs(ifos)
-#    trigIfoautoCS = format_single_chisqs(trigIfoautoCS, trigs, ifos):
-#  if sngl_chisq:
-#    trigIfostanCS = trigs.get_sngl_chisqs(ifos)
-#    trigIfostanCS = format_single_chisqs(trigIfostanCS, trigs, ifos):
-#  trigSigma  = trigs.get_sigmasqs()
-#  trigSigmaTot = numpy.zeros(numtrigs)
-#  
-#  # Get amplitude terms
-#  trigAmp         = dict((amp,\
-#                          numpy.asarray(trigs.get_column('amp_term_%d' % amp)))\
-#                          for amp in amplitudes)
-#  trigRelAmp1     = numpy.sqrt((trigAmp[1]**2 + trigAmp[2]**2)/\
-#                               (trigAmp[3]**2 + trigAmp[4]**2))
-#  trigGammaR      = trigAmp[1] - trigAmp[4]
-#  trigGammaI      = trigAmp[2] + trigAmp[3]
-#  trigDeltaR      = trigAmp[1] + trigAmp[4]
-#  trigDeltaI      = trigAmp[3] - trigAmp[2]
-#  trigNorm1       = trigDeltaR*trigDeltaR + trigDeltaI*trigDeltaI
-#  trigNorm2       = trigGammaR*trigGammaR + trigGammaI*trigGammaI
-#  trigNorm3       = ((trigNorm1**0.25) + (trigNorm2**0.25))**2
-#  trigAmpPlus     = (trigNorm1)**0.5 + (trigNorm2)**0.5
-#  trigAmpCross    = abs((trigNorm1)**0.5 - (trigNorm2)**0.5)
-#  trigRelAmp2     = trigAmpPlus/trigAmpCross
-#  trigInclination = trigAmpCross/trigNorm3
-#
-#  return
 
 # =============================================================================
 # Format single detector chi-square data as numpy array and floor at 0.005
@@ -156,6 +63,171 @@ def format_single_chisqs(trigIfoCS, trigs, ifos):
     numpy.putmask(trigIfoCS[ifo], trigIfoCS[ifo]==0, 0.005)
 
   return trigIfoCS
+
+
+# =============================================================================
+# Extract trigger/injection data produced by PyGRB
+# =============================================================================
+class pygrb_filter_output(object):
+  def __init__(self, trigs_or_injs, ifos, columns, output_type, chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=False):
+    if verbose:
+      sys.stdout.write("Extracting data related to the %s just loaded...\n" % output_type)
+    # Initialize all content of self
+    self.Time = None
+    self.SNR = numpy.array(None)
+    self.ReweightedSNR = None
+    self.NullSNR = None
+    self.Nullstat = None
+    self.TraceSNR = None
+    self.ChiSquare = numpy.array(None)
+    self.BankVeto = None
+    self.AutoVeto = None
+    self.CoincSNR = None
+    self.IfoSNR = dict((ifo, None) for ifo in ifos)
+    self.FirstSNR = None
+    self.SecondSNR = None
+    self.ThirdSNR = None
+    self.IfobankCS = dict((ifo, None) for ifo in ifos)
+    self.IfoautoCS = dict((ifo, None) for ifo in ifos)
+    self.IfostanCS = dict((ifo, None) for ifo in ifos)
+    self.RelAmp1 = None
+    self.Norm3 = None
+    self.RelAmp2 = None
+    self.Inclination = None
+    # Exctract data and fill in content of self
+    if trigs_or_injs is not None:
+      # Work out if using sngl chisqs
+      ifoAtt = { 'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t' } 
+      i = ifoAtt[ifos[0]]
+  
+      self.sngl_chisq      = 'chisq_%s' % i in columns
+      self.sngl_bank_chisq = 'bank_chisq_%s' % i in columns
+      self.sngl_cont_chisq = 'cont_chisq_%s' % i in columns
+      
+      # Set basic data
+      self.Time          = numpy.asarray(trigs_or_injs.get_end())
+      self.SNR           = numpy.asarray(trigs_or_injs.get_column('snr'))
+      self.ReweightedSNR = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
+                                       null_thresh=null_thresh,snr_threshold=snrThresh,\
+                                       sngl_snr_threshold = snglSnrThresh,\
+                                       chisq_threshold = newSnrThresh,\
+                                       null_grad_thresh = nullGradThresh,\
+                                       null_grad_val = nullGradVal) for t in trigs_or_injs]
+      self.ReweightedSNR = numpy.array(self.ReweightedSNR)
+      self.NullSNR       = numpy.asarray(trigs_or_injs.get_null_snr())
+      self.Nullstat      = numpy.asarray(trigs_or_injs.get_column('null_statistic'))
+      self.TraceSNR      = numpy.asarray(trigs_or_injs.get_column('null_stat_degen'))
+    
+      # Get chisq data
+      self.ChiSquare = numpy.asarray(trigs_or_injs.get_column('chisq'))
+      self.BankVeto  = numpy.asarray(trigs_or_injs.get_column('bank_chisq')) 
+      self.AutoVeto  = numpy.asarray(trigs_or_injs.get_column('cont_chisq'))
+      numpy.putmask(self.ChiSquare, self.ChiSquare==0, 0.005)
+      numpy.putmask(self.BankVeto, self.BankVeto==0, 0.005)
+      numpy.putmask(self.AutoVeto, self.AutoVeto==0, 0.005)
+       
+      # Get single detector data
+      self.CoincSNR  = (trigs_or_injs.get_column('coinc_snr'))
+      self.IfoSNR    = dict((ifo, trigs_or_injs.get_sngl_snr(ifo)) for ifo in ifos)
+      tmp           = numpy.sort(self.IfoSNR.values(), 0)
+      if len(ifos) > 0:
+        self.FirstSNR  = tmp[-1,:]
+      if len(ifos) > 1:
+        self.SecondSNR = tmp[-2,:]
+      if len(ifos) > 2:
+        self.ThirdSNR  = tmp[-3,:]
+      if self.sngl_bank_chisq:
+        self.IfobankCS = trigs_or_injs.get_sngl_bank_chisqs(ifos)
+        self.IfobankCS = format_single_chisqs(self.IfobankCS, trigs_or_injs, ifos)
+      if self.sngl_cont_chisq:
+        self.IfoautoCS = trigs_or_injs.get_sngl_cont_chisqs(ifos)
+        self.IfoautoCS = format_single_chisqs(self.IfoautoCS, trigs_or_injs, ifos)
+      if self.sngl_chisq:
+        self.IfostanCS = trigs_or_injs.get_sngl_chisqs(ifos)
+        self.IfostanCS = format_single_chisqs(self.IfostanCS, trigs_or_injs, ifos)
+      
+      # Initiate amplitude generator
+      numAmp  = 4
+      amplitudes = xrange(1,numAmp+1)
+    
+      # Get amplitude terms
+      Amp              = dict((amp,\
+                               numpy.asarray(trigs_or_injs.get_column('amp_term_%d' % amp)))\
+                               for amp in amplitudes)
+      #print numpy.count_nonzero(Amp[1]) # All trigAmp's are 0
+      #print numpy.count_nonzero(Amp[2]) # Hence the 3 warnings
+      #print numpy.count_nonzero(Amp[3])
+      #print numpy.count_nonzero(Amp[4])
+      self.RelAmp1     = numpy.sqrt((Amp[1]**2 + Amp[2]**2)/\
+                                    (Amp[3]**2 + Amp[4]**2))
+      GammaR           = Amp[1] - Amp[4]
+      GammaI           = Amp[2] + Amp[3]
+      DeltaR           = Amp[1] + Amp[4]
+      DeltaI           = Amp[3] - Amp[2]
+      Norm1            = DeltaR*DeltaR + DeltaI*DeltaI
+      Norm2            = GammaR*GammaR + GammaI*GammaI
+      self.Norm3       = ((Norm1**0.25) + (Norm2**0.25))**2
+      AmpPlus          = (Norm1)**0.5 + (Norm2)**0.5
+      AmpCross         = abs((Norm1)**0.5 - (Norm2)**0.5)
+      self.RelAmp2     = AmpPlus/AmpCross
+      self.Inclination = AmpCross/self.Norm3
+      
+      num_trigs_or_injs = len(trigs_or_injs)
+      if num_trigs_or_injs<1:
+        sys.stderr.write("WARNING: No %s found." % output_type)
+      elif num_trigs_or_injs >= 1 and verbose:
+        sys.stdout.write("%d %s found at %d.\n"\
+                         % (num_trigs_or_injs, output_type, elapsed_time()))
+      if(output_type == "triggers"):
+        Sigma  = trigs_or_injs.get_sigmasqs()
+        self.SigmaTot = numpy.zeros(num_trigs_or_injs)
+        # Get antenna response based parameters
+        self.Longitude = numpy.degrees(trigs_or_injs.get_column('ra'))
+        self.Latitude  = numpy.degrees(trigs_or_injs.get_column('dec'))
+        self.fResp = dict((ifo, numpy.empty(num_trigs_or_injs)) for ifo in ifos)
+        for i in xrange(num_trigs_or_injs):
+          # Calculate fResp for each IFO is we haven't done so already
+          fPlus,fCross     = get_det_response(self.Longitude[i], self.Latitude[i],\
+                                              self.Time[i])
+          for ifo in ifos:
+            self.fResp[ifo][i]   = sum(numpy.array([fPlus[ifo], fCross[ifo]])**2)
+            self.SigmaTot[i]    += Sigma[ifo][i] * self.fResp[ifo][i]
+        
+        for ifo in ifos:
+          self.fResp[ifo] = self.fResp[ifo].mean()
+        
+        # Normalise trigSigma
+        self.SigmaTot = numpy.array(self.SigmaTot)
+        for ifo in ifos:
+          Sigma[ifo] = numpy.asarray(Sigma[ifo]) / self.SigmaTot
+        
+        self.SigmaMean = {}
+        self.SigmaMax  = {}
+        self.SigmaMin  = {}
+        for ifo in ifos:
+          try:
+            self.SigmaMean[ifo] = Sigma[ifo].mean()
+            self.SigmaMax[ifo]  = Sigma[ifo].max()
+            self.SigmaMin[ifo]  = Sigma[ifo].min()
+          except ValueError:
+            self.SigmaMean[ifo] = 0
+            self.SigmaMax[ifo]  = 0
+            self.SigmaMin[ifo]  = 0
+    if verbose:
+      sys.stdout.write("%s parameters extracted at %d\n"\
+                       % (output_type, elapsed_time()))
+
+
+# =============================================================================
+# Create filename tags for zoomed and non-zoomed plots 
+# =============================================================================
+
+def generate_raw_zoom_tags(run_tag, plot_tag):
+  fig_tag_raw = "%s_%s" % (run_tag, plot_tag) 
+  fig_tag_zoom = "%s_%s" % (fig_tag_raw, "zoom")
+
+  return [fig_tag_raw, fig_tag_zoom]
+
 
 # =============================================================================
 # Parse command line
@@ -236,10 +308,6 @@ pylal_cbc_cohptf_sbv_plotter will calculate all signal based vetoes and the fina
   parser.add_option("-b", "--veto-category",action="store",type="int",\
                    default=None, help="Apply vetoes up to this level inclusive")
 
-  parser.add_option( "-M", "--max-chirp-mass", action="store", type="float",\
-                     default=8.0,\
-                     help="maximum allowed chirp mass, default %default" )
-
   (opts,args) = parser.parse_args()
 
   if not opts.trig_file:
@@ -278,14 +346,13 @@ segdir    = opts.segment_dir
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
 null_thresh = map(float, opts.null_snr_threshold.split(','))
-max_mchirp = opts.max_chirp_mass
 vetoFiles = []
 if opts.veto_directory:
   vetoString = ','.join([str(i) for i in range(2,opts.veto_category+1)])
   vetoFiles = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(vetoString))
 snrThresh = opts.snr_threshold
 snglSnrThresh = opts.sngl_snr_threshold
-newSnrThresh = snglSnrThresh
+newSnrThresh = opts.newsnr_threshold
 nullGradThresh = opts.null_grad_thresh
 nullGradVal    = opts.null_grad_val
 verbose   = opts.verbose
@@ -314,7 +381,6 @@ searchSumm = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
 
 # Extract IFOS
 ifos = sorted(map(str, searchSumm[0].get_ifos()))
-ifoAtt = { 'G1':'g', 'H1':'h1', 'H2':'h2', 'L1':'l', 'V1':'v', 'T1':'t' } 
 
 tmp, slideDict, segmentDict = \
         MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trigFile])
@@ -350,18 +416,16 @@ for slideID in range(numSlides):
   vets = slidVetoes.union(slidVetoes.keys())
   trigs.extend(t for t in tmp.veto(vets) if int(t.time_slide_id) == slideID)
 
-numtrigs = len(trigs)
-if numtrigs<1:
-  sys.stderr.write("WARNING: No triggers found.")
-elif numtrigs >= 1 and verbose:
-  sys.stdout.write("%d triggers found at %d.\n"\
-                   % (numtrigs, elapsed_time()))
+# Extract trigger data
+trigData = pygrb_filter_output(trigs, ifos, lsctables.MultiInspiralTable.loadcolumns, "triggers", \
+  chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
 
 
 #
 # Load injections
 #
 
+injs = None
 if injFile:
   if verbose:
     sys.stdout.write("\nLoading injections...\n")
@@ -374,211 +438,10 @@ if injFile:
     sys.stdout.write("%d injections found at %d.\n"\
                      % (len(injs), elapsed_time()))
 
-#
-# Extract trigger data
-#
+# Extract injection data
+injData = pygrb_filter_output(injs, ifos, lsctables.MultiInspiralTable.loadcolumns, "injections", \
+  chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
 
-
-# Work out if using sngl chisqs
-i = ifoAtt[ifos[0]]
-sngl_chisq      = 'chisq_%s' % i\
-                  in lsctables.MultiInspiralTable.loadcolumns
-sngl_bank_chisq = 'bank_chisq_%s' % i\
-                  in lsctables.MultiInspiralTable.loadcolumns
-sngl_cont_chisq = 'cont_chisq_%s' % i\
-                  in lsctables.MultiInspiralTable.loadcolumns
-
-# Initiate amplitude generator
-numAmp  = 4
-amplitudes = xrange(1,numAmp+1)
-
-# Set basic data
-trigTime      = numpy.asarray(trigs.get_end())
-trigSNR       = numpy.asarray(trigs.get_column('snr'))
-trigBestNR    = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
-                           null_thresh=null_thresh,snr_threshold=snrThresh,\
-                           sngl_snr_threshold = snglSnrThresh,\
-                           chisq_threshold = newSnrThresh,\
-                           null_grad_thresh = nullGradThresh,\
-                           null_grad_val =  nullGradVal ) for t in trigs]
-trigBestNR    = numpy.array(trigBestNR)
-trigNullSNR   = numpy.asarray(trigs.get_null_snr())
-trigNullstat  = numpy.asarray(trigs.get_column('null_statistic'))
-trigTraceSNR  = numpy.asarray(trigs.get_column('null_stat_degen'))
-trigMchirp    = numpy.asarray(trigs.get_column('mchirp'))
-
-# Get chisq data
-trigChiSquare = numpy.asarray(trigs.get_column('chisq'))
-trigBankVeto  = numpy.asarray(trigs.get_column('bank_chisq')) 
-trigAutoVeto  = numpy.asarray(trigs.get_column('cont_chisq'))
-numpy.putmask(trigChiSquare, trigChiSquare==0, 0.005)
-numpy.putmask(trigBankVeto, trigBankVeto==0, 0.005)
-numpy.putmask(trigAutoVeto, trigAutoVeto==0, 0.005)
- 
-# Get single detector data
-trigCoincSNR  = (trigs.get_column('coinc_snr'))
-trigIfoSNR    = dict((ifo, trigs.get_sngl_snr(ifo)) for ifo in ifos)
-tmp           = numpy.sort(trigIfoSNR.values(), 0)
-if len(ifos) > 0:
-  trigFirstSNR  = tmp[-1,:]
-if len(ifos) > 1:
-  trigSecondSNR = tmp[-2,:]
-if len(ifos) > 2:
-  trigThirdSNR  = tmp[-3,:]
-if sngl_bank_chisq:
-  trigIfobankCS = trigs.get_sngl_bank_chisqs(ifos)
-  trigIfobankCS = format_single_chisqs(trigIfobankCS, trigs, ifos)
-if sngl_cont_chisq:
-  trigIfoautoCS = trigs.get_sngl_cont_chisqs(ifos)
-  trigIfoautoCS = format_single_chisqs(trigIfoautoCS, trigs, ifos)
-if sngl_chisq:
-  trigIfostanCS = trigs.get_sngl_chisqs(ifos)
-  trigIfostanCS = format_single_chisqs(trigIfostanCS, trigs, ifos)
-trigSigma  = trigs.get_sigmasqs()
-trigSigmaTot = numpy.zeros(numtrigs)
-
-# Get amplitude terms
-trigAmp         = dict((amp,\
-                        numpy.asarray(trigs.get_column('amp_term_%d' % amp)))\
-                        for amp in amplitudes)
-trigRelAmp1     = numpy.sqrt((trigAmp[1]**2 + trigAmp[2]**2)/\
-                             (trigAmp[3]**2 + trigAmp[4]**2))
-trigGammaR      = trigAmp[1] - trigAmp[4]
-trigGammaI      = trigAmp[2] + trigAmp[3]
-trigDeltaR      = trigAmp[1] + trigAmp[4]
-trigDeltaI      = trigAmp[3] - trigAmp[2]
-trigNorm1       = trigDeltaR*trigDeltaR + trigDeltaI*trigDeltaI
-trigNorm2       = trigGammaR*trigGammaR + trigGammaI*trigGammaI
-trigNorm3       = ((trigNorm1**0.25) + (trigNorm2**0.25))**2
-trigAmpPlus     = (trigNorm1)**0.5 + (trigNorm2)**0.5
-trigAmpCross    = abs((trigNorm1)**0.5 - (trigNorm2)**0.5)
-trigRelAmp2     = trigAmpPlus/trigAmpCross
-trigInclination = trigAmpCross/trigNorm3
-
-# Get antenna response based parameters
-trigLongitude = numpy.degrees(trigs.get_column('ra'))
-trigLatitude  = numpy.degrees(trigs.get_column('dec'))
-fResp = dict((ifo, numpy.empty(numtrigs)) for ifo in ifos)
-for i in xrange(numtrigs):
-  # Calculate fResp for each IFO is we haven't done so already
-  fPlus,fCross     = get_det_response(trigLongitude[i], trigLatitude[i],\
-                                      trigTime[i])
-  for ifo in ifos:
-    fResp[ifo][i]    = sum(numpy.array([fPlus[ifo], fCross[ifo]])**2)
-    trigSigmaTot[i] += trigSigma[ifo][i] * fResp[ifo][i]
-
-for ifo in ifos:
-  fResp[ifo] = fResp[ifo].mean()
-
-# Normalise trigSigma
-trigSigmaTot = numpy.array(trigSigmaTot)
-for ifo in ifos:
-  trigSigma[ifo] = numpy.asarray(trigSigma[ifo]) / trigSigmaTot
-
-trigSigmaMean = {}
-trigSigmaMax  = {}
-trigSigmaMin  = {}
-for ifo in ifos:
-  try:
-    trigSigmaMean[ifo] = trigSigma[ifo].mean()
-    trigSigmaMax[ifo]  = trigSigma[ifo].max()
-    trigSigmaMin[ifo]  = trigSigma[ifo].min()
-  except ValueError:
-    trigSigmaMean[ifo] = 0
-    trigSigmaMax[ifo]  = 0
-    trigSigmaMin[ifo]  = 0
-
-if verbose:
-  sys.stdout.write("Trigger parameters extracted at %d\n"\
-                   % elapsed_time())
-
-#
-# Get injection data
-#
-
-# Initialize all injection related variables
-injTime = None
-injSNR = numpy.array(None)
-injBestNR = None
-injNullSNR = None
-injNullstat = None
-injTraceSNR = None
-injChiSquare = numpy.array(None)
-injBankVeto = None
-injAutoVeto = None
-injCoincSNR = None
-injIfoSNR = dict((ifo, None) for ifo in ifos)
-injFirstSNR = None
-injSecondSNR = None
-injThirdSNR = None
-injIfobankCS = dict((ifo, None) for ifo in ifos)
-injIfoautoCS = dict((ifo, None) for ifo in ifos)
-injIfostanCS = dict((ifo, None) for ifo in ifos)
-injRelAmp1 = None
-injNorm3 = None
-injRelAmp2 = None
-injInclination = None
-
-# Fill in injection related variables (if injection files exist)
-if injFile:
-
-  # Get basics
-  injTime      = numpy.asarray(injs.get_end())
-  injSNR       = numpy.asarray(injs.get_column('snr'))
-  injBestNR    = [get_bestnr(t,q=chisq_index, n=chisq_nhigh,\
-                           null_thresh=null_thresh,snr_threshold=snrThresh,\
-                           sngl_snr_threshold = snglSnrThresh,\
-                           chisq_threshold = newSnrThresh,\
-                           null_grad_thresh = nullGradThresh,\
-                           null_grad_val = nullGradVal) for t in injs]
-  injBestNR    = numpy.array(injBestNR)
-  injNullSNR   = numpy.asarray(injs.get_null_snr())
-  injNullstat  = numpy.asarray(injs.get_column('null_statistic'))
-  injTraceSNR  = numpy.asarray(injs.get_column('null_stat_degen'))
-
-  # Get chisq data
-  injChiSquare = numpy.asarray(injs.get_column('chisq'))
-  injBankVeto  = numpy.asarray(injs.get_column('bank_chisq'))
-  injAutoVeto  = numpy.asarray(injs.get_column('cont_chisq'))
-
-  # Get single detector data
-  injCoincSNR  = numpy.asarray(injs.get_column('coinc_snr'))
-  injIfoSNR    = dict((ifo, injs.get_sngl_snr(ifo)) for ifo in ifos)
-  tmp          = numpy.sort(injIfoSNR.values(), 0)
-  if len(ifos) > 0:
-    injFirstSNR  = tmp[-1,:]
-  if len(ifos) > 1:
-    injSecondSNR = tmp[-2,:]
-  if len(ifos) > 2:
-    injThirdSNR  = tmp[-3,:]
-  if sngl_bank_chisq:
-    injIfobankCS = injs.get_sngl_bank_chisqs(ifos)
-  if sngl_cont_chisq:
-    injIfoautoCS = injs.get_sngl_cont_chisqs(ifos)
-  if sngl_chisq:
-    injIfostanCS = injs.get_sngl_chisqs(ifos)
-  #injSigma  = injs.get_sigmasqs()
-
-  # get amplitude terms
-  injAmp    = dict((amp, numpy.asarray(injs.get_column('amp_term_%d' % amp)))\
-                   for amp in amplitudes)
-  injRelAmp1     = numpy.sqrt((injAmp[1]**2 + injAmp[2]**2)/\
-                              (injAmp[3]**2 + injAmp[4]**2))
-  injGammaR      = injAmp[1] - injAmp[4]
-  injGammaI      = injAmp[2] + injAmp[3]
-  injDeltaR      = injAmp[1] + injAmp[4]
-  injDeltaI      = injAmp[3] - injAmp[2]
-  injNorm1       = injDeltaR*injDeltaR + injDeltaI*injDeltaI
-  injNorm2       = injGammaR*injGammaR + injGammaI*injGammaI
-  injNorm3       = ((injNorm1**0.25) + (injNorm2**0.25))**2
-  injAmpPlus     = (injNorm1)**0.5 + (injNorm2)**0.5
-  injAmpCross    = abs((injNorm1)**0.5 - (injNorm2)**0.5)
-  injRelAmp2     = injAmpPlus/injAmpCross
-  injInclination = injAmpCross/injNorm3
-
-  if verbose:
-    sys.stdout.write("Injection parameters extracted at %d\n"\
-                     % elapsed_time())
 
 #
 # Generate plots
@@ -609,38 +472,36 @@ bank_conts, auto_conts,chi_conts,null_cont,snr_vals, colors =\
 # Reset times
 segs = readSegFiles(segdir)
 grbTime = segs['on'][1] - 1
-start = int(min(trigTime)) - grbTime
-end   = int(max(trigTime)) - grbTime
+start = int(min(trigData.Time)) - grbTime
+end   = int(max(trigData.Time)) - grbTime
 duration = end-start
 start -= duration*0.05
 end += duration*0.05
-trigTime = [t-grbTime for t in trigTime]
+trigData.Time = [t-grbTime for t in trigData.Time]
 if injFile:
-  injTime  = [t-grbTime for t in injTime]
+  injData.Time  = [t-grbTime for t in injData.Time]
 
-# Plotting starts here: this is where we have WIP
 
-# Plot coherent SNR versus time
-fig_tag = '%s_%s' % (tag, "triggers_vs_time") 
-for injF in [None, injFile]:
-  sbv_plot_handler(trigTime, trigSNR, injTime, injSNR, injF, \
+# Plot SNR timeseries
+for injF in numpy.unique([None, injFile]):
+  # Coherent SNR versus time
+  fig_tag = '%s_%s' % (tag, "triggers_vs_time") 
+  sbv_plot_handler(trigData.Time, trigData.SNR, injData.Time, injData.SNR, injF, \
               "Time since %s" % (grbTime), "Coherent SNR", outdir, fig_tag,
               xlims=[start,end], use_logs=False, verbose=verbose)
-
-# Plot BestNR versus time
-fig_tag = '%s_%s' % (tag, "bestnr_vs_time") 
-for injF in [None, injFile]:
-  sbv_plot_handler(trigTime, trigBestNR, injTime, injBestNR, injF, \
-              "Time since %s" % (grbTime), "BestNR", outdir, fig_tag,
-              xlims=[start,end], use_logs=False, verbose=verbose)
-
-# Plot single IFO SNR versus time
-for ifo in ifos:
-  fig_tag = '%s_%s_%s' % (tag, ifo, "triggers_vs_time") 
-  for injF in [None, injFile]:
-    sbv_plot_handler(trigTime, trigIfoSNR[ifo], injTime, injIfoSNR[ifo], injF, \
+  # Reweighted SNR versus time
+  fig_tag = '%s_%s' % (tag, "reweighted_snr_vs_time") 
+  sbv_plot_handler(trigData.Time, trigData.ReweightedSNR, injData.Time, \
+              injData.ReweightedSNR, injF, "Time since %s" % (grbTime), \
+              "Reweighted SNR", outdir, fig_tag, xlims=[start,end], \
+              use_logs=False, verbose=verbose)
+  # Single IFO SNR versus time
+  for ifo in ifos:
+    fig_tag = '%s_%s_%s' % (tag, ifo, "triggers_vs_time") 
+    sbv_plot_handler(trigData.Time, trigData.IfoSNR[ifo], injData.Time, injData.IfoSNR[ifo], injF, \
                 "Time since %s" % (grbTime), "%s SNR" % (ifo), outdir, fig_tag,
                 xlims=[start,end], use_logs=False, verbose=verbose)
+
 
 # Coherent SNR versus null stat plots: non-zoomed and zoomed 
 null_stat_colors = ['k-', 'g-', 'm-']
@@ -656,7 +517,7 @@ xlims_list = [None, [6,30]]
 ylims_list = [None, [0,30]]
 for fig_tag, null_stat_conts, xlims, ylims in \
              zip(fig_tag_list, null_stat_conts_list, xlims_list, ylims_list):
-  sbv_plot_handler(trigSNR, trigNullstat, injSNR, injNullstat, injFile, \
+  sbv_plot_handler(trigData.SNR, trigData.Nullstat, injData.SNR, injData.Nullstat, injFile, \
                    "Coherent SNR", "Null statistic", outdir, fig_tag, \
                    snr_vals=snr_vals, conts=null_stat_conts, \
                    colors=null_stat_colors, xlims=xlims, ylims=ylims, \
@@ -676,7 +537,7 @@ xlims_list = [None, [6,30]]
 ylims_list = [None, [0,30]]
 for fig_tag, null_stat_conts, xlims, ylims in \
              zip(fig_tag_list, null_stat_conts_list, xlims_list, ylims_list):
-  sbv_plot_handler(trigSNR, trigNullSNR, injSNR, injNullSNR, injFile, \
+  sbv_plot_handler(trigData.SNR, trigData.NullSNR, injData.SNR, injData.NullSNR, injFile, \
                    "Coherent SNR", "Overwhitened null statistic", outdir, fig_tag, \
                    snr_vals=snr_vals, conts=null_stat_conts, \
                    shade_cont_value=0, colors=null_stat_colors, \
@@ -689,38 +550,33 @@ xlims_list = [None, [6,30]]
 ylims_list = [None, [4,30]]
 for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
-  sbv_plot_handler(trigSNR, trigCoincSNR, injSNR, injCoincSNR, injFile, \
+  sbv_plot_handler(trigData.SNR, trigData.CoincSNR, injData.SNR, injData.CoincSNR, injFile, \
                    "Coherent SNR", "Coincidence SNR", outdir, fig_tag, \
                    snr_vals=[4,30], conts=[[4,30]], colors=['g-'], \
                    xlims=xlims, ylims=ylims, use_logs=False, verbose=verbose)
 
 
-# Coherent SNR versus traceSNR: non-zoomed and zoomed
-maxSNR = trigSNR.max()
-if injFile and injSNR.size and injSNR.max() > maxSNR:
-  maxSNR = injSNR.max()
-zoomSNR = numpy.arange(0.01,maxSNR,0.01)
-
+# Coherent SNR versus trace SNR: non-zoomed and zoomed
 fig_tag_list = generate_raw_zoom_tags(tag, "trace_snr_vs_snr")
 xlims_list = [None, [6,30]]
 ylims_list = [None, [4,30]]
-for fig_tag, xlims, ylims in \
-             zip(fig_tag_list, xlims_list, ylims_list):
-  sbv_plot_handler(trigSNR, trigTraceSNR, injSNR, injTraceSNR, injFile, \
+for fig_tag, xlims, ylims in zip(fig_tag_list, xlims_list, ylims_list):
+  sbv_plot_handler(trigData.SNR, trigData.TraceSNR, injData.SNR, injData.TraceSNR, injFile, \
                    "Coherent SNR", "Trace SNR", outdir, fig_tag, \
                    snr_vals=[6,30], conts=[[6,27.5]], colors=['g-'], \
                    xlims=xlims, ylims=ylims, use_logs=False, verbose=verbose)
 
-# Plot coincident SNR versus trace SNR
+
+# Plot coincident SNR versus trace SNR: non-zoomed and zoomed
 fig_tag_list = generate_raw_zoom_tags(tag, "trace_snr_vs_coinc_snr")
 xlims_list = [None, [0,30]]
 ylims_list = [None, [0,30]]
-for fig_tag, xlims, ylims in \
-             zip(fig_tag_list, xlims_list, ylims_list):
-  sbv_plot_handler(trigCoincSNR, trigTraceSNR, injCoincSNR, injTraceSNR, injFile, \
+for fig_tag, xlims, ylims in zip(fig_tag_list, xlims_list, ylims_list):
+  sbv_plot_handler(trigData.CoincSNR, trigData.TraceSNR, injData.CoincSNR, injData.TraceSNR, injFile, \
             "Coincidence SNR", "Trace SNR", outdir, fig_tag, \
             use_logs=False, xlims=xlims, ylims=ylims, verbose=verbose)
  
+
 # Plot coherent SNR versus bank veto
 fig_tag_list = generate_raw_zoom_tags(tag, "bank_veto_vs_snr")
 xlims_list = [[6,1000], [6,50]]
@@ -728,12 +584,13 @@ ylims_list = [None, [1,2000]]
 for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
   
-  sbv_plot_handler(trigSNR, trigBankVeto, injSNR, injBankVeto, injFile, \
+  sbv_plot_handler(trigData.SNR, trigData.BankVeto, injData.SNR, injData.BankVeto, injFile, \
             "Coherent SNR", "Bank Veto", outdir, fig_tag, \
             snr_vals=snr_vals, conts=bank_conts, \
             shade_cont_value=cont_value, colors=colors, vert_spike=True, \
             xlims=xlims, ylims=ylims, verbose=verbose)
  
+
 # Plot coherent SNR versus auto veto
 fig_tag_list = generate_raw_zoom_tags(tag, "auto_veto_vs_snr")
 xlims_list = [None, [6,30]]
@@ -741,27 +598,30 @@ ylims_list = [None, [10,20000]]
 for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
  
-  sbv_plot_handler(trigSNR, trigAutoVeto, injSNR, injAutoVeto, injFile, \
+  sbv_plot_handler(trigData.SNR, trigData.AutoVeto, injData.SNR, injData.AutoVeto, injFile, \
             "Coherent SNR", "Auto Veto", outdir, fig_tag, \
             snr_vals=snr_vals, conts=auto_conts, \
             shade_cont_value=cont_value,xlims=xlims, ylims=ylims, colors=colors, vert_spike=True, \
             verbose=verbose)
 
+
 # Plot coherent SNR versus chisq veto
-fig_tag_list = generate_raw_zoom_tags(tag, "chi_square_vs_snr")
+fig_tag_list = generate_raw_zoom_tags(tag, "chisq_vs_snr")
 xlims_list = [[6,1000], [0,50]]
 ylims_list = [[1,10000], [1,2000]]
 for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
  
-  sbv_plot_handler(trigSNR[trigBestNR!=0], trigChiSquare[trigBestNR!=0], \
-            injSNR[injBestNR!=0], injChiSquare[injBestNR!=0], injFile, \
+  sbv_plot_handler(trigData.SNR[trigData.ReweightedSNR!=0], \
+            trigData.ChiSquare[trigData.ReweightedSNR!=0], \
+            injData.SNR[injData.ReweightedSNR!=0],
+            injData.ChiSquare[injData.ReweightedSNR!=0], injFile, \
             "Coherent SNR", "Chi Square", outdir, fig_tag, \
             snr_vals=snr_vals, conts=chi_conts, vert_spike=True, \
             shade_cont_value=cont_value, colors=colors, \
             xlims=xlims, ylims=ylims, \
             verbose=verbose)
-          
+
 
 # Plot coherent SNR versus loudest single SNR
 fig_tag_list = generate_raw_zoom_tags(tag, "first_snr_vs_snr")
@@ -770,10 +630,11 @@ ylims_list = [None, [0,20]]
 for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
  
-  sbv_plot_handler(trigSNR, trigFirstSNR, injSNR, injFirstSNR, injFile, \
+  sbv_plot_handler(trigData.SNR, trigData.FirstSNR, injData.SNR, injData.FirstSNR, injFile, \
             "Coherent SNR", "First loudest sngl SNR", outdir, fig_tag, \
             snr_vals=[0,50], conts=[[4,4]], use_logs=False, \
             colors=['g-'],xlims=xlims, ylims=ylims, verbose=verbose)
+
 
 # Plot coherent SNR versus second loudest single SNR 
 if(len(ifos)>1): 
@@ -784,23 +645,25 @@ if(len(ifos)>1):
              zip(fig_tag_list, xlims_list, ylims_list):
  
 
-    sbv_plot_handler(trigSNR, trigSecondSNR, injSNR, injSecondSNR, injFile, \
+    sbv_plot_handler(trigData.SNR, trigData.SecondSNR, injData.SNR, injData.SecondSNR, injFile, \
               "Coherent SNR", "Second loudest sngl SNR", outdir, fig_tag, \
               snr_vals=[6, 10, 50], conts=[[2.5, 3.5, 13.5]], use_logs=False, \
               colors=['g-'],xlims=xlims, ylims=ylims, verbose=verbose)
 
+
 # Plot coherent SNR versus third loudest single SNR
 if len(ifos)>2: 
-
   fig_tag_list = generate_raw_zoom_tags(tag, "third_snr_vs_snr")
   xlims_list = [None, [6,50]]
   ylims_list = [None, [0,20]]
   for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
  
-    sbv_plot_handler(trigSNR, trigThirdSNR, injSNR, injThirdSNR, injFile, \
+    sbv_plot_handler(trigData.SNR, trigData.ThirdSNR, injData.SNR, injData.ThirdSNR, injFile, \
               "Coherent SNR", "Third loudest sngl SNR", outdir, fig_tag, \
               snr_vals=[0, 50], conts=[[4, 4]], use_logs=False, \
+              colors=['g-'],xlims=xlims, ylims=ylims, verbose=verbose)
+
 
 # TODO: plot SNR versus IFO SNR
 sens1 = None
@@ -809,42 +672,46 @@ for ifo in ifos:
   if not sens1:
     sens1 = ifo
   elif not sens2:
-    senstvty = fResp[ifo]*trigSigmaMean[ifo]
-    if (fResp[ifo]*trigSigmaMean[ifo] > fResp[sens1]*trigSigmaMean[sens1]):
+    senstvty = trigData.fResp[ifo]*trigData.SigmaMean[ifo]
+    if (trigData.fResp[ifo]*trigData.SigmaMean[ifo] > trigData.fResp[sens1]*trigData.SigmaMean[sens1]):
       sens2 = sens1
->>>>>>> refactored some plots and fixed typos
       sens1 = ifo
     else:
       sens2 = ifo
   else:
-    if (fResp[ifo]*trigSigmaMean[ifo] > fResp[sens1]*trigSigmaMean[sens1]):
+    if (trigData.fResp[ifo]*trigData.SigmaMean[ifo] > trigData.fResp[sens1]*trigData.SigmaMean[sens1]):
       sens2 = sens1
       sens1 = ifo
-    elif (fResp[ifo]*trigSigmaMean[ifo] > fResp[sens2]*trigSigmaMean[sens2]):
+    elif (trigData.fResp[ifo]*trigData.SigmaMean[ifo] > trigData.fResp[sens2]*trigData.SigmaMean[sens2]):
       sens2 = ifo
+
+maxSNR = trigData.SNR.max()
+if injFile and injData.SNR.size and injData.SNR.max() > maxSNR:
+  maxSNR = injData.SNR.max()
+zoomSNR = numpy.arange(0.01,maxSNR,0.01)
 
 for ifo in ifos:
 
   fig = plt.figure()
   ax  = fig.gca()
-  ax.plot(trigSNR, trigIfoSNR[ifo], 'bx')
+  ax.plot(trigData.SNR, trigData.IfoSNR[ifo], 'bx')
   ax.grid()
   if injFile:
-    ax.plot(injSNR, injIfoSNR[ifo], 'r+')
-  ax.plot(zoomSNR, ((fResp[ifo]*trigSigmaMean[ifo])**0.5) * zoomSNR, 'g-')
-  ax.plot(zoomSNR, ((fResp[ifo]*trigSigmaMin[ifo])**0.5) * zoomSNR, 'g-')
-  ax.plot(zoomSNR, ((fResp[ifo]*trigSigmaMax[ifo])**0.5) * zoomSNR, 'g-')
+    ax.plot(injData.SNR, injData.IfoSNR[ifo], 'r+')
+  ax.plot(zoomSNR, ((trigData.fResp[ifo]*trigData.SigmaMean[ifo])**0.5) * zoomSNR, 'g-')
+  ax.plot(zoomSNR, ((trigData.fResp[ifo]*trigData.SigmaMin[ifo])**0.5) * zoomSNR, 'g-')
+  ax.plot(zoomSNR, ((trigData.fResp[ifo]*trigData.SigmaMax[ifo])**0.5) * zoomSNR, 'g-')
   ax.plot(zoomSNR, scipy.stats.ncx2.ppf(0.0455/2., 2,\
-                                          (fResp[ifo]*trigSigmaMin[ifo])*\
+                                          (trigData.fResp[ifo]*trigData.SigmaMin[ifo])*\
                                            zoomSNR**2)**0.5, 'm-')
   ax.plot(zoomSNR, scipy.stats.ncx2.ppf(1-0.0455/2., 2,\
-                                          (fResp[ifo]*trigSigmaMax[ifo])*\
+                                          (trigData.fResp[ifo]*trigData.SigmaMax[ifo])*\
                                            zoomSNR**2)**0.5, 'm-')
   ax.plot(zoomSNR, scipy.stats.ncx2.ppf(0.00135/2., 2,\
-                                          (fResp[ifo]*trigSigmaMin[ifo])*\
+                                          (trigData.fResp[ifo]*trigData.SigmaMin[ifo])*\
                                            zoomSNR**2)**0.5, 'c-')
   ax.plot(zoomSNR, scipy.stats.ncx2.ppf(1-0.00135/2., 2,\
-                                          (fResp[ifo]*trigSigmaMax[ifo])*\
+                                          (trigData.fResp[ifo]*trigData.SigmaMax[ifo])*\
                                            zoomSNR**2)**0.5, 'c-')
   ax.plot([0,50], [4,4], 'k-')
   if (ifo == sens1) or (ifo == sens2):
@@ -870,59 +737,60 @@ for ifo in ifos:
 
 # Plot single detector chi-square plots: non-zoomed and zoomed 
 for ifo in ifos:
-  if sngl_bank_chisq:
-   
-    fig_tag_list = generate_raw_zoom_tags(tag, "bankchisq")
-    xlims_list = [[4,1000], [4,50]]
-    ylims_list = [None, [1,2000]]
-    for fig_tag, xlims, ylims in \
-             zip(fig_tag_list, xlims_list, ylims_list):
- 
-      sbv_plot_handler(trigSNR, trigIfobankCS[ifo], injSNR, injIfobankCS[ifo], injFile, \
-                "Coherent SNR", "%s sngl bank veto" % ifo, outdir, fig_tag, \
-                xlims=xlims, ylims=ylims, verbose=verbose)
-    
+  # Bank chi-square
+  if trigData.sngl_bank_chisq:
     fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_" + ifo + "_bankchisq")
     xlims_list = [[4,1000], [4,50]]
     ylims_list = [None, [1,2000]]
     for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
-  
-      sbv_plot_handler(trigIfoSNR[ifo], trigIfobankCS[ifo], \
-                injIfoSNR[ifo], injIfobankCS[ifo], injFile, \
+ 
+      sbv_plot_handler(trigData.SNR, trigData.IfobankCS[ifo], injData.SNR, injData.IfobankCS[ifo], injFile, \
                 "Coherent SNR", "%s sngl bank veto" % ifo, outdir, fig_tag, \
                 xlims=xlims, ylims=ylims, verbose=verbose)
     
-    fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs__autochisq")
+    fig_tag_list = generate_raw_zoom_tags(tag, ifo + "_snr_vs_" + ifo + "_bankchisq")
     xlims_list = [[4,1000], [4,50]]
     ylims_list = [None, [1,2000]]
     for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
   
-      sbv_plot_handler(trigSNR, trigIfoautoCS[ifo], injSNR, injIfoautoCS[ifo], injFile, \
-                "Coherent SNR", "%s sngl auto veto" % ifo, outdir, fig_tag, \
+      sbv_plot_handler(trigData.IfoSNR[ifo], trigData.IfobankCS[ifo], \
+                injData.IfoSNR[ifo], injData.IfobankCS[ifo], injFile, \
+                "%s SNR" % ifo, "%s sngl bank veto" % ifo, outdir, fig_tag, \
                 xlims=xlims, ylims=ylims, verbose=verbose)
-    
+  # Auto chi-square
+  if trigData.sngl_cont_chisq:
     fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_" + ifo + "_autochisq")
     xlims_list = [[4,1000], [4,50]]
     ylims_list = [None, [1,2000]]
     for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
   
-      sbv_plot_handler(trigIfoSNR[ifo], trigIfoautoCS[ifo], \
-                injIfoSNR[ifo], injIfoautoCS[ifo], injFile, \
+      sbv_plot_handler(trigData.SNR, trigData.IfoautoCS[ifo], injData.SNR, injData.IfoautoCS[ifo], injFile, \
                 "Coherent SNR", "%s sngl auto veto" % ifo, outdir, fig_tag, \
                 xlims=xlims, ylims=ylims, verbose=verbose)
-  if sngl_chisq:
+    
+    fig_tag_list = generate_raw_zoom_tags(tag, ifo + "_snr_vs_" + ifo + "_autochisq")
+    xlims_list = [[4,1000], [4,50]]
+    ylims_list = [None, [1,2000]]
+    for fig_tag, xlims, ylims in \
+             zip(fig_tag_list, xlims_list, ylims_list):
+  
+      sbv_plot_handler(trigData.IfoSNR[ifo], trigData.IfoautoCS[ifo], \
+                injData.IfoSNR[ifo], injData.IfoautoCS[ifo], injFile, \
+                "%s SNR" % ifo, "%s sngl auto veto" % ifo, outdir, fig_tag, \
+                xlims=xlims, ylims=ylims, verbose=verbose)
+  # Standard chi-square
+  if trigData.sngl_chisq:
     try:
-      
-      fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_chisq")
+      fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_" + ifo + "_chisq")
       xlims_list = [[4,1000], [4,50]]
       ylims_list = [None, [1,2000]]
       for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
   
-        sbv_plot_handler(trigSNR, trigIfostanCS[ifo], injSNR, injIfostanCS[ifo], injFile, \
+        sbv_plot_handler(trigData.SNR, trigData.IfostanCS[ifo], injData.SNR, injData.IfostanCS[ifo], injFile, \
                   "Coherent SNR", "%s sngl chi squared veto" % ifo, outdir, fig_tag, \
                   xlims=xlims, ylims=ylims, verbose=verbose)
 
@@ -930,15 +798,15 @@ for ifo in ifos:
       sys.stderr.write("WARNING: Sngl chisq versus snr "+\
                        "failed with zeros in a loglog plot\n")
     try:
-      fig_tag_list = generate_raw_zoom_tags(tag, "snr_vs_" + ifo + "chisq") #Why was it named the same as the one above? 
+      fig_tag_list = generate_raw_zoom_tags(tag, ifo + "_snr_vs_" + ifo + "_chisq")
       xlims_list = [[4,1000], [4,50]]
       ylims_list = [None, [1,2000]]
       for fig_tag, xlims, ylims in \
              zip(fig_tag_list, xlims_list, ylims_list):
   
-        sbv_plot_handler(trigIfoSNR[ifo], trigIfostanCS[ifo], \
-                  injIfoSNR[ifo], injIfostanCS[ifo], injFile, \
-                  "Coherent SNR", "%s sngl chi squared veto" % ifo, outdir, fig_tag, \
+        sbv_plot_handler(trigData.IfoSNR[ifo], trigData.IfostanCS[ifo], \
+                  injData.IfoSNR[ifo], injData.IfostanCS[ifo], injFile, \
+                  "%s SNR" % ifo, "%s sngl chi squared veto" % ifo, outdir, fig_tag, \
                   xlims=xlims, ylims=ylims, verbose=verbose)
       
     except OverflowError:
@@ -952,20 +820,21 @@ xlims_list = [None, [6,20]]
 ylims_list = [None, [-5,10]]
 inj_y=None
 if injFile:
-  inj_y = injSNR - injTraceSNR
+  inj_y = injData.SNR - injData.TraceSNR
 
 for fig_tag, xlims, ylims in \
          zip(fig_tag_list, xlims_list, ylims_list):
   
-  sbv_plot_handler(trigSNR, trigSNR - trigTraceSNR, injSNR, inj_y, injFile, "Coherent SNR", "SNR - Trace SNR", \
+  sbv_plot_handler(trigData.SNR, trigData.SNR - trigData.TraceSNR, injData.SNR, inj_y, injFile, "Coherent SNR", "SNR - Trace SNR", \
             outdir, fig_tag, use_logs=False,xlims=xlims, ylims=ylims, verbose=verbose)
   
 
 # Plot time versus null stat
 fig_tag = '%s_%s' % (tag, "null_snr_vs_time")
-sbv_plot_handler(trigTime, trigNullstat, injTime, injNullstat , injFile, \
+sbv_plot_handler(trigData.Time, trigData.Nullstat, injData.Time, injData.Nullstat , injFile, \
             "Time since %s" % (grbTime), "Null SNR", outdir, fig_tag, \
             xlims=[start,end], use_logs=False, verbose=verbose)
+
 
 # Plot SNR versus rel amp 1
 try:
@@ -976,12 +845,13 @@ try:
          zip(fig_tag_list, xlims_list, ylims_list):
   
 
-    sbv_plot_handler(trigSNR, trigRelAmp1, injSNR, injRelAmp1, injFile, "Coherent SNR", "Relative amplitude 1", \
+    sbv_plot_handler(trigData.SNR, trigData.RelAmp1, injData.SNR, injData.RelAmp1, injFile, "Coherent SNR", "Relative amplitude 1", \
               outdir, fig_tag,xlims=xlims, ylims=ylims,  verbose=verbose)  
 
 except (OverflowError,ValueError):
   sys.stderr.write("WARNING: Relative amplitude 1 versus coherent SNR "+\
                    "failed.\n")
+
 
 # Plot SNR versus rel amp 2 TODO: empty!
 try:
@@ -991,40 +861,37 @@ try:
   for fig_tag, xlims, ylims in \
          zip(fig_tag_list, xlims_list, ylims_list):
   
-    sbv_plot_handler(trigSNR, trigRelAmp2, injSNR, injRelAmp2, injFile, "Coherent SNR", "Relative amplitude 2", \
+    sbv_plot_handler(trigData.SNR, trigData.RelAmp2, injData.SNR, injData.RelAmp2, injFile, "Coherent SNR", "Relative amplitude 2", \
                outdir, fig_tag,xlims=xlims, ylims=ylims,  verbose=verbose)
 except (OverflowError,ValueError):
   sys.stderr.write("WARNING: Relative amplitude 2 versus coherent SNR "+\
                    "failed with zeros in a loglog plot\n")
 
+
 # Plot SNR versus norm 3: TODO empty
 try:
   fig_tag_list = generate_raw_zoom_tags(tag, "norm3_vs_snr")
   xlims_list = [None, [6,30]]
-  ylims_list = [None, None]
-  for fig_tag, xlims, ylims in \
-         zip(fig_tag_list, xlims_list, ylims_list):
-   
-    sbv_plot_handler(trigSNR, trigNorm3, injSNR, injNorm3, injFile, "Coherent SNR", "Amplitude factor", \
-              outdir, fig_tag,xlims=xlims, ylims=ylims, verbose=True)
+  for fig_tag, xlims in zip(fig_tag_list, xlims_list):
+    sbv_plot_handler(trigData.SNR, trigData.Norm3, injData.SNR, injData.Norm3, injFile, "Coherent SNR", "Amplitude factor", \
+              outdir, fig_tag,xlims=xlims, verbose=True)
 except (OverflowError,ValueError):
   sys.stderr.write("WARNING: Amplitude factor versus coherent SNR "+\
                    "failed with zeros in a loglog plot\n")
+
 
 # Plot SNR versus inclination: TODO: empty
 try:
   fig_tag_list = generate_raw_zoom_tags(tag, "inclination_vs_snr")
   xlims_list = [None, [6,30]]
-  ylims_list = [None, None]
-  for fig_tag, xlims, ylims in \
-         zip(fig_tag_list, xlims_list, ylims_list):
-   
-    sbv_plot_handler(trigSNR, trigInclination, injSNR, injInclination, injFile, "Coherent SNR", "|cos inclination|", \
-              outdir, fig_tag,xlims=xlims, ylims=ylims, verbose=verbose)
+  for fig_tag, xlims in zip(fig_tag_list, xlims_list):
+    sbv_plot_handler(trigData.SNR, trigData.Inclination, injData.SNR, injData.Inclination, injFile, "Coherent SNR", "|cos inclination|", \
+              outdir, fig_tag, xlims=xlims, verbose=verbose)
 
 except (OverflowError,ValueError):
   sys.stderr.write("WARNING: cos(inclination) versus coherent SNR "+\
                    "failed with zeros in a loglog plot\n")
+
 
 # TODO: plot sky grid
 fig = plt.figure()
@@ -1032,10 +899,11 @@ ax  = fig.gca()
 ax.set_title("coh\_PTF %s Sky Grid" % tag, fontsize=18)
 ax.set_xlabel("Longitude (Degrees)", fontsize=16)
 ax.set_ylabel("Latitude (Degrees)", fontsize=16)
-ax.plot(trigLongitude, trigLatitude, 'ko', markerfacecolor='blue')
+ax.plot(trigData.Longitude, trigData.Latitude, 'ko', markerfacecolor='blue')
 fig.savefig("%s/%s_sky_grid.png" % (outdir, tag))
 plt.close()
-#sbv_plot_handler(trigSNR, trigInclination, injSNR, injInclination, injFile, "Longitude (Degrees)", "Latitude (Degrees)", \
+#sbv_plot_handler(trigData.SNR, trigData.Inclination, injData.SNR, injData.Inclination, injFile, "Longitude (Degrees)", "Latitude (Degrees)", \
 #            outdir, fig_tag, verbose=True)
+
 
 if verbose: sys.stdout.write("Done at %d.\n" % (elapsed_time()))
