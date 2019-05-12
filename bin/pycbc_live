@@ -236,16 +236,23 @@ class LiveEventManager(object):
                     * bank.sample_rate)
                 flen = int(tlen / 2 + 1)
                 delta_f = bank.sample_rate / float(tlen)
+                cmd = 'timeout 150 pycbc_optimize_snr '
+                data_fils_str = '--data-files '
+                psd_fils_str = '--psd-files '
                 for ifo in ifos:
                     curr_fname = \
                         fname.replace('.xml.gz',
                                       '_{}_data_overwhitened.hdf'.format(ifo))
                     curr_data = data_readers[ifo].overwhitened_data(delta_f)
                     curr_data.save(curr_fname)
+                    data_fils_str += '{}:{} ' .format(ifo, curr_fname)
                     curr_fname = fname.replace('.xml.gz', 
                                                '_{}_psd.hdf'.format(ifo))
                     curr_psd = curr_data.psd
                     curr_psd.save(curr_fname)
+                    psd_fils_str += '{}:{} ' .format(ifo, curr_fname)
+                cmd += data_fils_str
+                cmd += psd_fils_str
 
                 curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
                 hdfp = h5py.File(curr_fname, 'w')
@@ -266,6 +273,12 @@ class LiveEventManager(object):
                 hdfp['spin1z'] = bank.table[template_id].spin1z
                 hdfp['spin2z'] = bank.table[template_id].spin2z
                 hdfp['ifar'] = ifar
+
+                cmd += '--params_file {} '.format(curr_fname)
+                cmd += '--approximant IMRPhenomD '
+                print cmd
+                DETACHED_PROCESS = 0x00000008
+                subprocess.Popen([cmd], creationflags=DETACHED_PROCESS)
 
 
     def check_singles(self, results, data_reader, psds, f_low):
