@@ -15,6 +15,7 @@ from time import time
 import os.path
 import itertools
 import platform
+import subprocess
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
