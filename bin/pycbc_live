@@ -237,7 +237,7 @@ class LiveEventManager(object):
                     * bank.sample_rate)
                 flen = int(tlen / 2 + 1)
                 delta_f = bank.sample_rate / float(tlen)
-                cmd = 'timeout 150 `which pycbc_optimize_snr` '
+                cmd = 'timeout 150 /virtualenvs/pycbc_multiifo_online/bin/pycbc_optimize_snr '
                 data_fils_str = '--data-files '
                 psd_fils_str = '--psd-files '
                 for ifo in ifos:
