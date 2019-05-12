@@ -4,6 +4,7 @@ import argparse, numpy, h5py
 from time import time
 import types
 import logging
+import tempfile
 import pycbc
 from pycbc import version, waveform
 from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
@@ -88,7 +89,7 @@ parser.add_argument("--psd-files", type=str, nargs='+',
                          "by PyCBC Live.")
 parser.add_argument("--approximant", required=True,
                     help="Waveform approximant string.")
-parser.add_argument("--snr-threshold", default=5.0,
+parser.add_argument("--snr-threshold", default=4.0,
                     help="If the SNR in ifo X is below this threshold do not "
                          "consider it part of the coincidence.")
 
@@ -250,7 +251,8 @@ doc = live.SingleCoincForGraceDB(coinc_ifos, coinc_results,
                                  followup_ifos=fup_ifos, **kwargs)
 gracedb_server = 'https://gracedb-playground.ligo.org/api/'
 test_event = True
-gid = doc.upload(str(loudest_snr_times[ifos[0]])+'.xml',
+tmpdir = tempfile.mkdtemp()
+gid = doc.upload(tmpdir + '/' + str(loudest_snr_times[ifos[0]])+'.xml',
                  gracedb_server=gracedb_server,
                  testing=test_event,
                  extra_strings=comments)
