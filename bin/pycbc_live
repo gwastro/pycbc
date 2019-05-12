@@ -277,7 +277,8 @@ class LiveEventManager(object):
 
                 cmd += '--params_file {} '.format(curr_fname)
                 cmd += '--approximant IMRPhenomD '
-                print cmd
+                cmd += '--verbose '
+                logging.info('Running {}.'.format(cmd))
                 subprocess.Popen([cmd])
 
 
