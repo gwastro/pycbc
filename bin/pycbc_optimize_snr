@@ -3,6 +3,7 @@
 import argparse, numpy, h5py
 from time import time
 import types
+import pycbc
 from pycbc import version, waveform
 from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
 from pycbc.filter import matched_filter_core
@@ -91,6 +92,9 @@ parser.add_argument("--snr-threshold", default=5.0,
                          "consider it part of the coincidence.")
 
 args = parser.parse_args()
+pycbc.init_logging(args.verbose, format=log_format)
+
+logging.info('Starting optimize SNR')
 
 data = {}
 for ifo in args.data_files.keys():
@@ -131,16 +135,16 @@ maxchirp = 80 if maxchirp > 80 else maxchirp
 
 bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
 
-# UNCOMMENT FOR TESTING SPEED OF OPTIMIZATION
-#import time as ctime
-#t1 = ctime.time()
+logging.info('Starting optimization')
 
 results = differential_evolution(compute_network_snr, bounds,
                                  maxiter=100, workers=-1,
                                  popsize=200, mutation=(0.5,1),
                                  recombination=0.7,
                                  args=extra_args)
-#t2 = ctime.time()
+
+logging.info('Optimization complete')
+
 mtotal = mtotal_from_mchirp_eta(results.x[0], results.x[1])
 mass1 = mass1_from_mtotal_eta(mtotal, results.x[1])
 mass2 = mass2_from_mtotal_eta(mtotal, results.x[1])
@@ -249,3 +253,5 @@ gid = doc.upload(str(loudest_snr_times[ifos[0]])+'.xml',
                  gracedb_server=gracedb_server,
                  testing=test_event,
                  extra_strings=comments)
+
+logging.info('Event uploaded as {}.'.format(gid))
