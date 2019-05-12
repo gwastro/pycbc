@@ -279,7 +279,7 @@ class LiveEventManager(object):
                 cmd += '--approximant IMRPhenomD '
                 cmd += '--verbose '
                 logging.info('Running {}.'.format(cmd))
-                subprocess.Popen([cmd])
+                subprocess.Popen(cmd, shell=True)
 
 
     def check_singles(self, results, data_reader, psds, f_low):
