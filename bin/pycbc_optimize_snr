@@ -92,7 +92,7 @@ parser.add_argument("--snr-threshold", default=5.0,
                          "consider it part of the coincidence.")
 
 args = parser.parse_args()
-pycbc.init_logging(args.verbose, format=log_format)
+pycbc.init_logging(args.verbose)
 
 logging.info('Starting optimize SNR')
 
