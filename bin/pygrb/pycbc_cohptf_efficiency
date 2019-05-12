@@ -38,11 +38,14 @@ import os,sys,matplotlib,numpy as np,re,copy,optparse
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import rc,cm,colors
-from pylal import SimInspiralUtils,MultiInspiralUtils,plotutils,git_version
+import glob
 from glue import segments,markup
-from pylal.dq import dqSegmentUtils,dqHTMLUtils
 from glue.ligolw import table,lsctables,utils,ligolw
-from pylal.coh_PTF_pyutils import *
+# TODO: remove these dependencies
+from pylal import SimInspiralUtils,MultiInspiralUtils,plotutils,git_version
+from pylal.dq import dqSegmentUtils,dqHTMLUtils
+from pylal.coh_PTF_pyutils import get_bestnr, readSegFiles, get_f_resp, sim_inspiral_get_theta # makePaperPlots
+#
 import scipy
 from scipy import stats
 
