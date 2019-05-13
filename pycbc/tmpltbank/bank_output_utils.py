@@ -203,7 +203,7 @@ def calculate_ethinca_metric_comps(metricParams, ethincaParams, mass1, mass2,
     # frequency for which moments were calculated
     fMax_theor = pnutils.frequency_cutoff_from_name(
         ethincaParams.cutoff, mass1, mass2, spin1z, spin2z)
-    fMaxes = metricParams.moments['J4'].keys()
+    fMaxes = list(metricParams.moments['J4'].keys())
     fMaxIdx = abs(numpy.array(fMaxes,dtype=float) - fMax_theor).argmin()
     fMax = fMaxes[fMaxIdx]
 
