@@ -25,8 +25,8 @@
 This modules provides classes for generating waveforms.
 """
 
-import waveform
-import ringdown
+from . import waveform
+from . import ringdown
 from pycbc import filter
 from pycbc import transforms
 from pycbc.types import TimeSeries
