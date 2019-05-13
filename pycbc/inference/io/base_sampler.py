@@ -19,17 +19,18 @@ from __future__ import absolute_import
 
 from abc import (ABCMeta, abstractmethod)
 
+from six import add_metaclass
+
 from .base_hdf import BaseInferenceFile
 
 
+@add_metaclass(ABCMeta)
 class BaseSamplerFile(BaseInferenceFile):
     """Base HDF class for all samplers.
 
     This adds abstract methods ``write_resume_point`` and
     ``write_sampler_metadata`` to :py:class:`BaseInferenceFile`.
     """
-    __metaclass__ = ABCMeta
-
     @abstractmethod
     def write_resume_point(self):
         """Should write the point that a sampler starts up.

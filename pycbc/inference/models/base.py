@@ -29,7 +29,7 @@ import numpy
 import logging
 from abc import (ABCMeta, abstractmethod)
 from six.moves.configparser import NoSectionError
-from six import string_types
+from six import (add_metaclass, string_types)
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 
@@ -284,6 +284,7 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
+@add_metaclass(ABCMeta)
 class BaseModel(object):
     r"""Base class for all models.
 
@@ -357,7 +358,6 @@ class BaseModel(object):
     logplr :
         A function that returns the log of the prior-weighted likelihood ratio.
     """
-    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,

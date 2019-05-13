@@ -30,9 +30,11 @@ from __future__ import absolute_import
 from abc import ABCMeta, abstractmethod, abstractproperty
 import os
 import shutil
-from pycbc import distributions
 import logging
 
+from six import add_metaclass
+
+from pycbc import distributions
 from pycbc.inference.io import validate_checkpoint_files
 
 #
@@ -44,6 +46,7 @@ from pycbc.inference.io import validate_checkpoint_files
 #
 
 
+@add_metaclass(ABCMeta)
 class BaseSampler(object):
     """Abstract base class for all inference samplers.
 
@@ -55,7 +58,6 @@ class BaseSampler(object):
     model : Model
         An instance of a model from ``pycbc.inference.models``.
     """
-    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, model):
