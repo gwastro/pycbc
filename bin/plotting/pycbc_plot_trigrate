@@ -251,7 +251,7 @@ for i, lower, upper in zip(binind, pbins.lower(), pbins.upper()):
     bintemplates[i] = len(set(tid_inbin))
     times_inbin = plottime[pind == i]
     bincounts[i] = len(times_inbin)
-    print bincounts[i]
+    print(bincounts[i])
     if len(times_inbin) == 0:
         logging.info("No trigs in bin %f-%f", (lower, upper))
         continue
@@ -264,7 +264,7 @@ for i, lower, upper in zip(binind, pbins.lower(), pbins.upper()):
     else:
         yplot = kd(xplot) * bincounts[i] / bintemplates[i]
     minrate = min(minrate, yplot.max()/5e2)
-    print minrate
+    print(minrate)
     maxrate = max(maxrate, yplot.max())
     binlabel = r"%.3g - %.3g" % (lower, upper)
     plt.plot(xplot, yplot, '-', c=bincolors[i], label=binlabel)
