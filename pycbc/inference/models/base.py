@@ -59,7 +59,7 @@ class ModelStats(object):
     @property
     def statnames(self):
         """Returns the names of the stats that have been stored."""
-        return self.__dict__.keys()
+        return list(self.__dict__.keys())
 
     def getstats(self, names, default=numpy.nan):
         """Get the requested stats as a tuple.
