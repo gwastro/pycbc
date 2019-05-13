@@ -16,6 +16,8 @@
 
 """Calculate the fitting factors of simulated signals with a template bank."""
 
+from __future__ import print_function
+
 import sys
 import logging
 from numpy import complex64, float32, array
