@@ -28,7 +28,7 @@
 import numpy
 import logging
 from abc import (ABCMeta, abstractmethod)
-from ConfigParser import NoSectionError
+from six.moves.configparser import NoSectionError
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 

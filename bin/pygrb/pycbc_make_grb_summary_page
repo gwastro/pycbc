@@ -22,7 +22,7 @@
 
 from __future__ import division
 
-import os,sys,datetime,re,glob,shutil,ConfigParser
+import os,sys,datetime,re,glob,shutil
 from argparse import ArgumentParser
 import random
 import string
