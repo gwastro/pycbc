@@ -3,10 +3,14 @@
 import os
 import pwd
 import logging
-import urllib2
 import json
 import argparse
 import shutil
+try:
+    from urllib.request import urlopen
+except ImportError:   # python < 3
+    from urllib2 import urlopen
+
 import ligo.segments
 from glue import git_version
 from glue.ligolw import ligolw
@@ -46,7 +50,7 @@ def query_losc(ifo, segment_name, gps_start_time, duration):
         The segments returned by LOSC
     """
 
-    response = urllib2.urlopen(
+    response = urlopen(
         'https://www.gw-openscience.org/timeline/segments/json/O1/{}_{}/{}/{}/'.format(
         ifo, segment_name, gps_start_time, duration))
 
