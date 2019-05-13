@@ -144,7 +144,7 @@ class BaseDataModel(BaseModel):
     @property
     def detectors(self):
         """Returns the detectors used."""
-        return self._data.keys()
+        return list(self._data.keys())
 
     def write_metadata(self, fp):
         """Adds data to the metadata that's written.
