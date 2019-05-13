@@ -275,7 +275,8 @@ for num_event in range(num_events):
     node.add_opt("--instruments", " ".join(workflow.ifos))
     node.add_opt("--gps-start-time", gps_start_time)
     node.add_opt("--gps-end-time", gps_end_time)
-    node.add_multiifo_input_list_opt("--frame-files", frame_files)
+    if len(frame_files):
+        node.add_multiifo_input_list_opt("--frame-files", frame_files)
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
