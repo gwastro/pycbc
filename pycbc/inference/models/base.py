@@ -29,6 +29,7 @@ import numpy
 import logging
 from abc import (ABCMeta, abstractmethod)
 from six.moves.configparser import NoSectionError
+from six import string_types
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 
@@ -362,7 +363,7 @@ class BaseModel(object):
     def __init__(self, variable_params, static_params=None, prior=None,
                  sampling_transforms=None, waveform_transforms=None):
         # store variable and static args
-        if isinstance(variable_params, basestring):
+        if isinstance(variable_params, string_types):
             variable_params = (variable_params,)
         if not isinstance(variable_params, tuple):
             variable_params = tuple(variable_params)

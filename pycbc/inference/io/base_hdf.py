@@ -30,6 +30,7 @@ from __future__ import absolute_import
 import sys
 import logging
 from abc import (ABCMeta, abstractmethod)
+from six import string_types
 import numpy
 
 import h5py
@@ -640,7 +641,7 @@ class BaseInferenceFile(h5py.File):
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
-        if isinstance(ignore, (str, unicode)):
+        if isinstance(ignore, string_types):
             ignore = [ignore]
         ignore = set(ignore + [self.samples_group])
         copy_groups = set(self.keys()) - ignore
@@ -726,7 +727,7 @@ class BaseInferenceFile(h5py.File):
         # info
         if ignore is None:
             ignore = []
-        if isinstance(ignore, (str, unicode)):
+        if isinstance(ignore, string_types):
             ignore = [ignore]
         self.copy_info(other, ignore=ignore)
         # samples

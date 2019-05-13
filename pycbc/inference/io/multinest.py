@@ -19,6 +19,8 @@
 
 from __future__ import absolute_import
 
+from six import string_types
+
 from .base_sampler import BaseSamplerFile
 
 
@@ -90,7 +92,7 @@ class MultinestFile(BaseSamplerFile):
             self.attrs['importance_dlog_evidence'] = importance_dlnz
 
     def read_raw_samples(self, fields, iteration=None):
-        if isinstance(fields, (str, unicode)):
+        if isinstance(fields, string_types):
             fields = [fields]
         # load
         group = self.samples_group + '/{name}'

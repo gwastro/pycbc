@@ -35,6 +35,8 @@ from pycbc.filter import autocorrelation
 
 from pycbc.inference.io import validate_checkpoint_files
 
+from six import string_types
+
 #
 # =============================================================================
 #
@@ -800,7 +802,7 @@ class MCMCAutocorrSupport(object):
         with cls._io(filename, 'r') as fp:
             if parameters is None:
                 parameters = fp.variable_params
-            if isinstance(parameters, str) or isinstance(parameters, unicode):
+            if isinstance(parameters, string_types):
                 parameters = [parameters]
             for param in parameters:
                 if per_walker:

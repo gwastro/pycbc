@@ -20,6 +20,8 @@
 import logging
 import argparse
 
+from six import string_types
+
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
@@ -160,7 +162,7 @@ class ParseLabelArg(argparse.Action):
                                             **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        singlearg = isinstance(values, (str, unicode))
+        singlearg = isinstance(values, string_types)
         if singlearg:
             values = [values]
         params = []
