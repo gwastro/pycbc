@@ -335,9 +335,9 @@ def time_multi_coincidence(times, slide_step=0, slop=.003,
                 #  jobs. For these, arbitrarily keep the first trigger and
                 #  discard the second (and any subsequent ones).
                 where = right - left == rlmax
-                logging.warn('Triggers in %s are closer than coincidence window'
-                             ', 1 or more coincs will be discarded. This is a '
-                             'warning, not an error.' % ifo1)
+                logging.warning('Triggers in %s are closer than coincidence '
+                                'window, 1 or more coincs will be discarded. '
+                                'This is a warning, not an error.' % ifo1)
                 print([float(ti) for ti in
                        time1[left[where][0]:right[where][0]]])
             # identify indices of times in ifo1 that form coincs with ifo2
