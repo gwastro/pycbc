@@ -26,6 +26,8 @@
 
 from __future__ import (absolute_import, division)
 
+from six import string_types
+
 import numpy
 import argparse
 
@@ -386,7 +388,7 @@ class SingleTempMCMCIO(object):
         dict
             A dictionary of field name -> numpy array pairs.
         """
-        if isinstance(fields, (str, unicode)):
+        if isinstance(fields, string_types):
             fields = [fields]
         # walkers to load
         if walkers is not None:
