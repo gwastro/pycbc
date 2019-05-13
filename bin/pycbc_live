@@ -64,12 +64,12 @@ def random_string(stringLength=10):
 
 class LiveEventManager(object):
     def __init__(self, output_path,
-                       use_date_prefix=False,
-                       ifar_upload_threshold=None,
-                       pval_livetime=None,
-                       enable_gracedb_upload=False,
-                       gracedb_testing=True,
-                 ):
+                 use_date_prefix=False,
+                 ifar_upload_threshold=None,
+                 pval_livetime=None,
+                 enable_gracedb_upload=False,
+                 gracedb_testing=True,
+                 run_snr_optimization=False):
         self.path = output_path
 
         # Figure out what we are supposed to process within the pool of MPI processes
@@ -83,8 +83,7 @@ class LiveEventManager(object):
         self.gracedb_testing = gracedb_testing
         self.enable_gracedb_upload = enable_gracedb_upload
 
-        # FIXME: Make CLA
-        self.store_data_and_psds = True
+        self.run_snr_optimization = run_snr_optimization
 
     def commit_results(self, results):
         self.comm.gather(results, root=0)
@@ -238,7 +237,7 @@ class LiveEventManager(object):
                 gid = None
                 event.save(fname)
 
-            if self.store_data_and_psds:
+            if self.run_snr_optimization and gid is not None:
                 template_id = \
                     coinc_results['foreground/{}/template_id'.format(ifos[0])]
                 p = props(bank.table[template_id])
@@ -531,6 +530,11 @@ parser.add_argument('--size-override', type=int, metavar='N',
                          " Useful for debugging and running a portion of a bank")
 parser.add_argument('--fftw-planning-limit', type=float,
                     help="Time in seconds to allow for a plan to be created")
+parser.add_argument('--run-snr-optimization', action='store_true',
+                    default=False,
+                    help='Run spawned followup processes to maximize SNR for '
+                         'any trigger uploaded to GraceDB')
+                   
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
@@ -567,7 +571,7 @@ evnt = LiveEventManager(args.output_path,
                         pval_livetime=args.pvalue_combination_livetime,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
-                       )
+                        run_snr_optimization=args.run_snr_optimization)
 
 sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
