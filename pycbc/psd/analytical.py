@@ -18,6 +18,7 @@
 """
 
 import warnings
+import numbers
 from pycbc.types import FrequencySeries, zeros
 import lal
 import lalsimulation
@@ -97,9 +98,10 @@ def from_string(psd_name, length, delta_f, low_freq_cutoff):
         raise ValueError(psd_name + ' not found among analytical '
                          'PSD functions.')
 
-    if type(length) is not int:
+    # make sure length has the right type for CreateREAL8FrequencySeries
+    if not isinstance(length, numbers.Integral):
         warnings.warn('forcing length argument to int', RuntimeWarning)
-        length = int(length)
+    length = int(length)
 
     # if PSD model is in LALSimulation
     if psd_name in get_lalsim_psd_list():
