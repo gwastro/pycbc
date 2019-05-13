@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """ Calculate psd estimates for analysis segments
 """
-import logging, argparse, numpy, h5py, itertools, multiprocessing, time
-from six.moves import range
+import logging, argparse, numpy, h5py, multiprocessing, time
+from six.moves import (range, zip_longest)
 import pycbc, pycbc.psd, pycbc.strain, pycbc.events
 from pycbc.version import git_verbose_msg as version
 from pycbc.fft.fftw import set_measure_level
@@ -32,7 +32,7 @@ pycbc.strain.StrainSegments.verify_segment_options(args, parser)
         
 def grouper(n, iterable):
     args = [iter(iterable)] * n
-    return list([e for e in t if e != None] for t in itertools.izip_longest(*args))
+    return list([e for e in t if e != None] for t in zip_longest(*args))
 
 def get_psd(input_tuple):
     """ Get the PSDs for the given data chunck. This follows the same rules
