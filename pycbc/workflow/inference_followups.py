@@ -21,7 +21,6 @@ import logging, os.path
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from pycbc.workflow import WorkflowConfigParser
-from itertools import izip_longest
 from Pegasus import DAX3 as dax
 from pycbc.workflow import pegasus_workflow as wdax
 
