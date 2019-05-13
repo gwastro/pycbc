@@ -87,4 +87,4 @@ if args.output_file:
 
 if args.print_params:
     for key in data.keys():
-        print key.split('/')[1], str(data[key])
+        print(key.split('/')[1], str(data[key]))

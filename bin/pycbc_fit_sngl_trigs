@@ -165,7 +165,7 @@ elif "hdf" in opt.inputs[0]:
     # columns for reading triggers without template file info
     cols = ["snr", "chisq", "template_duration", "template_id", "end_time"]
 else:
-    print 'inputs:', opt.inputs
+    print('inputs:', opt.inputs)
     raise RuntimeError("I didn't recognize the file format for the inputs!")
 
 if opt.trig_filter and trigformat != "hdf":
@@ -312,7 +312,7 @@ for ifo in opt.ifos:
             vals_inbin = statv[pind == i]
             counts[ifo][th][i] = sum(vals_inbin >= th)
             if len(vals_inbin) == 0:
-                print "No trigs in bin", lower, upper
+                print("No trigs in bin", lower, upper)
                 continue
             # FIXME: Also allow to use dynamically determined threshold
             # calculated via Nth loudest trig

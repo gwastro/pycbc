@@ -38,9 +38,9 @@ niter = options.iterations
 
 
 if type(ctx) is CUDAScheme:
-    print "RUNNING ON ", ctx.device.name()
+    print("RUNNING ON ", ctx.device.name())
 else:
-    print "RUNNING ON CPU"
+    print("RUNNING ON CPU")
 
 
 with ctx:
@@ -57,7 +57,7 @@ def taylorf2():
 import timeit
 gt = timeit.Timer(taylorf2)
 t = (1000 * gt.timeit(number=1)/niter)
-print "Waveform Generation %.2f msec" % t, " %5.1f gen/min " % (1000 *60 /t)
+print("Waveform Generation %.2f msec" % t, " %5.1f gen/min " % (1000 *60 /t))
 
 if type(ctx) is CUDAScheme:
     def SPAtmplt():
@@ -70,6 +70,6 @@ if type(ctx) is CUDAScheme:
 
     gt = timeit.Timer(SPAtmplt)
     t = (1000 * gt.timeit(number=1)/niter)
-    print "SPAtmplt Generation %.2f msec" % t, " %5.1f gen/min " % (1000 *60 /t)
+    print("SPAtmplt Generation %.2f msec" % t, " %5.1f gen/min " % (1000 *60 /t))
 
 
