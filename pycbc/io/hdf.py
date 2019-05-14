@@ -394,6 +394,7 @@ class SingleDetTriggers(object):
             self.mask = premask
         else:
             self.mask = np.zeros(len(self.trigs['end_time']), dtype=bool)
+            self.mask[:] = True
 
         if veto_file:
             logging.info('Applying veto segments')
