@@ -807,9 +807,11 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                   existing_events_mask[ifo]]['event_id']
             self.event_index[ifo] = self.event_index[ifo] + num_events
 
+        # Add the network event ids for the events with this template.
         num_events = len(self.template_event_dict['network'])
         new_event_ids = numpy.arange(self.event_index['network'],
                                      self.event_index['network'] + num_events)
+        self.event_index['network'] = self.event_index['network'] + num_events
         self.template_event_dict['network']['event_id'] = new_event_ids
         # Move template events for each ifo to the events list
         for ifo in self.ifos:
