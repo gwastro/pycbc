@@ -767,7 +767,7 @@ class BaseInferenceFile(h5py.File):
             if val is None:
                 val = str(None)
             if isinstance(val, dict):
-                attrs[arg] = val.keys()
+                attrs[arg] = list(val.keys())
                 # just call self again with the dict as kwargs
                 cls.write_kwargs_to_attrs(attrs, **val)
             else:
