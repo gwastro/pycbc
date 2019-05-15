@@ -641,8 +641,11 @@ class SingleDetTriggers(object):
                                            self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):
-        if self.mask is not None and (self.mask.sum() != len(self.mask)):
+        MFRAC = 0.3
+        if self.mask is not None and (self.mask.sum() < len(self.mask) * MFRAC):
             return self.trigs[cname][self.mask]
+        elif self.mask is not None:
+            return self.trigs[cname][:][self.mask]
         else:
             return self.trigs[cname][:]
 
