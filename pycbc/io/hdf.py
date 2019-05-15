@@ -641,11 +641,10 @@ class SingleDetTriggers(object):
                                            self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):
-        if self.mask is not None:
+        if self.mask is not None and (self.mask.sum() != len(self.mask)):
             return self.trigs[cname][self.mask]
         else:
             return self.trigs[cname][:]
-
 
 class ForegroundTriggers(object):
     # FIXME: A lot of this is hardcoded to expect two ifos
