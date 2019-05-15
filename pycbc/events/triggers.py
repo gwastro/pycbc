@@ -72,7 +72,7 @@ def bank_bins_from_cli(opts):
     if opts.bank_bins:
         bins_idx = coinc.background_bin_from_string(opts.bank_bins, bank)
     else:
-        bins_idx = {"all" : numpy.arange(0, len(bank[fp.keys()[0]]))}
+        bins_idx = {"all" : numpy.arange(0, len(bank[tuple(fp.keys())[0]]))}
     fp.close()
     return bins_idx, bank
 
@@ -191,7 +191,7 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
 
             # only use one IFO
             if len(opts.sngl_trigger_files.keys()) == 1:
-                ifo = opts.sngl_trigger_files.keys()[0]
+                ifo = tuple(opts.sngl_trigger_files.keys())[0]
             else:
                 raise ValueError("Too many IFOs")
 

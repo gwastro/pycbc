@@ -36,7 +36,7 @@ have_gates = False
 for fn in args.input_file:
     logging.info('Reading gates from %s', fn)
     f = h5py.File(fn, 'r')
-    ifo = f.keys()[0]
+    ifo = tuple(f.keys())[0]
     for gate_type in ['file', 'auto']:
         try:
             gate_time = f[ifo + '/gating/' + gate_type + '/time'][:]

@@ -60,7 +60,7 @@ for f, b, t in zip(args.found, args.bank_files, args.trig):
     foundstat = np.concatenate((foundstat, f['found_after_vetoes/stat'][:]))
     foundifar = np.concatenate((foundifar, f['found_after_vetoes/ifar'][:]))
     # acrobatics to find right ifo
-    ifo = t.keys()[0] if t else None
+    ifo = tuple(t.keys())[0] if t else None
     ## each tuple is of form ('L1', 'detector_1')
     #dettuples = [(val, key) for (key, val) in f.attrs.items()
     #             if "detector" in key]

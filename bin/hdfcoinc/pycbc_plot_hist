@@ -44,7 +44,7 @@ pycbc.init_logging(args.verbose)
 
 # read trigger file to determine IFO
 f = h5py.File(args.trigger_file, 'r')
-ifo = f.keys()[0]
+ifo = tuple(f.keys())[0]
 
 # read single-detector triggers
 trigs = pycbc.io.SingleDetTriggers(args.trigger_file, args.bank_file,

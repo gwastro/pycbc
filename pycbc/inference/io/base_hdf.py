@@ -738,9 +738,9 @@ class BaseInferenceFile(h5py.File):
                               write_args=write_args)
             # if any down selection was done, re-set the default
             # thin-start/interval/end
-            p = self[self.samples_group].keys()[0]
+            p = tuple(self[self.samples_group].keys())[0]
             my_shape = self[self.samples_group][p].shape
-            p = other[other.samples_group].keys()[0]
+            p = tuple(other[other.samples_group].keys())[0]
             other_shape = other[other.samples_group][p].shape
             if my_shape != other_shape:
                 other.attrs['thin_start'] = 0

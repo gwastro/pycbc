@@ -165,7 +165,7 @@ def from_xml(filename, length, delta_f, low_freq_cutoff, ifo_string=None,
         psd_freq_series = psd_dict[ifo_string]
     else:
         if len(psd_dict.keys()) == 1:
-            psd_freq_series = psd_dict[psd_dict.keys()[0]]
+            psd_freq_series = psd_dict[tuple(psd_dict.keys())[0]]
         else:
             err_msg = "No ifo string given and input XML file contains not "
             err_msg += "exactly one PSD. Specify which PSD you want to use."

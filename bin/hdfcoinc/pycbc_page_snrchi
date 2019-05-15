@@ -20,7 +20,7 @@ parser.add_argument('--chisq-choice', choices=chisq_choices,
 args = parser.parse_args()
 
 f = h5py.File(args.trigger_file, 'r')
-ifo = f.keys()[0]
+ifo = tuple(f.keys())[0]
 f = f[ifo]
 snr = f['snr'][:]
 chisq = get_chisq_from_file_choice(f, args.chisq_choice)

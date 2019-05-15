@@ -48,7 +48,7 @@ class TimeVaryingPSD(object):
     def __init__(self, file_name, length=None, delta_f=None, f_low=None):
         f = h5py.File(file_name, 'r')
         self.file_name = file_name
-        detector = f.keys()[0]
+        detector = tuple(f.keys())[0]
         self.start_times = f[detector + '/start_time'][:]
         self.end_times = f[detector + '/end_time'][:]
         self.file_f_low = f.attrs['low_frequency_cutoff']
