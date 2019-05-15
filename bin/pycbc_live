@@ -500,6 +500,7 @@ parser.add_argument('--store-loudest-index', type=int, default=0)
 parser.add_argument('--max-psd-abort-distance', type=float, default=numpy.inf)
 parser.add_argument('--min-psd-abort-distance', type=float, default=-numpy.inf)
 parser.add_argument('--max-triggers-in-batch', type=int)
+parser.add_argument('--divide-chunk', type=int, default=1)
 parser.add_argument('--max-length', type=float,
                     help='Maximum duration of templates, used to set the data buffer size')
 
@@ -630,7 +631,8 @@ with ctx:
                                     snr_abort_threshold=args.snr_abort_threshold,
                                     newsnr_threshold=args.newsnr_threshold,
                                     max_triggers_in_batch=args.max_triggers_in_batch,
-                                    maxelements=args.max_batch_size)
+                                    maxelements=args.max_batch_size,
+                                    divide_chunk=args.divide_chunk)
 
     # Synchronize start time if not provided on the command line
     if not args.start_time:

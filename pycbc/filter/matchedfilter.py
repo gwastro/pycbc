@@ -1469,7 +1469,9 @@ class LiveBatchMatchedFilter(object):
                  maxelements=2**27,
                  snr_abort_threshold=None,
                  newsnr_threshold=None,
-                 max_triggers_in_batch=None):
+                 max_triggers_in_batch=None,
+                 divide_chunk=1,
+                 ):
         """Create a batched matchedfilter instance
 
         Parameters
@@ -1493,12 +1495,16 @@ class LiveBatchMatchedFilter(object):
         max_triggers_in_batch: {int, None}
             Record X number of the loudest triggers by newsnr in each mpi
         process group. Signal consistency values will also only be calculated
+        divide_chunk: {int, 1}
+            Number of divisions of each chunk to look for a trigger in. These
+            are equally spaced. Each could produce an independent trigger.
         for these triggers.
         """
         self.snr_threshold = snr_threshold
         self.snr_abort_threshold = snr_abort_threshold
         self.newsnr_threshold = newsnr_threshold
         self.max_triggers_in_batch = max_triggers_in_batch
+        self.subdivide = divide_chunk
 
         from pycbc import vetoes
         self.power_chisq = vetoes.SingleDetPowerChisq(chisq_bins, None)
@@ -1657,17 +1663,19 @@ class LiveBatchMatchedFilter(object):
         valid_end = int(psize - self.data.trim_padding)
         valid_start = int(valid_end - self.data.blocksize * self.data.sample_rate)
 
-        seg = slice(valid_start, valid_end)
+        segs = numpy.linspace(valid_start, valid_end, num=(1 + self.subdivide))
+        segs = [slice(s, e) for s, e in segs]
 
         self.corr[self.block_id].execute(stilde)
         self.ifts[mid].execute()
 
         self.block_id += 1
 
-        snr = numpy.zeros(len(tgroup), dtype=numpy.complex64)
-        time = numpy.zeros(len(tgroup), dtype=numpy.float64)
-        templates = numpy.zeros(len(tgroup), dtype=numpy.uint64)
-        sigmasq = numpy.zeros(len(tgroup), dtype=numpy.float32)
+        maxtrigs = len(tgroup) * len(segs)
+        snr = numpy.zeros(maxtrigs, dtype=numpy.complex64)
+        time = numpy.zeros(maxtrigs, dtype=numpy.float64)
+        templates = numpy.zeros(maxtrigs, dtype=numpy.uint64)
+        sigmasq = numpy.zeros(maxtrigs, dtype=numpy.float32)
 
         time[:] = self.data.start_time
 
@@ -1681,41 +1689,41 @@ class LiveBatchMatchedFilter(object):
         # Find the peaks in our SNR times series from the various templates
         i = 0
         for htilde in tgroup:
-            l = htilde.out[seg].abs_arg_max()
-
             sgm = htilde.sigmasq(psd)
             norm = 4.0 * htilde.delta_f / (sgm ** 0.5)
+        
+            for seg in segs:
+                l = htilde.out[seg].abs_arg_max()
+                l += valid_start
+                snrv = numpy.array([htilde.out[l]])
 
-            l += valid_start
-            snrv = numpy.array([htilde.out[l]])
+                # If nothing is above threshold we can exit this template
+                s = abs(snrv[0]) * norm
+                if s < self.snr_threshold:
+                    continue
 
-            # If nothing is above threshold we can exit this template
-            s = abs(snrv[0]) * norm
-            if s < self.snr_threshold:
-                continue
+                time[i] += float(l - valid_start) / self.data.sample_rate
 
-            time[i] += float(l - valid_start) / self.data.sample_rate
+                # We have an SNR so high that we will drop the entire analysis
+                # of this chunk of time!
+                if self.snr_abort_threshold is not None and s > self.snr_abort_threshold:
+                    logging.info("We are seeing some *really* high SNRs, lets"
+                                 " assume they aren't signals and just give up")
+                    return False, []
 
-            # We have an SNR so high that we will drop the entire analysis
-            # of this chunk of time!
-            if self.snr_abort_threshold is not None and s > self.snr_abort_threshold:
-                logging.info("We are seeing some *really* high SNRs, lets"
-                             " assume they aren't signals and just give up")
-                return False, []
+                veto_info.append((snrv, norm, l, htilde, stilde))
 
-            veto_info.append((snrv, norm, l, htilde, stilde))
+                snr[i] = snrv[0] * norm
+                sigmasq[i] = sgm
+                templates[i] = htilde.id
+                if not hasattr(htilde, 'dict_params'):
+                    htilde.dict_params = {}
+                    for key in tkeys:
+                        htilde.dict_params[key] = htilde.params[key]
 
-            snr[i] = snrv[0] * norm
-            sigmasq[i] = sgm
-            templates[i] = htilde.id
-            if not hasattr(htilde, 'dict_params'):
-                htilde.dict_params = {}
                 for key in tkeys:
-                    htilde.dict_params[key] = htilde.params[key]
-
-            for key in tkeys:
-                result[key].append(htilde.dict_params[key])
-            i += 1
+                    result[key].append(htilde.dict_params[key])
+                i += 1
 
 
         result['snr'] = abs(snr[0:i])
