@@ -19,7 +19,7 @@ import argparse, logging
 
 import numpy as np
 
-from pycbc.events import trigger_fits as trstats
+from pycbc.events import triggers
 import pycbc.version
 
 parser = argparse.ArgumentParser(usage="",
@@ -102,20 +102,27 @@ if args.use_template_fit_param:
 else:
     logging.info('Calculating template parameter values')
     bank = h5py.File(args.bank_file, 'r')
-    m1, m2, s1z, s2z = trstats.get_masses(bank, tid)
-    parvals = trstats.get_param(args.fit_param, args, m1, m2, s1z, s2z) 
+    m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
+    parvals = triggers.get_param(args.fit_param, args, m1, m2, s1z, s2z) 
+
+if 'count_in_template' in fits.keys():  # recently introduced extra dataset
+    tcount = True
+else:
+    tcount = False
 
 nabove = fits['count_above_thresh'][:]
 nabove = nabove/np.mean(nabove)
+if tcount: ntotal = fits['count_in_template'][:]
 # for an exponential fit 1/alpha is linear in the trigger statistic values
 # so taking weighted sums/averages of 1/alpha is appropriate
 invalpha = 1./(fits['fit_coeff'][:])
 
-# sort in ascending duration order
+# sort in ascending parameter order
 parsort = np.argsort(parvals)
 tid = tid[parsort]
 parvals = parvals[parsort]
 nabove = nabove[parsort]
+if tcount: ntotal = ntotal[parsort]
 invalpha = invalpha[parsort]
 
 if args.log_param:
@@ -138,6 +145,13 @@ if args.regression_method == 'nn':
     nabove_smoothed = [nabove_knn.predict([[p]]) for p in parvals]
     del nabove_knn
 
+    if tcount:
+        logging.info('Smoothing ntotal data')
+        ntotal_knn = knn.fit(parvals[:, np.newaxis], ntotal)
+        logging.info('Evaluating smoothed ntotal')
+        ntotal_smoothed = [ntotal_knn.predict([[p]]) for p in parvals]
+        del ntotal_knn
+
     logging.info('Smoothing invalpha data')
     # smooth the inverse alpha values times trig count above threshold
     invalphan = invalpha * nabove
@@ -155,6 +169,7 @@ elif args.regression_method == 'tricube':
     invalphan = invalpha * nabove
     invalpha_smoothed = []
     nabove_smoothed = []
+    if tcount: ntotal_smoothed = []
     logging.info('Evaluating smoothed invalpha and n_above')
     for i, p in enumerate(parvals):
         if not i % 100:
@@ -167,14 +182,17 @@ elif args.regression_method == 'tricube':
         norm = weights.sum()
         # weighted average
         n_sm = (nabove[in_kernel] * weights).sum() / norm
+        if tcount: nt_sm = (ntotal[in_kernel] * weights).sum() / norm
         invalphan_smoothed = (invalphan[in_kernel] * weights).sum() / norm
         invalpha_smoothed.append(invalphan_smoothed / n_sm)
         nabove_smoothed.append(n_sm)
+        ntotal_smoothed.append(nt_sm)
 
 # store template-dependent fit output
 outfile = h5py.File(args.output, 'w')
 outfile.create_dataset('template_id', data=tid)
 outfile.create_dataset('count_above_thresh', data=nabove_smoothed)
+if tcount: outfile.create_dataset('count_in_template', data=ntotal_smoothed)
 outfile.create_dataset('fit_coeff', data=1. / np.array(invalpha_smoothed))
 outfile.create_dataset('param_val', data=(np.exp(parvals) if args.log_param
     else parvals))
@@ -187,6 +205,8 @@ outfile.attrs.create('regression_method', data=args.regression_method)
 if args.num_neighbors > 0:
     outfile.attrs.create('n_neighbors', data=args.num_neighbors)
 outfile.attrs.create('smoothing_width', data=args.smoothing_width)
+if 'analysis_time' in fits.attrs:    
+    outfile.attrs['analysis_time'] = fits.attrs['analysis_time']
 
 # add a magic file attribute so that coinc_findtrigs can parse it
 outfile.attrs.create('stat', data=ifo+'-fit_coeffs')

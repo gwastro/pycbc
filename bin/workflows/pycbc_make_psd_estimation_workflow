@@ -25,7 +25,7 @@ import pycbc.workflow
 import os.path
 import argparse
 import logging
-from glue import segments
+from ligo import segments as _segments
 import datetime
 import lal, sys
 from pycbc.results import save_fig_with_metadata, two_column_layout
@@ -62,7 +62,7 @@ time_file = pycbc.workflow.File(workflow.ifos, 'time', workflow.analysis_time,
                                            extension='.html',
                                            directory='plots')
 pycbc.workflow.makedir('plots')
-kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)', 
+kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)',
         'caption' : "Wall clock start and end times for this invocation of the workflow. "
                     " The command line button shows the arguments used to invoke the workflow "
                     " creation script.",
@@ -104,7 +104,7 @@ for ifo, segments in analyzable_segs.items():
         start_time = seg[0] + pad_data
         while start_time + psd_job_length + pad_data <= seg[1]:
             end_time = start_time + psd_job_length
-            s = segments.segment(start_time, end_time)
+            s = _segments.segment(start_time, end_time)
             batch.append(s)
             start_time = end_time
 
@@ -134,7 +134,7 @@ for ifo, segments in analyzable_segs.items():
         psd_files[ifo].append(ifo_psd_file)
 
     flat_split_segments = \
-        segments.segmentlist([s for batch in batches for s in batch])
+        _segments.segmentlist([s for batch in batches for s in batch])
     logging.info('%.1f s of analyzable %s data reduced to %.1f s after '
                  'segmentation', abs(segments), ifo, abs(flat_split_segments))
 

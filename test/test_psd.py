@@ -24,7 +24,7 @@
 '''
 These are the unittests for the pycbc PSD module.
 '''
-
+from __future__ import division
 import sys
 import os
 import tempfile
@@ -52,9 +52,9 @@ class TestPSD(unittest.TestCase):
         sample_freq = 4096.
         delta_f = sample_freq / noise_size
         numpy.random.seed(132435)
-        noise = numpy.random.normal(loc=0, scale=1, size=noise_size/2+1) + \
-            1j * numpy.random.normal(loc=0, scale=1, size=noise_size/2+1)
-        noise_model = 1. / numpy.linspace(1., 100., noise_size / 2 + 1)
+        noise = numpy.random.normal(loc=0, scale=1, size=noise_size//2+1) + \
+            1j * numpy.random.normal(loc=0, scale=1, size=noise_size//2+1)
+        noise_model = 1. / numpy.linspace(1., 100., noise_size // 2 + 1)
         noise *= noise_model / numpy.sqrt(delta_f) / 2
         noise[0] = noise[0].real
         noise_fs = FrequencySeries(noise, delta_f=delta_f)
@@ -94,8 +94,8 @@ class TestPSD(unittest.TestCase):
     def test_estimate_welch(self):
         """Test estimating PSDs from data using Welch's method"""
         for seg_len in (2048, 4096, 8192):
-            noise_model = (numpy.linspace(1., 100., seg_len/2 + 1)) ** (-2)
-            for seg_stride in (seg_len, seg_len/2):
+            noise_model = (numpy.linspace(1., 100., seg_len//2 + 1)) ** (-2)
+            for seg_stride in (seg_len, seg_len//2):
                 for method in ('mean', 'median', 'median-mean'):
                     with self.context:
                         psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
@@ -109,11 +109,11 @@ class TestPSD(unittest.TestCase):
     def test_truncation(self):
         """Test inverse PSD truncation"""
         for seg_len in (2048, 4096, 8192):
-            noise_model = (numpy.linspace(1., 100., seg_len/2 + 1)) ** (-2)
+            noise_model = (numpy.linspace(1., 100., seg_len//2 + 1)) ** (-2)
             for max_len in (1024, 512, 256):
                 with self.context:
                     psd = pycbc.psd.welch(self.noise, seg_len=seg_len, \
-                                          seg_stride=seg_len/2, avg_method='mean')
+                                          seg_stride=seg_len//2, avg_method='mean')
                     psd_trunc = pycbc.psd.inverse_spectrum_truncation(
                             psd, max_len,
                             low_frequency_cutoff=self.psd_low_freq_cutoff)

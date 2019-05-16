@@ -21,7 +21,7 @@ setup.py file for PyCBC package
 
 from __future__ import print_function
 
-import os, sys, subprocess, shutil
+import os, subprocess, shutil
 
 from distutils.errors import DistutilsError
 from distutils.command.clean import clean as _clean
@@ -30,8 +30,6 @@ from setuptools.command.install import install as _install
 from setuptools import Extension, setup, Command
 from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools import find_packages
-
-PY3 = sys.version_info[0] == 3
 
 requires = []
 setup_requires = ['numpy>=1.13.0,<1.15.3',]
@@ -43,19 +41,17 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'pillow',
                       'h5py>=2.5',
                       'jinja2',
-                      'astropy>=2.0.3,<3.0.0',
+                      'astropy>=2.0.3,<3.0.0; python_version <= "2.7"',
+                      'astropy>=2.0.3; python_version > "3.4"',
                       'mpld3>=0.3',
                       'lscsoft-glue>=1.59.3',
-                      'kombine>=0.8.2',
                       'emcee==2.2.1',
                       'requests>=1.2.1',
                       'beautifulsoup4>=4.6.0',
                       'six>=1.10.0',
                       'ligo-segments',
+                      'weave>=0.16.0; python_version <= "2.7"',
                       ]
-
-if not PY3:
-    install_requires += ['weave>=0.16.0']
 
 def find_files(dirname, relpath=None):
     def find_paths(dirname):
@@ -122,7 +118,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.13.dev4'
+        vinfo.version = '1.13.dev9'
         vinfo.release = 'False'
 
     with open('pycbc/version.py', 'w') as f:
@@ -205,7 +201,8 @@ VERSION = get_version_info()
 cythonext = ['waveform.spa_tmplt',
              'waveform.utils',
              'types.array',
-             'filter.matchedfilter']
+             'filter.matchedfilter',
+             'vetoes.chisq']
 ext = []
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,

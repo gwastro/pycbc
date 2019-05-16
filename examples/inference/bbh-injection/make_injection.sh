@@ -5,5 +5,5 @@ pycbc_create_injections --verbose \
         --seed 10 \
         --output-file injection.hdf \
         --variable-params-section variable_params \
-        --static-args-section static_params \
+        --static-params-section static_params \
         --dist-section prior

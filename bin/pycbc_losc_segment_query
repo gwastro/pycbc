@@ -3,11 +3,15 @@
 import os
 import pwd
 import logging
-import urllib2
 import json
 import argparse
 import shutil
-import glue.segments
+try:
+    from urllib.request import urlopen
+except ImportError:   # python < 3
+    from urllib2 import urlopen
+
+import ligo.segments
 from glue import git_version
 from glue.ligolw import ligolw
 from glue.ligolw import utils
@@ -40,24 +44,24 @@ def query_losc(ifo, segment_name, gps_start_time, duration):
 
     Returns
     ---------
-    segment_list :  glue.segments.segmentlist
+    segment_list :  ligo.segments.segmentlist
         The inverval returned by LOSC
-    segment_summary :  glue.segments.segmentlist
+    segment_summary :  ligo.segments.segmentlist
         The segments returned by LOSC
     """
 
-    response = urllib2.urlopen(
+    response = urlopen(
         'https://www.gw-openscience.org/timeline/segments/json/O1/{}_{}/{}/{}/'.format(
         ifo, segment_name, gps_start_time, duration))
 
     logging.info(response.info())
     json_segment_data = json.loads(response.read())
 
-    summary_segment = glue.segments.segmentlist([glue.segments.segment(
+    summary_segment = ligo.segments.segmentlist([ligo.segments.segment(
                                                 json_segment_data['start'],
                                                 json_segment_data['end'])])
 
-    segments = glue.segments.segmentlist([glue.segments.segment(
+    segments = ligo.segments.segmentlist([ligo.segments.segment(
                                          x[0],x[1]) for x in json_segment_data['segments']])
 
     return summary_segment, segments

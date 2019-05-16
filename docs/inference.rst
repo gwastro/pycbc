@@ -127,6 +127,64 @@ max_postrior`` would instead consider the sampler to be burned in when either
 the ``nacl`` *or* ``max_posterior`` tests were satisfied. For more information
 on what tests are available, see the :py:mod:`pycbc.inference.burn_in` module.
 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Thinning samples (MCMC only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The default behavior for the MCMC samplers (``emcee``, ``emcee_pt``) is to save
+every iteration of the Markov chains to the output file. This can quickly lead
+to very large files. For example, a BBH analysis (~15 parameters) with 200
+walkers, 20 temperatures may take ~50 000 iterations to acquire ~5000
+independent samples. This will lead to a file that is ~ 50 000 iterations x 200
+walkers x 20 temperatures x 15 parameters x 8 bytes ~ 20GB.  Quieter signals
+can take an order of magnitude more iterations to converge, leading to O(100GB)
+files. Clearly, since we only obtain 5000 independent samples from such a run,
+the vast majority of these samples are of little interest.
+
+To prevent large file size growth, samples may be thinned before they are
+written to disk. Two thinning options are available, both of which are set in
+the ``[sampler]`` section of the configuration file. They are:
+
+ * ``thin-interval``: This will thin the samples by the given integer before
+   writing the samples to disk. File sizes can still grow unbounded, but at
+   a slower rate. The interval must be less than the checkpoint interval.
+ * ``max-samples-per-chain``: This will cap the maximum number of samples per
+   walker and per temperature to the given integer. This ensures that file
+   sizes never exceed ~ ``max-samples-per-chain`` x ``nwalkers`` x ``ntemps``
+   x ``nparameters`` x 8 bytes. Once the limit is reached,
+   samples will be thinned on disk, and new samples will be thinned to match.
+   The thinning interval will grow with longer runs as a result. To ensure
+   that enough samples exist to determine burn in and to measure an
+   autocorrelation length, ``max-samples-per-chain`` must be greater than
+   or equal to 100.
+
+The thinned interval that was used for thinning samples is saved to the output
+file's ``thinned_by`` attribute (stored in the HDF file's ``.attrs``).  Note
+that this is not the autocorrelation length (ACL), which is the amount that the
+samples need to be further thinned to obtain independent samples.
+
+
+.. note::
+
+    In the output file creates by the MCMC samplers, we adopt the convention
+    that "iteration" means iteration of the sampler, not index of the samples.
+    For example, if a burn in test is used, ``burn_in_iteration`` will be
+    stored to the ``sampler_info`` group in the output file. This gives the
+    iteration of the sampler at which burn in occurred, not the sample on disk.
+    To determine  which samples an iteration corresponds to in the file, divide
+    iteration by ``thinned_by``.
+
+    Likewise, we adopt the convention that autocorrelation **length** (ACL) is
+    the autocorrelation length of the thinned samples (the number of samples on
+    disk that you need to skip to get independent samples) whereas
+    autocorrelation **time** (ACT) is the autocorrelation length in terms of
+    iteration (it is the number of **iterations** that you need to skip to get
+    independent samples); i.e., ``ACT = thinned_by x ACL``. The ACT is (up to
+    measurement resolution) independent of the thinning used, and thus is
+    useful for comparing the performance of the sampler.
+
+
+
 ^^^^^^^^^^^^^^^^^^^^^
 Configuring the prior
 ^^^^^^^^^^^^^^^^^^^^^
@@ -295,6 +353,44 @@ analysis. E.g. for an analysis using H1 only, the required options would be
 ``h1-transfer-function-a-pu``, ``h1-transfer-function-c``,
 ``h1-transfer-function-d``.
 
+^^^^^^^^^^^
+Constraints
+^^^^^^^^^^^
+
+One or more constraints may be applied to the parameters; these are
+specified by the ``[constraint]`` section(s). Additional constraints may be
+supplied by adding more ``[constraint-{tag}]`` sections. Any tag may be used; the
+only requirement is that they be unique. If multiple constraint sections are
+provided, the union of all constraints is applied. Alternatively, multiple
+constraints may be joined in a single argument using numpy's logical operators.
+
+The parameter that constraints are applied to may be any parameter in
+``variable_params`` or any output parameter of the transforms. Functions may be
+applied to these parameters to obtain constraints on derived parameters. Any
+function in the conversions, coordinates, or cosmology module may be used,
+along with any numpy ufunc. So, in the following example, the mass ratio (q) is
+constrained to be <= 4 by using a function from the conversions module.
+
+.. code-block:: ini
+
+   [variable_params]
+   mass1 =
+   mass2 =
+
+   [prior-mass1]
+   name = uniform
+   min-mass1 = 3
+   max-mass1 = 12
+
+   [prior-mass2]
+   name = uniform
+   min-mass2 = 1
+   min-mass2 = 3
+
+   [constraint-1]
+   name = custom
+   constraint_args = q_from_mass1_mass2(mass1, mass2) <= 4
+
 ------------------------------
 Checkpointing and output files
 ------------------------------
@@ -355,7 +451,7 @@ quickly on a laptop to check that a sampler is working properly.
 This example demonstrates how to sample a 2D normal distribution with the
 ``emcee`` sampler. First, we create the following configuration file:
 
-.. literalinclude:: ../examples/inference/analytic-normal2d/normal2d.ini 
+.. literalinclude:: ../examples/inference/analytic-normal2d/normal2d.ini
    :language: ini
 
 :download:`Download <../examples/inference/analytic-normal2d/normal2d.ini>`
@@ -366,7 +462,7 @@ The number of dimensions of the distribution is set by the number of
 ``variable_params``. The names of the parameters do not matter, just that just
 that the prior sections use the same names.
 
-Now run: 
+Now run:
 
 .. literalinclude:: ../examples/inference/analytic-normal2d/run.sh
    :language: bash
@@ -407,7 +503,7 @@ To make a movie showing how the walkers evolved, run:
 
 .. note::
    You need ``ffmpeg`` installed for the mp4 to be created.
-   
+
 See below for more information on using ``pycbc_inference_plot_movie``.
 
 
@@ -536,15 +632,15 @@ the following:
 
   .. code-block:: bash
 
-     wget https://www.gw-openscience.org/GW150914data/H-H1_LOSC_4_V2-1126257414-4096.gwf
-     wget https://www.gw-openscience.org/GW150914data/L-L1_LOSC_4_V2-1126257414-4096.gwf
+     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf
+     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf
 
   Then set the following enviornment variables:
 
   .. code-block:: bash
 
-     export FRAMES="--frame-files H1:H-H1_LOSC_4_V2-1126257414-4096.gwf L1:L-L1_LOSC_4_V2-1126257414-4096.gwf"
-     export CHANNELS="H1:LOSC-STRAIN L1:LOSC-STRAIN"
+     export FRAMES="--frame-files H1:H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf L1:L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf"
+     export CHANNELS="H1:GWOSC-4KHZ_R1_STRAIN L1:GWOSC-4KHZ_R1_STRAIN"
 
 Now run:
 
@@ -564,7 +660,7 @@ Visualizing the Posteriors
 
 ===============================================
 Workflows
-=============================================== 
+===============================================
 
 .. toctree::
    :maxdepth: 1
@@ -574,7 +670,7 @@ Workflows
 
 ===============================================
 For Developers
-=============================================== 
+===============================================
 
 .. toctree::
     :maxdepth: 1

@@ -16,10 +16,13 @@
 """
 This modules contains functions for getting data from the LOSC
 """
+from astropy.utils.data import download_file
 
 _losc_url = "https://losc.ligo.org/archive/links/%s/%s/%s/%s/json/"
 
-def _get_run(time):
+def get_run(time):
+    if 1164556817 <= time <= 1187733618:
+        return 'O2_16KHZ_R1'
     if 1126051217 <= time <= 1137254417:
         return 'O1'
     elif 815011213 <= time <= 875318414:
@@ -29,6 +32,11 @@ def _get_run(time):
     else:
         raise ValueError('Time %s not available in a public dataset' % time)
 
+def _get_channel(time):
+    if 1164556817 <= time <= 1187733618:
+        return 'GWOSC-16KHZ_R1_STRAIN'
+    else:
+        return 'LOSC-STRAIN'
 
 def losc_frame_json(ifo, start_time, end_time):
     """ Get the information about the public data files in a duration of time
@@ -48,9 +56,13 @@ def losc_frame_json(ifo, start_time, end_time):
         A dictionary containing information about the files that span the
         requested times.
     """
-    import urllib, json
-    run = _get_run(start_time)
-    run2 = _get_run(end_time)
+    import json
+    try:
+        from urllib.request import urlopen
+    except ImportError:  # python < 3
+        from urllib import urlopen
+    run = get_run(start_time)
+    run2 = get_run(end_time)
     if run != run2:
         raise ValueError('Spanning multiple runs is not currently supported.'
                          'You have requested data that uses '
@@ -59,8 +71,9 @@ def losc_frame_json(ifo, start_time, end_time):
     url = _losc_url % (run, ifo, int(start_time), int(end_time))
 
     try:
-        return json.loads(urllib.urlopen(url).read())
-    except Exception:
+        return json.loads(urlopen(url).read())
+    except Exception as e:
+        print(e)
         raise ValueError('Failed to find gwf files for '
             'ifo=%s, run=%s, between %s-%s' % (ifo, run, start_time, end_time))
 
@@ -102,7 +115,6 @@ def read_frame_losc(channels, start_time, end_time):
     ts: TimeSeries
         Returns a timeseries or list of timeseries with the requested data.
     """
-    import urllib
     from pycbc.frame import read_frame
     if not isinstance(channels, list):
         channels = [channels]
@@ -117,7 +129,7 @@ def read_frame_losc(channels, start_time, end_time):
     fnames = {ifo:[] for ifo in ifos}
     for ifo in ifos:
         for url in urls[ifo]:
-            fname, _ = urllib.urlretrieve(url)
+            fname = download_file(url, cache=True)
             fnames[ifo].append(fname)
 
     ts = [read_frame(fnames[channel[0:2]], channel,
@@ -144,5 +156,6 @@ def read_strain_losc(ifo, start_time, end_time):
     ts: TimeSeries
         Returns a timeseries with the strain data.
     """
-    return read_frame_losc('%s:LOSC-STRAIN' % ifo, start_time, end_time)
+    channel = _get_channel(start_time)
+    return read_frame_losc('%s:%s' % (ifo, channel), start_time, end_time)
 

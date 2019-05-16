@@ -31,6 +31,7 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/NOTYETCREATED.html
 from __future__ import division
 
 import os, logging
+from math import radians
 from pycbc.workflow.core import FileList, make_analysis_dir
 from pycbc.workflow.jobsetup import (select_matchedfilter_class,
         select_tmpltbank_class, sngl_ifo_job_setup,
@@ -52,7 +53,7 @@ def setup_matchedfltr_workflow(workflow, science_segs, datafind_outs,
     -----------
     Workflow : pycbc.workflow.core.Workflow
         The workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
     datafind_outs : pycbc.workflow.core.FileList
         An FileList of the datafind files that are needed to obtain the
@@ -152,7 +153,7 @@ def setup_matchedfltr_dax_generated(workflow, science_segs, datafind_outs,
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
     datafind_outs : pycbc.workflow.core.FileList
         An FileList of the datafind files that are needed to obtain the
@@ -252,7 +253,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
     -----------
     workflow : pycbc.workflow.core.Workflow
         The Workflow instance that the coincidence jobs will be added to.
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
     datafind_outs : pycbc.workflow.core.FileList
         An FileList of the datafind files that are needed to obtain the
@@ -293,25 +294,29 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
 
     logging.info("Setting up matched-filtering for %s." %(' '.join(ifos),))
 
-    if match_fltr_exe == 'lalapps_coh_PTF_inspiral':
-        from pylal.legacy_ihope import select_legacy_matchedfilter_class
-        from pycbc.workflow.grb_utils import get_sky_grid_scale
-        exe_class = select_legacy_matchedfilter_class(match_fltr_exe)
-        cp.set('inspiral', 'right-ascension', cp.get('workflow', 'ra'))
-        cp.set('inspiral', 'declination', cp.get('workflow', 'dec'))
-        if cp.has_option("jitter_skyloc", "apply-fermi-error"):
-            cp.set('inspiral', 'sky-error',
-                   str(get_sky_grid_scale(float(cp.get('workflow',
-                                                       'sky-error')))))
-        else:
-            cp.set('inspiral', 'sky-error',
-                   str(get_sky_grid_scale(float(cp.get('workflow',
-                                                       'sky-error')),
-                                          sigma_sys=0.0)))
-        cp.set('inspiral', 'trigger-time', cp.get('workflow', 'trigger-time'))
-        cp.set('inspiral', 'block-duration',
-               str(abs(science_segs[ifos[0]][0]) - \
-                       2 * int(cp.get('inspiral', 'pad-data'))))
+    if match_fltr_exe == 'pycbc_multi_inspiral':
+        exe_class = select_matchedfilter_class(match_fltr_exe)
+        cp.set('inspiral', 'longitude',\
+               str(radians(float(cp.get('workflow', 'ra')))))
+        cp.set('inspiral', 'latitude',\
+               str(radians(float(cp.get('workflow', 'dec')))))
+        # At the moment we aren't using sky grids, but when we do this code
+        # might be used then. 
+        # from pycbc.workflow.grb_utils import get_sky_grid_scale
+        # if cp.has_option("jitter_skyloc", "apply-fermi-error"):
+        #     cp.set('inspiral', 'sky-error',
+        #            str(get_sky_grid_scale(float(cp.get('workflow',
+        #                                                'sky-error')))))
+        # else:
+        #     cp.set('inspiral', 'sky-error',
+        #            str(get_sky_grid_scale(float(cp.get('workflow',
+        #                                                'sky-error')),
+        #                                   sigma_sys=0.0)))
+        # cp.set('inspiral', 'trigger-time',\
+        #        cp.get('workflow', 'trigger-time'))
+        # cp.set('inspiral', 'block-duration',
+        #        str(abs(science_segs[ifos[0]][0]) - \
+        #                2 * int(cp.get('inspiral', 'pad-data'))))
 
         job_instance = exe_class(workflow.cp, 'inspiral', ifo=ifos,
                                  out_dir=output_dir,
@@ -321,7 +326,7 @@ def setup_matchedfltr_dax_generated_multi(workflow, science_segs, datafind_outs,
             slide_num = int(tags[-1].replace("slide", ""))
             logging.info("Setting up matched-filtering for slide {}"
                          .format(slide_num))
-            slide_shift = int(cp.get("inspiral", "segment-duration"))
+            slide_shift = int(cp.get("inspiral", "segment-length"))
             time_slide_dict = {ifo: (slide_num + 1) * ix * slide_shift
                                for ix, ifo in enumerate(ifos)}
             multi_ifo_coherent_job_setup(workflow, inspiral_outs, job_instance,

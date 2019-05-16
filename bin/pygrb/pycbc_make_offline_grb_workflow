@@ -33,7 +33,7 @@ import os
 import argparse
 import logging
 import pycbc.workflow as _workflow
-from glue.segments import segment, segmentlist, segmentlistdict
+from ligo.segments import segment, segmentlist, segmentlistdict
 import matplotlib
 matplotlib.use('agg')
 from pycbc.results.legacy_grb import make_grb_segments_plot
@@ -78,18 +78,24 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
+ 
 
-# Make coherent network segments
-if wflow.cp.has_option("inspiral", "analyse-segment-end"):
+if wflow.cp.has_option("inspiral", "segment-start-pad"):
+    pad_data = int(wflow.cp.get("inspiral", "pad-data"))
+    start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
+    end_pad = int(wflow.cp.get("inspiral", "segment-end-pad"))
+    wflow.cp.set("workflow-exttrig_segments", "min-before",str(start_pad+pad_data))
+    wflow.cp.set("workflow-exttrig_segments", "min-after",str(end_pad+pad_data))
+elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
     safety = 1
-    deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 2
+    deadtime = int(wflow.cp.get("inspiral", "segment-length")) / 2
     spec_len = int(wflow.cp.get("inspiral", "inverse-spec-length")) / 2
     wflow.cp.set("workflow-exttrig_segments", "min-before",
                  str(deadtime - spec_len - safety))
     wflow.cp.set("workflow-exttrig_segments", "min-after",
                  str(spec_len + safety))
 else:
-    deadtime = int(wflow.cp.get("inspiral", "segment-duration")) / 4
+    deadtime = int(wflow.cp.get("inspiral", "segment-length")) / 4
     wflow.cp.set("workflow-exttrig_segments", "min-before", str(deadtime))
     wflow.cp.set("workflow-exttrig_segments", "min-after", str(deadtime))
 
@@ -144,7 +150,14 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     gate_pad = int(wflow.cp.get("condition_strain", "pad-data"))
     padding += gate_pad
 
-if wflow.cp.has_option("inspiral", "analyse-segment-end"):
+if wflow.cp.has_option("inspiral", "segment-start-pad"):
+    start_pad = int(wflow.cp.get("inspiral", "segment-start-pad"))
+    end_pad = int(wflow.cp.get("inspiral", "segment-end-pad"))
+    wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + \
+                                                    start_pad + padding,
+                                  int(sciSegs[ifo][0][1]) - \
+                                                      padding - end_pad)
+elif wflow.cp.has_option("inspiral", "analyse-segment-end"):
     wflow.analysis_time = segment(int(sciSegs[ifo][0][0]) + deadtime - \
                                       spec_len + padding - safety,
                                   int(sciSegs[ifo][0][1]) - spec_len - \
@@ -177,17 +190,6 @@ if wflow.cp.has_option("workflow-condition_strain", "do-gating"):
     logging.info("Creating gating jobs.")
     wflow.cp = _workflow.set_grb_start_end(wflow.cp, int(sciSegs[ifo][0][0]),
                                            int(sciSegs[ifo][0][1]))
-    gate_files = _workflow.setup_gate_pregenerated(wflow, output_dir=dfDir)
-    for gate_file in gate_files:
-        ifo_gate = gate_file.cache_entry.url
-        try:
-            wflow.cp.set('condition_strain-{}'.format(gate_file.ifo.lower()),
-                         'gating-file', ifo_gate)
-        except ConfigParser.SectionError:
-            wflow.cp.add_section('condition_strain-{}'.format(
-                    gate_file.ifo.lower()))
-            wflow.cp.set('condition_strain-{}'.format(
-                    gate_file.ifo.lower()), 'gating-file', ifo_gate)
     gating_nodes, gated_files = _workflow.make_gating_node(wflow,
             datafind_files, outdir=dfDir)
     gating_method = wflow.cp.get("workflow-condition_strain",
@@ -240,9 +242,8 @@ elif wflow.cp.has_option("workflow-inspiral", "ipn-search-points") \
 else:
     IPN = False
 
-# If using coh_PTF_inspiral we need bank_veto_bank.xml
-if os.path.basename(wflow.cp.get("executables", "inspiral")) \
-                    == "lalapps_coh_PTF_inspiral":
+# If using pycbc_multi_inspiral we need bank_veto_bank.xml
+if (os.path.basename(wflow.cp.get("executables", "inspiral")) == "pycbc_multi_inspiral"):
     bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
                                                  bank_veto=True)
     datafind_veto_files.extend(bank_veto_file)
@@ -388,7 +389,7 @@ if long_slides:
     else:
         num_slides = int((int(wflow.cp.get("workflow", "end-time")) - \
                          int(wflow.cp.get("workflow", "start-time"))) / \
-                         float(int(wflow.cp.get("inspiral", "segment-duration")) * \
+                         float(int(wflow.cp.get("inspiral", "segment-length")) * \
                                (len(ifo_list) - 1)))
     logging.info("Doing {} long slides".format(num_slides))
     inspiral_ts_files = _workflow.FileList([])

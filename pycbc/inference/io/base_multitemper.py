@@ -26,7 +26,8 @@
 
 from __future__ import absolute_import
 import argparse
-from .base_mcmc import MCMCMetadataIO
+from six import string_types
+from .base_mcmc import (MCMCMetadataIO, thin_samples_for_writing)
 import numpy
 
 class ParseTempsArg(argparse.Action):
@@ -43,7 +44,7 @@ class ParseTempsArg(argparse.Action):
         super(ParseTempsArg, self).__init__(type=type, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        singlearg = isinstance(values, (str, unicode))
+        singlearg = isinstance(values, string_types)
         if singlearg:
             values = [values]
         if values[0] == 'all':
@@ -103,8 +104,7 @@ class MultiTemperedMCMCIO(object):
     """Provides functions for reading/writing samples from a parallel-tempered
     MCMC sampler.
     """
-    def write_samples(self, samples, parameters=None,
-                      start_iteration=None, max_iterations=None):
+    def write_samples(self, samples, parameters=None, last_iteration=None):
         """Writes samples to the given file.
 
         Results are written to ``samples_group/{vararg}``, where ``{vararg}``
@@ -119,51 +119,46 @@ class MultiTemperedMCMCIO(object):
         parameters : list, optional
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
-        start_iteration : int, optional
-            Write results to the file's datasets starting at the given
-            iteration. Default is to append after the last iteration in the
-            file.
-        max_iterations : int, optional
-            Set the maximum size that the arrays in the hdf file may be resized
-            to. Only applies if the samples have not previously been written
-            to file. The default (None) is to use the maximum size allowed by
-            h5py.
+        last_iteration : int, optional
+            The iteration of the last sample. If the file's ``thinned_by``
+            attribute is > 1, this is needed to determine where to start
+            thinning the samples to match what has already been stored on disk.
         """
         ntemps, nwalkers, niterations = samples.values()[0].shape
         assert all(p.shape == (ntemps, nwalkers, niterations)
                    for p in samples.values()), (
                "all samples must have the same shape")
-        if max_iterations is not None and max_iterations < niterations:
-            raise IndexError("The provided max size is less than the "
-                             "number of iterations")
         group = self.samples_group + '/{name}'
         if parameters is None:
             parameters = samples.keys()
+        # thin the samples
+        samples = thin_samples_for_writing(self, samples, parameters,
+                                           last_iteration)
         # loop over number of dimensions
         for param in parameters:
             dataset_name = group.format(name=param)
-            istart = start_iteration
+            data = samples[param]
+            # check that there's something to write after thinning
+            if data.shape[2] == 0:
+                # nothing to write, move along
+                continue
             try:
                 fp_niterations = self[dataset_name].shape[-1]
-                if istart is None:
-                    istart = fp_niterations
-                istop = istart + niterations
+                istart = fp_niterations
+                istop = istart + data.shape[2]
                 if istop > fp_niterations:
                     # resize the dataset
                     self[dataset_name].resize(istop, axis=2)
             except KeyError:
                 # dataset doesn't exist yet
-                if istart is not None and istart != 0:
-                    raise ValueError("non-zero start_iteration provided, "
-                                     "but dataset doesn't exist yet")
                 istart = 0
-                istop = istart + niterations
+                istop = istart + data.shape[2]
                 self.create_dataset(dataset_name, (ntemps, nwalkers, istop),
                                     maxshape=(ntemps, nwalkers,
-                                              max_iterations),
-                                    dtype=samples[param].dtype,
+                                              None),
+                                    dtype=data.dtype,
                                     fletcher32=True)
-            self[dataset_name][:, :, istart:istop] = samples[param]
+            self[dataset_name][:, :, istart:istop] = data
 
     def read_raw_samples(self, fields,
                          thin_start=None, thin_interval=None, thin_end=None,
@@ -204,7 +199,7 @@ class MultiTemperedMCMCIO(object):
             An instance of the given array class populated with values
             retrieved from the fields.
         """
-        if isinstance(fields, (str, unicode)):
+        if isinstance(fields, string_types):
             fields = [fields]
         # walkers to load
         if walkers is not None:

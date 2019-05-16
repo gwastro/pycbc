@@ -26,9 +26,14 @@ This module provides the worker functions and classes that are used when
 creating a workflow. For details about the workflow module see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope.html
 """
-import sys, os, stat, subprocess, logging, math, string, urlparse, urllib
-import ConfigParser, copy
-import numpy, cPickle, random
+import sys, os, stat, subprocess, logging, math, string
+from six.moves import configparser as ConfigParser
+from six.moves import urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin
+from six.moves import cPickle
+import copy
+import numpy, random
 from itertools import combinations, groupby, permutations
 from operator import attrgetter
 from six import string_types
@@ -36,11 +41,12 @@ import lal
 import lal.utils
 import Pegasus.DAX3
 from glue import lal as gluelal
-from glue import segments
+from ligo import segments
 from glue.ligolw import table, lsctables, ligolw
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import segments as ligolw_segments
 from glue.ligolw.utils import process as ligolw_process
+from pycbc import makedir
 from pycbc.workflow.configuration import WorkflowConfigParser, resolve_url
 from pycbc.workflow import pegasus_workflow
 
@@ -79,14 +85,6 @@ def make_analysis_dir(path):
     if path is not None:
         makedir(os.path.join(path, 'logs'))
 
-def makedir(path):
-    """
-    Make the analysis directory path and any parent directories that don't
-    already exist. Will do nothing if path already exists.
-    """
-    if path is not None and not os.path.exists(path):
-        os.makedirs(path)
-
 def is_condor_exec(exe_path):
     """
     Determine if an executable is condor-compiled
@@ -101,7 +99,7 @@ def is_condor_exec(exe_path):
     truth_value  : boolean
         Return True if the exe is condor compiled, False otherwise.
     """
-    if check_output(['nm', '-a', exe_path]).find('condor') != -1:
+    if str(check_output(['nm', '-a', exe_path])).find('condor') != -1:
         return True
     else:
         return False
@@ -229,7 +227,7 @@ class Executable(pegasus_workflow.Executable):
         exe_path = cp.get('executables', name)
         self.needs_fetching = False
 
-        exe_url = urlparse.urlparse(exe_path)
+        exe_url = urllib.parse.urlparse(exe_path)
 
         # See if the user specified a list of sites for the executable
         try:
@@ -300,7 +298,7 @@ class Executable(pegasus_workflow.Executable):
             if namespace == 'pycbc' or namespace == 'container':
                 continue
 
-            value = string.strip(cp.get(sec, opt))
+            value = cp.get(sec, opt).strip()
             key = opt.split('|')[1]
             self.add_profile(namespace, key, value, force=True)
 
@@ -319,26 +317,45 @@ class Executable(pegasus_workflow.Executable):
             The section containing options for this job.
         """
         for opt in cp.options(sec):
-            value = string.strip(cp.get(sec, opt))
+            value = cp.get(sec, opt).strip()
             opt = '--%s' %(opt,)
             if opt in self.file_input_options:
                 # This now expects the option to be a file
                 # Check is we have a list of files
                 values = [path for path in value.split(' ') if path]
-                dax_reprs = []
+
+                self.common_raw_options.append(opt)
+                self.common_raw_options.append(' ')
 
                 # Get LFN and PFN
                 for path in values:
+                    # Here I decide if the path is URL or
+                    # IFO:/path/to/file or IFO:url://path/to/file
+                    # That's somewhat tricksy as we used : as delimiter
+                    split_path = path.split(':', 1)
+                    if len(split_path) == 1:
+                        ifo = None
+                        path = path
+                    else:
+                        # Have I split a URL or not?
+                        if split_path[1].startswith('//'):
+                            # URL
+                            ifo = None
+                            path = path
+                        else:
+                            #IFO:path or IFO:URL
+                            ifo = split_path[0]
+                            path = split_path[1]
+
                     curr_lfn = os.path.basename(path)
 
                     # If the file exists make sure to use the
                     # fill path as a file:// URL
                     if os.path.isfile(path):
-                        curr_pfn = urlparse.urljoin('file:',
-                                    urllib.pathname2url(
-                                    os.path.abspath(path))) 
+                        curr_pfn = urljoin('file:',
+                                           pathname2url(os.path.abspath(path)))
                     else:
-                        curr_pfn = value
+                        curr_pfn = path
 
                     if curr_lfn in file_input_from_config_dict.keys():
                         file_pfn = file_input_from_config_dict[curr_lfn][2]
@@ -350,8 +367,12 @@ class Executable(pegasus_workflow.Executable):
                         tuple_val = (local_file_path, curr_file, curr_pfn)
                         file_input_from_config_dict[curr_lfn] = tuple_val
                     self.common_input_files.append(curr_file)
-                    dax_reprs.append(curr_file.dax_repr)
-                self.common_options += [opt] + dax_reprs
+                    if ifo:
+                        self.common_raw_options.append(ifo + ':')
+                        self.common_raw_options.append(curr_file.dax_repr)
+                    else:
+                        self.common_raw_options.append(curr_file.dax_repr)
+                    self.common_raw_options.append(' ')
             else:
                 self.common_options += [opt, value]
 
@@ -492,6 +513,12 @@ class Executable(pegasus_workflow.Executable):
         tags = [tag.upper() for tag in tags]
         self.tags = tags
 
+        if len(tags) > 6:
+            warn_msg = "This job has way too many tags. "
+            warn_msg += "Current tags are {}. ".format(' '.join(tags))
+            warn_msg += "Current executable {}.".format(self.name)
+            logging.info(warn_msg)
+
         if len(tags) != 0:
             self.tagged_name = "{0}-{1}".format(self.name, '_'.join(tags))
         else:
@@ -527,6 +554,7 @@ class Executable(pegasus_workflow.Executable):
         # collect the options and profile information
         # from the ini file section(s)
         self.common_options = []
+        self.common_raw_options = []
         self.common_input_files = []
         for sec in sections:
             if self.cp.has_section(sec):
@@ -658,9 +686,8 @@ class Workflow(pegasus_workflow.Workflow):
 
             resolved = resolve_url(pfn, permissions=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
             node.executable.clear_pfns()
-            node.executable.add_pfn(urlparse.urljoin('file:',
-                                    urllib.pathname2url(
-                                    resolved)), site='local')
+            node.executable.add_pfn(urljoin('file:', pathname2url(resolved)),
+                                    site='local')
 
         cmd_list = node.get_command_line()
 
@@ -677,8 +704,7 @@ class Workflow(pegasus_workflow.Workflow):
 
         for fil in node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:', 
-                    urllib.pathname2url(fil.storage_path)),
+            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                     site='local')
 
     @staticmethod
@@ -813,6 +839,7 @@ class Node(pegasus_workflow.Node):
             self.add_profile('hints', 'execution.site', executable.execution_site)
 
         self._options += self.executable.common_options
+        self._raw_options += self.executable.common_raw_options
         for inp in self.executable.common_input_files:
             self._add_input(inp)
 
@@ -834,7 +861,7 @@ class Node(pegasus_workflow.Node):
 
         # This allows the pfn to be an http(s) URL, which will be
         # downloaded by resolve_url
-        exe_path = urlparse.urlsplit(self.executable.get_pfn()).path
+        exe_path = urllib.parse.urlsplit(self.executable.get_pfn()).path
 
         return [exe_path] + arglist
 
@@ -846,7 +873,7 @@ class Node(pegasus_workflow.Node):
 
         Parameters
         -----------
-        valid_seg : glue.segments.segment
+        valid_seg : ligo.segments.segment
             The time span over which the job is valid for.
         extension : string
             The extension to be used at the end of the filename.
@@ -1034,12 +1061,12 @@ class File(pegasus_workflow.File):
         self.ifo_string = ''.join(self.ifo_list)
         self.description = exe_name
 
-        if isinstance(segs, (segments.segment)):
+        if isinstance(segs, segments.segment):
             self.segment_list = segments.segmentlist([segs])
         elif isinstance(segs, (segments.segmentlist)):
             self.segment_list = segs
         else:
-            err = "segs input must be either glue.segments.segment or "
+            err = "segs input must be either ligo.segments.segment or "
             err += "segments.segmentlist. Got %s." %(str(type(segs)),)
             raise ValueError(err)
         if tags is not None:
@@ -1069,8 +1096,8 @@ class File(pegasus_workflow.File):
             path = os.path.join(directory, filename)
             if not os.path.isabs(path):
                 path = os.path.join(os.getcwd(), path)
-            file_url = urlparse.urlunparse(['file', 'localhost', path, None,
-                                            None, None])
+            file_url = urllib.parse.urlunparse(['file', 'localhost', path,
+                                                None, None, None])
 
         # Let's do a test here
         if use_tmp_subdirs and len(self.segment_list):
@@ -1081,7 +1108,7 @@ class File(pegasus_workflow.File):
         super(File, self).__init__(pegasus_lfn)
 
         if store_file:
-            self.storage_path = urlparse.urlsplit(file_url).path
+            self.storage_path = urllib.parse.urlsplit(file_url).path
         else:
             self.storage_path = None
 
@@ -1135,7 +1162,8 @@ class File(pegasus_workflow.File):
             raise ValueError('This file is temporary and so a lal '
                              'cache entry cannot be made')
 
-        file_url = urlparse.urlunparse(['file', 'localhost', self.storage_path, None,
+        file_url = urllib.parse.urlunparse(['file', 'localhost',
+                                            self.storage_path, None,
                                             None, None])
         cache_entry = lal.utils.CacheEntry(self.ifo_string,
                    self.tagged_description, self.segment_list.extent(), file_url)
@@ -1555,7 +1583,7 @@ class SegFile(File):
         See File.__init__ for a full set of documentation for how to
         call this class. The only thing unique and added to this class is
         the optional segment_dict. NOTE that while segment_dict is a
-        glue.segments.segmentlistdict rather than the usual dict[ifo]
+        ligo.segments.segmentlistdict rather than the usual dict[ifo]
         we key by dict[ifo:name].
 
         Parameters
@@ -1564,10 +1592,10 @@ class SegFile(File):
             See File.__init__
         description : string (required)
             See File.__init__
-        segment : glue.segments.segment or glue.segments.segmentlist
+        segment : ligo.segments.segment or ligo.segments.segmentlist
             See File.__init__
-        segment_dict : glue.segments.segmentlistdict (optional, default=None)
-            A glue.segments.segmentlistdict covering the times covered by the
+        segment_dict : ligo.segments.segmentlistdict (optional, default=None)
+            A ligo.segments.segmentlistdict covering the times covered by the
             segmentlistdict associated with this file.
             Can be added by setting self.segment_dict after initializing an
             instance of the class.
@@ -1590,13 +1618,13 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlist : glue.segments.segmentslist
+        segmentlist : ligo.segments.segmentslist
             The segment list that will be stored in this file.
         name : str
             The name of the segment lists to be stored in the file.
         ifo : str
             The ifo of the segment lists to be stored in this file.
-        seg_summ_list : glue.segments.segmentslist (OPTIONAL)
+        seg_summ_list : ligo.segments.segmentslist (OPTIONAL)
             Specify the segment_summary segmentlist that goes along with the
             segmentlist. Default=None, in this case segment_summary is taken
             from the valid_segment of the SegFile class.
@@ -1620,13 +1648,13 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlists : List of glue.segments.segmentslist
+        segmentlists : List of ligo.segments.segmentslist
             List of segment lists that will be stored in this file.
         names : List of str
             List of names of the segment lists to be stored in the file.
         ifos : str
             List of ifos of the segment lists to be stored in this file.
-        seg_summ_lists : glue.segments.segmentslist (OPTIONAL)
+        seg_summ_lists : ligo.segments.segmentslist (OPTIONAL)
             Specify the segment_summary segmentlists that go along with the
             segmentlists. Default=None, in this case segment_summary is taken
             from the valid_segment of the SegFile class.
@@ -1655,18 +1683,18 @@ class SegFile(File):
         ------------
         description : string (required)
             See File.__init__
-        segmentlistdict : glue.segments.segmentslistdict
+        segmentlistdict : ligo.segments.segmentslistdict
             See SegFile.__init__
         ifo_list : string or list (optional)
             See File.__init__, if not given a list of all ifos in the
             segmentlistdict object will be used
-        valid_segment : glue.segments.segment or glue.segments.segmentlist
+        valid_segment : ligo.segments.segment or ligo.segments.segmentlist
             See File.__init__, if not given the extent of all segments in the
             segmentlistdict is used.
         file_exists : boolean (default = False)
             If provided and set to True it is assumed that this file already
             exists on disk and so there is no need to write again.
-        seg_summ_dict : glue.segments.segmentslistdict
+        seg_summ_dict : ligo.segments.segmentslistdict
             Optional. See SegFile.__init__.
         """
         if ifo_list is None:
@@ -1700,15 +1728,14 @@ class SegFile(File):
         if not file_exists:
             instnc.to_segment_xml()
         else:
-            instnc.PFN(urlparse.urljoin('file:',
-                       urllib.pathname2url(
-                       instnc.storage_path)), site='local')
+            instnc.PFN(urljoin('file:', pathname2url(instnc.storage_path)),
+                       site='local')
         return instnc
 
     @classmethod
     def from_segment_xml(cls, xml_file, **kwargs):
         """
-        Read a glue.segments.segmentlist from the file object file containing an
+        Read a ligo.segments.segmentlist from the file object file containing an
         xml segment table.
 
         Parameters
@@ -1717,7 +1744,7 @@ class SegFile(File):
             file object for segment xml file
         """
         # load xmldocument and SegmentDefTable and SegmentTables
-        fp = open(xml_file, 'r')
+        fp = open(xml_file, 'rb')
         xmldoc, _ = ligolw_utils.load_fileobj(fp,
                                               gz=xml_file.endswith(".gz"),
                                               contenthandler=ContentHandler)
@@ -1757,8 +1784,8 @@ class SegFile(File):
 
         xmldoc.unlink()
         fp.close()
-        curr_url = urlparse.urlunparse(['file', 'localhost', xml_file, None,
-                                        None, None])
+        curr_url = urllib.parse.urlunparse(['file', 'localhost', xml_file,
+                                            None, None, None])
 
         return cls.from_segment_list_dict('SEGMENTS', segs, file_url=curr_url,
                                           file_exists=True,
@@ -1831,13 +1858,9 @@ class SegFile(File):
                                     version=1, valid=vsegs))
 
         # write file
-        if override_file_if_exists and \
-                                 self.has_pfn(self.storage_path, site='local'):
-            pass
-        else:
-            self.PFN(urlparse.urljoin('file:', 
-                     urllib.pathname2url(self.storage_path)),
-                     site='local')
+        url = urljoin('file:', pathname2url(self.storage_path))
+        if not override_file_if_exists or not self.has_pfn(url, site='local'):
+            self.PFN(url, site='local')
         ligolw_utils.write_filename(outdoc, self.storage_path)
 
 
@@ -1938,12 +1961,12 @@ def get_full_analysis_chunk(science_segs):
 
     Parameters
     -----------
-    science_segs : ifo-keyed dictionary of glue.segments.segmentlist instances
+    science_segs : ifo-keyed dictionary of ligo.segments.segmentlist instances
         The list of times that are being analysed in this workflow.
 
     Returns
     --------
-    fullSegment : glue.segments.segment
+    fullSegment : ligo.segments.segment
         The segment spanning the first and last time point contained in science_segs.
     """
     extents = [science_segs[ifo].extent() for ifo in science_segs.keys()]

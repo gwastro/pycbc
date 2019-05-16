@@ -13,10 +13,12 @@ parser.add_argument('--injection-file',
 parser.add_argument('--axis-type', default='mchirp', choices=['mchirp',
                     'effective_spin', 'time', 'mtotal', 'mass_ratio'])
 parser.add_argument('--log-x', action='store_true', default=False)
-parser.add_argument('--distance-type', default='decisive_distance',
+parser.add_argument('--distance-type', default='decisive_optimal_snr',
                     choices=['decisive_distance', 'dec_chirp_distance',
                              'chirp_distance', 'comb_optimal_snr',
-                             'decisive_optimal_snr', 'redshift'])
+                             'decisive_optimal_snr', 'redshift'],
+                    help="Variable related to injected distance. Decisive distance and dec"
+                         " chirp distance only available for 2-ifo search")
 parser.add_argument('--plot-all-distance', action='store_true', default=False,
                     help="Plot all values of distance or SNR. If not given, "
                          "the plot will be truncated below 1")
@@ -51,9 +53,6 @@ elif args.far_type == 'exclusive':
     ifar_found = f['found_after_vetoes/ifar_exc'][:]
     far_title = 'Exclusive'
 
-# This hardcodes HL search !!!!!, replace with function that takes or/sky/det
-hdist = f['injections/eff_dist_h'][:]
-ldist = f['injections/eff_dist_l'][:]
 s1z = f['injections/spin1z'][:]
 s2z = f['injections/spin2z'][:]
 dist = f['injections/distance'][:]
@@ -69,17 +68,50 @@ vals['mtotal'] = m1 + m2
 vals['mass_ratio'] = numpy.maximum(m1/m2, m2/m1)
 
 dvals = {}
-dvals['decisive_distance'] = numpy.maximum(hdist, ldist)
-dvals['dec_chirp_distance'] = pycbc.pnutils.chirp_distance(dvals['decisive_distance'], vals['mchirp'])
+
+ifos = f.attrs['ifos'].split(' ')
+
+# NOTE: Effective distance is hardcoded to these values. It's also normally
+#       meaningless for precessing injections.
+eff_dist_map = {'H1': 'eff_dist_h', 'H2': 'eff_dist_h', 'L1': 'eff_dist_l',
+                'G1': 'eff_dist_g', 'T1': 'eff_dist_t', 'V1': 'eff_dist_v'}
+
+try:
+    eff_dists = [f['injections/{}'.format(eff_dist_map[ifo])][:]\
+                 for ifo in ifos]
+    eff_dists = numpy.array(eff_dists).T 
+    # "Decisive" distance is the second smallest effective distance
+    dvals['decisive_distance'] = numpy.sort(eff_dists)[:,1]
+    dvals['dec_chirp_distance'] = \
+        pycbc.pnutils.chirp_distance(dvals['decisive_distance'],
+                                     vals['mchirp'])
+except KeyError:
+    # If the ifo isn't in the effective distance columns you can't get this.
+    # But you can still use other values.
+    pass
+
 dvals['chirp_distance'] = pycbc.pnutils.chirp_distance(dist, vals['mchirp'])
 if args.distance_type == 'redshift':
     dvals['redshift'] = f['injections/redshift'][:]
 
-if 'optimal_snr_1' in f['injections']:
-    opt_snr_1 = f['injections/optimal_snr_1'][:]
-    opt_snr_2 = f['injections/optimal_snr_2'][:]
-    dvals['comb_optimal_snr'] = numpy.sqrt(opt_snr_1 ** 2 + opt_snr_2 ** 2)
-    dvals['decisive_optimal_snr'] = numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
+if 'snr' in args.distance_type:  # only evaluate SNRs if needed
+    if 'optimal_snr_1' in f['injections']:  # old 2-ifo search behaviour
+        opt_snr_1 = f['injections/optimal_snr_1'][:]
+        opt_snr_2 = f['injections/optimal_snr_2'][:]
+        dvals['comb_optimal_snr'] = \
+            numpy.sqrt(opt_snr_1 ** 2. + opt_snr_2 ** 2.)
+        dvals['decisive_optimal_snr'] = \
+            numpy.where(opt_snr_1 < opt_snr_2, opt_snr_1, opt_snr_2)
+    else: # New workflow code syntax
+        opt_snrsq_arr = \
+            [f['injections/optimal_snr_%s' % ifo][:]**2. for ifo in ifos]
+        dvals['comb_optimal_snr'] = \
+            numpy.array([numpy.sqrt(sum(opt_snrsq))
+                         for opt_snrsq in zip(*opt_snrsq_arr)])
+        # Decisive optimal SNR is the 2nd largest optimal SNR
+        dvals['decisive_optimal_snr'] = \
+            numpy.array([numpy.sqrt(sorted(opt_snrsq)[-2])
+                         for opt_snrsq in zip(*opt_snrsq_arr)])
 
 fdvals = dvals[args.distance_type][found]
 mdvals = dvals[args.distance_type][missed]
@@ -141,7 +173,7 @@ else:
                           marker='o', label='found', zorder=zfound)
     caption = (fig_title + ": Red x's are missed injections. "
                "Circles are found injections. The color indicates the value of "
-               "the false alarm rate. " )
+               "the false alarm rate." )
     plot.subplots_adjust(right=0.99)
     try:
         c = plot.colorbar()
@@ -203,4 +235,3 @@ pycbc.results.save_fig_with_metadata\
     (fig, args.output_file, fig_kwds=fig_kwds,
      title='%s: %s vs %s' % (fig_title, args.axis_type, args.distance_type),
      cmd=' '.join(sys.argv), caption=caption)
-

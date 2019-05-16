@@ -31,7 +31,7 @@ __program__ = "get_data_example"
 import os, sys
 import argparse
 import logging
-from glue import segments
+from ligo import segments
 import pycbc.workflow as _workflow
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
@@ -57,6 +57,6 @@ scienceSegs, segsList = _workflow.setup_segment_generation(workflow, segDir)
 datafinds, scienceSegs = _workflow.setup_datafind_workflow(workflow, scienceSegs,
                            dfDir, segsList)
 
-# scienceSegs is a glue.segmentlist of the times you should analyse.
+# scienceSegs is a ligo.segment.segmentlist of the times you should analyse.
 # It contains science times, that are present on disk, with CAT_1 times
 # removed.

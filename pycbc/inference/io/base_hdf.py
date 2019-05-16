@@ -30,6 +30,7 @@ from __future__ import absolute_import
 import sys
 import logging
 from abc import (ABCMeta, abstractmethod)
+from six import string_types
 import numpy
 
 import h5py
@@ -93,20 +94,10 @@ class BaseInferenceFile(h5py.File):
 
         Parameters
         ----------
-        fp : open hdf file
-            The file to write to.
         samples : dict
             Samples should be provided as a dictionary of numpy arrays.
         \**kwargs :
             Any other keyword args the sampler needs to write data.
-        """
-        pass
-
-    @abstractmethod
-    def write_sampler_metadata(self, sampler):
-        """This should write the given sampler's metadata to the file.
-
-        This should also include the model's metadata.
         """
         pass
 
@@ -155,8 +146,6 @@ class BaseInferenceFile(h5py.File):
 
         Parameters
         -----------
-        fp : InferenceFile
-            An open file handler to read the samples from.
         parameters : (list of) strings
             The parameter(s) to retrieve.
         array_class : FieldArray-like class, optional
@@ -180,8 +169,10 @@ class BaseInferenceFile(h5py.File):
         samples = self.read_raw_samples(loadfields, **kwargs)
         # convert to FieldArray
         samples = array_class.from_kwargs(**samples)
-        # add the static params
-        for (p, val) in self.static_params.items():
+        # add the static params and attributes
+        addatrs = (self.static_params.items() +
+                   self[self.samples_group].attrs.items())
+        for (p, val) in addatrs:
             setattr(samples, p, val)
         return samples
 
@@ -190,20 +181,6 @@ class BaseInferenceFile(h5py.File):
         """Low level function for reading datasets in the samples group.
 
         This should return a dictionary of numpy arrays.
-        """
-        pass
-
-    @abstractmethod
-    def write_posterior(self, filename, **kwargs):
-        """This should write a posterior plus any other metadata to the given
-        file.
-
-        Parameters
-        ----------
-        posterior_file : str
-            Name of the file to write to.
-        \**kwargs :
-            Any other keyword args the sampler needs to write the posterior.
         """
         pass
 
@@ -299,7 +276,7 @@ class BaseInferenceFile(h5py.File):
             Array of the loaded samples.
         """
         if parameters is None and opts.parameters is None:
-            parameters = self.variable_args
+            parameters = self.variable_params
         elif parameters is None:
             parameters = opts.parameters
         # parse optional arguments
@@ -339,6 +316,17 @@ class BaseInferenceFile(h5py.File):
         except KeyError:
             return 0
 
+    @thin_start.setter
+    def thin_start(self, thin_start):
+        """Sets the thin start attribute.
+
+        Parameters
+        ----------
+        thin_start : int or None
+            Value to set the thin start to.
+        """
+        self.attrs['thin_start'] = thin_start
+
     @property
     def thin_interval(self):
         """The default interval to use when reading samples.
@@ -351,6 +339,17 @@ class BaseInferenceFile(h5py.File):
         except KeyError:
             return 1
 
+    @thin_interval.setter
+    def thin_interval(self, thin_interval):
+        """Sets the thin start attribute.
+
+        Parameters
+        ----------
+        thin_interval : int or None
+            Value to set the thin interval to.
+        """
+        self.attrs['thin_interval'] = thin_interval
+
     @property
     def thin_end(self):
         """The defaut end index to use when reading samples.
@@ -362,6 +361,17 @@ class BaseInferenceFile(h5py.File):
             return self.attrs['thin_end']
         except KeyError:
             return None
+
+    @thin_end.setter
+    def thin_end(self, thin_end):
+        """Sets the thin end attribute.
+
+        Parameters
+        ----------
+        thin_end : int or None
+            Value to set the thin end to.
+        """
+        self.attrs['thin_end'] = thin_end
 
     @property
     def cmd(self):
@@ -566,16 +576,6 @@ class BaseInferenceFile(h5py.File):
             previous = []
         self.attrs["cmd"] = cmd + previous
 
-    @abstractmethod
-    def write_resume_point(self):
-        """Should write the point that a sampler starts up.
-
-        How the resume point is indexed is up to the sampler. For example,
-        MCMC samplers use the number of iterations that are stored in the
-        checkpoint file.
-        """
-        pass
-
     def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
         """Formats a slice using the given arguments that can be used to
         retrieve a thinned array from an InferenceFile.
@@ -641,7 +641,7 @@ class BaseInferenceFile(h5py.File):
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
-        if isinstance(ignore, (str, unicode)):
+        if isinstance(ignore, string_types):
             ignore = [ignore]
         ignore = set(ignore + [self.samples_group])
         copy_groups = set(self.keys()) - ignore
@@ -727,7 +727,7 @@ class BaseInferenceFile(h5py.File):
         # info
         if ignore is None:
             ignore = []
-        if isinstance(ignore, (str, unicode)):
+        if isinstance(ignore, string_types):
             ignore = [ignore]
         self.copy_info(other, ignore=ignore)
         # samples

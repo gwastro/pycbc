@@ -67,7 +67,8 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
     _io = EmceeFile
     burn_in_class = MCMCBurnInTests
 
-    def __init__(self, model, nwalkers, checkpoint_interval=None,
+    def __init__(self, model, nwalkers,
+                 checkpoint_interval=None, checkpoint_signal=None,
                  logpost_function=None, nprocesses=1, use_mpi=False):
 
         self.model = model
@@ -95,6 +96,7 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         rstate = numpy.random.get_state()
         self._sampler.random_state = rstate
         self._checkpoint_interval = checkpoint_interval
+        self._checkpoint_signal = checkpoint_signal
 
     @property
     def io(self):
@@ -173,9 +175,11 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params)
+            fp.write_samples(self.samples, self.model.variable_params,
+                             last_iteration=self.niterations)
             # write stats
-            fp.write_samples(self.model_stats)
+            fp.write_samples(self.model_stats,
+                             last_iteration=self.niterations)
             # write accpetance
             fp.write_acceptance_fraction(self._sampler.acceptance_fraction)
             # write random state
@@ -197,13 +201,18 @@ class EmceeEnsembleSampler(MCMCAutocorrSupport, BaseMCMC, BaseSampler):
         nwalkers = int(cp.get(section, "nwalkers"))
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
+        checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the logpost function
         lnpost = get_optional_arg_from_config(cp, section, 'logpost-function')
-        obj = cls(model, nwalkers, checkpoint_interval=checkpoint_interval,
+        obj = cls(model, nwalkers,
+                  checkpoint_interval=checkpoint_interval,
+                  checkpoint_signal=checkpoint_signal,
                   logpost_function=lnpost, nprocesses=nprocesses,
                   use_mpi=use_mpi)
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
         obj.set_burn_in_from_config(cp)
+        # set prethin options
+        obj.set_thin_interval_from_config(cp, section)
         return obj

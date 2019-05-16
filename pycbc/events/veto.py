@@ -3,8 +3,7 @@ segment.
 """
 import numpy
 from glue.ligolw import table, lsctables, utils as ligolw_utils
-from glue.segments import segment, segmentlist
-
+from ligo.segments import segment, segmentlist
 
 def start_end_to_segments(start, end):
     return segmentlist([segment(s, e) for s, e in zip(start, end)])

@@ -57,10 +57,10 @@ snum, swidth, sbins = bcount(args.min_snr, args.max_snr, snr_error)
 rnum, rwidth, rbins = bcount(args.min_detector_ratio, 1, detector_error)
 
 hist_bins = (tbins, pbins, sbins, sbins, rbins)
-print tbins
-print pbins
-print sbins
-print rbins
+print(tbins)
+print(pbins)
+print(sbins)
+print(rbins)
 pycbc.init_logging(args.verbose)
 
 def generate_hist(val):
@@ -133,7 +133,7 @@ def generate_samples(val):
     phase_diff = (numpy.arctan2(sc1, sp1) - numpy.arctan2(sc2, sp2)) % (numpy.pi * 2)
     
     logging.info('keeping %s values' % len(s1))
-    print r
+    print(r)
     return td, phase_diff, s1, s2, r
 
 # This just makes sure that 3 chunks are submitted to each process
@@ -143,7 +143,7 @@ chunk_data = [core_size] * args.cores * fiddle
 
 seeds = numpy.arange(args.seed, args.seed + len(chunk_data), 1)
 chunk_data = tuple(list(zip(chunk_data, seeds)))
-print chunk_data
+print(chunk_data)
 
 if args.cores == 1:
     h = map(generate_hist, chunk_data)

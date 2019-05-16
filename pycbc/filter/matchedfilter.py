@@ -33,6 +33,7 @@ from pycbc.types import complex_same_precision_as, real_same_precision_as
 from pycbc.fft import fft, ifft, IFFT
 import pycbc.scheme
 from pycbc import events
+from pycbc.events import ranking
 import pycbc
 import numpy
 
@@ -99,6 +100,7 @@ class Correlator(object):
     def __new__(cls, *args, **kwargs):
         real_cls = _correlate_factory(*args, **kwargs)
         return real_cls(*args, **kwargs) # pylint:disable=not-callable
+
 
 # The class below should serve as the parent for all schemed classes.
 # The intention is that this class serves simply as the location for
@@ -327,7 +329,7 @@ class MatchedFilterControl(object):
         corr = FrequencySeries(self.corr_mem, delta_f=self.delta_f, copy=False)
         return snr, norm, corr, idx, snrv
 
-    def full_matched_filter_thresh_only(self, segnum, template_norm, window, epoch=None):
+    def full_matched_filter_thresh_only(self, segnum, template_norm, window=None, epoch=None):
         """ Returns the complex snr timeseries, normalization of the complex snr,
         the correlation vector frequency series, the list of indices of the
         triggers, and the snr values at the trigger locations. Returns empty
@@ -359,15 +361,11 @@ class MatchedFilterControl(object):
         snrv : Array
             The snr values at the trigger locations.
         """
-        norm = (4.0 * self.stilde_delta_f) / sqrt(template_norm)
+        norm = (4.0 * self.delta_f) / sqrt(template_norm)
         self.correlators[segnum].correlate()
         self.ifft.execute()
-        snrv, idx = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
+        idx, snrv = events.threshold_only(self.snr_mem[self.segments[segnum].analyze],
                                           self.snr_threshold / norm)
-
-        if len(idx) == 0:
-            return [], [], [], [], []
-
         logging.info("%s points above threshold" % str(len(idx)))
 
         snr = TimeSeries(self.snr_mem, epoch=epoch, delta_t=self.delta_t, copy=False)
@@ -823,6 +821,7 @@ def compute_u_val_for_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
 
     return u_val, coa_phase
 
+
 class MatchedFilterSkyMaxControl(object):
     # FIXME: This seems much more simplistic than the aligned-spin class.
     #        E.g. no correlators. Is this worth updating?
@@ -971,6 +970,7 @@ class MatchedFilterSkyMaxControl(object):
     def _maximized_extrinsic_params(self, hplus, hcross, hphccorr, **kwargs):
         return compute_u_val_for_sky_loc_stat(hplus, hcross, hphccorr,
                                               **kwargs)
+
 
 class MatchedFilterSkyMaxControlNoPhase(MatchedFilterSkyMaxControl):
     # Basically the same as normal SkyMaxControl, except we use a slight
@@ -1247,10 +1247,9 @@ def matched_filter_core(template, data, psd=None, low_frequency_cutoff=None,
         h_norm = sigmasq(htilde, psd, low_frequency_cutoff, high_frequency_cutoff)
 
     norm = (4.0 * stilde.delta_f) / sqrt( h_norm)
-    delta_t = 1.0 / (N * stilde.delta_f)
 
-    return (TimeSeries(_q, epoch=stilde._epoch, delta_t=delta_t, copy=False),
-           FrequencySeries(qtilde, epoch=stilde._epoch, delta_f=htilde.delta_f, copy=False),
+    return (TimeSeries(_q, epoch=stilde._epoch, delta_t=stilde.delta_t, copy=False),
+           FrequencySeries(qtilde, epoch=stilde._epoch, delta_f=stilde.delta_f, copy=False),
            norm)
 
 def smear(idx, factor):
@@ -1461,11 +1460,12 @@ def quadratic_interpolate_peak(left, middle, right):
     peak_value = middle + 0.25 * (left - right) * bin_offset
     return bin_offset, peak_value
 
+
 class LiveBatchMatchedFilter(object):
 
     """Calculate SNR and signal consistency tests in a batched progression"""
 
-    def __init__(self, templates, snr_threshold, chisq_bins,
+    def __init__(self, templates, snr_threshold, chisq_bins, sg_chisq,
                  maxelements=2**27,
                  snr_abort_threshold=None,
                  newsnr_threshold=None,
@@ -1480,7 +1480,9 @@ class LiveBatchMatchedFilter(object):
             Minimum value to record peaks in the SNR time series.
         chisq_bins: str
             Str that determines how the number of chisq bins varies as a
-        function of the template bank parameters.
+            function of the template bank parameters.
+        sg_chisq: pycbc.vetoes.SingleDetSGChisq
+            Instance of the sg_chisq class to calculate sg_chisq with.
         maxelements: {int, 2**27}
             Maximum size of a batched fourier transform.
         snr_abort_threshold: {float, None}
@@ -1500,6 +1502,7 @@ class LiveBatchMatchedFilter(object):
 
         from pycbc import vetoes
         self.power_chisq = vetoes.SingleDetPowerChisq(chisq_bins, None)
+        self.sg_chisq = sg_chisq
 
         durations = numpy.array([1.0 / t.delta_f for t in templates])
 
@@ -1564,7 +1567,6 @@ class LiveBatchMatchedFilter(object):
                 e += psize
             self.corr.append(BatchCorrelator(tgroup, [t.cout for t in tgroup], len(tgroup[0])))
 
-
     def set_data(self, data):
         """Set the data reader object to use"""
         self.data = data
@@ -1610,8 +1612,11 @@ class LiveBatchMatchedFilter(object):
         """Calculate signal based vetoes"""
         chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32, ndmin=1)
         dof = numpy.array(numpy.zeros(len(veto_info)), numpy.uint32, ndmin=1)
+        sg_chisq = numpy.array(numpy.zeros(len(veto_info)), numpy.float32,
+                               ndmin=1)
         results['chisq'] = chisq
         results['chisq_dof'] = dof
+        results['sg_chisq'] = sg_chisq
 
         keep = []
         for i, (snrv, norm, l, htilde, stilde) in enumerate(veto_info):
@@ -1621,8 +1626,13 @@ class LiveBatchMatchedFilter(object):
             chisq[i] = c[0] / d[0]
             dof[i] = d[0]
 
+            sgv = self.sg_chisq.values(stilde, htilde, stilde.psd,
+                                       snrv, norm, c, d, [l])
+            if sgv is not None:
+                sg_chisq[i] = sgv[0]
+
             if self.newsnr_threshold:
-                newsnr = events.newsnr(results['snr'][i], chisq[i])
+                newsnr = ranking.newsnr(results['snr'][i], chisq[i])
                 if newsnr >= self.newsnr_threshold:
                     keep.append(i)
 
@@ -1719,6 +1729,88 @@ class LiveBatchMatchedFilter(object):
 
         return result, veto_info
 
+def followup_event_significance(ifo, data_reader, bank,
+                                template_id, coinc_times,
+                                coinc_threshold=0.005,
+                                lookback=150, duration=0.095):
+    """ Followup an event in another detector and determine its significance
+    """
+    from pycbc.waveform import get_waveform_filter_length_in_time
+    tmplt = bank.table[template_id]
+    length_in_time = get_waveform_filter_length_in_time(tmplt['approximant'],
+                                                        tmplt)
+
+    # calculate onsource time range
+    from pycbc.detector import Detector
+    onsource_start = -numpy.inf
+    onsource_end = numpy.inf
+    fdet = Detector(ifo)
+
+    for cifo in coinc_times:
+        time = coinc_times[cifo]
+        dtravel =  Detector(cifo).light_travel_time_to_detector(fdet)
+        if time - dtravel > onsource_start:
+            onsource_start = time - dtravel
+        if time + dtravel < onsource_end:
+            onsource_end = time + dtravel
+
+    # Source must be within this time window to be considered a possible
+    # coincidence
+    onsource_start -= coinc_threshold
+    onsource_end += coinc_threshold
+
+    # Calculate how much time needed to calculate significance
+    trim_pad = (data_reader.trim_padding * data_reader.strain.delta_t)
+    bdur = int(lookback + 2.0 * trim_pad + length_in_time)
+    if bdur > data_reader.strain.duration * .75:
+        bdur = data_reader.strain.duration * .75
+
+    # Require all strain be valid within lookback time
+    if data_reader.state is not None:
+        state_start_time = data_reader.strain.end_time \
+                - data_reader.reduced_pad * data_reader.strain.delta_t - bdur
+        if not data_reader.state.is_extent_valid(state_start_time, bdur):
+            return None, None, None, None
+
+    # We won't require that all DQ checks be valid for now, except at
+    # onsource time.
+    if data_reader.dq is not None:
+        dq_start_time = onsource_start - duration / 2.0
+        dq_duration = onsource_end - onsource_start + duration
+        if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
+            return None, None, None, None
+
+    # Calculate SNR time series for this duration
+    htilde = bank.get_template(template_id, min_buffer=bdur)
+    stilde = data_reader.overwhitened_data(htilde.delta_f)
+
+    sigma2 = htilde.sigmasq(stilde.psd)
+    snr, _, norm = matched_filter_core(htilde, stilde, h_norm=sigma2)
+
+    # Find peak in on-source and determine p-value
+    onsrc = snr.time_slice(onsource_start, onsource_end)
+    peak = onsrc.abs_arg_max()
+    peak_time = peak * snr.delta_t + onsrc.start_time
+    peak_value = abs(onsrc[peak])
+
+    bstart = float(snr.start_time) + length_in_time + trim_pad
+    bkg = abs(snr.time_slice(bstart, onsource_start)).numpy()
+
+    window = int((onsource_end - onsource_start) * snr.sample_rate)
+    nsamples = int(len(bkg) / window)
+
+    peaks = bkg[:nsamples*window].reshape(nsamples, window).max(axis=1)
+    pvalue = (1 + (peaks >= peak_value).sum()) / float(1 + nsamples)
+
+    # Return recentered source SNR for bayestar, along with p-value, and trig
+    baysnr = snr.time_slice(peak_time - duration / 2.0,
+                            peak_time + duration / 2.0)
+
+    logging.info('Adding %s to candidate, pvalue %s, %s samples', ifo,
+                 pvalue, nsamples)
+
+    return baysnr * norm, peak_time, pvalue, sigma2
+
 def compute_followup_snr_series(data_reader, htilde, trig_time,
                                 duration=0.095, check_state=True,
                                 coinc_window=0.05):
@@ -1765,47 +1857,36 @@ def compute_followup_snr_series(data_reader, htilde, trig_time,
         state_start_time = trig_time - duration / 2 - htilde.length_in_time
         state_end_time = trig_time + duration / 2
         state_duration = state_end_time - state_start_time
-        if data_reader.state is not None \
-                and not data_reader.state.is_extent_valid(
-                        state_start_time, state_duration):
-            return None
+        if data_reader.state is not None:
+            if not data_reader.state.is_extent_valid(state_start_time,
+                                                     state_duration):
+                return None
 
         # was the data quality ok for the full amount of involved data?
         dq_start_time = state_start_time - data_reader.dq_padding
         dq_duration = state_duration + 2 * data_reader.dq_padding
-        if data_reader.dq is not None \
-                and not data_reader.dq.is_extent_valid(
-                        dq_start_time, dq_duration):
-            return None
+        if data_reader.dq is not None:
+            if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
+                return None
 
     stilde = data_reader.overwhitened_data(htilde.delta_f)
-
-    norm = 4.0 * htilde.delta_f * htilde.sigmasq(stilde.psd) ** (-0.5)
-
-    sr = data_reader.sample_rate
-    dt = 1. / sr
-
-    qtilde = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
-    correlate(htilde, stilde, qtilde)
-    snr = zeros((len(htilde) - 1) * 2, dtype=htilde.dtype)
-    ifft(qtilde, snr)
+    snr, _, norm = matched_filter_core(htilde, stilde,
+                                          h_norm=htilde.sigmasq(stilde.psd))
 
     valid_end = int(len(snr) - data_reader.trim_padding)
-    valid_start = int(valid_end - data_reader.blocksize * sr)
+    valid_start = int(valid_end - data_reader.blocksize * snr.sample_rate)
 
-    half_dur_samples = int(sr * duration / 2)
-    coinc_samples = int(sr * coinc_window)
+    half_dur_samples = int(snr.sample_rate * duration / 2)
+    coinc_samples = int(snr.sample_rate * coinc_window)
     valid_start -= half_dur_samples + coinc_samples
     valid_end += half_dur_samples
     if valid_start < 0 or valid_end > len(snr)-1:
         raise ValueError(('Requested SNR duration ({0} s)'
                           ' too long').format(duration))
 
-    epoch = data_reader.start_time - (half_dur_samples + coinc_samples) * dt
-    snr = TimeSeries(snr[slice(valid_start, valid_end)],
-                     delta_t=dt, epoch=epoch)
-
-    onsource_idx = int(round(float(trig_time - snr.start_time) * sr))
+    # Onsource slice for Bayestar followup
+    onsource_idx = float(trig_time - snr.start_time) * snr.sample_rate
+    onsource_idx = int(round(onsource_idx))
     onsource_slice = slice(onsource_idx - half_dur_samples,
                            onsource_idx + half_dur_samples + 1)
     return snr[onsource_slice] * norm
@@ -1819,5 +1900,6 @@ __all__ = ['match', 'matched_filter', 'sigmasq', 'sigma', 'get_cutoff_indices',
            'compute_max_snr_over_sky_loc_stat',
            'compute_followup_snr_series',
            'compute_u_val_for_sky_loc_stat_no_phase',
-           'compute_u_val_for_sky_loc_stat']
+           'compute_u_val_for_sky_loc_stat',
+           'followup_event_significance']
 

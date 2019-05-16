@@ -15,7 +15,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 import copy
-from glue import segments
+from ligo import segments
 from pycbc.psd.read import *
 from pycbc.psd.analytical import *
 from pycbc.psd.estimate import *
@@ -204,16 +204,23 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                                   "to you, then it is probably safe to "
                                   "ignore this option.")
     # Options for PSD variation
-    psd_options.add_argument("--psdvar_short_segment", type=float,
+    psd_options.add_argument("--psdvar-short-segment", type=float,
                              metavar="SECONDS", help="Length of short segment "
                              "when calculating the PSD variability.")
-    psd_options.add_argument("--psdvar_long_segment", type=float,
+    psd_options.add_argument("--psdvar-long-segment", type=float,
                              metavar="SECONDS", help="Length of long segment "
                              "when calculating the PSD variability.")
-    psd_options.add_argument("--psdvar_overlap", type=float, metavar="SECONDS",                              help="Sample length of the PSD.")
-    psd_options.add_argument("--psdvar_low_freq", type=float, metavar="HERTZ",                               help="Minimum frequency to consider in PSD "
+    psd_options.add_argument("--psdvar-short-psd-duration", type=float,
+                             metavar="SECONDS", help="Duration of short "
+                             "segments for PSD estimation.")
+    psd_options.add_argument("--psdvar-short-psd-stride", type=float,
+                             metavar="SECONDS", help="Separation between PSD "
+                             "estimation segments.")
+    psd_options.add_argument("--psdvar-low-freq", type=float, metavar="HERTZ",
+                             help="Minimum frequency to consider in PSD "
                              "comparison.")
-    psd_options.add_argument("--psdvar_high_freq", type=float, metavar="HERTZ",                              help="Maximum frequency to consider in PSD "
+    psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",
+                             help="Maximum frequency to consider in PSD "
                              "comparison.")
 
     if include_data_options :
@@ -300,16 +307,23 @@ def insert_psd_option_group_multi_ifo(parser):
                           help="(Optional) Write PSD to specified file")
 
     # Options for PSD variation
-    psd_options.add_argument("--psdvar_short_segment", type=float,
+    psd_options.add_argument("--psdvar-short-segment", type=float,
                              metavar="SECONDS", help="Length of short segment "
                              "when calculating the PSD variability.")
-    psd_options.add_argument("--psdvar_long_segment", type=float,
+    psd_options.add_argument("--psdvar-long-segment", type=float,
                              metavar="SECONDS", help="Length of long segment "
                              "when calculating the PSD variability.")
-    psd_options.add_argument("--psdvar_overlap", type=float, metavar="SECONDS",                              help="Sample length of the PSD.")
-    psd_options.add_argument("--psdvar_low_freq", type=float, metavar="HERTZ",                               help="Minimum frequency to consider in PSD "
+    psd_options.add_argument("--psdvar-short-psd-duration", type=float,
+                             metavar="SECONDS", help="Duration of short "
+                             "segments for PSD estimation.")
+    psd_options.add_argument("--psdvar-short-psd-stride", type=float,
+                             metavar="SECONDS", help="Separation between PSD "
+                             "estimation segments.")
+    psd_options.add_argument("--psdvar-low-freq", type=float, metavar="HERTZ",
+                             help="Minimum frequency to consider in PSD "
                              "comparison.")
-    psd_options.add_argument("--psdvar_high_freq", type=float, metavar="HERTZ",                              help="Maximum frequency to consider in PSD "
+    psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",
+                             help="Maximum frequency to consider in PSD "
                              "comparison.")
 
     return psd_options

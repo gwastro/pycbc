@@ -23,6 +23,7 @@ from __future__ import absolute_import
 
 import numpy
 import emcee
+import h5py
 import logging
 from pycbc.pool import choose_pool
 
@@ -49,6 +50,11 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         Number of temeratures to use in the sampler.
     nwalkers : int
         Number of walkers to use in sampler.
+    betas : array
+        An array of inverse temperature values to be used in emcee_pt's
+        temperature ladder. If not provided, emcee_pt will use the number of
+        temperatures and the number of dimensions of the parameter space to
+        construct the ladder with geometrically spaced temperatures.
     pool : function with map, Optional
         A provider of a map function that allows a function call to be run
         over multiple sets of arguments and possibly maps them to
@@ -58,8 +64,10 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
     _io = EmceePTFile
     burn_in_class = MultiTemperedMCMCBurnInTests
 
-    def __init__(self, model, ntemps, nwalkers, checkpoint_interval=None,
-                 loglikelihood_function=None, nprocesses=1, use_mpi=False):
+    def __init__(self, model, ntemps, nwalkers, betas=None,
+                 checkpoint_interval=None, checkpoint_signal=None,
+                 loglikelihood_function=None,
+                 nprocesses=1, use_mpi=False):
 
         self.model = model
 
@@ -88,10 +96,12 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         # functions separately
         ndim = len(model.variable_params)
         self._sampler = emcee.PTSampler(ntemps, nwalkers, ndim,
-                                        model_call, prior_call, pool=pool)
+                                        model_call, prior_call, pool=pool,
+                                        betas=betas)
         self._nwalkers = nwalkers
         self._ntemps = ntemps
         self._checkpoint_interval = checkpoint_interval
+        self._checkpoint_signal = checkpoint_signal
 
     @property
     def io(self):
@@ -107,27 +117,58 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
     @classmethod
     def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
-        """Loads the sampler from the given config file."""
+        """
+        Loads the sampler from the given config file.
+
+        For generating the temperature ladder to be used by emcee_pt, either
+        the number of temperatures (provided by the option 'ntemps'),
+        or the path to a file storing inverse temperature values (provided
+        under a subsection inverse-temperatures-file) can be loaded from the
+        config file. If the latter, the file should be of hdf format, having
+        an attribute named 'betas' storing the list of inverse temperature
+        values to be provided to emcee_pt. If the former, emcee_pt will
+        construct the ladder with "ntemps" geometrically spaced temperatures.
+        """
         section = "sampler"
         # check name
         assert cp.get(section, "name") == cls.name, (
             "name in section [sampler] must match mine")
         # get the number of walkers to use
         nwalkers = int(cp.get(section, "nwalkers"))
-        # get the number of temps
-        ntemps = int(cp.get(section, "ntemps"))
+        if cp.has_option(section, "ntemps") and \
+                cp.has_option(section, "inverse-temperatures-file"):
+            raise ValueError("Must specify either ntemps or "
+                             "inverse-temperatures-file, not both.")
+        if cp.has_option(section, "inverse-temperatures-file"):
+            # get the path of the file containing inverse temperatures values.
+            inverse_temperatures_file = cp.get(section,
+                                               "inverse-temperatures-file")
+            with h5py.File(inverse_temperatures_file, "r") as fp:
+                try:
+                    betas = numpy.array(fp.attrs['betas'])
+                    ntemps = betas.shape[0]
+                except KeyError:
+                    raise AttributeError("No attribute called betas")
+        else:
+            # get the number of temperatures
+            betas = None
+            ntemps = int(cp.get(section, "ntemps"))
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
+        checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
-        obj = cls(model, ntemps, nwalkers,
+        obj = cls(model, ntemps, nwalkers, betas=betas,
                   checkpoint_interval=checkpoint_interval,
+                  checkpoint_signal=checkpoint_signal,
                   loglikelihood_function=logl, nprocesses=nprocesses,
                   use_mpi=use_mpi)
         # set target
         obj.set_target_from_config(cp, section)
         # add burn-in if it's specified
         obj.set_burn_in_from_config(cp)
+        # set prethin options
+        obj.set_thin_interval_from_config(cp, section)
         return obj
 
     @property
@@ -149,27 +190,23 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         The returned array has shape ntemps x nwalkers x niterations.
 
         Unfortunately, because ``emcee_pt`` does not have blob support, this
-        will only return the loglikelihood, logprior, and logjacobian,
-        regardless of what stats the model can return.
+        will only return the loglikelihood and logprior (with the logjacobian
+        set to zero) regardless of what stats the model can return.
+
+
+        .. warning::
+            Since the `logjacobian` is not saved by `emcee_pt`, the `logprior`
+            returned here is the log of the prior pdf in the sampling
+            coordinate frame rather than the variable params frame. This
+            differs from the variable params frame by the log of the Jacobian
+            of the transform from one frame to the other. If no sampling
+            transforms were used, then the `logprior` is the same.
         """
         # likelihood has shape ntemps x nwalkers x niterations
         logl = self._sampler.lnlikelihood
         # get prior from posterior
         logp = self._sampler.lnprobability - logl
-        logjacobian = numpy.zeros(logp.size)
-        # if different coordinates were used for sampling, get the jacobian
-        if self.model.sampling_transforms is not None:
-            samples = self.samples
-            flattened_samples = {param: arr.ravel()
-                                 for param, arr in samples.items()}
-            for ii in range(logp.size):
-                these_samples = {param: vals[ii]
-                                 for param, vals in flattened_samples.items()}
-                self.model.update(**these_samples)
-                logjacobian[ii] = self.model.logjacobian
-        logjacobian = logjacobian.reshape(logp.shape)
-        # put the logprior into the variable_params space
-        logp -= logjacobian
+        logjacobian = numpy.zeros(logp.shape)
         return {'loglikelihood': logl, 'logprior': logp,
                 'logjacobian': logjacobian}
 
@@ -218,9 +255,10 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params)
+            fp.write_samples(self.samples, self.model.variable_params,
+                             last_iteration=self.niterations)
             # write stats
-            fp.write_samples(self.model_stats)
+            fp.write_samples(self.model_stats, last_iteration=self.niterations)
             # write accpetance
             fp.write_acceptance_fraction(self._sampler.acceptance_fraction)
             # write random state

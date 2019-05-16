@@ -295,25 +295,25 @@ def td_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain approximants for
        the given processing scheme.
     """
-    return td_wav[type(scheme)].keys()
+    return list(td_wav[type(scheme)].keys())
 
 def fd_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available fourier domain approximants for
        the given processing scheme.
     """
-    return fd_wav[type(scheme)].keys()
+    return list(fd_wav[type(scheme)].keys())
 
 def sgburst_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain sgbursts for
        the given processing scheme.
     """
-    return sgburst_wav[type(scheme)].keys()
+    return list(sgburst_wav[type(scheme)].keys())
 
 def filter_approximants(scheme=_scheme.mgr.state):
     """Return a list of fourier domain approximants including those
        written specifically as templates.
     """
-    return filter_wav[type(scheme)].keys()
+    return list(filter_wav[type(scheme)].keys())
 
 # Input parameter handling ###################################################
 
@@ -615,7 +615,7 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
 
     # Resize to the right sample rate
     tsize = int(1.0 / params['delta_t'] /  nparams['delta_f'])
-    fsize = tsize / 2 + 1
+    fsize = tsize // 2 + 1
     hp.resize(fsize)
     hc.resize(fsize)
 
@@ -809,6 +809,8 @@ _filter_time_lengths["SEOBNRv4"] = seobnrv4_length_in_time
 _filter_time_lengths["IMRPhenomC"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomD"] = imrphenomd_length_in_time
 _filter_time_lengths["IMRPhenomPv2"] = imrphenomd_length_in_time
+_filter_time_lengths["IMRPhenomD_NRTidal"] = imrphenomd_length_in_time
+_filter_time_lengths["IMRPhenomPv2_NRTidal"] = imrphenomd_length_in_time
 _filter_time_lengths["SpinTaylorF2"] = spa_length_in_time
 _filter_time_lengths["TaylorF2NL"] = spa_length_in_time
 

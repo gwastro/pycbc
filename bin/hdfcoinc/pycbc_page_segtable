@@ -22,7 +22,7 @@ import logging
 import numpy
 import pycbc.results
 import sys
-from glue import segments
+from ligo import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import table
@@ -31,6 +31,13 @@ from pycbc.events.veto import get_segment_definer_comments
 from pycbc.results import save_fig_with_metadata
 from pycbc.workflow import SegFile
 import pycbc.version
+import itertools
+
+def powerset_ifos(ifo_set):
+    combo_set = []
+    for n_ifos in range(1, len(ifo_set) + 1):
+        combo_set += itertools.combinations(ifo_set, n_ifos)
+    return combo_set
 
 # parse command line
 parser = argparse.ArgumentParser()
@@ -46,22 +53,25 @@ parser.add_argument('--title-text', type=str, required=False,
                         help='Additional text to append to title.')
 parser.add_argument('--output-file', type=str,
                         help='Path of the output HTML file.')
+parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'],
+                        help='Space-separated list of detectors: default H1 L1.')
 opts = parser.parse_args()
 
 # setup log
 logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO,datefmt='%I:%M:%S')
 
-# set column names
-columns = (('Name', []),
-           ('H1 Time (s)', []),
-           ('L1 Time (s)', []),
-           ('H1L1 Time (s)', []),
-)
-caption = "This table shows the cumulative amount of time for each segment. Shown are:"
+# create list of combinations of detectors
+ifo_combinations = powerset_ifos(opts.ifos)
 
-# FIXME: set IFO list
-ifos = ['H1', 'L1']
+# set column names
+columns = (('Name', []),)
+# columns for detectors and combinations
+for combo in ifo_combinations:
+    det_combo_string = ''.join(combo).upper()
+    columns += (('%s Time (s)' % det_combo_string, []),)
+
+caption = "This table shows the cumulative amount of time for each segment. Shown are:"
 
 # loop over segment files from command line
 seg_dict = {}
@@ -86,7 +96,7 @@ for segment_name in opts.segment_names:
     comp_segs = segments.segmentlistdict({})
 
     # loop over IFOs
-    for ifo in ifos:
+    for ifo in opts.ifos:
 
         # make an empty list for each IFO
         base_segs[ifo] = segments.segmentlist([])
@@ -125,33 +135,36 @@ for segment_name in opts.segment_names:
     #if comment_dict[key] != None:
     #    caption += " ("+comment_dict[key]+")"
 
-    # get length of time of single-IFO segments in seconds
-    if len(names) > 1:
-        h1_len = abs( ( base_segs['H1'].coalesce() & comp_segs["H1"].coalesce() ).coalesce() )
-        l1_len = abs( ( base_segs['L1'].coalesce() & comp_segs["L1"].coalesce() ).coalesce() )
-    else:
-        h1_len = abs( base_segs['H1'].coalesce() )
-        l1_len = abs( base_segs['L1'].coalesce() )
+    # set up dictionary of length of time of single-ifo segments in seconds
+    ifo_len = {}
+    for ifo in opts.ifos:
+        if len(names) > 1:
+            ifo_len[ifo] = abs( ( base_segs[ifo].coalesce() & comp_segs[ifo].coalesce() ).coalesce() )
+        else:
+            ifo_len[ifo] = abs( base_segs[ifo].coalesce() )
 
-    # find the AND of H1 and L1 time
-    h1l1_base_segs = base_segs["H1"].coalesce() & base_segs["L1"].coalesce()
-    h1l1_base_segs.coalesce()
-
-    # find all the time that should overlap
-    h1l1_comp_segs = comp_segs["H1"].coalesce() + comp_segs["L1"].coalesce()
-    h1l1_comp_segs.coalesce()
-
-    # get length of time in coincident H1L1 segments in seconds
-    if len(names) > 1:
-        h1l1_len = abs( (h1l1_base_segs & h1l1_comp_segs).coalesce() )
-    else:
-        h1l1_len = abs( h1l1_base_segs.coalesce() )
-
-    # put values into columns
     columns[0][1].append(segment_name)
-    columns[1][1].append(float(h1_len))
-    columns[2][1].append(float(l1_len))
-    columns[3][1].append(float(h1l1_len))
+    counter = 1
+    for combo in ifo_combinations:
+        first_ifo = True
+        for ifo in combo:
+            if first_ifo:
+                combo_base_segs = base_segs[ifo].coalesce()
+                combo_comp_segs = comp_segs[ifo].coalesce()
+                first_ifo = False
+            else:
+                for ifo in combo:
+                    combo_base_segs = combo_base_segs.coalesce() & base_segs[ifo].coalesce()
+                    combo_comp_segs = combo_comp_segs.coalesce() + comp_segs[ifo].coalesce()
+
+        combo_base_segs.coalesce()
+        combo_comp_segs.coalesce()
+        if len(names) > 1:
+            combo_len = abs( (combo_base_segs.coalesce() & combo_comp_segs.coalesce() ).coalesce() )
+        else:
+            combo_len = abs( combo_base_segs.coalesce() )
+        columns[counter][1].append(float(combo_len))
+        counter += 1
 
 # cast columns into arrays
 keys = [numpy.array(key, dtype=type(key[0])) for key,_ in columns]

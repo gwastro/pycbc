@@ -37,6 +37,7 @@ import copy
 import logging
 import numpy
 import h5py
+from six.moves import range
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from pycbc import tmpltbank, psd, strain, pnutils
 import matplotlib
@@ -261,7 +262,7 @@ vecs = tmpltbank.get_cov_params(rMass1, rMass2, rSpin1z, rSpin2z,
                                 metricParams, refFreq)
 vecs = numpy.array(vecs)
 
-for idx_curr in xrange(opts.num_points):
+for idx_curr in range(opts.num_points):
     vs = vecs[:,idx_curr]
     if opts.vary_fupper:
         min_mismatch, idxes = partitioned_bank_object.calc_point_distance_vary(\
@@ -296,21 +297,21 @@ if opts.histogram_output_file:
     pylab.savefig(opts.histogram_output_file)
 
 if opts.print_distances:
-    print
-    for idx in xrange(len(points_mass1)):
-        print "The test point with the following parameters (m1,m2,S1z,S2z)"
-        print "%e %e %e %e" %(points_mass1[idx], points_mass2[idx],\
-                              points_spin1z[idx], points_spin2z[idx])
-        print "Was recovered with an overlap of %e" %(points_fittingfactor[idx])
+    print()
+    for idx in range(len(points_mass1)):
+        print("The test point with the following parameters (m1,m2,S1z,S2z)")
+        print("%e %e %e %e" %(points_mass1[idx], points_mass2[idx],\
+                              points_spin1z[idx], points_spin2z[idx]))
+        print("Was recovered with an overlap of %e" %(points_fittingfactor[idx]))
         if points_closestidxes[idx] is None:
-            print "No template was within a metric distance of 1."
-            print
+            print("No template was within a metric distance of 1.")
+            print()
             continue
-        print "The point in the bank with this overlap had (m1,m2,S1z,S2z)"
+        print("The point in the bank with this overlap had (m1,m2,S1z,S2z)")
         curr_m1, curr_m2, curr_spin1, curr_spin2 = \
                 partitioned_bank_object.get_point_from_bins_and_idx(\
                       points_closestidxes[idx][0], points_closestidxes[idx][1],
                        points_closestidxes[idx][2])
-        print "%e %e %e %e" %(curr_m1, curr_m2, curr_spin1, curr_spin2)
-        print
+        print("%e %e %e %e" %(curr_m1, curr_m2, curr_spin1, curr_spin2))
+        print()
         

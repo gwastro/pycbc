@@ -23,8 +23,10 @@
 #
 """Provides constructor classes and convenience functions for MCMC samplers."""
 
-from __future__ import absolute_import
+from __future__ import (absolute_import, division)
 
+import os
+import signal
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 import logging
 import numpy
@@ -32,6 +34,8 @@ from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
 
 from pycbc.inference.io import validate_checkpoint_files
+
+from six import string_types
 
 #
 # =============================================================================
@@ -185,13 +189,21 @@ class BaseMCMC(object):
 
     Attributes
     ----------
-    p0 : dict
-        A dictionary of the initial position of the walkers. Set by using
-        ``set_p0``. If not set yet, a ``ValueError`` is raised when the
-        attribute is accessed.
-    pos : dict
-        A dictionary of the current walker positions. If the sampler hasn't
-        been run yet, returns p0.
+    p0
+    pos
+    nwalkers
+    niterations
+    checkpoint_interval
+    checkpoint_signal
+    target_niterations
+    target_eff_nsamples
+    thin_interval
+    max_samples_per_chain
+    thin_safety_factor
+    burn_in
+    effective_nsamples
+    acls
+    acts
     """
     __metaclass__ = ABCMeta
 
@@ -201,9 +213,13 @@ class BaseMCMC(object):
     _p0 = None
     _nwalkers = None
     _burn_in = None
+    _acls = None
     _checkpoint_interval = None
+    _checkpoint_signal = None
     _target_niterations = None
     _target_eff_nsamples = None
+    _thin_interval = 1
+    _max_samples_per_chain = None
 
     @abstractproperty
     def base_shape(self):
@@ -218,14 +234,14 @@ class BaseMCMC(object):
 
     @property
     def nwalkers(self):
-        """Get the number of walkers."""
+        """The number of walkers used."""
         if self._nwalkers is None:
             raise ValueError("number of walkers not set")
         return self._nwalkers
 
     @property
     def niterations(self):
-        """Get the current number of iterations."""
+        """The current number of iterations."""
         itercounter = self._itercounter
         if itercounter is None:
             itercounter = 0
@@ -240,6 +256,11 @@ class BaseMCMC(object):
         return self._checkpoint_interval
 
     @property
+    def checkpoint_signal(self):
+        """The signal to use when checkpointing."""
+        return self._checkpoint_signal
+
+    @property
     def target_niterations(self):
         """The number of iterations the sampler should run for."""
         return self._target_niterations
@@ -248,6 +269,71 @@ class BaseMCMC(object):
     def target_eff_nsamples(self):
         """The target number of effective samples the sampler should get."""
         return self._target_eff_nsamples
+
+    @property
+    def thin_interval(self):
+        """Returns the thin interval being used."""
+        return self._thin_interval
+
+    @thin_interval.setter
+    def thin_interval(self, interval):
+        """Sets the thin interval to use.
+
+        If ``None`` provided, will default to 1.
+        """
+        if interval is None:
+            interval = 1
+        self._thin_interval = interval
+
+    @property
+    def thin_safety_factor(self):
+        """The minimum value that ``max_samples_per_chain`` may be set to."""
+        return 100
+
+    @property
+    def max_samples_per_chain(self):
+        """The maximum number of samplers per chain that is written to disk."""
+        return self._max_samples_per_chain
+
+    @max_samples_per_chain.setter
+    def max_samples_per_chain(self, n):
+        if n is not None:
+            n = int(n)
+            if n < self.thin_safety_factor:
+                raise ValueError("max samples per chain must be >= {}"
+                                 .format(self.thin_safety_factor))
+            # also check that this is consistent with the target number of
+            # effective samples
+            if self.target_eff_nsamples is not None:
+                target_samps_per_chain = int(numpy.ceil(
+                    self.target_eff_nsamples / self.nwalkers))
+                if n <= target_samps_per_chain:
+                    raise ValueError("max samples per chain must be > target "
+                                     "effective number of samples per walker "
+                                     "({})".format(target_samps_per_chain))
+        self._max_samples_per_chain = n
+
+    def get_thin_interval(self):
+        """Gets the thin interval to use.
+
+        If ``max_samples_per_chain`` is set, this will figure out what thin
+        interval is needed to satisfy that criteria. In that case, the thin
+        interval used must be a multiple of the currently used thin interval.
+        """
+        if self.max_samples_per_chain is not None:
+            # the extra factor of 2 is to account for the fact that the thin
+            # interval will need to be at least twice as large as a previously
+            # used interval
+            thinfactor = 2 * self.niterations // self.max_samples_per_chain
+            # make the new interval is a multiple of the previous, to ensure
+            # that any samples currently on disk can be thinned accordingly
+            thin_interval = (thinfactor // self.thin_interval) * \
+                self.thin_interval
+            # make sure it's at least 1
+            thin_interval = max(thin_interval, 1)
+        else:
+            thin_interval = self.thin_interval
+        return thin_interval
 
     def set_target(self, niterations=None, eff_nsamples=None):
         """Sets the target niterations/nsamples for the sampler.
@@ -272,9 +358,9 @@ class BaseMCMC(object):
 
     @property
     def pos(self):
-        """The current position of the walkers.
+        """A dictionary of the current walker positions.
 
-        Returns a dictionary mapping the sampling paramters to the values.
+        If the sampler hasn't been run yet, returns p0.
         """
         pos = self._pos
         if pos is None:
@@ -286,10 +372,10 @@ class BaseMCMC(object):
 
     @property
     def p0(self):
-        """The starting position of the walkers in the sampling param space.
+        """A dictionary of the initial position of the walkers.
 
-        The returned object is a dict mapping the sampling parameters to the
-        values.
+        This is set by using ``set_p0``. If not set yet, a ``ValueError`` is
+        raised when the attribute is accessed.
         """
         if self._p0 is None:
             raise ValueError("initial positions not set; run set_p0")
@@ -432,14 +518,14 @@ class BaseMCMC(object):
         """The effective number of samples post burn-in that the sampler has
         acquired so far."""
         try:
-            acl = numpy.array(self.acls.values()).max()
+            act = numpy.array(list(self.acts.values())).max()
         except (AttributeError, TypeError):
-            acl = numpy.inf
+            act = numpy.inf
         if self.burn_in is None:
-            nperwalker = max(int(self.niterations // acl), 1)
+            nperwalker = max(int(self.niterations // act), 1)
         elif self.burn_in.is_burned_in:
             nperwalker = int(
-                (self.niterations - self.burn_in.burn_in_iteration) // acl)
+                (self.niterations - self.burn_in.burn_in_iteration) // act)
             # after burn in, we always have atleast 1 sample per walker
             nperwalker = max(nperwalker, 1)
         else:
@@ -458,47 +544,76 @@ class BaseMCMC(object):
 
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
-        # write new samples
-        logging.info("Writing samples to files")
+        # thin and write new samples
         for fn in [self.checkpoint_file, self.backup_file]:
-            self.write_results(fn)
             with self.io(fn, "a") as fp:
                 # write the current number of iterations
                 fp.write_niterations(self.niterations)
-        # check for burn in, compute the acls
-        self.acls = None
-        if self.burn_in is not None:
-            logging.info("Updating burn in")
-            self.burn_in.evaluate(self.checkpoint_file)
-            burn_in_iter = self.burn_in.burn_in_iteration
-            logging.info("Is burned in: {}".format(self.burn_in.is_burned_in))
-            if self.burn_in.is_burned_in:
-                logging.info("Burn-in iteration: {}".format(
-                    self.burn_in.burn_in_iteration))
+                thin_interval = self.get_thin_interval()
+                # thin samples on disk if it changed
+                if thin_interval > 1:
+                    # if this is the first time writing, set the file's
+                    # thinned_by
+                    if fp.last_iteration() == 0:
+                        fp.thinned_by = thin_interval
+                    else:
+                        # check if we need to thin the current samples on disk
+                        thin_by = thin_interval // fp.thinned_by
+                        if thin_by > 1:
+                            logging.info("Thinning samples in %s by a factor "
+                                         "of %i", fn, int(thin_by))
+                            fp.thin(thin_by)
+                fp_lastiter = fp.last_iteration()
+            logging.info("Writing samples to %s with thin interval %i", fn,
+                         thin_interval)
+            self.write_results(fn)
+        # see if we had anything to write after thinning; if not, don't try
+        # to compute anything
+        with self.io(self.checkpoint_file, "r") as fp:
+            nsamples_written = fp.last_iteration() - fp_lastiter
+        if nsamples_written == 0:
+            logging.info("No samples written due to thinning")
         else:
-            burn_in_iter = 0
-        # Compute acls; the burn_in test may have calculated an acl and saved
-        # it, in which case we don't need to do it again.
-        if self.acls is None:
-            logging.info("Computing acls")
-            self.acls = self.compute_acl(self.checkpoint_file,
-                                         start_index=burn_in_iter)
-        logging.info("ACL: {}".format(numpy.array(self.acls.values()).max()))
-        # write
-        for fn in [self.checkpoint_file, self.backup_file]:
-            with self.io(fn, "a") as fp:
-                if self.burn_in is not None:
-                    fp.write_burn_in(self.burn_in)
-                if self.acls is not None:
-                    fp.write_acls(self.acls)
-                # write effective number of samples
-                fp.write_effective_nsamples(self.effective_nsamples)
+            # check for burn in, compute the acls
+            self.acls = None
+            if self.burn_in is not None:
+                logging.info("Updating burn in")
+                self.burn_in.evaluate(self.checkpoint_file)
+                burn_in_index = self.burn_in.burn_in_index
+                logging.info("Is burned in: %r", self.burn_in.is_burned_in)
+                if self.burn_in.is_burned_in:
+                    logging.info("Burn-in iteration: %i",
+                                 int(self.burn_in.burn_in_iteration))
+            else:
+                burn_in_index = 0
+            # Compute acls; the burn_in test may have calculated an acl and
+            # saved it, in which case we don't need to do it again.
+            if self.acls is None:
+                logging.info("Computing acls")
+                self.acls = self.compute_acl(self.checkpoint_file,
+                                             start_index=burn_in_index)
+            logging.info("ACT: %s", str(numpy.array(self.acts.values()).max()))
+            # write
+            for fn in [self.checkpoint_file, self.backup_file]:
+                with self.io(fn, "a") as fp:
+                    if self.burn_in is not None:
+                        fp.write_burn_in(self.burn_in)
+                    if self.acls is not None:
+                        fp.write_acls(self.acls)
+                    # write effective number of samples
+                    fp.write_effective_nsamples(self.effective_nsamples)
         # check validity
         logging.info("Validating checkpoint and backup files")
         checkpoint_valid = validate_checkpoint_files(
             self.checkpoint_file, self.backup_file)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
+        elif self.checkpoint_signal:
+            # kill myself with the specified signal
+            logging.info("Exiting with SIG{}".format(self.checkpoint_signal))
+            kill_cmd="os.kill(os.getpid(), signal.SIG{})".format(
+                self.checkpoint_signal)
+            exec(kill_cmd)
         # clear the in-memory chain to save memory
         logging.info("Clearing samples from memory")
         self.clear_samples()
@@ -523,6 +638,27 @@ class BaseMCMC(object):
         """
         return get_optional_arg_from_config(cp, section, 'checkpoint-interval',
                                             dtype=int)
+
+    @staticmethod
+    def ckpt_signal_from_config(cp, section):
+        """Gets the checkpoint signal from the given config file.
+
+        This looks for 'checkpoint-signal' in the section.
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            Open config parser to retrieve the argument from.
+        section : str
+            Name of the section to retrieve from.
+
+        Return
+        ------
+        int or None :
+            The checkpoint interval, if it is in the section. Otherw
+        """
+        return get_optional_arg_from_config(cp, section, 'checkpoint-signal',
+                                            dtype=str)
 
     def set_target_from_config(self, cp, section):
         """Sets the target using the given config file.
@@ -558,6 +694,55 @@ class BaseMCMC(object):
         except ConfigParser.Error:
             bit = None
         self.set_burn_in(bit)
+
+    def set_thin_interval_from_config(self, cp, section):
+        """Sets thinning options from the given config file.
+        """
+        if cp.has_option(section, "thin-interval"):
+            thin_interval = int(cp.get(section, "thin-interval"))
+            logging.info("Will thin samples using interval %i", thin_interval)
+        else:
+            thin_interval = None
+        if cp.has_option(section, "max-samples-per-chain"):
+            max_samps_per_chain = int(cp.get(section, "max-samples-per-chain"))
+            logging.info("Setting max samples per chain to %i",
+                         max_samps_per_chain)
+        else:
+            max_samps_per_chain = None
+        # check for consistency
+        if thin_interval is not None and max_samps_per_chain is not None:
+            raise ValueError("provide either thin-interval or "
+                             "max-samples-per-chain, not both")
+        # check that the thin interval is < then the checkpoint interval
+        if thin_interval is not None and self.checkpoint_interval is not None \
+                and thin_interval >= self.checkpoint_interval:
+            raise ValueError("thin interval must be less than the checkpoint "
+                             "interval")
+        self.thin_interval = thin_interval
+        self.max_samples_per_chain = max_samps_per_chain
+
+    @property
+    def acls(self):
+        """The autocorrelation lengths of each parameter's thinned chain."""
+        return self._acls
+
+    @acls.setter
+    def acls(self, acls):
+        """Sets the acls."""
+        self._acls = acls
+
+    @property
+    def acts(self):
+        """The autocorrelation times of each parameter.
+
+        The autocorrelation time is defined as the ACL times the
+        ``thin_interval``. It gives the number of iterations between
+        independent samples.
+        """
+        if self.acls is None:
+            return None
+        return {p: acl * self.get_thin_interval()
+                for (p, acl) in self.acls.items()}
 
     @abstractmethod
     def compute_acf(cls, filename, **kwargs):
@@ -617,7 +802,7 @@ class MCMCAutocorrSupport(object):
         with cls._io(filename, 'r') as fp:
             if parameters is None:
                 parameters = fp.variable_params
-            if isinstance(parameters, str) or isinstance(parameters, unicode):
+            if isinstance(parameters, string_types):
                 parameters = [parameters]
             for param in parameters:
                 if per_walker:

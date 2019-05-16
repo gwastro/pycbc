@@ -29,8 +29,9 @@ __program__ = "pycbc_make_coinc_search_workflow"
 import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging
-from glue import segments
+import os, argparse, logging
+from six.moves import configparser as ConfigParser
+from ligo import segments
 import numpy, lal, datetime
 from pycbc.results import create_versioning_page, static_table, layout
 from pycbc.results.versioning import save_fig_with_metadata
@@ -116,43 +117,24 @@ kwds = { 'title' : 'Search Workflow Duration (Wall Clock Time)',
 save_fig_with_metadata(time_str, time_file.storage_path, **kwds)
 
 # Get segments and find where the data is
-wf.makedir(rdir['analysis_time/segment_data'])
-science_veto_name = 'segments-science-veto'
-primary_veto_name = 'segments-final-veto-group'
-secondary_vetoes_name = 'segments-veto-groups'
-nonscience_veto_names = [primary_veto_name, secondary_vetoes_name]
+sci_seg_name = 'science'
+science_seg_file = wf.get_segments_file(workflow, sci_seg_name, 'segments-science',
+                                        rdir['analysis_time/segment_data'])
 
-science_seg_file, sci_segs, sci_seg_name = wf.get_science_segments(workflow,
-                                            rdir['analysis_time/segment_data'])
-
-runtime_names=[science_veto_name]
-in_workflow_names = nonscience_veto_names
-veto_cat_files = wf.get_files_for_vetoes(workflow,
-                                         rdir['analysis_time/segment_data'],
-                                         runtime_names=runtime_names,
-                                         in_workflow_names=in_workflow_names)
-
-sci_ok_seg_file, sci_ok_segs, sci_ok_seg_name = wf.get_analyzable_segments(\
-                                            workflow, sci_segs, veto_cat_files,
-                                            rdir['analysis_time/segment_data'])
+ssegs = {}
+for ifo in workflow.ifos:
+    ssegs[ifo] = science_seg_file.segment_dict["%s:science" % ifo]
 
 datafind_files, analyzable_file, analyzable_segs, analyzable_name = \
                                            wf.setup_datafind_workflow(workflow,
-                                                     sci_ok_segs, "datafind",
-                                                     seg_file=science_seg_file)
+                                     ssegs, "datafind",
+                                     seg_file=science_seg_file)
 
-cum_veto_files, veto_names, ind_cats = wf.get_cumulative_veto_group_files(\
-                                            workflow, 'segments-veto-groups',
-                                            veto_cat_files,
-                                            rdir['analysis_time/segment_data'],
-                                            execute_now=False)
+final_veto_name = ['vetoes']
+final_veto_file = wf.FileList([wf.get_segments_file(workflow, final_veto_name[0],
+                                       'segments-vetoes',
+                                       rdir['analysis_time/segment_data'])])
 
-final_veto_file, final_veto_name, ind_cats = \
-                                   wf.get_cumulative_veto_group_files(workflow,
-                                            'segments-final-veto-group',
-                                            veto_cat_files,
-                                            rdir['analysis_time/segment_data'],
-                                            execute_now=False)
 
 # Precalculated PSDs
 precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
@@ -167,6 +149,7 @@ hdfbank = wf.setup_tmpltbank_workflow(workflow, analyzable_segs,
 splitbank_files_fd = wf.setup_splittable_workflow(workflow, hdfbank,
                                                   out_dir="bank",
                                                   tags=['full_data'])
+
 splitbank_files_inj = wf.setup_splittable_workflow(workflow, hdfbank,
                                                    out_dir="bank",
                                                    tags=['injections'])
@@ -198,9 +181,7 @@ statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
 
 # setup coinc for the filtering jobs
 full_insps = insps
-bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
-                               cum_veto_files, veto_names,
-                               output_dir, tags=ctags)
+
 final_bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
                                final_veto_file, final_veto_name,
                                output_dir, tags=ctags)
@@ -213,7 +194,7 @@ censored_veto = wf.make_foreground_censored_veto(workflow,
 
 closed_snrifar = []
 all_snrifar = []
-for bg_file, bg_bins in (bg_files + final_bg_files):
+for bg_file, bg_bins in final_bg_files:
     for bg_bin in bg_bins:
         snrifar = wf.make_snrifar_plot(workflow, bg_bin,
                          rdir['coincident_triggers'],
@@ -222,7 +203,7 @@ for bg_file, bg_bins in (bg_files + final_bg_files):
         if bg_file == final_bg_file:
             closed_snrifar.append(snrifar)
 
-max_hierarchical_removal = workflow.cp.get('workflow-results', 
+max_hierarchical_removal = workflow.cp.get('workflow-results',
                                            'max-hierarchical-removal')
 results_page = []
 results_aux_page = []
@@ -259,10 +240,10 @@ for bin_file in bin_files:
                     rdir['coincident_triggers'],
                     tags=bin_file.tags + ['closed_box'])
     closed_box_ifars.append(ifar_cb)
-    
+
 # Open box table
 table = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
+                    hdfbank[0], rdir['open_box_result'], singles=insps,
                     extension='.html', tags=["html"])
 
 symlink_result(table, 'open_box_result/significance')
@@ -276,10 +257,10 @@ results_aux_page += [(table,)]
 layout.two_column_layout(rdir['open_box_result/significance'], results_aux_page)
 
 fore_xmlall = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
+                    hdfbank[0], rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlall"])
 fore_xmlloudest = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir['open_box_result'], singles=insps,
+                    hdfbank[0], rdir['open_box_result'], singles=insps,
                     extension='.xml', tags=["xmlloudest"])
 
 # Closed box coincident triggers page
@@ -301,6 +282,7 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
             'open_box_result/loudest_{}_events_removed_from_background'.format(
                  hierarchical_level)
 
+    logging.info('hlevel plotting: %s', hierarchical_level)
     for bin_file in bin_files:
         snrifar = wf.make_snrifar_plot(workflow, bin_file,
                        rdir[hierarchical_level_page], tags=bin_file.tags,
@@ -320,7 +302,7 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
         results_hier_page += [(snrifar, ratehist), (snrifar_ifar, ifar_ob)]
 
     table = wf.make_foreground_table(workflow, final_bg_file,
-                    hdfbank[0], tag, rdir[hierarchical_level_page], 
+                    hdfbank[0], rdir[hierarchical_level_page],
                     singles=insps,
                     extension='.html', tags=["html"],
                     hierarchical_level=hierarchical_level)
@@ -439,15 +421,8 @@ for insp_file in full_insps:
                                       tags=insp_file.tags + [subsec])
 
 ################## Setup segment / veto related plots #########################
-# do plotting of segments / veto times
-for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
-    wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'],
-                          tags=['%s_VETO_SEGMENTS' % ifo])
-
 wf.make_segments_plot(workflow, [insp_files_seg_file],
                  rdir['analysis_time/segments'], tags=[trig_generated_name])
-wf.make_segments_plot(workflow, [sci_ok_seg_file],
-                 rdir['analysis_time/segments'], tags=['SCIENCE_MINUS_CAT1'])
 wf.make_gating_plot(workflow, full_insps, rdir['analysis_time/gating'],
                     tags=['full_data'])
 
@@ -457,9 +432,9 @@ if workflow.cp.has_option_tags('workflow-matchedfilter',
                             tags=['full_data'])
 
 # make segment table and plot for summary page
-curr_files = [science_seg_file, sci_ok_seg_file, analyzable_file,
+curr_files = [science_seg_file, analyzable_file,
               insp_files_seg_file]
-curr_names = [sci_seg_name, sci_ok_seg_name, analyzable_name,
+curr_names = [sci_seg_name, analyzable_name,
               trig_generated_name]
 seg_summ_table = wf.make_seg_table(workflow, curr_files, curr_names,
                         rdir['analysis_time/segments'], ['SUMMARY'],
@@ -471,11 +446,11 @@ seg_summ_plot = wf.make_seg_plot(workflow, curr_files,
                         rdir['analysis_time/segments'],
                         curr_names, ['SUMMARY'])
 
-curr_files = [insp_files_seg_file] + final_veto_file + cum_veto_files
+curr_files = [insp_files_seg_file] + final_veto_file
 # Add in singular veto files
-curr_files = curr_files + veto_cat_files + [science_seg_file]
+curr_files = curr_files + [science_seg_file]
 curr_names = [trig_generated_name + '&' + veto_name\
-                   for veto_name in veto_names+final_veto_name]
+                   for veto_name in final_veto_name]
 # And SCIENCE - CAT 1 vetoes explicitly.
 curr_names += [sci_seg_name + '&' + 'VETO_CAT1']
 
@@ -486,9 +461,6 @@ veto_summ_table = wf.make_seg_table(workflow, curr_files, curr_names,
                                   'output time by the vetoes applied to the '
                                     'triggers.')
 
-# make veto definer table
-vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
-layout.single_layout(rdir['analysis_time/veto_definer'], ([vetodef_table]))
 
 ############################## Setup the injection runs #######################
 
@@ -629,7 +601,7 @@ layout.two_column_layout(rdir.base, summ)
 base = rdir['workflow/configuration']
 wf.makedir(base)
 ini_file_path = os.path.join(base, 'configuration.ini')
-with open(ini_file_path, 'wb') as ini_fh:
+with open(ini_file_path, 'w') as ini_fh:
     container.cp.write(ini_fh)
 ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
                         file_url='file://'+ini_file_path)])
@@ -672,7 +644,7 @@ container._adag.addDependency(dep)
 container.save()
 
 # Protect the open box results folder
-os.chmod(rdir['open_box_result'], 0700)
+os.chmod(rdir['open_box_result'], 0o0700)
 
 logging.info("Written dax.")
 

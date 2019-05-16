@@ -26,6 +26,8 @@ samplers."""
 
 from __future__ import absolute_import
 
+from six import string_types
+
 import numpy
 from pycbc.filter import autocorrelation
 
@@ -94,7 +96,7 @@ class MultiTemperedAutocorrSupport(object):
         with cls._io(filename, 'r') as fp:
             if parameters is None:
                 parameters = fp.variable_params
-            if isinstance(parameters, str) or isinstance(parameters, unicode):
+            if isinstance(parameters, string_types):
                 parameters = [parameters]
             if isinstance(temps, int):
                 temps = [temps]

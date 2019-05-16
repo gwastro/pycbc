@@ -20,44 +20,15 @@
 import logging
 import argparse
 
-from pycbc.workflow import WorkflowConfigParser
+from six import string_types
+
 from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd)
+from pycbc.types import MultiDetOptionAction
 from pycbc import waveform
-
-
-# -----------------------------------------------------------------------------
-#
-#                   Utilities for loading config files
-#
-# -----------------------------------------------------------------------------
-
-def add_config_opts_to_parser(parser):
-    """Adds options for the configuration files to the given parser.
-    """
-    parser.add_argument("--config-files", type=str, nargs="+", required=True,
-                        help="A file parsable by "
-                             "pycbc.workflow.WorkflowConfigParser.")
-    parser.add_argument("--config-overrides", type=str, nargs="+",
-                        default=None, metavar="SECTION:OPTION:VALUE",
-                        help="List of section:option:value combinations to "
-                             "add into the configuration file.")
-
-
-def config_parser_from_cli(opts):
-    """Loads a config file from the given options, applying any overrides
-    specified. Specifically, config files are loaded from the `--config-files`
-    options while overrides are loaded from `--config-overrides`.
-    """
-    # read configuration file
-    logging.info("Reading configuration file")
-    if opts.config_overrides is not None:
-        overrides = [override.split(":") for override in opts.config_overrides]
-    else:
-        overrides = None
-    return WorkflowConfigParser(opts.config_files, overrides)
+from pycbc import distributions
 
 
 # -----------------------------------------------------------------------------
@@ -69,26 +40,11 @@ def config_parser_from_cli(opts):
 
 def add_low_frequency_cutoff_opt(parser):
     """Adds the low-frequency-cutoff option to the given parser."""
-    # FIXME: this just uses the same frequency cutoff for every instrument for
-    # now. We should allow for different frequency cutoffs to be used; that
-    # will require (minor) changes to the Likelihood class
-    parser.add_argument("--low-frequency-cutoff", type=float,
-                        help="Low frequency cutoff for each IFO.")
-
-
-def low_frequency_cutoff_from_cli(opts):
-    """Parses the low frequency cutoff from the given options.
-
-    Returns
-    -------
-    dict
-        Dictionary of instruments -> low frequency cutoff.
-    """
-    # FIXME: this just uses the same frequency cutoff for every instrument for
-    # now. We should allow for different frequency cutoffs to be used; that
-    # will require (minor) changes to the Likelihood class
-    instruments = opts.instruments if opts.instruments is not None else []
-    return {ifo: opts.low_frequency_cutoff for ifo in instruments}
+    parser.add_argument("--data-conditioning-low-freq", type=float,
+                        nargs="+", action=MultiDetOptionAction,
+                        metavar='IFO:FLOW', dest="low_frequency_cutoff",
+                        help="Low frequency cutoff of the data. Needed for "
+                             "PSD estimation and when creating fake strain.")
 
 
 def data_from_cli(opts):
@@ -147,7 +103,6 @@ def data_from_cli(opts):
     stilde_dict = {}
     length_dict = {}
     delta_f_dict = {}
-    low_frequency_cutoff_dict = low_frequency_cutoff_from_cli(opts)
     for ifo in instruments:
         stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
         length_dict[ifo] = len(stilde_dict[ifo])
@@ -155,7 +110,7 @@ def data_from_cli(opts):
 
     # get PSD as frequency series
     psd_dict = psd_from_cli_multi_ifos(
-        opts, length_dict, delta_f_dict, low_frequency_cutoff_dict,
+        opts, length_dict, delta_f_dict, opts.low_frequency_cutoff,
         instruments, strain_dict=psd_strain_dict, precision="double")
 
     # apply any gates to overwhitened data, if desired
@@ -207,7 +162,7 @@ class ParseLabelArg(argparse.Action):
                                             **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        singlearg = isinstance(values, (str, unicode))
+        singlearg = isinstance(values, string_types)
         if singlearg:
             values = [values]
         params = []
@@ -462,3 +417,33 @@ def add_density_option_group(parser):
              "Default is to use scipy's gaussian_kde.")
 
     return density_group
+
+
+def prior_from_config(cp, prior_section='prior'):
+    """Loads a prior distribution from the given config file.
+
+    Parameters
+    ----------
+    cp : pycbc.workflow.WorkflowConfigParser
+        The config file to read.
+    sections : list of str, optional
+        The sections to retrieve the prior from. If ``None`` (the default),
+        will look in sections starting with 'prior'.
+
+    Returns
+    -------
+    distributions.JointDistribution
+        The prior distribution.
+    """
+    # Read variable and static parameters from the config file
+    variable_params, _ = distributions.read_params_from_config(
+        cp, prior_section=prior_section, vargs_section='variable_params',
+        sargs_section='static_params')
+    # Read constraints to apply to priors from the config file
+    constraints = distributions.read_constraints_from_config(cp)
+    # Get PyCBC distribution instances for each variable parameter in the
+    # config file
+    dists = distributions.read_distributions_from_config(cp, prior_section)
+    # construct class that will return draws from the prior
+    return distributions.JointDistribution(variable_params, *dists,
+                                           **{"constraints": constraints})

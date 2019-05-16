@@ -13,7 +13,7 @@ parser.add_argument('--statmap-files', nargs='+',
                     help="List of coinc files to be redistributed")
 parser.add_argument('--cluster-window', type=float)
 parser.add_argument('--output-file', help="name of output file")
-parser.add_argument('--ifos',nargs='+', 
+parser.add_argument('--ifos',nargs='+',
                     help="list of interferometers in the input files" )
 args = parser.parse_args()
 
@@ -26,25 +26,28 @@ f = h5py.File(args.output_file, "w")
 logging.info('Copying segments and attributes to %s' % args.output_file)
 # Move segments information into the final file - remove some duplication in earlier files
 for fi in files:
-    # Get a list of ifos in the segments of the input data file
-    ifos_in_file = [ifo for ifo in args.ifos if ifo in fi['segments']]
-    # Arbitrarily choose one to copy over the segments for as all are currently the same 
-    ifo_to_get = 'segments/{}'.format(ifos_in_file[0])
-    # Convert list of IFOs into a identifier string
-    ifosstring = ''.join(ifos_in_file)
-    group_to_save = '{}/segments'.format(ifosstring)
-    f[group_to_save + '/end'] = fi[ifo_to_get + '/end'][:]
-    f[group_to_save + '/start'] = fi[ifo_to_get + '/start'][:]
-    # Use this ID string to save the attributes from the input files
-    for attr_name in fi.attrs:
-        f[ifosstring].attrs[attr_name] = fi.attrs[attr_name]
+    for key in fi['segments']:
+        if key.startswith('foreground') or key.startswith('background'):
+            continue
+        f['segments/%s/end' % key] = fi['segments/%s/end' % key][:]
+        f['segments/%s/start' % key] = fi['segments/%s/start' % key][:]
+        if 'segments/foreground_veto' in fi:
+            f['segments/%s/foreground_veto/end' % key] = fi['segments/foreground_veto/end'][:]
+            f['segments/%s/foreground_veto/start' % key] = fi['segments/foreground_veto/start'][:]
+        for attr_name in fi.attrs:
+            if key not in f:
+                 f.create_group(key)
+            f[key].attrs[attr_name] = fi.attrs[attr_name]
+
+# Save the ifo list for easy access
+f.attrs['ifos'] = ' '.join(sorted(args.ifos))
 
 logging.info('Generating list of datasets in input files')
 
 key_set = pycbc.io.name_all_datasets(files)
 
 logging.info('Copying foreground non-ifo-specific data')
-# copy and concatenate all the columns in the foreground group 
+# copy and concatenate all the columns in the foreground group
 # from all files /except/ the IFO groups
 for key in key_set:
     if key.startswith('foreground') and not any([ifo in key for ifo in args.ifos]):
@@ -65,7 +68,7 @@ for f_in in files:
         if ifo in f_in['foreground']:
             all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], \
                                      f_in['foreground/{}/time'.format(ifo)][:]])
-            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo], 
+            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo],
                                      f_in['foreground/{}/trigger_id'.format(ifo)][:]])
         else:
             all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo],
@@ -101,7 +104,7 @@ def filter_dataset(h5file, name, idx):
     del h5file[name]
     h5file[name] = filtered_dset
     return idx
-    
+
 # Downsample the foreground columns to only the loudest ifar between the multiple files
 for key in f['foreground'].keys():
     if key not in args.ifos:
@@ -115,17 +118,17 @@ logging.info('Applying trials factor')
 # Recalculate event times after clustering for trials factor calculation
 clustered_times = (f['foreground/%s/time' % ifo][:] for ifo in args.ifos)
 
-# Trials factor is how many possible 2+IFO combinations are 'on' 
+# Trials factor is how many possible 2+IFO combinations are 'on'
 #  at the time of the coincidence
 trials_factors = numpy.zeros_like(f['foreground/ifar'][:])
-test_times = numpy.array([pycbc.events.mean_if_greater_than_zero(tc)[0] 
+test_times = numpy.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
                           for tc in zip(*clustered_times)])
 # Iterate over different ifo combinations
-for key in f:
+for key in f['segments']:
     if key.startswith('foreground') or key.startswith('background'):
         continue
-    end_times = numpy.array(f['%s/segments/end' % key][:])
-    start_times = numpy.array(f['%s/segments/start' % key][:])
+    end_times = numpy.array(f['segments/%s/end' % key][:])
+    start_times = numpy.array(f['segments/%s/start' % key][:])
     idx_within_segment = pycbc.events.indices_within_times(test_times, start_times, end_times)
     trials_factors[idx_within_segment] += numpy.ones_like(idx_within_segment)
 
@@ -136,7 +139,7 @@ f['foreground/ifar_exc'][:] = f['foreground/ifar_exc'][:] / trials_factors
 #      commented out parts here need re-working out
 
 #TODO: add in background combinations
-# If there is a background set (full_data as opposed to injection run), then recalculate 
+# If there is a background set (full_data as opposed to injection run), then recalculate
 # the values for its triggers as well
 
 f.close()

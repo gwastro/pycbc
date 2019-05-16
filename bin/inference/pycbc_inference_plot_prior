@@ -29,8 +29,9 @@ from matplotlib import pyplot as plt
 
 import pycbc
 from pycbc import __version__
-from pycbc import (distributions, results)
-from pycbc.inference.option_utils import ParseParametersArg
+from pycbc import (distributions, results, waveform)
+from pycbc.inference.option_utils import (ParseParametersArg,
+                                          prior_from_config)
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.results.scatter_histograms import create_multidim_plot
 
@@ -65,13 +66,13 @@ parser.add_argument("--parameters", nargs="+", action=ParseParametersArg,
                          "property of that parameter will be used. If not "
                          "provided, will plot all of the parameters in the "
                          "[variable_params] section of the config file.")
-parser.add_argument("--sections", type=str, nargs="+", default=["prior"],
-                    help="Name of section plus subsection with distribution "
-                         "configurations, eg. prior-mass1.")
+parser.add_argument("--prior-section", type=str, default="prior",
+                    help="Name of section with distribution configurations. "
+                         "Default is 'prior'.")
 # add output options
 parser.add_argument("--nsamples", type=int, default=10000,
                     help="The number of samples to draw from the prior for "
-                         "plotting. Defaults is 10000.")
+                         "plotting. Default is 10000.")
 parser.add_argument("--output-file", type=str, required=True,
                     help="Path to output plot.")
 # verbose option
@@ -90,38 +91,21 @@ pycbc.init_logging(opts.verbose)
 logging.info("Reading configuration files")
 cp = WorkflowConfigParser(opts.config_files)
 
-# get prior distribution for each variable parameter
-# parse command line values for section and subsection
-# if only section then look for subsections
-# and add distributions to list
-logging.info("Constructing prior")
-variable_params = []
-dists = []
-for sec in opts.sections:
-    section = sec.split("-")[0]
-    subsec = sec.split("-")[1:]
-    if len(subsec):
-        subsections = ["-".join(subsec)]
-    else:
-        subsections = cp.get_subsections(section)
-    for subsection in subsections:
-        name = cp.get_opt_tag(section, "name", subsection)
-        dist = distributions.distribs[name].from_config(
-                                            cp, section, subsection)
-        variable_params += dist.params
-        dists.append(dist)
-variable_params = sorted(variable_params)
-ndim = len(variable_params)
-
-# construct class that will return draws from the prior
-logging.info("Drawing samples")
-prior = distributions.JointDistribution(variable_params, *dists)
+logging.info("Loading prior")
+prior = prior_from_config(cp, prior_section=opts.prior_section)
+logging.info("Drawing samples from prior")
 samples = prior.rvs(opts.nsamples)
 
 # figure out what parameters to plot
 if opts.parameters is None:
-    parameters = variable_params
-    labels = {param: param for param in variable_params}
+    parameters = prior.variable_args
+    labels = {}
+    for param in parameters:
+        # try to get the parameter label from the waveform module
+        try:
+            labels[param] = getattr(waveform.parameters, param).label
+        except AttributeError:
+            labels[param] = param
 else:
     parameters = opts.parameters
     labels = opts.parameters_labels
@@ -142,12 +126,9 @@ fig, axis_dict = create_multidim_plot(
 fig.set_dpi(200)
 
 # save figure with meta-data
-caption_kwargs = {
-    "parameters" : ", ".join([param for param in variable_params])
-}
 caption = """This plot shows the probability density function (PDF) from the 
 prior distributions."""
-title = """Prior Distributions for {parameters}""".format(**caption_kwargs)
+title = "Prior Distribution"
 results.save_fig_with_metadata(fig, opts.output_file,
                                cmd=" ".join(sys.argv),
                                title=title,

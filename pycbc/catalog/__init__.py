@@ -30,7 +30,7 @@ from . import catalog
 
 class Merger(object):
     """Informaton about a specific compact binary merger"""
-    def __init__(self, name):
+    def __init__(self, name, source='gwtc-1'):
         """ Return the information of a merger
 
         Parameters
@@ -38,13 +38,14 @@ class Merger(object):
         name: str
             The name (GW prefixed date) of the merger event.
         """
-        self.data = catalog.data[name]
+        self.data = catalog.get_source(source)[name]
 
         # Set some basic params from the dataset
-        for key in self.data['median1d']:
-            setattr(self, key, self.data['median1d'][key][0])
+        for key in self.data:
+            if 'best' in self.data[key]:
+                setattr(self, key, self.data[key]['best'])
 
-        self.time = self.data['time']
+        self.time = self.data['tc']['best']
 
     def median1d(self, name, return_errors=False):
         """ Return median 1d marginalized parameters
@@ -63,11 +64,13 @@ class Merger(object):
             The requested parameter
         """
         if return_errors:
-            return self.data['median1d'][name]
+            mid = self.data[name]['best']
+            low, high = self.data[name]['err']
+            return (mid, low, high)
         else:
-            return self.data['median1d'][name][0]
+            return self.data[name]['best']
 
-    def strain(self, ifo):
+    def strain(self, ifo, duration=32, sample_rate=4096):
         """ Return strain around the event
 
         Currently this will return the strain around the event in the smallest
@@ -86,20 +89,34 @@ class Merger(object):
         from astropy.utils.data import download_file
         from pycbc.frame import read_frame
 
-        channel = '%s:LOSC-STRAIN' % ifo
-        url = self.data['frames'][ifo]
+        # Information is currently wrong on GWOSC!
+        # channels = self.data['files']['FrameChannels']
+        # for channel in channels:
+        #    if ifo in channel:
+        #        break
+
+        length = "{}sec".format(duration)
+        if sample_rate == 4096:
+            sampling = "4KHz"
+        elif sample_rate == 16384:
+            sampling = "16KHz"
+
+        channel = "{}:GWOSC-{}_R1_STRAIN".format(ifo, sampling.upper())
+        url = self.data['files'][ifo][length][sampling]['GWF']
         filename = download_file(url, cache=True)
-        return read_frame(filename, channel)
+        return read_frame(str(filename), str(channel))
 
 class Catalog(object):
     """Manage a set of binary mergers"""
-    def __init__(self):
+    def __init__(self, source='gwtc-1'):
         """ Return the set of detected mergers
 
         The set of detected mergers. At some point this may have some selection
         abilities.
         """
-        self.mergers = {name: Merger(name) for name in catalog.data}
+        self.data = catalog.get_source(source=source)
+        self.mergers = {name: Merger(name,
+                                     source=source) for name in self.data}
         self.names = self.mergers.keys()
 
     def __len__(self):
