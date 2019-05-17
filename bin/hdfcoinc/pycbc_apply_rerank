@@ -1,6 +1,8 @@
 #!/bin/env python
 """Rewrite statmap file with a reranking of the statistic values"""
 import h5py, numpy, argparse, logging, pycbc
+from pycbc.conversions import sec_to_year
+from pycbc.events.coinc import calculate_n_louder
 from shutil import copyfile
 
 parser = argparse.ArgumentParser()
@@ -37,3 +39,54 @@ stats = stats[inv]
 # only make a few modifications
 copyfile(args.statmap_file, args.output_file)
 o = h5py.File(args.output_file)
+
+# Update the statistic values
+for sec in sections:
+    # New stats for this section
+    nsize = len(o['foreground/stat'])
+    o['sec/stat'] = stats[:nsize]
+    # use for next section
+    stats = stats[nsize:]
+
+background_time = o.attrs['background_time']
+coinc_time = o.attrs['foreground_time']
+background_time_exc = o.attrs['background_time_exc']
+
+# Injection run
+if args.ranking_file:
+    f = h5py.File(args.ranking_file, 'r')
+    fstat = o['foreground/stat'][:]
+    backstat = f['background_exc/stat'][:]
+    
+    bnum, fnum = calculate_n_louder(backstat, fstat, dec)
+
+    ifar = background_time / (fnum + 1)
+    fap = 1 - numpy.exp(- coinc_time / ifar)
+    f['foreground/ifar'] = conv.sec_to_year(ifar)
+    f['foreground/fap'] = fap
+    
+    f['foreground/ifar_exc'] = f['foreground/ifar'][:]
+    f['foreground/fap_exc'] = f['foreground/fap'][:]
+
+# full data run
+else:
+    fstat = o['foreground/stat'][:]
+    backstat = o['background/stat'][:]
+    dec = o['background/decimation_factor'][:]
+    backstat_exc = o['background_exc/stat'][:]
+    
+    bnum, fnum = calculate_n_louder(backstat, fstat, dec)
+    bnum_exc, fnum_exc = calculate_n_louder(backstat_exc, fstat, dec)
+    
+    o['background/ifar'] = sec_to_year(background_time / (bnum + 1))  
+    o['background_exc/ifar'] = sec_to_year(background_time_exc / (bnum_exc + 1))  
+    
+    ifar = background_time / (fnum + 1)
+    fap = 1 - numpy.exp(- coinc_time / ifar)
+    f['foreground/ifar'] = conv.sec_to_year(ifar)
+    f['foreground/fap'] = fap
+
+    ifar_exc = background_time_exc / (fnum_exc + 1)
+    fap_exc = 1 - numpy.exp(- coinc_time_exc / ifar_exc)
+    f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
+    f['foreground/fap_exc'] = fap_exc
