@@ -288,8 +288,12 @@ class LiveEventManager(object):
                 hdfp['mass2'] = bank.table[template_id].mass2
                 hdfp['spin1z'] = bank.table[template_id].spin1z
                 hdfp['spin2z'] = bank.table[template_id].spin2z
+                hdfp['template_duration'] = \
+                    bank.table[template_id].template_duration
                 hdfp['ifar'] = ifar
                 hdfp['gid'] = gid
+                for ifo in args.channel_name:
+                    hdfp['channel_names'][ifo] = args.channel_name[ifo]
 
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant IMRPhenomD '
