@@ -187,6 +187,10 @@ loudest_snrs = {}
 loudest_snr_times = {}
 loudest_snr_idxs = {}
 
+# Determine which ifo has the loudest SNR peak ... We'll use this to determine
+# the time window for other ifos (e.g. if one ifo has a loud SNR peak, and the
+# other has SNR < 4, we would need to determine the loudest SNR for the quieter
+# instrument within light-travel time of the loud SNR peak)
 for ifo in ifos:
     duration = 0.095
     half_dur_samples = int(sample_rate * duration / 2)
@@ -222,43 +226,54 @@ for idx, ifo in enumerate(ifos):
     coinc_results['foreground/'+ifo+'/window'] = 0.1
     coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
     coinc_results['foreground/'+ifo+'/template_id'] = 0
+    coinc_results['foreground/'+ifo+'/template_duration'] = \
+        fp['template_duration'][()]
     followup_data[ifo] = {}
     fseries = interpolate(data[ifo].psd, 0.25)
     followup_data[ifo]['psd'] = fseries
     followup_data[ifo]['snr_series'] = snr_series_dict[ifo]
 
-    # Should this trigger be considered part of the coincidence?
-    # Check snr_peak
+    # Find loudest SNR within coincidence window of the largest peak
     snr_peak = abs(loudest_snrs[ifo])
     # And check light travel time
     lttbd = Detector(ifo).light_travel_time_to_detector(Detector(loudest_ifo))
     # Add small buffer
     lttbd += 0.005
 
-    if snr_peak < args.snr_threshold or \
-            abs(loudest_snr_times[ifo] - loudest_snr_time_allifos) > lttbd:
-        coinc_results['foreground/'+ifo+'/end_time'] = loudest_snr_time_allifos
-        continue
+    time_window = [loudest_snr_time_allifos-lttbd,
+                   loudest_snr_time_allifos+lttbd]
 
-    coinc_results['foreground/'+ifo+'/end_time'] = loudest_snr_times[ifo]
+    snr_slice = snr_series_dict[ifo].time_slice(time_window[0], time_window[1])
+    max_snr_idx = numpy.argmax(abs(snr_slice))
+    loudest_snr_time = snr_slice.sample_times[max_snr_idx]
+    loudest_snr = snr_slice[max_snr_idx]
+
+    coinc_results['foreground/'+ifo+'/end_time'] = loudest_snr_time_allifos
+    coinc_results['foreground/'+ifo+'/end_time'] = loudest_snr_time
     coinc_results['foreground/'+ifo+'/snr_series'] = snr_series_dict[ifo]
     coinc_results['foreground/'+ifo+'/psd_series'] = data[ifo].psd
     coinc_results['foreground/'+ifo+'/delta_f'] = delta_f
-    coinc_results['foreground/'+ifo+'/event_id'] = 'sngl_inspiral:event_id:'+str(idx)
-    coinc_results['foreground/'+ifo+'/snr'] = abs(loudest_snrs[ifo])
-    netsnr += abs(loudest_snrs[ifo])**2
+    coinc_results['foreground/'+ifo+'/event_id'] = \
+        'sngl_inspiral:event_id:'+str(idx)
+    coinc_results['foreground/'+ifo+'/snr'] = abs(loudest_snr)
+    netsnr += abs(loudest_snr)**2
     coinc_results['foreground/'+ifo+'/sigmasq'] \
         = snr_series_dict['sigmasq_' + ifo]
     coinc_results['foreground/'+ifo+'/coa_phase'] \
-        = numpy.angle(loudest_snrs[ifo])
+        = numpy.angle(loudest_snr)
     coinc_results['foreground/'+ifo+'/chisq'] = 1.
     coinc_results['foreground/'+ifo+'/chisq_dof'] = 1
 coinc_results['foreground/stat'] = numpy.sqrt(netsnr)
 coinc_results['foreground/ifar'] = fp['ifar'][()]
 
+channel_names = {}
+for ifo in hdfp['channel_names'].keys():
+    channel_names['ifo'] = hdfp['channel_names'][ifo]
+
 kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
           'low_frequency_cutoff': flow,
-          'followup_data': followup_data}
+          'followup_data': followup_data,
+          'channel_names': channel_names}
 comments = ['Automatic PyCBC followup to find largest SNR parameters']
 
 doc = live.SingleCoincForGraceDB(coinc_ifos, coinc_results,
