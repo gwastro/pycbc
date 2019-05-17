@@ -801,7 +801,7 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
         node.add_opt('--start-index', str(i))
         node.add_opt('--stride', factor)
         workflow += node        
-        stat_files += node.output_file
+        stat_files += node.output_files
 
     exe = Executable(workflow.cp, 'rerank_coincs', ifos=workflow.ifos,
                      out_dir=out_dir, tags=tags)
@@ -811,9 +811,9 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
     node.add_input_opt('--followup-file', trigfil)
     
     if ranking_file:
-        node.add_input_list_opt('--ranking-file', ranking_file)
+        node.add_input_opt('--ranking-file', ranking_file)
         
     node.new_output_file_opt(workflow.analysis_time, '.hdf', 
                              '--output-file')
-
+    workflow += node
     return node.output_files[0]

@@ -510,7 +510,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                     full_insps, insps, statfiles, bin_files,
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, tags = ctags)
-    inj_coinc = wf.rerank_coinc_interval(inj_coinc,
+    inj_coinc = wf.rerank_coinc_followup(workflow, inj_coinc,
                                          hdfbank[0],
                                          output_dir, tags=ctags, 
                                          injection_file=inj_file,
