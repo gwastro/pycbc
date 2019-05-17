@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+
+import argparse
+import logging
+from matplotlib import use
+use('agg')
+import matplotlib.pyplot as plt
+import numpy
+import pycbc
+import pycbc.version
+from pycbc import waveform
+from pycbc import results
+from pycbc import __version__
+from pycbc.inference import io
+from pycbc import coordinates
+import sys
+
+# add options to command line
+parser = argparse.ArgumentParser(
+            usage="pycbc_inference_plot_maxl_waveform [--options]",
+            description="Plots the maximum likelihood waveform in the "
+                        "frequency and time domain.")
+parser.add_argument("--input-file", type=str, required=True,
+                    help="Path to input HDF file.")
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
+# output table options
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Path to output plot.")
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="")
+
+# parse the command line
+opts = parser.parse_args()
+
+# setup log
+pycbc.init_logging(opts.verbose)
+
+# load the samples
+logging.info("Reading input file")
+fp = io.loadfile(opts.input_file, "r")
+
+# find max l sample
+samples = fp.read_samples(fp['samples'].keys())
+maxi = samples["loglikelihood"].argmax()
+
+# get names and values for table
+params = list(samples.fieldnames)
+params.sort()
+lastparams = ['logjacobian', 'logprior', 'loglikelihood']
+names = [p for p in params if p not in lastparams]
+names += [p for p in lastparams if p in params]
+cols = [numpy.array([samples[p][maxi]]) for p in params
+		if p not in lastparams]
+cols += [numpy.array([samples[p][maxi]]) for p in lastparams
+		 if p in params]
+
+# Close the file
+fp.close()
+
+# Create html table
+logging.info("Creating HTML Table")
+
+html_table = results.table(cols, names)
+
+# save figure with meta-data
+caption = """This table contains the parameters of 
+maximum likelihood sample"""
+kwds = {'title' : 'Maximum Likelihood Template Parameters',
+        'cmd' :' '.join(sys.argv), }
+
+results.save_fig_with_metadata(str(html_table), opts.output_file,
+							   caption=caption, **kwds)
+
+# exit
+logging.info("Done")
