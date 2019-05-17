@@ -36,6 +36,7 @@ from pycbc.workflow import core
 from pycbc.workflow import jobsetup
 from pycbc.workflow import inference_followups
 from pycbc.workflow import plotting
+from pycbc.inject import InjectionSet
 
 # set command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -223,24 +224,21 @@ if injection_input:
     os.mkdir("injections")
     
     # split injections into one file per injection
+    
     n_total_injections = 0
     for i_injfile in range(len(injection_input)):
-        with h5py.File(injection_input[i_injfile], "r") as inputfile:
-            if isinstance(inputfile['tc'][()], int):
-                local_n_injections = 1
-            elif isinstance(inputfile['tc'][()], numpy.ndarray):
-                local_n_injections = len(inputfile['tc'][()])
-            for i in range(local_n_injections):
-                with h5py.File(
-                    'injections/injection%s.hdf' %(i+n_total_injections), 'w'
-                    ) as inj:
-                    for k in inputfile.keys():
-                        inj.create_dataset(k,data=inputfile[k][i])
-                injection_files.append(
-                    core.File.from_path(
-                    'injections/injection%s.hdf' %(i+n_total_injections)
-                    ))
-            n_total_injections += local_n_injections
+        input_injset = InjectionSet(injection_input[i_injfile])
+        print(input_injset.table)
+        if isinstance(input_injset.table['tc'], (int, float):
+            local_n_injections = 1
+        elif isinstance(input_injset.table['tc'], numpy.ndarray):
+            local_n_injections = len(input_injset.table['tc'])
+        for i in range(local_n_injections):
+            output_injset = InjectionSet(injection_input[i_injfile], 
+                                extract_single_inj=i)
+            output_injset.write(
+                    'injections/injection%s.hdf' %(i+n_total_injections),
+                    samples=output_injset.table)
 
 for i in range(n_injections):
     

@@ -85,84 +85,52 @@ class _HDFInjectionSet(object):
     extra_args
     """
 
-    def __init__(self, sim_file, hdf_group=None, **kwds):
+    def __init__(self, sim_file, hdf_group=None, extract_single_inj=None, **kwds):
         # open the file
         fp = h5py.File(sim_file, 'r')
         group = fp if hdf_group is None else fp[hdf_group]
         self.filehandler = fp
         # get parameters
         parameters = group.keys()
-        # get all injection parameter values
-        injvals = {param: group[param][()] for param in parameters}
-        # We assume injvals are either (floats and 1D-arrays) for a single
-        # injection or (1D-arrays and 2D-arrays) for multiple. 
-        contains_floats_strings = False
-        contains_1d_arrays = False
-        contains_2d_arrays = False
-#        print(injvals)
-        for param in parameters:
-            if not isinstance(injvals[param], np.ndarray):
-                contains_floats_strings = True
-            else:
-#                contains_arrays = True
-                if injvals[param].ndim == 1:
-                    contains_1d_arrays = True
-                elif injvals[param].ndim == 2:
-                    contains_2d_arrays = True
-                else:
-#                    print(param, type(injvals[param]))
-                    raise ValueError("Expect float, 1d or 2d injection array.")
-        if contains_2d_arrays and contains_floats_strings: 
-            raise ValueError("Cannot interpret floats and 2d injection arrays.")
-#        elif not contains_arrays: all floats, nothing to do
-#        if contains_2d_arrays and not contains_floats: all 1d arrays, nothing to do
-        elif contains_1d_arrays and contains_floats_strings:
-            for param in parameters: 
-                if isinstance(injvals[param],np.ndarray):
-                    arr = np.empty(1, dtype=object)
-                    arr[0] = injvals[param]
-                    injvals[param] = arr
-        elif contains_1d_arrays and contains_2d_arrays: 
-            for param in parameters:
-                if injvals[param].shape != injvals[0].shape:
-                    raise ValueError("Unequal first dimension size, "
-                                     "should be number of injections.")
-                elif injvals[param].ndim == 2:
-                    arr = np.empty(injvals[param].shape[0], dtype=object)
-                    for ii in range(injvals[param].shape[0]):
-                        arr[ii] = injvals[param][ii,:]
-                    injvals[param] = arr
-        
-        # enforce equal first dimension (should be number of injections).
-        # Note: this does not accept injections with shape ()
-        # This does not work for injection parameters that are not arrays.
-        # Treat single injection (mostly single floats) and multi injection (mostly 1-d arrays) separately?
-#        for param in parameters:
-#            if injvals[param].shape[0] != injvals[parameters[0]].shape[0]:
-#                raise ValueError("Unequal first dimension size"
-#                                 "of injection parameters.")
-##            if injvals[param].shape != (injvals[parameters[0]].shape[0],):
-#            if isinstance(injvals[param][0],np.ndarray):
-#                arr = np.empty(injvals[param].shape[0], dtype=object)
-#                for ii in range(injvals[param].shape[0]):
-#                    arr[ii] = injvals[param][ii]
-#            injvals[param] = arr
-#        for param in parameters:
-#            if isinstance(injvals[param], np.ndarray):
-#                arr = np.empty(1, dtype=object)
-#                arr[0] = injvals[param]
-#                injvals[param] = arr
-                
-        # if there were no variable args, then we only have a single injection
-        if len(parameters) == 0:
-            numinj = 1
-        else:
-            numinj = injvals.values()[0].size
-        # add any static args in the file
         try:
             self.static_args = group.attrs['static_args']
         except KeyError:
             self.static_args = []
+        if 'tc' not in parameters and 'tc' not in self.static_args:
+            raise ValueError("no tc found in the given injection file; "
+                             "this is needed to determine where to place the "
+                             "injection")
+        # get all injection parameter values
+        injvals = {param: group[param][()] for param in parameters}
+        # make sure a coalescence time is specified for injections
+        # TODO: also check in static-args
+        # We assume injvals are either (floats and 1D-arrays) for a single
+        # injection or (1D-arrays and 2D-arrays) for multiple. 
+
+        # if there were no variable args, then we only have a single injection
+        if len(parameters) == 0:
+            numinj = 1
+        elif isinstance(injvals['tc'][()], (int, float)):
+            numinj = 1
+        elif isinstance(injvals['tc'][()], np.ndarray):
+            numinj = len(injvals['tc'][()])
+        
+        if extract_single_inj is not None:
+            if extract_single_inj > numinj - 1:
+                raise ValueError("Cannot extract single injection from file.")
+            elif numinj == 1:
+                pass
+            else:
+                injvals = {param:group[param][single_inj] for param in parameters}
+                numinj = 1
+        
+        for param in parameters:
+            if injvals[param].ndim > 1:
+                arr = np.empty(numinj, dtype=object)
+                for ii in range(numinj):
+                    arr[ii] = injvals[param][ii,:]
+                injvals[param] = arr
+        
         parameters.extend(self.static_args)
         # we'll expand the static args to be arrays with the same size as
         # the other values
@@ -179,11 +147,6 @@ class _HDFInjectionSet(object):
                 # times
                 arr = np.repeat(val, numinj)
             injvals[param] = arr
-        # make sure a coalescence time is specified for injections
-        if 'tc' not in injvals:
-            raise ValueError("no tc found in the given injection file; "
-                             "this is needed to determine where to place the "
-                             "injection")
         # initialize the table
         self.table = pycbc.io.WaveformArray.from_kwargs(**injvals)
         # save the extra arguments
