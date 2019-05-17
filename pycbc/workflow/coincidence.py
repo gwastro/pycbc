@@ -807,6 +807,8 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
                      out_dir=out_dir, tags=tags)
     node = exe.create_node()
     node.add_input_list_opt('--stat-files', stat_files)
+    node.add_input_opt('--statmap-file', statmap_file)
+    node.add_input_opt('--followup-file', trigfil)
     
     if ranking_file:
         node.add_input_list_opt('--ranking-file', ranking_file)
