@@ -267,7 +267,7 @@ coinc_results['foreground/stat'] = numpy.sqrt(netsnr)
 coinc_results['foreground/ifar'] = fp['ifar'][()]
 
 channel_names = {}
-for ifo in hdfp['channel_names'].keys():
+for ifo in fp['channel_names'].keys():
     channel_names['ifo'] = hdfp['channel_names'][ifo]
 
 kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
