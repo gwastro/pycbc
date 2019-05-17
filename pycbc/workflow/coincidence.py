@@ -755,7 +755,9 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
     workflow.add_node(combine_statmap_node)
     return combine_statmap_node.output_file
 
-def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
+def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags, 
+                          injection_file=None, 
+                          ranking_file=None):
     make_analysis_dir(out_dir)
 
     # Generate reduced data files (maybe this could also be used elsewhere?)
@@ -766,6 +768,9 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
                           out_dir='strain_files').create_node()
         node.add_opt('--gps-start-time', workflow.analysis_time[0])
         node.add_opt('--gps-end-time', workflow.analysis_time[1])
+        if injection_file:
+            node.add_input_opt('--injection-file', injection_file)
+            
         fil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
                                        '--output-file', tags=tags)
         stores.append(fil)
@@ -785,6 +790,8 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
                                       "parallelization-factor", tags))
     exe = Executable(workflow.cp, 'coinc_followup', ifos=workflow.ifos,
                      out_dir=out_dir, tags=tags)
+                     
+    stat_files = FileList([])
     for i in range(factor):
         node = exe.create_node()
         node.new_output_file_opt(workflow.analysis_time, '.hdf',
@@ -794,7 +801,17 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags):
         node.add_opt('--start-index', str(i))
         node.add_opt('--stride', factor)
         workflow += node        
+        stat_files += node.output_file
 
-    # Rerank using results of trigger followup
-    # NOOP for now.
+    exe = Executable(workflow.cp, 'rerank_coincs', ifos=workflow.ifos,
+                     out_dir=out_dir, tags=tags)
+    node = exe.create_node()
+    node.add_input_list_opt('--stat-files', stat_files)
+    
+    if ranking_file:
+        node.add_input_list_opt('--ranking-file', ranking_file)
+        
+    node.new_output_file_opt(workflow.analysis_time, '.hdf', 
+                             '--output-file')
+
     return statmap_file
