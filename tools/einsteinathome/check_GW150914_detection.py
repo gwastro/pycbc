@@ -14,7 +14,7 @@ gw150914_snr = {'H1': 19.71, 'L1': 13.28}
 gw150914_chi2r = {'H1': 1.05, 'L1': 0.45}
 
 f = h5py.File(sys.argv[1], 'r')
-detector = f.keys()[0]
+detector = tuple(f.keys())[0]
 end_times = f[detector]['end_time'][:]
 snrs = f[detector]['snr'][:]
 chi2rs = f[detector]['chisq'][:] / (2 * f[detector]['chisq_dof'][:] - 2)

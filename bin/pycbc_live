@@ -561,7 +561,7 @@ with ctx:
         pr.enable()
 
     # main analysis loop
-    data_end = lambda: data_reader[data_reader.keys()[0]].end_time
+    data_end = lambda: data_reader[tuple(data_reader.keys())[0]].end_time
     last_bg_dump_time = int(data_end())
     while data_end() < args.end_time:
         t1 = time()

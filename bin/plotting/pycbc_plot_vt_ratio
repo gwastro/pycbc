@@ -49,7 +49,7 @@ ax_mi.grid(True, zorder=1)
 labels = ['$ ' + label.split('\\in')[-1] for label in ffirst_set['data'].keys()]
 
 # read in the splitting parameter name from the first data set
-x_param = r'$' + ffirst_set['data'].keys()[0].split('\\in')[0].strip('$').strip() + r'$'
+x_param = r'$' + tuple(ffirst_set['data'].keys())[0].split('\\in')[0].strip('$').strip() + r'$'
 
 # read in the positions from the labels
 xpos = np.array([float(l.split('[')[1].split(',')[0]) for l in labels])

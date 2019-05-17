@@ -1052,7 +1052,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     # Check available data segments meet criteria specified in arguments
     commonsegs = sciencesegs.extract_common(sciencesegs.keys())
-    offsrclist = commonsegs[commonsegs.keys()[0]]
+    offsrclist = commonsegs[tuple(commonsegs.keys())[0]]
     if len(offsrclist) > 1:
         logging.info("Removing network segments that do not contain trigger "
                      "time")
@@ -1212,7 +1212,7 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
                 best_comb = max(seg_lens.iterkeys(),
                                 key=(lambda key: seg_lens[key]))
             else:
-                best_comb = offsource.keys()[0]
+                best_comb = tuple(offsource.keys())[0]
             logging.info("No combination of %d IFOs with suitable science "
                          "segment.", num_ifos)
         else:

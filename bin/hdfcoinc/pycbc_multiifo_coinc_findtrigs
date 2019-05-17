@@ -73,7 +73,7 @@ class ReadByTemplate(object):
     def __init__(self, filename, bank=None, segment_name=[], veto_files=[]):
         self.filename = filename
         self.file = h5py.File(filename, 'r')
-        self.ifo = self.file.keys()[0]
+        self.ifo = tuple(self.file.keys())[0]
         self.valid = None
         self.bank = h5py.File(bank, 'r') if bank else None
 

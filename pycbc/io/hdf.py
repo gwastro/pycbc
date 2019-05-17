@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 import logging
 import inspect
+from itertools import chain
 from six.moves import range
 
 from lal import LIGOTimeGPS, YRJUL_SI
@@ -145,7 +146,7 @@ class DictArray(object):
         return self.__class__(data=data)
 
     def __len__(self):
-        return len(self.data[self.data.keys()[0]])
+        return len(self.data[tuple(self.data.keys())[0]])
 
     def __add__(self, other):
         data = {}
@@ -277,13 +278,13 @@ class FileData(object):
         self.h5file = HFile(fname, "r")
         if group is None:
             if len(self.h5file.keys()) == 1:
-                group = self.h5file.keys()[0]
+                group, = self.h5file.keys()
             else:
                 raise RuntimeError("Didn't get a group!")
         self.group_key = group
         self.group = self.h5file[group]
         self.columns = columnlist if columnlist is not None \
-                       else self.group.keys()
+                       else list(self.group.keys())
         self.filter_func = filter_func
         self._mask = None
 
@@ -427,7 +428,7 @@ class SingleDetTriggers(object):
 
             self.filter_mask = eval(filter_func.replace('self.', 'self._'))
             # remove the dummy attributes
-            for c in self.trigs.keys() + self.bank.keys():
+            for c in chain(self.trigs.keys(), self.bank.keys()):
                 if c in filter_func: delattr(self, '_'+c)
 
             self.mask = self.mask & self.filter_mask
@@ -728,7 +729,7 @@ class ForegroundTriggers(object):
         outdoc = ligolw.Document()
         outdoc.appendChild(ligolw.LIGO_LW())
 
-        ifos = [ifo for ifo in self.sngl_files.keys()]
+        ifos = list(self.sngl_files.keys())
         proc_id = ligolw_process.register_to_xmldoc(outdoc, 'pycbc',
                      {}, ifos=ifos, comment='', version=pycbc_version.git_hash,
                      cvs_repository='pycbc/'+pycbc_version.git_branch,
