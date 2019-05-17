@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+
+import argparse
+import logging
+from matplotlib import use
+use('agg')
+import matplotlib.pyplot as plt
+import numpy
+import pycbc
+import pycbc.version
+from pycbc import waveform
+from pycbc import results
+from pycbc import __version__
+from pycbc.inference import io
+from pycbc import coordinates
+from pycbc.types import zeros, complex64
+import sys
+
+# add options to command line
+parser = argparse.ArgumentParser(
+            usage="pycbc_inference_plot_maxl_waveform [--options]",
+            description="Plots the maximum likelihood waveform in the "
+                        "frequency and time domain.")
+parser.add_argument("--input-file", type=str, required=True,
+                    help="Path to input HDF file.")
+parser.add_argument('--version', action='version', version=__version__,
+                    help='show version number and exit')
+
+# waveform options
+parser.add_argument("--waveform-length", type=float, required=True,
+                    help="Used to set the value of delta-f when either "
+                    "generating in frequency domain, or when FFTing.")
+parser.add_argument("--sample-rate", type=float, required=True,
+                    help="Sample rate to use when generating waveform.")
+parser.add_argument("--transforms", nargs="+", type=str,
+                    help="Parameter transforms required for waveform "
+                    "generation.")
+
+# output plot options
+parser.add_argument("--output-file", type=str, required=True,
+                    help="Path to output plot.")
+# verbose option
+parser.add_argument("--verbose", action="store_true", default=False,
+                    help="")
+
+# parse the command line
+opts = parser.parse_args()
+
+# setup log
+pycbc.init_logging(opts.verbose)
+
+# load the samples
+logging.info("Reading input file")
+fp = io.loadfile(opts.input_file, "r")
+
+attributes = ['approximant', 'f_lower', 'f_ref']
+approx = {a:fp.attrs[a] for a in attributes}
+
+samples = fp.read_samples(fp['samples'].keys())
+maxi = samples["loglikelihood"].argmax()
+params = {p:samples[p][maxi] for p in samples.fieldnames}
+
+# TODO: Transform parameters to those needed
+if opts.transforms:
+	transform_params = {t.split(':')[1]:samples[t.split(':')[0]][maxi]
+						for t in opts.transforms}
+	params.update(transform_params)
+
+params.update(approx)
+
+print(params)
+
+# Close the file
+fp.close()
+
+# TODO: Generate the frequency-domain waveform
+
+delta_f = 1. / opts.waveform_length
+delta_t = 1. / opts.sample_rate
+tlen = int(opts.waveform_length * opts.sample_rate)
+flen = tlen / 2 + 1
+
+hp, hc = waveform.get_two_pol_waveform_filter(zeros(flen, dtype=complex64),
+                                              zeros(flen, dtype=complex64),
+                                              params,
+                                              delta_f=delta_f, delta_t=delta_t,
+                                              **params)
+
+f_length = hp.sample_frequencies[numpy.nonzero(hp.data)][-1]
+
+ht = hp.to_timeseries()
+
+post_merger_length = hp.length_in_time - hp.chirp_length + 0.1
+roll_samples = int(-post_merger_length * opts.sample_rate)
+ht.roll(roll_samples)
+
+# plot both waveforms
+logging.info("Plotting maximum likelihood waveform")
+fig = plt.figure()
+
+plt.subplot(2, 1, 1)
+
+plt.plot(hp.sample_frequencies, numpy.abs(hp))
+plt.xlim([0,f_length*1.1])
+
+plt.title("Frequency-Domain Waveform")
+plt.ylabel('abs($\\tilde{h}(f)$)')
+plt.xlabel('Frequency (Hz)')
+
+plt.subplot(2, 1, 2)
+
+plt.plot(ht.sample_times - ht.sample_times[roll_samples], ht)
+plt.xlim([-hp.chirp_length*1.1, post_merger_length])
+
+plt.title("Time-Domain Waveform")
+plt.ylabel('$h(t)$')
+plt.xlabel('Time (s)')
+
+# save figure with meta-data
+caption = """This plot shows the maximum likelihood
+waveform in both the time and frequency domain"""
+results.save_fig_with_metadata(fig, opts.output_file,
+                               cmd=" ".join(sys.argv),
+                               title="Maximum Likelihood Template",
+                               caption=caption)
+plt.close()
+
+# exit
+logging.info("Done")
