@@ -814,4 +814,4 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
     node.new_output_file_opt(workflow.analysis_time, '.hdf', 
                              '--output-file')
 
-    return statmap_file
+    return node.output_files[0]
