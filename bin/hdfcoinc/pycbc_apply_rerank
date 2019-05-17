@@ -1,0 +1,39 @@
+#!/bin/env python
+"""Rewrite statmap file with a reranking of the statistic values"""
+import h5py, numpy, argparse, logging, pycbc
+from shutil import copyfile
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--stat-files', nargs='+')
+parser.add_argument('--followup-file')
+parser.add_argument('--statmap-file')
+parser.add_argument('--ranking-file')
+parser.add_argument('--output-file')
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+# Reconstruct the full stat vector
+f = h5py.File(args.followup_file, 'r')
+num = len(f['offsets'])
+inv = f['inverse'][:]
+stats = numpy.zeros(num)
+sections = f.attrs['sections']
+
+values = []
+starts = []
+for fname in args.stat_files:
+    f = h5py.File(fname, 'r')
+    s = f.attrs['start_index']
+    v = f['stat'][:]
+    stride = f.attrs['stride'] 
+    stats[s::stride] = s
+stats = stats[inv]
+
+# copy statmap file to output since we'll
+# only make a few modifications
+copyfile(args.statmap_file, args.output_file)
+o = h5py.File(args.output_file)
