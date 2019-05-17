@@ -293,7 +293,8 @@ class LiveEventManager(object):
                 hdfp['ifar'] = ifar
                 hdfp['gid'] = gid
                 for ifo in args.channel_name:
-                    hdfp['channel_names'][ifo] = args.channel_name[ifo]
+                    hdfp['channel_names/{}'.format(ifo)] = \
+                        args.channel_name[ifo]
 
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant IMRPhenomD '
