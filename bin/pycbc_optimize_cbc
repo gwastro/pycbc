@@ -76,6 +76,7 @@ if args.input_file:
     stride = args.stride
     ofile.attrs['start_index'] = start
     ofile.attrs['end_index' ] = end
+    ofile.attrs['stride'] = stride
     wparams = f['waveparams'][start:end:stride]
     triggers = (f['time'][start:end:stride], f['offsets'][start:end:stride],
                 [dict(zip(wparams.dtype.names, x)) for x in wparams])
