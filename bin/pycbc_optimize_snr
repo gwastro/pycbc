@@ -268,7 +268,7 @@ coinc_results['foreground/ifar'] = fp['ifar'][()]
 
 channel_names = {}
 for ifo in fp['channel_names'].keys():
-    channel_names['ifo'] = hdfp['channel_names'][ifo]
+    channel_names['ifo'] = fp['channel_names'][ifo]
 
 kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
           'low_frequency_cutoff': flow,
