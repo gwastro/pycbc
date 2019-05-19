@@ -14,8 +14,8 @@ parser.add_argument("--verbose", action="count")
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("--injection-file", required=True,
-                    help="hdf injection file containing found injections"
-                         "Required.")
+                    help="hdf injection file containing found injections. "
+                         "Required")
 parser.add_argument("--bank-file",
                     help="hdf bank file containing template parameters. "
                          "Required for some parameters, ex. chirp mass")
@@ -108,10 +108,22 @@ args.x_param = args.x_param or "badger"
 # Get the recovered values
 # unhack the parameter name as triggers are stored by ifo
 param = args.error_param
-# calculate parameters for all recovered injection triggers, then select
-# only those above the IFAR threshold
-rec_params = triggers.get_found_param(injs, bank, trig, param,
-                                      args.ifo, args)[above_min_ifar]
+
+# calculate parameters for all recovered injection triggers
+rec_params, found_in_ifo = triggers.get_found_param(injs, bank, trig, param,
+                                                    args.ifo, args)
+# select values above IFAR threshold 
+rec_params = rec_params[above_min_ifar]
+found_in_ifo = found_in_ifo[above_min_ifar]
+
+# restrict plotted values if some inj are not found in given ifo
+if not all(found_in_ifo):
+    rec_params = rec_params[found_in_ifo]
+    inj_params = inj_params[found_in_ifo]
+    inj_xparams = inj_xparams[found_in_ifo]
+    ifar_found = ifar_found[found_in_ifo]
+    logging.info("Removing %i inj not found in %s" %
+                 ((found_in_ifo == False).sum(), args.ifo))
 
 # calculate needed values
 if "err" in args.plot_type:
@@ -170,7 +182,7 @@ ylabels = {
 xvals = eval(x_dict[args.plot_type])
 yvals = eval(y_dict[args.plot_type])
 
-logging.info("Plotting...")
+logging.info("Plotting %i found inj ..." % len(xvals))
 fig = plot.figure()
 
 if "hist" not in args.plot_type:

@@ -330,10 +330,13 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
 
     Returns
     -------
-    [return value]: NumPy array of floats
-        The calculated parameter values
+    [return value]: NumPy array of floats, array of boolean
+        The calculated parameter values and a Boolean mask indicating which
+        injections were found in the given ifo (if supplied)
     """
     foundtmp = injfile["found_after_vetoes/template_id"][:]
+    # will record whether inj was found in the given ifo
+    found_in_ifo = numpy.ones_like(foundtmp, dtype=bool)
     if trigfile is not None:
         try:  # old 2-ifo behaviour
             # get the name of the ifo in the injection file, eg "detector_1"
@@ -343,14 +346,18 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
             foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
         except IndexError:  # multi-ifo
             foundtrg = injfile["found_after_vetoes/%s/trigger_id" % ifo]
+            # multi-ifo pipeline assigns -1 for inj not found in specific ifo
+            found_in_ifo = foundtrg[:] != -1
     if bankfile is not None and param in bankfile.keys():
-        return bankfile[param][:][foundtmp]
+        return bankfile[param][:][foundtmp], found_in_ifo
     elif trigfile is not None and param in trigfile[ifo].keys():
-        return trigfile[ifo][param][:][foundtrg]
+        return trigfile[ifo][param][:][foundtrg], found_in_ifo
     else:
+        assert bankfile
         b = bankfile
         return get_param(param, args, b['mass1'][:], b['mass2'][:],
-                                     b['spin1z'][:], b['spin2z'][:])[foundtmp]
+                         b['spin1z'][:], b['spin2z'][:])[foundtmp],\
+               found_in_ifo
 
 
 def get_inj_param(injfile, param, ifo, args=None):
