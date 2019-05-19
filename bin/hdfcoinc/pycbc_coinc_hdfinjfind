@@ -218,11 +218,11 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  fo.create_group(key)
             fo[key].attrs['pivot'] = f[key].attrs['pivot']
             fo[key].attrs['fixed'] = f[key].attrs['fixed']
-            fo[key].attrs['foreground_time_exc'] = f[key].attrs['foreground_time_exc']
+        fo.attrs['foreground_time_exc'] = foreground_time_exc
     else:
         fo.attrs['detector_1'] = f.attrs['detector_1']
         fo.attrs['detector_2'] = f.attrs['detector_2']
-        fo.attrs['foreground_time_exc'] = foreground_time_exc
+        fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
 
     hdf_append(fo, 'missed/all', missed + injection_index)
     hdf_append(fo, 'missed/within_analysis', missed_within_time + injection_index)
