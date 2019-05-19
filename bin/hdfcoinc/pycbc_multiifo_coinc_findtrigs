@@ -9,11 +9,11 @@ parser.add_argument("--verbose", action="count")
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument("--veto-files", nargs='*', action='append', default=[],
                     help="Optional veto file. Triggers within veto segments "
-                    "contained in the file are ignored")
+                         "contained in the file are ignored")
 parser.add_argument("--segment-name", nargs='*', action='append', default=[],
                     help="Optional, name of veto segment in veto file")
 parser.add_argument("--trigger-files", nargs='*', action='append', default=[],
-                    help="File containing the single-detector triggers")
+                    help="Files containing single-detector triggers")
 parser.add_argument("--template-bank", required=True,
                     help="Template bank file in HDF format")
 parser.add_argument("--pivot-ifo", required=True,
@@ -26,26 +26,27 @@ parser.add_argument("--fixed-ifo", required=True,
 parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
                     help="Files containing ranking statistic info")
 parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
-                    help="The ranking statistic to use", default='newsnr')
+                    default='newsnr',
+                    help="The coinc ranking statistic to calculate")
 parser.add_argument("--use-maxalpha", action="store_true")
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
 parser.add_argument("--timeslide-interval", type=float,
                     help="Interval between timeslides in seconds. Timeslides are"
                          " disabled if the option is omitted.")
-parser.add_argument("--loudest-keep-values", type=str, nargs='*',
-                    help="Apply successive (multiplicative) levels of decimation"
-                         "for coincs with stat value below the given thresholds"
-                         "Ex. 9:10 8.5:30 8:30 7.5:30")
+parser.add_argument("--loudest-keep-values", type=str, nargs='*', default='6:1',
+                    help="Apply successive multiplicative levels of decimation"
+                         " to coincs with stat value below the given thresholds"
+                         " Ex. 9:10 8.5:30 8:30 7.5:30. Default: no decimation")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
-                    " PART/NUM_PARTS")
+                         " PART/NUM_PARTS")
 parser.add_argument("--randomize-template-order", action="store_true",
                     help="Random shuffle templates with fixed seed "
                          "before selecting range to analyze")
 parser.add_argument("--cluster-window", type=float,
                     help="Optional, window size in seconds to cluster "
-                    "coincidences over the bank")
+                         "coincidences over the bank")
 parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 parser.add_argument("--batch-singles", default=5000, type=int,
