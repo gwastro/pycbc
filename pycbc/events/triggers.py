@@ -24,6 +24,7 @@ from pycbc.events import coinc
 from pycbc.io import hdf
 import pycbc.detector
 
+
 def insert_bank_bins_option_group(parser):
     """ Add options to the optparser object for selecting templates in bins.
 
@@ -48,6 +49,7 @@ def insert_bank_bins_option_group(parser):
     bins_group.add_argument("--f-lower", default=None,
                             help="Low frequency cutoff in Hz.")
     return bins_group
+
 
 def bank_bins_from_cli(opts):
     """ Parses the CLI options related to binning templates in the bank.
@@ -75,6 +77,7 @@ def bank_bins_from_cli(opts):
         bins_idx = {"all" : numpy.arange(0, len(bank[tuple(fp.keys())[0]]))}
     fp.close()
     return bins_idx, bank
+
 
 def insert_loudest_triggers_option_group(parser, coinc_options=True):
     """ Add options to the optparser object for selecting templates in bins.
@@ -108,6 +111,7 @@ def insert_loudest_triggers_option_group(parser, coinc_options=True):
     opt_group.add_argument("--n-loudest", type=int, default=None,
                            help="Number of triggers to return in results.")
     return opt_group
+
 
 def loudest_triggers_from_cli(opts, coinc_parameters=None,
                               sngl_parameters=None, bank_parameters=None):
@@ -234,6 +238,7 @@ def loudest_triggers_from_cli(opts, coinc_parameters=None,
 
     return bin_names, bin_results
 
+
 def get_mass_spin(bank, tid):
     """
     Helper function
@@ -255,6 +260,7 @@ def get_mass_spin(bank, tid):
     s1z = bank['spin1z'][:][tid]
     s2z = bank['spin2z'][:][tid]
     return m1, m2, s1z, s2z
+
 
 def get_param(par, args, m1, m2, s1z, s2z):
     """
@@ -301,6 +307,7 @@ def get_param(par, args, m1, m2, s1z, s2z):
         parvals = pnutils.get_freq(par, m1, m2, s1z, s2z)
     return parvals
 
+
 def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
     """
     Translates some popular trigger parameters into functions that calculate
@@ -323,24 +330,35 @@ def get_found_param(injfile, bankfile, trigfile, param, ifo, args=None):
 
     Returns
     -------
-    [return value]: NumPy array of floats
-        The calculated parameter values
+    [return value]: NumPy array of floats, array of boolean
+        The calculated parameter values and a Boolean mask indicating which
+        injections were found in the given ifo (if supplied)
     """
     foundtmp = injfile["found_after_vetoes/template_id"][:]
+    # will record whether inj was found in the given ifo
+    found_in_ifo = numpy.ones_like(foundtmp, dtype=bool)
     if trigfile is not None:
-        # get the name of the ifo in the injection file, eg "detector_1"
-        # and the integer from that name
-        ifolabel = [name for name, val in injfile.attrs.items() if \
-                    "detector" in name and val == ifo][0]
-        foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
+        try:  # old 2-ifo behaviour
+            # get the name of the ifo in the injection file, eg "detector_1"
+            # and the integer from that name
+            ifolabel = [name for name, val in injfile.attrs.items() if \
+                        "detector" in name and val == ifo][0]
+            foundtrg = injfile["found_after_vetoes/trigger_id" + ifolabel[-1]]
+        except IndexError:  # multi-ifo
+            foundtrg = injfile["found_after_vetoes/%s/trigger_id" % ifo]
+            # multi-ifo pipeline assigns -1 for inj not found in specific ifo
+            found_in_ifo = foundtrg[:] != -1
     if bankfile is not None and param in bankfile.keys():
-        return bankfile[param][:][foundtmp]
+        return bankfile[param][:][foundtmp], found_in_ifo
     elif trigfile is not None and param in trigfile[ifo].keys():
-        return trigfile[ifo][param][:][foundtrg]
+        return trigfile[ifo][param][:][foundtrg], found_in_ifo
     else:
+        assert bankfile
         b = bankfile
         return get_param(param, args, b['mass1'][:], b['mass2'][:],
-                                     b['spin1z'][:], b['spin2z'][:])[foundtmp]
+                         b['spin1z'][:], b['spin2z'][:])[foundtmp],\
+               found_in_ifo
+
 
 def get_inj_param(injfile, param, ifo, args=None):
     """
