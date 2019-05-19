@@ -106,13 +106,13 @@ if args.x_param:
 args.x_param = args.x_param or "badger"
 
 # Get the recovered values
-# unhack the parameter name as triggers are stored by ifo
+# for this, unhack the parameter name as triggers are stored by ifo
 param = args.error_param
 
 # calculate parameters for all recovered injection triggers
 rec_params, found_in_ifo = triggers.get_found_param(injs, bank, trig, param,
                                                     args.ifo, args)
-# select values above IFAR threshold 
+# select values above IFAR threshold
 rec_params = rec_params[above_min_ifar]
 found_in_ifo = found_in_ifo[above_min_ifar]
 
