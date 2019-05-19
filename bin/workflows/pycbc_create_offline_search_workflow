@@ -610,8 +610,8 @@ for inj_file, tag in zip(inj_files, inj_tags):
     wf.make_foundmissed_plot(workflow, found_inj, injdir,
                              exclude=['all', 'summ', 'sub'], tags=[tag])
 
-    found_table = wf.make_inj_table(workflow, found_inj, injdir,
-                                    singles=insps, tags=[tag + 'found'])
+    #found_table = wf.make_inj_table(workflow, found_inj, injdir,
+    #                                singles=insps, tags=[tag + 'found'])
     missed_table = wf.make_inj_table(workflow, found_inj, injdir,
                                      missed=True, tags=[tag + 'missed'])
 
