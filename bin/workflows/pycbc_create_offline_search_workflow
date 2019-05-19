@@ -596,22 +596,22 @@ for inj_file, tag in zip(inj_files, inj_tags):
     sensdir = rdir['search_sensitivity/%s' % tag]
 
     #foundmissed/sensitivity plots
-    #s = wf.make_sensitivity_plot(workflow, found_inj, sensdir,
-    #                             exclude=['all', 'summ'], require='sub',
-    #                             tags=ctags)
+    s = wf.make_sensitivity_plot(workflow, found_inj, sensdir,
+                                 exclude=['all', 'summ'], require='sub',
+                                 tags=ctags)
     f = wf.make_foundmissed_plot(workflow, found_inj, injdir,
                                  exclude=['all', 'summ'], require='sub',
                                  tags=[tag])
 
     # FIXME: It's not clear to me that this does anything??
     # Extra foundmissed/sensitivity plots
-    #wf.make_sensitivity_plot(workflow, found_inj, sensdir,
-    #                         exclude=['all', 'summ', 'sub'], tags=ctags)
+    wf.make_sensitivity_plot(workflow, found_inj, sensdir,
+                             exclude=['all', 'summ', 'sub'], tags=ctags)
     wf.make_foundmissed_plot(workflow, found_inj, injdir,
                              exclude=['all', 'summ', 'sub'], tags=[tag])
 
-    #found_table = wf.make_inj_table(workflow, found_inj, injdir,
-    #                                singles=insps, tags=[tag + 'found'])
+    found_table = wf.make_inj_table(workflow, found_inj, injdir,
+                                    singles=insps, tags=[tag + 'found'])
     missed_table = wf.make_inj_table(workflow, found_inj, injdir,
                                      missed=True, tags=[tag + 'missed'])
 
