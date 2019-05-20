@@ -116,10 +116,10 @@ def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
         idx = (dt[ifo] + (maxtime - snrs[ifo].start_time)) * snrs[ifo].sample_rate
         idx = idx.astype(numpy.int)
         sh[ifo] = snrs[ifo].take(idx) * 4.0 * stilde[ifo].delta_f
+
     skymult = 1
 
-    def loglr(dist):
-        inc = 0
+    def loglr(inc, dist):
         shloglr = hhloglr = 0
         ip = numpy.cos(inc)
         ic = 0.5 * (1.0 + ip * ip) * 1.0j
@@ -131,17 +131,17 @@ def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
 
         vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
         vloglr += abs(shloglr) + hhloglr
-
-        return numpy.log(numpy.exp(vloglr * skymult).sum())
+        return numpy.exp(vloglr * skymult).sum()
 
     t1 = time.time()
-    a, b = scipy.integrate.quadrature(loglr, 1, 5000, rtol=1e-3, vec_func=False)
-    a /= 5000.0
+    a, b = scipy.integrate.nquad(loglr, [(0, numpy.pi*2.0), (1, 5000)],
+                                 opts={'epsrel':1e-3, 'limit':2})
+    a = (numpy.log(a) * 2) ** 0.5
     t2 = time.time()
-    #print (t2 - t1) * 0.1, t2 - t0
-    #exit()
+    print (t2 - t1) * 0.1, t2 - t0, a
+    exit()
 
-    return (a * 2) ** 0.5
+    return a
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
