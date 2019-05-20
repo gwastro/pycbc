@@ -1848,11 +1848,11 @@ class PycbcInferenceExecutable(Executable):
 
         # get multi-IFO opts
         channel_names_opt = " ".join(["{}:{}".format(k, v)
-                                      for k, v in channel_names.iteritems()])
+                                      for k, v in channel_names.items()])
         if fake_strain_seed is not None:
             fake_strain_seed_opt = " ".join([
                                     "{}:{}".format(k, v)
-                                    for k, v in fake_strain_seed.iteritems()])
+                                    for k, v in fake_strain_seed.items()])
 
         # make node for running executable
         node = Node(self)

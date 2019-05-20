@@ -15,13 +15,13 @@ parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument("--injection-file", required=True,
                     help="hdf injection file containing found injections. "
-                         "Required.")
-parser.add_argument("--bank-file", required=True,
+                         "Required")
+parser.add_argument("--bank-file",
                     help="hdf bank file containing template parameters. "
                          "Required for some parameters, ex. chirp mass")
 parser.add_argument("--trigger-file",
                     help="hdf trigger merge file containing single triggers. "
-                         "Required for some parameters, ex. end_time.")
+                         "Required for some parameters, ex. end_time")
 parser.add_argument("--ifo", required=True,
                     help="Detector where injections are recovered. Required")
 parser.add_argument("--min-ifar", default=0,
@@ -31,7 +31,7 @@ parser.add_argument("--error-param", required=True,
                          "event, ex. 'mchirp'. Required")
 parser.add_argument("--x-param",
                     help="Injected parameter to plot on x-axis. Required if "
-                         "--plot-type is err_v_param or fracerr_v_param.")
+                         "--plot-type is err_v_param or fracerr_v_param")
 parser.add_argument("--log-x", action="store_true",
                     help="Use a logarithmic x-axis.")
 parser.add_argument("--log-y", action="store_true",
@@ -46,7 +46,7 @@ parser.add_argument("--gradient-far", action="store_true",
                     help="Show FAR of found injections as a color gradient")
 parser.add_argument("--f-lower", type=int,
                     help="lower frequency value for e.g. calculation of "
-                         "template duration. Only needed for certain parameters")
+                         "template duration")
 parser.add_argument("--output-file", required=True)
 args = parser.parse_args()
 
@@ -64,10 +64,12 @@ injs = h5py.File(args.injection_file, "r")
 bank = h5py.File(args.bank_file, "r") if args.bank_file else None
 trig = h5py.File(args.trigger_file, "r") if args.trigger_file else None
 
-# First check the detector
-dettuples = [(val,name) for (name,val) in injs.attrs.items()
-                                                         if "detector" in name]
-dets = [t[0] for t in dettuples]
+# Check the detector
+if "detector_1" in injs.attrs.keys():  # old 2-ifo case
+    # key / value pairs are eg 'detector_1' / 'L1'
+    dets = [det for (label, det) in injs.attrs.items() if "detector" in label]
+else:  # multi-ifo
+    dets = injs.attrs["ifos"].split(" ")
 if args.ifo not in dets:
     raise RuntimeError("Can't find detector %s in injection file!" % args.ifo)
 site = args.ifo[0].lower()
@@ -104,12 +106,24 @@ if args.x_param:
 args.x_param = args.x_param or "badger"
 
 # Get the recovered values
-# unhack the parameter name as triggers are stored by ifo
+# for this, unhack the parameter name as triggers are stored by ifo
 param = args.error_param
-# calculate parameters for all recovered injection triggers, then select
-# only those above the IFAR threshold
-rec_params = triggers.get_found_param(injs, bank, trig, param,
-                                      args.ifo, args)[above_min_ifar]
+
+# calculate parameters for all recovered injection triggers
+rec_params, found_in_ifo = triggers.get_found_param(injs, bank, trig, param,
+                                                    args.ifo, args)
+# select values above IFAR threshold
+rec_params = rec_params[above_min_ifar]
+found_in_ifo = found_in_ifo[above_min_ifar]
+
+# restrict plotted values if some inj are not found in given ifo
+if not all(found_in_ifo):
+    rec_params = rec_params[found_in_ifo]
+    inj_params = inj_params[found_in_ifo]
+    inj_xparams = inj_xparams[found_in_ifo]
+    ifar_found = ifar_found[found_in_ifo]
+    logging.info("Removing %i inj not found in %s" %
+                 ((found_in_ifo == False).sum(), args.ifo))
 
 # calculate needed values
 if "err" in args.plot_type:
@@ -168,7 +182,7 @@ ylabels = {
 xvals = eval(x_dict[args.plot_type])
 yvals = eval(y_dict[args.plot_type])
 
-logging.info("Plotting...")
+logging.info("Plotting %i found inj ..." % len(xvals))
 fig = plot.figure()
 
 if "hist" not in args.plot_type:

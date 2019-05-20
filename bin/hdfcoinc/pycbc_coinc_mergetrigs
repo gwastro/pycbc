@@ -49,7 +49,7 @@ for fname in args.trigger_files:
     except IOError:
         logging.error("Cannot open %s" % fname)
         raise IOError
-    ifo = f2.keys()[0]
+    ifo = tuple(f2.keys())[0]
     if len(f2[ifo].keys()) > 0:
         k = f2[ifo].keys()
         trigger_columns = f2[ifo].keys()

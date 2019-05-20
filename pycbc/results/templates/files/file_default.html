@@ -22,7 +22,7 @@
     <tbody>
 
     <!--table rows-->
-    {% for channel, segmentlist in content.iteritems() %}
+    {% for channel, segmentlist in content.items() %}
         {% for seg in segmentlist %}
             <tr>
                 <td>{{channel}}</td>

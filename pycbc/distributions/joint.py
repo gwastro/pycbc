@@ -116,7 +116,7 @@ class JointDistribution(object):
                     samples[param] = draw[param][:]
 
             # evaluate constraints
-            result = numpy.ones(len(samples.values()[0]), dtype=bool)
+            result = numpy.ones(len(tuple(samples.values())[0]), dtype=bool)
             for constraint in self._constraints:
                 result = constraint(samples) & result
 

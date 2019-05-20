@@ -223,7 +223,7 @@ for ifo in workflow.ifos:
     channel_names[ifo] = workflow.cp.get_opt_tags(
                                "workflow", "%s-channel-name" % ifo.lower(), "")
 channel_names_str = " ".join([key + ":" + val for key, val in \
-                              channel_names.iteritems()])
+                              channel_names.items()])
 
 # figure out what parameters user wants to plot from workflow configuration
 plot_parameters = {}

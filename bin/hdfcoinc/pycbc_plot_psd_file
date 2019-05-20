@@ -54,7 +54,7 @@ for psd_file in args.psd_files:
     elif "ifo_list" in f.attrs.keys():
         ifo_list = f.attrs["ifo_list"]
     else:
-        ifo_list = [f.keys()[0]]
+        ifo_list = [tuple(f.keys())[0]]
     for ifo in ifo_list:
         fac = 1.0 / pycbc.DYN_RANGE_FAC
         df = f[ifo + '/psds/0'].attrs['delta_f']

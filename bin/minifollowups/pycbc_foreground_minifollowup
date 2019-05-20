@@ -134,11 +134,13 @@ for num_event in range(num_events):
     ifo_tids = ''
 
     if 'detector_1' in f.attrs:
-        ifo_times = '%s:%s %s:%s' % (times.keys()[0], times[times.keys()[0]][num_event],
-                                     times.keys()[1], times[times.keys()[1]][num_event])
+        key0, key1 = tuple(times.keys())[:2]
+        ifo_times = '%s:%s %s:%s' % (key0, times[key0][num_event],
+                                     key1, times[key1][num_event])
 
-        ifo_tids = '%s:%s %s:%s' % (tids.keys()[0], tids[tids.keys()[0]][num_event],
-                                    tids.keys()[1], tids[tids.keys()[1]][num_event])
+        key0, key1 = tuple(tids.keys())[:2]
+        ifo_tids = '%s:%s %s:%s' % (key0, tids[key0][num_event],
+                                    key1, tids[key1][num_event])
     else:
         # Version used for multi-ifo coinc code
         ifo_times_strings = []

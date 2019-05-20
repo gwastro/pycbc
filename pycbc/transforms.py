@@ -138,7 +138,7 @@ class BaseTransform(object):
         else:
             additional_opts = additional_opts.copy()
         outputs = set(outputs.split(VARARGS_DELIM))
-        special_args = ['name'] + skip_opts + additional_opts.keys()
+        special_args = ['name'] + skip_opts + list(additional_opts.keys())
         # get any extra arguments to pass to init
         extra_args = {}
         for opt in cp.options("-".join([section, tag])):

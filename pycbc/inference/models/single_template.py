@@ -53,7 +53,7 @@ class SingleTemplate(BaseDataModel):
             high_frequency_cutoff = float(high_frequency_cutoff)
 
         # Generate template waveforms
-        df = data[data.keys()[0]].delta_f
+        df = data[tuple(data.keys())[0]].delta_f
         p = self.static_params.copy()
         if 'distance' in p:
             p.pop('distance')
@@ -63,7 +63,7 @@ class SingleTemplate(BaseDataModel):
         hp, _ = get_fd_waveform(delta_f=df, distance=1, inclination=0, **p)
 
         if high_frequency_cutoff is None:
-            high_frequency_cutoff = len(data[data.keys()[0]]-1) * df
+            high_frequency_cutoff = len(data[tuple(data.keys())[0]]-1) * df
 
         # Extend data and template to high sample rate
         flen = int(sample_rate / df) / 2 + 1

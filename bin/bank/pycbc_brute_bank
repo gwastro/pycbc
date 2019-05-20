@@ -142,7 +142,7 @@ class TriangleBank(object):
     def check_params(self, gen, params, threshold):
         num_tried = 0
         num_added = 0
-        for i in range(len(params.values()[0])):
+        for i in range(len(tuple(params.values())[0])):
             num_tried += 1.0
 
             try:

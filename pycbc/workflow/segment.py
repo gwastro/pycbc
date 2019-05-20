@@ -1052,7 +1052,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     # Check available data segments meet criteria specified in arguments
     commonsegs = sciencesegs.extract_common(sciencesegs.keys())
-    offsrclist = commonsegs[commonsegs.keys()[0]]
+    offsrclist = commonsegs[tuple(commonsegs.keys())[0]]
     if len(offsrclist) > 1:
         logging.info("Removing network segments that do not contain trigger "
                      "time")
@@ -1207,18 +1207,18 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             # If none, offsource dict will contain segments showing criteria
             # that have not been met, for use in plotting
             if len(offsource.keys()) > 1:
-                seg_lens = {ifos: abs(next(offsource[ifos].itervalues())[0])
+                seg_lens = {ifos: abs(next(offsource[ifos].values())[0])
                             for ifos in offsource.keys()}
                 best_comb = max(seg_lens.iterkeys(),
                                 key=(lambda key: seg_lens[key]))
             else:
-                best_comb = offsource.keys()[0]
+                best_comb = tuple(offsource.keys())[0]
             logging.info("No combination of %d IFOs with suitable science "
                          "segment.", num_ifos)
         else:
             # Identify best analysis segment
             if len(valid_combs) > 1:
-                seg_lens = {ifos: abs(next(offsource[ifos].itervalues())[0])
+                seg_lens = {ifos: abs(next(offsource[ifos].values())[0])
                             for ifos in valid_combs}
                 best_comb = max(seg_lens.iterkeys(),
                                 key=(lambda key: seg_lens[key]))
@@ -1228,11 +1228,11 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
 
             offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
             segmentsUtils.tosegwizard(open(offsourceSegfile, "w"),
-                                      next(offsource[best_comb].itervalues()))
+                                      next(offsource[best_comb].values()))
 
             onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
             segmentsUtils.tosegwizard(file(onsourceSegfile, "w"),
-                                      next(onsource[best_comb].itervalues()))
+                                      next(onsource[best_comb].values()))
 
             bufferleft = int(cp.get('workflow-exttrig_segments',
                                     'num-buffer-before'))

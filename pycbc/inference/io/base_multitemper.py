@@ -124,7 +124,7 @@ class MultiTemperedMCMCIO(object):
             attribute is > 1, this is needed to determine where to start
             thinning the samples to match what has already been stored on disk.
         """
-        ntemps, nwalkers, niterations = samples.values()[0].shape
+        ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
         assert all(p.shape == (ntemps, nwalkers, niterations)
                    for p in samples.values()), (
                "all samples must have the same shape")

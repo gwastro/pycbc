@@ -59,7 +59,7 @@ ax=fig.gca()
 logging.info('Reading %s', opts.psd_file)
 
 f = h5py.File(opts.psd_file, 'r')
-ifo = f.keys()[0]
+ifo = tuple(f.keys())[0]
 df = f[ifo + '/psds/0'].attrs['delta_f']
 keys = f[ifo + '/psds'].keys()
 psds = [f[ifo + '/psds/' + str(key)][:] for key in range(len(f[ifo + '/psds']))]

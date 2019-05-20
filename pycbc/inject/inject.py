@@ -345,7 +345,7 @@ class _HDFInjectionSet(object):
         if len(parameters) == 0:
             numinj = 1
         else:
-            numinj = injvals.values()[0].size
+            numinj = tuple(injvals.values())[0].size
         # add any static args in the file
         try:
             self.static_args = group.attrs['static_args']

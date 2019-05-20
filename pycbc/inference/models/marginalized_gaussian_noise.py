@@ -465,7 +465,7 @@ class MarginalizedGaussianNoise(GaussianNoise):
             raise ValueError("no approximant provided in the static args")
         generator_function = generator.select_waveform_generator(approximant)
         waveform_generator = generator.FDomainDetFrameGenerator(
-            generator_function, epoch=data.values()[0].start_time,
+            generator_function, epoch=tuple(data.values())[0].start_time,
             variable_args=variable_params, detectors=data.keys(),
             delta_f=delta_f, delta_t=delta_t,
             recalib=recalibration, gates=gates,

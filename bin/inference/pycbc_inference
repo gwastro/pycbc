@@ -182,7 +182,7 @@ with ctx:
     # should be fixed in a future version of PyCBC. Once it is,
     # update this. Until then, just use the first file.
     if opts.injection_file:
-        injection_file = opts.injection_file.values()[0]  # None if not set
+        injection_file = tuple(opts.injection_file.values())[0]  # None if not set
     else:
         injection_file = None
     sampler.setup_output(opts.output_file, force=opts.force,

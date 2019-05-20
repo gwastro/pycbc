@@ -45,7 +45,7 @@ class MultinestFile(BaseSamplerFile):
             Only write the specified parameters to the file. If None, will
             write all of the keys in the ``samples`` dict.
         """
-        niterations = len(samples.values()[0])
+        niterations = len(tuple(samples.values())[0])
         assert all(len(p) == niterations for p in samples.values()), (
             "all samples must have the same shape")
         group = self.samples_group + '/{name}'
