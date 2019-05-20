@@ -295,25 +295,25 @@ def td_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain approximants for
        the given processing scheme.
     """
-    return td_wav[type(scheme)].keys()
+    return list(td_wav[type(scheme)].keys())
 
 def fd_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available fourier domain approximants for
        the given processing scheme.
     """
-    return fd_wav[type(scheme)].keys()
+    return list(fd_wav[type(scheme)].keys())
 
 def sgburst_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain sgbursts for
        the given processing scheme.
     """
-    return sgburst_wav[type(scheme)].keys()
+    return list(sgburst_wav[type(scheme)].keys())
 
 def filter_approximants(scheme=_scheme.mgr.state):
     """Return a list of fourier domain approximants including those
        written specifically as templates.
     """
-    return filter_wav[type(scheme)].keys()
+    return list(filter_wav[type(scheme)].keys())
 
 # Input parameter handling ###################################################
 

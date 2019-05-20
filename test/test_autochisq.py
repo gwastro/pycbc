@@ -1,4 +1,5 @@
 import sys
+from six.moves import range
 import pycbc
 from pycbc.fft.fftw import set_measure_level
 set_measure_level(0)
@@ -41,30 +42,30 @@ class TestAutochisquare(unittest.TestCase):
         self.phiS = 2.781
 
         self.Fp = 0.5*cos(2.0*self.zeta)*(1.0 + cos(self.thetaS)*cos(self.thetaS))*cos(2.0*self.phiS) - \
-		sin(2.*self.zeta)*cos(self.thetaS)*sin(2.*self.phiS)
+                sin(2.*self.zeta)*cos(self.thetaS)*sin(2.*self.phiS)
 
         self.Fc = 0.5*sin(2.0*self.zeta)*(1.0 + cos(self.thetaS)*cos(self.thetaS))*cos(2.0*self.phiS) + \
- 		cos(2.*self.zeta)*sin(self.thetaS)*sin(2.*self.phiS)
+                 cos(2.*self.zeta)*sin(self.thetaS)*sin(2.*self.phiS)
 
 
-	# params of sin-gaussian
+        # params of sin-gaussian
         self.Q = 1.e-1
         self.om = 200.0*pi*2.0
 
         # use flat psd
         self.seg_len_idx = self.segment_length * self.sample_rate
-        self.psd_len = self.seg_len_idx/2+1
+        self.psd_len = int(self.seg_len_idx/2+1)
 
         self.Psd = np.ones(self.psd_len)*2.0e-46
 
         #  generate waveform and chirp signal
 
         hp, hc = get_td_waveform(approximant="TaylorT2", mass1=self.m1, mass2=self.m2, \
-			delta_t=self.del_t, f_lower=self.low_frequency_cutoff, distance=self.Dl, \
-			inclination=self.iota, coa_phase=self.phi_c)
+                        delta_t=self.del_t, f_lower=self.low_frequency_cutoff, distance=self.Dl, \
+                        inclination=self.iota, coa_phase=self.phi_c)
 
-	# signal which is a noiseless data
-	thp = np.zeros(self.seg_len_idx)
+        # signal which is a noiseless data
+        thp = np.zeros(self.seg_len_idx)
         thp[self.tc_indx:len(hp)+self.tc_indx] = hp
         thc = np.zeros(self.seg_len_idx)
         thc[self.tc_indx:len(hc)+self.tc_indx] = hc
@@ -81,9 +82,9 @@ class TestAutochisquare(unittest.TestCase):
 
         # generate sin-gaussian signal
         time = np.arange(0, len(hp))*self.del_t
-        Nby2 = len(hp)/2
+        Nby2 = int(len(hp)/2)
         sngt = np.zeros(len(hp))
-        for i in xrange(len(hp)):
+        for i in range(len(hp)):
             sngt[i] = 9.0e-21*exp(-(time[i]-time[Nby2])**2/self.Q)*sin(self.om*time[i])
 
         self.sig2 = np.zeros(self.seg_len_idx)
@@ -91,7 +92,7 @@ class TestAutochisquare(unittest.TestCase):
 
 
     def test_chirp(self):
-	### use a chirp as a signal
+        ### use a chirp as a signal
 
 
         sigt = TimeSeries(self.sig1, self.del_t)
@@ -103,11 +104,11 @@ class TestAutochisquare(unittest.TestCase):
 
         with _context:
             hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
-			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
+                        low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
             hautocor = hautocor * float(np.real(1./hautocor[0]))
 
             snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
-			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
+                        low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
 
         hacor = Array(hautocor, copy=True)
 
@@ -129,15 +130,15 @@ class TestAutochisquare(unittest.TestCase):
         self.assertTrue(achisq[2] > 20.0)
 
 
-	#with _context:
+        #with _context:
     #       dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
-	# 	 low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
+        #          low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
 
-	#self.assertTrue(obt_snr == achi_list[0, 1])
-	#self.assertTrue(obt_ach == achi_list[0, 2])
+        #self.assertTrue(obt_snr == achi_list[0, 1])
+        #self.assertTrue(obt_ach == achi_list[0, 2])
 
-    #    for i in xrange(1, len(achi_list)):
-	#   self.assertTrue(achi_list[i,2] > 4.0)
+    #    for i in range(1, len(achi_list)):
+        #   self.assertTrue(achi_list[i,2] > 4.0)
 
     def test_sg(self):
         ### use a sin-gaussian as a signal
@@ -147,16 +148,16 @@ class TestAutochisquare(unittest.TestCase):
 
         del_f = sig_tilde.get_delta_f()
         psd = FrequencySeries(self.Psd, del_f)
-	flow = self.low_frequency_cutoff
+        flow = self.low_frequency_cutoff
 
         with _context:
             hautocor, hacorfr, hnrm = matched_filter_core(self.htilde, self.htilde, psd=psd, \
-			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
+                        low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
             hautocor = hautocor * float(np.real(1./hautocor[0]))
 
 
             snr, cor, nrm = matched_filter_core(self.htilde, sig_tilde, psd=psd, \
-			low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
+                        low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax)
 
 
 
@@ -180,14 +181,14 @@ class TestAutochisquare(unittest.TestCase):
 
 
     #    with _context:
-	#    dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
-	# 	 low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
+        #    dof, achi_list = autochisq(self.htilde, sig_tilde, psd,  stride=3,  num_points=20, \
+        #          low_frequency_cutoff=flow, high_frequency_cutoff=self.fmax, max_snr=True)
 
-	#self.assertTrue(obt_snr == achi_list[0, 1])
-	#self.assertTrue(obt_ach == achi_list[0, 2])
+        #self.assertTrue(obt_snr == achi_list[0, 1])
+        #self.assertTrue(obt_ach == achi_list[0, 2])
 
-    #    for i in xrange(1, len(achi_list)):
-	#   self.assertTrue(achi_list[i,2] > 2.e3)
+    #    for i in range(1, len(achi_list)):
+        #   self.assertTrue(achi_list[i,2] > 2.e3)
 
 
 

@@ -21,74 +21,11 @@
 #
 # =============================================================================
 #
-""" This modules contains functions for calculating coincident ranking
+""" This module contains functions for calculating coincident ranking
 statistic values
 """
 import numpy
-from . import events
-
-def get_newsnr(trigs):
-    """
-    Calculate newsnr ('reweighted SNR') for a trigs object
-
-    Parameters
-    ----------
-    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-        Dictionary-like object holding single detector trigger information.
-        'chisq_dof', 'snr', and 'chisq' are required keys
-
-    Returns
-    -------
-    numpy.ndarray
-        Array of newsnr values
-    """
-    dof = 2. * trigs['chisq_dof'][:] - 2.
-    newsnr = events.newsnr(trigs['snr'][:], trigs['chisq'][:] / dof)
-    return numpy.array(newsnr, ndmin=1, dtype=numpy.float32)
-
-def get_newsnr_sgveto(trigs):
-    """
-    Calculate newsnr re-weigthed by the sine-gaussian veto
-
-    Parameters
-    ----------
-    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
-        Dictionary-like object holding single detector trigger information.
-        'chisq_dof', 'snr', 'sg_chisq' and 'chisq' are required keys
-
-    Returns
-    -------
-    numpy.ndarray
-        Array of newsnr values
-    """
-    dof = 2. * trigs['chisq_dof'][:] - 2.
-    nsnr_sg = events.newsnr_sgveto(trigs['snr'][:],
-                                   trigs['chisq'][:] / dof,
-                                   trigs['sg_chisq'][:])
-    return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
-
-def get_newsnr_sgveto_psdvar(trigs):
-    """
-    Calculate newsnr re-weighted by the sine-gaussian veto and psd variation
-    statistic
-
-    Parameters
-    ----------
-    trigs: dict of numpy.ndarrays
-        Dictionary holding single detector trigger information.
-    'chisq_dof', 'snr', 'chisq' and 'psd_var_val' are required keys
-
-    Returns
-    -------
-     numpy.ndarray
-        Array of newsnr values
-    """
-    dof = 2. * trigs['chisq_dof'][:] - 2.
-    nsnr_sg_psd = \
-        events.newsnr_sgveto_psdvar(trigs['snr'][:], trigs['chisq'][:] / dof,
-                                    trigs['sg_chisq'][:],
-                                    trigs['psd_var_val'][:])
-    return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+from . import ranking
 
 
 class Stat(object):
@@ -135,7 +72,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             The array of single detector values
         """
-        return get_newsnr(trigs)
+        return ranking.get_newsnr(trigs)
 
     def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
@@ -170,7 +107,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             Array of coincident ranking statistic values
         """
-        return (sum([x ** 2. for x in s.values()])) ** 0.5
+        return sum(x ** 2. for x in s.values()) ** 0.5
 
 
 class NewSNRSGStatistic(NewSNRStatistic):
@@ -190,7 +127,7 @@ class NewSNRSGStatistic(NewSNRStatistic):
         numpy.ndarray
             The array of single detector values
         """
-        return get_newsnr_sgveto(trigs)
+        return ranking.get_newsnr_sgveto(trigs)
 
 
 class NewSNRSGPSDStatistic(NewSNRSGStatistic):
@@ -210,7 +147,7 @@ class NewSNRSGPSDStatistic(NewSNRSGStatistic):
         numpy.ndarray
             The array of single detector values
         """
-        return get_newsnr_sgveto_psdvar(trigs)
+        return ranking.get_newsnr_sgveto_psdvar(trigs)
 
 
 class NetworkSNRStatistic(NewSNRStatistic):
@@ -238,7 +175,7 @@ class NewSNRCutStatistic(NewSNRStatistic):
         newsnr: numpy.ndarray
             Array of single detector values
         """
-        newsnr = get_newsnr(trigs)
+        newsnr = ranking.get_newsnr(trigs)
         rchisq = trigs['chisq'][:] / (2. * trigs['chisq_dof'][:] - 2.)
         newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
         return newsnr
@@ -277,7 +214,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         NewSNRStatistic.__init__(self, files)
         self.hist = self.files['phasetd_newsnr']['map'][:]
 
-        #normalize so that peak has no effect on newsnr
+        # Normalize so that peak has no effect on newsnr
         self.hist = self.hist / float(self.hist.max())
         self.hist = numpy.log(self.hist)
 
@@ -293,7 +230,8 @@ class PhaseTDStatistic(NewSNRStatistic):
                     ('sigmasq', numpy.float32),
                     ('snr', numpy.float32)]
 
-        self.get_newsnr = get_newsnr
+        # Assign attribute so that it can be replaced with other functions
+        self.get_newsnr = ranking.get_newsnr
 
     def single(self, trigs):
         """
@@ -393,7 +331,7 @@ class PhaseTDSGStatistic(PhaseTDStatistic):
 
     def __init__(self, files):
         PhaseTDStatistic.__init__(self, files)
-        self.get_newsnr = get_newsnr_sgveto
+        self.get_newsnr = ranking.get_newsnr_sgveto
 
 
 class ExpFitStatistic(NewSNRStatistic):
@@ -421,7 +359,7 @@ class ExpFitStatistic(NewSNRStatistic):
             self.fits_by_tid[i] = self.assign_fits(i)
             self.get_ref_vals(i)
 
-        self.get_newsnr = get_newsnr
+        self.get_newsnr = ranking.get_newsnr
 
     def assign_fits(self, ifo):
         coeff_file = self.files[ifo+'-fit_coeffs']
@@ -503,9 +441,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
     def use_alphamax(self):
         # take reference slope as the harmonic mean of individual ifo slopes
-        inv_alphas = [1./self.alphamax[i] for i in self.ifos]
-        self.alpharef = (sum(inv_alphas)/len(inv_alphas))**-1
-        print(self.alpharef)
+        inv_alphas = [1. / self.alphamax[i] for i in self.ifos]
+        self.alpharef = 1. / (sum(inv_alphas) / len(inv_alphas))
 
     def single(self, trigs):
         logr_n = self.lognoiserate(trigs)
@@ -518,7 +455,11 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
     def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         # scale by 1/sqrt(2) to resemble network SNR
-        return (s0 + s1) / (2.**0.5)
+        return (s0 + s1) / 2.**0.5
+
+    def coinc_multiifo(self, s, slide, step): # pylint:disable=unused-argument
+        # scale by 1/sqrt(number of ifos) to resemble network SNR
+        return sum(x for x in s.values()) / len(s)**0.5
 
 
 class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
@@ -530,7 +471,7 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
 
     def __init__(self, files):
         ExpFitCombinedSNR.__init__(self, files)
-        self.get_newsnr = get_newsnr_sgveto
+        self.get_newsnr = ranking.get_newsnr_sgveto
 
 
 class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
@@ -542,7 +483,7 @@ class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
 
     def __init__(self, files):
         ExpFitCombinedSNR.__init__(self, files)
-        self.get_newsnr = get_newsnr_sgveto_psdvar
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
@@ -585,7 +526,7 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
 
     def __init__(self, files):
         PhaseTDExpFitStatistic.__init__(self, files)
-        self.get_newsnr = get_newsnr_sgveto
+        self.get_newsnr = ranking.get_newsnr_sgveto
 
 
 class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
@@ -597,7 +538,7 @@ class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
 
     def __init__(self, files):
         PhaseTDExpFitSGStatistic.__init__(self, files)
-        self.get_newsnr = get_newsnr_sgveto_psdvar
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
@@ -619,9 +560,9 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
         stat: numpy.ndarray
             The array of single detector values
         """
-        chisq_newsnr = get_newsnr(trigs)
+        chisq_newsnr = ranking.get_newsnr(trigs)
         rautochisq = trigs['cont_chisq'][:] / trigs['cont_chisq_dof'][:]
-        autochisq_newsnr = events.newsnr(trigs['snr'][:], rautochisq)
+        autochisq_newsnr = ranking.newsnr(trigs['snr'][:], rautochisq)
         return numpy.array(numpy.minimum(chisq_newsnr, autochisq_newsnr,
                            dtype=numpy.float32), ndmin=1, copy=False)
 

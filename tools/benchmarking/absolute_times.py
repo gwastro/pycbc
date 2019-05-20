@@ -5,10 +5,10 @@ import sys
 try:
     tottime = float(sys.argv[1])
 except:
-    print "usage: %s total_time_in_seconds" % sys.argv[0]
-    print
-    print "Typical use case is: "
-    print "  gprof2dot.py -f pstats profile_file | %s total_time_in_seconds | dot -Tpng -o output.png"  % sys.argv[0]
+    print("usage: %s total_time_in_seconds" % sys.argv[0])
+    print()
+    print("Typical use case is: ")
+    print("  gprof2dot.py -f pstats profile_file | %s total_time_in_seconds | dot -Tpng -o output.png"  % sys.argv[0])
 
     sys.exit(0)
 
@@ -28,5 +28,5 @@ for line in sys.stdin:
 
         newtokens.append(token)
 
-    print '\\n'.join(newtokens)
+    print('\\n'.join(newtokens))
 

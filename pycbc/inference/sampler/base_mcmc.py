@@ -25,6 +25,8 @@
 
 from __future__ import (absolute_import, division)
 
+import os
+import signal
 from abc import (ABCMeta, abstractmethod, abstractproperty)
 import logging
 import numpy
@@ -32,6 +34,8 @@ from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
 
 from pycbc.inference.io import validate_checkpoint_files
+
+from six import string_types
 
 #
 # =============================================================================
@@ -190,6 +194,7 @@ class BaseMCMC(object):
     nwalkers
     niterations
     checkpoint_interval
+    checkpoint_signal
     target_niterations
     target_eff_nsamples
     thin_interval
@@ -210,6 +215,7 @@ class BaseMCMC(object):
     _burn_in = None
     _acls = None
     _checkpoint_interval = None
+    _checkpoint_signal = None
     _target_niterations = None
     _target_eff_nsamples = None
     _thin_interval = 1
@@ -248,6 +254,11 @@ class BaseMCMC(object):
     def checkpoint_interval(self):
         """The number of iterations to do between checkpoints."""
         return self._checkpoint_interval
+
+    @property
+    def checkpoint_signal(self):
+        """The signal to use when checkpointing."""
+        return self._checkpoint_signal
 
     @property
     def target_niterations(self):
@@ -597,6 +608,12 @@ class BaseMCMC(object):
             self.checkpoint_file, self.backup_file)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
+        elif self.checkpoint_signal:
+            # kill myself with the specified signal
+            logging.info("Exiting with SIG{}".format(self.checkpoint_signal))
+            kill_cmd="os.kill(os.getpid(), signal.SIG{})".format(
+                self.checkpoint_signal)
+            exec(kill_cmd)
         # clear the in-memory chain to save memory
         logging.info("Clearing samples from memory")
         self.clear_samples()
@@ -621,6 +638,27 @@ class BaseMCMC(object):
         """
         return get_optional_arg_from_config(cp, section, 'checkpoint-interval',
                                             dtype=int)
+
+    @staticmethod
+    def ckpt_signal_from_config(cp, section):
+        """Gets the checkpoint signal from the given config file.
+
+        This looks for 'checkpoint-signal' in the section.
+
+        Parameters
+        ----------
+        cp : ConfigParser
+            Open config parser to retrieve the argument from.
+        section : str
+            Name of the section to retrieve from.
+
+        Return
+        ------
+        int or None :
+            The checkpoint interval, if it is in the section. Otherw
+        """
+        return get_optional_arg_from_config(cp, section, 'checkpoint-signal',
+                                            dtype=str)
 
     def set_target_from_config(self, cp, section):
         """Sets the target using the given config file.
@@ -764,7 +802,7 @@ class MCMCAutocorrSupport(object):
         with cls._io(filename, 'r') as fp:
             if parameters is None:
                 parameters = fp.variable_params
-            if isinstance(parameters, str) or isinstance(parameters, unicode):
+            if isinstance(parameters, string_types):
                 parameters = [parameters]
             for param in parameters:
                 if per_walker:

@@ -36,6 +36,7 @@ from pycbc import inference
 from pycbc.inject import InjectionSet
 from pycbc.inference import (models, burn_in, option_utils)
 from pycbc.strain.calibration import Recalibrate
+from pycbc.workflow import configuration
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -81,7 +82,7 @@ parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initially distributes the walkers. Default is 0.")
 # add config options
-option_utils.add_config_opts_to_parser(parser)
+configuration.add_workflow_command_line_group(parser)
 # add module pre-defined options
 fft.insert_fft_option_group(parser)
 opt.insert_optimization_option_group(parser)
@@ -138,13 +139,16 @@ if stilde_dict:
 with ctx:
 
     # read configuration file
-    cp = option_utils.config_parser_from_cli(opts)
-    
-    # Note: PyCBC's multi-ifo parser uses key:ifo for
-    # the injection file, even though we will use the same
-    # injection file all detectors. This
-    # should be fixed in a future version of PyCBC. Once it is,
-    # update this. Until then, just use the first file.
+    cp = configuration.WorkflowConfigParser.from_cli(opts)
+
+    # create an empty checkpoint file, if needed
+    condor_ckpt = cp.has_option('sampler', 'checkpoint-signal')
+    if condor_ckpt:
+        logging.info(
+            "Sampler will exit with signal {} after checkpointing".format(
+                cp.get('sampler', 'checkpoint-signal')))
+        # create an empty output file to keep condor happy
+        open(opts.output_file, 'a').close()
 
     if opts.injection_file and opts.ringdown_injection_file:
         raise ValueError('Ringdown injections and other injections cannot \
@@ -233,12 +237,23 @@ with ctx:
     # Finalize the output 
     sampler.finalize()
 
+if condor_ckpt:
+   # unlink the empty output file
+   try:
+       os.unlink(opts.output_file)
+   except:
+       pass
+
 # rename checkpoint to output and delete backup
 logging.info("Moving checkpoint to output")
 os.rename(sampler.checkpoint_file, opts.output_file)
 if not opts.save_backup:
     logging.info("Deleting backup file")
     os.remove(sampler.backup_file)
+
+if condor_ckpt:
+   # create an empty checkpoint file
+   open(sampler.checkpoint_file, 'a').close()
 
 # exit
 logging.info("Done")

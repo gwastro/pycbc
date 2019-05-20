@@ -21,7 +21,6 @@ import logging, os.path
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
 from pycbc.workflow import WorkflowConfigParser
-from itertools import izip_longest
 from Pegasus import DAX3 as dax
 from pycbc.workflow import pegasus_workflow as wdax
 
@@ -124,8 +123,8 @@ def setup_foreground_inference(workflow, coinc_file, single_triggers,
     logging.info("Leaving inference module")
 
 def make_inference_prior_plot(workflow, config_file, output_dir,
-                    sections=None, name="inference_prior",
-                    analysis_seg=None, tags=None):
+                              sections=None, name="inference_prior",
+                              parameters=None, analysis_seg=None, tags=None):
     """ Sets up the corner plot of the priors in the workflow.
 
     Parameters
@@ -171,6 +170,8 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
     if sections is not None:
         node.add_opt("--sections", " ".join(sections))
+    if parameters is not None:
+        node.add_opt("--parameters", " ".join(parameters))
 
     # add node to workflow
     workflow += node

@@ -28,7 +28,7 @@ from .base_hdf import BaseInferenceFile
 
 
 class PosteriorFile(BaseInferenceFile):
-    """Class to handle file IO for the simplified Posterior file"""
+    """Class to handle file IO for the simplified Posterior file."""
 
     name = 'posterior_file'
 
@@ -36,15 +36,45 @@ class PosteriorFile(BaseInferenceFile):
         samples = self[self.samples_group]
         return {field: samples[field][:] for field in fields}
 
-    def write_posterior(self, filename, **kwargs):
-        """Write me."""
-        raise NotImplementedError
+    def write_samples(self, samples, parameters=None):
+        """Writes samples to the given file.
 
-    def write_resume_point(self):
-        raise NotImplementedError
+        Results are written to ``samples_group/{vararg}``, where ``{vararg}``
+        is the name of a model params. The samples are written as an
+        array of length ``niterations``.
 
-    def write_sampler_metadata(self, sampler):
-        raise NotImplementedError
-
-    def write_samples(self, samples, **kwargs):
-        raise NotImplementedError
+        Parameters
+        -----------
+        samples : dict
+            The samples to write. Each array in the dictionary should have
+            length niterations.
+        parameters : list, optional
+            Only write the specified parameters to the file. If None, will
+            write all of the keys in the ``samples`` dict.
+        """
+        # check data dimensions; we'll just use the first array in samples
+        arr = list(samples.values())[0]
+        if not arr.ndim == 1:
+            raise ValueError("samples must be 1D arrays")
+        niterations = arr.size
+        assert all(len(p) == niterations
+                   for p in samples.values()), (
+            "all samples must have the same shape")
+        group = self.samples_group + '/{name}'
+        if parameters is None:
+            parameters = samples.keys()
+        # loop over number of dimensions
+        for param in parameters:
+            dataset_name = group.format(name=param)
+            try:
+                fp_niterations = len(self[dataset_name])
+                if niterations != fp_niterations:
+                    # resize the dataset
+                    self[dataset_name].resize(niterations, axis=0)
+            except KeyError:
+                # dataset doesn't exist yet
+                self.create_dataset(dataset_name, (niterations,),
+                                    maxshape=(None,),
+                                    dtype=samples[param].dtype,
+                                    fletcher32=True)
+            self[dataset_name][:] = samples[param]

@@ -197,7 +197,7 @@ if __name__ == '__main__':
             try:
                 wave = get_injection(injections, det, injection_time,
                                      simulation_id=inj.simulation_id)
-            except Exception, e:
+            except Exception as e:
                 if opts.ignore_waveform_errors:
                     logging.warn('%s: waveform generation failed, skipping (%s)',
                                  inj.simulation_id, e)

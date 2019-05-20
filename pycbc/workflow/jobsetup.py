@@ -295,7 +295,11 @@ def sngl_ifo_job_setup(workflow, ifo, out_files, curr_exe_job, science_segs,
             # one job. If there are no curr_parents it is set to [None] and I
             # make a single job. This catches the case of a split template bank
             # where I run a number of jobs to cover a single range of time.
-            for pnum, parent in enumerate(curr_parent):
+
+            # Sort parent jobs to ensure predictable order
+            sorted_parents = sorted(curr_parent,
+                                    key=lambda fobj: fobj.tagged_description)
+            for pnum, parent in enumerate(sorted_parents):
                 if len(curr_parent) != 1:
                     tag = ["JOB%d" %(pnum,)]
                 else:
@@ -1870,5 +1874,12 @@ class PycbcInferenceExecutable(Executable):
         inference_file = node.new_output_file_opt(analysis_time,
                                                   ".hdf", "--output-file",
                                                   tags=tags)
+
+        if self.cp.has_option("pegasus_profile-inference",
+                              "condor|+CheckpointSig"):
+            ckpt_file_name = "{}.checkpoint".format(inference_file.name)
+            ckpt_file = dax.File(ckpt_file_name)
+            node._dax_node.uses(ckpt_file, link=dax.Link.OUTPUT,
+                                register=False, transfer=False)
 
         return node, inference_file

@@ -14,6 +14,8 @@ addons:
     - libdb-dev
     - libopenblas-dev
     - graphviz
+    - mpi-default-bin
+    - mpi-default-dev
 env:
   global:
   # This is the global version of lalsuite that will be used and included
@@ -51,16 +53,6 @@ matrix:
     sudo: required
     services:
     - docker
-  - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev:jessie
-    language: minimal
-    sudo: required
-    services:
-    - docker
-  - env: PYCBC_CONTAINER=pycbc_inspiral_bundle DOCKER_IMG=pycbc/sl6-travis
-    language: minimal
-    sudo: required
-    services:
-    - docker
   - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
     language: minimal
     sudo: required
@@ -68,36 +60,17 @@ matrix:
     - docker
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR
     language: python
+    python: 2.7
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
     language: python
     python: 3.6
   allow_failures:
-  - env: PYCBC_CONTAINER=pycbc_rhel_virtualenv DOCKER_IMG=ligo/lalsuite-dev:el7
-    language: minimal
-    sudo: required
-    services:
-    - docker
-  - env: PYCBC_CONTAINER=pycbc_debian_virtualenv DOCKER_IMG=ligo/lalsuite-dev:jessie
-    language: minimal
-    sudo: required
-    services:
-    - docker
-  - env: PYCBC_CONTAINER=pycbc_inspiral_bundle DOCKER_IMG=pycbc/sl6-travis
-    language: minimal
-    sudo: required
-    services:
-    - docker
-  - env: PYCBC_CONTAINER=pycbc_docker DOCKER_IMG=pycbc/pycbc-el7
-    language: minimal
-    sudo: required
-    services:
-    - docker
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
     language: python
     python: 3.6
 
 before_install:
-- if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_debian_virtualenv" ] || [ "x${PYCBC_CONTAINER}" == "xpycbc_inspiral_bundle" ]; then docker pull $DOCKER_IMG; fi
+- if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then docker pull $DOCKER_IMG; fi
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then docker build -t ${DOCKER_IMG}-tmp . ; fi
 install:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
@@ -148,7 +121,7 @@ script:
     sudo chown -R $UID . ;
     sudo chown -R $UID ~/.ssh ;
   else
-    travis_wait 60 ./tools/docker_build_and_test.sh ;
+    ./tools/docker_build_and_test.sh ;
   fi
 after_success:
   - if [ "x${TRAVIS_SECURE_ENV_VARS}" == "xtrue" ] && [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then

@@ -575,6 +575,17 @@ with ctx:
                     ifo_out_vals['snr'] = coherent_ifo_triggers[ifo]
                     # IFO is stored as an int
                     ifo_out_vals['ifo'] = [event_mgr.ifo_dict[ifo]]
+                    # Need all out vals to be the same length. This means the
+                    # entries that are single values need to be repeated once
+                    # per event.
+                    num_events = max([
+                        len(ifo_out_vals[key]) for key in ifo_out_vals.keys()
+                            if ifo_out_vals[key] is not None])
+                    for key in ifo_out_vals.keys():
+                        if ifo_out_vals[key] is None:
+                            continue
+                        elif len(ifo_out_vals[key]) == 1:
+                            ifo_out_vals[key] = ifo_out_vals[key] * num_events
                     event_mgr.add_template_events_to_ifo(
                         ifo, ifo_names, [ifo_out_vals[n] for n in ifo_names])
                 if nifo>2:
@@ -590,8 +601,14 @@ with ctx:
                 network_out_vals['nifo'] = [nifo]
                 network_out_vals['latitude'] = [opt.latitude]
                 network_out_vals['longitude'] = [opt.longitude]
+                for key in network_out_vals.keys():
+                    if network_out_vals[key] is None:
+                        continue
+                    elif len(network_out_vals[key]) == 1:
+                        network_out_vals[key] = network_out_vals[key] * num_events
                 event_mgr.add_template_events_to_network( network_names,
                                 [network_out_vals[n] for n in network_names])
+
         event_mgr.finalize_template_events()
 event_mgr.write_events(opt.output)
 

@@ -151,16 +151,32 @@ class MKLScheme(CPUScheme):
 class NumpyScheme(CPUScheme):
     pass
 
-class DefaultScheme(CPUScheme):
+
+scheme_prefix = {
+    CUDAScheme: "cuda",
+    CPUScheme: "cpu",
+    MKLScheme: "mkl",
+    NumpyScheme: "numpy",
+}
+_scheme_map = {v: k for (k, v) in scheme_prefix.items()}
+
+_default_scheme_prefix = os.getenv("PYCBC_SCHEME", "cpu")
+try:
+    _default_scheme_class = _scheme_map[_default_scheme_prefix]
+except KeyError as exc:
+    raise RuntimeError(
+        "PYCBC_SCHEME={!r} not recognised, please select one of: {}".format(
+            _default_scheme_prefix,
+            ", ".join(map(repr, _scheme_map)),
+        ),
+    )
+
+class DefaultScheme(_default_scheme_class):
     pass
 
 default_context = DefaultScheme()
 mgr.state = default_context
-scheme_prefix = {CUDAScheme: "cuda",
-                 CPUScheme: "cpu",
-                 MKLScheme: "mkl",
-                 NumpyScheme: "numpy",
-                 DefaultScheme: 'cpu'}
+scheme_prefix[DefaultScheme] = _default_scheme_prefix
 
 def current_prefix():
     return scheme_prefix[type(mgr.state)]
