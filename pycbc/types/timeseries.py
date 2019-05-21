@@ -138,7 +138,7 @@ class TimeSeries(Array):
     def get_duration(self):
         """Return duration of time series in seconds.
         """
-        return len(self) * self._delta_t
+        return len(self) * self.delta_t
     duration = property(get_duration,
                         doc="Duration of time series in seconds.")
 

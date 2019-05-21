@@ -247,8 +247,12 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
             logging.info('Must fit within %s-%s', start, end)
             if start > psd_start[ifo] - pad:
                 psd_start[ifo] = start
+                logging.info('Adjusting psd start time')
+
             if end < psd_start[ifo] + pad + psdlen:
                 psd_start[ifo] = end - pad - psdlen
+                logging.info('Adjusting psd end time')
+
         psd_end[ifo] = psd_start[ifo] + psdlen
         logging.info('%s: PSD data will be %s-%s', ifo, psd_start[ifo], psd_end[ifo])
 
@@ -276,6 +280,8 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     strain = pycbc.strain.from_cli_multi_ifos(args, ifos,
                                               dyn_range_fac=pycbc.DYN_RANGE_FAC)
 
+    print len(strain['L1']), len(strain['H1'])
+
     # Undo any time offsets for slides
     stilde = {}
     psd = {}
@@ -289,11 +295,11 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
             strain[ifo].resize(len(strain[ifo]) + strain[ifo].sample_rate * tpad)
             strain[ifo] = strain[ifo].cyclic_time_shift(pad_start[ifo])
 
-        spart = strain[ifo].time_slice(filter_start[ifo], filter_end[ifo])
+        spart = strain[ifo].time_slice(filter_start[ifo], min(filter_end[ifo], strain[ifo].end_time))
         stilde[ifo] = spart.to_frequencyseries()
 
         logging.info('Calculating PSD around time')
-        spart = strain[ifo].time_slice(psd_start[ifo], psd_end[ifo])
+        spart = strain[ifo].time_slice(psd_start[ifo], min(psd_end[ifo], strain[ifo].end_time))
         psd[ifo] = spart.filter_psd(psdseg, stilde[ifo].delta_f,
                                     args.low_frequency_cutoff)
 

@@ -243,7 +243,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
 
     if trunc_method == 'hann':
         trunc_window = Array(numpy.hanning(max_filter_len), dtype=q.dtype)
-        q[0:trunc_start] *= trunc_window[max_filter_len//2:max_filter_len]
+        q[0:trunc_start] *= trunc_window[-trunc_start:]
         q[trunc_end:N] *= trunc_window[0:max_filter_len//2]
 
     if trunc_start < trunc_end:
