@@ -58,16 +58,17 @@ if args.ranking_file:
     f = h5py.File(args.ranking_file, 'r')
     fstat = o['foreground/stat'][:]
     backstat = f['background_exc/stat'][:]
+    dec = f['background_exc/decimation_factor'][:]
     
     bnum, fnum = calculate_n_louder(backstat, fstat, dec)
 
     ifar = background_time / (fnum + 1)
     fap = 1 - numpy.exp(- coinc_time / ifar)
-    f['foreground/ifar'][...] = conv.sec_to_year(ifar)
-    f['foreground/fap'][...] = fap
+    o['foreground/ifar'][...] = sec_to_year(ifar)
+    o['foreground/fap'][...] = fap
     
-    f['foreground/ifar_exc'] = f['foreground/ifar'][:]
-    f['foreground/fap_exc'] = f['foreground/fap'][:]
+    o['foreground/ifar_exc'][...] = o['foreground/ifar'][:]
+    o['foreground/fap_exc'][...] = o['foreground/fap'][:]
 
 # full data run
 else:
