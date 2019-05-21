@@ -16,7 +16,8 @@ import pycbc.detector
 
 def multiifo_noise_coinc_rate(rates, slop):
     """
-    Calculate the expected rate of noise coincidences for multiple detectors
+    Calculate the expected rate of noise coincidences for multiple
+    combinations of detectors
 
     Parameters
     ----------
@@ -34,20 +35,19 @@ def multiifo_noise_coinc_rate(rates, slop):
         Dictionary keyed on the ifo combination string
         Value is expected coincidence rate in the combination, units Hz
     """
+
     ifos = numpy.array(sorted(rates.keys()))
     rates_raw = list(rates[ifo] for ifo in ifos)
     expected_coinc_rates = {}
 
     # Calculate coincidence for all-ifo combination
-    # multiply product of trigger rates by the overlap time
-    allowed_area = multiifo_noise_coincident_area(ifos, slop)
-    rateprod = [numpy.prod(rs) for rs in zip(*rates_raw)]
     ifostring = ' '.join(ifos)
-    expected_coinc_rates[ifostring] = allowed_area * numpy.array(rateprod)
+    expected_coinc_rates[ifostring] = combination_noise_coinc_rate(rates, slop)
 
     # if more than one possible coincidence type exists,
     # calculate coincidence for subsets through recursion
     if len(ifos) > 2:
+        ifos = numpy.array(sorted(rates.keys()))
         # Calculate rate for each 'miss-one-out' detector combination
         subsets = itertools.combinations(ifos, len(ifos) - 1)
         for subset in subsets:
@@ -61,6 +61,36 @@ def multiifo_noise_coinc_rate(rates, slop):
 
     return expected_coinc_rates
 
+def combination_noise_coinc_rate(rates, slop):
+    """
+    Calculate the expected rate of noise coincidences for a combination of
+    detectors
+
+    Parameters
+    ----------
+    rates: dict
+        Dictionary keyed on ifo string
+        Value is a sequence of single-detector trigger rates, units assumed
+        to be Hz
+    slop: float
+        time added to maximum time-of-flight between detectors to account
+        for timing error
+
+    Returns
+    -------
+    combo_coinc_rate: numpy array
+        Value is expected coincidence rate in the combination, units Hz
+    """
+    # extract ifo list and rates vectors from the dictionary
+    ifos = numpy.array(sorted(rates.keys()))
+    rates_raw = list(rates[ifo] for ifo in ifos)
+
+    # multiply product of trigger rates by the overlap time
+    allowed_area = multiifo_noise_coincident_area(ifos, slop)
+    rateprod = [numpy.prod(rs) for rs in zip(*rates_raw)]
+    combo_coinc_rate = allowed_area * numpy.array(rateprod)
+
+    return combo_coinc_rate
 
 def multiifo_noise_coincident_area(ifos, slop):
     """
