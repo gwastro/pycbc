@@ -191,7 +191,7 @@ times = trigs.end_time
 tids = trigs.template_id
 
 # loop over number of loudest events to be followed up
-order = trigs.stat.argsort()
+order = trigs.stat.argsort()[::-1]
 for rank, num_event in enumerate(order):
     logging.info('Processing event: %s', num_event)
 
