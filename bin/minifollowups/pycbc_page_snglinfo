@@ -53,6 +53,11 @@ parser.add_argument('--ranking-statistic', default='newsnr',
          "'newsnr'")
 
 args = parser.parse_args()
+
+if args.trigger_id is not None and args.n_loudest is not None:
+    err_msg = "Must provide only one of --n-loudest and --trigger-id"
+    raise ValueError(err_msg)
+
 pycbc.init_logging(args.verbose)
 
 # Get the single-ifo triggers
