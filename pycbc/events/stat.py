@@ -578,19 +578,20 @@ class CoincRateCalcStatistic(ExpFitStatistic):
     def __init__(self, files, benchmark_lograte=-14.6):
         # benchmark_lograte is log of a representative noise trigger rate in H1L1 (O2)
         # this is 4.5e-7 Hz
-        ExpFitStatistic.__init__(self, files)
-        self.benchmark_lograte = benchmark_lograte
+        super(CoincRateCalcStatistic, self).__init__(files)
+        self.benchmark_lograte = 0#benchmark_lograte
 
-    def assign_fits(self, ifo):
+        for ifo in self.ifos:
+            self.reassign_rate(ifo)
+
+    def reassign_rate(self, ifo):
         coeff_file = self.files[ifo+'-fit_coeffs']
-        exp_fit_fits = ExpFitStatistic.assign_fits(self, ifo)
         template_id = coeff_file['template_id'][:]
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
-        exp_fit_fits['rates'] = coeff_file['count_in_template'][:][tid_sort] / \
+        self.fits_by_tid[ifo]['rate'] = coeff_file['count_in_template'][:][tid_sort] / \
                 float(coeff_file.attrs['analysis_time'])
-        return exp_fit_fits
 
     def coinc_multiifo(self, s, slide,
                   step, **kwargs): # pylint:disable=unused-argument
