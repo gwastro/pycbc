@@ -210,7 +210,7 @@ class InjFilterRejector(object):
             opt.injection_filter_rejector_coarsematch_deltaf[ifo]
         coarsematch_fmax = opt.injection_filter_rejector_coarsematch_fmax[ifo]
         seg_buffer = opt.injection_filter_rejector_seg_buffer[ifo]
-        if opt.injection_filter_rejector_f_lower is not None:
+        if opt.injection_filter_rejector_f_lower[ifo] is not None:
             f_lower = opt.injection_filter_rejector_f_lower[ifo]
         else:
             # NOTE: Uses main low-frequency cutoff as default option. This may
