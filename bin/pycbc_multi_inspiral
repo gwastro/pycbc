@@ -469,7 +469,7 @@ with ctx:
             sigma = {ifo : np.sqrt(sigmasq[ifo]) for ifo in opt.instruments}
             # Every time s_num is zero or we skip the segment, we run new 
             # template to increment the template index
-            if s_num==0 or analyse_segment==False:
+            if s_num==0:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
             if not analyse_segment: continue
             logging.info("Analyzing segment %d/%d" % (s_num + 1,
