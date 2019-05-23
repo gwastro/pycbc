@@ -37,13 +37,13 @@ import logging
 import requests
 import distutils.spawn
 import itertools
-import glue.pipeline
-
+import six
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.parse import urlparse
 from six.moves import http_cookiejar as cookielib
 from six.moves.http_cookiejar import (_warn_unhandled_exception,
                                       LoadError, Cookie)
+import glue.pipeline
 from bs4 import BeautifulSoup
 
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
@@ -150,16 +150,25 @@ def istext(s, text_characters=None, threshold=0.3):
     Code modified from
     https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch01s12.html
     """
-    text_characters = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
-    _null_trans = string.maketrans("", "")
     # if s contains any null, it's not text:
-    if "\0" in s:
+    if six.PY2 and "\0" in s:
         return False
     # an "empty" string is "text" (arbitrary but reasonable choice):
     if not s:
         return True
-    # Get the substring of s made up of non-text characters
-    t = s.translate(_null_trans, text_characters)
+
+    text_characters = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
+    if six.PY2:
+        _null_trans = string.maketrans("", "")
+        # Get the substring of s made up of non-text characters
+        t = s.translate(_null_trans, text_characters)
+    else:
+        # Not yet sure how to deal with this in python3. Will need example.
+        return True
+
+        # trans = str.maketrans('', '', text_characters)
+        # t = s.translate(trans)
+
     # s is 'text' if less than 30% of its characters are non-text ones:
     return len(t)/float(len(s)) <= threshold
 
@@ -231,7 +240,7 @@ def resolve_url(url, directory=None, permissions=None):
                   desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
                     raise ValueError(ecp_cookie_error.format(url))
 
-        output_fp = open(filename, 'w')
+        output_fp = open(filename, 'wb')
         output_fp.write(r.content)
         output_fp.close()
 
@@ -299,8 +308,9 @@ def add_workflow_command_line_group(parser):
     parser : argparse.ArgumentParser instance
         The initialized argparse instance to add the workflow option group to.
     """
-    workflowArgs = parser.add_argument_group('workflow',
-                                          'Options needed for workflow setup.')
+    workflowArgs = parser.add_argument_group('Configuration',
+                                             'Options needed for parsing '
+                                             'config file(s).')
     workflowArgs.add_argument("--config-files", nargs="+", action='store',
                            metavar="CONFIGFILE",
                            help="List of config files to be used in "
@@ -1016,7 +1026,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
     @classmethod
     def from_cli(cls, opts):
-        """Loads a config file from the given options, with overrides applied.
+        """Loads a config file from the given options, with overrides and
+        deletes applied.
         """
         # read configuration file
         logging.info("Reading configuration file")
@@ -1025,4 +1036,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                          for override in opts.config_overrides]
         else:
             overrides = None
-        return cls(opts.config_files, overrides)
+        if opts.config_delete is not None:
+            deletes = [delete.split(":") for delete in opts.config_delete]
+        else:
+            deletes = None
+        return cls(opts.config_files, overrides, deleteTuples=deletes)

@@ -23,7 +23,6 @@ import h5py
 import logging
 import os
 import Pegasus.DAX3 as dax
-import pycbc.workflow as wf
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import socket
@@ -33,7 +32,10 @@ from pycbc import results
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
 from pycbc.types import MultiDetOptionAppendAction
-from pycbc.workflow import WorkflowConfigParser
+from pycbc.workflow import configuration
+from pycbc.workflow import core
+from pycbc.workflow import datafind
+from pycbc.workflow import plotting
 
 from pycbc import __version__
 
@@ -112,34 +114,42 @@ parser.add_argument("--frame-files", nargs="+", default=None,
                     help="GWF frame files to use.")
 
 # add option groups
-wf.add_workflow_command_line_group(parser)
+configuration.add_workflow_command_line_group(parser)
 
 # parser command line
 opts = parser.parse_args()
+
+# make data output directory
+core.makedir(opts.output_dir)
+
+# the file we'll store all output files in
+filedir = 'output'
 
 # log to terminal until we know where the path to log output file
 log_format = "%(asctime)s:%(levelname)s : %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO)
 
 # create workflow and sub-workflows
-container = wf.Workflow(opts, opts.workflow_name)
-workflow = wf.Workflow(opts, opts.workflow_name + "-main")
-finalize_workflow = wf.Workflow(opts, opts.workflow_name + "-finalization")
+container = core.Workflow(opts, opts.workflow_name)
+workflow = core.Workflow(opts, opts.workflow_name + "-main")
+finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
+
+# change working directory to the output
+os.chdir(opts.output_dir)
 
 # sections for output HTML pages
 rdir = layout.SectionNumber("results",
                             ["detector_sensitivity", "priors", "posteriors",
                              "samples", "workflow"])
 
-# make data output and results directories
-wf.makedir(opts.output_dir)
-wf.makedir(rdir.base)
-wf.makedir(rdir["workflow"])
+# make results directories
+core.makedir(rdir.base)
+core.makedir(rdir["workflow"])
 
 # create files for workflow log
-log_file_txt = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
+log_file_txt = core.File(workflow.ifos, "workflow-log", workflow.analysis_time,
                       extension=".txt", directory=rdir["workflow"])
-log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
+log_file_html = core.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
                         extension=".html", directory=rdir["workflow"])
 
 # switch saving log to file
@@ -151,43 +161,6 @@ formatter = logging.Formatter(log_format)
 log_file.setFormatter(formatter)
 logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
-
-# sanity check that user is either using workflow or command line
-workflow_options = opts.bank_file != None \
-                   and opts.statmap_file != None \
-                   and opts.single_detector_triggers != None
-if not workflow_options and not (opts.gps_end_time != None):
-    raise ValueError("Must use either workflow options or --gps-end-time")
-
-# sections for output HTML pages
-rdir = layout.SectionNumber("results",
-                            ["detector_sensitivity", "priors", "posteriors",
-                             "samples", "workflow"])
-
-wf.makedir(rdir.base)
-wf.makedir(rdir["workflow"])
-
-# create file for workflow log
-wf_log_file = wf.File(workflow.ifos, "workflow-log", workflow.analysis_time,
-                      extension=".txt",
-                      directory=rdir["workflow"])
-
-# Create the final log file
-log_file_html = wf.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
-                                           extension=".html",
-                                           directory=rdir["workflow"])
-
-logging.basicConfig(format="%(asctime)s:%(levelname)s : %(message)s",
-                    filename=wf_log_file.storage_path,
-                    level=logging.INFO,
-                    filemode="w")
-
-logfile = logging.FileHandler(filename=wf_log_file.storage_path, mode="w")
-logfile.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s:%(levelname)s : %(message)s")
-logfile.setFormatter(formatter)
-logging.getLogger("").addHandler(logfile)
-logging.info("Created log file %s" % wf_log_file.storage_path)
 
 # sanity check that user is either using workflow or command line
 workflow_options = opts.bank_file != None \
@@ -234,12 +207,12 @@ else:
     num_events = len(opts.gps_end_time)
 
 # construct Executable for running sampler
-inference_exe = wf.Executable(workflow.cp, "inference", ifos=workflow.ifos,
-                              out_dir=opts.output_dir)
+inference_exe = core.Executable(workflow.cp, "inference",
+                                ifos=workflow.ifos, out_dir=filedir)
 
 # read inference configuration file
 # typecast str from command line to File instances
-cp = WorkflowConfigParser(opts.inference_config_file)
+cp = configuration.WorkflowConfigParser(opts.inference_config_file)
 with open('inference.ini', 'w') as ff:
     cp.write(ff)
 config_file = to_file('inference.ini')
@@ -250,7 +223,7 @@ for ifo in workflow.ifos:
     channel_names[ifo] = workflow.cp.get_opt_tags(
                                "workflow", "%s-channel-name" % ifo.lower(), "")
 channel_names_str = " ".join([key + ":" + val for key, val in \
-                              channel_names.iteritems()])
+                              channel_names.items()])
 
 # figure out what parameters user wants to plot from workflow configuration
 plot_parameters = {}
@@ -282,26 +255,28 @@ for num_event in range(num_events):
                       gps_start_time, gps_end_time)]) for ifo in workflow.ifos}
 
     # get frame files from command line or datafind server
-    frame_files = wf.FileList([])
+    frame_files = core.FileList([])
     if opts.frame_files:
         for ifo in workflow.ifos:
             for path in opts.frame_files[ifo]:
-                frame_file = wf.File(
-                                ifo, "FRAME",
-                                segments.segment(gps_start_time, gps_end_time),
-                                file_url="file://" + path)
+                frame_file = core.File(
+                                   ifo, "FRAME",
+                                   segments.segment(gps_start_time,
+                                                    gps_end_time),
+                                   file_url="file://" + path)
                 frame_file.PFN(frame_file.storage_path, site="local")
                 frame_files.append(frame_file)
     else:
-        frame_files, _, _, _ = wf.setup_datafind_workflow(workflow, seg_dict,
-                                                          "datafind")
+        frame_files, _, _, _ = datafind.setup_datafind_workflow(workflow, seg_dict,
+                                                                "datafind")
 
     # make node for running sampler
     node = inference_exe.create_node()
     node.add_opt("--instruments", " ".join(workflow.ifos))
     node.add_opt("--gps-start-time", gps_start_time)
     node.add_opt("--gps-end-time", gps_end_time)
-    node.add_multiifo_input_list_opt("--frame-files", frame_files)
+    if len(frame_files):
+        node.add_multiifo_input_list_opt("--frame-files", frame_files)
     node.add_opt("--channel-name", channel_names_str)
     node.add_input_opt("--config-file", config_file)
     analysis_time = segments.segment(gps_start_time, gps_end_time)
@@ -343,7 +318,7 @@ for num_event in range(num_events):
                           workflow, inference_file, rdir[base],
                           parameters=parameters,
                           analysis_seg=analysis_time,
-                          tags=opts.tags + [str(num_event)])
+                          tags=opts.tags + [str(num_event), group])
         layout.group_layout(rdir[base], post_1d_files)
 
     # files for samples summary subsection
@@ -366,8 +341,9 @@ for num_event in range(num_events):
 
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"
-    psd_file = wf.make_spectrum_plot(workflow, [inference_file], rdir[base],
-                                     tags=opts.tags + [str(num_event)])
+    psd_file = plotting.make_spectrum_plot(workflow, [inference_file], rdir[base],
+                                     tags=opts.tags + [str(num_event)],
+                                     hdf_group="data")
     layout.single_layout(rdir[base], [psd_file])
 
 # files for priors summary section
@@ -377,7 +353,7 @@ for subsection in cp.get_subsections(opts.prior_section):
     prior_files += inffu.make_inference_prior_plot(
                           workflow, config_file, rdir[base],
                           analysis_seg=workflow.analysis_time,
-                          sections=[opts.prior_section + "-" + subsection],
+                          parameters=[subsection],
                           tags=opts.tags + [subsection])
 layout.group_layout(rdir[base], prior_files)
 
@@ -392,7 +368,7 @@ layout.single_layout(rdir.base, summ_files)
 results.create_versioning_page(rdir["workflow/version"], container.cp)
 
 # create node for making HTML pages
-wf.make_results_web_page(finalize_workflow,
+plotting.make_results_web_page(finalize_workflow,
                          os.path.join(os.getcwd(), rdir.base))
 
 # add sub-workflows to workflow
@@ -405,17 +381,17 @@ container._adag.addDependency(dep)
 
 # write dax
 container.save(filename=opts.output_file, output_map_path=opts.output_map,
-               transformation_catalog_path=args.transformation_catalog)
+               transformation_catalog_path=opts.transformation_catalog)
 
 # save workflow configuration file
 base = rdir["workflow/configuration"]
-wf.makedir(base)
+core.makedir(base)
 wf_ini = workflow.save_config("workflow.ini", base, container.cp)
 layout.single_layout(base, wf_ini)
 
 # save prior configuration file
 base = rdir["priors/configuration"]
-wf.makedir(base)
+core.makedir(base)
 prior_ini = workflow.save_config("priors.ini", base, cp)
 layout.single_layout(base, prior_ini)
 

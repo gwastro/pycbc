@@ -32,7 +32,7 @@ def to_file(path, ifo=None):
     return fil
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg) 
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
@@ -42,7 +42,7 @@ parser.add_argument('--statmap-file',
                     help="HDF format clustered coincident trigger result file")
 parser.add_argument('--single-detector-triggers', nargs='+', action=MultiDetOptionAction,
                     help="HDF format merged single detector trigger files")
-parser.add_argument('--inspiral-segments', 
+parser.add_argument('--inspiral-segments',
                     help="xml segment files containing the inspiral analysis times")
 parser.add_argument('--inspiral-data-read-name',
                     help="Name of inspiral segmentlist containing data read in "
@@ -57,13 +57,13 @@ parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
 workflow = wf.Workflow(args, args.workflow_name)
 
 wf.makedir(args.output_dir)
-             
+
 # create a FileList that will contain all output files
 layouts = []
 
@@ -85,7 +85,7 @@ for ifo in args.single_detector_triggers:
     #       being used to determine command-line options for other codes,
     #       please think if that code requires coalesced, or not, segments.
     insp_data_seglists[ifo].coalesce()
-    
+
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
 stat = f['foreground/stat'][:]
@@ -105,35 +105,65 @@ if len(stat) < num_events:
 
 stat = stat[sorting][0:num_events]
 
-times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
-         f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
-        }
-tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_events],
-         f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
-        }
+times = {}
+tids = {}
+# Check if using input files from old (2-ifo) coinc code
+if 'detector_1' in f.attrs:
+    times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
+             f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
+            }
+    tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_events],
+            f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
+           }
+else:
+    # Version used for multi-ifo coinc code
+    ifo_list = f.attrs['ifos'].split(' ')
+    for ifo in ifo_list:
+        times[ifo] = f['foreground/%s/time' % ifo][:][sorting][0:num_events]
+        tids[ifo] = f['foreground/%s/trigger_id' % ifo][:][sorting][0:num_events]
 
 bank_data = h5py.File(args.bank_file, 'r')
 
 # loop over number of loudest events to be followed up
 for num_event in range(num_events):
     files = wf.FileList([])
-    
-    ifo_times = '%s:%s %s:%s' % (times.keys()[0], times[times.keys()[0]][num_event],
-                                 times.keys()[1], times[times.keys()[1]][num_event])
 
-    ifo_tids = '%s:%s %s:%s' % (tids.keys()[0], tids[tids.keys()[0]][num_event],
-                                 tids.keys()[1], tids[tids.keys()[1]][num_event])
-    
+    # Check if using input files from old (2-ifo) coinc code
+
+    ifo_timse = ''
+    ifo_tids = ''
+
+    if 'detector_1' in f.attrs:
+        key0, key1 = tuple(times.keys())[:2]
+        ifo_times = '%s:%s %s:%s' % (key0, times[key0][num_event],
+                                     key1, times[key1][num_event])
+
+        key0, key1 = tuple(tids.keys())[:2]
+        ifo_tids = '%s:%s %s:%s' % (key0, tids[key0][num_event],
+                                    key1, tids[key1][num_event])
+    else:
+        # Version used for multi-ifo coinc code
+        ifo_times_strings = []
+        ifo_tids_strings = []
+        for ifo in times:
+            ifo_times_string = '%s:%s' % (ifo, times[ifo][num_event])
+            ifo_tids_string = '%s:%s' % (ifo, tids[ifo][num_event])
+            ifo_times_strings += [ifo_times_string]
+            ifo_tids_strings += [ifo_tids_string]
+
+        ifo_times = ' '.join(ifo_times_strings)
+        ifo_tids = ' '.join(ifo_tids_strings)
+
     bank_id = f['foreground/template_id'][:][sorting][num_event]
-    
+
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
-                              coinc_file, args.output_dir, n_loudest=num_event, 
-                              tags=args.tags + [str(num_event)]),)        
+                              coinc_file, args.output_dir, n_loudest=num_event,
+                              tags=args.tags + [str(num_event)]),)
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir, special_tids=ifo_tids,
                               tags=args.tags + [str(num_event)])
-    
-    params = {}                          
+
+    params = {}
     for ifo in times:
         params['%s_end_time' % ifo] = times[ifo][num_event]
         try:
@@ -163,10 +193,10 @@ for num_event in range(num_events):
                                     args.inspiral_data_analyzed_name,  params,
                                     args.output_dir,
                                     tags=args.tags + [str(num_event)])
-    
+
     for single in single_triggers:
         time = times[single.ifo][num_event]
-        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
+        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
                                 time, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
@@ -178,7 +208,6 @@ for num_event in range(num_events):
 
 
     layouts += list(layout.grouper(files, 2))
-    num_event += 1
 
 workflow.save(filename=args.output_file, output_map_path=args.output_map,
               transformation_catalog_path=args.transformation_catalog)

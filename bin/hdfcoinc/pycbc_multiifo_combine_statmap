@@ -39,6 +39,9 @@ for fi in files:
                  f.create_group(key)
             f[key].attrs[attr_name] = fi.attrs[attr_name]
 
+# Save the ifo list for easy access
+f.attrs['ifos'] = ' '.join(sorted(args.ifos))
+
 logging.info('Generating list of datasets in input files')
 
 key_set = pycbc.io.name_all_datasets(files)

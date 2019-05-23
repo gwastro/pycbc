@@ -29,7 +29,7 @@ import json
 import numpy
 from astropy.utils.data import download_file
 from ligo.segments import segmentlist, segment
-
+from pycbc.frame.losc import get_run
 
 def parse_veto_definer(veto_def_filename):
     """ Parse a veto definer file from the filename and return a dictionary
@@ -92,7 +92,7 @@ def parse_veto_definer(veto_def_filename):
     return data
 
 
-GWOSC_URL = 'https://www.gw-openscience.org/timeline/segments/json/O1/{}_{}/{}/{}/'
+GWOSC_URL = 'https://www.gw-openscience.org/timeline/segments/json/{}/{}_{}/{}/{}/'
 
 
 def query_flag(ifo, name, start_time, end_time,
@@ -151,10 +151,11 @@ def query_flag(ifo, name, start_time, end_time,
             return (data - negate).coalesce()
 
         duration = end_time - start_time
-        url = GWOSC_URL.format(ifo, segment_name,
-                               int(start_time), int(duration))
-
         try:
+            url = GWOSC_URL.format(get_run(start_time + duration/2),
+                                   ifo, segment_name,
+                                   int(start_time), int(duration))
+
             fname = download_file(url, cache=cache)
             data = json.load(open(fname, 'r'))
             if 'segments' in data:
@@ -190,6 +191,7 @@ def query_flag(ifo, name, start_time, end_time,
         # a process the flags in the veto definer
         if veto_definer is not None and segment_name in veto_def[ifo]:
             for flag in veto_def[ifo][segment_name]:
+                partial = segmentlist([])
                 segs = query("https", server, ifo, flag['name'],
                              flag['version'], 'active',
                              int(start_time), int(end_time))[0]['active']
@@ -198,11 +200,12 @@ def query_flag(ifo, name, start_time, end_time,
                 for rseg in segs:
                     seg_start = rseg[0] + flag['start_pad']
                     seg_end = rseg[1] + flag['end_pad']
-                    flag_segments.append(segment(seg_start, seg_end))
+                    partial.append(segment(seg_start, seg_end))
 
-            # Apply start / end of the veto definer segment
-            send = segmentlist([segment([veto_def['start'], veto_def['end']])])
-            flag_segments = (flag_segments.coalesce() & send)
+                # Limit to the veto definer stated valid region of this flag
+                send = segmentlist([segment([flag['start'],
+                                             flag['end']])])
+                flag_segments += (partial.coalesce() & send)
 
         else:  # Standard case just query directly.
             try:

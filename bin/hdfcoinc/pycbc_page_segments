@@ -47,7 +47,7 @@ def plot_segs(start, end, color=None, y=0, h=1):
         plot_segs.colors = cycle(['red', 'blue', 'green', 'yellow', 'cyan', 'violet'])
 
     if color is None:
-        color = plot_segs.colors.next()
+        color = next(plot_segs.colors)
 
     for s, e in zip(start, end):
         ax = pylab.gca()

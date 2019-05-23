@@ -23,7 +23,7 @@ fig, (ax1, ax2, ax3) = pl.subplots(3,1,figsize=(10,10))
 
 for pa in args.input_file:
     f = h5py.File(pa, 'r')
-    ifo = f.keys()[0]
+    ifo = tuple(f.keys())[0]
     if 'templates_per_core' in f['%s/search' % ifo].keys():
         tpc = f['%s/search/templates_per_core' % ifo][:]
     else:

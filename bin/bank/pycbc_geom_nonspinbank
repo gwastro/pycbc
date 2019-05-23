@@ -26,6 +26,7 @@ import math
 import copy
 import numpy
 import logging
+from six.moves import range
 import pycbc
 import pycbc.version
 import pycbc.psd
@@ -299,10 +300,10 @@ numv2bins = int(math.ceil(v2sdiff / 1.))
 
 sortedBins = {}
 
-#for i in xrange(numv1bins):
+#for i in range(numv1bins):
 #    print i
 #    sortedBins[i] = {}
-#    for j in xrange(numv2bins):
+#    for j in range(numv2bins):
 #        sortedBins[i][j] = []
 
 logging.info("Sorting guide points")

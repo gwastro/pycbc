@@ -56,8 +56,14 @@ parser.add_argument('--low-frequency-cutoff', type=float,
                     help='Provide a low-frequency-cutoff for fake strain. '
                          'This is only needed if fake-strain or '
                          'fake-strain-from-file is used')
+parser.add_argument('--frame-duration', type=int,
+                    help='Split all data into smaller frame files of the given duration if specified.')
+
 pycbc.strain.insert_strain_option_group(parser)
 args = parser.parse_args()
+
+if args.frame_duration is not None and args.frame_duration <= 0:
+    parser.error('Frame duration should be positive integer, {} given'.format(args.frame_duration))
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
@@ -83,8 +89,24 @@ if not args.dyn_range_factor:
 logging.info('Writing output strain')
 output_channel_name = args.output_channel_name or args.channel_name
 if args.output_strain_file.endswith('.gwf'):
-    pycbc.frame.write_frame(args.output_strain_file, output_channel_name,
-                            out_strain)
+
+    if args.frame_duration:
+        start = args.gps_start_time
+        stop = args.gps_end_time
+        step = args.frame_duration
+        # Filename with split the given name as prefix and add `start_time-duration`
+        filename = args.output_strain_file.rsplit('.', 2)[0]
+        filename += '_{0}-{1}.'+args.output_strain_file.rsplit('.', 2)[1]
+
+        # Last frame duration can be shorter than duration if stop doesn't allow
+        for s in range(start, stop, step):
+            ts = out_strain.time_slice(s, s+step if s+step < stop else stop)
+            pycbc.frame.write_frame(filename.format(s, step if s+step < stop else stop),
+                                    output_channel_name, ts)
+    else:
+        pycbc.frame.write_frame(args.output_strain_file, output_channel_name,
+                                out_strain)
+
 else:
     out_strain.save(args.output_strain_file, group=output_channel_name)
 

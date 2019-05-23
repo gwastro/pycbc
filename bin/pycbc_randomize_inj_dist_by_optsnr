@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+from __future__ import print_function
+
 __prog__ = 'pycbc_randr_by_snr'
 __author__ = 'Collin Capano <collin.capano@ligo.org>, Miriam Cabero Mueller <miriam.cabero@ligo.org>'
 __description__ = 'Resets the distance distribution in a sim_inspiral table based on desired SNR. The SNRs are chosen randomly from a given range.'
@@ -145,7 +147,7 @@ numpy.random.seed(opts.seed)
 
 # cycle over the injections, calculating results for each
 if opts.verbose:
-    print >> sys.stdout, "Cycling over injections..."
+    print("Cycling over injections...", file=sys.stdout)
 
 # Read in input file
 xmldoc = ligolw_utils.load_filename\
@@ -156,7 +158,7 @@ injections = tabletype.get_table(xmldoc)
 
 for ii, inj in enumerate(injections):
     if opts.verbose:
-        print >> sys.stdout, "Injection %i\r" %(ii+1), 
+        print("Injection %i\r" %(ii+1), end=' ', file=sys.stdout)
         sys.stdout.flush()
       
     # calculate the sigmas in each ifo
@@ -203,12 +205,12 @@ for ii, inj in enumerate(injections):
         setattr(inj, opts.snr_columns[nzidx[kk]], sigmas[kk]/inj.distance)
 
 if opts.verbose:
-    print >> sys.stdout, ""
+    print("", file=sys.stdout)
     sys.stdout.flush()
 
 ligolw_utils.write_filename(xmldoc, opts.output_file,
                             gz=opts.output_file.endswith('gz'))
 if opts.verbose:
-    print >> sys.stdout, "Finished!"
+    print("Finished!", file=sys.stdout)
 sys.exit(0)
 

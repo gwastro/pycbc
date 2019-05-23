@@ -20,9 +20,9 @@
 # Preamble
 # =============================================================================
 
-from __future__ import division
+from __future__ import (division, print_function)
 
-import os,sys,datetime,re,glob,shutil,ConfigParser
+import os,sys,datetime,re,glob,shutil
 from argparse import ArgumentParser
 import random
 import string
@@ -205,7 +205,7 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
         segplot = '%s/%s' % (outdir, os.path.basename(args.seg_plot))
     else:
         segplot = None
-        print >>sys.stderr, 'WARNING: Cannot find segments availability plot.'
+        print('WARNING: Cannot find segments availability plot.', file=sys.stderr)
     
     # get sky error from config
     if grid:

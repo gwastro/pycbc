@@ -12,6 +12,7 @@ from glue.ligolw import param as ligolw_param
 from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
+from pycbc.results import ifo_color
 
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
@@ -105,6 +106,8 @@ class SingleCoincForGraceDB(object):
             Will be recorded in the sngl_inspiral table.
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
+        self.coinc_results = coinc_results
+        self.ifos = ifos
 
         # remember if this should be marked as HWINJ
         self.is_hardware_injection = ('HWINJ' in coinc_results
@@ -112,6 +115,8 @@ class SingleCoincForGraceDB(object):
 
         if 'followup_data' in kwargs:
             fud = kwargs['followup_data']
+            assert len({fud[ifo]['snr_series'].delta_t for ifo in fud}) == 1, \
+                    "delta_t for all ifos do not match"
             self.snr_series = {ifo: fud[ifo]['snr_series'] for ifo in fud}
             usable_ifos = fud.keys()
             followup_ifos = list(set(usable_ifos) - set(ifos))
@@ -276,6 +281,9 @@ class SingleCoincForGraceDB(object):
             test trigger (True) or a production trigger (False).
         """
         from ligo.gracedb.rest import GraceDb
+        import matplotlib
+        matplotlib.use('Agg')
+        import pylab
 
         # first of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
@@ -286,11 +294,44 @@ class SingleCoincForGraceDB(object):
                 snr_series_fname = fname.replace('.xml.gz', '.hdf')
             else:
                 snr_series_fname = fname.replace('.xml', '.hdf')
+            snr_series_plot_fname = snr_series_fname.replace('.hdf',
+                                                             '_snr.png')
+            psd_series_plot_fname = snr_series_fname.replace('.hdf',
+                                                             '_psd.png')
+            pylab.figure()
             for ifo in self.snr_series:
-                self.snr_series[ifo].save(snr_series_fname,
-                                          group='%s/snr' % ifo)
-                self.psds[ifo].save(snr_series_fname,
-                                    group='%s/psd' % ifo)
+                curr_snrs = self.snr_series[ifo]
+                curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
+                pylab.plot(curr_snrs.sample_times, abs(curr_snrs),
+                           c=ifo_color(ifo), label=ifo)
+                if ifo in self.ifos:
+                    snr = self.coinc_results['foreground/%s/%s' %
+                                             (ifo, 'snr')]
+                    endt = self.coinc_results['foreground/%s/%s' %
+                                              (ifo, 'end_time')]
+                    pylab.plot([endt], [snr], c=ifo_color(ifo), marker='x')
+
+            pylab.legend()
+            pylab.xlabel('GPS time (s)')
+            pylab.ylabel('SNR')
+            pylab.savefig(snr_series_plot_fname)
+            pylab.close()
+
+            pylab.figure()
+            for ifo in self.snr_series:
+                # Undo dynamic range factor
+                curr_psd = self.psds[ifo].astype(numpy.float64)
+                curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
+                curr_psd.save(snr_series_fname, group='%s/psd' % ifo)
+                # Can't plot log(0) so start from point 1
+                pylab.loglog(curr_psd.sample_frequencies[1:],
+                             curr_psd[1:]**0.5, c=ifo_color(ifo), label=ifo)
+            pylab.legend()
+            pylab.xlim([20, 2000])
+            pylab.ylim([1E-24, 1E-21])
+            pylab.xlabel('Frequency (Hz)')
+            pylab.ylabel('ASD')
+            pylab.savefig(psd_series_plot_fname)
 
         gid = None
         try:
@@ -325,9 +366,18 @@ class SingleCoincForGraceDB(object):
             for text in extra_strings:
                 gracedb.writeLog(gid, text)
 
-            # upload SNR series in HDF format
+            # upload SNR series in HDF format and plots
             if self.snr_series is not None:
-                gracedb.writeFile(gid, snr_series_fname)
+                gracedb.writeLog(gid, 'SNR timeseries HDF file upload',
+                                 filename=snr_series_fname)
+                gracedb.writeLog(gid, 'SNR timeseries plot upload',
+                                 filename=snr_series_plot_fname,
+                                 tag_name=['background'],
+                                 displayName=['SNR timeseries'])
+                gracedb.writeLog(gid, 'PSD plot upload',
+                                 filename=psd_series_plot_fname,
+                                 tag_name=['psd'], displayName=['PSDs'])
+
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
                           'event %s on GraceDB. The event may not have been '

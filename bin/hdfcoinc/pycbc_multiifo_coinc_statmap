@@ -103,7 +103,7 @@ all_trigs = pycbc.io.MultiifoStatmapData(files=args.coinc_files, ifos = args.ifo
 if 'ifos' in all_trigs.attrs:
     ifos = all_trigs.attrs['ifos'].split(' ')
     logging.info('using ifos from file {}'.format(args.coinc_files[0]))
-else: 
+else:
     ifos = args.ifos
     logging.info('using ifos from command line input')
 
@@ -151,6 +151,11 @@ f = fw(args.output_file)
 f.attrs['num_of_ifos'] = all_trigs.attrs['num_of_ifos']
 f.attrs['pivot'] = all_trigs.attrs['pivot']
 f.attrs['fixed'] = all_trigs.attrs['fixed']
+if 'ifos' in all_trigs.attrs:
+    f.attrs['ifos'] = all_trigs.attrs['ifos']
+else:
+    f.attrs['ifos'] = ' '.join(sorted(args.ifos))
+
 f.attrs['timeslide_interval'] = all_trigs.attrs['timeslide_interval']
 
 # Copy over the segment for coincs and singles
@@ -333,7 +338,7 @@ while numpy.any(louder_foreground == 0):
     # Remove the foreground trigger and all of the background triggers that
     # are associated with it.
 
-    ave_fore_time = 0
+    ave_rm_time = 0
     for ifo in args.ifos:
         ave_rm_time += all_trigs.data['%s/time' % ifo][rm_trig_idx] / len(args.ifos)
 

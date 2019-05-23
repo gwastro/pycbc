@@ -236,8 +236,8 @@ class TestChisq(unittest.TestCase):
         self.filter_t_length = 16
         self.low_freq_filter = 30.
         self.sample_rate = 16384
-        self.filter_N = self.filter_t_length * self.sample_rate
-        self.filter_n = self.filter_N / 2 + 1
+        self.filter_N = int(self.filter_t_length * self.sample_rate)
+        self.filter_n = int(self.filter_N / 2 + 1)
         self.filter_delta_f = 1.0 / self.filter_t_length
         self.psd = psd.from_string('aLIGOZeroDetHighPowerGWINC',
                                    self.filter_n, self.filter_delta_f,

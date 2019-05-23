@@ -55,7 +55,7 @@ b_tids[f.attrs['detector_1']] = f['background_exc/trigger_id1']
 b_tids[f.attrs['detector_2']] = f['background_exc/trigger_id2']
 
 f = h5py.File(args.single_trigger_file, 'r')
-ifo = f.keys()[0]
+ifo = tuple(f.keys())[0]
 f = f[ifo]
 tid = b_tids[ifo][:]
 bkg_snr = f['snr'][:][tid]

@@ -16,6 +16,8 @@
 
 """Calculate the fitting factors of simulated signals with a template bank."""
 
+from __future__ import print_function
+
 import sys
 import logging
 from numpy import complex64, float32, sqrt, argmax, real, array
@@ -45,9 +47,9 @@ from pycbc.waveform import TemplateBank
 
 def update_progress(progress):
     bar = '#' * (int(progress*100)/2) + ' ' * (50-int(progress*100)/2)
-    print '[{0}] {1:.2%}\r\r'.format(bar, progress),
+    print('[{0}] {1:.2%}\r\r'.format(bar, progress), end=' ')
     if progress == 1:
-        print('Done' + ' ' * 70)
+        print(('Done' + ' ' * 70))
     sys.stdout.flush()
 
 ## Remove the need for these functions ########################################

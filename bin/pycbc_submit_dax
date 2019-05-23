@@ -298,7 +298,7 @@ if [ $DATA_INLINE == "True" ] ; then
   expand_pegasus_files
   PEGASUS_FILE_DIRECTORY=${PWD}/pegasus_files
 elif [ -z $PEGASUS_FILE_DIRECTORY ] ; then
-  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print(PEGASUS_FILE_DIRECTORY)'`
 fi
 
 # Create the site catalog

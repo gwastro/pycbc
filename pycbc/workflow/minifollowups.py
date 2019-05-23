@@ -15,11 +15,17 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, os.path
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin
 import distutils.spawn
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
-from itertools import izip_longest
+try:
+    # Python 3
+    from itertools import zip_longest
+except ImportError:
+    # Python 2
+    from itertools import izip_longest as zip_longest
 from Pegasus import DAX3 as dax
 from pycbc.workflow import pegasus_workflow as wdax
 
@@ -27,7 +33,7 @@ def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
     """
     args = [iter(iterable)] * n
-    return izip_longest(*args, fillvalue=fillvalue)
+    return zip_longest(*args, fillvalue=fillvalue)
 
 def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
                        tmpltbank_file, insp_segs, insp_data_name,
@@ -78,8 +84,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
     exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 
@@ -172,8 +177,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
                      ifos=curr_ifo, out_dir=dax_output, tags=tags)
@@ -274,8 +278,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
     exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 
@@ -408,6 +411,8 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     files = FileList([])
     for tag in secs:
         for ifo in workflow.ifos:
+            if params['%s_end_time' % ifo] == -1.0:
+                continue
             # Reanalyze the time around the trigger in each detector
             node = SingleTemplateExecutable(workflow.cp, 'single_template',
                                             ifos=[ifo], out_dir=out_dir,
@@ -642,6 +647,15 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
             if trig_time in seg:
                 data_seg = seg
                 break
+            elif trig_time == -1.0:
+                node.add_opt('--gps-start-time', int(trig_time))
+                node.add_opt('--gps-end-time', int(trig_time))
+                node.add_opt('--center-time', trig_time)
+                caption_string = "'No trigger in %s'" % ifo
+                node.add_opt('--plot-caption', caption_string)
+                node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+                workflow += node
+                return node.output_files
         else:
             err_msg = "Trig time {} ".format(trig_time)
             err_msg += "does not seem to lie within any data segments. "
@@ -732,6 +746,18 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
             if trig_time in seg:
                 data_seg = seg
                 break
+            elif trig_time == -1.0:
+                node.add_opt('--gps-start-time', int(trig_time))
+                node.add_opt('--gps-end-time', int(trig_time))
+                node.add_opt('--center-time', trig_time)
+
+                if veto_file:
+                    node.add_input_opt('--veto-file', veto_file)
+
+                node.add_opt('--detector', single.ifo)
+                node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+                workflow += node
+                return node.output_files
         else:
             err_msg = "Trig time {} ".format(trig_time)
             err_msg += "does not seem to lie within any data segments. "

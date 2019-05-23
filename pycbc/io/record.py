@@ -22,13 +22,14 @@
 # =============================================================================
 #
 """
-This modules provides definitions of, and helper functions for, FieldArrays.
-FieldArrays are wrappers of numpy recarrays with additional functionality
+This modules provides definitions of, and helper functions for, FieldArray.
+FieldArray are wrappers of numpy recarrays with additional functionality
 useful for storing and retrieving data created by a search for gravitationa
 waves.
 """
 
 import os, sys, types, re, copy, numpy, inspect
+import six
 from six import string_types
 from glue.ligolw import types as ligolw_types
 from pycbc import coordinates, conversions, cosmology
@@ -104,16 +105,16 @@ def lstring_as_obj(true_or_false=None):
 
     Examples
     --------
-    >>> from pycbc.io import FieldArrays
-    >>> FieldArrays.lstring_as_obj()
+    >>> from pycbc.io import FieldArray
+    >>> FieldArray.lstring_as_obj()
         True
-    >>> FieldArrays.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
+    >>> FieldArray.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
     FieldArray([(0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,), (0.0,),
            (0.0,), (0.0,)],
           dtype=[('foo', 'O')])
-    >>> FieldArrays.lstring_as_obj(False)
+    >>> FieldArray.lstring_as_obj(False)
         False
-    >>> FieldArrays.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
+    >>> FieldArray.FieldArray.from_arrays([numpy.zeros(10)], dtype=[('foo', 'lstring')])
     FieldArray([('0.0',), ('0.0',), ('0.0',), ('0.0',), ('0.0',), ('0.0',),
            ('0.0',), ('0.0',), ('0.0',), ('0.0',)],
           dtype=[('foo', 'S50')])
@@ -295,7 +296,7 @@ def combine_fields(dtypes):
 
 def _ensure_array_list(arrays):
     """Ensures that every element in a list is an instance of a numpy array."""
-    # Note: the isinstance test is needed below so that instances of FieldArrays
+    # Note: the isinstance test is needed below so that instances of FieldArray
     # are not converted to numpy arrays
     return [numpy.array(arr, ndmin=1) if not isinstance(arr, numpy.ndarray)
             else arr for arr in arrays]
@@ -516,7 +517,7 @@ class FieldArray(numpy.recarray):
 
     * **Subfields and '.' indexing**:
       Structured arrays, which are the base class for recarrays and, by
-      inheritance, FieldArrays, allows for fields to themselves have fields. For
+      inheritance, FieldArray, allows for fields to themselves have fields. For
       example, an array ``x`` may have fields ``a`` and ``b``, with ``b`` having
       subfields ``c`` and ``d``. You can access subfields using other index
       notation or attribute notation. So, the subfields ``d`` may be retrieved
@@ -784,9 +785,13 @@ class FieldArray(numpy.recarray):
             pass
         # numpy has some issues with dtype field names that are unicode,
         # so we'll force them to strings here
-        if self.dtype.names is not None and \
-                any(isinstance(name, unicode) for name in obj.dtype.names):
-            self.dtype.names = map(str, self.dtype.names)
+        if six.PY2:
+            if self.dtype.names is not None and \
+                    any(isinstance(name, unicode) for name in obj.dtype.names):
+                self.dtype.names = map(str, self.dtype.names)
+            # We don't want to do this in python3 because a str *is* unicode,
+            # but maybe numpy in python3 is more lenient of this. Let's just
+            # wait and see if this becomes a problem in python3
 
     def __copy_attributes__(self, other, default=None):
         """Copies the values of all of the attributes listed in
@@ -1139,7 +1144,7 @@ class FieldArray(numpy.recarray):
         if cast_to_dtypes is not None:
             dtype = [cast_to_dtypes[col] for col in columns]
         else:
-            dtype = columns.items()
+            dtype = list(columns.items())
         # get the values
         if _default_types_status['ilwd_as_int']:
             input_array = \
@@ -1505,7 +1510,7 @@ def fields_from_names(fields, names=None):
 #
 # =============================================================================
 #
-#                           FieldArrays with default fields
+#                           FieldArray with default fields
 #
 # =============================================================================
 #
@@ -1560,12 +1565,11 @@ class _FieldArrayWithDefaults(FieldArray):
         parameters at initialization. Keyword arguments can be passed to this
         to set such dynamic fields.
         """
-        add_fields = {}
+        output = cls._staticfields.copy()
         if include_virtual:
-            add_fields.update(dict([[name, VIRTUALFIELD_DTYPE]
-                for name in cls._virtualfields]))
-        return dict(cls._staticfields.items() + add_fields.items())
-
+            output.update({name: VIRTUALFIELD_DTYPE
+                           for name in cls._virtualfields})
+        return output
 
     def __new__(cls, shape, name=None, additional_fields=None,
                 field_kwargs=None, **kwargs):

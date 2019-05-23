@@ -1,5 +1,6 @@
 # requirements for most basic library use
-astropy>=2.0.3,<3.0.0
+astropy>=2.0.3,<3.0.0; python_version <= '2.7'
+astropy>=2.0.3; python_version > '3.4'
 Mako>=1.0.1
 decorator>=3.4.2
 scipy>=0.16.0
@@ -9,21 +10,25 @@ pillow
 h5py>=2.5
 jinja2
 mpld3>=0.3
-lscsoft-glue>=1.59.3
-weave>=0.16.0
+weave>=0.16.0; python_version <= '2.7'
 requests>=1.2.1
 beautifulsoup4>=4.6.0
 six>1.10.0
 cython
 lalsuite
+lscsoft-glue>=1.59.3
 ligo-segments
+
+# Requirements for ligoxml access needed by some workflows
+python-ligo-lw
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
+cpnest
 
 # For LDG service access
 dqsegdb
-http://download.pegasus.isi.edu/pegasus/4.9.0/pegasus-python-source-4.9.0.tar.gz
+http://download.pegasus.isi.edu/pegasus/4.9.0/pegasus-python-source-4.9.0.tar.gz; python_version <= '2.7'
 amqplib
 
 # For building documentation

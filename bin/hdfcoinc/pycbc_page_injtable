@@ -42,7 +42,7 @@ else:
             i = ids[ifo]
             snr = f['snr'][:][i]
             chisq = f['chisq'][:][i] / (2 * f['chisq_dof'][:][i] - 2)
-            newsnr = pycbc.events.newsnr(snr, chisq)
+            newsnr = pycbc.events.ranking.newsnr(snr, chisq)
             
             found_names += ["%s SNR" % ifo, "CHISQ", "NewSNR"]
             found_cols += [snr, chisq, newsnr]

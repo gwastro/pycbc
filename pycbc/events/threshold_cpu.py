@@ -26,7 +26,7 @@ import numpy
 from pycbc import WEAVE_FLAGS
 from pycbc.weave import inline
 from .simd_threshold import thresh_cluster_support, default_segsize
-from .events import _BaseThresholdCluster
+from .eventmgr import _BaseThresholdCluster
 from pycbc.opt import omp_libs, omp_flags
 
 def threshold_numpy(series, value):

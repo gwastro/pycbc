@@ -54,7 +54,7 @@ def get_backend_modules():
     return _all_backends_dict.values()
 
 def get_backend_names():
-    return _all_backends_dict.keys()
+    return list(_all_backends_dict.keys())
 
 BACKEND_PREFIX="pycbc.fft.backend_"
 

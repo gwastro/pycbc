@@ -27,6 +27,7 @@ import argparse
 import numpy as np
 import matplotlib
 matplotlib.use('agg')
+from six.moves import range
 import pylab as pl
 import matplotlib.mlab as mlab
 from matplotlib.colors import LogNorm
@@ -72,8 +73,6 @@ opts = parser.parse_args()
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-opts.low_frequency_cutoff = opts.f_low
-strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.center_time is None:
     center_time = (opts.gps_start_time + opts.gps_end_time) / 2.
@@ -84,6 +83,32 @@ fig = pl.figure(figsize=(11,5.5))
 fig.subplots_adjust(left=0.06, right=0.95, bottom=0.09, top=0.95)
 ax = fig.gca()
 
+if center_time == -1.0:
+    title = '%s - no triggers' % opts.detector
+    ax.set_xlim(opts.gps_start_time - center_time, opts.gps_end_time - center_time)
+    ax.set_ylim(opts.f_low, opts.sample_rate / 2)
+    ax.set_yscale('log')
+    ax.grid(ls='solid', alpha=0.2)
+    ax.set_xlabel('Time - %.3f (s)' % center_time)
+    ax.set_ylabel('Frequency (Hz)')
+    ax.set_title(title)
+    caption = ("This plot shows the power spectrogram of the strain data, "
+               "normalized to its median over time, as a heatmap. The "
+               "time-frequency evolution of each single trigger is shown as a blue "
+               "curve. The light-blue curve is the loudest trigger by %s. Only the "
+               "loudest %d triggers by %s are shown. Green hatched areas denote "
+               "gated strain data. Red hatched areas denote vetoed time.") % \
+    (opts.rank, opts.num_loudest, opts.rank)
+    pycbc.results.save_fig_with_metadata(
+        fig, opts.output_file, cmd=' '.join(sys.argv),
+        title='Strain spectrogram and inspiral tracks for %s' % opts.detector,
+        caption=caption, fig_kwds={'dpi': 100})
+
+    logging.info('Done')
+    sys.exit(0)
+
+opts.low_frequency_cutoff = opts.f_low
+strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 logging.info('Plotting strain spectrogram')
 Pxx, freq, t = mlab.specgram(strain, NFFT=1024, noverlap=1000,
                              Fs=opts.sample_rate, mode='psd')
@@ -131,7 +156,7 @@ if len(indices) > 0:
         rank = snr
     elif opts.rank == 'newsnr':
         rchisq = chisq / (chisq_dof * 2 - 2)
-        rank = pycbc.events.newsnr(snr, rchisq)
+        rank = pycbc.events.ranking.newsnr(snr, rchisq)
         if type(rank) in [np.float32, np.float64]:
             rank = np.array([rank])
         del rchisq
@@ -143,7 +168,7 @@ if len(indices) > 0:
     sorted_template_ids = template_ids[sorter]
 
     try:
-        max_rank = max([sorted_rank[i] for i in xrange(len(sorted_rank)) \
+        max_rank = max([sorted_rank[i] for i in range(len(sorted_rank)) \
                         if sorted_end_time[i] <= opts.gps_end_time])
     except ValueError:
         max_rank = None
@@ -158,9 +183,9 @@ if len(indices) > 0:
     logging.info('Plotting %d trigs', len(sorted_end_time))
     for tc, rho, tid in zip(sorted_end_time, sorted_rank, sorted_template_ids):
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
-                tc - center_time, tmplts.mass1[tid], tmplts.mass2[tid],
-                tmplts.spin1z[tid], tmplts.spin2z[tid],
-                opts.f_low, approximant=bank.approximant(tid))
+                    tc - center_time, tmplts.mass1[tid], tmplts.mass2[tid],
+                    tmplts.spin1z[tid], tmplts.spin2z[tid],
+                    opts.f_low, approximant=bank.approximant(tid))
         if max_rank and rho == max_rank:
             ax.plot(track_t, track_f, '-', color='#0080ff', zorder=3, lw=2)
         else:
@@ -182,13 +207,13 @@ if len(indices) > 0:
 
     if max_rank:
         title = '%s - loudest %d triggers by %s - max %s = %.2f (light blue curve)' \
-            % (opts.channel_name, opts.num_loudest, opts.rank, opts.rank, max_rank)
+        % (opts.channel_name, opts.num_loudest, opts.rank, opts.rank, max_rank)
     else:
         title = '%s - loudest %d triggers by %s' \
-            % (opts.channel_name, opts.num_loudest, opts.rank)
+        % (opts.channel_name, opts.num_loudest, opts.rank)
     if interesting_trig_rank is not None:
         title += ' - selected %s = %.2f (green curve)' \
-            % (opts.rank, interesting_trig_rank)
+        % (opts.rank, interesting_trig_rank)
 else:
     title = '%s - no triggers' % opts.channel_name
 
@@ -211,7 +236,7 @@ for gate_type, hatch_style in [('file', '\\'), ('auto', '/')]:
 if opts.veto_file:
     logging.info('Loading and plotting veto segments')
     veto_segs = pycbc.events.veto.select_segments_by_definer(
-            opts.veto_file, ifo=opts.detector)
+        opts.veto_file, ifo=opts.detector)
     veto_segs.coalesce()
     for seg in veto_segs:
         if seg[0] > opts.gps_end_time or seg[1] < opts.gps_start_time:
@@ -238,8 +263,8 @@ caption = ("This plot shows the power spectrogram of the strain data, "
            "gated strain data. Red hatched areas denote vetoed time.") % \
         (opts.rank, opts.num_loudest, opts.rank)
 pycbc.results.save_fig_with_metadata(
-        fig, opts.output_file, cmd=' '.join(sys.argv),
-        title='Strain spectrogram and inspiral tracks for %s' % opts.detector,
-        caption=caption, fig_kwds={'dpi': 100})
+    fig, opts.output_file, cmd=' '.join(sys.argv),
+    title='Strain spectrogram and inspiral tracks for %s' % opts.detector,
+    caption=caption, fig_kwds={'dpi': 100})
 
 logging.info('Done')

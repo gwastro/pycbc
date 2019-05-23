@@ -17,10 +17,7 @@
 """
 
 import logging
-from ConfigParser import NoSectionError, NoOptionError
-
 import numpy
-
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
 from pycbc.waveform import generator
@@ -88,16 +85,19 @@ class GaussianNoise(BaseDataModel):
         values are the data (assumed to be unwhitened). The list of keys must
         match the waveform generator's detectors keys, and the epoch of every
         data set must be the same as the waveform generator's epoch.
-    low_frequency_cutoff : float
-        The starting frequency to use for computing inner products.
-        Must be specified in the config file under section [model].
+    low_frequency_cutoff : dict
+        A dictionary of starting frequencies, in which the keys are the
+        detector names and the values are the starting frequencies for the
+        respective detectors to be used for computing inner products.
     psds : {None, dict}
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
         dictionary. If provided, the inner products in each detector will be
         weighted by 1/psd of that detector.
-    high_frequency_cutoff : float, optional
-        The ending frequency to use for computing inner products. If not
+    high_frequency_cutoff : dict, optional
+        A dictionary of ending frequencies, in which the keys are the
+        detector names and the values are the ending frequencies for the
+        respective detectors to be used for computing inner products. If not
         provided, the minimum of the largest frequency stored in the data
         and a given waveform will be used.
     norm : {None, float or array}
@@ -134,9 +134,9 @@ class GaussianNoise(BaseDataModel):
     >>> signal = generator.generate(tc=tsig)
     >>> psd = pypsd.aLIGOZeroDetHighPower(N, 1./seglen, 20.)
     >>> psds = {'H1': psd, 'L1': psd}
-    >>> model = GaussianNoise(variable_params, signal, fmin, psds=psds,
-    ...                       static_params=static_params)
-
+    >>> low_frequency_cutoff = {'H1': fmin, 'L1': fmin}
+    >>> model = GaussianNoise(variable_params, signal, low_frequency_cutoff,
+                              psds=psds, static_params=static_params)
     Set the current position to the coalescence time of the signal:
 
     >>> model.update(tc=tsig)
@@ -196,7 +196,7 @@ class GaussianNoise(BaseDataModel):
     >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior = distributions.JointDistribution(variable_params, uniform_prior)
     >>> model = pycbc.inference.models.GaussianNoise(variable_params,
-    ...     signal, generator, 20., psds=psds, prior=prior)
+    ...     signal, generator, low_frequency_cutoff, psds=psds, prior=prior)
     >>> model.update(tc=tsig)
     >>> print('{:.2f}'.format(model.logplr))
     283.21
@@ -221,6 +221,16 @@ class GaussianNoise(BaseDataModel):
         super(GaussianNoise, self).__init__(variable_params, data,
                                             static_params=static_params,
                                             **kwargs)
+        # check if low frequency cutoff has been provided for every IFO.
+        if set(low_frequency_cutoff.keys()) != set(self.data.keys()):
+            raise KeyError("IFOs for which data has been provided should "
+                           "match IFOs for which low-frequency-cutoff has "
+                           "been provided for likelihood inner product "
+                           "calculation. If loading the model settings from "
+                           "a config file, please provide an "
+                           "`IFO-low-frequency-cutoff` input for each "
+                           "detector in the `[model]` section, where IFO is "
+                           "the name of the detector.")
         # create the waveform generator
         self._waveform_generator = create_waveform_generator(
             self.variable_params, self.data, recalibration=self.recalibration,
@@ -234,11 +244,16 @@ class GaussianNoise(BaseDataModel):
         N = len(d)
         # Set low frequency cutoff
         self._f_lower = low_frequency_cutoff
-        self._f_upper = high_frequency_cutoff
-        kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower, self._f_upper,
-                                                 d.delta_f, (N-1)*2)
-        self._kmin = kmin
-        self._kmax = kmax
+        self._f_upper = {}
+        if high_frequency_cutoff is not None and bool(high_frequency_cutoff):
+            for det in self._data:
+                if det in high_frequency_cutoff:
+                    self._f_upper[det] = high_frequency_cutoff[det]
+                else:
+                    self._f_upper[det] = None
+        else:
+            for det in self._data.keys():
+                self._f_upper[det] = None
         if norm is None:
             norm = 4*d.delta_f
         # we'll store the weight to apply to the inner product
@@ -254,9 +269,16 @@ class GaussianNoise(BaseDataModel):
             self._weight = {det: Array(numpy.sqrt(norm/psds[det]))
                             for det in data}
             numpy.seterr(**numpysettings)
-        # whiten the data
+        self._kmin = {}
+        self._kmax = {}
         for det in self._data:
+            # whiten the data
+            kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
+                                                     self._f_upper[det],
+                                                     d.delta_f, (N-1)*2)
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
+            self._kmin[det] = kmin
+            self._kmax[det] = kmax
 
     @property
     def waveform_generator(self):
@@ -292,8 +314,8 @@ class GaussianNoise(BaseDataModel):
         except AttributeError:
             det_lognls = {}
             for (det, d) in self._data.items():
-                kmin = self._kmin
-                kmax = self._kmax
+                kmin = self._kmin[det]
+                kmax = self._kmax[det]
                 det_lognls[det] = -0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
             self.__det_lognls = det_lognls
             self.__lognl = sum(det_lognls.values())
@@ -334,16 +356,16 @@ class GaussianNoise(BaseDataModel):
         lr = 0.
         for det, h in wfs.items():
             # the kmax of the waveforms may be different than internal kmax
-            kmax = min(len(h), self._kmax)
-            if self._kmin >= kmax:
+            kmax = min(len(h), self._kmax[det])
+            if self._kmin[det] >= kmax:
                 # if the waveform terminates before the filtering low frequency
                 # cutoff, then the loglr is just 0 for this detector
                 cplx_hd = 0j
                 hh = 0.
             else:
-                slc = slice(self._kmin, kmax)
+                slc = slice(self._kmin[det], kmax)
                 # whiten the waveform
-                h[self._kmin:kmax] *= self._weight[det][slc]
+                h[self._kmin[det]:kmax] *= self._weight[det][slc]
                 # the inner products
                 cplx_hd = self.data[det][slc].inner(h[slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
@@ -453,9 +475,6 @@ class GaussianNoise(BaseDataModel):
             The inference file to write to.
         """
         super(GaussianNoise, self).write_metadata(fp)
-        fp.attrs['low_frequency_cutoff'] = self.low_frequency_cutoff
-        if self.high_frequency_cutoff is not None:
-            fp.attrs['high_frequency_cutoff'] = self.high_frequency_cutoff
         if self._psds is not None:
             fp.write_psd(self._psds)
         try:
@@ -466,7 +485,16 @@ class GaussianNoise(BaseDataModel):
             attrs = fp[fp.samples_group].attrs
         attrs['lognl'] = self.lognl
         for det in self.detectors:
+            # Save lognl for each IFO as attributes in the samples group
             attrs['{}_lognl'.format(det)] = self.det_lognl(det)
+            # Save each IFO's low frequency cutoff used in the likelihood
+            # computation as an attribute
+            fp.attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
+            # Save the IFO's high frequency cutoff used in the likelihood
+            # computation as an attribute if one was provided the user
+            if self._f_upper[det] is not None:
+                fp.attrs['{}_likelihood_high_freq'.format(det)] = \
+                                                        self._f_upper[det]
 
     @classmethod
     def from_config(cls, cp, **kwargs):
@@ -484,7 +512,11 @@ class GaussianNoise(BaseDataModel):
         args['low_frequency_cutoff'] = low_frequency_cutoff_from_config(cp)
         args['high_frequency_cutoff'] = high_frequency_cutoff_from_config(cp)
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'low-frequency-cutoff', 'high-frequency-cutoff']
+        ignore_args = ['name']
+        for option in cp.options("model"):
+            if any([option.endswith("-low-frequency-cutoff"),
+                    option.endswith("-high-frequency-cutoff")]):
+                ignore_args.append(option)
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
         args.update(kwargs)
@@ -555,11 +587,13 @@ def create_waveform_generator(variable_params, data,
 
 
 def low_frequency_cutoff_from_config(cp):
-    """Gets the low frequency cutoff from the given config file.
+    """Gets the low frequency cutoff for all detectors to be used from the
+    given config file.
 
-    This looks for ``low-frequency-cutoff`` in the ``[model]`` section and
-    casts it to float. If none is found, or the casting to float fails, an
-    error is raised.
+    The low-frequency-cutoff for each detector should be provided using an
+    option ``IFO-low-frequency-cutoff`` in the ``[model]`` section, where IFO
+    is the name of the detector. The low frequency cutoff value is then casted
+    to float. If the casting to float fails, an error is raised.
 
     Parameters
     ----------
@@ -568,30 +602,30 @@ def low_frequency_cutoff_from_config(cp):
 
     Returns
     -------
-    float :
-        The low frequency cutoff.
+    dict :
+        Dictionary with the IFO names as the keys and the respective low
+        frequency cutoffs to be used in the likelihood calculation as the
+        values.
     """
-    try:
-        low_frequency_cutoff = float(
-            cp.get('model', 'low-frequency-cutoff'))
-    except (NoOptionError, NoSectionError) as e:
-        logging.warning("Low frequency cutoff for calculation of inner "
-                        "product needs to be specified in config file "
-                        "under section 'model'")
-        raise e
-    except Exception as e:
-        # everything the float() can throw
-        logging.warning("Low frequency cutoff could not be "
-                        "converted to float ")
-        raise e
+    low_frequency_cutoff = {}
+    for option in cp.options("model"):
+        if option.endswith("-low-frequency-cutoff"):
+            ifo = option.rsplit("-low-frequency-cutoff")[0].upper()
+            try:
+                low_frequency_cutoff[ifo] = float(cp.get("model", option))
+            except Exception as e:
+                logging.warning("Low frequency cutoff of %s could not be "
+                                "converted to float", ifo)
+                raise e
     return low_frequency_cutoff
 
 
 def high_frequency_cutoff_from_config(cp):
-    """Gets the high frequency cutoff from the given config file.
+    """Gets the high frequency cutoff, if one is provided for a detector from
+    the given config file for likelihood computation.
 
-    This looks for ``high-frequency-cutoff`` in the ``[model]`` section and
-    casts it to float. If none is found, will just return ``None``.
+    This looks for options ``IFO-high-frequency-cutoff`` in the ``[model]``
+    section, where IFO is the name of the detector, and casts it to float.
 
     Parameters
     ----------
@@ -600,12 +634,20 @@ def high_frequency_cutoff_from_config(cp):
 
     Returns
     -------
-    float or None :
-        The high frequency cutoff.
+    dict or None :
+        Dictionary with the IFO names as the keys and the respective high
+        frequency cutoffs to be used in the likelihood calculation as the
+        values. If high frequency cutoffs for no detectors are provided,
+        returns an empty dictionary.
     """
-    if cp.has_option('model', 'high-frequency-cutoff'):
-        high_frequency_cutoff = float(
-            cp.get('model', 'high-frequency-cutoff'))
-    else:
-        high_frequency_cutoff = None
+    high_frequency_cutoff = {}
+    for option in cp.options("model"):
+        if option.endswith("-high-frequency-cutoff"):
+            ifo = option.rsplit("-high-frequency-cutoff")[0].upper()
+            try:
+                high_frequency_cutoff[ifo] = float(cp.get("model", option))
+            except Exception as e:
+                logging.warning("High frequency cutoff of %s could not be "
+                                "converted to float", ifo)
+                raise e
     return high_frequency_cutoff

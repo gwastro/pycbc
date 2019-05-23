@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 import argparse
+from six import string_types
 from .base_mcmc import (MCMCMetadataIO, thin_samples_for_writing)
 import numpy
 
@@ -43,7 +44,7 @@ class ParseTempsArg(argparse.Action):
         super(ParseTempsArg, self).__init__(type=type, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        singlearg = isinstance(values, (str, unicode))
+        singlearg = isinstance(values, string_types)
         if singlearg:
             values = [values]
         if values[0] == 'all':
@@ -123,7 +124,7 @@ class MultiTemperedMCMCIO(object):
             attribute is > 1, this is needed to determine where to start
             thinning the samples to match what has already been stored on disk.
         """
-        ntemps, nwalkers, niterations = samples.values()[0].shape
+        ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
         assert all(p.shape == (ntemps, nwalkers, niterations)
                    for p in samples.values()), (
                "all samples must have the same shape")
@@ -198,7 +199,7 @@ class MultiTemperedMCMCIO(object):
             An instance of the given array class populated with values
             retrieved from the fields.
         """
-        if isinstance(fields, (str, unicode)):
+        if isinstance(fields, string_types):
             fields = [fields]
         # walkers to load
         if walkers is not None:

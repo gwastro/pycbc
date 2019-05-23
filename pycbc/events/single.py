@@ -1,6 +1,6 @@
 """ utilities for assigning FAR to single detector triggers
 """
-from pycbc.events import newsnr
+from pycbc.events import ranking
 from pycbc.types import MultiDetOptionAction
 
 class LiveSingleFarThreshold(object):
@@ -17,13 +17,13 @@ class LiveSingleFarThreshold(object):
 
     @staticmethod
     def insert_args(parser):
-        parser.add_argument('--single-newsnr-threshold',
+        parser.add_argument('--single-newsnr-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--single-reduced-chisq-threshold',
+        parser.add_argument('--single-reduced-chisq-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--single-fixed-ifar',
+        parser.add_argument('--single-fixed-ifar', nargs='+',
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--single-duration-threshold',
+        parser.add_argument('--single-duration-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
 
     @classmethod
@@ -46,7 +46,7 @@ class LiveSingleFarThreshold(object):
         # This uses the pycbc live convention of chisq always meaning the
         # reduced chisq.
         rchisq = triggers['chisq'][i]
-        nsnr = newsnr(triggers['snr'][i], rchisq)
+        nsnr = ranking.newsnr(triggers['snr'][i], rchisq)
         dur = triggers['template_duration'][i]
 
         if nsnr > self.newsnr_threshold and \
