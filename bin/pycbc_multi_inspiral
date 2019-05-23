@@ -220,9 +220,10 @@ def coincident_snr(snr_dict, index, threshold):
                         for ifo in coinc_triggers.keys()])
     rho_coinc = np.sqrt(np.sum(snr_array * snr_array.conj(),axis=0))
     #Apply threshold
-    index = index[rho_coinc > threshold]
+    thresh_indexes = rho_coinc > threshold
+    index = index[thresh_indexes]
     coinc_triggers = {ifo : snr_dict[ifo][index] for ifo in snr_dict.keys()}
-    rho_coinc = rho_coinc[rho_coinc > threshold]
+    rho_coinc = rho_coinc[thresh_indexes]
     return rho_coinc, index, coinc_triggers
 
 def null_snr(rho_coh, rho_coinc, null_min=5.25, null_grad=0.2, null_step=20.,
