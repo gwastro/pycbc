@@ -458,9 +458,10 @@ with ctx:
             for ifo in opt.instruments:
                 if not inj_filter_rejector[ifo].template_segment_checker(
                         bank, t_num, stilde[ifo], opt.gps_start_time[ifo]):
-                    logging.info("Skipping segment %d/%d as no detectable "
-                                 "injection is present" % (s_num + 1,
-                                 len(segments[ifo])))
+                    logging.info("Skipping segment %d/%d with template %d/%d"
+                                 " as no detectable injection is present"
+                                 % (s_num + 1, len(segments[ifo]),
+                                 t_num + 1, len(bank)))
                     analyse_segment = False
             #Find detector sensitivities (sigma) and make array of normalised
             sigmasq = {ifo : template.sigmasq(segments[ifo][s_num].psd)
@@ -597,7 +598,7 @@ with ctx:
                             coherent_ifo_triggers[ifo] / norm_dict[ifo],
                             norm_dict[ifo],
                             stilde[ifo].psd,
-                            coinc_idx + stilde[ifo].analyze.start, template)
+                            coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start, template)
                     ifo_out_vals['time_index'] = coinc_idx_det_frame[ifo] + \
                         stilde[ifo].cumulative_index
                     ifo_out_vals['snr'] = coherent_ifo_triggers[ifo]
