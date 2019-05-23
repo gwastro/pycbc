@@ -116,31 +116,31 @@ def insert_injfilterrejector_option_group_multi_ifo(parser):
         parser.add_argument_group(_injfilterrejector_group_help)
     curr_arg = "--injection-filter-rejector-chirp-time-window"
     injfilterrejector_group.add_argument(
-        curr_arg, type=float, default=None, nargs='+',
+        curr_arg, type=float, default=None, nargs='+', metavar='IFO:VALUE',
         action=MultiDetOptionAction, help=_injfilterer_cthresh_help)
     curr_arg = "--injection-filter-rejector-match-threshold"
     injfilterrejector_group.add_argument(
-        curr_arg, type=float, default=None, nargs='+',
+        curr_arg, type=float, default=None, nargs='+', metavar='IFO:VALUE',
         action=MultiDetOptionAction, help=_injfilterer_mthresh_help)
     curr_arg = "--injection-filter-rejector-coarsematch-deltaf"
     injfilterrejector_group.add_argument(
-        curr_arg, type=float, default=1., nargs='+',
+        curr_arg, type=float, default=1., nargs='+', metavar='IFO:VALUE',
         action=MultiDetOptionAction, help=_injfilterer_deltaf_help)
     curr_arg = "--injection-filter-rejector-coarsematch-fmax"
     injfilterrejector_group.add_argument(
-        curr_arg, type=float, default=256., nargs='+',
+        curr_arg, type=float, default=256., nargs='+', metavar='IFO:VALUE',
         action=MultiDetOptionAction, help=_injfilterer_fmax_help)
     curr_arg = "--injection-filter-rejector-seg-buffer"
     injfilterrejector_group.add_argument(
-        curr_arg, type=int, default=10, nargs='+',
+        curr_arg, type=int, default=10, nargs='+', metavar='IFO:VALUE',
         action=MultiDetOptionAction, help=_injfilterer_buffer_help)
     curr_arg = "--injection-filter-rejector-f-lower"
     injfilterrejector_group.add_argument(
-        curr_arg, type=int, default=None, help=_injfilterer_flower_help)
+        curr_arg, type=int, default=None, help=_injfilterer_flower_help,
+        metavar='IFO:VALUE', action=MultiDetOptionAction, nargs='+')
 
 
 class InjFilterRejector(object):
-
     """Class for holding parameters for using injection/template pre-filtering.
 
     This class is responsible for identifying where a matched-filter operation
@@ -217,12 +217,11 @@ class InjFilterRejector(object):
             #       need some editing if using this in multi_inspiral, which I
             #       leave for future work, or if this is being used in another
             #       code which doesn't have --low-frequency-cutoff
-            f_lower = opt.low_frequency_cutoff[ifo]
-        return cls(injection_file[ifo], chirp_time_window[ifo],
-                   match_threshold[ifo], f_lower[ifo],
-                   coarsematch_deltaf=coarsematch_deltaf[ifo],
-                   coarsematch_fmax=coarsematch_fmax[ifo],
-                   seg_buffer=seg_buffer[ifo])
+            f_lower = opt.low_frequency_cutoff
+        return cls(injection_file, chirp_time_window,
+                   match_threshold, f_lower,
+                   coarsematch_deltaf, coarsematch_fmax,
+                   seg_buffer=seg_buffer)
 
     @classmethod
     def from_cli_multi_ifos(cls, opt, ifos):

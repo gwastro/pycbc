@@ -114,7 +114,7 @@ fft.insert_fft_option_group(parser)
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 pycbc.opt.insert_optimization_option_group(parser)
 pycbc.weave.insert_weave_option_group(parser)
-pycbc.inject.insert_injfilterrejector_option_group(parser)
+pycbc.inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()
 
@@ -139,6 +139,7 @@ fft.verify_fft_options(opt,parser)
 log_level = logging.DEBUG if opt.verbose else logging.INFO
 logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
+inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli_multi_ifos(opt,opt.instruments)
 ctx = scheme.from_cli(opt)
 
 def get_weighted_antenna_patterns(Fp_dict, Fc_dict, sigma_dict):
@@ -286,8 +287,10 @@ def get_coinc_indexes(idx_dict, time_delay_idx):
                    np.unique(coinc_list, return_counts=True)[1]>1]
     return coinc_idx
 
-strain_dict = strain.from_cli_multi_ifos(opt, opt.instruments,
-                                         dyn_range_fac=DYN_RANGE_FAC)
+strain_dict = strain.from_cli_multi_ifos(
+    opt, opt.instruments, inj_filter_rejector,
+    dyn_range_fac=DYN_RANGE_FAC
+    )
 strain_segments_dict = strain.StrainSegments.from_cli_multi_ifos(
                          opt, strain_dict, opt.instruments)
 with ctx:
@@ -417,6 +420,19 @@ with ctx:
                                low_frequency_cutoff=flow, phase_order=opt.order,
                                taper=opt.taper_template,
                                approximant=opt.approximant, out=template_mem)
+
+    # Use injfilterrejector to reduce the bank to only those templates that
+    # might actually find something
+    ntemplates = len(bank)
+    nfilters = 0
+
+    logging.info("Full template bank size: %s", ntemplates)
+    for ifo in opt.instruments:
+        bank.template_thinning(inj_filter_rejector[ifo])
+    if not len(bank) == ntemplates:
+        logging.info("Template bank size after thinning: %s", len(bank))
+
+
     Fp = {} #Antenna patterns
     Fc = {}
     for ifo in opt.instruments:
@@ -434,17 +450,30 @@ with ctx:
 
         #Loop over segments
         for s_num,stilde in enumerate(segments[opt.instruments[0]]):
-            logging.info("Analyzing segment %d/%d" % (s_num + 1,
-                                                     len(segments[ifo])))
+            stilde = {ifo : segments[ifo][s_num] for ifo in opt.instruments}
+            # Filter check checks the 'inj_filter_rejector' options to
+            # determine whether to filter this template/segment 
+            # if injections are present.
+            analyse_segment = True
+            for ifo in opt.instruments:
+                if not inj_filter_rejector[ifo].template_segment_checker(
+                        bank, t_num, stilde[ifo], opt.gps_start_time[ifo]):
+                    logging.info("Skipping segment %d/%d with template %d/%d"
+                                 " as no detectable injection is present"
+                                 % (s_num + 1, len(segments[ifo]),
+                                 t_num + 1, len(bank)))
+                    analyse_segment = False
             #Find detector sensitivities (sigma) and make array of normalised
             sigmasq = {ifo : template.sigmasq(segments[ifo][s_num].psd)
                       for ifo in opt.instruments}
             sigma = {ifo : np.sqrt(sigmasq[ifo]) for ifo in opt.instruments}
-            stilde = {ifo : segments[ifo][s_num] for ifo in opt.instruments}
-            # Every time s_num is zero, we run new template to increment the
-            # template index
+            # Every time s_num is zero or we skip the segment, we run new 
+            # template to increment the template index
             if s_num==0:
                 event_mgr.new_template(tmplt=template.params, sigmasq=sigmasq)
+            if not analyse_segment: continue
+            logging.info("Analyzing segment %d/%d" % (s_num + 1,
+                                                     len(segments[ifo])))
             snrv_dict = {}
             norm_dict = {}
             corr_dict = {}
@@ -569,7 +598,7 @@ with ctx:
                             coherent_ifo_triggers[ifo] / norm_dict[ifo],
                             norm_dict[ifo],
                             stilde[ifo].psd,
-                            coinc_idx + stilde[ifo].analyze.start, template)
+                            coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start, template)
                     ifo_out_vals['time_index'] = coinc_idx_det_frame[ifo] + \
                         stilde[ifo].cumulative_index
                     ifo_out_vals['snr'] = coherent_ifo_triggers[ifo]
