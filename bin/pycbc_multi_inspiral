@@ -190,7 +190,8 @@ def coherent_snr(snr_triggers, index, threshold, projection_matrix,
             coinc_snr: Optional- The coincident snr for each trigger.
     """
     #Calculate rho_coh
-    snr_array = np.array([snr_triggers[ifo] for ifo in snr_triggers.keys()])
+    snr_array = np.array([snr_triggers[ifo]
+                         for ifo in sorted(snr_triggers.keys())])
     x = np.inner(snr_array.conj().transpose(),projection_matrix)
     rho_coh2 = sum(x.transpose()*snr_array)
     rho_coh = np.sqrt(rho_coh2)
