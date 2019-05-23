@@ -332,7 +332,7 @@ class _HDFInjectionSet(object):
     _tableclass = pycbc.io.FieldArray
     injtype = None
 
-    def __init__(self, sim_file, hdf_group=None, extract_single_inj=None, **kwds):
+    def __init__(self, sim_file, hdf_group=None, n_injections=None, **kwds):
         # open the file
         fp = h5py.File(sim_file, 'r')
         group = fp if hdf_group is None else fp[hdf_group]
@@ -349,34 +349,45 @@ class _HDFInjectionSet(object):
                              "injection")
         # get all injection parameter values
         injvals = {param: group[param][()] for param in parameters}
+        
         # make sure a coalescence time is specified for injections
         # TODO: also check in static-args
         # We assume injvals are either (floats and 1D-arrays) for a single
         # injection or (1D-arrays and 2D-arrays) for multiple. 
-
+        
         # if there were no variable args, then we only have a single injection
-        if len(parameters) == 0:
+        if n_injections is not None:
+            numinj = n_injections
+        elif len(parameters) == 0:
             numinj = 1
-        elif isinstance(injvals['tc'][()], (int, float)):
-            numinj = 1
-        elif isinstance(injvals['tc'][()], np.ndarray):
-            numinj = len(injvals['tc'][()])
-        
-        if extract_single_inj is not None:
-            if extract_single_inj > numinj - 1:
-                raise ValueError("Cannot extract single injection from file.")
-            elif numinj == 1:
-                pass
-            else:
-                injvals = {param:group[param][single_inj] for param in parameters}
+        # determine number of injections from variable params.
+        # this assumes that if only arrays are given, they have the length of 
+        # the number of injections. It fails if a single injection is given where
+        # the only variable params are arrays.         
+        else:
+            types = {param: type(injvals[param]) for param in parameters}
+            if any(t is not np.ndarray for t in types.values()):
                 numinj = 1
+            else:
+                numinj = injvals[0].shape[0]
+                for param in parameters:
+                    if injvals[param].shape[0] is not numinj:
+                        raise ValueError("Injection number mismatch.")
         
+        # if parameter of individual injection is array, store it as object, 
+        # to prevent shape mismatch between fields. 
         for param in parameters:
-            if injvals[param].ndim > 1:
-                arr = np.empty(numinj, dtype=object)
-                for ii in range(numinj):
-                    arr[ii] = injvals[param][ii,:]
-                injvals[param] = arr
+            if type(injvals[param] == np.ndarray):
+                if numinj == 1 and injvals[param].ndim >=1:
+                    arr = np.empty(numinj, dtype=object)
+                    for ii in range(numinj):
+                        arr[ii] = injvals[param][()]
+                    injvals[param] = arr
+                elif injvals[param].ndim > 1:
+                    arr = np.empty(numinj, dtype=object)
+                    for ii in range(numinj):
+                        arr[ii] = injvals[param][ii]
+                    injvals[param] = arr
         
         parameters.extend(self.static_args)
         # we'll expand the static args to be arrays with the same size as
@@ -398,7 +409,7 @@ class _HDFInjectionSet(object):
         self.table = self._tableclass.from_kwargs(**injvals)
         # save the extra arguments
         self.extra_args = kwds
-
+    
     @abstractmethod
     def apply(self, strain, detector_name, distance_scale=1,
               simulation_ids=None, inj_filter_rejector=None,

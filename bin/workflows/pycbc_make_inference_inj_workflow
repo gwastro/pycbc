@@ -192,7 +192,7 @@ if 'pp-plot-parameters' in workflow.cp.options("workflow-inference"):
         'pp-plot-parameters', 'inference'))
 else:
     # just use the variable params
-    pp_plot_params = workflow.cp.options(cp.options("variable_params"))
+    pp_plot_params = cp.options("variable_params")
 
 # get groups of parameters to plot in posterior and samples plots
 plot_groups = {}
@@ -224,21 +224,24 @@ if injection_input:
     os.mkdir("injections")
     
     # split injections into one file per injection
-    
+
     n_total_injections = 0
     for i_injfile in range(len(injection_input)):
-        input_injset = InjectionSet(injection_input[i_injfile])
-        print(input_injset.table)
-        if isinstance(input_injset.table['tc'], (int, float):
-            local_n_injections = 1
-        elif isinstance(input_injset.table['tc'], numpy.ndarray):
-            local_n_injections = len(input_injset.table['tc'])
-        for i in range(local_n_injections):
-            output_injset = InjectionSet(injection_input[i_injfile], 
-                                extract_single_inj=i)
-            output_injset.write(
-                    'injections/injection%s.hdf' %(i+n_total_injections),
-                    samples=output_injset.table)
+        with h5py.File(injection_input[i_injfile], "r") as inputfile:
+            local_n_injections = n_injections
+            for i in range(local_n_injections):
+                with h5py.File(
+                    'injections/injection%s.hdf' %(i+n_total_injections), 'w'
+                    ) as inj:
+                    for k in inputfile.keys():
+                        inj.create_dataset(k,data=inputfile[k][i])
+                    for k in inputfile.attrs.keys():
+                        inj.attrs[k] = inputfile.attrs[k]
+                injection_files.append(
+                    core.File.from_path(
+                    'injections/injection%s.hdf' %(i+n_total_injections)
+                    ))
+            n_total_injections += local_n_injections
 
 for i in range(n_injections):
     
