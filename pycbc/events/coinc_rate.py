@@ -37,7 +37,6 @@ def multiifo_noise_coinc_rate(rates, slop):
     """
 
     ifos = numpy.array(sorted(rates.keys()))
-    rates_raw = list(rates[ifo] for ifo in ifos)
     expected_coinc_rates = {}
 
     # Calculate coincidence for all-ifo combination
@@ -60,6 +59,7 @@ def multiifo_noise_coinc_rate(rates, slop):
                 expected_coinc_rates[sub_coinc] = sub_coinc_rates[sub_coinc]
 
     return expected_coinc_rates
+
 
 def combination_noise_coinc_rate(rates, slop):
     """
@@ -91,6 +91,7 @@ def combination_noise_coinc_rate(rates, slop):
     combo_coinc_rate = allowed_area * numpy.array(rateprod)
 
     return combo_coinc_rate
+
 
 def multiifo_noise_coincident_area(ifos, slop):
     """

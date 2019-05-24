@@ -458,7 +458,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / 2.**0.5
 
-    def coinc_multiifo(self, s, slide, step, **kwargs): # pylint:disable=unused-argument
+    def coinc_multiifo(self, s, slide,
+                       step, **kwargs): # pylint:disable=unused-argument
         # scale by 1/sqrt(number of ifos) to resemble network SNR
         return sum(x for x in s.values()) / len(s)**0.5
 
@@ -576,10 +577,10 @@ class CoincRateCalcStatistic(ExpFitStatistic):
     """
 
     def __init__(self, files, benchmark_lograte=-14.6):
-        # benchmark_lograte is log of a representative noise trigger rate in H1L1 (O2)
-        # this is 4.5e-7 Hz
+        # benchmark_lograte is log of a representative noise trigger rate
+        # This comes from H1L1 (O2) and is 4.5e-7 Hz
         super(CoincRateCalcStatistic, self).__init__(files)
-        self.benchmark_lograte = 0#benchmark_lograte
+        self.benchmark_lograte = 0  # benchmark_lograte
 
         for ifo in self.ifos:
             self.reassign_rate(ifo)
@@ -590,17 +591,18 @@ class CoincRateCalcStatistic(ExpFitStatistic):
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
-        self.fits_by_tid[ifo]['rate'] = coeff_file['count_in_template'][:][tid_sort] / \
-                float(coeff_file.attrs['analysis_time'])
+        self.fits_by_tid[ifo]['rate'] = \
+            coeff_file['count_in_template'][:][tid_sort] / \
+            float(coeff_file.attrs['analysis_time'])
 
     def coinc_multiifo(self, s, slide,
-                  step, **kwargs): # pylint:disable=unused-argument
+                       step, **kwargs): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
         snglsprod = sum(x for x in s.values())
         ifo_list = [ifo for ifo in self.fits_by_tid]
         ln_coinc_area = numpy.log(coinc_rate.multiifo_noise_coincident_area(
-                                             ifo_list, kwargs['time_addition']))
-        loglr = - ln_coinc_area - snglsprod - self.benchmark_lograte
+                                  ifo_list, kwargs['time_addition']))
+        loglr = - ln_coinc_area + snglsprod - self.benchmark_lograte
         return loglr
 
 
