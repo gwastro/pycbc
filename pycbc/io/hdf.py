@@ -648,7 +648,8 @@ class SingleDetTriggers(object):
         # If the mask accesses few enough elements then directly use it
         # This can be slower than reading in all the elements if most of them
         # will be read.
-        if self.mask is not None and (self.mask.sum() < len(self.mask) * MFRAC):
+        if self.mask is not None and not isinstance(self.mask, list) and \
+                (self.mask.sum() < len(self.mask) * MFRAC):
             return self.trigs[cname][self.mask]
 
         # We have a lot of elements to read so we resort to readin the entire
