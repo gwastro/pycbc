@@ -34,6 +34,8 @@ from pycbc.workflow import core
 from pycbc.workflow import jobsetup
 from pycbc.workflow import inference_followups
 from pycbc.workflow import plotting
+from pycbc.inject import InjectionSet
+from pycbc.io import FieldArray
 
 # set command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
@@ -67,6 +69,12 @@ parser.add_argument(
     "--inference-config-file",
     type=str, required=True,
     help="WorkflowConfigParser parsable file with proir information.")
+
+# injections file
+parser.add_argument(
+    "--injection-files", 
+    type=str, nargs="+", 
+    help="hdf files containing injections.")
 
 # input data for workflow options
 parser.add_argument(
@@ -104,6 +112,12 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # read inference configuration file
 cp = configuration.WorkflowConfigParser([opts.inference_config_file])
+
+# read injection files
+if opts.injection_files:
+    input_injection_files = []
+    for injfile in opts.injection_files:
+        input_injection_files.append(os.path.abspath(injfile))
 
 # typecast str from command line to File instances
 config_file = core.File.from_path(opts.inference_config_file)
@@ -159,7 +173,7 @@ if 'pp-plot-parameters' in  workflow.cp.options("workflow-inference"):
         'pp-plot-parameters', 'inference'))
 else:
     # just use the variable params
-    pp_plot_params = workflow.cp.options(cp.options("variable_params"))
+    pp_plot_params = cp.options("variable_params")
 
 # get groups of parameters to plot in posterior and samples plots
 plot_groups = {}
@@ -185,6 +199,39 @@ post_group_files = {g : core.FileList([]) for g in plot_groups.keys()}
 post_table_files = core.FileList([])
 accept_files = core.FileList([])
 sample_group_files = {g : core.FileList([]) for g in plot_groups.keys()}
+
+# if injection files given, separate into individual files for each injection
+if input_injection_files:
+    injection_files = core.FileList([])
+    os.mkdir("injections")
+    
+    total_numinj = 0
+    for i_input in range(len(input_injection_files)):
+        injections = InjectionSet(input_injection_files[i_input])
+        local_numinj = len(injections.table)
+        st_args = {k: injections.table[k][0] 
+                   for k in injections._injhandler.static_args}
+                    
+        for i in range(local_numinj):
+            samples = {f: injections.table[i][f] 
+                       for f in injections.table.fieldnames
+                       if f not in injections._injhandler.static_args}
+            
+            injections.write(
+                'injections/injection%s.hdf' %(i+total_numinj), 
+                 FieldArray.from_kwargs(**samples),
+                 write_params = [k for k in injections.table.fieldnames 
+                                 if k not in injections._injhandler.static_args],
+                 static_args = st_args)
+            
+            injection_files.append(
+                    core.File.from_path(
+                        'injections/injection%s.hdf' %(i+total_numinj)))
+        total_numinj += local_numinj
+    if total_numinj != n_injections:
+        raise ValueError('Given number of injections does not match '
+                         'injections in files.')
+
 for i in range(n_injections):
 
     # make node for drawing injection parameter values
