@@ -86,7 +86,10 @@ else:
 if opts.thin_interval is not None:
     xint = opts.thin_interval
 else:
-    xint = fp.attrs['thin_interval']
+    try:
+        xint = fp.attrs['thin_interval']
+    except KeyError:
+        xint = 1
 
 thinned_by = fp.thinned_by*xint
 xmin = xmin*fp.thinned_by
