@@ -97,7 +97,6 @@ for trigger_file, injection_file in zip(args.trigger_files,
     ifar = f['foreground/ifar'][:]
     fap = f['foreground/fap'][:]
     fap_exc = f['foreground/fap_exc'][:]
-    foreground_time_exc = 0.
     if multi_ifo_style:
         # using multi-ifo-style trigger file input
         ifo_times = ()
@@ -121,8 +120,6 @@ for trigger_file, injection_file in zip(args.trigger_files,
                 ends = f['/segments/%s/end' % key][:]
                 any_seg += events.start_end_to_segments(starts,ends)
         ana_start, ana_end = events.segments_to_start_end(any_seg)
-        any_seg.coalesce()
-        foreground_time_exc = abs(any_seg)
     else:
         # Using the old 2-ifo organisation
         time1 = f['foreground/time1'][:]
@@ -218,7 +215,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  fo.create_group(key)
             fo[key].attrs['pivot'] = f[key].attrs['pivot']
             fo[key].attrs['fixed'] = f[key].attrs['fixed']
-        fo.attrs['foreground_time_exc'] = foreground_time_exc
+            fo[key].attrs['foreground_time_exc'] = f[key].attrs['foreground_time_exc']
     else:
         fo.attrs['detector_1'] = f.attrs['detector_1']
         fo.attrs['detector_2'] = f.attrs['detector_2']
