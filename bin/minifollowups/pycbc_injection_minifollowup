@@ -146,7 +146,7 @@ for num_event in range(num_events):
     for single in single_triggers:
         ifo = single.ifo
         for seg in insp_data_seglists[single.ifo]:
-            if trig_time in seg:
+            if time in seg:
                 det = Detector(ifo)
                 lon = f['injections/longitude'][injection_index]
                 lat = f['injections/latitude'][injection_index]
