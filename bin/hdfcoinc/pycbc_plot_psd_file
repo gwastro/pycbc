@@ -69,9 +69,9 @@ for psd_file in args.psd_files:
                     flow = base_file.attrs[
                                '{}_likelihood_low_freq'.format(ifo)]
             except KeyError:
-                raise ValueError("low_frequency_cutoff not found in hdf file; "
-                                 "please specify a value using the "
-                                 "--low-frequency-cutoff option")
+                raise RuntimeError("hdf file %s does not contain an attribute giving "
+                                   "low frequency cutoff, please specify a value using "
+                                   "the --low-frequency-cutoff option" % psd_file)
         kmin = int(flow / df)
         kmax = len(f[ifo + '/psds/' + keys[0]][:])
         klen = kmax - kmin
