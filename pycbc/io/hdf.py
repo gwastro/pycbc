@@ -515,7 +515,7 @@ class SingleDetTriggers(object):
 
     @property
     def template_id(self):
-        return self.trigs['template_id'][self.mask]
+        return self.get_column('template_id')
 
     @property
     def mass1(self):
@@ -641,9 +641,17 @@ class SingleDetTriggers(object):
                                            self.sgchisq, self.psd_var_val)
 
     def get_column(self, cname):
+        # Fiducial value that seems to work, not extensively tuned.
         MFRAC = 0.3
+
+        # If the mask accesses few enough elements then directly use it
+        # This can be slower than reading in all the elements if most of them
+        # will be read.
         if self.mask is not None and (self.mask.sum() < len(self.mask) * MFRAC):
             return self.trigs[cname][self.mask]
+
+        # We have a lot of elements to read so we resort to readin the entire
+        # array before masking.
         elif self.mask is not None:
             return self.trigs[cname][:][self.mask]
         else:
