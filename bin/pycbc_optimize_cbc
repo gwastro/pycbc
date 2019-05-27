@@ -316,7 +316,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     logging.info('Using chirp mass range %s-%s', minchirp, maxchirp)
     logging.info('Using mass ratio range %s-%s', minq, maxq)
     bounds = [(minchirp, maxchirp), (minq, maxq), (-.98, 0.98)]
-    result = differential_evolution(coherent_likelihood, bounds,
+    result = differential_evolution(network_snr, bounds,
                                     popsize=20,
                                     args=(trigger_time, stilde,
                                           psd, waveparams),
