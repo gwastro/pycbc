@@ -185,6 +185,7 @@ full_insps = insps
 final_bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
                                final_veto_file, final_veto_name,
                                output_dir, tags=ctags)
+
 old_bg_file = final_bg_files[0][0]
 final_bg_file = wf.rerank_coinc_followup(workflow, old_bg_file, hdfbank[0],
                                          output_dir, tags=[tag])
@@ -216,7 +217,7 @@ closed_box_ifars = []
 # if there are bins, then there is a pair of plots for each bin
 # with no hierarchical_level specified, these results are the
 # final stage of hierarchical removal (i.e. the main result).
-for bin_file in bin_files:
+for bin_file in [final_bg_file]:
     # Open box
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result'], tags=bin_file.tags)
@@ -286,7 +287,7 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
                  hierarchical_level)
 
     logging.info('hlevel plotting: %s', hierarchical_level)
-    for bin_file in bin_files:
+    for bin_file in [final_bg_file]:
         snrifar = wf.make_snrifar_plot(workflow, bin_file,
                        rdir[hierarchical_level_page], tags=bin_file.tags,
                        hierarchical_level=hierarchical_level)
@@ -512,7 +513,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                     output_dir, tags = ctags)
     inj_coinc = wf.rerank_coinc_followup(workflow, inj_coinc,
                                          hdfbank[0],
-                                         output_dir, tags=ctags, 
+                                         output_dir, tags=ctags,
                                          injection_file=inj_file,
                                          ranking_file=final_bg_file)
     found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
