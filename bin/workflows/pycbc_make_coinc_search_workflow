@@ -198,7 +198,7 @@ censored_veto = wf.make_foreground_censored_veto(workflow,
 
 closed_snrifar = []
 all_snrifar = []
-for bg_file, bg_bins in final_bg_files:
+for bg_file, bg_bins in [final_bg_file]:
     for bg_bin in bg_bins:
         snrifar = wf.make_snrifar_plot(workflow, bg_bin,
                          rdir['coincident_triggers'],
