@@ -191,7 +191,7 @@ times = trigs.end_time
 tids = trigs.template_id
 
 # loop over number of loudest events to be followed up
-order = trigs.stat.argsort()
+order = trigs.stat.argsort()[::-1]
 for rank, num_event in enumerate(order):
     logging.info('Processing event: %s', num_event)
 
@@ -203,8 +203,7 @@ for rank, num_event in enumerate(order):
 
     layouts += (mini.make_sngl_ifo(workflow, sngl_file, tmpltbank_file,
                                    tid, args.output_dir, args.instrument,
-                                   tags=args.tags + [str(rank)],
-                                   rank=rank),)
+                                   tags=args.tags + [str(rank)]),)
     files += mini.make_trigger_timeseries(workflow, [sngl_file],
                               ifo_time, args.output_dir, special_tids=ifo_tid,
                               tags=args.tags + [str(rank)])

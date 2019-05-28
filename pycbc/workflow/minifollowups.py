@@ -548,7 +548,7 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     return files
 
 def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
-                  tags=None, rank=None):
+                  tags=None):
     """Setup a job to create sngl detector sngl ifo html summary snippet.
     """
     tags = [] if tags is None else tags
@@ -560,8 +560,6 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
     node.add_input_opt('--single-trigger-file', sngl_file)
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--trigger-id', str(trigger_id))
-    if rank is not None:
-        node.add_opt('--n-loudest', str(rank))
     node.add_opt('--instrument', ifo)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node

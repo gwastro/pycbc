@@ -42,10 +42,11 @@ parser.add_argument('--veto-file',
 parser.add_argument('--veto-segment-name',
     help="If using veto file, the name of the segments to use as a veto.")
 parser.add_argument("--instrument", help="Name of ifo (e.g. H1)")
-parser.add_argument("--n-loudest", type=int, default=None,
+trig_args = parser.add_mutually_exclusive_group(required=True)
+trig_args.add_argument("--n-loudest", type=int, default=None,
     help="Examine the n'th loudest trigger (loudest is n=0). Must supply "
          "either this or --trigger-id.")
-parser.add_argument("--trigger-id", type=int, default=None,
+trig_args.add_argument("--trigger-id", type=int, default=None,
     help="Use the trigger with this ID in the HDF file. Must supply either "
          "this option or --n-loudest.")
 parser.add_argument('--ranking-statistic', default='newsnr',
@@ -53,6 +54,7 @@ parser.add_argument('--ranking-statistic', default='newsnr',
          "'newsnr'")
 
 args = parser.parse_args()
+
 pycbc.init_logging(args.verbose)
 
 # Get the single-ifo triggers
