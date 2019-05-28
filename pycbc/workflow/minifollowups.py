@@ -153,7 +153,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         The directory to store minifollowups result plots and files
     statfiles: FileList (optional, default=None)
         Supplementary files necessary for computing the single-detector
-        statistic. 
+        statistic.
     tags: {None, optional}
         Tags to add to the minifollowups executables
     Returns
