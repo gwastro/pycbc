@@ -351,6 +351,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
 
     logging.info('Assigning Ranking Statistic')
     stat = newsnr(msnr, chiv)
+    logging.info('Ranking Statistic = %s', stat)
     stats.append(stat)
 
 ofile['stat'] = numpy.array(stats)
