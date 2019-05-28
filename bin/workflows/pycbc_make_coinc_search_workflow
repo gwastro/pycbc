@@ -198,14 +198,10 @@ censored_veto = wf.make_foreground_censored_veto(workflow,
 
 closed_snrifar = []
 all_snrifar = []
-for bg_file, bg_bins in [final_bg_file]:
-    for bg_bin in bg_bins:
-        snrifar = wf.make_snrifar_plot(workflow, bg_bin,
+snrifar = wf.make_snrifar_plot(workflow, final_bg_file,
                          rdir['coincident_triggers'],
-                         closed_box=True, tags=bg_bin.tags + ['closed'])
-        all_snrifar.append(snrifar)
-        if bg_file == final_bg_file:
-            closed_snrifar.append(snrifar)
+                         closed_box=True, tags=final_bg_file.tags + ['closed'])
+closed_snrifar.append(snrifar)
 
 max_hierarchical_removal = workflow.cp.get('workflow-results',
                                            'max-hierarchical-removal')

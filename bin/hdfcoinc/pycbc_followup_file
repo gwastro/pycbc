@@ -41,15 +41,13 @@ for k in sfile:
         t1 = sfile[k]['time1'][:].astype(numpy.float64)
         t2 = sfile[k]['time2'][:].astype(numpy.float64)
 
-
-
         template = sfile[k]['template_id'][:]
 
         value = numpy.zeros(len(t1), dtype=dtype)
 
         if k is not 'foreground':
-            t2 -= sfile[k]['timeslide_id'][:] * slide
-            value[ifo2] = sfile[k]['timeslide_id'][:] * slide
+            t2 += sfile[k]['timeslide_id'][:] * slide
+            value[ifo2] = -sfile[k]['timeslide_id'][:] * slide
 
         value['time'] = 0.5 * (t1 + t2)
         value['template_id'] = template
