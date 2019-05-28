@@ -20,26 +20,34 @@ def params_from_waveformstr(wstr):
         wparams[key] = rvalue
     return wparams
 
-def network_snr(wparam, trig_time, stilde, psd, fixed):
+def getwf(wparam, fixed, flen, df):
     mchirp, q, spin = wparam
     p = fixed.copy()
     p['mass1'] = pycbc.conversions.mass1_from_mchirp_q(mchirp, q)
     p['mass2'] = pycbc.conversions.mass2_from_mchirp_q(mchirp, q)
     p['spin1z'] = p['spin2z'] = spin
+
+    out = pycbc.types.zeros(flen, dtype=numpy.complex64)
+    hp = pycbc.waveform.get_waveform_filter(out, delta_f=df, **p)
+    return hp
+
+def network_snr(wparam, trig_time, stilde, psd, fixed):
+    p = psd.values()[0]
+    hp = getwf(wparam, fixed, len(p), p.delta_f)
     with ctx:
-        out = pycbc.types.zeros(len(psd.values()[0]), dtype=numpy.complex64)
-        hp = pycbc.waveform.get_waveform_filter(out,
-                            delta_f=stilde.values()[0].delta_f, **p)
         nsnr = 0
         for ifo in strain:
             snr = pycbc.filter.matched_filter(
                         hp, stilde[ifo], psd=psd[ifo],
-                        low_frequency_cutoff=p['f_lower'])
+                        low_frequency_cutoff=fixed['f_lower'])
             z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
             nsnr += abs(z).max() ** 2.0
     return -nsnr ** 0.5
 
-def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
+def coherent_snr(wparam, trig_time, stilde, psd, fixed):
+    pass
+
+def marginal_likelihood(wparam, trig_time, stilde, psd, fixed):
     # Determines density of sky grid ##########################################
     numpy.random.seed(0)
     NSIDE = 15
@@ -65,24 +73,19 @@ def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
         dt[ifo] = d.time_delay_from_earth_center(ra, dec, fiducial_time)
 
     logging.info('Precalculating SNRs')
-    mchirp, q, spin = wparam
-    p = fixed.copy()
-    p['mass1'] = pycbc.conversions.mass1_from_mchirp_q(mchirp, q)
-    p['mass2'] = pycbc.conversions.mass2_from_mchirp_q(mchirp, q)
-    p['spin1z'] = p['spin2z'] = spin
+    p = psd.values()[0]
+    fixed['distance'] = 1.0 / pycbc.DYN_RANGE_FAC
+    fixed['inclination'] = 0
+    hp = getwf(wparam, fixed, len(p), p.delta_f)
+
     with ctx:
-        out = pycbc.types.zeros(len(psd.values()[0]), dtype=numpy.complex64)
-        hp = pycbc.waveform.get_waveform_filter(out,
-                            delta_f=stilde.values()[0].delta_f,
-                            distance=1.0/pycbc.DYN_RANGE_FAC,
-                            inclination=0, **p)
         snrs, norm, hh = {}, {}, {}
         maxtime = maxsnr = nsnr = 0
         maxifo = ''
         for ifo in stilde:
             snr, corr, norm[ifo] = pycbc.filter.matched_filter_core(
                         hp, stilde[ifo], psd=psd[ifo],
-                        low_frequency_cutoff=p['f_lower'])
+                        low_frequency_cutoff=fixed['f_lower'])
             snrs[ifo] = snr.time_slice(trig_time - 0.2, trig_time + 0.2).copy()
             s = abs(snrs[ifo] * norm[ifo])
             kmin = len(snrs[ifo]) // 4
@@ -302,8 +305,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     bounds = [(minchirp, maxchirp), (minq, maxq), (-.98, 0.98)]
 
     logging.info('Optimizing intrinsic parameters')
-    result = differential_evolution(network_snr, bounds,
-                                    popsize=20,
+    result = differential_evolution(network_snr, bounds, popsize=20,
                                     args=(trigger_time, stilde,
                                           psd, waveparams),
                                     disp=args.verbose, seed=0)
@@ -312,7 +314,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     snr = result['fun'] * -1.0
 
     logging.info('Calculating marginal likelihood')
-    msnr, smax = coherent_likelihood(optparam, trigger_time, stilde, psd, waveparams)
+    msnr, smax = marginal_likelihood(optparam, trigger_time, stilde, psd, waveparams)
     logging.info('Marginal Likelihood = %s, %s', msnr, smax)
 
     logging.info('Running Signal-Consistency Tests')
