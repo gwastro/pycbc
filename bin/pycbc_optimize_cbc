@@ -40,29 +40,22 @@ def network_snr(wparam, trig_time, stilde, psd, fixed):
     return -nsnr ** 0.5
 
 def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
-    t0 = time.time()
-    # Determines density of sky grid ##############################################
+    # Determines density of sky grid ##########################################
     numpy.random.seed(0)
     NSIDE = 15
-    MSIZE = 50
-    DSIZE = 100
-    DMAX = 5000
+    DMAX = 4000
     fiducial_time = 1000000000
+    pol = 0
+
     def pix2radec(index):
         theta, phi=healpy.pixelfunc.pix2ang(NSIDE, index)
         return numpy.pi*2. - phi, numpy.pi/2 - theta
 
     n = healpy.nside2npix(NSIDE)
-    #logging.info('Using %s skypoints', n)
+    logging.info('Using %s skypoints', n)
     ra, dec = pix2radec(numpy.arange(0, n))
 
-    #inc = numpy.linspace(0, numpy.pi * 2, num=MSIZE)
-    #pol = numpy.random.uniform(0, numpy.pi * 2, size=MSIZE)
-    #dist = numpy.linspace(1, DMAX, num=DSIZE)
-    # Let's assume this is zero for now (i.e. not measurable)
-    pol = 0
-
-    # Precalculate fp, fc and dt arguments
+    logging.info('Precalculating Antenna pattern')
     fp, fc, dt = {}, {}, {}
     for ifo in args.instruments:
         d = pycbc.detector.Detector(ifo)
@@ -71,6 +64,7 @@ def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
         fp[ifo], fc[ifo] = d.antenna_pattern(ra, dec, pol, fiducial_time)
         dt[ifo] = d.time_delay_from_earth_center(ra, dec, fiducial_time)
 
+    logging.info('Precalculating SNRs')
     mchirp, q, spin = wparam
     p = fixed.copy()
     p['mass1'] = pycbc.conversions.mass1_from_mchirp_q(mchirp, q)
@@ -80,15 +74,11 @@ def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
         out = pycbc.types.zeros(len(psd.values()[0]), dtype=numpy.complex64)
         hp = pycbc.waveform.get_waveform_filter(out,
                             delta_f=stilde.values()[0].delta_f,
-                            distance=1.0/pycbc.DYN_RANGE_FAC, inclination=0, **p)
-
-        snrs = {}
-        norm = {}
-        hh = {}
-        maxtime = 0
-        maxsnr = 0
+                            distance=1.0/pycbc.DYN_RANGE_FAC,
+                            inclination=0, **p)
+        snrs, norm, hh = {}, {}, {}
+        maxtime = maxsnr = nsnr = 0
         maxifo = ''
-        nsnr = 0
         for ifo in stilde:
             snr, corr, norm[ifo] = pycbc.filter.matched_filter_core(
                         hp, stilde[ifo], psd=psd[ifo],
@@ -103,26 +93,25 @@ def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
                 maxtime = s[kmin:kmax].sample_times[i]
                 maxsnr = s[kmin:kmax][i]
                 maxifo = ifo
-
             hh[ifo] = -0.5 * (4.0 * stilde[ifo].delta_f / norm[ifo]) ** 2.0
 
     off = dt[maxifo].copy()
     for ifo in args.instruments:
         dt[ifo] -= off
 
-    # This can be sped up a lot by reducing to unique indices
     sh = {}
     for ifo in args.instruments:
         idx = (dt[ifo] + (maxtime - snrs[ifo].start_time)) * snrs[ifo].sample_rate
         idx = idx.astype(numpy.int)
         sh[ifo] = snrs[ifo].take(idx) * 4.0 * stilde[ifo].delta_f
 
-    skymult = 1
-
     def loglr(inc, dist):
         shloglr = hhloglr = 0
         ip = numpy.cos(inc)
         ic = 0.5 * (1.0 + ip * ip) * 1.0j
+
+        iprior = numpy.sin(inc) / 2.0
+        dprior = dist ** 2.0 * 3.0 / DMAX ** 3.0
 
         for ifo in fp:
             htf = (fp[ifo] * ip + fc[ifo] * ic)
@@ -131,17 +120,14 @@ def coherent_likelihood(wparam, trig_time, stilde, psd, fixed):
 
         vloglr = numpy.log(scipy.special.i0e(abs(shloglr)))
         vloglr += abs(shloglr) + hhloglr
-        return numpy.exp(vloglr * skymult).sum()
+        return numpy.exp(vloglr).sum() * dprior * iprior
 
-    t1 = time.time()
-    a, b = scipy.integrate.nquad(loglr, [(0, numpy.pi*2.0), (1, 5000)],
-                                 opts={'epsrel':1e-3, 'limit':2})
-    a = (numpy.log(a) * 2) ** 0.5
-    t2 = time.time()
-    print (t2 - t1) * 0.1, t2 - t0, a
-    exit()
+    logging.info('Integrating Likelihood')
+    a, b = scipy.integrate.nquad(loglr, [(0, numpy.pi), (1, DMAX)],
+                                 opts={'epsrel':1e-2})
 
-    return a
+    print a, b, a / b
+    return (numpy.log(a) * 2) ** 0.5, (numpy.log(a + b) * 2) ** 0.5
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -269,7 +255,7 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
             if data_end[ifo] > end - pad:
                 pad_end[ifo] = data_end[ifo] - end + pad
                 data_end[ifo] = end - pad
-            print pad_start[ifo], pad_end[ifo], segs[ifo][0][idx], segs[ifo][1][idx]
+
         args.gps_start_time[ifo] = data_start[ifo] + pad + time_offsets[ifo]
         args.gps_end_time[ifo] = data_end[ifo] - pad + time_offsets[ifo]
         logging.info('%s: actually reading %s-%s',
@@ -279,8 +265,6 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     logging.info('Calculating Strain around trigger')
     strain = pycbc.strain.from_cli_multi_ifos(args, ifos,
                                               dyn_range_fac=pycbc.DYN_RANGE_FAC)
-
-    print len(strain['L1']), len(strain['H1'])
 
     # Undo any time offsets for slides
     stilde = {}
@@ -316,18 +300,25 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
     logging.info('Using chirp mass range %s-%s', minchirp, maxchirp)
     logging.info('Using mass ratio range %s-%s', minq, maxq)
     bounds = [(minchirp, maxchirp), (minq, maxq), (-.98, 0.98)]
+
+    logging.info('Optimizing intrinsic parameters')
     result = differential_evolution(network_snr, bounds,
                                     popsize=20,
                                     args=(trigger_time, stilde,
                                           psd, waveparams),
                                     disp=args.verbose, seed=0)
     logging.info(result)
+    optparam = result['x']
     snr = result['fun'] * -1.0
 
-    logging.info('Running Signal-Consistency Test')
+    logging.info('Calculating marginal likelihood')
+    msnr, smax = coherent_likelihood(optparam, trigger_time, stilde, psd, waveparams)
+    logging.info('Marginal Likelihood = %s, %s', msnr, smax)
 
+    logging.info('Running Signal-Consistency Tests')
 
-    stats.append(snr)
+    logging.info('Assigning Ranking Statistic')
+    stats.append(msnr)
 
 ofile['stat'] = numpy.array(stats)
 logging.info('Done')
