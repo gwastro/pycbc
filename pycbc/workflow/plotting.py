@@ -94,7 +94,6 @@ def make_spectrum_plot(workflow, psd_files, out_dir, tags=None,
                           out_dir=out_dir, tags=tags).create_node()
     node.add_input_list_opt('--psd-files', psd_files)
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
-    node.add_opt('--ifos', ' '.join(workflow.ifos))
 
     if hdf_group is not None:
         node.add_opt('--hdf-group', hdf_group)
