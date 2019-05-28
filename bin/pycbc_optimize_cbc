@@ -55,6 +55,11 @@ def network_snr(wparam, trig_time, stilde, psd, fixed, return_all=False):
                 snrs[ifo] = snr.copy()
                 corrs[ifo] = corr.copy()
                 norms[ifo] = norm
+                logging.info('%s:SNR = %s', ifo, abs(z).max())
+
+    if not numpy.isfinite(nsnr):
+        logging.warning("network SNR wasn't a number")
+        nsnr = 0
 
     if return_all:
         return -nsnr ** 0.5, hp, corrs, snrs, norms, indices
@@ -145,6 +150,10 @@ def marginal_likelihood(wparam, trig_time, stilde, psd, fixed):
     logging.info('Integrating Likelihood')
     a, b = scipy.integrate.nquad(loglr, [(0, numpy.pi), (1, DMAX)],
                                  opts={'epsrel':1e-2})
+    if not numpy.isfinite(a):
+        a = 30
+        logging.warn('Integral too large, replacing with %s', a)
+    
     return (numpy.log(a) * 2) ** 0.5, (numpy.log(a + b) * 2) ** 0.5
 
 parser = argparse.ArgumentParser()
@@ -341,8 +350,8 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
             chi /= 2 * num_bins - 2
             chi = chi[indices[ifo]]
             chis.append(chi)
-            logging.info('Chisq: %s - %s', num_bins, chi)
-    chiv = max(chis) if max(chis) > 1.8 else 1.0
+            logging.info('%s: Chisq: %s - %s', ifo, num_bins, chi)
+    chiv = max(chis) if max(chis) > 1.3 else 1.0
 
     logging.info('Calculating marginal likelihood')
     msnr, smax = marginal_likelihood(optparam, trigger_time, stilde, psd, waveparams)
