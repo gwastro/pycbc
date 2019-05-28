@@ -25,6 +25,7 @@ import numpy as np
 from scipy.interpolate import UnivariateSpline
 from pycbc.types import FrequencySeries
 
+
 @add_metaclass(ABCMeta)
 class Recalibrate(object):
     """ Base class for modifying calibration """

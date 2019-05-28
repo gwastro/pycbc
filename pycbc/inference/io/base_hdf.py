@@ -30,15 +30,16 @@ from __future__ import absolute_import
 import sys
 import logging
 from abc import (ABCMeta, abstractmethod)
-from six import string_types
-import numpy
 
-from six import add_metaclass
+from six import (add_metaclass, string_types)
+
+import numpy
 
 import h5py
 
 from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
+
 
 @add_metaclass(ABCMeta)
 class BaseInferenceFile(h5py.File):

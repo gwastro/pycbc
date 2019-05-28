@@ -27,10 +27,10 @@ from __future__ import (absolute_import, division)
 
 import os
 import signal
-from abc import (ABCMeta, abstractmethod, abstractproperty)
 import logging
+from abc import (ABCMeta, abstractmethod, abstractproperty)
 
-from six import add_metaclass
+from six import (add_metaclass, string_types)
 
 import numpy
 
@@ -38,7 +38,6 @@ from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import validate_checkpoint_files
 
-from six import string_types
 
 #
 # =============================================================================
