@@ -6,6 +6,8 @@ import scipy.special, scipy.integrate
 import numpy.random
 import pycbc.version, pycbc.strain, pycbc.waveform, pycbc.pnutils, pycbc.filter
 import pycbc.conversions, pycbc.types, pycbc.dq, pycbc.scheme, pycbc.detector
+import pycbc.vetoes
+from pycbc.events.ranking import newsnr
 from scipy.optimize import differential_evolution
 from pycbc.types.optparse import DictWithDefaultReturn
 
@@ -31,18 +33,33 @@ def getwf(wparam, fixed, flen, df):
     hp = pycbc.waveform.get_waveform_filter(out, delta_f=df, **p)
     return hp
 
-def network_snr(wparam, trig_time, stilde, psd, fixed):
+def network_snr(wparam, trig_time, stilde, psd, fixed, return_all=False):
     p = psd.values()[0]
     hp = getwf(wparam, fixed, len(p), p.delta_f)
+
+    corrs, snrs, norms, indices = {}, {}, {}, {}
+
     with ctx:
         nsnr = 0
         for ifo in strain:
-            snr = pycbc.filter.matched_filter(
+            snr, corr, norm = pycbc.filter.matched_filter_core(
                         hp, stilde[ifo], psd=psd[ifo],
                         low_frequency_cutoff=fixed['f_lower'])
-            z = snr.time_slice(trig_time - 0.1, trig_time + 0.1)
+
+            z = snr.time_slice(trig_time - 0.1, trig_time + 0.1) * norm
             nsnr += abs(z).max() ** 2.0
-    return -nsnr ** 0.5
+
+            if return_all:
+                sidx = round((z.start_time - snr.start_time) * snr.sample_rate)
+                indices[ifo] = abs(z).abs_arg_max() + int(sidx)
+                snrs[ifo] = snr.copy()
+                corrs[ifo] = corr.copy()
+                norms[ifo] = norm
+
+    if return_all:
+        return -nsnr ** 0.5, hp, corrs, snrs, norms, indices
+    else:
+        return -nsnr ** 0.5
 
 def coherent_snr(wparam, trig_time, stilde, psd, fixed):
     pass
@@ -128,8 +145,6 @@ def marginal_likelihood(wparam, trig_time, stilde, psd, fixed):
     logging.info('Integrating Likelihood')
     a, b = scipy.integrate.nquad(loglr, [(0, numpy.pi), (1, DMAX)],
                                  opts={'epsrel':1e-2})
-
-    print a, b, a / b
     return (numpy.log(a) * 2) ** 0.5, (numpy.log(a + b) * 2) ** 0.5
 
 parser = argparse.ArgumentParser()
@@ -159,6 +174,9 @@ parser.add_argument('--adjust-psd-center', action='store_true',
 parser.add_argument('--low-frequency-cutoff', type=float)
 pycbc.strain.insert_strain_option_group_multi_ifo(parser, gps_times=False)
 pycbc.scheme.insert_processing_option_group(parser)
+
+#pycbc.vetoes.SingleDetSGChisq.insert_option_group(parser)
+#parser.add_argument('--chisq-bins')
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -306,21 +324,34 @@ for i, (trigger_time, time_offsets, waveparams) in enumerate(zip(*triggers)):
 
     logging.info('Optimizing intrinsic parameters')
     result = differential_evolution(network_snr, bounds, popsize=20,
-                                    args=(trigger_time, stilde,
-                                          psd, waveparams),
+                                    args=(trigger_time, stilde, psd, waveparams),
                                     disp=args.verbose, seed=0)
-    logging.info(result)
     optparam = result['x']
-    snr = result['fun'] * -1.0
+    logging.info(result)
+
+    logging.info('Running Signal-Consistency Tests')
+    _,  hp, corrs, snrs, norms, indices = network_snr(
+                            optparam, trigger_time, stilde, psd, waveparams,
+                            return_all=True)
+    chis = []
+    for ifo in strain:
+        for num_bins in [8, 20, 65]:
+            chi = pycbc.vetoes.power_chisq(hp, stilde[ifo], num_bins, psd[ifo],
+                                 low_frequency_cutoff=waveparams['f_lower'])
+            chi /= 2 * num_bins - 2
+            chi = chi[indices[ifo]]
+            chis.append(chi)
+            logging.info('Chisq: %s - %s', num_bins, chi)
+    chiv = max(chis) if max(chis) > 1.8 else 1.0
 
     logging.info('Calculating marginal likelihood')
     msnr, smax = marginal_likelihood(optparam, trigger_time, stilde, psd, waveparams)
     logging.info('Marginal Likelihood = %s, %s', msnr, smax)
 
-    logging.info('Running Signal-Consistency Tests')
 
     logging.info('Assigning Ranking Statistic')
-    stats.append(msnr)
+    stat = newsnr(msnr, chiv)
+    stats.append(stat)
 
 ofile['stat'] = numpy.array(stats)
 logging.info('Done')
