@@ -151,7 +151,7 @@ def marginal_likelihood(wparam, trig_time, stilde, psd, fixed):
     a, b = scipy.integrate.nquad(loglr, [(0, numpy.pi), (1, DMAX)],
                                  opts={'epsrel':1e-2})
     if not numpy.isfinite(a):
-        a = 30
+        a = numpy.exp(30**2.0 / 2.0)
         logging.warn('Integral too large, replacing with %s', a)
     
     return (numpy.log(a) * 2) ** 0.5, (numpy.log(a + b) * 2) ** 0.5
