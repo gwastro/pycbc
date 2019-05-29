@@ -31,7 +31,7 @@ for fname in args.stat_files:
     f = h5py.File(fname, 'r')
     s = f.attrs['start_index']
     v = f['stat'][:]
-    stride = f.attrs['stride'] 
+    stride = f.attrs['stride']
     stats[s::stride] = v
 stats = stats[inv]
 
@@ -59,14 +59,14 @@ if args.ranking_file:
     fstat = o['foreground/stat'][:]
     backstat = f['background_exc/stat'][:]
     dec = f['background_exc/decimation_factor'][:]
-    
+
     bnum, fnum = calculate_n_louder(backstat, fstat, dec)
 
     ifar = background_time / (fnum + 1)
     fap = 1 - numpy.exp(- coinc_time / ifar)
     o['foreground/ifar'][...] = sec_to_year(ifar)
     o['foreground/fap'][...] = fap
-    
+
     o['foreground/ifar_exc'][...] = o['foreground/ifar'][:]
     o['foreground/fap_exc'][...] = o['foreground/fap'][:]
 
@@ -75,14 +75,15 @@ else:
     fstat = o['foreground/stat'][:]
     backstat = o['background/stat'][:]
     dec = o['background/decimation_factor'][:]
+    dec_exc = o['background_exc/decimation_factor'][:]
     backstat_exc = o['background_exc/stat'][:]
-    
+
     bnum, fnum = calculate_n_louder(backstat, fstat, dec)
-    bnum_exc, fnum_exc = calculate_n_louder(backstat_exc, fstat, dec)
-    
-    o['background/ifar'][...] = sec_to_year(background_time / (bnum + 1))  
-    o['background_exc/ifar'][...] = sec_to_year(background_time_exc / (bnum_exc + 1))  
-    
+    bnum_exc, fnum_exc = calculate_n_louder(backstat_exc, fstat, dec_exc)
+
+    o['background/ifar'][...] = sec_to_year(background_time / (bnum + 1))
+    o['background_exc/ifar'][...] = sec_to_year(background_time_exc / (bnum_exc + 1))
+
     ifar = background_time / (fnum + 1)
     fap = 1 - numpy.exp(- coinc_time / ifar)
     o['foreground/ifar'][...] = sec_to_year(ifar)
