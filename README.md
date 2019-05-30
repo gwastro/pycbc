@@ -1,5 +1,7 @@
 ![GW150914](docs/_static/gw150914st.png)
 
+Simone is awesome
+
 Welcome to PyCBC, a python toolkit for analysis of data from gravitational-wave
 laser interferometer detectors with the goal of detecting and studying signals
 from compact binary coalescences (CBCs).
