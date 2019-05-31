@@ -478,7 +478,7 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
 
 class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
 
-    """ExpFitCombinedSNR but with sine-Gaussian veto and PSD variation added to
+    """ExpFitCombinedSNR bnted to do the latter .. so, make an init step that ensures this, or maybe make thiut with sine-Gaussian veto and PSD variation added to
 
     the single detector ranking
     """
@@ -569,7 +569,7 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
                            dtype=numpy.float32), ndmin=1, copy=False)
 
 
-class CoincRateCalcStatistic(ExpFitStatistic):
+class ExpFitSGCoincRateStatistic(ExpFitStatistic):
 
     """Detection statistic using an exponential falloff noise model.
     Statistic calculates the log noise coinc rate for each
@@ -579,9 +579,13 @@ class CoincRateCalcStatistic(ExpFitStatistic):
     def __init__(self, files, benchmark_lograte=-14.6):
         # benchmark_lograte is log of a representative noise trigger rate
         # This comes from H1L1 (O2) and is 4.5e-7 Hz
-        super(CoincRateCalcStatistic, self).__init__(files)
-        self.benchmark_lograte = 0  # benchmark_lograte
-
+        super(ExpFitSGCoincRateStatistic, self).__init__(files)
+        self.benchmark_lograte = benchmark_lograte
+        self.get_newsnr = ranking.get_newsnr_sgveto
+        
+        # Reassign the rate as the we are now calculating total number in
+        # the template and dividing by time rather than just counting above
+        # threshold as was done previously
         for ifo in self.ifos:
             self.reassign_rate(ifo)
 
@@ -598,11 +602,13 @@ class CoincRateCalcStatistic(ExpFitStatistic):
     def coinc_multiifo(self, s, slide,
                        step, **kwargs): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
-        snglsprod = sum(x for x in s.values())
-        ifo_list = [ifo for ifo in self.fits_by_tid]
-        ln_coinc_area = numpy.log(coinc_rate.multiifo_noise_coincident_area(
-                                  ifo_list, kwargs['time_addition']))
-        loglr = - ln_coinc_area + snglsprod - self.benchmark_lograte
+        sngl_rates_dict = {ifo: numpy.exp(sngl_rate) for (ifo, sngl_rate) in\
+                      zip(self.fits_by_tid.keys(), s.values()) }
+        #snglsprod = sum(x for x in s.values())
+        #ifo_list = self.fits_by_tid.keys()
+        ln_coinc_rate = numpy.log(coinc_rate.combination_noise_coinc_rate(
+                                  sngl_rates_dict, kwargs['time_addition']))
+        loglr = - ln_coinc_rate + self.benchmark_lograte
         return loglr
 
 
@@ -622,7 +628,7 @@ statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
-    'coinc_rate_calc': CoincRateCalcStatistic
+    'exp_fit_sg_coinc_rate': ExpFitSGCoincRateStatistic
 }
 
 sngl_statistic_dict = {

@@ -82,8 +82,8 @@ def combination_noise_coinc_rate(rates, slop):
         Value is expected coincidence rate in the combination, units Hz
     """
     # extract ifo list and rates vectors from the dictionary
-    ifos = numpy.array(sorted(rates.keys()))
-    rates_raw = list(rates[ifo] for ifo in ifos)
+    ifos = numpy.array(rates.keys())
+    rates_raw = [rates[ifo] for ifo in ifos]
 
     # multiply product of trigger rates by the overlap time
     allowed_area = multiifo_noise_coincident_area(ifos, slop)
