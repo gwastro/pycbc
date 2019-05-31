@@ -30,7 +30,9 @@ from __future__ import absolute_import
 import sys
 import logging
 from abc import (ABCMeta, abstractmethod)
-from six import string_types
+
+from six import (add_metaclass, string_types)
+
 import numpy
 
 import h5py
@@ -38,6 +40,8 @@ import h5py
 from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
 
+
+@add_metaclass(ABCMeta)
 class BaseInferenceFile(h5py.File):
     """Base class for all inference hdf files.
 
@@ -51,7 +55,6 @@ class BaseInferenceFile(h5py.File):
     mode : {None, str}
         The mode to open the file, eg. "w" for write and "r" for read.
     """
-    __metaclass__ = ABCMeta
 
     name = None
     samples_group = 'samples'

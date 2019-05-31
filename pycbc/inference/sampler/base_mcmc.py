@@ -27,15 +27,17 @@ from __future__ import (absolute_import, division)
 
 import os
 import signal
-from abc import (ABCMeta, abstractmethod, abstractproperty)
 import logging
+from abc import (ABCMeta, abstractmethod, abstractproperty)
+
+from six import (add_metaclass, string_types)
+
 import numpy
+
 from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
-
 from pycbc.inference.io import validate_checkpoint_files
 
-from six import string_types
 
 #
 # =============================================================================
@@ -154,6 +156,7 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
 #
 
 
+@add_metaclass(ABCMeta)
 class BaseMCMC(object):
     """Abstract base class that provides methods common to MCMCs.
 
@@ -205,8 +208,6 @@ class BaseMCMC(object):
     acls
     acts
     """
-    __metaclass__ = ABCMeta
-
     _lastclear = None  # the iteration when samples were cleared from memory
     _itercounter = None  # the number of iterations since the last clear
     _pos = None

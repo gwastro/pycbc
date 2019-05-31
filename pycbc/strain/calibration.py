@@ -19,10 +19,11 @@
 import numpy as np
 from scipy.interpolate import UnivariateSpline
 from abc import (ABCMeta, abstractmethod)
+from six import add_metaclass
 
 
+@add_metaclass(ABCMeta)
 class Recalibrate(object):
-    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, ifo_name):
