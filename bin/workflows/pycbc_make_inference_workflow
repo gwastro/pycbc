@@ -77,11 +77,11 @@ parser.add_argument("--tags", nargs="+", default=[],
                     help="Tags to apend in various places.")
 parser.add_argument("--output-dir", default=None,
                     help="Path to output directory.")
-parser.add_argument("--output-map", required=True,
+parser.add_argument("--output-map", default=None,
                     help="Path to output map file.")
-parser.add_argument("--transformation-catalog", required=True,
+parser.add_argument("--transformation-catalog", default=None,
                     help="Path to transformation catalog file.")
-parser.add_argument("--output-file", required=True,
+parser.add_argument("--output-file", default=None,
                     help="Path to DAX file.")
 
 # input workflow file options
@@ -382,7 +382,8 @@ dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
 
 # write dax
-container.save(filename=opts.output_file, output_map_path=opts.output_map,
+outputfile = "{}.dax".format(opts.workflow_name) if opts.output_file == None else opts.output_file
+container.save(filename=outputfile, output_map_path=opts.output_map,
                transformation_catalog_path=opts.transformation_catalog)
 
 # save workflow configuration file
