@@ -73,7 +73,14 @@ class FrequencySeries(Array):
                     epoch = _lal.LIGOTimeGPS(0)
             elif epoch is not None:
                 try: 
-                    epoch = _lal.LIGOTimeGPS(epoch)
+                    if isinstance(epoch, _numpy.generic):
+                        # In python3 lal LIGOTimeGPS will not work on numpy
+                        # types as input. A quick google on how to generically
+                        # convert numpy floats/ints to the python equivalent
+                        # https://stackoverflow.com/questions/9452775/
+                        epoch = _lal.LIGOTimeGPS(epoch.item())
+                    else:
+                        epoch = _lal.LIGOTimeGPS(epoch)
                 except:
                     raise TypeError('epoch must be either None or a lal.LIGOTimeGPS')
         Array.__init__(self, initial_array, dtype=dtype, copy=copy)
