@@ -45,7 +45,7 @@ try:
 except KeyError:
     h_iterations = None
 
-if h_num_rm > h_iterations:
+if h_num_rm is not None and (h_iterations is None or h_num_rm > h_iterations):
     col_one = numpy.array([h_num_rm])
     col_two = numpy.array([h_iterations])
     columns = [col_one, col_two]
@@ -70,10 +70,11 @@ if args.output_file.endswith('.xml') or args.output_file.endswith('.xml.gz'):
         err_msg += "trigger lists with --single-detector-triggers."
         raise ValueError(err_msg)
 
-# Insure that the user uses a coinc trigger file that is hierarchical
+# Ensure that the user uses a coinc trigger file that is hierarchical
 # removal compatible. Also default to regular behavior if hierarchical
 # removals were not performed.
-if h_num_rm >= 0 and h_iterations is not None and h_iterations!=0:
+if h_num_rm is not None and h_iterations is not None \
+        and h_num_rm >= 0 and h_iterations != 0:
     # read in the triggers from the group corresponding to the removal stage
     fortrigs = hdf.ForegroundTriggers(args.trigger_file, args.bank_file,
                                       sngl_files=args.single_detector_triggers,
@@ -101,7 +102,8 @@ if args.output_file.endswith('.html'):
     time1 = fortrigs.get_coincfile_array('time1')
     time2 = fortrigs.get_coincfile_array('time2')
 
-    if h_num_rm >= 0 and h_iterations is not None and h_iterations!=0:
+    if h_num_rm is not None and h_iterations is not None \
+            and h_num_rm >= 0 and h_iterations != 0:
         # This information is not stored at all levels of the coinc trigger file
         # so grab from the top level and populate the variables for output later
  
