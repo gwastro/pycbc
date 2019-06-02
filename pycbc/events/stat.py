@@ -46,7 +46,7 @@ class Stat(object):
         self.files = {}
         for filename in files:
             f = h5py.File(filename, 'r')
-            stat = f.attrs['stat']
+            stat = (f.attrs['stat']).decode()
             self.files[stat] = f
 
         # Provide the dtype of the single detector method's output
