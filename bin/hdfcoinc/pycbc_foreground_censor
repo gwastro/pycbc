@@ -1,7 +1,8 @@
-#!/bin/env python
+#!/usr/bin/env python
 """Make segment file to blind the results from foreground related triggers """
 
-import os, argparse, logging, pycbc.version, h5py, urlparse
+import os, argparse, logging, pycbc.version, h5py
+from six.moves.urllib.parse import urlunparse
 import pycbc.events
 from pycbc.workflow import SegFile
 
@@ -72,7 +73,7 @@ else:
         names += [args.output_segment_name]
         ifos += [ifo]
 
-file_url = urlparse.urlunparse(['file', 'localhost',
-                          os.path.abspath(args.output_file), None, None, None])
+file_url = urlunparse(['file', 'localhost',
+                       os.path.abspath(args.output_file), None, None, None])
 SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
 logging.info('done')
