@@ -127,7 +127,6 @@ def query_flag(ifo, segment_name, start_time, end_time,
     segments: glue.segments.segmentlist
         List of segments
     """
-    
     flag_segments = segmentlist([])
 
     if source in ['GWOSC', 'any']:
@@ -203,7 +202,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
         else:  # Standard case just query directly.
             try:
-                segs = query(':'.join([ifo, name, str(version)]),
+                segs = query(':'.join([ifo, segment_name]),
                              int(start_time), int(end_time),
                              host=server)['active']
                 for rseg in segs:
