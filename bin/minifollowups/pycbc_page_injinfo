@@ -67,7 +67,7 @@ if 'optimal_snr_1' in f['injections'].keys():
     labels['optimal_snr_2'] = 'Opt.&nbsp;SNR %s' % f.attrs['detector_2']
     params += ['optimal_snr_1', 'optimal_snr_2']
 elif 'ifos' in f.attrs:
-    ifolist = attrs['ifos'].split(' ')
+    ifolist = f.attrs['ifos'].split(' ')
     for ifo in ifolist:
         labels['optimal_snr_%s' % ifo] = 'Opt.&nbsp;SNR %s' % ifo
         params += ['optimal_snr_%s' % ifo]
