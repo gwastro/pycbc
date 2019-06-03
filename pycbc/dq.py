@@ -96,7 +96,7 @@ def parse_veto_definer(veto_def_filename):
 GWOSC_URL = 'https://www.gw-openscience.org/timeline/segments/json/{}/{}_{}/{}/{}/'
 
 
-def query_flag(ifo, name, start_time, end_time,
+def query_flag(ifo, segment_name, start_time, end_time,
                source='any', server="segments.ligo.org",
                veto_definer=None, cache=False):
     """Return the times where the flag is active
@@ -105,7 +105,7 @@ def query_flag(ifo, name, start_time, end_time,
     ----------
     ifo: string
         The interferometer to query (H1, L1).
-    name: string
+    segment_name: string
         The status flag to query from LOSC.
     start_time: int
         The starting gps time to begin querying from LOSC
@@ -127,13 +127,7 @@ def query_flag(ifo, name, start_time, end_time,
     segments: glue.segments.segmentlist
         List of segments
     """
-    info = name.split(':')
-    if len(info) == 2:
-        segment_name, version = info
-    elif len(info) == 1:
-        segment_name = info[0]
-        version = 1
-
+    
     flag_segments = segmentlist([])
 
     if source in ['GWOSC', 'any']:
@@ -329,6 +323,12 @@ def parse_flag_str(flag_str):
 
     for flag in flags:
         # Check if the flag should add or subtract time
+        if not (flag[0] == '+' or flag[0] == '-'):
+            err_msg = "DQ flags must begin with a '+' or a '-' character. "
+            err_msg += "You provided {}.".format(flag)
+            err_msg += "See http://pycbc.org/pycbc/latest/html/workflow/segments.html "
+            err_msg += "for more information."
+            raise ValueError(err_msg)
         sign = flag[0] == '+'
         flag = flag[1:]
 
