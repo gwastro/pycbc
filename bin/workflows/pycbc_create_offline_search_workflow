@@ -192,12 +192,10 @@ statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name)
 
 # Set up the multi-ifo coinc jobs
-# bg_files contains coinc results using vetoes from cum_veto_files
 # final_bg_files contains coinc results using vetoes final_veto_files
 # ifo_ids will store an (integer) index for each ifo in the precedence list
 full_insps = insps
 ctags = [tag]
-bg_files = []
 final_bg_files = {}
 ifo_ids = {}
 
@@ -217,9 +215,7 @@ for i in range(2, len(insps)+1):
         # Create coinc tag, and set up the coinc job for the combination
         coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
         ctagcomb = [tag, 'full', coinctag]
-        bg_files += wf.setup_multiifo_interval_coinc(workflow, hdfbank, inspcomb, statfiles,
-                               cum_veto_files, veto_names,
-                               output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
+
         final_bg_files[ordered_ifo_list] = wf.setup_multiifo_interval_coinc(workflow,
                                                                             hdfbank,
                                                                             inspcomb,
@@ -293,16 +289,9 @@ layout.two_column_layout(rdir['detector_sensitivity'],
                          det_summ + list(layout.grouper(r2, 2)))
 
 # do plotting of segments / veto times
-for ifo, files in zip(*ind_cats.categorize_by_attr('ifo')):
-    wf.make_segments_plot(workflow, files, rdir['analysis_time/segments'],
-                          tags=['%s_VETO_SEGMENTS' % ifo])
-
 wf.make_segments_plot(workflow, [insp_files_seg_file],
                       rdir['analysis_time/segments'],
                       tags=[trig_generated_name])
-wf.make_segments_plot(workflow, [sci_ok_seg_file],
-                      rdir['analysis_time/segments'],
-                      tags=['SCIENCE_MINUS_CAT1'])
 wf.make_gating_plot(workflow, full_insps, rdir['analysis_time/gating'],
                     tags=['full_data'])
 
@@ -320,11 +309,11 @@ seg_summ_plot = wf.make_seg_plot(workflow, curr_files,
                                 rdir['analysis_time/segments'],
                                 curr_names, ['SUMMARY'])
 
-curr_files = [insp_files_seg_file] + final_veto_file + cum_veto_files
+curr_files = [insp_files_seg_file] + final_veto_file
 # Add in singular veto files
-curr_files = curr_files + veto_cat_files + [science_seg_file]
+curr_files = curr_files + [science_seg_file]
 curr_names = [trig_generated_name + '&' + veto_name
-              for veto_name in veto_names+final_veto_name]
+              for veto_name in final_veto_name]
 # And SCIENCE - CAT 1 vetoes explicitly.
 curr_names += [sci_seg_name + '&' + 'VETO_CAT1']
 
@@ -336,7 +325,8 @@ veto_summ_table = wf.make_seg_table\
 
 # make veto definer table
 vetodef_table = wf.make_veto_table(workflow, rdir['analysis_time/veto_definer'])
-layout.single_layout(rdir['analysis_time/veto_definer'], ([vetodef_table]))
+if vetodef_table is not None:
+    layout.single_layout(rdir['analysis_time/veto_definer'], ([vetodef_table]))
 
 #################### Plotting on FULL_DATA results ##########################
 ##################### SINGLES plots first ###################################

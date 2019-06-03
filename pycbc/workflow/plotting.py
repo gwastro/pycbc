@@ -238,6 +238,9 @@ def make_veto_table(workflow, out_dir, vetodef_file=None, tags=None):
     table. Returns a File instances for the output file.
     """
     if vetodef_file is None:
+        if not workflow.cp.has_option_tags("workflow-segments",
+                                           "segments-veto-definer-file", []):
+            return None
         vetodef_file = workflow.cp.get_opt_tags("workflow-segments",
                                            "segments-veto-definer-file", [])
         file_url = urljoin('file:', pathname2url(vetodef_file))
