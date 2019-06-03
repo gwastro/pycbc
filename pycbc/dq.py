@@ -83,6 +83,7 @@ def parse_veto_definer(veto_def_filename):
 
         veto_info = {'name': name[i],
                      'version': version[i],
+                     'full_name': name[i]+':'+str(version[i]),
                      'start': start[i],
                      'end': end[i],
                      'start_pad': start_pad[i],
@@ -95,7 +96,7 @@ def parse_veto_definer(veto_def_filename):
 GWOSC_URL = 'https://www.gw-openscience.org/timeline/segments/json/{}/{}_{}/{}/{}/'
 
 
-def query_flag(ifo, name, start_time, end_time,
+def query_flag(ifo, segment_name, start_time, end_time,
                source='any', server="segments.ligo.org",
                veto_definer=None, cache=False):
     """Return the times where the flag is active
@@ -104,7 +105,7 @@ def query_flag(ifo, name, start_time, end_time,
     ----------
     ifo: string
         The interferometer to query (H1, L1).
-    name: string
+    segment_name: string
         The status flag to query from LOSC.
     start_time: int
         The starting gps time to begin querying from LOSC
@@ -126,13 +127,6 @@ def query_flag(ifo, name, start_time, end_time,
     segments: glue.segments.segmentlist
         List of segments
     """
-    info = name.split(':')
-    if len(info) == 2:
-        segment_name, version = info
-    elif len(info) == 1:
-        segment_name = info[0]
-        version = 1
-
     flag_segments = segmentlist([])
 
     if source in ['GWOSC', 'any']:
@@ -167,8 +161,8 @@ def query_flag(ifo, name, start_time, end_time,
             if source != 'any':
                 raise ValueError(msg)
             else:
-                print("Tried and failed GWOSC {}, trying dqsegdb", name)
-
+                print("Tried and failed GWOSC {}, trying dqsegdb",
+                      segment_name)
 
             return query_flag(ifo, segment_name, start_time, end_time,
                               source='dqsegdb', server=server,
@@ -177,10 +171,10 @@ def query_flag(ifo, name, start_time, end_time,
     elif source == 'dqsegdb':
         # Let's not hard require dqsegdb to be installed if we never get here.
         try:
-            from dqsegdb.apicalls import dqsegdbQueryTimes as query
+            from dqsegdb2.query import query_segments as query
         except ImportError:
-            raise ValueError("Could not query flag. Install dqsegdb"
-                             ":'pip install dqsegdb'")
+            raise ValueError("Could not query flag. Install dqsegdb2"
+                             ":'pip install dqsegdb2'")
 
         # The veto definer will allow the use of MACRO names
         # These directly correspond the name defined in the veto definer file.
@@ -192,9 +186,8 @@ def query_flag(ifo, name, start_time, end_time,
         if veto_definer is not None and segment_name in veto_def[ifo]:
             for flag in veto_def[ifo][segment_name]:
                 partial = segmentlist([])
-                segs = query("https", server, ifo, flag['name'],
-                             flag['version'], 'active',
-                             int(start_time), int(end_time))[0]['active']
+                segs = query(ifo+':'+flag['full_name'], int(start_time),
+                             int(end_time), host=server)['active']
 
                 # Apply padding to each segment
                 for rseg in segs:
@@ -209,9 +202,9 @@ def query_flag(ifo, name, start_time, end_time,
 
         else:  # Standard case just query directly.
             try:
-                segs = query("https", server, ifo, name, version,
-                             'active', int(start_time),
-                             int(end_time))[0]['active']
+                segs = query(':'.join([ifo, segment_name]),
+                             int(start_time), int(end_time),
+                             host=server)['active']
                 for rseg in segs:
                     flag_segments.append(segment(rseg[0], rseg[1]))
             except Exception as e:
@@ -329,6 +322,12 @@ def parse_flag_str(flag_str):
 
     for flag in flags:
         # Check if the flag should add or subtract time
+        if not (flag[0] == '+' or flag[0] == '-'):
+            err_msg = "DQ flags must begin with a '+' or a '-' character. "
+            err_msg += "You provided {}.".format(flag)
+            err_msg += "See http://pycbc.org/pycbc/latest/html/workflow/segments.html "
+            err_msg += "for more information."
+            raise ValueError(err_msg)
         sign = flag[0] == '+'
         flag = flag[1:]
 
