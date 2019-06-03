@@ -161,8 +161,8 @@ def query_flag(ifo, segment_name, start_time, end_time,
             if source != 'any':
                 raise ValueError(msg)
             else:
-                print("Tried and failed GWOSC {}, trying dqsegdb", segment_name)
-
+                print("Tried and failed GWOSC {}, trying dqsegdb",
+                      segment_name)
 
             return query_flag(ifo, segment_name, start_time, end_time,
                               source='dqsegdb', server=server,
