@@ -1,6 +1,7 @@
 #!/bin/bash -v
 set -x
-cd /opt/pycbc
+id
+cd /scratch/pycbc
 pip install -r requirements.txt
 pip install .
 cd /
