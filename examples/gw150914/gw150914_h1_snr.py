@@ -20,13 +20,13 @@ psd = interpolate(welch(h1), 1.0 / h1.duration)
 # Generate a template to filter with
 hp, hc = get_fd_waveform(approximant="IMRPhenomD", mass1=40, mass2=32,
                          f_lower=20, delta_f=1.0/h1.duration)
-hp.resize(len(h1) / 2 + 1)
+hp.resize(len(h1) // 2 + 1)
 
 # Calculate the complex (two-phase SNR)
 snr = matched_filter(hp, h1, psd=psd, low_frequency_cutoff=20.0)
 
 # Remove regions corrupted by filter wraparound
-snr = snr[len(snr) / 4: len(snr) * 3 / 4]
+snr = snr[len(snr) // 4: len(snr) * 3 // 4]
 
 import pylab
 pylab.plot(snr.sample_times, abs(snr))
