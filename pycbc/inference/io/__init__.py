@@ -154,7 +154,7 @@ def check_integrity(filename):
     # will raise an IOError
     with loadfile(filename, 'r') as fp:
         # check that all datasets in samples have the same shape
-        parameters = fp[fp.samples_group].keys()
+        parameters = list(fp[fp.samples_group].keys())
         # but only do the check if parameters have been written
         if len(parameters) > 0:
             group = fp.samples_group + '/{}'
