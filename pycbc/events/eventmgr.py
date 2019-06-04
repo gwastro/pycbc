@@ -340,6 +340,10 @@ class EventManager(object):
         self.accumulate.append(self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
 
+    def consolidate_events(self):
+        self.events = numpy.concatenate(self.accumulate)
+        self.accumulate = [self.events]
+
     def finalize_events(self):
         self.events = numpy.concatenate(self.accumulate)
 
