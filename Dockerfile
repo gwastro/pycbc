@@ -33,11 +33,7 @@ RUN yum install -y libmetaio libmetaio-devel libmetaio-utils
 RUN yum install -y hdf5 hdf5-devel
 
 # Install MKL
-RUN mkdir -p /opt/intel/composer_xe_2015.0.090/mkl/lib/intel64
-RUN curl https://git.ligo.org/ligo-cbc/pycbc-software/raw/efd37637fbb568936dfb92bc7aa8a77359c9aa36/x86_64/composer_xe_2015.0.090/composer_xe_2015.0.090.tar.gz | tar -C /opt/intel/composer_xe_2015.0.090/mkl/lib/intel64 -zxvf -
-RUN curl https://software.intel.com/en-us/license/intel-simplified-software-license > /opt/intel/composer_xe_2015.0.090/mkl/lib/intel64/intel-simplified-software-license.html
-RUN chmod go+rx /opt/intel/composer_xe_2015.0.090/mkl/lib/intel64/*.so
-RUN chmod go+r /opt/intel/composer_xe_2015.0.090/mkl/lib/intel64/intel-simplified-software-license.html
+RUN pip install mkl
 
 # Install Python development tools
 RUN yum install -y python-devel which
@@ -62,17 +58,28 @@ RUN cd / && \
 
 # Install MPI software needed for pycbc_inference
 RUN yum install -y libibverbs libibverbs-devel libibmad libibmad-devel libibumad libibumad-devel librdmacm librdmacm-devel libmlx5 libmlx4
-RUN curl http://mvapich.cse.ohio-state.edu/download/mvapich/mv2/mvapich2-2.1.tar.gz | tar -C /tmp -zxvf - && \
-    cd /tmp/mvapich2-2.1 && ./configure --prefix=/opt/mvapich2-2.1 && make -j 8 install && \
+RUN curl http://mvapich.cse.ohio-state.edu/download/mvapich/mv2/mvapich2-2.1.tar.gz | tar -C /tmp -zxf - && \
+    cd /tmp/mvapich2-2.1 && ./configure --prefix=/opt/mvapich2-2.1 && make install && \
     rm -rf /tmp/mvapich2-2.1
 RUN pip install schwimmbad
 RUN MPICC=/opt/mvapich2-2.1/bin CFLAGS='-I /opt/mvapich2-2.1/include -L /opt/mvapich2-2.1/lib -lmpi' pip install --no-cache-dir mpi4py
+
+# Install and set up cvmfs using static mounts
+RUN yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum install -y cvmfs cvmfs-config-default
+ADD etc/cvmfs/default.local /etc/cvmfs/default.local
+ADD etc/cvmfs/60-osg.conf /etc/cvmfs/60-osg.conf
+ADD etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.opensciencegrid.org.conf
+RUN mkdir -p /cvmfs/config-osg.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org /cvmfs/gwosc.osgstorage.org
+RUN echo "config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab && echo "oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab && echo "gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org cvmfs ro,noauto 0 0" >> /etc/fstab
 
 # Mount points for the XSEDE Comet machine
 RUN mkdir -p /oasis /scratch /projects /usr/lib64/slurm /var/run/munge
 
 # Create a PyCBC user
 RUN groupadd -g 1000 pycbc && useradd -u 1000 -g 1000 -d /opt/pycbc -k /etc/skel -m -s /bin/bash pycbc
+
+# Add the script that installs PyCBC inside the container
+ADD etc/docker-install.sh /etc/docker-install.sh
 
 # When the container is started with 
 #   docker run -it pycbc/pycbc-el7:latest 
