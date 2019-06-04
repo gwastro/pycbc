@@ -209,7 +209,7 @@ def qseries(fseries, Q, f0, return_complex=False):
 
     start = int((f0 - (f0 / qprime)) * fseries.duration)
     end = int(start + window_size)
-    center = (start + end) / 2
+    center = (start + end) // 2
 
     windowed = fseries[start:end] * (1 - xfrequencies ** 2) ** 2 * norm
 
