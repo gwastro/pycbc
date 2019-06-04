@@ -93,7 +93,7 @@ script:
 - if [ "x${PYCBC_CONTAINER}" == "xbuild_and_test" ] ; then
     ./tools/pycbc_test_suite.sh ;
   elif [ "x${PYCBC_CONTAINER}" == "xpycbc_docker" ] ; then
-    docker run --name pycbc_inst -v `pwd`:/scratch:ro ${DOCKER_IMG}-tmp root /bin/bash -c /etc/docker-install.sh
+    docker run --privileged --name pycbc_inst -v `pwd`:/scratch:ro ${DOCKER_IMG}-tmp root /bin/bash -c /etc/docker-install.sh
     docker commit pycbc_inst $DOCKER_IMG || exit 1 ;
   else
     ./tools/docker_build_and_test.sh ;
