@@ -1,7 +1,8 @@
 #!/bin/bash -v
 set -x
 id
-cd /scratch/pycbc
+modprobe fuse
+cd /scratch
 pip install -r requirements.txt
 pip install .
 cd /
