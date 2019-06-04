@@ -176,7 +176,7 @@ class MCMCMetadataIO(object):
                 # dataset doesn't exist yet
                 self[group.format(param)] = acls[param]
         # write the maximum over all params
-        acl = numpy.array(acls.values()).max()
+        acl = numpy.array(list(acls.values())).max()
         self[self.sampler_group].attrs['acl'] = acl
         # set the default thin interval to be the acl (if it is finite)
         if numpy.isfinite(acl):
