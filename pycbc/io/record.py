@@ -1600,7 +1600,7 @@ class _FieldArrayWithDefaults(FieldArray):
             # add the fields as the dtype argument for initializing
             kwargs['dtype'] = [(fld, default_fields[fld]) for fld in names]
         if 'dtype' not in kwargs:
-            kwargs['dtype'] = default_fields.items()
+            kwargs['dtype'] = list(default_fields.items())
         # add the additional fields
         if additional_fields is not None:
             if not isinstance(additional_fields, list):

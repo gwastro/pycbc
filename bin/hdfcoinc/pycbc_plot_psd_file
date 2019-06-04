@@ -58,7 +58,7 @@ for psd_file in args.psd_files:
     for ifo in ifo_list:
         fac = 1.0 / pycbc.DYN_RANGE_FAC
         df = f[ifo + '/psds/0'].attrs['delta_f']
-        keys = f[ifo + '/psds'].keys()
+        keys = list(f[ifo + '/psds'].keys())
         if args.low_frequency_cutoff is not None:
             flow = args.low_frequency_cutoff
         elif 'low_frequency_cutoff' in f.attrs.keys():

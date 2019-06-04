@@ -192,9 +192,10 @@ if args.use_maxalpha:
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)
 time_window = det0.light_travel_time_to_detector(det1) + args.coinc_threshold
 
-if time_window >= args.timeslide_interval and args.timeslide_interval is not None:
-    raise parser.error("The maximum time delay between detectors should be smaller "
-                       "than the timeslide interval.")
+if args.timeslide_interval is not None and \
+        time_window >= args.timeslide_interval:
+    raise parser.error("The maximum time delay between detectors should be "
+                       "smaller than the timeslide interval.")
 
 # slide = 0 means don't do timeslides
 if args.timeslide_interval is None:

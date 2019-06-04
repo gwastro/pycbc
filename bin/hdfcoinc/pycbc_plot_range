@@ -28,7 +28,7 @@ for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
     ifo = tuple(f.keys())[0]
     flow = f.attrs['low_frequency_cutoff']
-    keys = f[ifo + '/psds'].keys()
+    keys = list(f[ifo + '/psds'].keys())
     start, end = f[ifo + '/start_time'][:], f[ifo + '/end_time'][:]
     f.close()
     ranges = {}

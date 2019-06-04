@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright 2016 Thomas Dent
 #
@@ -318,11 +318,11 @@ if args.save_trig_param:
     outfile.create_dataset("template_param", data=tpars)
 outfile.create_dataset("count_in_template", data=counts_total)
 # add some metadata
-outfile.attrs.create("ifo", data=args.ifo)
-outfile.attrs.create("fit_function", data=args.fit_function)
-outfile.attrs.create("sngl_stat", data=args.sngl_stat)
+outfile.attrs.create("ifo", data=args.ifo.encode())
+outfile.attrs.create("fit_function", data=args.fit_function.encode())
+outfile.attrs.create("sngl_stat", data=args.sngl_stat.encode())
 if args.save_trig_param:
-    outfile.attrs.create("save_trig_param", data=args.save_trig_param)
+    outfile.attrs.create("save_trig_param", data=args.save_trig_param.encode())
 outfile.attrs.create("stat_threshold", data=args.stat_threshold)
 outfile.attrs.create("analysis_time", data=total_time)
 

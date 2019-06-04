@@ -220,7 +220,7 @@ def render_tmplt(path, cp):
     content = None
 
     # read file as a string
-    with open(path, 'rb') as fp:
+    with open(path, 'r') as fp:
         content = fp.read()
 
     # replace all the escaped characters
