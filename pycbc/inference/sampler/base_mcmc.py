@@ -112,7 +112,7 @@ def blob_data_to_dict(stat_names, blobs):
         "number of stat names must match length of tuples in the blobs")
     # convert to an array; to ensure that we get the dtypes correct, we'll
     # cast to a structured array
-    raw_stats = numpy.array(blobs, dtype=zip(stat_names, dtypes))
+    raw_stats = numpy.array(blobs, dtype=list(zip(stat_names, dtypes)))
     # transpose so that it has shape nwalkers x niterations
     raw_stats = raw_stats.transpose()
     # now return as a dictionary
