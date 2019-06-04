@@ -54,8 +54,6 @@ To start a Docker container on Linux that can display graphics, run the commands
 
     docker run -e DISPLAY=${DISPLAY} -v /tmp/.X11-unix:/tmp/.X11-unix/ -it pycbc/pycbc-el7:latest
 
-If you are having problems with this method, try `Using ssh to display graphics`_.
-
 -------------------------------
 Sharing user files and SSH keys
 -------------------------------
