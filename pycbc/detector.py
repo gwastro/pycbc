@@ -61,7 +61,7 @@ def get_available_detectors():
     known_lal_names = [j for j in ld.keys() if "DETECTOR_PREFIX" in j]
     known_prefixes = [ld[k] for k in known_lal_names]
     known_names = [ld[k.replace('PREFIX', 'NAME')] for k in known_lal_names]
-    return zip(known_prefixes, known_names)
+    return list(zip(known_prefixes, known_names))
 
 
 class Detector(object):
