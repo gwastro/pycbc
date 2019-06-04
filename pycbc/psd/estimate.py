@@ -219,7 +219,7 @@ def inverse_spectrum_truncation(psd, max_filter_len, low_frequency_cutoff=None, 
     if type(max_filter_len) is not int or max_filter_len <= 0:
         raise ValueError('max_filter_len must be a positive integer')
     if low_frequency_cutoff is not None and \
-            (low_frequency_cutoff < 0 or 
+            (low_frequency_cutoff < 0 or
              low_frequency_cutoff > psd.sample_frequencies[-1]):
         raise ValueError('low_frequency_cutoff must be within the bandwidth of the PSD')
 
