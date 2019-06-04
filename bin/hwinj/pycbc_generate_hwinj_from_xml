@@ -53,7 +53,7 @@ parser.add_argument('--sample-rate', type=int, required=True,
 parser.add_argument("--tag", type=str, default='hwinjcbcsimid',
                     help="Prefix added to output filenames.")
 parser.add_argument('--ifos', nargs='+', default=['H1', 'L1'], required=True,
-                    choices=zip(*get_available_detectors())[0],
+                    choices=list(zip(*get_available_detectors()))[0],
                     help='List of IFOs to generate injections for.')
 # parse command line
 opts = parser.parse_args()

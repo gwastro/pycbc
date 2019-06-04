@@ -250,7 +250,8 @@ class TmpltbankTestClass(unittest.TestCase):
                 if self.min_total_mass == min_comp_mass:
                     # Okay, the total mass is changed by the components
                     pass
-                elif min_eta < self.min_eta or min_eta > self.max_eta:
+                elif (self.min_eta and min_eta < self.min_eta) or \
+                        (self.max_eta and min_eta > self.max_eta):
                     # Okay, not possible from eta
                     pass
                 elif min_chirp_mass < self.min_chirp_mass:
@@ -271,7 +272,8 @@ class TmpltbankTestClass(unittest.TestCase):
                 if self.max_total_mass == max_comp_mass:
                     # Okay, the total mass is changed by the components
                     pass
-                elif max_eta < self.min_eta or max_eta > self.max_eta:
+                elif (self.min_eta and max_eta < self.min_eta) or\
+                        (self.max_eta and max_eta > self.max_eta):
                     # Okay, not possible from eta
                     pass
                 elif max_chirp_mass > self.max_chirp_mass:

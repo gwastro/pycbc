@@ -97,30 +97,30 @@ opts, _ = parser.parse_args()
 
 # check options
 if opts.input is None and (opts.mass1 is None or opts.mass2 is None):
-    raise ValueError, fstr("""must specify input file or at least mass1,mass2
-        of a single waveform""")
+    raise ValueError("Must specify input file or at least mass1,mass2 "
+                     "of a single waveform")
 infile = opts.input
 if opts.input is not None and opts.output is None:
-    raise ValueError, "must specify output if giving input file"
+    raise ValueError("Must specify output if giving input file")
 outfile = opts.output
 if opts.approximant is None:
-    raise ValueError, "must specify an approximant"
+    raise ValueError("Must specify an approximant")
 fd_approx = opts.approximant in waveform.fd_approximants()
 if not fd_approx and opts.approximant not in waveform.td_approximants():
-    raise ValueError, "unrecognized approximant %s" % opts.approximant
+    raise ValueError("Unrecognized approximant {}".format(opts.approximant))
 if not fd_approx and opts.sample_rate is None:
-    raise ValueError, "TD approximants require a sample-rate"
+    raise ValueError("TD approximants require a sample-rate")
 min_sample_rate = opts.sample_rate
 if opts.max_sample_rate is not None:
     max_sample_rate = opts.max_sample_rate
 else:
     max_sample_rate = min_sample_rate
 if fd_approx and opts.segment_length is None:
-    raise ValueError, "FD approximants require a segment-length"
+    raise ValueError("FD approximants require a segment-length")
 seg_length = opts.segment_length
 wFmin = opts.f_min
 if not fd_approx and wFmin >= min_sample_rate / 2.:
-    raise ValueError, "f-min must be < half the sample-rate"
+    raise ValueError("f-min must be < half the sample-rate")
 phi0 = 0.
 
 # load the xml file
@@ -178,8 +178,9 @@ for cache_id, tmplt in enumerate(sngl_insp_table):
             except:
                 sample_rate *= 2
                 if sample_rate > max_sample_rate:
-                    raise ValueError, "unable to generate template %i;" %(
-                        cache_id) + " try increasing max sample rate"
+                    err_msg = "Unable to generate template %i;" %(cache_id)
+                    err_msg += " try increasing max sample rate"
+                    raise ValueError(err_msg)
                 
         # Remove possible zero padding at the end of the waveforms
         amp = hplus**2 + hcross**2 

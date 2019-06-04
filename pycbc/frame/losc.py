@@ -71,7 +71,7 @@ def losc_frame_json(ifo, start_time, end_time):
     url = _losc_url % (run, ifo, int(start_time), int(end_time))
 
     try:
-        return json.loads(urlopen(url).read())
+        return json.loads(urlopen(url).read().decode())
     except Exception as e:
         print(e)
         raise ValueError('Failed to find gwf files for '

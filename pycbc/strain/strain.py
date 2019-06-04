@@ -906,7 +906,7 @@ class StrainSegments(object):
 
         self.delta_f = 1.0 / seg_len
         self.time_len = seg_len * self.sample_rate
-        self.freq_len = self.time_len / 2 + 1
+        self.freq_len = self.time_len // 2 + 1
 
         seg_end_pad = segment_end_pad
         seg_start_pad = segment_start_pad
