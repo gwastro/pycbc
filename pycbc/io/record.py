@@ -1458,10 +1458,10 @@ class FieldArray(numpy.recarray):
         """
         if isinstance(possible_fields, string_types):
             possible_fields = [possible_fields]
-        possible_fields = map(str, possible_fields)
+        possible_fields = list(map(str, possible_fields))
         # we'll just use float as the dtype, as we just need this for names
-        arr = cls(1, dtype=zip(possible_fields,
-                               len(possible_fields)*[float]))
+        arr = cls(1, dtype=list(zip(possible_fields,
+                                len(possible_fields)*[float])))
         # try to perserve order
         return list(get_needed_fieldnames(arr, parameters))
 

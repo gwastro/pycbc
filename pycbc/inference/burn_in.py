@@ -205,7 +205,7 @@ class MCMCBurnInTests(object):
             try:
                 group = fp[fp.samples_group]
                 # we'll just use the first parameter
-                params = group.keys()
+                params = list(group.keys())
                 nsamples = group[params[0]].shape[-1]
             except (KeyError, IndexError):
                 nsamples = 0
