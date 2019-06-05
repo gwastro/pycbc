@@ -182,12 +182,14 @@ class EpsiePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """Sets the state of the sampler back to the instance saved in a file.
         """
         with self.io(filename, 'r') as fp:
-            rstate = fp.read_random_state()
-            sampler_state = fp.read_sampler_state()
-        # set the global numpy random state for pycbc
-        numpy.random.set_state(rstate)
+            sampler_state = fp.read_state()
+            numpy_rstate_group = '/'.join([fp.sampler_group,
+                                           'numpy_random_state'])
+            rstate = fp.read_random_state(group=numpy_rstate_group)
         # set the sampler state for epsie
         self._sampler.set_state(sampler_state)
+        # set the global numpy random state for pycbc
+        numpy.random.set_state(rstate)
 
     @property
     def pos(self):
@@ -224,11 +226,17 @@ class EpsiePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             fp.write_samples(self.model_stats, last_iteration=self.niterations)
             # write accpetance ratio
             acceptance = self._sampler.acceptance
-            fp.write_acceptance_ratio(acceptance['acceptance_ratio'])
+            fp.write_acceptance_ratio(acceptance['acceptance_ratio'],
+                                      last_iteration=self.niterations)
             # write temperature data
-            fp.write_temperature_data(self._sampler.temperature_swaps)
-            # write random state
-            fp.write_state()
+            fp.write_temperature_data(self._sampler.temperature_swaps,
+                                      last_iteration=self.niterations)
+            # write the sampler's state
+            fp.write_state(self._sampler.state)
+            # write numpy's global state (for the distributions)
+            numpy_rstate_group = '/'.join([fp.sampler_group,
+                                           'numpy_random_state'])
+            fp.write_random_state(group=numpy_rstate_group)
 
     @classmethod
     def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
