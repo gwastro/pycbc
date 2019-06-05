@@ -106,7 +106,7 @@ if center_time == -1.0:
     plt.grid(False)
     plt.xlabel('Time from {:.3f} (s)'.format(opts.center_time))
     plt.ylabel('Frequency (Hz)')
-    title = 'No triggers or this IFO'
+    title = 'No data for this IFO'
     pycbc.results.save_fig_with_metadata\
     (fig, opts.output_file, cmd=' '.join(sys.argv), fig_kwds={'dpi': 150},
      title=title, caption=opts.plot_caption)
