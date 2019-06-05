@@ -370,7 +370,7 @@ class EventManager(object):
             logging.info("Keeping triggers within %s seconds of injection",
                          opt.injection_window)
             self.keep_near_injection(opt.injection_window,
-                                          gwstrain.injections)
+                                     gwstrain.injections)
             logging.info("%d remaining triggers", len(self.events))
 
         self.accumulate = [self.events]
