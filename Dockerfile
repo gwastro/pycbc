@@ -49,7 +49,7 @@ ADD docker/etc/profile.d/pycbc.sh /etc/profile.d/pycbc.sh
 ADD docker/etc/profile.d/pycbc.csh /etc/profile.d/pycbc.csh
 
 # add singularity profiles
-COPY .singularity.d /.singularity.d
+COPY docker/.singularity.d /.singularity.d
 RUN cd / && \
     ln -s .singularity.d/actions/exec .exec && \
     ln -s .singularity.d/actions/run .run && \
