@@ -211,7 +211,7 @@ class MultiTemperedMCMCIO(object):
             nwalkers = self.nwalkers
         # temperatures to load
         selecttemps = False
-        if isinstance(temps, int):
+        if isinstance(temps, (int, numpy.int32, numpy.int64)):
             tidx = temps
             ntemps = 1
         else:
