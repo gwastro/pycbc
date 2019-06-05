@@ -45,8 +45,8 @@ RUN pip install --upgrade pip setuptools
 RUN pip install ipython jupyter
 
 # set up environment
-ADD etc/profile.d/pycbc.sh /etc/profile.d/pycbc.sh
-ADD etc/profile.d/pycbc.csh /etc/profile.d/pycbc.csh
+ADD docker/etc/profile.d/pycbc.sh /etc/profile.d/pycbc.sh
+ADD docker/etc/profile.d/pycbc.csh /etc/profile.d/pycbc.csh
 
 # add singularity profiles
 COPY .singularity.d /.singularity.d
@@ -66,9 +66,9 @@ RUN MPICC=/opt/mvapich2-2.1/bin CFLAGS='-I /opt/mvapich2-2.1/include -L /opt/mva
 
 # Install and set up cvmfs using static mounts
 RUN yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum install -y cvmfs cvmfs-config-default
-ADD etc/cvmfs/default.local /etc/cvmfs/default.local
-ADD etc/cvmfs/60-osg.conf /etc/cvmfs/60-osg.conf
-ADD etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.opensciencegrid.org.conf
+ADD docker/etc/cvmfs/default.local /etc/cvmfs/default.local
+ADD docker/etc/cvmfs/60-osg.conf /etc/cvmfs/60-osg.conf
+ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.opensciencegrid.org.conf
 RUN mkdir -p /cvmfs/config-osg.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org /cvmfs/gwosc.osgstorage.org
 RUN echo "config-osg.opensciencegrid.org /cvmfs/config-osg.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab && echo "oasis.opensciencegrid.org /cvmfs/oasis.opensciencegrid.org cvmfs ro,noauto 0 0" >> /etc/fstab && echo "gwosc.osgstorage.org /cvmfs/gwosc.osgstorage.org cvmfs ro,noauto 0 0" >> /etc/fstab
 
@@ -79,7 +79,7 @@ RUN mkdir -p /oasis /scratch /projects /usr/lib64/slurm /var/run/munge
 RUN groupadd -g 1000 pycbc && useradd -u 1000 -g 1000 -d /opt/pycbc -k /etc/skel -m -s /bin/bash pycbc
 
 # Add the script that installs PyCBC inside the container
-ADD etc/docker-install.sh /etc/docker-install.sh
+ADD docker/etc/docker-install.sh /etc/docker-install.sh
 
 # When the container is started with 
 #   docker run -it pycbc/pycbc-el7:latest 
