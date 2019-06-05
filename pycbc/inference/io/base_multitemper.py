@@ -104,7 +104,8 @@ class MultiTemperedMCMCIO(object):
     """Provides functions for reading/writing samples from a parallel-tempered
     MCMC sampler.
     """
-    def write_samples(self, samples, parameters=None, last_iteration=None):
+    def write_samples(self, samples, parameters=None, last_iteration=None,
+                      group=None):
         """Writes samples to the given file.
 
         Results are written to ``samples_group/{vararg}``, where ``{vararg}``
@@ -123,12 +124,17 @@ class MultiTemperedMCMCIO(object):
             The iteration of the last sample. If the file's ``thinned_by``
             attribute is > 1, this is needed to determine where to start
             thinning the samples to match what has already been stored on disk.
+        group : str, optional
+            Which group to write the samples to. Default (None) will result
+            in writing to "samples".
         """
         ntemps, nwalkers, niterations = tuple(samples.values())[0].shape
         assert all(p.shape == (ntemps, nwalkers, niterations)
                    for p in samples.values()), (
                "all samples must have the same shape")
-        group = self.samples_group + '/{name}'
+        if group is None:
+            group = self.samples_group
+        group = group + '/{name}'
         if parameters is None:
             parameters = samples.keys()
         # thin the samples
