@@ -44,39 +44,6 @@ def update_progress(p,u,n):
             f.close()
         last_progress_update = p
 
-def process_triggers(event_mgr, opt, gwstrain=None):
-    """ Apply clustering and rejection vetoes to current triggers."""
-    logging.info("We currently have %d triggers" % len(event_mgr.events))
-    if opt.chisq_threshold and opt.chisq_bins:
-        logging.info("Removing triggers with poor chisq")
-        event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
-                                  opt.chisq_delta)
-        logging.info("%d remaining triggers" % len(event_mgr.events))
-
-    if opt.newsnr_threshold and opt.chisq_bins:
-        logging.info("Removing triggers with NewSNR below threshold")
-        event_mgr.newsnr_threshold(opt.newsnr_threshold)
-        logging.info("%d remaining triggers" % len(event_mgr.events))
-
-    if opt.keep_loudest_interval:
-        logging.info("Removing triggers not within the top %s loudest of a %s "
-                     "second interval by %s" % (opt.keep_loudest_num,
-                                                opt.keep_loudest_interval,
-                                                opt.keep_loudest_stat))
-        event_mgr.keep_loudest_in_interval(
-            opt.keep_loudest_interval * opt.sample_rate,
-            opt.keep_loudest_num, statname=opt.keep_loudest_stat,
-            log_chirp_width=opt.keep_loudest_log_chirp_window)
-        logging.info("%d remaining triggers" % len(event_mgr.events))
-
-    if opt.injection_window and hasattr(gwstrain, 'injections'):
-        logging.info("Keeping triggers within %s seconds of injection" %
-                     opt.injection_window)
-        event_mgr.keep_near_injection(opt.injection_window,
-                                      gwstrain.injections)
-        logging.info("%d remaining triggers" % len(event_mgr.events))
-
-
 tstart = time.time()
 
 parser = argparse.ArgumentParser(usage='',
@@ -463,13 +430,11 @@ with ctx:
         event_mgr.finalize_template_events()
         if opt.finalize_events_template_rate is not None and \
                 not (t_num+1) % opt.finalize_events_template_rate:
-            event_mgr.consolidate_events()
-            process_triggers(event_mgr, opt, gwstrain=gwstrain)
-            event_mgr.consolidate_events()
+            event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 
+event_mgr.consolidate_events(opt, gwstrain=gwstrain)
 event_mgr.finalize_events()
-logging.info("Found %s triggers" % str(len(event_mgr.events)))
-process_triggers(event_mgr, opt, gwstrain=gwstrain)
+logging.info("Outputting %s triggers" % str(len(event_mgr.events)))
 
 tstop = time.time()
 run_time = tstop - tstart
