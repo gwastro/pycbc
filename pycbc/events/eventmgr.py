@@ -26,6 +26,7 @@ produces event triggers
 """
 from __future__ import absolute_import
 import numpy, copy, os.path
+import logging
 
 from pycbc import WEAVE_FLAGS
 from pycbc.types import Array
