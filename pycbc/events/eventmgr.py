@@ -340,8 +340,39 @@ class EventManager(object):
         self.accumulate.append(self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
 
-    def consolidate_events(self):
+    def consolidate_events(self, opt, gwstrain=None):
         self.events = numpy.concatenate(self.accumulate)
+        logging.info("We currently have %d triggers" % len(event_mgr.events))
+        if opt.chisq_threshold and opt.chisq_bins:
+            logging.info("Removing triggers with poor chisq")
+            event_mgr.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
+                                      opt.chisq_delta)
+            logging.info("%d remaining triggers" % len(event_mgr.events))
+
+        if opt.newsnr_threshold and opt.chisq_bins:
+            logging.info("Removing triggers with NewSNR below threshold")
+            event_mgr.newsnr_threshold(opt.newsnr_threshold)
+            logging.info("%d remaining triggers" % len(event_mgr.events))
+
+        if opt.keep_loudest_interval:
+            logging.info("Removing triggers not within the top %s "
+                         "loudest of a %s "
+                         "second interval by %s" % (opt.keep_loudest_num,
+                                                    opt.keep_loudest_interval,
+                                                    opt.keep_loudest_stat))
+            event_mgr.keep_loudest_in_interval\
+                (opt.keep_loudest_interval * opt.sample_rate,
+                 opt.keep_loudest_num, statname=opt.keep_loudest_stat,
+                 log_chirp_width=opt.keep_loudest_log_chirp_window)
+            logging.info("%d remaining triggers" % len(event_mgr.events))
+
+        if opt.injection_window and hasattr(gwstrain, 'injections'):
+            logging.info("Keeping triggers within %s seconds of injection" %
+                         opt.injection_window)
+            event_mgr.keep_near_injection(opt.injection_window,
+                                          gwstrain.injections)
+            logging.info("%d remaining triggers" % len(event_mgr.events))
+
         self.accumulate = [self.events]
 
     def finalize_events(self):
