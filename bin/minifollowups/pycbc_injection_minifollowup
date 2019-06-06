@@ -35,7 +35,7 @@ def to_file(path, ifo=None):
     return fil
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg) 
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
@@ -67,13 +67,13 @@ parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
 workflow = wf.Workflow(args, args.workflow_name)
 
 wf.makedir(args.output_dir)
-             
+
 # create a FileList that will contain all output files
 layouts = []
 
@@ -117,7 +117,7 @@ except:
                'L1': f['injections/eff_dist_l'][:][missed],
                'V1': f['injections/eff_dist_v'][:][missed],
                }
-    dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo], 
+    dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo],
                              eff_dist[single_triggers[1].ifo])
 
     mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(\
@@ -135,25 +135,31 @@ if len(missed) < num_events:
 found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
-    
+
     injection_index = missed[sorting][num_event]
     time = f['injections/end_time'][injection_index]
-    
+
     ifo_times = ''
     inj_params = {}
     for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'end_time']:
         inj_params[val] = f['injections/%s' %(val,)][injection_index]
     for single in single_triggers:
         ifo = single.ifo
-        det = Detector(ifo)
-        lon = f['injections/longitude'][injection_index]
-        lat = f['injections/latitude'][injection_index]
-        ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
-        ifo_times += ' %s:%s ' % (ifo, ifo_time) 
+        for seg in insp_data_seglists[single.ifo]:
+            if time in seg:
+                det = Detector(ifo)
+                lon = f['injections/longitude'][injection_index]
+                lat = f['injections/latitude'][injection_index]
+                ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
+                break
+        else:
+            ifo_time = -1.0
+
+        ifo_times += ' %s:%s ' % (ifo, ifo_time)
         inj_params[ifo+'_end_time'] = ifo_time
-          
+
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
-                               args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
+                               args.output_dir, tags=args.tags + [str(num_event)])[0],)]
     if injection_index in found_inj_idxes:
         trig_id = numpy.where(found_inj_idxes == injection_index)[0][0]
         layouts += [(mini.make_coinc_info
@@ -164,15 +170,19 @@ for num_event in range(num_events):
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
-    
+
     for single in single_triggers:
-        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
-                                time, args.output_dir,
+        checkedtime = time
+        if (inj_params[single.ifo+'_end_time'] == -1.0):
+            checkedtime = -1.0
+
+        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
+                                checkedtime, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
 
         files += mini.make_qscan_plot\
-            (workflow, single.ifo, time, args.output_dir,
+            (workflow, single.ifo, checkedtime, args.output_dir,
              data_segments=insp_data_seglists[single.ifo],
              injection_file=injection_xml_file,
              tags=args.tags + [str(num_event)])
@@ -215,7 +225,7 @@ for num_event in range(num_events):
         # Use SNR here or NewSNR??
         snr = hd_sngl.snr
         lgc_mask = abs(end_times - inj_params['end_time']) < args.inj_window
-        
+
         if len(snr[lgc_mask]) == 0:
             continue
 
