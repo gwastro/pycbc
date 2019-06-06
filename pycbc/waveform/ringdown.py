@@ -76,28 +76,17 @@ def format_lmns(lmns):
     given, raise an error.
     """
 
-    # Case 1: the list is in a string (with or without comma),
-    # "[221, 331]" or "[221 331]"
+    # Case 1: the list is in a string "[221, 331]"
     if isinstance(lmns, (str, unicode)):
         # strip off brackets
         lmns = lmns.strip('[]')
         # convert to list
-        delimiter = ',' if bool(re.search(',', lmns)) else ' '
-        lmns = lmns.split(delimiter)
+        lmns = lmns.split(',')
 
-    # Case 2: a list with only one string with a list (with or without comma),
-    # ["221' '331"] or ["221', '331"]
+    # Case 2: a list with only one string with a list ["221', '331"]
     elif (len(lmns) == 1 and isinstance(lmns[0], (str, unicode))
           and len(lmns[0]) > 3):
-        try:
-            # It could be a single mode list with an extra space, ['221 ']
-            lmns = [str(int(lmn)) for lmn in lmns]
-        except ValueError:
-            delimiter = ',' if bool(re.search(',', lmns[0])) else ' '
-            lmns = lmns[0].split(delimiter)
-
-    # Remove any extra spaces or quotes
-    lmns = [lmn.strip().strip('\'') for lmn in lmns]
+        lmns = lmns[0].split(',')
 
     out = []
     # Cycle over the lmns to ensure that we get back a list of strings that
@@ -151,20 +140,21 @@ def lm_freqs_taus(**kwargs):
     times of each overtone of a specific lm mode, checking that all of them
     are given.
     """
-    lmns = kwargs['lmns']
+    lmns = format_lmns(kwargs['lmns'])
     freqs, taus = {}, {}
 
     for lmn in lmns:
-        l, m, nmodes = int(lmn[0]), int(lmn[1]), int(lmn[2])
+        lm, nmodes = lmn[0:-1], int(lmn[2])
         for n in range(nmodes):
+            mode = lm + '{}'.format(n)
             try:
-                freqs['%d%d%d' %(l,m,n)] = kwargs['f_%d%d%d' %(l,m,n)]
+                freqs[mode] = kwargs['f_' + mode]
             except KeyError:
-                raise ValueError('f_%d%d%d is required' %(l,m,n))
+                raise ValueError('f_{} is required'.format(mode))
             try:
-                taus['%d%d%d' %(l,m,n)] = kwargs['tau_%d%d%d' %(l,m,n)]
+                taus[mode] = kwargs['tau_' + mode]
             except KeyError:
-                raise ValueError('tau_%d%d%d is required' %(l,m,n))
+                raise ValueError('tau_{} is required'.format(mode))
 
     return freqs, taus
 
