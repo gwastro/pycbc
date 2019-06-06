@@ -207,8 +207,10 @@ ext = []
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,
                   ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
-                  extra_compile_args=[ '-O3', '-w', '-msse4.2',
-                                 '-ffast-math', '-ffinite-math-only'],
+                  extra_compile_args=['-O3', '-w', '-msse4.2',
+                                      '-ffast-math', '-ffinite-math-only',
+                                      '-fopenmp'],
+                  extra_link_args=['-fopenmp'],
                   compiler_directives={'embedsignature': True})
     ext.append(e)
 
