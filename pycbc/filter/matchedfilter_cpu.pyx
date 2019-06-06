@@ -64,7 +64,6 @@ def _correlate(COMPLEXTYPE[:] x,
                COMPLEXTYPE[:] z):
     cdef unsigned int xmax = x.shape[0]
     cdef unsigned int i
-    cdef COMPLEXTYPE xconj;
     for i in prange(xmax, nogil=True):
         z[i] = x[i].conjugate() * y[i]
 
