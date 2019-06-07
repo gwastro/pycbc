@@ -186,7 +186,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
         # The veto definer will allow the use of MACRO names
         # These directly correspond the name defined in the veto definer file.
         if veto_definer is not None:
-            veto_def = parse_veto_definer(veto_definer, ifo)
+            veto_def = parse_veto_definer(veto_definer, [ifo])
 
         # We treat the veto definer name as if it were its own flag and
         # a process the flags in the veto definer
