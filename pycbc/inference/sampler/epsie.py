@@ -28,8 +28,8 @@ from ..burn_in import MultiTemperedMCMCBurnInTests
 from ..jump_proposals import epsie_proposals_from_config
 
 
-class EpsiePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
-                     BaseMCMC, BaseSampler):
+class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
+                   BaseMCMC, BaseSampler):
     """Constructs an MCMC sampler using epsie's parallel-tempered sampler.
 
     Parameters
@@ -74,8 +74,8 @@ class EpsiePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         Use MPI for parallelization. Default (False) will use python's
         multiprocessing.
     """
-    name = "epsie_ptsampler"
-    _io = EpsiePTFile
+    name = "epsie"
+    _io = EpsieFile
     burn_in_class = MultiTemperedMCMCBurnInTests
 
     def __init__(self, model, nchains, ntemps=None, betas=None,
