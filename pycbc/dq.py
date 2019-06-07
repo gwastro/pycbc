@@ -53,6 +53,13 @@ def parse_veto_definer(veto_def_filename, ifos):
     from glue.ligolw.ligolw import LIGOLWContentHandler as h
     lsctables.use_in(h)
 
+    data = {}
+    for ifo_name in ifos:
+        data[ifo_name] = {}
+        data[ifo_name]['CAT_H'] = []
+        for cat_num in range(1,5):
+            data[ifo_name]['CAT_{}'.format(cat_num)] = []
+
     indoc = ligolw_utils.load_filename(veto_def_filename, False,
                                        contenthandler=h)
     veto_table = table.get_table(indoc, 'veto_definer')
@@ -65,13 +72,6 @@ def parse_veto_definer(veto_def_filename, ifos):
     end = numpy.array(veto_table.getColumnByName('end_time'))
     start_pad = numpy.array(veto_table.getColumnByName('start_pad'))
     end_pad = numpy.array(veto_table.getColumnByName('end_pad'))
-
-    data = {}
-    for ifo in ifos:
-        data[ifo] = {}
-        data[ifo[i]]['CAT_H'] = []
-        for cat_num in range(1,5):
-            data[ifo[i]]['CAT_{}'.format(cat_num)] = []
 
     for i in range(len(veto_table)):
         if ifo[i] not in data:
