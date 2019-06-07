@@ -57,7 +57,7 @@ def parse_veto_definer(veto_def_filename, ifos):
     for ifo_name in ifos:
         data[ifo_name] = {}
         data[ifo_name]['CAT_H'] = []
-        for cat_num in range(1,5):
+        for cat_num in range(1, 5):
             data[ifo_name]['CAT_{}'.format(cat_num)] = []
 
     indoc = ligolw_utils.load_filename(veto_def_filename, False,
