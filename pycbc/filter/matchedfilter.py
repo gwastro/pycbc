@@ -510,7 +510,7 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
         The SNR maximized over sky location
     """
     # NOTE: Not much optimization has been done here! This may need to be
-    # C-ified using scipy.weave.
+    # Cythonized.
 
     if out is None:
         out = zeros(len(hplus))
