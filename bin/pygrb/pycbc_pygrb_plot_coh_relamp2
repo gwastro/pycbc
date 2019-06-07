@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#Copyright (C) 2019 Gino Contestabile, Francesco Pannarale
+# Copyright (C) 2019 Gino Contestabile, Francesco Pannarale
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -39,7 +39,7 @@ from pylal.coh_PTF_pyutils import calculate_contours, readSegFiles
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_plot_snr_snrMinusTrace"
+__program__ = "pycbc_pygrb_plot_coh_relamp2"
 
 
 
@@ -47,7 +47,7 @@ __program__ = "pycbc_pygrb_plot_snr_snrMinusTrace"
 # Main script starts here
 # =============================================================================
 
-description = 'pycbc_pygrb_plot_coh_trace will produce coherent SNR versus (SNR-trace SNR) plots.'
+description = 'pycbc_pygrb_plot_coh_relamp2 will produce coherent SNR versus inclination plots.'
 opts = pygrb_plot_two_snrs_opts_parser(description=description, version=__version__)
 
 trigFile  = os.path.abspath(opts.trig_file)
@@ -193,16 +193,17 @@ trigData.Time = [t-grbTime for t in trigData.Time]
 if injFile:
   injData.Time  = [t-grbTime for t in injData.Time]
 
-# Coherent SNR versus (SNR-traceSNR): non-zoomed and zoomed
+# Coherent SNR versus rel amp 2: non-zoomed and zoomed
+# TODO: empty!
 fig_path_list = [outfile, zoomedoutfile]
-xlims_list = [None, [6,20]]
-ylims_list = [None, [-5,10]]
-inj_y = None
-if injFile:
-  inj_y = injData.SNR - injData.TraceSNR
-for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
-  pygrb_plotter(trigData.SNR, trigData.SNR - trigData.TraceSNR, injData.SNR, inj_y, injFile, \
-                "Coherent SNR", "SNR - Trace SNR", fig_path, \
-                colors=['g-'], \
-                xlims=xlims, ylims=ylims, use_logs=False, verbose=verbose)
-
+xlims_list = [None, [6,30]]
+ylims_list = [None, None]
+try:
+  for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
+    pygrb_plotter(trigData.SNR, trigData.RelAmp2, \
+                  injData.SNR, injData.RelAmp2, injFile, \
+                  "Coherent SNR", "Relative amplitude 2", \
+                  fig_path, xlims=xlims, ylims=ylims, verbose=verbose)
+except (OverflowError,ValueError):
+  sys.stderr.write("WARNING: Relative amplitude 2 versus coherent SNR "+\
+                   "plot failed.\n")
