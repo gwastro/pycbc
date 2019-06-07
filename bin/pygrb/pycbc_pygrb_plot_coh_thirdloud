@@ -47,7 +47,7 @@ __program__ = "pycbc_pygrb_plot_coh_thirdloud"
 # Main script starts here
 # =============================================================================
 
-description = 'pycbc_pygrb_plot_coh_firstloud will produce coherent SNR versus third loudest SNR plots.'
+description = 'pycbc_pygrb_plot_coh_thirdloud will produce coherent SNR versus third loudest SNR plots.'
 opts = pygrb_plot_two_snrs_opts_parser(description=description, version=__version__)
 
 trigFile  = os.path.abspath(opts.trig_file)
@@ -95,6 +95,9 @@ searchSumm = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
 
 # Extract IFOS
 ifos = sorted(map(str, searchSumm[0].get_ifos()))
+if(len(ifos)<3):
+  print("Found less than 2 IFOs: cannot produce coherent SNR versus thirs loudest SNR plots.")
+  exit()
 
 tmp, slideDict, segmentDict = \
         MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trigFile])
@@ -194,17 +197,11 @@ if injFile:
   injData.Time  = [t-grbTime for t in injData.Time]
 
 #Coherent SNR versus third loudest single SNR: non-zoomed and zoomed
-if(len(ifos)>2): 
-
-  fig_path_list = [outfile, zoomedoutfile]
-  xlims_list = [None, [6,50]]
-  ylims_list = [None, [0,20]]
-  for fig_path, xlims,ylims in zip(fig_path_list, xlims_list, ylims_list):
-    pygrb_plotter(trigData.SNR, trigData.ThirdSNR, injData.SNR, injData.ThirdSNR, injFile, \
+fig_path_list = [outfile, zoomedoutfile]
+xlims_list = [None, [6,50]]
+ylims_list = [None, [0,20]]
+for fig_path, xlims,ylims in zip(fig_path_list, xlims_list, ylims_list):
+  pygrb_plotter(trigData.SNR, trigData.ThirdSNR, injData.SNR, injData.ThirdSNR, injFile, \
                 "Coherent SNR", "Third loudest sngl SNR", fig_path, \
                 snr_vals=[0,50], conts=[[4,4]], colors=['g-'], \
                 xlims=xlims, ylims=ylims, use_logs=False, verbose=verbose)
-
-
-
-

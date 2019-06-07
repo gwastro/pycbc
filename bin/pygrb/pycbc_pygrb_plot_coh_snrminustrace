@@ -39,7 +39,7 @@ from pylal.coh_PTF_pyutils import calculate_contours, readSegFiles
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_plot_coh_secondloud"
+__program__ = "pycbc_pygrb_plot_coh_snrminustrace"
 
 
 
@@ -47,7 +47,7 @@ __program__ = "pycbc_pygrb_plot_coh_secondloud"
 # Main script starts here
 # =============================================================================
 
-description = 'pycbc_pygrb_plot_coh_secondloud will produce coherent SNR versus second loudest SNR plots.'
+description = 'pycbc_pygrb_plot_coh_snrminustrace will produce coherent SNR versus (SNR-trace SNR) plots.'
 opts = pygrb_plot_two_snrs_opts_parser(description=description, version=__version__)
 
 trigFile  = os.path.abspath(opts.trig_file)
@@ -95,9 +95,6 @@ searchSumm = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
 
 # Extract IFOS
 ifos = sorted(map(str, searchSumm[0].get_ifos()))
-if(len(ifos)<2): 
-  print("Found less than 2 IFOs: cannot produce coherent SNR versus second loudest SNR plots.")
-  exit()
 
 tmp, slideDict, segmentDict = \
         MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trigFile])
@@ -196,12 +193,16 @@ trigData.Time = [t-grbTime for t in trigData.Time]
 if injFile:
   injData.Time  = [t-grbTime for t in injData.Time]
 
-#Coherent SNR versus second loudest single SNR: non-zoomed and zoomed
+# Coherent SNR versus (SNR-traceSNR): non-zoomed and zoomed
 fig_path_list = [outfile, zoomedoutfile]
-xlims_list = [None, [6,50]]
-ylims_list = [None, [0,20]]
-for fig_path, xlims,ylims in zip(fig_path_list, xlims_list, ylims_list):
-  pygrb_plotter(trigData.SNR, trigData.SecondSNR, injData.SNR, injData.SecondSNR, injFile, \
-                "Coherent SNR", "Second loudest sngl SNR", fig_path, \
-                snr_vals=[6,10,50], conts=[[2.5, 3.5, 13.5]], colors=['g-'], \
+xlims_list = [None, [6,20]]
+ylims_list = [None, [-5,10]]
+inj_y = None
+if injFile:
+  inj_y = injData.SNR - injData.TraceSNR
+for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
+  pygrb_plotter(trigData.SNR, trigData.SNR - trigData.TraceSNR, injData.SNR, inj_y, injFile, \
+                "Coherent SNR", "SNR - Trace SNR", fig_path, \
+                colors=['g-'], \
                 xlims=xlims, ylims=ylims, use_logs=False, verbose=verbose)
+
