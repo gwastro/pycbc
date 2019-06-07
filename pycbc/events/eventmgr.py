@@ -623,7 +623,8 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         network_events = numpy.array([e for e in self.network_events],
                                      dtype=self.network_event_dtype)
         f['event_id'] = network_events['event_id']
-        f['network_snr'] = network_events['network_snr']
+        f['coherent_snr'] = network_events['coherent_snr']
+        f['reweighted_snr'] = network_events['reweighted_snr']
         f['null_snr'] = network_events['null_snr']
         f['end_time_gc'] = network_events['time_index'] / \
                 float(self.opt.sample_rate[self.ifos[0].lower()]) + \
