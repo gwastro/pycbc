@@ -22,12 +22,14 @@ from __future__ import absolute_import
 from .base import (initial_dist_from_config, create_new_output_file)
 from .emcee import EmceeEnsembleSampler
 from .emcee_pt import EmceePTSampler
+from .epsie import EpsieSampler
 from .multinest import MultinestSampler
 
 # list of available samplers
 samplers = {cls.name: cls for cls in (
     EmceeEnsembleSampler,
     EmceePTSampler,
+    EpsieSampler,
     MultinestSampler
 )}
 
