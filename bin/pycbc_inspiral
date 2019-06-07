@@ -180,7 +180,7 @@ parser.add_argument("--finalize-events-template-rate", default=None,
                          "usage if a lot of triggers that would be rejected "
                          "are being retained. A suggested value for this is "
                          "500, but a good number may depend on other settings "
-                         "and your specific use-case.)
+                         "and your specific use-case.")
 parser.add_argument("--gpu-callback-method", default='none')
 parser.add_argument("--use-compressed-waveforms", action="store_true", default=False,
                     help='Use compressed waveforms from the bank file.')
