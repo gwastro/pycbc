@@ -1812,7 +1812,7 @@ class PycbcInferenceExecutable(Executable):
                                                        ifo, out_dir, tags)
 
     def create_node(self, channel_names, config_file, injection_file=None,
-                    seed=None, fake_strain_seed=None, tags=None):
+                    seed=None, fake_strain_seed=None, tags=None, start_time=None, end_time=None, psd_start_time=None, psd_end_time=None):
         """ Set up a CondorDagmanNode class to run ``pycbc_inference``.
 
         Parameters
@@ -1842,8 +1842,11 @@ class PycbcInferenceExecutable(Executable):
         tags = [] if tags is None else tags
 
         # get analysis start and end time
-        start_time = self.cp.get("workflow", "start-time")
-        end_time = self.cp.get("workflow", "end-time")
+        if start_time is None:
+            start_time = self.cp.get("workflow", "start-time")
+        if end_time is None:    
+            end_time = self.cp.get("workflow", "end-time")
+            
         analysis_time = segments.segment(int(start_time), int(end_time))
 
         # get multi-IFO opts
@@ -1859,6 +1862,9 @@ class PycbcInferenceExecutable(Executable):
         node.add_opt("--instruments", " ".join(self.ifo_list))
         node.add_opt("--gps-start-time", start_time)
         node.add_opt("--gps-end-time", end_time)
+        if psd_start_time is not None:
+            node.add_opt("--psd-start-time",psd_start_time)
+            node.add_opt("--psd-end-time",psd_end_time)
         node.add_opt("--channel-name", channel_names_opt)
         node.add_input_opt("--config-file", config_file)
         if fake_strain_seed is not None:
