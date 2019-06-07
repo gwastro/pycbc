@@ -278,6 +278,12 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
         else:
             raise ValueError("Unrecognized precision {}".format(precision))
 
+        if opt.sample_rate:
+            logging.info("Resampling data")
+            strain = resample_to_delta_t(strain,
+                                         1.0 / opt.sample_rate,
+                                         method='ldas')
+
         if opt.gating_file is not None:
             logging.info("Gating times contained in gating file")
             gate_params = numpy.loadtxt(opt.gating_file)
@@ -302,12 +308,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                              ', '.join(['%.3f' % gt for gt in glitch_times]))
             strain = gate_data(strain, gate_params)
             gating_info['auto'] = gate_params
-
-        if opt.sample_rate:
-            logging.info("Resampling data")
-            strain = resample_to_delta_t(strain,
-                                         1.0 / opt.sample_rate,
-                                         method='ldas')
 
         if opt.strain_high_pass:
             logging.info("Highpass Filtering")
