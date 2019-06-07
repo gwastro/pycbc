@@ -26,6 +26,7 @@ produces event triggers
 """
 from __future__ import absolute_import
 import numpy, copy, os.path
+import logging
 
 from pycbc import WEAVE_FLAGS
 from pycbc.types import Array
@@ -235,10 +236,10 @@ class EventManager(object):
             raise RuntimeError('Chi-square test must be enabled in order to '
                                'use newsnr threshold')
 
-        remove = [i for i, e in enumerate(self.events) if
-                  ranking.newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
-                  < threshold]
-        self.events = numpy.delete(self.events, remove)
+        nsnrs = ranking.newsnr(abs(self.events['snr']),
+                               self.events['chisq'] / self.events['chisq_dof'])
+        remove_idxs = numpy.where(nsnrs < threshold)[0]
+        self.events = numpy.delete(self.events, remove_idxs)
 
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times
@@ -339,6 +340,40 @@ class EventManager(object):
     def finalize_template_events(self):
         self.accumulate.append(self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
+
+    def consolidate_events(self, opt, gwstrain=None):
+        self.events = numpy.concatenate(self.accumulate)
+        logging.info("We currently have %d triggers", len(self.events))
+        if opt.chisq_threshold and opt.chisq_bins:
+            logging.info("Removing triggers with poor chisq")
+            self.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
+                                 opt.chisq_delta)
+            logging.info("%d remaining triggers", len(self.events))
+
+        if opt.newsnr_threshold and opt.chisq_bins:
+            logging.info("Removing triggers with NewSNR below threshold")
+            self.newsnr_threshold(opt.newsnr_threshold)
+            logging.info("%d remaining triggers", len(self.events))
+
+        if opt.keep_loudest_interval:
+            logging.info("Removing triggers not within the top %s "
+                         "loudest of a %s second interval by %s",
+                         opt.keep_loudest_num, opt.keep_loudest_interval,
+                         opt.keep_loudest_stat)
+            self.keep_loudest_in_interval\
+                (opt.keep_loudest_interval * opt.sample_rate,
+                 opt.keep_loudest_num, statname=opt.keep_loudest_stat,
+                 log_chirp_width=opt.keep_loudest_log_chirp_window)
+            logging.info("%d remaining triggers", len(self.events))
+
+        if opt.injection_window and hasattr(gwstrain, 'injections'):
+            logging.info("Keeping triggers within %s seconds of injection",
+                         opt.injection_window)
+            self.keep_near_injection(opt.injection_window,
+                                     gwstrain.injections)
+            logging.info("%d remaining triggers", len(self.events))
+
+        self.accumulate = [self.events]
 
     def finalize_events(self):
         self.events = numpy.concatenate(self.accumulate)
