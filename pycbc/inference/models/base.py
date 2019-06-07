@@ -622,6 +622,7 @@ class BaseModel(object):
         dict
             A dictionary of the transformed parameters.
         """
+        params.update(self._static_params)
         # apply inverse transforms to go from sampling parameters to
         # variable args
         if self.sampling_transforms is not None:
