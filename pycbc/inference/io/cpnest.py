@@ -24,7 +24,7 @@
 """Provides IO for the emcee sampler.
 """
 from .base_sampler import BaseSamplerFile
-from .posterior import *
+from .posterior import read_raw_samples_from_file, write_samples_to_file
 
 
 class CPNestFile(BaseSamplerFile):
