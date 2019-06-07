@@ -31,7 +31,7 @@ from astropy.utils.data import download_file
 from ligo.segments import segmentlist, segment
 from pycbc.frame.losc import get_run
 
-def parse_veto_definer(veto_def_filename):
+def parse_veto_definer(veto_def_filename, ifos):
     """ Parse a veto definer file from the filename and return a dictionary
     indexed by ifo and veto definer category level.
 
@@ -39,15 +39,26 @@ def parse_veto_definer(veto_def_filename):
     ----------
     veto_def_filename: str
         The path to the veto definer file
+    ifos: str
+        The list of ifos for which we require information from the vet-definer
+        file
 
-    Returns:
-        parsed_definition: dict
-            Returns a dictionary first indexed by ifo, then category level, and
-            finally a list of veto definitions.
+    Returns
+    --------
+    parsed_definition: dict
+        Returns a dictionary first indexed by ifo, then category level, and
+        finally a list of veto definitions.
     """
     from glue.ligolw import table, lsctables, utils as ligolw_utils
     from glue.ligolw.ligolw import LIGOLWContentHandler as h
     lsctables.use_in(h)
+
+    data = {}
+    for ifo_name in ifos:
+        data[ifo_name] = {}
+        data[ifo_name]['CAT_H'] = []
+        for cat_num in range(1, 5):
+            data[ifo_name]['CAT_{}'.format(cat_num)] = []
 
     indoc = ligolw_utils.load_filename(veto_def_filename, False,
                                        contenthandler=h)
@@ -62,10 +73,9 @@ def parse_veto_definer(veto_def_filename):
     start_pad = numpy.array(veto_table.getColumnByName('start_pad'))
     end_pad = numpy.array(veto_table.getColumnByName('end_pad'))
 
-    data = {}
     for i in range(len(veto_table)):
         if ifo[i] not in data:
-            data[ifo[i]] = {}
+            continue
 
         # The veto-definer categories are weird! Hardware injections are stored
         # in "3" and numbers above that are bumped up by one (although not
@@ -77,9 +87,6 @@ def parse_veto_definer(veto_def_filename):
             curr_cat = "CAT_H"
         else:
             curr_cat = "CAT_{}".format(category[i])
-
-        if curr_cat not in data[ifo[i]]:
-            data[ifo[i]][curr_cat] = []
 
         veto_info = {'name': name[i],
                      'version': version[i],
@@ -179,7 +186,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
         # The veto definer will allow the use of MACRO names
         # These directly correspond the name defined in the veto definer file.
         if veto_definer is not None:
-            veto_def = parse_veto_definer(veto_definer)
+            veto_def = parse_veto_definer(veto_definer, [ifo])
 
         # We treat the veto definer name as if it were its own flag and
         # a process the flags in the veto definer
