@@ -32,7 +32,7 @@ class CPNestFile(BaseSamplerFile):
 
     name = 'cpnest_file'
 
-    def read_raw_samples(self,fields):
+    def read_raw_samples(self, fields, **kwargs):
         read_raw_samples_from_file(self, fields, **kwargs)
 
     def write_resume_point(self):
