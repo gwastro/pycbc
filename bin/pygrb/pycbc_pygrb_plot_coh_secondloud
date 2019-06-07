@@ -47,7 +47,7 @@ __program__ = "pycbc_pygrb_plot_coh_secondloud"
 # Main script starts here
 # =============================================================================
 
-description = 'pycbc_pygrb_plot_coh_firstloud will produce coherent SNR versus second loudest SNR plots.'
+description = 'pycbc_pygrb_plot_coh_secondloud will produce coherent SNR versus second loudest SNR plots.'
 opts = pygrb_plot_two_snrs_opts_parser(description=description, version=__version__)
 
 trigFile  = os.path.abspath(opts.trig_file)
