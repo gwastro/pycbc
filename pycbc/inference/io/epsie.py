@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 from .base_sampler import BaseSamplerFile
+from .base_multitemper import (MultiTemperedMCMCIO, MultiTemperedMetadataIO)
 
 class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
                 BaseSamplerFile):
@@ -35,7 +36,7 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
     def write_sampler_metadata(self, sampler):
         """Adds writing betas to MultiTemperedMCMCIO.
         """
-        super(EmceePTFile, self).write_sampler_metadata(sampler)
+        super(EpsieFile, self).write_sampler_metadata(sampler)
         try:
             self[self.sampler_group]["betas"][:] = sampler.betas
         except KeyError:
@@ -110,7 +111,7 @@ def write_recursive_dict(fp, group, write_dict):
         The (possibly nested) dictionary to write.
     """
     for key, val in write_dict.items():
-        writeto = '/'.join([group, key])
+        writeto = '/'.join([str(group), str(key)])
         if isinstance(val, dict):
             # call myself with the new sub group
             write_recursive_dict(fp, writeto, val)
@@ -139,6 +140,11 @@ def read_recursive_dict(fp, group):
     out = {}
     for key in fp[group].keys():
         readfrom = '/'.join([group, key])
+        # if key is an int, cast it like that
+        try:
+            key = int(key)
+        except ValueError:
+            pass
         if isinstance(fp[readfrom], h5py.Group):
             # call myself to get the sub info
             out[key] = read_recursive_dict(fp, readfrom)

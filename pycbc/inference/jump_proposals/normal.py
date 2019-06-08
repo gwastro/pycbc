@@ -18,13 +18,14 @@
 from __future__ import absolute_import
 
 import numpy
-import epsie
+
+from epsie import proposals as epsie_proposals
 
 from pycbc import VARARGS_DELIM
 from pycbc import boundaries
 
 
-class EpsieNormal(epsie.proposals.Normal):
+class EpsieNormal(epsie_proposals.Normal):
     """Adds ``from_config`` method to epsie's normal proposal."""
 
     @classmethod
@@ -64,9 +65,9 @@ class EpsieNormal(epsie.proposals.Normal):
         assert cp.get_opt_tag(section, "name", tag) == cls.name, (
             "name in specified section must match mine")
         params = tag.split(VARARGS_DELIM)
-        # see if any variances were provides
-        readsection = '-'.join(section, tag)
-        opts = cp.options(readsection)
+        # see if any variances were provided
+        readsection = '-'.join([section, tag])
+        opts = [opt for opt in cp.options(readsection) if opt != 'name']
         varfmt = 'var-{}'
         if opts:
             optvals = {opt: cp.get(readsection, opt) for opt in opts}
@@ -81,7 +82,7 @@ class EpsieNormal(epsie.proposals.Normal):
         return cls(params, cov=cov)
 
 
-class EpsieAdaptiveNormal(epsie.proposals.AdaptiveNormal):
+class EpsieAdaptiveNormal(epsie_proposals.AdaptiveNormal):
     """Adds ``from_config`` method to epsie's adaptive normal proposal."""
 
     @classmethod
@@ -144,7 +145,7 @@ class EpsieAdaptiveNormal(epsie.proposals.AdaptiveNormal):
         # get options
         readsection = '-'.join(section, tag)
         opts = {opt: cp.get(readsection, opt)
-                for opt in cp.options(readsection)}
+                for opt in cp.options(readsection) if opt != 'name'}
         adaptation_duration = opts.pop('adaptation-duration', None)
         if adaptation_duration is None:
             raise ValueError("No adaptation-duration specified")

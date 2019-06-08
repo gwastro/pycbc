@@ -26,6 +26,9 @@ python-ligo-lw
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
+randomgen==1.15.1; python_version <= '2.7'
+randomgen; python_version >= '3.0'
+epsie
 cpnest
 
 # For LDG service access
