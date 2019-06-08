@@ -18,14 +18,25 @@
 
 from __future__ import absolute_import
 
-import epsie
+import itertools
 
+import epsie
+from epsie.samplers import ParallelTemperedSampler
+
+# we'll use emcee_pt's default beta ladder for temperature levels
+from emcee.ptsampler import default_beta_ladder
+
+from pycbc.pool import choose_pool
+
+from .base import BaseSampler
 from .base_mcmc import (BaseMCMC, raw_samples_to_dict,
                         get_optional_arg_from_config)
 from .base_multitemper import (MultiTemperedSupport,
                                MultiTemperedAutocorrSupport)
 from ..burn_in import MultiTemperedMCMCBurnInTests
 from ..jump_proposals import epsie_proposals_from_config
+from ..io import EpsieFile
+from .. import models
 
 
 class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
@@ -85,6 +96,10 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
                  loglikelihood_function=None,
                  nprocesses=1, use_mpi=False):
 
+        # create the betas if not provided
+        if betas is None:
+            betas = default_beta_ladder(len(model.variable_params),
+                                        ntemps=ntemps)
         self.model = model
         # create a wrapper for calling the model
         model_call = _EpsieCallModel(model, loglikelihood_function)
@@ -96,8 +111,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         if pool is not None:
             pool.count = nprocesses
         # initialize the sampler
-        self._sampler = epsie.ParallelTemperedSampler(
-            model.sampling_params, model, nwalkers, betas=betas,
+        self._sampler = ParallelTemperedSampler(
+            model.sampling_params, model_call, nchains, betas=betas,
             proposals=proposals, default_proposal=default_proposal,
             default_proposal_args=default_proposal_args,
             seed=seed, pool=pool) 
@@ -149,6 +164,8 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
         The arrays have shape ``ntemps x nchains x niterations``.
         """
+        print('hasblobs:', self._sampler.chains[0].hasblobs)
+        print('hasblobs2:', self._sampler.chains[0].chains[0].hasblobs)
         return epsie.array2dict(self._sampler.blobs)
 
     def clear_samples(self):
@@ -229,14 +246,18 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             fp.write_acceptance_ratio(acceptance['acceptance_ratio'],
                                       last_iteration=self.niterations)
             # write temperature data
-            fp.write_temperature_data(self._sampler.temperature_swaps,
-                                      last_iteration=self.niterations)
+            if self.ntemps > 1:
+                fp.write_temperature_data(self._sampler.temperature_swaps,
+                                          last_iteration=self.niterations)
             # write the sampler's state
             fp.write_state(self._sampler.state)
             # write numpy's global state (for the distributions)
             numpy_rstate_group = '/'.join([fp.sampler_group,
                                            'numpy_random_state'])
             fp.write_random_state(group=numpy_rstate_group)
+
+    def finalize(self):
+        pass
 
     @classmethod
     def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
@@ -325,7 +346,7 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         assert cp.get(section, "name") == cls.name, (
             "name in section [sampler] must match mine")
         nchains = int(cp.get(section, "nchains"))
-        seed = int(cp.get(section, "seed"))
+        seed = get_optional_arg_from_config(cp, section, 'seed', dtype=int)
         ntemps, betas = cls.betas_from_config(cp, section)
         # get the checkpoint interval, if it's specified
         checkpoint_interval = cls.checkpoint_from_config(cp, section)
@@ -336,14 +357,14 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         proposals = epsie_proposals_from_config(cp)
         # check that all of the sampling parameters have a specified
         # proposal
-        sampling_params = set(model.sampling_parameters)
-        proposal_params = set(proposals.keys())
+        sampling_params = set(model.sampling_params)
+        proposal_params = set(itertools.chain(*proposals.keys()))
         missing = sampling_params - proposal_params
         if missing:
             raise ValueError("Missing jump proposals for sampling parameters "
                              "{}".format(', '.join(missing)))
         # initialize
-        obj = cls(model.sampling_params, model, nchains,
+        obj = cls(model, nchains,
                   ntemps=ntemps, betas=betas,
                   proposals=proposals, seed=seed,
                   checkpoint_interval=checkpoint_interval,
@@ -375,6 +396,6 @@ class _EpsieCallModel(object):
     def __call__(self, **kwargs):
         """Calls update, then calls the loglikelihood and logprior."""
         self.model.update(**kwargs)
-        logl = getattr(model, self.loglikelhood_function)
-        logp = model.logprior
-        return logl, logp, self.model.get_current_stats()
+        logl = getattr(self.model, self.loglikelihood_function)
+        logp = self.model.logprior
+        return logl, logp, self.model.current_stats
