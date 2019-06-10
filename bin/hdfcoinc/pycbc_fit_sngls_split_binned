@@ -74,7 +74,7 @@ parser.add_argument("--sngl-stat", default="new_snr",
                     choices=sngl_statistic_dict.keys(),
                     help="Function of SNR and chisq to perform fits with")
 parser.add_argument('--ifo', type=str, help="Interferometer")
-parser.add_argument('--plot-max-x',default=None,
+parser.add_argument('--plot-max-x', type=float, default=None,
                     help="Maximum stat value for use in plots, if not given "
                     "1.05 * largest stat value will be used")
 parser.add_argument("--veto-file", type=str,
@@ -198,7 +198,7 @@ trigf.close()
 logging.info('setting up plotting and fitting limit values')
 minplot = max(stat[np.nonzero(stat)].min(), args.stat_fit_threshold - 1)
 min_fit = max(minplot, args.stat_fit_threshold)
-max_fit = 1.05*stat.max()
+max_fit = 1.05 * stat.max()
 if args.plot_max_x:
     maxplot = args.plot_max_x
 else:
