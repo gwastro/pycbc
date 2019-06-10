@@ -610,6 +610,7 @@ with ctx:
                         logging.info("Max null SNR = %s" % str(max(null)))
                     logging.info("%s points above null threshold: "
                                 % str(len(null)))
+
             # We are now going to find the individual detector chi2 values.
             # To do this it is useful to find the indexes of coinc triggers
             # in the detector frame.
@@ -634,13 +635,21 @@ with ctx:
                         template)
 
                 # Calculate network chisq value
-                network_chisq = network_chisq(chisq, chisq_dof, coherent_ifo_triggers)
+                network_chisq_dict = network_chisq(chisq, chisq_dof, 
+                                              coherent_ifo_triggers)
 
                 # Calculate chisq reweighted SNR
-                reweighted_snr = pycbc_reweight_snr(rho_coh, network_chisq)
-
-                # Calculate null reweighted SNR
-                reweighted_snr = reweight_snr_by_null(reweighted_snr, null)
+                if nifo > 2:
+                    reweighted_snr = pycbc_reweight_snr(rho_coh,
+                                                        network_chisq_dict)
+                    # Calculate null reweighted SNR
+                    reweighted_snr = reweight_snr_by_null(reweighted_snr, null)
+                elif nifo == 2:
+                    reweighted_snr = pycbc_reweight_snr(rho_coinc,
+                                                        network_chisq_dict)
+                else:
+                    reweighted_snr = pycbc_reweight_snr(
+                        abs(snr[ifo_list[0]][coinc_idx]), network_chisq_dict)
 
                 for ifo in ifo_list:
                     ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] =\
