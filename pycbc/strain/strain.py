@@ -235,7 +235,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = pycbc.frame.read_store(opt.hdf_store, opt.channel_name,
                                             opt.gps_start_time - opt.pad_data,
                                             opt.gps_end_time + opt.pad_data)
-
+        strain.save("/home/simone.mozzon/prova_pycbc/first.hdf")
         if opt.zpk_z and opt.zpk_p and opt.zpk_k:
             logging.info("Highpass Filtering")
             strain = highpass(strain, frequency=opt.strain_high_pass)
