@@ -236,7 +236,7 @@ setup (
     version = VERSION,
     description = 'Core library to analyze gravitational-wave data, find signals, and study their parameters.',
     long_description = open('descr.rst').read(),
-    author = 'Ligo-Virgo Collaborations and the PyCBC team',
+    author = 'The PyCBC team',
     author_email = 'alex.nitz@gmail.org',
     url = 'http://www.pycbc.org/',
     download_url = 'https://github.com/gwastro/pycbc/tarball/v%s' % VERSION,
@@ -253,8 +253,8 @@ setup (
     ext_modules = ext,
     classifiers=[
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.6',
         'Intended Audience :: Science/Research',
         'Natural Language :: English',
         'Topic :: Scientific/Engineering',

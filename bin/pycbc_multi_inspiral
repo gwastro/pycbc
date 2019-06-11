@@ -142,6 +142,41 @@ logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 inj_filter_rejector = pycbc.inject.InjFilterRejector.from_cli_multi_ifos(opt,opt.instruments)
 ctx = scheme.from_cli(opt)
 
+def network_chisq(chisq, chisq_dof, snr_dict):
+    ifos = sorted(snr_dict.keys())
+    chisq_per_dof = {}
+    for ifo in ifos:
+        chisq_per_dof[ifo] = chisq[ifo] / chisq_dof[ifo]
+        chisq_per_dof[ifo][chisq_per_dof[ifo]<1] = 1
+    snr2 = {ifo : np.real(np.array(snr_dict[ifo]) *
+                np.array(snr_dict[ifo]).conj()) for ifo in ifos}
+    coinc_snr2 = sum(snr2.values())
+    snr2_ratio = {ifo : snr2[ifo] / coinc_snr2 for ifo in ifos}
+    network_chisq = sum( [chisq_per_dof[ifo] * snr2_ratio[ifo] for ifo in ifos] )
+    return network_chisq
+
+def pycbc_reweight_snr(network_snr, network_chisq, a = 3, b = 1. / 6.):
+    """
+    Output: reweighted_snr: Reweighted SNR for each trigger
+    Input:  network_snr:  Dictoinary of coincident or coherent SNR for each
+                          trigger
+            network_chisq: A chisq value for each trigger 
+    """
+    denom = ((1 + network_chisq)**a) / 2
+    reweighted_snr = network_snr / denom**b
+    return reweighted_snr
+
+def reweight_snr_by_null(network_snr, nullsnr):
+    """
+    Output: reweighted_snr: Reweighted SNR for each trigger
+    Input:  network_snr:  Dictoinary of coincident, coherent, or reweighted
+                          SNR for each trigger
+            null: Null snr for each trigger
+    """
+    nullsnr[nullsnr <= 4.25] = 4.25
+    reweighted_snr = network_snr / (nullsnr - 3.25)
+    return reweighted_snr
+
 def get_weighted_antenna_patterns(Fp_dict, Fc_dict, sigma_dict):
     """
     Output: wp: 1 x nifo of the weighted antenna response fuctions to plus
@@ -398,17 +433,19 @@ with ctx:
         'latitude'      : float32,
         'longitude'     : float32,
         'time_index'    : int,
-        'network_snr'   : float32,
+        'coherent_snr'   : float32,
         'null_snr'      : float32,
-        'nifo'          : int
+        'nifo'          : int,
+        'reweighted_snr' : float32
                }
     network_out_vals = {
         'latitude'      : None,
         'longitude'     : None,
         'time_index'    : None,
-        'network_snr'   : None,
+        'coherent_snr'   : None,
         'null_snr'      : None,
-        'nifo'          : None
+        'nifo'          : None,
+        'reweighted_snr' : None
                }
     network_names = sorted(network_out_vals.keys())
 
@@ -573,6 +610,7 @@ with ctx:
                         logging.info("Max null SNR = %s" % str(max(null)))
                     logging.info("%s points above null threshold: "
                                 % str(len(null)))
+
             # We are now going to find the individual detector chi2 values.
             # To do this it is useful to find the indexes of coinc triggers
             # in the detector frame.
@@ -581,9 +619,38 @@ with ctx:
                                       for ifo in ifo_list}
                 coherent_ifo_triggers = {ifo : snr[ifo][coinc_idx]
                                         for ifo in ifo_list}
+
                 # Calculate the power and autochi2 values for the coinc indexes
                 # (this uses the snr timeseries before the time delay, so we
                 # need to undo it. Same for normalisation)
+                chisq = {}
+                chisq_dof = {}
+                for ifo in ifo_list:
+                    chisq[ifo], chisq_dof[ifo] = power_chisq.values(
+                        corr_dict[ifo],
+                        coherent_ifo_triggers[ifo] / norm_dict[ifo],
+                        norm_dict[ifo],
+                        stilde[ifo].psd,
+                        coinc_idx + stilde[ifo].analyze.start,
+                        template)
+
+                # Calculate network chisq value
+                network_chisq_dict = network_chisq(chisq, chisq_dof, 
+                                              coherent_ifo_triggers)
+
+                # Calculate chisq reweighted SNR
+                if nifo > 2:
+                    reweighted_snr = pycbc_reweight_snr(rho_coh,
+                                                        network_chisq_dict)
+                    # Calculate null reweighted SNR
+                    reweighted_snr = reweight_snr_by_null(reweighted_snr, null)
+                elif nifo == 2:
+                    reweighted_snr = pycbc_reweight_snr(rho_coinc,
+                                                        network_chisq_dict)
+                else:
+                    reweighted_snr = pycbc_reweight_snr(
+                        abs(snr[ifo_list[0]][coinc_idx]), network_chisq_dict)
+
                 for ifo in ifo_list:
                     ifo_out_vals['bank_chisq'], ifo_out_vals['bank_chisq_dof'] =\
                         bank_chisq.values(template, stilde[ifo].psd, stilde[ifo],
@@ -594,13 +661,8 @@ with ctx:
                         snr[ifo], coinc_idx+stilde[ifo].analyze.start,
                         template, stilde[ifo].psd, norm_dict[ifo],
                         stilde=stilde[ifo], low_frequency_cutoff=flow)
-                    ifo_out_vals['chisq'], ifo_out_vals['chisq_dof'] =\
-                        power_chisq.values(
-                            corr_dict[ifo],
-                            coherent_ifo_triggers[ifo] / norm_dict[ifo],
-                            norm_dict[ifo],
-                            stilde[ifo].psd,
-                            coinc_idx_det_frame[ifo] + stilde[ifo].analyze.start, template)
+                    ifo_out_vals['chisq'] = chisq[ifo]
+                    ifo_out_vals['chisq_dof'] = chisq_dof[ifo]
                     ifo_out_vals['time_index'] = coinc_idx_det_frame[ifo] + \
                         stilde[ifo].cumulative_index
                     ifo_out_vals['snr'] = coherent_ifo_triggers[ifo]
@@ -620,13 +682,14 @@ with ctx:
                     event_mgr.add_template_events_to_ifo(
                         ifo, ifo_names, [ifo_out_vals[n] for n in ifo_names])
                 if nifo>2:
-                    network_out_vals['network_snr'] = np.real(rho_coh)
+                    network_out_vals['coherent_snr'] = np.real(rho_coh)
                     network_out_vals['null_snr'] = np.real(null)
                 elif nifo==2:
-                    network_out_vals['network_snr'] = np.real(rho_coinc)
+                    network_out_vals['coherent_snr'] = np.real(rho_coinc)
                 else:
-                    network_out_vals['network_snr'] = \
+                    network_out_vals['coherent_snr'] = \
                         abs(snr[ifo_list[0]][coinc_idx])
+                network_out_vals['reweighted_snr'] = reweighted_snr
                 network_out_vals['time_index'] = \
                     coinc_idx+stilde[ifo].cumulative_index
                 network_out_vals['nifo'] = [nifo]
