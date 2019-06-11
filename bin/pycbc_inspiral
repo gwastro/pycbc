@@ -216,7 +216,7 @@ ctx = scheme.from_cli(opt)
 
 gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
                            inj_filter_rejector=inj_filter_rejector)
-
+gwstrain.save("/home/simone.mozzon/prova_pycbc/fourth.hdf")
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
 
@@ -240,7 +240,7 @@ with ctx:
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
 
-
+    gwstrain.save("/home/simone.mozzon/prova_pycbc/fifth.hdf")
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
     psd.associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f,
@@ -271,11 +271,12 @@ with ctx:
         logging.info("Finished")
         sys.exit(0)
 
-    if opt.psdvar_short_segment is not None:
+    if opt.psdvar_segment is not None:
         logging.info("Calculating PSD variation")
-        psd_var = pycbc.psd.calc_psd_variation(gwstrain,
-                opt.psdvar_short_segment, opt.psdvar_long_segment,
-                opt.psdvar_short_psd_duration, opt.psdvar_short_psd_stride,
+        ## FIX IT (step)
+        psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
+                opt.psdvar_short_segment, opt.psdvar_long_segment, 
+                opt.psdvar_psd_duration, opt.psdvar_psd_stride,
                 opt.psd_estimation, opt.psdvar_low_freq, opt.psdvar_high_freq)
 
     if opt.enable_q_transform:
@@ -422,7 +423,7 @@ with ctx:
 
             if opt.psdvar_short_segment is not None:
                 out_vals['psd_var_val'] = \
-                            pycbc.psd.find_trigger_value(psd_var,
+                            pycbc.psd.new_find_trigger_value(psd_var,
                                           out_vals['time_index'],
                                           opt.gps_start_time, opt.sample_rate)
 
