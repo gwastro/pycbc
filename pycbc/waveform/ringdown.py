@@ -77,14 +77,14 @@ def format_lmns(lmns):
     """
 
     # Case 1: the list is in a string "[221, 331]"
-    if isinstance(lmns, (str, unicode)):
+    if isinstance(lmns, str):
         # strip off brackets
         lmns = lmns.strip('[]')
         # convert to list
         lmns = lmns.split(',')
 
     # Case 2: a list with only one string with a list ["221', '331"]
-    elif (len(lmns) == 1 and isinstance(lmns[0], (str, unicode))
+    elif (len(lmns) == 1 and isinstance(lmns[0], str)
           and len(lmns[0]) > 3):
         lmns = lmns[0].split(',')
 
