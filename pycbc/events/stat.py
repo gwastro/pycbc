@@ -582,7 +582,6 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
         super(ExpFitSGCoincRateStatistic, self).__init__(files)
         self.benchmark_lograte = benchmark_lograte
         self.get_newsnr = ranking.get_newsnr_sgveto
-        
         # Reassign the rate as the we are now calculating total number in
         # the template and dividing by time rather than just counting above
         # threshold as was done previously
@@ -596,7 +595,7 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
         self.fits_by_tid[ifo]['rate'] = \
-            coeff_file['count_in_template'][:][tid_sort] / \
+            coeff_file['count_above_thresh'][:][tid_sort] / \
             float(coeff_file.attrs['analysis_time'])
 
     def coinc_multiifo(self, s, slide,
@@ -604,8 +603,6 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
         """Calculate the final coinc ranking statistic"""
         sngl_rates_dict = {ifo: numpy.exp(sngl_rate) for (ifo, sngl_rate) in\
                       zip(self.fits_by_tid.keys(), s.values()) }
-        #snglsprod = sum(x for x in s.values())
-        #ifo_list = self.fits_by_tid.keys()
         ln_coinc_rate = numpy.log(coinc_rate.combination_noise_coinc_rate(
                                   sngl_rates_dict, kwargs['time_addition']))
         loglr = - ln_coinc_rate + self.benchmark_lograte
