@@ -61,13 +61,13 @@ Description of the ini file contents
 
 There are three important segments options that we need to provide:
 
-* `segments-science`: This decides what times will be analysed to produce triggers. All times in this might be used to compute PSDs used in the final results. In previous runs this is normally the science flag with CAT_1 vetoes subtracted from it.
-* `segments-vetoes`: This decides what times will be vetoed when producing final significance. These times *are* analysed but are discarded after combining single-detector triggers together. In previous runs this is CAT_2 vetoes and hardware injections.
+* `segments-science`: This decides what times will be analysed to produce triggers. All times in this might be used to compute PSDs used in the results. Normally all times flagged as ready for science analysis, minus times vetoed at CAT_1.
+* `segments-vetoes`: This decides what times will be vetoed when producing final candidate event lists. These times *are* analysed but are discarded after combining single-detector triggers together. Normally the time discarded comprises times vetoed at CAT_2 and times of hardware injections.
 * `segments-veto-definer-url`: As previously, this is the location of the veto definer.
 
-Note that this obeys the usual workflow tagging rules. If you supply `segments-science` in `workflow-segments` it will be valid for all ifos. Or, if you want to supply different values for different ifos (e.g. because the Virgo SCIENCE flag is named differently to L1 and H1) you can use `workflow-segments-ifos`.
+Note that this obeys the usual workflow tagging rules. If you supply `segments-science` in `workflow-segments` it will be valid for all ifos. Or, if you want to supply different values for different ifos (e.g. because the Virgo SCIENCE flag is named differently to L1 and H1) you can use `workflow-segments-${ifoname}` (where `${ifoname}` is replaced with the ifo name and this should then be given for all active ifos).
 
-The `segments-science` and `segments-vetoes` are provided as a *comma-separated* list of flags. We will document what these are below.
+The `segments-science` and `segments-vetoes` are provided as a *comma-separated* list of flags. Documented below.
 
 ^^^^^^^^^^^^^^^^^^^^^
 Flag syntax
@@ -77,17 +77,15 @@ We've said that `segments-science` and `segments-vetoes` look something like
 
 `segments-science = FLAG_1,FLAG_2`
 
-So let's describe now what FLAG_1 might look like. There is a bit of subtlety to the flag syntax, so let's start with something basic, and then add possible complexity.
-
-At the very basic level you can set (for the value of FLAG_1):
+We start with a simple example of what can be given as the value of FLAG_1:
 
 `+SCIENCE` or `-SCIENCE`
 
-In this case SCIENCE is the flag name. It is what will be queried from the segment server. The ifo will be automatically appended (so this becomes `${IFO}:SCIENCE` when querying). The `+` or `-` is important (and not optional). If the sign as a `+` then the flag is *added* to the list of times, if it is `-` then the flag is removed. All `+` flags are processed first and then all `-` flags are removed from that.
+In this case SCIENCE is the flag name. It is what will be queried from the segment server. The ifo will be automatically appended, so this becomes `${IFO}:SCIENCE` when querying. The `+` or `-` is important and not optional. If the sign as a `+` then the flag is added to the list of times, if it is `-` then the flag is removed. All `+` flags are processed first and then all `-` flags are removed from that.
 
-In `segments-science` `+` means that that time *should* be included in the analysis. A `-` means it should not be included.
+In `segments-science` `+` means that that time should be included in the analysis. A `-` means it should not be included.
 
-In `segments-vetoes` `+` means that that time *should* be included in the vetoed times (and so *not* included in the analysis). A `-` means it should not be included in the vetoed times (so that time can be analysed) ... It is not envisaged that `-` flags will be used often in `segments-vetoes`.
+In `segments-vetoes` `+` means that that time should be included in the vetoed times and so not included in the analysis. A `-` means it should not be included in the vetoed times so that time will be analysed ... It is not envisaged that `-` flags will be used often in `segments-vetoes`.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Version numbers
@@ -103,7 +101,7 @@ not providing a version will query *all* versions of that flag. That probably wo
 The veto-definer file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The veto definer file groups a set of flags together, defining what is meant as CAT_1 vetoes. We *could* explictly map the veto-definer from the XML file into a list of flags (removing the veto-definer altogether), but it is easier to just use the veto-definer and let the detchar group decide what these flags should be. When using a veto-definer we have access to "special" flag names corresponding to what's in the veto-definer. That is:
+The veto definer file groups a set of flags together, defining what is meant as CAT_1 vetoes. We could explictly map the veto-definer from the XML file into a list of flags (removing the veto-definer altogether), but it is easier to just use the veto-definer and let the detchar group decide what these flags should be. When using a veto-definer we have access to "special" flag names corresponding to what's in the veto-definer. That is:
 
 `CAT_1`: All flags given the `category` value of 1 within the veto-definer file.
 `CAT_2`: All flags given the `category` value of 2 within the veto-definer file.
@@ -116,7 +114,7 @@ Examples of using these flags are given at the top. All of the stuff below also 
 Adding a ifo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now let's start adding complexity. I *can* explictly state an ifo, even if the workflow thinks its analysing V1 (say) I can supply a *different* ifo and the workflow will analyse that data as if it was ifo. For example
+Now let's start adding complexity. I can explictly state an ifo, even if the workflow thinks its analysing V1, I can supply a *different* ifo and the workflow will analyse that data as if it was the second ifo. For example
 
 `segments-science-v1 = H1:DMT-ANALYSIS_READY:1`
 
@@ -130,7 +128,7 @@ For some flags we want to include some additional time ... Normally for vetoes w
 
 `+H1:SCIENCE:1<-8:8>` or `-H1:SCIENCE:1<-8:8>`
 
-When `start_pad` = -8 and `end_pad` = 8. This numbers are *added* to every segment coming from this flag, so `segment_start += start_pad` and `segment_end += end_pad` ... Or more simply, in this example the segment is extended by 8s on both the start and the end of every segment.
+When `start_pad` = -8 and `end_pad` = 8. This numbers are added to every segment coming from this flag, so `segment_start += start_pad` and `segment_end += end_pad` ... Or more simply, in this example the segment is extended by 8s on both the start and the end of every segment.
 This number can be flipped to cause the segment to get shorter. Be careful with this though, glue does not do the right thing if the start of a segment is after the end of the segment! (e.g. if you shrink a segment so much that it disappears, weird things will happen!)
 
 The padding must always appear after the flag and version name.
