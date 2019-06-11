@@ -4,7 +4,7 @@ time of coincidence. This clusters to find the most significant foreground, but
 leaves the background triggers alone. """
 
 import h5py, numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
-import pycbc.version
+import pycbc.version, ligo.segments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
@@ -38,6 +38,12 @@ for fi in files:
             if key not in f:
                  f.create_group(key)
             f[key].attrs[attr_name] = fi.attrs[attr_name]
+
+all_coincident_time = ligo.segments.segmentlist([])
+for fi in files:
+    key = fi.attrs['ifos'].replace(' ','')
+    for s, e in zip(['segments/%s/start' % key][:], fi['segments/%s/end' % key][:]):
+        all_coincident_time += ligo.segments.segment(s, e)
 
 # Save the ifo list for easy access
 f.attrs['ifos'] = ' '.join(sorted(args.ifos))
