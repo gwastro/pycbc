@@ -478,7 +478,7 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
 
 class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
 
-    """ExpFitCombinedSNR bnted to do the latter .. so, make an init step that ensures this, or maybe make thiut with sine-Gaussian veto and PSD variation added to
+    """ExpFitCombinedSNR but with sine-Gaussian veto and PSD variation added to
 
     the single detector ranking
     """
