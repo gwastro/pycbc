@@ -36,7 +36,7 @@ def multiifo_noise_coinc_rate(rates, slop):
         Value is expected coincidence rate in the combination, units Hz
     """
     expected_coinc_rates = {}
-   
+
     # Order of ifos must be stable in output dict keys, so sort them
     ifos = sorted(list(rates.keys()))
     ifostring = ' '.join(ifos)
