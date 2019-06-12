@@ -582,9 +582,8 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
         super(ExpFitSGCoincRateStatistic, self).__init__(files)
         self.benchmark_lograte = benchmark_lograte
         self.get_newsnr = ranking.get_newsnr_sgveto
-        # Reassign the rate as the we are now calculating total number in
-        # the template and dividing by time rather than just counting above
-        # threshold as was done previously
+        # Reassign the rate as it is now number per time rather than an
+        # arbitrarily normalised number
         for ifo in self.ifos:
             self.reassign_rate(ifo)
 

@@ -36,7 +36,7 @@ def multiifo_noise_coinc_rate(rates, slop):
         Value is expected coincidence rate in the combination, units Hz
     """
 
-    ifos = numpy.array(sorted(rates.keys()))
+    ifos = sorted(list(rates.keys()))
     expected_coinc_rates = {}
 
     # Calculate coincidence for all-ifo combination
@@ -46,7 +46,6 @@ def multiifo_noise_coinc_rate(rates, slop):
     # if more than one possible coincidence type exists,
     # calculate coincidence for subsets through recursion
     if len(ifos) > 2:
-        ifos = numpy.array(sorted(rates.keys()))
         # Calculate rate for each 'miss-one-out' detector combination
         subsets = itertools.combinations(ifos, len(ifos) - 1)
         for subset in subsets:
@@ -81,13 +80,9 @@ def combination_noise_coinc_rate(rates, slop):
     combo_coinc_rate: numpy array
         Value is expected coincidence rate in the combination, units Hz
     """
-    # extract ifo list and rates vectors from the dictionary
-    ifos = numpy.array(rates.keys())
-    rates_raw = [rates[ifo] for ifo in ifos]
-
     # multiply product of trigger rates by the overlap time
-    allowed_area = multiifo_noise_coincident_area(ifos, slop)
-    rateprod = [numpy.prod(rs) for rs in zip(*rates_raw)]
+    allowed_area = multiifo_noise_coincident_area(list(rates.keys()), slop)
+    rateprod = [numpy.prod(rs) for rs in zip(*rates.values())]
     combo_coinc_rate = allowed_area * numpy.array(rateprod)
 
     return combo_coinc_rate
