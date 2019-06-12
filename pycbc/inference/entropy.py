@@ -6,9 +6,11 @@ import numpy
 from scipy import stats
 
 
-def check_hist_bounds(hist_min, hist_max):
+def check_hist_bounds(hist_min, hist_max, hist_bins):
     """ Checks that the bound values given for the histogram are consistent,
-    returning the range if they are or raising an error if they are not
+    returning the range if they are or raising an error if they are not.
+    Also checks that the hist_bins is either an int or a str from the list
+    of available methods in numpy.histogram
 
     Parameters
     ----------
@@ -16,12 +18,26 @@ def check_hist_bounds(hist_min, hist_max):
         Minimum value for the histogram.
     hist_max : numpy.float64
         Maximum value for the histogram.
+    hist_bins: int or str
+        If int, number of equal-width bins to use in numpy.histogram. If str,
+        it should be one of the methods to calculate the optimal bin width
+        available in numpy.histogram: ['auto', 'fd', 'doane', 'scott', 'stone',
+        'rice', 'sturges', 'sqrt']. Default is 'fd' (Freedman Diaconis
+        Estimator). This option will be ignored if `kde=True`.
 
     Returns
     -------
     range : tuple
         The bounds (hist_min, hist_max).
     """
+
+    hist_methods = ['auto', 'fd', 'doane', 'scott', 'stone', 'rice',
+                     'sturges', 'sqrt']
+    if isinstance(hist_bins, str) and hist_bins not in hist_methods:
+        raise ValueError('Method for calculating bins width must be one of'
+                         ' {}'.format(hist_methods))
+    elif not hist_bins:
+        hist_bins = 'fd'
 
     # One of the bounds is missing
     if hist_min and not hist_max:
@@ -39,7 +55,7 @@ def check_hist_bounds(hist_min, hist_max):
     elif not hist_min and not hist_max:
         hist_range = None
 
-    return hist_range
+    return hist_range, hist_bins
 
 def entropy(pdf1, base=numpy.e):
     """ Computes the information entropy for a single parameter
@@ -63,7 +79,7 @@ def entropy(pdf1, base=numpy.e):
 
 
 def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
-       bins=30, hist_min=None, hist_max=None, base=numpy.e):
+       bins=None, hist_min=None, hist_max=None, base=numpy.e):
     """ Computes the Kullback-Leibler divergence for a single parameter
     from two distributions.
 
@@ -83,10 +99,13 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
         Set to `True` if at least one of `pdf1` or `pdf2` is `False` to
         estimate the probability density function using kernel density
         estimation (KDE).
-    bins : {30, int}, optional
-        Number of bins to use when calculating probability density function
-        from a set of samples of the distribution. This will be ignored if
-        `kde=True`.
+    bins : int or str, optional
+        If int, number of equal-width bins to use when calculating probability
+        density function from a set of samples of the distribution. If str, it
+        should be one of the methods to calculate the optimal bin width
+        available in numpy.histogram: ['auto', 'fd', 'doane', 'scott', 'stone',
+        'rice', 'sturges', 'sqrt']. Default is 'fd' (Freedman Diaconis
+        Estimator). This option will be ignored if `kde=True`.
     hist_min : numpy.float64
         Minimum of the distributions' values to use. This will be ignored if
         `kde=True`.
@@ -114,14 +133,14 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
             samples_kde = stats.gaussian_kde(samples)
             pdfs[n] = samples_kde.evaluate(samples)
         else:
-            hist_range = check_hist_bounds(hist_min, hist_max)
-            pdfs[n], _ = numpy.histogram(samples, bins=bins,
+            hist_range, hist_bins = check_hist_bounds(hist_min, hist_max, bins)
+            pdfs[n], _ = numpy.histogram(samples, bins=hist_bins,
                                          range=hist_range, normed=True)
 
     return stats.entropy(pdfs[0], qk=pdfs[1], base=base)
 
 
-def js(samples1, samples2, kde=False, bins=30, hist_min=None, hist_max=None,
+def js(samples1, samples2, kde=False, bins=None, hist_min=None, hist_max=None,
        base=numpy.e):
     """ Computes the Jensen-Shannon divergence for a single parameter
     from two distributions.
@@ -135,10 +154,13 @@ def js(samples1, samples2, kde=False, bins=30, hist_min=None, hist_max=None,
     kde : bool
         Set to `True` to estimate the probability density function using
         kernel density estimation (KDE).
-    bins : {30, int}, optional
-        Number of bins to use to calculate the probability density function
-        from a set of samples of the distribution. This will be ignored if
-        `kde=True`.
+    bins : int or str, optional
+        If int, number of equal-width bins to use when calculating probability
+        density function from a set of samples of the distribution. If str, it
+        should be one of the methods to calculate the optimal bin width
+        available in numpy.histogram: ['auto', 'fd', 'doane', 'scott', 'stone',
+        'rice', 'sturges', 'sqrt']. Default is 'fd' (Freedman Diaconis
+        Estimator). This option will be ignored if `kde=True`.
     hist_min : numpy.float64
         Minimum of the distributions' values to use. This will be ignored if
         `kde=True`.
@@ -159,8 +181,8 @@ def js(samples1, samples2, kde=False, bins=30, hist_min=None, hist_max=None,
         samplesm_kde = stats.gaussian_kde(join_samples)
         samplesm = samplesm_kde.evaluate(join_samples)
     else:
-        hist_range = check_hist_bounds(hist_min, hist_max)
-        samplesm, _ = numpy.histogram(join_samples, bins=bins,
+        hist_range, hist_bins = check_hist_bounds(hist_min, hist_max, bins)
+        samplesm, _ = numpy.histogram(join_samples, bins=hist_bins,
                                       range=hist_range, normed=True)
     samplesm = (1./2) * samplesm
 
