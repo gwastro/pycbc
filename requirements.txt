@@ -26,7 +26,6 @@ python-ligo-lw
 
 # Needed for Parameter Estimation Tasks
 emcee==2.2.1
-cpnest
 
 # For LDG service access
 dqsegdb

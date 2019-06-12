@@ -245,7 +245,7 @@ setup (
     setup_requires = setup_requires,
     extras_require = extras_require,
     install_requires = install_requires,
-    scripts  = find_files('bin', relpath='./') + ['tools/einsteinathome/pycbc_build_eah.sh'],
+    scripts  = find_files('bin', relpath='./'),
     packages = find_packages(),
     package_data = {'pycbc.workflow': find_files('pycbc/workflow'),
                     'pycbc.results': find_files('pycbc/results'),
