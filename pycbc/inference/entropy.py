@@ -75,23 +75,23 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
     if pdf1 and pdf2 and kde:
         raise ValueError('KDE can only be used when at least one of pdf1 or '
                          'pdf2 is False.')
-    if not pdf1:
-        if kde:
-            samples1 = stats.gaussian_kde(samples1)
+
+    pdfs = {}
+    for n, (samples, pdf) in enumerate(((samples1, pdf1), (samples2, pdf2))):
+        if pdf:
+            pdfs[n] = samples
+        elif kde:
+            samples_kde = stats.gaussian_kde(samples)
+            pdfs[n] = samples_kde.evaluate(samples)
         else:
-            samples1, _ = numpy.histogram(samples1, bins=bins,
-                range=(hist_min, hist_max), normed=True)
-    if not pdf2:
-        if kde:
-            samples2 = stats.gaussian_kde(samples2)
-        else:
-            samples2, _ = numpy.histogram(samples2, bins=bins,
-                range=(hist_min, hist_max), normed=True)
-
-    return stats.entropy(samples1, pdf2=samples2, base=base)
+            pdfs[n], _ = numpy.histogram(samples, bins=bins,
+                                         range=(hist_min, hist_max),
+                                         normed=True)
+            
+    return stats.entropy(pdfs[0], qk=pdfs[1], base=base)
 
 
-def js(samples1, samples2, kde=True, bins=30, hist_min=None, hist_max=None,
+def js(samples1, samples2, kde=False, bins=30, hist_min=None, hist_max=None,
        base=numpy.e):
     """ Computes the Jensen-Shannon divergence for a single parameter
     from two distributions.
@@ -126,14 +126,17 @@ def js(samples1, samples2, kde=True, bins=30, hist_min=None, hist_max=None,
     """
     join_samples = numpy.concatenate((samples1, samples2))
     if kde:
-        samplesm = stats.gaussian_kde(join_samples)
+        samplesm_kde = stats.gaussian_kde(join_samples)
+        samplesm = samplesm_kde.evaluate(samplesm)
     else:
         samplesm, _ = numpy.histogram(join_samples, bins=bins,
-            range=(hist_min, hist_max), normed=True)
+                                      range=(hist_min, hist_max), normed=True)
     samplesm = (1./2) * samplesm
-    return (1./2) * kl(samples1, samplesm, pdf1=False, pdf2=True,
-                     kde=kde, bins=bins, hist_min=hist_min, hist_max=hist_max,
-                     base=base) + \
-           (1./2) * kl(samples2, samplesm, pdf1=False, pdf2=True,
-                     kde=kde, bins=bins, hist_min=hist_min, hist_max=hist_max,
-                     base=base)
+
+    js_div = 0
+    for samples in (samples1, samples2):
+        js_div += (1./2) * kl(samples, samplesm, pdf1=False, pdf2=True,
+                              kde=kde, bins=bins, hist_min=hist_min,
+                              hist_max=hist_max, base=base)
+
+    return js_div
