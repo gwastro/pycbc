@@ -21,6 +21,7 @@ setup.py file for PyCBC package
 
 from __future__ import print_function
 
+import sys
 import os, subprocess, shutil
 
 from distutils.errors import DistutilsError
@@ -32,8 +33,7 @@ from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools import find_packages
 
 requires = []
-setup_requires = ['numpy>=1.13.0,<1.15.3; python_version <= "2.7"',
-                  'numpy>=1.13.0; python_version > "3.0"']
+setup_requires = ['numpy>=1.13.0']
 install_requires =  setup_requires + ['Mako>=1.0.1',
                       'cython',
                       'decorator>=3.4.2',
@@ -52,7 +52,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'beautifulsoup4>=4.6.0',
                       'six>=1.10.0',
                       'ligo-segments',
-                      'weave>=0.16.0; python_version <= "2.7"',
+                      'weave>=0.17.0; python_version <= "2.7"',
                       ]
 
 def find_files(dirname, relpath=None):
@@ -206,27 +206,34 @@ cythonext = ['waveform.spa_tmplt',
              'filter.matchedfilter',
              'vetoes.chisq']
 ext = []
+cython_compile_args = ['-O3', '-w', '-msse4.2', '-ffast-math',
+                       '-ffinite-math-only']
+cython_link_args = []
+# Mac's clang compiler doesn't have openMP support by default. Therefore
+# disable openmp builds on MacOSX. Optimization should never really be a
+# concern on that OS, and this line can be commented out if needed anyway.
+if not sys.platform == 'darwin':
+    cython_compile_args += ['-fopenmp']
+    cython_link_args += ['fopenmp']
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,
                   ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
-                  extra_compile_args=['-O3', '-w', '-msse4.2',
-                                      '-ffast-math', '-ffinite-math-only',
-                                      '-fopenmp'],
-                  extra_link_args=['-fopenmp'],
+                  extra_compile_args=cython_compile_args,
+                  extra_link_args=cython_link_args,
                   compiler_directives={'embedsignature': True})
     ext.append(e)
 
 # Not all modules work like this:
 e = Extension("pycbc.fft.fftw_pruned_cython",
               ["pycbc/fft/fftw_pruned_cython.pyx"],
-              extra_compile_args=['-O3', '-w', '-msse4.2',
-                                  '-ffast-math', '-ffinite-math-only'],
+              extra_compile_args=cython_compile_args,
+              extra_link_args=cython_link_args,
               compiler_directives={'embedsignature': True})
 ext.append(e)
 e = Extension("pycbc.events.eventmgr_cython",
               ["pycbc/events/eventmgr_cython.pyx"],
-              extra_compile_args=['-O3', '-w', '-msse4.2',
-                                  '-ffast-math', '-ffinite-math-only'],
+              extra_compile_args=cython_compile_args,
+              extra_link_args=cython_link_args,
               compiler_directives={'embedsignature': True})
 ext.append(e)
 
