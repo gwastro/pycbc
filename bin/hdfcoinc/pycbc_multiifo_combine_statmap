@@ -4,7 +4,8 @@ time of coincidence. This clusters to find the most significant foreground, but
 leaves the background triggers alone. """
 
 import h5py, numpy, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
-import pycbc.version, ligo.segments
+import pycbc.version
+from ligo import segments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
@@ -39,14 +40,45 @@ for fi in files:
                  f.create_group(key)
             f[key].attrs[attr_name] = fi.attrs[attr_name]
 
-all_coincident_time = ligo.segments.segmentlist([])
+# Set up dictionaries to contain segments from the individual statmap files
+indiv_segs = segments.segmentlistdict({})
+indiv_segs_fg_exc = segments.segmentlistdict({})
+
+# obtain list of all ifos involved in the coinc_statmap files
+all_ifos = numpy.unique([ifo for fi in files for ifo in \
+                         fi.attrs['ifos'].split(' ')])
+
+# loop through statmap files and find all time in which any 2-ifo combination
+# is 'on
 for fi in files:
     key = fi.attrs['ifos'].replace(' ','')
-    for s, e in zip(['segments/%s/start' % key][:], fi['segments/%s/end' % key][:]):
-        all_coincident_time += ligo.segments.segment(s, e)
+    fi_ifos = fi.attrs['ifos'].split(' ')
+    starts = fi['segments/{}/start'.format(key)][:]
+    ends = fi['segments/{}/end'.format(key)][:]
+    indiv_segs[key] = pycbc.events.veto.start_end_to_segments(starts, ends)
+    # remove vetoed foreground time from the segments
+    # obtain average time of the foreground triggers
+    ave_fore_time = numpy.array([numpy.mean(times) for times in \
+                     zip(*tuple(fi['foreground/%s/time' % ifo][:] \
+                         for ifo in fi_ifos))])
+    # set up the veto window around the foreground triggers
+    remove_start_time = ave_fore_time - 0.1 #fi.attrs['veto_window']
+    remove_end_time = ave_fore_time + 0.1 #fi.attrs['veto_window']
+    vetoed_segs = pycbc.events.veto.start_end_to_segments(remove_start_time,
+                                                          remove_end_time)
+    # remove from analysis segments
+    indiv_segs_fg_exc[key] = indiv_segs[key] - vetoed_segs
+
+# Add together segments to obtain '2 or more detectors on' time
+foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
+foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
+
+# output to file
+f.attrs['foreground_time'] = abs(foreground_segs)
+f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
 
 # Save the ifo list for easy access
-f.attrs['ifos'] = ' '.join(sorted(args.ifos))
+f.attrs['ifos'] = ' '.join(sorted(all_ifos))
 
 logging.info('Generating list of datasets in input files')
 
@@ -56,21 +88,21 @@ logging.info('Copying foreground non-ifo-specific data')
 # copy and concatenate all the columns in the foreground group
 # from all files /except/ the IFO groups
 for key in key_set:
-    if key.startswith('foreground') and not any([ifo in key for ifo in args.ifos]):
+    if key.startswith('foreground') and not any([ifo in key for ifo in all_ifos]):
         pycbc.io.combine_and_copy(f, files, key)
 
 logging.info('Collating triggers into single structure')
 
 all_trig_times = {}
 all_trig_ids = {}
-for ifo in args.ifos:
+for ifo in all_ifos:
     all_trig_times[ifo] = numpy.array([], dtype=numpy.uint32)
     all_trig_ids[ifo] = numpy.array([], dtype=numpy.uint32)
 
 # For each file, append the trigger time and id data for each ifo
 # If an ifo does not participate in any given coinc then fill with -1 values
 for f_in in files:
-    for ifo in args.ifos:
+    for ifo in all_ifos:
         if ifo in f_in['foreground']:
             all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], \
                                      f_in['foreground/{}/time'.format(ifo)][:]])
@@ -85,7 +117,7 @@ for f_in in files:
 
 logging.info('Clustering triggers for loudest ifar value')
 
-for ifo in args.ifos:
+for ifo in all_ifos:
     f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
     f['foreground/{}/trigger_id'.format(ifo)] = all_trig_ids[ifo]
 
@@ -94,7 +126,7 @@ ifar_stat = numpy.core.records.fromarrays([f['foreground/ifar'][:],
                                           names='ifar,stat')
 
 # all_times is a tuple of trigger time arrays
-all_times = (f['foreground/%s/time' % ifo][:] for ifo in args.ifos)
+all_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
 def argmax(v):
     return numpy.argsort(v)[-1]
@@ -113,7 +145,7 @@ def filter_dataset(h5file, name, idx):
 
 # Downsample the foreground columns to only the loudest ifar between the multiple files
 for key in f['foreground'].keys():
-    if key not in args.ifos:
+    if key not in all_ifos:
         id = filter_dataset(f, 'foreground/%s' % key, cidx)
     else:  # key is an ifo
         for k in f['foreground/%s' % key].keys():
@@ -122,7 +154,7 @@ for key in f['foreground'].keys():
 logging.info('Applying trials factor')
 
 # Recalculate event times after clustering for trials factor calculation
-clustered_times = (f['foreground/%s/time' % ifo][:] for ifo in args.ifos)
+clustered_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
 # Trials factor is how many possible 2+IFO combinations are 'on'
 #  at the time of the coincidence
