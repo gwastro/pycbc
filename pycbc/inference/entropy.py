@@ -3,9 +3,43 @@ Kullback-Leibler divergence.
 """
 
 import numpy
-
 from scipy import stats
 
+
+def check_hist_bounds(hist_min, hist_max):
+    """ Checks that the bound values given for the histogram are consistent,
+    returning the range if they are or raising an error if they are not
+
+    Parameters
+    ----------
+    hist_min : numpy.float64
+        Minimum value for the histogram.
+    hist_max : numpy.float64
+        Maximum value for the histogram.
+
+    Returns
+    -------
+    range : tuple
+        The bounds (hist_min, hist_max).
+    """
+
+    # One of the bounds is missing
+    if hist_min and not hist_max:
+        raise ValueError('hist_min provided but hist_max missing.')
+    elif hist_max and not hist_min:
+        raise ValueError('hist_max provided but hist_min missing.')
+
+    # Both bounds given
+    if hist_min and hist_max:
+        if hist_min >= hist_max:
+            raise ValueError('hist_min must be lower than hist_max.')
+        else:
+            hist_range = (hist_min, hist_max)
+    # No bounds given
+    elif not hist_min and not hist_max:
+        hist_range = None
+
+    return hist_range
 
 def entropy(pdf1, base=numpy.e):
     """ Computes the information entropy for a single parameter
@@ -15,9 +49,6 @@ def entropy(pdf1, base=numpy.e):
     ----------
     pdf1 : numpy.array
         Probability density function.
-    pdf2 : {None, numpy.array}, optional
-        Probability density function of a second distribution to
-        calculate the Kullback-Leibler divergence.
     base : {numpy.e, numpy.float64}, optional
         The logarithmic base to use (choose base 2 for information measured
         in bits, default is nats).
@@ -25,8 +56,7 @@ def entropy(pdf1, base=numpy.e):
     Returns
     -------
     numpy.float64
-        The information entropy value (or the Kullback-Leibler divergence if
-        two distributions are given).
+        The information entropy value.
     """
 
     return stats.entropy(pdf1, base=base)
@@ -84,10 +114,10 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
             samples_kde = stats.gaussian_kde(samples)
             pdfs[n] = samples_kde.evaluate(samples)
         else:
+            hist_range = check_hist_bounds(hist_min, hist_max)
             pdfs[n], _ = numpy.histogram(samples, bins=bins,
-                                         range=(hist_min, hist_max),
-                                         normed=True)
-            
+                                         range=hist_range, normed=True)
+
     return stats.entropy(pdfs[0], qk=pdfs[1], base=base)
 
 
@@ -127,10 +157,11 @@ def js(samples1, samples2, kde=False, bins=30, hist_min=None, hist_max=None,
     join_samples = numpy.concatenate((samples1, samples2))
     if kde:
         samplesm_kde = stats.gaussian_kde(join_samples)
-        samplesm = samplesm_kde.evaluate(samplesm)
+        samplesm = samplesm_kde.evaluate(join_samples)
     else:
+        hist_range = check_hist_bounds(hist_min, hist_max)
         samplesm, _ = numpy.histogram(join_samples, bins=bins,
-                                      range=(hist_min, hist_max), normed=True)
+                                      range=hist_range, normed=True)
     samplesm = (1./2) * samplesm
 
     js_div = 0
