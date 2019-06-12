@@ -32,11 +32,12 @@ parser.add_argument("--use-maxalpha", action="store_true")
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
 parser.add_argument("--timeslide-interval", type=float,
-                    help="Interval between timeslides in seconds. Timeslides are "
-                         "disabled if the option is omitted.")
-parser.add_argument("--loudest-keep-values", type=str, nargs='*',
-                     help="Apply a sequence of decimations at the given thresholds"
-                          "Ex. 8.5:10 8:10 7.5:10 7:10")
+                    help="Interval between timeslides in seconds. Timeslides are"
+                         " disabled if the option is omitted.")
+parser.add_argument("--loudest-keep-values", type=str, nargs='*', default='6:1',
+                    help="Apply successive multiplicative levels of decimation"
+                         " to coincs with stat value below the given thresholds"
+                         " Ex. 9:10 8.5:30 8:30 7.5:30. Default: no decimation")
 parser.add_argument("--template-fraction-range", default="0/1",
                     help="Optional, analyze only part of template bank. Format"
                          " PART/NUM_PARTS")
@@ -50,7 +51,6 @@ parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 parser.add_argument("--batch-singles", default=5000, type=int,
                     help="Number of single triggers to process at once")
-
 args = parser.parse_args()
 
 # flatten the list of lists of filenames to a single list (may be empty)
@@ -267,7 +267,7 @@ for tnum in template_ids:
             logging.info('Calculating Multi-Detector Combined Statistic')
             sdswithids = {}
             for ifo in sds:
-                sdswithids[ifo]=sds[ifo][ids[ifo]]
+                sdswithids[ifo] = sds[ifo][ids[ifo]]
             cstat = rank_method.coinc_multiifo(sdswithids, slide,
                                            args.timeslide_interval,
                                            time_addition=args.coinc_threshold)
