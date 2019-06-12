@@ -32,7 +32,7 @@ def check_hist_params(hist_min, hist_max, hist_bins):
     """
 
     hist_methods = ['auto', 'fd', 'doane', 'scott', 'stone', 'rice',
-                     'sturges', 'sqrt']
+                    'sturges', 'sqrt']
     if not hist_bins:
         hist_bins = 'fd'
     elif isinstance(hist_bins, str) and hist_bins not in hist_methods:
@@ -135,7 +135,7 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
         else:
             hist_range, hist_bins = check_hist_params(hist_min, hist_max, bins)
             pdfs[n], _ = numpy.histogram(samples, bins=hist_bins,
-                                         range=hist_range, normed=True)
+                                         range=hist_range, density=True)
 
     return stats.entropy(pdfs[0], qk=pdfs[1], base=base)
 
@@ -183,7 +183,7 @@ def js(samples1, samples2, kde=False, bins=None, hist_min=None, hist_max=None,
     else:
         hist_range, hist_bins = check_hist_params(hist_min, hist_max, bins)
         samplesm, _ = numpy.histogram(join_samples, bins=hist_bins,
-                                      range=hist_range, normed=True)
+                                      range=hist_range, density=True)
     samplesm = (1./2) * samplesm
 
     js_div = 0
