@@ -76,14 +76,14 @@ def format_lmns(lmns):
     given, raise an error.
     """
 
-    # Case 1: the list is in a string "[221, 331]"
+    # Case 1: the list is in a string "['221', '331']"
+    # In Python3 this might be "[b'221', b'331']"
     if isinstance(lmns, str):
-        # strip off brackets
-        lmns = lmns.strip('[]')
-        # convert to list
-        lmns = lmns.split(',')
+        # strip off brackets and convert to list
+        lmns = lmns.strip('[]').split(',')
 
     # Case 2: a list with only one string with a list ["221', '331"]
+    # In Python3 this might be ["b221', b'331"]
     elif (len(lmns) == 1 and isinstance(lmns[0], str)
           and len(lmns[0]) > 3):
         lmns = lmns[0].split(',')
@@ -92,6 +92,8 @@ def format_lmns(lmns):
     # Cycle over the lmns to ensure that we get back a list of strings that
     # are three digits long, and that nmodes!=0
     for lmn in lmns:
+        # For Python3
+        lmn = lmn.strip(" b'")
         # Try to convert to int and then str, to ensure the right format
         lmn = str(int(lmn))
         if len(lmn) != 3:
