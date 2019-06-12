@@ -19,10 +19,8 @@ be needed to support some code/interface that is not currently supported.
 This module will generate science segments and any appropriate veto segments
 and combine these together to identify a set of segments to be used in the
 analysis. The various files will also be returned for later use in the analysis
-(ie. for vetoing triggers with data-quality vetoes). The module also supports
-generating cumulative and multiple-detector veto files for easy use with
-ligolw_thinca and pipedown. If other workflows require similar combined files
-these can be added on request.
+(ie. for vetoing triggers with data-quality vetoes). If other workflows require 
+similar combined files these can be added on request.
 
 =======
 Usage
@@ -101,12 +99,15 @@ not providing a version will query *all* versions of that flag. That probably wo
 The veto-definer file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The veto definer file groups a set of flags together, defining what is meant as CAT_1 vetoes. We could explictly map the veto-definer from the XML file into a list of flags (removing the veto-definer altogether), but it is easier to just use the veto-definer and let the detchar group decide what these flags should be. When using a veto-definer we have access to "special" flag names corresponding to what's in the veto-definer. That is:
+The veto definer file groups a set of flags together, defining what is meant as CAT_1 vetoes. We could explicitly map the veto-definer from the XML file into a list of flags (removing the veto-definer altogether), but it is easier to just use the veto-definer and let the detchar group decide what these flags should be. 
+
+When using a veto-definer we have access to "special" flag names corresponding to what's in the veto-definer. These special flag names are:
 
 `CAT_1`: All flags given the `category` value of 1 within the veto-definer file.
 `CAT_2`: All flags given the `category` value of 2 within the veto-definer file.
-`CAT_H`: All flags given the `category` value of 3 within the veto-definer file. There's some history/confusion here. Since S6 we've been storing hardware injections in the `category=3` field of the veto-definer. Don't worry about that, this just means all hardware injection flags.
-`CAT_3`. All flags given the `category` value of 4 within the veto-definer file. As above this is where category 3 vetoes are traditionally stored. These have not been used since the start of Advanced LIGO/Virgo, so we can probably ignore this now.
+`CAT_H`: All flags given the `category` value of 3 within the veto-definer file. 
+There's some history/confusion here : since S6 we've been storing hardware injections in the `category=3` field of the veto-definer. Don't worry about that, this just means all hardware injection flags.
+`CAT_3`. All flags given the `category` value of 4 within the veto-definer file. As mentioned above, this is where category 3 vetoes are traditionally stored. These vetoes have not been used since the start of Advanced LIGO/Virgo, so we can probably ignore this now.
 
 Examples of using these flags are given at the top. All of the stuff below also applies to these "special" flags, but some of these combinations may be a little odd.
 
@@ -114,22 +115,22 @@ Examples of using these flags are given at the top. All of the stuff below also 
 Adding a ifo
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now let's start adding complexity. I can explictly state an ifo, even if the workflow thinks its analysing V1, I can supply a *different* ifo and the workflow will analyse that data as if it was the second ifo. For example
+Now let's start adding complexity. I can explicitly state an ifo, even if the workflow thinks it's analysing V1, I can supply a *different* ifo and the workflow will analyse that data as if it was the second ifo. For example
 
 `segments-science-v1 = H1:DMT-ANALYSIS_READY:1`
 
-will use `H1` data as "Virgo". This functionality is not expected to be used in production runs, but has been useful in the past for testing purposes (e.g. using H2 data as V1 to simulate a true 3-instrument analysis). Probably this won't be used much, but it's here for completeness.
+will use `H1` data as "Virgo". This functionality is not expected to be used in production runs, but has been useful in the past for testing purposes, e.g. using H1 data as V1 to simulate a true 3-instrument analysis. Probably this won't be used much, but it's here for completeness.
 
 ~~~~~~~~~~~~~~~~~~~~~~
 Providing padding
 ~~~~~~~~~~~~~~~~~~~~~~
 
-For some flags we want to include some additional time ... Normally for vetoes where we want to cut out a little bit more data as we know the bad time might be a little longer than that recorded. This can be done like:
+For some flags we want to include some additional time ... Normally for vetoes where we want to cut out a little bit more data as we know the bad time might be a little longer than that recorded. This can be done as:
 
 `+H1:SCIENCE:1<-8:8>` or `-H1:SCIENCE:1<-8:8>`
 
-When `start_pad` = -8 and `end_pad` = 8. This numbers are added to every segment coming from this flag, so `segment_start += start_pad` and `segment_end += end_pad` ... Or more simply, in this example the segment is extended by 8s on both the start and the end of every segment.
-This number can be flipped to cause the segment to get shorter. Be careful with this though, glue does not do the right thing if the start of a segment is after the end of the segment! (e.g. if you shrink a segment so much that it disappears, weird things will happen!)
+This corresponds to `start_pad` = -8 and `end_pad` = 8. These numbers are added to the start/end times of every segment coming from this flag, so `segment_start += start_pad` and `segment_end += end_pad`.  Or more simply, in this example the segment is extended by 8s on both the start and the end of every segment.
+This number can be flipped to cause the segment to get shorter. Be careful with this though, glue does not do the right thing if the start of a segment is after the end of the segment - e.g. if you shrink a segment so much that it disappears, weird things will happen!
 
 The padding must always appear after the flag and version name.
 
@@ -155,7 +156,7 @@ OLD Usage
 ==========
 
 THE FOLLOWING DESCRIBES THE DEPRECATED INTERFACE. DO NOT USE THIS ANY MORE.
-IT WILL SOON BY REMOVED!!!
+IT WILL SOON BE REMOVED!!!
 
 Using this module requires a number of things
 
