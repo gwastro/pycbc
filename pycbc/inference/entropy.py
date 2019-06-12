@@ -7,7 +7,7 @@ import numpy
 from scipy import stats
 
 
-def entropy(pdf1, pdf2=None, base=numpy.e):
+def entropy(pdf1, base=numpy.e):
     """ Computes the information entropy for a single parameter
     from one probability density function.
 
@@ -29,10 +29,10 @@ def entropy(pdf1, pdf2=None, base=numpy.e):
         two distributions are given).
     """
 
-    return stats.entropy(pdf1, qk=pdf2, base=base)
+    return stats.entropy(pdf1, base=base)
 
 
-def kl(samples1, samples2, pdf1=False, pdf2=False,
+def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
        bins=30, hist_min=None, hist_max=None, base=numpy.e):
     """ Computes the Kullback-Leibler divergence for a single parameter
     from two distributions.
@@ -40,20 +40,29 @@ def kl(samples1, samples2, pdf1=False, pdf2=False,
     Parameters
     ----------
     samples1 : numpy.array
-        Samples or probability density function (must also set `pdf1=True`).
+        Samples or probability density function (for the latter must also set
+        `pdf1=True`).
     samples2 : numpy.array
-        Samples or probability density function (must also set `pdf2=True`).
+        Samples or probability density function (for the latter must also set
+        `pdf2=True`).
     pdf1 : bool
         Set to `True` if `samples1` is a probability density funtion already.
     pdf2 : bool
         Set to `True` if `samples2` is a probability density funtion already.
-    bins : int
+    kde : bool
+        Set to `True` if at least one of `pdf1` or `pdf2` is `False` to
+        estimate the probability density function using kernel density
+        estimation (KDE).
+    bins : {30, int}, optional
         Number of bins to use when calculating probability density function
-        from a set of samples of the distribution.
+        from a set of samples of the distribution. This will be ignored if
+        `kde=True`.
     hist_min : numpy.float64
-        Minimum of the distributions' values to use.
+        Minimum of the distributions' values to use. This will be ignored if
+        `kde=True`.
     hist_max : numpy.float64
-        Maximum of the distributions' values to use.
+        Maximum of the distributions' values to use. This will be ignored if
+        `kde=True`.
     base : numpy.float64
         The logarithmic base to use (choose base 2 for information measured
         in bits, default is nats).
@@ -63,17 +72,26 @@ def kl(samples1, samples2, pdf1=False, pdf2=False,
     numpy.float64
         The Kullback-Leibler divergence value.
     """
-    hist_range = (hist_min, hist_max)
+    if pdf1 and pdf2 and kde:
+        raise ValueError('KDE can only be used when at least one of pdf1 or '
+                         'pdf2 is False.')
     if not pdf1:
-        samples1, _ = numpy.histogram(samples1, bins=bins,
-                                      range=hist_range, normed=True)
+        if kde:
+            samples1 = stats.gaussian_kde(samples1)
+        else:
+            samples1, _ = numpy.histogram(samples1, bins=bins,
+                range=(hist_min, hist_max), normed=True)
     if not pdf2:
-        samples2, _ = numpy.histogram(samples2, bins=bins,
-                                      range=hist_range, normed=True)
-    return entropy(samples1, pdf2=samples2, base=base)
+        if kde:
+            samples2 = stats.gaussian_kde(samples2)
+        else:
+            samples2, _ = numpy.histogram(samples2, bins=bins,
+                range=(hist_min, hist_max), normed=True)
+
+    return stats.entropy(samples1, pdf2=samples2, base=base)
 
 
-def js(samples1, samples2, bins=30, hist_min=None, hist_max=None,
+def js(samples1, samples2, kde=True, bins=30, hist_min=None, hist_max=None,
        base=numpy.e):
     """ Computes the Jensen-Shannon divergence for a single parameter
     from two distributions.
@@ -84,13 +102,19 @@ def js(samples1, samples2, bins=30, hist_min=None, hist_max=None,
         Samples.
     samples2 : numpy.array
         Samples.
-    bins : int
-        Number of bins to use when calculating probability density function
-        from a set of samples of the distribution.
+    kde : bool
+        Set to `True` to estimate the probability density function using
+        kernel density estimation (KDE).
+    bins : {30, int}, optional
+        Number of bins to use to calculate the probability density function
+        from a set of samples of the distribution. This will be ignored if
+        `kde=True`.
     hist_min : numpy.float64
-        Minimum of the distributions' values to use.
+        Minimum of the distributions' values to use. This will be ignored if
+        `kde=True`.
     hist_max : numpy.float64
-        Maximum of the distributions' values to use.
+        Maximum of the distributions' values to use. This will be ignored if
+        `kde=True`.
     base : numpy.float64
         The logarithmic base to use (choose base 2 for information measured
         in bits, default is nats).
@@ -100,13 +124,16 @@ def js(samples1, samples2, bins=30, hist_min=None, hist_max=None,
     numpy.float64
         The Jensen-Shannon divergence value.
     """
-    hist_range = (hist_min, hist_max)
     join_samples = numpy.concatenate((samples1, samples2))
-    samplesm, _ = numpy.histogram(join_samples, bins=bins,
-                                  range=hist_range, normed=True)
-    return (1./2)*kl(samples1, (1./2)*samplesm, pdf1=False, pdf2=True,
-                     bins=bins, hist_min=hist_min, hist_max=hist_max,
+    if kde:
+        samplesm = stats.gaussian_kde(join_samples)
+    else:
+        samplesm, _ = numpy.histogram(join_samples, bins=bins,
+            range=(hist_min, hist_max), normed=True)
+    samplesm = (1./2) * samplesm
+    return (1./2) * kl(samples1, samplesm, pdf1=False, pdf2=True,
+                     kde=kde, bins=bins, hist_min=hist_min, hist_max=hist_max,
                      base=base) + \
-           (1./2)*kl(samples2, (1./2)*samplesm, pdf1=False, pdf2=True,
-                     bins=bins, hist_min=hist_min, hist_max=hist_max,
+           (1./2) * kl(samples2, samplesm, pdf1=False, pdf2=True,
+                     kde=kde, bins=bins, hist_min=hist_min, hist_max=hist_max,
                      base=base)
