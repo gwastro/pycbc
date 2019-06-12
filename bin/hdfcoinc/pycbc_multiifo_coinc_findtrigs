@@ -86,7 +86,7 @@ class ReadByTemplate(object):
         self.segs = veto.start_end_to_segments(s, e).coalesce()
         for vfile, name in zip(veto_files, segment_name):
             veto_segs = veto.select_segments_by_definer(vfile, ifo=self.ifo,
-                                                     segment_name=name)
+                                                        segment_name=name)
             self.segs = (self.segs - veto_segs).coalesce()
         self.valid = veto.segments_to_start_end(self.segs)
 
@@ -268,9 +268,11 @@ for tnum in template_ids:
             sdswithids = {}
             for ifo in sds:
                 sdswithids[ifo] = sds[ifo][ids[ifo]]
-            cstat = rank_method.coinc_multiifo(sdswithids, slide,
-                                           args.timeslide_interval,
-                                           time_addition=args.coinc_threshold)
+            cstat = rank_method.coinc_multiifo(sdswithids,
+                                               slide,
+                                               args.timeslide_interval,
+                                               time_addition=\
+                                                   args.coinc_threshold)
 
             # index values of the zerolag triggers
             fi = numpy.where(slide == 0)[0]
@@ -301,8 +303,7 @@ for tnum in template_ids:
 
                 bi_dec = numpy.concatenate([idx_keep, idx])
                 dec = numpy.concatenate([dec[upper],
-                                         numpy.repeat(total_factor, len(idx))]
-                                       )
+                                         numpy.repeat(total_factor, len(idx))])
 
             ti = numpy.concatenate([bi_dec, fi]).astype(numpy.uint32)
             dec_fac = numpy.concatenate([dec, numpy.ones(len(fi))])
