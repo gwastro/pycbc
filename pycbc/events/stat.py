@@ -26,6 +26,7 @@ statistic values
 """
 import numpy
 from . import ranking
+from . import coinc_rate
 
 
 class Stat(object):
@@ -94,7 +95,7 @@ class NewSNRStatistic(Stat):
         return (s0**2. + s1**2.) ** 0.5
 
     def coinc_multiifo(self, s, slide, step,
-                       ): # pylint:disable=unused-argument
+                       **kwargs): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
         Parameters
         ----------
@@ -457,7 +458,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
         # scale by 1/sqrt(2) to resemble network SNR
         return (s0 + s1) / 2.**0.5
 
-    def coinc_multiifo(self, s, slide, step): # pylint:disable=unused-argument
+    def coinc_multiifo(self, s, slide,
+                       step, **kwargs): # pylint:disable=unused-argument
         # scale by 1/sqrt(number of ifos) to resemble network SNR
         return sum(x for x in s.values()) / len(s)**0.5
 
@@ -567,6 +569,45 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
                            dtype=numpy.float32), ndmin=1, copy=False)
 
 
+class ExpFitSGCoincRateStatistic(ExpFitStatistic):
+
+    """Detection statistic using an exponential falloff noise model.
+    Statistic calculates the log noise coinc rate for each
+    template over single-ifo newsnr values.
+    """
+
+    def __init__(self, files, benchmark_lograte=-14.6):
+        # benchmark_lograte is log of a representative noise trigger rate
+        # This comes from H1L1 (O2) and is 4.5e-7 Hz
+        super(ExpFitSGCoincRateStatistic, self).__init__(files)
+        self.benchmark_lograte = benchmark_lograte
+        self.get_newsnr = ranking.get_newsnr_sgveto
+        # Reassign the rate as it is now number per time rather than an
+        # arbitrarily normalised number
+        for ifo in self.ifos:
+            self.reassign_rate(ifo)
+
+    def reassign_rate(self, ifo):
+        coeff_file = self.files[ifo+'-fit_coeffs']
+        template_id = coeff_file['template_id'][:]
+        # the template_ids and fit coeffs are stored in an arbitrary order
+        # create new arrays in template_id order for easier recall
+        tid_sort = numpy.argsort(template_id)
+        self.fits_by_tid[ifo]['rate'] = \
+            coeff_file['count_above_thresh'][:][tid_sort] / \
+            float(coeff_file.attrs['analysis_time'])
+
+    def coinc_multiifo(self, s, slide,
+                       step, **kwargs): # pylint:disable=unused-argument
+        """Calculate the final coinc ranking statistic"""
+        sngl_rates_dict = {ifo: numpy.exp(sngl_rate) for (ifo, sngl_rate) in\
+                           zip(self.fits_by_tid.keys(), s.values())}
+        ln_coinc_rate = numpy.log(coinc_rate.combination_noise_coinc_rate(
+                                  sngl_rates_dict, kwargs['time_addition']))
+        loglr = - ln_coinc_rate + self.benchmark_lograte
+        return loglr
+
+
 statistic_dict = {
     'newsnr': NewSNRStatistic,
     'network_snr': NetworkSNRStatistic,
@@ -582,7 +623,8 @@ statistic_dict = {
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
-    'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic
+    'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
+    'exp_fit_sg_coinc_rate': ExpFitSGCoincRateStatistic
 }
 
 sngl_statistic_dict = {
