@@ -61,6 +61,53 @@ def check_hist_params(samples, hist_min, hist_max, hist_bins):
     return hist_range, hist_bins
 
 
+def compute_pdf(samples, method, bins, hist_min, hist_max):
+    """ Computes the probability density function for a set of samples.
+
+    Parameters
+    ----------
+    samples : numpy.array
+        Set of samples to calculate the pdf.
+    method : str
+        Method to calculate the pdf. Options are 'kde' for the Kernel Density
+        Estimator, and 'hist' to use numpy.histogram
+    bins : str or int, optional
+        This option will be ignored if method is `kde`.
+        If int, number of equal-width bins to use when calculating probability
+        density function from a set of samples of the distribution. If str, it
+        should be one of the methods to calculate the optimal bin width
+        available in numpy.histogram: ['auto', 'fd', 'doane', 'scott', 'stone',
+        'rice', 'sturges', 'sqrt']. Default is 'fd' (Freedman Diaconis
+        Estimator).
+    hist_min : numpy.float64, optional
+        Minimum of the distributions' values to use. This will be ignored if
+        `kde=True`.
+    hist_max : numpy.float64, optional
+        Maximum of the distributions' values to use. This will be ignored if
+        `kde=True`.
+
+    Returns
+    -------
+    pdf : numpy.array
+        Discrete probability distribution calculated from samples.
+    """
+
+    if method == 'kde':
+        samples_kde = stats.gaussian_kde(samples)
+        npts = 10000 if len(samples) <= 10000 else len(samples)
+        draw = samples_kde.resample(npts)
+        pdf = samples_kde.evaluate(draw)
+    elif method == 'hist':
+        hist_range, hist_bins = check_hist_params(samples, hist_min, 
+                                                  hist_max, bins)
+        pdf, _ = numpy.histogram(samples, bins=hist_bins,
+                                 range=hist_range, density=True)
+    else:
+        raise ValueError('Method not recognized.')
+
+    return pdf
+
+
 def entropy(pdf1, base=numpy.e):
     """ Computes the information entropy for a single parameter
     from one probability density function.
@@ -129,22 +176,17 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
         raise ValueError('KDE can only be used when at least one of pdf1 or '
                          'pdf2 is False.')
 
-    sample_groups = {1: (samples1, pdf1), 2: (samples2, pdf2)}
+    sample_groups = {'P': (samples1, pdf1), 'Q': (samples2, pdf2)}
     pdfs = {}
     for n in sample_groups.keys():
         samples, pdf = sample_groups[n]
         if pdf:
             pdfs[n] = samples
-        elif kde:
-            samples_kde = stats.gaussian_kde(samples)
-            pdfs[n] = samples_kde.evaluate(samples)
         else:
-            hist_range, hist_bins = check_hist_params(samples, hist_min,
-                                                      hist_max, bins)
-            pdfs[n], _ = numpy.histogram(samples, bins=hist_bins,
-                                         range=hist_range, density=True)
+            method = 'kde' if kde else 'hist'
+            pdfs[n] = compute_pdf(samples, method, bins, hist_min, hist_max)
 
-    return stats.entropy(pdfs[0], qk=pdfs[1], base=base)
+    return stats.entropy(pdfs['P'], qk=pdfs['Q'], base=base)
 
 
 def js(samples1, samples2, kde=False, bins=None, hist_min=None, hist_max=None,
@@ -183,21 +225,18 @@ def js(samples1, samples2, kde=False, bins=None, hist_min=None, hist_max=None,
     numpy.float64
         The Jensen-Shannon divergence value.
     """
-    join_samples = numpy.concatenate((samples1, samples2))
-    if kde:
-        samplesm_kde = stats.gaussian_kde(join_samples)
-        samplesm = samplesm_kde.evaluate(join_samples)
-    else:
-        hist_range, hist_bins = check_hist_params(join_samples, hist_min,
-                                                  hist_max, bins)
-        samplesm, _ = numpy.histogram(join_samples, bins=hist_bins,
-                                      range=hist_range, density=True)
-    samplesm = (1./2) * samplesm
+
+    sample_groups = {'P': samples1, 'Q': samples2}
+    pdfs = {}
+    for n in sample_groups.keys():
+        samples = sample_groups[n]
+        method = 'kde' if kde else 'hist'
+        pdfs[n] = compute_pdf(samples, method, bins, hist_min, hist_max)
+
+    pdfs['M'] = (1./2) * (pdfs['P'] + pdfs['Q'])
 
     js_div = 0
-    for samples in (samples1, samples2):
-        js_div += (1./2) * kl(samples, samplesm, pdf1=False, pdf2=True,
-                              kde=kde, bins=bins, hist_min=hist_min,
-                              hist_max=hist_max, base=base)
+    for pdf in (pdfs['P'], pdfs['Q']):
+        js_div += (1./2) * kl(pdf, pdfs['M'], pdf1=True, pdf2=True, base=base)
 
     return js_div
