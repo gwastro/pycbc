@@ -6,7 +6,7 @@ import numpy
 from scipy import stats
 
 
-def check_hist_params(hist_min, hist_max, hist_bins):
+def check_hist_params(samples, hist_min, hist_max, hist_bins):
     """ Checks that the bound values given for the histogram are consistent,
     returning the range if they are or raising an error if they are not.
     Also checks that if hist_bins is a str, it corresponds to a method
@@ -41,9 +41,9 @@ def check_hist_params(hist_min, hist_max, hist_bins):
 
     # One of the bounds is missing
     if hist_min and not hist_max:
-        raise ValueError('hist_min provided but hist_max missing.')
+        hist_max = samples.max()
     elif hist_max and not hist_min:
-        raise ValueError('hist_max provided but hist_min missing.')
+        hist_min = samples.min()
 
     # Both bounds given
     if hist_min and hist_max:
@@ -126,15 +126,18 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
         raise ValueError('KDE can only be used when at least one of pdf1 or '
                          'pdf2 is False.')
 
+    sample_groups = {1:(samples1, pdf1), 2:(samples2, pdf2)}
     pdfs = {}
-    for n, (samples, pdf) in enumerate(((samples1, pdf1), (samples2, pdf2))):
+    for n in sample_groups.keys:
+        samples, pdf = samples_group[n]
         if pdf:
             pdfs[n] = samples
         elif kde:
             samples_kde = stats.gaussian_kde(samples)
             pdfs[n] = samples_kde.evaluate(samples)
         else:
-            hist_range, hist_bins = check_hist_params(hist_min, hist_max, bins)
+            hist_range, hist_bins = check_hist_params(samples, hist_min,
+                                                      hist_max, bins)
             pdfs[n], _ = numpy.histogram(samples, bins=hist_bins,
                                          range=hist_range, density=True)
 
@@ -182,7 +185,8 @@ def js(samples1, samples2, kde=False, bins=None, hist_min=None, hist_max=None,
         samplesm_kde = stats.gaussian_kde(join_samples)
         samplesm = samplesm_kde.evaluate(join_samples)
     else:
-        hist_range, hist_bins = check_hist_params(hist_min, hist_max, bins)
+        hist_range, hist_bins = check_hist_params(join_samples, hist_min,
+                                                  hist_max, bins)
         samplesm, _ = numpy.histogram(join_samples, bins=hist_bins,
                                       range=hist_range, density=True)
     samplesm = (1./2) * samplesm
