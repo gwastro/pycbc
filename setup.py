@@ -215,7 +215,7 @@ cython_link_args = []
 # concern on that OS, and this line can be commented out if needed anyway.
 if not sys.platform == 'darwin':
     cython_compile_args += ['-fopenmp']
-    cython_link_args += ['fopenmp']
+    cython_link_args += ['-fopenmp']
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,
                   ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
