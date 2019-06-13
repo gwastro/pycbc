@@ -129,10 +129,10 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
         raise ValueError('KDE can only be used when at least one of pdf1 or '
                          'pdf2 is False.')
 
-    sample_groups = {1:(samples1, pdf1), 2:(samples2, pdf2)}
+    sample_groups = {1: (samples1, pdf1), 2: (samples2, pdf2)}
     pdfs = {}
-    for n in sample_groups.keys:
-        samples, pdf = samples_group[n]
+    for n in sample_groups.keys():
+        samples, pdf = sample_groups[n]
         if pdf:
             pdfs[n] = samples
         elif kde:
