@@ -98,7 +98,7 @@ def compute_pdf(samples, method, bins, hist_min, hist_max):
         draw = samples_kde.resample(npts)
         pdf = samples_kde.evaluate(draw)
     elif method == 'hist':
-        hist_range, hist_bins = check_hist_params(samples, hist_min, 
+        hist_range, hist_bins = check_hist_params(samples, hist_min,
                                                   hist_max, bins)
         pdf, _ = numpy.histogram(samples, bins=hist_bins,
                                  range=hist_range, density=True)
@@ -178,7 +178,7 @@ def kl(samples1, samples2, pdf1=False, pdf2=False, kde=False,
 
     sample_groups = {'P': (samples1, pdf1), 'Q': (samples2, pdf2)}
     pdfs = {}
-    for n in sample_groups.keys():
+    for n in sample_groups:
         samples, pdf = sample_groups[n]
         if pdf:
             pdfs[n] = samples
@@ -228,7 +228,7 @@ def js(samples1, samples2, kde=False, bins=None, hist_min=None, hist_max=None,
 
     sample_groups = {'P': samples1, 'Q': samples2}
     pdfs = {}
-    for n in sample_groups.keys():
+    for n in sample_groups:
         samples = sample_groups[n]
         method = 'kde' if kde else 'hist'
         pdfs[n] = compute_pdf(samples, method, bins, hist_min, hist_max)
