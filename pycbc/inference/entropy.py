@@ -57,6 +57,7 @@ def check_hist_params(hist_min, hist_max, hist_bins):
 
     return hist_range, hist_bins
 
+
 def entropy(pdf1, base=numpy.e):
     """ Computes the information entropy for a single parameter
     from one probability density function.
