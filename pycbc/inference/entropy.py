@@ -14,6 +14,8 @@ def check_hist_params(samples, hist_min, hist_max, hist_bins):
 
     Parameters
     ----------
+    samples : numpy.array
+        Set of samples to get the min/max if only one of the bounds is given.
     hist_min : numpy.float64
         Minimum value for the histogram.
     hist_max : numpy.float64
@@ -27,8 +29,10 @@ def check_hist_params(samples, hist_min, hist_max, hist_bins):
 
     Returns
     -------
-    range : tuple
-        The bounds (hist_min, hist_max).
+    hist_range : tuple or None
+        The bounds (hist_min, hist_max) or None.
+    hist_bins : int or str
+        Number of bins or method for optimal width bin calculation.
     """
 
     hist_methods = ['auto', 'fd', 'doane', 'scott', 'stone', 'rice',
@@ -39,21 +43,20 @@ def check_hist_params(samples, hist_min, hist_max, hist_bins):
         raise ValueError('Method for calculating bins width must be one of'
                          ' {}'.format(hist_methods))
 
+    # No bounds given, return None
+    if not hist_min and not hist_max:
+        return None, hist_bins
+
     # One of the bounds is missing
     if hist_min and not hist_max:
         hist_max = samples.max()
     elif hist_max and not hist_min:
         hist_min = samples.min()
-
     # Both bounds given
-    if hist_min and hist_max:
-        if hist_min >= hist_max:
-            raise ValueError('hist_min must be lower than hist_max.')
-        else:
-            hist_range = (hist_min, hist_max)
-    # No bounds given
-    elif not hist_min and not hist_max:
-        hist_range = None
+    elif hist_min and hist_max and hist_min >= hist_max:
+        raise ValueError('hist_min must be lower than hist_max.')
+
+    hist_range = (hist_min, hist_max)
 
     return hist_range, hist_bins
 
