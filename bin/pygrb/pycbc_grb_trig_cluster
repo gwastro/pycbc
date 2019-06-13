@@ -147,10 +147,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-vprint = print if args.verbose else str
 win = args.time_window
-
-vprint("-- Hello")
 
 # -- generate clustering bins -------------------
 
@@ -217,14 +214,14 @@ for i, bin_ in enumerate(bar):
         # check all events in previous bin
         if not first and prevt and abs(prevt - t) < win:
             for id2 in bins[prev]:
-                if abs(time[id2] - t) < win and t < snr[id2]:
+                if abs(time[id2] - t) < win and s < snr[id2]:
                     loudest = False
                     break
 
-        # check all events in previous bin
+        # check all events in next bin
         if loudest and not last and nextt and abs(nextt - t) < win:
             for id2 in bins[nxt_]:
-                if abs(time[id2] - t) < win and t < snr[id2]:
+                if abs(time[id2] - t) < win and s < snr[id2]:
                     loudest = False
                     break
 
