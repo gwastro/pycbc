@@ -216,6 +216,7 @@ ctx = scheme.from_cli(opt)
 
 gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
                            inj_filter_rejector=inj_filter_rejector)
+
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
 
@@ -238,6 +239,7 @@ with ctx:
     flen = strain_segments.freq_len
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
+
 
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
