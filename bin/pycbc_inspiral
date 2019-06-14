@@ -216,7 +216,6 @@ ctx = scheme.from_cli(opt)
 
 gwstrain = strain.from_cli(opt, dyn_range_fac=DYN_RANGE_FAC,
                            inj_filter_rejector=inj_filter_rejector)
-gwstrain.save("/home/simone.mozzon/prova_pycbc/fourth.hdf")
 strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
 
@@ -240,7 +239,6 @@ with ctx:
     tlen = strain_segments.time_len
     delta_f = strain_segments.delta_f
 
-    gwstrain.save("/home/simone.mozzon/prova_pycbc/fifth.hdf")
     logging.info("Making frequency-domain data segments")
     segments = strain_segments.fourier_segments()
     psd.associate_psds_to_segments(opt, segments, gwstrain, flen, delta_f,
