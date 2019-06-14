@@ -35,7 +35,7 @@ class PosteriorFile(BaseInferenceFile):
     def read_raw_samples(self, fields, **kwargs):
         return read_raw_samples_from_file(self, fields, **kwargs)
 
-    def write_samples(self, samples, parameters=None):
+    def write_samples(self, samples, parameters=parameters):
         return write_samples_to_file(self, samples, parameters=None)
 
 
@@ -43,7 +43,8 @@ def read_raw_samples_from_file(fp, fields, **kwargs):
     samples = fp[fp.samples_group]
     return {field: samples[field][:] for field in fields}
 
-def write_samples_to_file(fp, samples, parameters=None):
+
+def write_samples_to_file(fp, samples, parameters=parameters):
     """Writes samples to the given file.
 
     Results are written to ``samples_group/{vararg}``, where ``{vararg}``
@@ -52,6 +53,8 @@ def write_samples_to_file(fp, samples, parameters=None):
 
     Parameters
     -----------
+    fp : self
+        Pass the 'self' from BaseInferenceFile class.
     samples : dict
         The samples to write. Each array in the dictionary should have
         length niterations.
@@ -81,7 +84,7 @@ def write_samples_to_file(fp, samples, parameters=None):
         except KeyError:
             # dataset doesn't exist yet
             fp.create_dataset(dataset_name, (niterations,),
-                                maxshape=(None,),
-                                dtype=samples[param].dtype,
-                                fletcher32=True)
+                              maxshape=(None,),
+                              dtype=samples[param].dtype,
+                              fletcher32=True)
         fp[dataset_name][:] = samples[param]
