@@ -743,7 +743,6 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
                                             tags=tags,
                                             out_dir=out_dir)
 
-    ifolist = ' '.join(workflow.ifos)
     cluster_window = float(workflow.cp.get_opt_tags('combine_statmap',
                                                     'cluster-window',
                                                     tags))
