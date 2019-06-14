@@ -209,7 +209,7 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              "when calculating the PSD variability.")
     psd_options.add_argument("--psdvar-short-segment", type=float,
                              metavar="SECONDS", help="Length of short segment "
-                             "when calculating the PSD variability.")
+                             "for outliers removal.")
     psd_options.add_argument("--psdvar-long-segment", type=float,
                              metavar="SECONDS", help="Length of long segment "
                              "when calculating the PSD variability.")
@@ -220,11 +220,11 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              metavar="SECONDS", help="Separation between PSD "
                              "estimation segments.")
     psd_options.add_argument("--psdvar-low-freq", type=float, metavar="HERTZ",
-                             help="Minimum frequency to consider in PSD "
-                             "comparison.")
+                             help="Minimum frequency to consider in strain "
+                             "bandpass.")
     psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",
-                             help="Maximum frequency to consider in PSD "
-                             "comparison.")
+                             help="Maximum frequency to consider in strain "
+                             "bandpass.")
 
     if include_data_options :
         psd_options.add_argument("--psd-estimation",
@@ -315,7 +315,7 @@ def insert_psd_option_group_multi_ifo(parser):
                              "when calculating the PSD variability.")
     psd_options.add_argument("--psdvar-short-segment", type=float,
                              metavar="SECONDS", help="Length of short segment "
-                             "when calculating the PSD variability.")
+                             "for outliers removal.")
     psd_options.add_argument("--psdvar-long-segment", type=float,
                              metavar="SECONDS", help="Length of long segment "
                              "when calculating the PSD variability.")
@@ -326,11 +326,11 @@ def insert_psd_option_group_multi_ifo(parser):
                              metavar="SECONDS", help="Separation between PSD "
                              "estimation segments.")
     psd_options.add_argument("--psdvar-low-freq", type=float, metavar="HERTZ",
-                             help="Minimum frequency to consider in PSD "
-                             "comparison.")
+                             help="Minimum frequency to consider in strain "
+                             "bandpass.")
     psd_options.add_argument("--psdvar-high-freq", type=float, metavar="HERTZ",
-                             help="Maximum frequency to consider in PSD "
-                             "comparison.")
+                             help="Maximum frequency to consider in strain "
+                             "bandpass.")
 
     return psd_options
 

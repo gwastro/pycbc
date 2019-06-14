@@ -474,7 +474,7 @@ class EventManager(object):
             if 'sg_chisq' in self.events.dtype.names:
                 f['sg_chisq'] = self.events['sg_chisq']
 
-            if self.opt.psdvar_short_segment is not None:
+            if self.opt.psdvar_segment is not None:
                 f['psd_var_val'] = self.events['psd_var_val']
 
         if self.opt.trig_start_time:
@@ -996,7 +996,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
 
                 f['template_hash'] = th[tid]
 
-                if self.opt.psdvar_short_segment is not None:
+                if self.opt.psdvar_segment is not None:
                     f['psd_var_val'] = ifo_events['psd_var_val']
 
             if self.opt.trig_start_time:
