@@ -273,7 +273,6 @@ with ctx:
 
     if opt.psdvar_segment is not None:
         logging.info("Calculating PSD variation")
-        ## FIX IT (step)
         psd_var = pycbc.psd.calc_filt_psd_variation(gwstrain, opt.psdvar_segment,
                 opt.psdvar_short_segment, opt.psdvar_long_segment, 
                 opt.psdvar_psd_duration, opt.psdvar_psd_stride,
