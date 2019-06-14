@@ -251,7 +251,7 @@ class PyCBCCombineStatmap(Executable):
 
 class PyCBCMultiifoCombineStatmap(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, statmap_files, ifos, cluster_window, tags=None):
+    def create_node(self, statmap_files, cluster_window, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
@@ -748,7 +748,6 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
                                                     'cluster-window',
                                                     tags))
     combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
-                                                 ifolist,
                                                  cluster_window,
                                                  tags)
     workflow.add_node(combine_statmap_node)
