@@ -15,8 +15,6 @@ parser.add_argument('--statmap-files', nargs='+',
                     help="List of coinc files to be redistributed")
 parser.add_argument('--cluster-window', type=float)
 parser.add_argument('--output-file', help="name of output file")
-parser.add_argument('--ifos',nargs='+',
-                    help="list of interferometers in the input files" )
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)

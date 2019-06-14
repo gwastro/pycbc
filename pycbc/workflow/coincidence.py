@@ -258,7 +258,6 @@ class PyCBCMultiifoCombineStatmap(Executable):
         node.add_input_list_opt('--statmap-files', statmap_files)
         node.new_output_file_opt(statmap_files[0].segment, '.hdf',
                                  '--output-file', tags=tags)
-        node.add_opt('--ifos', ifos)
         node.add_opt('--cluster-window', cluster_window)
         return node
 
