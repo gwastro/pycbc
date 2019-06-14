@@ -35,7 +35,7 @@ class PosteriorFile(BaseInferenceFile):
     def read_raw_samples(self, fields, **kwargs):
         return read_raw_samples_from_file(self, fields, **kwargs)
 
-    def write_samples(self, samples, parameters=parameters):
+    def write_samples(self, samples, parameters):
         return write_samples_to_file(self, samples, parameters=None)
 
 
@@ -44,7 +44,7 @@ def read_raw_samples_from_file(fp, fields, **kwargs):
     return {field: samples[field][:] for field in fields}
 
 
-def write_samples_to_file(fp, samples, parameters=parameters):
+def write_samples_to_file(fp, samples, parameters):
     """Writes samples to the given file.
 
     Results are written to ``samples_group/{vararg}``, where ``{vararg}``
