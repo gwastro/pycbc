@@ -32,67 +32,6 @@ if injFile:
   injData.Time  = [t-grbTime for t in injData.Time]
 
 
-# Plot SNR timeseries
-for injF in numpy.unique([None, injFile]):
-  # Coherent SNR versus time
-  fig_tag = '%s_%s' % (tag, "triggers_vs_time") 
-  sbv_plot_handler(trigData.Time, trigData.SNR, injData.Time, injData.SNR, injF, \
-              "Time since %s" % (grbTime), "Coherent SNR", outdir, fig_tag,
-              xlims=[start,end], use_logs=False, verbose=verbose)
-  # Reweighted SNR versus time
-  fig_tag = '%s_%s' % (tag, "reweighted_snr_vs_time") 
-  sbv_plot_handler(trigData.Time, trigData.ReweightedSNR, injData.Time, \
-              injData.ReweightedSNR, injF, "Time since %s" % (grbTime), \
-              "Reweighted SNR", outdir, fig_tag, xlims=[start,end], \
-              use_logs=False, verbose=verbose)
-  # Single IFO SNR versus time
-  for ifo in ifos:
-    fig_tag = '%s_%s_%s' % (tag, ifo, "triggers_vs_time") 
-    sbv_plot_handler(trigData.Time, trigData.IfoSNR[ifo], injData.Time, injData.IfoSNR[ifo], injF, \
-                "Time since %s" % (grbTime), "%s SNR" % (ifo), outdir, fig_tag,
-                xlims=[start,end], use_logs=False, verbose=verbose)
-
-
-# Coherent SNR versus null stat plots: non-zoomed and zoomed 
-null_stat_colors = ['k-', 'g-', 'm-']
-fig_tag_list = generate_raw_zoom_tags(tag, "null_stat_vs_snr")
-null_stat_conts_1 = [null_cont]
-null_stat_conts_2 = [null_cont]
-null_thresh_width = null_thresh[1] - null_thresh[0]
-null_stat_conts_2.append(numpy.asarray(null_cont) - null_thresh_width)
-if null_thresh_width > 1:
-   null_stat_conts_2.append(numpy.asarray(null_cont) - null_thresh_width + 1)
-null_stat_conts_list = [null_stat_conts_1, null_stat_conts_2]
-xlims_list = [None, [6,30]]
-ylims_list = [None, [0,30]]
-for fig_tag, null_stat_conts, xlims, ylims in \
-             zip(fig_tag_list, null_stat_conts_list, xlims_list, ylims_list):
-  sbv_plot_handler(trigData.SNR, trigData.Nullstat, injData.SNR, injData.Nullstat, injFile, \
-                   "Coherent SNR", "Null statistic", outdir, fig_tag, \
-                   snr_vals=snr_vals, conts=null_stat_conts, \
-                   colors=null_stat_colors, xlims=xlims, ylims=ylims, \
-                   use_logs=False, verbose=verbose)
-
-
-# Coherent SNR versus overwhitened null stat plots: non-zoomed and zoomed
-fig_tag_list = generate_raw_zoom_tags(tag, "null_stat2_vs_snr")
-null_stat_conts_1 = [null_cont]
-null_stat_conts_2 = [null_cont]
-null_thresh_width = null_thresh[1] - null_thresh[0]
-null_stat_conts_2.append(numpy.asarray(null_cont) - null_thresh_width)
-if null_thresh_width > 1:
-   null_stat_conts_2.append(numpy.asarray(null_cont) - null_thresh_width + 1)
-null_stat_conts_list = [null_stat_conts_1, null_stat_conts_2]
-xlims_list = [None, [6,30]]
-ylims_list = [None, [0,30]]
-for fig_tag, null_stat_conts, xlims, ylims in \
-             zip(fig_tag_list, null_stat_conts_list, xlims_list, ylims_list):
-  sbv_plot_handler(trigData.SNR, trigData.NullSNR, injData.SNR, injData.NullSNR, injFile, \
-                   "Coherent SNR", "Overwhitened null statistic", outdir, fig_tag, \
-                   snr_vals=snr_vals, conts=null_stat_conts, \
-                   shade_cont_value=0, colors=null_stat_colors, \
-                   xlims=xlims, ylims=ylims, use_logs=False, verbose=verbose)
-
 
 # Plot coherent SNR versus bank veto
 fig_tag_list = generate_raw_zoom_tags(tag, "bank_veto_vs_snr")
