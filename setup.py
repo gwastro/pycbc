@@ -21,6 +21,7 @@ setup.py file for PyCBC package
 
 from __future__ import print_function
 
+import sys
 import os, subprocess, shutil
 
 from distutils.errors import DistutilsError
@@ -206,27 +207,34 @@ cythonext = ['waveform.spa_tmplt',
              'filter.matchedfilter',
              'vetoes.chisq']
 ext = []
+cython_compile_args = ['-O3', '-w', '-msse4.2', '-ffast-math',
+                       '-ffinite-math-only']
+cython_link_args = []
+# Mac's clang compiler doesn't have openMP support by default. Therefore
+# disable openmp builds on MacOSX. Optimization should never really be a
+# concern on that OS, and this line can be commented out if needed anyway.
+if not sys.platform == 'darwin':
+    cython_compile_args += ['-fopenmp']
+    cython_link_args += ['-fopenmp']
 for name in cythonext:
     e = Extension("pycbc.%s_cpu" % name,
                   ["pycbc/%s_cpu.pyx" % name.replace('.', '/')],
-                  extra_compile_args=['-O3', '-w', '-msse4.2',
-                                      '-ffast-math', '-ffinite-math-only',
-                                      '-fopenmp'],
-                  extra_link_args=['-fopenmp'],
+                  extra_compile_args=cython_compile_args,
+                  extra_link_args=cython_link_args,
                   compiler_directives={'embedsignature': True})
     ext.append(e)
 
 # Not all modules work like this:
 e = Extension("pycbc.fft.fftw_pruned_cython",
               ["pycbc/fft/fftw_pruned_cython.pyx"],
-              extra_compile_args=['-O3', '-w', '-msse4.2',
-                                  '-ffast-math', '-ffinite-math-only'],
+              extra_compile_args=cython_compile_args,
+              extra_link_args=cython_link_args,
               compiler_directives={'embedsignature': True})
 ext.append(e)
 e = Extension("pycbc.events.eventmgr_cython",
               ["pycbc/events/eventmgr_cython.pyx"],
-              extra_compile_args=['-O3', '-w', '-msse4.2',
-                                  '-ffast-math', '-ffinite-math-only'],
+              extra_compile_args=cython_compile_args,
+              extra_link_args=cython_link_args,
               compiler_directives={'embedsignature': True})
 ext.append(e)
 
