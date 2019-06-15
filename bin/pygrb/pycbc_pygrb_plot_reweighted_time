@@ -1,0 +1,204 @@
+#!/usr/bin/env python
+
+#Copyright (C) 2019 Gino Contestabile, Francesco Pannarale
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+# =============================================================================
+# Preamble
+# =============================================================================
+
+from __future__ import division
+
+import sys
+import glob
+import os,copy
+from glue import segments
+from glue.ligolw import utils,lsctables,ligolw,table
+import pycbc.version
+#from pycbc.results.pygrb_plotting_utils import pygrb_filter_output, pygrb_plotter,pygrb_plot_two_snrs_opts_parser
+from pycbc.results.pygrb_plotting_utils import *
+##### TODO: remove these dependencies!
+from pylal import MultiInspiralUtils
+from pylal.dq import dqSegmentUtils
+from pylal.coh_PTF_pyutils import calculate_contours, readSegFiles
+#####
+
+__author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
+__version__ = pycbc.version.git_verbose_msg
+__date__ = pycbc.version.date
+__program__ = "pycbc_pygrb_plot_reweighted_time"
+
+
+
+# =============================================================================
+# Main script starts here
+# =============================================================================
+
+description = 'pycbc_pygrb_plot_reweighted_time will produce reweighted SNR versus time plots.'
+opts = pygrb_plot_two_snrs_opts_parser(description=description, version=__version__)
+
+trigFile  = os.path.abspath(opts.trig_file)
+injFile   = None
+if opts.inj_file:
+  injFile = os.path.abspath(opts.inj_file)
+outfile       = opts.output_file
+zoomedoutfile = opts.zoomed_output_file
+segdir      = opts.segment_dir
+chisq_index = opts.chisq_index
+chisq_nhigh = opts.chisq_nhigh
+null_thresh = map(float, opts.null_snr_threshold.split(','))
+vetoFiles = []
+if opts.veto_directory:
+  vetoString = ','.join([str(i) for i in range(2,opts.veto_category+1)])
+  vetoFiles = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(vetoString))
+snrThresh = opts.snr_threshold
+snglSnrThresh = opts.sngl_snr_threshold
+newSnrThresh = opts.newsnr_threshold
+nullGradThresh = opts.null_grad_thresh
+nullGradVal    = opts.null_grad_val
+verbose   = opts.verbose
+
+if verbose:
+  sys.stdout.write("Imported and ready to go.\n")
+
+# Set output directories
+outdirs = [os.path.split(os.path.abspath(outfile))[0], \
+           os.path.split(os.path.abspath(zoomedoutfile))[0]]
+for outdir in outdirs:
+  if not os.path.isdir(outdir):
+    os.makedirs(outdir)
+
+
+#
+# Load triggers
+#
+
+if verbose:
+  sys.stdout.write("Loading triggers...\n")
+
+# Load file
+xmldoc = utils.load_filename(trigFile, gz=trigFile.endswith("gz"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
+searchSumm = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
+
+# Extract IFOS
+ifos = sorted(map(str, searchSumm[0].get_ifos()))
+
+tmp, slideDict, segmentDict = \
+        MultiInspiralUtils.ReadMultiInspiralTimeSlidesFromFiles([trigFile])
+numSlides = len(slideDict)
+lsctables.MultiInspiralTable.loadcolumns =\
+        [slot for slot in tmp[0].__slots__ if hasattr(tmp[0], slot)]
+trigs = lsctables.New(lsctables.MultiInspiralTable,\
+        columns=lsctables.MultiInspiralTable.loadcolumns)
+
+# Construct veto list
+vetoes = segments.segmentlistdict()
+for ifo in ifos:
+  vetoes[ifo] = segments.segmentlist()
+
+if vetoFiles:
+  for file in vetoFiles:
+    ifo = os.path.basename(file)[:2]
+    if ifo in ifos:
+      # This returns a coalesced list of the vetoes
+      tmpVetoSegs = dqSegmentUtils.fromsegmentxml(open(file,'r'))
+      for entry in tmpVetoSegs:
+        vetoes[ifo].append(entry)
+
+for ifo in ifos:
+  vetoes[ifo].coalesce()
+
+for slideID in range(numSlides):
+  slidVetoes = copy.deepcopy(vetoes)
+  for ifo in ifos:
+    slidVetoes[ifo].shift(-slideDict[slideID][ifo])
+
+  # Load triggers
+  vets = slidVetoes.union(slidVetoes.keys())
+  trigs.extend(t for t in tmp.veto(vets) if int(t.time_slide_id) == slideID)
+
+# Extract trigger data
+trigData = pygrb_filter_output(trigs, ifos, lsctables.MultiInspiralTable.loadcolumns, "triggers", \
+  chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
+
+
+#
+# Load injections
+#
+
+injs = None
+if injFile:
+  if verbose:
+    sys.stdout.write("\nLoading injections...\n")
+  xmldoc = utils.load_filename(injFile, gz=injFile.endswith("gz"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
+  tmp = table.get_table(xmldoc, lsctables.MultiInspiralTable.tableName)
+  injs = lsctables.New(lsctables.MultiInspiralTable,\
+                      columns=lsctables.MultiInspiralTable.loadcolumns)
+  injs.extend(t for t in tmp if t.get_end() not in vetoes)
+  if verbose:
+    sys.stdout.write("%d injections found.\n"\
+                     % (len(injs)))
+
+# Extract injection data
+injData = pygrb_filter_output(injs, ifos, lsctables.MultiInspiralTable.loadcolumns, "injections", \
+  chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
+
+
+#
+# Generate plots
+#
+
+if verbose:
+  sys.stdout.write("\nPlotting...\n")
+
+new_snrs = [5.5,6,6.5,7,8,9,10,11]
+try:
+  cont_value = new_snrs.index(newSnrThresh)
+except ValueError:
+  new_snrs.append(newSnrThresh)
+  cont_value = -1
+
+bank_conts, auto_conts,chi_conts,null_cont,snr_vals, colors =\
+    calculate_contours(q=chisq_index, n=chisq_nhigh,new_snrs=new_snrs,\
+                       new_snr_thresh=newSnrThresh,\
+                       null_thresh=null_thresh[-1],\
+                       null_grad_snr=nullGradThresh,\
+                       null_grad_val=nullGradVal,\
+                       chisq_dof=trigs[0].chisq_dof,\
+                       bank_chisq_dof=trigs[0].bank_chisq_dof,\
+                       cont_chisq_dof=trigs[0].cont_chisq_dof)
+
+# Reset times
+segs = readSegFiles(segdir)
+grbTime = segs['on'][1] - 1
+start = int(min(trigData.Time)) - grbTime
+end   = int(max(trigData.Time)) - grbTime
+duration = end-start
+start -= duration*0.05
+end += duration*0.05
+trigData.Time = [t-grbTime for t in trigData.Time]
+if injFile:
+  injData.Time  = [t-grbTime for t in injData.Time]
+
+# Reweighted SNR versus time
+xlims =  [start,end]
+for injF in numpy.unique([None, injFile]):
+  pygrb_plotter(trigData.Time, trigData.ReweightedSNR, \
+                  injData.Time, injData.ReweightedSNR, injF, \
+                  "Time since %s" (grbTime), "Reweighted SNR", \
+                  outfile, xlims=xlims, use_logs=False, verbose=verbose)
+
+
