@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+#!/bin/python
 
 ptfcolormap = plt.cm.spring
+
 ptfcolormap.set_over('g')
      
 new_snrs = [5.5,6,6.5,7,8,9,10,11]
@@ -30,54 +31,7 @@ end += duration*0.05
 trigData.Time = [t-grbTime for t in trigData.Time]
 if injFile:
   injData.Time  = [t-grbTime for t in injData.Time]
-
-
-
-# Plot coherent SNR versus bank veto
-fig_tag_list = generate_raw_zoom_tags(tag, "bank_veto_vs_snr")
-xlims_list = [[6,1000], [6,50]]
-ylims_list = [None, [1,2000]]
-for fig_tag, xlims, ylims in \
-             zip(fig_tag_list, xlims_list, ylims_list):
-  
-  sbv_plot_handler(trigData.SNR, trigData.BankVeto, injData.SNR, injData.BankVeto, injFile, \
-            "Coherent SNR", "Bank Veto", outdir, fig_tag, \
-            snr_vals=snr_vals, conts=bank_conts, \
-            shade_cont_value=cont_value, colors=colors, vert_spike=True, \
-            xlims=xlims, ylims=ylims, verbose=verbose)
  
-
-# Plot coherent SNR versus auto veto
-fig_tag_list = generate_raw_zoom_tags(tag, "auto_veto_vs_snr")
-xlims_list = [None, [6,30]]
-ylims_list = [None, [10,20000]]
-for fig_tag, xlims, ylims in \
-             zip(fig_tag_list, xlims_list, ylims_list):
- 
-  sbv_plot_handler(trigData.SNR, trigData.AutoVeto, injData.SNR, injData.AutoVeto, injFile, \
-            "Coherent SNR", "Auto Veto", outdir, fig_tag, \
-            snr_vals=snr_vals, conts=auto_conts, \
-            shade_cont_value=cont_value,xlims=xlims, ylims=ylims, colors=colors, vert_spike=True, \
-            verbose=verbose)
-
-
-# Plot coherent SNR versus chisq veto
-fig_tag_list = generate_raw_zoom_tags(tag, "chisq_vs_snr")
-xlims_list = [[6,1000], [0,50]]
-ylims_list = [[1,10000], [1,2000]]
-for fig_tag, xlims, ylims in \
-             zip(fig_tag_list, xlims_list, ylims_list):
- 
-  sbv_plot_handler(trigData.SNR[trigData.ReweightedSNR!=0], \
-            trigData.ChiSquare[trigData.ReweightedSNR!=0], \
-            injData.SNR[injData.ReweightedSNR!=0],
-            injData.ChiSquare[injData.ReweightedSNR!=0], injFile, \
-            "Coherent SNR", "Chi Square", outdir, fig_tag, \
-            snr_vals=snr_vals, conts=chi_conts, vert_spike=True, \
-            shade_cont_value=cont_value, colors=colors, \
-            xlims=xlims, ylims=ylims, \
-            verbose=verbose)
-
 
 # TODO: plot SNR versus IFO SNR
 sens1 = None
@@ -226,23 +180,3 @@ for ifo in ifos:
     except OverflowError:
       sys.stderr.write("WARNING: Sngl chisq versus sngl snr"+\
                        "failed with zeros in a loglog plot\n")
-
-
-# Plot time versus null stat
-fig_tag = '%s_%s' % (tag, "null_snr_vs_time")
-sbv_plot_handler(trigData.Time, trigData.Nullstat, injData.Time, injData.Nullstat , injFile, \
-            "Time since %s" % (grbTime), "Null SNR", outdir, fig_tag, \
-            xlims=[start,end], use_logs=False, verbose=verbose)
-
-
-# TODO: plot sky grid
-fig = plt.figure()
-ax  = fig.gca()
-ax.set_title("coh\_PTF %s Sky Grid" % tag, fontsize=18)
-ax.set_xlabel("Longitude (Degrees)", fontsize=16)
-ax.set_ylabel("Latitude (Degrees)", fontsize=16)
-ax.plot(trigData.Longitude, trigData.Latitude, 'ko', markerfacecolor='blue')
-fig.savefig("%s/%s_sky_grid.png" % (outdir, tag))
-plt.close()
-#sbv_plot_handler(trigData.SNR, trigData.Inclination, injData.SNR, injData.Inclination, injFile, "Longitude (Degrees)", "Latitude (Degrees)", \
-#            outdir, fig_tag, verbose=True)

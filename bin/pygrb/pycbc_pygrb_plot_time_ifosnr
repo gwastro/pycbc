@@ -39,7 +39,7 @@ from pylal.coh_PTF_pyutils import calculate_contours, readSegFiles
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_plot_coh_overwhitenull"
+__program__ = "pycbc_pygrb_plot_time_ifosnr"
 
 
 
@@ -47,7 +47,7 @@ __program__ = "pycbc_pygrb_plot_coh_overwhitenull"
 # Main script starts here
 # =============================================================================
 
-description = 'pycbc_pygrb_plot_coh_overwhitenull will produce coherent SNR versus overwhitened null statistics plots.'
+description = 'pycbc_pygrb_plot_ifosnr_time will produce single ifo SNR versus time plots.'
 usage = __program__ + ' [--options]'
 opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
 
@@ -55,12 +55,7 @@ trigFile  = os.path.abspath(opts.trig_file)
 injFile   = None
 if opts.inj_file:
   injFile = os.path.abspath(opts.inj_file)
-outfile       = opts.output_file
-zoomedoutfile = opts.zoomed_output_file
-if zoomedoutfile == None:
-  msg = "Please specify a pathname with the zoomed-ouptut-file option"
-  logging.error(msg)
-  sys.exit()
+outfile     = opts.output_file
 segdir      = opts.segment_dir
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
@@ -80,8 +75,7 @@ if verbose:
   sys.stdout.write("Imported and ready to go.\n")
 
 # Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0], \
-           os.path.split(os.path.abspath(zoomedoutfile))[0]]
+outdirs = [os.path.split(os.path.abspath(outfile))[0]]
 for outdir in outdirs:
   if not os.path.isdir(outdir):
     os.makedirs(outdir)
@@ -198,22 +192,10 @@ trigData.time = [t-grbTime for t in trigData.time]
 if injFile:
   injData.time  = [t-grbTime for t in injData.time]
 
-# Coherent SNR versus overwhitened null stat plots: non-zoomed and zoomed 
-null_stat_colors = ['k-', 'g-', 'm-']
-null_stat_conts_1 = [null_cont]
-null_stat_conts_2 = [null_cont]
-null_thresh_width = null_thresh[1] - null_thresh[0]
-null_stat_conts_2.append(numpy.asarray(null_cont) - null_thresh_width)
-if null_thresh_width > 1:
-   null_stat_conts_2.append(numpy.asarray(null_cont) - null_thresh_width + 1)
-null_stat_conts_list = [null_stat_conts_1, null_stat_conts_2]
-fig_path_list = [outfile, zoomedoutfile]
-xlims_list = [None, [6,30]]
-ylims_list = [None, [0,30]]
-for fig_path, null_stat_conts,xlims, ylims in zip(fig_path_list, null_stat_conts_list, xlims_list, ylims_list):
-  pygrb_plotter(trigData.snr, trigData.null_snr, \
-                  injData.snr, injData.null_snr, injFile, \
-                  "Coherent SNR", "Overwhitened null statistic", \
-                  fig_path, snr_vals=snr_vals, conts=null_stat_conts, \
-                  shade_cont_value=0, colors=null_stat_colors,\
-                  xlims=xlims, ylims=ylims,use_logs=False, verbose=verbose)
+# Single IFO SNR versus time plots
+xlims =  [start,end]
+for injF in numpy.unique([None, injFile]):
+  pygrb_plotter(trigData.time, trigData.ifo_snr[opts.ifo], \
+                injData.time, injData.ifo_snr[opts.ifo], injF, \
+                "Time since %s" % (str(grbTime)), "%s SNR" % (opts.ifo), \
+                outfile, xlims=xlims, use_logs=False, verbose=verbose)

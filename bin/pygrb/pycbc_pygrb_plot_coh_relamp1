@@ -28,7 +28,7 @@ import os,copy
 from glue import segments
 from glue.ligolw import utils,lsctables,ligolw,table
 import pycbc.version
-#from pycbc.results.pygrb_plotting_utils import pygrb_filter_output, pygrb_plotter,pygrb_plot_two_snrs_opts_parser
+#from pycbc.results.pygrb_plotting_utils import PygrbFilterOutput, pygrb_plotter,pygrb_plot_opts_parser
 from pycbc.results.pygrb_plotting_utils import *
 ##### TODO: remove these dependencies!
 from pylal import MultiInspiralUtils
@@ -48,7 +48,8 @@ __program__ = "pycbc_pygrb_plot_coh_relamp1"
 # =============================================================================
 
 description = 'pycbc_pygrb_plot_coh_relamp1 will produce coherent SNR versus inclination plots.'
-opts = pygrb_plot_two_snrs_opts_parser(description=description, version=__version__)
+usage = __program__ + ' [--options]'
+opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
 
 trigFile  = os.path.abspath(opts.trig_file)
 injFile   = None
@@ -56,6 +57,10 @@ if opts.inj_file:
   injFile = os.path.abspath(opts.inj_file)
 outfile       = opts.output_file
 zoomedoutfile = opts.zoomed_output_file
+if zoomedoutfile == None:
+  msg = "Please specify a pathname with the zoomed-ouptut-file option"
+  logging.error(msg)
+  sys.exit()
 segdir      = opts.segment_dir
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
@@ -131,7 +136,7 @@ for slideID in range(numSlides):
   trigs.extend(t for t in tmp.veto(vets) if int(t.time_slide_id) == slideID)
 
 # Extract trigger data
-trigData = pygrb_filter_output(trigs, ifos, lsctables.MultiInspiralTable.loadcolumns, "triggers", \
+trigData = PygrbFilterOutput(trigs, ifos, lsctables.MultiInspiralTable.loadcolumns, "triggers", \
   chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
 
 
@@ -153,7 +158,7 @@ if injFile:
                      % (len(injs)))
 
 # Extract injection data
-injData = pygrb_filter_output(injs, ifos, lsctables.MultiInspiralTable.loadcolumns, "injections", \
+injData = PygrbFilterOutput(injs, ifos, lsctables.MultiInspiralTable.loadcolumns, "injections", \
   chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
 
 
@@ -184,14 +189,14 @@ bank_conts, auto_conts,chi_conts,null_cont,snr_vals, colors =\
 # Reset times
 segs = readSegFiles(segdir)
 grbTime = segs['on'][1] - 1
-start = int(min(trigData.Time)) - grbTime
-end   = int(max(trigData.Time)) - grbTime
+start = int(min(trigData.time)) - grbTime
+end   = int(max(trigData.time)) - grbTime
 duration = end-start
 start -= duration*0.05
 end += duration*0.05
-trigData.Time = [t-grbTime for t in trigData.Time]
+trigData.time = [t-grbTime for t in trigData.time]
 if injFile:
-  injData.Time  = [t-grbTime for t in injData.Time]
+  injData.time  = [t-grbTime for t in injData.time]
 
 # Coherent SNR versus rel amp 1: non-zoomed and zoomed
 fig_path_list = [outfile, zoomedoutfile]
@@ -199,8 +204,8 @@ xlims_list = [None, [6,30]]
 ylims_list = [None, None]
 try:
   for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
-    pygrb_plotter(trigData.SNR, trigData.RelAmp1, \
-                  injData.SNR, injData.RelAmp1, injFile, \
+    pygrb_plotter(trigData.snr, trigData.rel_amp_1, \
+                  injData.snr, injData.rel_amp_1, injFile, \
                   "Coherent SNR", "Relative amplitude 1", \
                   fig_path, xlims=xlims, ylims=ylims, verbose=verbose)
 except (OverflowError,ValueError):

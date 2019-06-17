@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#Copyright (C) 2019 Gino Contestabile, Francesco Pannarale
+# Copyright (C) 2019 Gino Contestabile, Francesco Pannarale
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,7 +28,7 @@ import os,copy
 from glue import segments
 from glue.ligolw import utils,lsctables,ligolw,table
 import pycbc.version
-#from pycbc.results.pygrb_plotting_utils import pygrb_filter_output, pygrb_plotter,pygrb_plot_two_snrs_opts_parser
+#from pycbc.results.pygrb_plotting_utils import PygrbFilterOutput, pygrb_plotter,pygrb_plot_opts_parser
 from pycbc.results.pygrb_plotting_utils import *
 ##### TODO: remove these dependencies!
 from pylal import MultiInspiralUtils
@@ -39,24 +39,20 @@ from pylal.coh_PTF_pyutils import calculate_contours, readSegFiles
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_plot_coh_time"
-
+__program__ = "pycbc_pygrb_plot_skygrid"
 
 
 # =============================================================================
 # Main script starts here
 # =============================================================================
 
-description = 'pycbc_pygrb_plot_coh_time will produce coherent SNR versus time plots.'
-opts = pygrb_plot_two_snrs_opts_parser(description=description, version=__version__)
+description = 'pycbc_pygrb_plot_skygrid will produce the sky grid plot.'
+usage = __program__ + ' [--options]'
+opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
 
 trigFile  = os.path.abspath(opts.trig_file)
-injFile   = None
-if opts.inj_file:
-  injFile = os.path.abspath(opts.inj_file)
 outfile       = opts.output_file
-zoomedoutfile = opts.zoomed_output_file
-segdir      = opts.segment_dir
+#segdir      = opts.segment_dir
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
 null_thresh = map(float, opts.null_snr_threshold.split(','))
@@ -74,12 +70,10 @@ verbose   = opts.verbose
 if verbose:
   sys.stdout.write("Imported and ready to go.\n")
 
-# Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0], \
-           os.path.split(os.path.abspath(zoomedoutfile))[0]]
-for outdir in outdirs:
-  if not os.path.isdir(outdir):
-    os.makedirs(outdir)
+# Set output directory
+outdir = os.path.split(os.path.abspath(outfile))[0]
+if not os.path.isdir(outdir):
+  os.makedirs(outdir)
 
 
 #
@@ -131,73 +125,32 @@ for slideID in range(numSlides):
   trigs.extend(t for t in tmp.veto(vets) if int(t.time_slide_id) == slideID)
 
 # Extract trigger data
-trigData = pygrb_filter_output(trigs, ifos, lsctables.MultiInspiralTable.loadcolumns, "triggers", \
+trigData = PygrbFilterOutput(trigs, ifos, lsctables.MultiInspiralTable.loadcolumns, "triggers", \
   chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
 
 
-#
-# Load injections
-#
-
-injs = None
-if injFile:
-  if verbose:
-    sys.stdout.write("\nLoading injections...\n")
-  xmldoc = utils.load_filename(injFile, gz=injFile.endswith("gz"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
-  tmp = table.get_table(xmldoc, lsctables.MultiInspiralTable.tableName)
-  injs = lsctables.New(lsctables.MultiInspiralTable,\
-                      columns=lsctables.MultiInspiralTable.loadcolumns)
-  injs.extend(t for t in tmp if t.get_end() not in vetoes)
-  if verbose:
-    sys.stdout.write("%d injections found.\n"\
-                     % (len(injs)))
-
-# Extract injection data
-injData = pygrb_filter_output(injs, ifos, lsctables.MultiInspiralTable.loadcolumns, "injections", \
-  chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
-
 
 #
-# Generate plots
+# Generate sky grid plot
 #
+
+xlabel = "Longitude (Degrees)"
+ylabel = "Latitude (Degrees)"
 
 if verbose:
   sys.stdout.write("\nPlotting...\n")
+  fig_name = os.path.split(os.path.abspath(outfile))[1]
+  sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
 
-new_snrs = [5.5,6,6.5,7,8,9,10,11]
-try:
-  cont_value = new_snrs.index(newSnrThresh)
-except ValueError:
-  new_snrs.append(newSnrThresh)
-  cont_value = -1
-
-bank_conts, auto_conts,chi_conts,null_cont,snr_vals, colors =\
-    calculate_contours(q=chisq_index, n=chisq_nhigh,new_snrs=new_snrs,\
-                       new_snr_thresh=newSnrThresh,\
-                       null_thresh=null_thresh[-1],\
-                       null_grad_snr=nullGradThresh,\
-                       null_grad_val=nullGradVal,\
-                       chisq_dof=trigs[0].chisq_dof,\
-                       bank_chisq_dof=trigs[0].bank_chisq_dof,\
-                       cont_chisq_dof=trigs[0].cont_chisq_dof)
-
-# Reset times
-segs = readSegFiles(segdir)
-grbTime = segs['on'][1] - 1
-start = int(min(trigData.Time)) - grbTime
-end   = int(max(trigData.Time)) - grbTime
-duration = end-start
-start -= duration*0.05
-end += duration*0.05
-trigData.Time = [t-grbTime for t in trigData.Time]
-if injFile:
-  injData.Time  = [t-grbTime for t in injData.Time]
-
-# Coherent SNR versus time
-xlims =  [start,end]
-for injF in numpy.unique([None, injFile]):
-  pygrb_plotter(trigData.Time, trigData.SNR, \
-                  injData.Time, injData.SNR, injF, \
-                  "Time since %s" (grbTime), "Coherent SNR", \
-                  outfile, xlims=xlims, use_logs=False, verbose=verbose)
-
+fig = plt.figure()
+ax  = fig.gca()
+ax.set_title("PyGRB Sky Grid")#, fontsize=18)
+ax.set_xlabel(xlabel)#, fontsize=16)
+ax.set_ylabel(ylabel)#, fontsize=16)
+ax.plot(trigData.longitude, trigData.latitude, 'ko', markerfacecolor='blue')
+# Wrap up
+save_fig_with_metadata(fig, outfile)
+                       #fig_kwds=fig_kwds, title=plot_title,
+                       #cmd=' '.join(sys.argv),
+                       #caption=plot_caption)
+plt.close()

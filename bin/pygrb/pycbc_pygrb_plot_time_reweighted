@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#Copyright (C) 2019 Gino Contestabile, Francesco Pannarale
+# Copyright (C) 2019 Gino Contestabile, Francesco Pannarale
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,7 +28,7 @@ import os,copy
 from glue import segments
 from glue.ligolw import utils,lsctables,ligolw,table
 import pycbc.version
-#from pycbc.results.pygrb_plotting_utils import pygrb_filter_output, pygrb_plotter,pygrb_plot_two_snrs_opts_parser
+#from pycbc.results.pygrb_plotting_utils import PygrbFilterOutput, pygrb_plotter,pygrb_plot_opts_parser
 from pycbc.results.pygrb_plotting_utils import *
 ##### TODO: remove these dependencies!
 from pylal import MultiInspiralUtils
@@ -39,7 +39,7 @@ from pylal.coh_PTF_pyutils import calculate_contours, readSegFiles
 __author__  = "Francesco Pannarale <francesco.pannarale@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__ = pycbc.version.date
-__program__ = "pycbc_pygrb_plot_reweighted_time"
+__program__ = "pycbc_pygrb_plot_time_reweighted"
 
 
 
@@ -48,14 +48,14 @@ __program__ = "pycbc_pygrb_plot_reweighted_time"
 # =============================================================================
 
 description = 'pycbc_pygrb_plot_reweighted_time will produce reweighted SNR versus time plots.'
-opts = pygrb_plot_two_snrs_opts_parser(description=description, version=__version__)
+usage = __program__ + ' [--options]'
+opts = pygrb_plot_opts_parser(usage=usage, description=description, version=__version__)
 
 trigFile  = os.path.abspath(opts.trig_file)
 injFile   = None
 if opts.inj_file:
   injFile = os.path.abspath(opts.inj_file)
 outfile       = opts.output_file
-zoomedoutfile = opts.zoomed_output_file
 segdir      = opts.segment_dir
 chisq_index = opts.chisq_index
 chisq_nhigh = opts.chisq_nhigh
@@ -75,8 +75,7 @@ if verbose:
   sys.stdout.write("Imported and ready to go.\n")
 
 # Set output directories
-outdirs = [os.path.split(os.path.abspath(outfile))[0], \
-           os.path.split(os.path.abspath(zoomedoutfile))[0]]
+outdirs = [os.path.split(os.path.abspath(outfile))[0]]
 for outdir in outdirs:
   if not os.path.isdir(outdir):
     os.makedirs(outdir)
@@ -131,7 +130,7 @@ for slideID in range(numSlides):
   trigs.extend(t for t in tmp.veto(vets) if int(t.time_slide_id) == slideID)
 
 # Extract trigger data
-trigData = pygrb_filter_output(trigs, ifos, lsctables.MultiInspiralTable.loadcolumns, "triggers", \
+trigData = PygrbFilterOutput(trigs, ifos, lsctables.MultiInspiralTable.loadcolumns, "triggers", \
   chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
 
 
@@ -153,7 +152,7 @@ if injFile:
                      % (len(injs)))
 
 # Extract injection data
-injData = pygrb_filter_output(injs, ifos, lsctables.MultiInspiralTable.loadcolumns, "injections", \
+injData = PygrbFilterOutput(injs, ifos, lsctables.MultiInspiralTable.loadcolumns, "injections", \
   chisq_index, chisq_nhigh, null_thresh, snrThresh, snglSnrThresh, newSnrThresh, nullGradThresh, nullGradVal, verbose=verbose)# opts better?
 
 
@@ -184,21 +183,19 @@ bank_conts, auto_conts,chi_conts,null_cont,snr_vals, colors =\
 # Reset times
 segs = readSegFiles(segdir)
 grbTime = segs['on'][1] - 1
-start = int(min(trigData.Time)) - grbTime
-end   = int(max(trigData.Time)) - grbTime
+start = int(min(trigData.time)) - grbTime
+end   = int(max(trigData.time)) - grbTime
 duration = end-start
 start -= duration*0.05
 end += duration*0.05
-trigData.Time = [t-grbTime for t in trigData.Time]
+trigData.time = [t-grbTime for t in trigData.time]
 if injFile:
-  injData.Time  = [t-grbTime for t in injData.Time]
+  injData.time  = [t-grbTime for t in injData.time]
 
 # Reweighted SNR versus time
 xlims =  [start,end]
 for injF in numpy.unique([None, injFile]):
-  pygrb_plotter(trigData.Time, trigData.ReweightedSNR, \
-                  injData.Time, injData.ReweightedSNR, injF, \
-                  "Time since %s" (grbTime), "Reweighted SNR", \
+  pygrb_plotter(trigData.time, trigData.reweighted_snr, \
+                  injData.time, injData.reweighted_snr, injF, \
+                  "Time since %s" % (str(grbTime)), "Reweighted SNR", \
                   outfile, xlims=xlims, use_logs=False, verbose=verbose)
-
-
