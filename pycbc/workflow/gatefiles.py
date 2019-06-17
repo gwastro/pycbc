@@ -31,11 +31,9 @@ from __future__ import division
 
 import os
 import ConfigParser
-import urlparse
-import urllib
+import urlparse, urllib
 import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
-
 
 def setup_gating_workflow(workflow, output_dir=None, tags=None):
     '''
@@ -84,19 +82,19 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
         errMsg += "PREGENERATED_FILE is currently supported."
         raise ValueError(errMsg)
 
-    # add the gate files to the jobs that use them
-    for job in ['calculate_psd', 'inspiral', 'single_template',
-                'plot_singles_timefreq']:
-        for gate_file in gate_files:
-            ifo_gate = gate_file.cache_entry.url
-            try:
-                workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()),
-                                'gating-file', ifo_gate)
-            except ConfigParser.SectionError:
-                workflow.cp.add_section('{}-{}'.format(job,
-                                                       gate_file.ifo.lower()))
-                workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()),
-                                'gating-file', ifo_gate)
+    # add the gate files to the jobs that use them	
+    for job in ['calculate_psd', 'inspiral', 'single_template',	
+                'plot_singles_timefreq']:	
+      for gate_file in gate_files:	
+          ifo_gate = gate_file.cache_entry.url	
+          try:	
+              workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()),	
+                              'gating-file', ifo_gate)	
+          except ConfigParser.SectionError:	
+              workflow.cp.add_section('{}-{}'.format(job,	
+                                      gate_file.ifo.lower()))	
+              workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()),	
+                              'gating-file', ifo_gate)	
 
     logging.info("Leaving gating module.")
     return gate_files
@@ -134,14 +132,14 @@ def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
     for ifo in workflow.ifos:
         try:
             pre_gen_file = cp.get_opt_tags('workflow-gating',
-                                           'gating-file-%s' % ifo.lower(),
-                                           tags)
+                            'gating-file-%s' % ifo.lower(),
+                            tags)
             pre_gen_file = resolve_url(pre_gen_file,
-                                       os.path.join(os.getcwd(), output_dir))
+                                       os.path.join(os.getcwd(),output_dir))
             file_url = urlparse.urljoin('file:',
-                                        urllib.pathname2url(pre_gen_file))
+                                         urllib.pathname2url(pre_gen_file))
             curr_file = File(ifo, user_tag, global_seg, file_url,
-                             tags=tags)
+                                                                 tags=tags)
             curr_file.PFN(file_url, site='local')
             gate_files.append(curr_file)
 
@@ -151,3 +149,4 @@ def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
             logging.info("No gating file specified for %s", ifo)
 
     return gate_files
+
