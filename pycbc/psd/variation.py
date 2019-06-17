@@ -220,10 +220,10 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     This function first splits the segment up into 512 second chunks. It
     then calculates the PSD over this 512 second. The PSD is used to
     to create a filter that is the composition of three filters:
-    1. Bandpass filter between f_low and f_high
+    1. Bandpass filter between f_low and f_high.
     2. Weightining filter which gives the rough response of a CBC
-       template.
-    3. Whitening filter
+    template.
+    3. Whitening filter.
     Next it makes the convolution of this filter with the stretch of data.
     This new time series is given to the "mean_square" function, which
     computes the mean square of the timeseries within an 8 seconds window,
