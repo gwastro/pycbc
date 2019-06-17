@@ -130,6 +130,12 @@ parser.add_argument(
     default=0.1,
     help="the cluster time window (default %(default)s)",
 )
+parser.add_argument(
+    "-c",
+    "--rank-column",
+    default="coherent_snr",
+    help="column over which to rank events (default: %(default)s)",
+)
 
 # input/output
 parser.add_argument(
@@ -163,7 +169,7 @@ clusters = []
 
 with h5py.File(args.trig_file, "r") as h5f:
     time = h5f["network"]["end_time_gc"][:]
-    snr = h5f["network"]["network_snr"][:]
+    snr = h5f["network"][args.rank_column][:]
 
 # find loudest trigger in each bin
 for i in tqdm.tqdm(range(time.size), desc="Initialising bins",
