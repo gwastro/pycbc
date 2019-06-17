@@ -31,17 +31,16 @@ from __future__ import division
 
 import os
 import ConfigParser
-from six.moves.urllib.parse import urljoin
-from six.moves.urllib.request import pathname2url
+import urlparse
+import urllib
 import logging
 from pycbc.workflow.core import File, FileList, make_analysis_dir, resolve_url
 
 
 def setup_gating_workflow(workflow, output_dir=None, tags=None):
     '''
-    Setup gating section of CBC workflow. At present this only supports
-    pregenerated gating files, in the future these could be created within
-    the workflow.
+    Setup gating section of CBC workflow. At present this only supports pregenerated
+    gating files, in the future these could be created within the workflow.
 
     Parameters
     ----------
@@ -62,28 +61,28 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
         tags = []
     logging.info("Entering gating module.")
     make_analysis_dir(output_dir)
-    conf_obj = workflow.cp
+    cp = workflow.cp
 
     # Parse for options in ini file.
     try:
-        gate_method = conf_obj.get_opt_tags("workflow-gating", "gating-method",
-                                            tags)
+        gateMethod = cp.get_opt_tags("workflow-gating", "gating-method",
+                                     tags)
     except ConfigParser.Error:
         # Gating is optional, just return an empty list if not
         # provided.
         return FileList([])
 
-    if gate_method == "PREGENERATED_FILE":
+    if gateMethod == "PREGENERATED_FILE":
         logging.info("Setting gating from pre-generated file(s).")
         gate_files = setup_gate_pregenerated(workflow,
                                              output_dir=output_dir, tags=tags)
-    elif gate_method == "NOOP":
+    elif gateMethod == "NOOP":
         # Gating can also be disabled by choose method = NOOP
         return FileList([])
     else:
-        err_msg = "Gating method not recognized. Only "
-        err_msg += "PREGENERATED_FILE is currently supported."
-        raise ValueError(err_msg)
+        errMsg = "Gating method not recognized. Only "
+        errMsg += "PREGENERATED_FILE is currently supported."
+        raise ValueError(errMsg)
 
     # add the gate files to the jobs that use them
     for job in ['calculate_psd', 'inspiral', 'single_template',
@@ -91,13 +90,13 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
         for gate_file in gate_files:
             ifo_gate = gate_file.cache_entry.url
             try:
-                workflow.conf_obj.set('{}-{}'.format(job, gate_file.ifo.lower()),
-                                      'gating-file', ifo_gate)
+                workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()),
+                                'gating-file', ifo_gate)
             except ConfigParser.SectionError:
-                workflow.conf_obj.add_section(
-                    '{}-{}'.format(job, gate_file.ifo.lower()))
-                workflow.conf_obj.set('{}-{}'.format(job, gate_file.ifo.lower()),
-                                      'gating-file', ifo_gate)
+                workflow.cp.add_section('{}-{}'.format(job,
+                                                       gate_file.ifo.lower()))
+                workflow.cp.set('{}-{}'.format(job, gate_file.ifo.lower()),
+                                'gating-file', ifo_gate)
 
     logging.info("Leaving gating module.")
     return gate_files
@@ -106,7 +105,7 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
 def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
     '''
     Setup CBC workflow to use pregenerated gating files.
-    The file given in conf_obj.get('workflow','gating-file-(ifo)') will
+    The file given in cp.get('workflow','gating-file-(ifo)') will
     be used as the --gating-file for all jobs for that ifo.
 
     Parameters
@@ -128,19 +127,19 @@ def setup_gate_pregenerated(workflow, output_dir=None, tags=None):
         tags = []
     gate_files = FileList([])
 
-    conf_obj = workflow.cp
+    cp = workflow.cp
     global_seg = workflow.analysis_time
     user_tag = "PREGEN_GATE"
 
     for ifo in workflow.ifos:
         try:
-            pre_gen_file = conf_obj.get_opt_tags(
-                'workflow-gating', 'gating-file-%s' %
-                ifo.lower(), tags)
+            pre_gen_file = cp.get_opt_tags('workflow-gating',
+                                           'gating-file-%s' % ifo.lower(),
+                                           tags)
             pre_gen_file = resolve_url(pre_gen_file,
                                        os.path.join(os.getcwd(), output_dir))
-            file_url = urljoin('file:',
-                               pathname2url(pre_gen_file))
+            file_url = urlparse.urljoin('file:',
+                                        urllib.pathname2url(pre_gen_file))
             curr_file = File(ifo, user_tag, global_seg, file_url,
                              tags=tags)
             curr_file.PFN(file_url, site='local')
