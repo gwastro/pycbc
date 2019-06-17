@@ -427,18 +427,16 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             logging.info("Overriding section %s option %s with value %s "
                 "in configuration.", section, option, value )
 
+        # Resolve any URLs needing resolving
+        self.curr_resolved_files = {}
+        self.resolve_urls()
 
         # Check for any substitutions that can be made
-        # FIXME: The python 3 version of ConfigParser can do this automatically
-        # move over to that if it can be backported to python2.X.
-        # We use the same formatting as the new configparser module when doing
-        # ExtendedInterpolation
-        # This is described at
-        # http://docs.python.org/3.4/library/configparser.html
         self.perform_extended_interpolation()
 
         # Check for duplicate options in sub-sections
         self.sanity_check_subsections()
+
 
         # Dump parsed .ini file if needed
         if parsedFilePath:
@@ -547,7 +545,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                 if newStr != value:
                     self.set('executables', option, newStr)
 
-
     def interpolate_exe(self, testString):
         """
         Replace testString with a path to an executable based on the format.
@@ -594,6 +591,75 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                     raise ValueError(errmsg)
 
         return newString
+
+    def resolve_urls(self):
+        """
+        This function will look through all sections of the
+        ConfigParser object and replace any URLs that are given the resolve
+        magic flag with a path on the local drive.
+
+        Specifically for any values that look like
+
+        ${resolve:https://git.ligo.org/detchar/SOME_GATING_FILE.txt}
+
+        the file will be replaced with the output of resolve_url(URL)
+
+        Otherwise values will be unchanged.
+        """
+        # Only works on executables section
+        for section in self.sections():
+            for option, value in self.items('executables'):
+                # Check the value
+                newStr = self.resolve_file_url(value)
+                if newStr != value:
+                    self.set(section, option, newStr)
+
+    def resolve_file_url(self, test_string):
+        """
+        Replace test_string with a path to an executable based on the format.
+
+        If this looks like
+
+        ${which:lalapps_tmpltbank}
+
+        it will return the equivalent of which(lalapps_tmpltbank)
+
+        Otherwise it will return an unchanged string.
+
+        Parameters
+        -----------
+        test_string : string
+            The input string
+
+        Returns
+        --------
+        new_string : string
+            The output string.
+        """
+        # First check if any interpolation is needed and abort if not
+        test_string = test_string.strip()
+        if not (test_string.startswith('${') and test_string.endswith('}')):
+            return test_string
+
+        # This may not be a "resolve" interpolation, so even if it has
+        # ${XXX} form I may not have to do anything
+
+        # Strip the ${ and }
+        test_string = test_string[2:-1]
+
+        test_list = test_string.split(':', 1)
+
+        if len(test_list) == 2:
+            if test_list[0] == 'resolve':
+                curr_lfn = os.path.basename(test_list[1])
+                if curr_lfn in self.curr_resolved_files:
+                    return self.curr_resolved_files[curr_lfn]
+                local_url = resolve_url(test_list[1])
+                self.curr_resolved_files[curr_lfn] = local_url
+                return local_url
+
+        return test_string
+
 
     def get_subsections(self, section_name):
         """ Return a list of subsections for the given section name
