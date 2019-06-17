@@ -437,7 +437,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # Check for duplicate options in sub-sections
         self.sanity_check_subsections()
 
-
         # Dump parsed .ini file if needed
         if parsedFilePath:
             fp = open(parsedFilePath,'w')
