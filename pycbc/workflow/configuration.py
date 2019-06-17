@@ -608,7 +608,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         """
         # Only works on executables section
         for section in self.sections():
-            for option, value in self.items('executables'):
+            for option, value in self.items(section):
                 # Check the value
                 newStr = self.resolve_file_url(value)
                 if newStr != value:
