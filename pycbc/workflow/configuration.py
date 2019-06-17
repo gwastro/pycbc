@@ -439,6 +439,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
 
         # Dump parsed .ini file if needed
+        parsedFilePath='test.ini'
         if parsedFilePath:
             fp = open(parsedFilePath,'w')
             self.write(fp)
@@ -610,9 +611,9 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         for section in self.sections():
             for option, value in self.items(section):
                 # Check the value
-                newStr = self.resolve_file_url(value)
-                if newStr != value:
-                    self.set(section, option, newStr)
+                new_str = self.resolve_file_url(value)
+                if new_str != value:
+                    self.set(section, option, new_str)
 
     def resolve_file_url(self, test_string):
         """
