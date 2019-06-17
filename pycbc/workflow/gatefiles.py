@@ -90,14 +90,13 @@ def setup_gating_workflow(workflow, output_dir=None, tags=None):
                 'plot_singles_timefreq']:
         for gate_file in gate_files:
             ifo_gate = gate_file.cache_entry.url
+            sec_name = '{}-{}'.format(job, gate_file.ifo.lower())
             try:
-                workflow.conf_obj.set('{}-{}'.format(job, gate_file.ifo.lower()),
-                                      'gating-file', ifo_gate)
+                workflow.conf_obj.set(sec_name, 'gating-file', ifo_gate)
             except ConfigParser.SectionError:
                 workflow.conf_obj.add_section(
                     '{}-{}'.format(job, gate_file.ifo.lower()))
-                workflow.conf_obj.set('{}-{}'.format(job, gate_file.ifo.lower()),
-                                      'gating-file', ifo_gate)
+                workflow.conf_obj.set(sec_name, 'gating-file', ifo_gate)
 
     logging.info("Leaving gating module.")
     return gate_files
