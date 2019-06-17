@@ -137,6 +137,9 @@ final_veto_file = wf.FileList([wf.get_segments_file(workflow, final_veto_name[0]
                                        'segments-vetoes',
                                        rdir['analysis_time/segment_data'])])
 
+# Setup gating files if provided
+gate_files = wf.setup_gating_workflow(workflow, output_dir="gating")
+
 # Precalculated PSDs
 precalc_psd_files = wf.setup_psd_workflow(workflow, analyzable_segs,
                                             datafind_files, "psdfiles")
