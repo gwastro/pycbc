@@ -76,7 +76,7 @@ def _really_load(self, f, filename, ignore_discard, ignore_expires):
             # support HttpOnly cookies (as stored by curl or old Firefox).
             if sline.startswith("#HttpOnly_"):
                 line = sline[10:]
-            # skip comments and blank lines XXX what is $ for?
+            # skip comments and blank lines ... what is $ for?
             elif (sline.startswith(("#", "$")) or sline == ""):
                 continue
 
@@ -571,7 +571,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         if not (testString.startswith('${') and testString.endswith('}')):
             return testString
 
-        # This may not be an exe interpolation, so even if it has ${XXX} form
+        # This may not be an exe interpolation, so even if it has ${ ... } form
         # I may not have to do anything
         newString = testString
 
@@ -641,7 +641,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             return test_string
 
         # This may not be a "resolve" interpolation, so even if it has
-        # ${XXX} form I may not have to do anything
+        # ${ ... } form I may not have to do anything
 
         # Strip the ${ and }
         test_string = test_string[2:-1]
