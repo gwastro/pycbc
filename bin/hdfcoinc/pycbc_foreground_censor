@@ -41,7 +41,7 @@ else:
 ifos, fsegs, names = [], [], []
 for ifo in ifos:
     segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
-    fsegs += [(segs.coalesce() + vsegs.coalesce()).coalesce()]
+    fsegs += [segs.coalesce() + vsegs.coalesce()]
     names += [args.output_segment_name]
     ifos += [ifo]
 
