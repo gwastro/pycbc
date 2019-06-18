@@ -47,10 +47,6 @@ logging.info('combining foreground and foreground excluded segments')
 indiv_segs = segments.segmentlistdict({})
 indiv_segs_fg_exc = segments.segmentlistdict({})
 
-# obtain list of all ifos involved in the coinc_statmap files
-all_ifos = numpy.unique([ifo for fi in files for ifo in \
-                         fi.attrs['ifos'].split(' ')])
-
 # loop through statmap files and put segments into segmentlistdicts
 for fi in files:
     key = fi.attrs['ifos'].replace(' ','')
@@ -66,15 +62,22 @@ for fi in files:
     # remove from analysis segments
     indiv_segs_fg_exc[key] = indiv_segs[key] - vetoed_segs
 
-# Add the segments to obtain '2 or more detectors on' time
+# Convert segmentlistdict to a list ('seglists') of segmentlists
+# then numpy.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
 foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
+# Note that 'exclusive' time only removes windows around coincs
+# that involve *all* active ifos (2 in 2-ifo time, 3 in 3-ifo time etc.)
 foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
 
 # output to file
 f.attrs['foreground_time'] = abs(foreground_segs)
 f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
 
-# Save the ifo list for easy access
+# obtain list of all ifos involved in the coinc_statmap files
+all_ifos = numpy.unique([ifo for fi in files for ifo in \
+                         fi.attrs['ifos'].split(' ')])
+
+# Save the ifo list for future reference
 f.attrs['ifos'] = ' '.join(sorted(all_ifos))
 
 logging.info('Generating list of datasets in input files')
