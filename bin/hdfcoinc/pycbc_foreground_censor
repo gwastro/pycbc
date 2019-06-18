@@ -17,8 +17,6 @@ parser.add_argument('--veto-file',
 parser.add_argument('--segment-name',
                     help="Segment name to use from the input veto file")
 parser.add_argument('--output-file', help='Name of the output segment file')
-parser.add_argument('--strict-coinc-time', action='store_true',
-                    help="Veto any time that is vetoed in either detector")
 parser.add_argument('--output-segment-name',
                     help="(optional), Name of output segment file list",
                     default="censor_foreground")
@@ -30,48 +28,22 @@ logging.info('start')
 
 f = h5py.File(args.foreground_triggers, 'r')
 
-# Check if using input files from old (2-ifo) coinc code
-if 'segments/foreground_veto/start' in f:
-    start = f['segments/foreground_veto/start'][:]
-    end = f['segments/foreground_veto/end'][:]
-    vsegs = pycbc.events.start_end_to_segments(start, end)
+start = f['segments/foreground_veto/start'][:]
+end = f['segments/foreground_veto/end'][:]
+vsegs = pycbc.events.start_end_to_segments(start, end)
 
+if 'detector_1' in f.attrs:
     ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
-
-    ifos, fsegs, names = [], [], []
-    for ifo in [ifo1, ifo2]:
-        segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
-        fsegs += [(segs.coalesce() + vsegs.coalesce()).coalesce()]
-        names += [args.output_segment_name]
-        ifos += [ifo]
-
-    if args.strict_coinc_time:
-        fsegs[0] = (fsegs[0].coalesce() + fsegs[1].coalesce()).coalesce()
-        fsegs[1] = fsegs[0]
-
+    ifos = [ifo1, ifo2]
 else:
-    # Version used for multi-ifo coinc code
-    if args.strict_coinc_time:
-        raise RuntimeError("Can't use strict coinc time option with multi-ifo pipeline!")
-    ifolist = f.attrs['ifos'].split(' ')
-    ifokey = ''.join(sorted(ifolist))
+    ifos = f.attrs['ifos'].split(' ')
 
-    start = f['segments/%s/foreground_veto/start' % ifokey][:]
-    end = f['segments/%s/foreground_veto/end' % ifokey][:]
-    mvsegs = pycbc.events.start_end_to_segments(start, end)
-
-    for key in f['segments']:
-        start = f['segments/%s/foreground_veto/start' % key][:]
-        end = f['segments/%s/foreground_veto/end' % key][:]
-        vsegs = pycbc.events.start_end_to_segments(start, end)
-        mvsegs = (mvsegs & vsegs).coalesce()
-
-    ifos, fsegs, names = [], [], []
-    for ifo in ifolist:
-        segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
-        fsegs += [(segs.coalesce() + mvsegs.coalesce()).coalesce()]
-        names += [args.output_segment_name]
-        ifos += [ifo]
+ifos, fsegs, names = [], [], []
+for ifo in ifos:
+    segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
+    fsegs += [(segs.coalesce() + vsegs.coalesce()).coalesce()]
+    names += [args.output_segment_name]
+    ifos += [ifo]
 
 file_url = urlunparse(['file', 'localhost',
                        os.path.abspath(args.output_file), None, None, None])
