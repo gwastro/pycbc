@@ -251,14 +251,13 @@ class PyCBCCombineStatmap(Executable):
 
 class PyCBCMultiifoCombineStatmap(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, statmap_files, ifos, cluster_window, tags=None):
+    def create_node(self, statmap_files, cluster_window, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
         node.add_input_list_opt('--statmap-files', statmap_files)
         node.new_output_file_opt(statmap_files[0].segment, '.hdf',
                                  '--output-file', tags=tags)
-        node.add_opt('--ifos', ifos)
         node.add_opt('--cluster-window', cluster_window)
         return node
 
@@ -744,12 +743,10 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
                                             tags=tags,
                                             out_dir=out_dir)
 
-    ifolist = ' '.join(workflow.ifos)
     cluster_window = float(workflow.cp.get_opt_tags('combine_statmap',
                                                     'cluster-window',
                                                     tags))
     combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
-                                                 ifolist,
                                                  cluster_window,
                                                  tags)
     workflow.add_node(combine_statmap_node)
