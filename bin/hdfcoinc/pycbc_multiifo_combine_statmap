@@ -69,6 +69,14 @@ foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
 # that involve *all* active ifos (2 in 2-ifo time, 3 in 3-ifo time etc.)
 foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
 
+# output foreground veto starts and ends to file
+foreground_vetos_start, foreground_vetos_end = \
+                   pycbc.events.veto.segments_to_start_end(foreground_segs - \
+                                                           foreground_segs_exc)
+
+f['segments/foreground_veto/start'] = foreground_vetos_start
+f['segments/foreground_veto/end'] = foreground_vetos_end
+
 # output to file
 f.attrs['foreground_time'] = abs(foreground_segs)
 f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
