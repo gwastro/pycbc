@@ -32,9 +32,11 @@ start = f['segments/foreground_veto/start'][:]
 end = f['segments/foreground_veto/end'][:]
 vsegs = pycbc.events.start_end_to_segments(start, end)
 
+# 2-ifo old style format
 if 'detector_1' in f.attrs:
     ifo1, ifo2 = f.attrs['detector_1'], f.attrs['detector_2']
     ifos = [ifo1, ifo2]
+# Multi-ifo format file
 else:
     ifos = f.attrs['ifos'].split(' ')
 
