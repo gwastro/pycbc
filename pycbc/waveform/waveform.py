@@ -599,7 +599,7 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
         full_duration = get_waveform_filter_length_in_time(**nparams)
         nparams['f_lower'] -= 1
 
-    if 'f_fref' not in nparams:
+    if 'f_ref' not in nparams:
         nparams['f_ref'] = params['f_lower']
 
     # factor to ensure the vectors are all large enough. We don't need to
