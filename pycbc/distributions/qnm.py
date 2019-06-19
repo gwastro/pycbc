@@ -15,6 +15,7 @@
 
 
 import numpy
+import re
 import pycbc
 from pycbc import conversions, boundaries
 from . import uniform, bounded
@@ -146,11 +147,17 @@ class UniformF0Tau(uniform.Uniform):
     def _constraints(self, params):
         f0 = params[self.rdfreq]
         tau = params[self.damping_time]
+        # check if we need to specify a particular mode (l,m) != (2,2)
+        if re.match('f_\d', self.rdfreq):
+            mode = self.rdfreq.strip('f_')
+            l, m = int(mode[0]), int(mode[1])
+        else:
+            l, m = 2, 2
         # temporarily silence invalid warnings... these will just be ruled out
         # automatically
         orig = numpy.seterr(invalid='ignore')
-        mf = conversions.final_mass_from_f0_tau(f0, tau)
-        sf = conversions.final_spin_from_f0_tau(f0, tau)
+        mf = conversions.final_mass_from_f0_tau(f0, tau, l=l, m=m)
+        sf = conversions.final_spin_from_f0_tau(f0, tau, l=l, m=m)
         isin = (self.final_mass_bounds.__contains__(mf)) & (
                 self.final_spin_bounds.__contains__(sf))
         numpy.seterr(**orig)

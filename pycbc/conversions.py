@@ -982,16 +982,22 @@ def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1):
     return get_lm_f0tau(final_mass, final_spin, l, m, nmodes)[1]
 
 
-# The following are from Table VIII of Berti et al., PRD 73 064030,
-# arXiv:gr-qc/0512160 (2006).
-# Keys are l,m. Constants are for converting from
+# The following are from Table VIII, IX, X of Berti et al.,
+# PRD 73 064030, arXiv:gr-qc/0512160 (2006).
+# Keys are l,m (only n=0 supported). Constants are for converting from
 # frequency and damping time to mass and spin.
 _berti_spin_constants = {
     (2,2): (0.7, 1.4187, -0.4990),
+    (3,3): (0.9, 2.343, -0.4810),
+    (4,4): (1.1929, 3.1191, -0.4825),
+    (2,1): (-0.3, 2.3561, -0.2277)
     }
 
 _berti_mass_constants = {
     (2,2): (1.5251, -1.1568, 0.1292),
+    (3,3): (1.8956, -1.3043, 0.1818),
+    (4,4): (2.3, -1.5056, 0.2244),
+    (2,1): (0.6, -0.2339, 0.4175)
     }
 
 
@@ -999,8 +1005,8 @@ def final_spin_from_f0_tau(f0, tau, l=2, m=2):
     """Returns the final spin based on the given frequency and damping time.
 
     .. note::
-        Currently, only l = m = 2 is supported. Any other indices will raise
-        a ``KeyError``.
+        Currently, only (l,m) = (2,2), (3,2), (4,4), (2,1) are supported.
+        Any other indices will raise a ``KeyError``.
 
     Parameters
     ----------
