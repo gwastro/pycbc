@@ -1050,8 +1050,8 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
     and damping time.
 
     .. note::
-        Currently, only l = m = 2 is supported. Any other indices will raise
-        a ``KeyError``.
+        Currently, only (l,m) = (2,2), (3,2), (4,4), (2,1) are supported.
+        Any other indices will raise a ``KeyError``.
 
     Parameters
     ----------
