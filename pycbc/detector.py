@@ -41,7 +41,7 @@ from numpy import cos, sin
 # presented in https://arxiv.org/pdf/gr-qc/0008066.pdf
 
 def gmst_accurate(gps_time):
-    gmst = Time(gps_time, format='gps',
+    gmst = Time(gps_time, format='gps', scale='utc',
                 location=(0, 0)).sidereal_time('mean').rad
     return gmst
 
