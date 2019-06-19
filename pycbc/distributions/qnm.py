@@ -14,8 +14,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
-import numpy
 import re
+import numpy
 import pycbc
 from pycbc import conversions, boundaries
 from . import uniform, bounded
