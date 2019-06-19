@@ -4,6 +4,7 @@
 files.
 """
 
+import itertools
 import argparse, h5py, logging, types, numpy, os.path
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from ligo import segments
@@ -181,7 +182,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
-
+    ##########################################################################
     logging.info('Saving injection information')
     columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
                'spin1z', 'spin2x', 'spin2y', 'spin2z',
