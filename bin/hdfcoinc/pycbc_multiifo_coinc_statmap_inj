@@ -56,6 +56,7 @@ f.attrs['num_of_ifos'] = zdata.attrs['num_of_ifos']
 f.attrs['pivot'] = zdata.attrs['pivot']
 f.attrs['fixed'] = zdata.attrs['fixed']
 f.attrs['timeslide_interval'] = zdata.attrs['timeslide_interval']
+f.attrs['ifos'] = ' '.join(sorted(args.ifos))
 
 # Copy over the segment for coincs and singles
 for key in zdata.seg.keys():
