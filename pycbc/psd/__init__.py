@@ -209,7 +209,8 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
                              "when calculating the PSD variability.")
     psd_options.add_argument("--psdvar-short-segment", type=float,
                              metavar="SECONDS", help="Length of short segment "
-                             "for outliers removal.")
+                             "for outliers removal in PSD variability "
+                             "calculation.")
     psd_options.add_argument("--psdvar-long-segment", type=float,
                              metavar="SECONDS", help="Length of long segment "
                              "when calculating the PSD variability.")
@@ -315,7 +316,8 @@ def insert_psd_option_group_multi_ifo(parser):
                              "when calculating the PSD variability.")
     psd_options.add_argument("--psdvar-short-segment", type=float,
                              metavar="SECONDS", help="Length of short segment "
-                             "for outliers removal.")
+                             "for outliers removal in PSD variability "
+                             "calculation.")
     psd_options.add_argument("--psdvar-long-segment", type=float,
                              metavar="SECONDS", help="Length of long segment "
                              "when calculating the PSD variability.")

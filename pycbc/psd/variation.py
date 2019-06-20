@@ -173,7 +173,7 @@ def mean_square(data, delta_t, short_stride, stride):
     First of all this function calculate the mean square of given time
     series once per short_stride. This is used to remove outliers due
     to short glitches. Then, every seconds it computes the mean square
-    of the smoothed time series, whitin the stride.
+    of the smoothed time series, within the stride.
 
     Parameters
     ----------
@@ -194,19 +194,19 @@ def mean_square(data, delta_t, short_stride, stride):
     srate = int(data.sample_rate)
 
     # Calculate mean square of data once per short stride and remove
-    # the ouliers
+    # the outliers
     data = numpy.array(data)
-    short_ms = numpy.mean(data.reshape(-1, int(srate*short_stride))**2,
+    short_ms = numpy.mean(data.reshape(-1, int(srate * short_stride)) ** 2,
                           axis=1)
-    ave = 0.5*(short_ms[2:]+short_ms[:-2])
-    outliers = short_ms[1:-1] > (2*ave)
+    ave = 0.5 * (short_ms[2:] + short_ms[:-2])
+    outliers = short_ms[1:-1] > (2 * ave)
     short_ms[1:-1][outliers] = ave[outliers]
 
     # Calculate mean square of data every step with a window equal to
     # stride seconds
     m_s = []
-    inv_time = int(1./short_stride)
-    for index in range(int(delta_t-stride+1)):
+    inv_time = int(1. / short_stride)
+    for index in range(int(delta_t - stride + 1)):
         m_s.append(numpy.mean(short_ms[inv_time * index:inv_time *
                                        int(index+stride)]))
     return m_s
@@ -221,8 +221,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     then calculates the PSD over this 512 second. The PSD is used to
     to create a filter that is the composition of three filters:
     1. Bandpass filter between f_low and f_high.
-    2. Weightining filter which gives the rough response of a CBC
-    template.
+    2. Weighting filter which gives the rough response of a CBC template.
     3. Whitening filter.
     Next it makes the convolution of this filter with the stretch of data.
     This new time series is given to the "mean_square" function, which
@@ -268,7 +267,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     end_time = numpy.float(strain.end_time)
 
     # Resample the data
-    strain = resample_to_delta_t(strain, 1.0/2048)
+    strain = resample_to_delta_t(strain, 1.0 / 2048)
     srate = int(strain.sample_rate)
 
     # Fix the step for the PSD estimation and the time to remove at the
@@ -278,24 +277,23 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
 
     # Find the times of the long segments
     times_long = numpy.arange(start_time, end_time,
-                              psd_long_segment-2*strain_crop
+                              psd_long_segment - 2 * strain_crop
                               - segment + step)
 
     # Set up the empty time series for the PSD variation estimate
-    psd_var = TimeSeries(zeros(int(numpy.floor((end_time - start_time -
-                                                2*strain_crop - segment +
-                                                1) / step))),
+    ts_duration = end_time - start_time - 2 * strain_crop - segment + 1
+    psd_var = TimeSeries(zeros(int(numpy.floor(ts_duration / step))),
                          delta_t=step, copy=False,
                          epoch=start_time + strain_crop + segment)
 
     # Create a bandpass filter between low_freq and high_freq
-    filt = sig.firwin(4*srate, [low_freq, high_freq], pass_zero=False,
-                      window='hann', nyq=srate/2)
-    filt.resize(int(psd_duration*srate))
+    filt = sig.firwin(4 * srate, [low_freq, high_freq], pass_zero=False,
+                      window='hann', nyq=srate / 2)
+    filt.resize(int(psd_duration * srate))
     # Fourier transform the filter and take the absolute value to get
     # rid of the phase. Save the filter as a frequency series.
     filt = abs(rfft(filt))
-    my_filter = FrequencySeries(filt, delta_f=1./psd_duration,
+    my_filter = FrequencySeries(filt, delta_f=1. / psd_duration,
                                 dtype=fs_dtype)
 
     ind = 0
@@ -303,12 +301,11 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
         # Calculate PSD for long segment
         if tlong + psd_long_segment <= float(end_time):
             astrain = strain.time_slice(tlong, tlong + psd_long_segment)
-            plong = pycbc.psd.welch(astrain,
-                                    seg_len=int(psd_duration
-                                                * strain.sample_rate),
-                                    seg_stride=int(psd_stride
-                                                   * strain.sample_rate),
-                                    avg_method=psd_avg_method)
+            plong = pycbc.psd.welch(
+                astrain,
+                seg_len=int(psd_duration * strain.sample_rate),
+                seg_stride=int(psd_stride * strain.sample_rate),
+                avg_method=psd_avg_method)
         else:
             astrain = strain.time_slice(tlong, end_time)
             plong = pycbc.psd.welch(
@@ -319,38 +316,34 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
                            avg_method=psd_avg_method)
 
         # Make the weighting filter - bandpass, which weight by f^-7/6,
-        # and whithen. The normalization is chosen so that the variance
+        # and withen. The normalization is chosen so that the variance
         # will be one if this filter is applied to white noise which
         # already has a variance of one.
         freqs = FrequencySeries(plong.sample_frequencies,
                                 delta_f=plong.delta_f,
                                 epoch=plong.epoch, dtype=fs_dtype)
-        fweight = freqs**(-7./6.) * my_filter / numpy.sqrt(plong)
+        fweight = freqs ** (-7./6.) * my_filter / numpy.sqrt(plong)
         fweight[0] = 0.
-        norm = 1. / numpy.sqrt(sum(abs(fweight)**2) / (len(fweight)-1.))
+        norm = (sum(abs(fweight) ** 2) / (len(fweight) - 1.)) ** -0.5
         fweight = norm * fweight
-        fwhiten = numpy.sqrt(2./srate) / numpy.sqrt(plong)
+        fwhiten = numpy.sqrt(2. / srate) / numpy.sqrt(plong)
         fwhiten[0] = 0.
-        full_filt = sig.hann(int(psd_duration*srate))*numpy.roll(
-            irfft(fwhiten*fweight), int(psd_duration/2)*srate)
+        full_filt = sig.hann(int(psd_duration * srate)) * numpy.roll(
+            irfft(fwhiten * fweight), int(psd_duration / 2) * srate)
         # Convolve the filter with long segment of data
-        wstrain = TimeSeries(sig.fftconvolve(astrain, full_filt,
-                                             mode='same'),
+        wstrain = TimeSeries(sig.fftconvolve(astrain, full_filt, mode='same'),
                              delta_t=strain.delta_t,
-                             epoch=astrain.start_time)[int(strain_crop
-                                                           * srate):
-                                                       -int(strain_crop
-                                                            * srate)]
-
+                             epoch=astrain.start_time)
+        wstrain = wstrain[int(strain_crop * srate):-int(strain_crop * srate)]
         # compute the mean square of the chunk of data
-        delta_t = wstrain.end_time.gpsSeconds-wstrain.start_time.gpsSeconds
+        delta_t = wstrain.end_time.gpsSeconds - wstrain.start_time.gpsSeconds
         variation = mean_square(wstrain, delta_t, short_segment, segment)
 
         # Store variation value
         for i, val in enumerate(variation):
-            psd_var[ind+i] = val
+            psd_var[ind + i] = val
 
-        ind = ind+len(variation)
+        ind = ind + len(variation)
     return psd_var
 
 
