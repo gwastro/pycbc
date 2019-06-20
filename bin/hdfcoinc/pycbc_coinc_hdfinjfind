@@ -172,21 +172,26 @@ for trigger_file, injection_file in zip(args.trigger_files,
     # combinations retain the veto
 
     # Put individual detector vetoes into a segment list dictionary keyed by ifo
-    vetoed_indices_dict ={}
+    vetoed_idxs_dict ={}
     for ifo in ifo_list:
-        vetoed_indices_dict[ifo], _ = veto_indices(inj_time, [args.veto_file],
+        vetoed_idxs_dict[ifo], _ = veto_indices(inj_time, [args.veto_file],
                                       ifo=ifo, segment_name=args.segment_name)
 
     # Get a flattened list of all indices vetoed in each detector
-    set_all_vetoed_indices = list(itertools.chain(*vetoed_indices_dict.values()))
+    set_all_vetoed_idxs = list(itertools.chain(*vetoed_idxs_dict.values()))
     # Find out which of these indices are unique, and how many times each
     # vetoed index occurs - this is how many detectors it is vetoed in
-    vetoed_indices, count_vetoes_per_index = numpy.unique(set_all_vetoed_indices, return_counts=True)
+    vetoed_idxs, count_vetoes_per_idx = numpy.unique(set_all_vetoed_idxs,
+                                                     return_counts=True)
 
     # vetoed for all combinations are ones which do not allow *any*
     # 2-ifo combination
-    vi = set_all_vetoed_indices[count_vetoes_per_index > (len(ifo_list) - 2)]
+    vi = vetoed_idxs[count_vetoes_per_idx > (len(ifo_list) - 2)]
 
+    found_after_vetoes = numpy.delete(found_within_time,
+                               numpy.where(numpy.in1d(found_within_time, vi)))
+    missed_after_vetoes = numpy.delete(missed_within_time,
+                              numpy.where(numpy.in1d(missed_within_time, vi)))
     ##########################################################################
     # Old style
     ##########################################################################
@@ -196,16 +201,15 @@ for trigger_file, injection_file in zip(args.trigger_files,
 #        vi = numpy.append(vi, veto_indices(inj_time, [args.veto_file],
 #                                        ifo=ifo, segment_name=args.segment_name))
 
-    found_after_vetoes = numpy.delete(found_within_time,
-                                      numpy.where(numpy.in1d(found_within_time, vi)))
-    missed_after_vetoes = numpy.delete(missed_within_time,
-                                       numpy.where(numpy.in1d(missed_within_time, vi)))
+#    found_after_vetoes = numpy.delete(found_within_time,
+#                                      numpy.where(numpy.in1d(found_within_time, vi)))[0]
+#    missed_after_vetoes = numpy.delete(missed_within_time,
+#                                       numpy.where(numpy.in1d(missed_within_time, vi)))[0]
     logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes),
                                             len(missed_after_vetoes)))
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
-    ##########################################################################
     logging.info('Saving injection information')
     columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
                'spin1z', 'spin2x', 'spin2y', 'spin2z',
