@@ -185,34 +185,6 @@ for trigger_file, injection_file in zip(args.trigger_files,
     which_indices_veto_all = numpy.where(count_ifo_veto_index > (len(ifo_list) - 2))[0]
     vi = set_all_vetoed_indices[which_indices_veto_all]
 
-    # (note that this may not be the most efficient way to perform this task)
-    # combine these vetoes into two-detector combination
- #   ifo_2_combos = itertools.combinations(ifo_list, 3)
- #   vseg_dict_comb = segments.segmentlistdict()
- #   for ifo_combo in ifo_2_combos:
- #       combokey = ''.join(ifo_combo)
- #       ifo0 = ifo_combo[0]
- #       ifo1 = ifo_combo[1]
- #       vseg_dict_comb[combokey] = vseg_dict_sngl[ifo0] \
- #                                        | vseg_dict_sngl[ifo1]
-
-    # Add two-detector combination segments together to get the 'less than
-    # two detectors are available' veto
-    # vetoed_segments = numpy.sum(list(vseg_dict_comb.values()), axis=0)
- #   vetoed_segments = vseg_dict_comb['H1L1V1']
-
-    # convert to start-end lists in order to use standard
- #   v_start, v_end = events.segments_to_start_end(vetoed_segments)
- #   vi = numpy.array([], dtype=numpy.uint32)
-    # if any vetoes exist, work out which indices are within the times
- #   if len(v_start) > 0:
- #       vidx = events.indices_within_times(inj_time, v_start, v_end)
- #       vi = numpy.union1d(vi, vidx)
-
-    print(len(vi))
-    print(vi)
-    print(numpy.where(numpy.in1d(found_within_time, vi)))
-
     ##########################################################################
     # Old style
     ##########################################################################
