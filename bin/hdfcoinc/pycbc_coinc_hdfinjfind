@@ -172,18 +172,20 @@ for trigger_file, injection_file in zip(args.trigger_files,
     # combinations retain the veto
 
     # Put individual detector vetoes into a segment list dictionary keyed by ifo
-    vseg_dict_sngl = segments.segmentlistdict()
     vetoed_indices_dict ={}
     for ifo in ifo_list:
-        vetoed_indices_dict[ifo], vseg_dict_sngl[ifo] = veto_indices(inj_time, [args.veto_file],
+        vetoed_indices_dict[ifo], _ = veto_indices(inj_time, [args.veto_file],
                                       ifo=ifo, segment_name=args.segment_name)
 
-    all_vetoed_indices = list(itertools.chain(*vetoed_indices_dict.values()))
-    set_all_vetoed_indices = numpy.unique(all_vetoed_indices)
+    # Get a flattened list of all indices vetoed in each detector
+    set_all_vetoed_indices = list(itertools.chain(*vetoed_indices_dict.values()))
+    # Find out which of these indices are unique, and how many times each
+    # vetoed index occurs - this is how many detectors it is vetoed in
+    vetoed_indices, count_vetoes_per_index = numpy.unique(set_all_vetoed_indices, return_counts=True)
 
-    count_ifo_veto_index = numpy.array([sum([1 for veto_list in vetoed_indices_dict.values() if test_idx in veto_list]) for test_idx in set_all_vetoed_indices])
-    which_indices_veto_all = numpy.where(count_ifo_veto_index > (len(ifo_list) - 2))[0]
-    vi = set_all_vetoed_indices[which_indices_veto_all]
+    # vetoed for all combinations are ones which do not allow *any*
+    # 2-ifo combination
+    vi = set_all_vetoed_indices[count_vetoes_per_index > (len(ifo_list) - 2)]
 
     ##########################################################################
     # Old style
