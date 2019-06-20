@@ -167,18 +167,67 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  (len(found_within_time), len(missed_within_time)))
 
     logging.info('Removing injections in vetoed time')
-    vetoid = numpy.array([])
+
+    # Vetoes will only mean that injection cannot be found if *all* 2-ifo 
+    # combinations retain the veto
+
+    # Put individual detector vetoes into a segment list dictionary keyed by ifo
+    vseg_dict_sngl = segments.segmentlistdict()
+    vetoed_indices_dict ={}
     for ifo in ifo_list:
-        vi, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
-                                        segment_name=args.segment_name)
-        vetoid = numpy.append(vetoid, vi)
-        del vi
-    found_after_vetoes = numpy.array([i for i in found_within_time
-                                      if i not in vetoid])
-    missed_after_vetoes = numpy.array([i for i in missed_within_time
-                                       if i not in vetoid])
-    logging.info('Found: %s, Missed: %s' %
-                 (len(found_after_vetoes), len(missed_after_vetoes)))
+        vetoed_indices_dict[ifo], vseg_dict_sngl[ifo] = veto_indices(inj_time, [args.veto_file],
+                                      ifo=ifo, segment_name=args.segment_name)
+
+    all_vetoed_indices = list(itertools.chain(*vetoed_indices_dict.values()))
+    set_all_vetoed_indices = numpy.unique(all_vetoed_indices)
+
+    count_ifo_veto_index = numpy.array([sum([1 for veto_list in vetoed_indices_dict.values() if test_idx in veto_list]) for test_idx in set_all_vetoed_indices])
+    which_indices_veto_all = numpy.where(count_ifo_veto_index > (len(ifo_list) - 2))[0]
+    vi = set_all_vetoed_indices[which_indices_veto_all]
+
+    # (note that this may not be the most efficient way to perform this task)
+    # combine these vetoes into two-detector combination
+ #   ifo_2_combos = itertools.combinations(ifo_list, 3)
+ #   vseg_dict_comb = segments.segmentlistdict()
+ #   for ifo_combo in ifo_2_combos:
+ #       combokey = ''.join(ifo_combo)
+ #       ifo0 = ifo_combo[0]
+ #       ifo1 = ifo_combo[1]
+ #       vseg_dict_comb[combokey] = vseg_dict_sngl[ifo0] \
+ #                                        | vseg_dict_sngl[ifo1]
+
+    # Add two-detector combination segments together to get the 'less than
+    # two detectors are available' veto
+    # vetoed_segments = numpy.sum(list(vseg_dict_comb.values()), axis=0)
+ #   vetoed_segments = vseg_dict_comb['H1L1V1']
+
+    # convert to start-end lists in order to use standard
+ #   v_start, v_end = events.segments_to_start_end(vetoed_segments)
+ #   vi = numpy.array([], dtype=numpy.uint32)
+    # if any vetoes exist, work out which indices are within the times
+ #   if len(v_start) > 0:
+ #       vidx = events.indices_within_times(inj_time, v_start, v_end)
+ #       vi = numpy.union1d(vi, vidx)
+
+    print(len(vi))
+    print(vi)
+    print(numpy.where(numpy.in1d(found_within_time, vi)))
+
+    ##########################################################################
+    # Old style
+    ##########################################################################
+
+#    vi = numpy.array([])
+#    for ifo in ifo_list:
+#        vi = numpy.append(vi, veto_indices(inj_time, [args.veto_file],
+#                                        ifo=ifo, segment_name=args.segment_name))
+
+    found_after_vetoes = numpy.delete(found_within_time,
+                                      numpy.where(numpy.in1d(found_within_time, vi)))
+    missed_after_vetoes = numpy.delete(missed_within_time,
+                                       numpy.where(numpy.in1d(missed_within_time, vi)))
+    logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes),
+                                            len(missed_after_vetoes)))
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
