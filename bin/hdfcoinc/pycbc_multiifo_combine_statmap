@@ -47,6 +47,7 @@ logging.info('combining foreground and foreground excluded segments')
 indiv_segs = segments.segmentlistdict({})
 indiv_segs_fg_exc = segments.segmentlistdict({})
 
+any_fg_vetoes = False
 # loop through statmap files and put segments into segmentlistdicts
 for fi in files:
     key = fi.attrs['ifos'].replace(' ','')
@@ -55,31 +56,34 @@ for fi in files:
     ends = fi['segments/{}/end'.format(key)][:]
     indiv_segs[key] = pycbc.events.veto.start_end_to_segments(starts, ends)
     # get the foreground_vetoed times from individual statmap files
-    remove_start_time = fi['segments/foreground_veto/start'][:]
-    remove_end_time = fi['segments/foreground_veto/end'][:]
-    vetoed_segs = pycbc.events.veto.start_end_to_segments(remove_start_time,
+    if 'foreground_veto' in fi['segments']:
+        any_fg_vetoes = True
+        remove_start_time = fi['segments/foreground_veto/start'][:]
+        remove_end_time = fi['segments/foreground_veto/end'][:]
+        vetoed_segs = pycbc.events.veto.start_end_to_segments(remove_start_time,
                                                           remove_end_time)
-    # remove from analysis segments
-    indiv_segs_fg_exc[key] = indiv_segs[key] - vetoed_segs
+        # remove from analysis segments
+        indiv_segs_fg_exc[key] = indiv_segs[key] - vetoed_segs
 
 # Convert segmentlistdict to a list ('seglists') of segmentlists
 # then numpy.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
 foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
 # Note that 'exclusive' time only removes windows around coincs
 # that involve *all* active ifos (2 in 2-ifo time, 3 in 3-ifo time etc.)
-foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
+if any_fg_vetoes:
+    foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
 
-# output foreground veto starts and ends to file
-foreground_vetos_start, foreground_vetos_end = \
+    # output foreground veto starts and ends to file
+    foreground_vetos_start, foreground_vetos_end = \
                    pycbc.events.veto.segments_to_start_end(foreground_segs - \
                                                            foreground_segs_exc)
 
-f['segments/foreground_veto/start'] = foreground_vetos_start
-f['segments/foreground_veto/end'] = foreground_vetos_end
+    f['segments/foreground_veto/start'] = foreground_vetos_start
+    f['segments/foreground_veto/end'] = foreground_vetos_end
 
 # output to file
 f.attrs['foreground_time'] = abs(foreground_segs)
-f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
+if any_fg_vetoes: f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
 
 # obtain list of all ifos involved in the coinc_statmap files
 all_ifos = numpy.unique([ifo for fi in files for ifo in \
