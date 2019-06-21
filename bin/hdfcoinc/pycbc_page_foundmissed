@@ -79,7 +79,7 @@ eff_dist_map = {'H1': 'eff_dist_h', 'H2': 'eff_dist_h', 'L1': 'eff_dist_l',
 try:
     eff_dists = [f['injections/{}'.format(eff_dist_map[ifo])][:]\
                  for ifo in ifos]
-    eff_dists = numpy.array(eff_dists).T 
+    eff_dists = numpy.array(eff_dists).T
     # "Decisive" distance is the second smallest effective distance
     dvals['decisive_distance'] = numpy.sort(eff_dists)[:,1]
     dvals['dec_chirp_distance'] = \
@@ -146,7 +146,7 @@ if not args.gradient_far:
     color[hundred] = 0.5
     color[thousand] = 1.0
 
-    mpoints = plot.scatter(vals[args.axis_type][missed], mdvals, s=10, linewidth=0.1,
+    mpoints = plot.scatter(vals[args.axis_type][missed], mdvals, s=10, linewidth=0.5,
                            marker='x', color='black', label='missed', zorder=zmissed)
     points = plot.scatter(vals[args.axis_type][found], fdvals, s=10,
                            c=color, linewidth=0, vmin=0, vmax=1,
@@ -166,7 +166,7 @@ else:
     if len(color) < 2:
         color=None
 
-    mpoints = plot.scatter(vals[args.axis_type][missed], mdvals, s=10, linewidth=0.1,
+    mpoints = plot.scatter(vals[args.axis_type][missed], mdvals, s=10, linewidth=0.5,
                            marker='x', color='red', label='missed', zorder=zmissed)
     points = plot.scatter(fvals, fdval, c=color, linewidth=0, s=10,
                           norm=matplotlib.colors.LogNorm(),
