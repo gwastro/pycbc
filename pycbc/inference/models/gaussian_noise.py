@@ -21,7 +21,7 @@ import numpy
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
 from pycbc.waveform import generator
-from pycbc.types import Array
+from pycbc.types import Array, FrequencySeries
 
 from .base_data import BaseDataModel
 
@@ -30,48 +30,52 @@ class GaussianNoise(BaseDataModel):
     r"""Model that assumes data is stationary Gaussian noise.
 
     With Gaussian noise the log likelihood functions for signal
-    :math:`\log p(d|\Theta)` and for noise :math:`\log p(d|n)` are given by:
+    :math:`\log p(d|\Theta, h)` and for noise :math:`\log p(d|n)` are given by:
 
     .. math::
 
-        \log p(d|\Theta) &=  -\frac{1}{2} \sum_i
-            \left< h_i(\Theta) - d_i | h_i(\Theta) - d_i \right> \\
-        \log p(d|n) &= -\frac{1}{2} \sum_i \left<d_i | d_i\right>
+        \log p(d|\Theta, h) &=  \log\alpha -\frac{1}{2} \sum_i
+            \left< d_i - h_i(\Theta) | d_i - h_i(\Theta) \right> \\
+        \log p(d|n) &= -\log\alpha -\frac{1}{2} \sum_i \left<d_i | d_i\right>
 
     where the sum is over the number of detectors, :math:`d_i` is the data in
     each detector, and :math:`h_i(\Theta)` is the model signal in each
-    detector. The inner product is given by:
+    detector. The (discrete) inner product is given by:
 
     .. math::
 
-        \left<a | b\right> = 4\Re \int_{0}^{\infty}
-            \frac{\tilde{a}(f) \tilde{b}(f)}{S_n(f)} \mathrm{d}f,
+        \left<a_i | b_i\right> = 4\Re \delta f
+            \sum_{k=k_{\mathrm{min}}}^{k_{\mathrm{max}}}
+            \frac{\tilde{a}_i^{*}[k] \tilde{b}_i[k]}{S^(i)_n[k]},
 
-    where :math:`S_n(f)` is the PSD in the given detector.
+    where :math:`\delta f` is the frequency resolution (given by 1 / the
+    observation time :math:`T`), :math:`k` is an index over the discretely
+    sampled frequencies :math:`f = k \delta_f`, and :math:`S^(i)_n[k]` is the
+    PSD in the given detector. The upper cutoff on the inner product
+    :math:`k_{\mathrm{max}}` is by default the Nyquist frequency
+    `k_{\mathrm{max}} = N/2+1`, where :math:`N = \lfloor T/\delta t \rfloor`
+    is the number of samples in the time domain, but this can be set manually
+    to a smaller value.
 
-    Note that the log prior-weighted likelihood ratio has one fewer term
-    than the log posterior, since the :math:`\left<d_i|d_i\right>` term cancels
-    in the likelihood ratio:
+    The normalization factor :math:`\alpha` is:
 
     .. math::
 
-        \log \hat{\mathcal{L}} = \log p(\Theta) + \sum_i \left[
+        \alpha = \frac{1}{\left(\pi T\right)^{N/2}
+            \prod_{k=k_\mathrm{min}}^{k_{\mathrm{max}}} S_n[k]}.
+
+    Note that the log likelihood ratio has fewer terms than the log likelihood,
+    since the normalization and :math:`\left<d_i|d_i\right>` terms cancel:
+
+    .. math::
+
+        \log \mathcal{L}(\Theta) = \sum_i \left[
             \left<h_i(\Theta)|d_i\right> -
             \frac{1}{2} \left<h_i(\Theta)|h_i(\Theta)\right> \right]
 
     Upon initialization, the data is whitened using the given PSDs. If no PSDs
     are given the data and waveforms returned by the waveform generator are
-    assumed to be whitened. The likelihood function of the noise,
-
-    .. math::
-
-        p(d|n) = \frac{1}{2} \sum_i \left<d_i|d_i\right>,
-
-    is computed on initialization and stored as the `lognl` attribute.
-
-    By default, the data is assumed to be equally sampled in frequency, but
-    unequally sampled data can be supported by passing the appropriate
-    normalization using the ``norm`` keyword argument.
+    assumed to be whitened.
 
     For more details on initialization parameters and definition of terms, see
     :py:class:`models.BaseDataModel`.
@@ -100,10 +104,6 @@ class GaussianNoise(BaseDataModel):
         respective detectors to be used for computing inner products. If not
         provided, the minimum of the largest frequency stored in the data
         and a given waveform will be used.
-    norm : {None, float or array}
-        An extra normalization weight to apply to the inner products. Can be
-        either a float or an array. If ``None``, ``4*data.values()[0].delta_f``
-        will be used.
     static_params : dict, optional
         A dictionary of parameter names -> values to keep fixed.
     \**kwargs :
@@ -137,6 +137,7 @@ class GaussianNoise(BaseDataModel):
     >>> low_frequency_cutoff = {'H1': fmin, 'L1': fmin}
     >>> model = GaussianNoise(variable_params, signal, low_frequency_cutoff,
                               psds=psds, static_params=static_params)
+
     Set the current position to the coalescence time of the signal:
 
     >>> model.update(tc=tsig)
@@ -145,29 +146,29 @@ class GaussianNoise(BaseDataModel):
     since we have not provided a prior, these should be equal to each other:
 
     >>> print('{:.2f}'.format(model.loglr))
-    282.29
+    282.43
     >>> print('{:.2f}'.format(model.logplr))
-    282.29
+    282.43
 
     Print all of the default_stats:
 
     >>> print(',\n'.join(['{}: {:.2f}'.format(s, v)
     ...                   for (s, v) in sorted(model.current_stats.items())]))
-    H1_cplx_loglr: 177.66+0.00j,
-    H1_optimal_snrsq: 355.33,
-    L1_cplx_loglr: 104.63+0.00j,
-    L1_optimal_snrsq: 209.26,
-    logjacobian: 0.00,
-    loglikelihood: 0.00,
-    loglr: 282.29,
-    logprior: 0.00
+    H1_cplx_loglr: 177.76+0.00j,
+    H1_optimal_snrsq: 355.52,
+    L1_cplx_loglr: 104.67+0.00j,
+    L1_optimal_snrsq: 209.35,
+    logjacobian: nan,
+    loglikelihood: 835680.31,
+    loglr: 282.43,
+    logprior: nan
 
     Compute the SNR; for this system and PSD, this should be approximately 24:
 
     >>> from pycbc.conversions import snr_from_loglr
     >>> x = snr_from_loglr(model.loglr)
     >>> print('{:.2f}'.format(x))
-    23.76
+    23.77
 
     Since there is no noise, the SNR should be the same as the quadrature sum
     of the optimal SNRs in each detector:
@@ -175,7 +176,7 @@ class GaussianNoise(BaseDataModel):
     >>> x = (model.det_optimal_snrsq('H1') +
     ...      model.det_optimal_snrsq('L1'))**0.5
     >>> print('{:.2f}'.format(x))
-    23.76
+    23.77
 
     Using the same model, evaluate the log likelihood ratio at several points
     in time and check that the max is at tsig:
@@ -196,26 +197,27 @@ class GaussianNoise(BaseDataModel):
     >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior = distributions.JointDistribution(variable_params, uniform_prior)
     >>> model = pycbc.inference.models.GaussianNoise(variable_params,
-    ...     signal, generator, low_frequency_cutoff, psds=psds, prior=prior)
+    ...     signal, low_frequency_cutoff, psds=psds, prior=prior,
+    ...     static_params=static_params)
     >>> model.update(tc=tsig)
     >>> print('{:.2f}'.format(model.logplr))
-    283.21
+    283.35
     >>> print(',\n'.join(['{}: {:.2f}'.format(s, v)
     ...                   for (s, v) in sorted(model.current_stats.items())]))
-    H1_cplx_loglr: 177.66+0.00j,
-    H1_optimal_snrsq: 355.33,
-    L1_cplx_loglr: 104.63+0.00j,
-    L1_optimal_snrsq: 209.26,
+    H1_cplx_loglr: 177.76+0.00j,
+    H1_optimal_snrsq: 355.52,
+    L1_cplx_loglr: 104.67+0.00j,
+    L1_optimal_snrsq: 209.35,
     logjacobian: 0.00,
-    loglikelihood: 0.00,
-    loglr: 282.29,
+    loglikelihood: 835680.31,
+    loglr: 282.43,
     logprior: 0.92
 
     """
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
-                 high_frequency_cutoff=None, norm=None, static_params=None,
+                 high_frequency_cutoff=None, static_params=None,
                  **kwargs):
         # set up the boiler-plate attributes
         super(GaussianNoise, self).__init__(variable_params, data,
@@ -235,50 +237,39 @@ class GaussianNoise(BaseDataModel):
         self._waveform_generator = create_waveform_generator(
             self.variable_params, self.data, recalibration=self.recalibration,
             gates=self.gates, **self.static_params)
-        # check that the data sets all have the same lengths
-        dlens = numpy.array([len(d) for d in self.data.values()])
-        if not all(dlens == dlens[0]):
-            raise ValueError("all data must be of the same length")
-        # we'll use the first data set for setting values
-        d = list(self.data.values())[0]
-        N = len(d)
+        # check that the data sets all have the same delta fs and delta ts
+        dts = numpy.array([d.delta_t for d in self.data.values()])
+        dfs = numpy.array([d.delta_f for d in self.data.values()])
+        if not all(dts == dts[0]):
+            raise ValueError("all data must have the same sample rate")
+        if not all(dfs == dfs[0]):
+            raise ValueError("all data must have the same segment length")
+        # store the number of samples in the time domain
+        self._N = int(1./(dts[0]*dfs[0]))
         # Set low frequency cutoff
-        self._f_lower = low_frequency_cutoff
-        self._f_upper = {}
-        if high_frequency_cutoff is not None and bool(high_frequency_cutoff):
-            for det in self._data:
-                if det in high_frequency_cutoff:
-                    self._f_upper[det] = high_frequency_cutoff[det]
-                else:
-                    self._f_upper[det] = None
-        else:
-            for det in self._data.keys():
-                self._f_upper[det] = None
-        if norm is None:
-            norm = 4*d.delta_f
-        # we'll store the weight to apply to the inner product
-        if psds is None:
-            self._psds = None
-            w = Array(numpy.sqrt(norm)*numpy.ones(N))
-            self._weight = {det: w for det in data}
-        else:
-            # store a copy of the psds
-            self._psds = {ifo: d.copy() for (ifo, d) in psds.items()}
-            # temporarily suppress numpy divide by 0 warning
-            numpysettings = numpy.seterr(divide='ignore')
-            self._weight = {det: Array(numpy.sqrt(norm/psds[det]))
-                            for det in data}
-            numpy.seterr(**numpysettings)
+        self._f_lower = None
+        self.low_frequency_cutoff = low_frequency_cutoff
+        # set upper frequency cutoff
+        self._f_upper = None
+        self.high_frequency_cutoff = high_frequency_cutoff
+        # Set the cutoff indices
         self._kmin = {}
         self._kmax = {}
         for det in self._data:
-            # whiten the data
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
                                                      self._f_upper[det],
-                                                     d.delta_f, (N-1)*2)
-            self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
+                                                     d.delta_f, self._N)
             self._kmin[det] = kmin
             self._kmax[det] = kmax
+        # store the psds and calculate the inner product weight
+        self._psds = {}
+        self._weight = {}
+        self._lognorm = {}
+        self._det_lognls = {}
+        self.psds = psds
+        # whiten the data
+        for det in self._data:
+            self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
 
     @property
     def waveform_generator(self):
@@ -290,10 +281,49 @@ class GaussianNoise(BaseDataModel):
         """The low frequency cutoff of the inner product."""
         return self._f_lower
 
+    @low_frequency_cutoff.setter
+    def low_frequency_cutoff(self, low_frequency_cutoff):
+        """Sets the lower frequency cutoff.
+
+        Parameters
+        ----------
+        low_frequency_cutoff : dict
+            Dictionary mapping detector names to frequencies. A cutoff
+            must be provided for every detector.
+        """
+        # check that all the detectors are accounted for
+        missing = set(self._data.keys()) - set(low_frequency_cutoff.keys())
+        if any(missing):
+            raise ValueError("Missing low frequency cutoffs for detector(s) "
+                             "{}".format(', '.join(list(missing))))
+        self._f_lower = low_frequency_cutoff.copy()
+
     @property
     def high_frequency_cutoff(self):
         """The high frequency cutoff of the inner product."""
         return self._f_upper
+
+    @high_frequency_cutoff.setter
+    def high_frequency_cutoff(self, high_frequency_cutoff):
+        """Sets the high frequency cutoff.
+
+        Parameters
+        ----------
+        high_frequency_cutoff : dict
+            Dictionary mapping detector names to frequencies. If a high
+            frequency cutoff is not provided for one or more detectors, the
+            Nyquist frequency will be used for those detectors.
+        """
+        self._f_upper = {}
+        if high_frequency_cutoff is not None and bool(high_frequency_cutoff):
+            for det in self._data:
+                if det in high_frequency_cutoff:
+                    self._f_upper[det] = high_frequency_cutoff[det]
+                else:
+                    self._f_upper[det] = None
+        else:
+            for det in self._data.keys():
+                self._f_upper[det] = None
 
     @property
     def _extra_stats(self):
@@ -303,23 +333,75 @@ class GaussianNoise(BaseDataModel):
                ['{}_cplx_loglr'.format(det) for det in self._data] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
 
+    @property
+    def psds(self):
+        """Returns the psds that are set."""
+        return self._psds
+
+    @psds.setter
+    def psds(self, psds):
+        """Sets the psds, and calculates the weight and norm from them.
+
+        The data and the low and high frequency cutoffs must be set first.
+        """
+        # check that the data has been set
+        if self._data is None:
+            raise ValueError("No data set")
+        if self._f_lower is None:
+            raise ValueError("low frequency cutoff not set")
+        if self._f_upper is None:
+            raise ValueError("high frequency cutoff not set")
+        # make sure the relevant caches are cleared
+        self._psds.clear()
+        self._weight.clear()
+        self._lognorm.clear()
+        self._det_lognls.clear()
+        for det, d in self._data.items():
+            if psds is None:
+                # No psd means assume white PSD
+                p = FrequencySeries(numpy.ones(int(self._N/2+1)),
+                                    delta_f=d.delta_f)
+            else:
+                # copy for storage
+                p = psds[det].copy()
+            self._psds[det] = p
+            # we'll store the weight to apply to the inner product
+            w = Array(numpy.zeros(len(p)))
+            # only set weight in band we will analyze
+            kmin = self._kmin[det]
+            kmax = self._kmax[det]
+            w[kmin:kmax] = numpy.sqrt(4.*p.delta_f/p[kmin:kmax])
+            self._weight[det] = w
+        # set the lognl and lognorm; we'll get this by just calling lognl
+        _ = self.lognl
+
+    def det_lognorm(self, det):
+        """The log of the likelihood normalization in the given detector."""
+        try:
+            return self._lognorm[det]
+        except KeyError:
+            # hasn't been calculated yet
+            p = self._psds[det]
+            dt = self._data[det].delta_t
+            kmin = self._kmin[det]
+            kmax = self._kmax[det]
+            lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
+                            + numpy.log(p[kmin:kmax]).sum())
+            self._lognorm[det] = lognorm
+            return self._lognorm[det]
+
+    @property
+    def lognorm(self):
+        """The log of the normalization of the log likelihood."""
+        return sum(self.det_lognorm(det) for det in self._data)
+
     def _lognl(self):
         """Computes the log likelihood assuming the data is noise.
 
         Since this is a constant for Gaussian noise, this is only computed once
         then stored.
         """
-        try:
-            return self.__lognl
-        except AttributeError:
-            det_lognls = {}
-            for (det, d) in self._data.items():
-                kmin = self._kmin[det]
-                kmax = self._kmax[det]
-                det_lognls[det] = -0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
-            self.__det_lognls = det_lognls
-            self.__lognl = sum(det_lognls.values())
-            return self.__lognl
+        return sum(self.det_lognl(det) for det in self._data)
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
@@ -385,8 +467,8 @@ class GaussianNoise(BaseDataModel):
 
         .. math::
 
-            p(d|\Theta) = -\frac{1}{2}\sum_i
-                \left<h_i(\Theta) - d_i | h_i(\Theta) - d_i\right>,
+            \log p(d|\Theta, h) = \log \alpha -\frac{1}{2}\sum_i
+                \left<d_i - h_i(\Theta) | d_i - h_i(\Theta)\right>,
 
         at the current parameter values :math:`\Theta`.
 
@@ -400,7 +482,13 @@ class GaussianNoise(BaseDataModel):
         return self.loglr + self.lognl
 
     def det_lognl(self, det):
-        """Returns the log likelihood of the noise in the given detector.
+        r"""Returns the log likelihood of the noise in the given detector:
+
+        .. math::
+
+            \log p(d_i|n_i) = \log \alpha_i - 
+                \frac{1}{2} \left<d_i | d_i\right>.
+
 
         Parameters
         ----------
@@ -413,12 +501,16 @@ class GaussianNoise(BaseDataModel):
             The log likelihood of the noise in the requested detector.
         """
         try:
-            return self.__det_lognls[det]
-        except AttributeError:
-            # hasn't been calculated yet, call lognl to calculate & store
-            self._lognl()
-            # now try returning
-            return self.__det_lognls[det]
+            return self._det_lognls[det]
+        except KeyError:
+            # hasn't been calculated yet; calculate & store
+            kmin = self._kmin[det]
+            kmax = self._kmax[det]
+            d = self._data[det]
+            lognorm = self.det_lognorm(det)
+            lognl = lognorm - 0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
+            self._det_lognls[det] = lognl
+            return self._det_lognls[det]
 
     def det_cplx_loglr(self, det):
         """Returns the complex log likelihood ratio in the given detector.
