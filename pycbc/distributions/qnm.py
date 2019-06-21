@@ -148,7 +148,7 @@ class UniformF0Tau(uniform.Uniform):
         f0 = params[self.rdfreq]
         tau = params[self.damping_time]
         # check if we need to specify a particular mode (l,m) != (2,2)
-        if re.match(r'f_\d', self.rdfreq):
+        if re.match(r'f_\d{3}', self.rdfreq):
             mode = self.rdfreq.strip('f_')
             l, m = int(mode[0]), int(mode[1])
         else:
