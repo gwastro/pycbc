@@ -241,9 +241,10 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     psd_long_segment : {float, 512}
         Duration of the long segments for PSD estimation in seconds.
     psd_duration : {float, 8}
-        Duration of the segments for PSD estimation in seconds.
+        Duration of FFT segments for long term PSD estimation, in seconds.
     psd_stride : {float, 4}
-        Separation between PSD estimation segments in seconds.
+        Separation between FFT segments for long term PSD estimation, in
+        seconds.
     psd_avg_method : {string, 'median'}
         Method for averaging PSD estimation segments.
     low_freq : {float, 20}
@@ -316,7 +317,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
                            avg_method=psd_avg_method)
 
         # Make the weighting filter - bandpass, which weight by f^-7/6,
-        # and withen. The normalization is chosen so that the variance
+        # and whiten. The normalization is chosen so that the variance
         # will be one if this filter is applied to white noise which
         # already has a variance of one.
         freqs = FrequencySeries(plong.sample_frequencies,
