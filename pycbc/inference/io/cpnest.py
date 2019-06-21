@@ -24,13 +24,16 @@
 """Provides IO for the emcee sampler.
 """
 from .base_sampler import BaseSamplerFile
-from .posterior import PosteriorFile
+from .posterior import read_raw_samples_from_file, write_samples_to_file
 
 
 class CPNestFile(BaseSamplerFile):
     """Class to handle file IO for the ``cpnest`` sampler."""
 
     name = 'cpnest_file'
+
+    def read_raw_samples(self, fields, **kwargs):
+        return read_raw_samples_from_file(self, fields, **kwargs)
 
     def write_resume_point(self):
         pass
@@ -71,4 +74,4 @@ class CPNestFile(BaseSamplerFile):
         """
         # since we're just writing a posterior use
         # PosteriorFile's write_samples
-        PosteriorFile.write_samples(self, samples, parameters=parameters)
+        write_samples_to_file(self, samples, parameters=parameters)
