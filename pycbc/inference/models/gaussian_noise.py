@@ -386,7 +386,7 @@ class GaussianNoise(BaseDataModel):
             kmin = self._kmin[det]
             kmax = self._kmax[det]
             lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
-                            + numpy.log(p[kmin:kmax]).sum())
+                             + numpy.log(p[kmin:kmax]).sum())
             self._lognorm[det] = lognorm
             return self._lognorm[det]
 
@@ -486,7 +486,7 @@ class GaussianNoise(BaseDataModel):
 
         .. math::
 
-            \log p(d_i|n_i) = \log \alpha_i - 
+            \log p(d_i|n_i) = \log \alpha_i -
                 \frac{1}{2} \left<d_i | d_i\right>.
 
 
