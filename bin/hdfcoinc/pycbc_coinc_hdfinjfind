@@ -59,6 +59,9 @@ parser.add_argument('--veto-file')
 parser.add_argument('--segment-name', default=None,
                     help='Name of segment list to use for vetoes. Optional')
 parser.add_argument('--injection-window', type=float, required=True)
+parser.add_argument('--min-required-ifos', type=int, default=2,
+                    help='Minimum number of IFOs required to be on to allow '
+                    'injection to be counted as found or missed. Default = 2')
 parser.add_argument('--optimal-snr-column', nargs='+',
                     action=MultiDetOptionAction, metavar='DETECTOR:COLUMN',
                     help='Names of the sim_inspiral columns containing the' \
@@ -154,8 +157,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  % (len(found), len(missed), len(ambiguous)))
 
     if len(ambiguous) > 0:
-        logging.warn('More than one coinc trigger found associated to '
-                     'injection')
+        logging.warn('More than one coinc trigger found associated '
+                     'with injection')
         am = numpy.arange(0, len(inj_time), 1)[left[ambiguous]]
         bm = numpy.arange(0, len(inj_time), 1)[right[ambiguous]]
 
@@ -168,45 +171,33 @@ for trigger_file, injection_file in zip(args.trigger_files,
 
     logging.info('Removing injections in vetoed time')
 
-    # Vetoes will only mean that injection cannot be found if *all* 2-ifo 
-    # combinations retain the veto
-
-    # Put individual detector vetoes into a segment list dictionary keyed by ifo
-    vetoed_idxs_dict ={}
+    # Put individual detector vetoes into list of all vetoed indices, if it
+    # is vetoed in more than one detector, then it will be repeated
+    vetoid = numpy.array([])
     for ifo in ifo_list:
-        vetoed_idxs_dict[ifo], _ = veto_indices(inj_time, [args.veto_file],
-                                      ifo=ifo, segment_name=args.segment_name)
+        vi, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
+                                        segment_name=args.segment_name)
+        vetoid = numpy.append(vetoid, vi)
+        del vi
 
-    # Get a flattened list of all indices vetoed in each detector
-    set_all_vetoed_idxs = list(itertools.chain(*vetoed_idxs_dict.values()))
     # Find out which of these indices are unique, and how many times each
     # vetoed index occurs - this is how many detectors it is vetoed in
-    vetoed_idxs, count_vetoes_per_idx = numpy.unique(set_all_vetoed_idxs,
-                                                     return_counts=True)
+    vetoid_unique, count_vetoid = numpy.unique(vetoid, return_counts=True)
 
-    # vetoed for all combinations are ones which do not allow *any*
-    # 2-ifo combination
-    vi = vetoed_idxs[count_vetoes_per_idx > (len(ifo_list) - 2)]
+    # Vetoed for all combinations are ones which do not allow *any*
+    # combination of min_required_ifos detectors, and so veto more than
+    # (len(ifo_list) - args.min_required_ifos) detectors
+    vetoed_all = vetoid_unique[count_vetoid > (len(ifo_list) - 
+                                               args.min_required_ifos)]
 
-    found_after_vetoes = numpy.delete(found_within_time,
-                               numpy.where(numpy.in1d(found_within_time, vi)))
-    missed_after_vetoes = numpy.delete(missed_within_time,
-                              numpy.where(numpy.in1d(missed_within_time, vi)))
-    ##########################################################################
-    # Old style
-    ##########################################################################
+    found_after_vetoes = numpy.array([i for i in found_within_time
+                                      if i not in vetoed_all])
+    missed_after_vetoes = numpy.array([i for i in missed_within_time
+                                       if i not in vetoed_all])
 
-#    vi = numpy.array([])
-#    for ifo in ifo_list:
-#        vi = numpy.append(vi, veto_indices(inj_time, [args.veto_file],
-#                                        ifo=ifo, segment_name=args.segment_name))
-
-#    found_after_vetoes = numpy.delete(found_within_time,
-#                                      numpy.where(numpy.in1d(found_within_time, vi)))[0]
-#    missed_after_vetoes = numpy.delete(missed_within_time,
-#                                       numpy.where(numpy.in1d(missed_within_time, vi)))[0]
-    logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes),
-                                            len(missed_after_vetoes)))
+    
+    logging.info('Found: %s, Missed: %s' %
+                 (len(found_after_vetoes), len(missed_after_vetoes)))
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
