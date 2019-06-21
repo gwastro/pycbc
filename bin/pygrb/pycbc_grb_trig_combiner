@@ -23,7 +23,6 @@ from __future__ import (division, print_function)
 
 import argparse
 import os
-import re
 from collections import defaultdict
 
 import numpy
@@ -50,12 +49,58 @@ TQDM_KW = {
     "smoothing": 0.05,
 }
 
-NETWORK_IFO_EVENT_ID_REGEX = re.compile(r"\Anetwork/(?P<ifo>[A-Z]1)_event_id\Z")
-EVENT_ID_REGEX = re.compile(r"/event_id\Z")
-SEARCH_REGEX = re.compile(r"\A[A-Z]1/search/(start|end)_time\Z")
-
 
 # -- utilties -----------------------------------
+
+def _init_combined_file(h5file, attributes, datasets, **compression_kw):
+    h5file.attrs.update(attributes)
+    # create datasets
+    for dset, (shape, dtype) in datasets.items():
+        h5file.create_dataset(dset, shape=shape, dtype=dtype,
+                              **compression_kw)
+
+
+def _merge_dataset(source, target, position, is_event_id=False, ifo_event_id_pos=None):
+    """Merge one dataset into another at a given position.
+
+    Parameters
+    ----------
+    source : `h5py.Dataset`
+        the source dataset
+
+    target : `h5py.Dataset`
+        the target dataset
+
+    position: `int`
+        the index of `target` at which to insert ``source`
+
+    is_event_id : `bool`, optional
+        if `True` the values of ``source`` will be incremented by ``position``;
+        this should be used to increment the ``*/event_id`` columns by the
+        internal count of events
+
+    ifo_event_id_pos : `int`, `None`, optional
+        if not `None`, the values of ``source`` will be incremented by
+        the given value; this should be used to increment the
+        ``network/X1_event_id`` column values by the current count of
+        ``X1/event_id`` events
+
+    Returns
+    -------
+    size : `int`
+        the size of the dataset that was just merged
+    """
+    data = source[()]
+    size = data.shape[0]
+    # increment network/X1_event_id by count of X1/event_id
+    if ifo_event_id_pos:
+        data += ifo_event_id_pos
+    # increment X1/event_id by number of events recorded so far
+    elif is_event_id:
+        data += position
+    target[position:position+size] = data
+    return size
+
 
 def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     """Merge several HDF5 files into a single file
@@ -77,7 +122,7 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     def _scan_dataset(name, obj):
         global chunk
 
-        if isinstance(obj, h5py.Dataset) and SEARCH_REGEX.match(name):
+        if isinstance(obj, h5py.Dataset) and "/search/" in name:
             datasets[name] = (obj.shape, obj.dtype)
         elif isinstance(obj, h5py.Dataset):
             shape = obj.shape
@@ -130,40 +175,43 @@ def merge_hdf5_files(inputfiles, outputfile, verbose=False, **compression_kw):
     # get ordered list of dataset names to loop over
     dataset_names = sorted(datasets, key=_network_first)
 
+    # get list of event_id columns
+    sngl_event_id_names = [
+        x for x in dataset_names if x.endswith("/event_id")
+    ]
+    network_event_id_names = {
+        "network/{}".format(x.replace('/', '_')): x for
+        x in sngl_event_id_names if not x.startswith("network")
+    }
+
     # handle search datasets as a special case
     # (they will the same in all files)
-    search_datasets = set(filter(SEARCH_REGEX.match, dataset_names))
+    search_datasets = set(filter(lambda x: "/search/" in x, dataset_names))
 
     # record where we are in the global dataset
     position = defaultdict(int)
 
     with h5py.File(outputfile, 'w') as h5out:
-        h5out.attrs.update(attributes)
-        # create datasets
-        for dset, (shape, dtype) in datasets.items():
-            h5out.create_dataset(dset, shape=shape, dtype=dtype,
-                                 **compression_kw)
+        _init_combined_file(h5out, attributes, datasets, **compression_kw)
+
         # copy dataset contents
         for filename in tqdm.tqdm(inputfiles, desc="Merging trigger files",
                                   disable=not verbose, total=nfiles,
                                   unit="files", **TQDM_KW):
             with h5py.File(filename, 'r') as h5in:
                 for dset in dataset_names:
-                    data = h5in[dset][:]
-                    size = data.shape[0]
-                    pos = position[dset]
-                    # increment network/X1_event_id by count of X1/event_id
-                    _network_ifo_m = NETWORK_IFO_EVENT_ID_REGEX.match(dset)
-                    if _network_ifo_m:
-                        ifoid = "{}/event_id".format(
-                            _network_ifo_m.groupdict()["ifo"],
-                        )
-                        data += position[ifoid]
-                    # increment X1/event_id by number of events recorded so far
-                    elif EVENT_ID_REGEX.search(dset):
-                        data += pos
-                    h5out[dset][pos:pos+size] = data
-                    position[dset] += size
+                    # get event_id handling options
+                    if dset in network_event_id_names:
+                        ifo_event_id_pos = position[network_event_id_names[dset]]
+                    else:
+                        ifo_event_id_pos = None
+
+                    # merge dataset
+                    position[dset] += _merge_dataset(
+                        h5in[dset], h5out[dset], position[dset],
+                        is_event_id=dset in sngl_event_id_names,
+                        ifo_event_id_pos=ifo_event_id_pos,
+                    )
 
             # only read the search datasets once
             while search_datasets:
@@ -182,7 +230,7 @@ def bin_events(inputfile, bins, outdir, filetag,
 
     with h5py.File(inputfile, "r") as h5in:
         ifos = [k for k in h5in.keys() if k != "network"]
-        times = h5in[column][:]
+        times = h5in[column][()]
 
         for bin_, segl in bins.items():
             # find which network triggers to keep
@@ -199,7 +247,7 @@ def bin_events(inputfile, bins, outdir, filetag,
             # find which single-ifo events to keep
             ifo_index = {
                 ifo: numpy.unique(
-                    h5in["network/{}_event_id".format(ifo)][:][include],
+                    h5in["network/{}_event_id".format(ifo)][()][include],
                 ) for ifo in ifos
             }
 
@@ -225,7 +273,7 @@ def bin_events(inputfile, bins, outdir, filetag,
                     if isinstance(old, h5py.Dataset):
                         h5out.create_dataset(
                             old.name,
-                            data=old[:][include],
+                            data=old[()][include],
                             compression=old.compression,
                             compression_opts=old.compression_opts,
                         )
@@ -236,7 +284,7 @@ def bin_events(inputfile, bins, outdir, filetag,
                         if isinstance(old, h5py.Dataset):
                             h5out.create_dataset(
                                 old.name,
-                                data=old[:][idx],
+                                data=old[()][idx],
                                 compression=old.compression,
                                 compression_opts=old.compression_opts,
                             )
@@ -352,18 +400,25 @@ parser.add_argument(
 
 # input/output
 parser.add_argument(
-    "-o",
-    "--output-dir",
-    default=os.getcwd(),
-    help="output directory (default: %(default)s)",
-)
-parser.add_argument(
     "-f",
     "--input-files",
     nargs="*",
     required=True,
     metavar="TRIGGER FILE",
     help="read in listed trigger files",
+)
+parser.add_argument(
+    "-o",
+    "--output-dir",
+    default=os.getcwd(),
+    help="output directory (default: %(default)s)",
+)
+parser.add_argument(
+    "-c",
+    "--no-compression",
+    action="store_true",
+    default=False,
+    help="don't compress output files (default: %(default)s)",
 )
 
 args = parser.parse_args()
@@ -379,6 +434,14 @@ if args.job_tag:
 
 analysis = segments.segmentlist([file_segment(args.input_files[0])])
 start, end = analysis[0]
+
+if args.no_compression:
+    compression_kw = {
+        "compression": None,
+        "compression_opts": None,
+    }
+else:
+    compression_kw = {}
 
 # -- construct segments -------------------------
 
@@ -424,6 +487,7 @@ else:
         args.input_files,
         outfile,
         verbose=args.verbose,
+        **compression_kw
     )
 
 vprint("-- Binning events")
