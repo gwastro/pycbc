@@ -100,7 +100,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
     if len(ifo_list) < args.min_required_ifos:
         raise RuntimeError('min-required-ifos (%s) must be <= number of ifos'
                            ' being searched (%s)' %
-                           (args.min_required_ifos, len(ifo_list))
+                           (args.min_required_ifos, len(ifo_list)))
     fo.attrs['ifos'] = ' '.join(sorted(ifo_list))
 
     template_id = f['foreground/template_id'][:]
