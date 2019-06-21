@@ -88,8 +88,9 @@ for trigger_file, injection_file in zip(args.trigger_files,
         multi_ifo_style = False
         ifo_list = ['H1', 'L1']
         if args.min_required_ifos > 2:
-            raise NotImplementedError('min-required-ifos must be less than or '
-                                'equal to number of ifos involved in search')
+            raise RuntimeError('min-required-ifos (%s' % args.min_required_ifos + 
+                                ') must be less than or equal to the number ' +
+                                'of ifos involved in search (2)')
     else:
         multi_ifo_style = True
         # Get list of groups which contain subgroup 'time'
@@ -98,8 +99,10 @@ for trigger_file, injection_file in zip(args.trigger_files,
                     if 'time' in f['foreground/%s/' % key]]
         assert len(ifo_list) > 1
         if len(ifo_list) < args.min_required_ifos:
-            raise NotImplementedError('min-required-ifos must be less than or '
-                                'equal to number of ifos involved in search')
+            raise RuntimeError('min-required-ifos (%s' % args.min_required_ifos +
+                                ') must be less than or equal to the number ' +
+                                'of ifos involved in the search (%s)' %
+                                len(ifo_list))
     fo.attrs['ifos'] = ' '.join(sorted(ifo_list))
 
     template_id = f['foreground/template_id'][:]
@@ -178,8 +181,9 @@ for trigger_file, injection_file in zip(args.trigger_files,
 
     logging.info('Removing injections in vetoed time')
 
-    # Put individual detector vetoes into list of all vetoed indices, if it
-    # is vetoed in more than one detector, then it will be repeated
+    # Put individual detector vetoes into list of all vetoed indices, if an
+    # injection is vetoed in more than one ifo, then its index will appear
+    # more than once
     vetoid = numpy.array([])
     for ifo in ifo_list:
         vi, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
@@ -191,11 +195,10 @@ for trigger_file, injection_file in zip(args.trigger_files,
     # vetoed index occurs - this is how many detectors it is vetoed in
     vetoid_unique, count_vetoid = numpy.unique(vetoid, return_counts=True)
 
-    # Vetoed for all combinations are ones which do not allow *any*
-    # combination of min_required_ifos detectors, and so veto more than
-    # (len(ifo_list) - args.min_required_ifos) detectors
-    vetoed_all = vetoid_unique[count_vetoid > (len(ifo_list) -
-                                               args.min_required_ifos)]
+    # remove injectons where the number of unvetoed ifos is less than the
+    # minimum specified by the user
+    vetoed_all = vetoid_unique[(len(ifo_list) - count_vetoid)
+                               < args.min_required_ifos]
 
     found_after_vetoes = numpy.array([i for i in found_within_time
                                       if i not in vetoed_all])
