@@ -87,7 +87,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
     if 'foreground/time1' in f:
         multi_ifo_style = False
         ifo_list = ['H1', 'L1']
-        assert args.min_required_ifos > 2
+        if args.min_required_ifos > 2:
             raise NotImplementedError('min-required-ifos must be less than or '
                                 'equal to number of ifos involved in search')
     else:
