@@ -4,7 +4,6 @@
 files.
 """
 
-import itertools
 import argparse, h5py, logging, types, numpy, os.path
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from ligo import segments
@@ -88,11 +87,19 @@ for trigger_file, injection_file in zip(args.trigger_files,
     if 'foreground/time1' in f:
         multi_ifo_style = False
         ifo_list = ['H1', 'L1']
+        assert args.min_required_ifos > 2
+            raise NotImplementedError('min-required-ifos must be less than or '
+                                'equal to number of ifos involved in search')
     else:
         multi_ifo_style = True
-        # Get list of groups which contain subgroup 'time' - these will be the IFOs
-        ifo_list = [key for key in f['foreground'] if 'time' in f['foreground/%s/' % key]]
+        # Get list of groups which contain subgroup 'time'
+        # - these will be the IFOs
+        ifo_list = [key for key in f['foreground']
+                    if 'time' in f['foreground/%s/' % key]]
         assert len(ifo_list) > 1
+        if len(ifo_list) < args.min_required_ifos:
+            raise NotImplementedError('min-required-ifos must be less than or '
+                                'equal to number of ifos involved in search')
     fo.attrs['ifos'] = ' '.join(sorted(ifo_list))
 
     template_id = f['foreground/template_id'][:]
