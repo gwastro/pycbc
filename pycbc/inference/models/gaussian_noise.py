@@ -255,7 +255,7 @@ class GaussianNoise(BaseDataModel):
         # Set the cutoff indices
         self._kmin = {}
         self._kmax = {}
-        for det in self._data:
+        for (det, d) in self._data.items():
             kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
                                                      self._f_upper[det],
                                                      d.delta_f, self._N)
