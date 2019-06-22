@@ -23,10 +23,12 @@ from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
 from pycbc.waveform import generator
 from pycbc.types import Array, FrequencySeries, MultiDetOptionAction
-from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
+from pycbc.psd import (from_cli_multi_ifos as psd_from_cli_multi_ifos,
+                       verify_psd_options)
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
-                          apply_gates_to_td, apply_gates_to_fd)
+                          apply_gates_to_td, apply_gates_to_fd,
+                          verify_strain_options)
 
 from .base_data import BaseDataModel
 
@@ -649,6 +651,10 @@ class GaussianNoise(BaseDataModel):
         replace_params = get_static_params_from_injection(
             args['static_params'], injection_file)
         args['static_params'].update(replace_params)
+        # get gates for templates
+        gates = gates_from_cli(opts)
+        if gates:
+            args['gates'] = gates
         return cls(**args)
 
 
@@ -727,6 +733,9 @@ def data_opts_from_config(cp, section, filter_flow):
                              "be less than the filter low frequency "
                              "cutoff")
         opts.low_frequency_cutoff = low_freq_cutoff
+    # verify options are sane
+    verify_psd_options(opts, parser)
+    verify_strain_options(opts, parser)
     return opts
 
 
