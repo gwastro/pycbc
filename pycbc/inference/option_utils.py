@@ -22,11 +22,6 @@ import argparse
 
 from six import string_types
 
-from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
-from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
-from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
-                          apply_gates_to_td, apply_gates_to_fd)
-from pycbc.types import MultiDetOptionAction
 from pycbc import waveform
 from pycbc import distributions
 
