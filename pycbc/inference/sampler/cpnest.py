@@ -209,6 +209,15 @@ class CPnestModel(cpm.Model):
             bounds.update(dist.bounds)
         self.bounds = [bounds[params] for params in self.names]
 
+    def new_point(self):
+        point = self.model.prior_rvs()
+        return cpm.LivePoint(list(self.model.sampling_params),
+                             [point[p] for p in self.model.sampling_params])
+
+    def log_prior(self,xx):
+        self.model.update(**xx)
+        return self.model.logprior
+
     def log_likelihood(self, xx):
         """
         Modify the log likelihood which will be passed to CPNest 'model class'
