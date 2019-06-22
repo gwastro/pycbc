@@ -18,10 +18,15 @@
 
 import logging
 import numpy
+
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
 from pycbc.waveform import generator
-from pycbc.types import Array, FrequencySeries
+from pycbc.types import Array, FrequencySeries, MultiDetOptionAction
+from pycbc.psd import from_cli_multi_ifos as psd_from_cli_multi_ifos
+from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
+from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
+                          apply_gates_to_td, apply_gates_to_fd)
 
 from .base_data import BaseDataModel
 
@@ -625,7 +630,8 @@ class GaussianNoise(BaseDataModel):
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
         # load the data
-        _, data, psds = data_from_config(cp, data_section, flow)
+        opts = data_opts_from_config(cp, data_section, flow)
+        _, data, psds = data_from_cli(opts)
         args.update({'data': data, 'psds': psds})
         return cls(**args)
 
@@ -662,8 +668,8 @@ def create_data_parser():
     return parser
 
 
-def data_from_config(cp, section, filter_flow, **kwargs):
-    """Loads data from a section in a config file.
+def data_opts_from_config(cp, section, filter_flow):
+    """Loads data options from a section in a config file.
 
     Parameters
     ----------
@@ -678,18 +684,12 @@ def data_from_config(cp, section, filter_flow, **kwargs):
         of the detectors, these values will be used. Otherwise, the
         data-conditioning-low-freq must be less than the inner product cutoffs.
         If any are not, a ``ValueError`` is raised.
-    \**kwargs :
-        Any extra keyword arguments will override/add options that were set
-        in the config file.
 
     Returns
     -------
-    strain_dict : dict
-        Dictionary of instruments -> `TimeSeries` strain.
-    stilde_dict : dict
-        Dictionary of instruments -> `FrequencySeries` strain.
-    psd_dict : dict
-        Dictionary of instruments -> `FrequencySeries` psds.
+    opts : parsed argparse.ArgumentParser
+        An argument parser namespace that was constructed as if the options
+        were specified on the command line.
     """
     # convert the section options into a command-line options
     optstr = cp.section_to_cli(section)
@@ -710,12 +710,8 @@ def data_from_config(cp, section, filter_flow, **kwargs):
             raise ValueError("data conditioning low frequency cutoff must "
                              "be less than the filter low frequency "
                              "cutoff")
-        opts.low_frequency_cutooff = low_freq_cutoff
-    # override with any of the keyword args
-    for param, value in kwargs.items():
-        setattr(opts, param, value)
-    # convert into data
-    return data_from_cli(opts)
+        opts.low_frequency_cutoff = low_freq_cutoff
+    return opts
 
 
 def data_from_cli(opts):
