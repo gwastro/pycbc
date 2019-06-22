@@ -633,6 +633,22 @@ class GaussianNoise(BaseDataModel):
         opts = data_opts_from_config(cp, data_section, flow)
         _, data, psds = data_from_cli(opts)
         args.update({'data': data, 'psds': psds})
+        # get the injection file
+        # Note: PyCBC's multi-ifo parser uses key:ifo for
+        # the injection file, even though we will use the same
+        # injection file for all detectors. This
+        # should be fixed in a future version of PyCBC. Once it is,
+        # update this. Until then, just use the first file.
+        if opts.injection_file:
+            injection_file = tuple(opts.injection_file.values())[0]  
+            # None if not set
+        else:
+            injection_file = None
+        args['injection_file'] = injection_file
+        # update any static params that are set to FROM_INJECTION
+        replace_params = get_static_params_from_injection(
+            args['static_params'], injection_file)
+        args['static_params'].update(replace_params)
         return cls(**args)
 
 
@@ -794,6 +810,51 @@ def data_from_cli(opts):
 
     return strain_dict, stilde_dict, psd_dict
 
+
+def get_static_params_from_injection(static_params, injection_file):
+    """Gets FROM_INJECTION static params from injection.
+
+    Parameters
+    ----------
+    static_params : dict
+        Dictionary of static params.
+    injection_file : str
+        Name of the injection file to use.
+
+    Returns
+    -------
+    dict :
+        A dictionary mapping parameter names to values retrieved from the
+        injection file. The dictionary will only contain parameters that were
+        set to ``"FROM_INJECTION"`` in the ``static_params``.
+        Parameter names -> values The injection parameters.
+    """
+    # pull out the parameters that need replacing
+    replace_params = {p: None for (p, val) in static_params.items()
+                      if val == 'FROM_INJECTION'}
+    if replace_params != {}:
+        # make sure there's actually an injection file
+        if injection_file is None:
+            raise ValueError("one or more static params are set to "
+                             "FROM_INJECTION, but not injection file "
+                             "provided in data section")
+        inj = InjectionSet(injection_file)
+        # make sure there's only one injection provided
+        if inj.size > 1:
+            raise ValueError("Some static params set to FROM_INJECTION, but "
+                             "more than one injection exists in the injection "
+                             "file.")
+        for param in replace_params:
+            try:
+                injval = inj.table[param][0]
+            except NameError:
+                # means the parameter doesn't exist
+                raise ValueError("Static param {} with placeholder "
+                                 "FROM_INJECTION has no counterpart in "
+                                 "injection file.".format(param))
+            replace_params[param] = injval
+    return replace_params
+   
 
 def create_waveform_generator(variable_params, data,
                               recalibration=None, gates=None,
