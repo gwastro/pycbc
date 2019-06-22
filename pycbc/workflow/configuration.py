@@ -1075,6 +1075,26 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         except ConfigParser.Error:
             return False
 
+    def section_to_cli(self, section):
+        """Converts a section into a command-line string.
+
+        For example:
+
+        .. code::
+
+            [section_name]
+            foo =
+            bar = 10
+
+        yields: `'--foo --bar 10'`.
+        """
+        opts = []
+        for opt in self.options(section):
+            opts.append('--{}'.format(opt))
+            val = cp.get(section, opt)
+            if val != '':
+                opts.append(val)
+        return ' '.join(opts)
 
     @staticmethod
     def add_config_opts_to_parser(parser):
