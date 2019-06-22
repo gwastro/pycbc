@@ -27,7 +27,7 @@ import numpy
 
 import pycbc
 from pycbc import (distributions, transforms, fft,
-                   opt, psd, scheme, strain, weave)
+                   opt, scheme, weave)
 from pycbc.waveform import generator
 
 from pycbc import __version__
@@ -92,9 +92,7 @@ pycbc.init_logging(opts.verbose)
 # verify options are sane
 fft.verify_fft_options(opts, parser)
 opt.verify_optimization_options(opts, parser)
-#psd.verify_psd_options(opts, parser)
 scheme.verify_processing_options(opts, parser)
-#strain.verify_strain_options(opts, parser)
 weave.verify_weave_options(opts, parser)
 
 # set seed
@@ -133,11 +131,6 @@ with ctx:
                                                       section='calibration')
                          for ifo in opts.instruments}
         model_args['recalibration'] = recalibration
-
-    # get gates for templates
-    gates = strain.gates_from_cli(opts)
-    if gates:
-        model_args['gates'] = gates
 
     logging.info("Setting up model")
 
