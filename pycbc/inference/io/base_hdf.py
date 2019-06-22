@@ -539,6 +539,7 @@ class BaseInferenceFile(h5py.File):
         injection_file : str
             Path to HDF injection file.
         """
+        logging.info("Writing injection file to output")
         try:
             with h5py.File(injection_file, "r") as fp:
                 super(BaseInferenceFile, self).copy(fp, self.injections_group)

@@ -67,16 +67,6 @@ parser.add_argument("--samples-file", default=None,
                          "section in the configuration file should be used. "
                          "The priors must allow encompass the initial "
                          "positions from the InferenceFile being read.")
-# add data options
-parser.add_argument("--instruments", type=str, nargs="+",
-                    help="IFOs, eg. H1 L1.")
-option_utils.add_low_frequency_cutoff_opt(parser)
-parser.add_argument("--psd-start-time", type=float, default=None,
-                    help="Start time to use for PSD estimation if different "
-                         "from analysis.")
-parser.add_argument("--psd-end-time", type=float, default=None,
-                    help="End time to use for PSD estimation if different "
-                         "from analysis.")
 parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initially distributes the walkers. Default is 0.")
@@ -85,11 +75,8 @@ configuration.add_workflow_command_line_group(parser)
 # add module pre-defined options
 fft.insert_fft_option_group(parser)
 opt.insert_optimization_option_group(parser)
-psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
-strain.insert_strain_option_group_multi_ifo(parser)
 weave.insert_weave_option_group(parser)
-strain.add_gate_option_group(parser)
 
 # parse command line
 opts = parser.parse_args()
@@ -125,16 +112,6 @@ fft.from_cli(opts)
 # Set up model arguments
 model_args = {}
 
-# get the data and psd
-strain_dict, stilde_dict, psd_dict = option_utils.data_from_cli(opts)
-if stilde_dict:
-    # make sure a low frequency cutoff was provided
-    if not opts.low_frequency_cutoff:
-        raise ValueError("must provide --low-frequency-cutoff for PSD "
-                         "estimation")
-    model_args['data'] = stilde_dict
-    model_args['psds'] = psd_dict
-
 with ctx:
 
     # read configuration file
@@ -148,35 +125,6 @@ with ctx:
                 cp.get('sampler', 'checkpoint-signal')))
         # create an empty output file to keep condor happy
         open(opts.output_file, 'a').close()
-    
-    # Note: PyCBC's multi-ifo parser uses key:ifo for
-    # the injection file, even though we will use the same
-    # injection file for all detectors. This
-    # should be fixed in a future version of PyCBC. Once it is,
-    # update this. Until then, just use the first file.
-    if opts.injection_file:
-        injection_file = tuple(opts.injection_file.values())[0]  
-        # None if not set
-    else:
-        injection_file = None
-
-    # If FROM_INJECTION placeholders for static params are set in config file, 
-    # insert injected parameters.
-    if injection_file \
-        and "FROM_INJECTION" in dict(cp.items('static_params')).values():
-        inj = InjectionSet(injection_file)
-        for opt in cp.options(section='static_params'):
-            if cp.get('static_params', opt) == "FROM_INJECTION" \
-                                and opt not in inj.table.fieldnames:
-                raise ValueError("Static param placeholder \"FROM_INJECTION\" \
-                            has no counterpart in injection file.")
-            elif cp.get('static_params', opt) == "FROM_INJECTION":
-                if isinstance(inj.table[opt][0], numpy.ndarray):
-                    if inj.table[opt][0].ndim > 0:
-                        cp.set('static_params', opt, 
-                               str(list(inj.table[opt][0])))
-                else: 
-                    cp.set('static_params', opt, str(inj.table[opt][0]))
     
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
@@ -206,8 +154,7 @@ with ctx:
         cp, model, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
 
     # set up output/checkpoint file
-    sampler.setup_output(opts.output_file, force=opts.force,
-                         injection_file=injection_file)
+    sampler.setup_output(opts.output_file, force=opts.force)
 
     # Figure out where to get the initial conditions from: a samples file,
     # the checkpoint file, the prior, or an initial prior.
