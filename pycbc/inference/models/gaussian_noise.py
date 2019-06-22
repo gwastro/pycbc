@@ -598,20 +598,24 @@ class GaussianNoise(BaseDataModel):
                                                         self._f_upper[det]
 
     @classmethod
-    def from_config(cls, cp, **kwargs):
+    def from_config(cls, cp, data_section='data', **kwargs):
         r"""Initializes an instance of this class from the given config file.
 
         Parameters
         ----------
         cp : WorkflowConfigParser
             Config file parser to read.
+        data_section : str, optional
+            The name of the section to load data options from.
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
             provided keyword will over ride what is in the config file.
         """
         args = cls._init_args_from_config(cp)
-        args['low_frequency_cutoff'] = low_frequency_cutoff_from_config(cp)
-        args['high_frequency_cutoff'] = high_frequency_cutoff_from_config(cp)
+        flow = low_frequency_cutoff_from_config(cp)
+        fhigh = high_frequency_cutoff_from_config(cp)
+        args['low_frequency_cutoff'] = flow
+        args['high_frequency_cutoff'] = fhigh
         # get any other keyword arguments provided in the model section
         ignore_args = ['name']
         for option in cp.options("model"):
@@ -620,7 +624,9 @@ class GaussianNoise(BaseDataModel):
                 ignore_args.append(option)
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
-        args.update(kwargs)
+        # load the data
+        _, data, psds = data_from_config(cp, data_section, flow)
+        args.update({'data': data, 'psds': psds})
         return cls(**args)
 
 
@@ -631,6 +637,166 @@ class GaussianNoise(BaseDataModel):
 #
 # =============================================================================
 #
+def create_data_parser():
+    """Creates an argument parser for loading GW data."""
+    parser = ArgumentParser()
+    # add data options
+    parser.add_argument("--instruments", type=str, nargs="+", required=True,
+                        help="IFOs, eg. H1 L1.")
+    parser.add_argument("--psd-start-time", type=float, default=None,
+                        help="Start time to use for PSD estimation if "
+                             "different from analysis.")
+    parser.add_argument("--psd-end-time", type=float, default=None,
+                        help="End time to use for PSD estimation if different "
+                             "from analysis.")
+    parser.add_argument("--data-conditioning-low-freq", type=float,
+                        nargs="+", action=MultiDetOptionAction,
+                        metavar='IFO:FLOW', dest="low_frequency_cutoff",
+                        help="Low frequency cutoff of the data. Needed for "
+                             "PSD estimation and when creating fake strain. "
+                             "If not provided, will use the model's "
+                             "low-frequency-cutoff.")
+    psd.insert_psd_option_group_multi_ifo(parser)
+    strain.insert_strain_option_group_multi_ifo(parser)
+    strain.add_gate_option_group(parser)
+    return parser
+
+
+def data_from_config(cp, section, filter_flow, **kwargs):
+    """Loads data from a section in a config file.
+
+    Parameters
+    ----------
+    cp : WorkflowConfigParser
+        Config file to read.
+    section : str
+        The section to read. All options in the section will be loaded as-if
+        they wre command-line arguments.
+    filter_flow : dict
+        Dictionary of detectors -> inner product low frequency cutoffs.
+        If a `data-conditioning-low-freq` cutoff wasn't provided for any
+        of the detectors, these values will be used. Otherwise, the
+        data-conditioning-low-freq must be less than the inner product cutoffs.
+        If any are not, a ``ValueError`` is raised.
+    \**kwargs :
+        Any extra keyword arguments will override/add options that were set
+        in the config file.
+
+    Returns
+    -------
+    strain_dict : dict
+        Dictionary of instruments -> `TimeSeries` strain.
+    stilde_dict : dict
+        Dictionary of instruments -> `FrequencySeries` strain.
+    psd_dict : dict
+        Dictionary of instruments -> `FrequencySeries` psds.
+    """
+    # convert the section options into a command-line options
+    optstr = cp.section_to_cli(section)
+    # create a fake parser to parse them
+    parser = create_data_parser()
+    # parse the options
+    opts = parser.parse_args(optstr.split(' '))
+    # check for the frequencies
+    low_freq_cutoff = filter_flow.copy()
+    if opts.low_frequency_cutoff is None:
+        opts.low_frequency_cutoff = low_freq_cutoff
+    else:
+        # add in any missing detectors
+        low_freq_cutoff.update(opts.low_frequency_cutoff)
+        # make sure the data conditioning low frequency cutoff is < than
+        # the matched filter cutoff
+        if any(low_freq_cutoff[det] > filter_flow[det] for det in filter_flow):
+            raise ValueError("data conditioning low frequency cutoff must "
+                             "be less than the filter low frequency "
+                             "cutoff")
+        opts.low_frequency_cutooff = low_freq_cutoff
+    # override with any of the keyword args
+    for param, value in kwargs.items():
+        setattr(opts, param, value)
+    # convert into data
+    return data_from_cli(opts)
+
+
+def data_from_cli(opts):
+    """Loads the data needed for a model from the given command-line options.
+
+    Gates specifed on the command line are also applied.
+
+    Parameters
+    ----------
+    opts : ArgumentParser parsed args
+        Argument options parsed from a command line string (the sort of thing
+        returned by `parser.parse_args`).
+
+    Returns
+    -------
+    strain_dict : dict
+        Dictionary of instruments -> `TimeSeries` strain.
+    stilde_dict : dict
+        Dictionary of instruments -> `FrequencySeries` strain.
+    psd_dict : dict
+        Dictionary of instruments -> `FrequencySeries` psds.
+    """
+    # get gates to apply
+    gates = gates_from_cli(opts)
+    psd_gates = psd_gates_from_cli(opts)
+
+    # get strain time series
+    instruments = opts.instruments if opts.instruments is not None else []
+    strain_dict = strain_from_cli_multi_ifos(opts, instruments,
+                                             precision="double")
+    # apply gates if not waiting to overwhiten
+    if not opts.gate_overwhitened:
+        strain_dict = apply_gates_to_td(strain_dict, gates)
+
+    # get strain time series to use for PSD estimation
+    # if user has not given the PSD time options then use same data as analysis
+    if opts.psd_start_time and opts.psd_end_time:
+        logging.info("Will generate a different time series for PSD "
+                     "estimation")
+        psd_opts = opts
+        psd_opts.gps_start_time = psd_opts.psd_start_time
+        psd_opts.gps_end_time = psd_opts.psd_end_time
+        psd_strain_dict = strain_from_cli_multi_ifos(psd_opts,
+                                                     instruments,
+                                                     precision="double")
+        # apply any gates
+        logging.info("Applying gates to PSD data")
+        psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
+
+    elif opts.psd_start_time or opts.psd_end_time:
+        raise ValueError("Must give psd-start-time and psd-end-time")
+    else:
+        psd_strain_dict = strain_dict
+
+    # FFT strain and save each of the length of the FFT, delta_f, and
+    # low frequency cutoff to a dict
+    stilde_dict = {}
+    length_dict = {}
+    delta_f_dict = {}
+    for ifo in instruments:
+        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
+        length_dict[ifo] = len(stilde_dict[ifo])
+        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
+
+    # get PSD as frequency series
+    psd_dict = psd_from_cli_multi_ifos(
+        opts, length_dict, delta_f_dict, opts.low_frequency_cutoff,
+        instruments, strain_dict=psd_strain_dict, precision="double")
+
+    # apply any gates to overwhitened data, if desired
+    if opts.gate_overwhitened and opts.gate is not None:
+        logging.info("Applying gates to overwhitened data")
+        # overwhiten the data
+        for ifo in gates:
+            stilde_dict[ifo] /= psd_dict[ifo]
+        stilde_dict = apply_gates_to_fd(stilde_dict, gates)
+        # unwhiten the data for the model
+        for ifo in gates:
+            stilde_dict[ifo] *= psd_dict[ifo]
+
+    return strain_dict, stilde_dict, psd_dict
 
 
 def create_waveform_generator(variable_params, data,
