@@ -29,6 +29,8 @@ from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd,
                           verify_strain_options)
+from pycbc.strain.calibration import Recalibrate
+from pycbc.inject import InjectionSet
 
 from .base_data import BaseDataModel
 
@@ -651,6 +653,13 @@ class GaussianNoise(BaseDataModel):
         replace_params = get_static_params_from_injection(
             args['static_params'], injection_file)
         args['static_params'].update(replace_params)
+        # get ifo-specific instances of calibration model
+        if cp.has_section('calibration'):
+            logging.info("Initializing calibration model")
+            recalib = {ifo: Recalibrate.from_config(cp, ifo,
+                                                    section='calibration')
+                             for ifo in opts.instruments}
+             args['recalibration'] = recalib
         # get gates for templates
         gates = gates_from_cli(opts)
         if gates:
