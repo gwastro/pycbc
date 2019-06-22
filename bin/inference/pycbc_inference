@@ -33,9 +33,7 @@ from pycbc.waveform import generator
 from pycbc import __version__
 from pycbc import inference
 from pycbc.inference import (models, burn_in, option_utils)
-from pycbc.strain.calibration import Recalibrate
 from pycbc.workflow import configuration
-from pycbc.inject import InjectionSet
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -105,9 +103,6 @@ numpy.seterr(divide='ignore', invalid='ignore')
 ctx = scheme.from_cli(opts)
 fft.from_cli(opts)
 
-# Set up model arguments
-model_args = {}
-
 with ctx:
 
     # read configuration file
@@ -122,18 +117,10 @@ with ctx:
         # create an empty output file to keep condor happy
         open(opts.output_file, 'a').close()
     
-    # get ifo-specific instances of calibration model
-    if cp.has_section('calibration'):
-        logging.info("Initializing calibration model")
-        recalibration = {ifo: Recalibrate.from_config(cp, ifo,
-                                                      section='calibration')
-                         for ifo in opts.instruments}
-        model_args['recalibration'] = recalibration
-
     logging.info("Setting up model")
 
     # construct class that will return the natural logarithm of likelihood
-    model = models.read_from_config(cp, **model_args)
+    model = models.read_from_config(cp)
 
     logging.info("Setting up sampler")
 
