@@ -25,6 +25,7 @@ from pycbc.waveform import generator
 from pycbc.types import Array, FrequencySeries, MultiDetOptionAction
 from pycbc.psd import (from_cli_multi_ifos as psd_from_cli_multi_ifos,
                        verify_psd_options)
+from pycbc import strain
 from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd,
@@ -680,12 +681,31 @@ def create_data_parser():
     # add data options
     parser.add_argument("--instruments", type=str, nargs="+", required=True,
                         help="IFOs, eg. H1 L1.")
-    parser.add_argument("--psd-start-time", type=float, default=None,
-                        help="Start time to use for PSD estimation if "
-                             "different from analysis.")
-    parser.add_argument("--psd-end-time", type=float, default=None,
-                        help="End time to use for PSD estimation if different "
-                             "from analysis.")
+    parser.add_argument("--trigger-time", type=float, default=0.,
+                        help="Reference GPS time from which the "
+                             "(anlaysis|psd)-(start|end)-time options are "
+                             "measured. The integer seconds will be used. "
+                             "Default is 0; i.e., if not provided, "
+                             "the analysis/psd times should be in GPS "
+                             "seconds.")
+    parser.add_argument("--analysis-start-time", type=int, required=True,
+                        help="The start time to use for the analysis, "
+                             "measured with respect to the trigger-time. "
+                             "If psd-inverse-length is provided, the given "
+                             "start time will be padded by half that length "
+                             "to account for wrap-around effects.")
+    parser.add_argument("--analysis-end-time", type=int, required=True,
+                        help="The end time to use for the analysis, "
+                             "measured with respect to the trigger-time. "
+                             "If psd-inverse-length is provided, the given "
+                             "end time will be padded by half that length "
+                             "to account for wrap-around effects.")
+    parser.add_argument("--psd-start-time", type=int, default=None,
+                        help="Start time to use for PSD estimation, measured "
+                             "with respect to the trigger-time.")
+    parser.add_argument("--psd-end-time", type=int, default=None,
+                        help="End time to use for PSD estimation, measured "
+                             "with respect to the trigger-time.")
     parser.add_argument("--data-conditioning-low-freq", type=float,
                         nargs="+", action=MultiDetOptionAction,
                         metavar='IFO:FLOW', dest="low_frequency_cutoff",
@@ -694,7 +714,7 @@ def create_data_parser():
                              "If not provided, will use the model's "
                              "low-frequency-cutoff.")
     psd.insert_psd_option_group_multi_ifo(parser)
-    strain.insert_strain_option_group_multi_ifo(parser)
+    strain.insert_strain_option_group_multi_ifo(parser, gps_times=False)
     strain.add_gate_option_group(parser)
     return parser
 
@@ -728,6 +748,23 @@ def data_opts_from_config(cp, section, filter_flow):
     parser = create_data_parser()
     # parse the options
     opts = parser.parse_args(optstr.split(' '))
+    # figure out the times to use
+    opts.trigger_time = int(opts.trigger_time)
+    gps_start = opts.trigger_time + opts.analysis_start_time
+    gps_end = opts.trigger_time + opts.analysis_end_time
+    if opts.psd_inverse_length is not None:
+        pad = int(numpy.ceil(opts.psd_inverse_length / 2))
+        logging.info("Padding analysis start and end times by {} "
+                     "(= psd-inverse-length/2) seconds to "
+                     "account for PSD wrap around effects.".format(pad))
+        gps_start -= pad
+        gps_end += pad
+    opts.gps_start_time = gps_start
+    opts.gps_end_time = gps_end
+    if opts.psd_start_time is not None:
+        opts.psd_start_time += opts.trigger_time
+    if opts.psd_end_time is not None:
+        opts.psd_end_time += opts.trigger_time
     # check for the frequencies
     low_freq_cutoff = filter_flow.copy()
     if opts.low_frequency_cutoff is None:
