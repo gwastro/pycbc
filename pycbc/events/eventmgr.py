@@ -591,6 +591,19 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.template_event_dict['network'] = \
                                 numpy.array([], dtype=self.network_event_dtype)
 
+    def cluster_template_network_events(self, tcolumn, column, window_size):
+        """ Cluster the internal events over the named column
+        """
+        cvec = self.template_event_dict['network'][column]
+        tvec = self.template_event_dict['network'][tcolumn]
+        if window_size == 0:
+            indices = numpy.arange(len(tvec))
+        else:
+            indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+        for key in self.template_event_dict.keys():
+            self.template_event_dict[key] = numpy.take(
+                self.template_event_dict[key], indices)
+
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """
         # initialize with zeros - since vectors can be None, look for the
