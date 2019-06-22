@@ -12,6 +12,7 @@ from pycbc.events import indices_within_segments
 from pycbc.types import MultiDetOptionAction
 import pycbc.version
 
+
 # dummy class needed for loading LIGOLW files
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -58,9 +59,12 @@ parser.add_argument('--veto-file')
 parser.add_argument('--segment-name', default=None,
                     help='Name of segment list to use for vetoes. Optional')
 parser.add_argument('--injection-window', type=float, required=True)
+parser.add_argument('--min-required-ifos', type=int, default=2,
+                    help='Minimum number of IFOs required to be observing and'
+                    ' not vetoed for an injection to be counted. Default 2')
 parser.add_argument('--optimal-snr-column', nargs='+',
                     action=MultiDetOptionAction, metavar='DETECTOR:COLUMN',
-                    help='Names of the sim_inspiral columns containing the' \
+                    help='Names of the sim_inspiral columns containing the'
                     ' optimal SNRs.')
 parser.add_argument('--redshift-column', default=None,
                     help='Name of sim_inspiral column containing redshift. '
@@ -74,6 +78,7 @@ if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 fo = h5py.File(args.output_file, 'w')
+
 injection_index = 0
 for trigger_file, injection_file in zip(args.trigger_files,
                                         args.injection_files):
@@ -86,9 +91,16 @@ for trigger_file, injection_file in zip(args.trigger_files,
         ifo_list = ['H1', 'L1']
     else:
         multi_ifo_style = True
-        # Get list of groups which contain subgroup 'time' - these will be the IFOs
-        ifo_list = [key for key in f['foreground'] if 'time' in f['foreground/%s/' % key]]
+        # Get list of groups which contain subgroup 'time'
+        # - these will be the IFOs
+        ifo_list = [key for key in f['foreground']
+                    if 'time' in f['foreground/%s/' % key]]
         assert len(ifo_list) > 1
+    # Check required ifos option
+    if len(ifo_list) < args.min_required_ifos:
+        raise RuntimeError('min-required-ifos (%s) must be <= number of ifos'
+                           ' being searched (%s)' %
+                           (args.min_required_ifos, len(ifo_list)))
     fo.attrs['ifos'] = ' '.join(sorted(ifo_list))
 
     template_id = f['foreground/template_id'][:]
@@ -118,7 +130,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
             else:
                 starts = f['/segments/%s/start' % key][:]
                 ends = f['/segments/%s/end' % key][:]
-                any_seg += events.start_end_to_segments(starts,ends)
+                any_seg += events.start_end_to_segments(starts, ends)
         ana_start, ana_end = events.segments_to_start_end(any_seg)
     else:
         # Using the old 2-ifo organisation
@@ -153,8 +165,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  % (len(found), len(missed), len(ambiguous)))
 
     if len(ambiguous) > 0:
-        logging.warn('More than one coinc trigger found associated to '
-                     'injection')
+        logging.warn('More than one coinc trigger found associated '
+                     'with injection')
         am = numpy.arange(0, len(inj_time), 1)[left[ambiguous]]
         bm = numpy.arange(0, len(inj_time), 1)[right[ambiguous]]
 
@@ -166,22 +178,34 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  (len(found_within_time), len(missed_within_time)))
 
     logging.info('Removing injections in vetoed time')
+
+    # Put individual detector vetoes into list of all vetoed indices, if an
+    # injection is vetoed in N ifos then its index will appear N times
     vetoid = numpy.array([])
     for ifo in ifo_list:
         vi, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
                                         segment_name=args.segment_name)
         vetoid = numpy.append(vetoid, vi)
         del vi
+
+    # Find out which of these indices are unique, and how many times each
+    # vetoed index occurs - this is how many detectors it is vetoed in
+    vetoid_unique, count_vetoid = numpy.unique(vetoid, return_counts=True)
+
+    # remove injections where the number of unvetoed ifos is less than the
+    # minimum specified by the user
+    vetoed_all = vetoid_unique[(len(ifo_list) - count_vetoid)
+                               < args.min_required_ifos]
     found_after_vetoes = numpy.array([i for i in found_within_time
-                                      if i not in vetoid])
+                                      if i not in vetoed_all])
     missed_after_vetoes = numpy.array([i for i in missed_within_time
-                                       if i not in vetoid])
+                                       if i not in vetoed_all])
+
     logging.info('Found: %s, Missed: %s' %
                  (len(found_after_vetoes), len(missed_after_vetoes)))
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
-
     logging.info('Saving injection information')
     columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
                'spin1z', 'spin2x', 'spin2y', 'spin2z',
