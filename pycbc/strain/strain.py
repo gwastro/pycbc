@@ -1401,10 +1401,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         """ Recalculate the psd
         """
 
-        seg_len = self.sample_rate * self.psd_segment_length
+        seg_len = int(self.sample_rate * self.psd_segment_length)
         e = len(self.strain)
-        s = e - ((self.psd_samples + 1) * self.psd_segment_length / 2) * self.sample_rate
-        psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, seg_stride=seg_len / 2)
+        s = e - (self.psd_samples + 1) * seg_len // 2
+        psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, seg_stride=seg_len//2)
 
         psd.dist = spa_distance(psd, 1.4, 1.4, self.low_frequency_cutoff) * pycbc.DYN_RANGE_FAC
 
