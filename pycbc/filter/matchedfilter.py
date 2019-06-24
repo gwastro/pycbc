@@ -1544,7 +1544,7 @@ class LiveBatchMatchedFilter(object):
             self.cout_mem[i] = zeros(size, dtype=numpy.complex64)
             self.ifts[i] = IFFT(self.cout_mem[i], self.out_mem[i],
                                 nbatch=count,
-                                size=len(self.cout_mem[i]) / count)
+                                size=len(self.cout_mem[i]) // count)
 
         # Split the templates into their processing groups
         for dur, count in mem_ids:
