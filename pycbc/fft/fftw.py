@@ -186,7 +186,7 @@ def import_single_wisdom_from_filename(filename):
         set_threads_backend()
     f = float_lib.fftwf_import_wisdom_from_filename
     f.argtypes = [ctypes.c_char_p]
-    retval = f(filename)
+    retval = f(filename.encode('ascii'))
     if retval == 0:
         raise RuntimeError("Could not import wisdom from file {0}".format(filename))
 
@@ -195,7 +195,7 @@ def import_double_wisdom_from_filename(filename):
         set_threads_backend()
     f = double_lib.fftw_import_wisdom_from_filename
     f.argtypes = [ctypes.c_char_p]
-    retval = f(filename)
+    retval = f(filename.encode('ascii'))
     if retval == 0:
         raise RuntimeError("Could not import wisdom from file {0}".format(filename))
 
@@ -204,7 +204,7 @@ def export_single_wisdom_to_filename(filename):
         set_threads_backend()
     f = float_lib.fftwf_export_wisdom_to_filename
     f.argtypes = [ctypes.c_char_p]
-    retval = f(filename)
+    retval = f(filename.encode('ascii'))
     if retval == 0:
         raise RuntimeError("Could not export wisdom to file {0}".format(filename))
 
@@ -213,7 +213,7 @@ def export_double_wisdom_to_filename(filename):
         set_threads_backend()
     f = double_lib.fftw_export_wisdom_to_filename
     f.argtypes = [ctypes.c_char_p]
-    retval = f(filename)
+    retval = f(filename.encode('ascii'))
     if retval == 0:
         raise RuntimeError("Could not export wisdom to file {0}".format(filename))
 
