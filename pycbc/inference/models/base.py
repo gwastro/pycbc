@@ -415,6 +415,8 @@ class BaseModel(object):
         If any sampling transforms are specified, they are applied to the
         params before being stored.
         """
+        # add the static params
+        params.update(self.static_params)
         self._current_params = self._transform_params(**params)
         self._current_stats = ModelStats()
 
