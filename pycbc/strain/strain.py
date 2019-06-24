@@ -1354,7 +1354,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.highpass_samples =  int(highpass_samples / 2)
         resample_corruption = 10 # If using the ldas method
         self.factor = int(1.0 / self.raw_buffer.delta_t / self.sample_rate)
-        self.corruption = self.highpass_samples / self.factor + resample_corruption
+        self.corruption = self.highpass_samples // self.factor + resample_corruption
 
         self.psd_corruption =  self.psd_inverse_length * self.sample_rate
         self.total_corruption = self.corruption + self.psd_corruption
@@ -1365,7 +1365,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if self.trim_padding > self.total_corruption:
             self.trim_padding = self.total_corruption
 
-        self.psd_duration = (psd_samples - 1) / 2 * psd_segment_length
+        self.psd_duration = (psd_samples - 1) // 2 * psd_segment_length
 
         self.reduced_pad = int(self.total_corruption - self.trim_padding)
         self.segments = {}
