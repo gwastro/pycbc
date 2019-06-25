@@ -206,7 +206,7 @@ def insert_psd_option_group(parser, output=True, include_data_options=True):
     # Options for PSD variation
     psd_options.add_argument("--psdvar-segment", type=float,
                              metavar="SECONDS", help="Length of segment "
-                             "when calculating the PSD variability.")
+                             "for mean square calculation of PSD variation.")
     psd_options.add_argument("--psdvar-short-segment", type=float,
                              metavar="SECONDS", help="Length of short segment "
                              "for outliers removal in PSD variability "

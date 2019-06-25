@@ -171,9 +171,13 @@ def mean_square(data, delta_t, short_stride, stride):
     """ Calculate mean square of given time series once per stride
 
     First of all this function calculate the mean square of given time
-    series once per short_stride. This is used to remove outliers due
-    to short glitches. Then, every seconds it computes the mean square
-    of the smoothed time series, within the stride.
+    series once per short_stride. This is used to find and remove
+    outliers due to short glitches. Here an outlier is defined as any
+    element which is grater than two times the average of its closest
+    neighbours. Every outlier is substituted with the average of the
+    corrisponding adjacent elements.
+    Then, every second the function compute the mean square of the
+    smoothed time series, within the stride.
 
     Parameters
     ----------
@@ -193,16 +197,17 @@ def mean_square(data, delta_t, short_stride, stride):
 
     srate = int(data.sample_rate)
 
-    # Calculate mean square of data once per short stride and remove
-    # the outliers
+    # Calculate mean square of data once per short stride and replace
+    # outliers
     data = numpy.array(data)
     short_ms = numpy.mean(data.reshape(-1, int(srate * short_stride)) ** 2,
                           axis=1)
+    # Define an array of averages that is used to substitute outliers
     ave = 0.5 * (short_ms[2:] + short_ms[:-2])
-    outliers = short_ms[1:-1] > (2 * ave)
+    outliers = short_ms[1:-1] > (2. * ave)
     short_ms[1:-1][outliers] = ave[outliers]
 
-    # Calculate mean square of data every step with a window equal to
+    # Calculate mean square of data every step within a window equal to
     # stride seconds
     m_s = []
     inv_time = int(1. / short_stride)
@@ -317,7 +322,7 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
                            avg_method=psd_avg_method)
 
         # Make the weighting filter - bandpass, which weight by f^-7/6,
-        # and withen. The normalization is chosen so that the variance
+        # and whiten. The normalization is chosen so that the variance
         # will be one if this filter is applied to white noise which
         # already has a variance of one.
         freqs = FrequencySeries(plong.sample_frequencies,
