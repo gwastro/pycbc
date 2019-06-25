@@ -237,7 +237,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
             if key == 'foreground':
                 continue
             if key not in fo:
-                 fo.create_group(key)
+                fo.create_group(key)
             fo[key].attrs['pivot'] = f[key].attrs['pivot']
             fo[key].attrs['fixed'] = f[key].attrs['fixed']
             fo[key].attrs['foreground_time_exc'] = f[key].attrs['foreground_time_exc']
