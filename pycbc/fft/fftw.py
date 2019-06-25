@@ -181,41 +181,32 @@ def get_flag(mlvl,aligned):
 
 # Add the ability to read/store wisdom to filenames
 
-def import_single_wisdom_from_filename(filename):
+def wisdom_io(filename, precision, action):
+    """Import or export an FFTW plan for single or double precision.
+    """
     if not _fftw_threaded_set:
         set_threads_backend()
-    f = float_lib.fftwf_import_wisdom_from_filename
+    func_map = {('float', 'import'): float_lib.fftwf_import_wisdom_from_filename,
+                ('float', 'export'): float_lib.fftwf_export_wisdom_to_filename,
+                ('double', 'import'): double_lib.fftw_import_wisdom_from_filename,
+                ('double', 'export'): double_lib.fftw_export_wisdom_to_filename}
+    f = func_map[(precision, action)]
     f.argtypes = [ctypes.c_char_p]
-    retval = f(filename.encode('ascii'))
+    retval = f(filename.encode())
     if retval == 0:
-        raise RuntimeError("Could not import wisdom from file {0}".format(filename))
+        raise RuntimeError("Could not {0} wisdom from file {1}".format(action, filename))
+
+def import_single_wisdom_from_filename(filename):
+    wisdom_io(filename, 'float', 'import')
 
 def import_double_wisdom_from_filename(filename):
-    if not _fftw_threaded_set:
-        set_threads_backend()
-    f = double_lib.fftw_import_wisdom_from_filename
-    f.argtypes = [ctypes.c_char_p]
-    retval = f(filename.encode('ascii'))
-    if retval == 0:
-        raise RuntimeError("Could not import wisdom from file {0}".format(filename))
+    wisdom_io(filename, 'double', 'import')
 
 def export_single_wisdom_to_filename(filename):
-    if not _fftw_threaded_set:
-        set_threads_backend()
-    f = float_lib.fftwf_export_wisdom_to_filename
-    f.argtypes = [ctypes.c_char_p]
-    retval = f(filename.encode('ascii'))
-    if retval == 0:
-        raise RuntimeError("Could not export wisdom to file {0}".format(filename))
+    wisdom_io(filename, 'float', 'export')
 
 def export_double_wisdom_to_filename(filename):
-    if not _fftw_threaded_set:
-        set_threads_backend()
-    f = double_lib.fftw_export_wisdom_to_filename
-    f.argtypes = [ctypes.c_char_p]
-    retval = f(filename.encode('ascii'))
-    if retval == 0:
-        raise RuntimeError("Could not export wisdom to file {0}".format(filename))
+    wisdom_io(filename, 'double', 'export')
 
 def set_planning_limit(time):
     if not _fftw_threaded_set:

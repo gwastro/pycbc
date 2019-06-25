@@ -261,9 +261,9 @@ class LiveEventManager(object):
             f.attrs['num_live_detectors'] = len(self.live_detectors)
 
             def h5py_unicode_workaround(stuff):
-                # FIXME workaround for the fact that h5py cannot handle Unicode
+                # workaround for the fact that h5py cannot handle Unicode
                 # numpy arrays that show up with Python 3
-                if hasattr(stuff, 'dtype') and 'U' in stuff.dtype.str:
+                if hasattr(stuff, 'dtype') and stuff.dtype.kind == 'U':
                     return [s.encode('ascii') for s in stuff]
                 return stuff
 
