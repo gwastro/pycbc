@@ -688,7 +688,7 @@ def create_data_parser():
                              "the (anlaysis|psd)-(start|end)-time options are "
                              "measured. The integer seconds will be used. "
                              "Default is 0; i.e., if not provided, "
-                             "the analysis/psd times should be in GPS "
+                             "the analysis and psd times should be in GPS "
                              "seconds.")
     parser.add_argument("--analysis-start-time", type=int, required=True,
                         nargs='+', action=MultiDetOptionAction,
