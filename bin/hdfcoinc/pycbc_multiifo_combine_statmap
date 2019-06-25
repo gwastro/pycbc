@@ -81,9 +81,12 @@ if any_fg_vetoes:
     f['segments/foreground_veto/start'] = foreground_vetos_start
     f['segments/foreground_veto/end'] = foreground_vetos_end
 
-# output to file
+# Output to file
 f.attrs['foreground_time'] = abs(foreground_segs)
-if any_fg_vetoes: f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
+if any_fg_vetoes:
+    f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
+else: # copy over number without fg vetoes for injection runs
+    f.attrs['foreground_time_exc'] = f.attrs['foreground_time']
 
 # obtain list of all ifos involved in the coinc_statmap files
 all_ifos = numpy.unique([ifo for fi in files for ifo in \
@@ -116,17 +119,17 @@ for ifo in all_ifos:
 for f_in in files:
     for ifo in all_ifos:
         if ifo in f_in['foreground']:
-            all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo], \
-                                   f_in['foreground/{}/time'.format(ifo)][:]])
-            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo],
-                             f_in['foreground/{}/trigger_id'.format(ifo)][:]])
+            all_trig_times[ifo] = numpy.concatenate( [all_trig_times[ifo],
+                                  f_in['foreground/{}/time'.format(ifo)][:]] )
+            all_trig_ids[ifo] = numpy.concatenate( [all_trig_ids[ifo],
+                            f_in['foreground/{}/trigger_id'.format(ifo)][:]] )
         else:
-            all_trig_times[ifo] = numpy.concatenate([all_trig_times[ifo],
-                                 -1*numpy.ones_like(f_in['foreground/fap'][:],
-                                                    dtype=numpy.uint32)])
-            all_trig_ids[ifo] = numpy.concatenate([all_trig_ids[ifo],
-                                 -1*numpy.ones_like(f_in['foreground/fap'][:],
-                                                    dtype=numpy.uint32)])
+            all_trig_times[ifo] = numpy.concatenate( [all_trig_times[ifo],
+                               -1 * numpy.ones_like(f_in['foreground/fap'][:],
+                                                    dtype=numpy.uint32)] )
+            all_trig_ids[ifo] = numpy.concatenate( [all_trig_ids[ifo],
+                               -1 * numpy.ones_like(f_in['foreground/fap'][:],
+                                                    dtype=numpy.uint32)] )
     f_in.close()
 
 logging.info('Clustering triggers for loudest ifar value')
