@@ -1091,7 +1091,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         opts = []
         for opt in self.options(section):
             opts.append('--{}'.format(opt))
-            val = cp.get(section, opt)
+            val = self.get(section, opt)
             if val != '':
                 opts.append(val)
         return ' '.join(opts)
