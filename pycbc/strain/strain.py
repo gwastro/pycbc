@@ -1361,7 +1361,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.highpass_samples =  int(highpass_samples / 2)
         resample_corruption = 10 # If using the ldas method
         self.factor = int(1.0 / self.raw_buffer.delta_t / self.sample_rate)
-        self.corruption = self.highpass_samples / self.factor + resample_corruption
+        self.corruption = self.highpass_samples // self.factor + resample_corruption
 
         self.psd_corruption =  self.psd_inverse_length * self.sample_rate
         self.total_corruption = self.corruption + self.psd_corruption
@@ -1372,7 +1372,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         if self.trim_padding > self.total_corruption:
             self.trim_padding = self.total_corruption
 
-        self.psd_duration = (psd_samples - 1) / 2 * psd_segment_length
+        self.psd_duration = (psd_samples - 1) // 2 * psd_segment_length
 
         self.reduced_pad = int(self.total_corruption - self.trim_padding)
         self.segments = {}
@@ -1408,10 +1408,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         """ Recalculate the psd
         """
 
-        seg_len = self.sample_rate * self.psd_segment_length
+        seg_len = int(self.sample_rate * self.psd_segment_length)
         e = len(self.strain)
-        s = e - ((self.psd_samples + 1) * self.psd_segment_length / 2) * self.sample_rate
-        psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, seg_stride=seg_len / 2)
+        s = e - (self.psd_samples + 1) * seg_len // 2
+        psd = pycbc.psd.welch(self.strain[s:e], seg_len=seg_len, seg_stride=seg_len//2)
 
         psd.dist = spa_distance(psd, 1.4, 1.4, self.low_frequency_cutoff) * pycbc.DYN_RANGE_FAC
 
