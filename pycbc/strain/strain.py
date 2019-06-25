@@ -454,6 +454,9 @@ def insert_strain_option_group(parser, gps_times=True):
     -----------
     parser : object
         OptionParser instance.
+    gps_times : bool, optional
+        Include ``--gps-start-time`` and ``--gps-end-time`` options. Default
+        is True.
     """
 
     data_reading_group = parser.add_argument_group("Options for obtaining h(t)",
@@ -594,7 +597,7 @@ def insert_strain_option_group(parser, gps_times=True):
 
 # FIXME: This repeats almost all of the options above. Any nice way of reducing
 #        this?
-def insert_strain_option_group_multi_ifo(parser):
+def insert_strain_option_group_multi_ifo(parser, gps_times=True):
     """
     Adds the options used to call the pycbc.strain.from_cli function to an
     optparser as an OptionGroup. This should be used if you
@@ -604,6 +607,9 @@ def insert_strain_option_group_multi_ifo(parser):
     -----------
     parser : object
         OptionParser instance.
+    gps_times : bool, optional
+        Include ``--gps-start-time`` and ``--gps-end-time`` options. Default
+        is True.
     """
 
     data_reading_group_multi = parser.add_argument_group("Options for obtaining"
@@ -615,14 +621,15 @@ def insert_strain_option_group_multi_ifo(parser):
                   "supports reading from multiple ifos simultaneously.")
 
     # Required options
-    data_reading_group_multi.add_argument("--gps-start-time", nargs='+',
-                            action=MultiDetOptionAction, metavar='IFO:TIME',
-                            help="The gps start time of the data "
-                                 "(integer seconds)", type=int)
-    data_reading_group_multi.add_argument("--gps-end-time", nargs='+', type=int,
-                            action=MultiDetOptionAction, metavar='IFO:TIME',
-                            help="The gps end time of the data "
-                                 "(integer seconds)")
+    if gps_times:
+        data_reading_group_multi.add_argument(
+            "--gps-start-time", nargs='+', action=MultiDetOptionAction,
+            metavar='IFO:TIME', type=int,
+            help="The gps start time of the data (integer seconds)")
+        data_reading_group_multi.add_argument(
+            "--gps-end-time", nargs='+', action=MultiDetOptionAction,
+            metavar='IFO:TIME', type=int,
+            help="The gps end time of the data (integer seconds)")
     data_reading_group_multi.add_argument("--strain-high-pass", nargs='+',
                             action=MultiDetOptionAction,
                             type=float, metavar='IFO:FREQUENCY',
