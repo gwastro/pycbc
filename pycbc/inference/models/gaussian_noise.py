@@ -236,7 +236,8 @@ class GaussianNoise(BaseDataModel):
         # of the waveform transforms, so we'll add them to the list of
         # parameters
         if self.waveform_transforms is not None:
-            wfoutputs = set.union(t.outputs for t in self.waveform_transforms)
+            wfoutputs = set.union(*[t.outputs
+                                    for t in self.waveform_transforms])
         else:
             wfoutputs = set()
         params = list(self.variable_params) + list(wfoutputs)
