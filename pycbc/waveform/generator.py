@@ -70,9 +70,7 @@ class BaseGenerator(object):
     generator : function
         The function that is called for waveform generation.
     variable_args : tuple
-        The list of names of variable arguments. Values passed to the
-        `generate_from_args` function must be in the same order as the
-        arguments in this list.
+        The list of names of variable arguments.
     frozen_params : dict
         A dictionary of the frozen keyword arguments that are always passed
         to the waveform generator function.
@@ -100,14 +98,6 @@ class BaseGenerator(object):
     def static_args(self):
         """Returns a dictionary of the static arguments."""
         return self.frozen_params
-
-    def generate_from_args(self, *args):
-        """Generates a waveform. The list of arguments must be in the same
-        order as self's variable_args attribute.
-        """
-        if len(args) != len(self.variable_args):
-            raise ValueError("variable argument length mismatch")
-        return self.generate(**dict(zip(self.variable_args, args)))
 
     def generate(self, **kwargs):
         """Generates a waveform from the keyword args. The current params
@@ -534,14 +524,6 @@ class FDomainDetFrameGenerator(object):
     @property
     def epoch(self):
         return _lal.LIGOTimeGPS(self._epoch)
-
-    def generate_from_args(self, *args):
-        """Generates a waveform, applies a time shift and the detector response
-        function from the given args.
-
-        The args are assumed to be in the same order as the variable args.
-        """
-        return self.generate(**dict(zip(self.variable_args, args)))
 
     def generate(self, **kwargs):
         """Generates a waveform, applies a time shift and the detector response
