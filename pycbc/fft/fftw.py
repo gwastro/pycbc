@@ -186,15 +186,16 @@ def wisdom_io(filename, precision, action):
     """
     if not _fftw_threaded_set:
         set_threads_backend()
-    func_map = {('float', 'import'): float_lib.fftwf_import_wisdom_from_filename,
-                ('float', 'export'): float_lib.fftwf_export_wisdom_to_filename,
-                ('double', 'import'): double_lib.fftw_import_wisdom_from_filename,
-                ('double', 'export'): double_lib.fftw_export_wisdom_to_filename}
-    f = func_map[(precision, action)]
+    fmap = {('float', 'import'): float_lib.fftwf_import_wisdom_from_filename,
+            ('float', 'export'): float_lib.fftwf_export_wisdom_to_filename,
+            ('double', 'import'): double_lib.fftw_import_wisdom_from_filename,
+            ('double', 'export'): double_lib.fftw_export_wisdom_to_filename}
+    f = fmap[(precision, action)]
     f.argtypes = [ctypes.c_char_p]
     retval = f(filename.encode())
     if retval == 0:
-        raise RuntimeError("Could not {0} wisdom from file {1}".format(action, filename))
+        raise RuntimeError(('Could not {0} wisdom '
+                            'from file {1}').format(action, filename))
 
 def import_single_wisdom_from_filename(filename):
     wisdom_io(filename, 'float', 'import')
