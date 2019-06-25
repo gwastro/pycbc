@@ -780,18 +780,20 @@ def data_opts_from_config(cp, section, filter_flow):
     opts.gps_end_time = gps_end
     # check for the frequencies
     low_freq_cutoff = filter_flow.copy()
-    if opts.low_frequency_cutoff is None:
-        opts.low_frequency_cutoff = low_freq_cutoff
-    else:
+    if opts.low_frequency_cutoff:
         # add in any missing detectors
-        low_freq_cutoff.update(opts.low_frequency_cutoff)
+        low_freq_cutoff.update({det: opts.low_frequency_cutoff[det]
+                                for det in opts.instruments
+                                if opts.low_frequency_cutoff[det] is not None})
         # make sure the data conditioning low frequency cutoff is < than
         # the matched filter cutoff
         if any(low_freq_cutoff[det] > filter_flow[det] for det in filter_flow):
             raise ValueError("data conditioning low frequency cutoff must "
                              "be less than the filter low frequency "
                              "cutoff")
-        opts.low_frequency_cutoff = low_freq_cutoff
+    # have to clear to remove the random string thing in DictWithDefaultReturn
+    opts.low_frequency_cutoff.clear()
+    opts.low_frequency_cutoff.update(low_freq_cutoff)
     # verify options are sane
     verify_psd_options_multi_ifo(opts, parser, opts.instruments)
     verify_strain_options_multi_ifo(opts, parser, opts.instruments)
