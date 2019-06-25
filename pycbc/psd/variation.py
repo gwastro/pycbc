@@ -173,9 +173,9 @@ def mean_square(data, delta_t, short_stride, stride):
     First of all this function calculate the mean square of given time
     series once per short_stride. This is used to find and remove
     outliers due to short glitches. Here an outlier is defined as any
-    element which is grater than two times the average of its closest
+    element which is greater than two times the average of its closest
     neighbours. Every outlier is substituted with the average of the
-    corrisponding adjacent elements.
+    corresponding adjacent elements.
     Then, every second the function compute the mean square of the
     smoothed time series, within the stride.
 
