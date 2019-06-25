@@ -232,8 +232,16 @@ class GaussianNoise(BaseDataModel):
                            "detector in the `[model]` section, where IFO is "
                            "the name of the detector.")
         # create the waveform generator
+        # the waveform generator will get the variable_params + the output
+        # of the waveform transforms, so we'll add them to the list of
+        # parameters
+        if self.waveform_transforms is not None:
+            wfoutputs = set.union(t.outputs for t in self.waveform_transforms)
+        else:
+            wfoutputs = set()
+        params = list(self.variable_params) + list(wfoutputs)
         self._waveform_generator = create_waveform_generator(
-            self.variable_params, self.data, recalibration=self.recalibration,
+            params, self.data, recalibration=self.recalibration,
             gates=self.gates, **self.static_params)
         # check that the data sets all have the same lengths
         dlens = numpy.array([len(d) for d in self.data.values()])
