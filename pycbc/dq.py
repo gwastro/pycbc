@@ -207,11 +207,15 @@ def query_flag(ifo, segment_name, start_time, end_time,
                                              flag['end']])])
                 flag_segments += (partial.coalesce() & send)
 
-        else:  # Standard case just query directly.
+        else:  # Standard case just query directly
             try:
                 segs = query(':'.join([ifo, segment_name]),
                              int(start_time), int(end_time),
                              host=server)['active']
+                # dqsegdb output is not guaranteed to lie entirely within start
+                # and end times
+                segs = segs & segmentlist( [segment(int(start_time),
+                                                    int(end_time))] )
                 for rseg in segs:
                     flag_segments.append(segment(rseg[0], rseg[1]))
             except Exception as e:
