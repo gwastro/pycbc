@@ -169,8 +169,8 @@ def query_flag(ifo, segment_name, start_time, end_time,
                 print(e)
                 raise ValueError(msg)
             else:
-                print("Tried and fail to find {} in GWOSC, trying dqsegdb",
-                      segment_name)
+                print("Tried and fail to find {} in GWOSC, trying dqsegdb".format(
+                      segment_name))
 
             return query_flag(ifo, segment_name, start_time, end_time,
                               source='dqsegdb', server=server,
