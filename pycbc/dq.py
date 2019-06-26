@@ -22,7 +22,7 @@
 # =============================================================================
 #
 """ Utilities to query archival instrument status information of
-gravitational-wave instruments from public sources as well as dqsegdb.
+gravitational-wave detectors from public sources and/or dqsegdb.
 """
 
 import json
@@ -30,6 +30,7 @@ import numpy
 from astropy.utils.data import download_file
 from ligo.segments import segmentlist, segment
 from pycbc.frame.losc import get_run
+
 
 def parse_veto_definer(veto_def_filename, ifos):
     """ Parse a veto definer file from the filename and return a dictionary
@@ -40,8 +41,8 @@ def parse_veto_definer(veto_def_filename, ifos):
     veto_def_filename: str
         The path to the veto definer file
     ifos: str
-        The list of ifos for which we require information from the vet-definer
-        file
+        The list of ifos for which we require information from the veto
+        definer file
 
     Returns
     --------
@@ -140,7 +141,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
         # Special cases as the LOSC convention is backwards from normal
         # LIGO / Virgo operation!!!!
         if (('_HW_INJ' in segment_name and 'NO' not in segment_name) or
-           'VETO' in segment_name):
+            'VETO' in segment_name):
             data = query_flag(ifo, 'DATA', start_time, end_time)
 
             if '_HW_INJ' in segment_name:
@@ -163,12 +164,12 @@ def query_flag(ifo, segment_name, start_time, end_time,
                 flag_segments = data['segments']
 
         except Exception as e:
-            msg = "Unable to find segments in GWOSC, check flag name or times"
-            print(e)
             if source != 'any':
+                msg = "Unable to find segments in GWOSC, check flag name or times"
+                print(e)
                 raise ValueError(msg)
             else:
-                print("Tried and failed GWOSC {}, trying dqsegdb",
+                print("Tried and fail to find {} in GWOSC, trying dqsegdb",
                       segment_name)
 
             return query_flag(ifo, segment_name, start_time, end_time,
@@ -184,12 +185,12 @@ def query_flag(ifo, segment_name, start_time, end_time,
                              ":'pip install dqsegdb2'")
 
         # The veto definer will allow the use of MACRO names
-        # These directly correspond the name defined in the veto definer file.
+        # These directly correspond to the name defined in the veto definer file
         if veto_definer is not None:
             veto_def = parse_veto_definer(veto_definer, [ifo])
 
         # We treat the veto definer name as if it were its own flag and
-        # a process the flags in the veto definer
+        # process the flags in the veto definer
         if veto_definer is not None and segment_name in veto_def[ifo]:
             for flag in veto_def[ifo][segment_name]:
                 partial = segmentlist([])
@@ -203,7 +204,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
                     partial.append(segment(seg_start, seg_end))
 
                 # Limit to the veto definer stated valid region of this flag
-                send = segmentlist( [segment(flag['start'], flag['end'])] )
+                send = segmentlist([segment(flag['start'], flag['end'])])
                 flag_segments += (partial.coalesce() & send)
 
         else:  # Standard case just query directly
@@ -211,16 +212,17 @@ def query_flag(ifo, segment_name, start_time, end_time,
                 segs = query(':'.join([ifo, segment_name]),
                              int(start_time), int(end_time),
                              host=server)['active']
-                # dqsegdb output is not guaranteed to lie entirely within start
-                # and end times
-                segs = segs.coalesce() & segmentlist( [segment(int(start_time),
-                                                               int(end_time))] )
                 for rseg in segs:
                     flag_segments.append(segment(rseg[0], rseg[1]))
             except Exception as e:
                 print("Could not query flag, check name "
-                      " (%s) or times" % segment_name)
+                      "(%s) or times" % segment_name)
                 raise e
+
+        # dqsegdb output is not guaranteed to lie entirely within start
+        # and end times, hence restrict to this range
+        flag_segments = flag_segments.coalesce() & \
+                         segmentlist([segment(int(start_time), int(end_time))])  
 
     else:
         raise ValueError("Source must be dqsegdb or GWOSC."
@@ -258,14 +260,14 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
         The path to a veto definer to define groups of flags which
         themselves define a set of segments.
     bounds: dict, Optional
-        Dict containing start end tuples keyed by the flag name which
-    indicated places which should have a distinct time period to be active.
+        Dict containing start-end tuples keyed by the flag name which
+        indicate places which should have a distinct time period to be active.
     padding: dict, Optional
         Dict keyed by the flag name. Each element is a tuple
     (start_pad, end_pad) which indicates how to change the segment boundaries.
     override_ifos: dict, Optional
         A dict keyed by flag_name to override the ifo option on a per flag
-    basis.
+        basis.
 
     Returns
     ---------
@@ -295,9 +297,9 @@ def query_cumulative_flags(ifo, segment_names, start_time, end_time,
             valid = segmentlist([segment([s, e])])
             segs = (segs & valid).coalesce()
 
-
         total_segs = (total_segs + segs).coalesce()
     return total_segs
+
 
 def parse_flag_str(flag_str):
     """ Parse a dq flag query string
@@ -305,22 +307,22 @@ def parse_flag_str(flag_str):
     Parameters
     ----------
     flag_str: str
-        String needing to be parsed
+        String to be parsed
 
     Returns
     -------
     flags: list of strings
         List of reduced name strings which can be passed to lower level
-    query commands
+        query commands
     signs: dict
-        Dict of bools indicated if this should add positively to the segmentlist
+        Dict of bools indicating if the flag should add positively to the
+        segmentlist
     ifos: dict
         Ifo specified for the given flag
     bounds: dict
         The boundary of a given flag
     padding: dict
-        Any padding that should be applied to the segments in for a given
-        flag.
+        Any padding that should be applied to the segments for a given flag
     """
     flags = flag_str.replace(' ', '').strip().split(',')
 
@@ -373,6 +375,7 @@ def parse_flag_str(flag_str):
 
     return bflags, signs, ifos, bounds, padding
 
+
 def query_str(ifo, flag_str, start_time, end_time, server="segments.ligo.org",
               veto_definer=None):
     """ Query for flags based on a special str syntax
@@ -380,17 +383,17 @@ def query_str(ifo, flag_str, start_time, end_time, server="segments.ligo.org",
     Parameters
     ----------
     ifo: str
-        The ifo to be mainly quering for. (may be overriden in syntax)
+        The ifo to query for (may be overridden in syntax)
     flag_str: str
         Specification of how to do the query. Ex. +H1:DATA:1<-8,8>[0,100000000]
         would return H1 time for the DATA available flag with version 1. It
         would then apply an 8 second padding and only return times within
         the chosen range 0,1000000000.
     start_time: int
-        The start gps time. May be overriden for individual flags with the
+        The start gps time. May be overridden for individual flags with the
         flag str bounds syntax
     end_time: int
-        The end gps time. May be overriden for individual flags with the
+        The end gps time. May be overridden for individual flags with the
         flag str bounds syntax
 
     Returns
