@@ -193,7 +193,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
         if veto_definer is not None and segment_name in veto_def[ifo]:
             for flag in veto_def[ifo][segment_name]:
                 partial = segmentlist([])
-                segs = query(ifo+':'+flag['full_name'], int(start_time),
+                segs = query(ifo + ':' + flag['full_name'], int(start_time),
                              int(end_time), host=server)['active']
 
                 # Apply padding to each segment
@@ -203,8 +203,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
                     partial.append(segment(seg_start, seg_end))
 
                 # Limit to the veto definer stated valid region of this flag
-                send = segmentlist([segment([flag['start'],
-                                             flag['end']])])
+                send = segmentlist( [segment(flag['start'], flag['end'])] )
                 flag_segments += (partial.coalesce() & send)
 
         else:  # Standard case just query directly
@@ -214,8 +213,8 @@ def query_flag(ifo, segment_name, start_time, end_time,
                              host=server)['active']
                 # dqsegdb output is not guaranteed to lie entirely within start
                 # and end times
-                segs = segs & segmentlist( [segment(int(start_time),
-                                                    int(end_time))] )
+                segs = segs.coalesce() & segmentlist( [segment(int(start_time),
+                                                               int(end_time))] )
                 for rseg in segs:
                     flag_segments.append(segment(rseg[0], rseg[1]))
             except Exception as e:
