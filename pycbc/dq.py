@@ -141,7 +141,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
         # Special cases as the LOSC convention is backwards from normal
         # LIGO / Virgo operation!!!!
         if (('_HW_INJ' in segment_name and 'NO' not in segment_name) or
-            'VETO' in segment_name):
+                'VETO' in segment_name):
             data = query_flag(ifo, 'DATA', start_time, end_time)
 
             if '_HW_INJ' in segment_name:
@@ -165,12 +165,12 @@ def query_flag(ifo, segment_name, start_time, end_time,
 
         except Exception as e:
             if source != 'any':
-                msg = "Unable to find segments in GWOSC, check flag name or times"
                 print(e)
-                raise ValueError(msg)
+                raise ValueError("Unable to find {} segments in GWOSC, check "
+                                 "flag name or times".format(segment_name))
             else:
-                print("Tried and fail to find {} in GWOSC, trying dqsegdb".format(
-                      segment_name))
+                print("Tried and fail to find {} in GWOSC, trying dqsegdb".\
+                      format(segment_name))
 
             return query_flag(ifo, segment_name, start_time, end_time,
                               source='dqsegdb', server=server,
@@ -185,7 +185,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
                              ":'pip install dqsegdb2'")
 
         # The veto definer will allow the use of MACRO names
-        # These directly correspond to the name defined in the veto definer file
+        # These directly correspond to the name in the veto definer file
         if veto_definer is not None:
             veto_def = parse_veto_definer(veto_definer, [ifo])
 
@@ -222,7 +222,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
         # dqsegdb output is not guaranteed to lie entirely within start
         # and end times, hence restrict to this range
         flag_segments = flag_segments.coalesce() & \
-                         segmentlist([segment(int(start_time), int(end_time))])  
+                        segmentlist([segment(int(start_time), int(end_time))])
 
     else:
         raise ValueError("Source must be dqsegdb or GWOSC."
@@ -337,8 +337,8 @@ def parse_flag_str(flag_str):
         if not (flag[0] == '+' or flag[0] == '-'):
             err_msg = "DQ flags must begin with a '+' or a '-' character. "
             err_msg += "You provided {}.".format(flag)
-            err_msg += "See http://pycbc.org/pycbc/latest/html/workflow/segments.html "
-            err_msg += "for more information."
+            err_msg += "See http://pycbc.org/pycbc/latest/html/workflow/segments.html"
+            err_msg += " for more information."
             raise ValueError(err_msg)
         sign = flag[0] == '+'
         flag = flag[1:]
