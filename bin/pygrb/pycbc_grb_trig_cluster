@@ -168,8 +168,8 @@ clusters = []
 # -- cluster ------------------------------------
 
 with h5py.File(args.trig_file, "r") as h5f:
-    time = h5f["network"]["end_time_gc"][:]
-    snr = h5f["network"][args.rank_column][:]
+    time = h5f["network"]["end_time_gc"][()]
+    snr = h5f["network"][args.rank_column][()]
 
 # find loudest trigger in each bin
 for i in tqdm.tqdm(range(time.size), desc="Initialising bins",
