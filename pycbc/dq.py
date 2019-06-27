@@ -169,7 +169,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
                 raise ValueError("Unable to find {} segments in GWOSC, check "
                                  "flag name or times".format(segment_name))
             else:
-                print("Tried and fail to find {} in GWOSC, trying dqsegdb".\
+                print("Tried and failed to find {} in GWOSC, trying dqsegdb".
                       format(segment_name))
 
             return query_flag(ifo, segment_name, start_time, end_time,
@@ -222,7 +222,7 @@ def query_flag(ifo, segment_name, start_time, end_time,
         # dqsegdb output is not guaranteed to lie entirely within start
         # and end times, hence restrict to this range
         flag_segments = flag_segments.coalesce() & \
-                        segmentlist([segment(int(start_time), int(end_time))])
+            segmentlist([segment(int(start_time), int(end_time))])
 
     else:
         raise ValueError("Source must be dqsegdb or GWOSC."
