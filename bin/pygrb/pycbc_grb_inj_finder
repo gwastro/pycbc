@@ -45,6 +45,7 @@ from ligo.segments.utils import fromsegwizard
 
 from pycbc import __version__
 from pycbc.inject import InjectionSet
+from pycbc.io import FieldArray
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
@@ -229,6 +230,8 @@ missed = []
 found = []
 trigs = defaultdict(list)
 
+allinjections = None
+
 with tqdm.tqdm(args.inj_files, desc="Finding injections",
                disable=not args.verbose, unit="files",
                postfix=dict(found=0, missed=0, excluded=nexcluded),
@@ -242,12 +245,19 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         trigfiles = list(find_split_files(args.input_files, split))
 
         # read injections and filter by exclude segments
-        injections = InjectionSet(injf).table
-        injtime = numpy.array([inj.time_geocent for inj in injections])
+        tmpinj = InjectionSet(injf).table
+        injtime = numpy.array([inj.time_geocent for inj in tmpinj])
         keep = numpy.asarray([t not in exclude for t in injtime])
         nexcluded += (~keep).sum()
-        injections = list(compress(injections, keep))
+        injections = type(tmpinj)()
+        injections.extend(compress(tmpinj, keep))
         injtime = injtime[keep]
+
+        # record all injections
+        if allinjections is None:
+            allinjections = injections
+        else:
+            allinjections.extend(injections)
 
         # read triggers
         triggers = read_hdf5_triggers(trigfiles)
@@ -271,9 +281,9 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
         # get indices of injections and finding trigger
         for i, (l, r) in enumerate(zip(_left, _right)):
             if not r - l:
-                missed.append(int(injections[i].simulation_id))
+                missed.append(i)
             else:
-                found.append(int(injections[i].simulation_id))
+                found.append(i)
                 eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
                 for col in triggers:
                     trigs[col].append(triggers[col][i])
@@ -283,6 +293,14 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
             missed=len(missed),
             excluded=nexcluded,
         )
+
+# reformat injection table for writing
+dtypes = {key: "string" if val == "lstring" else val for
+          (key, val) in allinjections.validcolumns.items()}
+injarr = FieldArray.from_ligolw_table(
+    allinjections,
+    cast_to_dtypes={x[0]: x for x in dtypes.items()},
+)
 
 # prepare output hdf5 file
 ifotag, desc, segment = filename_metadata(args.inj_files[0])
@@ -296,17 +314,21 @@ outfilename = os.path.join(
         abs(segment),
     ),
 )
+
 with h5py.File(outfilename, "w") as h5out:
-    # write injection ids as datasets
+    # write injections from recarray
     for name, injlist in (("found", found), ("missed", missed)):
-        h5out.create_dataset(name, data=injlist)
+        grp = h5out.create_group(name)
+        injs = injarr[injlist]
+        for field in injs.fieldnames:
+            grp[field] = injs[field]
 
     # write triggers
     netg = h5out.create_group("network")
     for col in trigs:
         netg.create_dataset(
             col,
-            data=triggers[col],
+            data=trigs[col],
             compression="gzip",
             compression_opts=9,
         )
