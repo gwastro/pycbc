@@ -23,6 +23,8 @@ from __future__ import print_function
 
 import argparse
 import os
+import shutil
+import sys
 
 import tqdm
 
@@ -155,10 +157,20 @@ args = parser.parse_args()
 
 win = args.time_window
 
-# -- generate clustering bins -------------------
-
 ifotag, filetag, segment = filename_metadata(args.trig_file)
 start, end = segment
+outfile = os.path.join(
+    args.output_dir,
+    "{}-{}_CLUSTERED-{}-{}.h5".format(
+        ifotag,
+        filetag,
+        start,
+        end - start,
+    ),
+)
+
+# -- generate clustering bins -------------------
+
 nbins = int((end - start) // win + 1)
 bins = [[] for i in range(nbins)]
 loudsnr = numpy.zeros(nbins)
@@ -170,6 +182,14 @@ clusters = []
 with h5py.File(args.trig_file, "r") as h5f:
     time = h5f["network"]["end_time_gc"][()]
     snr = h5f["network"][args.rank_column][()]
+
+# empty file (no triggers), so just copy the file
+if not time.size:
+    shutil.copyfile(args.trig_file, outfile)
+    if args.verbose:
+        print("trigger file is empty")
+        print("copied input file to {}".format(outfile))
+    sys.exit(0)
 
 # find loudest trigger in each bin
 for i in tqdm.tqdm(range(time.size), desc="Initialising bins",
@@ -245,15 +265,9 @@ for i, bin_ in enumerate(bar):
 
     bar.update()
 
-outfile = "{}-{}_CLUSTERED-{}-{}.h5".format(
-    ifotag,
-    filetag,
-    start,
-    end - start,
-)
 slice_hdf5(
     args.trig_file,
-    os.path.join(args.output_dir, outfile),
+    outfile,
     numpy.asarray(clusters),
     verbose=args.verbose,
 )
