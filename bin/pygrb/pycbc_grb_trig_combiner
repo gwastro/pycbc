@@ -279,7 +279,7 @@ def bin_events(inputfile, bins, outdir, filetag,
                         )
                         bar.update()
                 for ifo in ifos:
-                    idx = ifo_index[ifo]
+                    idx = numpy.in1d(h5in[ifo]["event_id"], ifo_index[ifo])
                     for old in h5in[ifo].values():
                         if isinstance(old, h5py.Dataset):
                             h5out.create_dataset(
