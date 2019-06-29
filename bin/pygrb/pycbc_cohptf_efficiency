@@ -276,7 +276,7 @@ def main(segdir, outdir, trigFile, foundFile, missedFile,\
   # load triggers 
   #
 
-  # FIXME: This is nasty, we actually read the file twice, can we fix this?
+  # This is nasty, we actually read the file twice, can we fix this?
   xmldoc = utils.load_filename(trigFile,gz=trigFile.endswith("gz"), contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
   searchSumm = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
   ifos = sorted(map(str,searchSumm[0].get_ifos()))
