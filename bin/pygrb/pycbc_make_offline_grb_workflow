@@ -78,7 +78,7 @@ wflow.cp = _workflow.set_grb_start_end(wflow.cp, start, end)
 currDir = os.getcwd()
 segDir = os.path.join(currDir, "segments")
 sciSegs, segsFileList = _workflow.setup_segment_generation(wflow, segDir)
- 
+
 
 if wflow.cp.has_option("inspiral", "segment-start-pad"):
     pad_data = int(wflow.cp.get("inspiral", "pad-data"))
@@ -112,7 +112,7 @@ elif len(sciSegs.keys()) < 2 and not single_ifo:
     msg = "Science segments exist only for %s. " % tuple(sciSegs.keys())[0]
     msg += "If you wish to enable single IFO running add the option "
     msg += "'allow-single-ifo-search' to the [workflow] section of your "
-    msg += "configuration file." 
+    msg += "configuration file."
     logging.warning(msg)
     sys.exit()
 else:
@@ -247,7 +247,7 @@ if (os.path.basename(wflow.cp.get("executables", "inspiral")) == "pycbc_multi_in
     bank_veto_file = _workflow.get_coh_PTF_files(wflow.cp, ifos, runDir,
                                                  bank_veto=True)
     datafind_veto_files.extend(bank_veto_file)
-    
+
     if IPN:
         search_pts_file = _workflow.get_ipn_sky_files(wflow,
                 wflow.cp.get("workflow-inspiral", "ipn-search-points"),
@@ -411,7 +411,7 @@ if post_proc_method in ["COH_PTF_WORKFLOW", "COH_PTF_OFFLINE",
                         "COH_PTF_ONLINE"]:
     from pylal import pygrb_cohptf_pp
     # Add parsed config file so it can be linked from summary page
-    cp_file_name = workflow_name + ".ini" 
+    cp_file_name = workflow_name + ".ini"
     cp_file_url = "file://localhost%s/%s" % (runDir, cp_file_name)
     cp_file = _workflow.File(ifos, cp_file_name, sciSegs[ifo][0],
                              file_url=cp_file_url)
