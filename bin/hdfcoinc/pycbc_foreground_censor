@@ -24,13 +24,15 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-logging.info('start')
+logging.info('Start')
 
 f = h5py.File(args.foreground_triggers, 'r')
 
 start = f['segments/foreground_veto/start'][:]
 end = f['segments/foreground_veto/end'][:]
 vsegs = pycbc.events.start_end_to_segments(start, end)
+
+logging.info('Read in foreground veto segments')
 
 # 2-ifo old style format
 if 'detector_1' in f.attrs:
@@ -40,14 +42,14 @@ if 'detector_1' in f.attrs:
 else:
     ifos = f.attrs['ifos'].split(' ')
 
-ifos, fsegs, names = [], [], []
+fsegs, names = [], []
 for ifo in ifos:
     segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
+    logging.info('Read in veto segments from %s' % ifo)
     fsegs += [segs.coalesce() + vsegs.coalesce()]
     names += [args.output_segment_name]
-    ifos += [ifo]
 
 file_url = urlunparse(['file', 'localhost',
                        os.path.abspath(args.output_file), None, None, None])
 SegFile.from_multi_segment_list('UNUSED', fsegs, names, ifos, file_url=file_url)
-logging.info('done')
+logging.info('Done')
