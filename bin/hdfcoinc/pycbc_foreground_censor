@@ -40,12 +40,11 @@ if 'detector_1' in f.attrs:
 else:
     ifos = f.attrs['ifos'].split(' ')
 
-ifos, fsegs, names = [], [], []
+fsegs, names = [], []
 for ifo in ifos:
     segs = pycbc.events.select_segments_by_definer(args.veto_file, args.segment_name, ifo)
     fsegs += [segs.coalesce() + vsegs.coalesce()]
     names += [args.output_segment_name]
-    ifos += [ifo]
 
 file_url = urlunparse(['file', 'localhost',
                        os.path.abspath(args.output_file), None, None, None])
