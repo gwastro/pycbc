@@ -51,6 +51,14 @@ logging.info('combining foreground and foreground excluded segments')
 # Set up dictionaries to contain segments from the individual statmap files
 indiv_segs = segments.segmentlistdict({})
 
+# loop through statmap files and put segments into segmentlistdicts
+for fi in files:
+    key = fi.attrs['ifos'].replace(' ','')
+    # get analysed segments from individual statmap files
+    starts = fi['segments/{}/start'.format(key)][:]
+    ends = fi['segments/{}/end'.format(key)][:]
+    indiv_segs[key] = pycbc.events.veto.start_end_to_segments(starts, ends)
+
 # Convert segmentlistdict to a list ('seglists') of segmentlists
 # then numpy.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
 foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
