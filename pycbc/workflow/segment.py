@@ -1437,7 +1437,7 @@ def get_segments_file(workflow, name, option_name, out_dir):
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
         key = ifo + ':' + name
         segs[key] = query_str(ifo, flag_str, start, end,
-                              source=source, server=server, 
+                              source=source, server=server,
                               veto_definer=veto_definer)
         logging.info("%s: got %s flags", ifo, option_name)
 
