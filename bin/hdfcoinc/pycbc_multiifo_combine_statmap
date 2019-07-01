@@ -194,9 +194,9 @@ f['foreground/ifar_exc'][:] = f['foreground/ifar_exc'][:] / trials_factors
 # Construct the foreground censor veto from the clustered candidate times
 # above the ifar threshold
 if args.censor_ifar_threshold:
-    thr = test_times[f['foreground/ifar'][:] > args.censor_ifar_threshold
-    f['segments/foreground_veto/stat'] = test_times[thr] + args.censor_window
-    f['segments/foreground_veto/stat'] = test_times[thr] - args.censor_window
+    thr = f['foreground/ifar'][:] > args.censor_ifar_threshold
+    f['segments/foreground_veto/start'] = test_times[thr] + args.censor_window
+    f['segments/foreground_veto/end'] = test_times[thr] - args.censor_window
 
 #otherwise just take them from the input files
 elif any_fg_vetoes:
