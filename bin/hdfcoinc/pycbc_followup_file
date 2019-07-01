@@ -34,6 +34,7 @@ slide = sfile.attrs['timeslide_interval']
 odtype = [(ifo, numpy.float64) for ifo in ifos]
 dtype = odtype + [('time', numpy.float64),
                   ('template_id', numpy.uint64),
+                  ('stat', numpy.float32),
          ]
 
 if args.foreground_only:
@@ -64,6 +65,7 @@ for k in sfile:
 
         value['time'] = 0.5 * (tpivot + tfixed)
         value['template_id'] = template
+        value['stat'] = sfile[k]['stat'][:]
 
         if args.min_stat:
             keep = sfile[k]['stat'][:] > args.min_stat
