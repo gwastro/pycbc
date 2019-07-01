@@ -204,7 +204,13 @@ def query_flag(ifo, segment_name, start_time, end_time,
                     partial.append(segment(seg_start, seg_end))
 
                 # Limit to the veto definer stated valid region of this flag
-                send = segmentlist([segment(flag['start'], flag['end'])])
+                flag_start = flag['start']
+                flag_end = flag['end']
+                # Corner case: if the flag end time is 0 it means 'no limit'
+                # so use the query end time
+                if flag_end == 0:
+                    flag_end = int(end_time)
+                send = segmentlist([segment(flag_start, flag_end)])
                 flag_segments += (partial.coalesce() & send)
 
         else:  # Standard case just query directly
@@ -376,8 +382,8 @@ def parse_flag_str(flag_str):
     return bflags, signs, ifos, bounds, padding
 
 
-def query_str(ifo, flag_str, start_time, end_time, server="segments.ligo.org",
-              veto_definer=None):
+def query_str(ifo, flag_str, start_time, end_time, source='any',
+              server="segments.ligo.org", veto_definer=None):
     """ Query for flags based on a special str syntax
 
     Parameters
@@ -395,6 +401,14 @@ def query_str(ifo, flag_str, start_time, end_time, server="segments.ligo.org",
     end_time: int
         The end gps time. May be overridden for individual flags with the
         flag str bounds syntax
+    source: str, Optional
+        Choice between "GWOSC" or "dqsegdb". If dqsegdb, the server option may
+        also be given. The default is to try GWOSC first then try dqsegdb.
+    server: str, Optional
+        The server path. Only used with dqsegdb atm.
+    veto_definer: str, Optional
+        The path to a veto definer to define groups of flags which
+        themselves define a set of segments.
 
     Returns
     -------
@@ -408,6 +422,7 @@ def query_str(ifo, flag_str, start_time, end_time, server="segments.ligo.org",
     if len(up) + len(down) != len(flags):
         raise ValueError('Not all flags could be parsed, check +/- prefix')
     segs = query_cumulative_flags(ifo, up, start_time, end_time,
+                                  source=source,
                                   server=server,
                                   veto_definer=veto_definer,
                                   bounds=bounds,
@@ -415,6 +430,7 @@ def query_str(ifo, flag_str, start_time, end_time, server="segments.ligo.org",
                                   override_ifos=ifos)
 
     mseg = query_cumulative_flags(ifo, down, start_time, end_time,
+                                  source=source,
                                   server=server,
                                   veto_definer=veto_definer,
                                   bounds=bounds,
