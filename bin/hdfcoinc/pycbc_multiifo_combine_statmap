@@ -16,9 +16,9 @@ parser.add_argument('--statmap-files', nargs='+',
 parser.add_argument('--cluster-window', type=float)
 parser.add_argument('--censor-ifar-threshold', type=float, default=0.003,
     help="If provided, only window out foreground triggers with IFAR (years)"
-         "above the threshold")
+         "above the threshold [default=0.003yr]")
 parser.add_argument('--veto-window', type=float, default=0.1,
-    help="Time around each zerolag trigger to window out, [default=.1s]")
+    help="Time around each zerolag trigger to window out [default=.1s]")
 parser.add_argument('--output-file', help="name of output file")
 args = parser.parse_args()
 
@@ -174,15 +174,12 @@ f.attrs['foreground_time_exc'] = f.attrs['foreground_time']
 thr = test_times[f['foreground/ifar'][:] > args.censor_ifar_threshold]
 vstart = thr - args.veto_window
 vend = thr + args.veto_window
-vtime = segments.segmentlist([segments.segment((s, e))
+vtime = segments.segmentlist([segments.segment(s, e)
                               for s, e in zip(vstart, vend)])
 logging.info('Censoring %.2f seconds', abs(vtime))
 f.attrs['foreground_time_exc'] -= abs(vtime)
 f['segments/foreground_veto/start'] = vstart
 f['segments/foreground_veto/end'] = vend
-
-#TODO: work out how to calculate fap given that coinc_time changes for each
-# detector combination
 
 #TODO: add in background combinations
 # If there is a background set (full_data as opposed to injection run), then
