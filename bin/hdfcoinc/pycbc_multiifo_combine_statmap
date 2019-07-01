@@ -16,7 +16,7 @@ parser.add_argument('--statmap-files', nargs='+',
 parser.add_argument('--cluster-window', type=float)
 parser.add_argument('--censor-ifar-threshold', type=float, default=0,
     help="If provided, set the foreground censor to be times around only"
-         "candidates more significant than the given IFAR threshold")
+         "candidates more significant than the given IFAR threshold (years)")
 parser.add_argument('--veto-window', type=float, default=0.1,
     help="Size of censore window to apply in seconds")
 parser.add_argument('--output-file', help="name of output file")
