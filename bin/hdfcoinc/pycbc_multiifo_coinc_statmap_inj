@@ -33,7 +33,7 @@ parser.add_argument('--veto-window', type=float, default=.1,
                          '[default=.1s]')
 parser.add_argument('--ranking-statistic-threshold', type=float,
                     help='Minimum value of the ranking statistic to calculate'
-                         ' a unique inclusive background.")
+                         ' a unique inclusive background.')
 parser.add_argument('--ifos', nargs='+',
                     help='List of ifos used in these coincidence files')
 parser.add_argument('--output-file')
