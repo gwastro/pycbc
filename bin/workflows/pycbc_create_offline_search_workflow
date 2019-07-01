@@ -196,23 +196,18 @@ for i in range(2, len(insps)+1):
         coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
         ctagcomb = [tag, 'full', coinctag]
 
-        final_bg_files[ordered_ifo_list] = wf.setup_multiifo_interval_coinc(workflow,
-                                                                            hdfbank,
-                                                                            inspcomb,
-                                                                            statfiles,
-                                                                            final_veto_file,
-                                                                            final_veto_name,
-                                                                            output_dir,
-                                                                            pivot_ifo,
-                                                                            fixed_ifo,
-                                                                            tags=ctagcomb)
+        bg_file = wf.setup_multiifo_interval_coinc(
+            workflow, hdfbank, inspcomb, statfiles, final_veto_file,
+            final_veto_name, output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)[0][1][0]
+
+        # Optionally perform follow-up on triggers and rerank the candidates
+        final_bg_files[ordered_ifo_list] = wf.rerank_coinc_followup(
+                       workflow, bg_file, hdfbank[0], output_dir,
+                       tags=ctagcomb)
 
 combctags = [tag]
-final_bg_file_list = wf.FileList()
-for key in final_bg_files:
-    final_bg_file_list += final_bg_files[key][0][1]
 combined_bg_file = wf.setup_multiifo_combine_statmap(workflow,
-                                                     final_bg_file_list,
+                                                     final_bg_files.values(),
                                                      output_dir,
                                                      tags=combctags)
 
@@ -421,7 +416,7 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
 
 for key in final_bg_files:
     # FIXME: Stop obfuscating this file!
-    bg_file = final_bg_files[key][0][1][0]
+    bg_file = final_bg_files[key]
     open_dir = rdir['open_box_result/{}_coincidences'.format(key)]
     closed_dir = rdir['coincident_triggers/{}_coincidences'.format(key)]
     snrifar = wf.make_snrifar_plot(workflow, bg_file, open_dir,
@@ -519,9 +514,17 @@ for inj_file, tag in zip(inj_files, inj_tags):
             ctagcomb = [tag, 'injections', coinctag]
             curr_out = wf.setup_multiifo_interval_coinc_inj\
                 (workflow, hdfbank, full_insps, inspcomb, statfiles,
-                 final_bg_files[ordered_ifo_list][0][1],
+                 final_bg_files[ordered_ifo_list],
                  final_veto_file[0], final_veto_name[0],
                  output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)
+
+            # Rerank events
+            curr_out = wf.rerank_coinc_followup(workflow, curr_out,
+                                     hdfbank[0],
+                                     output_dir, tags=ctagcomb,
+                                     injection_file=small_inj_file,
+                                     ranking_file=final_bg_files[ordered_ifo_list])
+
             inj_coinc[ordered_ifo_list] = curr_out
 
     combctags = [tag, 'injections']
@@ -593,7 +596,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
             _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
 
             for inj_insp, trig_insp in zip(inspcomb, fdinspcmb):
-                final_bg_file = final_bg_files[ordered_ifo_list][0][1][0]
+                final_bg_file = final_bg_files[ordered_ifo_list]
                 curr_tags = [tag, ordered_ifo_list]
                 #f += wf.make_coinc_snrchi_plot(workflow, found_inj, inj_insp,
                 #                               final_bg_file, trig_insp,

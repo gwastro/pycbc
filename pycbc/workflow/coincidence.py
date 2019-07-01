@@ -141,7 +141,11 @@ class PyCBCStatMapExecutable(Executable):
 
         node = Node(self)
         node.set_memory(5000)
-        node.add_input_list_opt('--coinc-files', coinc_files)
+        if isinstance(coinc_files, list):
+            node.add_input_list_opt('--coinc-files', coinc_files)
+        else:
+            node.add_input_opt('--coinc-files', coinc_files)
+
         node.new_output_file_opt(seg, '.hdf', '--output-file', tags=tags)
         return node
 
@@ -174,7 +178,12 @@ class PyCBCMultiifoStatMapInjExecutable(Executable):
         node = Node(self)
         node.set_memory(5000)
         node.add_input_list_opt('--zero-lag-coincs', zerolag)
-        node.add_input_list_opt('--full-data-background', full_data)
+
+        if isinstance(full_data, list):
+            node.add_input_list_opt('--full-data-background', full_data)
+        else:
+            node.add_input_opt('--full-data-background', full_data)
+
         node.add_input_list_opt('--mixed-coincs-inj-full', injfull)
         node.add_input_list_opt('--mixed-coincs-full-inj', fullinj)
         node.add_opt('--ifos', ifos)
@@ -694,7 +703,7 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                                                    group_str,
                                                    pivot_ifo,
                                                    fixed_ifo,
-                                                   tags=[veto_name, str(i)])
+                                                       tags=[veto_name, str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
 
@@ -751,3 +760,66 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
                                                  tags)
     workflow.add_node(combine_statmap_node)
     return combine_statmap_node.output_file
+
+def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
+                          injection_file=None,
+                          ranking_file=None):
+    make_analysis_dir(out_dir)
+
+    # Generate reduced data files (maybe this could also be used elsewhere?)
+    stores = FileList([])
+    for ifo in workflow.ifos:
+        make_analysis_dir('strain_files')
+        node = Executable(workflow.cp, 'strain_data_reduce', ifos=[ifo],
+                          out_dir='strain_files').create_node()
+        node.add_opt('--gps-start-time', workflow.analysis_time[0])
+        node.add_opt('--gps-end-time', workflow.analysis_time[1])
+        if injection_file:
+            node.add_input_opt('--injection-file', injection_file)
+
+        fil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                                       '--output-file', tags=tags)
+        stores.append(fil)
+        workflow += node
+
+    # Generate trigger input file
+    node = Executable(workflow.cp, 'rerank_trigger_input', ifos=workflow.ifos,
+                      out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--statmap-file', statmap_file)
+    node.add_input_opt('--bank-file', bank_file)
+    trigfil = node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                                   '--output-file', tags=tags)
+    workflow += node
+
+    # Parallelize coinc trigger followup
+    factor = int(workflow.cp.get_opt_tags("workflow-rerank",
+                                      "parallelization-factor", tags))
+    exe = Executable(workflow.cp, 'coinc_followup', ifos=workflow.ifos,
+                     out_dir=out_dir, tags=tags)
+
+    stat_files = FileList([])
+    for i in range(factor):
+        node = exe.create_node()
+        node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                                 '--output-file', tags=[str(i)])
+        node.add_multiifo_input_list_opt('--hdf-store', stores)
+        node.add_input_opt('--input-file', trigfil)
+        node.add_opt('--start-index', str(i))
+        node.add_opt('--stride', factor)
+        workflow += node
+        stat_files += node.output_files
+
+    exe = Executable(workflow.cp, 'rerank_coincs', ifos=workflow.ifos,
+                     out_dir=out_dir, tags=tags)
+    node = exe.create_node()
+    node.add_input_list_opt('--stat-files', stat_files)
+    node.add_input_opt('--statmap-file', statmap_file)
+    node.add_input_opt('--followup-file', trigfil)
+
+    if ranking_file:
+        node.add_input_opt('--ranking-file', ranking_file)
+
+    node.new_output_file_opt(workflow.analysis_time, '.hdf',
+                             '--output-file')
+    workflow += node
+    return node.output_files[0]
