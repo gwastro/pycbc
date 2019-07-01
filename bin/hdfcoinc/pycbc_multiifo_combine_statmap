@@ -14,6 +14,11 @@ parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-files', nargs='+',
                     help="List of coinc files to be redistributed")
 parser.add_argument('--cluster-window', type=float)
+parser.add_argument('--censor-ifar-threshold', type=float,
+    help="If provided, set the foreground censor to be times around only"
+         "candidates more significant than the given IFAR threshold")
+parser.add_argument('--censor-window', type=float, default=0.1,
+    help="Size of censore window to apply in seconds")
 parser.add_argument('--output-file', help="name of output file")
 args = parser.parse_args()
 
@@ -70,16 +75,6 @@ for fi in files:
 foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
 # Note that 'exclusive' time only removes windows around coincs
 # that involve *all* active ifos (2 in 2-ifo time, 3 in 3-ifo time etc.)
-if any_fg_vetoes:
-    foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
-
-    # output foreground veto starts and ends to file
-    foreground_vetos_start, foreground_vetos_end = \
-                   pycbc.events.veto.segments_to_start_end(foreground_segs - \
-                                                           foreground_segs_exc)
-
-    f['segments/foreground_veto/start'] = foreground_vetos_start
-    f['segments/foreground_veto/end'] = foreground_vetos_end
 
 # Output to file
 f.attrs['foreground_time'] = abs(foreground_segs)
@@ -180,6 +175,7 @@ clustered_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 trials_factors = numpy.zeros_like(f['foreground/ifar'][:])
 test_times = numpy.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
                           for tc in zip(*clustered_times)])
+
 # Iterate over different ifo combinations
 for key in f['segments']:
     if key.startswith('foreground') or key.startswith('background'):
@@ -193,6 +189,26 @@ for key in f['segments']:
 
 f['foreground/ifar'][:] = f['foreground/ifar'][:] / trials_factors
 f['foreground/ifar_exc'][:] = f['foreground/ifar_exc'][:] / trials_factors
+
+
+# Construct the foreground censor veto from the clustered candidate times
+# above the ifar threshold
+if args.censor_ifar_threshold:
+    thr = test_times[f['foreground/ifar'][:] > args.censor_ifar_threshold
+    f['segments/foreground_veto/stat'] = test_times[thr] + args.censor_window
+    f['segments/foreground_veto/stat'] = test_times[thr] - args.censor_window
+
+#otherwise just take them from the input files
+elif any_fg_vetoes:
+    foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
+
+    # output foreground veto starts and ends to file
+    foreground_vetos_start, foreground_vetos_end = \
+                   pycbc.events.veto.segments_to_start_end(foreground_segs - \
+                                                           foreground_segs_exc)
+
+    f['segments/foreground_veto/start'] = foreground_vetos_start
+    f['segments/foreground_veto/end'] = foreground_vetos_end
 
 #TODO: work out how to calculate fap given that coinc_time changes for each
 # detector combination
