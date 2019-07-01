@@ -1428,12 +1428,16 @@ def get_segments_file(workflow, name, option_name, out_dir):
         server = cp.get("workflow-segments",
                                  "segments-database-url")
 
+    source = "any"
+    if cp.has_option("workflow-segments", "segments-source"):
+        source = cp.get("workflow-segments", "segments-source")
+
     segs = {}
     for ifo in workflow.ifos:
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
         key = ifo + ':' + name
         segs[key] = query_str(ifo, flag_str, start, end,
-                              server=server,
+                              server=server, source=source,
                               veto_definer=veto_definer)
         logging.info("%s: got %s flags", ifo, option_name)
 
