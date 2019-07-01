@@ -703,7 +703,7 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                                                    group_str,
                                                    pivot_ifo,
                                                    fixed_ifo,
-                                                       tags=[veto_name, str(i)])
+                                                   tags=[veto_name, str(i)])
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
 
@@ -799,7 +799,7 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
 
     # Parallelize coinc trigger followup
     factor = int(workflow.cp.get_opt_tags("workflow-rerank",
-                                      "parallelization-factor", tags))
+                                          "parallelization-factor", tags))
     exe = Executable(workflow.cp, 'coinc_followup', ifos=workflow.ifos,
                      out_dir=out_dir, tags=tags)
 
