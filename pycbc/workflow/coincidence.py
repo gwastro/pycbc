@@ -766,6 +766,12 @@ def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
                           ranking_file=None):
     make_analysis_dir(out_dir)
 
+    if not workflow.cp.has_section("workflow-rerank"):
+        logging.info("No reranking done in this workflow")
+        return statmap_file
+    else:
+        logging.info("Setting up reranking of candidates")
+
     # Generate reduced data files (maybe this could also be used elsewhere?)
     stores = FileList([])
     for ifo in workflow.ifos:
