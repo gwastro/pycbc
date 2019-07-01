@@ -78,10 +78,6 @@ foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
 
 # Output to file
 f.attrs['foreground_time'] = abs(foreground_segs)
-if any_fg_vetoes:
-    f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
-else: # copy over number without fg vetoes for injection runs
-    f.attrs['foreground_time_exc'] = f.attrs['foreground_time']
 
 # obtain list of all ifos involved in the coinc_statmap files
 all_ifos = numpy.unique([ifo for fi in files for ifo in \
@@ -190,23 +186,30 @@ for key in f['segments']:
 f['foreground/ifar'][:] = f['foreground/ifar'][:] / trials_factors
 f['foreground/ifar_exc'][:] = f['foreground/ifar_exc'][:] / trials_factors
 
+f.attrs['foreground_time_exc'] = f.attrs['foreground_time']
 
 # Construct the foreground censor veto from the clustered candidate times
 # above the ifar threshold
 if args.censor_ifar_threshold:
-    thr = f['foreground/ifar'][:] > args.censor_ifar_threshold
-    f['segments/foreground_veto/start'] = test_times[thr] + args.censor_window
-    f['segments/foreground_veto/end'] = test_times[thr] - args.censor_window
+    thr = test_times[f['foreground/ifar'][:] > args.censor_ifar_threshold]
+    vstart = thr - args.censor_window
+    vend = thr + args.censor_window
+    vtime = segments.segmentlist([segments.segment((s, e))
+                                  for s, e in zip(vstart, vend)])
+    logging.info('Censoring %.2f seconds', abs(vtime))
+    f.attrs['foreground_time_exc'] -= abs(vtime)
+    f['segments/foreground_veto/start'] = vstart
+    f['segments/foreground_veto/end'] = vend
 
 #otherwise just take them from the input files
 elif any_fg_vetoes:
-    foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
-
     # output foreground veto starts and ends to file
+    foreground_segs_exc = numpy.sum(list(indiv_segs_fg_exc.values()), axis=0)
     foreground_vetos_start, foreground_vetos_end = \
                    pycbc.events.veto.segments_to_start_end(foreground_segs - \
                                                            foreground_segs_exc)
 
+    f.attrs['foreground_time_exc'] = abs(foreground_segs_exc)
     f['segments/foreground_veto/start'] = foreground_vetos_start
     f['segments/foreground_veto/end'] = foreground_vetos_end
 
