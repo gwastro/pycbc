@@ -47,28 +47,28 @@ for fi in files:
                  f.create_group(key)
             f[key].attrs[attr_name] = fi.attrs[attr_name]
 
-logging.info('combining foreground and foreground excluded segments')
 # Set up dictionaries to contain segments from the individual statmap files
 indiv_segs = segments.segmentlistdict({})
+# loop through statmap files and put segments into segmentlistdicts
+for fi in files:
+    key = fi.attrs['ifos'].replace(' ','')
+    # get analysed segments from individual statmap files
+    starts = fi['segments/{}/start'.format(key)][:]
+    ends = fi['segments/{}/end'.format(key)][:]
+    indiv_segs[key] = pycbc.events.veto.start_end_to_segments(starts, ends)
 
 # Convert segmentlistdict to a list ('seglists') of segmentlists
 # then numpy.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
 foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
-# Note that 'exclusive' time only removes windows around coincs
-# that involve *all* active ifos (2 in 2-ifo time, 3 in 3-ifo time etc.)
-
-# Output to file
+# Total zerolag analysis time
 f.attrs['foreground_time'] = abs(foreground_segs)
 
 # obtain list of all ifos involved in the coinc_statmap files
 all_ifos = numpy.unique([ifo for fi in files for ifo in \
                          fi.attrs['ifos'].split(' ')])
-
-# Save the ifo list for future reference
 f.attrs['ifos'] = ' '.join(sorted(all_ifos))
 
 logging.info('Generating list of datasets in input files')
-
 key_set = pycbc.io.name_all_datasets(files)
 
 logging.info('Copying foreground non-ifo-specific data')
