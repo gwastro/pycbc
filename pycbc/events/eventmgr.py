@@ -635,7 +635,6 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.events.sort(order='template_id')
         th = numpy.array([p['tmplt'].template_hash for p in
                           self.template_params])
-        tid = self.events['template_id']
         f = fw(outname)
         # Output network stuff
         f.prefix = 'network'
@@ -657,6 +656,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             f[ifo + '_event_id'] = network_events[ifo + '_event_id']
         # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
+            tid = self.events['template_id'][self.events['ifo'] == i]
             f.prefix = ifo
             ifo_events = numpy.array([e for e in self.events
                     if e['ifo'] == self.ifo_dict[ifo]], dtype=self.event_dtype)
@@ -723,7 +723,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 else:
                     f['chisq_dof'] = numpy.zeros(len(ifo_events))
 
-                f['template_hash'] = th[tid][self.events['ifo'] == i]
+                f['template_hash'] = th[tid]
 
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([
