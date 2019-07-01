@@ -14,7 +14,7 @@ parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-files', nargs='+',
                     help="List of coinc files to be redistributed")
 parser.add_argument('--cluster-window', type=float)
-parser.add_argument('--censor-ifar-threshold', type=float, default=0,
+parser.add_argument('--censor-ifar-threshold', type=float, default=0.003,
     help="If provided, set the foreground censor to be times around only"
          "candidates more significant than the given IFAR threshold (years)")
 parser.add_argument('--veto-window', type=float, default=0.1,
