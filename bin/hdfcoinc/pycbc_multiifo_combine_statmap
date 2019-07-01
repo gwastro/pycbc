@@ -60,6 +60,7 @@ for fi in files:
 # Convert segmentlistdict to a list ('seglists') of segmentlists
 # then numpy.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
 foreground_segs = numpy.sum(list(indiv_segs.values()), axis=0)
+
 # Total zerolag analysis time
 f.attrs['foreground_time'] = abs(foreground_segs)
 
