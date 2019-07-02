@@ -106,7 +106,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     corrupt_length = int(corrupt_time * strain.sample_rate)
     w = numpy.arange(corrupt_length) / float(corrupt_length)
     strain[0:corrupt_length] *= pycbc.types.Array(w, dtype=strain.dtype)
-    strain[(len(strain)-corrupt_length):] *= \
+    strain[(len(strain) - corrupt_length):] *= \
         pycbc.types.Array(w[::-1], dtype=strain.dtype)
 
     if output_intermediates:
@@ -114,12 +114,12 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
 
     # zero-pad strain to a power-of-2 length
     strain_pad_length = next_power_of_2(len(strain))
-    pad_start = int(strain_pad_length/2 - len(strain)/2)
+    pad_start = int(strain_pad_length / 2 - len(strain) / 2)
     pad_end = pad_start + len(strain)
+    pad_epoch = strain.start_time - pad_start / float(strain.sample_rate)
     strain_pad = pycbc.types.TimeSeries(
             pycbc.types.zeros(strain_pad_length, dtype=strain.dtype),
-            delta_t=strain.delta_t, copy=False,
-            epoch=strain.start_time-pad_start/float(strain.sample_rate))
+            delta_t=strain.delta_t, copy=False, epoch=pad_epoch)
     strain_pad[pad_start:pad_end] = strain[:]
 
     logging.info('Autogating: estimating PSD')
@@ -128,7 +128,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                           seg_stride=int(psd_stride * strain.sample_rate),
                           avg_method=psd_avg_method,
                           require_exact_data_fit=False)
-    psd = pycbc.psd.interpolate(psd, 1./strain_pad.duration)
+    psd = pycbc.psd.interpolate(psd, 1. / strain_pad.duration)
     psd = pycbc.psd.inverse_spectrum_truncation(
             psd, int(psd_duration * strain.sample_rate),
             low_frequency_cutoff=low_freq_cutoff,
@@ -146,7 +146,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     if high_freq_cutoff:
         norm = high_freq_cutoff - low_freq_cutoff
     else:
-        norm = strain.sample_rate/2. - low_freq_cutoff
+        norm = strain.sample_rate / 2. - low_freq_cutoff
     strain_tilde *= (psd * norm) ** (-0.5)
 
     logging.info('Autogating: frequency -> time')
