@@ -369,20 +369,17 @@ with ctx:
     # needed. Segments is only used to get tlen etc. which is same for all
     # ifos, so just send the first ifo
     template_mem = zeros(tlen, dtype=complex64)
-    if opt.cluster_window == 0:
-        use_cluster = False
-    else:
-        use_cluster = True
 
     #Calculate time delay to each detector
     time_delay_idx = {ifo :  int(round(pycbc.detector.Detector(ifo).
                      time_delay_from_earth_center(ra,dec,t_gps) * sample_rate))
                      for ifo in opt.instruments}
 
-    #Matched filter each ifo
+    #Matched filter each ifo. Don't cluster here for a coherent search.
+    #Clustering happens at the end of the template loop.
     matched_filter = {ifo : MatchedFilterControl(
         opt.low_frequency_cutoff, None, opt.snr_threshold, tlen, delta_f,
-        complex64, segments[ifo], template_mem, use_cluster,
+        complex64, segments[ifo], template_mem, use_cluster=False,
         downsample_factor=opt.downsample_factor,
         upsample_threshold=opt.upsample_threshold,
         upsample_method=opt.upsample_method,
@@ -523,12 +520,13 @@ with ctx:
             for ifo in opt.instruments:
                 logging.info("Filtering template %d/%d, ifo %s" %
                              (t_num + 1, len(bank), ifo))
+                # No clustering in the coherent search until the end.
                 # The correlation vector is the FFT of the snr (so inverse FFT
-                # it to get the snr)
+                # it to get the snr). 
                 snr_ts[ifo], norm_dict[ifo], corr_dict[ifo], idx[ifo],\
                     snrv_dict[ifo] = matched_filter[ifo].matched_filter_and_cluster(
                             s_num, template.sigmasq(stilde[ifo].psd),
-                            window=cluster_window
+                            window=0
                             )
 
                 #List of ifos with triggers
@@ -691,6 +689,11 @@ with ctx:
                 network_out_vals['longitude'] = [opt.longitude] * num_events
                 event_mgr.add_template_events_to_network( network_names,
                                 [network_out_vals[n] for n in network_names])
+        event_mgr.cluster_template_network_events(
+            "time_index",
+            "reweighted_snr",
+            cluster_window
+            )
         event_mgr.finalize_template_events()
 event_mgr.write_events(opt.output)
 
