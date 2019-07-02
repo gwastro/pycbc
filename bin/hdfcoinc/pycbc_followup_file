@@ -86,6 +86,7 @@ offsets = numpy.zeros(len(values), dtype=odtype)
 for ifo in ifos:
     offsets[ifo] = values[ifo]
 f['offsets'] = offsets
+f['stat'] = values['stat']
 
 wdtype = [(k, numpy.float64) for k in bank]
 wparam = numpy.zeros(len(values), dtype=wdtype)

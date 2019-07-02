@@ -3,6 +3,7 @@
 import h5py, numpy, argparse, logging, pycbc
 
 parser = argparse.ArgumentParser()
+
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
@@ -15,7 +16,8 @@ parser.add_argument('--start-index', type=int)
 parser.add_argument('--end-index', type=int)
 parser.add_argument('--stride', type=int, default=1)
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
+
 pycbc.init_logging(args.verbose)
 
 ofile = h5py.File(args.output_file, 'w')
