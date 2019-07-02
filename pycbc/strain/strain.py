@@ -107,7 +107,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     w = numpy.arange(corrupt_length) / float(corrupt_length)
     strain[0:corrupt_length] *= pycbc.types.Array(w, dtype=strain.dtype)
     strain[(len(strain)-corrupt_length):] *= \
-            pycbc.types.Array(w[::-1], dtype=strain.dtype)
+        pycbc.types.Array(w[::-1], dtype=strain.dtype)
 
     if output_intermediates:
         strain.save_to_wav('strain_conditioned.wav')
