@@ -600,7 +600,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             indices = numpy.arange(len(tvec))
         else:
             indices = findchirp_cluster_over_window(tvec, cvec, window_size)
-        for key in self.template_event_dict.keys():
+        for key in self.template_event_dict:
             self.template_event_dict[key] = numpy.take(
                 self.template_event_dict[key], indices)
 
