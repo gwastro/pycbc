@@ -608,6 +608,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
 
 
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
+
     def __init__(self, files):
         # read in background fit info and store it, also use newsnr_sgveto
         ExpFitSGBgRateStatistic.__init__(self, files)
@@ -672,7 +673,15 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         ifos = s.keys()
         benchmark_logvol = s[ifos[0]]['benchmark_logvol']
 
-        loglr = - ln_noise_rate + self.benchmark_lograte \
+        # logsignalrate function inherited from PhaseTDStatistic
+        # - for now, only use H-L consistency
+        ifos = s.keys()
+        if 'H1' in ifos and 'L1' in ifos:
+            logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
+        else:
+            logr_s = numpy.zeros_like(s['V1']['snr'])
+
+        loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
             + network_logvol - benchmark_logvol
         return loglr
 
