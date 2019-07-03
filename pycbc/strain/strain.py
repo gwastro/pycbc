@@ -51,8 +51,7 @@ def next_power_of_2(n):
     m : int
         Smallest integer power of 2 larger than n.
     """
-    # TODO use 1 << n.bit_length() after Python 2.6 is gone
-    return 1 << (len(bin(n)) - 2)
+    return 1 << n.bit_length()
 
 def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                          psd_avg_method='median', low_freq_cutoff=30.,
@@ -100,26 +99,27 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
         logging.info('Autogating: downsampling strain')
         strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
                                      method='ldas')
+    else:
+        strain = strain.copy()
 
     logging.info('Autogating: tapering strain')
-    taper_length = int(corrupt_time * strain.sample_rate)
-    w = numpy.arange(taper_length) / float(taper_length)
-    strain[0:taper_length] *= pycbc.types.Array(w, dtype=strain.dtype)
-    strain[(len(strain)-taper_length):] *= pycbc.types.Array(w[::-1],
-                                                             dtype=strain.dtype)
+    corrupt_length = int(corrupt_time * strain.sample_rate)
+    w = numpy.arange(corrupt_length) / float(corrupt_length)
+    strain[0:corrupt_length] *= pycbc.types.Array(w, dtype=strain.dtype)
+    strain[(len(strain) - corrupt_length):] *= \
+        pycbc.types.Array(w[::-1], dtype=strain.dtype)
+
     if output_intermediates:
         strain.save_to_wav('strain_conditioned.wav')
 
-    corrupt_length = int(corrupt_time * strain.sample_rate)
-
     # zero-pad strain to a power-of-2 length
     strain_pad_length = next_power_of_2(len(strain))
-    pad_start = int(strain_pad_length/2 - len(strain)/2)
+    pad_start = int(strain_pad_length / 2 - len(strain) / 2)
     pad_end = pad_start + len(strain)
+    pad_epoch = strain.start_time - pad_start / float(strain.sample_rate)
     strain_pad = pycbc.types.TimeSeries(
             pycbc.types.zeros(strain_pad_length, dtype=strain.dtype),
-            delta_t=strain.delta_t, copy=False,
-            epoch=strain.start_time-pad_start/strain.sample_rate)
+            delta_t=strain.delta_t, copy=False, epoch=pad_epoch)
     strain_pad[pad_start:pad_end] = strain[:]
 
     logging.info('Autogating: estimating PSD')
@@ -128,7 +128,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
                           seg_stride=int(psd_stride * strain.sample_rate),
                           avg_method=psd_avg_method,
                           require_exact_data_fit=False)
-    psd = pycbc.psd.interpolate(psd, 1./strain_pad.duration)
+    psd = pycbc.psd.interpolate(psd, 1. / strain_pad.duration)
     psd = pycbc.psd.inverse_spectrum_truncation(
             psd, int(psd_duration * strain.sample_rate),
             low_frequency_cutoff=low_freq_cutoff,
@@ -146,7 +146,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     if high_freq_cutoff:
         norm = high_freq_cutoff - low_freq_cutoff
     else:
-        norm = strain.sample_rate/2. - low_freq_cutoff
+        norm = strain.sample_rate / 2. - low_freq_cutoff
     strain_tilde *= (psd * norm) ** (-0.5)
 
     logging.info('Autogating: frequency -> time')
@@ -297,7 +297,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
         if opt.autogating_threshold is not None:
             glitch_times = detect_loud_glitches(
-                    strain.copy(), threshold=opt.autogating_threshold,
+                    strain, threshold=opt.autogating_threshold,
                     cluster_window=opt.autogating_cluster,
                     low_freq_cutoff=opt.strain_high_pass,
                     corrupt_time=opt.pad_data + opt.autogating_pad)
