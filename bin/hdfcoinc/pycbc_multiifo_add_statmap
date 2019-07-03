@@ -151,7 +151,7 @@ del idx_within_segment
 # interferometer combinations are available at the time of coincidence
 available_combos =[' '.join(sorted([key for key in is_in_combo_time 
                                     if is_in_combo_time[key][i]])
-                           ).encode('utf8') for i in np.arange(n_triggers)]
+                            ).encode('utf8') for i in np.arange(n_triggers)]
 
 all_combo_types = np.unique(available_combos)
 idx = {ct:np.where(np.array(available_combos)==ct)[0]
@@ -180,17 +180,19 @@ fg_ifar_exc = np.zeros(n_triggers)
 for ct in all_combo_types:
     cts = ct.split(' ')
     if len(cts) == 1:
-        logging.info('IFAR is the same as previosuly calculated for triggers in {} time'.format(ct))
+        logging.info('IFAR is the same as previously calculated for triggers in {} time'.format(ct))
         # If only one combination is available, then the stat is the same
         # as previously calulated
         fg_ifar[idx[ct]] = f['foreground/ifar'][:][idx[ct]]
         fg_ifar_exc[idx[ct]] = f['foreground/ifar_exc'][:][idx[ct]]
-    else:
+    elif len(cts) > 1:
         logging.info('Recalculating ifar for coincidences which are in {} time'.format(ct))
         far_new = np.sum([far[ifo_combo_key][idx[ct]] for ifo_combo_key in cts], axis=0)
         far_new_exc = np.sum([far_exc[ifo_combo_key][idx[ct]] for ifo_combo_key in cts], axis=0)
         fg_ifar[idx[ct]] = conv.sec_to_year(1. / np.array(far_new))
         fg_ifar_exc[idx[ct]] = conv.sec_to_year(1. / np.array(far_new_exc))
+    else:
+        raise RuntimeError('Empty combo type string, something has gone wrong')
 
 f.attrs['foreground_time_exc'] = f.attrs['foreground_time']
 
