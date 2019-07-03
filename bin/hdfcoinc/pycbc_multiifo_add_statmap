@@ -71,7 +71,6 @@ for k in files[0]['foreground']:
         pycbc.io.combine_and_copy(f, files, 'foreground/' + k)
 
 logging.info('Collating triggers into single structure')
-
 all_trig_times = {}
 all_trig_ids = {}
 for ifo in all_ifos:
@@ -83,17 +82,17 @@ for ifo in all_ifos:
 for f_in in files:
     for ifo in all_ifos:
         if ifo in f_in['foreground']:
-            all_trig_times[ifo] = np.concatenate([all_trig_times[ifo], \
+            all_trig_times[ifo] = np.concatenate([all_trig_times[ifo],
                                     f_in['foreground/{}/time'.format(ifo)][:]])
             all_trig_ids[ifo] = np.concatenate([all_trig_ids[ifo],
                               f_in['foreground/{}/trigger_id'.format(ifo)][:]])
         else:
             all_trig_times[ifo] = np.concatenate([all_trig_times[ifo],
-                                 -1*np.ones_like(f_in['foreground/fap'][:],
-                                                    dtype=np.uint32)])
+                                 -1 * np.ones_like(f_in['foreground/fap'][:],
+                                                   dtype=np.uint32)])
             all_trig_ids[ifo] = np.concatenate([all_trig_ids[ifo],
-                                 -1*np.ones_like(f_in['foreground/fap'][:],
-                                                    dtype=np.uint32)])
+                                 -1 * np.ones_like(f_in['foreground/fap'][:],
+                                                   dtype=np.uint32)])
 
 for ifo in all_ifos:
     f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
@@ -110,7 +109,6 @@ all_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 cidx = pycbc.events.cluster_coincs_multiifo(f['foreground/stat'][:], all_times,
                                             np.zeros(n_triggers), 0,
                                             args.cluster_window)
-
 
 def filter_dataset(h5file, name, idx):
     # Dataset needs to be deleted and remade as it is a different size
@@ -132,7 +130,7 @@ n_triggers = f['foreground/ifar'].size
 # Calculating event times to determine which types of coinc are available
 times_tuple = (f['foreground/{}/time'.format(ifo)] for ifo in all_ifos)
 test_times = np.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
-                          for tc in zip(*times_tuple)])
+                       for tc in zip(*times_tuple)])
 
 is_in_combo_time = {}
 for key in f['segments']:
@@ -147,16 +145,19 @@ for key in f['segments']:
     is_in_combo_time[key][idx_within_segment] = np.ones_like(idx_within_segment)
 del idx_within_segment
 
-# available_combos is a string containing a space-separated list of which
-# interferometer combinations are available at the time of coincidence
-available_combos =[' '.join(sorted([key for key in is_in_combo_time 
-                                    if is_in_combo_time[key][i]])
-                            ).encode('utf8') for i in np.arange(n_triggers)]
+# available_combos is a list of strings in parallel to the array of coincs, each string
+# is a space-separated sorted set of ifo combinations available at the coinc time
+available_combos = []
+for i in np.arange(n_triggers):
+    a_string = ' '.join(sorted([key for key in is_in_combo_time 
+                                if is_in_combo_time[key][i]]))
+    available_combos.append(a_string.encode('utf8'))
 
 all_combo_types = np.unique(available_combos)
-idx = {ct:np.where(np.array(available_combos)==ct)[0]
+# idx gives the indices of coincs for which each combination of coinc types in
+# all_combo_types is active
+idx = {ct: np.where(np.array(available_combos) == ct)[0]
        for ct in all_combo_types}
-
 del available_combos
 
 logging.info('Calculating false alarm rate over all coinc types for foreground events')
@@ -180,13 +181,11 @@ fg_ifar_exc = np.zeros(n_triggers)
 for ct in all_combo_types:
     cts = ct.split(' ')
     if len(cts) == 1:
-        logging.info('IFAR is the same as previously calculated for triggers in {} time'.format(ct))
-        # If only one combination is available, then the stat is the same
-        # as previously calulated
+        logging.info('IFAR is the same as previously calculated for coincs in {} time'.format(ct))
         fg_ifar[idx[ct]] = f['foreground/ifar'][:][idx[ct]]
         fg_ifar_exc[idx[ct]] = f['foreground/ifar_exc'][:][idx[ct]]
     elif len(cts) > 1:
-        logging.info('Recalculating ifar for coincidences which are in {} time'.format(ct))
+        logging.info('Recalculating IFAR for coincs when {} are active'.format(ct))
         far_new = np.sum([far[ifo_combo_key][idx[ct]] for ifo_combo_key in cts], axis=0)
         far_new_exc = np.sum([far_exc[ifo_combo_key][idx[ct]] for ifo_combo_key in cts], axis=0)
         fg_ifar[idx[ct]] = conv.sec_to_year(1. / np.array(far_new))
