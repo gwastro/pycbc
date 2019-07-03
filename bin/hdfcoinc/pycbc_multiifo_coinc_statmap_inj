@@ -45,10 +45,12 @@ zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos = args.ifo
 zdata = zdata.cluster(window)
 
 logging.info("Loading coinc full inj triggers")
-fidata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_full_inj, ifos = args.ifos).cluster(window)
+fidata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_full_inj,
+                                      ifos=args.ifos).cluster(window)
 
 logging.info("Loading coinc inj full triggers")
-ifdata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_inj_full, ifos = args.ifos).cluster(window)
+ifdata = pycbc.io.MultiifoStatmapData(files=args.mixed_coincs_inj_full,
+                                      ifos=args.ifos).cluster(window)
 
 f = h5py.File(args.output_file, "w")
 
@@ -87,7 +89,8 @@ f.attrs['background_time'] = background_time
 f.attrs['foreground_time'] = coinc_time
 
 if len(zdata) > 0:
-    fnlouder_exc = coinc.calculate_n_louder(back_stat, zdata.stat, dec_fac, skip_background=True)
+    fnlouder_exc = coinc.calculate_n_louder(back_stat, zdata.stat, dec_fac,
+                                            skip_background=True)
     ifar_exc = background_time / (fnlouder_exc + 1)
     fap_exc = 1 - numpy.exp(- coinc_time / ifar_exc)
     f['foreground/ifar_exc'] = conv.sec_to_year(ifar_exc)
@@ -108,11 +111,13 @@ if len(zdata) > 0:
     pivot_ifo = zdata.attrs['pivot']
     ifsort = ifdata.data['%s/time' % pivot_ifo].argsort()
     ifsorted = ifdata.data['%s/time' % pivot_ifo][ifsort]
-    if_start, if_end = numpy.searchsorted(ifsorted, start), numpy.searchsorted(ifsorted, end)
+    if_start, if_end = numpy.searchsorted(ifsorted, start), \
+                       numpy.searchsorted(ifsorted, end)
 
     fisort = fidata.data['%s/time' % pivot_ifo].argsort()
     fisorted = fidata.data['%s/time' % pivot_ifo][fisort]
-    fi_start, fi_end = numpy.searchsorted(fisorted, start), numpy.searchsorted(fisorted, end)
+    fi_start, fi_end = numpy.searchsorted(fisorted, start), \
+                       numpy.searchsorted(fisorted, end)
 
     # most of the triggers are here so presort to speed up later sorting
     bsort = back_stat.argsort()
@@ -122,7 +127,8 @@ if len(zdata) > 0:
     for i, fstat in enumerate(zdata.stat):
         # If the trigger is quiet enough, then don't calculate a separate
         # background type, as it would not be significantly different
-        if args.ranking_statistic_threshold and fstat < args.ranking_statistic_threshold:
+        if args.ranking_statistic_threshold and \
+                fstat < args.ranking_statistic_threshold:
             fnlouder[i] = fnlouder_exc[i]
             ifar[i] = ifar_exc[i]
             fap[i] = fap_exc[i]
@@ -131,10 +137,13 @@ if len(zdata) > 0:
         v1 = fisort[fi_start[i]:fi_end[i]]
         v2 = ifsort[if_start[i]:if_end[i]]
 
-        inj_stat = numpy.concatenate([ifdata.stat[v2], fidata.stat[v1], back_stat])
-        inj_dec = numpy.concatenate([numpy.repeat(1, len(v1) + len(v2)), dec_fac])
+        inj_stat = numpy.concatenate([ifdata.stat[v2], fidata.stat[v1],
+                                      back_stat])
+        inj_dec = numpy.concatenate([numpy.repeat(1, len(v1) + len(v2)),
+                                     dec_fac])
 
-        fnlouder[i] = coinc.calculate_n_louder(inj_stat, fstat, inj_dec, skip_background=True)
+        fnlouder[i] = coinc.calculate_n_louder(inj_stat, fstat, inj_dec,
+                                               skip_background=True)
         ifar[i] = background_time / (fnlouder[i] + 1)
         fap[i] = 1 - numpy.exp(- coinc_time / ifar[i])
         logging.info('processed %s, %s' % (i, fstat))
