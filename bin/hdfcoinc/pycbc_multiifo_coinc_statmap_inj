@@ -111,12 +111,12 @@ if len(zdata) > 0:
     pivot_ifo = zdata.attrs['pivot']
     ifsort = ifdata.data['%s/time' % pivot_ifo].argsort()
     ifsorted = ifdata.data['%s/time' % pivot_ifo][ifsort]
-    if_start, if_end = numpy.searchsorted(ifsorted, start),
+    if_start, if_end = numpy.searchsorted(ifsorted, start), \
                        numpy.searchsorted(ifsorted, end)
 
     fisort = fidata.data['%s/time' % pivot_ifo].argsort()
     fisorted = fidata.data['%s/time' % pivot_ifo][fisort]
-    fi_start, fi_end = numpy.searchsorted(fisorted, start),
+    fi_start, fi_end = numpy.searchsorted(fisorted, start), \
                        numpy.searchsorted(fisorted, end)
 
     # most of the triggers are here so presort to speed up later sorting
