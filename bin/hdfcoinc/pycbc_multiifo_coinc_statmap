@@ -208,7 +208,7 @@ background_time_exc = int(maxtime_exc / all_trigs.attrs['timeslide_interval']) \
                           * mintime_exc
 coinc_time_exc = coinc_time - veto_time
 
-logging.info("Making mapping from FAN to the combined statistic")
+logging.info("Calculating FAN from background statistic values")
 # Ranking statistic of foreground and background
 back_stat = all_trigs.stat[back_locs]
 fore_stat = all_trigs.stat[fore_locs]
@@ -252,7 +252,7 @@ if 'name' in all_trigs.attrs:
     f.attrs['name'] = all_trigs.attrs['name']
 
 # Incorporate hierarchical removal for any other loud triggers
-logging.info("Beginning hierarchical removal of foreground triggers.")
+logging.info("Beginning hierarchical removal of foreground triggers")
 
 # Step 1: Create a copy of foreground trigger ranking statistic for reference
 #         in the hierarchical removal while loop when updating ifar and fap of
@@ -343,21 +343,6 @@ while numpy.any(louder_foreground == 0):
         indices_to_rm = numpy.concatenate([indices_to_rm, ind_to_rm[ifo]])
     all_trigs = all_trigs.remove(indices_to_rm)
 
-    # NB the values calculated below are not used!
-    #fore_locs = all_trigs.timeslide_id == 0
-    # The foreground trigger has been removed, continue with statmap operations
-    # Calculate the change to foreground trigger time and vetoed out time
-    #fore_time = {}
-    #for ifo in args.ifos:
-    #    fore_time[ifo] = all_trigs.data['%s/time' % ifo][fore_locs]
-
-    #ave_fore_time = 0
-    #for ifo in args.ifos:  < NB THIS CODE IS WRONG FOR MULTIIFO!
-    #    ave_fore_time += fore_time[ifo] / len(args.ifos)
-
-    #remove_start_time = ave_fore_time - args.veto_window
-    #remove_end_time = ave_fore_time + args.veto_window
-
     logging.info("We have %s triggers after hierarchical removal." % len(all_trigs.stat))
 
     # Step 4: Re-cluster the triggers and calculate the inclusive ifar/fap
@@ -373,7 +358,7 @@ while numpy.any(louder_foreground == 0):
     logging.info("Dumping foreground triggers")
     logging.info("Dumping background triggers (inclusive of zerolag)")
     for k in all_trigs.data:
-         f['background_h%s/' %h_iterations + k] = all_trigs.data[k][back_locs]
+         f['background_h%s/' % h_iterations + k] = all_trigs.data[k][back_locs]
 
     maxtime = all_trigs.attrs['%s_foreground_time' % f.attrs['pivot']]
     for ifo in ifos:
@@ -388,7 +373,7 @@ while numpy.any(louder_foreground == 0):
     background_time = int(maxtime / all_trigs.attrs['timeslide_interval']) * mintime
     coinc_time = float(all_trigs.attrs['coinc_time'])
 
-    logging.info("Making mapping from FAN to the combined statistic")
+    logging.info("Calculating FAN from background statistic values")
     back_stat = all_trigs.stat[back_locs]
     fore_stat = all_trigs.stat[fore_locs]
     back_cnum, fnlouder = coinc.calculate_n_louder(back_stat, fore_stat,
