@@ -156,20 +156,19 @@ del available_combos
 
 logging.info('Calculating n_louder background triggers in each type for all foreground events')
 
-fnlouder = {}
-fnlouder_exc = {}
+far = {}
+far_exc = {}
 for f_in in files:
         ifo_combo_key = f_in.attrs['ifos'].replace(' ','')
-        _, fnlouder[ifo_combo_key] = coinc.calculate_n_louder(
-                                                   f_in['background/stat'][:],
+        _, fnlouder = coinc.calculate_n_louder(f_in['background/stat'][:],
+                                               f['foreground/stat'][:],
+                                               f_in['background/decimation_factor'][:])
+        far[ifo_combo_key] = (fnlouder + 1) / f_in.attrs['background_time']
+        _, fnlouder_exc = coinc.calculate_n_louder(f_in['background_exc/stat'][:],
                                                    f['foreground/stat'][:],
-                                                   f_in['background/decimation_factor'][:]
-                                                             )
-        _, fnlouder_exc[ifo_combo_key] = coinc.calculate_n_louder(
-                                                   f_in['background_exc/stat'][:],
-                                                   f['foreground/stat'][:],
-                                                   f_in['background_exc/decimation_factor'][:]
-                                                             )
+                                                   f_in['background_exc/decimation_factor'][:])
+        far_exc[ifo_combo_key] = (fnlouder_exc + 1) / f_in.attrs['background_time_exc']
+
 logging.info('Recalculating ifar according to summed trigger distributions')
 
 fg_ifar = np.zeros_like(f['foreground/decimation_factor'][:])
@@ -185,13 +184,10 @@ for ct in all_combo_types:
         fg_ifar_exc[idx[ct]] = f['foreground/ifar_exc'][:][idx[ct]]
         continue
     logging.info('Recalculating ifar for coincidences which are in {} time'.format(ct))
-    largest_combination = cts[np.argmax([len(ifo_c) for ifo_c in cts])]
-    bg_time = f[largest_combination].attrs['background_time']
-    bg_time_exc = f[largest_combination].attrs['background_time_exc']
-    fnlouder = np.sum([fnlouder[ifo_combo_key][idx[ct]] for ifo_combo_key in cts])
-    fnlouder_exc = np.sum([fnlouder_exc[ifo_combo_key][idx[ct]] for ifo_combo_key in cts])
-    ifar = bg_time / (fnlouder + 1)
-    ifar_exc = bg_time_exc / (fnlouder_exc + 1)
+    far_new = np.sum([far[ifo_combo_key][idx[ct]] for ifo_combo_key in cts], axis=0)
+    far_new_exc = np.sum([far_exc[ifo_combo_key][idx[ct]] for ifo_combo_key in cts], axis=0)
+    ifar = 1 / np.array(far_new)
+    ifar_exc = 1 / np.array(far_new_exc)
     fg_ifar[idx[ct]] = conv.sec_to_year(ifar)
     fg_ifar_exc[idx[ct]] = conv.sec_to_year(ifar_exc)
 
