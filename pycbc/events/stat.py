@@ -770,26 +770,19 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         # Volume \propto sigma^3 or sigmasq^1.5
         network_logvol = 1.5 * numpy.log(network_sigmasq)
         # Get benchmark log volume as single-ifo information
-        # NB benchmark logvol for a given template is not ifo-dependent
-        # - choose the first ifo for convenience
-        benchmark_logvol = s[0][1]['benchmark_logvol']
-        network_logvol -= benchmark_logvol
+        ifos = s.keys()
+        benchmark_logvol = s[ifos[0]]['benchmark_logvol']
 
-        coincifos = [sngl[0] for sngl in s]
-        # logsignalrate function from PhaseTDStatistic
-        if ('H1' in coincifos and 'L1' in coincifos):
-            # apply HL hist for HL & HLV coincs, keep only H/L info
-            s_hl = [sngl[1] for sngl in s if sngl[0] in ['H1', 'L1']]
-            shift_hl = [sh for sngl, sh in zip(s, to_shift) if \
-                        sngl[0] in ['H1', 'L1']]
-            logr_s = self.logsignalrate_multiifo(s_hl, slide * step, shift_hl)
+        # logsignalrate function inherited from PhaseTDStatistic
+        # - for now, only use H-L consistency
+        ifos = s.keys()
+        if 'H1' in ifos and 'L1' in ifos:
+            logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
         else:
-            logr_s = self.logsignalrate_multiifo([sngl[1] for sngl in s],
-                                                 slide * step, to_shift)
+            logr_s = numpy.zeros_like(s['V1']['snr'])
 
-        loglr = logr_s + network_logvol - ln_noise_rate
-        # cut off underflowing and very small values
-        loglr[loglr < -30.] = -30.
+        loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
+            + network_logvol - benchmark_logvol
         return loglr
 
 
