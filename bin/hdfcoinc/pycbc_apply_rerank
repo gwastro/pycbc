@@ -1,5 +1,7 @@
 #!/bin/env python
-"""Rewrite statmap file with a reranking of the statistic values"""
+"""Rewrite statmap file and rerank candidates using the statistic values
+generated from the followup of candidates.
+"""
 import h5py, numpy, argparse, logging, pycbc
 from pycbc.conversions import sec_to_year
 from pycbc.events.coinc import calculate_n_louder
@@ -9,18 +11,27 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--stat-files', nargs='+')
-parser.add_argument('--followup-file')
-parser.add_argument('--statmap-file')
-parser.add_argument('--ranking-file')
+parser.add_argument('--stat-files', nargs='+',
+    help="Statistic files produced by candidate followup codes")
+parser.add_argument('--followup-file',
+    help="File containing the candidate times which were analyzed")
+parser.add_argument('--statmap-file',
+    help="The statmap file containing the candidates to rerank")
+parser.add_argument('--ranking-file',
+    help="Provided only for injection sets, use this file to provide the "
+         "background to rank candidate significance")
 parser.add_argument('--output-file')
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
 
-# Reconstruct the full stat vector
+# Reconstruct the full set of statistic values for our candidates
 f = h5py.File(args.followup_file, 'r')
-num = len(f['offsets'])
+num = len(f['offsets']) # Number of followups done
+
+# Mapping between the followups done and the original candidate list
+# May be shorter due to duplicates in the original set (which combines
+# background / background_exc, etc
 inv = f['inverse'][:]
 stats = numpy.zeros(num)
 sections = f.attrs['sections']

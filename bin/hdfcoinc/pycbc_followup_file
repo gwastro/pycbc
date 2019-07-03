@@ -1,15 +1,21 @@
 #!/bin/env python
-"""Followup a candidate"""
+"""Generate the standardized file detailing the candidates/background to
+follow-up.
+"""
 import h5py, numpy, argparse, logging, pycbc
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--statmap-file')
-parser.add_argument('--bank-file')
-parser.add_argument('--min-stat', type=float)
-parser.add_argument('--foreground-only', action='store_true')
+parser.add_argument('--statmap-file',
+    help="Statmap file containing the candidates/background to follow up")
+parser.add_argument('--bank-file',
+    help="HDF format template bank file")
+parser.add_argument('--min-stat', type=float,
+    help="Minimum statistic value to follow up")
+parser.add_argument('--foreground-only', action='store_true',
+    help="Only make an followup input file which contains zerolag candidates")
 parser.add_argument('--output-file')
 
 args = parser.parse_args()
@@ -37,6 +43,7 @@ dtype = odtype + [('time', numpy.float64),
                   ('stat', numpy.float32),
          ]
 
+# Determine which events we will include in our followup file
 if args.foreground_only:
     sections = ['foreground']
 else:
@@ -73,6 +80,8 @@ for k in sfile:
 
         values.append(value)
 
+# Compress to only the unique candidates (as there is overlap due to the
+# multiple background types)
 values = numpy.concatenate(values)
 values, invmap = numpy.unique(values, return_inverse=True)
 logging.info('%s triggers to follow up', len(values))
