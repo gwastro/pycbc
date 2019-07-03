@@ -26,6 +26,7 @@
 waveforms.
 """
 
+import os
 import lal, lalsimulation, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
@@ -821,6 +822,16 @@ _filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
 
 from . nltides import nonlinear_tidal_spa
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
+
+# Load external waveforms #####################################################
+if 'PYCBC_WAVEFORM' in os.environ:
+    mods = os.environ['PYCBC_WAVEFORM'].split(':')
+    for mod in mods:
+        mhandle = __import__(mod, fromlist=[''])
+        mhandle.add_me(cpu_fd=cpu_fd, 
+                       cpu_td=cpu_td,
+                       filter_time_lengths=_filter_time_lengths,
+                      )
 
 for apx in copy.copy(_filter_time_lengths):
     fd_apx = list(cpu_fd.keys())
