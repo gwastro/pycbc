@@ -36,6 +36,7 @@ from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
 from .cpnest import CPNestFile
 from .multinest import MultinestFile
+from .dynesty import DynestyFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
 
@@ -44,6 +45,7 @@ filetypes = {
     EmceePTFile.name: EmceePTFile,
     CPNestFile.name: CPNestFile,
     MultinestFile.name: MultinestFile,
+    DynestyFile.name: DynestyFile,
     PosteriorFile.name: PosteriorFile
 }
 
