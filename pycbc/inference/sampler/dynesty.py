@@ -64,11 +64,11 @@ class DynestySampler(BaseSampler):
     name = "dynesty"
     _io = DynestyFile
 
-    def __init__(self, model, **kwargs):
+    def __init__(self, model, nlive, err_logz, **kwargs):
 
         self.model = model
         self.nlive = nlive
-        self.dlogz = dlogz
+        self.err_logz = err_logz
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
         self._sampler = None
@@ -94,7 +94,7 @@ class DynestySampler(BaseSampler):
             self._sampler=dynesty.NestedSampler(self.log_likelihood,
                                                 self.prior_transform, self.ndim,
                                                 nlive=self.nlive,
-                                                dlogz=self.dlogz **kwargs)
+                                                dlogz=self.err_logz, **kwargs)
         res = self._sampler.run_nested()
 
     @property
@@ -116,8 +116,8 @@ class DynestySampler(BaseSampler):
             "name in section [sampler] must match mine")
         # get the number of live points to use
         nlive = int(cp.get(section, "nlive"))
-        dlogz = float(cp.get(section, "dlogz"))
-        obj = cls(model, nlive=nlive, dlogz=dlogz)
+        err_logz = float(cp.get(section, "err_logz"))
+        obj = cls(model, nlive=nlive, err_logz=err_logz)
         return obj
 
     def checkpoint(self):
@@ -147,7 +147,7 @@ class DynestySampler(BaseSampler):
     @property
     def samples(self):
         samples_dict = {p: self._sampler.results.samples[:,i] for p,i in
-                        zip(self.model.sampling_params,self.ndim)}
+                        zip(self.model.sampling_params,range(self.ndim))}
         return samples_dict
 
     def set_initial_conditions(self, initial_distribution=None,
@@ -174,7 +174,8 @@ class DynestySampler(BaseSampler):
             # write stats
             fp.write_samples(self.model_stats)
             # write log evidence
-            fp.write_logevidence(self._sampler.NS.logZ, 0.1)
+            fp.write_logevidence(self._sampler.results.logz[-1:][0],
+                                 self._sampler.results.logzerr[-1:][0])
 
     @property
     def posterior_samples(self):
