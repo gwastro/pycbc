@@ -45,6 +45,7 @@ def gmst_accurate(gps_time):
                 location=(0, 0)).sidereal_time('mean').rad
     return gmst
 
+
 def get_available_detectors():
     """Return list of detectors known in the currently sourced lalsuite.
 
@@ -73,7 +74,7 @@ class Detector(object):
         Parameters
         ----------
         detector_name: str
-            The two character detector string, i.e. H1, L1, V1, K1, I1
+            The two-character detector string, i.e. H1, L1, V1, K1, I1
         reference_time: float
             Default is time of GW150914. In this case, the earth's rotation
         will be estimated from a reference time. If 'None', we will
@@ -91,9 +92,9 @@ class Detector(object):
         self.reference_time = reference_time
 
     def set_gmst_reference(self):
-        if reference_time is not None:
+        if self.reference_time is not None:
             self.sday = float(sday.si.scale)
-            self.gmst_reference = gmst_accurate(reference_time)
+            self.gmst_reference = gmst_accurate(self.reference_time)
         else:
             raise RuntimeError("Can't get accurate sidereal time without GPS "
                                "reference time!")
