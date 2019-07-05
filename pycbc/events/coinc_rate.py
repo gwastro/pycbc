@@ -82,12 +82,11 @@ def combination_noise_coinc_rate(rates, slop):
         Value is expected coincidence rate in the combination, units Hz
     """
     # multiply product of trigger rates by the overlap time
-    allowed_area = multiifo_noise_coincident_area(list(rates), slop)
-    # list(dict.values()) is python-3-proof
-    rateprod = numpy.prod(list(rates.values()), axis=0)
-    combo_coinc_rate = allowed_area * rateprod
+    log_rates = {k:numpy.log(r) for (k,r) in rates.items()}
+    combo_coinc_rate = combination_noise_coinc_rate_log(log_rates, slop)
 
     return combo_coinc_rate
+
 
 def combination_noise_coinc_rate_log(log_rates, slop):
     """
@@ -110,12 +109,14 @@ def combination_noise_coinc_rate_log(log_rates, slop):
         Value is expected coincidence rate in the combination, units Hz
     """
     # multiply product of trigger rates by the overlap time
-    allowed_area = numpy.log(multiifo_noise_coincident_area(list(log_rates), slop))
+    allowed_area = numpy.log(multiifo_noise_coincident_area(list(log_rates),
+                                                            slop))
     # list(dict.values()) is python-3-proof
     rateprod = numpy.sum(list(log_rates.values()), axis=0)
     combo_coinc_rate = allowed_area + rateprod
 
     return combo_coinc_rate
+
 
 def multiifo_noise_coincident_area(ifos, slop):
     """
