@@ -89,6 +89,33 @@ def combination_noise_coinc_rate(rates, slop):
 
     return combo_coinc_rate
 
+def combination_noise_coinc_rate_log(log_rates, slop):
+    """
+    Calculate the expected rate of noise coincidences for a combination of
+    detectors
+
+    Parameters
+    ----------
+    log_rates: dict
+        Dictionary keyed on ifo string
+        Value is a sequence of logarithm of single-detector trigger rates,
+        units assumed to be Hz
+    slop: float
+        time added to maximum time-of-flight between detectors to account
+        for timing error
+
+    Returns
+    -------
+    combo_coinc_rate: numpy array
+        Value is expected coincidence rate in the combination, units Hz
+    """
+    # multiply product of trigger rates by the overlap time
+    allowed_area = numpy.log(multiifo_noise_coincident_area(list(log_rates), slop))
+    # list(dict.values()) is python-3-proof
+    rateprod = numpy.sum(list(log_rates.values()), axis=0)
+    combo_coinc_rate = allowed_area + rateprod
+
+    return combo_coinc_rate
 
 def multiifo_noise_coincident_area(ifos, slop):
     """

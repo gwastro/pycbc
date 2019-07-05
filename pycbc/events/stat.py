@@ -600,10 +600,10 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
     def coinc_multiifo(self, s, slide,
                        step, **kwargs): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
-        sngl_rates_dict = {ifo: numpy.exp(log_rate) for (ifo, log_rate)\
+        sngl_rates_dict = {ifo: log_rate for (ifo, log_rate)\
                            in s.items()}
-        ln_coinc_rate = numpy.log(coinc_rate.combination_noise_coinc_rate(
-                                  sngl_rates_dict, kwargs['time_addition']))
+        ln_coinc_rate = coinc_rate.combination_noise_coinc_rate_log(
+                                  sngl_rates_dict, kwargs['time_addition'])
         loglr = - ln_coinc_rate + self.benchmark_lograte
         return loglr
 
