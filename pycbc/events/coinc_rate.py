@@ -82,7 +82,7 @@ def combination_noise_coinc_rate(rates, slop):
         Value is expected coincidence rate in the combination, units Hz
     """
     # multiply product of trigger rates by the overlap time
-    log_rates = {k:numpy.log(r) for (k,r) in rates.items()}
+    log_rates = {k: numpy.log(r) for (k, r) in rates.items()}
     combo_coinc_rate = combination_noise_coinc_rate_log(log_rates, slop)
 
     return combo_coinc_rate
