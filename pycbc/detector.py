@@ -90,6 +90,8 @@ class Detector(object):
         self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
 
         self.reference_time = reference_time
+        self.sday = None
+        self.gmst_reference = None
 
     def set_gmst_reference(self):
         if self.reference_time is not None:
