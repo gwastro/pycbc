@@ -10,9 +10,10 @@
 """
 
 import itertools
+import logging
 import numpy
 import pycbc.detector
-import logging
+
 
 def multiifo_noise_coinc_lograte(log_rates, slop):
     """
@@ -23,17 +24,17 @@ def multiifo_noise_coinc_lograte(log_rates, slop):
     ----------
     log_rates: dict
         Dictionary keyed on ifo string
-        Value is a sequence of single-detector trigger rates, units assumed
-        to be Hz
+        Value is a sequence of single-detector trigger logarithm of rates,
+        units assumed to be Hz
     slop: float
         time added to maximum time-of-flight between detectors to account
         for timing error
 
     Returns
     -------
-    expected_coinc_rates: dict
+    expected_coinc_log_rates: dict
         Dictionary keyed on the ifo combination string
-        Value is expected coincidence rate in the combination, units Hz
+        Value is expected coincidence log rate in the combination, units log Hz
     """
     expected_coinc_log_rates = {}
 
@@ -43,7 +44,7 @@ def multiifo_noise_coinc_lograte(log_rates, slop):
 
     # Calculate coincidence for all-ifo combination
     expected_coinc_log_rates[ifostring] = \
-                              combination_noise_coinc_lograte(log_rates, slop)
+        combination_noise_coinc_lograte(log_rates, slop)
 
     # If more than one possible coincidence type exists,
     # calculate coincidence for subsets through recursion
@@ -57,7 +58,8 @@ def multiifo_noise_coinc_lograte(log_rates, slop):
             sub_coinc_rates = multiifo_noise_coinc_lograte(rates_subset, slop)
             # add these sub-coincidences to the overall dictionary
             for sub_coinc in sub_coinc_rates:
-                expected_coinc_log_rates[sub_coinc] = sub_coinc_rates[sub_coinc]
+                expected_coinc_log_rates[sub_coinc] = \
+                    sub_coinc_rates[sub_coinc]
 
     return expected_coinc_log_rates
 
