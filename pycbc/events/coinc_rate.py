@@ -65,6 +65,8 @@ def combination_noise_coinc_rate(rates, slop):
     """
     Calculate the expected rate of noise coincidences for a combination of
     detectors
+    WARNING: for high stat values, this can cause numerical underflow in the
+    rate calculation
 
     Parameters
     ----------
@@ -81,7 +83,7 @@ def combination_noise_coinc_rate(rates, slop):
     combo_coinc_rate: numpy array
         Value is expected coincidence rate in the combination, units Hz
     """
-    # multiply product of trigger rates by the overlap time
+    # convert rates to log rates for use in combination_noise_coinc_rate_log
     log_rates = {k: numpy.log(r) for (k, r) in rates.items()}
     combo_coinc_rate = combination_noise_coinc_rate_log(log_rates, slop)
 
@@ -91,7 +93,7 @@ def combination_noise_coinc_rate(rates, slop):
 def combination_noise_coinc_rate_log(log_rates, slop):
     """
     Calculate the expected rate of noise coincidences for a combination of
-    detectors
+    detectors given log of single detector noise rates
 
     Parameters
     ----------
@@ -120,9 +122,10 @@ def combination_noise_coinc_rate_log(log_rates, slop):
 
 def multiifo_noise_coincident_area(ifos, slop):
     """
-    calculate the total extent of time offset between 2 detectors,
+    Calculate the total extent of time offset between 2 detectors,
     or area of the 2d space of time offsets for 3 detectors, for
     which a coincidence can be generated
+    This function cannot yet handle more than 3 detectors
 
     Parameters
     ----------
