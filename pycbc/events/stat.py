@@ -597,13 +597,11 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
             coeff_file['count_above_thresh'][:][tid_sort] / \
             float(coeff_file.attrs['analysis_time'])
 
-    def coinc_multiifo(self, s, slide,
+    def coinc_multiifo(self, sngl_stat, slide,
                        step, **kwargs): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
-        sngl_rates_dict = {ifo: log_rate for (ifo, log_rate)\
-                           in s.items()}
         ln_coinc_rate = coinc_rate.combination_noise_coinc_rate_log(
-                                  sngl_rates_dict, kwargs['time_addition'])
+                                  sngl_stat, kwargs['time_addition'])
         loglr = - ln_coinc_rate + self.benchmark_lograte
         return loglr
 
