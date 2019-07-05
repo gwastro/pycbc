@@ -11,6 +11,16 @@ import pycbc.conversions as conv
 from pycbc.events import coinc
 from ligo import segments
 
+def get_ifo_attr(fi):
+    if 'ifos' in fi.attrs:
+        # input file is full_data style, so ifos is stored as an attribute
+        attr = fi.attrs['ifos']
+    else:
+        # The input file is injection style, so the segments group only contains
+        # the segments for the given ifo combination
+        attr = ' '.join([k for k in fi['foreground'].keys() if 'time' in fi['foreground/%s' % k]])
+    return attr
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
@@ -42,7 +52,7 @@ logging.info('Copying segments and attributes to %s' % args.output_file)
 # individual statmap files
 indiv_segs = segments.segmentlistdict({})
 for fi in files:
-    key = fi.attrs['ifos'].replace(' ','')
+    key = get_ifo_attr(fi).replace(' ','')
     starts = fi['segments/{}/start'.format(key)][:]
     ends = fi['segments/{}/end'.format(key)][:]
     indiv_segs[key] = pycbc.events.veto.start_end_to_segments(starts, ends)
@@ -67,8 +77,8 @@ f.attrs['foreground_time'] = abs(foreground_segs)
 
 # obtain list of all ifos involved in the coinc_statmap files
 all_ifos = np.unique([ifo for fi in files
-                      for ifo in fi.attrs['ifos'].split(' ')])
-all_ifo_combos = [fi.attrs['ifos'].replace(' ','') for fi in files]
+                      for ifo in get_ifo_attr(fi).split(' ')])
+all_ifo_combos = [get_ifo_attr(fi).replace(' ','') for fi in files]
 
 logging.info('Copying foreground datasets')
 for k in files[0]['foreground']:
@@ -103,7 +113,7 @@ n_triggers = f['foreground/ifar'].size
 all_combo_types = []
 if args.output_combination_information:
     for f_in in files:
-        key = f_in.attrs['ifos'].replace(' ','')
+        key = get_ifo_attr(f_in).replace(' ','')
         all_combo_types.append(key)
         type_combo_key = 'foreground/ifo_combination'
         combo_repeat = np.array(np.repeat(key.encode('utf8'), f_in['foreground/fap'].size))
@@ -180,14 +190,14 @@ if args.background_files:
         _, fnlouder = coinc.calculate_n_louder(bg_f['background/stat'][:],
                                                f['foreground/stat'][:],
                                                bg_f['background/decimation_factor'][:])
-        far[ifo_combo_key] = (fnlouder + 1) / f_in.attrs['background_time']
+        far[ifo_combo_key] = (fnlouder + 1) / bg_f.attrs['background_time']
         _, fnlouder_exc = coinc.calculate_n_louder(bg_f['background_exc/stat'][:],
                                                    f['foreground/stat'][:],
                                                    bg_f['background_exc/decimation_factor'][:])
-        far_exc[ifo_combo_key] = (fnlouder_exc + 1) / f_in.attrs['background_time_exc']
+        far_exc[ifo_combo_key] = (fnlouder_exc + 1) / bg_f.attrs['background_time_exc']
 else:
     for f_in in files:
-        ifo_combo_key = f_in.attrs['ifos'].replace(' ','')
+        ifo_combo_key = get_ifo_attr(f_in).replace(' ','')
         _, fnlouder = coinc.calculate_n_louder(f_in['background/stat'][:],
                                                f['foreground/stat'][:],
                                                f_in['background/decimation_factor'][:])
@@ -203,15 +213,15 @@ logging.info('Combining false alarm rates from all available backgrounds')
 # remains the same
 
 # Create a mask of whether the ifo combination is available at trigger time
-isincombo_mask = np.array(zip(*[list(is_in_combo_time[ct]) for ct in all_ifo_combos]))
+isincombo_mask = np.array([list(is_in_combo_time[ct]) for ct in all_ifo_combos])
 
 # Create n_combos by n_triggers arrays of FARs
-all_fars = np.array(zip(*[list(far[ct]) for ct in all_ifo_combos]))
-all_fars_exc = np.array(zip(*[list(far_exc[ct]) for ct in all_ifo_combos]))
+all_fars = np.array([list(far[ct]) for ct in all_ifo_combos])
+all_fars_exc = np.array([list(far_exc[ct]) for ct in all_ifo_combos])
 
 # Combine the FARs with the mask to obtain the new ifars
-fg_ifar = conv.sec_to_year(1. /np.sum(isincombo_mask*all_fars, axis=1))
-fg_ifar_exc = conv.sec_to_year(1. /np.sum(isincombo_mask*all_fars_exc, axis=1))
+fg_ifar = conv.sec_to_year(1. /np.sum(isincombo_mask*all_fars, axis=0))
+fg_ifar_exc = conv.sec_to_year(1. /np.sum(isincombo_mask*all_fars_exc, axis=0))
 
 f.attrs['foreground_time_exc'] = f.attrs['foreground_time']
 
