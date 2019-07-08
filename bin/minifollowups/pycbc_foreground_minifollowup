@@ -163,7 +163,7 @@ for num_event in range(num_events):
         ifo_times = ' '.join(ifo_times_strings)
         ifo_tids = ' '.join(ifo_tids_strings)
 
-    bank_id = f['foreground/template_id'][:][sorting][num_event]
+    bank_id = f['{}/template_id'.format(file_val)][:][sorting][num_event]
 
     layouts += (mini.make_coinc_info(workflow, single_triggers, tmpltbank_file,
                               coinc_file, args.output_dir, n_loudest=num_event,

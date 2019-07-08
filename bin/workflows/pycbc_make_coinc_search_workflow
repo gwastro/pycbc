@@ -390,6 +390,14 @@ wf.setup_foreground_minifollowups(workflow, final_bg_file,
                               rdir['open_box_result/loudest_event_followup'],
                               tags=final_bg_file.tags)
 
+curr_rdir = 'coincident_triggers/loudest_background_followup'
+wf.setup_foreground_minifollowups(workflow, final_bg_file,
+                              full_insps,  hdfbank[0], insp_files_seg_file,
+                              data_analysed_name, trig_generated_name, 'daxes',
+                              rdir[curr_rdir],
+                              tags=final_bg_file.tags + ['background'])
+
+
 for bin_file in bin_files:
     if hasattr(bin_file, 'bin_name'):
         currdir = rdir['open_box_result/loudest_in_%s_bin' % bin_file.bin_name]
