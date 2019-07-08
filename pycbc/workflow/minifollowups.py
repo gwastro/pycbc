@@ -802,6 +802,41 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
     workflow += node
     return node.output_files
 
+def make_skipped_html(workflow, skipped_data, out_dir, tags):
+    """
+    Make a html snippet from the list of skipped background coincidences
+    """
+    exe = Executable(workflow.cp, 'html_snippet',
+                     ifos=workflow.ifos, out_dir=out_dir, tags=tags)
+
+    node = exe.create_node()
+
+    parsed_data = {}
+    for ifo, time in skipped_data:
+        if not ifo in parsed_data:
+            parsed_data[ifo] = {}
+        if not time in parsed_data[ifo]:
+            parsed_data[ifo][time] = 1
+        else:
+            parsed_data[ifo][time] = parsed_data[ifo][time] + 1
+
+    n_events = len(skipped_data)
+    html_string = '{} background events have been skipped '.format(n_events)
+    html_string += 'because one of their single triggers already appears '
+    html_string += 'in the events followed up above. '
+    html_string += 'Specifically, the following single detector triggers '
+    html_string += 'were found in these coincidences. '
+    html_template = '{} event at time {} appeared {} times. '
+    for ifo in parsed_data:
+        for time in parsed_data[ifo]:
+            n_occurances = parsed_data[ifo][time]
+            html_string += html_template.format(ifo, time, n_occurances)
+
+    node.add_opt('--html_text', html_string)
+    node.add_opt('--title', 'Events were skipped')
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+
+
 def create_noop_node():
     """
     Creates a noop node that can be added to a DAX doing nothing. The reason
