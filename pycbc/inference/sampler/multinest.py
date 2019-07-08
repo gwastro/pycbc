@@ -30,11 +30,13 @@ from __future__ import absolute_import
 
 import logging
 import numpy
+import shutil
+import sys
 
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
 from pycbc.transforms import apply_transforms
-from .base import BaseSampler
+from .base import (BaseSampler, create_new_output_file)
 from .base_mcmc import get_optional_arg_from_config
 
 
@@ -73,6 +75,11 @@ class MultinestSampler(BaseSampler):
             logging.getLogger().setLevel(loglevel)
         except ImportError:
             raise ImportError("pymultinest is not installed.")
+        try:
+            from mpi4py.MPI import COMM_WORLD
+            self.is_master = COMM_WORLD.Get_rank() == 0
+        except ImportError:
+            self.is_master = True
 
         super(MultinestSampler, self).__init__(model)
 
@@ -282,9 +289,12 @@ class MultinestSampler(BaseSampler):
             if self._samples.shape[0] == 0:
                 continue
             # dump the current results
-            self.checkpoint()
+            if self.is_master:
+                self.checkpoint()
             # check if we're finished
             done = self.check_if_finished()
+        if not self.is_master:
+            sys.exit()
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
@@ -320,6 +330,61 @@ class MultinestSampler(BaseSampler):
             self.checkpoint_file, self.backup_file)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
+
+    def setup_output(self, output_file, force=False, injection_file=None):
+        """Sets up the sampler's checkpoint and output files.
+
+        The checkpoint file has the same name as the output file, but with
+        ``.checkpoint`` appended to the name. A backup file will also be
+        created.
+
+        If the output file already exists, an ``OSError`` will be raised.
+        This can be overridden by setting ``force`` to ``True``.
+
+        Parameters
+        ----------
+        sampler : sampler instance
+            Sampler
+        output_file : str
+            Name of the output file.
+        force : bool, optional
+            If the output file already exists, overwrite it.
+        injection_file : str, optional
+            If an injection was added to the data, write its information.
+        """
+        # check for backup file(s)
+        checkpoint_file = output_file + '.checkpoint'
+        backup_file = output_file + '.bkup'
+        if not self.is_master:
+            self.checkpoint_file = checkpoint_file
+            self.backup_file = backup_file
+            self.checkpoint_valid = True
+            self.new_checkpoint = True
+        else:
+            # check if we have a good checkpoint and/or backup file
+            logging.info("Looking for checkpoint file")
+            checkpoint_valid = validate_checkpoint_files(checkpoint_file,
+                                                         backup_file)
+            # Create a new file if the checkpoint doesn't exist, or if it is
+            # corrupted
+            self.new_checkpoint = False  # keeps track if this is a new file or not
+            if not checkpoint_valid:
+                logging.info("Checkpoint not found or not valid")
+                create_new_output_file(self, checkpoint_file, force=force,
+                                       injection_file=injection_file)
+                # now the checkpoint is valid
+                self.new_checkpoint = True
+                # copy to backup
+                shutil.copy(checkpoint_file, backup_file)
+            # write the command line, startup
+            for fn in [checkpoint_file, backup_file]:
+                with self.io(fn, "a") as fp:
+                    fp.write_command_line()
+                    fp.write_resume_point()
+            # store
+            self.checkpoint_file = checkpoint_file
+            self.backup_file = backup_file
+            self.checkpoint_valid = checkpoint_valid
 
     def finalize(self):
         """All data is written by the last checkpoint in the run method, so
