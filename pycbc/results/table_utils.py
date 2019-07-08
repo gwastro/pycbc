@@ -156,6 +156,7 @@ sngl_table_headers = [
     "M<sub>c</sub>",
     "s<sub>1z</sub>",
     "s<sub>2z</sub>",
-    "Duration"
+    "Duration",
+    "PSD var"
 ]
 

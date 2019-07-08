@@ -98,6 +98,7 @@ data = [[pycbc.results.dq.get_summary_page_link(args.instrument, utc),
         '%5.2f' % sngl_file.spin1z,
         '%5.2f' % sngl_file.spin2z,
         '%5.2f' % sngl_file.template_duration,
+        '%5.2f' % sngl_file.psd_var_val
        ]]
 
 html = pycbc.results.dq.redirect_javascript + \
