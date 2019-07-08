@@ -159,12 +159,12 @@ while event_count < num_events and curr_idx < events_to_read:
         if key0 not in event_tids:
             event_tids[key0] = []
         if int(tids[key0][curr_idx]) in event_tids[key0]:
-            skipped_data.append((key0, int(tids[key0][curr_idx]))
+            skipped_data.append((key0, int(tids[key0][curr_idx])))
             continue
         if key1 not in events_tids
             event_tids[key1] = []
         if int(tids[key1][curr_idx]) in event_tids[key1]:
-            skipped_data.append((key1, int(tids[key1][curr_idx]))
+            skipped_data.append((key1, int(tids[key1][curr_idx])))
             continue
 
     else:
