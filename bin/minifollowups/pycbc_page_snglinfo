@@ -84,6 +84,10 @@ else:
 # make a table for the single detector information ############################
 time = sngl_file.end_time
 utc = lal.GPSToUTC(int(time))[0:6]
+try:
+    psd_var = sngl_file.psd_var_val
+except:
+    psd_var = 0
 data = [[pycbc.results.dq.get_summary_page_link(args.instrument, utc),
         str(datetime.datetime(*utc)),
         '%.3f'  % time,
@@ -98,7 +102,7 @@ data = [[pycbc.results.dq.get_summary_page_link(args.instrument, utc),
         '%5.2f' % sngl_file.spin1z,
         '%5.2f' % sngl_file.spin2z,
         '%5.2f' % sngl_file.template_duration,
-        '%5.2f' % sngl_file.psd_var_val
+        '%5.2f' % psd_var
        ]]
 
 html = pycbc.results.dq.redirect_javascript + \
