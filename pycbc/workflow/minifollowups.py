@@ -86,7 +86,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     config_file = wdax.File(os.path.basename(config_path))
     config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
-    exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
+    exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output, tags=tags)
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
@@ -96,9 +96,9 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     node.add_input_opt('--inspiral-segments', insp_segs)
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
