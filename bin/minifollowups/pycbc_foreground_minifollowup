@@ -50,6 +50,11 @@ parser.add_argument('--inspiral-data-read-name',
 parser.add_argument('--inspiral-data-analyzed-name',
                     help="Name of inspiral segmentlist containing data "
                          "analyzed by each analysis job.")
+parser.add_argument('--background-triggers', action='store_true',
+                    default=False,
+                    help="Perform followup on background triggers (with the "
+                         "foreground coincs excluded). If not given we will "
+                         "followup foreground triggers.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--transformation-catalog')
@@ -88,7 +93,11 @@ for ifo in args.single_detector_triggers:
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
-stat = f['foreground/stat'][:]
+if args.background_triggers:
+    file_val = 'background_exc'
+else:
+    file_val = 'foreground'
+stat = f['{}/stat'.format(file_val)][:]
 
 sorting = stat.argsort()[::-1]
 
@@ -109,18 +118,18 @@ times = {}
 tids = {}
 # Check if using input files from old (2-ifo) coinc code
 if 'detector_1' in f.attrs:
-    times = {f.attrs['detector_1']: f['foreground/time1'][:][sorting][0:num_events],
-             f.attrs['detector_2']: f['foreground/time2'][:][sorting][0:num_events],
+    times = {f.attrs['detector_1']: f['{}/time1'.format(file_val)][:][sorting][0:num_events],
+             f.attrs['detector_2']: f['{}/time2'.format(file_val)][:][sorting][0:num_events],
             }
-    tids = {f.attrs['detector_1']: f['foreground/trigger_id1'][:][sorting][0:num_events],
-            f.attrs['detector_2']: f['foreground/trigger_id2'][:][sorting][0:num_events],
+    tids = {f.attrs['detector_1']: f['{}/trigger_id1'.format(file_val)][:][sorting][0:num_events],
+            f.attrs['detector_2']: f['{}/trigger_id2'.format(file_val)][:][sorting][0:num_events],
            }
 else:
     # Version used for multi-ifo coinc code
     ifo_list = f.attrs['ifos'].split(' ')
     for ifo in ifo_list:
-        times[ifo] = f['foreground/%s/time' % ifo][:][sorting][0:num_events]
-        tids[ifo] = f['foreground/%s/trigger_id' % ifo][:][sorting][0:num_events]
+        times[ifo] = f['{}/{}/time'.format(file_val,ifo)][:][sorting][0:num_events]
+        tids[ifo] = f['{}/{}/trigger_id'.format(file_val, ifo)][:][sorting][0:num_events]
 
 bank_data = h5py.File(args.bank_file, 'r')
 
