@@ -268,6 +268,7 @@ class MultinestSampler(BaseSampler):
                                sampling_efficiency=self._eff,
                                importance_nested_sampling=self._ins,
                                max_iter=iterinterval,
+                               n_iter_before_update=iterinterval,
                                seed=numpy.random.randint(0, 1e6),
                                outputfiles_basename=outputfiles_basename,
                                multimodal=False, verbose=True)
