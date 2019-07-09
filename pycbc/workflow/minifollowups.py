@@ -97,7 +97,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
     if tags:
-        node.add_input_list_opt('--tags', tags)
+        node.add_list_opt('--tags', tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
     node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog')
