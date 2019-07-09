@@ -823,7 +823,7 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
             parsed_data[ifo][time] = parsed_data[ifo][time] + 1
 
     n_events = len(skipped_data)
-    html_string = '{} background events have been skipped '.format(n_events)
+    html_string = '"{} background events have been skipped '.format(n_events)
     html_string += 'because one of their single triggers already appears '
     html_string += 'in the events followed up above. '
     html_string += 'Specifically, the following single detector triggers '
@@ -833,6 +833,8 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
         for time in parsed_data[ifo]:
             n_occurances = parsed_data[ifo][time]
             html_string += html_template.format(ifo, time, n_occurances)
+
+    html_string += '"'
 
     node.add_opt('--html_text', html_string)
     node.add_opt('--title', 'Events were skipped')
