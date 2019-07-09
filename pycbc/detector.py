@@ -45,6 +45,7 @@ def gmst_accurate(gps_time):
                 location=(0, 0)).sidereal_time('mean').rad
     return gmst
 
+
 def get_available_detectors():
     """Return list of detectors known in the currently sourced lalsuite.
 
@@ -73,7 +74,7 @@ class Detector(object):
         Parameters
         ----------
         detector_name: str
-            The two character detector string, i.e. H1, L1, V1, K1, I1
+            The two-character detector string, i.e. H1, L1, V1, K1, I1
         reference_time: float
             Default is time of GW150914. In this case, the earth's rotation
         will be estimated from a reference time. If 'None', we will
@@ -82,21 +83,30 @@ class Detector(object):
 
         """
         self.name = str(detector_name)
-        self.frDetector =  lalsimulation.DetectorPrefixToLALDetector(self.name)
+        self.frDetector = lalsimulation.DetectorPrefixToLALDetector(self.name)
         self.response = self.frDetector.response
         self.location = self.frDetector.location
         self.latitude = self.frDetector.frDetector.vertexLatitudeRadians
         self.longitude = self.frDetector.frDetector.vertexLongitudeRadians
 
         self.reference_time = reference_time
-        if reference_time is not None:
+        self.sday = None
+        self.gmst_reference = None
+
+    def set_gmst_reference(self):
+        if self.reference_time is not None:
             self.sday = float(sday.si.scale)
-            self.gmst_reference = gmst_accurate(reference_time)
+            self.gmst_reference = gmst_accurate(self.reference_time)
+        else:
+            raise RuntimeError("Can't get accurate sidereal time without GPS "
+                               "reference time!")
 
     def gmst_estimate(self, gps_time):
         if self.reference_time is None:
             return gmst_accurate(gps_time)
 
+        if self.gmst_reference is None:
+            self.set_gmst_reference()
         dphase = (gps_time - self.reference_time) / self.sday * (2.0 * np.pi)
         gmst = (self.gmst_reference + dphase) % (2.0 * np.pi)
         return gmst
