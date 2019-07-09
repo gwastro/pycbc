@@ -72,11 +72,19 @@ if 'detector_1' in f.attrs:
                "Time delay (s)"
               ]
 
+    try:
+        fap_inclusive = d['fap'][n]
+        fap_exclusive = d['fap_exc'][n]
+        ifar_exclusive = d['ifar_exc'][n]
+    except:
+        fap_inclusive = -1
+        fap_exclusive = -1
+        ifar_exclusive = -1
     table = numpy.array([['%5.2f' % d['stat'][n],
                           '%5.2f' % d['ifar'][n],
-                          '%5.2e' % d['fap'][n],
-                          '%5.2f' % d['ifar_exc'][n],
-                          '%5.2e' % d['fap_exc'][n],
+                          '%5.2e' % fap_inclusive,
+                          '%5.2f' % ifar_exclusive,
+                          '%5.2e' % fap_exclusive,
                           '%5.4f' % (d['time2'][n] - d['time1'][n])
                          ]], dtype=str)
 else:
