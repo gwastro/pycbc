@@ -57,6 +57,9 @@ def read_store(fname, channel, start_time, end_time):
     stime = starts[sidx]
     etime = ends[sidx]
 
+    if stime > start_time:
+        raise ValueError("Cannot read data segment before {}".format(stime))
+
     if etime < end_time:
         raise ValueError("Cannot read data segment past {}".format(etime))
 
