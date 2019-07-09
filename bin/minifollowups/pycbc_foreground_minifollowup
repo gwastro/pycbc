@@ -166,6 +166,8 @@ while event_count < num_events and curr_idx < events_to_read:
         if int(tids[key1][curr_idx]) in event_tids[key1]:
             skipped_data.append((key1, int(tids[key1][curr_idx])))
             continue
+        event_tids[key0].append(int(tids[key0][curr_idx]))
+        event_tids[key1].append(int(tids[key1][curr_idx]))
 
     else:
         # Version used for multi-ifo coinc code
@@ -189,6 +191,8 @@ while event_count < num_events and curr_idx < events_to_read:
 
         if duplicate:
             continue
+        for ifo in times:
+            event_tids[ifo].append(int(tids[ifo][curr_idx]))
 
         ifo_times = ' '.join(ifo_times_strings)
         ifo_tids = ' '.join(ifo_tids_strings)
@@ -196,7 +200,8 @@ while event_count < num_events and curr_idx < events_to_read:
     event_count += 1
     if skipped_data:
         layouts += (mini.make_skipped_html(workflow, skipped_data,
-                                           tags='SKIP_{}'.format(event_count)),)
+                                           args.output_dir,
+                                           tags=['SKIP_{}'.format(event_count)]),)
         skipped_data = []
 
     bank_id = f['{}/template_id'.format(file_val)][:][sorting][curr_idx]
