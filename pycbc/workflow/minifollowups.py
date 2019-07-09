@@ -837,6 +837,7 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
     node.add_opt('--html_text', html_string)
     node.add_opt('--title', 'Events were skipped')
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    return node
 
 
 def create_noop_node():
