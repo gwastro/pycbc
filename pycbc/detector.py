@@ -105,7 +105,8 @@ class Detector(object):
         if self.reference_time is None:
             return gmst_accurate(gps_time)
 
-        self.set_gmst_reference()
+        if self.gmst_reference is None:
+            self.set_gmst_reference()
         dphase = (gps_time - self.reference_time) / self.sday * (2.0 * np.pi)
         gmst = (self.gmst_reference + dphase) % (2.0 * np.pi)
         return gmst
