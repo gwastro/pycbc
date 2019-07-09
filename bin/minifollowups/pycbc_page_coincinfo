@@ -161,6 +161,10 @@ for ifo in files.keys():
 
     time = d['end_time'][:][i]
     utc = lal.GPSToUTC(int(time))[0:6]
+    try:
+        psd_var = d['psd_var_val'][i]
+    except:
+        psd_var = 0
 
     data = [pycbc.results.dq.get_summary_page_link(ifo, utc),
             str(datetime.datetime(*utc)),
@@ -175,7 +179,8 @@ for ifo in files.keys():
             '%5.2f' % mchirp,
             '%5.2f' % bank['spin1z'][tid],
             '%5.2f' % bank['spin2z'][tid],
-            '%5.2f' % d['template_duration'][i]
+            '%5.2f' % d['template_duration'][i],
+            '%5.2f' % psd_var
            ]
     table.append(data)
 
