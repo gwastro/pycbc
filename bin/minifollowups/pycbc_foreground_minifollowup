@@ -142,7 +142,7 @@ event_tids = {}
 skipped_data = []
 event_count = 0
 curr_idx = -1
-while event_count < num_events and curr_idx < events_to_read:
+while event_count < num_events and curr_idx < (events_to_read-1):
     curr_idx += 1
     files = wf.FileList([])
 
