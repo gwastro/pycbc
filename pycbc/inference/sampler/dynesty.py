@@ -31,6 +31,7 @@ from __future__ import absolute_import
 import logging
 import os
 import dynesty
+from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
 from .base import BaseSampler
 
@@ -179,7 +180,13 @@ class DynestySampler(BaseSampler):
 
     @property
     def posterior_samples(self):
-        return self._sampler.results.samples
+        dynesty_samples = self._sampler.results['samples']
+        try:
+            weights = np.exp(self._sampler.results['logwt'] - self._sampler.results['logz'][-1])
+        except:
+            weights = self._sampler.results['weights']
+        posterior_dynesty = resample_equal(dynesty_samples,weights)
+        return posterior_dynesty
 
     @property
     def logz(self):
