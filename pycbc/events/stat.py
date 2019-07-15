@@ -709,16 +709,15 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
 
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
-    def __init__(self, files, ifos=None):
-        # read in background fit info and store it
-        ExpFitSGBgRateStatistic.__init__(self, files, ifos=ifos)
-        # if ifos not already set, determine via background fit info
-        self.ifos = self.ifos or self.bg_ifos
-        # PhaseTD statistic single_dtype plus network sensitivity benchmark
-        PhaseTDStatistic.__init__(self, files, ifos=self.ifos)
-        self.single_dtype.append(('benchmark_logvol', numpy.float32))
+    def __init__(self, files):
+        # read in background fit info and store it, also use newsnr_sgveto
+        ExpFitSGBgRateStatistic.__init__(self, files)
+        # Use PhaseTD statistic single.dtype
+        PhaseTDStatistic.__init__(self, files)
 
-        self.get_newsnr = ranking.get_newsnr_sgveto
+        for ifo in self.ifos:
+            self.assign_median_sigma(ifo)
+        self.single_dtype.append(('benchmark_logvol', numpy.float32))
 
         for ifo in self.bg_ifos:
             self.assign_median_sigma(ifo)
@@ -726,6 +725,8 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
                                        for ifo in ['H1', 'L1']], axis=0)
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
+
+        self.get_newsnr = ranking.get_newsnr_sgveto
 
     def assign_median_sigma(self, ifo):
         coeff_file = self.files[ifo + '-fit_coeffs']
@@ -778,11 +779,14 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         ifos = s.keys()
         if 'H1' in ifos and 'L1' in ifos:
             logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
+            # makeshift factor to compensate HL(V) coincs which are penalized
+            # on average by p/t/a vs HV, LV which are not
+            logr_s = logr_s + 4.5
         else:
             logr_s = numpy.zeros_like(s['V1']['snr'])
 
         loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
-            + network_logvol - benchmark_logvol
+                + network_logvol - benchmark_logvol
         return loglr
 
 
