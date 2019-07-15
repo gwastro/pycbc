@@ -575,7 +575,7 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
         _MAKE_COINC_INFO_EXE = curr_exe
     else:
         curr_exe = _MAKE_COINC_INFO_EXE
-        curr_exe.update_current_tags(out_dir)
+        curr_exe.update_current_tags(tags)
     node = curr_exe.create_node()
     node.add_input_list_opt('--single-trigger-files', singles)
     node.add_input_opt('--statmap-file', coinc)
