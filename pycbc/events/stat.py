@@ -614,6 +614,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         ExpFitSGBgRateStatistic.__init__(self, files)
         # Use PhaseTD statistic single.dtype
         PhaseTDStatistic.__init__(self, files)
+
         for ifo in self.ifos:
             self.assign_median_sigma(ifo)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
@@ -622,13 +623,13 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
                                        for ifo in ['H1', 'L1']], axis=0)
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
+
         self.get_newsnr = ranking.get_newsnr_sgveto
 
     def assign_median_sigma(self, ifo):
-        coeff_file = self.files[ifo+'-fit_coeffs']
+        coeff_file = self.files[ifo + '-fit_coeffs']
         template_id = coeff_file['template_id'][:]
         tid_sort = numpy.argsort(template_id)
-
         self.fits_by_tid[ifo]['median_sigma'] = \
             coeff_file['median_sigma'][:][tid_sort]
 
@@ -678,11 +679,14 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         ifos = s.keys()
         if 'H1' in ifos and 'L1' in ifos:
             logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
+            # makeshift factor to compensate HL(V) coincs which are penalized
+            # on average by p/t/a vs HV, LV which are not
+            logr_s = logr_s + 4.5
         else:
             logr_s = numpy.zeros_like(s['V1']['snr'])
 
         loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
-            + network_logvol - benchmark_logvol
+                + network_logvol - benchmark_logvol
         return loglr
 
 
