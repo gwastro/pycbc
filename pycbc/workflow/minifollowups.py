@@ -424,7 +424,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                 continue
             # Reanalyze the time around the trigger in each detector
             if _MAKE_SINGLE_TEMPLATE_EXE is None:
-                curr_exe = SingleTemplateExecutable
+                curr_exe = SingleTemplateExecutable\
                     (workflow.cp, 'single_template',
                      ifos=[ifo], out_dir=out_dir,
                      tags=[tag] + tags)
