@@ -35,6 +35,7 @@ import sys
 
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
+from pycbc.pool import is_main_processs
 from pycbc.transforms import apply_transforms
 from .base import (BaseSampler, create_new_output_file)
 from .base_mcmc import get_optional_arg_from_config
@@ -75,11 +76,6 @@ class MultinestSampler(BaseSampler):
             logging.getLogger().setLevel(loglevel)
         except ImportError:
             raise ImportError("pymultinest is not installed.")
-        try:
-            from mpi4py.MPI import COMM_WORLD
-            self.is_master = COMM_WORLD.Get_rank() == 0
-        except ImportError:
-            self.is_master = True
 
         super(MultinestSampler, self).__init__(model)
 
@@ -97,6 +93,7 @@ class MultinestSampler(BaseSampler):
         self._dlogz = None
         self._importance_logz = None
         self._importance_dlogz = None
+        self.is_main_process = is_main_process()
 
     @property
     def io(self):
@@ -290,11 +287,11 @@ class MultinestSampler(BaseSampler):
             if self._samples.shape[0] == 0:
                 continue
             # dump the current results
-            if self.is_master:
+            if self.is_main_process:
                 self.checkpoint()
             # check if we're finished
             done = self.check_if_finished()
-        if not self.is_master:
+        if not self.is_main_process:
             sys.exit()
 
     def write_results(self, filename):
@@ -356,7 +353,7 @@ class MultinestSampler(BaseSampler):
         # check for backup file(s)
         checkpoint_file = output_file + '.checkpoint'
         backup_file = output_file + '.bkup'
-        if not self.is_master:
+        if not self.is_main_process:
             self.checkpoint_file = checkpoint_file
             self.backup_file = backup_file
             self.checkpoint_valid = True
