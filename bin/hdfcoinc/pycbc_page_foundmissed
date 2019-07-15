@@ -69,7 +69,11 @@ vals['mass_ratio'] = numpy.maximum(m1/m2, m2/m1)
 
 dvals = {}
 
-ifos = f.attrs['ifos'].split(' ')
+if 'ifos' in f.attrs:
+    ifos = f.attrs['ifos'].split(' ')
+else:
+    logging.warning("Ifos not found in input file, assuming H-L")
+    ifos = ['H1', 'L1']
 
 # NOTE: Effective distance is hardcoded to these values. It's also normally
 #       meaningless for precessing injections.
