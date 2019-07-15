@@ -18,7 +18,8 @@ def get_ifo_attr(fi):
     else:
         # The input file is injection style, so the segments group only contains
         # the segments for the given ifo combination
-        attr = ' '.join([k for k in fi['foreground'].keys() if 'time' in fi['foreground/%s' % k]])
+        attr = ' '.join([k for k in fi['foreground'].keys()
+                         if 'time' in fi['foreground/%s' % k]])
     return attr
 
 parser = argparse.ArgumentParser()
@@ -78,6 +79,8 @@ f.attrs['foreground_time'] = abs(foreground_segs)
 # obtain list of all ifos involved in the coinc_statmap files
 all_ifos = np.unique([ifo for fi in files
                       for ifo in get_ifo_attr(fi).split(' ')])
+# output inherits ifo list
+f.attrs['ifos'] = ' '.join(sorted(all_ifos))
 all_ifo_combos = [get_ifo_attr(fi).replace(' ','') for fi in files]
 
 logging.info('Copying foreground datasets')
@@ -225,18 +228,18 @@ fg_ifar = conv.sec_to_year(1. /np.sum(isincombo_mask*all_fars, axis=0))
 fg_ifar_exc = conv.sec_to_year(1. /np.sum(isincombo_mask*all_fars_exc, axis=0))
 
 f.attrs['foreground_time_exc'] = f.attrs['foreground_time']
-
-# Construct the foreground censor veto from the clustered candidate times
-# above the ifar threshold
-thr = test_times[fg_ifar > args.censor_ifar_threshold]
-vstart = thr - args.veto_window
-vend = thr + args.veto_window
-vtime = segments.segmentlist([segments.segment(s, e)
-                              for s, e in zip(vstart, vend)])
-logging.info('Censoring %.2f seconds', abs(vtime))
-f.attrs['foreground_time_exc'] -= abs(vtime)
-f['segments/foreground_veto/start'] = vstart
-f['segments/foreground_veto/end'] = vend
+if not args.background_files:
+    # Construct the foreground censor veto from the clustered candidate times
+    # above the ifar threshold
+    thr = test_times[fg_ifar > args.censor_ifar_threshold]
+    vstart = thr - args.veto_window
+    vend = thr + args.veto_window
+    vtime = segments.segmentlist([segments.segment(s, e)
+                                  for s, e in zip(vstart, vend)])
+    logging.info('Censoring %.2f seconds', abs(vtime))
+    f.attrs['foreground_time_exc'] -= abs(vtime)
+    f['segments/foreground_veto/start'] = vstart
+    f['segments/foreground_veto/end'] = vend
 
 f['foreground/ifar'][:] = fg_ifar
 f['foreground/fap'] = 1 - np.exp(-f.attrs['foreground_time'] / fg_ifar)
