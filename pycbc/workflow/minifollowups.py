@@ -353,6 +353,7 @@ class PlotQScanExecutable(PlotExecutable):
     file_input_options = ['--gating-file']
 
 
+_MAKE_SINGLE_TEMPLATE_EXE = None
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                                   params, out_dir, inj_file=None, exclude=None,
                                   require=None, tags=None, params_str=None,
@@ -410,6 +411,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
     output_files : workflow.FileList
         The list of workflow.Files created in this function.
     """
+    global _MAKE_SINGLE_TEMPLATE_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'single_template_plot'
@@ -421,9 +423,18 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
             if params['%s_end_time' % ifo] == -1.0:
                 continue
             # Reanalyze the time around the trigger in each detector
-            node = SingleTemplateExecutable(workflow.cp, 'single_template',
-                                            ifos=[ifo], out_dir=out_dir,
-                                            tags=[tag] + tags).create_node()
+            if _MAKE_SINGLE_TEMPLATE_EXE is None:
+                curr_exe = SingleTemplateExecutable
+                    (workflow.cp, 'single_template',
+                     ifos=[ifo], out_dir=out_dir,
+                     tags=[tag] + tags)
+                _MAKE_SINGLE_TEMPLATE_EXE = curr_exe
+            else:
+                curr_exe = _MAKE_SINGLE_TEMPLATE_EXE
+                curr_exe.update_current_tags([tag] + tags)
+                curr_exe.ifo_list = [ifo]
+                curr_exe.ifo_string = ifo
+            node = curr_exe.create_node()
             if use_exact_inj_params:
                 node.add_opt('--use-params-of-closest-injection')
             else:
@@ -484,10 +495,12 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
             files += node.output_files
     return files
 
+_MAKE_PLOT_WAVEFORM_EXE = None
 def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
                             require=None, tags=None):
     """ Add plot_waveform jobs to the workflow.
     """
+    global _MAKE_PLOT_WAVEFORM_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'single_template_plot'
@@ -495,8 +508,16 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
     secs = excludestr(secs, exclude)
     files = FileList([])
     for tag in secs:
-        node = PlotExecutable(workflow.cp, 'plot_waveform', ifos=ifos,
-                              out_dir=out_dir, tags=[tag] + tags).create_node()
+        if _MAKE_PLOT_WAVEFORM_EXE is None:
+            curr_exe = PlotExecutable(workflow.cp, 'plot_waveform', ifos=ifos,
+                                      out_dir=out_dir, tags=[tag] + tags)
+            _MAKE_PLOT_WAVEFORM_EXE = curr_exe
+        else:
+            curr_exe = _MAKE_PLOT_WAVEFORM_EXE
+            curr_exe.ifo_list = ifos
+            curr_exe.ifo_string = ''.join(ifos)
+            curr_exe.update_current_tags([tag] + tags)
+        node = curr_exe.create_node()
         node.add_opt('--mass1', "%.6f" % params['mass1'])
         node.add_opt('--mass2', "%.6f" % params['mass2'])
         node.add_opt('--spin1z',"%.6f" % params['spin1z'])
@@ -515,14 +536,22 @@ def make_plot_waveform_plot(workflow, params, out_dir, ifos, exclude=None,
         files += node.output_files
     return files
 
+_MAKE_INJ_INFO_EXE = None
 def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
                   tags=None):
+    global _MAKE_INJ_INFO_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_injinfo'
     files = FileList([])
-    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                              out_dir=out_dir, tags=tags).create_node()
+    if _MAKE_INJ_INFO_EXE is None:
+        curr_exe = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                                  out_dir=out_dir, tags=tags)
+        _MAKE_INJ_INFO_EXE = curr_exe
+    else:
+        curr_exe = _MAKE_INJ_INFO_EXE
+        curr_exe.update_current_tags(tags)
+    node = curr_exe.create_node()
     node.add_input_opt('--injection-file', injection_file)
     node.add_opt('--injection-index', str(injection_index))
     node.add_opt('--n-nearest', str(num))
@@ -531,15 +560,23 @@ def make_inj_info(workflow, injection_file, injection_index, num, out_dir,
     files += node.output_files
     return files
 
+_MAKE_COINC_INFO_EXE = None
 def make_coinc_info(workflow, singles, bank, coinc, out_dir,
                     n_loudest=None, trig_id=None, file_substring=None,
                     tags=None):
+    global _MAKE_COINC_INFO_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_coincinfo'
     files = FileList([])
-    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                              out_dir=out_dir, tags=tags).create_node()
+    if _MAKE_COINC_INFO_EXE is None:
+        curr_exe = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                                  out_dir=out_dir, tags=tags)
+        _MAKE_COINC_INFO_EXE = curr_exe
+    else:
+        curr_exe = _MAKE_COINC_INFO_EXE
+        curr_exe.update_current_tags(out_dir)
+    node = curr_exe.create_node()
     node.add_input_list_opt('--single-trigger-files', singles)
     node.add_input_opt('--statmap-file', coinc)
     node.add_input_opt('--bank-file', bank)
@@ -554,16 +591,26 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     files += node.output_files
     return files
 
+_MAKE_SNGL_INFO_EXE = None
 def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
                   tags=None):
     """Setup a job to create sngl detector sngl ifo html summary snippet.
     """
+    global _MAKE_SNGL_INFO_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'page_snglinfo'
     files = FileList([])
-    node = PlotExecutable(workflow.cp, name, ifos=[ifo],
-                              out_dir=out_dir, tags=tags).create_node()
+    if _MAKE_SNGL_INFO_EXE is None:
+        curr_exe = PlotExecutable(workflow.cp, name, ifos=[ifo],
+                                  out_dir=out_dir, tags=tags)
+        _MAKE_SNGL_INFO_EXE = curr_exe
+    else:
+        curr_exe = _MAKE_SNGL_INFO_EXE
+        curr_exe.ifo_list = [ifo]
+        curr_exe.ifo_string = ifo
+        curr_exe.update_current_tags(tags)
+    node = curr_exe.create_node()
     node.add_input_opt('--single-trigger-file', sngl_file)
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--trigger-id', str(trigger_id))
@@ -574,8 +621,10 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
     return files
 
 
+_MAKE_TRIGGER_TIMESERIES_EXE = None
 def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=None,
                             exclude=None, require=None, tags=None):
+    global _MAKE_TRIGGER_TIMESERIES_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'plot_trigger_timeseries'
@@ -583,8 +632,14 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
     secs = excludestr(secs, exclude)
     files = FileList([])
     for tag in secs:
-        node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                              out_dir=out_dir, tags=[tag] + tags).create_node()
+        if _MAKE_TRIGGER_TIMESERIES_EXE is None:
+            curr_exe = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                                      out_dir=out_dir, tags=[tag] + tags)
+            _MAKE_TRIGGER_TIMESERIES_EXE = curr_exe
+        else:
+            curr_exe = _MAKE_TRIGGER_TIMESERIES_EXE
+            curr_exe.update_current_tags([tag] + tags)
+        node = curr_exe.create_node()
         node.add_multiifo_input_list_opt('--single-trigger-files', singles)
         node.add_opt('--times', ifo_times)
         node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
@@ -596,6 +651,7 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
         files += node.output_files
     return files
 
+_MAKE_QSCAN_PLOT_EXE = None
 def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
                     data_segments=None, time_window=100, tags=None):
     """ Generate a make_qscan node and add it to workflow.
@@ -632,12 +688,20 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
     tags: list (optional, default=None)
         List of tags to add to the created nodes, which determine file naming.
     """
+    global _MAKE_QSCAN_PLOT_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'plot_qscan'
 
-    curr_exe = PlotQScanExecutable(workflow.cp, name, ifos=[ifo],
-                          out_dir=out_dir, tags=tags)
+    if _MAKE_QSCAN_PLOT_EXE is None:
+        curr_exe = PlotQScanExecutable(workflow.cp, name, ifos=[ifo],
+                                       out_dir=out_dir, tags=tags)
+        _MAKE_QSCAN_PLOT_EXE = curr_exe
+    else:
+        curr_exe = _MAKE_QSCAN_PLOT_EXE
+        curr_exe.ifo_list = [ifo]
+        curr_exe.ifo_string = ifo
+        curr_exe.update_current_tags(tags)
     node = curr_exe.create_node()
 
     # Determine start/end times, using data segments if needed.
@@ -689,6 +753,7 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
     workflow += node
     return node.output_files
 
+_MAKE_SINGLES_TIMEFREQ_EXE = None
 def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
                           veto_file=None, time_window=10, data_segments=None,
                           tags=None):
@@ -729,12 +794,22 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
     tags: list (optional, default=None)
         List of tags to add to the created nodes, which determine file naming.
     """
+    global _MAKE_SINGLES_TIMEFREQ_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'plot_singles_timefreq'
 
-    curr_exe = SingleTimeFreqExecutable(workflow.cp, name, ifos=[single.ifo],
-                          out_dir=out_dir, tags=tags)
+    if _MAKE_SINGLES_TIMEFREQ_EXE is None:
+        curr_exe = SingleTimeFreqExecutable(workflow.cp, name,
+                                            ifos=[single.ifo],
+                                            out_dir=out_dir, tags=tags)
+        _MAKE_SINGLES_TIMEFREQ_EXE = curr_exe
+    else:
+        curr_exe = _MAKE_SINGLES_TIMEFREQ_EXE
+        curr_exe.ifo_list = [single.ifo]
+        curr_exe.ifo_string = single.ifo
+        curr_exe.update_current_tags(tags)
+      
     node = curr_exe.create_node()
     node.add_input_opt('--trig-file', single)
     node.add_input_opt('--bank-file', bank_file)
