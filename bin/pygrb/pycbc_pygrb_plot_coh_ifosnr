@@ -148,6 +148,7 @@ y_max = axis_max_value(trig_data.ifo_snr[ifo], inj_data.ifo_snr[ifo], inj_file)
 zoom_snr = numpy.arange(0.01, max_snr, 0.01)
 
 # Setup the plots
+pygrb_shared_plot_setups()
 fig_path_list = [outfile, zoomedoutfile]
 x_label = "Coherent SNR"
 y_label = "%s sngl SNR" % ifo
