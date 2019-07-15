@@ -138,7 +138,7 @@ else:
 bank_data = h5py.File(args.bank_file, 'r')
 
 # loop over number of loudest events to be followed up
-event_tids = {}
+event_times = {}
 skipped_data = []
 event_count = 0
 curr_idx = -1
@@ -156,18 +156,18 @@ while event_count < num_events and curr_idx < (events_to_read-1):
                                     key1, tids[key1][curr_idx])
         # For background do not want to follow up 10 background events caused
         # by the same event in ifo 1 and different, quiet, events in ifo 2,
-        if key0 not in event_tids:
-            event_tids[key0] = []
-        if int(tids[key0][curr_idx]) in event_tids[key0]:
-            skipped_data.append((key0, int(tids[key0][curr_idx])))
+        if key0 not in event_times:
+            event_times[key0] = []
+        if int(times[key0][curr_idx]) in event_times[key0]:
+            skipped_data.append((key0, int(times[key0][curr_idx])))
             continue
-        if key1 not in event_tids:
-            event_tids[key1] = []
-        if int(tids[key1][curr_idx]) in event_tids[key1]:
-            skipped_data.append((key1, int(tids[key1][curr_idx])))
+        if key1 not in event_times:
+            event_times[key1] = []
+        if int(times[key1][curr_idx]) in event_times[key1]:
+            skipped_data.append((key1, int(times[key1][curr_idx])))
             continue
-        event_tids[key0].append(int(tids[key0][curr_idx]))
-        event_tids[key1].append(int(tids[key1][curr_idx]))
+        event_times[key0].append(int(times[key0][curr_idx]))
+        event_times[key1].append(int(times[key1][curr_idx]))
 
     else:
         # Version used for multi-ifo coinc code
@@ -182,17 +182,17 @@ while event_count < num_events and curr_idx < (events_to_read-1):
 
             # For background do not want to follow up 10 background events
             # by the same event in ifo 1 and different, quiet, events in ifo 2,
-            if ifo not in event_tids:
-                event_tids[ifo] = []
-            if int(tids[ifo][curr_idx]) in event_tids[ifo]:
-                skipped_data.append((ifo, int(tids[ifo][curr_idx])))
+            if ifo not in event_times:
+                event_times[ifo] = []
+            if int(times[ifo][curr_idx]) in event_times[ifo]:
+                skipped_data.append((ifo, int(times[ifo][curr_idx])))
                 duplicate=True
                 break
 
         if duplicate:
             continue
         for ifo in times:
-            event_tids[ifo].append(int(tids[ifo][curr_idx]))
+            event_times[ifo].append(int(times[ifo][curr_idx]))
 
         ifo_times = ' '.join(ifo_times_strings)
         ifo_tids = ' '.join(ifo_tids_strings)
