@@ -431,9 +431,9 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                 _MAKE_SINGLE_TEMPLATE_EXE = curr_exe
             else:
                 curr_exe = _MAKE_SINGLE_TEMPLATE_EXE
-                curr_exe.update_current_tags([tag] + tags)
                 curr_exe.ifo_list = [ifo]
                 curr_exe.ifo_string = ifo
+                curr_exe.update_current_tags([tag] + tags)
             node = curr_exe.create_node()
             if use_exact_inj_params:
                 node.add_opt('--use-params-of-closest-injection')
