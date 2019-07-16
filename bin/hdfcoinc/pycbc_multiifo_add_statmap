@@ -128,21 +128,13 @@ logging.info('{} triggers'.format(n_triggers))
 if args.output_combination_information:
     # if outputting ifo combination info, then create dataset of interferometer
     # strings
+    fg_coinc_type = np.array([])
     for f_in in files:
         key = get_ifo_string(f_in).replace(' ','')
-        type_combo_key = 'foreground/ifo_combination'
         # make list of repeated ifo combination strings
         combo_repeat = np.array(np.repeat(key.encode('utf8'), f_in['foreground/fap'].size))
-        if type_combo_key in f:
-            # if the dataset already exists, make a copy, delete original
-            # and concatenate the string list
-            ifo_comb_fg_type = f[type_combo_key][:]
-            del f[type_combo_key]
-            ifo_comb_fg_type = np.concatenate([ifo_comb_fg_type, combo_repeat])
-        else:
-            ifo_comb_fg_type = combo_repeat
-
-        f[type_combo_key]=ifo_comb_fg_type
+        fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat])
+    f['foreground/ifo_combination'] = fg_coinc_type
 
 # all_times is a tuple of trigger time arrays
 all_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
