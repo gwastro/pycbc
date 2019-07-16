@@ -29,9 +29,9 @@ packages for parameter estimation.
 from __future__ import absolute_import
 
 import logging
-import numpy
 import shutil
 import sys
+import numpy
 
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
@@ -365,7 +365,7 @@ class MultinestSampler(BaseSampler):
                                                          backup_file)
             # Create a new file if the checkpoint doesn't exist, or if it is
             # corrupted
-            self.new_checkpoint = False  # keeps track if this is a new file or not
+            self.new_checkpoint = False  # tracks whether this is a new file
             if not checkpoint_valid:
                 logging.info("Checkpoint not found or not valid")
                 create_new_output_file(self, checkpoint_file, force=force,
@@ -375,10 +375,10 @@ class MultinestSampler(BaseSampler):
                 # copy to backup
                 shutil.copy(checkpoint_file, backup_file)
             # write the command line, startup
-            for fn in [checkpoint_file, backup_file]:
-                with self.io(fn, "a") as fp:
-                    fp.write_command_line()
-                    fp.write_resume_point()
+            for f_n in [checkpoint_file, backup_file]:
+                with self.io(f_n, "a") as f_p:
+                    f_p.write_command_line()
+                    f_p.write_resume_point()
             # store
             self.checkpoint_file = checkpoint_file
             self.backup_file = backup_file
