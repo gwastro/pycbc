@@ -1133,7 +1133,7 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
         with open(self._map_file, 'r') as fp:
             for line in fp:
                 fname = line.rstrip('\n') 
-                eosidx = int(os.path.basename(fname.split('.')[0]))
+                eosidx = int(os.path.basename(fname).split('.')[0])
                 self._eos_files[eosidx] = os.path.abspath(fname)
         # create an eos cache for fast load later
         self._eos_cache = {}
