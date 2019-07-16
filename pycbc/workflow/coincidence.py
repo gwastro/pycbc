@@ -27,9 +27,10 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 """
 
+import os
 import logging
-from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
 from ligo import segments
+from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
 
 class PyCBCBank2HDFExecutable(Executable):
 
@@ -260,11 +261,27 @@ class PyCBCCombineStatmap(Executable):
 
 class PyCBCMultiifoCombineStatmap(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, statmap_files, cluster_window, tags=None):
+    def create_node(self, statmap_files, cluster_window,
+                    tags=None):
         if tags is None:
             tags = []
         node = Node(self)
         node.add_input_list_opt('--statmap-files', statmap_files)
+        node.new_output_file_opt(statmap_files[0].segment, '.hdf',
+                                 '--output-file', tags=tags)
+        node.add_opt('--cluster-window', cluster_window)
+        return node
+
+class PyCBCMultiifoAddStatmap(Executable):
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, statmap_files, background_files, cluster_window,
+                    tags=None):
+        if tags is None:
+            tags = []
+        node = Node(self)
+        node.add_input_list_opt('--statmap-files', statmap_files)
+        if 'injections' in tags:
+            node.add_input_list_opt('--background-files', background_files)
         node.new_output_file_opt(statmap_files[0].segment, '.hdf',
                                  '--output-file', tags=tags)
         node.add_opt('--cluster-window', cluster_window)
@@ -737,7 +754,8 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
 
     return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list)
 
-def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
+def setup_multiifo_combine_statmap(workflow, final_bg_file_list, bg_file_list,
+                                   out_dir, tags):
     """
     Combine the multiifo statmap files into one background file
     """
@@ -746,18 +764,31 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, out_dir, tags):
     make_analysis_dir(out_dir)
     logging.info('Setting up multiifo combine statmap')
 
-    cstat_exe = PyCBCMultiifoCombineStatmap(workflow.cp,
-                                            'combine_statmap',
-                                            ifos=workflow.ifos,
-                                            tags=tags,
-                                            out_dir=out_dir)
+    cstat_exe_name = os.path.basename(workflow.cp.get("executables",
+                                                      "combine_statmap"))
+    if cstat_exe_name == 'pycbc_multiifo_combine_statmap':
+        cstat_class = PyCBCMultiifoCombineStatmap
+    elif cstat_exe_name == 'pycbc_multiifo_add_statmap':
+        cstat_class = PyCBCMultiifoAddStatmap
+    else:
+        raise NotImplementedError('executable should be '
+            'pycbc_multiifo_combine_statmap or pycbc_multiifo_add_statmap')
+
+    cstat_exe = cstat_class(workflow.cp, 'combine_statmap', ifos=workflow.ifos,
+                            tags=tags, out_dir=out_dir)
 
     cluster_window = float(workflow.cp.get_opt_tags('combine_statmap',
                                                     'cluster-window',
                                                     tags))
-    combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
-                                                 cluster_window,
-                                                 tags)
+    if cstat_exe_name == 'pycbc_multiifo_combine_statmap':
+        combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
+                                                     cluster_window,
+                                                     tags)
+    elif cstat_exe_name == 'pycbc_multiifo_add_statmap':
+        combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
+                                                     bg_file_list,
+                                                     cluster_window,
+                                                     tags)
     workflow.add_node(combine_statmap_node)
     return combine_statmap_node.output_file
 

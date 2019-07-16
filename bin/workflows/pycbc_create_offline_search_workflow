@@ -209,6 +209,7 @@ combctags = [tag]
 combined_bg_file = wf.setup_multiifo_combine_statmap(
                                 workflow,
                                 wf.FileList(final_bg_files.values()),
+                                wf.FileList([]),
                                 output_dir,
                                 tags=combctags)
 
@@ -532,6 +533,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     final_inj_bg_file_list = wf.FileList(inj_coinc.values())
     combined_inj_bg_file = wf.setup_multiifo_combine_statmap(workflow,
                                                      final_inj_bg_file_list,
+                                                     wf.FileList(final_bg_files.values()),
                                                      output_dir,
                                                      tags=combctags)
 
