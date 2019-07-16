@@ -958,6 +958,8 @@ def recursively_save_dict_contents_to_group(h5file, path, dic):
 
 def combine_and_copy(f, files, group):
     """ Combine the same column from multiple files and save to a third"""
+    # ensure that the files input is stable for iteration order
+    assert isinstance(files, (list, tuple))
     f[group] = np.concatenate([fi[group][:] if group in fi else \
                                    np.array([], dtype=np.uint32) for fi in files])
 

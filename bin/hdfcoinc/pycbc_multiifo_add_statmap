@@ -118,13 +118,24 @@ for f_in in files:
             all_trig_ids[ifo] = np.concatenate([all_trig_ids[ifo],
                                  -1 * np.ones_like(f_in['foreground/fap'][:],
                                                    dtype=np.uint32)])
+
+for ifo in all_ifos:
+    f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
+    f['foreground/{}/trigger_id'.format(ifo)] = all_trig_ids[ifo]
 n_triggers = f['foreground/ifar'].size
+logging.info('{} triggers'.format(n_triggers))
+
 if args.output_combination_information:
+    # if outputting ifo combination info, then create dataset of interferometer
+    # strings
     for f_in in files:
         key = get_ifo_string(f_in).replace(' ','')
         type_combo_key = 'foreground/ifo_combination'
+        # make list of repeated ifo combination strings
         combo_repeat = np.array(np.repeat(key.encode('utf8'), f_in['foreground/fap'].size))
         if type_combo_key in f:
+            # if the dataset already exists, make a copy, delete original
+            # and concatenate the string list
             ifo_comb_fg_type = f[type_combo_key][:]
             del f[type_combo_key]
             ifo_comb_fg_type = np.concatenate([ifo_comb_fg_type, combo_repeat])
@@ -132,12 +143,6 @@ if args.output_combination_information:
             ifo_comb_fg_type = combo_repeat
 
         f[type_combo_key]=ifo_comb_fg_type
-
-for ifo in all_ifos:
-    f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
-    f['foreground/{}/trigger_id'.format(ifo)] = all_trig_ids[ifo]
-
-logging.info('{} triggers'.format(n_triggers))
 
 # all_times is a tuple of trigger time arrays
 all_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
@@ -172,11 +177,11 @@ times_tuple = (f['foreground/{}/time'.format(ifo)] for ifo in all_ifos)
 test_times = np.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
                        for tc in zip(*times_tuple)])
 
+# create a dictionary of whether the coincidence is in an available time for
+# each interferometer combination
 is_in_combo_time = {}
-for key in f['segments']:
+for key in all_ifo_combos:
     is_in_combo_time[key] = np.zeros(n_triggers)
-    if key.startswith('foreground') or key.startswith('background'):
-        continue
     end_times = np.array(f['segments/%s/end' % key][:])
     start_times = np.array(f['segments/%s/start' % key][:])
     idx_within_segment = pycbc.events.indices_within_times(test_times,
@@ -223,7 +228,8 @@ logging.info('Combining false alarm rates from all available backgrounds')
 # note that iterating over all_ifo_combos here ensures that the ordering
 # remains the same
 
-# Create a mask of whether the ifo combination is available at trigger time
+# Convert dictionary of whether the ifo combination is available at trigger
+# time into a 2D mask
 isincombo_mask = np.array([list(is_in_combo_time[ct]) for ct in all_ifo_combos])
 
 # Create n_combos by n_triggers arrays of FARs
