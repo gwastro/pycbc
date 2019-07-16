@@ -73,7 +73,7 @@ for fi in files:
         if key not in f:
             f.create_group(key)
         f[key].attrs[attr_name] = fi.attrs[attr_name]
-        
+
 logging.info('Combining foreground segments')
 
 # Convert segmentlistdict to a list ('seglists') of segmentlists
@@ -165,7 +165,7 @@ logging.info('{} foreground events after clustering'.format(n_triggers))
 times_tuple = (f['foreground/{}/time'.format(ifo)] for ifo in all_ifos)
 test_times = np.array([pycbc.events.mean_if_greater_than_zero(tc)[0]
                        for tc in zip(*times_tuple)])
-
+        
 # create a dictionary of whether the coincidence is in an available time for
 # each interferometer combination
 is_in_combo_time = {}
