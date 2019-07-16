@@ -1,8 +1,7 @@
 #!/bin/env python
 """ Calculate total FAR based on statistic ranking for coincidences in times
-with more than one ifo combination available. Cluster to keep coincs with the
-highest stat value . This clusters to find the most significant foreground,
-but leaves the background triggers alone.
+with more than one ifo combination available. Cluster to keep foreground
+coincs with the highest stat value.
 """
 
 import h5py, numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io
@@ -13,24 +12,24 @@ from ligo import segments
 
 def get_ifo_string(fi):
     # Returns a string of a space-separated list of ifos from input file.
-    # This should be deprecated soon, but is needed when dealing with older
-    # coinc_statmap files which do not have the 'ifos' attribute
+    # Can be deprecated soon, needed for older coinc_statmap files which 
+    # do not have 'ifos' attribute
     try:
         # input file has ifos stored as an attribute
-        attr = fi.attrs['ifos']
+        istring = fi.attrs['ifos']
     except KeyError:
-        # The input file doesn't have the ifos attribute, but the foreground
-        # group contains the time information for each ifo so it can be
-        # reconstructed
-        attr = ' '.join(sorted([k for k in fi['foreground'].keys()
+        # Foreground group contains the time information for each ifo so 
+        # the ifos list can be reconstructed
+        istring = ' '.join(sorted([k for k in fi['foreground'].keys()
                          if 'time' in fi['foreground/%s' % k]]))
-    return attr
+    return istring
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--statmap-files', nargs='+',
-                    help="List of coinc files to be combined")
+    help="List of coinc files to be combined")
 parser.add_argument('--censor-ifar-threshold', type=float, default=0.003,
     help="If provided, only window out foreground triggers with IFAR (years)"
          "above the threshold [default=0.003yr]")
@@ -38,12 +37,13 @@ parser.add_argument('--veto-window', type=float, default=0.1,
     help="Time around each zerolag trigger to window out [default=.1s]")
 parser.add_argument('--cluster-window', type=float,
     help="Maximum time interval to cluster coincident events")
-parser.add_argument('--output-combination-information', action='store_true',
-    help="Output which ifo combination was used for this coincidence")
+parser.add_argument('--output-coinc-types', action='store_true',
+    help="Create additional foreground dataset recording coinc type for each"
+         " event. Mainly for debugging")
 parser.add_argument('--output-file', help="name of output file")
 parser.add_argument('--background-files', nargs='+', default=None,
-                    help="full data coinc_statmap files for use in background"
-                          "calculation when used for injections")
+    help="full data coinc_statmap files for use in background"
+         "calculation when used for injections")
 args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
@@ -73,7 +73,7 @@ for fi in files:
         if key not in f:
             f.create_group(key)
         f[key].attrs[attr_name] = fi.attrs[attr_name]
-
+        
 logging.info('Combining foreground segments')
 
 # Convert segmentlistdict to a list ('seglists') of segmentlists
@@ -92,6 +92,15 @@ logging.info('Copying foreground datasets')
 for k in files[0]['foreground']:
     if not k.startswith('fap') and k not in all_ifos:
         pycbc.io.combine_and_copy(f, files, 'foreground/' + k)
+
+if args.output_coinc_types:
+    # create dataset of ifo combination strings
+    fg_coinc_type = np.array([])
+    for f_in in files:
+        key = get_ifo_string(f_in).replace(' ','')
+        combo_repeat = np.array(np.repeat(key.encode('utf8'), f_in['foreground/fap'].size))
+        fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat])
+    f['foreground/ifo_combination'] = fg_coinc_type
 
 logging.info('Collating triggers into single structure')
 
@@ -119,23 +128,12 @@ for f_in in files:
                                  -1 * np.ones_like(f_in['foreground/fap'][:],
                                                    dtype=np.uint32)])
 
+n_triggers = f['foreground/ifar'].size
+logging.info('{} foreground events before clustering'.format(n_triggers))
+
 for ifo in all_ifos:
     f['foreground/{}/time'.format(ifo)] = all_trig_times[ifo]
     f['foreground/{}/trigger_id'.format(ifo)] = all_trig_ids[ifo]
-n_triggers = f['foreground/ifar'].size
-logging.info('{} triggers'.format(n_triggers))
-
-if args.output_combination_information:
-    # if outputting ifo combination info, then create dataset of interferometer
-    # strings
-    fg_coinc_type = np.array([])
-    for f_in in files:
-        key = get_ifo_string(f_in).replace(' ','')
-        # make list of repeated ifo combination strings
-        combo_repeat = np.array(np.repeat(key.encode('utf8'), f_in['foreground/fap'].size))
-        fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat])
-    f['foreground/ifo_combination'] = fg_coinc_type
-
 # all_times is a tuple of trigger time arrays
 all_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
@@ -145,13 +143,11 @@ cidx = pycbc.events.cluster_coincs_multiifo(f['foreground/stat'][:], all_times,
                                             np.zeros(n_triggers), 0,
                                             args.cluster_window)
 
-
 def filter_dataset(h5file, name, idx):
     # Dataset needs to be deleted and remade as it is a different size
     filtered_dset = h5file[name][:][idx]
     del h5file[name]
     h5file[name] = filtered_dset
-
 
 # Downsample the foreground columns to only the loudest ifar between the
 # multiple files
@@ -163,6 +159,7 @@ for key in f['foreground'].keys():
             filter_dataset(f, 'foreground/{}/{}'.format(key, k), cidx)
 
 n_triggers = f['foreground/ifar'].size
+logging.info('{} foreground events after clustering'.format(n_triggers))
 
 # Calculating event times to determine which types of coinc are available
 times_tuple = (f['foreground/{}/time'.format(ifo)] for ifo in all_ifos)
