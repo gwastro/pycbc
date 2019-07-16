@@ -27,10 +27,9 @@ workflows. For details about this module and its capabilities see here:
 https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/coincidence.html
 """
 
-import logging
-from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
+import logging, os
 from ligo import segments
-import os
+from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
 
 class PyCBCBank2HDFExecutable(Executable):
 
