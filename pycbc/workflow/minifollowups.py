@@ -354,6 +354,7 @@ class PlotQScanExecutable(PlotExecutable):
 
 
 _MAKE_SINGLE_TEMPLATE_EXE = None
+_MAKE_SINGLE_TEMPLATE_PLOT_EXE = None
 def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
                                   params, out_dir, inj_file=None, exclude=None,
                                   require=None, tags=None, params_str=None,
@@ -412,6 +413,7 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
         The list of workflow.Files created in this function.
     """
     global _MAKE_SINGLE_TEMPLATE_EXE
+    global _MAKE_SINGLE_TEMPLATE_PLOT_EXE
     tags = [] if tags is None else tags
     makedir(out_dir)
     name = 'single_template_plot'
@@ -470,8 +472,17 @@ def make_single_template_plots(workflow, segs, data_read_name, analyzed_name,
             data = node.output_files[0]
             workflow += node
             # Make the plot for this trigger and detector
-            node = PlotExecutable(workflow.cp, name, ifos=[ifo],
-                              out_dir=out_dir, tags=[tag] + tags).create_node()
+            if _MAKE_SINGLE_TEMPLATE_PLOT_EXE is None:
+                curr_exe = PlotExecutable(workflow.cp, name, ifos=[ifo],
+                                          out_dir=out_dir, tags=[tag] + tags)
+                _MAKE_SINGLE_TEMPLATE_PLOT_EXE = curr_exe
+            else:
+                curr_exe = _MAKE_SINGLE_TEMPLATE_PLOT_EXE
+                curr_exe.ifo_list = [ifo]
+                curr_exe.ifo_string = ifo
+                curr_exe.update_current_tags([tag] + tags)
+
+            node = curr_exe.create_node()
             node.add_input_opt('--single-template-file', data)
             node.new_output_file_opt(workflow.analysis_time, '.png',
                                      '--output-file')
