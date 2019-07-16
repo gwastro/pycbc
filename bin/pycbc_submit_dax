@@ -31,6 +31,7 @@ REMOTE_STAGING_SERVER=""
 NO_CREATE_PROXY=0
 NO_GRID=""
 SUBMIT_DAX="--submit"
+HTML_ENTITIES="{\"\'\": '&#39;', '(': '&#40;', ')': '&#41;', '+': '&#43;', '\"': '&quot;'}"
 
 # These will be changed by the bundle builder
 DATA_INLINE=False
@@ -131,7 +132,7 @@ while true ; do
       case "$2" in
         "") shift 2 ;;
         *) SITE_PROFILE=${2}
-           APPEND_SITE_PROFILE_ARRAY=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${SITE_PROFILE}`
+           APPEND_SITE_PROFILE_ARRAY=$(python -c "import sys; from xml.sax.saxutils import (escape, unescape); print(escape(unescape(sys.stdin.read()), entities=${HTML_ENTITIES}))" <<< ${SITE_PROFILE})
            OIFS=${IFS}; IFS=":"
            read -ra APPEND_SITE_PROFILE_ARRAY <<< "${APPEND_SITE_PROFILE_ARRAY}"
            IFS=${OIFS}
@@ -610,9 +611,9 @@ if [ -e ${DASHBOARD_PATH} ] ; then
     cp ${DASHBOARD_PATH} ${DASHBOARD_COPY}
   fi
 
-  COMMAND_LINE=`perl -e 'use HTML::Entities; print encode_entities(decode_entities(<STDIN>), "\'\"'\'\''<>()&+" );' <<< ${COMMAND_LINE}`
-  perl -pi.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
-  perl -pi.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
+  COMMAND_LINE=$(python -c "import sys; from xml.sax.saxutils import (escape, unescape); print(escape(unescape(sys.stdin.read()), entities=${HTML_ENTITIES}))" <<< ${SITE_PROFILE})
+  sed -i.bak -e "s+PYCBC_SUBMIT_DAX_ARGV+${COMMAND_LINE}+g" ${DASHBOARD_PATH}
+  sed -i.bak -e "s+PEGASUS_DASHBOARD_URL+${DASHBOARD_URL}+g" ${DASHBOARD_PATH}
 fi
 shopt -u nullglob
 
