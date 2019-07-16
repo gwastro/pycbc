@@ -754,7 +754,8 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
 
     return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list)
 
-def setup_multiifo_combine_statmap(workflow, final_bg_file_list, bg_file_list, out_dir, tags):
+def setup_multiifo_combine_statmap(workflow, final_bg_file_list, bg_file_list,
+                                   out_dir, tags):
     """
     Combine the multiifo statmap files into one background file
     """
@@ -763,13 +764,15 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, bg_file_list, o
     make_analysis_dir(out_dir)
     logging.info('Setting up multiifo combine statmap')
 
-    cstat_exe_name = os.path.basename(workflow.cp.get("executables", "combine_statmap"))
+    cstat_exe_name = os.path.basename(workflow.cp.get("executables",
+                                                      "combine_statmap"))
     if cstat_exe_name == 'pycbc_multiifo_combine_statmap':
         cstat_class = PyCBCMultiifoCombineStatmap
     elif cstat_exe_name == 'pycbc_multiifo_add_statmap':
         cstat_class = PyCBCMultiifoAddStatmap
     else:
-        raise NotImplementedError('executable should be combine_statmap or add_statmap')
+        raise NotImplementedError('executable should be '
+            'pycbc_multiifo_combine_statmap or pycbc_multiifo_add_statmap')
 
     cstat_exe = cstat_class(workflow.cp, 'combine_statmap', ifos=workflow.ifos,
                             tags=tags, out_dir=out_dir)
