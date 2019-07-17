@@ -107,6 +107,10 @@ def primary_mass(mass1, mass2):
     mp[mask] = mass2[mask]
     return formatreturn(mp, input_is_array)
 
+def primary_source_mass(mass1, mass2, distance):
+    """Returns the larger of mass1 and mass2 in the source frame."""
+    det_mass = primary_mass(mass1, mass2)
+    return det_mass/(1. + pycbc.cosmology.redshift(distance))
 
 def secondary_mass(mass1, mass2):
     """Returns the smaller of mass1 and mass2 (s = secondary)."""
@@ -117,6 +121,11 @@ def secondary_mass(mass1, mass2):
     mask = mass1 < mass2
     ms[mask] = mass1[mask]
     return formatreturn(ms, input_is_array)
+
+def secondary_source_mass(mass1, mass2, distance):
+    """Returns the smaller of mass1 and mass2 in the source frame."""
+    det_mass = secondary_mass(mass1, mass2)
+    return det_mass/(1. + pycbc.cosmology.redshift(distance))
 
 
 def mtotal_from_mass1_mass2(mass1, mass2):
@@ -1449,5 +1458,6 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde',
            'final_mass_from_initial', 'final_spin_from_initial',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
-           'nltides_gw_phase_diff_isco',
+           'nltides_gw_phase_diff_isco', 'primary_source_mass',
+           'secondary_source_mass',
           ]
