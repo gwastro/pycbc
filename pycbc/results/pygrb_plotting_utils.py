@@ -42,11 +42,6 @@ try:
     from pylal.dq import dqSegmentUtils
 except ImportError:
     pass
-# Only if a backend is not already set ... This should really *not* be done
-# here, but in the executables you should set matplotlib.use()
-# This matches the check that matplotlib does internally, but this *may* be
-# version dependenant. If this is a problem then remove this and control from
-# the executables directly.
 from matplotlib import rc
 from matplotlib import pyplot as plt
 
