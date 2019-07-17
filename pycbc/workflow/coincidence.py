@@ -253,8 +253,8 @@ class PyCBCDistributeBackgroundBins(Executable):
         return node
 
 class PyCBCCombineStatmap(Executable):
-    """Combine statmap files over different bins and apply trials factor"""
-    
+    """Combine coincs over different bins and apply trials factor"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, statmap_files, tags=None):
         if tags is None:
@@ -266,14 +266,14 @@ class PyCBCCombineStatmap(Executable):
         return node
 
 class PyCBCMultiifoCombineStatmap(PyCBCCombineStatmap):
-    """Combine statmap files over different coinc types and apply trials factor"""
+    """Combine coincs over different coinc types and apply trials factor"""
 
     # same inputs and outputs as PyCBCCombineStatmap
     current_retention_level = Executable.MERGED_TRIGGERS
-    
+
 class PyCBCMultiifoAddStatmap(Executable):
     """Combine statmap files and add FARs over different coinc types"""
-    
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, statmap_files, background_files, tags=None):
         if tags is None:
