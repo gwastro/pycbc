@@ -51,6 +51,7 @@ except ImportError:
 import matplotlib
 if 'matplotlib.backends' not in sys.modules:  # nopep8
     matplotlib.use('agg')
+from matplotlib import rc
 from matplotlib import pyplot as plt
 
 
@@ -581,6 +582,19 @@ def contour_plotter(axis, snr_vals, contours, colors, vert_spike=False):
             plot_vals_x = snr_vals
             plot_vals_y = contours[i]
         axis.plot(plot_vals_x, plot_vals_y, colors[i])
+
+
+# =============================================================================
+# Contains plotting setups shared by PyGRB plots
+# =============================================================================
+
+def pygrb_shared_plot_setups():
+    """Master function to plot PyGRB results"""
+
+    # Get rcParams
+    rc('font', size=14)
+    # Set color for out-of-range values
+    plt.cm.spring.set_over('g')
 
 
 # =============================================================================

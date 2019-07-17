@@ -32,7 +32,6 @@ import pycbc.version
 import collections
 import operator
 import scipy
-from matplotlib import rc
 from pycbc.results.pygrb_plotting_utils import *
 plt.switch_backend('Agg')
 
@@ -148,11 +147,8 @@ y_max = axis_max_value(trig_data.ifo_snr[ifo], inj_data.ifo_snr[ifo], inj_file)
 
 zoom_snr = numpy.arange(0.01, max_snr, 0.01)
 
-# Get rcParams
-rc('font', size=14)
-# Set color for out-of-range values
-plt.cm.spring.set_over('g')
 # Setup the plots
+pygrb_shared_plot_setups()
 fig_path_list = [outfile, zoomedoutfile]
 x_label = "Coherent SNR"
 y_label = "%s sngl SNR" % ifo

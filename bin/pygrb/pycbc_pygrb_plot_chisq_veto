@@ -29,7 +29,6 @@ import copy
 import logging
 from glue.ligolw import lsctables
 import pycbc.version
-from matplotlib import rc
 from pycbc.results.pygrb_plotting_utils import *
 plt.switch_backend('Agg')
 
@@ -207,10 +206,7 @@ if ifo is None:
 fig_path_list = [outfile, zoomedoutfile]
 xlims_list = [[x_min,50], [x_min,1.1*x_max]]
 ylims_list = [[1,20000], [1,10*y_max]]
-# Get rcParams
-rc('font', size=14)
-# Set color for out-of-range values
-plt.cm.spring.set_over('g')
+pygrb_shared_plot_setups()
 for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
     pygrb_plotter(trig_snr, trig_veto_data, inj_snr, inj_veto_data,
                   inj_file, x_label, y_label, fig_path,
