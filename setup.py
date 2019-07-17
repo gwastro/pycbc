@@ -53,6 +53,7 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'beautifulsoup4>=4.6.0',
                       'six>=1.10.0',
                       'ligo-segments',
+                      'tqdm',
                       'weave>=0.16.0; python_version <= "2.7"',
                       ]
 
