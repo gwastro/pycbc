@@ -49,8 +49,6 @@ except ImportError:
 # version dependenant. If this is a problem then remove this and control from
 # the executables directly.
 import matplotlib
-if 'matplotlib.backends' not in sys.modules:  # nopep8
-    matplotlib.use('agg')
 from matplotlib import rc
 from matplotlib import pyplot as plt
 
