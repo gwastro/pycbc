@@ -67,7 +67,7 @@ veto_files = []
 if opts.veto_directory:
     veto_string = ','.join([str(i) for i in range(2,opts.veto_category+1)])
     veto_files = glob.glob(opts.veto_directory +'/*CAT[%s]*.xml' %(veto_string))
-# If an ifo is given, the vetoe is intende as a single IFO quantity
+# If an ifo is given, the veto is intended as a single IFO quantity
 ifo = opts.ifo
 veto_type = opts.variable
 if veto_type is None:
@@ -202,10 +202,11 @@ cont_dict = {'standard': chi_conts,
 if ifo is None:
     conts = cont_dict[veto_type]
 
-# Produce anon-zoomed and a zoomed veto vs. SNR plot
+# Produce a non-zoomed and a zoomed veto vs. SNR plot
 fig_path_list = [outfile, zoomedoutfile]
 xlims_list = [[x_min,50], [x_min,1.1*x_max]]
 ylims_list = [[1,20000], [1,10*y_max]]
+pygrb_shared_plot_setups()
 for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
     pygrb_plotter(trig_snr, trig_veto_data, inj_snr, inj_veto_data,
                   inj_file, x_label, y_label, fig_path,
@@ -213,5 +214,3 @@ for fig_path, xlims, ylims in zip(fig_path_list, xlims_list, ylims_list):
                   shade_cont_value=cont_value, vert_spike=True,
                   xlims=xlims, ylims=ylims, cmd=' '.join(sys.argv),
                   plot_title=opts.plot_title, plot_caption=opts.plot_caption)
-
-# TODO: null stat and overwhitened...

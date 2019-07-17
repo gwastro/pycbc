@@ -102,6 +102,7 @@ if opts.verbose:
     fig_name = os.path.split(os.path.abspath(outfile))[1]
     sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
 
+pygrb_shared_plot_setups()
 fig = plt.figure()
 ax  = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)

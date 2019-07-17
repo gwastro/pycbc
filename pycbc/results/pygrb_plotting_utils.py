@@ -35,16 +35,14 @@ try:
     from glue import segments
     from glue.ligolw import utils, lsctables, ligolw, table
 except ImportError:
-    MSG = "Fix when tests on top of the O2 PyGRB installation are finished."
-    logging.warning(MSG)
+    pass
 try:
     from pylal import MultiInspiralUtils
     from pylal.coh_PTF_pyutils import get_bestnr, get_det_response
     from pylal.coh_PTF_pyutils import readSegFiles
     from pylal.dq import dqSegmentUtils
 except ImportError:
-    MSG = "Running the PyGRB post-processing requires a pylal installation"
-    logging.warning(MSG)
+    pass
 # Only if a backend is not already set ... This should really *not* be done
 # here, but in the executables you should set matplotlib.use()
 # This matches the check that matplotlib does internally, but this *may* be
@@ -55,11 +53,6 @@ if 'matplotlib.backends' not in sys.modules:  # nopep8
     matplotlib.use('agg')
 from matplotlib import rc
 from matplotlib import pyplot as plt
-
-# Get rcParams
-rc('font', size=14)
-
-plt.cm.spring.set_over('g')
 
 
 # =============================================================================
@@ -592,7 +585,20 @@ def contour_plotter(axis, snr_vals, contours, colors, vert_spike=False):
 
 
 # =============================================================================
-# Master plotting fucntion: fits all plotting needs in for PyGRB results
+# Contains plotting setups shared by PyGRB plots
+# =============================================================================
+
+def pygrb_shared_plot_setups():
+    """Master function to plot PyGRB results"""
+
+    # Get rcParams
+    rc('font', size=14)
+    # Set color for out-of-range values
+    plt.cm.spring.set_over('g')
+
+
+# =============================================================================
+# Master plotting function: fits all plotting needs in for PyGRB results
 # =============================================================================
 
 def pygrb_plotter(trig_x, trig_y, inj_x, inj_y, inj_file, xlabel, ylabel,
