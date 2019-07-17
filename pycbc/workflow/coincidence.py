@@ -33,7 +33,6 @@ from ligo import segments
 from pycbc.workflow.core import FileList, make_analysis_dir, Executable, Node, File
 
 class PyCBCBank2HDFExecutable(Executable):
-
     """Converts xml tmpltbank to hdf format"""
 
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -44,7 +43,6 @@ class PyCBCBank2HDFExecutable(Executable):
         return node
 
 class PyCBCTrig2HDFExecutable(Executable):
-
     """Converts xml triggers to hdf format, grouped by template hash"""
 
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -57,7 +55,6 @@ class PyCBCTrig2HDFExecutable(Executable):
         return node
 
 class PyCBCFitByTemplateExecutable(Executable):
-
     """Calculates values that describe the background distribution template by template"""
 
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -73,7 +70,6 @@ class PyCBCFitByTemplateExecutable(Executable):
         return node
 
 class PyCBCFitOverParamExecutable(Executable):
-
     """Smooths the background distribution parameters over a continuous parameter"""
 
     current_retention_level = Executable.MERGED_TRIGGERS
@@ -86,6 +82,7 @@ class PyCBCFitOverParamExecutable(Executable):
 
 class PyCBCFindCoincExecutable(Executable):
     """Find coinc triggers using a folded interval method"""
+
     current_retention_level = Executable.ALL_TRIGGERS
     file_input_options = ['--statistic-files']
     def create_node(self, trig_files, bank_file, stat_files, veto_file,
@@ -109,6 +106,7 @@ class PyCBCFindCoincExecutable(Executable):
 
 class PyCBCFindMultiifoCoincExecutable(Executable):
     """Find coinc triggers using a folded interval method"""
+
     current_retention_level = Executable.ALL_TRIGGERS
     file_input_options = ['--statistic-files']
     def create_node(self, trig_files, bank_file, stat_files, veto_file,
@@ -133,6 +131,7 @@ class PyCBCFindMultiifoCoincExecutable(Executable):
 
 class PyCBCStatMapExecutable(Executable):
     """Calculate FAP, IFAR, etc"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, coinc_files, tags=None):
         if tags is None:
@@ -152,6 +151,7 @@ class PyCBCStatMapExecutable(Executable):
 
 class PyCBCMultiifoStatMapExecutable(Executable):
     """Calculate FAP, IFAR, etc"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, coinc_files, ifos, tags=None):
         if tags is None:
@@ -168,6 +168,7 @@ class PyCBCMultiifoStatMapExecutable(Executable):
 
 class PyCBCMultiifoStatMapInjExecutable(Executable):
     """Calculate FAP, IFAR, etc"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, zerolag, full_data,
                     injfull, fullinj, ifos, tags=None):
@@ -192,7 +193,8 @@ class PyCBCMultiifoStatMapInjExecutable(Executable):
         return node
 
 class PyCBCStatMapInjExecutable(Executable):
-    """Calculate FAP, IFAR, etc"""
+    """Calculate FAP, IFAR, etc for injections"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, zerolag, full_data, injfull, fullinj, tags=None):
         if tags is None:
@@ -211,6 +213,7 @@ class PyCBCStatMapInjExecutable(Executable):
 
 class PyCBCHDFInjFindExecutable(Executable):
     """Find injections in the hdf files output"""
+
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, inj_coinc_file, inj_xml_file, veto_file, veto_name, tags=None):
         if tags is None:
@@ -226,7 +229,8 @@ class PyCBCHDFInjFindExecutable(Executable):
         return node
 
 class PyCBCDistributeBackgroundBins(Executable):
-    """Distribute coinc files amoung different background bins"""
+    """Distribute coinc files among different background bins"""
+
     current_retention_level = Executable.ALL_TRIGGERS
     def create_node(self, coinc_files, bank_file, background_bins, tags=None):
         if tags is None:
@@ -249,6 +253,8 @@ class PyCBCDistributeBackgroundBins(Executable):
         return node
 
 class PyCBCCombineStatmap(Executable):
+    """Combine statmap files over different bins and apply trials factor"""
+    
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, statmap_files, tags=None):
         if tags is None:
@@ -259,21 +265,17 @@ class PyCBCCombineStatmap(Executable):
                                  '--output-file', tags=tags)
         return node
 
-class PyCBCMultiifoCombineStatmap(Executable):
-    current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, statmap_files, cluster_window, tags=None):
-        if tags is None:
-            tags = []
-        node = Node(self)
-        node.add_input_list_opt('--statmap-files', statmap_files)
-        node.new_output_file_opt(statmap_files[0].segment, '.hdf',
-                                 '--output-file', tags=tags)
-        return node
+class PyCBCMultiifoCombineStatmap(PyCBCCombineStatmap):
+    """Combine statmap files over different coinc types and apply trials factor"""
 
-class PyCBCMultiifoAddStatmap(Executable):
+    # same inputs and outputs as PyCBCCombineStatmap
     current_retention_level = Executable.MERGED_TRIGGERS
-    def create_node(self, statmap_files, background_files, cluster_window,
-                    tags=None):
+    
+class PyCBCMultiifoAddStatmap(Executable):
+    """Combine statmap files and add FARs over different coinc types"""
+    
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, statmap_files, background_files, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
@@ -289,6 +291,7 @@ class MergeExecutable(Executable):
 
 class CensorForeground(Executable):
     current_retention_level = Executable.MERGED_TRIGGERS
+
 
 def make_foreground_censored_veto(workflow, bg_file, veto_file, veto_name,
                                   censored_name, out_dir, tags=None):
