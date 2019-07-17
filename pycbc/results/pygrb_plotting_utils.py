@@ -23,7 +23,6 @@
 Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
-import sys
 import os
 import logging
 import argparse
@@ -48,7 +47,6 @@ except ImportError:
 # This matches the check that matplotlib does internally, but this *may* be
 # version dependenant. If this is a problem then remove this and control from
 # the executables directly.
-import matplotlib
 from matplotlib import rc
 from matplotlib import pyplot as plt
 
