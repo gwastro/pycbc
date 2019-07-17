@@ -23,6 +23,7 @@
 Module to generate PyGRB figures: scatter plots and timeseries.
 """
 
+import sys
 import os
 import logging
 import argparse
@@ -42,14 +43,14 @@ try:
     from pylal.dq import dqSegmentUtils
 except ImportError:
     pass
-# Only if a backend is not already set ... This should really *not* be done	
-# here, but in the executables you should set matplotlib.use()	
-# This matches the check that matplotlib does internally, but this *may* be	
-# version dependenant. If this is a problem then remove this and control from	
-# the executables directly.	
-import matplotlib	
-if 'matplotlib.backends' not in sys.modules:  # nopep8	
-    matplotlib.use('agg')	
+# Only if a backend is not already set ... This should really *not* be done
+# here, but in the executables you should set matplotlib.use()
+# This matches the check that matplotlib does internally, but this *may* be
+# version dependenant. If this is a problem then remove this and control from
+# the executables directly.
+import matplotlib
+if 'matplotlib.backends' not in sys.modules:  # nopep8
+    matplotlib.use('agg')
 from matplotlib import rc
 from matplotlib import pyplot as plt
 
