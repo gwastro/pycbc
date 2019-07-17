@@ -132,6 +132,10 @@ outfile = h5py.File(args.output, 'w')
 outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed
+try:
+    outfile['median_sigma'] = fits['median_sigma'][:]
+except KeyError:
+    logging.info('Recently introduced median_sigma dataset not present in fits file')
 if tcount: outfile['count_in_template'] = ntotal_smoothed
 
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
