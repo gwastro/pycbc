@@ -29,6 +29,7 @@ import copy
 import logging
 from glue.ligolw import lsctables
 import pycbc.version
+from matplotlib import rc
 from pycbc.results.pygrb_plotting_utils import *
 plt.switch_backend('Agg')
 
@@ -140,8 +141,11 @@ if inj_file:
         inj_snr_data_dict.update({'single': inj_data.ifo_snr[ifo]})
     inj_snr_data = inj_snr_data_dict[snr_type]
 
+# Get rcParams
+rc('font', size=14)
+# Set color for out-of-range values
+plt.cm.spring.set_over('g')
 # Single IFO SNR versus time plots
-pygrb_shared_plot_setups()
 xlims = [start, end]
 pygrb_plotter(trig_data.time, trig_snr_data,
               inj_data.time, inj_snr_data, inj_file,

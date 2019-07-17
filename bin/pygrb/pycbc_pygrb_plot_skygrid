@@ -29,6 +29,7 @@ import copy
 import logging
 from glue.ligolw import lsctables
 import pycbc.version
+from matplotlib import rc
 from pycbc.results.pygrb_plotting_utils import *
 plt.switch_backend('Agg')
 
@@ -102,7 +103,10 @@ if opts.verbose:
     fig_name = os.path.split(os.path.abspath(outfile))[1]
     sys.stdout.write(" * %s (%s vs %s)...\n" % (fig_name, xlabel, ylabel))
 
-pygrb_shared_plot_setups()
+# Get rcParams
+rc('font', size=14)
+# Set color for out-of-range values
+plt.cm.spring.set_over('g')
 fig = plt.figure()
 ax  = fig.gca()
 ax.set_xlabel(xlabel)#, fontsize=16)
