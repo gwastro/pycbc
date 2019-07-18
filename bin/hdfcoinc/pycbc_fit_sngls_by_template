@@ -310,8 +310,8 @@ for tnum in trange:
                                                     (tnum - tmin, tmax - tmin))
 
 logging.info("Calculating median sigma value in each template")
-median_sigma = [np.sqrt(np.median(trigf['H1/sigmasq'][reg])) for reg in
-                    trigf['H1/sigmasq_template'][:]]
+median_sigma = [np.sqrt(np.median(trigf[args.ifo + '/sigmasq'][reg])) for reg in
+                    trigf[args.ifo + '/sigmasq_template'][:]]
 
 outfile = h5py.File(args.output, 'w')
 # store template-dependent fit output
