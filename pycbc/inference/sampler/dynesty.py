@@ -29,6 +29,7 @@ packages for parameter estimation.
 from __future__ import absolute_import
 
 import logging
+from pycbc.pool import choose_pool
 import os
 import dynesty
 from dynesty.utils import resample_equal
@@ -65,9 +66,32 @@ class DynestySampler(BaseSampler):
     name = "dynesty"
     _io = DynestyFile
 
-    def __init__(self, model, nlive, err_logz, **kwargs):
+    def __init__(self, model, nlive, err_logz, nprocesses=1, use_mpi=False,
+                 **kwargs):
 
         self.model = model
+        # create a wrapper for calling the model
+        #if loglikelihood_function is None:
+        #    loglikelihood_function = 'loglikelihood'
+        # frustratingly, emcee_pt does not support blob data, so we have to
+        # turn it off
+        #model_call = models.CallModel(model, loglikelihood_function,
+                                      #return_all_stats=False)
+
+        # Set up the pool
+        #if nprocesses > 1:
+            # these are used to help paralleize over multiple cores / MPI
+        #    models._global_instance = model_call
+        #    model_call = models._call_global_model
+        #    prior_call = models._call_global_model_logprior
+        #else:
+        #    prior_call = models.CallModel(model, 'logprior',
+        #                                  return_all_stats=False)
+        print nprocess
+        pool = choose_pool(mpi=use_mpi, processes=nprocesses)
+        if pool is not None:
+            pool.count = nprocesses
+
         self.nlive = nlive
         self.err_logz = err_logz
         self.names = model.sampling_params
@@ -95,7 +119,8 @@ class DynestySampler(BaseSampler):
             self._sampler=dynesty.NestedSampler(self.log_likelihood,
                                                 self.prior_transform, self.ndim,
                                                 nlive=self.nlive,
-                                                dlogz=self.err_logz, **kwargs)
+                                                dlogz=self.err_logz,
+                                                pool=pool, **kwargs)
         res = self._sampler.run_nested()
 
     @property
@@ -118,7 +143,8 @@ class DynestySampler(BaseSampler):
         # get the number of live points to use
         nlive = int(cp.get(section, "nlive"))
         err_logz = float(cp.get(section, "err_logz"))
-        obj = cls(model, nlive=nlive, err_logz=err_logz)
+        obj = cls(model, nlive=nlive, err_logz=err_logz, nprocesses=nprocesses,
+                  use_mpi=use_mpi)
         return obj
 
     def checkpoint(self):
