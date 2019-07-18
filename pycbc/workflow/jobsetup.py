@@ -1812,7 +1812,7 @@ class PycbcInferenceExecutable(Executable):
                                                        ifo, out_dir, tags)
 
     def create_node(self, channel_names, config_file, injection_file=None,
-                    seed=None, fake_strain_seed=None, tags=None, start_time=None, end_time=None, psd_start_time=None, psd_end_time=None):
+                    seed=None, fake_strain_seed=None, start_time=None, end_time=None, psd_start_time=None, psd_end_time=None, tags = None):
         """ Set up a CondorDagmanNode class to run ``pycbc_inference``.
 
         Parameters
