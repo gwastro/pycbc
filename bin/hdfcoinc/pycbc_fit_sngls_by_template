@@ -50,6 +50,7 @@ def get_stat(statchoice, trigs, threshold):
     # Return boolean area that selects the triggers above threshold
     # along with the stat values above threshold
     return np.concatenate(select), np.concatenate(stat)
+
 #### MAIN ####
 
 parser = argparse.ArgumentParser(usage="",
@@ -309,6 +310,10 @@ for tnum in trange:
     if (tnum % 1000 == 0): logging.info('Fitted template %i / %i' %
                                                     (tnum - tmin, tmax - tmin))
 
+logging.info("Calculating median sigma for each template")
+median_sigma = [np.sqrt(np.median(trigf[args.ifo + '/sigmasq'][reg])) for reg in
+                    trigf[args.ifo + '/sigmasq_template'][:]]
+
 outfile = h5py.File(args.output, 'w')
 # store template-dependent fit output
 outfile.create_dataset("template_id", data=trange)
@@ -317,6 +322,7 @@ outfile.create_dataset("fit_coeff", data=fits)
 if args.save_trig_param:
     outfile.create_dataset("template_param", data=tpars)
 outfile.create_dataset("count_in_template", data=counts_total)
+outfile.create_dataset("median_sigma", data=median_sigma)
 # add some metadata
 outfile.attrs.create("ifo", data=args.ifo.encode())
 outfile.attrs.create("fit_function", data=args.fit_function.encode())
