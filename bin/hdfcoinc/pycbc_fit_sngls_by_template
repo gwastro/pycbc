@@ -50,6 +50,7 @@ def get_stat(statchoice, trigs, threshold):
     # Return boolean area that selects the triggers above threshold
     # along with the stat values above threshold
     return np.concatenate(select), np.concatenate(stat)
+
 #### MAIN ####
 
 parser = argparse.ArgumentParser(usage="",
@@ -309,7 +310,7 @@ for tnum in trange:
     if (tnum % 1000 == 0): logging.info('Fitted template %i / %i' %
                                                     (tnum - tmin, tmax - tmin))
 
-logging.info("Calculating median sigma value in each template")
+logging.info("Calculating median sigma for each template")
 median_sigma = [np.sqrt(np.median(trigf[args.ifo + '/sigmasq'][reg])) for reg in
                     trigf[args.ifo + '/sigmasq_template'][:]]
 
