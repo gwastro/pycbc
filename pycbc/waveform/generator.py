@@ -511,11 +511,7 @@ class FDomainDetFrameGenerator(object):
             self.detectors = {det: Detector(det) for det in detectors}
             missing_args = [arg for arg in self.location_args if not
                 (arg in self.current_params or arg in self.variable_args)]
-            if any(missing_args):
-                raise ValueError("detectors provided, but missing location "
-                    "parameters %s. " %(', '.join(missing_args)) +
-                    "These must be either in the frozen params or the "
-                    "variable args.")
+            
         else:
             self.detectors = {'RF': None}
         self.detector_names = sorted(self.detectors.keys())

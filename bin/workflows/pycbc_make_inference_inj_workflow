@@ -255,17 +255,17 @@ for i in range(n_injections):
         fake_strain_seed = None
 
     #EDITS -  make node for running sampler
-    start_time = injections.table[i]['tc']-10
-    end_time = injections.table[i]['tc']+6
-    psd_start_time = injections.table[i]['tc']-512
-    psd_end_time = injections.table[i]['tc']+512
+    start_time = int(injections.table[i]['tc']-10)
+    end_time = int(injections.table[i]['tc']+6)
+    psd_start_time = int(injections.table[i]['tc']-512)
+    psd_end_time = int(injections.table[i]['tc']+512)
     
     node, inference_file = inference_exe.create_node(
                                      channel_names,
                                      config_file,
                                      injection_file=injection_file,
                                      seed=i, fake_strain_seed=fake_strain_seed,
-                                     tags=[str(i)], start_time, end_time, psd_start_time, psd_end_time)
+                                     start_time=start_time, end_time=end_time, psd_start_time=psd_start_time, psd_end_time=psd_end_time, tags=[str(i)])
     inference_files.append(inference_file)
     workflow += node
 
