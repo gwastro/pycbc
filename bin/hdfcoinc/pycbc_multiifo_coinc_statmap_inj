@@ -12,24 +12,28 @@ import pycbc.conversions as conv
 parser = argparse.ArgumentParser()
 # General required options
 parser.add_argument('--verbose', action='count')
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
+parser.add_argument('--version', action='version',
+                    version=pycbc.version.git_verbose_msg)
 parser.add_argument('--cluster-window', type=float, default=10,
-         help='Length of time window in seconds to cluster coinc events, [default=10s]')
+                    help='Length of time window in seconds to cluster coinc '
+                         'events [default=10s]')
 parser.add_argument('--zero-lag-coincs', nargs='+',
-                    help="Files containing the injection zerolag coincidences")
+                    help='Files containing the injection zerolag coincidences')
 parser.add_argument('--mixed-coincs-inj-full', nargs='+',
-                    help="Files containing the mixed injection/clean data "
-                         "time slides")
+                    help='Files containing the mixed injection/clean data '
+                         'time slides')
 parser.add_argument('--mixed-coincs-full-inj', nargs='+',
-                    help="Files containing the mixed clean/injection data "
-                         "time slides")
+                    help='Files containing the mixed clean/injection data '
+                         'time slides')
 parser.add_argument('--full-data-background',
-                    help='background file from full data for use in analyzing injection coincs')
+                    help='background file from full data for use in analyzing '
+                         'injection coincs')
 parser.add_argument('--veto-window', type=float, default=.1,
-         help='Time around each zerolag trigger to window out, [default=.1s]')
-parser.add_argument("--ranking-statistic-threshold", type=float,
-                    help="Minimum value of the ranking statistic to calculate"
-                         " a unique inclusive background.")
+                    help='Time around each zerolag trigger to window out '
+                         '[default=.1s]')
+parser.add_argument('--ranking-statistic-threshold', type=float,
+                    help='Minimum value of the ranking statistic to calculate'
+                         ' a unique inclusive background.')
 parser.add_argument('--ifos', nargs='+',
                     help='List of ifos used in these coincidence files')
 parser.add_argument('--output-file')
@@ -39,9 +43,9 @@ if args.verbose:
     log_level = logging.INFO
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
-logging.info("Loading coinc zerolag triggers")
 window = args.cluster_window
-zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos = args.ifos)
+logging.info("Loading coinc zerolag triggers")
+zdata = pycbc.io.MultiifoStatmapData(files=args.zero_lag_coincs, ifos=args.ifos)
 zdata = zdata.cluster(window)
 
 logging.info("Loading coinc full inj triggers")
@@ -128,7 +132,7 @@ if len(zdata) > 0:
         # If the trigger is quiet enough, then don't calculate a separate
         # background type, as it would not be significantly different
         if args.ranking_statistic_threshold and \
-                fstat < args.ranking_statistic_threshold:
+                    fstat < args.ranking_statistic_threshold:
             fnlouder[i] = fnlouder_exc[i]
             ifar[i] = ifar_exc[i]
             fap[i] = fap_exc[i]
@@ -137,10 +141,10 @@ if len(zdata) > 0:
         v1 = fisort[fi_start[i]:fi_end[i]]
         v2 = ifsort[if_start[i]:if_end[i]]
 
-        inj_stat = numpy.concatenate([ifdata.stat[v2], fidata.stat[v1],
-                                      back_stat])
-        inj_dec = numpy.concatenate([numpy.repeat(1, len(v1) + len(v2)),
-                                     dec_fac])
+        inj_stat = numpy.concatenate(
+                     [ifdata.stat[v2], fidata.stat[v1], back_stat])
+        inj_dec = numpy.concatenate(
+                     [numpy.repeat(1, len(v1) + len(v2)), dec_fac])
 
         fnlouder[i] = coinc.calculate_n_louder(inj_stat, fstat, inj_dec,
                                                skip_background=True)
@@ -157,4 +161,3 @@ else:
     f['foreground/fap'] = numpy.array([])
 
 logging.info("Done")
-
