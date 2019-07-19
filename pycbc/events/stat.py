@@ -25,6 +25,7 @@
 statistic values
 """
 import numpy
+import logging
 from . import ranking
 from . import coinc_rate
 
@@ -92,7 +93,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             Array of coincident ranking statistic values
         """
-        return (s0**2. + s1**2.) ** 0.5
+        return (s0 ** 2. + s1 ** 2.) ** 0.5
 
     def coinc_multiifo(self, s, slide, step,
                        **kwargs): # pylint:disable=unused-argument
@@ -367,11 +368,13 @@ class ExpFitStatistic(NewSNRStatistic):
         template_id = coeff_file['template_id'][:]
         alphas = coeff_file['fit_coeff'][:]
         rates = coeff_file['count_above_thresh'][:]
+        med_sigma = coeff_file['median_sigma'][:]
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
         return {'alpha':alphas[tid_sort], 'rate':rates[tid_sort],
-                'thresh':coeff_file.attrs['stat_threshold']}
+                'thresh':coeff_file.attrs['stat_threshold'],
+                'median_sigma':med_sigma[tid_sort]}
 
     def get_ref_vals(self, ifo):
         self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
@@ -507,6 +510,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         singles['end_time'] = trigs['end_time'][:]
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
+        singles['median_sigma'] = self.fits_by_tid['median_sigma']
         return numpy.array(singles, ndmin=1)
 
     def coinc(self, s0, s1, slide, step):
@@ -569,7 +573,7 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
                            dtype=numpy.float32), ndmin=1, copy=False)
 
 
-class ExpFitSGCoincRateStatistic(ExpFitStatistic):
+class ExpFitSGBgRateStatistic(ExpFitStatistic):
 
     """Detection statistic using an exponential falloff noise model.
     Statistic calculates the log noise coinc rate for each
@@ -579,7 +583,7 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
     def __init__(self, files, benchmark_lograte=-14.6):
         # benchmark_lograte is log of a representative noise trigger rate
         # This comes from H1L1 (O2) and is 4.5e-7 Hz
-        super(ExpFitSGCoincRateStatistic, self).__init__(files)
+        super(ExpFitSGBgRateStatistic, self).__init__(files)
         self.benchmark_lograte = benchmark_lograte
         self.get_newsnr = ranking.get_newsnr_sgveto
         # Reassign the rate as it is now number per time rather than an
@@ -599,10 +603,73 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
 
     def coinc_multiifo(self, s, slide,
                        step, **kwargs): # pylint:disable=unused-argument
-        """Calculate the final coinc ranking statistic"""
-        ln_coinc_rate = coinc_rate.combination_noise_coinc_lograte(
+        # ranking statistic is -ln(expected rate density of noise triggers)
+        # plus normalization constant
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   s, kwargs['time_addition'])
         loglr = - ln_coinc_rate + self.benchmark_lograte
+        return loglr
+
+class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
+    def __init__(self, files):
+        # read in background fit info and store it, also use newsnr_sgveto
+        ExpFitSGBgRateStatistic.__init__(self, files)
+        # Use PhaseTD statistic single.dtype
+        PhaseTDStatistic.__init__(self, files)
+        self.single_dtype.append(('benchmark_sigma', numpy.float32))
+        self.benchmark_sigma = 3.0 * numpy.log(numpy.amin([self.fits_by_tid[ifo]['median_sigma']
+                                   for ifo in ['H1', 'L1']], axis=0))
+
+        self.get_newsnr = ranking.get_newsnr_sgveto
+
+    def single(self, trigs):
+        # single-ifo stat = log of noise rate
+        sngl_stat = self.lognoiserate(trigs)
+        # populate other fields to calculate phase/time/amp consistency
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
+        singles['coa_phase'] = trigs['coa_phase'][:]
+        singles['end_time'] = trigs['end_time'][:]
+        singles['sigmasq'] = trigs['sigmasq'][:]
+        singles['snr'] = trigs['snr'][:]
+        try:
+            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+            ifo = trigs.ifo
+        except AttributeError:
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            # Should only be one ifo fit file provided
+            assert len(self.ifos) == 1
+            ifo = self.ifos[0]
+        singles['benchmark_sigma'] = self.benchmark_sigma[tnum]
+        return numpy.array(singles, ndmin=1)
+
+    def coinc_multiifo(self, s, slide,
+                       step, **kwargs): # pylint:disable=unused-argument
+        sngl_rates = {ifo: sngl_data['snglstat'] for ifo, sngl_data in
+                      s.items()}
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                  sngl_rates, kwargs['time_addition'])
+
+        network_sigma = 1.5 * numpy.log(numpy.amin(
+                            [s[ifo]['sigmasq']
+                             for ifo in s.keys()], axis=0))
+        
+        # logsignalrate function inherited from PhaseTDStatistic
+        # - for now, only use H-L consistency
+        ifos = s.keys()
+        if 'H1' in ifos and 'L1' in ifos:
+            logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
+            if len(logr_s):
+                logging.info('Applying HL phase/time/amp consistency')
+            # makeshift factor to compensate HL(V) coincs which are penalized
+            # on average by p/t/a vs HV, LV which are not
+            logr_s = logr_s + 4.5
+        else:
+            logr_s = numpy.zeros_like(s['V1']['snr'])
+            if len(logr_s):
+                logging.info('HV or LV coinc, no phase/time-amp/consistency')
+        loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
+                     + network_sigma - s[ifos[0]]['benchmark_sigma']
         return loglr
 
 
@@ -622,7 +689,8 @@ statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
-    'exp_fit_sg_coinc_rate': ExpFitSGCoincRateStatistic
+    'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
+    'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic
 }
 
 sngl_statistic_dict = {
