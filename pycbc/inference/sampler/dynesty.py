@@ -35,7 +35,7 @@ import dynesty
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
 from .base import BaseSampler
-
+from .. import models
 
 
 #
@@ -79,26 +79,36 @@ class DynestySampler(BaseSampler):
                                       #return_all_stats=False)
 
         # Set up the pool
-        #if nprocesses > 1:
+        print 'nprocess=%i'%nprocesses
+        model_call = DynestyModel(model)
+        if nprocesses > 1:
             # these are used to help paralleize over multiple cores / MPI
-        #    models._global_instance = model_call
-        #    model_call = models._call_global_model
-        #    prior_call = models._call_global_model_logprior
-        #else:
-        #    prior_call = models.CallModel(model, 'logprior',
-        #                                  return_all_stats=False)
-        print nprocess
+            models._global_instance = model_call
+            print 'global instance is:',models._global_instance
+            log_likelihood_call = _call_global_loglikelihood
+            prior_call = _call_global_logprior
+        else:
+            
+            prior_call = model_call.prior_transform
+            log_likelihood_call = model_call.log_likelihood
+         
+        print 'nprocess=%i'%nprocesses
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         if pool is not None:
-            pool.count = nprocesses
+            pool.size = nprocesses
 
         self.nlive = nlive
         self.err_logz = err_logz
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
-        self._sampler = None
         self.checkpoint_file = None
-        
+        self._sampler=dynesty.NestedSampler(log_likelihood_call,
+                                            prior_call, self.ndim,
+                                            nlive=self.nlive,
+                                            dlogz=self.err_logz,
+                                            pool=pool, **kwargs)
+
+ 
     def log_likelihood(self,cube):
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         self.model.update(**params)
@@ -115,12 +125,6 @@ class DynestySampler(BaseSampler):
     
     def run(self, **kwargs):
         OUTDIR = os.path.dirname(os.path.abspath(self.checkpoint_file))
-        if self._sampler is None:
-            self._sampler=dynesty.NestedSampler(self.log_likelihood,
-                                                self.prior_transform, self.ndim,
-                                                nlive=self.nlive,
-                                                dlogz=self.err_logz,
-                                                pool=pool, **kwargs)
         res = self._sampler.run_nested()
 
     @property
@@ -221,4 +225,32 @@ class DynestySampler(BaseSampler):
     @property
     def dlogz(self):
         return self._sampler.results.dlogz[-1:][0]
+
+#_global_instance = None
+
+def _call_global_loglikelihood(cube):
+    return models._global_instance.log_likelihood(cube)
+
+def _call_global_logprior(cube):
+    return models._global_instance.prior_transform(cube)
+
+
+class DynestyModel(object):
+    def __init__(self, model):
+        self.model = model
+
+    def log_likelihood(self,cube):
+        params = {p: v for p, v in zip(self.model.variable_params, cube)}
+        self.model.update(**params)
+        return self.model.loglikelihood
+
+    def prior_transform(self,cube):
+        prior_dists = self.model.prior_distribution.distributions
+        dist_dict = {}
+        for dist in prior_dists:
+            dist_dict.update({param: dist for param in dist.params})
+        for i, param in enumerate(self.model.variable_params):
+            cube[i] = dist_dict[param].cdfinv(param, cube[i])
+        return cube
+
 
