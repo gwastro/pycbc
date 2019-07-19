@@ -677,6 +677,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         # logsignalrate function inherited from PhaseTDStatistic
         # - for now, only use H-L consistency
         ifos = s.keys()
+        import logging
         if 'H1' in ifos and 'L1' in ifos:
             logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
             # makeshift factor to compensate HL(V) coincs which are penalized
