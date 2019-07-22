@@ -24,7 +24,6 @@
 """ This module contains functions for calculating coincident ranking
 statistic values
 """
-import logging
 import numpy
 from . import ranking
 from . import coinc_rate
@@ -368,13 +367,11 @@ class ExpFitStatistic(NewSNRStatistic):
         template_id = coeff_file['template_id'][:]
         alphas = coeff_file['fit_coeff'][:]
         rates = coeff_file['count_above_thresh'][:]
-        med_sigma = coeff_file['median_sigma'][:]
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
         return {'alpha':alphas[tid_sort], 'rate':rates[tid_sort],
-                'thresh':coeff_file.attrs['stat_threshold'],
-                'median_sigma':med_sigma[tid_sort]}
+                'thresh':coeff_file.attrs['stat_threshold']}
 
     def get_ref_vals(self, ifo):
         self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
@@ -610,18 +607,28 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         loglr = - ln_noise_rate + self.benchmark_lograte
         return loglr
 
+
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
     def __init__(self, files):
         # read in background fit info and store it, also use newsnr_sgveto
         ExpFitSGBgRateStatistic.__init__(self, files)
         # Use PhaseTD statistic single.dtype
         PhaseTDStatistic.__init__(self, files)
-        self.single_dtype.append(('benchmark_sigma', numpy.float32))
-        hl_network_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
-                                           for ifo in ['H1', 'L1']], axis=0)
-        self.benchmark_logvol = 3.0 * numpy.log(hl_net_median_sigma)
-
+        for ifo in self.ifos:
+            self.assign_median_sigma(ifo)
+        self.single_dtype.append(('benchmark_logvol', numpy.float32))
+        hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
+                                       for ifo in ['H1', 'L1']], axis=0)
+        self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
         self.get_newsnr = ranking.get_newsnr_sgveto
+
+    def assign_median_sigma(self, ifo):
+        coeff_file = self.files[ifo+'-fit_coeffs']
+        template_id = coeff_file['template_id'][:]
+        tid_sort = numpy.argsort(template_id)
+
+        self.fits_by_tid[ifo]['median_sigma'] = \
+                coeff_file['median_sigma'][:][tid_sort]
 
     def single(self, trigs):
         # single-ifo stat = log of noise rate
@@ -653,7 +660,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
                                   sngl_rates, kwargs['time_addition'])
 
         network_sigmasq = numpy.amin([s[ifo]['sigmasq'] for ifo in s.keys()],
-                                      axis=0)
+                                     axis=0)
         # volume = sigma^3, so sigmasq^1.5
         network_logvol = 1.5 * numpy.log(network_sigmasq)
 
