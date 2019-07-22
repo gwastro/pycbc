@@ -646,7 +646,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
             tnum = trigs['template_id']  # exists for SingleDetTriggers
             # Should only be one ifo fit file provided
             assert len(self.ifos) == 1
-        # note that though this is not ifo-dependent, we calculate this here as
+        # note that though this is not ifo-dependent, we assign this here as
         # getting template number in the coinc function is a kerfuffle
         singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
         return numpy.array(singles, ndmin=1)
