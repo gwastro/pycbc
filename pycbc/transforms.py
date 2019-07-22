@@ -993,8 +993,6 @@ class LambdaFromTOVFile(BaseTransform):
         self._distance = distance
         self._inputs = [mass_param, 'distance']
         self._outputs = [lambda_param]
-        logging.info("Loading mass-Lambda data from %s for computing %s",
-                     self._mass_lambda_file, self._lambda_param)
         if file_columns is None:
             file_columns = ['mass', 'lambda']
         dtype = [(fname, float) for fname in file_columns]
@@ -1126,8 +1124,6 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
         self._distance = distance
         self._inputs = [mass_param, 'eos', 'distance']
         self._outputs = [lambda_param]
-        logging.info("Loading mass-Lambda data from %s for computing %s",
-                     self._map_file, self._lambda_param)
         # create a dictionary of the EOS files from the map_file
         self._eos_files = {} 
         with open(self._map_file, 'r') as fp:
