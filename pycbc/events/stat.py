@@ -507,7 +507,6 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         singles['end_time'] = trigs['end_time'][:]
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
-        singles['median_sigma'] = self.fits_by_tid['median_sigma']
         return numpy.array(singles, ndmin=1)
 
     def coinc(self, s0, s1, slide, step):
