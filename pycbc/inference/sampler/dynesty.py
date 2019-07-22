@@ -30,6 +30,7 @@ from __future__ import absolute_import
 
 import logging
 from pycbc.pool import choose_pool
+import numpy
 import os
 import dynesty
 from dynesty.utils import resample_equal
@@ -70,21 +71,12 @@ class DynestySampler(BaseSampler):
                  **kwargs):
 
         self.model = model
-        # create a wrapper for calling the model
-        #if loglikelihood_function is None:
-        #    loglikelihood_function = 'loglikelihood'
-        # frustratingly, emcee_pt does not support blob data, so we have to
-        # turn it off
-        #model_call = models.CallModel(model, loglikelihood_function,
-                                      #return_all_stats=False)
 
         # Set up the pool
-        print 'nprocess=%i'%nprocesses
         model_call = DynestyModel(model)
         if nprocesses > 1:
             # these are used to help paralleize over multiple cores / MPI
             models._global_instance = model_call
-            print 'global instance is:',models._global_instance
             log_likelihood_call = _call_global_loglikelihood
             prior_call = _call_global_logprior
         else:
@@ -177,8 +169,11 @@ class DynestySampler(BaseSampler):
 
     @property
     def samples(self):
-        samples_dict = {p: self._sampler.results.samples[:,i] for p,i in
-                        zip(self.model.sampling_params,range(self.ndim))}
+        #samples_dict = {p: self._sampler.results.samples[:,i] for p,i in
+        #                zip(self.model.sampling_params,range(self.ndim))}
+        #return samples_dict
+        samples_dict = {p: self.posterior_samples[i] for p,i in
+                       zip(self.model.sampling_params,range(self.ndim))}
         return samples_dict
 
     def set_initial_conditions(self, initial_distribution=None,
@@ -211,10 +206,8 @@ class DynestySampler(BaseSampler):
     @property
     def posterior_samples(self):
         dynesty_samples = self._sampler.results['samples']
-        try:
-            weights = np.exp(self._sampler.results['logwt'] - self._sampler.results['logz'][-1])
-        except:
-            weights = self._sampler.results['weights']
+        #try:
+        weights = numpy.exp(self._sampler.results['logwt'] - self._sampler.results['logz'][-1])
         posterior_dynesty = resample_equal(dynesty_samples,weights)
         return posterior_dynesty
 
