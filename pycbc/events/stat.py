@@ -627,7 +627,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         tid_sort = numpy.argsort(template_id)
 
         self.fits_by_tid[ifo]['median_sigma'] = \
-                coeff_file['median_sigma'][:][tid_sort]
+            coeff_file['median_sigma'][:][tid_sort]
 
     def single(self, trigs):
         # single-ifo stat = log of noise rate
@@ -669,7 +669,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         benchmark_logvol = s[ifos[0]]['benchmark_logvol']
 
         loglr = - ln_noise_rate + self.benchmark_lograte \
-                   + network_logvol - benchmark_logvol
+            + network_logvol - benchmark_logvol
         return loglr
 
 
