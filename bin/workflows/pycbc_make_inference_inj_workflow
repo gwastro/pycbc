@@ -118,6 +118,8 @@ if opts.injection_files:
     input_injection_files = []
     for injfile in opts.injection_files:
         input_injection_files.append(os.path.abspath(injfile))
+else:
+    input_injection_files = None
 
 # typecast str from command line to File instances
 config_file = core.File.from_path(opts.inference_config_file)
