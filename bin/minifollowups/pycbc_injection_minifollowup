@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Followup foreground events
-"""
+""" Followup foreground events """
+
 import os, argparse, numpy, logging, h5py, copy
 import pycbc.workflow as wf
 from pycbc.types import MultiDetOptionAction
@@ -26,6 +26,7 @@ import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version, pycbc.pnutils
 from pycbc.io.hdf import SingleDetTriggers
+
 
 def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
@@ -98,7 +99,11 @@ for ifo in args.single_detector_triggers:
 f = h5py.File(args.injection_file, 'r')
 missed = f['missed/after_vetoes'][:]
 if args.ifar_threshold is not None:
-    ifars = f['found_after_vetoes']['ifar'][:]
+    try:  # injections may not have (inclusive) IFAR present
+        ifars = f['found_after_vetoes']['ifar'][:]
+    except KeyError:
+        ifars = f['found_after_vetoes']['ifar_exc'][:]
+        logging.warn('Inclusive IFAR not found, using exclusive')
     lgc_arr = ifars < args.ifar_threshold
     missed = numpy.append(missed,
                           f['found_after_vetoes']['injection_index'][lgc_arr])
@@ -156,7 +161,7 @@ for num_event in range(num_events):
             ifo_time = -1.0
 
         ifo_times += ' %s:%s ' % (ifo, ifo_time)
-        inj_params[ifo+'_end_time'] = ifo_time
+        inj_params[ifo + '_end_time'] = ifo_time
 
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
                                args.output_dir, tags=args.tags + [str(num_event)])[0],)]
@@ -173,7 +178,7 @@ for num_event in range(num_events):
 
     for single in single_triggers:
         checkedtime = time
-        if (inj_params[single.ifo+'_end_time'] == -1.0):
+        if (inj_params[single.ifo + '_end_time'] == -1.0):
             checkedtime = -1.0
 
         files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
@@ -186,7 +191,6 @@ for num_event in range(num_events):
              data_segments=insp_data_seglists[single.ifo],
              injection_file=injection_xml_file,
              tags=args.tags + [str(num_event)])
-
 
     files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
@@ -201,8 +205,8 @@ for num_event in range(num_events):
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
-                            tags=args.tags+['INJ_PARAMS_INVERTED',
-                                            str(num_event)],
+                            tags=args.tags + ['INJ_PARAMS_INVERTED',
+                                              str(num_event)],
                             params_str='injection parameters as template, ' +\
                                        'here the injection is made inverted',
                             use_exact_inj_params=True)
@@ -211,8 +215,8 @@ for num_event in range(num_events):
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
-                            tags=args.tags+['INJ_PARAMS_NOINJ',
-                                            str(num_event)],
+                            tags=args.tags + ['INJ_PARAMS_NOINJ',
+                                              str(num_event)],
                             params_str='injection parameters, here no ' +\
                                        'injection was actually performed',
                             use_exact_inj_params=True)

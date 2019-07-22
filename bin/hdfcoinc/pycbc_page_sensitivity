@@ -28,6 +28,8 @@ parser.add_argument('--bins', nargs='+',
 parser.add_argument('--sig-type', choices=['ifar', 'fap', 'stat'],
                     default='ifar',
                     help="x-axis significance measure. Default 'ifar'")
+parser.add_argument('--exclusive-sig', action='store_true',
+                    help="Plot only exclusive injection FAR, not inclusive")
 parser.add_argument('--sig-bins', nargs='*',
                    help="Boundaries of x-axis significance bins. If not given"
                         ", hard-coded defaults will be used"),
@@ -154,14 +156,21 @@ for fi in args.injection_file:
             raise RuntimeError('Unrecognized --bin-type value!')
 
         if args.sig_type == 'stat':
-            sig = f['found_after_vetoes/stat'][:]
-            sig_exc = None
+            sig_exc = f['found_after_vetoes/stat'][:]
+            sig = None
         elif args.sig_type == 'ifar':
             sig = f['found_after_vetoes/ifar'][:]
             sig_exc = f['found_after_vetoes/ifar_exc'][:]
+            try:
+                sig = f['found_after_vetoes/ifar'][:]
+            except KeyError:  # multiifo inj files may not have inclusive FAR
+                sig = numpy.array([])
         elif args.sig_type == 'fap':
-            sig = f['found_after_vetoes/fap'][:]
             sig_exc = f['found_after_vetoes/fap_exc'][:]
+            try:
+                sig = f['found_after_vetoes/fap'][:]
+            except KeyError:  # multiifo inj files may not have inclusive FAP
+                sig = numpy.array([])
         else:
             raise RuntimeError('Unrecognized --sig-type value!')
 
@@ -215,18 +224,23 @@ if args.hdf_out:
     plotdict = {}
     plotdict['xvals'] = x_values
 
-# Switches for plotting both inclusive/exclusive significance
-color=iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
-fvalues = [found['sig'], found['sig_exc']]
-do_labels = [True, False]
-alphas = [.8, .3]
+# Switches for plotting inclusive/exclusive significance
+color = iter(cm.rainbow(numpy.linspace(0, 1, len(args.bins)-1)))
+if not args.exclusive_sig:
+    fvalues = [found['sig'], found['sig_exc']]
+    do_labels = [True, False]
+    alphas = [.8, .3]
+else:
+    fvalues = [found['sig_exc']]
+    do_labels = [True]
+    alphas = [.6]
 
 fig = pylab.figure()
 # Cycle over parameter bins plotting each in turn
 for j in range(len(args.bins)-1):
     c = next(color)
 
-    # Plot both the inclusive and exclusive significance
+    # cycle over inclusive / exclusive significance if available
     for sig_val, do_label, alpha in zip(fvalues, do_labels, alphas):
         if sig_val[0] is None:
             logging.info('Skipping exclusive significance')
