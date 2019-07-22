@@ -24,8 +24,8 @@
 """ This module contains functions for calculating coincident ranking
 statistic values
 """
-import numpy
 import logging
+import numpy
 from . import ranking
 from . import coinc_rate
 
@@ -607,7 +607,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         # plus normalization constant
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   s, kwargs['time_addition'])
-        loglr = - ln_coinc_rate + self.benchmark_lograte
+        loglr = - ln_noise_rate + self.benchmark_lograte
         return loglr
 
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
@@ -617,8 +617,9 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         # Use PhaseTD statistic single.dtype
         PhaseTDStatistic.__init__(self, files)
         self.single_dtype.append(('benchmark_sigma', numpy.float32))
-        self.benchmark_sigma = 3.0 * numpy.log(numpy.amin([self.fits_by_tid[ifo]['median_sigma']
-                                   for ifo in ['H1', 'L1']], axis=0))
+        hl_network_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
+                                           for ifo in ['H1', 'L1']], axis=0)
+        self.benchmark_logvol = 3.0 * numpy.log(hl_net_median_sigma)
 
         self.get_newsnr = ranking.get_newsnr_sgveto
 
@@ -626,6 +627,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         # single-ifo stat = log of noise rate
         sngl_stat = self.lognoiserate(trigs)
         # populate other fields to calculate phase/time/amp consistency
+        # and sigma comparison
         singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
         singles['snglstat'] = sngl_stat
         singles['coa_phase'] = trigs['coa_phase'][:]
@@ -634,13 +636,13 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         singles['snr'] = trigs['snr'][:]
         try:
             tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
-            ifo = trigs.ifo
         except AttributeError:
             tnum = trigs['template_id']  # exists for SingleDetTriggers
             # Should only be one ifo fit file provided
             assert len(self.ifos) == 1
-            ifo = self.ifos[0]
-        singles['benchmark_sigma'] = self.benchmark_sigma[tnum]
+        # note that though this is not ifo-dependent, we calculate this here as
+        # getting template number in the coinc function is a kerfuffle
+        singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
         return numpy.array(singles, ndmin=1)
 
     def coinc_multiifo(self, s, slide,
@@ -650,26 +652,18 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
 
-        network_sigma = 1.5 * numpy.log(numpy.amin(
-                            [s[ifo]['sigmasq']
-                             for ifo in s.keys()], axis=0))
-        
-        # logsignalrate function inherited from PhaseTDStatistic
-        # - for now, only use H-L consistency
+        network_sigmasq = numpy.amin([s[ifo]['sigmasq'] for ifo in s.keys()],
+                                      axis=0)
+        # volume = sigma^3, so sigmasq^1.5
+        network_logvol = 1.5 * numpy.log(network_sigmasq)
+
+        # get benchmark log volume from singles, this is *not* ifo-dependent,
+        # but needed tnum from singles in the calculation
         ifos = s.keys()
-        if 'H1' in ifos and 'L1' in ifos:
-            logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
-            if len(logr_s):
-                logging.info('Applying HL phase/time/amp consistency')
-            # makeshift factor to compensate HL(V) coincs which are penalized
-            # on average by p/t/a vs HV, LV which are not
-            logr_s = logr_s + 4.5
-        else:
-            logr_s = numpy.zeros_like(s['V1']['snr'])
-            if len(logr_s):
-                logging.info('HV or LV coinc, no phase/time-amp/consistency')
-        loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
-                     + network_sigma - s[ifos[0]]['benchmark_sigma']
+        benchmark_logvol = s[ifos[0]]['benchmark_logvol']
+
+        loglr = - ln_noise_rate + self.benchmark_lograte \
+                   + network_logvol - benchmark_logvol
         return loglr
 
 
