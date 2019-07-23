@@ -225,9 +225,11 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         # Assign attribute so that it can be replaced with other functions
         self.get_newsnr = ranking.get_newsnr
-        self.ifos = []
 
-    def setup_hist(self):
+    def setup_hist(self, ifos=None):
+        if ifos is None:
+            ifos = self.ifos
+
         # default name, used for two-ifo workflows usually
         if 'phasetd_newsnr' in self.files:
             key = 'phasetd_newsnr'
@@ -236,8 +238,8 @@ class PhaseTDStatistic(NewSNRStatistic):
             keys = self.files.keys()
             for key in keys:
                 if (('phasetd_newsnr' in key) and
-                    (self.ifos[0] in key) and
-                    (self.ifos[1] in key)):
+                    (ifos[0] in key) and
+                    (ifos[1] in key)):
                     break
             else:
                 raise ValueError("We didn't find a matching phasetd file")
@@ -270,8 +272,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         numpy.ndarray
             Array of single detector parameter values
         """
-        self.ifos += [trigs.ifo]
-
         sngl_stat = self.get_newsnr(trigs)
         singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
         singles['snglstat'] = sngl_stat
@@ -281,9 +281,9 @@ class PhaseTDStatistic(NewSNRStatistic):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def logsignalrate(self, s0, s1, slide, step):
+    def logsignalrate(self, s0, s1, slide, step, ifos=None):
         """Calculate the normalized log rate density of signals via lookup"""
-        self.setup_hist()
+        self.setup_hist(ifos=ifos)
 
         td = numpy.array(s0['end_time'] - s1['end_time'] - slide*step, ndmin=1)
         pd = numpy.array((s0['coa_phase'] - s1['coa_phase']) % \
