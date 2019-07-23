@@ -772,7 +772,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
                 logging.info('Setup ifos %s-%s with file %s and stat %s',
                              ifos[0], ifos[1], fname, background_statistic)
 
-        self.stat_calculator = stat.get_statistic(background_statistic)(stat_files)
+        self.stat_calculator = stat.get_statistic(background_statistic)(stat_files,
+                                                                        ifos=ifos)
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background

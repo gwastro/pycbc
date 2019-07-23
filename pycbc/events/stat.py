@@ -32,7 +32,7 @@ from . import coinc_rate
 class Stat(object):
 
     """ Base class which should be extended to provide a coincident statistic"""
-    def __init__(self, files):
+    def __init__(self, files, ifos, pivot=None):
         """Create a statistic class instance
 
         Parameters
@@ -54,6 +54,9 @@ class Stat(object):
         # This is used by background estimation codes that need to maintain
         # a buffer of such values.
         self.single_dtype = numpy.float32
+
+        self.ifos = ifos
+        self.pivot = pivot if pivot is not None else ifos[0]
 
 
 class NewSNRStatistic(Stat):

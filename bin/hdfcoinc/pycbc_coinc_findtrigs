@@ -187,7 +187,9 @@ if args.strict_coinc_time:
     trigs1.valid = veto.segments_to_start_end(trigs1.segs)
 
 # initialize a Stat class instance to calculate the coinc ranking statistic
-rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
+rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
+                                                         [trigs0.ifo,
+                                                          trigs1.ifo])
 if args.use_maxalpha:
     rank_method.use_alphamax()
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)

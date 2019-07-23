@@ -195,7 +195,9 @@ for ifo in trigs:
     trigs[ifo].valid = veto.segments_to_start_end(trigs[ifo].segs)
 
 # Stat class instance to calculate the coinc ranking statistic
-rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
+rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
+                                                         ifos=trigs.keys(),
+                                                         pivot=args.pivot_ifo)
 
 # Sanity check, time slide interval should be larger than twice the
 # Earth crossing time, which is approximately 0.085 seconds.
