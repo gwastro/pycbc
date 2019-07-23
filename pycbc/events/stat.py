@@ -618,6 +618,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
         hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
                                        for ifo in ['H1', 'L1']], axis=0)
+        # benchmark_logvol is a template-dependent benchmark sensitivity array
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
@@ -657,7 +658,8 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
                       s.items()}
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
-
+        # network sensitivity for a given coinc type is approximately
+        # determined by the least sensitive ifo
         network_sigmasq = numpy.amin([s[ifo]['sigmasq'] for ifo in s.keys()],
                                      axis=0)
         # volume = sigma^3, so sigmasq^1.5
