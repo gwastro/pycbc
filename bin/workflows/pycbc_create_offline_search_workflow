@@ -556,8 +556,22 @@ if len(files_for_combined_injfind) > 0:
         (workflow, inj_coincs, files_for_combined_injfind, final_veto_file[0],
          final_veto_name[0], 'allinj', tags=['ALLINJ'])
 
-
 ############################ Injection plots #################################
+
+    sen_all = wf.make_sensitivity_plot(workflow, found_inj_comb, rdir['search_sensitivity'],
+                            require='all', tags=['ALLINJ'])
+    layout.group_layout(rdir['search_sensitivity'], sen_all)
+    inj_all = wf.make_foundmissed_plot(workflow, found_inj_comb, rdir['injections'],
+                            require='all', tags=['ALLINJ'])
+    layout.group_layout(rdir['injections'], inj_all)
+
+    # Make summary page foundmissed and sensitivity plot
+    sen_s = wf.make_sensitivity_plot(workflow, found_inj_comb,
+                rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
+    inj_s = wf.make_foundmissed_plot(workflow, found_inj_comb,
+                rdir['injections'], require='summ', tags=['ALLINJ'])
+    inj_summ = list(layout.grouper(inj_s + sen_s, 2))
+
 
 # Per injection run plots
 for inj_file, tag in zip(inj_files, inj_tags):
@@ -626,6 +640,16 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                    'plot-throughput', tags=[tag]):
         wf.make_throughput_plot(workflow, insps, rdir['workflow/throughput'],
                                 tags=[tag])
+
+
+########################## Make full summary ####################################
+summ = ([(time_file,)] + [(seg_summ_plot,)] +
+        [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ +
+        bank_plot + inj_summ)
+for row in summ:
+    for f in row:
+        symlink_path(f, rdir.base)
+layout.two_column_layout(rdir.base, summ)
 
 
 ############################ Finalization ####################################
