@@ -232,9 +232,9 @@ class PhaseTDStatistic(NewSNRStatistic):
         else:
             keys = self.files.keys()
             for key in keys:
-                if ('phasetd_newsnr' in key and
-                    self.ifos[0] in key and
-                    self.ifos[1] in key)
+                if (('phasetd_newsnr' in key) and
+                    (self.ifos[0] in key) and
+                    (self.ifos[1] in key)):
                     break
             else:
                 raise ValueError("We didn't find a matching phasetd file")
