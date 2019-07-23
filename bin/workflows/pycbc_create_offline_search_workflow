@@ -561,7 +561,6 @@ if len(files_for_combined_injfind) > 0:
 
 # Per injection run plots
 for inj_file, tag in zip(inj_files, inj_tags):
-    s = []
     found_inj = found_inj_dict[tag]
     insps = insps_dict[tag]
     small_inj_file = small_inj_file_dict[tag]
@@ -571,7 +570,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     #foundmissed/sensitivity plots
     s = wf.make_sensitivity_plot(workflow, found_inj, sensdir,
                                  exclude=['all', 'summ'], require='sub',
-                                 tags=ctags)
+                                 tags=[tag])
     f = wf.make_foundmissed_plot(workflow, found_inj, injdir,
                                  exclude=['all', 'summ'], require='sub',
                                  tags=[tag])
@@ -579,7 +578,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     # FIXME: It's not clear to me that this does anything??
     # Extra foundmissed/sensitivity plots
     wf.make_sensitivity_plot(workflow, found_inj, sensdir,
-                             exclude=['all', 'summ', 'sub'], tags=ctags)
+                             exclude=['all', 'summ', 'sub'], tags=[tag])
     wf.make_foundmissed_plot(workflow, found_inj, injdir,
                              exclude=['all', 'summ', 'sub'], tags=[tag])
 
