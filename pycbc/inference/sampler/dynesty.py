@@ -36,6 +36,7 @@ import dynesty
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
 from .base import BaseSampler
+from .base_mcmc import get_optional_arg_from_config
 from .. import models
 
 
@@ -67,13 +68,15 @@ class DynestySampler(BaseSampler):
     name = "dynesty"
     _io = DynestyFile
 
-    def __init__(self, model, nlive, err_logz, nprocesses=1, use_mpi=False,
-                 **kwargs):
+    def __init__(self, model, nlive, err_logz, nprocesses=1,
+                 loglikelihood_function=None, use_mpi=False, **kwargs):
 
         self.model = model
-
+        
         # Set up the pool
-        model_call = DynestyModel(model)
+        #if loglikelihood_function is None:
+         #   loglikelihood_function = 'loglikelihood'
+        model_call = DynestyModel(model,loglikelihood_function)
         if nprocesses > 1:
             # these are used to help paralleize over multiple cores / MPI
             models._global_instance = model_call
@@ -83,7 +86,7 @@ class DynestySampler(BaseSampler):
             
             prior_call = model_call.prior_transform
             log_likelihood_call = model_call.log_likelihood
-         
+        print 'loglikelihood function is: %s, %s'%(loglikelihood_function,type(loglikelihood_function))
         print 'nprocess=%i'%nprocesses
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         if pool is not None:
@@ -128,7 +131,7 @@ class DynestySampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, use_mpi=False):
+    def from_config(cls, cp, model, nprocesses=1, loglikelihood_function=None, use_mpi=False):
         """
         Loads the sampler from the given config file.
         """
@@ -139,8 +142,10 @@ class DynestySampler(BaseSampler):
         # get the number of live points to use
         nlive = int(cp.get(section, "nlive"))
         err_logz = float(cp.get(section, "err_logz"))
+        loglikelihood_function = get_optional_arg_from_config(cp, section, 'loglikelihood-function')
+        print 'kya yaar %s, %s'%(loglikelihood_function,type(loglikelihood_function))
         obj = cls(model, nlive=nlive, err_logz=err_logz, nprocesses=nprocesses,
-                  use_mpi=use_mpi)
+                  loglikelihood_function=loglikelihood_function, use_mpi=use_mpi)
         return obj
 
     def checkpoint(self):
@@ -229,13 +234,16 @@ def _call_global_logprior(cube):
 
 
 class DynestyModel(object):
-    def __init__(self, model):
+    def __init__(self, model, loglikelihood_function=None):
         self.model = model
+        if loglikelihood_function is None:
+            loglikelihood_function = 'loglikelihood'
+        self.loglikelihood_function = loglikelihood_function
 
     def log_likelihood(self,cube):
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         self.model.update(**params)
-        return self.model.loglikelihood
+        return getattr(self.model,self.loglikelihood_function)
 
     def prior_transform(self,cube):
         prior_dists = self.model.prior_distribution.distributions
