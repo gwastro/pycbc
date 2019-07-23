@@ -616,9 +616,10 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         for ifo in self.ifos:
             self.assign_median_sigma(ifo)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
+
+        # benchmark_logvol is a benchmark sensitivity array over template id
         hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
                                        for ifo in ['H1', 'L1']], axis=0)
-        # benchmark_logvol is a template-dependent benchmark sensitivity array
         self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
@@ -647,8 +648,8 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
             tnum = trigs['template_id']  # exists for SingleDetTriggers
             # Should only be one ifo fit file provided
             assert len(self.ifos) == 1
-        # note that though this is not ifo-dependent, we assign this here as
-        # getting template number in the coinc function is a kerfuffle
+        # store benchmark log volume as single-ifo information since the coinc
+        # method does not have access to template id
         singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
         return numpy.array(singles, ndmin=1)
 
@@ -658,15 +659,16 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
                       s.items()}
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
-        # network sensitivity for a given coinc type is approximately
+        # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
         network_sigmasq = numpy.amin([s[ifo]['sigmasq'] for ifo in s.keys()],
                                      axis=0)
-        # volume = sigma^3, so sigmasq^1.5
+        # Volume \propto sigma^3 or sigmasq^1.5
         network_logvol = 1.5 * numpy.log(network_sigmasq)
 
-        # get benchmark log volume from singles, this is *not* ifo-dependent,
-        # but needed tnum from singles in the calculation
+        # Get benchmark log volume as single-ifo information
+        # NB, benchmark logvol for a given template is not ifo-dependent
+        # so choose one ifo for convenience
         ifos = s.keys()
         benchmark_logvol = s[ifos[0]]['benchmark_logvol']
 
