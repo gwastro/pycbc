@@ -92,7 +92,7 @@ class NewSNRStatistic(Stat):
         numpy.ndarray
             Array of coincident ranking statistic values
         """
-        return (s0**2. + s1**2.) ** 0.5
+        return (s0 ** 2. + s1 ** 2.) ** 0.5
 
     def coinc_multiifo(self, s, slide, step,
                        **kwargs): # pylint:disable=unused-argument
@@ -569,7 +569,7 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
                            dtype=numpy.float32), ndmin=1, copy=False)
 
 
-class ExpFitSGCoincRateStatistic(ExpFitStatistic):
+class ExpFitSGBgRateStatistic(ExpFitStatistic):
 
     """Detection statistic using an exponential falloff noise model.
     Statistic calculates the log noise coinc rate for each
@@ -579,7 +579,7 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
     def __init__(self, files, benchmark_lograte=-14.6):
         # benchmark_lograte is log of a representative noise trigger rate
         # This comes from H1L1 (O2) and is 4.5e-7 Hz
-        super(ExpFitSGCoincRateStatistic, self).__init__(files)
+        super(ExpFitSGBgRateStatistic, self).__init__(files)
         self.benchmark_lograte = benchmark_lograte
         self.get_newsnr = ranking.get_newsnr_sgveto
         # Reassign the rate as it is now number per time rather than an
@@ -599,10 +599,81 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
 
     def coinc_multiifo(self, s, slide,
                        step, **kwargs): # pylint:disable=unused-argument
-        """Calculate the final coinc ranking statistic"""
-        ln_coinc_rate = coinc_rate.combination_noise_coinc_lograte(
+        # ranking statistic is -ln(expected rate density of noise triggers)
+        # plus normalization constant
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   s, kwargs['time_addition'])
-        loglr = - ln_coinc_rate + self.benchmark_lograte
+        loglr = - ln_noise_rate + self.benchmark_lograte
+        return loglr
+
+
+class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
+    def __init__(self, files):
+        # read in background fit info and store it, also use newsnr_sgveto
+        ExpFitSGBgRateStatistic.__init__(self, files)
+        # Use PhaseTD statistic single.dtype
+        PhaseTDStatistic.__init__(self, files)
+        for ifo in self.ifos:
+            self.assign_median_sigma(ifo)
+        self.single_dtype.append(('benchmark_logvol', numpy.float32))
+
+        # benchmark_logvol is a benchmark sensitivity array over template id
+        hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
+                                       for ifo in ['H1', 'L1']], axis=0)
+        self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
+        self.get_newsnr = ranking.get_newsnr_sgveto
+
+    def assign_median_sigma(self, ifo):
+        coeff_file = self.files[ifo+'-fit_coeffs']
+        template_id = coeff_file['template_id'][:]
+        tid_sort = numpy.argsort(template_id)
+
+        self.fits_by_tid[ifo]['median_sigma'] = \
+            coeff_file['median_sigma'][:][tid_sort]
+
+    def single(self, trigs):
+        # single-ifo stat = log of noise rate
+        sngl_stat = self.lognoiserate(trigs)
+        # populate other fields to calculate phase/time/amp consistency
+        # and sigma comparison
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
+        singles['coa_phase'] = trigs['coa_phase'][:]
+        singles['end_time'] = trigs['end_time'][:]
+        singles['sigmasq'] = trigs['sigmasq'][:]
+        singles['snr'] = trigs['snr'][:]
+        try:
+            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+        except AttributeError:
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            # Should only be one ifo fit file provided
+            assert len(self.ifos) == 1
+        # store benchmark log volume as single-ifo information since the coinc
+        # method does not have access to template id
+        singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
+        return numpy.array(singles, ndmin=1)
+
+    def coinc_multiifo(self, s, slide,
+                       step, **kwargs): # pylint:disable=unused-argument
+        sngl_rates = {ifo: sngl_data['snglstat'] for ifo, sngl_data in
+                      s.items()}
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                  sngl_rates, kwargs['time_addition'])
+        # Network sensitivity for a given coinc type is approximately
+        # determined by the least sensitive ifo
+        network_sigmasq = numpy.amin([s[ifo]['sigmasq'] for ifo in s.keys()],
+                                     axis=0)
+        # Volume \propto sigma^3 or sigmasq^1.5
+        network_logvol = 1.5 * numpy.log(network_sigmasq)
+
+        # Get benchmark log volume as single-ifo information
+        # NB, benchmark logvol for a given template is not ifo-dependent
+        # so choose one ifo for convenience
+        ifos = s.keys()
+        benchmark_logvol = s[ifos[0]]['benchmark_logvol']
+
+        loglr = - ln_noise_rate + self.benchmark_lograte \
+            + network_logvol - benchmark_logvol
         return loglr
 
 
@@ -622,7 +693,8 @@ statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
-    'exp_fit_sg_coinc_rate': ExpFitSGCoincRateStatistic
+    'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
+    'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic
 }
 
 sngl_statistic_dict = {
