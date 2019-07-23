@@ -214,8 +214,8 @@ class PhaseTDStatistic(NewSNRStatistic):
     The weighting is based on the PDF of time delays, phase differences and
     amplitude ratios between triggers in different ifos.
     """
-    def __init__(self, files):
-        NewSNRStatistic.__init__(self, files)
+    def __init__(self, files, ifos, pivot=None):
+        NewSNRStatistic.__init__(self, files, ifos, pivot=pivot)
 
         self.single_dtype = [('snglstat', numpy.float32),
                     ('coa_phase', numpy.float32),
@@ -354,8 +354,8 @@ class PhaseTDSGStatistic(PhaseTDStatistic):
     single detector ranking
     """
 
-    def __init__(self, files):
-        PhaseTDStatistic.__init__(self, files)
+    def __init__(self, files, ifos, pivot=None):
+        PhaseTDStatistic.__init__(self, files, ifos, pivot=pivot)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -367,10 +367,10 @@ class ExpFitStatistic(NewSNRStatistic):
     template over single-ifo newsnr values.
     """
 
-    def __init__(self, files):
+    def __init__(self, files, ifos, pivot=None):
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
-        NewSNRStatistic.__init__(self, files)
+        NewSNRStatistic.__init__(self, files, ifos, pivot=pivot)
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.ifos = [at[0] for at in parsed_attrs if
@@ -459,8 +459,8 @@ class ExpFitCombinedSNR(ExpFitStatistic):
     approximates combined (new)snr for coincs with similar newsnr in each ifo
     """
 
-    def __init__(self, files):
-        ExpFitStatistic.__init__(self, files)
+    def __init__(self, files, ifos, pivot=None):
+        ExpFitStatistic.__init__(self, files, ifos, pivot=pivot)
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
 
@@ -495,8 +495,8 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
     single detector ranking
     """
 
-    def __init__(self, files):
-        ExpFitCombinedSNR.__init__(self, files)
+    def __init__(self, files, ifos, pivot=None):
+        ExpFitCombinedSNR.__init__(self, files, ifos, pivot=pivot)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -507,8 +507,8 @@ class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
     the single detector ranking
     """
 
-    def __init__(self, files):
-        ExpFitCombinedSNR.__init__(self, files)
+    def __init__(self, files, ifos, pivot=None):
+        ExpFitCombinedSNR.__init__(self, files, ifos, pivot=pivot)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
@@ -516,11 +516,11 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
 
     """Statistic combining exponential noise model with signal histogram PDF"""
 
-    def __init__(self, files):
+    def __init__(self, files, ifos, pivot=None):
         # read in both foreground PDF and background fit info
-        ExpFitCombinedSNR.__init__(self, files)
+        ExpFitCombinedSNR.__init__(self, files, ifos, pivot=pivot)
         # need the self.single_dtype value from PhaseTDStatistic
-        PhaseTDStatistic.__init__(self, files)
+        PhaseTDStatistic.__init__(self, files, ifos, pivot=pivot)
 
     def single(self, trigs):
         # same single-ifo stat as ExpFitCombinedSNR
@@ -550,8 +550,8 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
        and adding the sine-Gaussian veto to the single detector ranking
     """
 
-    def __init__(self, files):
-        PhaseTDExpFitStatistic.__init__(self, files)
+    def __init__(self, files, ifos, pivot=None):
+        PhaseTDExpFitStatistic.__init__(self, files, ifos, pivot=pivot)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -562,8 +562,8 @@ class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
        single detector ranking
     """
 
-    def __init__(self, files):
-        PhaseTDExpFitSGStatistic.__init__(self, files)
+    def __init__(self, files, ifos, pivot=None):
+        PhaseTDExpFitSGStatistic.__init__(self, files, ifos, pivot=pivot)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
@@ -600,10 +600,10 @@ class ExpFitSGCoincRateStatistic(ExpFitStatistic):
     template over single-ifo newsnr values.
     """
 
-    def __init__(self, files, benchmark_lograte=-14.6):
+    def __init__(self, files, ifos, benchmark_lograte=-14.6, pivot=None):
         # benchmark_lograte is log of a representative noise trigger rate
         # This comes from H1L1 (O2) and is 4.5e-7 Hz
-        super(ExpFitSGCoincRateStatistic, self).__init__(files)
+        super(ExpFitSGCoincRateStatistic, self).__init__(files, ifos, pivot=pivot)
         self.benchmark_lograte = benchmark_lograte
         self.get_newsnr = ranking.get_newsnr_sgveto
         # Reassign the rate as it is now number per time rather than an
