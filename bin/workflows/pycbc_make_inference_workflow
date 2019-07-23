@@ -113,6 +113,10 @@ parser.add_argument("--frame-files", nargs="+", default=None,
                     action=MultiDetOptionAppendAction,
                     help="GWF frame files to use.")
 
+# verbosity flag (to be passed through to main inference executable)
+parser.add_argument("--verbose", action="store_true",
+                    help="Turn on --verbose for main pycbc_inference executable.")
+
 # add option groups
 configuration.add_workflow_command_line_group(parser)
 
@@ -272,6 +276,8 @@ for num_event in range(num_events):
 
     # make node for running sampler
     node = inference_exe.create_node()
+    if opts.verbose:
+        node.add_opt("--verbose")
     node.add_opt("--instruments", " ".join(workflow.ifos))
     node.add_opt("--gps-start-time", gps_start_time)
     node.add_opt("--gps-end-time", gps_end_time)
