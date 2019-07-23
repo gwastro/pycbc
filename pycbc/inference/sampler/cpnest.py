@@ -34,6 +34,7 @@ import cpnest
 import cpnest.model as cpm
 from pycbc.inference.io import (CPNestFile, validate_checkpoint_files)
 from .base import BaseSampler
+from .base_mcmc import get_optional_arg_from_config
 
 
 
@@ -63,15 +64,16 @@ class CPNestSampler(BaseSampler):
     name = "cpnest"
     _io = CPNestFile
 
-    def __init__(self, model, nlive, verbose, nthreads=8, maxmcmc=1000):
-
+    def __init__(self, model, nlive, maxmcmc=1000, nthreads=1, verbose=1,
+                 loglikelihood_function=None):
         self.model = model
         self.nlive = nlive
         self.maxmcmc = maxmcmc
         self.nthreads = nthreads
         self.verbose = verbose
         # create a wrapper for calling the model
-        self.model_call = CPnestModel(model)
+        #print 'loglikelihood_function is %s, %s'%(loglikelihood_function,type(loglikelihood_function))
+        self.model_call = CPNestModel(model,loglikelihood_function)
         self._sampler = None
         self._nested_samples = None
         self._posterior_samples = None
@@ -111,8 +113,12 @@ class CPNestSampler(BaseSampler):
         maxmcmc = int(cp.get(section, "maxmcmc"))
         nthreads = int(cp.get(section, "nthreads"))
         verbose = int(cp.get(section, "verbose"))
-        obj = cls(model, nlive=nlive, maxmcmc=maxmcmc,
-                  nthreads=nthreads, verbose=verbose)
+        loglikelihood_function = \
+            get_optional_arg_from_config(cp, section, 'loglikelihood-function')
+        #print 'kya yaar %s, %s'%(loglikelihood_function,type(loglikelihood_function))
+        obj = cls(model, nlive=nlive, maxmcmc=maxmcmc, nthreads=nthreads, 
+                  verbose=verbose,
+                  loglikelihood_function = loglikelihood_function)
         return obj
 
     def checkpoint(self):
@@ -189,7 +195,7 @@ class CPNestSampler(BaseSampler):
         return self._dlogz
 
 
-class CPnestModel(cpm.Model):
+class CPNestModel(cpm.Model):
     """
     Class for making PyCBC Inference 'model class'
     compatible with CPNest 'model class'
@@ -199,11 +205,15 @@ class CPnestModel(cpm.Model):
     model : inference.BaseModel instance
              A model instance from pycbc.
     """
-    def __init__(self, model):
+    def __init__(self, model, loglikelihood_function=None):
         if model.sampling_transforms is not None:
             raise ValueError("CPNest does not support sampling transforms")
         self.model = model
         self.names = list(model.sampling_params)
+        # set up lohlikelihood_function
+        if loglikelihood_function is None:
+            loglikelihood_function = 'loglikelihood'
+        self.loglikelihood_function = loglikelihood_function
         bounds = {}
         for dist in model.prior_distribution.distributions:
             bounds.update(dist.bounds)
@@ -223,4 +233,5 @@ class CPnestModel(cpm.Model):
         Modify the log likelihood which will be passed to CPNest 'model class'
         """
         self.model.update(**xx)
-        return self.model.loglikelihood
+        #print 'This is what you are looking for: %s,%f'%(self.loglikelihood_function, getattr(self.model,self.loglikelihood_function))
+        return getattr(self.model,self.loglikelihood_function)
