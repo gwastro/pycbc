@@ -213,17 +213,6 @@ class PhaseTDStatistic(NewSNRStatistic):
     """
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
-        self.hist = self.files['phasetd_newsnr']['map'][:]
-
-        # Normalize so that peak has no effect on newsnr
-        self.hist = self.hist / float(self.hist.max())
-        self.hist = numpy.log(self.hist)
-
-        # Bin boundaries are stored in the hdf file
-        self.tbins = self.files['phasetd_newsnr']['tbins'][:]
-        self.pbins = self.files['phasetd_newsnr']['pbins'][:]
-        self.sbins = self.files['phasetd_newsnr']['sbins'][:]
-        self.rbins = self.files['phasetd_newsnr']['rbins'][:]
 
         self.single_dtype = [('snglstat', numpy.float32),
                     ('coa_phase', numpy.float32),
@@ -233,6 +222,34 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         # Assign attribute so that it can be replaced with other functions
         self.get_newsnr = ranking.get_newsnr
+        self.ifos = []
+
+    def setup_hist(self):
+        # default name, used for two-ifo workflows usually
+        if 'phasetd_newsnr' in self.files:
+            key = 'phasetd_newsnr'
+        # otherwise, pick based on ifos supported if multiple files
+        else:
+            keys = self.files.keys()
+            for key in keys:
+                if ('phasetd_newsnr' in key and
+                    self.ifos[0] in key and
+                    self.ifos[1] in key)
+                    break
+            else:
+                raise ValueError("We didn't find a matching phasetd file")
+
+        self.hist = self.files[key]['map'][:]
+
+        # Normalize so that peak has no effect on newsnr
+        self.hist = self.hist / float(self.hist.max())
+        self.hist = numpy.log(self.hist)
+
+        # Bin boundaries are stored in the hdf file
+        self.tbins = self.files[key]['tbins'][:]
+        self.pbins = self.files[key]['pbins'][:]
+        self.sbins = self.files[key]['sbins'][:]
+        self.rbins = self.files[key]['rbins'][:]
 
     def single(self, trigs):
         """
@@ -250,6 +267,8 @@ class PhaseTDStatistic(NewSNRStatistic):
         numpy.ndarray
             Array of single detector parameter values
         """
+        self.ifos += [trigs.ifo]
+
         sngl_stat = self.get_newsnr(trigs)
         singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
         singles['snglstat'] = sngl_stat
@@ -261,6 +280,8 @@ class PhaseTDStatistic(NewSNRStatistic):
 
     def logsignalrate(self, s0, s1, slide, step):
         """Calculate the normalized log rate density of signals via lookup"""
+        self.setup_hist()
+
         td = numpy.array(s0['end_time'] - s1['end_time'] - slide*step, ndmin=1)
         pd = numpy.array((s0['coa_phase'] - s1['coa_phase']) % \
                          (2. * numpy.pi), ndmin=1)
