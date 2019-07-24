@@ -74,20 +74,15 @@ class DynestySampler(BaseSampler):
         self.model = model
         
         # Set up the pool
-        #if loglikelihood_function is None:
-         #   loglikelihood_function = 'loglikelihood'
-        model_call = DynestyModel(model,loglikelihood_function)
+        model_call = DynestyModel(model, loglikelihood_function)
         if nprocesses > 1:
             # these are used to help paralleize over multiple cores / MPI
             models._global_instance = model_call
             log_likelihood_call = _call_global_loglikelihood
             prior_call = _call_global_logprior
         else:
-            
             prior_call = model_call.prior_transform
             log_likelihood_call = model_call.log_likelihood
-        print 'loglikelihood function is: %s, %s'%(loglikelihood_function,type(loglikelihood_function))
-        print 'nprocess=%i'%nprocesses
         pool = choose_pool(mpi=use_mpi, processes=nprocesses)
         if pool is not None:
             pool.size = nprocesses
@@ -97,29 +92,13 @@ class DynestySampler(BaseSampler):
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
-        self._sampler=dynesty.NestedSampler(log_likelihood_call,
-                                            prior_call, self.ndim,
-                                            nlive=self.nlive,
-                                            dlogz=self.err_logz,
-                                            pool=pool, **kwargs)
+        self._sampleri = dynesty.NestedSampler(log_likelihood_call,
+                                               prior_call, self.ndim,
+                                               nlive=self.nlive,
+                                               dlogz=self.err_logz,
+                                               pool=pool, **kwargs)
 
- 
-    def log_likelihood(self,cube):
-        params = {p: v for p, v in zip(self.model.variable_params, cube)}
-        self.model.update(**params)
-        return self.model.loglikelihood
-    
-    def prior_transform(self,cube):
-        prior_dists = self.model.prior_distribution.distributions
-        dist_dict = {}
-        for dist in prior_dists:
-            dist_dict.update({param: dist for param in dist.params})
-        for i, param in enumerate(self.model.variable_params):
-            cube[i] = dist_dict[param].cdfinv(param, cube[i])
-        return cube
-    
     def run(self, **kwargs):
-        #OUTDIR = os.path.dirname(os.path.abspath(self.checkpoint_file))
         res = self._sampler.run_nested()
 
     @property
@@ -131,7 +110,8 @@ class DynestySampler(BaseSampler):
         return len(tuple(self.samples.values())[0])
 
     @classmethod
-    def from_config(cls, cp, model, nprocesses=1, loglikelihood_function=None, use_mpi=False):
+    def from_config(cls, cp, model, nprocesses=1, loglikelihood_function=None,
+                    use_mpi=False):
         """
         Loads the sampler from the given config file.
         """
@@ -142,10 +122,11 @@ class DynestySampler(BaseSampler):
         # get the number of live points to use
         nlive = int(cp.get(section, "nlive"))
         err_logz = float(cp.get(section, "err_logz"))
-        loglikelihood_function = get_optional_arg_from_config(cp, section, 'loglikelihood-function')
-        print 'kya yaar %s, %s'%(loglikelihood_function,type(loglikelihood_function))
+        loglikelihood_function = \
+            get_optional_arg_from_config(cp, section, 'loglikelihood-function')
         obj = cls(model, nlive=nlive, err_logz=err_logz, nprocesses=nprocesses,
-                  loglikelihood_function=loglikelihood_function, use_mpi=use_mpi)
+                  loglikelihood_function=loglikelihood_function,
+                  use_mpi=use_mpi)
         return obj
 
     def checkpoint(self):
@@ -174,11 +155,8 @@ class DynestySampler(BaseSampler):
 
     @property
     def samples(self):
-        #samples_dict = {p: self._sampler.results.samples[:,i] for p,i in
-        #                zip(self.model.sampling_params,range(self.ndim))}
-        #return samples_dict
-        samples_dict = {p: self.posterior_samples[:,i] for p,i in
-                       zip(self.model.sampling_params,range(self.ndim))}
+        samples_dict = {p: self.posterior_samples[:,i] for p, i in
+                       zip(self.model.sampling_params, range(self.ndim))}
         return samples_dict
 
     def set_initial_conditions(self, initial_distribution=None,
@@ -211,9 +189,9 @@ class DynestySampler(BaseSampler):
     @property
     def posterior_samples(self):
         dynesty_samples = self._sampler.results['samples']
-        #try:
-        weights = numpy.exp(self._sampler.results['logwt'] - self._sampler.results['logz'][-1])
-        posterior_dynesty = resample_equal(dynesty_samples,weights)
+        weights = numpy.exp(self._sampler.results['logwt'] - \
+             self._sampler.results['logz'][-1])
+        posterior_dynesty = resample_equal(dynesty_samples, weights)
         return posterior_dynesty
 
     @property
@@ -224,10 +202,10 @@ class DynestySampler(BaseSampler):
     def dlogz(self):
         return self._sampler.results.dlogz[-1:][0]
 
-#_global_instance = None
 
 def _call_global_loglikelihood(cube):
     return models._global_instance.log_likelihood(cube)
+
 
 def _call_global_logprior(cube):
     return models._global_instance.prior_transform(cube)
@@ -240,12 +218,12 @@ class DynestyModel(object):
             loglikelihood_function = 'loglikelihood'
         self.loglikelihood_function = loglikelihood_function
 
-    def log_likelihood(self,cube):
+    def log_likelihood(self, cube):
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         self.model.update(**params)
         return getattr(self.model,self.loglikelihood_function)
 
-    def prior_transform(self,cube):
+    def prior_transform(self, cube):
         prior_dists = self.model.prior_distribution.distributions
         dist_dict = {}
         for dist in prior_dists:
@@ -253,5 +231,3 @@ class DynestyModel(object):
         for i, param in enumerate(self.model.variable_params):
             cube[i] = dist_dict[param].cdfinv(param, cube[i])
         return cube
-
-
