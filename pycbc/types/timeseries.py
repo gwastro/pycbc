@@ -84,12 +84,22 @@ class TimeSeries(Array):
         self._delta_t = delta_t
         self._epoch = epoch
 
+    def sample_rate_close(self, other):
+        """ Check if the sample rate is close enough to allow operations """
+        if (other.delta_t - self.delta_t) / self.delta_t > 1e-4:
+            return False
+
+        if abs(1 - other.delta_t / self.delta_t) * len(self) > 0.5:
+            return False
+
+        return True
+
     def _return(self, ary):
         return TimeSeries(ary, self._delta_t, epoch=self._epoch, copy=False)
 
     def _typecheck(self, other):
         if isinstance(other, TimeSeries):
-            if other._delta_t != self._delta_t:
+            if not self.sample_rate_close(other):
                 raise ValueError('different delta_t')
             if self._epoch != other._epoch:
                 raise ValueError('different epoch')
