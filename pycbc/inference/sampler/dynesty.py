@@ -119,7 +119,7 @@ class DynestySampler(BaseSampler):
         return cube
     
     def run(self, **kwargs):
-        OUTDIR = os.path.dirname(os.path.abspath(self.checkpoint_file))
+        #OUTDIR = os.path.dirname(os.path.abspath(self.checkpoint_file))
         res = self._sampler.run_nested()
 
     @property
@@ -177,7 +177,7 @@ class DynestySampler(BaseSampler):
         #samples_dict = {p: self._sampler.results.samples[:,i] for p,i in
         #                zip(self.model.sampling_params,range(self.ndim))}
         #return samples_dict
-        samples_dict = {p: self.posterior_samples[i] for p,i in
+        samples_dict = {p: self.posterior_samples[:,i] for p,i in
                        zip(self.model.sampling_params,range(self.ndim))}
         return samples_dict
 
