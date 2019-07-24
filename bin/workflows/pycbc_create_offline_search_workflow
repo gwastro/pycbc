@@ -416,6 +416,7 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
 
 # Sub-pages for each ifo combination
 
+snrifar_summ = []
 for key in final_bg_files:
     # FIXME: Stop obfuscating this file!
     bg_file = final_bg_files[key]
@@ -446,6 +447,7 @@ for key in final_bg_files:
 
     #closed_page = [(snrifar_cb, ifar_cb)]
     closed_page = [(snrifar_cb,)]
+    snrifar_summ += closed_page
     layout.two_column_layout(closed_dir, closed_page)
 
 
@@ -644,7 +646,7 @@ if len(files_for_combined_injfind) > 0:
 ########################## Make full summary ####################################
 summ = ([(time_file,)] + [(seg_summ_plot,)] +
         [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ +
-        [(bank_plot,)] + inj_summ)
+        [(bank_plot,)] + inj_summ + snrifar_summ)
 for row in summ:
     for f in row:
         symlink_path(f, rdir.base)
