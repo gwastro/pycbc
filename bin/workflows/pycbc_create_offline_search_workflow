@@ -617,7 +617,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
 if len(files_for_combined_injfind) > 0:
     found_inj_comb = wf.find_injections_in_hdf_coinc\
         (workflow, inj_coincs, files_for_combined_injfind, censored_veto,
-         censored_veto_name, 'allinj', tags=['ALLINJ'])
+         censored_veto_name[0], 'allinj', tags=['ALLINJ'])
 
     sen_all = wf.make_sensitivity_plot(workflow, found_inj_comb, rdir['search_sensitivity'],
                             require='all', tags=['ALLINJ'])
