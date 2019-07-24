@@ -34,7 +34,7 @@ from . import coinc_rate
 class Stat(object):
     """Base class which should be extended to provide a coincident statistic"""
 
-    def __init__(self, files=None, ifos=None):
+    def __init__(self, files):
         """Create a statistic class instance
 
         Parameters
@@ -57,7 +57,6 @@ class Stat(object):
             if stat in self.files:
                 raise RuntimeError("We already have one file with stat attr ="
                                    " %s. Can't provide more than one!" % stat)
-            logging.info("Found file %s for stat %s", filename, stat)
             self.files[stat] = f
 
         # Provide the dtype of the single detector method's output
@@ -115,9 +114,6 @@ class NewSNRStatistic(Stat):
             List of (ifo, single detector statistic) tuples
         slide: (unused in this statistic)
         step: (unused in this statistic)
-        to_shift: list
-            List of integers indicating what multiples of the time shift will
-        be applied (unused in this statistic)
 
         Returns
         -------
@@ -223,6 +219,20 @@ class PhaseTDStatistic(NewSNRStatistic):
     amplitude ratios between triggers in different ifos.
     """
 
+    def __init__(self, files):
+        NewSNRStatistic.__init__(self, files)
+
+        # Determine which ifos are involved - NB signal hists are symmetric
+        # under exchange of 2 ifos
+        self.hist_ifos = sorted([i for at, i in \
+            self.files['phasetd_newsnr'].attrs.items() if at[0:2] == 'ifo'])
+
+        self.hist = self.files['phasetd_newsnr']['map'][:]
+
+        # Normalize so that peak has no effect on newsnr
+        self.hist = self.hist / float(self.hist.max())
+        self.hist = numpy.log(self.hist)
+
     def __init__(self, files, ifos=None):
         NewSNRStatistic.__init__(self, files, ifos=ifos)
 
@@ -301,8 +311,15 @@ class PhaseTDStatistic(NewSNRStatistic):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def signal_hist(self, td, pd, sn0, sn1, rd):
-        assert self.hist is not None
+    def logsignalrate(self, s0, s1, slide, step):
+        """Calculate the normalized log rate density of signals via lookup"""
+
+        td = numpy.array(s0['end_time'] - s1['end_time'] - slide*step, ndmin=1)
+        pd = numpy.array((s0['coa_phase'] - s1['coa_phase']) % \
+                         (2. * numpy.pi), ndmin=1)
+        rd = numpy.array((s0['sigmasq'] / s1['sigmasq']) ** 0.5, ndmin=1)
+        sn0 = numpy.array(s0['snr'], ndmin=1)
+        sn1 = numpy.array(s1['snr'], ndmin=1)
 
         # enforce that sigma ratio is < 1 by swapping values
         snr0 = sn0 * 1
@@ -429,8 +446,8 @@ class PhaseTDSGStatistic(PhaseTDStatistic):
 
     single-detector ranking
     """
-    def __init__(self, files, ifos=None):
-        PhaseTDStatistic.__init__(self, files, ifos=ifos)
+    def __init__(self, files):
+        PhaseTDStatistic.__init__(self, files)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -472,7 +489,7 @@ class ExpFitStatistic(NewSNRStatistic):
         return {'alpha': alphas[tid_sort],
                 'rate': rates[tid_sort],
                 'thresh': coeff_file.attrs['stat_threshold']
-                }
+               }
 
     def get_ref_vals(self, ifo):
         self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
@@ -567,9 +584,9 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
 
 class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
-    """ExpFitCombinedSNR but with sine-Gaussian veto added to the single
+    """ExpFitCombinedSNR but with sine-Gaussian veto added to the
 
-    detector ranking
+    single detector ranking
     """
 
     def __init__(self, files, ifos=None):
@@ -775,16 +792,13 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         benchmark_logvol = s[ifos[0]]['benchmark_logvol']
 
         # logsignalrate function inherited from PhaseTDStatistic
-        # - for now, only use H-L consistency
-        ifos = s.keys()
-        import logging
-        if 'H1' in ifos and 'L1' in ifos:
+        if 'H1' in ifos and 'L1' in ifos:  # apply HL hist for HL & HLV coincs
             logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
-            # makeshift factor to compensate HL(V) coincs which are penalized
-            # on average by p/t/a vs HV, LV which are not
-            logr_s = logr_s + 4.5
         else:
-            logr_s = numpy.zeros_like(s['V1']['snr'])
+            # use the histogram ifos that we have
+            logr_s = self.logsignalrate(
+                        s[ifos[0]], s[ifos[1]],
+                        slide, step) # how do we know if 'slide' is being applied correctly?
 
         loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
                 + network_logvol - benchmark_logvol
