@@ -21,8 +21,9 @@
 #
 # =============================================================================
 #
-""" This module contains functions for calculating coincident ranking
-statistic values
+"""
+This module contains functions for calculating coincident ranking statistic
+values.
 """
 import numpy
 from . import ranking
@@ -30,8 +31,8 @@ from . import coinc_rate
 
 
 class Stat(object):
+    """Base class which should be extended to provide a coincident statistic"""
 
-    """ Base class which should be extended to provide a coincident statistic"""
     def __init__(self, files):
         """Create a statistic class instance
 
@@ -48,6 +49,9 @@ class Stat(object):
         for filename in files:
             f = h5py.File(filename, 'r')
             stat = (f.attrs['stat']).decode()
+            if stat in self.files:
+                raise RuntimeError("We already have one file with stat attr ="
+                                   " %s. Can't provide more than one!" % stat)
             self.files[stat] = f
 
         # Provide the dtype of the single detector method's output
@@ -57,8 +61,7 @@ class Stat(object):
 
 
 class NewSNRStatistic(Stat):
-
-    """ Calculate the NewSNR coincident detection statistic """
+    """Calculate the NewSNR coincident detection statistic"""
 
     def single(self, trigs):
         """Calculate the single detector statistic, here equal to newsnr
@@ -97,12 +100,14 @@ class NewSNRStatistic(Stat):
     def coinc_multiifo(self, s, slide, step,
                        **kwargs): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
+
         Parameters
         ----------
         s: dictionary keyed by ifo of single detector ranking
            statistics
         slide: (unused in this statistic)
         step: (unused in this statistic)
+
         Returns
         -------
         numpy.ndarray
@@ -112,8 +117,7 @@ class NewSNRStatistic(Stat):
 
 
 class NewSNRSGStatistic(NewSNRStatistic):
-
-    """ Calculate the NewSNRSG coincident detection statistic """
+    """Calculate the NewSNRSG coincident detection statistic"""
 
     def single(self, trigs):
         """Calculate the single detector statistic, here equal to newsnr_sgveto
@@ -132,12 +136,11 @@ class NewSNRSGStatistic(NewSNRStatistic):
 
 
 class NewSNRSGPSDStatistic(NewSNRSGStatistic):
-
-    """ Calculate the NewSNRSGPSD coincident detection statistic """
+    """Calculate the NewSNRSGPSD coincident detection statistic"""
 
     def single(self, trigs):
         """Calculate the single detector statistic, here equal to newsnr
-           combined with sgveto and psdvar statistic
+        combined with sgveto and psdvar statistic
 
         Parameters
         ----------
@@ -152,7 +155,6 @@ class NewSNRSGPSDStatistic(NewSNRSGStatistic):
 
 
 class NetworkSNRStatistic(NewSNRStatistic):
-
     """Same as the NewSNR statistic, but just sum of squares of SNRs"""
 
     def single(self, trigs):
@@ -160,7 +162,6 @@ class NetworkSNRStatistic(NewSNRStatistic):
 
 
 class NewSNRCutStatistic(NewSNRStatistic):
-
     """Same as the NewSNR statistic, but demonstrates a cut of the triggers"""
 
     def single(self, trigs):
@@ -205,14 +206,20 @@ class NewSNRCutStatistic(NewSNRStatistic):
 
 
 class PhaseTDStatistic(NewSNRStatistic):
-
     """Statistic that re-weights combined newsnr using coinc parameters.
 
     The weighting is based on the PDF of time delays, phase differences and
     amplitude ratios between triggers in different ifos.
     """
+
     def __init__(self, files):
         NewSNRStatistic.__init__(self, files)
+
+        # Determine which ifos are involved - NB signal hists are symmetric
+        # under exchange of 2 ifos
+        self.hist_ifos = sorted([i for at, i in \
+            self.files['phasetd_newsnr'].attrs.items() if at[0:2] == 'ifo'])
+
         self.hist = self.files['phasetd_newsnr']['map'][:]
 
         # Normalize so that peak has no effect on newsnr
@@ -235,8 +242,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.get_newsnr = ranking.get_newsnr
 
     def single(self, trigs):
-        """
-        Calculate the single detector statistic and assemble other parameters
+        """Calculate the single detector statistic & assemble other parameters
 
         Parameters
         ----------
@@ -261,6 +267,7 @@ class PhaseTDStatistic(NewSNRStatistic):
 
     def logsignalrate(self, s0, s1, slide, step):
         """Calculate the normalized log rate density of signals via lookup"""
+
         td = numpy.array(s0['end_time'] - s1['end_time'] - slide*step, ndmin=1)
         pd = numpy.array((s0['coa_phase'] - s1['coa_phase']) % \
                          (2. * numpy.pi), ndmin=1)
@@ -298,8 +305,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         return self.hist[tv, pv, s0v, s1v, rv]
 
     def coinc(self, s0, s1, slide, step):
-        """
-        Calculate the coincident detection statistic.
+        """Calculate the coincident detection statistic.
 
         Parameters
         ----------
@@ -327,16 +333,14 @@ class PhaseTDStatistic(NewSNRStatistic):
 class PhaseTDSGStatistic(PhaseTDStatistic):
     """PhaseTDStatistic but with sine-Gaussian veto added to the
 
-    single detector ranking
+    single-detector ranking
     """
-
     def __init__(self, files):
         PhaseTDStatistic.__init__(self, files)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
 class ExpFitStatistic(NewSNRStatistic):
-
     """Detection statistic using an exponential falloff noise model.
 
     Statistic approximates the negative log noise coinc rate density per
@@ -370,14 +374,17 @@ class ExpFitStatistic(NewSNRStatistic):
         # the template_ids and fit coeffs are stored in an arbitrary order
         # create new arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
-        return {'alpha':alphas[tid_sort], 'rate':rates[tid_sort],
-                'thresh':coeff_file.attrs['stat_threshold']}
+        return {'alpha': alphas[tid_sort],
+                'rate': rates[tid_sort],
+                'thresh': coeff_file.attrs['stat_threshold']
+               }
 
     def get_ref_vals(self, ifo):
         self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
 
     def find_fits(self, trigs):
         """Get fit coeffs for a specific ifo and template id(s)"""
+
         try:
             tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
             ifo = trigs.ifo
@@ -394,8 +401,7 @@ class ExpFitStatistic(NewSNRStatistic):
         return alphai, ratei, thresh
 
     def lognoiserate(self, trigs):
-        """
-        Calculate the log noise rate density over single-ifo newsnr
+        """Calculate the log noise rate density over single-ifo newsnr
 
         Read in single trigger information, make the newsnr statistic
         and rescale by the fitted coefficients alpha and rate
@@ -412,10 +418,12 @@ class ExpFitStatistic(NewSNRStatistic):
 
     def single(self, trigs):
         """Single-detector statistic, here just equal to the log noise rate"""
+
         return self.lognoiserate(trigs)
 
     def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
         """Calculate the final coinc ranking statistic"""
+
         # Approximate log likelihood ratio by summing single-ifo negative
         # log noise likelihoods
         loglr = - s0 - s1
@@ -428,7 +436,6 @@ class ExpFitStatistic(NewSNRStatistic):
 
 
 class ExpFitCombinedSNR(ExpFitStatistic):
-
     """Reworking of ExpFitStatistic designed to resemble network SNR
 
     Use a monotonic function of the negative log noise rate density which
@@ -465,7 +472,6 @@ class ExpFitCombinedSNR(ExpFitStatistic):
 
 
 class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
-
     """ExpFitCombinedSNR but with sine-Gaussian veto added to the
 
     single detector ranking
@@ -477,7 +483,6 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
 
 
 class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
-
     """ExpFitCombinedSNR but with sine-Gaussian veto and PSD variation added to
 
     the single detector ranking
@@ -489,7 +494,6 @@ class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
 
 
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
-
     """Statistic combining exponential noise model with signal histogram PDF"""
 
     def __init__(self, files):
@@ -521,9 +525,9 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
 
 
 class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
-
     """Statistic combining exponential noise model with signal histogram PDF
-       and adding the sine-Gaussian veto to the single detector ranking
+
+    adding the sine-Gaussian veto to the single detector ranking
     """
 
     def __init__(self, files):
@@ -532,10 +536,10 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
 
 
 class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
-
     """Statistic combining exponential noise model with signal histogram PDF
-       and adding the sine-Gaussian veto and PSD variation statistic to the
-       single detector ranking
+
+    adding the sine-Gaussian veto and PSD variation statistic to the
+    single detector ranking
     """
 
     def __init__(self, files):
@@ -544,11 +548,10 @@ class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
 
 
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
-
     """Combination of NewSNR with the power chisq and auto chisq"""
 
     def single(self, trigs):
-        """ Calculate the single detector statistic.
+        """Calculate the single detector statistic.
 
         Parameters
         ----------
@@ -570,8 +573,8 @@ class MaxContTradNewSNRStatistic(NewSNRStatistic):
 
 
 class ExpFitSGBgRateStatistic(ExpFitStatistic):
-
     """Detection statistic using an exponential falloff noise model.
+
     Statistic calculates the log noise coinc rate for each
     template over single-ifo newsnr values.
     """
@@ -675,16 +678,13 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         benchmark_logvol = s[ifos[0]]['benchmark_logvol']
 
         # logsignalrate function inherited from PhaseTDStatistic
-        # - for now, only use H-L consistency
-        ifos = s.keys()
-        import logging
-        if 'H1' in ifos and 'L1' in ifos:
+        if 'H1' in ifos and 'L1' in ifos:  # apply HL hist for HL & HLV coincs
             logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
-            # makeshift factor to compensate HL(V) coincs which are penalized
-            # on average by p/t/a vs HV, LV which are not
-            logr_s = logr_s + 4.5
         else:
-            logr_s = numpy.zeros_like(s['V1']['snr'])
+            # use the histogram ifos that we have
+            logr_s = self.logsignalrate(
+                        s[ifos[0]], s[ifos[1]],
+                        slide, step) # how do we know if 'slide' is being applied correctly?
 
         loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
                 + network_logvol - benchmark_logvol
