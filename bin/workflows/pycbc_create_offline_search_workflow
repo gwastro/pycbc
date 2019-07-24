@@ -567,15 +567,6 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                  exclude=['all', 'summ'], require='sub',
                                  tags=[tag])
 
-    # Extra foundmissed/sensitivity plots
-    # This will make more injection plots for any plot_sensitivity or
-    # plot_foundmissed sections in the config file that do not have 'all',
-    # 'summ' or 'sub' in their tag names
-    wf.make_sensitivity_plot(workflow, found_inj, sensdir,
-                             exclude=['all', 'summ', 'sub'], tags=[tag])
-    wf.make_foundmissed_plot(workflow, found_inj, injdir,
-                             exclude=['all', 'summ', 'sub'], tags=[tag])
-
     found_table = wf.make_inj_table(workflow, found_inj, injdir,
                                     singles=insps, tags=[tag + 'found'])
     missed_table = wf.make_inj_table(workflow, found_inj, injdir,
