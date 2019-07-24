@@ -549,30 +549,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
     insps_dict[tag] = insps
     small_inj_file_dict[tag] = small_inj_file
 
-# Make combined injection file
-# FIXME: Should this be censored_veto?
-if len(files_for_combined_injfind) > 0:
-    found_inj_comb = wf.find_injections_in_hdf_coinc\
-        (workflow, inj_coincs, files_for_combined_injfind, final_veto_file[0],
-         final_veto_name[0], 'allinj', tags=['ALLINJ'])
-
 ############################ Injection plots #################################
-
-    sen_all = wf.make_sensitivity_plot(workflow, found_inj_comb, rdir['search_sensitivity'],
-                            require='all', tags=['ALLINJ'])
-    layout.group_layout(rdir['search_sensitivity'], sen_all)
-    inj_all = wf.make_foundmissed_plot(workflow, found_inj_comb, rdir['injections'],
-                            require='all', tags=['ALLINJ'])
-    layout.group_layout(rdir['injections'], inj_all)
-
-    # Make summary page foundmissed and sensitivity plot
-    sen_s = wf.make_sensitivity_plot(workflow, found_inj_comb,
-                rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
-    inj_s = wf.make_foundmissed_plot(workflow, found_inj_comb,
-                rdir['injections'], require='summ', tags=['ALLINJ'])
-    inj_summ = list(layout.grouper(inj_s + sen_s, 2))
-
-
 # Per injection run plots
 for inj_file, tag in zip(inj_files, inj_tags):
     found_inj = found_inj_dict[tag]
@@ -640,6 +617,28 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                    'plot-throughput', tags=[tag]):
         wf.make_throughput_plot(workflow, insps, rdir['workflow/throughput'],
                                 tags=[tag])
+
+
+######################## Make combined injection plots ##########################
+# FIXME: Should this be censored_veto?
+if len(files_for_combined_injfind) > 0:
+    found_inj_comb = wf.find_injections_in_hdf_coinc\
+        (workflow, inj_coincs, files_for_combined_injfind, final_veto_file[0],
+         final_veto_name[0], 'allinj', tags=['ALLINJ'])
+
+    sen_all = wf.make_sensitivity_plot(workflow, found_inj_comb, rdir['search_sensitivity'],
+                            require='all', tags=['ALLINJ'])
+    layout.group_layout(rdir['search_sensitivity'], sen_all)
+    inj_all = wf.make_foundmissed_plot(workflow, found_inj_comb, rdir['injections'],
+                            require='all', tags=['ALLINJ'])
+    layout.group_layout(rdir['injections'], inj_all)
+
+    # Make summary page foundmissed and sensitivity plot
+    sen_s = wf.make_sensitivity_plot(workflow, found_inj_comb,
+                rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
+    inj_s = wf.make_foundmissed_plot(workflow, found_inj_comb,
+                rdir['injections'], require='summ', tags=['ALLINJ'])
+    inj_summ = list(layout.grouper(inj_s + sen_s, 2))
 
 
 ########################## Make full summary ####################################
