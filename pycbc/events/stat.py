@@ -33,7 +33,7 @@ from . import coinc_rate
 class Stat(object):
     """Base class which should be extended to provide a coincident statistic"""
 
-    def __init__(self, files):
+    def __init__(self, files=None, ifodict=None):#, pivot=None)
         """Create a statistic class instance
 
         Parameters
@@ -43,9 +43,15 @@ class Stat(object):
         construct the coincident statistics. The files must have a 'stat'
         attribute which is used to associate them with the appropriate
         statistic class.
+
+        ifodict: dict of detector names, optional
+            key is the ifo name, value indicates if time shifts are to be
+            applied to the ifo time in background estimation
         """
         import h5py
+
         self.files = {}
+        files = files or []
         for filename in files:
             f = h5py.File(filename, 'r')
             stat = (f.attrs['stat']).decode()
@@ -58,6 +64,9 @@ class Stat(object):
         # This is used by background estimation codes that need to maintain
         # a buffer of such values.
         self.single_dtype = numpy.float32
+
+        self.ifos = sorted(ifodict.keys()) if ifodict else []
+        self.shift = [ifodict[i] for i in self.ifos]
 
 
 class NewSNRStatistic(Stat):
@@ -78,7 +87,7 @@ class NewSNRStatistic(Stat):
         """
         return ranking.get_newsnr(trigs)
 
-    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
+    def coinc(self, s0, s1, slide=None, step=None): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
 
         Parameters
@@ -97,7 +106,7 @@ class NewSNRStatistic(Stat):
         """
         return (s0 ** 2. + s1 ** 2.) ** 0.5
 
-    def coinc_multiifo(self, s, slide, step,
+    def coinc_multiifo(self, s, slide=None, step=None,
                        **kwargs): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
 
@@ -182,7 +191,7 @@ class NewSNRCutStatistic(NewSNRStatistic):
         newsnr[numpy.logical_and(newsnr < 10, rchisq > 2)] = -1
         return newsnr
 
-    def coinc(self, s0, s1, slide, step): # pylint:disable=unused-argument
+    def coinc(self, s0, s1): # pylint:disable=unused-argument
         """Calculate the coincident detection statistic.
 
         Parameters
@@ -199,9 +208,9 @@ class NewSNRCutStatistic(NewSNRStatistic):
         cstat: numpy.ndarray
             Array of coincident ranking statistic values
         """
-        cstat = (s0**2. + s1**2.) ** 0.5
-        cstat[s0==-1] = 0
-        cstat[s1==-1] = 0
+        cstat = (s0 ** 2. + s1 ** 2.) ** 0.5
+        cstat[s0 == -1] = 0
+        cstat[s1 == -1] = 0
         return cstat
 
 
@@ -212,34 +221,63 @@ class PhaseTDStatistic(NewSNRStatistic):
     amplitude ratios between triggers in different ifos.
     """
 
-    def __init__(self, files):
-        NewSNRStatistic.__init__(self, files)
-
-        # Determine which ifos are involved - NB signal hists are symmetric
-        # under exchange of 2 ifos
-        self.hist_ifos = sorted([i for at, i in \
-            self.files['phasetd_newsnr'].attrs.items() if at[0:2] == 'ifo'])
-
-        self.hist = self.files['phasetd_newsnr']['map'][:]
-
-        # Normalize so that peak has no effect on newsnr
-        self.hist = self.hist / float(self.hist.max())
-        self.hist = numpy.log(self.hist)
-
-        # Bin boundaries are stored in the hdf file
-        self.tbins = self.files['phasetd_newsnr']['tbins'][:]
-        self.pbins = self.files['phasetd_newsnr']['pbins'][:]
-        self.sbins = self.files['phasetd_newsnr']['sbins'][:]
-        self.rbins = self.files['phasetd_newsnr']['rbins'][:]
+    def __init__(self, files, ifodict):
+        NewSNRStatistic.__init__(self, files, ifodict)
 
         self.single_dtype = [('snglstat', numpy.float32),
-                    ('coa_phase', numpy.float32),
-                    ('end_time', numpy.float64),
-                    ('sigmasq', numpy.float32),
-                    ('snr', numpy.float32)]
+                             ('coa_phase', numpy.float32),
+                             ('end_time', numpy.float64),
+                             ('sigmasq', numpy.float32),
+                             ('snr', numpy.float32)]
 
         # Assign attribute so that it can be replaced with other functions
         self.get_newsnr = ranking.get_newsnr
+
+        self.hist = None
+        self.bins = {}
+
+    def get_hist(self, ifos=None, norm=None):
+        """Read in a signal density file for the ifo combination"""
+
+        if ifos is None:
+            ifos = self.ifos
+
+        # default name for old 2-ifo workflow
+        if 'phasetd_newsnr' in self.files:
+            histfile = self.files['phasetd_newsnr']
+
+        else:
+            if len(ifos) < 2:
+                raise RuntimeError("Not enough ifos for the p/t/a statistic!"
+                                   "Ifos given were " + ifos)
+            # ifos is sorted, so if ifos is [H1, L1, V1] this will check for
+            # 'H' and 'L' to be present
+            # -> HL statistic file will be used for HLV coincs
+            matching = [k for k in self.files.keys() if \
+                        'phasetd' in k and \
+                        (ifos[0][0] in k and ifos[1][0] in k)]
+            if len(matching) == 1:
+                histfile = self.files[matching[0]]
+            else:
+                raise RuntimeError(
+                    "%i statistic files had an attribute matching phasetd*%s%s"
+                    "! Should be exactly 1" % (len(matching), ifos[0], ifos[1])
+                )
+
+        self.hist = histfile['map'][:]
+
+        if norm is None:
+            # Normalize so that peak of hist is equal to unity
+            self.hist = self.hist / float(self.hist.max())
+            self.hist = numpy.log(self.hist)
+        else:
+            raise NotImplementedError("Sorry, we have no other normalizations")
+
+        # Bin boundaries are stored in the hdf file
+        self.bins['dt'] = histfile['tbins'][:]
+        self.bins['dphi'] = histfile['tbins'][:]
+        self.bins['snr'] = histfile['sbins'][:]
+        self.bins['sigma_ratio'] = histfile['rbins'][:]
 
     def single(self, trigs):
         """Calculate the single detector statistic & assemble other parameters
@@ -265,9 +303,12 @@ class PhaseTDStatistic(NewSNRStatistic):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def logsignalrate(self, s0, s1, slide, step):
+    def logsignalrate(self, s0, s1, slide, step, ifos=None):
         """Calculate the normalized log rate density of signals via lookup"""
 
+        self.get_hist(ifos=ifos)
+
+        # Time shift is always applied to the second ifo ('s1')
         td = numpy.array(s0['end_time'] - s1['end_time'] - slide*step, ndmin=1)
         pd = numpy.array((s0['coa_phase'] - s1['coa_phase']) % \
                          (2. * numpy.pi), ndmin=1)
@@ -283,24 +324,19 @@ class PhaseTDStatistic(NewSNRStatistic):
         rd[rd > 1] = 1. / rd[rd > 1]
 
         # Find which bin each coinc falls into
-        tv = numpy.searchsorted(self.tbins, td) - 1
-        pv = numpy.searchsorted(self.pbins, pd) - 1
-        s0v = numpy.searchsorted(self.sbins, snr0) - 1
-        s1v = numpy.searchsorted(self.sbins, snr1) - 1
-        rv = numpy.searchsorted(self.rbins, rd) - 1
+        tv = numpy.searchsorted(self.bins['dt'], td) - 1
+        pv = numpy.searchsorted(self.bins['dphi'], pd) - 1
+        s0v = numpy.searchsorted(self.bins['snr'], snr0) - 1
+        s1v = numpy.searchsorted(self.bins['snr'], snr1) - 1
+        rv = numpy.searchsorted(self.bins['sigma_ratio'], rd) - 1
 
-        # Enforce that points fits into the bin boundaries: if a point lies
+        # Enforce that points fit into the bin boundaries: if a point lies
         # outside the boundaries it is pushed back to the nearest bin.
-        tv[tv < 0] = 0
-        tv[tv >= len(self.tbins) - 1] = len(self.tbins) - 2
-        pv[pv < 0] = 0
-        pv[pv >= len(self.pbins) - 1] = len(self.pbins) - 2
-        s0v[s0v < 0] = 0
-        s0v[s0v >= len(self.sbins) - 1] = len(self.sbins) - 2
-        s1v[s1v < 0] = 0
-        s1v[s1v >= len(self.sbins) - 1] = len(self.sbins) - 2
-        rv[rv < 0] = 0
-        rv[rv >= len(self.rbins) - 1] = len(self.rbins) - 2
+        for binnum, axis in zip([tv, pv, s0v, s1v, rv],
+                                ['dt', 'dphi', 'snr', 'snr', 'sigma_ratio']):
+            binend = len(self.bins[axis])
+            binnum[binnum < 0] = 0
+            binnum[binnum >= binend - 1] = binend - 2
 
         return self.hist[tv, pv, s0v, s1v, rv]
 
@@ -324,7 +360,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         coinc_stat: numpy.ndarray
             An array of the coincident ranking statistic values
         """
-        rstat = s0['snglstat']**2. + s1['snglstat']**2.
+        rstat = s0['snglstat'] ** 2. + s1['snglstat'] ** 2.
         cstat = rstat + 2. * self.logsignalrate(s0, s1, slide, step)
         cstat[cstat < 0] = 0
         return cstat ** 0.5
@@ -335,8 +371,8 @@ class PhaseTDSGStatistic(PhaseTDStatistic):
 
     single-detector ranking
     """
-    def __init__(self, files):
-        PhaseTDStatistic.__init__(self, files)
+    def __init__(self, files, ifodict=None):
+        PhaseTDStatistic.__init__(self, files, ifodict)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -351,6 +387,7 @@ class ExpFitStatistic(NewSNRStatistic):
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
         NewSNRStatistic.__init__(self, files)
+
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
         self.ifos = [at[0] for at in parsed_attrs if
@@ -377,7 +414,7 @@ class ExpFitStatistic(NewSNRStatistic):
         return {'alpha': alphas[tid_sort],
                 'rate': rates[tid_sort],
                 'thresh': coeff_file.attrs['stat_threshold']
-               }
+                }
 
     def get_ref_vals(self, ifo):
         self.alphamax[ifo] = self.fits_by_tid[ifo]['alpha'].max()
@@ -390,7 +427,7 @@ class ExpFitStatistic(NewSNRStatistic):
             ifo = trigs.ifo
         except AttributeError:
             tnum = trigs['template_id']  # exists for SingleDetTriggers
-            # Should only be one ifo fit file provided
+            # Should be exactly one ifo fit file provided
             assert len(self.ifos) == 1
             ifo = self.ifos[0]
         # fits_by_tid is a dictionary of dictionaries of arrays
@@ -409,7 +446,7 @@ class ExpFitStatistic(NewSNRStatistic):
         alphai, ratei, thresh = self.find_fits(trigs)
         newsnr = self.get_newsnr(trigs)
         # alphai is constant of proportionality between single-ifo newsnr and
-        #  negative log noise likelihood in given template
+        #   negative log noise likelihood in given template
         # ratei is rate of trigs in given template compared to average
         # thresh is stat threshold used in given ifo
         lognoisel = - alphai * (newsnr - thresh) + numpy.log(alphai) + \
@@ -477,8 +514,8 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
     single detector ranking
     """
 
-    def __init__(self, files):
-        ExpFitCombinedSNR.__init__(self, files)
+    def __init__(self, files, ifodict=None):
+        ExpFitCombinedSNR.__init__(self, files, ifodict)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -488,19 +525,20 @@ class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
     the single detector ranking
     """
 
-    def __init__(self, files):
-        ExpFitCombinedSNR.__init__(self, files)
+    def __init__(self, files, ifodict=None):
+        ExpFitCombinedSNR.__init__(self, files, ifodict)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
 class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
     """Statistic combining exponential noise model with signal histogram PDF"""
 
-    def __init__(self, files):
+    # default is 2-ifo operation with exactly 1 'phasetd' file
+    def __init__(self, files, ifodict=None):
         # read in both foreground PDF and background fit info
         ExpFitCombinedSNR.__init__(self, files)
         # need the self.single_dtype value from PhaseTDStatistic
-        PhaseTDStatistic.__init__(self, files)
+        PhaseTDStatistic.__init__(self, files, ifodict)
 
     def single(self, trigs):
         # same single-ifo stat as ExpFitCombinedSNR
@@ -515,7 +553,7 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
 
     def coinc(self, s0, s1, slide, step):
         # logsignalrate function inherited from PhaseTDStatistic
-        logr_s = self.logsignalrate(s0, s1, slide, step)
+        logr_s = self.logsignalrate(s0, s1, slide, step, ifos=self.ifos)
         # rescale by ExpFitCombinedSNR reference slope as for sngl stat
         cstat = s0['snglstat'] + s1['snglstat'] + logr_s / self.alpharef
         # cut off underflowing and very small values
@@ -530,8 +568,8 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
     adding the sine-Gaussian veto to the single detector ranking
     """
 
-    def __init__(self, files):
-        PhaseTDExpFitStatistic.__init__(self, files)
+    def __init__(self, files, ifodict=None):
+        PhaseTDExpFitStatistic.__init__(self, files, ifodict)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -542,8 +580,8 @@ class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
     single detector ranking
     """
 
-    def __init__(self, files):
-        PhaseTDExpFitSGStatistic.__init__(self, files)
+    def __init__(self, files, ifodict=None):
+        PhaseTDExpFitSGStatistic.__init__(self, files, ifodict)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
@@ -593,8 +631,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
     def reassign_rate(self, ifo):
         coeff_file = self.files[ifo+'-fit_coeffs']
         template_id = coeff_file['template_id'][:]
-        # the template_ids and fit coeffs are stored in an arbitrary order
-        # create new arrays in template_id order for easier recall
+        # create arrays in template_id order for easier recall
         tid_sort = numpy.argsort(template_id)
         self.fits_by_tid[ifo]['rate'] = \
             coeff_file['count_above_thresh'][:][tid_sort] / \
@@ -664,6 +701,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
                       s.items()}
         ln_noise_rate = coinc_rate.combination_noise_lograte(
                                   sngl_rates, kwargs['time_addition'])
+
         # Network sensitivity for a given coinc type is approximately
         # determined by the least sensitive ifo
         network_sigmasq = numpy.amin([s[ifo]['sigmasq'] for ifo in s.keys()],
@@ -674,11 +712,11 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         # Get benchmark log volume as single-ifo information
         # NB, benchmark logvol for a given template is not ifo-dependent
         # so choose one ifo for convenience
-        ifos = s.keys()
+        coincifos = s.keys()
         benchmark_logvol = s[ifos[0]]['benchmark_logvol']
 
         # logsignalrate function inherited from PhaseTDStatistic
-        if 'H1' in ifos and 'L1' in ifos:  # apply HL hist for HL & HLV coincs
+        if 'H1' in coincifos and 'L1' in coincifos:  # apply HL hist for HL & HLV coincs
             logr_s = self.logsignalrate(s['H1'], s['L1'], slide, step)
         else:
             # use the histogram ifos that we have
@@ -687,7 +725,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
                         slide, step) # how do we know if 'slide' is being applied correctly?
 
         loglr = logr_s - ln_noise_rate + self.benchmark_lograte \
-                + network_logvol - benchmark_logvol
+            + network_logvol - benchmark_logvol
         return loglr
 
 
@@ -724,6 +762,7 @@ sngl_statistic_dict = {
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
 
+
 def get_statistic(stat):
     """
     Error-handling sugar around dict lookup for coincident statistics
@@ -747,6 +786,7 @@ def get_statistic(stat):
         return statistic_dict[stat]
     except KeyError:
         raise RuntimeError('%s is not an available detection statistic' % stat)
+
 
 def get_sngl_statistic(stat):
     """
