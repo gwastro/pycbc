@@ -71,8 +71,7 @@ class DynestySampler(BaseSampler):
     def __init__(self, model, nlive, err_logz, nprocesses=1,
                  loglikelihood_function=None, use_mpi=False, **kwargs):
 
-        self.model = model
-        
+        self.model = model 
         # Set up the pool
         model_call = DynestyModel(model, loglikelihood_function)
         if nprocesses > 1:
@@ -98,7 +97,7 @@ class DynestySampler(BaseSampler):
                                                dlogz=self.err_logz,
                                                pool=pool, **kwargs)
 
-    def run(self, **kwargs):
+    def run(self):
         res = self._sampler.run_nested()
 
     @property
@@ -155,8 +154,8 @@ class DynestySampler(BaseSampler):
 
     @property
     def samples(self):
-        samples_dict = {p: self.posterior_samples[:,i] for p, i in
-                       zip(self.model.sampling_params, range(self.ndim))}
+        samples_dict = {p: self.posterior_samples[:, i] for p, i in
+                        zip(self.model.sampling_params, range(self.ndim))}
         return samples_dict
 
     def set_initial_conditions(self, initial_distribution=None,
@@ -221,7 +220,7 @@ class DynestyModel(object):
     def log_likelihood(self, cube):
         params = {p: v for p, v in zip(self.model.variable_params, cube)}
         self.model.update(**params)
-        return getattr(self.model,self.loglikelihood_function)
+        return getattr(self.model, self.loglikelihood_function)
 
     def prior_transform(self, cube):
         prior_dists = self.model.prior_distribution.distributions
