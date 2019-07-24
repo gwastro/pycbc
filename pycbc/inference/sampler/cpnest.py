@@ -72,7 +72,7 @@ class CPNestSampler(BaseSampler):
         self.nthreads = nthreads
         self.verbose = verbose
         # create a wrapper for calling the model
-        self.model_call = CPNestModel(model,loglikelihood_function)
+        self.model_call = CPNestModel(model, loglikelihood_function)
         self._sampler = None
         self._nested_samples = None
         self._posterior_samples = None
@@ -114,9 +114,9 @@ class CPNestSampler(BaseSampler):
         verbose = int(cp.get(section, "verbose"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
-        obj = cls(model, nlive=nlive, maxmcmc=maxmcmc, nthreads=nthreads, 
+        obj = cls(model, nlive=nlive, maxmcmc=maxmcmc, nthreads=nthreads,
                   verbose=verbose,
-                  loglikelihood_function = loglikelihood_function)
+                  loglikelihood_function=loglikelihood_function)
         return obj
 
     def checkpoint(self):
@@ -231,4 +231,4 @@ class CPNestModel(cpm.Model):
         Modify the log likelihood which will be passed to CPNest 'model class'
         """
         self.model.update(**xx)
-        return getattr(self.model,self.loglikelihood_function)
+        return getattr(self.model, self.loglikelihood_function)
