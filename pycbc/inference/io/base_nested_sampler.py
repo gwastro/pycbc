@@ -27,7 +27,7 @@ from .base_sampler import BaseSamplerFile
 from .posterior import read_raw_samples_from_file, write_samples_to_file
 
 
-class BaseNestSamplerFile(BaseSamplerFile):
+class BaseNestedSamplerFile(BaseSamplerFile):
     """Class to handle file IO for the nested samplers cpnest and dynesty."""
 
     name = 'base_nest_file'

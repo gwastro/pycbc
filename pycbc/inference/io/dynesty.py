@@ -23,9 +23,9 @@
 #
 """Provides IO for the dynesty sampler.
 """
-from .base_nest_sampler import BaseNestSamplerFile
+from .base_nested_sampler import BaseNestedSamplerFile
 
-class DynestyFile(BaseNestSamplerFile):
+class DynestyFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``dynesty`` sampler."""
 
     name = 'dynesty_file'
