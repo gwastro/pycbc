@@ -91,7 +91,7 @@ class DynestySampler(BaseSampler):
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
-        self._sampleri = dynesty.NestedSampler(log_likelihood_call,
+        self._sampler = dynesty.NestedSampler(log_likelihood_call,
                                                prior_call, self.ndim,
                                                nlive=self.nlive,
                                                dlogz=self.err_logz,
@@ -178,7 +178,7 @@ class DynestySampler(BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.variable_params)
+            fp.write_samples(self.samples, self.model.sampling_params)
             # write stats
             fp.write_samples(self.model_stats)
             # write log evidence
@@ -218,7 +218,7 @@ class DynestyModel(object):
         self.loglikelihood_function = loglikelihood_function
 
     def log_likelihood(self, cube):
-        params = {p: v for p, v in zip(self.model.variable_params, cube)}
+        params = {p: v for p, v in zip(self.model.sampling_params, cube)}
         self.model.update(**params)
         return getattr(self.model, self.loglikelihood_function)
 
@@ -227,6 +227,6 @@ class DynestyModel(object):
         dist_dict = {}
         for dist in prior_dists:
             dist_dict.update({param: dist for param in dist.params})
-        for i, param in enumerate(self.model.variable_params):
+        for i, param in enumerate(self.model.sampling_params):
             cube[i] = dist_dict[param].cdfinv(param, cube[i])
         return cube
