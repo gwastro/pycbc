@@ -26,12 +26,12 @@ This modules provides classes and functions for using the dynesty sampler
 packages for parameter estimation.
 """
 
+
 from __future__ import absolute_import
 
 import logging
 from pycbc.pool import choose_pool
 import numpy
-import os
 import dynesty
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
@@ -92,10 +92,10 @@ class DynestySampler(BaseSampler):
         self.ndim = len(model.sampling_params)
         self.checkpoint_file = None
         self._sampler = dynesty.NestedSampler(log_likelihood_call,
-                                               prior_call, self.ndim,
-                                               nlive=self.nlive,
-                                               dlogz=self.err_logz,
-                                               pool=pool, **kwargs)
+                                              prior_call, self.ndim,
+                                              nlive=self.nlive,
+                                              dlogz=self.err_logz,
+                                              pool=pool, **kwargs)
 
     def run(self):
         res = self._sampler.run_nested()
@@ -187,6 +187,11 @@ class DynestySampler(BaseSampler):
 
     @property
     def posterior_samples(self):
+        """
+        Returns posterior samples from nested samples and weights
+        given by dynsety sampler
+        """
+
         dynesty_samples = self._sampler.results['samples']
         weights = numpy.exp(self._sampler.results['logwt'] - \
              self._sampler.results['logz'][-1])
@@ -195,10 +200,20 @@ class DynestySampler(BaseSampler):
 
     @property
     def logz(self):
+        """
+        return bayesian evidence estimated by
+        dynesty sampler
+        """
+
         return self._sampler.results.logz[-1:][0]
 
     @property
     def dlogz(self):
+        """
+        return error in bayesian evidence estimated by
+        dynesty sampler
+        """
+
         return self._sampler.results.dlogz[-1:][0]
 
 
@@ -211,6 +226,14 @@ def _call_global_logprior(cube):
 
 
 class DynestyModel(object):
+    """
+    Class for making PyCBC Inference 'model class'
+    Parameters
+    ----------
+    model : inference.BaseModel instance
+             A model instance from pycbc.
+    """
+
     def __init__(self, model, loglikelihood_function=None):
         self.model = model
         if loglikelihood_function is None:
