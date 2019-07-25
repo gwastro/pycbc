@@ -815,9 +815,9 @@ def make_skipped_html(workflow, skipped_data, out_dir, tags):
 
     parsed_data = {}
     for ifo, time in skipped_data:
-        if not ifo in parsed_data:
+        if ifo not in parsed_data:
             parsed_data[ifo] = {}
-        if not time in parsed_data[ifo]:
+        if time not in parsed_data[ifo]:
             parsed_data[ifo][time] = 1
         else:
             parsed_data[ifo][time] = parsed_data[ifo][time] + 1
