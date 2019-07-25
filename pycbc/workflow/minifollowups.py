@@ -820,7 +820,7 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
         curr_exe.ifo_list = [single.ifo]
         curr_exe.ifo_string = single.ifo
         curr_exe.update_current_tags(tags)
-      
+
     node = curr_exe.create_node()
     node.add_input_opt('--trig-file', single)
     node.add_input_opt('--bank-file', bank_file)
