@@ -214,7 +214,7 @@ class DynestySampler(BaseSampler):
         dynesty sampler
         """
 
-        return self._sampler.results.dlogz[-1:][0]
+        return self._sampler.results.logzerr[-1:][0]
 
 
 def _call_global_loglikelihood(cube):
@@ -241,11 +241,20 @@ class DynestyModel(object):
         self.loglikelihood_function = loglikelihood_function
 
     def log_likelihood(self, cube):
+        """
+        returns log likelihood function
+        """
+
         params = {p: v for p, v in zip(self.model.sampling_params, cube)}
         self.model.update(**params)
         return getattr(self.model, self.loglikelihood_function)
 
     def prior_transform(self, cube):
+        """
+        prior transform function for dynesty sampler
+        It takes unit cube as input parameter and apply
+        prior transforms
+        """
         prior_dists = self.model.prior_distribution.distributions
         dist_dict = {}
         for dist in prior_dists:
