@@ -70,8 +70,7 @@ class DynestySampler(BaseSampler):
 
     def __init__(self, model, nlive, err_logz, nprocesses=1,
                  loglikelihood_function=None, use_mpi=False, **kwargs):
-
-        self.model = model 
+        self.model = model
         # Set up the pool
         model_call = DynestyModel(model, loglikelihood_function)
         if nprocesses > 1:
@@ -194,7 +193,7 @@ class DynestySampler(BaseSampler):
 
         dynesty_samples = self._sampler.results['samples']
         weights = numpy.exp(self._sampler.results['logwt'] - \
-             self._sampler.results['logz'][-1])
+                  self._sampler.results['logz'][-1])
         posterior_dynesty = resample_equal(dynesty_samples, weights)
         return posterior_dynesty
 

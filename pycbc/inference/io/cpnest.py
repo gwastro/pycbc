@@ -30,4 +30,3 @@ class CPNestFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``cpnest`` sampler."""
 
     name = 'cpnest_file'
-

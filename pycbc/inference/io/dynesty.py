@@ -29,4 +29,3 @@ class DynestyFile(BaseNestedSamplerFile):
     """Class to handle file IO for the ``dynesty`` sampler."""
 
     name = 'dynesty_file'
-
