@@ -35,6 +35,8 @@ import numpy
 import dynesty
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
+from pycbc.distributions import read_constraints_from_config
+from pycbc.transforms import apply_transforms
 from .base import BaseSampler
 from .base_mcmc import get_optional_arg_from_config
 from .. import models
@@ -68,11 +70,12 @@ class DynestySampler(BaseSampler):
     name = "dynesty"
     _io = DynestyFile
 
-    def __init__(self, model, nlive, err_logz, nprocesses=1,
-                 loglikelihood_function=None, use_mpi=False, **kwargs):
+    def __init__(self, model, nlive, err_logz, nprocesses=1, 
+                 loglikelihood_function=None, use_mpi=False, constraints=None, 
+                 **kwargs):
         self.model = model
         # Set up the pool
-        model_call = DynestyModel(model, loglikelihood_function)
+        model_call = DynestyModel(model, loglikelihood_function, constraints)
         if nprocesses > 1:
             # these are used to help paralleize over multiple cores / MPI
             models._global_instance = model_call
@@ -89,6 +92,7 @@ class DynestySampler(BaseSampler):
         self.err_logz = err_logz
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
+        self._constraints = constraints
         self.checkpoint_file = None
         self._sampler = dynesty.NestedSampler(log_likelihood_call,
                                               prior_call, self.ndim,
@@ -122,9 +126,11 @@ class DynestySampler(BaseSampler):
         err_logz = float(cp.get(section, "err_logz"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
+        # get constraints since we can't use the joint prior distribution
+        constraints = read_constraints_from_config(cp)
         obj = cls(model, nlive=nlive, err_logz=err_logz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
-                  use_mpi=use_mpi)
+                  use_mpi=use_mpi, constraints=constraints)
         return obj
 
     def checkpoint(self):
@@ -154,7 +160,7 @@ class DynestySampler(BaseSampler):
     @property
     def samples(self):
         samples_dict = {p: self.posterior_samples[:, i] for p, i in
-                        zip(self.model.sampling_params, range(self.ndim))}
+                        zip(self.model.variable_params, range(self.ndim))}
         return samples_dict
 
     def set_initial_conditions(self, initial_distribution=None,
@@ -233,19 +239,34 @@ class DynestyModel(object):
              A model instance from pycbc.
     """
 
-    def __init__(self, model, loglikelihood_function=None):
+    def __init__(self, model, loglikelihood_function=None, constraints=None):
         self.model = model
         if loglikelihood_function is None:
             loglikelihood_function = 'loglikelihood'
         self.loglikelihood_function = loglikelihood_function
+        self.constraints = constraints
 
     def log_likelihood(self, cube):
         """
         returns log likelihood function
         """
 
-        params = {p: v for p, v in zip(self.model.sampling_params, cube)}
+        #params = {p: v for p, v in zip(self.model.sampling_params, cube)}
+        #self.model.update(**params)
+        #return getattr(self.model, self.loglikelihood_function)
+
+        params = {p: v for p, v in zip(self.model.variable_params, cube)}
+        # apply transforms
+        if self.model.sampling_transforms is not None:
+            params = self.model.sampling_transforms.apply(params)
+        if self.model.waveform_transforms is not None:
+            params = apply_transforms(params, self.model.waveform_transforms)
+        # apply constraints
+        if (self.constraints is not None and
+                not all([c(params) for c in self.constraints])):
+            return -numpy.inf
         self.model.update(**params)
+        #return self.model.loglikelihood
         return getattr(self.model, self.loglikelihood_function)
 
     def prior_transform(self, cube):
@@ -258,6 +279,6 @@ class DynestyModel(object):
         dist_dict = {}
         for dist in prior_dists:
             dist_dict.update({param: dist for param in dist.params})
-        for i, param in enumerate(self.model.sampling_params):
+        for i, param in enumerate(self.model.variable_params):
             cube[i] = dist_dict[param].cdfinv(param, cube[i])
         return cube
