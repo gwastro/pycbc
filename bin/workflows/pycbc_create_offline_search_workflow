@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2013-2019 Ian W. Harry, Alex Nitz, Marton Tapai
+# Copyright (C) 2013-2019 Ian W. Harry, Alex Nitz, Marton Tapai,
+#     Gareth Davies
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -213,10 +214,10 @@ combined_bg_file = wf.setup_multiifo_combine_statmap(
                                 output_dir,
                                 tags=combctags)
 
+censored_veto_name = ['closed_box']
 censored_veto = wf.make_foreground_censored_veto(workflow,
                        combined_bg_file, final_veto_file[0], final_veto_name[0],
-                       'closed_box', 'segments')
-
+                       censored_veto_name[0], 'segments')
 # Calculate the inspiral psds and make plots
 psd_files = []
 trig_generated_name = 'TRIGGERS_GENERATED'
@@ -416,6 +417,7 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
 
 # Sub-pages for each ifo combination
 
+snrifar_summ = []
 for key in final_bg_files:
     # FIXME: Stop obfuscating this file!
     bg_file = final_bg_files[key]
@@ -446,6 +448,7 @@ for key in final_bg_files:
 
     #closed_page = [(snrifar_cb, ifar_cb)]
     closed_page = [(snrifar_cb,)]
+    snrifar_summ += closed_page
     layout.two_column_layout(closed_dir, closed_page)
 
 
@@ -537,10 +540,9 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                                      output_dir,
                                                      tags=combctags)
 
-    # FIXME: Should this be censored_veto
     found_inj = wf.find_injections_in_hdf_coinc\
         (workflow, [combined_inj_bg_file], [file_for_injfind],
-         final_veto_file[0], final_veto_name[0], output_dir, tags=combctags)
+         censored_veto, censored_veto_name[0], output_dir, tags=combctags)
 
     inj_coincs += [combined_inj_bg_file]
 
@@ -549,19 +551,9 @@ for inj_file, tag in zip(inj_files, inj_tags):
     insps_dict[tag] = insps
     small_inj_file_dict[tag] = small_inj_file
 
-# Make combined injection file
-# FIXME: Should this be censored_veto?
-if len(files_for_combined_injfind) > 0:
-    found_inj_comb = wf.find_injections_in_hdf_coinc\
-        (workflow, inj_coincs, files_for_combined_injfind, final_veto_file[0],
-         final_veto_name[0], 'allinj', tags=['ALLINJ'])
-
-
 ############################ Injection plots #################################
-
 # Per injection run plots
 for inj_file, tag in zip(inj_files, inj_tags):
-    s = []
     found_inj = found_inj_dict[tag]
     insps = insps_dict[tag]
     small_inj_file = small_inj_file_dict[tag]
@@ -571,17 +563,10 @@ for inj_file, tag in zip(inj_files, inj_tags):
     #foundmissed/sensitivity plots
     s = wf.make_sensitivity_plot(workflow, found_inj, sensdir,
                                  exclude=['all', 'summ'], require='sub',
-                                 tags=ctags)
+                                 tags=[tag])
     f = wf.make_foundmissed_plot(workflow, found_inj, injdir,
                                  exclude=['all', 'summ'], require='sub',
                                  tags=[tag])
-
-    # FIXME: It's not clear to me that this does anything??
-    # Extra foundmissed/sensitivity plots
-    wf.make_sensitivity_plot(workflow, found_inj, sensdir,
-                             exclude=['all', 'summ', 'sub'], tags=ctags)
-    wf.make_foundmissed_plot(workflow, found_inj, injdir,
-                             exclude=['all', 'summ', 'sub'], tags=[tag])
 
     #found_table = wf.make_inj_table(workflow, found_inj, injdir,
     #                                singles=insps, tags=[tag + 'found'])
@@ -627,6 +612,37 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                    'plot-throughput', tags=[tag]):
         wf.make_throughput_plot(workflow, insps, rdir['workflow/throughput'],
                                 tags=[tag])
+
+
+######################## Make combined injection plots ##########################
+if len(files_for_combined_injfind) > 0:
+    found_inj_comb = wf.find_injections_in_hdf_coinc\
+        (workflow, inj_coincs, files_for_combined_injfind, censored_veto,
+         censored_veto_name[0], 'allinj', tags=['ALLINJ'])
+
+    sen_all = wf.make_sensitivity_plot(workflow, found_inj_comb, rdir['search_sensitivity'],
+                            require='all', tags=['ALLINJ'])
+    layout.group_layout(rdir['search_sensitivity'], sen_all)
+    inj_all = wf.make_foundmissed_plot(workflow, found_inj_comb, rdir['injections'],
+                            require='all', tags=['ALLINJ'])
+    layout.group_layout(rdir['injections'], inj_all)
+
+    # Make summary page foundmissed and sensitivity plot
+    sen_s = wf.make_sensitivity_plot(workflow, found_inj_comb,
+                rdir['search_sensitivity'], require='summ', tags=['ALLINJ'])
+    inj_s = wf.make_foundmissed_plot(workflow, found_inj_comb,
+                rdir['injections'], require='summ', tags=['ALLINJ'])
+    inj_summ = list(layout.grouper(inj_s + sen_s, 2))
+
+
+########################## Make full summary ####################################
+summ = ([(time_file,)] + [(seg_summ_plot,)] +
+        [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ +
+        [(bank_plot,)] + inj_summ + snrifar_summ)
+for row in summ:
+    for f in row:
+        symlink_path(f, rdir.base)
+layout.two_column_layout(rdir.base, summ)
 
 
 ############################ Finalization ####################################
