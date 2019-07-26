@@ -70,8 +70,8 @@ class DynestySampler(BaseSampler):
     name = "dynesty"
     _io = DynestyFile
 
-    def __init__(self, model, nlive, err_logz, nprocesses=1, 
-                 loglikelihood_function=None, use_mpi=False, constraints=None, 
+    def __init__(self, model, nlive, err_logz, nprocesses=1,
+                 loglikelihood_function=None, use_mpi=False, constraints=None,
                  **kwargs):
         self.model = model
         # Set up the pool
@@ -183,7 +183,7 @@ class DynestySampler(BaseSampler):
         """
         with self.io(filename, 'a') as fp:
             # write samples
-            fp.write_samples(self.samples, self.model.sampling_params)
+            fp.write_samples(self.samples, self.model.variable_params)
             # write stats
             fp.write_samples(self.model_stats)
             # write log evidence
