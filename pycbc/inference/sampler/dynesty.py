@@ -36,7 +36,6 @@ import dynesty
 from dynesty.utils import resample_equal
 from pycbc.inference.io import (DynestyFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
-from pycbc.transforms import apply_transforms
 from .base import BaseSampler
 from .base_mcmc import get_optional_arg_from_config
 from .. import models
