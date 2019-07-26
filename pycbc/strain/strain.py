@@ -1620,7 +1620,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                     high_freq_cutoff=self.sample_rate/2,
                     corrupt_time=self.autogating_window+self.autogating_pad)
             if len(glitch_times) > 0:
-                logging.info('Autogating at %s',
+                logging.info('Autogating %s at %s', self.detector,
                              ', '.join(['%.3f' % gt for gt in glitch_times]))
                 gate_params = [[gt, self.autogating_window, self.autogating_pad] \
                                for gt in glitch_times]
