@@ -70,12 +70,11 @@ class DynestySampler(BaseSampler):
     name = "dynesty"
     _io = DynestyFile
 
-    def __init__(self, model, nlive, err_logz, nprocesses=1,
-                 loglikelihood_function=None, use_mpi=False, constraints=None,
-                 **kwargs):
+    def __init__(self, model, nlive, dlogz, nprocesses=1,
+                 loglikelihood_function=None, use_mpi=False, **kwargs):
         self.model = model
         # Set up the pool
-        model_call = DynestyModel(model, loglikelihood_function, constraints)
+        model_call = DynestyModel(model, loglikelihood_function)
         if nprocesses > 1:
             # these are used to help paralleize over multiple cores / MPI
             models._global_instance = model_call
@@ -89,15 +88,14 @@ class DynestySampler(BaseSampler):
             pool.size = nprocesses
 
         self.nlive = nlive
-        self.err_logz = err_logz
+        self.dlogz = dlogz
         self.names = model.sampling_params
         self.ndim = len(model.sampling_params)
-        self._constraints = constraints
         self.checkpoint_file = None
         self._sampler = dynesty.NestedSampler(log_likelihood_call,
                                               prior_call, self.ndim,
                                               nlive=self.nlive,
-                                              dlogz=self.err_logz,
+                                              dlogz=self.dlogz,
                                               pool=pool, **kwargs)
 
     def run(self):
@@ -123,14 +121,14 @@ class DynestySampler(BaseSampler):
             "name in section [sampler] must match mine")
         # get the number of live points to use
         nlive = int(cp.get(section, "nlive"))
-        err_logz = float(cp.get(section, "err_logz"))
+        dlogz = float(cp.get(section, "dlogz"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
         # get constraints since we can't use the joint prior distribution
         constraints = read_constraints_from_config(cp)
-        obj = cls(model, nlive=nlive, err_logz=err_logz, nprocesses=nprocesses,
+        obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
-                  use_mpi=use_mpi, constraints=constraints)
+                  use_mpi=use_mpi)
         return obj
 
     def checkpoint(self):
@@ -213,7 +211,7 @@ class DynestySampler(BaseSampler):
         return self._sampler.results.logz[-1:][0]
 
     @property
-    def dlogz(self):
+    def logz_err(self):
         """
         return error in bayesian evidence estimated by
         dynesty sampler
@@ -239,34 +237,23 @@ class DynestyModel(object):
              A model instance from pycbc.
     """
 
-    def __init__(self, model, loglikelihood_function=None, constraints=None):
+    def __init__(self, model, loglikelihood_function=None):
+        if model.sampling_transforms is not None:
+            raise ValueError("CPNest does not support sampling transforms")
         self.model = model
         if loglikelihood_function is None:
             loglikelihood_function = 'loglikelihood'
         self.loglikelihood_function = loglikelihood_function
-        self.constraints = constraints
 
     def log_likelihood(self, cube):
         """
         returns log likelihood function
         """
 
-        #params = {p: v for p, v in zip(self.model.sampling_params, cube)}
-        #self.model.update(**params)
-        #return getattr(self.model, self.loglikelihood_function)
-
-        params = {p: v for p, v in zip(self.model.variable_params, cube)}
-        # apply transforms
-        if self.model.sampling_transforms is not None:
-            params = self.model.sampling_transforms.apply(params)
-        if self.model.waveform_transforms is not None:
-            params = apply_transforms(params, self.model.waveform_transforms)
-        # apply constraints
-        if (self.constraints is not None and
-                not all([c(params) for c in self.constraints])):
-            return -numpy.inf
+        params = {p: v for p, v in zip(self.model.sampling_params, cube)}
         self.model.update(**params)
-        #return self.model.loglikelihood
+        if self.model.logprior == -numpy.inf:
+            return -numpy.inf
         return getattr(self.model, self.loglikelihood_function)
 
     def prior_transform(self, cube):
