@@ -98,7 +98,7 @@ class DynestySampler(BaseSampler):
                                               pool=pool, **kwargs)
 
     def run(self):
-        res = self._sampler.run_nested()
+        self._sampler.run_nested()
 
     @property
     def io(self):
@@ -123,8 +123,6 @@ class DynestySampler(BaseSampler):
         dlogz = float(cp.get(section, "dlogz"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
-        # get constraints since we can't use the joint prior distribution
-        constraints = read_constraints_from_config(cp)
         obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
                   use_mpi=use_mpi)
@@ -195,8 +193,8 @@ class DynestySampler(BaseSampler):
         """
 
         dynesty_samples = self._sampler.results['samples']
-        weights = numpy.exp(self._sampler.results['logwt'] - \
-                  self._sampler.results['logz'][-1])
+        weights = numpy.exp(self._sampler.results['logwt'] - 
+                            self._sampler.results['logz'][-1])
         posterior_dynesty = resample_equal(dynesty_samples, weights)
         return posterior_dynesty
 
@@ -238,7 +236,7 @@ class DynestyModel(object):
 
     def __init__(self, model, loglikelihood_function=None):
         if model.sampling_transforms is not None:
-            raise ValueError("CPNest does not support sampling transforms")
+            raise ValueError("Dinesty does not support sampling transforms")
         self.model = model
         if loglikelihood_function is None:
             loglikelihood_function = 'loglikelihood'
@@ -248,7 +246,6 @@ class DynestyModel(object):
         """
         returns log likelihood function
         """
-
         params = {p: v for p, v in zip(self.model.sampling_params, cube)}
         self.model.update(**params)
         if self.model.logprior == -numpy.inf:
