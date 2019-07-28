@@ -207,7 +207,7 @@ class EventManager(object):
     def chisq_threshold(self, value, num_bins, delta=0):
         remove = []
         for i, event in enumerate(self.events):
-            xi = event['chisq'] / (event['chisq_dof'] / 2 + 1 +
+            xi = event['chisq'] / (event['chisq_dof'] +
                                    delta * event['snr'].conj() * event['snr'])
             if xi > value:
                 remove.append(i)
