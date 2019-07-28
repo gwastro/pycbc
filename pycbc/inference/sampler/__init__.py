@@ -37,6 +37,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from .dynesty import DynestySampler
+    samplers[DynestySampler.name] = DynestySampler
+except ImportError:
+    pass
+
 def load_from_config(cp, model, **kwargs):
     """Loads a sampler from the given config file.
 

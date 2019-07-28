@@ -1,4 +1,4 @@
-# Copyright (C) 2019 Sumit Kumar and Collin Capano
+# Copyright (C) 2019 Collin Capano, Sumit Kumar
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -21,12 +21,11 @@
 #
 # =============================================================================
 #
-"""Provides IO for the emcee sampler.
+"""Provides IO for the dynesty sampler.
 """
 from .base_nested_sampler import BaseNestedSamplerFile
 
+class DynestyFile(BaseNestedSamplerFile):
+    """Class to handle file IO for the ``dynesty`` sampler."""
 
-class CPNestFile(BaseNestedSamplerFile):
-    """Class to handle file IO for the ``cpnest`` sampler."""
-
-    name = 'cpnest_file'
+    name = 'dynesty_file'
