@@ -190,14 +190,13 @@ for i in range(len(args.trigger_files)):
                             args.template_bank,
                             args.segment_name,
                             args.veto_files)
-    trigs[reader.ifo] = reader
-
-# Assign shift vectors
-ifolist = trigs.keys()
-# time shift is subtracted from pivot ifo time
-slidevec = [(-1 if i == args.pivot_ifo else 0) for i in ifolist]
-logging.info('Applying time shifts', slidevec, 'to ifos', ifolist)
-slidedict = {i: s for i, s in zip(ifolist, slidevec)}
+    ifo = reader.ifo
+    trigs.ifos.append(ifo)
+    # time shift is subtracted from pivot ifo time
+    trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
+    logging.info('Applying time shift multiple %i to ifo %s' %
+                 (trigs.to_shift[-1], trigs.ifos[-1]))
+    trigs.singles.append(reader)
 
 # Coinc_segs contains only segments where all ifos are analyzed
 coinc_segs = veto.start_end_to_segments([-infinity()], [infinity()])
@@ -287,13 +286,14 @@ for tnum in template_ids:
                                                       args.coinc_threshold,
                                                       args.pivot_ifo,
                                                       args.fixed_ifo)
-            logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
-            logging.info('Calculating Multi-Detector Combined Statistic')
-            sdswithids = {}
-            for ifo in sds:
-                sdswithids[ifo] = sds[ifo][ids[ifo]]
+            logging.info('Coincident trigs: %s' % (len(ids[args.pivot_ifo])))
+
+            logging.info('Calculating multi-detector combined statistic')
+            # list in ifo order of remaining trigger data
+            single_info = [(i, sds[i][ids[i]]) for i in trigs.ifos]
             cstat = rank_method.coinc_multiifo(
-                sdswithids, slide, args.timeslide_interval, to_shift=None,
+                single_info, slide, args.timeslide_interval,
+                to_shift=trigs.to_shift,
                 time_addition=args.coinc_threshold)
 
             # index values of the zerolag triggers
