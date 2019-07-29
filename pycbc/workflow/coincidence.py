@@ -262,7 +262,7 @@ class PyCBCCombineStatmap(Executable):
         node = Node(self)
         node.add_input_list_opt('--statmap-files', statmap_files)
         node.new_output_file_opt(statmap_files[0].segment, '.hdf',
-                                 '--output-file', tags=tags)
+                                 '--output-file', tags=None)
         return node
 
 class PyCBCMultiifoCombineStatmap(PyCBCCombineStatmap):
@@ -271,19 +271,31 @@ class PyCBCMultiifoCombineStatmap(PyCBCCombineStatmap):
     # same inputs and outputs as PyCBCCombineStatmap
     current_retention_level = Executable.MERGED_TRIGGERS
 
-class PyCBCMultiifoAddStatmap(Executable):
+class PyCBCMultiifoAddStatmap(PyCBCMultiifoCombineStatmap):
     """Combine statmap files and add FARs over different coinc types"""
 
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, statmap_files, background_files, tags=None):
+        node = super(PyCBCMultiifoAddStatmap, self).create_node(statmap_files,
+                                                            tags=tags)
+        if 'injections' in tags:
+            node.add_input_list_opt('--background-files', background_files)
+
+        return node
+
+class PyCBCMultiifoExcludeZerolag(Executable):
+    """ Remove times of zerolag coincidences of all types of from
+        exclusive background """
+    current_retention_level = Executable.MERGED_TRIGGERS
+    def create_node(self, statmap_file, other_statmap_files, tags=None):
         if tags is None:
             tags = []
         node = Node(self)
-        node.add_input_list_opt('--statmap-files', statmap_files)
-        if 'injections' in tags:
-            node.add_input_list_opt('--background-files', background_files)
-        node.new_output_file_opt(statmap_files[0].segment, '.hdf',
-                                 '--output-file', tags=tags)
+        node.add_input_opt('--statmap-file', statmap_file)
+        node.add_input_list_opt('--other-statmap-files', other_statmap_files)
+        node.new_output_file_opt(statmap_file.segment, '.hdf',
+                                 '--output-file', tags=None)
+
         return node
 
 class MergeExecutable(Executable):
@@ -479,37 +491,49 @@ def setup_simple_statmap_inj(workflow, coinc_files, background_file, out_dir, ta
                                               ifos=workflow.ifos,
                                               tags=tags, out_dir=out_dir)
 
-    stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']), background_file,
-                                     FileList(coinc_files['injfull']), FileList(coinc_files['fullinj']))
+    stat_node = statmap_exe.create_node(FileList(coinc_files['injinj']),
+                                        background_file,
+                                        FileList(coinc_files['injfull']),
+                                        FileList(coinc_files['fullinj']))
     workflow.add_node(stat_node)
     return stat_node.output_files[0]
 
-def setup_background_bins_inj(workflow, coinc_files, background_file, bank_file, out_dir, tags=None):
+def setup_background_bins_inj(workflow, coinc_files, background_file,
+                              bank_file, out_dir, tags=None):
     tags = [] if tags is None else tags
 
-    bins_exe = PyCBCDistributeBackgroundBins(workflow.cp, 'distribute_background_bins',
-                                       ifos=workflow.ifos, tags=tags, out_dir=out_dir)
+    bins_exe = PyCBCDistributeBackgroundBins(workflow.cp,
+                                             'distribute_background_bins',
+                                             ifos=workflow.ifos, tags=tags,
+                                             out_dir=out_dir)
 
     statmap_exe = PyCBCStatMapInjExecutable(workflow.cp, 'statmap_inj',
-                                              ifos=workflow.ifos,
-                                              tags=tags, out_dir=out_dir)
+                                            ifos=workflow.ifos, tags=tags,
+                                            out_dir=out_dir)
 
-    cstat_exe = PyCBCCombineStatmap(workflow.cp, 'combine_statmap', ifos=workflow.ifos,
-                                    tags=tags, out_dir=out_dir)
+    cstat_exe = PyCBCCombineStatmap(workflow.cp, 'combine_statmap',
+                                    ifos=workflow.ifos, tags=tags,
+                                    out_dir=out_dir)
 
-    background_bins = workflow.cp.get_opt_tags('workflow-coincidence', 'background-bins', tags).split(' ')
+    background_bins = workflow.cp.get_opt_tags('workflow-coincidence',
+                                               'background-bins',
+                                               tags).split(' ')
     background_bins = [x for x in background_bins if x != '']
 
     for inj_type in ['injinj', 'injfull', 'fullinj']:
-        bins_node = bins_exe.create_node(FileList(coinc_files[inj_type]), bank_file, background_bins, tags=[inj_type])
+        bins_node = bins_exe.create_node(FileList(coinc_files[inj_type]),
+                                         bank_file, background_bins,
+                                         tags=[inj_type])
         workflow += bins_node
         coinc_files[inj_type] = bins_node.output_files
 
     statmap_files = FileList([])
     for i in range(len(background_bins)):
-        statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]), FileList([background_file[i]]),
-                                     FileList([coinc_files['injfull'][i]]), FileList([coinc_files['fullinj'][i]]),
-                                     tags=['BIN_%s' % i])
+        statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]),
+                                           FileList([background_file[i]]),
+                                           FileList([coinc_files['injfull'][i]]),
+                                           FileList([coinc_files['fullinj'][i]]),
+                                           tags=['BIN_%s' % i])
         workflow += statnode
         statmap_files.append(statnode.output_files[0])
 
@@ -539,7 +563,8 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
         raise ValueError('This coincidence method only supports two-ifo searches')
 
     # Wall time knob and memory knob
-    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence',
+                                          'parallelization-factor', tags))
 
     ffiles = {}
     ifiles = {}
@@ -558,7 +583,8 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
     for trig_files, ctag in combo:
         findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
                                               ifos=workflow.ifos,
-                                              tags=tags + [ctag], out_dir=out_dir)
+                                              tags=tags + [ctag],
+                                              out_dir=out_dir)
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
             coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
@@ -569,7 +595,8 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
             bg_files[ctag] += coinc_node.output_files
             workflow.add_node(coinc_node)
 
-    return setup_statmap_inj(workflow, bg_files, background_file, hdfbank, out_dir, tags=tags)
+    return setup_statmap_inj(workflow, bg_files, background_file, hdfbank,
+                             out_dir, tags=tags)
 
 def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                          veto_files, veto_names, out_dir, tags=None):
@@ -589,14 +616,16 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
     hdfbank = hdfbank[0]
 
     if len(workflow.ifos) > 2:
-        raise ValueError('This coincidence method only supports two-ifo searches')
+        raise ValueError('This coincidence method only supports two-ifo '
+                         'searches')
 
     findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
                                              ifos=workflow.ifos,
                                              tags=tags, out_dir=out_dir)
 
     # Wall time knob and memory knob
-    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence',
+                                          'parallelization-factor', tags))
 
     statmap_files = []
     for veto_file, veto_name in zip(veto_files, veto_names):
@@ -611,13 +640,15 @@ def setup_interval_coinc(workflow, hdfbank, trig_files, stat_files,
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
 
-        statmap_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir, tags=tags + [veto_name])]
+        statmap_files += [setup_statmap(workflow, bg_files, hdfbank, out_dir,
+                                        tags=tags + [veto_name])]
 
     logging.info('...leaving coincidence ')
     return statmap_files
 
-def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_files,
-                                      stat_files, background_file, veto_file, veto_name,
+def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files,
+                                      inj_trig_files, stat_files,
+                                      background_file, veto_file, veto_name,
                                       out_dir, pivot_ifo, fixed_ifo, tags=None):
     """
     This function sets up exact match multiifo coincidence for injections
@@ -633,7 +664,8 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
     hdfbank = hdfbank[0]
 
     # Wall time knob and memory knob
-    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence',
+                                          'parallelization-factor', tags))
 
     ffiles = {}
     ifiles = {}
@@ -684,10 +716,13 @@ def setup_multiifo_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, i
 
     logging.info('...leaving coincidence for injections')
 
-    return setup_multiifo_statmap_inj(workflow, ifiles.keys(), bg_files, background_file, out_dir, tags=tags + [veto_name])
+    return setup_multiifo_statmap_inj(workflow, ifiles.keys(), bg_files,
+                                      background_file, out_dir,
+                                      tags=tags + [veto_name])
 
 def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
-                         veto_files, veto_names, out_dir, pivot_ifo, fixed_ifo, tags=None):
+                                  veto_files, veto_names, out_dir, pivot_ifo,
+                                  fixed_ifo, tags=None):
     """
     This function sets up exact match multiifo coincidence
     """
@@ -707,7 +742,8 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
                                              tags=tags, out_dir=out_dir)
 
     # Wall time knob and memory knob
-    factor = int(workflow.cp.get_opt_tags('workflow-coincidence', 'parallelization-factor', tags))
+    factor = int(workflow.cp.get_opt_tags('workflow-coincidence',
+                                          'parallelization-factor', tags))
 
     statmap_files = []
     for veto_file, veto_name in zip(veto_files, veto_names):
@@ -724,7 +760,9 @@ def setup_multiifo_interval_coinc(workflow, hdfbank, trig_files, stat_files,
             bg_files += coinc_node.output_files
             workflow.add_node(coinc_node)
 
-        statmap_files += [setup_multiifo_statmap(workflow, ifos, bg_files, out_dir, tags=tags + [veto_name])]
+        statmap_files += [setup_multiifo_statmap(workflow, ifos, bg_files,
+                                                 out_dir,
+                                                 tags=tags + [veto_name])]
 
     logging.info('...leaving coincidence ')
     return statmap_files
@@ -755,7 +793,7 @@ def get_ordered_ifo_list(ifocomb, ifo_ids):
     return pivot_ifo, fixed_ifo, ''.join(ordered_ifo_list)
 
 def setup_multiifo_combine_statmap(workflow, final_bg_file_list, bg_file_list,
-                                   out_dir, tags):
+                                   out_dir, tags=None):
     """
     Combine the multiifo statmap files into one background file
     """
@@ -779,13 +817,34 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, bg_file_list,
 
     if cstat_exe_name == 'pycbc_multiifo_combine_statmap':
         combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
-                                                     tags)
+                                                     tags=tags)
     elif cstat_exe_name == 'pycbc_multiifo_add_statmap':
         combine_statmap_node = cstat_exe.create_node(final_bg_file_list,
                                                      bg_file_list,
-                                                     tags)
+                                                     tags=tags)
+
     workflow.add_node(combine_statmap_node)
     return combine_statmap_node.output_file
+
+def setup_multiifo_exclude_zerolag(workflow, statmap_file, other_statmap_files,
+                                   out_dir, tags=None):
+    """
+    Exclude single triggers close to zerolag triggers from forming any
+    background events
+    """
+    if tags is None:
+        tags = []
+    make_analysis_dir(out_dir)
+    logging.info('Setting up multiifo exclude zerolag')
+
+    exc_zerolag_exe = PyCBCMultiifoExcludeZerolag(workflow.cp, 'exclude_zerolag',
+                                                  ifos=workflow.ifos, tags=tags,
+                                                  out_dir=out_dir)
+    exc_zerolag_node = exc_zerolag_exe.create_node(statmap_file,
+                                                   other_statmap_files,
+                                                   tags=tags)
+    workflow.add_node(exc_zerolag_node)
+    return exc_zerolag_node.output_file
 
 def rerank_coinc_followup(workflow, statmap_file, bank_file, out_dir, tags,
                           injection_file=None,
