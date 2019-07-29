@@ -96,7 +96,6 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     pycbc.fft.fftw.set_measure_level(0)
 
     if high_freq_cutoff:
-        logging.info('Autogating: downsampling strain')
         strain = resample_to_delta_t(strain, 0.5 / high_freq_cutoff,
                                      method='ldas')
     else:
