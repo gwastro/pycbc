@@ -1613,7 +1613,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                     threshold=self.autogating_threshold,
                     cluster_window=self.autogating_cluster,
                     low_freq_cutoff=self.highpass_frequency,
-                    high_freq_cutoff=self.sample_rate/2,
                     corrupt_time=self.autogating_window+self.autogating_pad)
             if len(glitch_times) > 0:
                 logging.info('Autogating %s at %s', self.detector,
