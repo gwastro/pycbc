@@ -57,6 +57,7 @@ class Stat(object):
             if stat in self.files:
                 raise RuntimeError("We already have one file with stat attr ="
                                    " %s. Can't provide more than one!" % stat)
+            logging.info("Found file %s for stat %s" % (filename, stat))
             self.files[stat] = f
 
         # Provide the dtype of the single detector method's output
@@ -236,6 +237,7 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         self.hist = None
         self.bins = {}
+        self.hist_ifos = []
 
     def get_hist(self, ifos=None, norm='max'):
         """Read in a signal density file for the ifo combination"""
@@ -258,9 +260,11 @@ class PhaseTDStatistic(NewSNRStatistic):
                     "%i statistic files had an attribute matching phasetd*%s%s"
                     "! Should be exactly 1" % (len(matching), ifos[0], ifos[1])
                 )
-            logging.info("Using signal histogram", matching, "for", ifos)
+            logging.info("Using signal histogram %s for ifos %s" %
+                         (matching, ifos))
 
         self.hist = histfile['map'][:]
+        self.hist_ifos = ifos
 
         if norm == 'max':
             # Normalize so that peak of hist is equal to unity
@@ -271,7 +275,7 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         # Bin boundaries are stored in the hdf file
         self.bins['dt'] = histfile['tbins'][:]
-        self.bins['dphi'] = histfile['tbins'][:]
+        self.bins['dphi'] = histfile['pbins'][:]
         self.bins['snr'] = histfile['sbins'][:]
         self.bins['sigma_ratio'] = histfile['rbins'][:]
 
@@ -332,14 +336,17 @@ class PhaseTDStatistic(NewSNRStatistic):
         assert len(singles) == 2
         assert len(slide_vec) == 2
         dt = singles[0]['end_time'] + shift * slide_vec[0] -\
-            singles[1]['end_time'] + shift * slide_vec[1]
+            (singles[1]['end_time'] + shift * slide_vec[1])
         return dt
 
     def logsignalrate(self, s0, s1, shift):
         """Calculate the normalized log rate density of signals via lookup"""
 
         # does not require ifos to be specified, only 1 p/t/a file
-        self.get_hist()
+        if self.hist is None:
+            self.get_hist()
+        else:
+            logging.info("Using pre-set signal histogram")
 
         # for 2-ifo pipeline, add time shift to 2nd ifo ('s1')
         slidevec = [0, 1]
@@ -374,7 +381,12 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         # At present for triples use the H/L signal histogram
         hist_ifos = self.ifos if len(self.ifos) == 2 else ['H1', 'L1']
-        self.get_hist(hist_ifos)
+        if self.hist is None:
+            self.get_hist(hist_ifos)
+        else:
+            assert self.hist_ifos == hist_ifos
+            logging.info("Using pre-set signal histogram for %s" %
+                         self.hist_ifos)
 
         td = self.slide_dt(s, shift, to_shift)
         if numpy.any(td > 1.):
@@ -699,17 +711,18 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
 
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
-    def __init__(self, files, ifos):
+    def __init__(self, files, ifos=None):
         # read in background fit info and store it, also use newsnr_sgveto
         ExpFitSGBgRateStatistic.__init__(self, files, ifos)
         # if ifos not already set, determine via background fit info
         self.ifos = self.ifos or self.bg_ifos
         # Use PhaseTD statistic single.dtype
-        PhaseTDStatistic.__init__(self, files, ifos)
+        PhaseTDStatistic.__init__(self, files, self.ifos)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
 
         self.get_newsnr = ranking.get_newsnr_sgveto
 
+        assert len(self.ifos)  # we need some ifo-specific information!
         for ifo in self.ifos:
             self.assign_median_sigma(ifo)
         # benchmark_logvol is a benchmark sensitivity array over template id
