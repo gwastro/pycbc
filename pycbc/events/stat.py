@@ -57,7 +57,7 @@ class Stat(object):
             if stat in self.files:
                 raise RuntimeError("We already have one file with stat attr ="
                                    " %s. Can't provide more than one!" % stat)
-            logging.info("Found file %s for stat %s" % (filename, stat))
+            logging.info("Found file %s for stat %s", filename, stat)
             self.files[stat] = f
 
         # Provide the dtype of the single detector method's output
@@ -230,7 +230,8 @@ class PhaseTDStatistic(NewSNRStatistic):
                              ('coa_phase', numpy.float32),
                              ('end_time', numpy.float64),
                              ('sigmasq', numpy.float32),
-                             ('snr', numpy.float32)]
+                             ('snr', numpy.float32)
+                             ]
 
         # Assign attribute so that it can be replaced with other functions
         self.get_newsnr = ranking.get_newsnr
@@ -251,17 +252,15 @@ class PhaseTDStatistic(NewSNRStatistic):
                 raise RuntimeError("Need exactly 2 ifos for the p/t/a "
                                    "statistic! Ifos given were " + ifos)
             matching = [k for k in self.files.keys() if \
-                        'phasetd' in k and \
-                        (ifos[0][0] in k and ifos[1][0] in k)]
+                        'phasetd' in k and (ifos[0] in k and ifos[1] in k)]
             if len(matching) == 1:
                 histfile = self.files[matching[0]]
             else:
                 raise RuntimeError(
-                    "%i statistic files had an attribute matching phasetd*%s%s"
-                    "! Should be exactly 1" % (len(matching), ifos[0], ifos[1])
-                )
-            logging.info("Using signal histogram %s for ifos %s" %
-                         (matching, ifos))
+                  "%i statistic files had an attribute matching phasetd*%s%s !"
+                  "Should be exactly 1" % (len(matching), ifos[0], ifos[1]))
+            logging.info("Using signal histogram %s for ifos %s", matching,
+                         ifos)
 
         self.hist = histfile['map'][:]
         self.hist_ifos = ifos
@@ -385,7 +384,7 @@ class PhaseTDStatistic(NewSNRStatistic):
             self.get_hist(hist_ifos)
         else:
             assert self.hist_ifos == hist_ifos
-            logging.info("Using pre-set signal histogram for %s" %
+            logging.info("Using pre-set signal histogram for %s",
                          self.hist_ifos)
 
         td = self.slide_dt(s, shift, to_shift)
@@ -713,18 +712,17 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
     def __init__(self, files, ifos=None):
-        # read in background fit info and store it, also use newsnr_sgveto
+        # read in background fit info and store it
         ExpFitSGBgRateStatistic.__init__(self, files, ifos)
         # if ifos not already set, determine via background fit info
         self.ifos = self.ifos or self.bg_ifos
-        # Use PhaseTD statistic single.dtype
+        # PhaseTD statistic single_dtype plus network sensitivity benchmark
         PhaseTDStatistic.__init__(self, files, self.ifos)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
 
         self.get_newsnr = ranking.get_newsnr_sgveto
 
-        assert len(self.ifos)  # we need some ifo-specific information!
-        for ifo in self.ifos:
+        for ifo in self.bg_ifos:
             self.assign_median_sigma(ifo)
         # benchmark_logvol is a benchmark sensitivity array over template id
         hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
@@ -775,7 +773,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         network_logvol = 1.5 * numpy.log(network_sigmasq)
         # Get benchmark log volume as single-ifo information
         # NB benchmark logvol for a given template is not ifo-dependent
-        # so choose the first ifo for convenience
+        # - choose the first ifo for convenience
         benchmark_logvol = s[0][1]['benchmark_logvol']
         network_logvol -= benchmark_logvol
 
