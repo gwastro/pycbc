@@ -102,7 +102,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     else:
         strain = strain.copy()
 
-    logging.info('Autogating: tapering strain')
+    # taper strain
     corrupt_length = int(corrupt_time * strain.sample_rate)
     w = numpy.arange(corrupt_length) / float(corrupt_length)
     strain[0:corrupt_length] *= pycbc.types.Array(w, dtype=strain.dtype)
@@ -122,7 +122,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
             delta_t=strain.delta_t, copy=False, epoch=pad_epoch)
     strain_pad[pad_start:pad_end] = strain[:]
 
-    logging.info('Autogating: estimating PSD')
+    # estimate the PSD
     psd = pycbc.psd.welch(strain[corrupt_length:(len(strain)-corrupt_length)],
                           seg_len=int(psd_duration * strain.sample_rate),
                           seg_stride=int(psd_stride * strain.sample_rate),
@@ -139,23 +139,20 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
         kmax = int(high_freq_cutoff / psd.delta_f)
         psd[kmax:] = numpy.inf
 
-    logging.info('Autogating: time -> frequency')
+    # whiten
     strain_tilde = strain_pad.to_frequencyseries()
 
-    logging.info('Autogating: whitening')
     if high_freq_cutoff:
         norm = high_freq_cutoff - low_freq_cutoff
     else:
         norm = strain.sample_rate / 2. - low_freq_cutoff
     strain_tilde *= (psd * norm) ** (-0.5)
 
-    logging.info('Autogating: frequency -> time')
     strain_pad = strain_tilde.to_timeseries()
 
     if output_intermediates:
         strain_pad[pad_start:pad_end].save_to_wav('strain_whitened.wav')
 
-    logging.info('Autogating: computing magnitude')
     mag = abs(strain_pad[pad_start:pad_end])
 
     if output_intermediates:
@@ -167,7 +164,7 @@ def detect_loud_glitches(strain, psd_duration=4., psd_stride=2.,
     mag[0:corrupt_length] = 0
     mag[-1:-corrupt_length-1:-1] = 0
 
-    logging.info('Autogating: finding loud peaks')
+    # find peaks and their times
     indices = numpy.where(mag > threshold)[0]
     cluster_idx = pycbc.events.findchirp_cluster_over_window(
             indices, numpy.array(mag[indices]),
