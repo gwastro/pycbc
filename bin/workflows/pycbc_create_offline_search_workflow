@@ -647,6 +647,8 @@ layout.two_column_layout(rdir.base, summ)
 
 ############################ Finalization ####################################
 
+
+
 # Create the final log file
 log_file_html = wf.File(workflow.ifos, 'WORKFLOW-LOG', workflow.analysis_time,
                                            extension='.html',

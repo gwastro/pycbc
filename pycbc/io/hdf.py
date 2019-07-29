@@ -119,7 +119,8 @@ class DictArray(object):
         files: list of filenames, optional
             List of hdf5 file filenames. Incompatibile with the `data` option.
         groups: list of strings
-            List of keys into each file. Required by the files options.
+            List of keys into each file. Required by the files option and for
+            data filtering.
         """
         self.data = data
 
@@ -141,6 +142,7 @@ class DictArray(object):
 
         for k in self.data:
             setattr(self, k, self.data[k])
+        self.groups=groups
 
     def _return(self, data):
         return self.__class__(data=data)
@@ -150,7 +152,7 @@ class DictArray(object):
 
     def __add__(self, other):
         data = {}
-        for k in self.data:
+        for k in self.groups:
             data[k] = np.concatenate([self.data[k], other.data[k]])
         return self._return(data=data)
 
@@ -158,7 +160,7 @@ class DictArray(object):
         """ Return a new DictArray containing only the indexed values
         """
         data = {}
-        for k in self.data:
+        for k in self.groups:
             data[k] = self.data[k][idx]
         return self._return(data=data)
 
@@ -166,7 +168,7 @@ class DictArray(object):
         """ Return a new DictArray that does not contain the indexed values
         """
         data = {}
-        for k in self.data:
+        for k in self.groups:
             data[k] = np.delete(self.data[k], idx)
         return self._return(data=data)
 
@@ -175,7 +177,7 @@ class DictArray(object):
         for k in self.attrs:
             f.attrs[k] = self.attrs[k]
 
-        for k in self.data:
+        for k in self.groups:
             f.create_dataset(k, data=self.data[k],
                       compression='gzip',
                       compression_opts=9,
@@ -964,19 +966,22 @@ def combine_and_copy(f, files, group):
                                    np.array([], dtype=np.uint32) for fi in files])
 
 def name_all_datasets(files):
+    assert isinstance(files, (list, tuple))
     datasets = []
     for fi in files:
-        datasets += get_all_subkeys(fi, '/', datasets)
+        datasets += get_all_subkeys(fi, '/')
     return set(datasets)
 
-def get_all_subkeys(fi, k, dset):
+def get_all_subkeys(grp, key):
     subkey_list = []
-    for sk in fi[k].keys():
-        path = k + '/' + sk
-        if path not in dset:
-            if isinstance(fi[path], h5py.Dataset):
-                subkey_list.append(path.lstrip('/'))
-            else:
-                subkey_list += get_all_subkeys(fi, path, dset)
+    subkey_start = key
+    if key == '': grpk = grp
+    else: grpk = grp[key]
+    for sk in grpk.keys():
+        path = subkey_start + '/' + sk
+        if isinstance(grp[path], h5py.Dataset):
+            subkey_list.append(path.lstrip('/'))
+        else:
+            subkey_list += get_all_subkeys(grp, path)
     # returns an empty list if there is no dataset or subgroup within the group
     return subkey_list
