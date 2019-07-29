@@ -207,7 +207,8 @@ for sngl in trigs.singles:
     sngl.valid = veto.segments_to_start_end(sngl.segs)
 
 # Stat class instance to calculate the coinc ranking statistic
-rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
+rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
+                                                         ifos=trigs.ifos)
 
 # Sanity check, time slide interval should be larger than twice the
 # Earth crossing time, which is approximately 0.085 seconds.
@@ -247,7 +248,7 @@ for tnum in template_ids:
 
     times_full = {}
     sds_full = {}
-    logging.info('Obtaining trigs for template %i :' % (tnum))
+    logging.info('Obtaining trigs for template %i ..' % (tnum))
     for i, sngl in zip(trigs.ifos, trigs.singles):
         logging.info('%s:%s' % (i, len(tids[i])))
         times_full[i] = sngl['end_time']
