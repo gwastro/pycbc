@@ -529,11 +529,12 @@ def setup_background_bins_inj(workflow, coinc_files, background_file,
 
     statmap_files = FileList([])
     for i in range(len(background_bins)):
-        statnode = statmap_exe.create_node(FileList([coinc_files['injinj'][i]]),
-                                           FileList([background_file[i]]),
-                                           FileList([coinc_files['injfull'][i]]),
-                                           FileList([coinc_files['fullinj'][i]]),
-                                           tags=['BIN_%s' % i])
+        statnode = statmap_exe.create_node(
+                                   FileList([coinc_files['injinj'][i]]),
+                                   FileList([background_file[i]]),
+                                   FileList([coinc_files['injfull'][i]]),
+                                   FileList([coinc_files['fullinj'][i]]),
+                                   tags=['BIN_%s' % i])
         workflow += statnode
         statmap_files.append(statnode.output_files[0])
 
@@ -582,9 +583,9 @@ def setup_interval_coinc_inj(workflow, hdfbank, full_data_trig_files, inj_trig_f
 
     for trig_files, ctag in combo:
         findcoinc_exe = PyCBCFindCoincExecutable(workflow.cp, 'coinc',
-                                              ifos=workflow.ifos,
-                                              tags=tags + [ctag],
-                                              out_dir=out_dir)
+                                                 ifos=workflow.ifos,
+                                                 tags=tags + [ctag],
+                                                 out_dir=out_dir)
         for i in range(factor):
             group_str = '%s/%s' % (i, factor)
             coinc_node = findcoinc_exe.create_node(trig_files, hdfbank,
