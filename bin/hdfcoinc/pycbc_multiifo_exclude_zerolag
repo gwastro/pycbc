@@ -12,9 +12,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version",
                     version=pycbc.version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--coinc-statmap-file', type=str,
+parser.add_argument('--statmap-file', type=str,
     help="Coinc statmap file to be recalculated based on foreground removal")
-parser.add_argument('--other-coinc-statmap-files', nargs='+',
+parser.add_argument('--other-statmap-files', nargs='+',
     help="List of coinc statmap files from other coincidence types")
 parser.add_argument('--censor-ifar-threshold', type=float, default=0.003,
     help="Only window out foreground triggers with IFAR (years)"
@@ -26,9 +26,9 @@ args = parser.parse_args()
 
 pycbc.init_logging(args.verbose)
 
-f_in = h5py.File(args.coinc_statmap_file,'r')
+f_in = h5py.File(args.statmap_file,'r')
 f_out = h5py.File(args.output_file, "w")
-f_others = [h5py.File(fname,'r') for fname in args.other_coinc_statmap_files]
+f_others = [h5py.File(fname,'r') for fname in args.other_statmap_files]
 
 all_ifos = f_in.attrs['ifos'].split(' ')
 

@@ -291,8 +291,9 @@ class PyCBCMultiifoExcludeZerolag(Executable):
         if tags is None:
             tags = []
         node = Node(self)
-        node.add_input_opt('--coinc-statmap-file', statmap_file)
-        node.add_input_list_opt('--other-coinc-statmap-files', other_statmap_files)
+        node.add_input_opt('--statmap-file', statmap_file)
+        node.add_input_list_opt('--other-statmap-files',
+                                other_statmap_files)
         node.new_output_file_opt(statmap_file.segment, '.hdf',
                                  '--output-file', tags=None)
 
@@ -828,7 +829,7 @@ def setup_multiifo_combine_statmap(workflow, final_bg_file_list, bg_file_list,
     return combine_statmap_node.output_file
 
 def setup_multiifo_exclude_zerolag(workflow, statmap_file, other_statmap_files,
-                                   out_dir, tags=None):
+                                   out_dir, ifos, tags=None):
     """
     Exclude single triggers close to zerolag triggers from forming any
     background events
@@ -839,11 +840,11 @@ def setup_multiifo_exclude_zerolag(workflow, statmap_file, other_statmap_files,
     logging.info('Setting up multiifo exclude zerolag')
 
     exc_zerolag_exe = PyCBCMultiifoExcludeZerolag(workflow.cp, 'exclude_zerolag',
-                                                  ifos=workflow.ifos, tags=tags,
+                                                  ifos=ifos, tags=tags,
                                                   out_dir=out_dir)
     exc_zerolag_node = exc_zerolag_exe.create_node(statmap_file,
                                                    other_statmap_files,
-                                                   tags=tags)
+                                                   tags=None)
     workflow.add_node(exc_zerolag_node)
     return exc_zerolag_node.output_file
 

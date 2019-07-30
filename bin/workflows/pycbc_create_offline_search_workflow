@@ -214,6 +214,7 @@ for i in range(2, len(insps)+1):
         _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
         # Create coinc tag
         coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
+        print(ordered_ifo_list)
         ctagcomb = [tag, 'full', coinctag]
         other_ifo_keys = no_fg_exc_files.keys()
         other_ifo_keys.remove(ordered_ifo_list)
@@ -222,7 +223,7 @@ for i in range(2, len(insps)+1):
                                                  workflow,
                                                  no_fg_exc_files[ordered_ifo_list],
                                                  wf.FileList(other_bg_files.values()),
-                                                 output_dir,
+                                                 output_dir, ordered_ifo_list,
                                                  tags=ctagcomb)
 
 combctags = [tag]
