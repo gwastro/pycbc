@@ -4,11 +4,9 @@ Remove all coincs in background_exc that contain triggers at time of zerolag
 coincidences from *any* coincidence type with ifar above a certain threshold
 """
 
-import h5py, numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io
+import h5py, numpy as np, argparse, logging, pycbc, pycbc.io
 import pycbc.version
-import pycbc.conversions as conv
-from pycbc.events import veto, coinc
-from ligo import segments
+from pycbc.events import veto
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version",

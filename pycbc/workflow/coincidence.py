@@ -291,8 +291,8 @@ class PyCBCMultiifoExcludeZerolag(Executable):
         if tags is None:
             tags = []
         node = Node(self)
-        node.add_input_opt('--statmap-file', statmap_file)
-        node.add_input_list_opt('--other-statmap-files', other_statmap_files)
+        node.add_input_opt('--coinc-statmap-file', statmap_file)
+        node.add_input_list_opt('--other-coinc-statmap-files', other_statmap_files)
         node.new_output_file_opt(statmap_file.segment, '.hdf',
                                  '--output-file', tags=None)
 
