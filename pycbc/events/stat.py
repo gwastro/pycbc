@@ -223,8 +223,8 @@ class PhaseTDStatistic(NewSNRStatistic):
     amplitude ratios between triggers in different ifos.
     """
 
-    def __init__(self, files, ifos):
-        NewSNRStatistic.__init__(self, files, ifos)
+    def __init__(self, files, ifos=None):
+        NewSNRStatistic.__init__(self, files, ifos=ifos)
 
         self.single_dtype = [('snglstat', numpy.float32),
                              ('coa_phase', numpy.float32),
@@ -432,7 +432,7 @@ class PhaseTDSGStatistic(PhaseTDStatistic):
     single-detector ranking
     """
     def __init__(self, files, ifos=None):
-        PhaseTDStatistic.__init__(self, files, ifos)
+        PhaseTDStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -446,7 +446,7 @@ class ExpFitStatistic(NewSNRStatistic):
     def __init__(self, files, ifos=None):
         if not len(files):
             raise RuntimeError("Can't find any statistic files !")
-        NewSNRStatistic.__init__(self, files, ifos)
+        NewSNRStatistic.__init__(self, files, ifos=ifos)
 
         # the stat file attributes are hard-coded as '%{ifo}-fit_coeffs'
         parsed_attrs = [f.split('-') for f in self.files.keys()]
@@ -540,7 +540,7 @@ class ExpFitCombinedSNR(ExpFitStatistic):
     """
 
     def __init__(self, files, ifos=None):
-        ExpFitStatistic.__init__(self, files, ifos)
+        ExpFitStatistic.__init__(self, files, ifos=ifos)
         # for low-mass templates the exponential slope alpha \approx 6
         self.alpharef = 6.
 
@@ -575,7 +575,7 @@ class ExpFitSGCombinedSNR(ExpFitCombinedSNR):
     """
 
     def __init__(self, files, ifos=None):
-        ExpFitCombinedSNR.__init__(self, files, ifos)
+        ExpFitCombinedSNR.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -586,7 +586,7 @@ class ExpFitSGPSDCombinedSNR(ExpFitCombinedSNR):
     """
 
     def __init__(self, files, ifos=None):
-        ExpFitCombinedSNR.__init__(self, files, ifos)
+        ExpFitCombinedSNR.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
@@ -596,9 +596,9 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
     # default is 2-ifo operation with exactly 1 'phasetd' file
     def __init__(self, files, ifos=None):
         # read in both foreground PDF and background fit info
-        ExpFitCombinedSNR.__init__(self, files, ifos)
+        ExpFitCombinedSNR.__init__(self, files, ifos=ifos)
         # need the self.single_dtype value from PhaseTDStatistic
-        PhaseTDStatistic.__init__(self, files, ifos)
+        PhaseTDStatistic.__init__(self, files, ifos=ifos)
 
     def single(self, trigs):
         # same single-ifo stat as ExpFitCombinedSNR
@@ -629,7 +629,7 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
     """
 
     def __init__(self, files, ifos=None):
-        PhaseTDExpFitStatistic.__init__(self, files, ifos)
+        PhaseTDExpFitStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -641,7 +641,7 @@ class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
     """
 
     def __init__(self, files, ifos=None):
-        PhaseTDExpFitSGStatistic.__init__(self, files, ifos)
+        PhaseTDExpFitSGStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
@@ -680,7 +680,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
     def __init__(self, files, ifos=None, benchmark_lograte=-14.6):
         # benchmark_lograte is log of a representative noise trigger rate
         # This comes from H1L1 (O2) and is 4.5e-7 Hz
-        super(ExpFitSGBgRateStatistic, self).__init__(files, ifos)
+        super(ExpFitSGBgRateStatistic, self).__init__(files, ifos=ifos)
         self.benchmark_lograte = benchmark_lograte
         self.get_newsnr = ranking.get_newsnr_sgveto
 
@@ -713,11 +713,11 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
     def __init__(self, files, ifos=None):
         # read in background fit info and store it
-        ExpFitSGBgRateStatistic.__init__(self, files, ifos)
+        ExpFitSGBgRateStatistic.__init__(self, files, ifos=ifos)
         # if ifos not already set, determine via background fit info
         self.ifos = self.ifos or self.bg_ifos
         # PhaseTD statistic single_dtype plus network sensitivity benchmark
-        PhaseTDStatistic.__init__(self, files, self.ifos)
+        PhaseTDStatistic.__init__(self, files, ifos=self.ifos)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
 
         self.get_newsnr = ranking.get_newsnr_sgveto
