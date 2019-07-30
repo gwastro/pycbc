@@ -779,7 +779,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
         coincifos = [sngl[0] for sngl in s]
         # logsignalrate function from PhaseTDStatistic
-        if 'H1' and 'L1' in coincifos:
+        if ('H1' in coincifos and 'L1' in coincifos):
             # apply HL hist for HL & HLV coincs, keep only H/L info
             s_hl = [sngl[1] for sngl in s if sngl[0] in ['H1', 'L1']]
             shift_hl = [sh for sngl, sh in zip(s, to_shift) if \
