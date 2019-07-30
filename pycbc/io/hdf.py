@@ -152,7 +152,10 @@ class DictArray(object):
     def __add__(self, other):
         data = {}
         for k in self.groups:
-            data[k] = np.concatenate([self.data[k], other.data[k]])
+            try:
+                data[k] = np.concatenate([self.data[k], other.data[k]])
+            except KeyError:
+                logging.info('%s does not exist in data' % k)
         return self._return(data=data)
 
     def select(self, idx):
@@ -160,7 +163,10 @@ class DictArray(object):
         """
         data = {}
         for k in self.groups:
-            data[k] = self.data[k][idx]
+            try:
+                data[k] = self.data[k][idx]
+            except KeyError:
+                logging.info('%s does not exist in data' % k)
         return self._return(data=data)
 
     def remove(self, idx):
@@ -168,7 +174,10 @@ class DictArray(object):
         """
         data = {}
         for k in self.groups:
-            data[k] = np.delete(self.data[k], idx)
+            try:
+                data[k] = np.delete(self.data[k], idx)
+            except KeyError:
+                logging.info('%s does not exist in data' % k)
         return self._return(data=data)
 
     def save(self, outname):
