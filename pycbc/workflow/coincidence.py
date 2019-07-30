@@ -262,7 +262,7 @@ class PyCBCCombineStatmap(Executable):
         node = Node(self)
         node.add_input_list_opt('--statmap-files', statmap_files)
         node.new_output_file_opt(statmap_files[0].segment, '.hdf',
-                                 '--output-file', tags=None)
+                                 '--output-file', tags=tags)
         return node
 
 class PyCBCMultiifoCombineStatmap(PyCBCCombineStatmap):
@@ -284,8 +284,8 @@ class PyCBCMultiifoAddStatmap(PyCBCMultiifoCombineStatmap):
         return node
 
 class PyCBCMultiifoExcludeZerolag(Executable):
-    """ Remove times of zerolag coincidences of all types of from
-        exclusive background """
+    """ Remove times of zerolag coincidences of all types from exclusive
+        background """
     current_retention_level = Executable.MERGED_TRIGGERS
     def create_node(self, statmap_file, other_statmap_files, tags=None):
         if tags is None:

@@ -123,7 +123,7 @@ class DictArray(object):
             data filtering.
         """
         self.data = data
-
+        self.groups = groups
         if files:
             self.data = {}
             for g in groups:
@@ -142,7 +142,6 @@ class DictArray(object):
 
         for k in self.data:
             setattr(self, k, self.data[k])
-        self.groups=groups
 
     def _return(self, data):
         return self.__class__(data=data)
@@ -975,8 +974,10 @@ def name_all_datasets(files):
 def get_all_subkeys(grp, key):
     subkey_list = []
     subkey_start = key
-    if key == '': grpk = grp
-    else: grpk = grp[key]
+    if key == '':
+        grpk = grp
+    else:
+        grpk = grp[key]
     for sk in grpk.keys():
         path = subkey_start + '/' + sk
         if isinstance(grp[path], h5py.Dataset):
