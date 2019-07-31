@@ -159,7 +159,6 @@ for fi in args.injection_file:
             sig_exc = f['found_after_vetoes/stat'][:]
             sig = None
         elif args.sig_type == 'ifar':
-            sig = f['found_after_vetoes/ifar'][:]
             sig_exc = f['found_after_vetoes/ifar_exc'][:]
             try:
                 sig = f['found_after_vetoes/ifar'][:]
