@@ -248,10 +248,7 @@ if not injection_style:
 else:
     del f['foreground/ifar']
 
-if 'ifar_exc' in f['foreground']:
-    f['foreground/ifar_exc'][:] = fg_ifar_exc
-else:
-    f['foreground/ifar_exc'] = fg_ifar_exc
+f['foreground/ifar_exc'][:] = fg_ifar_exc
 f['foreground/fap_exc'] = 1 - np.exp(-f.attrs['foreground_time_exc'] / fg_ifar_exc)
 
 f.close()

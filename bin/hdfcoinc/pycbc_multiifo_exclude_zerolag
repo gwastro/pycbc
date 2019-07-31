@@ -39,7 +39,7 @@ for attrk in f_in.attrs.keys():
 logging.info('Copying unchanged datasets to %s' % args.output_file)
 keys = pycbc.io.name_all_datasets([f_in])
 for k in keys:
-    if '_exc' not in k:
+    if 'background_exc' not in k:
         f_out[k] = f_in[k][:]
 
 logging.info("Collating all foreground times")
