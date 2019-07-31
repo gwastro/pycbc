@@ -55,7 +55,7 @@ google_table_template = mako.template.Template("""
     <div id='${div_id}'></div>
 """)
 
-def table(columns, names, page_size=None, format_strings=None):
+def html_table(columns, names, page_size=None, format_strings=None):
     """ Return an html table of this data
 
     Parameters

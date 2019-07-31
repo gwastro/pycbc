@@ -179,7 +179,7 @@ if opts.description:
    caption = caption + " " + opts.description
 
 fig_kwds = {}
-html_table = pycbc.results.table(vals, keys, page_size=10)
+html_table = pycbc.results.html_table(vals, keys, page_size=10)
 save_fig_with_metadata(str(html_table), opts.output_file,
                      fig_kwds=fig_kwds,
                      title=title,
