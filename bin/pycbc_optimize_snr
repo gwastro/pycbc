@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 
+"""Followup utility to optimize the SNR of a PyCBC Live trigger."""
+
 import argparse, numpy, h5py
 from time import time
 import types
@@ -20,6 +22,7 @@ from pycbc.io import live
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
 import time
+
 
 Nfeval = 0
 start_time = time.time()
@@ -82,7 +85,7 @@ def compute_network_snr(v, *argv):
     return -nsnr
 
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--version', action='version',
                     version=version.git_verbose_msg)
 parser.add_argument('--verbose', action='store_true')
@@ -104,6 +107,11 @@ parser.add_argument("--approximant", required=True,
 parser.add_argument("--snr-threshold", default=4.0,
                     help="If the SNR in ifo X is below this threshold do not "
                          "consider it part of the coincidence.")
+parser.add_argument('--gracedb-server', metavar='URL',
+                    help='URL of GraceDB server API for uploading events. '
+                         'If not provided, the default URL is used.')
+parser.add_argument('--production', action='store_true',
+                    help='Upload a production event rather than a test event')
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -279,12 +287,10 @@ comments = ['Automatic PyCBC followup to find largest SNR parameters']
 doc = live.SingleCoincForGraceDB(coinc_ifos, coinc_results,
                                  upload_snr_series=True,
                                  followup_ifos=fup_ifos, **kwargs)
-gracedb_server = 'https://gracedb-playground.ligo.org/api/'
-test_event = True
 tmpdir = tempfile.mkdtemp()
 gid = doc.upload(tmpdir + '/' + str(loudest_snr_times[ifos[0]])+'.xml',
-                 gracedb_server=gracedb_server,
-                 testing=test_event,
+                 gracedb_server=args.gracedb_server,
+                 testing=(not args.production),
                  extra_strings=comments)
 
-logging.info('Event uploaded as {}.'.format(gid))
+logging.info('Event uploaded as %s', gid)

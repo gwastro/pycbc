@@ -297,13 +297,16 @@ class LiveEventManager(object):
                         args.channel_name[ifo]
 
                 cmd += '--params-file {} '.format(curr_fname)
-                cmd += '--approximant IMRPhenomD '
+                cmd += '--approximant {} '.format(apr)
+                cmd += '--gracedb-server {} '.format(args.gracedb_server)
+                if not self.gracedb_testing:
+                    cmd += '--production '
                 cmd += '--verbose '
                 log_fname = \
                         fname.replace('.xml.gz', '_optimize_snr_log.dat')
 
                 cmd += '&> {} '.format(log_fname)
-                logging.info('Running {}.'.format(cmd))
+                logging.info('Running %s', cmd)
                 subprocess.Popen(cmd, shell=True)
 
 
