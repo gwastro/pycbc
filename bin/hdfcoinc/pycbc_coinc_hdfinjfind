@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 """Associate coincident triggers with injections listed in one or more LIGOLW
 files.
 """
@@ -106,9 +105,14 @@ for trigger_file, injection_file in zip(args.trigger_files,
     template_id = f['foreground/template_id'][:]
     stat = f['foreground/stat'][:]
     ifar_exc = f['foreground/ifar_exc'][:]
-    ifar = f['foreground/ifar'][:]
-    fap = f['foreground/fap'][:]
     fap_exc = f['foreground/fap_exc'][:]
+    try:
+        ifar = f['foreground/ifar'][:]
+        fap = f['foreground/fap'][:]
+    except KeyError:
+        logging.info('No inclusive ifar/fap. Proceeding anyway')
+        ifar = None
+        fap = None
     if multi_ifo_style:
         # using multi-ifo-style trigger file input
         ifo_times = ()
@@ -258,18 +262,21 @@ for trigger_file, injection_file in zip(args.trigger_files,
     hdf_append(fo, 'found/template_id', template_id[time_sorting][found_fore])
     hdf_append(fo, 'found/injection_index', found + injection_index)
     hdf_append(fo, 'found/stat', stat[time_sorting][found_fore])
-    hdf_append(fo, 'found/ifar', ifar[time_sorting][found_fore])
     hdf_append(fo, 'found/ifar_exc', ifar_exc[time_sorting][found_fore])
-    hdf_append(fo, 'found/fap', fap[time_sorting][found_fore])
+    hdf_append(fo, 'found/fap_exc', ifar_exc[time_sorting][found_fore])
+    if ifar is not None:
+        hdf_append(fo, 'found/ifar', ifar[time_sorting][found_fore])
+        hdf_append(fo, 'found/fap', fap[time_sorting][found_fore])
     hdf_append(fo, 'found_after_vetoes/template_id',
                template_id[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/injection_index',
                found_after_vetoes + injection_index)
     hdf_append(fo, 'found_after_vetoes/stat', stat[time_sorting][found_fore_v])
-    hdf_append(fo, 'found_after_vetoes/ifar', ifar[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/ifar_exc', ifar_exc[time_sorting][found_fore_v])
-    hdf_append(fo, 'found_after_vetoes/fap', fap[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/fap_exc', fap_exc[time_sorting][found_fore_v])
+    if ifar is not None:
+        hdf_append(fo, 'found_after_vetoes/ifar', ifar[time_sorting][found_fore_v])
+        hdf_append(fo, 'found_after_vetoes/fap', fap[time_sorting][found_fore_v])
     if multi_ifo_style:
         for ifo in ifo_list:
             hdf_append(fo, 'found/%s/time' % ifo,
