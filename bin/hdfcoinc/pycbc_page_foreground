@@ -51,7 +51,7 @@ if h_num_rm is not None and (h_iterations is None or h_num_rm > h_iterations):
     columns = [col_one, col_two]
     names = ["Hierarchical Removals Requested", "Hierarchical Removals Performed"]
     format_strings = ['#', '#']
-    html_table = pycbc.results.table(columns, names,
+    html_table = pycbc.results.html_table(columns, names,
                                    format_strings=format_strings, page_size=10)
 
     kwds = { 'title' :
@@ -157,7 +157,7 @@ if args.output_file.endswith('.html'):
         format_strings.extend(["##.##" for ifo in single_chisq.keys()])
 
     logging.info('Making table of foreground triggers')
-    html_table = pycbc.results.table(columns, names, 
+    html_table = pycbc.results.html_table(columns, names, 
                                    format_strings=format_strings, page_size=10)
 
     kwds = { 'title' : 'Loudest Event Table', 

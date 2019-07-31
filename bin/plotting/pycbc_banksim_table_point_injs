@@ -110,7 +110,7 @@ if 'filtered_points' in test_fp.keys():
 else:
     test_fp.close()
 
-html_table = results.table(columns, col_names, format_strings=format_strings,
+html_table = results.html_table(columns, col_names, format_strings=format_strings,
                            page_size=len(m1))
 
 kwds = {'title' : 'Point Injection Results',
