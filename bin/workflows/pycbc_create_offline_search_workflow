@@ -177,7 +177,7 @@ statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
 # ifo_ids will store an (integer) index for each ifo in the precedence list
 full_insps = insps
 ctags = [tag]
-final_bg_files = {}
+no_fg_exc_files = {}
 ifo_ids = {}
 
 # Get the ifo precedence values
@@ -187,6 +187,7 @@ for ifo, _ in zip(*insps.categorize_by_attr('ifo')):
 
 # Generate the possible detector combinations from 2 detectors
 # up to the number of trigger files
+
 for i in range(2, len(insps)+1):
     combinations = itertools.combinations(ifo_ids.keys(), i)
     for ifocomb in combinations:
@@ -202,9 +203,27 @@ for i in range(2, len(insps)+1):
             final_veto_name, output_dir, pivot_ifo, fixed_ifo, tags=ctagcomb)[0][1][0]
 
         # Optionally perform follow-up on triggers and rerank the candidates
-        final_bg_files[ordered_ifo_list] = wf.rerank_coinc_followup(
+        no_fg_exc_files[ordered_ifo_list] = wf.rerank_coinc_followup(
                        workflow, bg_file, hdfbank[0], output_dir,
                        tags=ctagcomb)
+
+final_bg_files = {}
+for i in range(2, len(insps)+1):
+    combinations = itertools.combinations(ifo_ids.keys(), i)
+    for ifocomb in combinations:
+        _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
+        # Create coinc tag
+        coinctag = '{}det_'.format(len(ifocomb)) + ordered_ifo_list
+        ctagcomb = [tag, 'full', coinctag]
+        other_ifo_keys = no_fg_exc_files.keys()
+        other_ifo_keys.remove(ordered_ifo_list)
+        other_bg_files = {ctype: no_fg_exc_files[ctype] for ctype in other_ifo_keys}
+        final_bg_files[ordered_ifo_list] = wf.setup_multiifo_exclude_zerolag(
+                                                 workflow,
+                                                 no_fg_exc_files[ordered_ifo_list],
+                                                 wf.FileList(other_bg_files.values()),
+                                                 output_dir, ordered_ifo_list,
+                                                 tags=ctagcomb)
 
 combctags = [tag]
 combined_bg_file = wf.setup_multiifo_combine_statmap(

@@ -119,10 +119,17 @@ class DictArray(object):
         files: list of filenames, optional
             List of hdf5 file filenames. Incompatibile with the `data` option.
         groups: list of strings
-            List of keys into each file. Required by the files options.
+            List of keys into each file. Required by the files option.
         """
-        self.data = data
+        # Check that input fits with how the DictArray is set up
+        if not data and files:
+            raise RuntimeError('DictArray can only have data or files as '
+                               'input, not both.')
+        if files and not groups:
+            raise RuntimeError('If files are given then need groups.')
 
+        self.data = data
+        self.groups = groups
         if files:
             self.data = {}
             for g in groups:
@@ -151,7 +158,10 @@ class DictArray(object):
     def __add__(self, other):
         data = {}
         for k in self.data:
-            data[k] = np.concatenate([self.data[k], other.data[k]])
+            try:
+                data[k] = np.concatenate([self.data[k], other.data[k]])
+            except KeyError:
+                logging.info('%s does not exist in other data' % k)
         return self._return(data=data)
 
     def select(self, idx):
@@ -226,13 +236,14 @@ class StatmapData(DictArray):
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None, ifos=None):
-        groups = ['stat', 'template_id', 'decimation_factor', 'timeslide_id']
+        groups = ['decimation_factor', 'stat', 'template_id', 'timeslide_id']
         for ifo in ifos:
             groups += ['%s/time' % ifo]
             groups += ['%s/trigger_id' % ifo]
 
         super(MultiifoStatmapData, self).__init__(data=data, files=files,
-                                                  groups=groups, attrs=attrs, seg=seg)
+                                                  groups=groups, attrs=attrs,
+                                                  seg=seg)
 
     def _return(self, data):
         ifolist = self.attrs['ifos'].split(' ')
@@ -964,19 +975,24 @@ def combine_and_copy(f, files, group):
                                    np.array([], dtype=np.uint32) for fi in files])
 
 def name_all_datasets(files):
+    assert isinstance(files, (list, tuple))
     datasets = []
     for fi in files:
-        datasets += get_all_subkeys(fi, '/', datasets)
+        datasets += get_all_subkeys(fi, '/')
     return set(datasets)
 
-def get_all_subkeys(fi, k, dset):
+def get_all_subkeys(grp, key):
     subkey_list = []
-    for sk in fi[k].keys():
-        path = k + '/' + sk
-        if path not in dset:
-            if isinstance(fi[path], h5py.Dataset):
-                subkey_list.append(path.lstrip('/'))
-            else:
-                subkey_list += get_all_subkeys(fi, path, dset)
+    subkey_start = key
+    if key == '':
+        grpk = grp
+    else:
+        grpk = grp[key]
+    for sk in grpk.keys():
+        path = subkey_start + '/' + sk
+        if isinstance(grp[path], h5py.Dataset):
+            subkey_list.append(path.lstrip('/'))
+        else:
+            subkey_list += get_all_subkeys(grp, path)
     # returns an empty list if there is no dataset or subgroup within the group
     return subkey_list
