@@ -119,9 +119,16 @@ class DictArray(object):
         files: list of filenames, optional
             List of hdf5 file filenames. Incompatibile with the `data` option.
         groups: list of strings
-            List of keys into each file. Required by the files option and for
-            data filtering.
+            List of keys into each file. Required by the files option.
         """
+        # Check that input fits with how the DictArray is set up
+        if not data and files:
+            raise RuntimeError('DictArray can only have data or files as '
+                               'input, not both.')
+        if files and not groups:
+            raise RuntimeError('If files are given then need groups.')
+
+
         self.data = data
         self.groups = groups
         if files:
