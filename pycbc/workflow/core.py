@@ -1073,7 +1073,6 @@ class File(pegasus_workflow.File):
         if tags is None:
             tags = []
         if '' in tags: tags.remove('')
-        tags = [tag.upper() for tag in tags]
         self.tags = tags
 
         if len(self.tags):
