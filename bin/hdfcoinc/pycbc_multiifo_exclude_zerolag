@@ -55,8 +55,11 @@ for f in f_others + [f_in]:
 all_fg_times = np.array(all_fg_times)
 
 logging.info("Loading coinc triggers into all_trigs structure")
-all_trigs = pycbc.io.MultiifoStatmapData(data=f_in['background_exc'],
-                                         attrs=f_in.attrs, ifos=all_ifos)
+groups = ['decimation_factor', 'stat', 'template_id', 'timeslide_id']
+for ifo in all_ifos:
+    groups += ['%s/time' % ifo]
+    groups += ['%s/trigger_id' % ifo]
+all_trigs = pycbc.io.DictArray(data=f_in['background_exc'], groups=groups)
 
 n_triggers = f_in['background_exc/%s/time' % all_ifos[0]].size
 
@@ -83,6 +86,6 @@ n_triggers_new = len(filtered_trigs.data['stat'])
 logging.info('%d triggers remaining' % n_triggers_new)
 
 logging.info('Writing updated background_exc to output file')
-for k in filtered_trigs.groups:
+for k in groups:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
 logging.info("Done!")

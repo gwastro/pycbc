@@ -151,33 +151,27 @@ class DictArray(object):
 
     def __add__(self, other):
         data = {}
-        for k in self.groups:
+        for k in self.data:
             try:
                 data[k] = np.concatenate([self.data[k], other.data[k]])
             except KeyError:
-                logging.info('%s does not exist in data' % k)
+                logging.info('%s does not exist in other data' % k)
         return self._return(data=data)
 
     def select(self, idx):
         """ Return a new DictArray containing only the indexed values
         """
         data = {}
-        for k in self.groups:
-            try:
-                data[k] = self.data[k][idx]
-            except KeyError:
-                logging.info('%s does not exist in data' % k)
+        for k in self.data:
+            data[k] = self.data[k][idx]
         return self._return(data=data)
 
     def remove(self, idx):
         """ Return a new DictArray that does not contain the indexed values
         """
         data = {}
-        for k in self.groups:
-            try:
-                data[k] = np.delete(self.data[k], idx)
-            except KeyError:
-                logging.info('%s does not exist in data' % k)
+        for k in self.data:
+            data[k] = np.delete(self.data[k], idx)
         return self._return(data=data)
 
     def save(self, outname):
@@ -185,7 +179,7 @@ class DictArray(object):
         for k in self.attrs:
             f.attrs[k] = self.attrs[k]
 
-        for k in self.groups:
+        for k in self.data:
             f.create_dataset(k, data=self.data[k],
                       compression='gzip',
                       compression_opts=9,
@@ -236,8 +230,7 @@ class StatmapData(DictArray):
 class MultiifoStatmapData(StatmapData):
     def __init__(self, data=None, seg=None, attrs=None,
                        files=None, ifos=None):
-        groups = ['decimation_factor', 'ifar', 'stat', 'template_id',
-                  'timeslide_id']
+        groups = ['decimation_factor', 'stat', 'template_id', 'timeslide_id']
         for ifo in ifos:
             groups += ['%s/time' % ifo]
             groups += ['%s/trigger_id' % ifo]
