@@ -179,12 +179,8 @@ def make_coinc_snrchi_plot(workflow, inj_file, inj_trig, stat_file, trig_file,
     secs = excludestr(secs, exclude)
     files = FileList([])
     for tag in secs:
-        if tag == '':
-            all_tags = tags
-        else:
-            all_tags = [tag] + tags
         node = PlotExecutable(workflow.cp, 'plot_coinc_snrchi', ifos=inj_trig.ifo,
-                    out_dir=out_dir, tags=all_tags).create_node()
+                    out_dir=out_dir, tags=[tag] + tags).create_node()
         node.add_input_opt('--found-injection-file', inj_file)
         node.add_input_opt('--single-injection-file', inj_trig)
         node.add_input_opt('--coinc-statistic-file', stat_file)
@@ -314,15 +310,11 @@ def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
     secs = excludestr(secs, exclude)
     files = FileList([])
     for tag in secs:
-        if tag == '':
-            all_tags = tags
-        else:
-            all_tags = [tag] + tags
         for trig_file in trig_files:
             node = PlotExecutable(workflow.cp, 'plot_snrchi',
                         ifos=trig_file.ifo,
                         out_dir=out_dir,
-                        tags=all_tags).create_node()
+                        tags=[tag] + tags).create_node()
 
             node.set_memory(15000)
             node.add_input_opt('--trigger-file', trig_file)
