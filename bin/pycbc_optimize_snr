@@ -58,6 +58,8 @@ def compute_network_snr_core(v, *argv):
     if not hasattr(htilde, 'params'):
         htilde.params = dict(mass1=mass1, mass2=mass2,
                              spin1z=v[2], spin2z=v[3])
+    if not hasattr(htilde, 'end_idx'):
+        htilde.end_idx = int(f_end / htilde.delta_f)
     htilde.approximant = approximant
     htilde.sigmasq = types.MethodType(pycbc.waveform.bank.sigma_cached,
                                       htilde)
