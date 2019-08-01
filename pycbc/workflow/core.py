@@ -510,7 +510,8 @@ class Executable(pegasus_workflow.Executable):
         """
         if tags is None:
             tags = []
-        if '' in tags: tags.remove('')
+        if '' in tags:
+            tags.remove('')
         tags = [tag.upper() for tag in tags]
         self.tags = tags
 
@@ -1072,7 +1073,8 @@ class File(pegasus_workflow.File):
             raise ValueError(err)
         if tags is None:
             tags = []
-        if '' in tags: tags.remove('')
+        if '' in tags:
+            tags.remove('')
         self.tags = tags
 
         if len(self.tags):
