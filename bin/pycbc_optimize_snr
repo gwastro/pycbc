@@ -298,4 +298,5 @@ gid = doc.upload(tmpdir + '/' + str(loudest_snr_times[ifos[0]])+'.xml',
                  testing=(not args.production),
                  extra_strings=comments)
 
-logging.info('Event uploaded as %s', gid)
+if gid is not None:
+    logging.info('Event uploaded as %s', gid)
