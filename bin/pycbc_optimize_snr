@@ -281,7 +281,8 @@ kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
           'low_frequency_cutoff': flow,
           'followup_data': followup_data,
           'channel_names': channel_names}
-comments = ['Automatic PyCBC followup to find largest SNR parameters']
+comments = ['Automatic PyCBC followup of trigger {} to find the parameters '
+            'that maximize the SNR'.format(fp['gid'][()])]
 
 doc = live.SingleCoincForGraceDB(coinc_ifos, coinc_results,
                                  upload_snr_series=True,
