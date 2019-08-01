@@ -790,6 +790,8 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
                                                  slide * step, to_shift)
 
         loglr = logr_s + network_logvol - ln_noise_rate
+        # cut off underflowing and very small values
+        loglr[loglr < -30.] = -30.
         return loglr
 
 
