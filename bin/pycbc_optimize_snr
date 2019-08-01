@@ -49,15 +49,18 @@ def compute_network_snr_core(v, *argv):
     mass1 = mass1_from_mtotal_eta(mtotal, v[1])
     mass2 = mass2_from_mtotal_eta(mtotal, v[1])
 
-    htilde = waveform.get_waveform_filter\
-        (zeros(flen, dtype=numpy.complex64),
-         approximant=approximant,
-         mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3],
-         f_lower=flow, f_final=f_end, delta_f=delta_f,
-         delta_t=1.0/sample_rate, distance=distance)
+    htilde = waveform.get_waveform_filter(
+            zeros(flen, dtype=numpy.complex64),
+            approximant=approximant,
+            mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3],
+            f_lower=flow, f_final=f_end, delta_f=delta_f,
+            delta_t=1.0/sample_rate, distance=distance)
+    if not hasattr(htilde, 'params'):
+        htilde.params = dict(mass1=mass1, mass2=mass2,
+                             spin1z=v[2], spin2z=v[3])
+    htilde.approximant = approximant
     htilde.sigmasq = types.MethodType(pycbc.waveform.bank.sigma_cached,
                                       htilde)
-    htilde.approximant = approximant
     htilde.min_f_lower = flow
     htilde.end_frequency = f_end
     htilde.f_lower = flow
