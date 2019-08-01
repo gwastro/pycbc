@@ -3,7 +3,7 @@
 """Followup utility to optimize the SNR of a PyCBC Live trigger."""
 
 import argparse, numpy, h5py
-from time import time
+import time
 import types
 import logging
 import tempfile
@@ -13,15 +13,14 @@ from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
 from pycbc.filter import matched_filter_core
 import pycbc.waveform.bank
 from pycbc import DYN_RANGE_FAC
-from pycbc.conversions import mchirp_from_mass1_mass2
-from pycbc.conversions import mtotal_from_mchirp_eta, mass1_from_mtotal_eta
-from pycbc.conversions import mass2_from_mtotal_eta
+from pycbc.conversions import (
+    mchirp_from_mass1_mass2, mtotal_from_mchirp_eta,
+    mass1_from_mtotal_eta, mass2_from_mtotal_eta
+)
 from scipy.optimize import differential_evolution
-from pycbc.waveform.waveform import props
 from pycbc.io import live
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
-import time
 
 
 Nfeval = 0
@@ -151,7 +150,7 @@ mass1 = fp['mass1'][()]
 mass2 = fp['mass2'][()]
 spin1z = fp['spin1z'][()]
 spin2z = fp['spin2z'][()]
-mchirp = pycbc.conversions.mchirp_from_mass1_mass2(mass1, mass2)
+mchirp = mchirp_from_mass1_mass2(mass1, mass2)
 minchirp = mchirp * (1 - mchirp / 50.0)
 maxchirp = mchirp * (1 + mchirp / 50.0)
 minchirp = 1 if minchirp < 1 else minchirp
