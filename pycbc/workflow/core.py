@@ -510,6 +510,10 @@ class Executable(pegasus_workflow.Executable):
         """
         if tags is None:
             tags = []
+        try:
+            tags.remove('')
+        except ValueError:
+            pass
         tags = [tag.upper() for tag in tags]
         self.tags = tags
 
@@ -1070,6 +1074,11 @@ class File(pegasus_workflow.File):
             err += "segments.segmentlist. Got %s." %(str(type(segs)),)
             raise ValueError(err)
         if tags is not None:
+            # remove any empty strings from tags
+            try:
+                tags.remove('')
+            except ValueError:
+                pass
             self.tags = [t.upper() for t in tags]
         else:
             self.tags = []
