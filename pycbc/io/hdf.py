@@ -128,7 +128,6 @@ class DictArray(object):
         if files and not groups:
             raise RuntimeError('If files are given then need groups.')
 
-
         self.data = data
         self.groups = groups
         if files:
