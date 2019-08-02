@@ -244,12 +244,14 @@ if not injection_style:
     f['segments/foreground_veto/end'] = vend
     # Only output non-exclusive ifar/fap if it is _not_ an injection case
     f['foreground/ifar'][:] = fg_ifar
-    f['foreground/fap'] = 1 - np.exp(-f.attrs['foreground_time'] / fg_ifar)
+    fg_time = conv.sec_to_year(f.attrs['foreground_time'])
+    f['foreground/fap'] = 1 - np.exp(-fg_time / fg_ifar)
 else:
     del f['foreground/ifar']
 
 f['foreground/ifar_exc'][:] = fg_ifar_exc
-f['foreground/fap_exc'] = 1 - np.exp(-f.attrs['foreground_time_exc'] / fg_ifar_exc)
+fg_time_exc = conv.sec_to_year(f.attrs['foreground_time_exc'])
+f['foreground/fap_exc'] = 1 - np.exp(-fg_time_exc / fg_ifar_exc)
 
 f.close()
 logging.info('Done!')
