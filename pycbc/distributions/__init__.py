@@ -143,6 +143,12 @@ def read_params_from_config(cp, prior_section='prior',
                            for key in cp.options(sargs_section)])
     except _ConfigParser.NoSectionError:
         static_args = {}
+    # sanity check that each parameter in [variable_args] 
+    # is not repeated in [static_args]
+    for arg in variable_args:
+        if arg in static_args:
+            raise KeyError("Parameter {} found both in static_args and in "
+                           "variable_args sections.".format(arg))
     # try converting values to float
     for key in static_args:
         val = static_args[key]
