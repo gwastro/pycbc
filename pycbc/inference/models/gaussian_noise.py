@@ -27,6 +27,7 @@ from pycbc.strain import gates_from_cli
 from pycbc.strain.calibration import Recalibrate
 from pycbc.inject import InjectionSet
 
+from .base import ModelStats
 from .base_data import BaseDataModel
 from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
@@ -42,7 +43,7 @@ class GaussianNoise(BaseDataModel):
 
         \log p(d|\Theta, h) &=  \log\alpha -\frac{1}{2} \sum_i
             \left< d_i - h_i(\Theta) | d_i - h_i(\Theta) \right> \\
-        \log p(d|n) &= -\log\alpha -\frac{1}{2} \sum_i \left<d_i | d_i\right>
+        \log p(d|n) &= \log\alpha -\frac{1}{2} \sum_i \left<d_i | d_i\right>
 
     where the sum is over the number of detectors, :math:`d_i` is the data in
     each detector, and :math:`h_i(\Theta)` is the model signal in each
@@ -50,16 +51,16 @@ class GaussianNoise(BaseDataModel):
 
     .. math::
 
-        \left<a_i | b_i\right> = 4\Re \delta f
+        \left<a_i | b_i\right> = 4\Re \Delta f
             \sum_{k=k_{\mathrm{min}}}^{k_{\mathrm{max}}}
-            \frac{\tilde{a}_i^{*}[k] \tilde{b}_i[k]}{S^(i)_n[k]},
+            \frac{\tilde{a}_i^{*}[k] \tilde{b}_i[k]}{S^{(i)}_n[k]},
 
-    where :math:`\delta f` is the frequency resolution (given by 1 / the
+    where :math:`\Delta f` is the frequency resolution (given by 1 / the
     observation time :math:`T`), :math:`k` is an index over the discretely
-    sampled frequencies :math:`f = k \delta_f`, and :math:`S^(i)_n[k]` is the
+    sampled frequencies :math:`f = k \Delta_f`, and :math:`S^{(i)}_n[k]` is the
     PSD in the given detector. The upper cutoff on the inner product
-    :math:`k_{\mathrm{max}}` is by default the Nyquist frequency
-    `k_{\mathrm{max}} = N/2+1`, where :math:`N = \lfloor T/\delta t \rfloor`
+    :math:`k_{\max}` is by default the Nyquist frequency
+    :math:`k_{\max} = N/2+1`, where :math:`N = \lfloor T/\Delta t \rfloor`
     is the number of samples in the time domain, but this can be set manually
     to a smaller value.
 
@@ -67,8 +68,12 @@ class GaussianNoise(BaseDataModel):
 
     .. math::
 
-        \alpha = \frac{1}{\left(\pi T\right)^{N/2}
-            \prod_{k=k_\mathrm{min}}^{k_{\mathrm{max}}} S_n[k]}.
+        \alpha = \prod_{i} \frac{1}{\left(\pi T\right)^{N/2}
+            \prod_{k=k_\mathrm{min}}^{k_{\mathrm{max}}} S^{(i)}_n[k]},
+
+    where the product is over the number of detectors. By default, the
+    normalization constant is not included in the log likelihood, but it can
+    be turned on using the ``normalize`` keyword argument.
 
     Note that the log likelihood ratio has fewer terms than the log likelihood,
     since the normalization and :math:`\left<d_i|d_i\right>` terms cancel:
@@ -110,6 +115,9 @@ class GaussianNoise(BaseDataModel):
         respective detectors to be used for computing inner products. If not
         provided, the minimum of the largest frequency stored in the data
         and a given waveform will be used.
+    normalize : bool, optional
+        If True, the normalization factor :math:`alpha` will be included in the
+        log likelihood. Default is to not include it.
     static_params : dict, optional
         A dictionary of parameter names -> values to keep fixed.
     \**kwargs :
@@ -164,10 +172,10 @@ class GaussianNoise(BaseDataModel):
     H1_optimal_snrsq: 355.52,
     L1_cplx_loglr: 104.67+0.00j,
     L1_optimal_snrsq: 209.35,
-    logjacobian: nan,
-    loglikelihood: 835680.31,
+    logjacobian: 0.00,
+    loglikelihood: 0.00,
     loglr: 282.43,
-    logprior: nan
+    logprior: 0.00
 
     Compute the SNR; for this system and PSD, this should be approximately 24:
 
@@ -183,6 +191,12 @@ class GaussianNoise(BaseDataModel):
     ...      model.det_optimal_snrsq('L1'))**0.5
     >>> print('{:.2f}'.format(x))
     23.77
+
+    Toggle on the normalization constant:
+
+    >>> model.normalize = True
+    >>> model.loglikelihood
+    835397.8757405131
 
     Using the same model, evaluate the log likelihood ratio at several points
     in time and check that the max is at tsig:
@@ -202,7 +216,7 @@ class GaussianNoise(BaseDataModel):
     >>> from pycbc import distributions
     >>> uniform_prior = distributions.Uniform(tc=(tsig-0.2,tsig+0.2))
     >>> prior = distributions.JointDistribution(variable_params, uniform_prior)
-    >>> model = pycbc.inference.models.GaussianNoise(variable_params,
+    >>> model = GaussianNoise(variable_params,
     ...     signal, low_frequency_cutoff, psds=psds, prior=prior,
     ...     static_params=static_params)
     >>> model.update(tc=tsig)
@@ -215,7 +229,7 @@ class GaussianNoise(BaseDataModel):
     L1_cplx_loglr: 104.67+0.00j,
     L1_optimal_snrsq: 209.35,
     logjacobian: 0.00,
-    loglikelihood: 835680.31,
+    loglikelihood: 0.00,
     loglr: 282.43,
     logprior: 0.92
 
@@ -223,8 +237,8 @@ class GaussianNoise(BaseDataModel):
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
-                 high_frequency_cutoff=None, static_params=None,
-                 **kwargs):
+                 high_frequency_cutoff=None, normalize=False,
+                 static_params=None, **kwargs):
         # set up the boiler-plate attributes
         super(GaussianNoise, self).__init__(variable_params, data,
                                             static_params=static_params,
@@ -285,10 +299,12 @@ class GaussianNoise(BaseDataModel):
         self._weight = {}
         self._lognorm = {}
         self._det_lognls = {}
+        self._whitened_data = {}
+        # set the normalization state
+        self._normalize = False
+        self.normalize = normalize
+        # store the psds and whiten the data
         self.psds = psds
-        # whiten the data
-        for det in self._data:
-            self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
 
     @property
     def waveform_generator(self):
@@ -375,6 +391,7 @@ class GaussianNoise(BaseDataModel):
         self._weight.clear()
         self._lognorm.clear()
         self._det_lognls.clear()
+        self._whitened_data.clear()
         for det, d in self._data.items():
             if psds is None:
                 # No psd means assume white PSD
@@ -391,6 +408,8 @@ class GaussianNoise(BaseDataModel):
             kmax = self._kmax[det]
             w[kmin:kmax] = numpy.sqrt(4.*p.delta_f/p[kmin:kmax])
             self._weight[det] = w
+            self._whitened_data[det] = d.copy()
+            self._whitened_data[det][kmin:kmax] *= w[kmin:kmax]
         # set the lognl and lognorm; we'll get this by just calling lognl
         _ = self.lognl
 
@@ -424,19 +443,41 @@ class GaussianNoise(BaseDataModel):
                 continue
 
     def det_lognorm(self, det):
-        """The log of the likelihood normalization in the given detector."""
-        try:
-            return self._lognorm[det]
-        except KeyError:
-            # hasn't been calculated yet
-            p = self._psds[det]
-            dt = self._data[det].delta_t
-            kmin = self._kmin[det]
-            kmax = self._kmax[det]
-            lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
-                             + numpy.log(p[kmin:kmax]).sum())
-            self._lognorm[det] = lognorm
-            return self._lognorm[det]
+        """The log of the likelihood normalization in the given detector.
+
+        If ``self.normalize`` is False, will just return 0.
+        """
+        if not self.normalize:
+            return 0.
+        else:
+            try:
+                return self._lognorm[det]
+            except KeyError:
+                # hasn't been calculated yet
+                p = self._psds[det]
+                dt = self._whitened_data[det].delta_t
+                kmin = self._kmin[det]
+                kmax = self._kmax[det]
+                lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
+                                 + numpy.log(p[kmin:kmax]).sum())
+                self._lognorm[det] = lognorm
+                return self._lognorm[det]
+
+    @property
+    def normalize(self):
+        """Determines if the loglikelihood includes the normalization term.
+        """
+        return self._normalize
+
+    @normalize.setter
+    def normalize(self, normalize):
+        """Clears the current stats if the normalization state is changed.
+        """
+        if normalize != self._normalize:
+            self._current_stats = ModelStats()
+            self._lognorm.clear()
+            self._det_lognls.clear()
+        self._normalize = normalize
 
     @property
     def lognorm(self):
@@ -497,7 +538,7 @@ class GaussianNoise(BaseDataModel):
                 # whiten the waveform
                 h[self._kmin[det]:kmax] *= self._weight[det][slc]
                 # the inner products
-                cplx_hd = self.data[det][slc].inner(h[slc])  # <h, d>
+                cplx_hd = self._whitened_data[det][slc].inner(h[slc])  # <h, d>
                 hh = h[slc].inner(h[slc]).real  # < h, h>
             cplx_loglr = cplx_hd - 0.5*hh
             # store
@@ -554,7 +595,7 @@ class GaussianNoise(BaseDataModel):
             # hasn't been calculated yet; calculate & store
             kmin = self._kmin[det]
             kmax = self._kmax[det]
-            d = self._data[det]
+            d = self._whitened_data[det]
             lognorm = self.det_lognorm(det)
             lognl = lognorm - 0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
             self._det_lognls[det] = lognl
@@ -688,6 +729,8 @@ class GaussianNoise(BaseDataModel):
           Raises an error if any detector is removed from the analysis because
           a valid time could not be found. Otherwise, a warning is printed
           to screen and the detector is removed from the analysis.
+        * ``normalize =``:
+          (Optional) Turn on the normalization factor.
 
         Parameters
         ----------
@@ -704,8 +747,11 @@ class GaussianNoise(BaseDataModel):
         fhigh = high_frequency_cutoff_from_config(cp)
         args['low_frequency_cutoff'] = flow
         args['high_frequency_cutoff'] = fhigh
+        # check if normalize is set
+        if cp.has_option('model', 'normalize'):
+            args['normalize'] = True
         # get any other keyword arguments provided in the model section
-        ignore_args = ['name']
+        ignore_args = ['name', 'normalize']
         for option in cp.options("model"):
             if any([option.endswith("-low-frequency-cutoff"),
                     option.endswith("-high-frequency-cutoff")]):
