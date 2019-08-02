@@ -4,7 +4,7 @@ with more than one ifo combination available. Cluster to keep foreground
 coincs with the highest stat value.
 """
 
-import h5py, numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io
+import h5py, numpy as np, argparse, logging, pycbc, pycbc.events, pycbc.io, lal
 import pycbc.version
 import pycbc.conversions as conv
 from pycbc.events import coinc
