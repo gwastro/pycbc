@@ -511,6 +511,7 @@ class Executable(pegasus_workflow.Executable):
         if tags is None:
             tags = []
         if '' in tags:
+            logging.warn('DO NOT GIVE ME EMPTY TAGS')
             tags.remove('')
         tags = [tag.upper() for tag in tags]
         self.tags = tags
@@ -1074,6 +1075,7 @@ class File(pegasus_workflow.File):
         if tags is None:
             tags = []
         if '' in tags:
+            logging.warn('DO NOT GIVE ME EMPTY TAGS')
             tags.remove('')
         self.tags = tags
 
