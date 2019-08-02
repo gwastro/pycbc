@@ -143,7 +143,7 @@ def read_params_from_config(cp, prior_section='prior',
                            for key in cp.options(sargs_section)])
     except _ConfigParser.NoSectionError:
         static_args = {}
-    # sanity check that each parameter in [variable_args] 
+    # sanity check that each parameter in [variable_args]
     # is not repeated in [static_args]
     for arg in variable_args:
         if arg in static_args:
