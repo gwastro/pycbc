@@ -382,7 +382,8 @@ def new_find_trigger_value(psd_var, idx, start, sample_rate):
     if _CACHED_PSD_VAR_INTERPOLANT is None:
         from scipy import interpolate
         _CACHED_PSD_VAR_INTERPOLANT = \
-            interpolate.interp1d(psd_var.sample_times, psd_var, fill_value=1)
+            interpolate.interp1d(psd_var.sample_times, psd_var, fill_value=1,
+                                 bounds_error=False)
     vals = _CACHED_PSD_VAR_INTERPOLANT(time)
 
     return vals
