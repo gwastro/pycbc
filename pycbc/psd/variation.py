@@ -353,7 +353,9 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
     return psd_var
 
 
-_CACHED_PSD_VAR_INTERPOLANT=None
+_CACHED_PSD_VAR_INTERPOLANT = None
+
+
 def new_find_trigger_value(psd_var, idx, start, sample_rate):
     """ Find the PSD variation value at a particular time with the filter
     method. If the time is outside the timeseries bound, 1. is given.
