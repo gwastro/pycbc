@@ -1198,9 +1198,10 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                  psd_inverse_length=3.5,
                  trim_padding=0.25,
                  autogating_threshold=None,
-                 autogating_cluster=0.25,
-                 autogating_window=0.5,
-                 autogating_pad=0.25,
+                 autogating_cluster=None,
+                 autogating_pad=None,
+                 autogating_width=None,
+                 autogating_taper=None,
                  state_channel=None,
                  data_quality_channel=None,
                  dyn_range_fac=pycbc.DYN_RANGE_FAC,
@@ -1244,14 +1245,17 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         trim_padding: {float, 0.25}, Optional
             Amount of padding in seconds to give for truncated the overwhitened
             data stream.
-        autogating_threshold: {float, None}, Optional
-            Sigma deviation required to cause gating of data
-        autogating_cluster: {float, 0.25}, Optional
-            Seconds to cluster possible gating locations
-        autogating_window: {float, 0.5}, Optional
-            Seconds to window out when gating a time
-        autogating_pad: {float, 0.25}, Optional
-            Seconds to pad either side of the gating window.
+        autogating_threshold: float, Optional
+            Sigma deviation required to cause autogating of data.
+            If None, no autogating is performed.
+        autogating_cluster: float, Optional
+            Seconds to cluster possible gating locations.
+        autogating_pad: float, Optional
+            Seconds of corrupted whitened strain to ignore when generating a gate.
+        autogating_width: float, Optional
+            Half-duration of the zeroed-out portion of autogates.
+        autogating_taper: float, Optional
+            Duration of taper on either side of the gating window in seconds.
         state_channel: {str, None}, Optional
             Channel to use for state information about the strain
         data_quality_channel: {str, None}, Optional
@@ -1332,7 +1336,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.autogating_threshold = autogating_threshold
         self.autogating_cluster = autogating_cluster
         self.autogating_pad = autogating_pad
-        self.autogating_window = autogating_window
+        self.autogating_width = autogating_width
+        self.autogating_taper = autogating_taper
 
         self.sample_rate = sample_rate
         self.dyn_range_fac = dyn_range_fac
@@ -1597,7 +1602,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         # taper beginning if needed
         if self.taper_immediate_strain:
             logging.info("Tapering start of %s strain block", self.detector)
-            strain = gate_data(strain, [(strain.start_time, 0., self.autogating_pad)])
+            strain = gate_data(
+                    strain, [(strain.start_time, 0., self.autogating_taper)])
             self.taper_immediate_strain = False
 
         # Stitch into continuous stream
@@ -1606,6 +1612,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain.start_time += blocksize
 
         # apply gating if needed
+        self.gate_params = []
         if self.autogating_threshold is not None:
             glitch_times = detect_loud_glitches(
                     strain[:-self.corruption],
@@ -1613,21 +1620,19 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                     threshold=self.autogating_threshold,
                     cluster_window=self.autogating_cluster,
                     low_freq_cutoff=self.highpass_frequency,
-                    corrupt_time=self.autogating_window+self.autogating_pad)
+                    corrupt_time=self.autogating_pad)
             if len(glitch_times) > 0:
                 logging.info('Autogating %s at %s', self.detector,
                              ', '.join(['%.3f' % gt for gt in glitch_times]))
-                gate_params = [[gt, self.autogating_window, self.autogating_pad] \
-                               for gt in glitch_times]
-                self.strain = gate_data(self.strain, gate_params)
+                self.gate_params = \
+                        [(gt, self.autogating_width, self.autogating_taper)
+                         for gt in glitch_times]
+                self.strain = gate_data(self.strain, self.gate_params)
 
         if self.psd is None and self.wait_duration <=0:
             self.recalculate_psd()
 
-        if self.wait_duration > 0:
-            return False
-        else:
-            return True
+        return self.wait_duration <= 0
 
     @classmethod
     def from_cli(cls, ifo, args, maxlen):
@@ -1669,8 +1674,9 @@ class StrainBuffer(pycbc.frame.DataBuffer):
                    psd_inverse_length=args.psd_inverse_length,
                    autogating_threshold=args.autogating_threshold,
                    autogating_cluster=args.autogating_cluster,
-                   autogating_window=args.autogating_window,
                    autogating_pad=args.autogating_pad,
+                   autogating_width=args.autogating_width,
+                   autogating_taper=args.autogating_taper,
                    psd_abort_difference=args.psd_abort_difference,
                    psd_recalculate_difference=args.psd_recalculate_difference,
                    force_update_cache=args.force_update_cache,

@@ -244,8 +244,9 @@ class LiveEventManager(object):
                     event.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
-             store_loudest_index=False, raw_results=None):
-        """ Save the results from this time block to an hdf output file """
+             store_loudest_index=False, raw_results=None, gates=None):
+        """Save the results from this time block to an hdf output file.
+        """
         if self.use_date_prefix:
             tm = lal.GPSToUTC(int(time_index))
             subdir = '{:04d}_{:02d}_{:02d}'.format(tm[0], tm[1], tm[2])
@@ -289,10 +290,16 @@ class LiveEventManager(object):
                         sloudest = numpy.argsort(s)[::-1][0:store_loudest_index]
                         f[ifo]['loudest'] = numpy.union1d(nloudest, sloudest)
 
-        if store_psd:
-            for ifo in store_psd:
-                if store_psd[ifo] is not None:
-                    store_psd[ifo].save(fname, group='%s/psd' % ifo)
+            for ifo in (gates or {}):
+                gate_dtype = [('center_time', float),
+                              ('zero_half_width', float),
+                              ('taper_width', float)]
+                f['{}/gates'.format(ifo)] = \
+                        numpy.array(gates[ifo], dtype=gate_dtype)
+
+        for ifo in (store_psd or {}):
+            if store_psd[ifo] is not None:
+                store_psd[ifo].save(fname, group='%s/psd' % ifo)
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -351,10 +358,28 @@ parser.add_argument('--trim-padding', type=float, default=0.25,
 parser.add_argument("--enable-bank-start-frequency", action='store_true',
                     help="Read the starting frequency of template waveforms"
                          " from the template bank")
-parser.add_argument('--autogating-threshold', type=float)
-parser.add_argument('--autogating-pad', type=float, default=.25)
-parser.add_argument('--autogating-window', type=float, default=0.5)
-parser.add_argument('--autogating-cluster', type=float, default=.25)
+
+parser.add_argument('--autogating-threshold', type=float, metavar='SIGMA',
+                    help='If given, find and gate glitches '
+                         'producing a deviation larger than '
+                         'SIGMA in the whitened strain time '
+                         'series.')
+parser.add_argument('--autogating-pad', type=float, default=0.5,
+                    metavar='SECONDS',
+                    help='Ignore the given length of whitened '
+                         'strain at the ends of a segment, to '
+                         'avoid filters ringing.')
+parser.add_argument('--autogating-cluster', type=float, default=1,
+                    metavar='SECONDS',
+                    help='Length of clustering window for '
+                         'detecting glitches for autogating.')
+parser.add_argument('--autogating-width', type=float, default=0.25,
+                    metavar='SECONDS', help='Half-width of the gating window.')
+parser.add_argument('--autogating-taper', type=float, metavar='SECONDS',
+                    default=0.25,
+                    help='Taper the strain before and after '
+                         'each gating window over a duration '
+                         'of SECONDS.')
 
 parser.add_argument('--sync', action='store_true')
 parser.add_argument('--increment-update-cache', action=MultiDetOptionAction, nargs='+')
@@ -646,6 +671,8 @@ with ctx:
                 evnt.check_singles(results, data_reader, psds,
                                    args.low_frequency_cutoff)
 
+            gates = {ifo: data_reader[ifo].gate_params for ifo in data_reader}
+
             # map the results file to an hdf file
             prefix = '{}-{}-{}-{}'.format(''.join(sorted(ifos)),
                                           args.file_prefix,
@@ -655,7 +682,7 @@ with ctx:
             evnt.dump(results, prefix, time_index=data_end(),
                       store_psd=(psds if args.store_psd else False),
                       store_loudest_index=args.store_loudest_index,
-                      raw_results=best_coinc)
+                      raw_results=best_coinc, gates=gates)
 
             # dump the background if needed
             if args.output_background and \
