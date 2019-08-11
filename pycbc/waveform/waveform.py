@@ -828,10 +828,9 @@ if 'PYCBC_WAVEFORM' in os.environ:
     mods = os.environ['PYCBC_WAVEFORM'].split(':')
     for mod in mods:
         mhandle = __import__(mod, fromlist=[''])
-        mhandle.add_me(cpu_fd=cpu_fd, 
+        mhandle.add_me(cpu_fd=cpu_fd,
                        cpu_td=cpu_td,
-                       filter_time_lengths=_filter_time_lengths,
-                      )
+                       filter_time_lengths=_filter_time_lengths)
 
 for apx in copy.copy(_filter_time_lengths):
     fd_apx = list(cpu_fd.keys())
