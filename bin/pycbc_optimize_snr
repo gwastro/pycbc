@@ -2,6 +2,7 @@
 
 """Followup utility to optimize the SNR of a PyCBC Live trigger."""
 
+import os, shutil
 import argparse, numpy, h5py
 import time
 import types
@@ -49,12 +50,22 @@ def compute_network_snr_core(v, *argv):
     mass1 = mass1_from_mtotal_eta(mtotal, v[1])
     mass2 = mass2_from_mtotal_eta(mtotal, v[1])
 
-    htilde = waveform.get_waveform_filter(
-            zeros(flen, dtype=numpy.complex64),
-            approximant=approximant,
-            mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3],
-            f_lower=flow, f_final=f_end, delta_f=delta_f,
-            delta_t=1.0/sample_rate, distance=distance)
+    # enforce broadly accepted search space boundaries
+    if mass1 < 1 or mass2 < 1 or mtotal > 500:
+        return -np.inf, {}
+
+    try:
+        htilde = waveform.get_waveform_filter(
+                zeros(flen, dtype=numpy.complex64),
+                approximant=approximant,
+                mass1=mass1, mass2=mass2, spin1z=v[2], spin2z=v[3],
+                f_lower=flow, f_final=f_end, delta_f=delta_f,
+                delta_t=1.0/sample_rate, distance=distance)
+    except RuntimeError:
+        # assume a failure in the waveform approximant
+        # due to the choice of parameters
+        return -np.inf, {}
+
     if not hasattr(htilde, 'params'):
         htilde.params = dict(mass1=mass1, mass2=mass2,
                              spin1z=v[2], spin2z=v[3])
@@ -241,8 +252,7 @@ for idx, ifo in enumerate(ifos):
     coinc_results['foreground/'+ifo+'/template_duration'] = \
         fp['template_duration'][()]
     followup_data[ifo] = {}
-    fseries = interpolate(data[ifo].psd, 0.25)
-    followup_data[ifo]['psd'] = fseries
+    followup_data[ifo]['psd'] = interpolate(data[ifo].psd, 0.25)
     followup_data[ifo]['snr_series'] = snr_series_dict[ifo]
 
     # Find loudest SNR within coincidence window of the largest peak
@@ -273,8 +283,7 @@ for idx, ifo in enumerate(ifos):
         = snr_series_dict['sigmasq_' + ifo]
     coinc_results['foreground/'+ifo+'/coa_phase'] \
         = numpy.angle(loudest_snr)
-    coinc_results['foreground/'+ifo+'/chisq'] = 1.
-    coinc_results['foreground/'+ifo+'/chisq_dof'] = 1
+
 coinc_results['foreground/stat'] = numpy.sqrt(netsnr)
 coinc_results['foreground/ifar'] = fp['ifar'][()]
 
@@ -286,17 +295,22 @@ kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
           'low_frequency_cutoff': flow,
           'followup_data': followup_data,
           'channel_names': channel_names}
-comments = ['Automatic PyCBC followup of trigger {} to find the parameters '
-            'that maximize the SNR'.format(fp['gid'][()])]
+comments = ['Automatic PyCBC followup of trigger {0} to find the parameters '
+            'that maximize the SNR. The FAR of this trigger is copied from '
+            '{0} and does not reflect this triggers\' '
+            'parameters.'.format(fp['gid'][()])]
 
 doc = live.SingleCoincForGraceDB(coinc_ifos, coinc_results,
                                  upload_snr_series=True,
                                  followup_ifos=fup_ifos, **kwargs)
 tmpdir = tempfile.mkdtemp()
-gid = doc.upload(tmpdir + '/' + str(loudest_snr_times[ifos[0]])+'.xml',
+xml_path = os.path.join(
+        tmpdir, '{:.3f}.xml.gz'.format(loudest_snr_time_allifos))
+gid = doc.upload(xml_path,
                  gracedb_server=args.gracedb_server,
                  testing=(not args.production),
                  extra_strings=comments)
 
 if gid is not None:
     logging.info('Event uploaded as %s', gid)
+    shutil.rmtree(tmpdir)
