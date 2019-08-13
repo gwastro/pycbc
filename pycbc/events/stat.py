@@ -557,6 +557,22 @@ class PhaseTDExpFitSGThresholdStatistic(PhaseTDExpFitStatistic):
     def __init__(self, files):
         PhaseTDExpFitStatistic.__init__(self, files)
         self.get_newsnr = ranking.get_newsnr_sgveto_threshold
+        
+class PhaseTDExpFitSGThresholdChirpStatistic(PhaseTDExpFitThresholdStatistic):
+
+    """Statistic combining exponential noise model with signal histogram PDF
+       and adding the sine-Gaussian veto to the single detector ranking
+    """
+    def single(self, trigs):
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        self.mchirp = mchirp_from_mass1_mass2(trigs.params['mass1'], trigs.params['mass2'])
+        return PhaseTDExpFitThresholdStatistic.single(self, trigs)
+    
+    def logsignalrate(self, s0, s1, slide, step):
+        logr_s = PhaseTDExpFitThresholdStatistic.logsignalrate(self, s0, s1, slide, step)
+        mchirp = self.mchirp if self.mchirp < 40 else 40.0
+        logr_s += numpy.log((mchirp / 20.0) ** (11./3.0))
+        return logr_s
 
 class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
 
@@ -718,6 +734,7 @@ statistic_dict = {
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
     'phasetd_exp_fit_stat_sgveto_threshold': PhaseTDExpFitSGThresholdStatistic,
+    'phasetd_exp_fit_stat_sgveto_threshold_chirp': PhaseTDExpFitSGThresholdChirpStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
