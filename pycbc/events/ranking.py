@@ -50,7 +50,22 @@ def newsnr_sgveto(snr, bchisq, sgchisq):
         return nsnr
     else:
         return nsnr[0]
+        
+def newsnr_sgveto_threshold(snr, bchisq, sgchisq):
+    """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
+    nsnr = numpy.array(newsnr(snr, bchisq), ndmin=1)
+    sgchisq = numpy.array(sgchisq, ndmin=1)
+    t = numpy.array(sgchisq > 4, ndmin=1)
+    if len(t):
+        nsnr[t] = nsnr[t] / (sgchisq[t] / 4.0) ** 0.5
+    
+    nsnr[bchisq > 2.0] = 1
 
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
+        return nsnr
+    else:
+        return nsnr[0]
 
 def newsnr_sgveto_psdvar(snr, bchisq, sgchisq, psd_var_val):
     """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD
@@ -109,6 +124,27 @@ def get_newsnr_sgveto(trigs):
                             trigs['sg_chisq'][:])
     return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
 
+
+def get_newsnr_sgveto_threshold(trigs):
+    """
+    Calculate newsnr re-weigthed by the sine-gaussian veto
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+        Dictionary-like object holding single detector trigger information.
+        'chisq_dof', 'snr', 'sg_chisq' and 'chisq' are required keys
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg = newsnr_sgveto_threshold(trigs['snr'][:],
+                            trigs['chisq'][:] / dof,
+                            trigs['sg_chisq'][:])
+    return numpy.array(nsnr_sg, ndmin=1, dtype=numpy.float32)
 
 def get_newsnr_sgveto_psdvar(trigs):
     """

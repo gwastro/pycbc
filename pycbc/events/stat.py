@@ -130,6 +130,24 @@ class NewSNRSGStatistic(NewSNRStatistic):
         """
         return ranking.get_newsnr_sgveto(trigs)
 
+class NewSNRSGThresholdStatistic(NewSNRStatistic):
+
+    """ Calculate the NewSNRSG coincident detection statistic """
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr_sgveto
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group (or similar dict-like object)
+            Dictionary-like object holding single detector trigger information.
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return ranking.get_newsnr_sgveto_threshold(trigs)
 
 class NewSNRSGPSDStatistic(NewSNRSGStatistic):
 
@@ -530,6 +548,15 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
         PhaseTDExpFitStatistic.__init__(self, files)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
+class PhaseTDExpFitSGThresholdStatistic(PhaseTDExpFitStatistic):
+
+    """Statistic combining exponential noise model with signal histogram PDF
+       and adding the sine-Gaussian veto to the single detector ranking
+    """
+
+    def __init__(self, files):
+        PhaseTDExpFitStatistic.__init__(self, files)
+        self.get_newsnr = ranking.get_newsnr_sgveto_threshold
 
 class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
 
@@ -690,6 +717,7 @@ statistic_dict = {
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
+    'phasetd_exp_fit_stat_sgveto_threshold': PhaseTDExpFitSGThresholdStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
@@ -706,6 +734,7 @@ sngl_statistic_dict = {
     'exp_fit_sg_csnr': ExpFitSGCombinedSNR,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
+    'newsnr_sgveto_threshold': NewSNRSGThresholdStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
