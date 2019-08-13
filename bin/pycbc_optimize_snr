@@ -52,7 +52,7 @@ def compute_network_snr_core(v, *argv):
 
     # enforce broadly accepted search space boundaries
     if mass1 < 1 or mass2 < 1 or mtotal > 500:
-        return -np.inf, {}
+        return -numpy.inf, {}
 
     try:
         htilde = waveform.get_waveform_filter(
@@ -64,7 +64,7 @@ def compute_network_snr_core(v, *argv):
     except RuntimeError:
         # assume a failure in the waveform approximant
         # due to the choice of parameters
-        return -np.inf, {}
+        return -numpy.inf, {}
 
     if not hasattr(htilde, 'params'):
         htilde.params = dict(mass1=mass1, mass2=mass2,
