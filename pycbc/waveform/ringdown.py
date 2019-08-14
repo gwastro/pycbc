@@ -495,6 +495,13 @@ def multimode_base(input_params, domain, freq_tau_approximant=False):
         norm = Kerr_factor(input_params['final_mass'],
             input_params['distance']) if 'distance' in input_params.keys() \
             else 1.
+        for mode in freqs:
+            if 'delta_f{}'.format(mode) in input_params:
+                freqs[mode] += input_params['delta_f{}'.format(mode)] * freqs[mode]
+        for mode in taus:
+            if 'delta_tau{}'.format(mode) in input_params:
+                taus[mode] += input_params['delta_tau{}'.format(mode)] * taus[mode]
+
     if domain == 'td':
         outplus, outcross = td_output_vector(freqs, taus,
                             input_params['taper'], input_params['delta_t'],
@@ -582,6 +589,14 @@ def get_td_from_final_mass_spin(template=None, **kwargs):
         include the information from the azimuthal angle, philmn=(phi + m*Phi).
     inclination : float
         Inclination of the system in radians (for the spherical harmonics).
+    delta_flmn: {None, float}, optional
+        GR deviation for the frequency of the lmn mode. If given, the lmn
+        frequency will be converted to new_flmn = flmn + delta_flmn * flmn,
+        with flmn the GR predicted value for the corresponding mass and spin.
+    delta_taulmn: {None, float}, optional
+        GR deviation for the damping time of the lmn mode. If given, the lmn
+        tau will be converted to new_taulmn = taulmn + delta_taulmn * taulmn,
+        with taulmn the GR predicted value for the corresponding mass and spin.
     delta_t : {None, float}, optional
         The time step used to generate the ringdown.
         If None, it will be set to the inverse of the frequency at which the
@@ -639,8 +654,17 @@ def get_fd_from_final_mass_spin(template=None, **kwargs):
         include the information from the azimuthal angle, philmn=(phi + m*Phi).
     inclination : float
         Inclination of the system in radians (for the spherical harmonics).
+    delta_flmn: {None, float}, optional
+        GR deviation for the frequency of the lmn mode. If given, the lmn
+        frequency will be converted to new_flmn = flmn + delta_flmn * flmn,
+        with flmn the GR predicted value for the corresponding mass and spin.
+    delta_taulmn: {None, float}, optional
+        GR deviation for the damping time of the lmn mode. If given, the lmn
+        tau will be converted to new_taulmn = taulmn + delta_taulmn * taulmn,
+        with taulmn the GR predicted value for the corresponding mass and spin.
     delta_f : {None, float}, optional
-        The frequency step used to generate the ringdown.
+        The frequency step used to generate the ringdown (not to be confused
+        with the delta_flmn parameter that simulates GR violations).
         If None, it will be set to the inverse of the time at which the
         amplitude is 1/1000 of the peak amplitude (the minimum of all modes).
     f_lower : {None, float}, optional
