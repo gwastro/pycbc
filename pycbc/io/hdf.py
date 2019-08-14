@@ -122,7 +122,7 @@ class DictArray(object):
             List of keys into each file. Required by the files option.
         """
         # Check that input fits with how the DictArray is set up
-        if not data and files:
+        if data and files:
             raise RuntimeError('DictArray can only have data or files as '
                                'input, not both.')
         if files and not groups:
