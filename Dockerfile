@@ -8,7 +8,7 @@ ADD docker/etc/cvmfs/60-osg.conf /etc/cvmfs/60-osg.conf
 ADD docker/etc/cvmfs/config-osg.opensciencegrid.org.conf /etc/cvmfs/config-osg.opensciencegrid.org.conf
 
 # Set up extra repositories
-RUN rpm -ivh http://software.ligo.org/lscsoft/scientific/7/x86_64/production/lscsoft-production-config-1.3-1.el7.noarch.rpm && yum install -y https://centos7.iuscommunity.org/ius-release.rpm && yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum install -y cvmfs cvmfs-config-default && yum clean all && yum makecache && \
+RUN rpm -ivh http://software.ligo.org/lscsoft/scientific/7/x86_64/production/l/lscsoft-production-config-1.3-1.el7.noarch.rpm && yum install -y https://centos7.iuscommunity.org/ius-release.rpm && yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum install -y cvmfs cvmfs-config-default && yum clean all && yum makecache && \
     yum -y groupinstall "Compatibility Libraries" \
                         "Development Tools" \
                         "Scientific Support" && \
