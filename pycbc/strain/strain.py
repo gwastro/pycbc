@@ -1338,6 +1338,7 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.autogating_pad = autogating_pad
         self.autogating_width = autogating_width
         self.autogating_taper = autogating_taper
+        self.gate_params = []
 
         self.sample_rate = sample_rate
         self.dyn_range_fac = dyn_range_fac
@@ -1549,6 +1550,8 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         ts = super(StrainBuffer, self).attempt_advance(blocksize, timeout=timeout)
         self.blocksize = blocksize
 
+        self.gate_params = []
+
         # We have given up so there is no time series
         if ts is None:
             logging.info("%s frame is late, giving up", self.detector)
@@ -1612,7 +1615,6 @@ class StrainBuffer(pycbc.frame.DataBuffer):
         self.strain.start_time += blocksize
 
         # apply gating if needed
-        self.gate_params = []
         if self.autogating_threshold is not None:
             glitch_times = detect_loud_glitches(
                     strain[:-self.corruption],
