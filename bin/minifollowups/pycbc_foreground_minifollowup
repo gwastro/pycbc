@@ -53,7 +53,7 @@ parser.add_argument('--inspiral-data-analyzed-name',
 parser.add_argument('--analysis-category', type=str, required=False,
                     default='background_exc',
                     choices = ['foreground', 'background', 'background_exc'],
-                    help='Designates whether to look at foreground triggers ',
+                    help='Designates whether to look at foreground triggers '
                          'background triggers (including "little dogs") '
                          'or background triggers (with "little dogs" removed)')
 parser.add_argument('--output-file')
