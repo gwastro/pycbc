@@ -50,12 +50,12 @@ parser.add_argument('--inspiral-data-read-name',
 parser.add_argument('--inspiral-data-analyzed-name',
                     help="Name of inspiral segmentlist containing data "
                          "analyzed by each analysis job.")
-parser.add_argument('--background-triggers', action='store_true',
-                    default=False,
-                    help="Perform followup on background triggers (with the "
-                         "foreground coincs excluded). If not given we will "
-                         "followup foreground triggers.")
-parser.add_argument('--output-map')
+parser.add_argument('--analysis-category', type=str, required=False,
+                    default='background_exc',
+                    choices = ['foreground', 'background', 'background_exc'],
+                    help='Designates whether to look at foreground triggers ',
+                         'background triggers (including "little dogs") '
+                         'or background triggers (with "little dogs" removed)')
 parser.add_argument('--output-file')
 parser.add_argument('--transformation-catalog')
 parser.add_argument('--tags', nargs='+', default=[])
@@ -93,10 +93,7 @@ for ifo in args.single_detector_triggers:
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
-if args.background_triggers:
-    file_val = 'background_exc'
-else:
-    file_val = 'foreground'
+file_val = args.analysis_category
 stat = f['{}/stat'.format(file_val)][:]
 
 sorting = stat.argsort()[::-1]
