@@ -33,9 +33,9 @@ parser.add_argument('--output-file')
 parser.add_argument('--statmap-file', required=True,
     help="HDF format clustered coincident statmap file containing the result "
          "triggers. Required")
-parser.add_argument('--statmap-file-subspace-name', default='background',
+parser.add_argument('--statmap-file-subspace-name', default='background_exc',
     help="If given look in this 'sub-directory' of the HDF file for triggers, "
-         "takes a default value of 'background'.")
+         "takes a default value of 'background_exc'.")
 trig_input = parser.add_mutually_exclusive_group(required=True)
 trig_input.add_argument('--n-loudest', type=int,
     help="Examine the n'th loudest trigger, use with statmap file")
