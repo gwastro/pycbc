@@ -98,7 +98,8 @@ if args.output_coinc_types:
     fg_coinc_type = np.array([])
     for f_in in files:
         key = get_ifo_string(f_in).replace(' ','')
-        combo_repeat = np.array(np.repeat(key.encode('utf8'), f_in['foreground/fap'].size))
+        combo_repeat = np.array(np.repeat(key.encode('utf8'),
+                                f_in['foreground/fap'].size))
         fg_coinc_type = np.concatenate([fg_coinc_type, combo_repeat])
     f['foreground/ifo_combination'] = fg_coinc_type
 
@@ -179,7 +180,7 @@ for key in all_ifo_combos:
     is_in_combo_time[key][idx_within_segment] = np.ones_like(idx_within_segment)
 del idx_within_segment
 
-logging.info('Calculating false alarm rate over all coinc types for foreground events')
+logging.info('Calculating FAR over all coinc types for foreground events')
 
 far = {}
 far_exc = {}

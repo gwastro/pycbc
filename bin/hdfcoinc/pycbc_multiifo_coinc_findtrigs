@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import h5py, argparse, logging, numpy, numpy.random
+from ligo.segments import infinity
 from pycbc.events import veto, coinc, stat
 import pycbc.version
 from numpy.random import seed, shuffle
@@ -175,27 +176,39 @@ num_templates = len(h5py.File(args.template_bank, "r")['template_hash'])
 tmin, tmax = parse_template_range(num_templates, args.template_fraction_range)
 logging.info('Analyzing template %s - %s' % (tmin, tmax-1))
 
-# Create dictionary for trigger files indexed on ifo name
-trigs = {}
+class MultiifoTrigs(object):
+    """store trigger info in parallel with ifo name and shift vector"""
+    def __init__(self):
+        self.ifos = []
+        self.to_shift = []
+        self.singles = []
+
+trigs = MultiifoTrigs()
 for i in range(len(args.trigger_files)):
     logging.info('Opening trigger file %s: %s' % (i,args.trigger_files[i]))
     reader = ReadByTemplate(args.trigger_files[i],
-                                               args.template_bank,
-                                               args.segment_name,
-                                               args.veto_files)
-    trigs[reader.ifo] = reader
+                            args.template_bank,
+                            args.segment_name,
+                            args.veto_files)
+    ifo = reader.ifo
+    trigs.ifos.append(ifo)
+    # time shift is subtracted from pivot ifo time
+    trigs.to_shift.append(-1 if ifo == args.pivot_ifo else 0)
+    logging.info('Applying time shift multiple %i to ifo %s' %
+                 (trigs.to_shift[-1], trigs.ifos[-1]))
+    trigs.singles.append(reader)
 
 # Coinc_segs contains only segments where all ifos are analyzed
-coinc_segs = trigs[args.pivot_ifo].segs
-for ifo in trigs:
-    coinc_segs = (coinc_segs & trigs[ifo].segs).coalesce()
-
-for ifo in trigs:
-    trigs[ifo].segs = coinc_segs
-    trigs[ifo].valid = veto.segments_to_start_end(trigs[ifo].segs)
+coinc_segs = veto.start_end_to_segments([-infinity()], [infinity()])
+for i, sngl in zip(trigs.ifos, trigs.singles):
+    coinc_segs = (coinc_segs & sngl.segs)
+for sngl in trigs.singles:
+    sngl.segs = coinc_segs
+    sngl.valid = veto.segments_to_start_end(sngl.segs)
 
 # Stat class instance to calculate the coinc ranking statistic
-rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files)
+rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
+                                                         ifos=trigs.ifos)
 
 # Sanity check, time slide interval should be larger than twice the
 # Earth crossing time, which is approximately 0.085 seconds.
@@ -223,21 +236,25 @@ data = {'stat': [], 'decimation_factor': [], 'timeslide_id': [], 'template_id': 
 
 for tnum in template_ids:
     tids = {}
-    for ifo in trigs:
-        tids[ifo] = trigs[ifo].set_template(tnum)
+    for i, sngl in zip(trigs.ifos, trigs.singles):
+        # restrict trigger information to current template
+        tids[i] = sngl.set_template(tnum)
 
-    for ifo in tids:
-        if not len(tids[ifo]):  # no triggers in this template
-            continue
+    mintrigs = min([len(ti) for ti in tids.values()])
+    if mintrigs == 0:
+        logging.info('No triggers in at least one ifo for template %i, '
+                     'skipping' % tnum)
+        continue
 
-    times_full = {ifo:trigs[ifo]['end_time'] for ifo in trigs}
-    logging.info('Trigs for template %s, '% (tnum))
-    for ifo in times_full:
-        logging.info('%s:%s' % (ifo, len(times_full[ifo])))
-
-    logging.info('Calculating Single Detector Statistic')
-    sds_full = {ifo: rank_method.single(trigs[ifo]) for ifo in trigs}
-
+    times_full = {}
+    sds_full = {}
+    logging.info('Obtaining trigs for template %i ..' % (tnum))
+    for i, sngl in zip(trigs.ifos, trigs.singles):
+        logging.info('%s:%s' % (i, len(tids[i])))
+        times_full[i] = sngl['end_time']
+        # get single-detector statistic
+        sds_full[i] = rank_method.single(sngl)
+         
     # Loop over the single triggers and calculate the coincs they can form
     start0 = 0
     while start0 < len(sds_full[args.pivot_ifo]):
@@ -264,16 +281,15 @@ for tnum in template_ids:
                                                       args.coinc_threshold,
                                                       args.pivot_ifo,
                                                       args.fixed_ifo)
-            logging.info('Coincident Trigs: %s' % (len(ids[args.pivot_ifo])))
-            logging.info('Calculating Multi-Detector Combined Statistic')
-            sdswithids = {}
-            for ifo in sds:
-                sdswithids[ifo] = sds[ifo][ids[ifo]]
-            cstat = rank_method.coinc_multiifo(sdswithids,
-                                               slide,
-                                               args.timeslide_interval,
-                                               time_addition=\
-                                                   args.coinc_threshold)
+            logging.info('Coincident trigs: %s' % (len(ids[args.pivot_ifo])))
+
+            logging.info('Calculating multi-detector combined statistic')
+            # list in ifo order of remaining trigger data
+            single_info = [(i, sds[i][ids[i]]) for i in trigs.ifos]
+            cstat = rank_method.coinc_multiifo(
+                single_info, slide, args.timeslide_interval,
+                to_shift=trigs.to_shift,
+                time_addition=args.coinc_threshold)
 
             # index values of the zerolag triggers
             fi = numpy.where(slide == 0)[0]
@@ -361,24 +377,21 @@ if len(data['stat']) > 0:
                          shuffle=True)
 
 # Store coinc segments keyed by detector combination
-key = ''.join(sorted(trigs))
-f['segments/%s/start' % key], f['segments/%s/end' % key] = trigs[args.pivot_ifo].valid
+key = ''.join(sorted(trigs.ifos))
+f['segments/%s/start' % key], f['segments/%s/end' % key] = trigs.singles[0].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
 f.attrs['num_of_ifos'] = len(args.trigger_files)
 f.attrs['pivot'] = args.pivot_ifo
 f.attrs['fixed'] = args.fixed_ifo
-for ifo in trigs:
-    f.attrs['%s_foreground_time' % ifo] = abs(trigs[ifo].segs)
+for i, sngl in zip(trigs.ifos, trigs.singles):
+    f.attrs['%s_foreground_time' % i] = abs(sngl.segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
-f.attrs['ifos'] = ' '.join(sorted(trigs))
+f.attrs['ifos'] = ' '.join(sorted(trigs.ifos))
 
 # What does this code actually calculate?
 if args.timeslide_interval:
-    maxtrigs = abs(trigs[args.pivot_ifo].segs)
-    for ifo in trigs:
-        if abs(trigs[ifo].segs) > maxtrigs:
-            maxtrigs = abs(trigs[ifo].segs)
+    maxtrigs = max([abs(sngl.segs) for sngl in trigs.singles])
     nslides = int(maxtrigs / args.timeslide_interval)
 else:
     nslides = 0
