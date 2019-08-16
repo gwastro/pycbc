@@ -292,18 +292,23 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                      and (gp[0] - gp[1] - gp[2] <= strain.end_time)]
 
         if opt.autogating_threshold is not None:
-            glitch_times = detect_loud_glitches(
-                    strain, threshold=opt.autogating_threshold,
-                    cluster_window=opt.autogating_cluster,
-                    low_freq_cutoff=opt.strain_high_pass,
-                    corrupt_time=opt.pad_data + opt.autogating_pad)
-            gate_params = [[gt, opt.autogating_width, opt.autogating_taper] \
-                           for gt in glitch_times]
-            if len(glitch_times) > 0:
-                logging.info('Autogating at %s',
-                             ', '.join(['%.3f' % gt for gt in glitch_times]))
-            strain = gate_data(strain, gate_params)
-            gating_info['auto'] = gate_params
+            gating_info['auto'] = []
+            for _ in range(opt.autogating_max_iterations):
+                glitch_times = detect_loud_glitches(
+                        strain, threshold=opt.autogating_threshold,
+                        cluster_window=opt.autogating_cluster,
+                        low_freq_cutoff=opt.strain_high_pass,
+                        corrupt_time=opt.pad_data + opt.autogating_pad)
+                gate_params = [[gt, opt.autogating_width, opt.autogating_taper]
+                               for gt in glitch_times]     
+                gating_info['auto'] += gate_params          
+                strain = gate_data(strain, gate_params)
+                if len(glitch_times) > 0:
+                    logging.info('Autogating at %s',
+                                 ', '.join(['%.3f' % gt 
+                                            for gt in glitch_times]))
+                else:
+                    break
 
         if opt.strain_high_pass:
             logging.info("Highpass Filtering")
@@ -545,6 +550,10 @@ def insert_strain_option_group(parser, gps_times=True):
                                          'producing a deviation larger than '
                                          'SIGMA in the whitened strain time '
                                          'series.')
+    data_reading_group.add_argument('--autogating-max-iterations', type=int,
+                                    metavar='SIGMA', default=1,
+                                    help='If given, iteratively apply '
+                                         'autogating')
     data_reading_group.add_argument('--autogating-cluster', type=float,
                                     metavar='SECONDS', default=5.,
                                     help='Length of clustering window for '
@@ -732,6 +741,10 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                                          'producing a deviation larger than '
                                          'SIGMA in the whitened strain time '
                                          'series.')
+    data_reading_group.add_argument('--autogating-max-iterations', type=int,
+                                    metavar='SIGMA', default=1,
+                                    help='If given, iteratively apply '
+                                         'autogating')
     data_reading_group_multi.add_argument('--autogating-cluster', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SECONDS', default=5.,
