@@ -300,12 +300,12 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                         low_freq_cutoff=opt.strain_high_pass,
                         corrupt_time=opt.pad_data + opt.autogating_pad)
                 gate_params = [[gt, opt.autogating_width, opt.autogating_taper]
-                               for gt in glitch_times]     
-                gating_info['auto'] += gate_params          
+                               for gt in glitch_times]
+                gating_info['auto'] += gate_params
                 strain = gate_data(strain, gate_params)
                 if len(glitch_times) > 0:
                     logging.info('Autogating at %s',
-                                 ', '.join(['%.3f' % gt 
+                                 ', '.join(['%.3f' % gt
                                             for gt in glitch_times]))
                 else:
                     break
@@ -741,7 +741,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                                          'producing a deviation larger than '
                                          'SIGMA in the whitened strain time '
                                          'series.')
-    data_reading_group.add_argument('--autogating-max-iterations', type=int,
+    data_reading_group_multi.add_argument('--autogating-max-iterations', type=int,
                                     metavar='SIGMA', default=1,
                                     help='If given, iteratively apply '
                                          'autogating')
