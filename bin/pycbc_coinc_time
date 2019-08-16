@@ -175,5 +175,5 @@ for science_name in args.science_names:
     ifo_segs += [segments]
     
 coinc_time = abs(ifo_segs[0] & ifo_segs[1])
-print "Available Coincident Time from %s-%s" % (args.gps_start_time, args.gps_end_time)
-print "%s seconds, %5.5f days" % (coinc_time, coinc_time / 86400.0)
+print("Available Coincident Time from %s-%s" % (args.gps_start_time, args.gps_end_time))
+print("%s seconds, %5.5f days" % (coinc_time, coinc_time / 86400.0))

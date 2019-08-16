@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # Copyright (C) 2015 Alexander Harvey Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-""" Followup foreground events
-"""
+""" Followup foreground events """
+
 import os, argparse, numpy, logging, h5py, copy
 import pycbc.workflow as wf
 from pycbc.types import MultiDetOptionAction
@@ -27,6 +27,7 @@ import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version, pycbc.pnutils
 from pycbc.io.hdf import SingleDetTriggers
 
+
 def to_file(path, ifo=None):
     fil = wdax.File(os.path.basename(path))
     fil.ifo = ifo
@@ -35,7 +36,7 @@ def to_file(path, ifo=None):
     return fil
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
-parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg) 
+parser.add_argument('--version', action='version', version=pycbc.version.git_verbose_msg)
 parser.add_argument('--workflow-name', default='my_unamed_run')
 parser.add_argument("-d", "--output-dir", default=None,
                     help="Path to output directory.")
@@ -67,13 +68,13 @@ parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s', 
+logging.basicConfig(format='%(asctime)s:%(levelname)s : %(message)s',
                     level=logging.INFO)
 
 workflow = wf.Workflow(args, args.workflow_name)
 
 wf.makedir(args.output_dir)
-             
+
 # create a FileList that will contain all output files
 layouts = []
 
@@ -98,7 +99,11 @@ for ifo in args.single_detector_triggers:
 f = h5py.File(args.injection_file, 'r')
 missed = f['missed/after_vetoes'][:]
 if args.ifar_threshold is not None:
-    ifars = f['found_after_vetoes']['ifar'][:]
+    try:  # injections may not have (inclusive) IFAR present
+        ifars = f['found_after_vetoes']['ifar'][:]
+    except KeyError:
+        ifars = f['found_after_vetoes']['ifar_exc'][:]
+        logging.warn('Inclusive IFAR not found, using exclusive')
     lgc_arr = ifars < args.ifar_threshold
     missed = numpy.append(missed,
                           f['found_after_vetoes']['injection_index'][lgc_arr])
@@ -117,7 +122,7 @@ except:
                'L1': f['injections/eff_dist_l'][:][missed],
                'V1': f['injections/eff_dist_v'][:][missed],
                }
-    dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo], 
+    dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo],
                              eff_dist[single_triggers[1].ifo])
 
     mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(\
@@ -135,25 +140,31 @@ if len(missed) < num_events:
 found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
-    
+
     injection_index = missed[sorting][num_event]
     time = f['injections/end_time'][injection_index]
-    
+
     ifo_times = ''
     inj_params = {}
     for val in ['mass1', 'mass2', 'spin1z', 'spin2z', 'end_time']:
         inj_params[val] = f['injections/%s' %(val,)][injection_index]
     for single in single_triggers:
         ifo = single.ifo
-        det = Detector(ifo)
-        lon = f['injections/longitude'][injection_index]
-        lat = f['injections/latitude'][injection_index]
-        ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
-        ifo_times += ' %s:%s ' % (ifo, ifo_time) 
-        inj_params[ifo+'_end_time'] = ifo_time
-          
+        for seg in insp_data_seglists[single.ifo]:
+            if time in seg:
+                det = Detector(ifo)
+                lon = f['injections/longitude'][injection_index]
+                lat = f['injections/latitude'][injection_index]
+                ifo_time = time + det.time_delay_from_earth_center(lon, lat, time)
+                break
+        else:
+            ifo_time = -1.0
+
+        ifo_times += ' %s:%s ' % (ifo, ifo_time)
+        inj_params[ifo + '_end_time'] = ifo_time
+
     layouts += [(mini.make_inj_info(workflow, injection_file, injection_index, num_event,
-                               args.output_dir, tags=args.tags + [str(num_event)])[0],)]   
+                               args.output_dir, tags=args.tags + [str(num_event)])[0],)]
     if injection_index in found_inj_idxes:
         trig_id = numpy.where(found_inj_idxes == injection_index)[0][0]
         layouts += [(mini.make_coinc_info
@@ -164,19 +175,22 @@ for num_event in range(num_events):
     files += mini.make_trigger_timeseries(workflow, single_triggers,
                               ifo_times, args.output_dir,
                               tags=args.tags + [str(num_event)])
-    
+
     for single in single_triggers:
-        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file, 
-                                time, args.output_dir,
+        checkedtime = time
+        if (inj_params[single.ifo + '_end_time'] == -1.0):
+            checkedtime = -1.0
+
+        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
+                                checkedtime, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
 
         files += mini.make_qscan_plot\
-            (workflow, single.ifo, time, args.output_dir,
+            (workflow, single.ifo, checkedtime, args.output_dir,
              data_segments=insp_data_seglists[single.ifo],
              injection_file=injection_xml_file,
              tags=args.tags + [str(num_event)])
-
 
     files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
@@ -191,8 +205,8 @@ for num_event in range(num_events):
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
-                            tags=args.tags+['INJ_PARAMS_INVERTED',
-                                            str(num_event)],
+                            tags=args.tags + ['INJ_PARAMS_INVERTED',
+                                              str(num_event)],
                             params_str='injection parameters as template, ' +\
                                        'here the injection is made inverted',
                             use_exact_inj_params=True)
@@ -201,8 +215,8 @@ for num_event in range(num_events):
                             args.inspiral_data_read_name,
                             args.inspiral_data_analyzed_name, inj_params,
                             args.output_dir, inj_file=injection_xml_file,
-                            tags=args.tags+['INJ_PARAMS_NOINJ',
-                                            str(num_event)],
+                            tags=args.tags + ['INJ_PARAMS_NOINJ',
+                                              str(num_event)],
                             params_str='injection parameters, here no ' +\
                                        'injection was actually performed',
                             use_exact_inj_params=True)
@@ -215,30 +229,30 @@ for num_event in range(num_events):
         # Use SNR here or NewSNR??
         snr = hd_sngl.snr
         lgc_mask = abs(end_times - inj_params['end_time']) < args.inj_window
-        
+
         if len(snr[lgc_mask]) == 0:
             continue
 
-        snr_idx = hd_sngl.mask[lgc_mask][snr[lgc_mask].argmax()]
-        hd_sngl.mask = hd_sngl.mask[snr_idx]
+        snr_idx = numpy.arange(len(lgc_mask))[lgc_mask][snr[lgc_mask].argmax()]
+        hd_sngl.mask = [snr_idx]
         curr_params = copy.deepcopy(inj_params)
-        curr_params['mass1'] = hd_sngl.mass1
-        curr_params['mass2'] = hd_sngl.mass2
-        curr_params['spin1z'] = hd_sngl.spin1z
-        curr_params['spin2z'] = hd_sngl.spin2z
-        curr_params['f_lower'] = hd_sngl.f_lower
+        curr_params['mass1'] = hd_sngl.mass1[0]
+        curr_params['mass2'] = hd_sngl.mass2[0]
+        curr_params['spin1z'] = hd_sngl.spin1z[0]
+        curr_params['spin2z'] = hd_sngl.spin2z[0]
+        curr_params['f_lower'] = hd_sngl.f_lower[0]
         # don't require precessing template info if not present
         try:
-            curr_params['spin1x'] = hd_sngl.spin1x
-            curr_params['spin2x'] = hd_sngl.spin2x
-            curr_params['spin1y'] = hd_sngl.spin1y
-            curr_params['spin2y'] = hd_sngl.spin2y
-            curr_params['inclination'] = hd_sngl.inclination
+            curr_params['spin1x'] = hd_sngl.spin1x[0]
+            curr_params['spin2x'] = hd_sngl.spin2x[0]
+            curr_params['spin1y'] = hd_sngl.spin1y[0]
+            curr_params['spin2y'] = hd_sngl.spin2y[0]
+            curr_params['inclination'] = hd_sngl.inclination[0]
         except KeyError:
             pass
         try:
             # Only present for precessing search
-            curr_params['u_vals'] = hd_sngl.u_vals
+            curr_params['u_vals'] = hd_sngl.u_vals[0]
         except:
             pass
 

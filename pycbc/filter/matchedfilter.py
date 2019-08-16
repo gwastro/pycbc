@@ -510,7 +510,7 @@ def compute_max_snr_over_sky_loc_stat(hplus, hcross, hphccorr,
         The SNR maximized over sky location
     """
     # NOTE: Not much optimization has been done here! This may need to be
-    # C-ified using scipy.weave.
+    # Cythonized.
 
     if out is None:
         out = zeros(len(hplus))
@@ -1544,7 +1544,7 @@ class LiveBatchMatchedFilter(object):
             self.cout_mem[i] = zeros(size, dtype=numpy.complex64)
             self.ifts[i] = IFFT(self.cout_mem[i], self.out_mem[i],
                                 nbatch=count,
-                                size=len(self.cout_mem[i]) / count)
+                                size=len(self.cout_mem[i]) // count)
 
         # Split the templates into their processing groups
         for dur, count in mem_ids:
@@ -1770,7 +1770,7 @@ def followup_event_significance(ifo, data_reader, bank,
         state_start_time = data_reader.strain.end_time \
                 - data_reader.reduced_pad * data_reader.strain.delta_t - bdur
         if not data_reader.state.is_extent_valid(state_start_time, bdur):
-            return None, None, None
+            return None, None, None, None
 
     # We won't require that all DQ checks be valid for now, except at
     # onsource time.
@@ -1778,7 +1778,7 @@ def followup_event_significance(ifo, data_reader, bank,
         dq_start_time = onsource_start - duration / 2.0
         dq_duration = onsource_end - onsource_start + duration
         if not data_reader.dq.is_extent_valid(dq_start_time, dq_duration):
-            return None, None, None
+            return None, None, None, None
 
     # Calculate SNR time series for this duration
     htilde = bank.get_template(template_id, min_buffer=bdur)

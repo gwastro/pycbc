@@ -415,9 +415,9 @@ with ctx:
     f['chisq'].attrs['delta_t'] = snr.delta_t
     if opt.trigger_time is not None:
         f.attrs['event_time'] = opt.trigger_time
-    f.attrs['approximant'] = approximant
-    f.attrs['ifo'] = ifo
-    f.attrs['command_line'] = ' '.join(sys.argv)
+    f.attrs['approximant'] = approximant.encode()
+    f.attrs['ifo'] = ifo.encode()
+    f.attrs['command_line'] = (' '.join(sys.argv)).encode()
 
 logging.info("Finished")
 

@@ -1589,12 +1589,12 @@ class PycbcDarkVsBrightInjectionsExecutable(Executable):
         # 1) the list of potentially EM bright injections
         tag=['POTENTIALLY_BRIGHT']
         node.new_output_file_opt(segment, ext, '--output-bright',
-                                 store_file=self.retain_files, tags=tag)
+                                 store_file=self.retain_files, tags=tags+tag)
         # 2) the list of EM dim injections
         tag=['DIM_ONLY']
         node.new_output_file_opt(segment,
                                  ext, '--output-dim',
-                                 store_file=self.retain_files, tags=tag)
+                                 store_file=self.retain_files, tags=tags+tag)
         return node
 
 class LigolwCBCJitterSkylocExecutable(Executable):
@@ -1848,11 +1848,11 @@ class PycbcInferenceExecutable(Executable):
 
         # get multi-IFO opts
         channel_names_opt = " ".join(["{}:{}".format(k, v)
-                                      for k, v in channel_names.iteritems()])
+                                      for k, v in channel_names.items()])
         if fake_strain_seed is not None:
             fake_strain_seed_opt = " ".join([
                                     "{}:{}".format(k, v)
-                                    for k, v in fake_strain_seed.iteritems()])
+                                    for k, v in fake_strain_seed.items()])
 
         # make node for running executable
         node = Node(self)

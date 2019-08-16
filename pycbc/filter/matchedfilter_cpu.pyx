@@ -26,6 +26,7 @@ from __future__ import absolute_import
 import numpy
 from .matchedfilter import _BaseCorrelator
 cimport numpy, cython
+from cython.parallel import prange
 
 ctypedef fused COMPLEXTYPE:
     float complex
@@ -58,11 +59,12 @@ def correlate_numpy(x, y, z):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def _correlate(numpy.ndarray [COMPLEXTYPE, ndim=1] x,
-               numpy.ndarray [COMPLEXTYPE, ndim=1] y,
-               numpy.ndarray [COMPLEXTYPE, ndim=1] z):
+def _correlate(COMPLEXTYPE[:] x,
+               COMPLEXTYPE[:] y,
+               COMPLEXTYPE[:] z):
     cdef unsigned int xmax = x.shape[0]
-    for i in range(xmax):
+    cdef unsigned int i
+    for i in prange(xmax, nogil=True):
         z[i] = x[i].conjugate() * y[i]
 
 def correlate(x, y, z):

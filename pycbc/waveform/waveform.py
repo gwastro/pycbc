@@ -26,6 +26,7 @@
 waveforms.
 """
 
+import os
 import lal, lalsimulation, numpy, copy
 from pycbc.types import TimeSeries, FrequencySeries, zeros, Array
 from pycbc.types import real_same_precision_as, complex_same_precision_as
@@ -295,25 +296,25 @@ def td_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain approximants for
        the given processing scheme.
     """
-    return td_wav[type(scheme)].keys()
+    return list(td_wav[type(scheme)].keys())
 
 def fd_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available fourier domain approximants for
        the given processing scheme.
     """
-    return fd_wav[type(scheme)].keys()
+    return list(fd_wav[type(scheme)].keys())
 
 def sgburst_approximants(scheme=_scheme.mgr.state):
     """Return a list containing the available time domain sgbursts for
        the given processing scheme.
     """
-    return sgburst_wav[type(scheme)].keys()
+    return list(sgburst_wav[type(scheme)].keys())
 
 def filter_approximants(scheme=_scheme.mgr.state):
     """Return a list of fourier domain approximants including those
        written specifically as templates.
     """
-    return filter_wav[type(scheme)].keys()
+    return list(filter_wav[type(scheme)].keys())
 
 # Input parameter handling ###################################################
 
@@ -599,7 +600,7 @@ def get_td_waveform_from_fd(rwrap=0.2, **params):
         full_duration = get_waveform_filter_length_in_time(**nparams)
         nparams['f_lower'] -= 1
 
-    if 'f_fref' not in nparams:
+    if 'f_ref' not in nparams:
         nparams['f_ref'] = params['f_lower']
 
     # factor to ensure the vectors are all large enough. We don't need to
@@ -822,9 +823,18 @@ _filter_time_lengths[apx_name] = _filter_time_lengths["SpinTaylorF2"]
 from . nltides import nonlinear_tidal_spa
 cpu_fd["TaylorF2NL"] = nonlinear_tidal_spa
 
+# Load external waveforms #####################################################
+if 'PYCBC_WAVEFORM' in os.environ:
+    mods = os.environ['PYCBC_WAVEFORM'].split(':')
+    for mod in mods:
+        mhandle = __import__(mod, fromlist=[''])
+        mhandle.add_me(cpu_fd=cpu_fd,
+                       cpu_td=cpu_td,
+                       filter_time_lengths=_filter_time_lengths)
+
 for apx in copy.copy(_filter_time_lengths):
-    fd_apx = cpu_fd.keys()
-    td_apx = cpu_td.keys()
+    fd_apx = list(cpu_fd.keys())
+    td_apx = list(cpu_td.keys())
 
     if (apx in td_apx) and (apx not in fd_apx):
         # We can make a fd version of td approximants

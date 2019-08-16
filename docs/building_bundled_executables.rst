@@ -57,7 +57,7 @@ Using the build script
 
 The command-line arguments for the ``pycbc_build_eah.sh`` build script are:
 
-.. command-output:: pycbc_build_eah.sh --force-debian4 --help
+.. command-output:: ../tools/einsteinathome/pycbc_build_eah.sh --force-debian4 --help
 
 .. note::
 

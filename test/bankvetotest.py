@@ -11,7 +11,7 @@ dt = 1.0/sr
 bl = 256
 df = 1.0/bl
 N = int(sr * bl)
-n = N/2 + 1
+n = int(N/2 + 1)
 
 psd = pycbc.psd.from_string("aLIGOZeroDetHighPower", n, df, 14)
 strain = noise_from_psd(N, dt, psd, seed=0)

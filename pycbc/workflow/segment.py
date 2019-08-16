@@ -29,7 +29,8 @@ https://ldas-jobs.ligo.caltech.edu/~cbc/docs/pycbc/ahope/segments.html
 
 import os, sys, shutil, stat, copy, itertools
 import logging
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin, urlunparse
 import lal
 from ligo import segments
 from ligo.segments import utils as segmentsUtils
@@ -557,8 +558,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         analysedSegDict[ifo + ':SCIENCE_OK'] = analysedSegs
         analysedXmlFile = os.path.join(out_dir,
                              "%s-SCIENCE_OK_SEGMENTS.xml" %(ifo.upper()) )
-        currUrl = urlparse.urlunparse(['file', 'localhost', analysedXmlFile,
-                          None, None, None])
+        currUrl = urlunparse(['file', 'localhost', analysedXmlFile,
+                              None, None, None])
         if tag:
             currTags = [tag, 'SCIENCE_OK']
         else:
@@ -607,8 +608,8 @@ def setup_segment_gen_mixed(workflow, veto_categories, out_dir,
         combined_veto_file = os.path.join(out_dir,
                                '%s-CUMULATIVE_ALL_CATS_SEGMENTS.xml' \
                                %(ifo_string) )
-        curr_url = urlparse.urlunparse(['file', 'localhost',
-                                       combined_veto_file, None, None, None])
+        curr_url = urlunparse(['file', 'localhost',
+                               combined_veto_file, None, None, None])
         curr_file = SegFile(ifo_string, 'SEGMENTS', segValidSeg,
                             file_url=curr_url, tags=currTags)
 
@@ -759,8 +760,8 @@ def get_veto_segs(workflow, ifo, category, start_time, end_time, out_dir,
                          %(ifo, category, start_time, end_time-start_time)
     veto_xml_file_path = os.path.abspath(os.path.join(out_dir,
                                          veto_xml_file_name))
-    curr_url = urlparse.urlunparse(['file', 'localhost',
-                                   veto_xml_file_path, None, None, None])
+    curr_url = urlunparse(['file', 'localhost',
+                           veto_xml_file_path, None, None, None])
     if tags:
         curr_tags = tags + ['VETO_CAT%d' %(category)]
     else:
@@ -883,8 +884,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
             cum_node.executed = True
             for fil in cum_node._outputs:
                 fil.node = None
-                fil.PFN(urlparse.urljoin('file:',
-                                         urllib.pathname2url(fil.storage_path)),
+                fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                         site='local')
         add_inputs += cum_node.output_files
 
@@ -906,8 +906,7 @@ def get_cumulative_segs(workflow, categories, seg_files_list, out_dir,
         add_node.executed = True
         for fil in add_node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:',
-                                     urllib.pathname2url(fil.storage_path)),
+            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                     site='local')
     return outfile
 
@@ -949,8 +948,7 @@ def add_cumulative_files(workflow, output_file, input_files, out_dir,
         add_node.executed = True
         for fil in add_node._outputs:
             fil.node = None
-            fil.PFN(urlparse.urljoin('file:',
-                                     urllib.pathname2url(fil.storage_path)),
+            fil.PFN(urljoin('file:', pathname2url(fil.storage_path)),
                     site='local')
     return add_node.output_files[0]
 
@@ -1054,7 +1052,7 @@ def get_triggered_coherent_segment(workflow, sciencesegs):
 
     # Check available data segments meet criteria specified in arguments
     commonsegs = sciencesegs.extract_common(sciencesegs.keys())
-    offsrclist = commonsegs[commonsegs.keys()[0]]
+    offsrclist = commonsegs[tuple(commonsegs.keys())[0]]
     if len(offsrclist) > 1:
         logging.info("Removing network segments that do not contain trigger "
                      "time")
@@ -1209,18 +1207,18 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
             # If none, offsource dict will contain segments showing criteria
             # that have not been met, for use in plotting
             if len(offsource.keys()) > 1:
-                seg_lens = {ifos: abs(offsource[ifos].itervalues().next()[0])
+                seg_lens = {ifos: abs(next(offsource[ifos].values())[0])
                             for ifos in offsource.keys()}
                 best_comb = max(seg_lens.iterkeys(),
                                 key=(lambda key: seg_lens[key]))
             else:
-                best_comb = offsource.keys()[0]
+                best_comb = tuple(offsource.keys())[0]
             logging.info("No combination of %d IFOs with suitable science "
                          "segment.", num_ifos)
         else:
             # Identify best analysis segment
             if len(valid_combs) > 1:
-                seg_lens = {ifos: abs(offsource[ifos].itervalues().next()[0])
+                seg_lens = {ifos: abs(next(offsource[ifos].values())[0])
                             for ifos in valid_combs}
                 best_comb = max(seg_lens.iterkeys(),
                                 key=(lambda key: seg_lens[key]))
@@ -1230,11 +1228,11 @@ def generate_triggered_segment(workflow, out_dir, sciencesegs):
 
             offsourceSegfile = os.path.join(out_dir, "offSourceSeg.txt")
             segmentsUtils.tosegwizard(open(offsourceSegfile, "w"),
-                                      offsource[best_comb].itervalues().next())
+                                      list(offsource[best_comb].values())[0])
 
             onsourceSegfile = os.path.join(out_dir, "onSourceSeg.txt")
             segmentsUtils.tosegwizard(file(onsourceSegfile, "w"),
-                                      onsource[best_comb].itervalues().next())
+                                      list(onsource[best_comb].values())[0])
 
             bufferleft = int(cp.get('workflow-exttrig_segments',
                                     'num-buffer-before'))
@@ -1430,12 +1428,16 @@ def get_segments_file(workflow, name, option_name, out_dir):
         server = cp.get("workflow-segments",
                                  "segments-database-url")
 
+    source = "any"
+    if cp.has_option("workflow-segments", "segments-source"):
+        source = cp.get("workflow-segments", "segments-source")
+
     segs = {}
     for ifo in workflow.ifos:
         flag_str = cp.get_opt_tags("workflow-segments", option_name, [ifo])
         key = ifo + ':' + name
         segs[key] = query_str(ifo, flag_str, start, end,
-                              server=server,
+                              source=source, server=server,
                               veto_definer=veto_definer)
         logging.info("%s: got %s flags", ifo, option_name)
 

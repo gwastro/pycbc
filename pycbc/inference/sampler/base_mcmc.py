@@ -27,13 +27,17 @@ from __future__ import (absolute_import, division)
 
 import os
 import signal
-from abc import (ABCMeta, abstractmethod, abstractproperty)
 import logging
+from abc import (ABCMeta, abstractmethod, abstractproperty)
+
+from six import (add_metaclass, string_types)
+
 import numpy
+
 from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
-
 from pycbc.inference.io import validate_checkpoint_files
+
 
 #
 # =============================================================================
@@ -108,7 +112,7 @@ def blob_data_to_dict(stat_names, blobs):
         "number of stat names must match length of tuples in the blobs")
     # convert to an array; to ensure that we get the dtypes correct, we'll
     # cast to a structured array
-    raw_stats = numpy.array(blobs, dtype=zip(stat_names, dtypes))
+    raw_stats = numpy.array(blobs, dtype=list(zip(stat_names, dtypes)))
     # transpose so that it has shape nwalkers x niterations
     raw_stats = raw_stats.transpose()
     # now return as a dictionary
@@ -152,6 +156,7 @@ def get_optional_arg_from_config(cp, section, arg, dtype=str):
 #
 
 
+@add_metaclass(ABCMeta)
 class BaseMCMC(object):
     """Abstract base class that provides methods common to MCMCs.
 
@@ -203,8 +208,6 @@ class BaseMCMC(object):
     acls
     acts
     """
-    __metaclass__ = ABCMeta
-
     _lastclear = None  # the iteration when samples were cleared from memory
     _itercounter = None  # the number of iterations since the last clear
     _pos = None
@@ -800,7 +803,7 @@ class MCMCAutocorrSupport(object):
         with cls._io(filename, 'r') as fp:
             if parameters is None:
                 parameters = fp.variable_params
-            if isinstance(parameters, str) or isinstance(parameters, unicode):
+            if isinstance(parameters, string_types):
                 parameters = [parameters]
             for param in parameters:
                 if per_walker:

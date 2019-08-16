@@ -36,7 +36,7 @@ have_gates = False
 for fn in args.input_file:
     logging.info('Reading gates from %s', fn)
     f = h5py.File(fn, 'r')
-    ifo = f.keys()[0]
+    ifo = tuple(f.keys())[0]
     for gate_type in ['file', 'auto']:
         try:
             gate_time = f[ifo + '/gating/' + gate_type + '/time'][:]
@@ -98,4 +98,4 @@ mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14, fmt='10.1f')
 mpld3.plugins.connect(fig, mpld3.plugins.BoxZoom())
 mpld3.plugins.connect(fig, MPLSlide())
 mpld3.plugins.connect(fig, mpld3.plugins.Reset())
-mpld3.save_html(fig, open(args.output_file, 'wb'))
+mpld3.save_html(fig, open(args.output_file, 'w'))

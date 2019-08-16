@@ -3,6 +3,7 @@
 # Copyright (C) 2014 Andrew Lundgren
 import sys
 import argparse
+from six.moves import range
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import ligolw, lsctables
 from itertools import cycle
@@ -52,11 +53,11 @@ else:
     num_splits = len(args.output_files)
 
 new_inj_tables = [lsctables.New(tabletype, columns=allinjs.columnnames) \
-                  for idx in xrange(num_splits)]
+                  for idx in range(num_splits)]
 
 table_cycle = cycle(new_inj_tables)
 for inj in sorted(allinjs, key=lambda x: x.get_time_geocent()):
-    table_cycle.next().append(inj)
+    next(table_cycle).append(inj)
 
 if not args.output_files:
     temp = args.input_file.split('-')

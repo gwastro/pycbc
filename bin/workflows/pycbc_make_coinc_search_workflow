@@ -29,7 +29,8 @@ __program__ = "pycbc_make_coinc_search_workflow"
 import sys
 import socket
 import pycbc.events, pycbc.workflow as wf
-import os, argparse, ConfigParser, logging
+import os, argparse, logging
+from six.moves import configparser as ConfigParser
 from ligo import segments
 import numpy, lal, datetime
 from pycbc.results import create_versioning_page, static_table, layout
@@ -174,7 +175,7 @@ insps = wf.merge_single_detector_hdf_files(workflow, hdfbank[0],
 
 # setup sngl trigger distribution fitting jobs
 # 'statfiles' is list of files used in calculating coinc statistic
-statfiles = []
+statfiles = wf.FileList([])
 statfiles += wf.setup_trigger_fitting(workflow, insps, hdfbank,
                                       final_veto_file, final_veto_name)
 
@@ -184,7 +185,11 @@ full_insps = insps
 final_bg_files = wf.setup_interval_coinc(workflow, hdfbank, insps, statfiles,
                                final_veto_file, final_veto_name,
                                output_dir, tags=ctags)
-final_bg_file = final_bg_files[0][0]
+
+old_bg_file = final_bg_files[0][0]
+final_bg_file = wf.rerank_coinc_followup(workflow, old_bg_file, hdfbank[0],
+                                         output_dir, tags=[tag])
+
 bin_files = final_bg_files[0][1]
 
 censored_veto = wf.make_foreground_censored_veto(workflow,
@@ -193,14 +198,10 @@ censored_veto = wf.make_foreground_censored_veto(workflow,
 
 closed_snrifar = []
 all_snrifar = []
-for bg_file, bg_bins in final_bg_files:
-    for bg_bin in bg_bins:
-        snrifar = wf.make_snrifar_plot(workflow, bg_bin,
+snrifar = wf.make_snrifar_plot(workflow, final_bg_file,
                          rdir['coincident_triggers'],
-                         closed_box=True, tags=bg_bin.tags + ['closed'])
-        all_snrifar.append(snrifar)
-        if bg_file == final_bg_file:
-            closed_snrifar.append(snrifar)
+                         closed_box=True, tags=final_bg_file.tags + ['closed'])
+closed_snrifar.append(snrifar)
 
 max_hierarchical_removal = workflow.cp.get('workflow-results',
                                            'max-hierarchical-removal')
@@ -212,7 +213,7 @@ closed_box_ifars = []
 # if there are bins, then there is a pair of plots for each bin
 # with no hierarchical_level specified, these results are the
 # final stage of hierarchical removal (i.e. the main result).
-for bin_file in bin_files:
+for bin_file in [final_bg_file]:
     # Open box
     snrifar = wf.make_snrifar_plot(workflow, bin_file,
                     rdir['open_box_result'], tags=bin_file.tags)
@@ -282,7 +283,7 @@ for hierarchical_level in range(int(max_hierarchical_removal) + 1):
                  hierarchical_level)
 
     logging.info('hlevel plotting: %s', hierarchical_level)
-    for bin_file in bin_files:
+    for bin_file in [final_bg_file]:
         snrifar = wf.make_snrifar_plot(workflow, bin_file,
                        rdir[hierarchical_level_page], tags=bin_file.tags,
                        hierarchical_level=hierarchical_level)
@@ -417,6 +418,7 @@ for insp_file in full_insps:
                                       trig_generated_name, 'daxes', currdir,
                                       veto_file=censored_veto,
                                       veto_segment_name='closed_box',
+                                      statfiles=statfiles,
                                       tags=insp_file.tags + [subsec])
 
 ################## Setup segment / veto related plots #########################
@@ -506,6 +508,11 @@ for inj_file, tag in zip(inj_files, inj_tags):
                                     full_insps, insps, statfiles, bin_files,
                                     final_veto_file[0], final_veto_name[0],
                                     output_dir, tags = ctags)
+    inj_coinc = wf.rerank_coinc_followup(workflow, inj_coinc,
+                                         hdfbank[0],
+                                         output_dir, tags=ctags,
+                                         injection_file=inj_file,
+                                         ranking_file=final_bg_file)
     found_inj = wf.find_injections_in_hdf_coinc(workflow, wf.FileList([inj_coinc]),
                                     wf.FileList([file_for_injfind]),
                                     final_veto_file[0], final_veto_name[0],
@@ -600,7 +607,7 @@ layout.two_column_layout(rdir.base, summ)
 base = rdir['workflow/configuration']
 wf.makedir(base)
 ini_file_path = os.path.join(base, 'configuration.ini')
-with open(ini_file_path, 'wb') as ini_fh:
+with open(ini_file_path, 'w') as ini_fh:
     container.cp.write(ini_fh)
 ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
                         file_url='file://'+ini_file_path)])
@@ -643,7 +650,7 @@ container._adag.addDependency(dep)
 container.save()
 
 # Protect the open box results folder
-os.chmod(rdir['open_box_result'], 0700)
+os.chmod(rdir['open_box_result'], 0o0700)
 
 logging.info("Written dax.")
 

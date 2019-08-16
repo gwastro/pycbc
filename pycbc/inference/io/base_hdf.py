@@ -30,6 +30,9 @@ from __future__ import absolute_import
 import sys
 import logging
 from abc import (ABCMeta, abstractmethod)
+
+from six import (add_metaclass, string_types)
+
 import numpy
 
 import h5py
@@ -37,6 +40,8 @@ import h5py
 from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
 
+
+@add_metaclass(ABCMeta)
 class BaseInferenceFile(h5py.File):
     """Base class for all inference hdf files.
 
@@ -50,7 +55,6 @@ class BaseInferenceFile(h5py.File):
     mode : {None, str}
         The mode to open the file, eg. "w" for write and "r" for read.
     """
-    __metaclass__ = ABCMeta
 
     name = None
     samples_group = 'samples'
@@ -93,20 +97,10 @@ class BaseInferenceFile(h5py.File):
 
         Parameters
         ----------
-        fp : open hdf file
-            The file to write to.
         samples : dict
             Samples should be provided as a dictionary of numpy arrays.
         \**kwargs :
             Any other keyword args the sampler needs to write data.
-        """
-        pass
-
-    @abstractmethod
-    def write_sampler_metadata(self, sampler):
-        """This should write the given sampler's metadata to the file.
-
-        This should also include the model's metadata.
         """
         pass
 
@@ -155,8 +149,6 @@ class BaseInferenceFile(h5py.File):
 
         Parameters
         -----------
-        fp : InferenceFile
-            An open file handler to read the samples from.
         parameters : (list of) strings
             The parameter(s) to retrieve.
         array_class : FieldArray-like class, optional
@@ -181,8 +173,8 @@ class BaseInferenceFile(h5py.File):
         # convert to FieldArray
         samples = array_class.from_kwargs(**samples)
         # add the static params and attributes
-        addatrs = (self.static_params.items() +
-                   self[self.samples_group].attrs.items())
+        addatrs = (list(self.static_params.items()) +
+                   list(self[self.samples_group].attrs.items()))
         for (p, val) in addatrs:
             setattr(samples, p, val)
         return samples
@@ -192,20 +184,6 @@ class BaseInferenceFile(h5py.File):
         """Low level function for reading datasets in the samples group.
 
         This should return a dictionary of numpy arrays.
-        """
-        pass
-
-    @abstractmethod
-    def write_posterior(self, filename, **kwargs):
-        """This should write a posterior plus any other metadata to the given
-        file.
-
-        Parameters
-        ----------
-        posterior_file : str
-            Name of the file to write to.
-        \**kwargs :
-            Any other keyword args the sampler needs to write the posterior.
         """
         pass
 
@@ -301,7 +279,7 @@ class BaseInferenceFile(h5py.File):
             Array of the loaded samples.
         """
         if parameters is None and opts.parameters is None:
-            parameters = self.variable_args
+            parameters = self.variable_params
         elif parameters is None:
             parameters = opts.parameters
         # parse optional arguments
@@ -601,16 +579,6 @@ class BaseInferenceFile(h5py.File):
             previous = []
         self.attrs["cmd"] = cmd + previous
 
-    @abstractmethod
-    def write_resume_point(self):
-        """Should write the point that a sampler starts up.
-
-        How the resume point is indexed is up to the sampler. For example,
-        MCMC samplers use the number of iterations that are stored in the
-        checkpoint file.
-        """
-        pass
-
     def get_slice(self, thin_start=None, thin_interval=None, thin_end=None):
         """Formats a slice using the given arguments that can be used to
         retrieve a thinned array from an InferenceFile.
@@ -676,7 +644,7 @@ class BaseInferenceFile(h5py.File):
         # copy non-samples/stats data
         if ignore is None:
             ignore = []
-        if isinstance(ignore, (str, unicode)):
+        if isinstance(ignore, string_types):
             ignore = [ignore]
         ignore = set(ignore + [self.samples_group])
         copy_groups = set(self.keys()) - ignore
@@ -762,7 +730,7 @@ class BaseInferenceFile(h5py.File):
         # info
         if ignore is None:
             ignore = []
-        if isinstance(ignore, (str, unicode)):
+        if isinstance(ignore, string_types):
             ignore = [ignore]
         self.copy_info(other, ignore=ignore)
         # samples
@@ -773,9 +741,9 @@ class BaseInferenceFile(h5py.File):
                               write_args=write_args)
             # if any down selection was done, re-set the default
             # thin-start/interval/end
-            p = self[self.samples_group].keys()[0]
+            p = tuple(self[self.samples_group].keys())[0]
             my_shape = self[self.samples_group][p].shape
-            p = other[other.samples_group].keys()[0]
+            p = tuple(other[other.samples_group].keys())[0]
             other_shape = other[other.samples_group][p].shape
             if my_shape != other_shape:
                 other.attrs['thin_start'] = 0
@@ -802,7 +770,7 @@ class BaseInferenceFile(h5py.File):
             if val is None:
                 val = str(None)
             if isinstance(val, dict):
-                attrs[arg] = val.keys()
+                attrs[arg] = list(val.keys())
                 # just call self again with the dict as kwargs
                 cls.write_kwargs_to_attrs(attrs, **val)
             else:

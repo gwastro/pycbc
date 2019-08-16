@@ -39,6 +39,8 @@ from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
 import pycbc.io
 
+from six import add_metaclass
+
 injection_func_map = {
     np.dtype(float32): sim.SimAddInjectionREAL4TimeSeries,
     np.dtype(float64): sim.SimAddInjectionREAL8TimeSeries
@@ -309,6 +311,7 @@ class _XMLInjectionSet(object):
 # -----------------------------------------------------------------------------
 
 
+@add_metaclass(ABCMeta)
 class _HDFInjectionSet(object):
     """Manages sets of injections: reads injections from hdf files
     and injects them into time series.
@@ -328,7 +331,6 @@ class _HDFInjectionSet(object):
     static_args
     extra_args
     """
-    __metaclass__ = ABCMeta
     _tableclass = pycbc.io.FieldArray
     injtype = None
 
@@ -345,7 +347,7 @@ class _HDFInjectionSet(object):
         if len(parameters) == 0:
             numinj = 1
         else:
-            numinj = injvals.values()[0].size
+            numinj = tuple(injvals.values())[0].size
         # add any static args in the file
         try:
             self.static_args = group.attrs['static_args']

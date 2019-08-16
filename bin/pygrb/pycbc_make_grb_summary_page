@@ -20,9 +20,9 @@
 # Preamble
 # =============================================================================
 
-from __future__ import division
+from __future__ import (division, print_function)
 
-import os,sys,datetime,re,glob,shutil,ConfigParser
+import os,sys,datetime,re,glob,shutil
 from argparse import ArgumentParser
 import random
 import string
@@ -58,7 +58,7 @@ def parse_command_line():
 
     parser.add_argument("-d", "--dec", type=float, default=None,
                         help="Declination of external trigger")
-    
+
     parser.add_argument("-o", "--output-path", type=str, default=os.getcwd(),
                         help="Post processing output directory")
 
@@ -160,14 +160,14 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     A list of tuples, each tuple representing the upper and lower bounds of
     a bin in mass parameter space, used to split the triggers into mass bins.
     """
-    # get entry information  
+    # get entry information
     ifos = args.ifo_tag
     GRBnum = args.grb_name
     os.chdir(outdir)
 
     # get sections
     #injList = glob.glob('injections*')
-    
+
     trials  = sorted(glob.glob('OFFTRIAL_*'))
 
     # initialise page
@@ -186,7 +186,7 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     #  webpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/OpenBox.jpg">')
     #else:
     #  webpage.add('<img src="https://www.lsc-group.phys.uwm.edu/ligovirgo/cbc/public/segments/S5/thomasLegacy.jpg">')
-    
+
     # set divs
     webpage.div(id="maintab")
     webpage.div(id="content")
@@ -199,14 +199,14 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     webpage.div(id="div_%s" % i, style="display: none;")
 
     # copy over segment plot
-    
+
     if os.path.isfile(args.seg_plot):
         shutil.copy(args.seg_plot, outdir)
         segplot = '%s/%s' % (outdir, os.path.basename(args.seg_plot))
     else:
         segplot = None
-        print >>sys.stderr, 'WARNING: Cannot find segments availability plot.'
-    
+        print('WARNING: Cannot find segments availability plot.', file=sys.stderr)
+
     # get sky error from config
     if grid:
         err = args.sky_error
@@ -236,7 +236,7 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
             not os.path.samefile(inifile, '%s/%s'
                                  % (outdir, os.path.basename(inifile))):
         shutil.copy(inifile, outdir)
-    
+
 
     # add off source trig plots
     secname = 'Offsource triggers versus time'
@@ -391,10 +391,10 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
         webpage.input(id="input_%s" % i, type="button", class_="h2",
                       onclick="toggleVisible('%s');" % i, value=secname)
         webpage.div(id="div_%s" % i, style="display: none;")
-    
+
         webpage = write_offsource(webpage, args, GRBnum, onsource=True)
         webpage.div.close()
-    
+
         # write on source events
         trial = 'ONSOURCE'
         secname = 'Results for %s' % trial.replace('_',' ').title()
@@ -422,7 +422,7 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
     else:
         suffix = "_CLOSED"
     html_path = htmldir + "/" + os.path.basename(htmldir) + suffix
-    
+
     if os.path.isdir(html_path):
         warn = "WARNING: %s already exists! " % html_path
         html_path += "_"
@@ -436,7 +436,7 @@ def build_grb_results_page(args, inifile, outdir, htmldir, ifoTag,
                  html_path)
     shutil.copy2('%s/coh_PTF_html_summary.js' % os.path.dirname(outdir),
                  html_path)
-  
+
 #####################
 # MAIN BODY OF CODE #
 #####################

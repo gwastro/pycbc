@@ -56,7 +56,11 @@ def losc_frame_json(ifo, start_time, end_time):
         A dictionary containing information about the files that span the
         requested times.
     """
-    import urllib, json
+    import json
+    try:
+        from urllib.request import urlopen
+    except ImportError:  # python < 3
+        from urllib import urlopen
     run = get_run(start_time)
     run2 = get_run(end_time)
     if run != run2:
@@ -67,7 +71,7 @@ def losc_frame_json(ifo, start_time, end_time):
     url = _losc_url % (run, ifo, int(start_time), int(end_time))
 
     try:
-        return json.loads(urllib.urlopen(url).read())
+        return json.loads(urlopen(url).read().decode())
     except Exception as e:
         print(e)
         raise ValueError('Failed to find gwf files for '

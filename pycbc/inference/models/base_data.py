@@ -28,9 +28,12 @@
 import numpy
 from abc import (ABCMeta, abstractmethod)
 
+from six import add_metaclass
+
 from .base import BaseModel
 
 
+@add_metaclass(ABCMeta)
 class BaseDataModel(BaseModel):
     r"""Base class for models that require data and a waveform generator.
 
@@ -71,8 +74,6 @@ class BaseDataModel(BaseModel):
 
     See ``BaseModel`` for additional attributes and properties.
     """
-    __metaclass__ = ABCMeta
-
     def __init__(self, variable_params, data, recalibration=None, gates=None,
                  **kwargs):
         self._data = None
@@ -144,7 +145,7 @@ class BaseDataModel(BaseModel):
     @property
     def detectors(self):
         """Returns the detectors used."""
-        return self._data.keys()
+        return list(self._data.keys())
 
     def write_metadata(self, fp):
         """Adds data to the metadata that's written.

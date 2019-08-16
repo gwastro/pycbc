@@ -259,7 +259,7 @@ context = {'analysis_title'    : analysis_title,
 output = template.render(context)
 if not os.path.exists(opts.output_path+cwd.path):
     os.makedirs(opts.output_path+cwd.path)
-with open(opts.output_path+cwd.path+'/index.html', "wb") as fp:
+with open(opts.output_path+cwd.path+'/index.html', "w") as fp:
     fp.write(output)
 
 # copy css, js, and font files to html directory

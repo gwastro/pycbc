@@ -26,13 +26,15 @@ produces event triggers
 """
 from __future__ import absolute_import
 import numpy, copy, os.path
+import logging
 
-from pycbc import WEAVE_FLAGS
 from pycbc.types import Array
 from pycbc.scheme import schemed
 from pycbc.detector import Detector
 
 from . import coinc, ranking
+
+from .eventmgr_cython import findchirp_cluster_over_window_cython
 
 @schemed("pycbc.events.threshold_")
 def threshold(series, value):
@@ -139,31 +141,14 @@ def findchirp_cluster_over_window(times, values, window_length):
     """
     assert window_length > 0, 'Clustering window length is not positive'
 
-    from weave import inline
-    indices = numpy.zeros(len(times), dtype=int)
-    tlen = len(times) # pylint:disable=unused-variable
-    k = numpy.zeros(1, dtype=int)
-    absvalues = abs(values) # pylint:disable=unused-variable
-    times = times.astype(int)
-    code = """
-        int j = 0;
-        int curr_ind = 0;
-        for (int i=0; i < tlen; i++){
-            if ((times[i] - times[curr_ind]) > window_length){
-                j += 1;
-                indices[j] = i;
-                curr_ind = i;
-            }
-            else if (absvalues[i] > absvalues[curr_ind]){
-                indices[j] = i;
-                curr_ind = i;
-            }
-        }
-        k[0] = j;
-    """
-    inline(code, ['times', 'absvalues', 'window_length', 'indices', 'tlen', 'k'],
-           extra_compile_args=[WEAVE_FLAGS])
-    return indices[0:k[0]+1]
+    indices = numpy.zeros(len(times), dtype=numpy.int32)
+    tlen = len(times)
+    absvalues = numpy.array(abs(values), copy=False)
+    times = numpy.array(times, dtype=numpy.int32, copy=False)
+    k = findchirp_cluster_over_window_cython(times, absvalues, window_length,
+                                             indices, tlen)
+
+    return indices[0:k+1]
 
 
 def cluster_reduce(idx, snr, window_size):
@@ -222,7 +207,7 @@ class EventManager(object):
     def chisq_threshold(self, value, num_bins, delta=0):
         remove = []
         for i, event in enumerate(self.events):
-            xi = event['chisq'] / (event['chisq_dof'] / 2 + 1 +
+            xi = event['chisq'] / (event['chisq_dof'] +
                                    delta * event['snr'].conj() * event['snr'])
             if xi > value:
                 remove.append(i)
@@ -235,10 +220,10 @@ class EventManager(object):
             raise RuntimeError('Chi-square test must be enabled in order to '
                                'use newsnr threshold')
 
-        remove = [i for i, e in enumerate(self.events) if
-                  ranking.newsnr(abs(e['snr']), e['chisq'] / e['chisq_dof'])
-                  < threshold]
-        self.events = numpy.delete(self.events, remove)
+        nsnrs = ranking.newsnr(abs(self.events['snr']),
+                               self.events['chisq'] / self.events['chisq_dof'])
+        remove_idxs = numpy.where(nsnrs < threshold)[0]
+        self.events = numpy.delete(self.events, remove_idxs)
 
     def keep_near_injection(self, window, injections):
         from pycbc.events.veto import indices_within_times
@@ -339,6 +324,40 @@ class EventManager(object):
     def finalize_template_events(self):
         self.accumulate.append(self.template_events)
         self.template_events = numpy.array([], dtype=self.event_dtype)
+
+    def consolidate_events(self, opt, gwstrain=None):
+        self.events = numpy.concatenate(self.accumulate)
+        logging.info("We currently have %d triggers", len(self.events))
+        if opt.chisq_threshold and opt.chisq_bins:
+            logging.info("Removing triggers with poor chisq")
+            self.chisq_threshold(opt.chisq_threshold, opt.chisq_bins,
+                                 opt.chisq_delta)
+            logging.info("%d remaining triggers", len(self.events))
+
+        if opt.newsnr_threshold and opt.chisq_bins:
+            logging.info("Removing triggers with NewSNR below threshold")
+            self.newsnr_threshold(opt.newsnr_threshold)
+            logging.info("%d remaining triggers", len(self.events))
+
+        if opt.keep_loudest_interval:
+            logging.info("Removing triggers not within the top %s "
+                         "loudest of a %s second interval by %s",
+                         opt.keep_loudest_num, opt.keep_loudest_interval,
+                         opt.keep_loudest_stat)
+            self.keep_loudest_in_interval\
+                (opt.keep_loudest_interval * opt.sample_rate,
+                 opt.keep_loudest_num, statname=opt.keep_loudest_stat,
+                 log_chirp_width=opt.keep_loudest_log_chirp_window)
+            logging.info("%d remaining triggers", len(self.events))
+
+        if opt.injection_window and hasattr(gwstrain, 'injections'):
+            logging.info("Keeping triggers within %s seconds of injection",
+                         opt.injection_window)
+            self.keep_near_injection(opt.injection_window,
+                                     gwstrain.injections)
+            logging.info("%d remaining triggers", len(self.events))
+
+        self.accumulate = [self.events]
 
     def finalize_events(self):
         self.events = numpy.concatenate(self.accumulate)
@@ -455,7 +474,7 @@ class EventManager(object):
             if 'sg_chisq' in self.events.dtype.names:
                 f['sg_chisq'] = self.events['sg_chisq']
 
-            if self.opt.psdvar_short_segment is not None:
+            if self.opt.psdvar_segment is not None:
                 f['psd_var_val'] = self.events['psd_var_val']
 
         if self.opt.trig_start_time:
@@ -572,6 +591,19 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.template_event_dict['network'] = \
                                 numpy.array([], dtype=self.network_event_dtype)
 
+    def cluster_template_network_events(self, tcolumn, column, window_size):
+        """ Cluster the internal events over the named column
+        """
+        cvec = self.template_event_dict['network'][column]
+        tvec = self.template_event_dict['network'][tcolumn]
+        if window_size == 0:
+            indices = numpy.arange(len(tvec))
+        else:
+            indices = findchirp_cluster_over_window(tvec, cvec, window_size)
+        for key in self.template_event_dict:
+            self.template_event_dict[key] = numpy.take(
+                self.template_event_dict[key], indices)
+
     def add_template_network_events(self, columns, vectors):
         """ Add a vector indexed """
         # initialize with zeros - since vectors can be None, look for the
@@ -616,14 +648,14 @@ class EventManagerCoherent(EventManagerMultiDetBase):
         self.events.sort(order='template_id')
         th = numpy.array([p['tmplt'].template_hash for p in
                           self.template_params])
-        tid = self.events['template_id']
         f = fw(outname)
         # Output network stuff
         f.prefix = 'network'
         network_events = numpy.array([e for e in self.network_events],
                                      dtype=self.network_event_dtype)
         f['event_id'] = network_events['event_id']
-        f['network_snr'] = network_events['network_snr']
+        f['coherent_snr'] = network_events['coherent_snr']
+        f['reweighted_snr'] = network_events['reweighted_snr']
         f['null_snr'] = network_events['null_snr']
         f['end_time_gc'] = network_events['time_index'] / \
                 float(self.opt.sample_rate[self.ifos[0].lower()]) + \
@@ -637,6 +669,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
             f[ifo + '_event_id'] = network_events[ifo + '_event_id']
         # Individual ifo stuff
         for i, ifo in enumerate(self.ifos):
+            tid = self.events['template_id'][self.events['ifo'] == i]
             f.prefix = ifo
             ifo_events = numpy.array([e for e in self.events
                     if e['ifo'] == self.ifo_dict[ifo]], dtype=self.event_dtype)
@@ -703,7 +736,7 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                 else:
                     f['chisq_dof'] = numpy.zeros(len(ifo_events))
 
-                f['template_hash'] = th[tid][self.events['ifo'] == i]
+                f['template_hash'] = th[tid]
 
             if self.opt.trig_start_time:
                 f['search/start_time'] = numpy.array([
@@ -807,9 +840,11 @@ class EventManagerCoherent(EventManagerMultiDetBase):
                   existing_events_mask[ifo]]['event_id']
             self.event_index[ifo] = self.event_index[ifo] + num_events
 
+        # Add the network event ids for the events with this template.
         num_events = len(self.template_event_dict['network'])
         new_event_ids = numpy.arange(self.event_index['network'],
                                      self.event_index['network'] + num_events)
+        self.event_index['network'] = self.event_index['network'] + num_events
         self.template_event_dict['network']['event_id'] = new_event_ids
         # Move template events for each ifo to the events list
         for ifo in self.ifos:
@@ -974,7 +1009,7 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
 
                 f['template_hash'] = th[tid]
 
-                if self.opt.psdvar_short_segment is not None:
+                if self.opt.psdvar_segment is not None:
                     f['psd_var_val'] = ifo_events['psd_var_val']
 
             if self.opt.trig_start_time:

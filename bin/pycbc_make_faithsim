@@ -2,7 +2,7 @@
 import os
 import logging
 import shutil
-import ConfigParser
+from six.moves import configparser as ConfigParser
 import subprocess
 import glob
 import tempfile
@@ -96,7 +96,7 @@ mkdir('plots')
 
 logging.info("Copying scripts")
 shutil.copy(banksim_prog, 'scripts/pycbc_faithsim')
-os.chmod('scripts/pycbc_faithsim', 0777)
+os.chmod('scripts/pycbc_faithsim', 0o0777)
 
 logging.info("Creating injection file")
 inj_str = "lalapps_inspinj " + get_ini_opts(confs, "inspinj") + "--output inj.xml"
@@ -199,14 +199,14 @@ if __name__ == "__main__":
             data = append(data, pdata)
         savetxt('result-' + tag + '.dat', data)
 """)
-os.chmod('scripts/pycbc_faithsim_collect_results', 0777)
+os.chmod('scripts/pycbc_faithsim_collect_results', 0o0777)
     
 logging.info("Creating submit script")
 f = open("submit.sh", 'w')
 f.write("""#!/bin/bash
 condor_submit_dag faithsim.dag
 """)
-os.chmod('submit.sh', 0777)
+os.chmod('submit.sh', 0o0777)
 
 dag.write_sub_files()
 dag.write_script()
@@ -400,6 +400,6 @@ for fil in fils:
     name = pname + 'scatter' + v1 + '-' + v2 + '-' + v3
     basic_scatter(name, v1, v2, tag, v1d, v2d, v3d, v3, vmin=None, vmax=None)     
  """)
-os.chmod('scripts/pycbc_faithsim_plots', 0777)
+os.chmod('scripts/pycbc_faithsim_plots', 0o0777)
 
 logging.info('Done')

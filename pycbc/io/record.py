@@ -29,6 +29,7 @@ waves.
 """
 
 import os, sys, types, re, copy, numpy, inspect
+import six
 from six import string_types
 from glue.ligolw import types as ligolw_types
 from pycbc import coordinates, conversions, cosmology
@@ -784,9 +785,13 @@ class FieldArray(numpy.recarray):
             pass
         # numpy has some issues with dtype field names that are unicode,
         # so we'll force them to strings here
-        if self.dtype.names is not None and \
-                any(isinstance(name, unicode) for name in obj.dtype.names):
-            self.dtype.names = map(str, self.dtype.names)
+        if six.PY2:
+            if self.dtype.names is not None and \
+                    any(isinstance(name, unicode) for name in obj.dtype.names):
+                self.dtype.names = map(str, self.dtype.names)
+            # We don't want to do this in python3 because a str *is* unicode,
+            # but maybe numpy in python3 is more lenient of this. Let's just
+            # wait and see if this becomes a problem in python3
 
     def __copy_attributes__(self, other, default=None):
         """Copies the values of all of the attributes listed in
@@ -1139,7 +1144,7 @@ class FieldArray(numpy.recarray):
         if cast_to_dtypes is not None:
             dtype = [cast_to_dtypes[col] for col in columns]
         else:
-            dtype = columns.items()
+            dtype = list(columns.items())
         # get the values
         if _default_types_status['ilwd_as_int']:
             input_array = \
@@ -1453,10 +1458,10 @@ class FieldArray(numpy.recarray):
         """
         if isinstance(possible_fields, string_types):
             possible_fields = [possible_fields]
-        possible_fields = map(str, possible_fields)
+        possible_fields = list(map(str, possible_fields))
         # we'll just use float as the dtype, as we just need this for names
-        arr = cls(1, dtype=zip(possible_fields,
-                               len(possible_fields)*[float]))
+        arr = cls(1, dtype=list(zip(possible_fields,
+                                len(possible_fields)*[float])))
         # try to perserve order
         return list(get_needed_fieldnames(arr, parameters))
 
@@ -1595,7 +1600,7 @@ class _FieldArrayWithDefaults(FieldArray):
             # add the fields as the dtype argument for initializing
             kwargs['dtype'] = [(fld, default_fields[fld]) for fld in names]
         if 'dtype' not in kwargs:
-            kwargs['dtype'] = default_fields.items()
+            kwargs['dtype'] = list(default_fields.items())
         # add the additional fields
         if additional_fields is not None:
             if not isinstance(additional_fields, list):

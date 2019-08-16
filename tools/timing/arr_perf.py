@@ -39,10 +39,10 @@ niter = options.iterations
 
 
 if type(ctx) is CUDAScheme:
-    print "RUNNING ON ", ctx.device.name()
+    print("RUNNING ON ", ctx.device.name())
 else:
-    print "RUNNING ON CPU"
-print type(ctx)
+    print("RUNNING ON CPU")
+print(type(ctx))
 
 N = 2**options.size
 
@@ -81,18 +81,18 @@ import timeit
 
 gt = timeit.Timer(addc)
 t = (1000 * gt.timeit(number=1)/niter)
-print "ADDC  %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
+print("ADDC  %.2f msec" % t, " %5.1f /min " % (1000 *60 /t))
 
 gt = timeit.Timer(add)
 t = (1000 * gt.timeit(number=1)/niter)
-print "ADD  %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
+print("ADD  %.2f msec" % t, " %5.1f /min " % (1000 *60 /t))
 
 gt = timeit.Timer(mul)
 t = (1000 * gt.timeit(number=1)/niter)
-print "MUL %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
+print("MUL %.2f msec" % t, " %5.1f /min " % (1000 *60 /t))
 
 gt = timeit.Timer(sqnm)
 t = (1000 * gt.timeit(number=1)/niter)
-print "SQNRM  %.2f msec" % t, " %5.1f /min " % (1000 *60 /t)
+print("SQNRM  %.2f msec" % t, " %5.1f /min " % (1000 *60 /t))
 
 

@@ -19,7 +19,7 @@
 import os.path, types
 import codecs
 
-from ConfigParser import ConfigParser
+from six.moves.configparser import ConfigParser
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import unescape
 
@@ -220,7 +220,7 @@ def render_tmplt(path, cp):
     content = None
 
     # read file as a string
-    with open(path, 'rb') as fp:
+    with open(path, 'r') as fp:
         content = fp.read()
 
     # replace all the escaped characters

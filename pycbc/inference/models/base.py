@@ -27,9 +27,9 @@
 
 import numpy
 import logging
-
 from abc import (ABCMeta, abstractmethod)
-
+from six.moves.configparser import NoSectionError
+from six import (add_metaclass, string_types)
 from pycbc import (transforms, distributions)
 from pycbc.io import FieldArray
 
@@ -60,7 +60,7 @@ class ModelStats(object):
     @property
     def statnames(self):
         """Returns the names of the stats that have been stored."""
-        return self.__dict__.keys()
+        return list(self.__dict__.keys())
 
     def getstats(self, names, default=numpy.nan):
         """Get the requested stats as a tuple.
@@ -206,11 +206,14 @@ class SamplingTransforms(object):
         SamplingTransforms
             A sampling transforms class.
         """
-        if not cp.has_section('sampling_params'):
-            raise ValueError("no sampling_params section found in config file")
+        # Check if a sampling_params section is provided
+        try:
+            sampling_params, replace_parameters = \
+                read_sampling_params_from_config(cp)
+        except NoSectionError as e:
+            logging.warning("No sampling_params section read from config file")
+            raise e
         # get sampling transformations
-        sampling_params, replace_parameters = \
-            read_sampling_params_from_config(cp)
         sampling_transforms = transforms.read_transforms_from_config(
             cp, 'sampling_transforms')
         logging.info("Sampling in {} in place of {}".format(
@@ -281,6 +284,7 @@ def read_sampling_params_from_config(cp, section_group=None,
 #
 
 
+@add_metaclass(ABCMeta)
 class BaseModel(object):
     r"""Base class for all models.
 
@@ -354,13 +358,12 @@ class BaseModel(object):
     logplr :
         A function that returns the log of the prior-weighted likelihood ratio.
     """
-    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, variable_params, static_params=None, prior=None,
                  sampling_transforms=None, waveform_transforms=None):
         # store variable and static args
-        if isinstance(variable_params, basestring):
+        if isinstance(variable_params, string_types):
             variable_params = (variable_params,)
         if not isinstance(variable_params, tuple):
             variable_params = tuple(variable_params)
@@ -412,6 +415,8 @@ class BaseModel(object):
         If any sampling transforms are specified, they are applied to the
         params before being stored.
         """
+        # add the static params
+        params.update(self.static_params)
         self._current_params = self._transform_params(**params)
         self._current_stats = ModelStats()
 
@@ -749,7 +754,7 @@ class BaseModel(object):
         try:
             sampling_transforms = SamplingTransforms.from_config(
                 cp, variable_params)
-        except ValueError:
+        except NoSectionError:
             sampling_transforms = None
         args['sampling_transforms'] = sampling_transforms
         # get any waveform transforms

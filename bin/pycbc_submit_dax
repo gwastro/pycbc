@@ -298,7 +298,7 @@ if [ $DATA_INLINE == "True" ] ; then
   expand_pegasus_files
   PEGASUS_FILE_DIRECTORY=${PWD}/pegasus_files
 elif [ -z $PEGASUS_FILE_DIRECTORY ] ; then
-  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print PEGASUS_FILE_DIRECTORY'`
+  PEGASUS_FILE_DIRECTORY=`python -c 'from pycbc.workflow import PEGASUS_FILE_DIRECTORY;print(PEGASUS_FILE_DIRECTORY)'`
 fi
 
 # Create the site catalog
@@ -434,9 +434,9 @@ fi
 
 
 if [ $CACHE_FILE == 0 ]; then
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID
 else
-  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster label $SUBMIT_DAX $NO_GRID
+  pegasus-plan --conf ./pegasus-properties.conf -d $DAX_FILE --sites $SITE_LIST $STAGING_SITES -o local --dir $SUBMIT_DIR --cleanup inplace --cache _reuse.cache --relative-dir work --cluster horizontal $SUBMIT_DAX $NO_GRID
 fi
 
 echo

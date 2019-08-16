@@ -48,7 +48,7 @@ class TimeVaryingPSD(object):
     def __init__(self, file_name, length=None, delta_f=None, f_low=None):
         f = h5py.File(file_name, 'r')
         self.file_name = file_name
-        detector = f.keys()[0]
+        detector = tuple(f.keys())[0]
         self.start_times = f[detector + '/start_time'][:]
         self.end_times = f[detector + '/end_time'][:]
         self.file_f_low = f.attrs['low_frequency_cutoff']
@@ -197,7 +197,7 @@ if __name__ == '__main__':
             try:
                 wave = get_injection(injections, det, injection_time,
                                      simulation_id=inj.simulation_id)
-            except Exception, e:
+            except Exception as e:
                 if opts.ignore_waveform_errors:
                     logging.warn('%s: waveform generation failed, skipping (%s)',
                                  inj.simulation_id, e)

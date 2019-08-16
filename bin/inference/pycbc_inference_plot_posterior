@@ -183,8 +183,8 @@ for (i, s) in enumerate(samples):
         axis_dict = None
 
     # loop over some contour colors
-    contour_color = colors.next() if not opts.contour_color \
-                                                else opts.contour_color
+    contour_color = next(colors) if not opts.contour_color \
+        else opts.contour_color
 
     # make histograms filled if only one input file to plot
     fill_color = "gray" if len(opts.input_file) == 1 else None
@@ -223,7 +223,7 @@ for (i, s) in enumerate(samples):
 # plot the prior
 if opts.plot_prior:
     if len(opts.input_file) > 1:
-        hist_color = colors.next()
+        hist_color = next(colors)
     fig, axis_dict = create_multidim_plot(
         parameters, prior_samples, fig=fig, axis_dict=axis_dict,
         labels=labels, plot_marginal=True, marginal_percentiles=[],

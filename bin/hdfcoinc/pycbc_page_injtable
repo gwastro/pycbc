@@ -73,7 +73,7 @@ format_strings = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
                   '##.##', '##.##'
                  ] + found_formats
 
-html_table = pycbc.results.table(columns, names, 
+html_table = pycbc.results.html_table(columns, names, 
                                  format_strings=format_strings, 
                                  page_size=20)
                                  

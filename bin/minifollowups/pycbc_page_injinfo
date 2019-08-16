@@ -42,8 +42,6 @@ data = []
 
 labels = {
     'end_time': 'End&nbsp;time',
-    'optimal_snr_1' : 'Opt.&nbsp;SNR %s' % f.attrs['detector_1'],
-    'optimal_snr_2' : 'Opt.&nbsp;SNR %s' % f.attrs['detector_2'],
     'dec_chirp_dist': 'Dec.&nbsp;chirp dist',
     'eff_dist_h'    : 'D<sub>eff</sub>&nbsp;H',
     'eff_dist_l'    : 'D<sub>eff</sub>&nbsp;L',
@@ -65,7 +63,14 @@ labels = {
 params += ['end_time']
 
 if 'optimal_snr_1' in f['injections'].keys():
+    labels['optimal_snr_1'] = 'Opt.&nbsp;SNR %s' % f.attrs['detector_1']
+    labels['optimal_snr_2'] = 'Opt.&nbsp;SNR %s' % f.attrs['detector_2']
     params += ['optimal_snr_1', 'optimal_snr_2']
+elif 'ifos' in f.attrs:
+    ifolist = f.attrs['ifos'].split(' ')
+    for ifo in ifolist:
+        labels['optimal_snr_%s' % ifo] = 'Opt.&nbsp;SNR %s' % ifo
+        params += ['optimal_snr_%s' % ifo]
 else:
     params += ['dec_chirp_dist', 'eff_dist_h', 'eff_dist_l']
     dec_dist = max(f['injections']['eff_dist_h'][iidx], f['injections']['eff_dist_l'][iidx])

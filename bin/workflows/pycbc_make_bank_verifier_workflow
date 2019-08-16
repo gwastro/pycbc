@@ -33,7 +33,7 @@ import pycbc.version
 import pycbc.workflow as wf
 import pycbc.workflow.pegasus_workflow as pwf
 from pycbc.results import create_versioning_page, static_table, layout
-from pycbc.workflow import LalappsInspinjExecutable
+from pycbc.workflow import LalappsInspinjExecutable, PycbcDarkVsBrightInjectionsExecutable
 from pycbc.workflow import setup_splittable_dax_generated
 
 # Boiler-plate stuff
@@ -194,6 +194,16 @@ def add_banksim_set(workflow, file_tag, num_injs, curr_tags, split_banks):
     node = inspinj_job.create_node(t_seg)
     workflow += node
     inj_file = node.output_file
+    # Here we apply the em-bright criterion
+    if workflow.cp.has_option('workflow-injections', 'em-bright-only'):
+        # Job to carry on with em-bright injections only
+        em_filter_job = PycbcDarkVsBrightInjectionsExecutable(workflow.cp,
+                                       'em_bright_filter',
+                                       out_dir='.', ifos='HL', tags=curr_tags)
+        node = em_filter_job.create_node(inj_file, t_seg, curr_tags)
+        workflow += node
+        inj_file = node.output_files[0]
+
     split_injs = setup_splittable_dax_generated(workflow, [inj_file],
                                                 'splitinjfiles', curr_tags)
     # Banksim job
