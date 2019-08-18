@@ -4,6 +4,38 @@ statistic values
 import numpy
 
 
+def newsnr_sgveto_psdvar_scaled(snr, bchisq, sgchisq, psd_var_val):
+    """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD
+    variation statistic """
+    nsnr = numpy.array(newsnr_sgveto(snr, bchisq, sgchisq), ndmin=1)
+    psd_var_val = numpy.array(psd_var_val, ndmin=1)
+    # 1.2 is the expected maximum psd_var_val over gaussian noise.
+    #lgc = psd_var_val >= 1.2
+    nsnr = nsnr / (psd_var_val)**0.33
+
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
+        return nsnr
+    else:
+        return nsnr[0]
+
+def newsnr_sgveto_psdvar_com(snr, bchisq, sgchisq, psd_var_val):
+    """ Combined SNR derived from NewSNR, Sine-Gaussian Chisq and PSD
+    variation statistic """
+    nsnr = numpy.array(newsnr_sgveto(snr, bchisq, sgchisq), ndmin=1)
+    psd_var_val = numpy.array(psd_var_val, ndmin=1)
+
+    # 1.2 is the expected maximum psd_var_val over gaussian noise.
+    lgc = psd_var_val >= 1.2
+    nsnr2 = nsnr / (psd_var_val)**0.33
+    nsnr2[lgc] = nsnr[lgc] / psd_var_val [lgc]
+
+    # If snr input is float, return a float. Otherwise return numpy array.
+    if hasattr(snr, '__len__'):
+        return nsnr2
+    else:
+        return nsnr2[0]
+
 def effsnr(snr, reduced_x2, fac=250.):
     """Calculate the effective SNR statistic. See (S5y1 paper) for definition.
     """
@@ -129,6 +161,52 @@ def get_newsnr_sgveto_psdvar(trigs):
     dof = 2. * trigs['chisq_dof'][:] - 2.
     nsnr_sg_psd = \
                  newsnr_sgveto_psdvar(trigs['snr'][:], trigs['chisq'][:] / dof,
+                                      trigs['sg_chisq'][:],
+                                      trigs['psd_var_val'][:])
+    return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+
+def get_newsnr_sgveto_psdvar_scaled(trigs):
+    """
+    Calculate newsnr re-weighted by the sine-gaussian veto and psd variation
+    statistic
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', 'chisq' and 'psd_var_val' are required keys
+
+    Returns
+    -------
+     numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg_psd = \
+                 newsnr_sgveto_psdvar_scaled(trigs['snr'][:], trigs['chisq'][:] / dof,
+                                      trigs['sg_chisq'][:],
+                                      trigs['psd_var_val'][:])
+    return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+
+def get_newsnr_sgveto_psdvar_com(trigs):
+    """
+    Calculate newsnr re-weighted by the sine-gaussian veto and psd variation
+    statistic
+
+    Parameters
+    ----------
+    trigs: dict of numpy.ndarrays
+        Dictionary holding single detector trigger information.
+    'chisq_dof', 'snr', 'chisq' and 'psd_var_val' are required keys
+
+    Returns
+    -------
+     numpy.ndarray
+        Array of newsnr values
+    """
+    dof = 2. * trigs['chisq_dof'][:] - 2.
+    nsnr_sg_psd = \
+                 newsnr_sgveto_psdvar_com(trigs['snr'][:], trigs['chisq'][:] / dof,
                                       trigs['sg_chisq'][:],
                                       trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)

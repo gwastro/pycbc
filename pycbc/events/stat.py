@@ -165,6 +165,43 @@ class NewSNRSGPSDStatistic(NewSNRSGStatistic):
         """
         return ranking.get_newsnr_sgveto_psdvar(trigs)
 
+class NewSNRSGPSDScaledStatistic(NewSNRSGStatistic):
+    """Calculate the NewSNRSGPSD coincident detection statistic"""
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr
+        combined with sgveto and psdvar statistic
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return ranking.get_newsnr_sgveto_psdvar_scaled(trigs)
+
+class NewSNRSGPSDComStatistic(NewSNRSGStatistic):
+    """Calculate the NewSNRSGPSD coincident detection statistic"""
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr
+        combined with sgveto and psdvar statistic
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return ranking.get_newsnr_sgveto_psdvar_com(trigs)
+
+
 
 class NetworkSNRStatistic(NewSNRStatistic):
     """Same as the NewSNR statistic, but just sum of squares of SNRs"""
@@ -1131,6 +1168,8 @@ sngl_statistic_dict = {
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
+    'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
+    'newsnr_sgveto_psdvar_com': NewSNRSGPSDComStatistic,
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
 
