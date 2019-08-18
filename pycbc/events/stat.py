@@ -907,6 +907,18 @@ class PhaseTDExpFitSGPSDStatistic(PhaseTDExpFitSGStatistic):
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar
 
 
+class PhaseTDExpFitSGPSDScaledStatistic(PhaseTDExpFitSGStatistic):
+    """Statistic combining exponential noise model with signal histogram PDF
+
+    adding the sine-Gaussian veto and PSD variation statistic to the
+    single detector ranking
+    """
+
+    def __init__(self, files, ifos=None):
+        PhaseTDExpFitSGStatistic.__init__(self, files, ifos=ifos)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled
+
+
 class MaxContTradNewSNRStatistic(NewSNRStatistic):
     """Combination of NewSNR with the power chisq and auto chisq"""
 
@@ -1153,6 +1165,7 @@ statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
+    'phasetd_exp_fit_stat_sgveto_psdvar_scaled': PhaseTDExpFitSGPSDScaledStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic, 
     'exp_fit_sg_fgbg_rate_new': ExpFitSGFgBgRateNewStatistic,
