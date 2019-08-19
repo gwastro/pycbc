@@ -56,8 +56,15 @@ parser.add_argument('--analysis-category', type=str, required=False,
                     help='Designates whether to look at foreground triggers '
                          'background triggers (including "little dogs") '
                          'or background triggers (with "little dogs" removed)')
-parser.add_argument('--output-file')
-parser.add_argument('--transformation-catalog')
+parser.add_argument('--output-map', type=str, required=False,
+                    help='Supply the location of the pegasus output map file. '
+                         'Only needed if running this job within a workflow.') 
+parser.add_argument('--output-file', type=str, required=True,
+                    help='Name of the output dax file to be generated.')
+parser.add_argument('--transformation-catalog', type=str, required=False,
+                    help='Supply the location of the pegasus executable '
+                         'transformation catalog file. '
+                         'Only needed if running this job within a workflow.')
 parser.add_argument('--tags', nargs='+', default=[])
 wf.add_workflow_command_line_group(parser)
 args = parser.parse_args()
