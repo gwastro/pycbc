@@ -86,7 +86,7 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     config_file = wdax.File(os.path.basename(config_path))
     config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
-    exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
+    exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output, tags=tags)
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
@@ -96,9 +96,11 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     node.add_input_opt('--inspiral-segments', insp_segs)
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
+    if tags:
+        node.add_list_opt('--tags', tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -801,6 +803,46 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files
+
+def make_skipped_html(workflow, skipped_data, out_dir, tags):
+    """
+    Make a html snippet from the list of skipped background coincidences
+    """
+    exe = Executable(workflow.cp, 'html_snippet',
+                     ifos=workflow.ifos, out_dir=out_dir, tags=tags)
+
+    node = exe.create_node()
+
+    parsed_data = {}
+    for ifo, time in skipped_data:
+        if ifo not in parsed_data:
+            parsed_data[ifo] = {}
+        if time not in parsed_data[ifo]:
+            parsed_data[ifo][time] = 1
+        else:
+            parsed_data[ifo][time] = parsed_data[ifo][time] + 1
+
+    n_events = len(skipped_data)
+    html_string = '"{} background events have been skipped '.format(n_events)
+    html_string += 'because one of their single triggers already appears '
+    html_string += 'in the events followed up above. '
+    html_string += 'Specifically, the following single detector triggers '
+    html_string += 'were found in these coincidences. '
+    html_template = '{} event at time {} appeared {} times. '
+    for ifo in parsed_data:
+        for time in parsed_data[ifo]:
+            n_occurances = parsed_data[ifo][time]
+            html_string += html_template.format(ifo, time, n_occurances)
+
+    html_string += '"'
+
+    node.add_opt('--html-text', html_string)
+    node.add_opt('--title', '"Events were skipped"')
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    files = node.output_files
+    return files
+
 
 def create_noop_node():
     """
