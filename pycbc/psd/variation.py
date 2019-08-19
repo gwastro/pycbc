@@ -377,11 +377,11 @@ def new_find_trigger_value(psd_var, idx, start, sample_rate):
     time = start + idx / sample_rate
     # Extract the PSD variation at trigger time through linear
     # interpolation
-    if not hasattr(psd_var, _CACHED_PSD_VAR_INTERPOLANT):
+    if not hasattr(psd_var, 'cached_psd_var_interpolant'):
         from scipy import interpolate
-        psd.var._CACHED_PSD_VAR_INTERPOLANT = \
+        psd_var.cached_psd_var_interpolant = \
             interpolate.interp1d(psd_var.sample_times, psd_var, fill_value=1,
                                  bounds_error=False)
-    vals = psd_var._CACHED_PSD_VAR_INTERPOLANT(time)
+    vals = psd_var.cached_psd_var_interpolant(time)
 
     return vals
