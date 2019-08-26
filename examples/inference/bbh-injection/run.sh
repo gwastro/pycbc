@@ -33,7 +33,7 @@ pycbc_inference --verbose \
     --psd-model ${STRAIN} \
     --psd-inverse-length ${PSD_INVERSE_LENGTH} \
     --fake-strain ${STRAIN} \
-    --fake-strain-seed 44 \
+    --fake-strain-seed H1:44 L1:45 \
     --strain-high-pass ${F_MIN} \
     --sample-rate ${SAMPLE_RATE} \
     --data-conditioning-low-freq ${F_MIN} \
