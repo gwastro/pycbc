@@ -9,7 +9,7 @@ from scipy.stats import norm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--ifos', nargs='+',
-                    help="The two ifos to generate a histogram for")
+                    help="The ifos to generate a histogram for")
 parser.add_argument('--sample-size', type=int, 
                     help="Approximant number of independent samples to draw for the distribution")
 parser.add_argument('--snr-ratio', type=float, 
@@ -19,7 +19,24 @@ parser.add_argument('--seed', type=int, default=124)
 parser.add_argument('--output-file')
 parser.add_argument('--verbose', action='store_true')
 parser.add_argument('--smoothing-sigma', type=int, default=2)
+parser.add_argument('--timing-uncertainty', type=float, default=.001,
+                    help="Timing uncertainty to set bin size and smoothing interval")
+parser.add_argument('--phase-uncertainty', type=float, default=0.25,
+                    help="Phase uncertainty used to set bin size and smoothing")
+parser.add_argument('--snr-reference', type=float, default=5, 
+                    help="Reference SNR to scale SNR uncertainty")
+parser.add_argument('--snr-uncertainty', type=float, default=1.4, 
+                    help="SNR uncertainty to set bin size and smoothing")
 args = parser.parse_args()
+
+twidth = args.timing_uncertainty  # approximate timing error at lower SNRs
+pwidth = args.phase_uncertainty   # approximate phase error at lower SNRs
+serr = args.snr_uncertainty   #
+sref = args.snr_reference     # Reference SNR for bin smoothing
+swidth = serr / sref
+
+srbmax = int((args.snr_ratio / swidth))
+srbmin = int((1.0 / args.snr_ratio) / swidth)
 
 # Apply a simple smoothing to help account for
 # measurement errors for weak signals
@@ -73,12 +90,6 @@ for k in range(chunks):
     ip = numpy.cos(inc)
     ic = 0.5 * (1.0 + ip * ip)
 
-    twidth = .001  # approximate timing error at lower SNRs
-    pwidth = .25   # approximate phase error at lower SNRs
-    serr = 1.4   #
-    sref = 5.0     # Reference SNR for bin smoothing
-    swidth = serr / sref
-
     # calculate the toa, poa, and amplitude of each sample
     data = {}
     for r, ifo in enumerate(args.ifos):
@@ -101,9 +112,6 @@ for k in range(chunks):
         dtbin = (dt / twidth).astype(numpy.int)
         dpbin = (dp / pwidth).astype(numpy.int)
         srbin = (sr / swidth).astype(numpy.int)
-        
-        srbmax = int((args.snr_ratio / swidth))
-        srbmin = int((1.0 / args.snr_ratio) / swidth)
         
         # We'll only store a limited range of ratios
         if keep is None:
@@ -129,8 +137,11 @@ for k in range(chunks):
 logging.info('applying smoothing')
 # apply smoothing iteratively
 for i, ifo in enumerate(range(len(args.ifos)-1)):
+    logging.info('%s-time', len(weights))
     weights = smooth_param(weights, twidth, i*3 + 0)
+    logging.info('%s-phase', len(weights))
     weights = smooth_param(weights, pwidth, i*3 + 1)
+    logging.info('%s-amp', len(weights))
     weights = smooth_param(weights, swidth, i*3 + 2)    
 logging.info('smoothing done: %s', len(weights))
 
@@ -138,8 +149,8 @@ logging.info('smoothing done: %s', len(weights))
 f = h5py.File(args.output_file, 'w')
 keys = numpy.array(weights.keys())
 values = numpy.array(weights.values())
-f['keys'] = keys
-f['values'] = values / values.max()
+f['param_bin'] = keys
+f['weights'] = values / values.max()
 
 f.attrs['srbmin'] = srbmin
 f.attrs['srbmax'] = srbmax
