@@ -2,6 +2,13 @@
 """ Create a file containing the phase and amplitude, 
 correlations between two detectors by
 doing a simple monte-carlo
+
+Output is the relative SNR, time, and phase as compared to a reference
+IFO (the first one provided). 
+
+To get the noise rate this should be scaled by the local sensitivity value
+and by the SNR of the signal in the reference detector 
+(see pycbc/events/stat.py)
 """
 import argparse, h5py, numpy.random, pycbc.detector, logging, multiprocessing
 from numpy.random import normal, uniform, power
