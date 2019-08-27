@@ -573,6 +573,16 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "given input file(s), as well as all avaiable functions, "
                  "run --file-help, along with one or more input files."
                  .format(lblhelp))
+        results_reading_group.add_argument(
+            "--constraint", type=str, nargs="+", metavar="CONSTRAINT[:FILE]",
+            help="Apply a constraint to the samples. If a file is provided "
+                 "after the constraint, it will only be applied to the given "
+                 "file. Otherwise, the constraint will be applied to all "
+                 "files. Only one constraint may be applied to a file. "
+                 "Samples that violate the constraint will be removed. Syntax "
+                 "is python; any parameter or function of parameter can be "
+                 "used, similar to the parameters argument. Multiple "
+                 "constraints may be combined by using '&' and '|'.")
         return results_reading_group
 
 
@@ -612,6 +622,22 @@ def results_from_cli(opts, load_samples=True, **kwargs):
     if isinstance(input_files, str):
         input_files = [input_files]
 
+    # load constraints
+    constraints = {}
+    if opts.constraint is not None:
+        for constraint in opts.constraint:
+            if len(constraint.split(':')) == 2:
+                constraint, fn = constraint.split(':')
+                constraints[fn] = constraint
+            # no file provided, make sure there's only one constraint
+            elif len(opts.constraint) > 1:
+                raise ValueError("must provide a file to apply constraints "
+                                 "to if providing more than one constraint")
+            else:
+                # this means no file, only one constraint, apply to all
+                # files
+                constraints = {fn: constraint for fn in input_files}
+                
     # loop over all input files
     for input_file in input_files:
         logging.info("Reading input file %s", input_file)
@@ -628,12 +654,23 @@ def results_from_cli(opts, load_samples=True, **kwargs):
                 opts.parameters, fp.variable_params)
 
             # read samples from file
-            samples = fp.samples_from_cli(opts, parameters=file_parameters, **kwargs)
+            samples = fp.samples_from_cli(opts, parameters=file_parameters,
+                                          **kwargs)
 
-            logging.info("Using {} samples".format(samples.size))
+            logging.info("Loaded {} samples".format(samples.size))
 
             # add parameters not included in file
             samples = _transforms.apply_transforms(samples, ts)
+
+            if input_file in constraints:
+                logging.info("Applying constraints")
+                mask = samples[constraints[input_file]]
+                samples = samples[mask] 
+                if samples.size == 0:
+                    raise ValueError("No samples remain after constraint {} "
+                                     "applied".format(constraints[input_file]))
+                logging.info("{} samples remain".format(samples.size))
+
 
         # else do not read samples
         else:

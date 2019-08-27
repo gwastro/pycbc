@@ -196,7 +196,8 @@ if waveform_transforms is not None:
     logging.info("Transforming to waveform transform parameters")
     for t in waveform_transforms:
         if not set(t.inputs).isdisjoint(set(static_params.keys())):
-            for item in list(set(t.inputs) & set(static_params.keys())):
+            for item in list((set(t.inputs) & set(static_params.keys())
+                             - set(samples.fieldnames))):
                 samples = samples.add_fields([numpy.repeat(static_params[item],
                                              opts.ninjections).astype(float)],
                                              [item])
