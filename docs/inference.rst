@@ -389,7 +389,7 @@ constrained to be <= 4 by using a function from the conversions module.
 
    [constraint-1]
    name = custom
-   constraint_args = q_from_mass1_mass2(mass1, mass2) <= 4
+   constraint_arg = q_from_mass1_mass2(mass1, mass2) <= 4
 
 ------------------------------
 Checkpointing and output files
