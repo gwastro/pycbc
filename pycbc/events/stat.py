@@ -255,8 +255,15 @@ class PhaseTDStatisticNew(NewSNRStatistic):
             logging.info("Using signal histogram %s for ifos %s", matching,
                          ifos)
 
-        self.param_bin = histfile['param_bin'][:]
+        
         self.weights = histfile['weights'][:]
+        
+        param = histfile['param_bin'][:]
+        ncol = self.param_bin.shape[1]
+        self.pdtype = [('c%s' % i, int) for i in range(ncol)]
+        self.param_bin = numpy.zeros(len(self.weights)), dtype=self.pdtype)
+        for i in range(ncol):
+            self.param_bin['c%s' % i] = param[:,i]
         
         l = self.param_bin.argsort()
         self.param_bin = self.param_bin[l]
@@ -309,9 +316,18 @@ class PhaseTDStatisticNew(NewSNRStatistic):
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
+        
+    def logsignalrate(self, s0, s1, shift):
+        to_shift = [-1, 0]
+        stats = {self.ifos[0]:s0, self.ifos[1]:s1}
+        return self.logsignalrate_multiifo(stats, shift, to_shift)
 
-    def logsignalrate(self, stats, shift):
+    def logsignalrate_multiifo(self, stats, shift, to_shift):
         """Calculate the normalized log rate density of signals via lookup"""
+
+        # Convert to dict as hist ifos and self.ifos may not be in same
+        # order
+        to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
 
         # does not require ifos to be specified, only 1 p/t/a file
         if self.hist is None:
@@ -319,8 +335,9 @@ class PhaseTDStatisticNew(NewSNRStatistic):
         else:
             logging.info("Using pre-set signal histogram")
         
-        # Get reference ifo information      
-        ref = stats[self.hist_ifos[0]]
+        # Get reference ifo information   
+        ref_ifo = self.hist_ifos[0]   
+        ref = stats[ref_ifo]
         pref = numpy.array(ref['coa_phase'], ndmin=1)
         tref = numpy.array(ref['end_time'], ndmin=1)
         sref = numpy.array(ref['snr'], ndmin=1)
@@ -332,7 +349,6 @@ class PhaseTDStatisticNew(NewSNRStatistic):
             sc = stats[ifo]
             p = numpy.array(sc['coa_phase'], ndmin=1)
             t = numpy.array(sc['end_time'], ndmin=1)
-            t = self.de_timeslide(t)
             s = numpy.array(sc['snr'], ndmin=1)
             
             sense = self.relsense[ifo]
@@ -340,7 +356,7 @@ class PhaseTDStatisticNew(NewSNRStatistic):
             
             # Calculate differences
             pdif = (pref - p) % (numpy.pi * 2.0)
-            tdif = tref - t 
+            tdif = shift * to_shift[ref_ifo] + tref - shift * to_shift[ifo] - t
             sdif = s / sref * sense / relsense * sigref / sig
                 
             # Put into bins
@@ -350,15 +366,17 @@ class PhaseTDStatisticNew(NewSNRStatistic):
             binned += [pbin, tbin, sbin]
             
         # convert binned to same dtype as stored in hist
-        
+        nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
+        for i in range(len(binned)):
+            nbinned['c%s' % i] = binned[i]
         
         # Read signal weight from precalculated histogram
-        l = numpy.searchsorted(self.param_bin, binned)
+        l = numpy.searchsorted(self.param_bin, nbinned)
         rate = self.weights[l]
         
         # These weren't in our histogram so give them max penalty instead
         # of random value
-        missed = numpy.where(self.param_bin[l] != binned)[0]       
+        missed = numpy.where(self.param_bin[l] != nbinned)[0]       
         rate[missed] = self.max_penalty
             
         # Scale by signal population SNR
