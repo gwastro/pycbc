@@ -216,6 +216,155 @@ class NewSNRCutStatistic(NewSNRStatistic):
         return cstat
 
 
+class PhaseTDStatisticNew(NewSNRStatistic):
+    """Statistic that re-weights combined newsnr using coinc parameters.
+
+    The weighting is based on the PDF of time delays, phase differences and
+    amplitude ratios between triggers in different ifos.
+    """
+
+    def __init__(self, files, ifos=None):
+        NewSNRStatistic.__init__(self, files, ifos=ifos)
+
+        self.single_dtype = [('snglstat', numpy.float32),
+                             ('coa_phase', numpy.float32),
+                             ('end_time', numpy.float64),
+                             ('sigmasq', numpy.float32),
+                             ('snr', numpy.float32)
+                             ]
+
+        # Assign attribute so that it can be replaced with other functions
+        self.get_newsnr = ranking.get_newsnr
+
+    def get_hist(self, ifos=None, norm='max'):
+        """Read in a signal density file for the ifo combination"""
+
+        # default name for old 2-ifo workflow
+        if 'phasetd_newsnr' in self.files:
+            histfile = self.files['phasetd_newsnr']
+        else:
+            ifos = ifos or self.ifos  # if None, use the instance attribute
+            matching = [k for k in self.files.keys() if \
+                        'phasetd' in k and (ifos[0] in k and ifos[1] in k)]
+            if len(matching) == 1:
+                histfile = self.files[matching[0]]
+            else:
+                raise RuntimeError(
+                  "%i statistic files had an attribute matching phasetd*%s%s !"
+                  "Should be exactly 1" % (len(matching), ifos[0], ifos[1]))
+            logging.info("Using signal histogram %s for ifos %s", matching,
+                         ifos)
+
+        self.param_bin = histfile['param_bin'][:]
+        self.weights = histfile['weights'][:]
+        
+        l = self.param_bin.argsort()
+        self.param_bin = self.param_bin[l]
+        self.weights = self.weights[l]
+        
+        self.max_penalty = self.weights.min()
+        
+        self.hist = {}
+        
+        # This order matters, we need to retrieve the order used to 
+        # generate the histogram as the first ifos if the reference
+        self.hist_ifos = histfile.attrs['ifos']
+
+        # Bin boundaries are stored in the hdf file
+        self.twidth = histfile.attrs['twidth']
+        self.pwidth = histfile.attrs['pwidth']
+        self.swidth = histfile.attrs['swidth']
+        
+        # Need these to push points back to space as we don't store outside
+        # certain ranges
+        self.srbinmax = histfile.attrs['srbinmax'] 
+        self.srbinmin = histfile.attrs['srbinmin']
+        
+        relfac = histfile.attrs['relative_sensitivies']
+        self.relsense = {}
+        for ifo, sense in zip(self.hist_ifos, relfac):
+            self.relsense[ifo] = sense
+      
+        self.ref_snr = 5.0
+
+    def single(self, trigs):
+        """Calculate the single detector statistic & assemble other parameters
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays, h5py group or similar dict-like object
+            Object holding single detector trigger information. 'snr', 'chisq',
+        'chisq_dof', 'coa_phase', 'end_time', and 'sigmasq' are required keys.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of single detector parameter values
+        """
+        sngl_stat = self.get_newsnr(trigs)
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
+        singles['coa_phase'] = trigs['coa_phase'][:]
+        singles['end_time'] = trigs['end_time'][:]
+        singles['sigmasq'] = trigs['sigmasq'][:]
+        singles['snr'] = trigs['snr'][:]
+        return numpy.array(singles, ndmin=1)
+
+    def logsignalrate(self, stats, shift):
+        """Calculate the normalized log rate density of signals via lookup"""
+
+        # does not require ifos to be specified, only 1 p/t/a file
+        if self.hist is None:
+            self.get_hist()
+        else:
+            logging.info("Using pre-set signal histogram")
+        
+        # Get reference ifo information      
+        ref = stats[self.hist_ifos[0]]
+        pref = numpy.array(ref['coa_phase'], ndmin=1)
+        tref = numpy.array(ref['end_time'], ndmin=1)
+        sref = numpy.array(ref['snr'], ndmin=1)
+        sigref = numpy.array(ref['sigmasq'], ndmin=1) ** 0.5
+        senseref = self.relsense[self.hist_ifos[0])
+        
+        binned = []
+        for ifo in self.hist_ifos[1:]:
+            sc = stats[ifo]
+            p = numpy.array(sc['coa_phase'], ndmin=1)
+            t = numpy.array(sc['end_time'], ndmin=1)
+            t = self.de_timeslide(t)
+            s = numpy.array(sc['snr'], ndmin=1)
+            
+            sense = self.relsense[ifo]
+            sig = numpy.array(sc['sigmasq'], ndmin=1) ** 0.5
+            
+            # Calculate differences
+            pdif = (pref - p) % (numpy.pi * 2.0)
+            tdif = tref - t 
+            sdif = s / sref * sense / relsense * sigref / sig
+                
+            # Put into bins
+            pbin = (pdif / self.pwidth).astype(numpy.int)
+            tbin = (tdif / self.twidth).astype(numpy.int)
+            sbin = (sdif / self.twidth).astype(Numpy.int)
+            binned += [pbin, tbin, sbin]
+            
+        # convert binned to same dtype as stored in hist
+        
+        
+        # Read signal weight from precalculated histogram
+        l = numpy.searchsorted(self.param_bin, binned)
+        rate = self.weights[l]
+        
+        # These weren't in our histogram so give them max penalty instead
+        # of random value
+        missed = numpy.where(self.param_bin[l] != binned)[0]       
+        rate[missed] = self.max_penalty
+            
+        # Scale by signal population SNR
+        rate *= (numpy.array(s0['snr'], ndim=1) / self.ref_snr) ** -4.0
+        return rate 
+
 class PhaseTDStatistic(NewSNRStatistic):
     """Statistic that re-weights combined newsnr using coinc parameters.
 

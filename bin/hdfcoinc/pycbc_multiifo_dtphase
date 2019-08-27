@@ -152,6 +152,7 @@ values = numpy.array(weights.values())
 f['param_bin'] = keys
 f['weights'] = values / values.max()
 
+f.attrs['sensitivity_ratios'] = args.relative_sensitivities
 f.attrs['srbmin'] = srbmin
 f.attrs['srbmax'] = srbmax
 f.attrs['twidth'] = twidth
