@@ -789,6 +789,37 @@ class PhaseTDExpFitStatistic(PhaseTDStatistic, ExpFitCombinedSNR):
         return cstat / (2.**0.5)
 
 
+class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
+    """Statistic combining exponential noise model with signal histogram PDF"""
+
+    # default is 2-ifo operation with exactly 1 'phasetd' file
+    def __init__(self, files, ifos=None):
+        # read in both foreground PDF and background fit info
+        ExpFitCombinedSNR.__init__(self, files, ifos=ifos)
+        # need the self.single_dtype value from PhaseTDStatistic
+        PhaseTDNewStatistic.__init__(self, files, ifos=ifos)
+
+    def single(self, trigs):
+        # same single-ifo stat as ExpFitCombinedSNR
+        sngl_stat = ExpFitCombinedSNR.single(self, trigs)
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
+        singles['coa_phase'] = trigs['coa_phase'][:]
+        singles['end_time'] = trigs['end_time'][:]
+        singles['sigmasq'] = trigs['sigmasq'][:]
+        singles['snr'] = trigs['snr'][:]
+        return numpy.array(singles, ndmin=1)
+
+    def coinc(self, s0, s1, slide, step):
+        # logsignalrate function inherited from PhaseTDStatistic
+        logr_s = self.logsignalrate(s0, s1, slide * step)
+        # rescale by ExpFitCombinedSNR reference slope as for sngl stat
+        cstat = s0['snglstat'] + s1['snglstat'] + logr_s / self.alpharef
+        # cut off underflowing and very small values
+        cstat[cstat < 8.] = 8.
+        # scale to resemble network SNR
+        return cstat / (2.**0.5)
+
 class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
     """Statistic combining exponential noise model with signal histogram PDF
 
@@ -797,6 +828,16 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
 
     def __init__(self, files, ifos=None):
         PhaseTDExpFitStatistic.__init__(self, files, ifos=ifos)
+        self.get_newsnr = ranking.get_newsnr_sgveto
+
+class PhaseTDNewExpFitSGStatistic(PhaseTDNewExpFitStatistic):
+    """Statistic combining exponential noise model with signal histogram PDF
+
+    adding the sine-Gaussian veto to the single detector ranking
+    """
+
+    def __init__(self, files, ifos=None):
+        PhaseTDNewExpFitStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto
 
 
@@ -975,6 +1016,7 @@ statistic_dict = {
     'phasetd_exp_fit_stat': PhaseTDExpFitStatistic,
     'max_cont_trad_newsnr': MaxContTradNewSNRStatistic,
     'phasetd_exp_fit_stat_sgveto': PhaseTDExpFitSGStatistic,
+    'phasetd_new_exp_fit_stat_sgveto': PhaseTDNewExpFitSGStatistic,
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
