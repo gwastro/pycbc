@@ -216,7 +216,7 @@ class NewSNRCutStatistic(NewSNRStatistic):
         return cstat
 
 
-class PhaseTDStatisticNew(NewSNRStatistic):
+class PhaseTDNewStatistic(NewSNRStatistic):
     """Statistic that re-weights combined newsnr using coinc parameters.
 
     The weighting is based on the PDF of time delays, phase differences and
@@ -235,6 +235,7 @@ class PhaseTDStatisticNew(NewSNRStatistic):
 
         # Assign attribute so that it can be replaced with other functions
         self.get_newsnr = ranking.get_newsnr
+        self.hist = None
 
     def get_hist(self, ifos=None, norm='max'):
         """Read in a signal density file for the ifo combination"""
@@ -259,9 +260,9 @@ class PhaseTDStatisticNew(NewSNRStatistic):
         self.weights = histfile['weights'][:]
         
         param = histfile['param_bin'][:]
-        ncol = self.param_bin.shape[1]
+        ncol = param.shape[1]
         self.pdtype = [('c%s' % i, int) for i in range(ncol)]
-        self.param_bin = numpy.zeros(len(self.weights)), dtype=self.pdtype)
+        self.param_bin = numpy.zeros(len(self.weights), dtype=self.pdtype)
         for i in range(ncol):
             self.param_bin['c%s' % i] = param[:,i]
         
@@ -284,10 +285,10 @@ class PhaseTDStatisticNew(NewSNRStatistic):
         
         # Need these to push points back to space as we don't store outside
         # certain ranges
-        self.srbinmax = histfile.attrs['srbinmax'] 
-        self.srbinmin = histfile.attrs['srbinmin']
+        self.srbinmax = histfile.attrs['srbmax'] 
+        self.srbinmin = histfile.attrs['srbmin']
         
-        relfac = histfile.attrs['relative_sensitivies']
+        relfac = histfile.attrs['sensitivity_ratios']
         self.relsense = {}
         for ifo, sense in zip(self.hist_ifos, relfac):
             self.relsense[ifo] = sense
@@ -342,7 +343,7 @@ class PhaseTDStatisticNew(NewSNRStatistic):
         tref = numpy.array(ref['end_time'], ndmin=1)
         sref = numpy.array(ref['snr'], ndmin=1)
         sigref = numpy.array(ref['sigmasq'], ndmin=1) ** 0.5
-        senseref = self.relsense[self.hist_ifos[0])
+        senseref = self.relsense[self.hist_ifos[0]]
         
         binned = []
         for ifo in self.hist_ifos[1:]:
@@ -357,14 +358,14 @@ class PhaseTDStatisticNew(NewSNRStatistic):
             # Calculate differences
             pdif = (pref - p) % (numpy.pi * 2.0)
             tdif = shift * to_shift[ref_ifo] + tref - shift * to_shift[ifo] - t
-            sdif = s / sref * sense / relsense * sigref / sig
+            sdif = s / sref * sense / senseref * sigref / sig
                 
             # Put into bins
             pbin = (pdif / self.pwidth).astype(numpy.int)
             tbin = (tdif / self.twidth).astype(numpy.int)
-            sbin = (sdif / self.twidth).astype(Numpy.int)
+            sbin = (sdif / self.swidth).astype(numpy.int)
             binned += [pbin, tbin, sbin]
-            
+
         # convert binned to same dtype as stored in hist
         nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
         for i in range(len(binned)):
@@ -372,6 +373,7 @@ class PhaseTDStatisticNew(NewSNRStatistic):
         
         # Read signal weight from precalculated histogram
         l = numpy.searchsorted(self.param_bin, nbinned)
+        l[l == len(self.weights)] = 0
         rate = self.weights[l]
         
         # These weren't in our histogram so give them max penalty instead
@@ -380,7 +382,7 @@ class PhaseTDStatisticNew(NewSNRStatistic):
         rate[missed] = self.max_penalty
             
         # Scale by signal population SNR
-        rate *= (numpy.array(s0['snr'], ndim=1) / self.ref_snr) ** -4.0
+        rate *= (sref / self.ref_snr) ** -4.0
         return rate 
 
 class PhaseTDStatistic(NewSNRStatistic):

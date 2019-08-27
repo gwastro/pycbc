@@ -189,7 +189,7 @@ if args.strict_coinc_time:
 # initialize a Stat class instance to calculate the coinc ranking statistic
 ifos = [trigs0.ifo, trigs1.ifo]
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
-                                                         ifos=ifos])
+                                                         ifos=ifos)
 if args.use_maxalpha:
     rank_method.use_alphamax()
 det0, det1 = detector.Detector(trigs0.ifo), detector.Detector(trigs1.ifo)

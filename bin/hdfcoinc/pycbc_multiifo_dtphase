@@ -159,3 +159,4 @@ f.attrs['twidth'] = twidth
 f.attrs['pwidth'] = pwidth
 f.attrs['swidth'] = swidth
 f.attrs['ifos'] = args.ifos
+f.attrs['stat'] = 'phasetd_newsnr_%s' % ''.join(args.ifos)
