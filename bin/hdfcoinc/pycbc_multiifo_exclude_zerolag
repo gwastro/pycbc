@@ -6,7 +6,8 @@ coincidences from *any* coincidence type with ifar above a certain threshold
 
 import h5py, numpy as np, argparse, logging, pycbc, pycbc.io
 import pycbc.version
-from pycbc.events import veto
+from pycbc.events import veto, coinc
+import pycbc.conversions as conv
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version",
@@ -89,4 +90,19 @@ logging.info('%d triggers remaining' % n_triggers_new)
 logging.info('Writing updated background_exc to output file')
 for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
+
+
+logging.info('Recalculating IFARs')
+fnlouder = coinc.calculate_n_louder(filtered_trigs.data['stat'],
+                                    f_in['foreground/stat'][:],
+                                    filtered_trigs.data['decimation_factor'],
+                                    skip_background=True)
+bg_time_exc = f_in.attrs['background_time_exc']
+fg_ifar_exc = conv.sec_to_year(bg_time_exc / (fnlouder + 1.))
+
+logging.info('Writing updated foreground ifar_exc and fap_exc to output file')
+f_out['foreground/ifar_exc'][:] = fg_ifar_exc
+fg_time_exc = conv.sec_to_year(f.attrs['foreground_time_exc'])
+f_out['foreground/fap_exc'][:] = 1 - np.exp(-fg_time_exc / fg_ifar_exc)
+
 logging.info("Done!")
