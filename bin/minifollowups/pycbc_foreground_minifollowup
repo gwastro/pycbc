@@ -19,7 +19,7 @@
 import os, sys, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
-from pycbc.events import select_segments_by_definer
+from pycbc.events import select_segments_by_definer, coinc
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
@@ -262,15 +262,21 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
 
     for single in single_triggers:
         time = times[single.ifo][curr_idx]
-        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
+        if time==-1:
+            time = coinc.mean_if_greater_than_zero([times[sngl.ifo][curr_idx]
+                                                    for sngl in single_triggers])[0]
+        try:
+            files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
                                 time, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(event_count)])
-
-        files += mini.make_qscan_plot\
-            (workflow, single.ifo, time, args.output_dir,
-             data_segments=insp_data_seglists[single.ifo],
-             tags=args.tags + [str(event_count)])
+            files += mini.make_qscan_plot\
+                (workflow, single.ifo, time, args.output_dir,
+                 data_segments=insp_data_seglists[single.ifo],
+                 tags=args.tags + [str(event_count)])
+        except ValueError:
+            logging.info('Trigger time {} is not valid in {}, ' \
+                         'skipping singles plots'.format(time, single.ifo))
 
     layouts += list(layout.grouper(files, 2))
 

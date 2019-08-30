@@ -19,7 +19,7 @@
 import os, argparse, numpy, logging, h5py, copy
 import pycbc.workflow as wf
 from pycbc.types import MultiDetOptionAction
-from pycbc.events import select_segments_by_definer
+from pycbc.events import select_segments_by_definer, coinc
 from pycbc.results import layout
 from pycbc.detector import Detector
 import pycbc.workflow.minifollowups as mini
@@ -179,18 +179,22 @@ for num_event in range(num_events):
     for single in single_triggers:
         checkedtime = time
         if (inj_params[single.ifo + '_end_time'] == -1.0):
-            checkedtime = -1.0
-
-        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
+            all_times = [inj_params[sngl.ifo + '_end_time'] for sngl in single_triggers]
+            checkedtime = coinc.mean_if_greater_than_zero(all_times)[0]
+        try:
+            files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
                                 checkedtime, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(num_event)])
-
-        files += mini.make_qscan_plot\
-            (workflow, single.ifo, checkedtime, args.output_dir,
-             data_segments=insp_data_seglists[single.ifo],
-             injection_file=injection_xml_file,
-             tags=args.tags + [str(num_event)])
+            files += mini.make_qscan_plot\
+                (workflow, single.ifo, checkedtime, args.output_dir,
+                 data_segments=insp_data_seglists[single.ifo],
+                 injection_file=injection_xml_file,
+                 tags=args.tags + [str(num_event)])
+        except ValueError:
+            logging.info('Trigger time {} is not valid in {}, ' \
+                         'skipping singles plots'.format(checkedtime,
+                                                         single.ifo))
 
     files += mini.make_single_template_plots(workflow, insp_segs,
                             args.inspiral_data_read_name,
