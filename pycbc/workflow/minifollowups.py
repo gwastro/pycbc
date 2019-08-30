@@ -599,8 +599,7 @@ def make_trigger_timeseries(workflow, singles, ifo_times, out_dir, special_tids=
     return files
 
 def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
-                    data_segments=None, time_window=100, no_trigger=False,
-                    tags=None):
+                    data_segments=None, time_window=100, tags=None):
     """ Generate a make_qscan node and add it to workflow.
 
     This function generates a single node of the singles_timefreq executable
@@ -632,7 +631,6 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
         The amount of data (not including padding) that will be read in by the
         singles_timefreq job. The default value of 100s should be fine for most
         cases.
-    no_trigger: bool (optional, default=False)
     tags: list (optional, default=None)
         List of tags to add to the created nodes, which determine file naming.
     """
@@ -656,11 +654,20 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
             if trig_time in seg:
                 data_seg = seg
                 break
-            else:
-                err_msg = "Trig time {} ".format(trig_time)
-                err_msg += "does not seem to lie within any data segments. "
-                err_msg += "This shouldn't be possible, please ask for help!"
-                raise ValueError(err_msg)
+            elif trig_time == -1.0:
+                node.add_opt('--gps-start-time', int(trig_time))
+                node.add_opt('--gps-end-time', int(trig_time))
+                node.add_opt('--center-time', trig_time)
+                caption_string = "'No trigger in %s'" % ifo
+                node.add_opt('--plot-caption', caption_string)
+                node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+                workflow += node
+                return node.output_files
+        else:
+            err_msg = "Trig time {} ".format(trig_time)
+            err_msg += "does not seem to lie within any data segments. "
+            err_msg += "This shouldn't be possible, please ask for help!"
+            raise ValueError(err_msg)
         # Check for pad-data
         if curr_exe.has_opt('pad-data'):
             pad_data = int(curr_exe.get_opt('pad-data'))
@@ -673,10 +680,6 @@ def make_qscan_plot(workflow, ifo, trig_time, out_dir, injection_file=None,
         if start < (data_seg[0] + pad_data):
             start = data_seg[0] + pad_data
 
-    if no_trigger:
-        caption_string = "Note that there was no trigger found " \
-                             "in %s so an average time was used" % ifo
-        node.add_opt('--plot-caption', caption_string)
     node.add_opt('--gps-start-time', int(start))
     node.add_opt('--gps-end-time', int(end))
     node.add_opt('--center-time', trig_time)

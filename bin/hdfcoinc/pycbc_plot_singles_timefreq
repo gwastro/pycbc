@@ -56,7 +56,7 @@ parser.add_argument('--rank', choices=['snr', 'newsnr'], default='newsnr',
                     help='Ranking statistic for sorting triggers')
 parser.add_argument('--num-loudest', type=int, default=1000,
                     help='Number of loudest triggers to plot')
-parser.add_argument('--interesting-trig', type=int, default=None,
+parser.add_argument('--interesting-trig', type=int,
                     help='Index of interesting trigger to highlight')
 parser.add_argument('--detector', type=str, required=True)
 parser.add_argument('--center-time', type=float,
@@ -180,7 +180,6 @@ if len(indices) > 0:
             load_compressed=False)
     tmplts = bank.table
 
-    trig_statement = "The time-frequency evolution of each single trigger is shown as a blue curve. The light-blue curve is the loudest trigger by newsnr."
     logging.info('Plotting %d trigs', len(sorted_end_time))
     for tc, rho, tid in zip(sorted_end_time, sorted_rank, sorted_template_ids):
         track_t, track_f = pycbc.pnutils.get_inspiral_tf(
