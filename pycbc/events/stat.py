@@ -182,6 +182,25 @@ class NewSNRSGPSDScaledStatistic(NewSNRSGStatistic):
             The array of single detector values
         """
         return ranking.get_newsnr_sgveto_psdvar_scaled(trigs)
+        
+
+class NewSNRSGPSDScaledThresholdStatistic(NewSNRSGStatistic):
+    """Calculate the NewSNRSGPSD coincident detection statistic"""
+
+    def single(self, trigs):
+        """Calculate the single detector statistic, here equal to newsnr
+        combined with sgveto and psdvar statistic
+
+        Parameters
+        ----------
+        trigs: dict of numpy.ndarrays
+
+        Returns
+        -------
+        numpy.ndarray
+            The array of single detector values
+        """
+        return ranking.get_newsnr_sgveto_psdvar_scaled_threshold(trigs)
 
 class NewSNRSGPSDComStatistic(NewSNRSGStatistic):
     """Calculate the NewSNRSGPSD coincident detection statistic"""
@@ -1146,7 +1165,26 @@ class ExpFitSGFgBgRateNewStatistic(PhaseTDNewStatistic, ExpFitSGBgRateStatistic)
         loglr[loglr < -30.] = -30.
         return loglr
 
+class TwoGCStatistic(ExpFitSGFgBgRateNewStatistic):
+    def __init__(self, files, ifos=None):
+        ExpFitSGFgBgRateNewStatistic.__init__(self, files, ifos=ifos)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled
 
+class TwoGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
+    def __init__(self, files, ifos=None):
+        ExpFitSGFgBgRateNewStatistic.__init__(self, files, ifos=ifos)
+        self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
+        
+    def single(self, trigs):
+        from pycbc.conversions import mchirp_from_mass1_mass2
+        self.mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'], trigs.param['mass2'])
+        return ExpFitSGFgBgRateNewStatistic.single(self, trigs)
+    
+    def logsignalrate_multiifo(self, stats, shift, to_shift):
+        logr_s = ExpFitSGFgBgRateNewStatistic.logsignalrate_multiifo(self, stats, shift, to_shift)
+        mchirp = self.mchirp if self.mchirp < 40 else 40.0
+        logr_s += numpy.log((mchirp / 20.0) ** (11./3.0))
+        return logr_s
 
 statistic_dict = {
     'newsnr': NewSNRStatistic,
@@ -1169,6 +1207,8 @@ statistic_dict = {
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic, 
     'exp_fit_sg_fgbg_rate_new': ExpFitSGFgBgRateNewStatistic,
+    '2gc':TwoGCStatistic,
+    '2gcbbh':TwoGCBBHStatistic,
 }
 
 sngl_statistic_dict = {
@@ -1182,6 +1222,7 @@ sngl_statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
+    'newsnr_sgveto_psdvar_scaled_threshold': NewSNRSGPSDScaledThresholdStatistic,
     'newsnr_sgveto_psdvar_com': NewSNRSGPSDComStatistic,
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
