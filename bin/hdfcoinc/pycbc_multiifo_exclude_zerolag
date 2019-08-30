@@ -93,16 +93,20 @@ for k in filtered_trigs.data:
 
 
 logging.info('Recalculating IFARs')
-fnlouder = coinc.calculate_n_louder(filtered_trigs.data['stat'],
+bnlouder, fnlouder = coinc.calculate_n_louder(filtered_trigs.data['stat'],
                                     f_in['foreground/stat'][:],
-                                    filtered_trigs.data['decimation_factor'],
-                                    skip_background=True)
-bg_time_exc = f_in.attrs['background_time_exc']
-fg_ifar_exc = conv.sec_to_year(bg_time_exc / (fnlouder + 1.))
+                                    filtered_trigs.data['decimation_factor'])
 
 logging.info('Writing updated foreground ifar_exc and fap_exc to output file')
+bg_time_exc = f_in.attrs['background_time_exc']
+fg_ifar_exc = conv.sec_to_year(bg_time_exc / (fnlouder + 1.))
 f_out['foreground/ifar_exc'][:] = fg_ifar_exc
 fg_time_exc = conv.sec_to_year(f.attrs['foreground_time_exc'])
 f_out['foreground/fap_exc'][:] = 1 - np.exp(-fg_time_exc / fg_ifar_exc)
+
+logging.info('Writing updated background_exc ifar to output file')
+bg_ifar_exc = conv.sec_to_year(bg_time_exc / (bnlouder + 1.))
+f_out['background_exc/ifar'][:] = bg_ifar_exc
+
 
 logging.info("Done!")
