@@ -1,3 +1,4 @@
+
 # Copyright (C) 2016 Alex Nitz
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -240,23 +241,26 @@ class PhaseTDNewStatistic(NewSNRStatistic):
     def get_hist(self, ifos=None, norm='max'):
         """Read in a signal density file for the ifo combination"""
 
-        # default name for old 2-ifo workflow
-        if 'phasetd_newsnr' in self.files:
-            histfile = self.files['phasetd_newsnr']
-        else:
-            ifos = ifos or self.ifos  # if None, use the instance attribute
-            matching = [k for k in self.files.keys() if \
-                        'phasetd' in k and (ifos[0] in k and ifos[1] in k)]
-            if len(matching) == 1:
-                histfile = self.files[matching[0]]
-            else:
-                raise RuntimeError(
-                  "%i statistic files had an attribute matching phasetd*%s%s !"
-                  "Should be exactly 1" % (len(matching), ifos[0], ifos[1]))
-            logging.info("Using signal histogram %s for ifos %s", matching,
-                         ifos)
 
-        
+        ifos = ifos or self.ifos
+
+        for name in self.files:
+             if 'phasetd_newsnr' in name:
+                 ifokey = name.split('_')[2]
+                 num = len(ifokey) / 2
+                 if num != len(ifos):
+                     continue
+                 
+                 match = [ifo in name for ifo in ifos]
+                 if False in match:
+                     continue
+                 else:
+                     break
+        else:
+            raise RuntimeError("Couldn't figure out which statistic file to use")
+        logging.info("Using signal histogram %s for ifos %s", name, ifos)
+        histfile = self.files[name]
+
         self.weights = histfile['weights'][:]
         
         param = histfile['param_bin'][:]
@@ -325,7 +329,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
     def logsignalrate_multiifo(self, stats, shift, to_shift):
         """Calculate the normalized log rate density of signals via lookup"""
-
         # Convert to dict as hist ifos and self.ifos may not be in same
         # order
         to_shift = {ifo: s for ifo, s in zip(self.ifos, to_shift)}
@@ -361,10 +364,10 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             sdif = s / sref * sense / senseref * sigref / sig
                 
             # Put into bins
-            pbin = (pdif / self.pwidth).astype(numpy.int)
             tbin = (tdif / self.twidth).astype(numpy.int)
+            pbin = (pdif / self.pwidth).astype(numpy.int)
             sbin = (sdif / self.swidth).astype(numpy.int)
-            binned += [pbin, tbin, sbin]
+            binned += [tbin, pbin, sbin]
 
         # convert binned to same dtype as stored in hist
         nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
@@ -380,10 +383,22 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         # of random value
         missed = numpy.where(self.param_bin[l] != nbinned)[0]       
         rate[missed] = self.max_penalty
+
+        #if len(tref) > 0 and abs(tref - 1187058327).min() < 1:
+        #    i = abs(tref - 1187058327).argmin()
+        ##    t = numpy.zeros(1, dtype=self.pdtype)
+        #    t[0][0] = 17
+        #    t[0][1] = 6
+        #    t[0][2] = 4
+        #    print self.param_bin
+        ##    print self.max_penalty, numpy.log(self.max_penalty)
+        #    print tref[i], rate[i], numpy.log(rate)[i], nbinned[i], pdif[i], tdif[i], sdif[i], pref[i], p[i]
+        #    exit()
             
         # Scale by signal population SNR
         rate *= (sref / self.ref_snr) ** -4.0
-        return rate 
+
+        return numpy.log(rate) 
 
 class PhaseTDStatistic(NewSNRStatistic):
     """Statistic that re-weights combined newsnr using coinc parameters.
@@ -918,7 +933,6 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         loglr = - ln_noise_rate + self.benchmark_lograte
         return loglr
 
-
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
     def __init__(self, files, ifos=None):
@@ -928,6 +942,93 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         self.ifos = self.ifos or self.bg_ifos
         # PhaseTD statistic single_dtype plus network sensitivity benchmark
         PhaseTDStatistic.__init__(self, files, ifos=self.ifos)
+        self.single_dtype.append(('benchmark_logvol', numpy.float32))
+
+        self.get_newsnr = ranking.get_newsnr_sgveto
+
+        for ifo in self.bg_ifos:
+            self.assign_median_sigma(ifo)
+        # benchmark_logvol is a benchmark sensitivity array over template id
+        hl_net_med_sigma = numpy.amin([self.fits_by_tid[ifo]['median_sigma']
+                                       for ifo in ['H1', 'L1']], axis=0)
+        self.benchmark_logvol = 3.0 * numpy.log(hl_net_med_sigma)
+
+    def assign_median_sigma(self, ifo):
+        coeff_file = self.files[ifo + '-fit_coeffs']
+        template_id = coeff_file['template_id'][:]
+        tid_sort = numpy.argsort(template_id)
+        self.fits_by_tid[ifo]['median_sigma'] = \
+            coeff_file['median_sigma'][:][tid_sort]
+
+    def single(self, trigs):
+        # single-ifo stat = log of noise rate
+        sngl_stat = self.lognoiserate(trigs)
+        # populate other fields to calculate phase/time/amp consistency
+        # and sigma comparison
+        singles = numpy.zeros(len(sngl_stat), dtype=self.single_dtype)
+        singles['snglstat'] = sngl_stat
+        singles['coa_phase'] = trigs['coa_phase'][:]
+        singles['end_time'] = trigs['end_time'][:]
+        singles['sigmasq'] = trigs['sigmasq'][:]
+        singles['snr'] = trigs['snr'][:]
+        try:
+            tnum = trigs.template_num  # exists if accessed via coinc_findtrigs
+        except AttributeError:
+            tnum = trigs['template_id']  # exists for SingleDetTriggers
+            # Should only be one ifo fit file provided
+            assert len(self.ifos) == 1
+        # store benchmark log volume as single-ifo information since the coinc
+        # method does not have access to template id
+        singles['benchmark_logvol'] = self.benchmark_logvol[tnum]
+        return numpy.array(singles, ndmin=1)
+
+    def coinc_multiifo(self, s, slide, step, to_shift,
+                       **kwargs): # pylint:disable=unused-argument
+        print s
+        sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
+
+        ln_noise_rate = coinc_rate.combination_noise_lograte(
+                                  sngl_rates, kwargs['time_addition'])
+        ln_noise_rate -= self.benchmark_lograte
+
+        # Network sensitivity for a given coinc type is approximately
+        # determined by the least sensitive ifo
+        network_sigmasq = numpy.amin([sngl[1]['sigmasq'] for sngl in s],
+                                     axis=0)
+        # Volume \propto sigma^3 or sigmasq^1.5
+        network_logvol = 1.5 * numpy.log(network_sigmasq)
+        # Get benchmark log volume as single-ifo information
+        # NB benchmark logvol for a given template is not ifo-dependent
+        # - choose the first ifo for convenience
+        benchmark_logvol = s[0][1]['benchmark_logvol']
+        network_logvol -= benchmark_logvol
+
+        coincifos = [sngl[0] for sngl in s]
+        # logsignalrate function from PhaseTDStatistic
+        if ('H1' in coincifos and 'L1' in coincifos):
+            # apply HL hist for HL & HLV coincs, keep only H/L info
+            s_hl = [sngl[1] for sngl in s if sngl[0] in ['H1', 'L1']]
+            shift_hl = [sh for sngl, sh in zip(s, to_shift) if \
+                        sngl[0] in ['H1', 'L1']]
+            logr_s = self.logsignalrate_multiifo(s_hl, slide * step, shift_hl)
+        else:
+            logr_s = self.logsignalrate_multiifo([sngl[1] for sngl in s],
+                                                 slide * step, to_shift)
+
+        loglr = logr_s + network_logvol - ln_noise_rate
+        # cut off underflowing and very small values
+        loglr[loglr < -30.] = -30.
+        return loglr
+
+class ExpFitSGFgBgRateNewStatistic(PhaseTDNewStatistic, ExpFitSGBgRateStatistic):
+
+    def __init__(self, files, ifos=None):
+        # read in background fit info and store it
+        ExpFitSGBgRateStatistic.__init__(self, files, ifos=ifos)
+        # if ifos not already set, determine via background fit info
+        self.ifos = self.ifos or self.bg_ifos
+        # PhaseTD statistic single_dtype plus network sensitivity benchmark
+        PhaseTDNewStatistic.__init__(self, files, ifos=self.ifos)
         self.single_dtype.append(('benchmark_logvol', numpy.float32))
 
         self.get_newsnr = ranking.get_newsnr_sgveto
@@ -987,22 +1088,15 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         benchmark_logvol = s[0][1]['benchmark_logvol']
         network_logvol -= benchmark_logvol
 
-        coincifos = [sngl[0] for sngl in s]
-        # logsignalrate function from PhaseTDStatistic
-        if ('H1' in coincifos and 'L1' in coincifos):
-            # apply HL hist for HL & HLV coincs, keep only H/L info
-            s_hl = [sngl[1] for sngl in s if sngl[0] in ['H1', 'L1']]
-            shift_hl = [sh for sngl, sh in zip(s, to_shift) if \
-                        sngl[0] in ['H1', 'L1']]
-            logr_s = self.logsignalrate_multiifo(s_hl, slide * step, shift_hl)
-        else:
-            logr_s = self.logsignalrate_multiifo([sngl[1] for sngl in s],
-                                                 slide * step, to_shift)
+        stat = {ifo: st for ifo, st in s}
+        logr_s = self.logsignalrate_multiifo(stat,
+                                             slide * step, to_shift)
 
         loglr = logr_s + network_logvol - ln_noise_rate
         # cut off underflowing and very small values
         loglr[loglr < -30.] = -30.
         return loglr
+
 
 
 statistic_dict = {
@@ -1023,7 +1117,8 @@ statistic_dict = {
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
-    'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic
+    'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic, 
+    'exp_fit_sg_fgbg_rate_new': ExpFitSGFgBgRateNewStatistic,
 }
 
 sngl_statistic_dict = {
