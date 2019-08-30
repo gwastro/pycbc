@@ -146,7 +146,7 @@ class Detector(object):
         fcross: float or numpy.ndarray
             The cross polarization factor for this sky location / orientation
         """
-        if np.isscalar(t_gps):
+        if isinstance(t_gps, lal.LIGOTimeGPS):
             t_gps = float(t_gps)
         gha = self.gmst_estimate(t_gps) - right_ascension
 
