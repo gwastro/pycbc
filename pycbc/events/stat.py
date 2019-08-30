@@ -240,43 +240,72 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.bins = {}
         self.hist_ifos = []
 
+    def match_file(self, ifos):
+        assert len(ifos) == 2
+        matching = [k for k in self.files.keys() if \
+                    'phasetd' in k and (ifos[0] in k and ifos[1] in k)]
+        if len(matching) == 1:
+            return matching[0]
+        else:
+            raise RuntimeError(
+              "%i statistic files had an attribute matching phasetd*%s%s !"
+              "Should be exactly 1" % (len(matching), ifos[0], ifos[1]))
+
     def get_hist(self, ifos=None, norm='max'):
         """Read in a signal density file for the ifo combination"""
 
         # default name for old 2-ifo workflow
         if 'phasetd_newsnr' in self.files:
             histfile = self.files['phasetd_newsnr']
+            ifos = ('H1', 'L1')
         else:
             ifos = ifos or self.ifos  # if None, use the instance attribute
             if len(ifos) != 2:
-                raise RuntimeError("Need exactly 2 ifos for the p/t/a "
-                                   "statistic! Ifos given were " + ifos)
-            matching = [k for k in self.files.keys() if \
-                        'phasetd' in k and (ifos[0] in k and ifos[1] in k)]
-            if len(matching) == 1:
-                histfile = self.files[matching[0]]
-            else:
-                raise RuntimeError(
-                  "%i statistic files had an attribute matching phasetd*%s%s !"
-                  "Should be exactly 1" % (len(matching), ifos[0], ifos[1]))
-            logging.info("Using signal histogram %s for ifos %s", matching,
-                         ifos)
+                #raise RuntimeError("Need exactly 2 ifos for the p/t/a "
+                #                   "statistic! Ifos given were " + ifos)
+                if len(ifos) == 3:
+                    self.get_threehists(ifos=ifos, norm='max')
+                    return
+            match = self.match_file(ifos)
+            logging.info("Using signal histogram %s for ifos %s", match, ifos)
+            histfile = self.files[match]
 
-        self.hist = histfile['map'][:]
         self.hist_ifos = ifos
+        ifos = tuple(ifos)  # hashable
+        hist = histfile['map'][:]
 
         if norm == 'max':
             # Normalize so that peak of hist is equal to unity
-            self.hist = self.hist / float(self.hist.max())
-            self.hist = numpy.log(self.hist)
+            hist = hist / float(hist.max())
+            self.hist = {ifos: numpy.log(hist)}
         else:
             raise NotImplementedError("Sorry, we have no other normalizations")
 
         # Bin boundaries are stored in the hdf file
-        self.bins['dt'] = histfile['tbins'][:]
-        self.bins['dphi'] = histfile['pbins'][:]
-        self.bins['snr'] = histfile['sbins'][:]
-        self.bins['sigma_ratio'] = histfile['rbins'][:]
+        self.bins['dt'] = {ifos: histfile['tbins'][:]}
+        self.bins['dphi'] = {ifos: histfile['pbins'][:]}
+        self.bins['snr'] = {ifos: histfile['sbins'][:]}
+        self.bins['sigma_ratio'] = {ifos: histfile['rbins'][:]}
+
+    def get_threehists(self, ifos=None, norm='max'):
+        if sorted(ifos) != ['H1', 'L1', 'V1']:
+            return RuntimeError("Can't use for 3-ifo combinations that are not HLV")
+        self.hist = {}
+        self.bins['dt'] = {}
+        self.bins['dphi'] = {}
+        self.bins['snr'] = {}
+        self.bins['sigma_ratio'] = {}
+        for two_combo in [('H1','L1'), ('H1','V1'), ('L1','V1')]:
+            match = self.match_file(two_combo)
+            logging.info("Using signal hist %s for ifos %s", match, two_combo)
+            histfile = self.files[match]
+            hist = histfile['map'][:]
+            hist = hist / float(hist.max())
+            self.hist[two_combo] = numpy.log(hist)
+            self.bins['dt'][two_combo] = histfile['tbins'][:]
+            self.bins['dphi'][two_combo] = histfile['pbins'][:]
+            self.bins['snr'][two_combo] = histfile['sbins'][:]
+            self.bins['sigma_ratio'][two_combo] = histfile['rbins'][:]
 
     def single(self, trigs):
         """Calculate the single detector statistic & assemble other parameters
@@ -301,8 +330,9 @@ class PhaseTDStatistic(NewSNRStatistic):
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
 
-    def signal_hist(self, td, pd, sn0, sn1, rd):
+    def signal_hist(self, ifos, td, pd, sn0, sn1, rd):
         assert self.hist is not None
+        ifos = tuple(ifos)
 
         # enforce that sigma ratio is < 1 by swapping values
         snr0 = sn0 * 1
@@ -313,11 +343,11 @@ class PhaseTDStatistic(NewSNRStatistic):
         rd[rd > 1] = 1. / rd[rd > 1]
 
         # Find which bin each coinc falls into
-        tv = numpy.searchsorted(self.bins['dt'], td) - 1
-        pv = numpy.searchsorted(self.bins['dphi'], pd) - 1
-        s0v = numpy.searchsorted(self.bins['snr'], snr0) - 1
-        s1v = numpy.searchsorted(self.bins['snr'], snr1) - 1
-        rv = numpy.searchsorted(self.bins['sigma_ratio'], rd) - 1
+        tv = numpy.searchsorted(self.bins['dt'][ifos], td) - 1
+        pv = numpy.searchsorted(self.bins['dphi'][ifos], pd) - 1
+        s0v = numpy.searchsorted(self.bins['snr'][ifos], snr0) - 1
+        s1v = numpy.searchsorted(self.bins['snr'][ifos], snr1) - 1
+        rv = numpy.searchsorted(self.bins['sigma_ratio'][ifos], rd) - 1
 
         # Enforce that points fit into the bin boundaries: if a point lies
         # outside the boundaries it is pushed back to the nearest bin.
@@ -327,7 +357,8 @@ class PhaseTDStatistic(NewSNRStatistic):
             binnum[binnum < 0] = 0
             binnum[binnum >= binend - 1] = binend - 2
 
-        return self.hist[tv, pv, s0v, s1v, rv]
+        logging.info('returning histogram for %s', ifos)
+        return self.hist[ifos][tv, pv, s0v, s1v, rv]
 
     def slide_dt(self, singles, shift, slide_vec):
         # Apply time shifts in the multiples specified by slide_vec
@@ -343,7 +374,7 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         # does not require ifos to be specified, only 1 p/t/a file
         if self.hist is None:
-            self.get_hist()
+            self.get_hist(ifos)
         else:
             logging.info("Using pre-set signal histogram")
 
@@ -361,9 +392,9 @@ class PhaseTDStatistic(NewSNRStatistic):
         sn1 = numpy.array(s1['snr'], ndmin=1)
         rd = numpy.array((s0['sigmasq'] / s1['sigmasq']) ** 0.5, ndmin=1)
 
-        return self.signal_hist(td, pd, sn0, sn1, rd)
+        return self.signal_hist(['H1','L1'], td, pd, sn0, sn1, rd)
 
-    def logsignalrate_multiifo(self, s, shift, to_shift):
+    def logsignalrate_multiifo(self, s, shift, to_shift, histifos):
         """
         Parameters
         ----------
@@ -378,14 +409,13 @@ class PhaseTDStatistic(NewSNRStatistic):
         assert len(s) == 2
         assert len(to_shift) == 2
 
-        # At present for triples use the H/L signal histogram
-        hist_ifos = self.ifos if len(self.ifos) == 2 else ['H1', 'L1']
+        #hist_ifos = self.ifos#  if len(self.ifos) == 2 else ['H1', 'L1']
         if self.hist is None:
-            self.get_hist(hist_ifos)
-        else:
-            assert self.hist_ifos == hist_ifos
-            logging.info("Using pre-set signal histogram for %s",
-                         self.hist_ifos)
+            self.get_hist(self.ifos)
+        #else:
+        #    assert self.hist_ifos == hist_ifos
+        #    logging.info("Using pre-set signal histogram for %s",
+        #                 self.hist_ifos)
 
         td = self.slide_dt(s, shift, to_shift)
         if numpy.any(td > 1.):
@@ -398,7 +428,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         sn1 = numpy.array(s[1]['snr'], ndmin=1)
         rd = numpy.array((s[0]['sigmasq'] / s[1]['sigmasq']) ** 0.5, ndmin=1)
 
-        return self.signal_hist(td, pd, sn0, sn1, rd)
+        return self.signal_hist(histifos, td, pd, sn0, sn1, rd)
 
     def coinc(self, s0, s1, slide, step):
         """Calculate the coincident detection statistic.
@@ -777,21 +807,39 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         benchmark_logvol = s[0][1]['benchmark_logvol']
         network_logvol -= benchmark_logvol
 
-        coincifos = [sngl[0] for sngl in s]
         # logsignalrate function from PhaseTDStatistic
-        if ('H1' in coincifos and 'L1' in coincifos):
-            # apply HL hist for HL & HLV coincs, keep only H/L info
-            s_hl = [sngl[1] for sngl in s if sngl[0] in ['H1', 'L1']]
-            shift_hl = [sh for sngl, sh in zip(s, to_shift) if \
-                        sngl[0] in ['H1', 'L1']]
-            logr_s = self.logsignalrate_multiifo(s_hl, slide * step, shift_hl)
+        if len(s) == 3:
+            # geometric average of products of 2 2-ifo hists
+            twoifos = ['H1', 'L1']
+            s_two = [sngl[1] for sngl in s if sngl[0] in twoifos]
+            shift_two = [sh for sngl, sh in zip(s, to_shift) if \
+                         sngl[0] in twoifos]
+            logr_hl = self.logsignalrate_multiifo(
+                                       s_two, slide * step, shift_two, twoifos)
+            twoifos = ['H1', 'V1']
+            s_two = [sngl[1] for sngl in s if sngl[0] in twoifos]
+            shift_two = [sh for sngl, sh in zip(s, to_shift) if \
+                         sngl[0] in twoifos]
+            logr_hv = self.logsignalrate_multiifo(
+                                       s_two, slide * step, shift_two, twoifos)
+            twoifos = ['L1', 'V1']
+            s_two = [sngl[1] for sngl in s if sngl[0] in twoifos]
+            shift_two = [sh for sngl, sh in zip(s, to_shift) if \
+                         sngl[0] in twoifos]
+            logr_lv = self.logsignalrate_multiifo(
+                                       s_two, slide * step, shift_two, twoifos)
+            if len(logr_hl):
+               print(logr_hl[:20], logr_hv[:20], logr_lv[:20])
+            logr_s = (logr_hl + logr_hv + logr_lv) * (2. / 3.)
         else:
-            logr_s = self.logsignalrate_multiifo([sngl[1] for sngl in s],
-                                                 slide * step, to_shift)
+            logr_s = self.logsignalrate_multiifo(
+                    [sngl[1] for sngl in s], slide * step, to_shift, self.ifos)
+            if len(logr_s):
+               print(logr_s[:20])
 
         loglr = logr_s + network_logvol - ln_noise_rate
         # cut off underflowing and very small values
-        loglr[loglr < -30.] = -30.
+        loglr[loglr < -50.] = -50.
         return loglr
 
 
