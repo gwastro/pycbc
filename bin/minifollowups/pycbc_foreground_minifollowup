@@ -19,7 +19,7 @@
 import os, sys, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
-from pycbc.events import select_segments_by_definer
+from pycbc.events import select_segments_by_definer, coinc
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
@@ -266,7 +266,10 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
                                 time, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(event_count)])
-
+        if time==-1:
+            time = coinc.mean_if_greater_than_zero([times[sngl.ifo][curr_idx]
+                                                    for sngl in single_triggers])[0]
+            print(time)
         files += mini.make_qscan_plot\
             (workflow, single.ifo, time, args.output_dir,
              data_segments=insp_data_seglists[single.ifo],
