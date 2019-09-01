@@ -1,12 +1,16 @@
 #!/bin/env python
-""" Create a file containing the phase and amplitude, 
-correlations between two detectors by
+""" Create a file containing the time, phase, and amplitude 
+correlations between two or more detectors by
 doing a simple monte-carlo
 
-Output is the relative SNR, time, and phase as compared to a reference
+Output is the relative amplitude, time, and phase as compared to a reference
 IFO (the first one provided). 
 
-To get the noise rate this should be scaled by the local sensitivity value
+The data is stored as two vectors, the discrete integer bin corresponding
+to a particular 3*(Nifo-1) location in amplitude/time/phase space along with the
+weight assigned to that bin.
+
+To get the signal rate this should be scaled by the local sensitivity value
 and by the SNR of the signal in the reference detector 
 (see pycbc/events/stat.py)
 """
@@ -18,14 +22,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--ifos', nargs='+',
                     help="The ifos to generate a histogram for")
 parser.add_argument('--sample-size', type=int, 
-                    help="Approximant number of independent samples to draw for the distribution")
+                    help="Approximate number of independent samples to draw for the distribution")
 parser.add_argument('--snr-ratio', type=float, 
-                    help="SNR ratio permitted between reference ifo and all others")
+                    help="The SNR ratio permitted between reference ifo and all others."
+                         "Ex. giving 4 permits a ratio of 0.25 -> 4")
 parser.add_argument('--relative-sensitivities', nargs='+', type=float)
 parser.add_argument('--seed', type=int, default=124)
 parser.add_argument('--output-file')
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--smoothing-sigma', type=int, default=2)
+parser.add_argument('--smoothing-sigma', type=int, default=2,
+                    help="Half-width of smoothing kernel in samples")
 parser.add_argument('--timing-uncertainty', type=float, default=.001,
                     help="Timing uncertainty to set bin size and smoothing interval")
 parser.add_argument('--phase-uncertainty', type=float, default=0.25,
@@ -99,11 +105,11 @@ for k in range(chunks):
 
     # calculate the toa, poa, and amplitude of each sample
     data = {}
-    for r, ifo in enumerate(args.ifos):
+    for rs, ifo in enumerate(args.relative_sensitivities, args.ifos):
         data[ifo] = {}
         fp, fc = d[ifo].antenna_pattern(ra, dec, pol, 0)
         sp, sc = fp * ip, fc * ic
-        data[ifo]['s'] = ((sp)**2.0 + (sc)**2.0) ** 0.5 * args.relative_sensitivities[r]
+        data[ifo]['s'] = (sp**2.0 + sc**2.0) ** 0.5 * rs
         data[ifo]['t'] = d[ifo].time_delay_from_earth_center(ra, dec, 0)
         data[ifo]['p'] = numpy.arctan2(sc, sp)
 
