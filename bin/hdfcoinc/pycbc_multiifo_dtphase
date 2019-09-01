@@ -12,7 +12,7 @@ weight assigned to that bin.
 
 To get the signal rate this should be scaled by the local sensitivity value
 and by the SNR of the signal in the reference detector 
-(see pycbc/events/stat.py)
+(see pycbc/events/stat.py) & PhaseTDNewStatistic
 """
 import argparse, h5py, numpy.random, pycbc.detector, logging, multiprocessing
 from numpy.random import normal, uniform, power
