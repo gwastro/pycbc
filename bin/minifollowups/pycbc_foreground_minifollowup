@@ -51,7 +51,7 @@ parser.add_argument('--inspiral-data-analyzed-name',
                     help="Name of inspiral segmentlist containing data "
                          "analyzed by each analysis job.")
 parser.add_argument('--analysis-category', type=str, required=False,
-                    default='background_exc',
+                    default='foreground',
                     choices = ['foreground', 'background', 'background_exc'],
                     help='Designates whether to look at foreground triggers '
                          'background triggers (including "little dogs") '
