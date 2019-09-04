@@ -103,6 +103,9 @@ elif [ -f /opt/intel/2015/composer_xe_2015/mkl/bin/mklvars.sh ] ; then
 elif [ -f /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh ] ; then
   # location on cit cluster
   . /ldcg/intel/2017u0/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
+elif [ -f /apps/compilers/intel/2019.3/compilers_and_libraries/linux/mkl/bin/mklvars.sh ] ; then
+  # location on ARCCA Hawk cluster
+  . /apps/compilers/intel/2019.3/compilers_and_libraries/linux/mkl/bin/mklvars.sh intel64
 fi
 
 # Use the ROM data from CVMFS
