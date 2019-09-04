@@ -132,6 +132,7 @@ def get_libpath_from_dirlist(libname, dirs):
         try:
             for libfile in os.listdir(nextdir):
                 if fnmatch.fnmatch(libfile,'lib'+libname+'.so*') or \
+                        fnmatch.fnmatch(libfile,'lib'+libname+'-????????.so*') or \
                         fnmatch.fnmatch(libfile,'lib'+libname+'.dylib*') or \
                         fnmatch.fnmatch(libfile,libname+'.dll') or \
                         fnmatch.fnmatch(libfile,'cyg'+libname+'-*.dll'):
@@ -157,6 +158,8 @@ def get_ctypes_library(libname, packages, mode=None):
     # First try to get from LD_LIBRARY_PATH
     if "LD_LIBRARY_PATH" in os.environ:
         libdirs += os.environ["LD_LIBRARY_PATH"].split(":")
+    # Next check for libraries bundled with the LALSuite wheel
+    libdirs += os.path.join(sys.path[-1], "lalsuite.libs")
     # Next try to append via pkg_config
     try:
         libdirs += pkg_config_libdirs(packages)
