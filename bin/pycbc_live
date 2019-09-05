@@ -176,7 +176,7 @@ class LiveEventManager(object):
         """
         #check for hardware injection
         for ifo in ifos:
-            if data_reader[ifo].near_hwinj():
+            if data_readers[ifo].near_hwinj():
                 coinc_results['HWINJ'] = True
                 break    
 
@@ -634,9 +634,11 @@ with ctx:
             if evnt.size > 1:
                 results, valid_end = evnt.gather_results()
 
-            # protect from situations where master and worker nodes disagree
-            # on the status of detectors: the master process has the last word
-            for ifo in set(results.keys()) - evnt.live_detectors:
+            # veto detectors with different state between the master
+            # and worker nodes (e.g. late frame files on one node only)
+            detectors_with_results = set(results.keys())
+            evnt.live_detectors.intersection_update(detectors_with_results)
+            for ifo in detectors_with_results - evnt.live_detectors:
                 results.pop(ifo)
 
             # Veto single detector triggers that fail the DQ vector
