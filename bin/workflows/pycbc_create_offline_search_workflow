@@ -210,7 +210,8 @@ for i in range(2, len(insps)+1):
 final_bg_files = {}
 for i in range(2, len(insps)+1):
     combinations = itertools.combinations(ifo_ids.keys(), i)
-    if len(combinations) == 1: continue
+    combs = combinations
+    if len([c for c in combs]) == 1: continue
     for ifocomb in combinations:
         _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
         # Create coinc tag
