@@ -208,7 +208,10 @@ for i in range(2, len(insps)+1):
                        tags=ctagcomb)
 
 final_bg_files = {}
+if len(ifo_ids) == 2:
+        final_bg_files = no_fg_exc_files
 for i in range(2, len(insps)+1):
+    if len(ifo_ids) == 2: continue
     combinations = itertools.combinations(ifo_ids.keys(), i)
     for ifocomb in combinations:
         _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
