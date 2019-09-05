@@ -208,11 +208,9 @@ for i in range(2, len(insps)+1):
                        tags=ctagcomb)
 
 final_bg_files = {}
-if len(ifo_ids) == 2:
-        final_bg_files = no_fg_exc_files
 for i in range(2, len(insps)+1):
-    if len(ifo_ids) == 2: continue
     combinations = itertools.combinations(ifo_ids.keys(), i)
+    if len(combinations) == 1: continue
     for ifocomb in combinations:
         _, _, ordered_ifo_list = wf.get_ordered_ifo_list(ifocomb, ifo_ids)
         # Create coinc tag
@@ -227,6 +225,8 @@ for i in range(2, len(insps)+1):
                                                  wf.FileList(other_bg_files.values()),
                                                  output_dir, ordered_ifo_list,
                                                  tags=ctagcomb)
+else:
+    final_bg_files = no_fg_exc_files
 
 combctags = [tag]
 combined_bg_file = wf.setup_multiifo_combine_statmap(
