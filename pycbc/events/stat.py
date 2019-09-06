@@ -353,7 +353,7 @@ class PhaseTDStatistic(NewSNRStatistic):
         # outside the boundaries it is pushed back to the nearest bin.
         for binnum, axis in zip([tv, pv, rv, s0v, s1v],
                                 ['dt', 'dphi', 'sigma_ratio', 'snr', 'snr']):
-            binend = len(self.bins[axis])
+            binend = len(self.bins[axis][ifos])
             binnum[binnum < 0] = 0
             binnum[binnum >= binend - 1] = binend - 2
 
@@ -409,13 +409,9 @@ class PhaseTDStatistic(NewSNRStatistic):
         assert len(s) == 2
         assert len(to_shift) == 2
 
-        #hist_ifos = self.ifos#  if len(self.ifos) == 2 else ['H1', 'L1']
+        #hist_ifos = self.ifos if len(self.ifos) == 2 else ['H1', 'L1']
         if self.hist is None:
             self.get_hist(self.ifos)
-        #else:
-        #    assert self.hist_ifos == hist_ifos
-        #    logging.info("Using pre-set signal histogram for %s",
-        #                 self.hist_ifos)
 
         td = self.slide_dt(s, shift, to_shift)
         if numpy.any(td > 1.):
