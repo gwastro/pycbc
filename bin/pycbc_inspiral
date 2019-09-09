@@ -25,7 +25,7 @@ from pycbc import vetoes, psd, waveform, strain, scheme, fft, DYN_RANGE_FAC, eve
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.filter import MatchedFilterControl, make_frequency_series, qtransform
 from pycbc.types import TimeSeries, FrequencySeries, zeros, float32, complex64
-import pycbc.fft.fftw, pycbc.version
+import pycbc.version
 import pycbc.opt
 import pycbc.weave
 import pycbc.inject
@@ -222,18 +222,18 @@ strain_segments = strain.StrainSegments.from_cli(opt, gwstrain)
 
 with ctx:
     # The following FFTW specific options needed to wait until
-    # we were inside the scheme context
+    # we were inside the scheme context.
 
     # Import system wisdom.
     if opt.fftw_import_system_wisdom:
-        import_sys_wisdom()
+        fft.fftw.import_sys_wisdom()
 
     # Read specified user-provided wisdom files
     if opt.fftw_input_float_wisdom_file is not None:
-        import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
+        fft.fftw.import_single_wisdom_from_filename(opt.fftw_input_float_wisdom_file)
 
     if opt.fftw_input_double_wisdom_file is not None:
-        import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)
+        fft.fftw.import_double_wisdom_from_filename(opt.fftw_input_double_wisdom_file)
 
     flow = opt.low_frequency_cutoff
     flen = strain_segments.freq_len
