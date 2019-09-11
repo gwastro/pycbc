@@ -111,14 +111,14 @@ if args.ifar_threshold is not None:
 num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
 
 try:
-    if 'optimal_snr_1' in f['injections/'].keys():  # 2-ifo pipeline case
+    if 'optimal_snr_1' in f['injections'].keys():  # 2-ifo pipeline case
         optimal_snr = [f['injections/optimal_snr_1'][:][missed],
                        f['injections/optimal_snr_2'][:][missed]]
         # 'decisive' opt SNR is 2nd smallest
         dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
         sorting = dec_snr.argsort()
     else:
-        optstrings = [os for os in f['injections/'].keys() if \
+        optstrings = [os for os in f['injections'].keys() if \
                       os.startswith('optimal_snr_')]
         optimal_snr = [f['injections/%s' % os][:][missed] for os in optstrings]
         # 2nd smallest opt SNR
