@@ -233,28 +233,29 @@ else:
 # in addition to these lists of coinc info, will also store trigger times and
 # ids in each ifo
 data = {'stat': [], 'decimation_factor': [], 'timeslide_id': [], 'template_id': []}
+for ifo in trigs.ifos:
+    data['%s/time' % ifo] = []
+    data['%s/trigger_id' % ifo] = []
 
 for tnum in template_ids:
-    tids = {}
+    times_full = {}
+    sds_full = {}
+    tids_full = {}
+    logging.info('Obtaining trigs for template %i ..' % (tnum))
     for i, sngl in zip(trigs.ifos, trigs.singles):
-        # restrict trigger information to current template
-        tids[i] = sngl.set_template(tnum)
+        tids_full[i] = sngl.set_template(tnum)
+        times_full[i] = sngl['end_time']
+        logging.info('%s:%s' % (i, len(tids_full[i])))
 
-    mintrigs = min([len(ti) for ti in tids.values()])
+        # get single-detector statistic
+        sds_full[i] = rank_method.single(sngl)
+         
+    mintrigs = min([len(ti) for ti in tids_full.values()])
     if mintrigs == 0:
         logging.info('No triggers in at least one ifo for template %i, '
                      'skipping' % tnum)
         continue
 
-    times_full = {}
-    sds_full = {}
-    logging.info('Obtaining trigs for template %i ..' % (tnum))
-    for i, sngl in zip(trigs.ifos, trigs.singles):
-        logging.info('%s:%s' % (i, len(tids[i])))
-        times_full[i] = sngl['end_time']
-        # get single-detector statistic
-        sds_full[i] = rank_method.single(sngl)
-         
     # Loop over the single triggers and calculate the coincs they can form
     start0 = 0
     while start0 < len(sds_full[args.pivot_ifo]):
@@ -274,6 +275,10 @@ for tnum in template_ids:
             sds = sds_full.copy()
             sds[args.pivot_ifo] = sds_full[args.pivot_ifo][start0:end0]
             sds[args.fixed_ifo] = sds_full[args.fixed_ifo][start1:end1]
+
+            tids = tids_full.copy()
+            tids[args.pivot_ifo] = tids_full[args.pivot_ifo][start0:end0]
+            tids[args.fixed_ifo] = tids_full[args.fixed_ifo][start1:end1]
 
             # find the coincs
             ids, slide = coinc.time_multi_coincidence(times,
@@ -332,21 +337,11 @@ for tnum in template_ids:
                 decid[ifo] = ids[ifo][ti]
             del ids
 
-            # In the first for cycle the time and trigger_id keys will not
-            # exist, thus we create them; otherwise add new items to data.
-            checkstring = '%s/time' % args.pivot_ifo
-            if not(checkstring in data):
-                for ifo in decid:
-                    addtime = times[ifo][decid[ifo]]
-                    addtriggerid = tids[ifo][decid[ifo]]
-                    data['%s/time' % ifo] = [addtime]
-                    data['%s/trigger_id' % ifo] = [addtriggerid]
-            else:
-                for ifo in decid:
-                    addtime = times[ifo][decid[ifo]]
-                    addtriggerid = tids[ifo][decid[ifo]]
-                    data['%s/time' % ifo] += [addtime]
-                    data['%s/trigger_id' % ifo] += [addtriggerid]
+            for ifo in decid:
+                addtime = times[ifo][decid[ifo]]
+                addtriggerid = tids[ifo][decid[ifo]]
+                data['%s/time' % ifo] += [addtime]
+                data['%s/trigger_id' % ifo] += [addtriggerid]
             data['stat'] += [cstat[ti]]
             data['decimation_factor'] += [dec_fac]
             data['timeslide_id'] += [slide[ti]]
