@@ -117,15 +117,14 @@ try:
         # 'decisive' opt SNR is 2nd smallest
         dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
         sorting = dec_snr.argsort()
-        sorting = sorting[::-1]
     else:
         optstrings = [os for os in f['injections/'].keys() if \
                       os.startswith('optimal_snr_')]
         optimal_snr = [f['injections/%s' % os][:][missed] for os in optstrings]
         # 2nd smallest opt SNR
         dec_snr = [sorted(snrs)[1] for snrs in zip(*optimal_snr)]
-        print(optimal_snr[0][:10], optimal_snr[1][:10], optimal_snr[2][:10], dec_snr[:10])
-    sorting = numpy.array(dec_snr).argsort()
+        sorting = numpy.array(dec_snr).argsort()
+
     sorting = sorting[::-1]  # descending order of dec opt SNR
 except KeyError:
     # Fall back to effective distance if optimal SNR not available
