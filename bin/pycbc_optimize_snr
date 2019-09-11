@@ -30,7 +30,7 @@ start_time = time.time()
 def callback_func(Xi, convergence=0):
     global Nfeval
     logging.info("CURRENTLY AT {} {}".format(Nfeval, convergence))
-    if (time.time() - start_time) > 120:
+    if (time.time() - start_time) > 360:
         return True
     Nfeval += 1
 
@@ -249,6 +249,9 @@ for idx, ifo in enumerate(ifos):
     coinc_results['foreground/'+ifo+'/window'] = 0.1
     coinc_results['foreground/'+ifo+'/sample_rate'] = int(sample_rate)
     coinc_results['foreground/'+ifo+'/template_id'] = 0
+    # Apparently GraceDB gets upset if chi-squared is not set
+    coinc_results['foreground/'+ifo+'/chisq'] = 1.
+    coinc_results['foreground/'+ifo+'/chisq_dof'] = 1
     coinc_results['foreground/'+ifo+'/template_duration'] = \
         fp['template_duration'][()]
     followup_data[ifo] = {}

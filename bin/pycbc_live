@@ -250,7 +250,7 @@ class LiveEventManager(object):
                     * bank.sample_rate)
                 flen = int(tlen / 2 + 1)
                 delta_f = bank.sample_rate / float(tlen)
-                cmd = 'timeout 150 '
+                cmd = 'timeout 400 '
                 exepath = distutils.spawn.find_executable('pycbc_optimize_snr')
                 cmd += exepath + ' '
                 data_fils_str = '--data-files '
