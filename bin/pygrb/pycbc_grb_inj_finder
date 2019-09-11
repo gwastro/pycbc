@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
 # Copyright (C) 2019 Duncan Macleod
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -284,7 +283,7 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
                 found.append(i)
                 eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
                 for col in triggers:
-                    trigs[col].append(triggers[col][i])
+                    trigs[col].append(triggers[col][i - len(allinjections or [])])
 
         # record all injections
         if allinjections is None:
