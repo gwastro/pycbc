@@ -111,32 +111,39 @@ if args.ifar_threshold is not None:
 num_events = int(workflow.cp.get_opt_tags('workflow-injection_minifollowups', 'num-events', ''))
 
 try:
-    optimal_snr =[f['injections/optimal_snr_1'][:][missed],
-                  f['injections/optimal_snr_2'][:][missed]]
-    dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
-    sorting = dec_snr.argsort()
-    sorting = sorting[::-1]
-except:
+    if 'optimal_snr_1' in f['injections'].keys():  # 2-ifo pipeline case
+        optimal_snr = [f['injections/optimal_snr_1'][:][missed],
+                       f['injections/optimal_snr_2'][:][missed]]
+        # 'decisive' opt SNR is 2nd smallest
+        dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
+        sorting = dec_snr.argsort()
+    else:
+        optstrings = [os for os in f['injections'].keys() if \
+                      os.startswith('optimal_snr_')]
+        optimal_snr = [f['injections/%s' % os][:][missed] for os in optstrings]
+        # 2nd smallest opt SNR
+        dec_snr = [sorted(snrs)[1] for snrs in zip(*optimal_snr)]
+        sorting = numpy.array(dec_snr).argsort()
+
+    sorting = sorting[::-1]  # descending order of dec opt SNR
+except KeyError:
     # Fall back to effective distance if optimal SNR not available
     eff_dist = {'H1': f['injections/eff_dist_h'][:][missed],
-               'L1': f['injections/eff_dist_l'][:][missed],
-               'V1': f['injections/eff_dist_v'][:][missed],
-               }
+                'L1': f['injections/eff_dist_l'][:][missed],
+                'V1': f['injections/eff_dist_v'][:][missed]
+                }
     dec_dist = numpy.maximum(eff_dist[single_triggers[0].ifo],
                              eff_dist[single_triggers[1].ifo])
-
     mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(\
                                               f['injections/mass1'][:][missed],
                                               f['injections/mass2'][:][missed])
-
     dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
-
-    sorting = dec_chirp_dist.argsort()
+    sorting = dec_chirp_dist.argsort()  # ascending order of dec chirp distance
 
 if len(missed) < num_events:
     num_events = len(missed)
 
-# loop over number of loudest events to be followed up
+# loop over loudest events to be followed up
 found_inj_idxes = f['found_after_vetoes/injection_index'][:]
 for num_event in range(num_events):
     files = wf.FileList([])
