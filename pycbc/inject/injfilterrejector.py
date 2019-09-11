@@ -233,7 +233,7 @@ class InjFilterRejector(object):
 
     def generate_short_inj_from_inj(self, inj_waveform, simulation_id):
         """Generate and a store a truncated representation of inj_waveform."""
-        if not self.enabled:
+        if not self.enabled or not self.match_threshold:
             # Do nothing!
             return
         if simulation_id in self.short_injections:
