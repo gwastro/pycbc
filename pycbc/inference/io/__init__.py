@@ -69,7 +69,7 @@ def get_file_type(filename):
         if filename.endswith(ext):
             with _h5py.File(filename, 'r') as fp:
                 filetype = fp.attrs['filetype']
-            return filetypes[filetype]
+            return filetypes[filetype.decode()]
     for ext in txt_extensions:
         if filename.endswith(ext):
             return InferenceTXTFile

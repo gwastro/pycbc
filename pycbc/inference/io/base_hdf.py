@@ -74,7 +74,7 @@ class BaseInferenceFile(h5py.File):
                 self.attrs['filetype'] = filetype
             else:
                 filetype = None
-        if filetype != self.name:
+        if filetype.decode() != self.name:
             raise ValueError("This file has filetype {}, whereas this class "
                              "is named {}. This indicates that the file was "
                              "not written by this class, and so cannot be "
