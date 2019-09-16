@@ -165,6 +165,7 @@ class NewSNRSGPSDStatistic(NewSNRSGStatistic):
         """
         return ranking.get_newsnr_sgveto_psdvar(trigs)
 
+
 class NewSNRSGPSDScaledStatistic(NewSNRSGStatistic):
     """Calculate the NewSNRSGPSD coincident detection statistic"""
 
@@ -202,6 +203,7 @@ class NewSNRSGPSDScaledThresholdStatistic(NewSNRSGStatistic):
         """
         return ranking.get_newsnr_sgveto_psdvar_scaled_threshold(trigs)
 
+
 class NewSNRSGPSDComStatistic(NewSNRSGStatistic):
     """Calculate the NewSNRSGPSD coincident detection statistic"""
 
@@ -219,7 +221,6 @@ class NewSNRSGPSDComStatistic(NewSNRSGStatistic):
             The array of single detector values
         """
         return ranking.get_newsnr_sgveto_psdvar_com(trigs)
-
 
 
 class NetworkSNRStatistic(NewSNRStatistic):
@@ -332,7 +333,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             self.pdtype = [('c%s' % i, int) for i in range(ncol)]
             self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]), dtype=self.pdtype)
             for i in range(ncol):
-                self.param_bin[ifo]['c%s' % i] = param[:,i]
+                self.param_bin[ifo]['c%s' % i] = param[:, i]
 
             l = self.param_bin[ifo].argsort()
             self.param_bin[ifo] = self.param_bin[ifo][l]
@@ -384,7 +385,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
     def logsignalrate(self, s0, s1, shift):
         to_shift = [-1, 0]
-        stats = {self.ifos[0]:s0, self.ifos[1]:s1}
+        stats = {self.ifos[0]: s0, self.ifos[1]: s1}
         return self.logsignalrate_multiifo(stats, shift, to_shift)
 
     def logsignalrate_multiifo(self, stats, shift, to_shift):
@@ -402,7 +403,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         # Figure out which weights each trigger will use
         snrs = numpy.array([numpy.array(stats[ifo]['snr'], ndmin=1) for ifo in self.ifos])
         smin = numpy.argmin(snrs, axis=0)
-        rtypes = {ifo:numpy.where(smin == j)[0] for j, ifo in enumerate(self.ifos)}
+        rtypes = {ifo: numpy.where(smin == j)[0] for j, ifo in enumerate(self.ifos)}
 
         # Get reference ifo information
         rate = numpy.zeros(len(shift), dtype=numpy.float32)
@@ -458,6 +459,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             rate[rtype] *= (sref / self.ref_snr) ** -4.0
 
         return numpy.log(rate)
+
 
 class PhaseTDStatistic(NewSNRStatistic):
     """Statistic that re-weights combined newsnr using coinc parameters.
@@ -905,6 +907,7 @@ class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
     def __init__(self, files, ifos=None):
         PhaseTDExpFitStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto
+
 
 class PhaseTDNewExpFitSGStatistic(PhaseTDNewExpFitStatistic):
     """Statistic combining exponential noise model with signal histogram PDF
