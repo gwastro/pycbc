@@ -10,7 +10,6 @@ def newsnr_sgveto_psdvar_scaled(snr, bchisq, sgchisq, psd_var_val):
     nsnr = numpy.array(newsnr_sgveto(snr, bchisq, sgchisq), ndmin=1)
     psd_var_val = numpy.array(psd_var_val, ndmin=1)
     # 1.2 is the expected maximum psd_var_val over gaussian noise.
-    #lgc = psd_var_val >= 1.2
     nsnr = nsnr / (psd_var_val)**0.33
 
     # If snr input is float, return a float. Otherwise return numpy array.
@@ -18,13 +17,13 @@ def newsnr_sgveto_psdvar_scaled(snr, bchisq, sgchisq, psd_var_val):
         return nsnr
     else:
         return nsnr[0]
-        
+
 def newsnr_sgveto_psdvar_scaled_threshold(snr, bchisq, sgchisq, psd_var_val):
     """ Combined SNR derived from NewSNR and Sine-Gaussian Chisq"""
     nsnr = newsnr_sgveto_psdvar_scaled(snr, bchisq, sgchisq, psd_var_val)
     nsnr = numpy.array(nsnr, ndmin=1)
     nsnr[bchisq > 2.0] = 1
-    
+
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
         return nsnr
@@ -40,7 +39,7 @@ def newsnr_sgveto_psdvar_com(snr, bchisq, sgchisq, psd_var_val):
     # 1.2 is the expected maximum psd_var_val over gaussian noise.
     lgc = psd_var_val >= 1.2
     nsnr2 = nsnr / (psd_var_val)**0.33
-    nsnr2[lgc] = nsnr[lgc] / psd_var_val [lgc]
+    nsnr2[lgc] = nsnr[lgc] / psd_var_val[lgc]
 
     # If snr input is float, return a float. Otherwise return numpy array.
     if hasattr(snr, '__len__'):
@@ -196,10 +195,10 @@ def get_newsnr_sgveto_psdvar_scaled(trigs):
     dof = 2. * trigs['chisq_dof'][:] - 2.
     nsnr_sg_psd = \
                  newsnr_sgveto_psdvar_scaled(trigs['snr'][:], trigs['chisq'][:] / dof,
-                                      trigs['sg_chisq'][:],
-                                      trigs['psd_var_val'][:])
+                                             trigs['sg_chisq'][:],
+                                             trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
-    
+
 def get_newsnr_sgveto_psdvar_scaled_threshold(trigs):
     """
     Calculate newsnr re-weighted by the sine-gaussian veto and psd variation
@@ -218,7 +217,8 @@ def get_newsnr_sgveto_psdvar_scaled_threshold(trigs):
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
     nsnr_sg_psd = \
-                 newsnr_sgveto_psdvar_scaled_threshold(trigs['snr'][:], trigs['chisq'][:] / dof,
+                 newsnr_sgveto_psdvar_scaled_threshold(
+                                      trigs['snr'][:], trigs['chisq'][:] / dof,
                                       trigs['sg_chisq'][:],
                                       trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
@@ -241,7 +241,8 @@ def get_newsnr_sgveto_psdvar_com(trigs):
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
     nsnr_sg_psd = \
-                 newsnr_sgveto_psdvar_com(trigs['snr'][:], trigs['chisq'][:] / dof,
+                 newsnr_sgveto_psdvar_com(
+                                      trigs['snr'][:], trigs['chisq'][:] / dof,
                                       trigs['sg_chisq'][:],
                                       trigs['psd_var_val'][:])
     return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
