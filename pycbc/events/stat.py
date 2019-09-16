@@ -1188,8 +1188,6 @@ class TwoGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
     def logsignalrate_multiifo(self, stats, shift, to_shift):
         logr_s = ExpFitSGFgBgRateNewStatistic.logsignalrate_multiifo(self, stats, shift, to_shift)
         logr_s += numpy.log((self.mchirp / 20.0) ** (11./3.0))
-        if self.mchirp > 60.0:
-            logr_s[:] = -20
         return logr_s
 
 statistic_dict = {
