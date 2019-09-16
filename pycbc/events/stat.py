@@ -403,7 +403,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         snrs = numpy.array([numpy.array(stats[ifo]['snr'], ndmin=1) for ifo in self.ifos])
         smin = numpy.argmin(snrs, axis=0)
         rtypes = {ifo:numpy.where(smin == j)[0] for j, ifo in enumerate(self.ifos)}
-        print smin, rtypes        
         
         # Get reference ifo information 
         rate = numpy.zeros(len(shift), dtype=numpy.float32)
@@ -448,7 +447,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             # Read signal weight from precalculated histogram
             l = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
             l[l == len(self.weights[ref_ifo])] = 0
-            print len(l), len(rtype)
             rate[rtype] = self.weights[ref_ifo][l]
             
             # These weren't in our histogram so give them max penalty instead
@@ -1057,7 +1055,6 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
     def coinc_multiifo(self, s, slide, step, to_shift,
                        **kwargs): # pylint:disable=unused-argument
-        print s
         sngl_rates = {sngl[0]: sngl[1]['snglstat'] for sngl in s}
 
         ln_noise_rate = coinc_rate.combination_noise_lograte(
