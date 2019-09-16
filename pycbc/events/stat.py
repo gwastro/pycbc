@@ -182,7 +182,7 @@ class NewSNRSGPSDScaledStatistic(NewSNRSGStatistic):
             The array of single detector values
         """
         return ranking.get_newsnr_sgveto_psdvar_scaled(trigs)
-        
+
 
 class NewSNRSGPSDScaledThresholdStatistic(NewSNRSGStatistic):
     """Calculate the NewSNRSGPSD coincident detection statistic"""
@@ -301,24 +301,24 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         ifos = ifos or self.ifos
 
         for name in self.files:
-             if 'phasetd_newsnr' in name:
-                 ifokey = name.split('_')[2]
-                 num = len(ifokey) / 2
-                 if num != len(ifos):
-                     continue
-                 
-                 match = [ifo in name for ifo in ifos]
-                 if False in match:
-                     continue
-                 else:
-                     break
+            if 'phasetd_newsnr' in name:
+                ifokey = name.split('_')[2]
+                num = len(ifokey) / 2
+                if num != len(ifos):
+                    continue
+
+                match = [ifo in name for ifo in ifos]
+                if False in match:
+                    continue
+                else:
+                    break
         else:
             raise RuntimeError("Couldn't figure out which statistic file to use")
         logging.info("Using signal histogram %s for ifos %s", name, ifos)
         histfile = self.files[name]
 
-        
-        # This order matters, we need to retrieve the order used to 
+
+        # This order matters, we need to retrieve the order used to
         # generate the histogram as the first ifos if the reference
         self.hist_ifos = histfile.attrs['ifos']
 
@@ -326,37 +326,37 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.param_bin = {}
         for ifo in self.hist_ifos:
             self.weights[ifo] = histfile[ifo]['weights'][:]
- 
+
             param = histfile[ifo]['param_bin'][:]
             ncol = param.shape[1]
             self.pdtype = [('c%s' % i, int) for i in range(ncol)]
             self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]), dtype=self.pdtype)
             for i in range(ncol):
                 self.param_bin[ifo]['c%s' % i] = param[:,i]
-            
+
             l = self.param_bin[ifo].argsort()
             self.param_bin[ifo] = self.param_bin[ifo][l]
             self.weights[ifo] = self.weights[ifo][l]
-            
+
             self.max_penalty = self.weights[ifo].min()
-        
+
         self.hist = {}
 
         # Bin boundaries are stored in the hdf file
         self.twidth = histfile.attrs['twidth']
         self.pwidth = histfile.attrs['pwidth']
         self.swidth = histfile.attrs['swidth']
-        
+
         # Need these to push points back to space as we don't store outside
         # certain ranges
-        self.srbinmax = histfile.attrs['srbmax'] 
+        self.srbinmax = histfile.attrs['srbmax']
         self.srbinmin = histfile.attrs['srbmin']
-        
+
         relfac = histfile.attrs['sensitivity_ratios']
         self.relsense = {}
         for ifo, sense in zip(self.hist_ifos, relfac):
             self.relsense[ifo] = sense
-      
+
         self.ref_snr = 5.0
 
     def single(self, trigs):
@@ -381,7 +381,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         singles['sigmasq'] = trigs['sigmasq'][:]
         singles['snr'] = trigs['snr'][:]
         return numpy.array(singles, ndmin=1)
-        
+
     def logsignalrate(self, s0, s1, shift):
         to_shift = [-1, 0]
         stats = {self.ifos[0]:s0, self.ifos[1]:s1}
@@ -398,13 +398,13 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             self.get_hist()
         else:
             logging.info("Using pre-set signal histogram")
-            
+
         # Figure out which weights each trigger will use
         snrs = numpy.array([numpy.array(stats[ifo]['snr'], ndmin=1) for ifo in self.ifos])
         smin = numpy.argmin(snrs, axis=0)
         rtypes = {ifo:numpy.where(smin == j)[0] for j, ifo in enumerate(self.ifos)}
-        
-        # Get reference ifo information 
+
+        # Get reference ifo information
         rate = numpy.zeros(len(shift), dtype=numpy.float32)
         for ref_ifo in self.ifos:
             rtype = rtypes[ref_ifo]
@@ -415,24 +415,24 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             sigref = numpy.array(ref['sigmasq'], ndmin=1) ** 0.5
             sigref = sigref[rtype]
             senseref = self.relsense[self.hist_ifos[0]]
-            
+
             binned = []
             other_ifos = [ifo for ifo in self.ifos if ifo != ref_ifo]
             for ifo in other_ifos:
-                sc = stats[ifo] 
+                sc = stats[ifo]
                 p = numpy.array(sc['coa_phase'], ndmin=1)[rtype]
                 t = numpy.array(sc['end_time'], ndmin=1)[rtype]
                 s = numpy.array(sc['snr'], ndmin=1)[rtype]
-                
+
                 sense = self.relsense[ifo]
                 sig = numpy.array(sc['sigmasq'], ndmin=1) ** 0.5
-                sig = sig[rtype]                
+                sig = sig[rtype]
 
                 # Calculate differences
                 pdif = (pref - p) % (numpy.pi * 2.0)
                 tdif = shift[rtype] * to_shift[ref_ifo] + tref - shift[rtype] * to_shift[ifo] - t
                 sdif = s / sref * sense / senseref * sigref / sig
-                    
+
                 # Put into bins
                 tbin = (tdif / self.twidth).astype(numpy.int)
                 pbin = (pdif / self.pwidth).astype(numpy.int)
@@ -443,21 +443,21 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
             for i in range(len(binned)):
                 nbinned['c%s' % i] = binned[i]
-            
+
             # Read signal weight from precalculated histogram
             l = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
             l[l == len(self.weights[ref_ifo])] = 0
             rate[rtype] = self.weights[ref_ifo][l]
-            
+
             # These weren't in our histogram so give them max penalty instead
             # of random value
-            missed = numpy.where(self.param_bin[ref_ifo][l] != nbinned)[0]       
+            missed = numpy.where(self.param_bin[ref_ifo][l] != nbinned)[0]
             rate[rtype][missed] = self.max_penalty
-                
+
             # Scale by signal population SNR
             rate[rtype] *= (sref / self.ref_snr) ** -4.0
 
-        return numpy.log(rate) 
+        return numpy.log(rate)
 
 class PhaseTDStatistic(NewSNRStatistic):
     """Statistic that re-weights combined newsnr using coinc parameters.
@@ -1176,12 +1176,12 @@ class TwoGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
     def __init__(self, files, ifos=None):
         ExpFitSGFgBgRateNewStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
-        
+
     def single(self, trigs):
         from pycbc.conversions import mchirp_from_mass1_mass2
         self.mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'], trigs.param['mass2'])
         return ExpFitSGFgBgRateNewStatistic.single(self, trigs)
-    
+
     def logsignalrate_multiifo(self, stats, shift, to_shift):
         logr_s = ExpFitSGFgBgRateNewStatistic.logsignalrate_multiifo(self, stats, shift, to_shift)
         logr_s += numpy.log((self.mchirp / 20.0) ** (11./3.0))
@@ -1206,7 +1206,7 @@ statistic_dict = {
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar_scaled': PhaseTDExpFitSGPSDScaledStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
-    'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic, 
+    'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic,
     'exp_fit_sg_fgbg_rate_new': ExpFitSGFgBgRateNewStatistic,
     '2gc':TwoGCStatistic,
     '2gcbbh':TwoGCBBHStatistic,
