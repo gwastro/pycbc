@@ -1211,8 +1211,8 @@ statistic_dict = {
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic,
     'exp_fit_sg_fgbg_rate_new': ExpFitSGFgBgRateNewStatistic,
-    '2gc':TwoGCStatistic,
-    '2gcbbh':TwoGCBBHStatistic,
+    '2gc': TwoGCStatistic,
+    '2gcbbh': TwoGCBBHStatistic,
 }
 
 sngl_statistic_dict = {
