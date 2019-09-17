@@ -103,7 +103,7 @@ for ifo in args.single_detector_triggers:
     #       being used to determine command-line options for other codes,
     #       please think if that code requires coalesced, or not, segments.
     insp_data_seglists[ifo].coalesce()
-    insp_analysed_seglists[ifo].coalesce
+    insp_analysed_seglists[ifo].coalesce()
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
