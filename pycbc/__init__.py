@@ -126,6 +126,7 @@ if os.environ.get("INITIAL_LOG_LEVEL", None):
                         level=int(os.environ["INITIAL_LOG_LEVEL"]))
 
 # Make sure we use a user specific, machine specific compiled cache location
+# FIXME: Alex can I clean this up now??
 _python_name =  "python%d%d_compiled" % tuple(sys.version_info[:2])
 _tmp_dir = tempfile.gettempdir()
 _cache_dir_name = repr(os.getuid()) + '_' + _python_name
@@ -156,14 +157,6 @@ try:
 except ImportError:
     HAVE_MKL=False
 
-
-# Check for site-local flags to pass to gcc
-WEAVE_FLAGS = '-march=native -O3 -w '
-if 'WEAVE_FLAGS' in os.environ:
-    if '-march=' in os.environ['WEAVE_FLAGS']:
-        WEAVE_FLAGS = os.environ['WEAVE_FLAGS']
-    else:
-        WEAVE_FLAGS += os.environ['WEAVE_FLAGS']
 
 def multiprocess_cache_dir():
     import multiprocessing
