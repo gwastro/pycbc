@@ -78,7 +78,10 @@ logging.info('Combining foreground segments')
 
 # Convert segmentlistdict to a list ('seglists') of segmentlists
 # then np.sum(seglists, axis=0) does seglists[0] + seglists[1] + ...
-foreground_segs = np.sum(list(indiv_segs.values()), axis=0)
+if len(indiv_segs) > 1:
+    foreground_segs = np.sum(list(indiv_segs.values()), axis=0)
+else:
+    foreground_segs = indiv_segs.values()[0]
 f.attrs['foreground_time'] = abs(foreground_segs)
 
 # obtain list of all ifos involved in the coinc_statmap files
