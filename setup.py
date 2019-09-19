@@ -262,8 +262,6 @@ e = Extension("pycbc.waveform.decompress_cpu_cython",
 ext.append(e)
 
 
-
-
 setup (
     name = 'PyCBC',
     version = VERSION,

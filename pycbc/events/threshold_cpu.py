@@ -23,9 +23,15 @@
 #
 from __future__ import absolute_import
 import numpy
-from .simd_threshold import default_segsize
 from .simd_threshold_cython import parallel_thresh_cluster, parallel_threshold
 from .eventmgr import _BaseThresholdCluster
+from .. import opt
+
+if opt.HAVE_GETCONF:
+    default_segsize = opt.LEVEL2_CACHE_SIZE / numpy.dtype('complex64').itemsize
+else:
+    # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
+    default_segsize = 32768
 
 def threshold_numpy(series, value):
     arr = series.data
@@ -33,11 +39,12 @@ def threshold_numpy(series, value):
     vals = arr[locs]
     return locs, vals
 
+
 outl = None
 outv = None
 count = None
 def threshold_inline(series, value):
-    arr = numpy.array(series.data, copy=False, dtype=numpy.float32)
+    arr = numpy.array(series.data, copy=False, dtype=numpy.complex64)
     global outl, outv, count
     if outl is None or len(outl) < len(series):
         outl = numpy.zeros(len(series), dtype=numpy.uint32)
@@ -63,19 +70,19 @@ class CPUThresholdCluster(_BaseThresholdCluster):
     def __init__(self, series):
         self.series = numpy.array(series.data, copy=False,
                                   dtype=numpy.complex64)
-        self.slen = len(series)
+        self.slen = numpy.uint32(len(series))
         self.outv = numpy.zeros(self.slen, numpy.complex64)
         self.outl = numpy.zeros(self.slen, numpy.uint32)
-        self.segsize = default_segsize
+        self.segsize = numpy.uint32(default_segsize)
 
     def threshold_and_cluster(self, threshold, window):
-        self.count = parallel_thresh_cluster(self.series, (uint32_t) self.slen,
+        self.count = parallel_thresh_cluster(self.series, self.slen,
                                              self.outv, self.outl,
-                                             (float) threshold,
-                                             (uint32_t) window,
-                                             (uint32_t) self.segsize)
+                                             numpy.float32(threshold),
+                                             numpy.uint32(window),
+                                             self.segsize)
         if self.count > 0:
-            return values[0:self.count], locs[0:self.count]
+            return self.outv[0:self.count], self.outl[0:self.count]
         else:
             return numpy.array([], dtype = numpy.complex64), numpy.array([], dtype = numpy.uint32)
 

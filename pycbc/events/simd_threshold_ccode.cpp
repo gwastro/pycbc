@@ -21,13 +21,10 @@
  * a combined thresholding and time clustering of a complex array using a
  * multithreaded, SIMD vectoried code.
  *
- * There are five C functions defined:
+ * There are four C functions defined:
  *
  * parallel_threshold: A multithreaded function that will identify points in a
  *                     timeseries above a user-input threshold.
- *
- * max_simd: A single-threaded function that uses SIMD vectorization to compute
- *          the maximum of a complex time series over a given window.
  *
  * max_simple: A single-threaded function that does NOT use explicit 
  *             SIMD vectorization,
@@ -37,13 +34,8 @@
  * windowed_max: A single threaded (but not vectorized) function that finds the
  *               locations, norms, and complex values of the maxima in each of
  *               a set of predefined windows in a given complex array. It does
- *               this by calling max_simd or max_simple on each window with the
+ *               this by calling max_simple on each window with the
  *               appropriate parameters.
- *
- *               At present, this function calls max_simple 
- *               rather than max_simd because
- *               of bugs in certain versions of gcc on LDG clusters
- *               that can cause max_simd to be mis-compiled.
  *
  * parallel_thresh_cluster: A multithreaded function that finds the maxima in
  *                          each of a set of contiguous, fixed-length windows
@@ -63,41 +55,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include <x86intrin.h>
-
-#ifdef __AVX2__
-#define _HAVE_AVX2 1
-#else
-#define _HAVE_AVX2 0
-#endif
-
-#ifdef __AVX__
-#define _HAVE_AVX 1
-#else
-#define _HAVE_AVX 0
-#endif
-
-#ifdef __SSE4_1__
-#define _HAVE_SSE4_1 1
-#else
-#define _HAVE_SSE4_1 0
-#endif
-
-#ifdef __SSE3__
-#define _HAVE_SSE3 1
-#else
-#define _HAVE_SSE3 0
-#endif
-
-#if _HAVE_AVX
-#define ALGN 32
-#define ALGN_FLT 8
-#define ALGN_DBL 4
-#else
-#define ALGN 16
-#define ALGN_FLT 4
-#define ALGN_DBL 2
-#endif
 
 /* Rough approx of GCC's error function. */
 void error(int status, int errnum, const char *format) {
@@ -107,7 +64,7 @@ void error(int status, int errnum, const char *format) {
   }
 }
 
-void _parallel_threshold(int64_t N, float * __restrict arr,
+void _parallel_threshold(int64_t N, std::complex<float> * __restrict arr,
                          std::complex<float> * __restrict outv,
                          uint32_t * __restrict outl,
                          uint32_t * __restrict count,
@@ -122,8 +79,8 @@ void _parallel_threshold(int64_t N, float * __restrict arr,
             unsigned int c = 0;
 
             for (unsigned int i=start; i<end; i++){
-                float r = arr[i*2];
-                float im = arr[i*2+1];
+                float r = std::real(arr[i]);
+                float im = std::imag(arr[i]);
                 if ((r * r + im * im) > v){
                     outl[c+start] = i;
                     outv[c+start] = std::complex<float>(r, im);
@@ -150,357 +107,6 @@ void _parallel_threshold(int64_t N, float * __restrict arr,
  * because the window length
  * itself may not be a multiple of the alignment.
  */
-
-void _max_simd(float * __restrict inarr, float * __restrict mval,
-               float * __restrict norm, int64_t *mloc,
-               int64_t nstart, int64_t howmany){
-
-  /*
-
-   This function, using SIMD vectorization, takes an input float
-   array (which consists of alternating real and imaginary parts
-   of a complex array) and writes the two-float value of the maximum
-   into 'mval', the single-float norm of the maximum into 'norm', and
-   the location of the maximum (as an index into a *complex* array)
-   into 'mloc'. The number 'nstart' is added to whatever location is
-   found for the maximum (returned in mloc), and 'howmany' is the length
-   of inarr (as a *real* array).
-
-  */
-
-  int64_t i, curr_mloc;
-  float re, im, curr_norm, curr, curr_mval[2], *arrptr;
-
-  // Set everything up.  Doesn't depend on any SIMD.
-  curr_norm = 0.0;
-  curr_mval[0] = 0.0;
-  curr_mval[1] = 0.0;
-  curr_mloc = 0;
-  arrptr = inarr;
-
-  /*
-
-   Note that at most one of _HAVE_AVX and _HAVE_SSE4_1 will be defined;
-   if neither is, then a non-vectorized code path will be executed.
-
-   As of this writing, documentation on the SIMD instrinsic functions may
-   be found at:
-
-      https://software.intel.com/sites/landingpage/IntrinsicsGuide/
-
-   though Intel websites change frequently.
-
-  */
-
-  /*
-
-   The basic vectorized algorithm is to read in complex elements of the input
-   array several at a time, using vectorized reads. We then compute the norm
-   of the array on an SIMD vector chunk, and compare to the current maximum,
-   obtaining a mask for where this vector is larger. Iterating give us the maximum
-   over elements 0, V, 2V, 3V, etc; 1, V+1, 2V+1, 3V+1, etc; and so forth, where
-   V is the vector length (or a multiple of it, when we are able to unroll the loop).
-   After this vectorized maximum, a non-vectorized comparison takes the max over the
-   V distinct elements that are the respective maxima for the different array elements
-   modulo V.
-
-  */
-
-#if _HAVE_AVX
-
-  __m256 norm_lo, cval_lo, arr_lo, reg0_lo, reg1_lo;
-  __m256d mloc_lo, count_lo, incr_lo;
-  __m256 norm_hi, cval_hi, arr_hi, reg0_hi, reg1_hi;
-  __m256d mloc_hi, count_hi, incr_hi;
-  float output_vals[2*ALGN_FLT] __attribute__ ((aligned(ALGN)));
-  float output_norms[2*ALGN_FLT] __attribute__ ((aligned(ALGN)));
-  double output_locs[2*ALGN_DBL] __attribute__ ((aligned(ALGN)));
-  double curr_mloc_dbl;
-  int64_t peel, misalgn, j;
-
-  // We calculate size of our various pointers modulo our alignment size
-
-  misalgn = (int64_t)  (((uintptr_t) inarr) % ALGN);
-
-  // Some kinds of misalignment are impossible to handle
-
-  if (misalgn % 2*sizeof(float)) {
-    error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary\\n");
-  }
-
-  // 'peel' is how many elements must be handled before we get to
-  // something aligned on an SIMD boundary.
-  peel = ( misalgn ? ((ALGN - misalgn) / (sizeof(float))) : 0 );
-  peel = (peel > howmany ? howmany : peel);
-
-  // Below is the only place i gets initialized! It should never be initialized
-  // in the 'for' loops.
-  i = 0;
-
-  // Peel off any unaligned beginning for the array.
-  for ( ; i < peel; i += 2){
-    re = *arrptr;
-    im = *(arrptr+1);
-    curr = re*re + im*im;
-    if (curr > curr_norm){
-        curr_mval[0] = re;
-        curr_mval[1] = im;
-        curr_mloc = i;
-        curr_norm = curr;
-    }
-    arrptr += 2;
-  }
-
-  // Now a loop, unrolled once (which is all the AVX registers we can use)
-
-  // AVX---as opposed to AVX2---has very little support for packed
-  // integer types.  For instance, one cannot add two packed int
-  // SIMD vectors.  So we compromise by storing the array indices
-  // as doubles, which should be more than enough to exactly represent
-  // a 32 bit integer.
-
-  _mm256_zeroupper();
-
-  // Note that the "set_p{s,d}" functions take their arguments from
-  // most-significant value to least.
-
-  incr_lo = _mm256_set_pd(6.0, 4.0, 2.0, 0.0); // incr_lo = [0, 2, 4, 6]
-  count_lo = _mm256_set1_pd( (double) i);      // count_lo = [i, i, i, i]
-  count_lo = _mm256_add_pd(count_lo, incr_lo); // count_lo = [i, i+2, i+4, i+6]
-  incr_lo = _mm256_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT, 1.0*ALGN_FLT, 1.0*ALGN_FLT);
-                                               // incr_lo = [8, 8, 8, 8]
-  count_hi = _mm256_add_pd(count_lo, incr_lo); // count_hi = [i+8, i+10, i+12, i+14]
-  incr_lo = _mm256_set_pd(2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT);
-                                               // incr_lo = [16, 16, 16, 16]
-  incr_hi = _mm256_set_pd(2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT, 2.0*ALGN_FLT);
-                                               // incr_hi = [16, 16, 16, 16]
-  // Now count_lo and count_hi have the current indices into the array
-
-  // We don't need to initialize to what we found in the peel-off loop,
-  // since we'll store the results of the high and low SIMD loops into
-  // an array that we then loop over comparing with the peel-off values.
-  mloc_lo = _mm256_setzero_pd();
-  norm_lo = _mm256_setzero_ps();
-  cval_lo = _mm256_setzero_ps();
-
-  mloc_hi = _mm256_setzero_pd();
-  norm_hi = _mm256_setzero_ps();
-  cval_hi = _mm256_setzero_ps();
-
-  for (; i <= howmany - 2*ALGN_FLT; i += 2*ALGN_FLT){
-      // Load everything into a register
-      arr_lo =  _mm256_load_ps(arrptr);
-      arr_hi = _mm256_load_ps(arrptr + ALGN_FLT);
-
-      reg0_lo = _mm256_mul_ps(arr_lo, arr_lo);               // 4 x [re*re, im*im]
-      reg1_lo = _mm256_shuffle_ps(reg0_lo, reg0_lo, 0xB1);   // 4 x [im*im, re*re]
-      reg0_lo = _mm256_add_ps(reg0_lo, reg1_lo);             // 4 x [re^2 +im^2, re^2 +im^2]
-      reg1_lo = _mm256_cmp_ps(reg0_lo, norm_lo, _CMP_GT_OQ); // Now a mask for where > curr_norm
-
-      // Now use the mask to selectively update complex value, norm, and location
-      mloc_lo = _mm256_blendv_pd(mloc_lo, count_lo, _mm256_castps_pd(reg1_lo) );
-      norm_lo = _mm256_blendv_ps(norm_lo, reg0_lo, reg1_lo);
-      cval_lo = _mm256_blendv_ps(cval_lo, arr_lo, reg1_lo);
-
-      reg0_hi = _mm256_mul_ps(arr_hi, arr_hi);               // 4 x [re*re, im*im]
-      reg1_hi = _mm256_shuffle_ps(reg0_hi, reg0_hi, 0xB1);   // 4 x [im*im, re*re]
-      reg0_hi = _mm256_add_ps(reg0_hi, reg1_hi);             // 4 x [re^2 +im^2, re^2 +im^2]
-      reg1_hi = _mm256_cmp_ps(reg0_hi, norm_hi, _CMP_GT_OQ); // Now a mask for where > curr_norm
-
-      // Now use the mask to selectively update complex value, norm, and location
-      mloc_hi = _mm256_blendv_pd(mloc_hi, count_hi, _mm256_castps_pd(reg1_hi) );
-      norm_hi = _mm256_blendv_ps(norm_hi, reg0_hi, reg1_hi);
-      cval_hi = _mm256_blendv_ps(cval_hi, arr_hi, reg1_hi);
-
-      count_lo = _mm256_add_pd(count_lo, incr_lo); // count_lo += [16, 16, 16, 16]
-      count_hi = _mm256_add_pd(count_hi, incr_hi); // count_hi += [16, 16, 16, 16]
-      arrptr += 2*ALGN_FLT;
-  }
-
-  // Finally, one last SIMD loop that is not unrolled, just in case we can.
-  // We don't reset increments because we won't use them after this loop, and
-  // this loop executes at most once.
-
-  for (; i <= howmany - ALGN_FLT; i += ALGN_FLT){
-      // Load everything into a register
-      arr_lo = _mm256_load_ps(arrptr);
-
-      reg0_lo = _mm256_mul_ps(arr_lo, arr_lo);               // 4 x [re*re, im*im]
-      reg1_lo = _mm256_shuffle_ps(reg0_lo, reg0_lo, 0xB1);   // 4 x [im*im, re*re]
-      reg0_lo = _mm256_add_ps(reg0_lo, reg1_lo);             // 4 x [re^2 +im^2, re^2 +im^2]
-      reg1_lo = _mm256_cmp_ps(reg0_lo, norm_lo, _CMP_GT_OQ); // Now a mask for where > curr_norm
-
-      // Now use the mask to selectively update complex value, norm, and location
-      mloc_lo = _mm256_blendv_pd(mloc_lo, count_lo, _mm256_castps_pd(reg1_lo) );
-      norm_lo = _mm256_blendv_ps(norm_lo, reg0_lo, reg1_lo);
-      cval_lo = _mm256_blendv_ps(cval_lo, arr_lo, reg1_lo);
-
-      arrptr += ALGN_FLT;
-  }
-
-  // Now write out the results to our temporary tables:
-  _mm256_store_ps(output_vals, cval_lo);
-  _mm256_store_ps(output_vals + ALGN_FLT, cval_hi);
-  _mm256_store_ps(output_norms, norm_lo);
-  _mm256_store_ps(output_norms + ALGN_FLT, norm_hi);
-  _mm256_store_pd(output_locs, mloc_lo);
-  _mm256_store_pd(output_locs + ALGN_DBL, mloc_hi);
-
-  _mm256_zeroupper();
-
-  // Now loop over our output arrays
-  // When we start, curr_norm, curr_mloc, and
-  // curr_mval all have the values they had at
-  // the end of the *first* peeling loop
-
-  curr_mloc_dbl = (double) curr_mloc;
-
-  for (j = 0; j < 2*ALGN_FLT; j += 2){
-    if (output_norms[j] > curr_norm) {
-      curr_norm = output_norms[j];
-      curr_mloc_dbl = output_locs[j/2];
-      curr_mval[0] = output_vals[j];
-      curr_mval[1] = output_vals[j+1];
-    }
-  }
-
-  curr_mloc = (int64_t) curr_mloc_dbl;
-
-#elif _HAVE_SSE4_1
-
-  __m128 norm_lo, cval_lo, arr_lo, reg0_lo, reg1_lo;
-  __m128d mloc_lo, count_lo, incr_lo;
-  float output_vals[ALGN_FLT] __attribute__ ((aligned(ALGN)));
-  float output_norms[ALGN_FLT] __attribute__ ((aligned(ALGN)));
-  double output_locs[ALGN_DBL] __attribute__ ((aligned(ALGN)));
-  double curr_mloc_dbl;
-  int64_t peel, misalgn, j;
-
-  // We calculate size of our various pointers modulo our alignment size
-
-  misalgn = (int64_t)  (((uintptr_t) inarr) % ALGN);
-
-  // Some kinds of misalignment are impossible to handle
-
-  if (misalgn % 2*sizeof(float)) {
-    error(EXIT_FAILURE, 0, "Array given to max_simd must be aligned on a least a complex float boundary");
-  }
-
-  // 'peel' is how many elements must be handled before we get to
-  // something aligned on an SIMD boundary.
-  peel = ( misalgn ? ((ALGN - misalgn) / (sizeof(float))) : 0 );
-  peel = (peel > howmany ? howmany : peel);
-
-  // Below is the only place i gets initialized! It should never be initialized
-  // in the for loops.
-  i = 0;
-
-  // Peel off any unaligned beginning for the array.
-  for ( ; i < peel; i += 2){
-    re = *arrptr;
-    im = *(arrptr+1);
-    curr = re*re + im*im;
-    if (curr > curr_norm){
-        curr_mval[0] = re;
-        curr_mval[1] = im;
-        curr_mloc = i;
-        curr_norm = curr;
-    }
-    arrptr += 2;
-  }
-
-  // Note that the "set_p{s,d}" functions take their arguments from
-  // most-significant value to least.
-
-  incr_lo = _mm_set_pd(2.0, 0.0);                   // incr_lo = [0, 2]
-  count_lo = _mm_set1_pd( (double) i);              // count_lo = [i, i]
-  count_lo = _mm_add_pd(count_lo, incr_lo);         // count_lo = [i, i+2]
-  incr_lo = _mm_set_pd(1.0*ALGN_FLT, 1.0*ALGN_FLT); // incr_lo = [4, 4]
-
-  // Now count_lo has the current indices into the array
-
-  // We don't need to initialize to what we found in the peel-off loop,
-  // since we'll store the results of the high and low SIMD loops into
-  // an array that we then loop over comparing with the peel-off values.
-  mloc_lo = _mm_setzero_pd();
-  norm_lo = _mm_setzero_ps();
-  cval_lo = _mm_setzero_ps();
-
-  for (; i <= howmany - ALGN_FLT; i += ALGN_FLT){
-      // Load everything into a register
-      arr_lo =  _mm_load_ps(arrptr);
-
-      reg0_lo = _mm_mul_ps(arr_lo, arr_lo);               // 2 x [re*re, im*im]
-      reg1_lo = _mm_shuffle_ps(reg0_lo, reg0_lo, 0xB1);   // 2 x [im*im, re*re]
-      reg0_lo = _mm_add_ps(reg0_lo, reg1_lo);             // 2 x [re^2 +im^2, re^2 +im^2]
-      reg1_lo = _mm_cmpgt_ps(reg0_lo, norm_lo);           // Now a mask for where > curr_norm
-
-      // Now use the mask to selectively update complex value, norm, and location
-      mloc_lo = _mm_blendv_pd(mloc_lo, count_lo, _mm_castps_pd(reg1_lo) );
-      norm_lo = _mm_blendv_ps(norm_lo, reg0_lo, reg1_lo);
-      cval_lo = _mm_blendv_ps(cval_lo, arr_lo, reg1_lo);
-
-      count_lo = _mm_add_pd(count_lo, incr_lo); // count_lo += [4, 4]
-      arrptr += ALGN_FLT;
-  }
-
-  // Now write out the results to our temporary tables:
-  _mm_store_ps(output_vals, cval_lo);
-  _mm_store_ps(output_norms, norm_lo);
-  _mm_store_pd(output_locs, mloc_lo);
-
-  // Now loop over our output arrays
-  // When we start, curr_norm, curr_mloc, and
-  // curr_mval all have the values they had at
-  // the end of the *first* peeling loop
-
-  curr_mloc_dbl = (double) curr_mloc;
-
-  for (j = 0; j < ALGN_FLT; j += 2){
-    if (output_norms[j] > curr_norm) {
-      curr_norm = output_norms[j];
-      curr_mloc_dbl = output_locs[j/2];
-      curr_mval[0] = output_vals[j];
-      curr_mval[1] = output_vals[j+1];
-    }
-  }
-
-  curr_mloc = (int64_t) curr_mloc_dbl;
-
-#else
- // If we have no SSE, all we have to do is initialize
- // our loop counter, and the last "cleanup" loop
- // will in fact do all the work.
-
- i = 0;
-
-#endif
-
-  for ( ; i < howmany; i += 2){
-    re = *arrptr;
-    im = *(arrptr+1);
-    curr = re*re + im*im;
-    if (curr > curr_norm){
-        curr_mval[0] = re;
-        curr_mval[1] = im;
-        curr_mloc = i;
-        curr_norm = curr;
-    }
-    arrptr += 2;
-  }
-
-  // Store our answers and return
-  *mval = curr_mval[0];
-  *(mval+1) = curr_mval[1];
-  *norm = curr_norm;
-
-  // Note that curr_mloc is a real array index, but we
-  // must return the index into the complex array.
-  *mloc = (curr_mloc/2) + nstart;
-
-  return;
-
-}
 
 void _max_simple(float * __restrict inarr, float * __restrict mval,
                  float * __restrict norm, int64_t *mloc,

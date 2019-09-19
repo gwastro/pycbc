@@ -16,7 +16,7 @@
 from __future__ import absolute_import
 from pycbc.types import float32, complex64
 import numpy as _np
-import pycbc.opt
+from .. import opt
 from .simd_correlate_cython import ccorrf_simd, ccorrf_parallel
 
 """
@@ -43,21 +43,22 @@ def correlate_simd(ht, st, qt):
     arrlen = len(htilde)
     ccorrf_simd(htilde, stilde, qtilde, arrlen)
 
+
 # We need a segment size (number of complex elements) such that *three* segments
 # of that size will fit in the L2 cache. We also want it to be a power of two.
 # We are dealing with single-precision complex numbers, which each require 8 bytes.
-
+#
 # Our kernel is written to assume a complex correlation of single-precision vectors,
 # so that's all we support here.  Note that we are assuming that the correct target
 # is that the vectors should fit in L2 cache.  Figuring out cache topology dynamically
 # is a harder problem than we attempt to solve here.
 
-if pycbc.opt.HAVE_GETCONF:
+if opt.HAVE_GETCONF:
     # Since we need 3 vectors fitting in L2 cache, divide by 3
     # We find the nearest power-of-two that fits, and the length
     # of the single-precision complex array that fits into that size.
-    pow2 = int( _np.log( pycbc.opt.LEVEL2_CACHE_SIZE/3.0 )/_np.log(2.0) )
-    default_segsize = pow(2, pow2)/ _np.dtype( _np.complex64).itemsize
+    pow2 = int(_np.log(opt.LEVEL2_CACHE_SIZE/3.0)/_np.log(2.0))
+    default_segsize = pow(2, pow2)/_np.dtype(_np.complex64).itemsize
 else:
     # Seems to work for Sandy Bridge/Ivy Bridge/Haswell, for now?
     default_segsize = 8192

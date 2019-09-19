@@ -25,7 +25,6 @@ from libc.stdint cimport int64_t, uint32_t
 # keep the bulk of the classes in pure python for ease of profiling, which will
 # be important for this code.
 
-# FIXME: I had to remove the restrict keyword here
 cdef extern from "simd_correlate_ccode.cpp":
     void _ccorrf_simd(float * inconj, float * innoconj,
                      float * out, const int64_t len)
