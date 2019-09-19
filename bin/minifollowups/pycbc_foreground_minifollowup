@@ -19,7 +19,7 @@
 import os, sys, argparse, logging, h5py, pycbc.workflow as wf
 from pycbc.results import layout
 from pycbc.types import MultiDetOptionAction
-from pycbc.events import select_segments_by_definer
+from pycbc.events import select_segments_by_definer, coinc
 import pycbc.workflow.minifollowups as mini
 import pycbc.workflow.pegasus_workflow as wdax
 import pycbc.version
@@ -58,7 +58,7 @@ parser.add_argument('--analysis-category', type=str, required=False,
                          'or background triggers (with "little dogs" removed)')
 parser.add_argument('--output-map', type=str, required=False,
                     help='Supply the location of the pegasus output map file. '
-                         'Only needed if running this job within a workflow.') 
+                         'Only needed if running this job within a workflow.')
 parser.add_argument('--output-file', type=str, required=True,
                     help='Name of the output dax file to be generated.')
 parser.add_argument('--transformation-catalog', type=str, required=False,
@@ -86,6 +86,7 @@ insp_segs = to_file(args.inspiral_segments)
 single_triggers = []
 fsdt = {}
 insp_data_seglists = {}
+insp_analysed_seglists = {}
 for ifo in args.single_detector_triggers:
     fname = args.single_detector_triggers[ifo]
     single_triggers.append(to_file(fname, ifo=ifo))
@@ -94,10 +95,15 @@ for ifo in args.single_detector_triggers:
         args.inspiral_segments,
         segment_name=args.inspiral_data_read_name,
         ifo=ifo)
+    insp_analysed_seglists[ifo] = select_segments_by_definer(
+        args.inspiral_segments,
+        segment_name=args.inspiral_data_analyzed_name,
+        ifo=ifo)
     # NOTE: make_singles_timefreq needs a coalesced set of segments. If this is
     #       being used to determine command-line options for other codes,
     #       please think if that code requires coalesced, or not, segments.
     insp_data_seglists[ifo].coalesce()
+    insp_analysed_seglists[ifo].coalesce()
 
 num_events = int(workflow.cp.get_opt_tags('workflow-minifollowups', 'num-events', ''))
 f = h5py.File(args.statmap_file, 'r')
@@ -262,15 +268,23 @@ while event_count < num_events and curr_idx < (events_to_read - 1):
 
     for single in single_triggers:
         time = times[single.ifo][curr_idx]
-        files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
+        if time==-1:
+            time = coinc.mean_if_greater_than_zero([times[sngl.ifo][curr_idx]
+                                                    for sngl in single_triggers])[0]
+        for seg in insp_analysed_seglists[single.ifo]:
+            if time in seg:
+                files += mini.make_singles_timefreq(workflow, single, tmpltbank_file,
                                 time, args.output_dir,
                                 data_segments=insp_data_seglists[single.ifo],
                                 tags=args.tags + [str(event_count)])
-
-        files += mini.make_qscan_plot\
-            (workflow, single.ifo, time, args.output_dir,
-             data_segments=insp_data_seglists[single.ifo],
-             tags=args.tags + [str(event_count)])
+                files += mini.make_qscan_plot\
+                    (workflow, single.ifo, time, args.output_dir,
+                     data_segments=insp_data_seglists[single.ifo],
+                     tags=args.tags + [str(event_count)])
+                break
+        else:
+            logging.info('Trigger time {} is not valid in {}, ' \
+                         'skipping singles plots'.format(time, single.ifo))
 
     layouts += list(layout.grouper(files, 2))
 
