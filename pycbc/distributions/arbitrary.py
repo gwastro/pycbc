@@ -207,6 +207,11 @@ class FromFile(Arbitrary):
         the same size. For example, to give a prior for mass1 and mass2 from
         file f, f['mass1'] and f['mass2'] contain the n values for each
         parameter.
+    datagroup : str, optional
+        The name of the group to look in for the samples. For example, if
+        ``datagroup = 'samples'``, then parameter ``param`` will be retrived
+        from ``f['samples'][param]``. If none provided (the default) the data
+        sets will be assumed to be in the top level directory of the file.
     \**params :
         The keyword arguments should provide the names of the parameters to be
         read from the file and (optionally) their bounds. If no parameters are
@@ -229,10 +234,11 @@ class FromFile(Arbitrary):
         The kde obtained from the values in the file.
     """
     name = 'fromfile'
-    def __init__(self, filename=None, **params):
+    def __init__(self, filename=None, datagroup=None, **params):
         if filename is None:
             raise ValueError('A file must be specified for this distribution.')
         self._filename = filename
+        self.datagroup = datagroup
         # Get the parameter names to pass to get_kde_from_file
         if len(params) == 0:
             ps = None
@@ -246,8 +252,7 @@ class FromFile(Arbitrary):
     def filename(self):
         return self._filename
 
-    @staticmethod
-    def get_arrays_from_file(params_file, params=None):
+    def get_arrays_from_file(self, params_file, params=None):
         """Reads the values of one or more parameters from an hdf file and
         returns as a dictionary.
 
@@ -267,16 +272,20 @@ class FromFile(Arbitrary):
             f = h5py.File(params_file, 'r')
         except:
             raise ValueError('File not found.')
+        if self.datagroup is not None:
+            get = f[self.datagroup]
+        else:
+            get = f
         if params is not None:
             if not isinstance(params, list):
                 params = [params]
             for p in params:
-                if p not in f.keys():
+                if p not in get.keys():
                     raise ValueError('Parameter {} is not in {}'
                                      .format(p, params_file))
         else:
-            params = [str(k) for k in f.keys()]
-        params_values = {p:f[p][:] for p in params}
+            params = [str(k) for k in get.keys()]
+        params_values = {p: get[p][()] for p in params}
         try:
             bandwidth = f.attrs["bandwidth"]
         except KeyError:
