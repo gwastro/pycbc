@@ -1066,10 +1066,11 @@ class LambdaFromTOVFile(BaseTransform):
     name = 'lambda_from_tov_file'
 
     def __init__(self, mass_param, lambda_param, mass_lambda_file,
-                 distance=None, file_columns=None):
+                 distance=None, redshift_mass=True, file_columns=None):
         self._mass_lambda_file = mass_lambda_file
         self._mass_param = mass_param
         self._lambda_param = lambda_param
+        self.redshift_mass = redshift_mass
         self._distance = distance
         self._inputs = [mass_param, 'distance']
         self._outputs = [lambda_param]
@@ -1116,7 +1117,7 @@ class LambdaFromTOVFile(BaseTransform):
         return self._distance
 
     @staticmethod
-    def lambda_from_tov_data(m, d, mass_data, lambda_data):
+    def lambda_from_tov_data(m_src, mass_data, lambda_data):
         """Returns Lambda corresponding to a given mass interpolating from the
         TOV data.
 
@@ -1124,8 +1125,6 @@ class LambdaFromTOVFile(BaseTransform):
         ----------
         m : float
             Value of the mass.
-        d : float
-            Value of distance.
         mass_data : array
             Mass array from the Lambda-M curve of an EOS.
         lambda_data : array
@@ -1136,8 +1135,11 @@ class LambdaFromTOVFile(BaseTransform):
         lambdav : float
             The Lambda corresponding to the mass `m` for the EOS considered.
         """
-        m_src = m/(1.0 + cosmology.redshift(abs(d)))
-        lambdav = numpy.interp(m_src, mass_data, lambda_data)
+        if m_src > mass_data.max():
+            # assume black hole
+            lambdav = 0.
+        else:
+            lambdav = numpy.interp(m_src, mass_data, lambda_data)
         return lambdav
 
     def transform(self, maps):
@@ -1156,20 +1158,38 @@ class LambdaFromTOVFile(BaseTransform):
             with the original variable name and value(s).
         """
         m = maps[self._mass_param]
-        if self._distance is not None:
-            d = self._distance
+        if self.redshift_mass:
+            if self._distance is not None:
+                d = self._distance
+            else:
+                try:
+                    d = maps['distance']
+                except KeyError as e:
+                    logging.warning("Either provide `distance` samples in the "
+                                    "list of samples to be transformed, or "
+                                    "provide a fixed `distance` value as input "
+                                    "when initializing `LambdaFromTOVFile`.")
+                    raise e
+            shift = 1./(1.0 + cosmology.redshift(abs(d)))
         else:
-            try:
-                d = maps['distance']
-            except KeyError as e:
-                logging.warning("Either provide `distance` samples in the "
-                                "list of samples to be transformed, or "
-                                "provide a fixed `distance` value as input "
-                                "when initializing `LambdaFromTOVFile`.")
-                raise e
+            shift = 1.
         out = {self._lambda_param : self.lambda_from_tov_data(
-            m, d, self._data['mass'], self._data['lambda'])}
+            m*shift, self._data['mass'], self._data['lambda'])}
         return self.format_output(maps, out)
+
+    @classmethod
+    def from_config(cls, cp, section, outputs):
+        # see if we're redshifting masses
+        if cp.has_option('-'.join([section, outputs]), 'do-not-redshift-mass'):
+            additional_opts = {'redshift_mass': False}
+            skip_opts = ['do-not-redshift-mass']
+        else:
+            additional_opts = None
+            skip_opts = None
+        return super(LambdaFromTOVFile, cls).from_config(
+            cp, section, outputs, skip_opts=skip_opts,
+            additional_opts=additional_opts)
+
 
 
 class LambdaFromMultipleTOVFiles(BaseTransform):
@@ -1197,11 +1217,12 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
     name = 'lambda_from_multiple_tov_files'
 
     def __init__(self, mass_param, lambda_param, map_file, distance=None,
-                 file_columns=None):
+                 redshift_mass=True, file_columns=None):
         self._map_file = map_file
         self._mass_param = mass_param
         self._lambda_param = lambda_param
         self._distance = distance
+        self.redshift_mass = redshift_mass
         self._inputs = [mass_param, 'eos', 'distance']
         self._outputs = [lambda_param]
         # create a dictionary of the EOS files from the map_file
@@ -1257,6 +1278,7 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
                                         lambda_param=self._lambda_param,
                                         mass_lambda_file=fname,
                                         distance=self._distance,
+                                        redshift_mass=self.redshift_mass,
                                         file_columns=self._file_columns)
                 self._eos_cache[eos_index] = eos
             except KeyError:
@@ -1275,6 +1297,19 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
             # no eos, just return nan
             out = {self._lambda_param : numpy.nan}
             return self.format_output(maps, out)
+
+    @classmethod
+    def from_config(cls, cp, section, outputs):
+        # see if we're redshifting masses
+        if cp.has_option('-'.join([section, outputs]), 'do-not-redshift-mass'):
+            additional_opts = {'redshift_mass': False}
+            skip_opts = ['do-not-redshift-mass']
+        else:
+            additional_opts = None
+            skip_opts = None
+        return super(LambdaFromMultipleTOVFiles, cls).from_config(
+            cp, section, outputs, skip_opts=skip_opts,
+            additional_opts=additional_opts)
 
 
 class Log(BaseTransform):
