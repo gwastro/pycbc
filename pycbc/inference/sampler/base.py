@@ -183,7 +183,7 @@ class BaseSampler(object):
         self.new_checkpoint = False  # keeps track if this is a new file or not
         if not checkpoint_valid:
             logging.info("Checkpoint not found or not valid")
-            create_new_output_file(self, checkpoint_file, force=force)
+            create_new_output_file(self, checkpoint_file)
             # now the checkpoint is valid
             self.new_checkpoint = True
             # copy to backup
@@ -207,7 +207,7 @@ class BaseSampler(object):
 # =============================================================================
 #
 
-def create_new_output_file(sampler, filename, force=False, **kwargs):
+def create_new_output_file(sampler, filename, **kwargs):
     """Creates a new output file.
 
     If the output file already exists, an ``OSError`` will be raised. This can
@@ -219,8 +219,6 @@ def create_new_output_file(sampler, filename, force=False, **kwargs):
         Sampler
     filename : str
         Name of the file to create.
-    force : bool, optional
-        Create the file even if it already exists. Default is False.
     \**kwargs :
         All other keyword arguments are passed through to the file's
         ``write_metadata`` function.
