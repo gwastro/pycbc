@@ -51,7 +51,6 @@ if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ]; then
   curl http://download.pegasus.isi.edu/wms/download/rhel/7/pegasus.repo > /etc/yum.repos.d/pegasus.repo
   yum clean all
   yum makecache
-  yum -y update
   yum -y install openssl-devel openssl-static
   yum -y install pegasus
   yum -y install ligo-proxy-utils
