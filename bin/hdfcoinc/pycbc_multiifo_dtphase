@@ -1,7 +1,16 @@
 #!/bin/env python
-""" Create a file containing the phase and amplitude, 
+""" Create a file containing the phase and amplitude,
 correlations between two detectors by
 doing a simple monte-carlo
+
+Output is the relative amplitude, time, and phase as compared to a reference
+IFO. A separate calculation is done for each IFO as a possible reference.
+ The data is stored as two vectors, the discrete integer bin corresponding
+to a particular 3*(Nifo-1) location in amplitude/time/phase space along with the
+weight assigned to that bin.
+To get the signal rate this should be scaled by the local sensitivity value
+and by the SNR of the signal in the reference detector
+
 """
 import argparse, h5py, numpy.random, pycbc.detector, logging, multiprocessing
 from numpy.random import normal, uniform, power
@@ -11,30 +20,37 @@ from copy import deepcopy
 parser = argparse.ArgumentParser()
 parser.add_argument('--ifos', nargs='+',
                     help="The ifos to generate a histogram for")
-parser.add_argument('--sample-size', type=int, 
-                    help="Approximant number of independent samples to draw for the distribution")
-parser.add_argument('--snr-ratio', type=float, 
-                    help="SNR ratio permitted between reference ifo and all others")
+parser.add_argument('--sample-size', type=int,
+                    help="Approximate number of independent samples to draw for the distribution")
+parser.add_argument('--snr-ratio', type=float,
+                   help="The SNR ratio permitted between reference ifo and all others."
+                         "Ex. giving 4 permits a ratio of 0.25 -> 4")
 parser.add_argument('--relative-sensitivities', nargs='+', type=float)
 parser.add_argument('--seed', type=int, default=124)
 parser.add_argument('--output-file')
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--bin-density', type=int, default=1)
+parser.add_argument('--bin-density', type=int, default=1,
+                    help='Number of bins per 1 sigma uncertainty in a parameter.'
+                         ' This increases the resolution of the data at the'
+                         ' expense of storage.')
 parser.add_argument('--smoothing-sigma', type=int, default=2)
 parser.add_argument('--timing-uncertainty', type=float, default=.001,
                     help="Timing uncertainty to set bin size and smoothing interval")
 parser.add_argument('--phase-uncertainty', type=float, default=0.25,
                     help="Phase uncertainty used to set bin size and smoothing")
-parser.add_argument('--snr-reference', type=float, default=5, 
+parser.add_argument('--snr-reference', type=float, default=5,
                     help="Reference SNR to scale SNR uncertainty")
-parser.add_argument('--snr-uncertainty', type=float, default=1.0, 
+parser.add_argument('--snr-uncertainty', type=float, default=1.0,
                     help="SNR uncertainty to set bin size and smoothing")
-parser.add_argument('--threshold', type=float, default=1e-10)
+parser.add_argument('--threshold', type=float, default=1e-10,
+                    help="Minimimum relative amplitude of bin to store. "
+                         "If a bin has less amplitude than this it will not "
+                         "be stored.")
 parser.add_argument('--batch-size', type=int, default=1000000)
 args = parser.parse_args()
 
 twidth = args.timing_uncertainty / args.bin_density # approximate timing error at lower SNRs
-serr = args.snr_uncertainty * 2 ** 0.5#
+serr = args.snr_uncertainty * 2 ** 0.5  # root 2 added as we'll be combining two SNRs with independent uncertainties
 sref = args.snr_reference     # Reference SNR for bin smoothing
 swidth = serr / sref / args.bin_density
 pwidth = numpy.arctan(serr / sref) / args.bin_density # approximate phase error at lower SNRs
@@ -50,33 +66,33 @@ def smooth_param(data, index):
     kernel = norm.pdf(bins, scale=args.bin_density)
 
     nweights = {}
-    
-    # This is massively redundant as many points may be 
+
+    # This is massively redundant as many points may be
     # recalculated, but it's straightforward.
     for i, key in enumerate(data):
         if data[key] / mref < args.threshold:
             continue
-    
+
         for a in bins:
             nkey = list(key)
             nkey[index] += a
             tnkey = tuple(nkey)
-            
+
             if tnkey in nweights:
                 continue
-            
+
             weight = 0
             for b, w in zip(bins, kernel):
                 wkey = list(nkey)
                 wkey[index] += b
                 wkey = tuple(wkey)
-                
+
                 if wkey in data:
                     weight += data[wkey] * w
-            
+
             nweights[tnkey] = weight
     return nweights
-    
+
 d = {ifo: pycbc.detector.Detector(ifo) for ifo in args.ifos}
 
 pycbc.init_logging(args.verbose)
@@ -130,24 +146,24 @@ for ifo0 in args.ifos:
             dtbin = (dt / twidth).astype(numpy.int)
             dpbin = (dp / pwidth).astype(numpy.int)
             srbin = (sr / swidth).astype(numpy.int)
-            
+
             # We'll only store a limited range of ratios
             if keep is None:
                 keep = (srbin < srbmax) & (srbin > srbmin)
             else:
                 keep = keep & (srbin < srbmax) & (srbin > srbmin)
             bind += [dtbin, dpbin, srbin]
-     
+
         # Calculate and sum the weights for each bin
         # use first ifo as reference for weights
         bind = [a[keep] for a in bind]
-        
-        w = data[ifo0]['s'][keep] ** 3.0          
+
+        w = data[ifo0]['s'][keep] ** 3.0
         for i, key in enumerate(zip(*bind)):
             if key not in weights:
                 weights[key] = 0
             weights[key] += w[i]
-            
+
         ol = l
         l = len(weights.values())
         logging.info('%s, %s, %s, %s', l, l - ol, (l - ol) / float(size), l / float(nsamples))
@@ -160,10 +176,10 @@ for ifo0 in args.ifos:
         logging.info('%s-time', len(weights))
         weights = smooth_param(weights, i*3 + 0)
         logging.info('%s-amp', len(weights))
-        weights = smooth_param(weights, i*3 + 2)    
+        weights = smooth_param(weights, i*3 + 2)
     logging.info('smoothing done: %s', len(weights))
 
-    # Get normalizations for different amplitude ratio thresholds 
+    # Get normalizations for different amplitude ratio thresholds
     normv = {}
     for key in weights:
         rvals = tuple(list(key)[2::3])
