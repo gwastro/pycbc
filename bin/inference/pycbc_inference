@@ -134,21 +134,6 @@ with ctx:
     # set up output/checkpoint file
     sampler.setup_output(opts.output_file, force=opts.force)
 
-    # Figure out where to get the initial conditions from: a samples file,
-    # the checkpoint file, the prior, or an initial prior.
-    samples_file = opts.samples_file
-    # use the checkpoint file instead if resume from checkpoint
-    if not sampler.new_checkpoint:
-        samples_file = sampler.checkpoint_file
-    if samples_file is not None:
-        logging.info("Initial positions taken from last iteration in %s",
-                     samples_file)
-        init_prior = None
-    else:
-        # try to load an initial distribution from the config file
-        init_prior = inference.sampler.initial_dist_from_config(
-            cp, sampler.variable_params)
-
     sampler.set_initial_conditions(initial_distribution=init_prior,
                                    samples_file=samples_file)
 

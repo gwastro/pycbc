@@ -34,6 +34,8 @@ from six import (add_metaclass, string_types)
 
 import numpy
 
+from .base import initial_dist_from_config
+
 from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import validate_checkpoint_files
@@ -436,13 +438,22 @@ class BaseMCMC(object):
         self._p0 = p0
         return self.p0
 
-    def set_initial_conditions(self, initial_distribution=None,
-                               samples_file=None):
+    def set_initial_conditions(self):
         """Sets the initial starting point for the MCMC.
 
         If a starting samples file is provided, will also load the random
         state from it.
         """
+        # use the checkpoint file instead if resume from checkpoint
+        if not self.new_checkpoint:
+            samples_file = self.checkpoint_file
+            logging.info("Initial positions taken from last iteration in %s",
+                         samples_file)
+            init_prior = None
+        else:
+            # try to load an initial distribution from the config file
+            init_prior = initial_dist_from_config(cp, sampler.variable_params)
+
         self.set_p0(samples_file=samples_file, prior=initial_distribution)
         # if a samples file was provided, use it to set the state of the
         # sampler
