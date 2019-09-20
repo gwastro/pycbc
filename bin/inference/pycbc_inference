@@ -134,8 +134,7 @@ with ctx:
     # set up output/checkpoint file
     sampler.setup_output(opts.output_file, force=opts.force)
 
-    sampler.set_initial_conditions(initial_distribution=init_prior,
-                                   samples_file=samples_file)
+    sampler.set_initial_conditions(cp)
 
     # Run the sampler
     sampler.run()

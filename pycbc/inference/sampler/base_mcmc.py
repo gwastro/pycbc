@@ -438,11 +438,15 @@ class BaseMCMC(object):
         self._p0 = p0
         return self.p0
 
-    def set_initial_conditions(self):
+    def set_initial_conditions(self,cp):
         """Sets the initial starting point for the MCMC.
 
         If a starting samples file is provided, will also load the random
         state from it.
+        Parameters:
+        ----------
+         cp : ConfigParser
+              Open config parser to retrieve the argument from.
         """
         # use the checkpoint file instead if resume from checkpoint
         if not self.new_checkpoint:
