@@ -436,7 +436,7 @@ class BaseMCMC(object):
         self._p0 = p0
         return self.p0
 
-    def set_initial_conditions(self,cp):
+    def set_initial_conditions(self, cp):
         """Sets the initial starting point for the MCMC.
 
         If a starting samples file is provided, will also load the random
@@ -455,7 +455,7 @@ class BaseMCMC(object):
         else:
             # try to load an initial distribution from the config file
             initial_distribution = initial_dist_from_config(cp,
-                sampler.variable_params)
+                self.variable_params)
 
         self.set_p0(samples_file=samples_file, prior=initial_distribution)
         # if a samples file was provided, use it to set the state of the
