@@ -34,14 +34,12 @@ from six import (add_metaclass, string_types)
 
 import numpy
 
-from .base import initial_dist_from_config
-
 from pycbc.workflow import ConfigParser
 from pycbc.filter import autocorrelation
 from pycbc.inference.io import validate_checkpoint_files
 
 from .base import setup_output
-
+from .base import initial_dist_from_config
 
 #
 # =============================================================================
@@ -453,10 +451,11 @@ class BaseMCMC(object):
             samples_file = self.checkpoint_file
             logging.info("Initial positions taken from last iteration in %s",
                          samples_file)
-            init_prior = None
+            initial_distribution = None
         else:
             # try to load an initial distribution from the config file
-            init_prior = initial_dist_from_config(cp, sampler.variable_params)
+            initial_distribution = initial_dist_from_config(cp,
+                sampler.variable_params)
 
         self.set_p0(samples_file=samples_file, prior=initial_distribution)
         # if a samples file was provided, use it to set the state of the
