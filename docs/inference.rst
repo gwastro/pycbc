@@ -36,23 +36,35 @@ and save the samples in an HDF file. A high-level description of the
 
 #. Write the samples and metadata to an HDF file.
 
-The model, sampler, parameters to vary and their priors are specified in a
-configuration file, which is passed to the program using the ``--config-file``
-option. Other command-line options determine what data to load (if the model
-uses data) and what parallelization settings to use. For a full listing of all
-options run ``pycbc_inference --help``. Below, we give details on how
-to set up a configuration file and provide examples of how to run
-``pycbc_inference``.
+The model, data, sampler, parameters to vary and their priors are specified in
+one or more configuration files, which are passed to the program using the
+``--config-file`` option. Other command-line options determine what
+parallelization settings to use. For a full listing of all options run
+``pycbc_inference --help``. Below, we give details on how to set up a
+configuration file and provide examples of how to run ``pycbc_inference``.
 
-------------------------------------------
-Configuring the model, sampler, and priors
-------------------------------------------
+------------------------------------------------
+Configuring the model, sampler, priors, and data
+------------------------------------------------
 
-The configuration file uses :py:class:`WorkflowConfigParser
+The configuration file(s) uses :py:class:`WorkflowConfigParser
 <pycbc.workflow.configuration.WorkflowConfigParser>` syntax.  The required
 sections are: ``[model]``, ``[sampler]``, and ``[variable_params]``.  In
 addition, multiple ``[prior]`` sections must be provided that define the prior
-distribution to use for the parameters in ``[variable_params]``.
+distribution to use for the parameters in ``[variable_params]``. If a model
+uses data a ``[data]`` section must also be provided.
+
+These sections may be split up over multiple files. In that case, all of the
+files should be provided as space-separated arguments to the ``--config-file``.
+Providing multiple files is equivalent to providing a single file with
+everything across the files combined. If the same section is specified in
+multiple files, the all of the options will be combined.
+
+Configuration files allow for referencing values in other sections using the
+syntax ``${section|option}``. See the examples below for an example of this.
+When providing multiple configuration files, sections in other files may be
+referenced, since in the multiple files are combined into a single file in
+memory when the files are loaded.
 
 ^^^^^^^^^^^^^^^^^^^^^
 Configuring the model
@@ -230,6 +242,21 @@ will remain fixed throughout the run. For example:
    [static_params]
    approximant = IMRPhenomPv2
    f_lower = 18
+
+^^^^^^^^^^^^
+Setting data
+^^^^^^^^^^^^
+
+Many models, such as the :py:class:`GaussianNoise <gwin.models.GaussianNoise>`,
+require data to be provided. To do so, a ``[data]`` section must be included
+that provides information about what data to load, and how to condition it.
+
+The type of data to be loaded depends on the model. If using the
+:py:class:`GaussianNoise <gwin.models.GaussianNoise>` or
+:py:class:`MarginalizedPhaseGaussianNoise
+<gwin.models.MarginalizedPhaseGaussianNoise>` models (the typical case), one
+will need to load gravitational-wave data.  This is accomplished using tools
+provided in the :py:mod:`pycbc.strain` module. The full set of options are:
 
 -------------------------------
 Advanced configuration settings
@@ -543,6 +570,10 @@ This will create the ``injection.hdf`` file, which we will give to
 ``pycbc_inference``. For more information on generating injection files, run
 ``pycbc_create_injections --help``.
 
+Now we need to set up the configuration for ``pycbc_inference``. Since we
+will be analyzing data, we will need to provide several additional options in a
+``[data]`` section. To keep the configuration files easy to read, we will split
+the data, sampler, and prior settings into their own configuration files. 
 Now we need to create the configuration file for ``pycbc_inference``, calling
 it ``inference.ini``:
 
