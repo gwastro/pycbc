@@ -39,6 +39,12 @@ from pycbc import dq
 #
 # =============================================================================
 #
+class NoValidDataError(Exception):
+    """This should be raised if a continous segment of valid data could not be
+    found.
+    """
+    pass
+
 def create_data_parser():
     """Creates an argument parser for loading GW data."""
     parser = ArgumentParser()
@@ -88,6 +94,23 @@ def create_data_parser():
     insert_psd_option_group_multi_ifo(parser)
     strain.insert_strain_option_group_multi_ifo(parser, gps_times=False)
     strain.add_gate_option_group(parser)
+    # add arguments for dq
+    dqgroup = parser.add_argument_group("Options for quering data quality "
+                                        "(DQ).")
+    dqgroup.add_argument('--dq-segment-name', default='DATA',
+                         help='The status flag to query for data quality. '
+                              'Default is "DATA".')
+    dqgroup.add_argument('--dq-source', choices=['any', 'GWOSC', 'dqsegdb'],
+                         default='any',
+                         help='Where to look for DQ information. If "any" '
+                              '(the default) will first try GWOSC, then '
+                              'dqsegdb.')
+    dqgroup.add_argument('--dq-server', default='segments.ligo.org',
+                         help='The server to use for dqsegdb.')
+    dqgroup.add_argument('--veto-definer', default=None,
+                         help='Path to a veto definer file that defines '
+                              'groups of flags, which themselves define a set '
+                              'of DQ segments.')
     return parser
 
 
@@ -104,7 +127,7 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
     exceeds ``max_shift``.
 
     If the given times are not in a continuous valid segment, or a valid block
-    cannot be found nearby, a ValueError is raised.
+    cannot be found nearby, a ``NoValidDataError`` is raised.
 
     Parameters
     ----------
@@ -161,8 +184,8 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
             shiftsize += 1
     # check that we have a valid range
     if (use_start, use_end) not in validsegs:
-        raise ValueError("could not find a continous valid segment in "
-                         "in detector {}".format(detector))
+        raise NoValidDataError("Could not find a continous valid segment in "
+                               "in detector {}".format(detector))
     return use_start, use_end
 
 
@@ -237,7 +260,9 @@ def data_opts_from_config(cp, section, filter_flow):
     return opts
 
 
-def data_from_cli(opts):
+def data_from_cli(opts, check_for_valid_times=True,
+                  shift_psd_times_to_valid=True,
+                  err_on_missing_detectors=False):
     """Loads the data needed for a model from the given command-line options.
 
     Gates specifed on the command line are also applied.
@@ -247,6 +272,15 @@ def data_from_cli(opts):
     opts : ArgumentParser parsed args
         Argument options parsed from a command line string (the sort of thing
         returned by `parser.parse_args`).
+    check_for_valid_times : bool, optional
+        Check that valid data exists in the requested gps times. Default is
+        True.
+    shift_psd_times_to_valid : bool, optional
+        If estimating the PSD from data, shift the PSD times to a valid
+        segment if needed. Default is True.
+    err_on_missing_detectors : bool, optional
+        Raise an NoValidDataError if any detector does not have valid data.
+        Otherwise, a warning is printed, and that detector is skipped.
 
     Returns
     -------
@@ -262,7 +296,31 @@ def data_from_cli(opts):
     psd_gates = psd_gates_from_cli(opts)
 
     # get strain time series
-    instruments = opts.instruments if opts.instruments is not None else []
+    instruments = opts.instruments
+
+    # validate times
+    if check_for_valid_times:
+        dets_with_data = []
+        for det in instruments:
+            try:
+                check_validtimes(det, opts.gps_start_time, opts.gps_end_time,
+                                 shift_to_valid=False,
+                                 segment_name=opts.dq_segment_name,
+                                 source=opts.dq_source,
+                                 server=opts.dq_sesrver,
+                                 veto_definer=opts.veto_definer)
+                dets_with_data.append(det)
+            except NoValidDataError as e:
+                if err_on_missing_detectors:
+                    raise NoValidDataError(e)
+                else:
+                    logging.warn("No valid data found for detector {}, "
+                                 "so will not use it in analysis.".format(
+                                 det))
+                    pass
+        instruments = dets_with_data
+        opts.instruments = dets_with_data
+
     strain_dict = strain_from_cli_multi_ifos(opts, instruments,
                                              precision="double")
     # apply gates if not waiting to overwhiten
@@ -274,12 +332,44 @@ def data_from_cli(opts):
     if opts.psd_start_time and opts.psd_end_time:
         logging.info("Will generate a different time series for PSD "
                      "estimation")
-        psd_opts = opts
-        psd_opts.gps_start_time = psd_opts.psd_start_time
-        psd_opts.gps_end_time = psd_opts.psd_end_time
-        psd_strain_dict = strain_from_cli_multi_ifos(psd_opts,
-                                                     instruments,
-                                                     precision="double")
+        if check_for_valid_times:
+            psd_times = {}
+            dets_with_data = []
+            for det in instruments:
+                try:
+                    psd_start, psd_end = check_validtimes(
+                        det, opts.psd_start_time,
+                        opts.psd_end_time,
+                        shift_to_valid=shift_psd_times_to_valid,
+                        segment_name=opts.dq_segment_name,
+                        source=opts.dq_source,
+                        server=opts.dq_server,
+                        veto_definer=opts.veto_definer)
+                    psd_times[det] = (psd_start, psd_end)
+                    dets_with_data.append(det)
+                except NoValidDataError as e:
+                    if err_on_missing_detectors:
+                        raise NoValidDataError(e)
+                    else:
+                        logging.warn("Not enough valid data found in "
+                                     "order to estimate the PSD for "
+                                     "detector {}, so it will not "
+                                     "be used in the analysis."
+                                     .format(det))
+                        strain_dict.pop(det)
+                        pass
+            instruments = dets_with_data
+            opts.instruments = dets_with_data
+        else:
+            psd_times = {det: (opts.psd_start_time, opts.psd_end_time)
+                         for det in instruments}
+        psd_strain_dict = {}
+        for det, (psd_start, psd_end) in psd_times.items():
+            #psd_opts = opts
+            opts.gps_start_time = psd_start
+            opts.gps_end_time = psd_end
+            psd_strain_dict.update(
+                strain_from_cli_multi_ifos(opts, [det], precision="double"))
         # apply any gates
         logging.info("Applying gates to PSD data")
         psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
@@ -288,6 +378,11 @@ def data_from_cli(opts):
         raise ValueError("Must give psd-start-time and psd-end-time")
     else:
         psd_strain_dict = strain_dict
+
+    # check that we have data left to analyze
+    if instruments == []:
+        raise NoValidDataError("No valid data could be found in any of the "
+                               "requested instruments.")
 
     # FFT strain and save each of the length of the FFT, delta_f, and
     # low frequency cutoff to a dict
