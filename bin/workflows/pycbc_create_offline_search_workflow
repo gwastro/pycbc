@@ -414,7 +414,7 @@ for insp_file in full_insps:
 #                            tags=combined_bg_file.tags + ['closed_box'])
 #table = wf.make_foreground_table(workflow, combined_bg_file,
 #                                 hdfbank[0], rdir['open_box_result'],
-#                                 singles=insps,  extension='.html',
+#                                 singles=insps, extension='.html',
 #                                 tags=["html"])
 #symlink_result(snrifar, 'open_box_result/significance')
 #symlink_result(ratehist, 'open_box_result/significance')
@@ -433,7 +433,7 @@ for insp_file in full_insps:
 # run minifollowups on the output of the loudest events
 mfup_dir = rdir['open_box_result/loudest_events_followup']
 wf.setup_foreground_minifollowups(workflow, combined_bg_file,
-                                  full_insps,  hdfbank[0], insp_files_seg_file,
+                                  full_insps, hdfbank[0], insp_files_seg_file,
                                   data_analysed_name, trig_generated_name,
                                   'daxes', mfup_dir,
                                   tags=combined_bg_file.tags)
@@ -461,7 +461,7 @@ for key in final_bg_files:
     #ifar_cb = wf.make_ifar_plot(workflow, bg_file, closed_dir,
     #                            tags=bg_file.tags + ['closed_box'])
     #table = wf.make_foreground_table(workflow, bg_file, hdfbank[0], open_dir,
-    #                                 singles=insps,  extension='.html',
+    #                                 singles=insps, extension='.html',
     #                                 tags=["html"])
 
     #detailed_page = [(snrifar, ratehist), (snrifar_ifar, ifar_ob), (table,)]
@@ -626,7 +626,7 @@ for inj_file, tag in zip(inj_files, inj_tags):
         curr_dir_nam += '_' + suf_str
     currdir = rdir[curr_dir_nam]
     wf.setup_injection_minifollowups(workflow, found_inj, small_inj_file,
-                                     insps,  hdfbank[0], insp_files_seg_file,
+                                     insps, hdfbank[0], insp_files_seg_file,
                                      data_analysed_name, trig_generated_name,
                                      'daxes', currdir, tags=[tag])
 
@@ -658,14 +658,36 @@ if len(files_for_combined_injfind) > 0:
     inj_summ = list(layout.grouper(inj_s + sen_s, 2))
 
 
+# Make analysis time summary
+analysis_time_summ = [time_file, seg_summ_plot]
+for f in analysis_time_summ:
+    symlink_result(f, 'analysis_time')
+layout.single_layout(rdir['analysis_time'], (analysis_time_summ))
+
+
 ########################## Make full summary ####################################
 summ = ([(time_file,)] + [(seg_summ_plot,)] +
         [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ +
-        [(bank_plot,)] + inj_summ + snrifar_summ)
+        [(bank_plot,)] + inj_summ + list(layout.grouper(snrifar_summ, 2)))
 for row in summ:
     for f in row:
         symlink_path(f, rdir.base)
 layout.two_column_layout(rdir.base, summ)
+
+
+# Save global config file to results directory
+base = rdir['workflow/configuration']
+wf.makedir(base)
+ini_file_path = os.path.join(base, 'configuration.ini')
+with open(ini_file_path, 'w') as ini_fh:
+    container.cp.write(ini_fh)
+ini_file = wf.FileList([wf.File(workflow.ifos, '', workflow.analysis_time,
+                        file_url='file://' + ini_file_path)])
+layout.single_layout(base, ini_file)
+
+
+# Create versioning information
+create_versioning_page(rdir['workflow/version'], container.cp)
 
 
 ############################ Finalization ####################################
@@ -680,7 +702,7 @@ dashboard_file = wf.File(workflow.ifos, 'DASHBOARD', workflow.analysis_time,
                                            extension='.html',
                                            directory=rdir['workflow'])
 dashboard_str = """<center><p style="font-size:20px"><b><a href="PEGASUS_DASHBOARD_URL" target="_blank">Pegasus Dashboard Page</a></b></p></center>"""
-kwds = { 'title' : 'Pegasus Dashboard',
+kwds = { 'title' : "Pegasus Dashboard",
          'caption' : "Link to Pegasus Dashboard",
          'cmd' : "PYCBC_SUBMIT_DAX_ARGV", }
 save_fig_with_metadata(dashboard_str, dashboard_file.storage_path, **kwds)
@@ -692,7 +714,7 @@ wf.makedir(rdir['workflow/output_map'])
 wf.makedir(rdir['workflow/planning'])
 
 wf.make_results_web_page(finalize_workflow, os.path.join(os.getcwd(),
-rdir.base))
+                         rdir.base))
 
 container += workflow
 container += finalize_workflow
