@@ -20,18 +20,12 @@ from mchirp_area import calc_areas
 
 #ARGUMENT PARSER
 parser = argparse.ArgumentParser()
-parser.add_argument("--min-m2","--min-m2",type=float,
-                    help="Minimum value for m2")
-parser.add_argument("--max-m1","--max-m1",type=float,
-                    help="Maximum value for m1")
-parser.add_argument("--ns-max","--ns-max",type=float,
-                    help="Maximum neutron star mass")
-parser.add_argument("--gap-max","--gap-max",type=float,
-                    help="Minimum black hole mass")
-parser.add_argument("--central-z","--central-z",type=float,
-                    help="Central redshift value")
-parser.add_argument("--delta-z","--delta-z",type=float,
-                    help="Redshift uncertainty")
+parser.add_argument("--min-m2", type=float, help="Minimum value for m2")
+parser.add_argument("--max-m1", type=float, help="Maximum value for m1")
+parser.add_argument("--ns-max", type=float, help="Maximum neutron star mass")
+parser.add_argument("--gap-max", type=float, help="Minimum black hole mass")
+parser.add_argument("--central-z", type=float, help="Central redshift value")
+parser.add_argument("--delta-z", type=float, help="Redshift uncertainty")
 args = parser.parse_args()
 
 if args.min_m2 and args.max_m1:
