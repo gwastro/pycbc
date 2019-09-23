@@ -17,25 +17,18 @@
 """
 
 import logging
-from argparse import ArgumentParser
 import numpy
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
 from pycbc.waveform import generator
-from pycbc.types import Array, FrequencySeries, MultiDetOptionAction
-from pycbc.psd import (insert_psd_option_group_multi_ifo,
-                       from_cli_multi_ifos as psd_from_cli_multi_ifos,
-                       verify_psd_options_multi_ifo)
-from pycbc import strain
-from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
-from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
-                          apply_gates_to_td, apply_gates_to_fd,
-                          verify_strain_options_multi_ifo)
+from pycbc.types import Array, FrequencySeries
+from pycbc.strain import gates_from_cli
 from pycbc.strain.calibration import Recalibrate
 from pycbc.inject import InjectionSet
 
 from .base_data import BaseDataModel
+from .data_utils import (data_opts_from_config, data_from_cli)
 
 
 class GaussianNoise(BaseDataModel):
@@ -677,210 +670,6 @@ class GaussianNoise(BaseDataModel):
 #
 # =============================================================================
 #
-def create_data_parser():
-    """Creates an argument parser for loading GW data."""
-    parser = ArgumentParser()
-    # add data options
-    parser.add_argument("--instruments", type=str, nargs="+", required=True,
-                        help="IFOs, eg. H1 L1.")
-    parser.add_argument("--trigger-time", type=float, default=0.,
-                        help="Reference GPS time (at geocenter) from which "
-                             "the (anlaysis|psd)-(start|end)-time options are "
-                             "measured. The integer seconds will be used. "
-                             "Default is 0; i.e., if not provided, "
-                             "the analysis and psd times should be in GPS "
-                             "seconds.")
-    parser.add_argument("--analysis-start-time", type=int, required=True,
-                        nargs='+', action=MultiDetOptionAction,
-                        metavar='IFO:TIME',
-                        help="The start time to use for the analysis, "
-                             "measured with respect to the trigger-time. "
-                             "If psd-inverse-length is provided, the given "
-                             "start time will be padded by half that length "
-                             "to account for wrap-around effects.")
-    parser.add_argument("--analysis-end-time", type=int, required=True,
-                        nargs='+', action=MultiDetOptionAction,
-                        metavar='IFO:TIME',
-                        help="The end time to use for the analysis, "
-                             "measured with respect to the trigger-time. "
-                             "If psd-inverse-length is provided, the given "
-                             "end time will be padded by half that length "
-                             "to account for wrap-around effects.")
-    parser.add_argument("--psd-start-time", type=int, default=None,
-                        nargs='+', action=MultiDetOptionAction,
-                        metavar='IFO:TIME',
-                        help="Start time to use for PSD estimation, measured "
-                             "with respect to the trigger-time.")
-    parser.add_argument("--psd-end-time", type=int, default=None,
-                        nargs='+', action=MultiDetOptionAction,
-                        metavar='IFO:TIME',
-                        help="End time to use for PSD estimation, measured "
-                             "with respect to the trigger-time.")
-    parser.add_argument("--data-conditioning-low-freq", type=float,
-                        nargs="+", action=MultiDetOptionAction,
-                        metavar='IFO:FLOW', dest="low_frequency_cutoff",
-                        help="Low frequency cutoff of the data. Needed for "
-                             "PSD estimation and when creating fake strain. "
-                             "If not provided, will use the model's "
-                             "low-frequency-cutoff.")
-    insert_psd_option_group_multi_ifo(parser)
-    strain.insert_strain_option_group_multi_ifo(parser, gps_times=False)
-    strain.add_gate_option_group(parser)
-    return parser
-
-
-def data_opts_from_config(cp, section, filter_flow):
-    """Loads data options from a section in a config file.
-
-    Parameters
-    ----------
-    cp : WorkflowConfigParser
-        Config file to read.
-    section : str
-        The section to read. All options in the section will be loaded as-if
-        they wre command-line arguments.
-    filter_flow : dict
-        Dictionary of detectors -> inner product low frequency cutoffs.
-        If a `data-conditioning-low-freq` cutoff wasn't provided for any
-        of the detectors, these values will be used. Otherwise, the
-        data-conditioning-low-freq must be less than the inner product cutoffs.
-        If any are not, a ``ValueError`` is raised.
-
-    Returns
-    -------
-    opts : parsed argparse.ArgumentParser
-        An argument parser namespace that was constructed as if the options
-        were specified on the command line.
-    """
-    # convert the section options into a command-line options
-    optstr = cp.section_to_cli(section)
-    # create a fake parser to parse them
-    parser = create_data_parser()
-    # parse the options
-    opts = parser.parse_args(optstr.split(' '))
-    # figure out the times to use
-    opts.trigger_time = int(opts.trigger_time)
-    gps_start = opts.analysis_start_time.copy()
-    gps_end = opts.analysis_end_time.copy()
-    for det, t in opts.analysis_start_time:
-        gps_start[det] += opts.trigger_time
-        gps_end[det] += opts.trigger_time
-        if opts.psd_inverse_length is not None:
-            pad = int(numpy.ceil(opts.psd_inverse_length[det] / 2))
-            logging.info("Padding analysis start and end times by {} "
-                         "(= psd-inverse-length/2) seconds to "
-                         "account for PSD wrap around effects.".format(pad))
-        gps_start[det] -= pad
-        gps_end[det] += pad
-        if opts.psd_start_time is not None:
-            opts.psd_start_time[det] += opts.trigger_time
-        if opts.psd_end_time is not None:
-            opts.psd_end_time[det] += opts.trigger_time
-    opts.gps_start_time = gps_start
-    opts.gps_end_time = gps_end
-    # check for the frequencies
-    low_freq_cutoff = filter_flow.copy()
-    if opts.low_frequency_cutoff:
-        # add in any missing detectors
-        low_freq_cutoff.update({det: opts.low_frequency_cutoff[det]
-                                for det in opts.instruments
-                                if opts.low_frequency_cutoff[det] is not None})
-        # make sure the data conditioning low frequency cutoff is < than
-        # the matched filter cutoff
-        if any(low_freq_cutoff[det] > filter_flow[det] for det in filter_flow):
-            raise ValueError("data conditioning low frequency cutoff must "
-                             "be less than the filter low frequency "
-                             "cutoff")
-    # have to clear to remove the random string thing in DictWithDefaultReturn
-    opts.low_frequency_cutoff.clear()
-    opts.low_frequency_cutoff.update(low_freq_cutoff)
-    # verify options are sane
-    verify_psd_options_multi_ifo(opts, parser, opts.instruments)
-    verify_strain_options_multi_ifo(opts, parser, opts.instruments)
-    return opts
-
-
-def data_from_cli(opts):
-    """Loads the data needed for a model from the given command-line options.
-
-    Gates specifed on the command line are also applied.
-
-    Parameters
-    ----------
-    opts : ArgumentParser parsed args
-        Argument options parsed from a command line string (the sort of thing
-        returned by `parser.parse_args`).
-
-    Returns
-    -------
-    strain_dict : dict
-        Dictionary of instruments -> `TimeSeries` strain.
-    stilde_dict : dict
-        Dictionary of instruments -> `FrequencySeries` strain.
-    psd_dict : dict
-        Dictionary of instruments -> `FrequencySeries` psds.
-    """
-    # get gates to apply
-    gates = gates_from_cli(opts)
-    psd_gates = psd_gates_from_cli(opts)
-
-    # get strain time series
-    instruments = opts.instruments if opts.instruments is not None else []
-    strain_dict = strain_from_cli_multi_ifos(opts, instruments,
-                                             precision="double")
-    # apply gates if not waiting to overwhiten
-    if not opts.gate_overwhitened:
-        strain_dict = apply_gates_to_td(strain_dict, gates)
-
-    # get strain time series to use for PSD estimation
-    # if user has not given the PSD time options then use same data as analysis
-    if opts.psd_start_time and opts.psd_end_time:
-        logging.info("Will generate a different time series for PSD "
-                     "estimation")
-        psd_opts = opts
-        psd_opts.gps_start_time = psd_opts.psd_start_time
-        psd_opts.gps_end_time = psd_opts.psd_end_time
-        psd_strain_dict = strain_from_cli_multi_ifos(psd_opts,
-                                                     instruments,
-                                                     precision="double")
-        # apply any gates
-        logging.info("Applying gates to PSD data")
-        psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
-
-    elif opts.psd_start_time or opts.psd_end_time:
-        raise ValueError("Must give psd-start-time and psd-end-time")
-    else:
-        psd_strain_dict = strain_dict
-
-    # FFT strain and save each of the length of the FFT, delta_f, and
-    # low frequency cutoff to a dict
-    stilde_dict = {}
-    length_dict = {}
-    delta_f_dict = {}
-    for ifo in instruments:
-        stilde_dict[ifo] = strain_dict[ifo].to_frequencyseries()
-        length_dict[ifo] = len(stilde_dict[ifo])
-        delta_f_dict[ifo] = stilde_dict[ifo].delta_f
-
-    # get PSD as frequency series
-    psd_dict = psd_from_cli_multi_ifos(
-        opts, length_dict, delta_f_dict, opts.low_frequency_cutoff,
-        instruments, strain_dict=psd_strain_dict, precision="double")
-
-    # apply any gates to overwhitened data, if desired
-    if opts.gate_overwhitened and opts.gate is not None:
-        logging.info("Applying gates to overwhitened data")
-        # overwhiten the data
-        for ifo in gates:
-            stilde_dict[ifo] /= psd_dict[ifo]
-        stilde_dict = apply_gates_to_fd(stilde_dict, gates)
-        # unwhiten the data for the model
-        for ifo in gates:
-            stilde_dict[ifo] *= psd_dict[ifo]
-
-    return strain_dict, stilde_dict, psd_dict
-
-
 def get_static_params_from_injection(static_params, injection_file):
     """Gets FROM_INJECTION static params from injection.
 
@@ -924,7 +713,7 @@ def get_static_params_from_injection(static_params, injection_file):
                                  "injection file.".format(param))
             replace_params[param] = injval
     return replace_params
-   
+
 
 def create_waveform_generator(variable_params, data,
                               recalibration=None, gates=None,
