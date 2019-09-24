@@ -189,6 +189,9 @@ for num_event, time in enumerate(times):
     analysis_index = segments.segment(num_event, num_event+1)
     inference_file = node.new_output_file_opt(analysis_index, ".hdf",
                                               "--output-file")
+    if time is not None:
+        node.add_input_opt("--config-overrides",
+                           "data:trigger-time:{}".format(time))
 
     # add node to workflow
     workflow += node
