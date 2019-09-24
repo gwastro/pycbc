@@ -279,7 +279,7 @@ def data_from_cli(opts, check_for_valid_times=True,
         If estimating the PSD from data, shift the PSD times to a valid
         segment if needed. Default is True.
     err_on_missing_detectors : bool, optional
-        Raise an NoValidDataError if any detector does not have valid data.
+        Raise a NoValidDataError if any detector does not have valid data.
         Otherwise, a warning is printed, and that detector is skipped.
 
     Returns
@@ -319,7 +319,6 @@ def data_from_cli(opts, check_for_valid_times=True,
                                  det))
                     pass
         instruments = dets_with_data
-        opts.instruments = dets_with_data
 
     strain_dict = strain_from_cli_multi_ifos(opts, instruments,
                                              precision="double")
@@ -359,7 +358,6 @@ def data_from_cli(opts, check_for_valid_times=True,
                         strain_dict.pop(det)
                         pass
             instruments = dets_with_data
-            opts.instruments = dets_with_data
         else:
             psd_times = {det: (opts.psd_start_time, opts.psd_end_time)
                          for det in instruments}
