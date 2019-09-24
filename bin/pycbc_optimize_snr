@@ -235,6 +235,23 @@ for ifo in ifos:
         loudest_ifo = ifo
         loudest_snr_time_allifos = loudest_snr_times[ifo]
 
+# Now we can create the snr_series_dict
+for ifo in ifos:
+    # Find loudest SNR within coincidence window of the largest peak
+    snr_peak = abs(loudest_snrs[ifo])
+    # And check light travel time
+    lttbd = Detector(ifo).light_travel_time_to_detector(Detector(loudest_ifo))
+    # Add small buffer
+    lttbd += 0.005
+
+    time_window = [loudest_snr_time_allifos-lttbd,
+                   loudest_snr_time_allifos+lttbd]
+
+    snr_slice = snr_series_dict[ifo].time_slice(time_window[0], time_window[1])
+    max_snr_idx = numpy.argmax(abs(snr_slice))
+    idx_offset = snr_slice.start_time - snr_series_dict[ifo].start_time
+    idx_offset = int(idx_offset * sample_rate + 0.5)
+    max_snr_idx = max_snr_idx + idx_offset
     new_snr_slice = slice(max_snr_idx - int(sample_rate/10),
                           max_snr_idx + int(sample_rate/10)+1)
     snr_series_dict[ifo] = snr_series_dict[ifo][new_snr_slice]
@@ -273,7 +290,6 @@ for idx, ifo in enumerate(ifos):
     loudest_snr_time = snr_slice.sample_times[max_snr_idx]
     loudest_snr = snr_slice[max_snr_idx]
 
-    coinc_results['foreground/'+ifo+'/end_time'] = loudest_snr_time_allifos
     coinc_results['foreground/'+ifo+'/end_time'] = loudest_snr_time
     coinc_results['foreground/'+ifo+'/snr_series'] = snr_series_dict[ifo]
     coinc_results['foreground/'+ifo+'/psd_series'] = data[ifo].psd
