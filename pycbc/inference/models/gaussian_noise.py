@@ -627,12 +627,19 @@ class GaussianNoise(BaseDataModel):
             if any([option.endswith("-low-frequency-cutoff"),
                     option.endswith("-high-frequency-cutoff")]):
                 ignore_args.append(option)
-        args.update(cls.extra_args_from_config(cp, "model",
-                                               skip_args=ignore_args))
+        # data args
+        bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
+                     'err-on-missing-detectors']
+        data_args = {arg.replace('-', '_'): True for arg in bool_args
+                     if cp.has_option('model', arg)}
+        ignore_args += bool_args
         # load the data
         opts = data_opts_from_config(cp, data_section, flow)
-        _, data, psds = data_from_cli(opts)
+        _, data, psds = data_from_cli(opts, **data_args)
         args.update({'data': data, 'psds': psds})
+        # any extra args
+        args.update(cls.extra_args_from_config(cp, "model",
+                                               skip_args=ignore_args))
         # get the injection file
         # Note: PyCBC's multi-ifo parser uses key:ifo for
         # the injection file, even though we will use the same
