@@ -107,7 +107,7 @@ for event in coinc_table:
             coinc_inspiral_table_curr.append(coinc_insp)
 
     if args.min_ifar is not None and \
-            coinc_inspiral_table_curr[0].combined_far > 1./args.min_ifar/YRJUL_SI:
+            coinc_inspiral_table_curr[0].combined_far > 1./args.min_ifar/lal.YRJUL_SI:
         continue
 
     sngl_ids = []
