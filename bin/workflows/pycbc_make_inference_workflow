@@ -286,7 +286,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     groups.sort()
     for group in groups:
         parameters = plot_parameters[group]
-        base = "posteriors/{}/1d_{}_posteriors".format(label, group)
+        base = "posteriors/1d_{}_posteriors".format(group)
         post_1d_files = inffu.make_inference_1d_posterior_plots(
                           workflow, inference_file, rdir[base],
                           parameters=parameters,
@@ -296,7 +296,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
 
     if "inference_samples" in workflow.cp.options("executables"):
         # files for samples summary subsection
-        base = "diagnostics/samples/{}".format(label)
+        base = "diagnostics/samples"
         samples_files = []
         for parameter in all_parameters:
             samples_files += inffu.make_inference_samples_plot(
@@ -307,7 +307,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
 
     if "inference_rate" in workflow.cp.options("executables"):
         # files for samples acceptance_rate subsection
-        base = "diagnostics/acceptance_rate/{}".format(label)
+        base = "diagnostics/acceptance_rate"
         acceptance_files = inffu.make_inference_acceptance_rate_plot(
                               workflow, inference_file, rdir[base],
                               analysis_seg=analysis_index,
@@ -325,10 +325,10 @@ for num_event, config_fnames in enumerate(infconfig_files):
     # files for priors summary section
     base = "priors/{}".format(label)
     prior_files = []
-    for subsection in cp.get_subsections(opts.prior_section):
+    for subsection in cp.get_subsections('prior'):
         prior_files += inffu.make_inference_prior_plot(
             workflow, config_file, rdir[base],
-            analysis_seg=workflow.analysis_index,
+            analysis_seg=workflow.analysis_time,
             parameters=[subsection],
             tags=opts.tags+[str(num_event), subsection])
     layout.group_layout(rdir[base], prior_files)
