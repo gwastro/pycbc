@@ -455,7 +455,7 @@ class BaseMCMC(object):
         else:
             # try to load an initial distribution from the config file
             initial_distribution = initial_dist_from_config(cp,
-                self.variable_params)
+                                       self.variable_params)
 
         self.set_p0(samples_file=samples_file, prior=initial_distribution)
         # if a samples file was provided, use it to set the state of the
