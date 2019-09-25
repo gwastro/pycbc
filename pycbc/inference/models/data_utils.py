@@ -217,19 +217,21 @@ def data_opts_from_config(cp, section, filter_flow):
     # create a fake parser to parse them
     parser = create_data_parser()
     # parse the options
-    opts = parser.parse_args(optstr.split(' '))
+    opts = parser.parse_args(optstr.split())
     # figure out the times to use
+    logging.info("Determining analysis times to use")
     opts.trigger_time = int(opts.trigger_time)
     gps_start = opts.analysis_start_time.copy()
     gps_end = opts.analysis_end_time.copy()
-    for det, t in opts.analysis_start_time:
+    for det in opts.instruments:
         gps_start[det] += opts.trigger_time
         gps_end[det] += opts.trigger_time
         if opts.psd_inverse_length is not None:
             pad = int(numpy.ceil(opts.psd_inverse_length[det] / 2))
-            logging.info("Padding analysis start and end times by {} "
+            logging.info("Padding {} analysis start and end times by {} "
                          "(= psd-inverse-length/2) seconds to "
-                         "account for PSD wrap around effects.".format(pad))
+                         "account for PSD wrap around effects."
+                         .format(det, pad))
         gps_start[det] -= pad
         gps_end[det] += pad
         if opts.psd_start_time is not None:
@@ -302,21 +304,27 @@ def data_from_cli(opts, check_for_valid_times=True,
     if check_for_valid_times:
         dets_with_data = []
         for det in instruments:
+            logging.info("Checking that {} has valid data in the requested "
+                         "analysis times".format(det))
             try:
-                check_validtimes(det, opts.gps_start_time, opts.gps_end_time,
+                check_validtimes(det, opts.gps_start_time[det],
+                                 opts.gps_end_time[det],
                                  shift_to_valid=False,
                                  segment_name=opts.dq_segment_name,
                                  source=opts.dq_source,
-                                 server=opts.dq_sesrver,
+                                 server=opts.dq_server,
                                  veto_definer=opts.veto_definer)
                 dets_with_data.append(det)
             except NoValidDataError as e:
                 if err_on_missing_detectors:
                     raise NoValidDataError(e)
                 else:
-                    logging.warn("No valid data found for detector {}, "
-                                 "so will not use it in analysis.".format(
-                                 det))
+                    logging.warn("WARNING: Detector {} will not be used in "
+                                 "the analysis, as it does not have "
+                                 "continuous valid data that spans the "
+                                 "anlysis segment [{}, {})."
+                                 .format(det, opts.gps_start_time[det],
+                                         opts.gps_end_time[det]))
                     pass
         instruments = dets_with_data
 
@@ -335,10 +343,12 @@ def data_from_cli(opts, check_for_valid_times=True,
             psd_times = {}
             dets_with_data = []
             for det in instruments:
+                logging.info("Checking that {} has valid data in requested "
+                             "times for PSD estimation".format(det))
                 try:
                     psd_start, psd_end = check_validtimes(
-                        det, opts.psd_start_time,
-                        opts.psd_end_time,
+                        det, opts.psd_start_time[det],
+                        opts.psd_end_time[det],
                         shift_to_valid=shift_psd_times_to_valid,
                         segment_name=opts.dq_segment_name,
                         source=opts.dq_source,
@@ -350,10 +360,9 @@ def data_from_cli(opts, check_for_valid_times=True,
                     if err_on_missing_detectors:
                         raise NoValidDataError(e)
                     else:
-                        logging.warn("Not enough valid data found in "
-                                     "order to estimate the PSD for "
-                                     "detector {}, so it will not "
-                                     "be used in the analysis."
+                        logging.warn("WARNING: Detector {} will not be used "
+                                     "in the analysis, as enough valid data "
+                                     "could not be found to estimate the PSD."
                                      .format(det))
                         strain_dict.pop(det)
                         pass
