@@ -57,9 +57,7 @@ mass_limits = {"max_m1": m1_max, "min_m2": m2_min}
 mass_bdary = {"ns_max": ns_max, "gap_max": gap_max}
 z = {"central": central_z, "delta": delta_z}
 trig_mc = {"central": central_mc, "delta": delta_mc}
-
-#areas = calc_areas(trig_mc, mass_limits, mass_bdary, z)
-
+areas = calc_areas(trig_mc, mass_limits, mass_bdary, z)
 print "abbh = " + str(areas["bbh"])
 print "abhg = " + str(areas["bhg"])
 print "agg = " + str(areas["gg"])
