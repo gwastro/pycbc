@@ -1,24 +1,25 @@
 #!/usr/bin/env python
 
-#mchirp_plots.py
+# chirp_plots.py
 #
-#Integration of the area laying in the different cbc regions
-#By A. Curiel Barroso
-#August 2019
+# Integration of the area laying in the different cbc regions
+# By A. Curiel Barroso
+# August 2019
 #
-#--------------------------------------------
-#This script computes the area corresponding
-#to different CBC on the m1 & m2 plane as a
-#function of central mchirp value
-#--------------------------------------------
+# --------------------------------------------
+# This script computes the area corresponding
+# to different CBC on the m1 & m2 plane as a
+# function of central mchirp value
+# --------------------------------------------
 
-import numpy
-import argparse
-from matplotlib import use; use("agg")
+from matplotlib import use
+use("agg")
 from matplotlib import pyplot
 from mchirp_area import calc_areas
+import argparse
+import numpy
 
-#ARGUMENT PARSER
+# ARGUMENT PARSER
 parser = argparse.ArgumentParser()
 parser.add_argument("--min-m2", type=float, help="Minimum value for m2")
 parser.add_argument("--max-m1", type=float, help="Maximum value for m1")
@@ -35,14 +36,14 @@ if args.min_m2 and args.max_m1:
 if args.min_m2 and args.max_m1:
     ns_max = float(args.ns_max)
     gap_max = float(args.gap_max)
-    
+
 if args.central_z and args.delta_z:
     central_z = float(args.central_z)
     delta_z = float(args.delta_z)
 else:
     central_z = 0.0
     delta_z = 0.0
-    
+
 mass_limits = {"max_m1": m1_max, "min_m2": m2_min}
 mass_bdary = {"ns_max": ns_max, "gap_max": gap_max}
 z = {"central": central_z, "delta": delta_z}
@@ -56,7 +57,6 @@ y_ansbh = numpy.zeros(n, float)
 y_agns = numpy.zeros(n, float)
 y_abns = numpy.zeros(n, float)
 
-
 for i in range(0, n):
     central_mc = 0.8 + i*(10.0 - 0.8)/(n - 1)
     delta_mc = central_mc * 0.01
@@ -69,7 +69,7 @@ for i in range(0, n):
     y_ansbh[i] = areas["nsbh"]
     y_agns[i] = areas["gns"]
     y_abns[i] = areas["bns"]
-    
+
 pyplot.plot(x_mc, y_abbh, label="Binary Black Hole")
 pyplot.plot(x_mc, y_abhg, label="Black Hole + Mass Gap Object")
 pyplot.plot(x_mc, y_agg, label="Binary Mass Gap Object")
