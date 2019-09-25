@@ -11,15 +11,13 @@ to different CBC on the m1 & m2 plane when
 given a central mchirp value and uncertainty
 --------------------------------------------
 """
-from matplotlib import use
-use("agg")
-from matplotlib import pyplot
-from scipy.integrate import quad
+import argparse
 from mchirp_area import calc_areas
 from mchirp_area import src_mass_from_z_det_mass
-import argparse
 from pycbc import conversions
 import numpy
+from matplotlib import use; use("Agg")
+from matplotlib import pyplot
 
 # ARGUMENT PARSER
 parser = argparse.ArgumentParser()
