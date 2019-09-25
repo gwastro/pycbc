@@ -1,17 +1,16 @@
 #!/usr/bin/env python
+"""mass_area_plot.py
 
-# mass_area_plot.py
-#
-# Integration of the area laying in the different cbc regions
-# By A. Curiel Barroso
-# August 2019
-#
-# --------------------------------------------
-# This script computes the area corresponding
-# to different CBC on the m1 & m2 plane when
-# given a central mchirp value and uncertainty
-# --------------------------------------------
+Integration of the area laying in the different cbc regions
+By A. Curiel Barroso
+August 2019
 
+--------------------------------------------
+This script computes the area corresponding
+to different CBC on the m1 & m2 plane when
+given a central mchirp value and uncertainty
+--------------------------------------------
+"""
 from matplotlib import use
 use("agg")
 from matplotlib import pyplot
@@ -61,7 +60,7 @@ trig_mc = {"central": central_mc, "delta": delta_mc}
 
 areas = calc_areas(trig_mc, mass_limits, mass_bdary, z)
 
-print "abbh = "+str(areas["bbh"])
+#print "abbh = "+str(areas["bbh"])
 print "abhg = "+str(areas["bhg"])
 print "agg = "+str(areas["gg"])
 print "ansbh = "+str(areas["nsbh"])
