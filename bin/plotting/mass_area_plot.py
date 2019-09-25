@@ -7,13 +7,11 @@
 #August 2019
 #
 #--------------------------------------------
-#This script computes the area corresponding 
-#to different CBC on the m1 & m2 plane when  
+#This script computes the area corresponding
+#to different CBC on the m1 & m2 plane when
 #given a central mchirp value and uncertainty
 #--------------------------------------------
 
-from pycbc import conversions
-import numpy
 from matplotlib import use
 use("agg")
 from matplotlib import pyplot
@@ -21,6 +19,8 @@ from scipy.integrate import quad
 from mchirp_area import calc_areas
 from mchirp_area import src_mass_from_z_det_mass
 import argparse
+from pycbc import conversions
+import numpy
 
 #ARGUMENT PARSER
 parser = argparse.ArgumentParser()
@@ -60,7 +60,7 @@ z = {"central": central_z, "delta": delta_z}
 trig_mc = {"central": central_mc, "delta": delta_mc}
 
 areas = calc_areas(trig_mc, mass_limits, mass_bdary, z)
-    
+
 print "abbh = "+str(areas["bbh"])
 print "abhg = "+str(areas["bhg"])
 print "agg = "+str(areas["gg"])
@@ -99,7 +99,7 @@ else:
     pyplot.plot(
         (m1_max, m1_max),
         (conversions.mass2_from_mchirp_mass1(mcs, lim_m1s),
-        conversions.mass2_from_mchirp_mass1(mcb, lim_m1b)), "b")
+         conversions.mass2_from_mchirp_mass1(mcb, lim_m1b)), "b")
 
 if mis >= m2_min:
     pyplot.plot(m1s, m2s, "b")
@@ -115,7 +115,6 @@ pyplot.plot((gap_max, m1_max), (gap_max, gap_max), "k:")
 
 pyplot.xlabel("M1")
 pyplot.ylabel("M2")
-pyplot.title("MChirp = "+str((0.5) * (mcb+mcs)) + " +/- "+str((mcb-mcs) * (0.5)))
+pyplot.title("MChirp = "+str((0.5) * (mcb+mcs)) + " +/- "
+             +str((mcb-mcs) * (0.5)))
 pyplot.savefig("mass_plot.png")
-
-
