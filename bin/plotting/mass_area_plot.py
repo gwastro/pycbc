@@ -57,13 +57,15 @@ mass_limits = {"max_m1": m1_max, "min_m2": m2_min}
 mass_bdary = {"ns_max": ns_max, "gap_max": gap_max}
 z = {"central": central_z, "delta": delta_z}
 trig_mc = {"central": central_mc, "delta": delta_mc}
+
 areas = calc_areas(trig_mc, mass_limits, mass_bdary, z)
-print "abbh = " + str(areas["bbh"])
-print "abhg = " + str(areas["bhg"])
-print "agg = " + str(areas["gg"])
-print "ansbh = " + str(areas["nsbh"])
-print "agns = " + str(areas["gns"])
-print "abns = " + str(areas["bns"])
+
+print("abbh = " + str(areas["bbh"]))
+print("abhg = " + str(areas["bhg"]))
+print("agg = " + str(areas["gg"]))
+print("ansbh = " + str(areas["nsbh"]))
+print("agns = " + str(areas["gns"]))
+print("abns = " + str(areas["bns"]))
 
 # PLOT GENERATION
 src_mchirp = src_mass_from_z_det_mass(central_z, delta_z,
