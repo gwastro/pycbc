@@ -23,8 +23,12 @@ parser.add_argument('--low-frequency-cutoff', type=float,
                          "provided, will try to retrive it from the "
                          "hdf-group's attrs.")
 parser.add_argument("--ifos", nargs="+",
-                    help="What ifo(s) to plot. If none provided, will look "
-                         "for an 'ifo_list' attribute in the hdf file.")
+                    help="What ifo(s) to plot. If none provided, will use  "
+                         "the names of the top-level keys in the psd file(s).")
+parser.add_argument("--dyn-range-factor", type=float,
+                    default=pycbc.DYN_RANGE_FAC,
+                    help="Dynamic range factor that was applied to the PSDs "
+                         "in the PSD files. Default is pycbc.DYN_RANGE_FAC.")
 parser.add_argument("--output-file", required=True, help='Output file name')
 parser.add_argument("--memory-limit", default=2., type=float, metavar="X GB",
                     help="Reading in all PSD files can use a lot of memory. "
@@ -48,15 +52,12 @@ for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
     if args.hdf_group is not None:
         f = f[args.hdf_group]
-
     if args.ifos is not None:
         ifo_list = args.ifos
-    elif "ifo_list" in f.attrs.keys():
-        ifo_list = f.attrs["ifo_list"]
     else:
-        ifo_list = [tuple(f.keys())[0]]
+        ifo_list = list(f.keys())
     for ifo in ifo_list:
-        fac = 1.0 / pycbc.DYN_RANGE_FAC
+        fac = 1.0 / args.dyn_range_factor
         df = f[ifo + '/psds/0'].attrs['delta_f']
         keys = list(f[ifo + '/psds'].keys())
         if args.low_frequency_cutoff is not None:
