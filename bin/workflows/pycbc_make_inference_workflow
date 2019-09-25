@@ -140,16 +140,18 @@ parser.add_argument("--workflow-name", required=True,
                     help="Name of the workflow to append in various places.")
 parser.add_argument("--tags", nargs="+", default=[],
                     help="Tags to apend in various places.")
-parser.add_argument("--output-dir", default="output",
+parser.add_argument("--output-dir", default=None,
                     help="Path to directory where the workflow will be "
-                         "written. Default is 'output'.")
+                         "written. Default is to use "
+                         "{workflow-name}_output.")
 parser.add_argument("--output-map", default="output.map",
                     help="Path to an output map file. Default is "
-                         "'output.map'.")
+                         "output.map.")
 parser.add_argument("--transformation-catalog", default=None,
                     help="Path to transformation catalog file.")
-parser.add_argument("--output-file", default=None,
-                    help="Path to DAX file.")
+parser.add_argument("--dax-file", default=None,
+                    help="Path to DAX file. Default is to write to the "
+                         "output directory with name {workflow-name}.dax.")
 # inference options
 parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for inference job(s). If multiple "
@@ -168,7 +170,6 @@ cgroup.add_argument("--inference-config-cache", type=str,
                          "event. If provided, will a separate inference "
                          "analysis will be created for each event. Must "
                          "provide either this or inference-config-file.")
-
 # add option groups
 configuration.add_workflow_command_line_group(parser)
 
@@ -190,8 +191,15 @@ else:
 config_file_tmplt = 'config_files/inference-{}.ini'
 
 # make data output directory
+if opts.output_dir is None:
+    opts.output_dir = opts.workflow_name + '_output'
 core.makedir(opts.output_dir)
 core.makedir('{}/{}'.format(opts.output_dir, 'config_files'))
+
+# set the dax file name
+dax_file = opts.dax_file
+if dax_file is None:
+    dax_file = "{}.dax".format(opts.workflow_name)
 
 # the file we'll store all output files in
 filedir = 'output'
@@ -365,9 +373,7 @@ dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
 container._adag.addDependency(dep)
 
 # write dax
-outputfile = "{}.dax".format(opts.workflow_name) if opts.output_file == None \
-    else opts.output_file
-container.save(filename=outputfile, output_map_path=opts.output_map,
+container.save(filename=dax_file, output_map_path=opts.output_map,
                transformation_catalog_path=opts.transformation_catalog)
 
 # save workflow configuration file
