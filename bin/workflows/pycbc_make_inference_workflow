@@ -136,18 +136,25 @@ parser.add_argument("--version", action="version", version=__version__,
                     help="Prints version information.")
 
 # workflow options
-parser.add_argument("--workflow-name", default="my_unamed_inference_run",
+parser.add_argument("--workflow-name", required=True,
                     help="Name of the workflow to append in various places.")
 parser.add_argument("--tags", nargs="+", default=[],
                     help="Tags to apend in various places.")
-parser.add_argument("--output-dir", default=None,
-                    help="Path to output directory.")
-parser.add_argument("--output-map", default=None,
-                    help="Path to output map file.")
+parser.add_argument("--output-dir", default="output",
+                    help="Path to directory where the workflow will be "
+                         "written. Default is 'output'.")
+parser.add_argument("--output-map", default="output.map",
+                    help="Path to an output map file. Default is "
+                         "'output.map'.")
 parser.add_argument("--transformation-catalog", default=None,
                     help="Path to transformation catalog file.")
 parser.add_argument("--output-file", default=None,
                     help="Path to DAX file.")
+# inference options
+parser.add_argument("--seed", type=int, default=0,
+                    help="Seed to use for inference job(s). If multiple "
+                         "events are analyzed, the seed will be incremented "
+                         "by one for each event.")
 # input configuration file options
 cgroup = parser.add_mutually_exclusive_group(required=True)
 cgroup.add_argument("--inference-config-file", type=str, nargs='+',
@@ -247,6 +254,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     label = elabels[num_event]
     if label is None:
         label = 'Event {}'.format(num_event)
+    label = label.replace(' ', '_')
     overrides = infconfig_overrides[num_event]
     deletions = infconfig_deletions[num_event]
     # write the configuration file to the config files directory
@@ -260,6 +268,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     # make node for running sampler
     node = inference_exe.create_node()
     node.add_input_opt("--config-file", config_file)
+    node.add_opt("--seed", opts.seed+num_event)
     analysis_index = segments.segment(num_event, num_event+1)
     inference_file = node.new_output_file_opt(analysis_index, ".hdf",
                                               "--output-file")
@@ -279,7 +288,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
         parameters=all_parameters,
         analysis_seg=analysis_index,
         tags=opts.tags)
-    layout.single_layout(rdir[base], post_table_files + post_files)
+    layout.single_layout(rdir[base], post_table_files+post_files)
 
     # files for posteriors 1d_posteriors subsection
     groups = plot_parameters.keys()
@@ -298,11 +307,12 @@ for num_event, config_fnames in enumerate(infconfig_files):
         # files for samples summary subsection
         base = "diagnostics/samples"
         samples_files = []
-        for parameter in all_parameters:
+        for pi, parameter in enumerate(all_parameters):
             samples_files += inffu.make_inference_samples_plot(
                               workflow, inference_file, rdir[base],
-                              parameters=[parameter], analysis_seg=analysis_index,
-                              tags=opts.tags + [str(num_event), parameter])
+                              parameters=[parameter],
+                              analysis_seg=analysis_index,
+                              tags=opts.tags+[str(num_event), str(pi)])
         layout.group_layout(rdir[base], samples_files)
 
     if "inference_rate" in workflow.cp.options("executables"):
@@ -325,12 +335,12 @@ for num_event, config_fnames in enumerate(infconfig_files):
     # files for priors summary section
     base = "priors/{}".format(label)
     prior_files = []
-    for subsection in cp.get_subsections('prior'):
+    for pi, subsection in enumerate(cp.get_subsections('prior')):
         prior_files += inffu.make_inference_prior_plot(
             workflow, config_file, rdir[base],
             analysis_seg=workflow.analysis_time,
             parameters=[subsection],
-            tags=opts.tags+[str(num_event), subsection])
+            tags=opts.tags+[str(num_event), str(pi)])
     layout.group_layout(rdir[base], prior_files)
 
 # files for overall summary section
