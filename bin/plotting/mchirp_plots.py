@@ -1,23 +1,22 @@
 #!/usr/bin/env python
 
-# chirp_plots.py
-#
-# Integration of the area laying in the different cbc regions
-# By A. Curiel Barroso
-# August 2019
-#
-# --------------------------------------------
-# This script computes the area corresponding
-# to different CBC on the m1 & m2 plane as a
-# function of central mchirp value
-# --------------------------------------------
+"""chirp_plots.py
 
-from matplotlib import use
-use("agg")
-from matplotlib import pyplot
-from mchirp_area import calc_areas
+Integration of the area laying in the different cbc regions
+By A. Curiel Barroso
+August 2019
+
+--------------------------------------------
+This script computes the area corresponding
+to different CBC on the m1 & m2 plane as a
+function of central mchirp value
+--------------------------------------------
+"""
 import argparse
+from mchirp_area import calc_areas
 import numpy
+from matplotlib import use; use("Agg")
+from matplotlib import pyplot
 
 # ARGUMENT PARSER
 parser = argparse.ArgumentParser()
