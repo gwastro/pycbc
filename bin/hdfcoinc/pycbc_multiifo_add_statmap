@@ -328,7 +328,7 @@ for ifo in all_ifos:
 
 combined_bg_data = pycbc.io.DictArray(data={g: f['background/%s' % g][:] for g in grps})
 combined_fg_data = pycbc.io.DictArray(data={g: f['foreground/%s' % g][:] for g in grps})
-#Get 
+#Get coincidence type for all coincidences
 fg_coinc_type = np.array([])
 bg_coinc_type = np.array([])
 for f_in in files:
@@ -359,8 +359,7 @@ any_above_ifar_lim = True
 ifos_in_combo = {}
 bg_time = {f_in.attrs['ifos'].replace(' ',''): f_in.attrs['background_time'] for f_in in files}
 fg_time = {f_in.attrs['ifos'].replace(' ',''): f_in.attrs['foreground_time'] for f_in in files}
-in_combo_time_dictarray = pycbc.io.DictArray(data=is_in_combo_time)
-#In order to separate the 
+
 while any_above_ifar_lim:
     if (h_iterations == args.max_hierarchical_removal):
         logging.info("Reached hierarchical removal limit of %d" %
@@ -433,7 +432,7 @@ while any_above_ifar_lim:
         any_above_ifar_lim = False
         break
     #Add the highest ifar (yet to be removed) to the final output
-    final_fg_data[maxcombo].__add__(sep_fg_data[maxcombo].select([max_ifar_idx]))
+    final_fg_data[maxcombo] = final_fg_data[maxcombo].__add__(sep_fg_data[maxcombo].select([max_ifar_idx]))
 
     maxtime = pycbc.events.mean_if_greater_than_zero(
         [sep_fg_data[maxcombo].data['%s/time' % ifo][:][max_ifar_idx] for 
@@ -444,6 +443,7 @@ while any_above_ifar_lim:
     logging.info('Removing trigger from combined foreground')
     where_combined = np.nonzero(combined_fg_data.data['stat'] == 
                                 sep_fg_data[maxcombo].data['stat'][:][max_ifar_idx])
+    final_combined_fg = final_combined_fg.__add__(combined_fg_data.select(where_combined))
     combined_fg_data = combined_fg_data.remove(where_combined)
     n_triggers -= 1
     logging.info('Removing background triggers at time {} within window '
@@ -502,10 +502,27 @@ while any_above_ifar_lim:
     fg_fars = np.array([list(far[ct]) for ct in all_ifo_combos])
 
     # Combine the FARs with the mask to obtain the new ifars
-    fg_ifar = conv.sec_to_year(1. /np.sum(isincombo_mask*fg_fars, axis=0))
-    combined_fg_data.data['ifar'] = fg_ifar
-	#combine and copy other datasets
+    combined_fg_data.data['ifar'] = conv.sec_to_year(1. /np.sum(isincombo_mask*fg_fars, axis=0))
 
+
+for combo in all_ifo_combos:
+    final_fg_data[combo] = final_fg_data[combo].__add__(sep_bg_data[combo])
+    for key in final_fg_data[combo].data:
+        full_key = 'foreground/%s/%s' % (combo, key)
+        if full_key in f:
+            del f[full_key]
+        f[full_key] = final_fg_data[combo].data[key]
+
+final_combined_fg = final_combined_fg.__add__(combined_fg_data)
+for key in final_combined_fg.data:
+    full_key = 'foreground/%s' % ( key)
+    if full_key in f:
+        del f[full_key]
+    f[full_key] = final_combined_fg.data[key]
+
+for key in f:
+    if 'background' in key and (key + '/ifar') in f:
+        del f[key + '/ifar']
 f.attrs['hierarchical_removal_iterations'] = h_iterations
 f.close()
 logging.info('Done!')
