@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """chirp_plots.py
 
 Integration of the area laying in the different cbc regions
