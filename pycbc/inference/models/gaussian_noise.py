@@ -228,16 +228,16 @@ class GaussianNoise(BaseDataModel):
         super(GaussianNoise, self).__init__(variable_params, data,
                                             static_params=static_params,
                                             **kwargs)
-        # check if low frequency cutoff has been provided for every IFO.
-        if set(low_frequency_cutoff.keys()) != set(self.data.keys()):
-            raise KeyError("IFOs for which data has been provided should "
-                           "match IFOs for which low-frequency-cutoff has "
-                           "been provided for likelihood inner product "
-                           "calculation. If loading the model settings from "
-                           "a config file, please provide an "
-                           "`IFO-low-frequency-cutoff` input for each "
-                           "detector in the `[model]` section, where IFO is "
-                           "the name of the detector.")
+        # check if low frequency cutoff has been provided for every IFO with
+        # data
+        if set(self.data.keys()) - set(low_frequency_cutoff.keys()):
+            raise KeyError("A low-frequency-cutoff must be provided for every "
+                           "detector for which data has been provided. If "
+                           "loading the model settings from "
+                           "a config file, please provide "
+                           "`{DETECTOR}-low-frequency-cutoff` options for "
+                           "every detector in the `[model]` section, where "
+                           "`{DETECTOR} is the name of the detector.")
         # create the waveform generator
         # the waveform generator will get the variable_params + the output
         # of the waveform transforms, so we'll add them to the list of
