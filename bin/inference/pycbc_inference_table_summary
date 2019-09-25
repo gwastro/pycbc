@@ -36,8 +36,9 @@ parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
 # add quantile options
 parser.add_argument("--quantiles", type=float, nargs="+",
-    default=[0.16,0.50,0.84],
-    help="Quantiles to calculate.")
+                    default=[16, 50, 84],
+                    help="Quantiles to calculate. Default is 16 50 84 "
+                         "(the median with one sigma errors).")
 
 # parse the command line
 opts = parser.parse_args()
@@ -57,8 +58,8 @@ for param, label in zip(parameters, labels):
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile
     x = samples[param]
-    quantiles = numpy.array([numpy.percentile(x, 100*q)
-        for q in opts.quantiles])
+    quantiles = numpy.array([numpy.percentile(x, q)
+                             for q in opts.quantiles])
 
     # add qunatiles to row;
     # we'll quote using the range of quanitles as the error; if there was
