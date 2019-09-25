@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
-#mass_area_plot.py
+# mass_area_plot.py
 #
-#Integration of the area laying in the different cbc regions
-#By A. Curiel Barroso
-#August 2019
+# Integration of the area laying in the different cbc regions
+# By A. Curiel Barroso
+# August 2019
 #
-#--------------------------------------------
-#This script computes the area corresponding
-#to different CBC on the m1 & m2 plane when
-#given a central mchirp value and uncertainty
-#--------------------------------------------
+# --------------------------------------------
+# This script computes the area corresponding
+# to different CBC on the m1 & m2 plane when
+# given a central mchirp value and uncertainty
+# --------------------------------------------
 
 from matplotlib import use
 use("agg")
@@ -22,7 +22,7 @@ import argparse
 from pycbc import conversions
 import numpy
 
-#ARGUMENT PARSER
+# ARGUMENT PARSER
 parser = argparse.ArgumentParser()
 parser.add_argument("--central-mc", type=float, help="Central value of mchirp")
 parser.add_argument("--delta-mc", type=float, help="Uncertainty for mchirp")
@@ -68,15 +68,15 @@ print "ansbh = "+str(areas["nsbh"])
 print "agns = "+str(areas["gns"])
 print "abns = "+str(areas["bns"])
 
-#PLOT GENERATION
+# PLOT GENERATION
 src_mchirp = src_mass_from_z_det_mass(central_z, delta_z,
                                       central_mc, delta_mc)
 
 mcb = src_mchirp[0] + src_mchirp[1]
 mcs = src_mchirp[0] - src_mchirp[1]
 
-#The points where the equal mass line and a chirp mass
-#curve intersect is m1 = m2 = (2**0.2)*mchirp
+# The points where the equal mass line and a chirp mass
+# curve intersect is m1 = m2 = (2**0.2)*mchirp
 
 mib = (2**0.2)*mcb
 mis = (2**0.2)*mcs
