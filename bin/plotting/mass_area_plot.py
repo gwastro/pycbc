@@ -60,12 +60,12 @@ trig_mc = {"central": central_mc, "delta": delta_mc}
 
 areas = calc_areas(trig_mc, mass_limits, mass_bdary, z)
 
-#print "abbh = "+str(areas["bbh"])
-print "abhg = "+str(areas["bhg"])
-print "agg = "+str(areas["gg"])
-print "ansbh = "+str(areas["nsbh"])
-print "agns = "+str(areas["gns"])
-print "abns = "+str(areas["bns"])
+print "abbh = " + str(areas["bbh"])
+print "abhg = " + str(areas["bhg"])
+print "agg = " + str(areas["gg"])
+print "ansbh = " + str(areas["nsbh"])
+print "agns = " + str(areas["gns"])
+print "abns = " + str(areas["bns"])
 
 # PLOT GENERATION
 src_mchirp = src_mass_from_z_det_mass(central_z, delta_z,
@@ -114,6 +114,6 @@ pyplot.plot((gap_max, m1_max), (gap_max, gap_max), "k:")
 
 pyplot.xlabel("M1")
 pyplot.ylabel("M2")
-pyplot.title("MChirp = "+str((0.5) * (mcb+mcs)) + " +/- "
-             +str((mcb-mcs) * (0.5)))
+pyplot.title("MChirp = " + str((0.5) * (mcb + mcs)) + " +/- "
+             + str((mcb - mcs) * (0.5)))
 pyplot.savefig("mass_plot.png")
