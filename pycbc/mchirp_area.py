@@ -1,40 +1,44 @@
 #!/usr/bin/env python
 
-#mchirp_area.py
+# mchirp_area.py
 #
-#Integration of the area laying in the different cbc regions
-#By A. Curiel Barroso
-#August 2019
+# Integration of the area laying in the different cbc regions
+# By A. Curiel Barroso
+# August 2019
 #
-#--------------------------------------------
-#This script computes the area corresponding 
-#to different CBC on the m1 & m2 plane when  
-#given a central mchirp value and uncertainty
-#It also includes a function that calculates
-#the source frame when given the detector
-#frame mass and redshift
-#--------------------------------------------
+# --------------------------------------------
+# This script computes the area corresponding
+# to different CBC on the m1 & m2 plane when
+# given a central mchirp value and uncertainty
+# It also includes a function that calculates
+# the source frame when given the detector
+# frame mass and redshift
+# --------------------------------------------
 
-import numpy
 from pycbc import conversions
 from scipy.integrate import quad
+
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     msrc = (mdet) / (1 + z)
     del_msrc = msrc * ((del_mdet/mdet)**2 + (del_z/(1 + z))**2)**(0.5)
     return (msrc, del_msrc)
 
-#Integration function
+
+# Integration function
 def mchange(x, mc):
     return conversions.mass2_from_mchirp_mass1(mc, x)
+
 
 def intmc(mc, x_min, x_max):
     integral = quad(mchange, x_min, x_max, args=mc)
     return integral[0]
 
+
 def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
     trig_mc = src_mass_from_z_det_mass(z["central"], z["delta"],
                                        trig_mc_det["central"],
+
                                        trig_mc_det["delta"])
     mcb = trig_mc[0] + trig_mc[1]
     mcs = trig_mc[0] - trig_mc[1]
@@ -42,12 +46,12 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
     m1_max = mass_limits["max_m1"]
     ns_max = mass_bdary["ns_max"]
     gap_max = mass_bdary["gap_max"]
-    #The points where the equal mass line and a chirp mass
-    #curve intersect is m1 = m2 = 2**0.2 * mchirp
+    '''The points where the equal mass line and a chirp mass
+    curve intersect is m1 = m2 = 2**0.2 * mchirp'''
     mib = (2**0.2) * mcb
     mis = (2**0.2) * mcs
 
-    #AREA FOR BBH
+    # AREA FOR BBH
     if mib < gap_max:
         abbh = 0.0
     else:
@@ -74,9 +78,9 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
 
         abbh = int_sup_bbh - int_inf_bbh
 
-    #AREA FOR BHG
+    # AREA FOR BHG
     if (conversions.mass2_from_mchirp_mass1(mcb, gap_max) < ns_max or
-        conversions.mass2_from_mchirp_mass1(mcs, m1_max) > gap_max):
+            conversions.mass2_from_mchirp_mass1(mcs, m1_max) > gap_max):
         abhg = 0.0
     else:
         if conversions.mass2_from_mchirp_mass1(mcb, m1_max) > gap_max:
@@ -101,16 +105,16 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
 
         intline_inf_bhg = (limb2_bhg - lims2_bhg) * ns_max
         intline_sup_bhg = (limb1_bhg - lims1_bhg) * gap_max
-        ints_bhg = intmc(mcs, lims1_bhg, lims2_bhg)    
+        ints_bhg = intmc(mcs, lims1_bhg, lims2_bhg)
         int_sup_bhg = intb_bhg + intline_sup_bhg
         int_inf_bhg = ints_bhg + intline_inf_bhg
 
         abhg = int_sup_bhg - int_inf_bhg
 
-    #AREA FOR GG
+    # AREA FOR GG
     if (conversions.mass2_from_mchirp_mass1(mcs, gap_max) > gap_max or
-        conversions.mass2_from_mchirp_mass1(mcb, ns_max) < ns_max):
-        agg = 0.0    
+            conversions.mass2_from_mchirp_mass1(mcb, ns_max) < ns_max):
+        agg = 0.0
     else:
         if conversions.mass2_from_mchirp_mass1(mcb, gap_max) > gap_max:
             limb2_gg = gap_max
@@ -143,7 +147,7 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
 
         agg = int_sup_gg - int_inf_gg
 
-    #AREA FOR BNS
+    # AREA FOR BNS
     if conversions.mass2_from_mchirp_mass1(mcs, ns_max) > ns_max:
         abns = 0.0
     else:
@@ -178,9 +182,9 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
 
         abns = int_sup_bns - int_inf_bns
 
-    #AREA FOR GNS
+    # AREA FOR GNS
     if (conversions.mass2_from_mchirp_mass1(mcs, gap_max) > ns_max or
-        conversions.mass2_from_mchirp_mass1(mcb, ns_max) < m2_min):
+            conversions.mass2_from_mchirp_mass1(mcb, ns_max) < m2_min):
         agns = 0.0
     else:
         if conversions.mass2_from_mchirp_mass1(mcb, gap_max) > ns_max:
@@ -202,18 +206,18 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
                             conversions.mass2_from_mchirp_mass1(mcs, ns_max))
             lims2_gns = min(gap_max,
                             conversions.mass2_from_mchirp_mass1(mcs, m2_min))
-        
+
         intline_inf_gns = (limb2_gns - lims2_gns) * m2_min
-        intline_sup_gns = (limb1_gns - lims1_gns) *ns_max
+        intline_sup_gns = (limb1_gns - lims1_gns) * ns_max
         ints_gns = intmc(mcs, lims1_gns, lims2_gns)
         int_sup_gns = intb_gns + intline_sup_gns
         int_inf_gns = ints_gns + intline_inf_gns
 
         agns = int_sup_gns - int_inf_gns
 
-    #AREA FOR NSBH
+    # AREA FOR NSBH
     if (conversions.mass2_from_mchirp_mass1(mcs, m1_max) > ns_max or
-        conversions.mass2_from_mchirp_mass1(mcb, gap_max) < m2_min):
+            conversions.mass2_from_mchirp_mass1(mcb, gap_max) < m2_min):
         ansbh = 0.0
     else:
         if conversions.mass2_from_mchirp_mass1(mcb, m1_max) > ns_max:
