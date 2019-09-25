@@ -1,20 +1,19 @@
 #!/usr/bin/env python
+"""mchirp_area.py
 
-# mchirp_area.py
-#
-# Integration of the area laying in the different cbc regions
-# By A. Curiel Barroso
-# August 2019
-#
-# --------------------------------------------
-# This script computes the area corresponding
-# to different CBC on the m1 & m2 plane when
-# given a central mchirp value and uncertainty
-# It also includes a function that calculates
-# the source frame when given the detector
-# frame mass and redshift
-# --------------------------------------------
+Integration of the area laying in the different cbc regions
+By A. Curiel Barroso
+August 2019
 
+--------------------------------------------
+This script computes the area corresponding
+to different CBC on the m1 & m2 plane when
+given a central mchirp value and uncertainty
+It also includes a function that calculates
+the source frame when given the detector
+frame mass and redshift
+--------------------------------------------
+"""
 from pycbc import conversions
 from scipy.integrate import quad
 
@@ -46,8 +45,8 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
     m1_max = mass_limits["max_m1"]
     ns_max = mass_bdary["ns_max"]
     gap_max = mass_bdary["gap_max"]
-    '''The points where the equal mass line and a chirp mass
-    curve intersect is m1 = m2 = 2**0.2 * mchirp'''
+    # The points where the equal mass line and a chirp mass
+    # curve intersect is m1 = m2 = 2**0.2 * mchirp
     mib = (2**0.2) * mcb
     mis = (2**0.2) * mcs
 
