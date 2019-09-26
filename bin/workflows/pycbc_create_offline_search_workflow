@@ -668,7 +668,7 @@ layout.single_layout(rdir['analysis_time'], (analysis_time_summ))
 ########################## Make full summary ####################################
 summ = ([(time_file,)] + [(seg_summ_plot,)] +
         [(seg_summ_table, veto_summ_table)] + det_summ + hist_summ +
-        [(bank_plot,)] + inj_summ + list(layout.grouper(snrifar_summ, 2)))
+        [(bank_plot,)] + inj_summ + snrifar_summ)
 for row in summ:
     for f in row:
         symlink_path(f, rdir.base)
