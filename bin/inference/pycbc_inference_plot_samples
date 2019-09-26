@@ -26,7 +26,7 @@ from matplotlib import pyplot as plt
 from matplotlib import rc
 import numpy
 import pycbc
-from pycbc import (results, transforms)
+from pycbc import results
 from pycbc import __version__
 from pycbc.inference import (option_utils, io)
 import sys
@@ -72,9 +72,6 @@ plt.xlabel("Iteration")
 # loop over parameters
 axs = [axs] if not hasattr(axs, "__iter__") else axs
 
-file_parameters, cs = transforms.get_common_cbc_transforms(
-                                            parameters, fp.variable_params)
-
 if opts.thin_start is not None:
     xmin = opts.thin_start
 else:
@@ -104,11 +101,10 @@ except AttributeError:
 for i, arg in enumerate(parameters):
     chains_arg = []
     for widx in walkers:
-        chain = fp.read_samples(file_parameters, walkers=widx,
+        chain = fp.read_samples(parameters, walkers=widx,
                                 thin_start=opts.thin_start,
                                 thin_interval=opts.thin_interval,
                                 thin_end=opts.thin_end, **additional_args)
-        chain = transforms.apply_transforms(chain, cs)
         chains_arg.append(chain[arg])
     if opts.walkers is not None:
         for chain in chains_arg:
