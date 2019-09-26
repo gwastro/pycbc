@@ -179,6 +179,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     return node.output_files
 
 def make_inference_summary_table(workflow, inference_file, output_dir,
+                    result_label=None,
                     parameters=None, name="inference_table",
                     analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
@@ -224,6 +225,8 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".html", "--output-file")
     node.add_opt("--parameters", _params_for_pegasus(parameters))
+    if result_label is not None:
+        node.add_opt("--result-label", result_label)
 
     # add node to workflow
     workflow += node
