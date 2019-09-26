@@ -302,6 +302,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
         workflow, inference_file, rdir.base,
         parameters=table_params,
         analysis_seg=analysis_index,
+        result_label=label,
         tags=opts.tags+[str(num_event)]),)
 
     # summary posteriors
