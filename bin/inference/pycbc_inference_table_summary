@@ -51,9 +51,9 @@ fp, parameters, labels, samples = results_from_cli(opts)
 
 # get thinned samples for each parameter
 table = []
-for param, label in zip(parameters, labels):
+for param in parameters:
 
-    row = [label]
+    row = [labels[param]]
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile
