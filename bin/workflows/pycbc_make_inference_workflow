@@ -291,12 +291,8 @@ for num_event, config_fnames in enumerate(infconfig_files):
     cp = configuration.WorkflowConfigParser(config_fnames,
                                             overrideTuples=overrides,
                                             deleteTuples=deletions)
-    config_file = os.path.join(config_file_dir,
-                               config_file_tmplt.format(num_event))
-    with open(config_file, 'w') as cf:
-        cp.write(cf)
-    # convert to a dax File type
-    config_file = to_file(config_file)
+    config_file = workflow.save_config(config_file_tmplt.format(num_event),
+                                       config_file_dir, cp)[0]
     # create sym links to config file for results page
     base = "config_files/{}".format(label)
     layout.single_layout(rdir[base], [config_file])
