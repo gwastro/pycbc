@@ -142,7 +142,7 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
         continous valid segment of data. Default is False.
     max_shift : int, optional
         The maximum number of seconds to try to shift left or right to find
-        a valid segment. Default is ``(gps_end-gps_start)/2``.
+        a valid segment. Default is ``gps_end - gps_start``.
     segment_name : str, optional
         The status flag to query; passed to :py:func:`pycbc.dq.query_flag`.
         Default is "DATA".
@@ -161,7 +161,7 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
     """
     # expand the times checked encase we need to shift
     if max_shift is None:
-        max_shift = int(numpy.ceil((gps_end - gps_start)/2.))
+        max_shift = int(gps_end - gps_start)
     check_start = gps_start - max_shift
     check_end = gps_end + max_shift
     validsegs = dq.query_flag(detector, segment_name, check_start, check_end,
@@ -171,16 +171,14 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
     # shift if necessary
     if shift_to_valid:
         shiftsize = 1
-        extent = validsegs.extent()
-        while ((use_start, use_end) not in validsegs and
-               (use_start, use_end) in extent):
+        while (use_start, use_end) not in validsegs and shiftsize < max_shift:
             # try shifting left
             use_start = gps_start - shiftsize
             use_end = gps_end - shiftsize
             if (use_start, use_end) not in validsegs:
                 # try shifting right
-                use_start = use_start + shiftsize
-                use_end = use_end + shiftsize
+                use_start = gps_start + shiftsize
+                use_end = gps_end + shiftsize
             shiftsize += 1
     # check that we have a valid range
     if (use_start, use_end) not in validsegs:
