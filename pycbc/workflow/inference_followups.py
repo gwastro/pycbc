@@ -171,7 +171,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     if sections is not None:
         node.add_opt("--sections", " ".join(sections))
     if parameters is not None:
-        node.add_opt("--parameters", " ".join(parameters))
+        node.add_opt("--parameters", _params_for_pegasus(parameters))
 
     # add node to workflow
     workflow += node
@@ -179,7 +179,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
     return node.output_files
 
 def make_inference_summary_table(workflow, inference_file, output_dir,
-                    variable_params=None, name="inference_table",
+                    parameters=None, name="inference_table",
                     analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -191,8 +191,8 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
         The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
-    variable_params : list
-        A list of parameters to use instead of [variable_params].
+    parameters : list
+        A list of parameters to generate the table for.
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -223,7 +223,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".html", "--output-file")
-    node.add_opt("--parameters", " ".join(variable_params))
+    node.add_opt("--parameters", _params_for_pegasus(parameters))
 
     # add node to workflow
     workflow += node
@@ -243,8 +243,8 @@ def make_inference_posterior_plot(
         The file with posterior samples.
     output_dir: str
         The directory to store result plots and files.
-    parameters : list
-        A list of parameters to plot.
+    parameters : list or str
+        The parameters to plot.
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -277,7 +277,7 @@ def make_inference_posterior_plot(
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
     if parameters is not None:
-        node.add_opt("--parameters", " ".join(parameters))
+        node.add_opt("--parameters", _params_for_pegasus(parameters))
 
     # add node to workflow
     workflow += node
@@ -293,7 +293,7 @@ def make_inference_1d_posterior_plots(
         files += make_inference_posterior_plot(
                     workflow, inference_file, output_dir,
                     parameters=[parameter], analysis_seg=analysis_seg,
-                    tags=tags + ['param{}'.format(ii)])
+                    tags=tags+['param{}'.format(ii)])
     return files
 
 def make_inference_samples_plot(
@@ -315,7 +315,7 @@ def make_inference_samples_plot(
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-    node.add_opt("--parameters", " ".join(parameters))
+    node.add_opt("--parameters", _params_for_pegasus(parameters))
 
     # add node to workflow
     workflow += node
@@ -423,3 +423,23 @@ def make_inference_inj_plots(workflow, inference_files, output_dir,
         output_files += node.output_files
 
     return output_files
+
+
+def _params_for_pegasus(parameters):
+    """Escapes $ and escapes in parameters string for pegasus.
+
+    Pegaus kickstart tries to do variable substitution if it sees a ``$``, and
+    it will strip away back slashes. This can be problematic when trying to use
+    LaTeX in parameter labels. This function adds escapes to all ``$`` and
+    backslashes in a parameters argument, so the argument can be safely passed
+    through pegasus-kickstart.
+
+    Parameters
+    ----------
+    parameters : list or str
+        The parameters argument to modify. If a list, the output will be
+        converted to a space-separated string.
+    """
+    if isinstance(parameters, list):
+        parameters = " ".join(parameters)
+    return parameters.replace('\\', '\\\\').replace('$', '\$')
