@@ -25,16 +25,20 @@ import pycbc
 from pycbc import results
 from pycbc.inference.io import ResultsArgumentParser, results_from_cli
 
-# command line usage
 parser = ResultsArgumentParser(
     description="Makes a table of posterior results.")
-# verbose option
 parser.add_argument("--verbose", action="store_true", default=False,
     help="Print logging info.")
-# output plot options
 parser.add_argument("--output-file", type=str, required=True,
     help="Path to output plot.")
+parser.add_argument("--result-label", nargs="+",
+                    help="Provide labels for the provided file. If given, "
+                         "must equal the number of files provided.")
 # add quantile options
+parser.add_argument("--quote-as-bounds", action="store_true", default=False,
+                    help="Quote values as "
+                         "{middle}^{+upper}_{-lower}. Must "
+                         "provide 3 quantiles in this case.")
 parser.add_argument("--quantiles", type=float, nargs="+",
                     default=[16, 50, 84],
                     help="Quantiles to calculate. Default is 16 50 84 "
@@ -45,45 +49,77 @@ opts = parser.parse_args()
 
 pycbc.init_logging(opts.verbose)
 
+ninputs = len(opts.input_file)
+if ninputs > 1:
+    raise ValueError("This program can only handle one file at a time")
 
 # load the results
 fp, parameters, labels, samples = results_from_cli(opts)
 
+if opts.result_label is None:
+    opts.result_label = ["Event {}".format(ii+1) for ii in range(len(fp))]
+
 # get thinned samples for each parameter
 table = []
+if opts.quote_as_bounds:
+    lbl = opts.result_label[0]
+    if ninputs == 1:
+        row = []
+    else:
+        row = [lbl]
+
 for param in parameters:
 
-    row = [labels[param]]
 
     # calculate the score at a given percentile
     # eg. 50 is the median, 16 and 84 correspond to 68 percentile
     x = samples[param]
     quantiles = numpy.array([numpy.percentile(x, q)
-                             for q in opts.quantiles])
-
-    # add qunatiles to row;
-    # we'll quote using the range of quanitles as the error; if there was
-    # only a single value, then we'll just do 1/100
-    if len(quantiles) > 1:
-        med = numpy.median(x)
-        err = min(abs(quantiles.max()-med), abs(quantiles.min()-med))
+                              for q in opts.quantiles])
+    if opts.quote_as_bounds:
+        if len(quantiles) != 3:
+            raise ValueError("must provide 3 quantiles if using "
+                             "quote-as-bounds")
+        values_min, values_med, values_max = quantiles
+        negerror = values_med - values_min
+        poserror = values_max - values_med
+        fmt = '${0}$'.format(results.format_value(
+            values_med, negerror, plus_error=poserror))
+        row.append(fmt)
     else:
-        err = quantiles[0]/100.
-    row += ['$%s$' %(results.format_value(val, err, include_error=False,
-        use_scientific_notation=10 if numpy.log10(abs(val)) > 0 else 3))
-        for val in quantiles]
-
-    # add row to table
+        # add qunatiles to row;
+        row = [labels[param]]
+        # we'll quote using the range of quanitles as the error; if there was
+        # only a single value, then we'll just do 1/100
+        if len(quantiles) > 1:
+            med = numpy.median(x)
+            err = min(abs(quantiles.max()-med), abs(quantiles.min()-med))
+        else:
+            err = quantiles[0]/100.
+        row += ['$%s$' %(results.format_value(val, err, include_error=False,
+            use_scientific_notation=10 if numpy.log10(abs(val)) > 0 else 3))
+            for val in quantiles]
+        # add row to table
+        table.append(row)
+if opts.quote_as_bounds:
     table.append(row)
 
 # make HTML table
-headers = ["Parameter"] + ["%.2f Quantile"%val for val in opts.quantiles]
+if opts.quote_as_bounds:
+    headers = [labels[p] for p in parameters]
+else:
+    headers = ["Parameter"]
+    headers += ["{:d} Quantile".format(int(val)) for val in opts.quantiles]
 # add mathjax header to display latex
 html = results.mathjax_html_header() + '\n%s'%(
     str( results.static_table(table, headers) ))
 
 # save HTML table
+if ninputs == 1:
+    ttl = "Parameter Estimates for {}".format(opts.result_label[0])
+else:
+    ttl = "Parameter Estimates"
 results.save_fig_with_metadata(html, opts.output_file, {},
                  cmd=" ".join(sys.argv),
-                 title="Table of Posterior Parameters",
+                 title=ttl,
                  caption="Table with quantiles for variable parameters.")
