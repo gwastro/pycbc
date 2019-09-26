@@ -425,6 +425,8 @@ while any_above_ifar_lim:
         logging.info('{}: {:.3g}'.format(k, max_ifars[k]))
     maxcombo = max(max_ifars, key=lambda key: max_ifars[key])
     max_ifar_idx = max_each_combo[maxcombo]
+    trigger_ids = {ifo: sep_fg_data[maxcombo].data['%s/trigger_id' % ifo][max_ifar_idx] for
+                          ifo in all_ifos if ifo in maxcombo}
     max_ifar = sep_fg_data[maxcombo].data['ifar'][:][max_ifar_idx]
     if not max_ifar > args.hierarchical_removal_ifar_limit:
         logging.info("Loudest Event IFAR of %.3f in %s is less than minimum of %f"
@@ -432,7 +434,8 @@ while any_above_ifar_lim:
         any_above_ifar_lim = False
         break
     #Add the highest ifar (yet to be removed) to the final output
-    final_fg_data[maxcombo] = final_fg_data[maxcombo].__add__(sep_fg_data[maxcombo].select([max_ifar_idx]))
+    final_fg_data[maxcombo] = final_fg_data[maxcombo].__add__(
+                                  sep_fg_data[maxcombo].select([max_ifar_idx]))
 
     maxtime = pycbc.events.mean_if_greater_than_zero(
         [sep_fg_data[maxcombo].data['%s/time' % ifo][:][max_ifar_idx] for 
@@ -448,28 +451,22 @@ while any_above_ifar_lim:
     n_triggers -= 1
     logging.info('Removing background triggers at time {} within window '
                  '{}s'.format(maxtime,args.hierarchical_removal_window))
-    trigger_time = np.array([sep_fg_data[maxcombo].data['%s/time' % ifo][max_ifar_idx] for
-                          ifo in all_ifos if ifo in maxcombo]).mean()
-    start = [trigger_time - args.hierarchical_removal_window]
-    end = [trigger_time + args.hierarchical_removal_window]
-    trigger_ids = {ifo: sep_fg_data[maxcombo].data['%s/trigger_id' % ifo][max_ifar_idx] for
-                          ifo in all_ifos if ifo in maxcombo}
     
     for combo in all_ifo_combos:
         all_hred_idx = []
         for ifo in all_ifos:
             if ifo in combo:
-                hred_ids = veto.indices_within_times(
-                              sep_bg_data[combo].data['%s/time' % ifo][:],
-                              start, end)
                 times = sep_bg_data[combo].data['%s/time' % ifo]
+                hred_ids = np.nonzero(abs(times - maxtime) < args.hierarchical_removal_window)[0]
             all_hred_idx += list(hred_ids)
+        logging.info('Removing {} background triggers from {}'.format(len(all_hred_idx), combo))
         sep_bg_data[combo] = sep_bg_data[combo].remove(all_hred_idx)
 
-    hred_ids = veto.indices_within_times(
-                              combined_bg_data.data['%s/time' % ifo][:],
-                              start, end)
+    hred_ids = []
+    for ifo in all_ifos:
+        hred_ids += list(np.nonzero(abs(combined_bg_data.data['%s/time' % ifo][:] - maxtime) < args.hierarchical_removal_window)[0])
     combined_bg_data = combined_bg_data.remove(hred_ids)
+    logging.info('Removing {} background triggers from combined background'.format(len(hred_ids)))
     logging.info("Recalculating individual combination IFARs")
 
     times_tuple = tuple(combined_fg_data.data[ifo + '/time'][:] for ifo in all_ifos)
