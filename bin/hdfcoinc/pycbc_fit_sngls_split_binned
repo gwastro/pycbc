@@ -91,7 +91,7 @@ parser.add_argument("--stat-fit-threshold", type=float, required=True,
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
-parser.add_argument("--prune-number", type=int, default=-1,
+parser.add_argument("--prune-number", type=int, default=0,
                     help="number of loudest events to remove from each split "
                          "[default do not prune]")
 parser.add_argument("--prune-window", type=float, default=0.1,
@@ -189,13 +189,6 @@ for i, lower_2, upper_2 in zip(range(args.split_two_nbins),
                                sp_two_bounds.lower(), sp_two_bounds.upper()):
     id_in_bin2[i] = np.intersect1d(np.argwhere(params[args.split_param_two] > lower_2),
                                    np.argwhere(params[args.split_param_two] <= upper_2))
-id_in_both = [[[]]*args.split_two_nbins]*args.split_one_nbins
-for x in range(args.split_one_nbins):
-    id_bin1 = id_in_bin1[x]
-    for y in range(args.split_two_nbins):
-        id_bin2 = id_in_bin2[y]
-        id_in_both[x][y] = np.intersect1d(id_bin1, id_bin2)
-id_in_both = np.array(id_in_both)
 
 logging.info('getting template boundaries from trigger file')
 boundaries = trigf[args.ifo + '/template_boundaries'][:]
@@ -226,11 +219,15 @@ logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
 logging.info('Applying pruning around loudest triggers in each split up to a maximum of {}'.format(
                   args.prune_number))
 for x in range(args.split_one_nbins):
+    if not args.prune_number: break
+    id_bin1 = id_in_bin1[x]
     for y in range(args.split_two_nbins):
-        if len(id_in_both[x,y]) == 0: continue
+        id_bin2 = id_in_bin2[y]
+        id_in_both = np.intersect1d(id_bin1, id_bin2)
+        if len(id_in_both) == 0: continue
         vals_inbin = []
         time_inbin = []
-        for idx in id_in_both[x,y]:
+        for idx in id_in_both:
             where_idx_start = boundaries[idx]
             vals_inbin += list(stat[where_idx_start:where_idx_end[idx]])
             time_inbin += list(time[where_idx_start:where_idx_end[idx]])
@@ -302,13 +299,16 @@ for i in range(args.num_bins):
 logging.info('starting bin, histogram and plot loop')
 maxyval = 0
 for x in range(args.split_one_nbins):
+    id_bin1 = id_in_bin1[x]
     logging.info('split {} number {}'.format(args.split_param_one, x))
     for y in range(args.split_two_nbins):
+        id_bin2 = id_in_bin2[y]
+        id_in_both = np.intersect1d(id_bin1, id_bin2)
         logging.info('split {} number {}'.format(args.split_param_two, y))
         ax = axes[x,y]
         for i, lower, upper in zip(range(args.num_bins), pbins.lower(),
                                    pbins.upper()):
-            indices_all_conditions = np.intersect1d(pidx[i], id_in_both[x,y])
+            indices_all_conditions = np.intersect1d(pidx[i], id_in_both)
             logging.info('{} split {}-{}'.format(args.bin_param, lower, upper))
             logging.info('{} templates in this bank split'.format(len(indices_all_conditions)))
             if len(indices_all_conditions) == 0: continue
