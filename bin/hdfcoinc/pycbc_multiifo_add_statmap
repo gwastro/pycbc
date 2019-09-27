@@ -350,7 +350,8 @@ for combo in all_ifo_combos:
     sep_bg_data[combo] = combined_bg_data.select(idx_bg_ct)
     final_fg_data[combo] = pycbc.io.DictArray(data={k:[] for k in sep_fg_data[combo].data})
 
-final_combined_fg = copy.deepcopy(combined_fg_data)
+final_combined_fg = pycbc.io.DictArray(data={k:[] for k in combined_fg_data.data})
+
 #counter to count number of removals
 h_iterations = 0
 
@@ -434,8 +435,7 @@ while any_above_ifar_lim:
         any_above_ifar_lim = False
         break
     #Add the highest ifar (yet to be removed) to the final output
-    final_fg_data[maxcombo] = final_fg_data[maxcombo].__add__(
-                                  sep_fg_data[maxcombo].select([max_ifar_idx]))
+    final_fg_data[maxcombo] = final_fg_data[maxcombo] + sep_fg_data[maxcombo].select([max_ifar_idx])
 
     maxtime = pycbc.events.mean_if_greater_than_zero(
         [sep_fg_data[maxcombo].data['%s/time' % ifo][:][max_ifar_idx] for 
@@ -446,7 +446,7 @@ while any_above_ifar_lim:
     logging.info('Removing trigger from combined foreground')
     where_combined = np.nonzero(combined_fg_data.data['stat'] == 
                                 sep_fg_data[maxcombo].data['stat'][:][max_ifar_idx])
-    final_combined_fg = final_combined_fg.__add__(combined_fg_data.select(where_combined))
+    final_combined_fg = final_combined_fg + combined_fg_data.select(where_combined)
     combined_fg_data = combined_fg_data.remove(where_combined)
     n_triggers -= 1
     logging.info('Removing background triggers at time {} within window '
@@ -476,8 +476,7 @@ while any_above_ifar_lim:
         bnlouder, fnlouder = coinc.calculate_n_louder(sep_bg_data[key].data['stat'],
                                     sep_fg_data[key].data['stat'],
                                     sep_bg_data[key].data['decimation_factor'])
-        # In principle bg and fg time should be recalculated, but we expect
-        # this to be a very small correction and as such ignore
+        bg_time[key] -= 2.0 * args.hierarchical_removal_window
         sep_bg_data[key].data['ifar'] = conv.sec_to_year(bg_time[key] / (bnlouder + 1))
         sep_fg_data[key].data['ifar'] = conv.sec_to_year(bg_time[key] / (fnlouder + 1))
     logging.info("Recalculating combined IFARs")
@@ -503,14 +502,14 @@ while any_above_ifar_lim:
 
 
 for combo in all_ifo_combos:
-    final_fg_data[combo] = final_fg_data[combo].__add__(sep_bg_data[combo])
+    final_fg_data[combo] = final_fg_data[combo] + sep_fg_data[combo]
     for key in final_fg_data[combo].data:
         full_key = 'foreground/%s/%s' % (combo, key)
         if full_key in f:
             del f[full_key]
         f[full_key] = final_fg_data[combo].data[key]
 
-final_combined_fg = final_combined_fg.__add__(combined_fg_data)
+final_combined_fg = final_combined_fg + combined_fg_data
 for key in final_combined_fg.data:
     full_key = 'foreground/%s' % ( key)
     if full_key in f:
