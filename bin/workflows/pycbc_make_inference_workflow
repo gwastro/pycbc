@@ -272,14 +272,14 @@ for num_event, config_fnames in enumerate(infconfig_files):
     label = elabels[num_event]
     if label is None:
         label = 'Event {}'.format(num_event)
-    label = label.replace(' ', '_')
+    label = label.replace(' ', '_').replace(':', '_').replace('+', '_')
     overrides = infconfig_overrides[num_event]
     deletions = infconfig_deletions[num_event]
     # write the configuration file to the config files directory
     cp = configuration.WorkflowConfigParser(config_fnames,
                                             overrideTuples=overrides,
                                             deleteTuples=deletions)
-    config_file = workflow.save_config(config_file_tmplt.format(num_event),
+    config_file = workflow.save_config(config_file_tmplt.format(label),
                                        config_file_dir, cp)[0]
     # create sym links to config file for results page
     base = "config_files/{}".format(label)
@@ -292,7 +292,8 @@ for num_event, config_fnames in enumerate(infconfig_files):
     node.add_opt("--seed", opts.seed+num_event)
     analysis_index = segments.segment(num_event, num_event+1)
     inference_file = node.new_output_file_opt(analysis_index, ".hdf",
-                                              "--output-file")
+                                              "--output-file",
+                                              tags=opts.tags+[label])
 
     # add node to workflow
     workflow += node
@@ -303,7 +304,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
         parameters=table_params,
         analysis_seg=analysis_index,
         result_label=label,
-        tags=opts.tags+[str(num_event)]),)
+        tags=opts.tags+[label]),)
 
     # summary posteriors
     summary_plots = []
@@ -312,7 +313,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
             workflow, inference_file, rdir.base,
             parameters=params,
             analysis_seg=analysis_index,
-            tags=opts.tags+[str(num_event), group])
+            tags=opts.tags+[label, group])
     summary_page += list(layout.grouper(summary_plots, 2))
     
 
@@ -320,7 +321,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     base = "detector_sensitivity"
     psd_page.append(plotting.make_spectrum_plot(
         workflow, [inference_file], rdir[base],
-        tags=opts.tags+[str(num_event)],
+        tags=opts.tags+[label],
         hdf_group="data"))
 
     # files for priors summary section
@@ -331,7 +332,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
             workflow, config_file, rdir[base],
             analysis_seg=workflow.analysis_time,
             parameters=params,
-            tags=opts.tags+[str(num_event), group])
+            tags=opts.tags+[label, group])
     layout.single_layout(rdir[base], prior_plots)
 
     # files for posteriors summary subsection
@@ -342,7 +343,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
             workflow, inference_file, rdir[base],
             parameters=params,
             analysis_seg=analysis_index,
-            tags=opts.tags+[str(num_event), group])
+            tags=opts.tags+[label, group])
     layout.single_layout(rdir[base], posterior_plots)
 
     # files for diagnostics section
@@ -355,7 +356,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
                 workflow, inference_file, rdir[base],
                 parameters=parameters,
                 analysis_seg=analysis_index,
-                tags=opts.tags+[str(num_event), group])
+                tags=opts.tags+[label, group])
         layout.group_layout(rdir[base], samples_plots)
 
     if 'acceptance_rate' in diagnostics:
@@ -364,7 +365,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
         acceptance_plot = inffu.make_inference_acceptance_rate_plot(
             workflow, inference_file, rdir[base],
             analysis_seg=analysis_index,
-            tags=opts.tags+[str(num_event)])
+            tags=opts.tags+[label])
         layout.single_layout(rdir[base], acceptance_plot)
 
 # build the summary page
