@@ -35,40 +35,35 @@ def get_stat(statchoice, trigs):
     return stat_instance.single(trigs)
 
 parser = argparse.ArgumentParser(usage="",
-    description="plot histograms of triggers split over various")
+    description="Plot histograms of triggers split over various parameters")
 parser.add_argument("--trigger-file", required=True,
                     help="Input hdf5 file containing single triggers. "
-                    "Required")
+                         "Required")
 parser.add_argument("--bank-file", default=None, required=True,
                     help="hdf file containing template parameters. Required")
-parser.add_argument('--output-file', type=str, required=True,
+parser.add_argument('--output-file', required=True,
                     help="Output image file. Required")
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--bin-param', default='template_duration', type=str,
-                    help="parameter for on-plot splitting. Default: template_duration")
+parser.add_argument('--bin-param', default='template_duration',
+                    help="Parameter for binning within plots, default "
+                         "'template_duration'")
 parser.add_argument('--bin-spacing', choices=['linear', 'log'], default='log',
                     help="How to space bin-param bin edges. "
-                         "Choices=[linear, log], Default: log")
+                         "Choices=[linear, log], default log")
 parser.add_argument('--num-bins', type=int, default=6,
-                    help="number of bins over which to split bin-param. Default: 6")
+                    help="Number of bins over which to split bin-param, default 6")
 parser.add_argument('--max-bin-param', type=float, default=None,
-                    help="maximum allowed value of bin-param")
-parser.add_argument('--min-duration', type=float, default=None,
-                    help="Fudge factor for templates with tiny or negative "
-                        "values of template_duration: add to duration values "
-                        "before fitting. Units seconds")
-parser.add_argument('--split-param-one', default='eta', type=str,
-                    help="Parameter over which to split plot grid in the "
-                         "y direction. Default: eta")
-parser.add_argument('--split-param-two', default='chi_eff', type=str,
-                    help="Parameter over which to split plot grid in the "
-                         "x direction. Default: chi_eff")
+                    help="Maximum allowed value of bin-param")
+parser.add_argument('--split-param-one', default='eta',
+                    help="Parameter for splitting plot grid in y-direction, "
+                         "default 'eta'")
+parser.add_argument('--split-param-two', default='chi_eff',
+                    help="Parameter for splitting plot grid in x-direction, "
+                         "default 'chi_eff'")
 parser.add_argument('--split-one-nbins', default=3, type=int,
-                    help="number of bins over which to split split-param-one. "
-                         "Default: 3")
+                    help="Number of split plots over split-param-one, default 3")
 parser.add_argument('--split-two-nbins', default=4, type=int,
-                    help="number of bins over which to split split-param-two. "
-                         "Default: 4")
+                    help="Number of split plots over split-param-two, default 4")
 parser.add_argument('--split-one-spacing', choices=['linear', 'log'], default='linear',
                     help="How to space split-param-one bin edges. "
                          "Choices=[linear, log], default=linear")
@@ -78,28 +73,28 @@ parser.add_argument('--split-two-spacing', choices=['linear', 'log'], default='l
 parser.add_argument("--sngl-stat", default="new_snr",
                     choices=sngl_statistic_dict.keys(),
                     help="Function of SNR and chisq to perform fits with")
-parser.add_argument('--ifo', type=str, help="Interferometer")
+parser.add_argument('--ifo', help="Detector. Required")
 parser.add_argument('--plot-max-x', type=float, default=None,
-                    help="Maximum stat value for use in plots, if not given "
-                    "1.05 * largest stat value will be used")
-parser.add_argument("--veto-file", type=str,
+                    help="Maximum stat value to plot, if not given "
+                         "1.05 * largest stat value will be used")
+parser.add_argument("--veto-file",
                     help="File(s) in .xml format with veto segments to apply "
-                    "to triggers before fitting")
-parser.add_argument("--veto-segment-name", type=str,
+                         "to triggers before fitting")
+parser.add_argument("--veto-segment-name",
                     help="Name(s) of veto segments to apply. Optional, if not "
-                    "given all segments for a given ifo will be used")
+                         "given all triggers for the given ifo will be used")
 parser.add_argument("--stat-fit-threshold", type=float, required=True,
                     help="Only fit triggers with statistic value above this "
-                    "threshold. Required")
+                         "threshold. Required")
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
 parser.add_argument("--prune-number", type=int, default=0,
-                    help="number of loudest events to remove from each split "
-                         "[default do not prune]")
+                    help="Number of loudest events to remove from each split "
+                         "histogram, default 0")
 parser.add_argument("--prune-window", type=float, default=0.1,
                     help="Time (s) to remove all triggers around a trigger "
-                         "which is loudest in each split [default=0.1s]")
+                         "which is loudest in each split, default 0.1s")
 args = parser.parse_args()
 
 if args.verbose:
@@ -215,9 +210,9 @@ logging.info('applying DQ vetoes')
 time = trigf[args.ifo + '/end_time'][:]
 remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
                      ifo=args.ifo, segment_name=args.veto_segment_name)
-# By setting stat to zero, we remove this from the 'above_threshold' dataset
-# so it will not be plotted, or fitted in the histograms. Setting this to zero
-# is easier than changing the boundaries values for every removed datapoint.
+# Set stat to zero for triggers being vetoed: given that the fit threshold is
+# >0 these will not be fitted or plotted.  Avoids complications from changing
+# the number of triggers, ie changes of template boundary.
 stat[remove] = np.zeros_like(remove)
 time[remove] = np.zeros_like(remove)
 logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
@@ -256,7 +251,7 @@ for x in range(args.split_one_nbins):
 
             remove = np.nonzero(abs(time_inbin[max_val_arg] - time)
                                     < args.prune_window)[0]
-            # Needs removing from inbin triggers as well in case there
+            # Remove from inbin triggers as well in case there
             # are more pruning iterations
             remove_inbin = np.nonzero(abs(time_inbin[max_val_arg] - time_inbin)
                                       < args.prune_window)[0]
@@ -264,8 +259,7 @@ for x in range(args.split_one_nbins):
                          ' {} in this split'.format(count_pruned, remove.size,
                                                     time[max_val_arg],
                                                     remove_inbin.size))
-            # Setting removed datapoints' stats to zero - see vetoing above
-            # for explanation
+            # Set pruned triggers' stat values to zero, as above for vetoes
             vals_inbin[remove_inbin] = np.zeros_like(remove_inbin)
             time_inbin[remove_inbin] = np.zeros_like(remove_inbin)
             stat[remove] = np.zeros_like(remove)
