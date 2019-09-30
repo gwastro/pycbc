@@ -216,10 +216,13 @@ time[remove] = np.zeros_like(remove)
 logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
                   remove.size, stat.size, args.veto_segment_name, args.veto_file))
 
-logging.info('Applying pruning around loudest triggers in each split up to a maximum of {}'.format(
-                  args.prune_number))
 for x in range(args.split_one_nbins):
-    if not args.prune_number: break
+    if not args.prune_number:
+        logging.info('Not performing any pruning')
+        break
+    elif args.prune_number and x == 0:
+        logging.info('Applying pruning around loudest triggers in each split'
+                     ' up to a maximum of {}'.format(args.prune_number))
     id_bin1 = id_in_bin1[x]
     for y in range(args.split_two_nbins):
         id_bin2 = id_in_bin2[y]
@@ -300,17 +303,16 @@ logging.info('starting bin, histogram and plot loop')
 maxyval = 0
 for x in range(args.split_one_nbins):
     id_bin1 = id_in_bin1[x]
-    logging.info('split {} number {}'.format(args.split_param_one, x))
     for y in range(args.split_two_nbins):
         id_bin2 = id_in_bin2[y]
         id_in_both = np.intersect1d(id_bin1, id_bin2)
-        logging.info('split {} number {}'.format(args.split_param_two, y))
+        logging.info('split {}: {}, {}: {}'.format(args.split_param_one, x,
+                                                   args.split_param_two, y))
         ax = axes[x,y]
         for i, lower, upper in zip(range(args.num_bins), pbins.lower(),
                                    pbins.upper()):
             indices_all_conditions = np.intersect1d(pidx[i], id_in_both)
             logging.info('{} split {}-{}'.format(args.bin_param, lower, upper))
-            logging.info('{} templates in this bank split'.format(len(indices_all_conditions)))
             if len(indices_all_conditions) == 0: continue
             vals_inbin = []
             for idx in indices_all_conditions:
@@ -319,7 +321,6 @@ for x in range(args.split_one_nbins):
 
             vals_inbin = np.array(vals_inbin)
             vals_above_thresh = vals_inbin[vals_inbin >= args.stat_fit_threshold]
-            logging.info('fitting triggers above stat value {}'.format(args.stat_fit_threshold))
             if not len(vals_above_thresh):
                 logging.info('No triggers above threshold')
                 continue
@@ -328,19 +329,18 @@ for x in range(args.split_one_nbins):
                              len(vals_above_thresh), len(vals_inbin)))
             alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function,
                                  vals_above_thresh, args.stat_fit_threshold)
-            logging.info('fitting triggers')
             fitted_cum_counts = len(vals_above_thresh) * \
                                 trstats.cum_fit(args.fit_function, fitrange,
                                                 alpha, args.stat_fit_threshold)
             # upper and lower 1-sigma bounds on fit are not currently plotted
-            fitted_cum_counts_plus = len(vals_above_thresh) * \
-                                      trstats.cum_fit(args.fit_function,
-                                                      fitrange, alpha + sig_alpha,
-                                                      args.stat_fit_threshold)
-            fitted_cum_counts_minus = len(vals_above_thresh) * \
-                                      trstats.cum_fit(args.fit_function, fitrange,
-                                                      alpha - sig_alpha,
-                                                      args.stat_fit_threshold)
+            #fitted_cum_counts_plus = len(vals_above_thresh) * \
+            #                             trstats.cum_fit(args.fit_function,
+            #                                          fitrange, alpha + sig_alpha,
+            #                                          args.stat_fit_threshold)
+            #fitted_cum_counts_minus = len(vals_above_thresh) * \
+            #                              trstats.cum_fit(args.fit_function, fitrange,
+            #                                          alpha - sig_alpha,
+            #                                          args.stat_fit_threshold)
 
             # make histogram of fitted values
             histcounts, edges = np.histogram(vals_inbin, bins=50)
