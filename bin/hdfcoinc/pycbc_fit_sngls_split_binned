@@ -140,7 +140,7 @@ formats = {
         "mchirp": '{:.2f}',
         "eta": '{:.3f}',
         "chi_eff": '{:.3f}',
-        'template_duration': '{:.0f}' 
+        'template_duration': '{:.0f}'
 }
 
 logging.info('setting up {}'.format(usedparams))
@@ -148,7 +148,7 @@ sp_one_bin_input = (params[args.split_param_one].min(),
                     params[args.split_param_one].max(), args.split_one_nbins)
 sp_two_bin_input = (params[args.split_param_two].min(),
                     params[args.split_param_two].max(), args.split_two_nbins)
-if args.max_bin_param: 
+if args.max_bin_param:
     logging.info(('setting maximum {} value: '
                   + formats[args.bin_param]).format(args.bin_param,
                                                     args.max_bin_param))
@@ -178,8 +178,8 @@ else:
     sp_two_bounds = bin_utils.LinearBins(*sp_two_bin_input)
 
 logging.info('assigning template ids to different splits')
-id_in_bin1 = [[]]*args.split_one_nbins
-id_in_bin2 = [[]]*args.split_two_nbins
+id_in_bin1 = [[]] * args.split_one_nbins
+id_in_bin2 = [[]] * args.split_two_nbins
 for i, lower_1, upper_1 in zip(range(args.split_one_nbins),
                                sp_one_bounds.lower(), sp_one_bounds.upper()):
     id_in_bin1[i] = np.intersect1d(np.argwhere(params[args.split_param_one] > lower_1),
@@ -199,7 +199,7 @@ logging.info('Processing template boundaries')
 where_idx_end = np.zeros_like(boundaries)
 for idx, idx_start in enumerate(boundaries):
     if idx == max_boundary_id:
-        where_idx_end[idx] = trigf[args.ifo+'/end_time'].size
+        where_idx_end[idx] = trigf[args.ifo + '/end_time'].size
     else:
         where_idx_end[idx] = sorted_boundary_list[
             np.argmax(sorted_boundary_list == idx_start) + 1]
@@ -208,9 +208,12 @@ logging.info('calculating single stat values from trigger file')
 stat = get_stat(args.sngl_stat, trigf[args.ifo])
 
 logging.info('applying DQ vetoes')
-time = trigf[args.ifo+'/end_time'][:]
+time = trigf[args.ifo + '/end_time'][:]
 remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
                      ifo=args.ifo, segment_name=args.veto_segment_name)
+# By setting stat to zero, we remove this from the 'above_threshold' dataset
+# so it will not be plotted, or fitted in the histograms. Setting this to zero
+# is easier than changing the boundaries values for every removed datapoint.
 stat[remove] = np.zeros_like(remove)
 time[remove] = np.zeros_like(remove)
 logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
@@ -221,15 +224,16 @@ for x in range(args.split_one_nbins):
         logging.info('Not performing any pruning')
         break
     elif args.prune_number and x == 0:
-        logging.info('Applying pruning around loudest triggers in each split'
-                     ' up to a maximum of {}'.format(args.prune_number))
+        logging.info('Applying pruning around loudest triggers in each split')
     id_bin1 = id_in_bin1[x]
     for y in range(args.split_two_nbins):
         id_bin2 = id_in_bin2[y]
+        # Finding ids of templates in split
         id_in_both = np.intersect1d(id_bin1, id_bin2)
         if len(id_in_both) == 0: continue
         vals_inbin = []
         time_inbin = []
+        # getting triggers that are in these templates
         for idx in id_in_both:
             where_idx_start = boundaries[idx]
             vals_inbin += list(stat[where_idx_start:where_idx_end[idx]])
@@ -239,27 +243,31 @@ for x in range(args.split_one_nbins):
         time_inbin = np.array(time_inbin)
 
         count_pruned = 0
-        logging.info('Pruning in split {}-{} {}-{}'.format(args.split_param_one, x,
-                                     args.split_param_two, y))
+        logging.info('Pruning in split {}-{} {}-{}'.format(
+                     args.split_param_one, x, args.split_param_two, y))
         while count_pruned < args.prune_number:
+            # Getting loudest statistic value in split
             max_val_arg = vals_inbin.argmax()
             max_statval = vals_inbin[max_val_arg]
 
-            logging.info('Prune {}: pruning triggers around time {}s'.format(
-                                     count_pruned, args.prune_window,
-                                     time[max_val_arg]))
             remove = np.nonzero(abs(time_inbin[max_val_arg] - time)
                                     < args.prune_window)[0]
+            # Needs removing from inbin triggers as well in case there
+            # are more pruning iterations
             remove_inbin = np.nonzero(abs(time_inbin[max_val_arg] - time_inbin)
                                       < args.prune_window)[0]
-            logging.info('Removing {} triggers, {} in this split'
-                         ''.format(remove.size,remove_inbin.size))
+            logging.info('Prune {}: removing {} triggers around time {:.2f},'
+                         ' {} in this split'.format(count_pruned, remove.size,
+                                                    time[max_val_arg],
+                                                    remove_inbin.size))
+            # Setting removed datapoints' stats to zero - see vetoing above
+            # for explanation
             vals_inbin[remove_inbin] = np.zeros_like(remove_inbin)
             time_inbin[remove_inbin] = np.zeros_like(remove_inbin)
             stat[remove] = np.zeros_like(remove)
             time[remove] = np.zeros_like(remove)
             count_pruned += 1
-            
+
 trigf.close()
 
 logging.info('setting up plotting and fitting limit values')
@@ -275,8 +283,9 @@ fitrange = np.linspace(min_fit, max_fit, 100)
 logging.info('setting up plotting variables')
 histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 fig, axes = plt.subplots(args.split_one_nbins, args.split_two_nbins,
-                         sharex=True, sharey=True, 
-                         figsize=(3*args.split_two_nbins, 3*args.split_one_nbins))
+                         sharex=True, sharey=True,
+                         figsize=(3 * args.split_two_nbins,
+                                  3 * args.split_one_nbins))
 
 # setting up overall legend outside the split-up plots
 lines = []
@@ -361,12 +370,12 @@ logging.info('setting up labels')
 for i in range(args.split_one_nbins):
     for j in range(args.split_two_nbins):
         axes[i,j].semilogy([args.stat_fit_threshold, args.stat_fit_threshold],
-                           [1, 5*maxyval], 'k', linestyle=':', alpha=0.2)
-axes[0,0].set_ylim(1, 5*maxyval)
+                           [1, 5 * maxyval], 'k', linestyle=':', alpha=0.2)
+axes[0,0].set_ylim(1, 5 * maxyval)
 axes[0,0].set_xlim(minplot, maxplot)
 
 for j in range(args.split_two_nbins):
-    axes[0, j].set_xlabel(args.split_param_two + ': ' + 
+    axes[0, j].set_xlabel(args.split_param_two + ': ' +
                           (formats[args.split_param_two] + ' to ' +
                            formats[args.split_param_two]).format(sp_two_bounds.lower()[j],
                                      sp_two_bounds.upper()[j]), size="large")
@@ -374,8 +383,8 @@ for j in range(args.split_two_nbins):
     axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_stat, size="large")
 
 for i in range(args.split_one_nbins):
-    axes[i, 0].set_ylabel(args.split_param_one + ': ' + 
-                          (formats[args.split_param_one] + ' to ' + 
+    axes[i, 0].set_ylabel(args.split_param_one + ': ' +
+                          (formats[args.split_param_one] + ' to ' +
                            formats[args.split_param_one]).format(sp_one_bounds.lower()[i],
                                       sp_one_bounds.upper()[i]) + '\ncumulative number',
                                       size="large")
