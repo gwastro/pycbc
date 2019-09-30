@@ -35,60 +35,66 @@ def get_stat(statchoice, trigs):
     return stat_instance.single(trigs)
 
 parser = argparse.ArgumentParser(usage="",
-    description="plot histograms of triggers split over various")
+    description="Plot histograms of triggers split over various parameters")
 parser.add_argument("--trigger-file", required=True,
                     help="Input hdf5 file containing single triggers. "
-                    "Required")
+                         "Required")
 parser.add_argument("--bank-file", default=None, required=True,
                     help="hdf file containing template parameters. Required")
-parser.add_argument('--output-file', type=str, required=True,
+parser.add_argument('--output-file', required=True,
                     help="Output image file. Required")
 parser.add_argument('--verbose', action='store_true')
-parser.add_argument('--bin-param', default='template_duration', type=str,
-                    help="parameter for on-plot splitting. Default: template_duration")
+parser.add_argument('--bin-param', default='template_duration',
+                    help="Parameter for binning within plots, default "
+                         "'template_duration'")
+parser.add_argument('--bin-spacing', choices=['linear', 'log'], default='log',
+                    help="How to space bin-param bin edges. "
+                         "Choices=[linear, log], default log")
 parser.add_argument('--num-bins', type=int, default=6,
-                    help="number of bins over which to split bin-param. Default: 6")
+                    help="Number of bins over which to split bin-param, default 6")
 parser.add_argument('--max-bin-param', type=float, default=None,
-                    help="maximum allowed value of bin-param")
-parser.add_argument('--min-duration', type=float, default=None,
-                    help="Fudge factor for templates with tiny or negative "
-                        "values of template_duration: add to duration values "
-                        "before fitting. Units seconds")
-parser.add_argument('--split-param-one', default='eta', type=str,
-                    help="Parameter over which to split plot grid in the "
-                         "y direction. Default: eta")
-parser.add_argument('--split-param-two', default='chi_eff', type=str,
-                    help="Parameter over which to split plot grid in the "
-                         "x direction. Default: chi_eff")
+                    help="Maximum allowed value of bin-param")
+parser.add_argument('--split-param-one', default='eta',
+                    help="Parameter for splitting plot grid in y-direction, "
+                         "default 'eta'")
+parser.add_argument('--split-param-two', default='chi_eff',
+                    help="Parameter for splitting plot grid in x-direction, "
+                         "default 'chi_eff'")
 parser.add_argument('--split-one-nbins', default=3, type=int,
-                    help="number of bins over which to split split-param-one. "
-                         "Default: 3")
+                    help="Number of split plots over split-param-one, default 3")
 parser.add_argument('--split-two-nbins', default=4, type=int,
-                    help="number of bins over which to split split-param-two. "
-                         "Default: 4")
-parser.add_argument('--split-one-log', action='store_true', default=False,
-                    help="is split-param-one split in log-space?. Default: False")
-parser.add_argument('--split-two-log', action='store_true', default=False,
-                    help="is split-param-two split in log-space?. Default: False")
+                    help="Number of split plots over split-param-two, default 4")
+parser.add_argument('--split-one-spacing', choices=['linear', 'log'], default='linear',
+                    help="How to space split-param-one bin edges. "
+                         "Choices=[linear, log], default=linear")
+parser.add_argument('--split-two-spacing', choices=['linear', 'log'], default='linear',
+                    help="How to space split-param-two bin edges. "
+                         "Choices=[linear, log], default=linear")
 parser.add_argument("--sngl-stat", default="new_snr",
                     choices=sngl_statistic_dict.keys(),
                     help="Function of SNR and chisq to perform fits with")
-parser.add_argument('--ifo', type=str, help="Interferometer")
+parser.add_argument('--ifo', help="Detector. Required")
 parser.add_argument('--plot-max-x', type=float, default=None,
-                    help="Maximum stat value for use in plots, if not given "
-                    "1.05 * largest stat value will be used")
-parser.add_argument("--veto-file", type=str,
+                    help="Maximum stat value to plot, if not given "
+                         "1.05 * largest stat value will be used")
+parser.add_argument("--veto-file",
                     help="File(s) in .xml format with veto segments to apply "
-                    "to triggers before fitting")
-parser.add_argument("--veto-segment-name", type=str,
+                         "to triggers before fitting")
+parser.add_argument("--veto-segment-name",
                     help="Name(s) of veto segments to apply. Optional, if not "
-                    "given all segments for a given ifo will be used")
+                         "given all triggers for the given ifo will be used")
 parser.add_argument("--stat-fit-threshold", type=float, required=True,
                     help="Only fit triggers with statistic value above this "
-                    "threshold. Required")
+                         "threshold. Required")
 parser.add_argument("--fit-function",
                     choices=["exponential", "rayleigh", "power"],
                     help="Functional form for the maximum likelihood fit")
+parser.add_argument("--prune-number", type=int, default=0,
+                    help="Number of loudest events to remove from each split "
+                         "histogram, default 0")
+parser.add_argument("--prune-window", type=float, default=0.1,
+                    help="Time (s) to remove all triggers around a trigger "
+                         "which is loudest in each split, default 0.1s")
 args = parser.parse_args()
 
 if args.verbose:
@@ -132,7 +138,7 @@ formats = {
         "mchirp": '{:.2f}',
         "eta": '{:.3f}',
         "chi_eff": '{:.3f}',
-        'template_duration': '{:.0f}' 
+        'template_duration': '{:.0f}'
 }
 
 logging.info('setting up {}'.format(usedparams))
@@ -140,7 +146,7 @@ sp_one_bin_input = (params[args.split_param_one].min(),
                     params[args.split_param_one].max(), args.split_one_nbins)
 sp_two_bin_input = (params[args.split_param_two].min(),
                     params[args.split_param_two].max(), args.split_two_nbins)
-if args.max_bin_param: 
+if args.max_bin_param:
     logging.info(('setting maximum {} value: '
                   + formats[args.bin_param]).format(args.bin_param,
                                                     args.max_bin_param))
@@ -150,24 +156,29 @@ else:
 bb_input = (params[args.bin_param].min(), pbin_upper_lim, args.num_bins)
 
 logging.info('splitting {} into bins'.format(args.bin_param))
-pbins = bin_utils.LogarithmicBins(*bb_input)
+if args.bin_param_spacing == 'log':
+    assert params[args.bin_param].min() > 0
+    pbins = bin_utils.LogarithmicBins(*bb_input)
+else:
+    pbins = bin_utils.LinearBins(*bb_input)
 # use sentinel value -1 for templates outside range
 pind = np.array([pbins[par] if par < pbin_upper_lim else -1 for par in params[args.bin_param]])
 
-if args.split_one_log:
+if args.split_one_spacing == 'log':
     assert params[args.split_param_one].min() > 0
     sp_one_bounds = bin_utils.LogarithmicBins(*sp_one_bin_input)
 else:
     sp_one_bounds = bin_utils.LinearBins(*sp_one_bin_input)
-if args.split_two_log:
+
+if args.split_two_spacing == 'log':
     assert params[args.split_param_two].min() > 0
     sp_two_bounds = bin_utils.LogarithmicBins(*sp_two_bin_input)
 else:
     sp_two_bounds = bin_utils.LinearBins(*sp_two_bin_input)
 
-logging.info('assigning template ids to split-up plots')
-id_in_bin1 = [[]]*args.split_one_nbins
-id_in_bin2 = [[]]*args.split_two_nbins
+logging.info('assigning template ids to different splits')
+id_in_bin1 = [[]] * args.split_one_nbins
+id_in_bin2 = [[]] * args.split_two_nbins
 for i, lower_1, upper_1 in zip(range(args.split_one_nbins),
                                sp_one_bounds.lower(), sp_one_bounds.upper()):
     id_in_bin1[i] = np.intersect1d(np.argwhere(params[args.split_param_one] > lower_1),
@@ -183,16 +194,78 @@ boundaries = trigf[args.ifo + '/template_boundaries'][:]
 max_boundary_id = np.argmax(boundaries)
 sorted_boundary_list = np.sort(boundaries)
 
-logging.info('getting stat values from trigger file')
+logging.info('Processing template boundaries')
+where_idx_end = np.zeros_like(boundaries)
+for idx, idx_start in enumerate(boundaries):
+    if idx == max_boundary_id:
+        where_idx_end[idx] = trigf[args.ifo + '/end_time'].size
+    else:
+        where_idx_end[idx] = sorted_boundary_list[
+            np.argmax(sorted_boundary_list == idx_start) + 1]
+
+logging.info('calculating single stat values from trigger file')
 stat = get_stat(args.sngl_stat, trigf[args.ifo])
 
 logging.info('applying DQ vetoes')
-time = trigf[args.ifo+'/end_time'][:]
+time = trigf[args.ifo + '/end_time'][:]
 remove, junk = events.veto.indices_within_segments(time, [args.veto_file],
                      ifo=args.ifo, segment_name=args.veto_segment_name)
+# Set stat to zero for triggers being vetoed: given that the fit threshold is
+# >0 these will not be fitted or plotted.  Avoids complications from changing
+# the number of triggers, ie changes of template boundary.
 stat[remove] = np.zeros_like(remove)
+time[remove] = np.zeros_like(remove)
 logging.info('{} out of {} trigs removed after vetoing with {} from {}'.format(
                   remove.size, stat.size, args.veto_segment_name, args.veto_file))
+
+for x in range(args.split_one_nbins):
+    if not args.prune_number:
+        logging.info('Not performing any pruning')
+        break
+    elif args.prune_number and x == 0:
+        logging.info('Applying pruning around loudest triggers in each split')
+    id_bin1 = id_in_bin1[x]
+    for y in range(args.split_two_nbins):
+        id_bin2 = id_in_bin2[y]
+        # Finding ids of templates in split
+        id_in_both = np.intersect1d(id_bin1, id_bin2)
+        if len(id_in_both) == 0: continue
+        vals_inbin = []
+        time_inbin = []
+        # getting triggers that are in these templates
+        for idx in id_in_both:
+            where_idx_start = boundaries[idx]
+            vals_inbin += list(stat[where_idx_start:where_idx_end[idx]])
+            time_inbin += list(time[where_idx_start:where_idx_end[idx]])
+
+        vals_inbin = np.array(vals_inbin)
+        time_inbin = np.array(time_inbin)
+
+        count_pruned = 0
+        logging.info('Pruning in split {}-{} {}-{}'.format(
+                     args.split_param_one, x, args.split_param_two, y))
+        while count_pruned < args.prune_number:
+            # Getting loudest statistic value in split
+            max_val_arg = vals_inbin.argmax()
+            max_statval = vals_inbin[max_val_arg]
+
+            remove = np.nonzero(abs(time_inbin[max_val_arg] - time)
+                                    < args.prune_window)[0]
+            # Remove from inbin triggers as well in case there
+            # are more pruning iterations
+            remove_inbin = np.nonzero(abs(time_inbin[max_val_arg] - time_inbin)
+                                      < args.prune_window)[0]
+            logging.info('Prune {}: removing {} triggers around time {:.2f},'
+                         ' {} in this split'.format(count_pruned, remove.size,
+                                                    time[max_val_arg],
+                                                    remove_inbin.size))
+            # Set pruned triggers' stat values to zero, as above for vetoes
+            vals_inbin[remove_inbin] = np.zeros_like(remove_inbin)
+            time_inbin[remove_inbin] = np.zeros_like(remove_inbin)
+            stat[remove] = np.zeros_like(remove)
+            time[remove] = np.zeros_like(remove)
+            count_pruned += 1
+
 trigf.close()
 
 logging.info('setting up plotting and fitting limit values')
@@ -208,8 +281,9 @@ fitrange = np.linspace(min_fit, max_fit, 100)
 logging.info('setting up plotting variables')
 histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 fig, axes = plt.subplots(args.split_one_nbins, args.split_two_nbins,
-                         sharex=True, sharey=True, 
-                         figsize=(3*args.split_two_nbins, 3*args.split_one_nbins))
+                         sharex=True, sharey=True,
+                         figsize=(3 * args.split_two_nbins,
+                                  3 * args.split_one_nbins))
 
 # setting up overall legend outside the split-up plots
 lines = []
@@ -228,55 +302,52 @@ labels.append(args.fit_function + ' fit to counts')
 lgd = axes[0,0].legend(lines, labels, labelspacing=0.2,
                        bbox_to_anchor=(-0.5, 0.5), title=args.bin_param)
 
+pidx = []
+for i in range(args.num_bins):
+    pidx.append([np.argwhere(pind == i)])
+
 logging.info('starting bin, histogram and plot loop')
 maxyval = 0
 for x in range(args.split_one_nbins):
-    logging.info('split {} number {}'.format(args.split_param_one, x))
     id_bin1 = id_in_bin1[x]
     for y in range(args.split_two_nbins):
-        logging.info('split {} number {}'.format(args.split_param_two, y))
         id_bin2 = id_in_bin2[y]
-        ax = axes[x,y]
-        logging.info('getting templates in the {} conditions'.format(args.bin_param))
         id_in_both = np.intersect1d(id_bin1, id_bin2)
+        logging.info('split {}: {}, {}: {}'.format(args.split_param_one, x,
+                                                   args.split_param_two, y))
+        ax = axes[x,y]
         for i, lower, upper in zip(range(args.num_bins), pbins.lower(),
                                    pbins.upper()):
-            logging.info('getting templates which meet all conditions')
-            indices_all_conditions = np.intersect1d(np.argwhere(pind == i),
-                                                    id_in_both)
-            logging.info('{} templates in this bank split'.format(len(indices_all_conditions)))
+            indices_all_conditions = np.intersect1d(pidx[i], id_in_both)
+            logging.info('{} split {}-{}'.format(args.bin_param, lower, upper))
             if len(indices_all_conditions) == 0: continue
             vals_inbin = []
-            logging.info('{} split {}-{}'.format(args.bin_param, lower, upper))
             for idx in indices_all_conditions:
                 where_idx_start = boundaries[idx]
-                if idx == max_boundary_id:
-                    where_idx_end = len(stat)
-                else:
-                    where_idx_end = sorted_boundary_list[
-                        np.argwhere(sorted_boundary_list == where_idx_start)[0][0] + 1]
-                vals_inbin += list(stat[where_idx_start:where_idx_end])
+                vals_inbin += list(stat[where_idx_start:where_idx_end[idx]])
 
             vals_inbin = np.array(vals_inbin)
             vals_above_thresh = vals_inbin[vals_inbin >= args.stat_fit_threshold]
-            logging.info('{} out of {} triggers below threshold'.format(
-                           len(vals_inbin) - len(vals_above_thresh), len(vals_inbin)))
-            logging.info('fitting stat values above {}'.format(args.stat_fit_threshold))
+            if not len(vals_above_thresh):
+                logging.info('No triggers above threshold')
+                continue
+            else:
+                logging.info('{} triggers out of {} above threshold'.format(
+                             len(vals_above_thresh), len(vals_inbin)))
             alpha, sig_alpha = trstats.fit_above_thresh(args.fit_function,
                                  vals_above_thresh, args.stat_fit_threshold)
-            logging.info('calculating fitted distributions')
             fitted_cum_counts = len(vals_above_thresh) * \
                                 trstats.cum_fit(args.fit_function, fitrange,
                                                 alpha, args.stat_fit_threshold)
             # upper and lower 1-sigma bounds on fit are not currently plotted
-            fitted_cum_counts_plus = len(vals_above_thresh) * \
-                                      trstats.cum_fit(args.fit_function,
-                                                      fitrange, alpha + sig_alpha,
-                                                      args.stat_fit_threshold)
-            fitted_cum_counts_minus = len(vals_above_thresh) * \
-                                      trstats.cum_fit(args.fit_function, fitrange,
-                                                      alpha - sig_alpha,
-                                                      args.stat_fit_threshold)
+            #fitted_cum_counts_plus = len(vals_above_thresh) * \
+            #                             trstats.cum_fit(args.fit_function,
+            #                                          fitrange, alpha + sig_alpha,
+            #                                          args.stat_fit_threshold)
+            #fitted_cum_counts_minus = len(vals_above_thresh) * \
+            #                              trstats.cum_fit(args.fit_function, fitrange,
+            #                                          alpha - sig_alpha,
+            #                                          args.stat_fit_threshold)
 
             # make histogram of fitted values
             histcounts, edges = np.histogram(vals_inbin, bins=50)
@@ -297,12 +368,12 @@ logging.info('setting up labels')
 for i in range(args.split_one_nbins):
     for j in range(args.split_two_nbins):
         axes[i,j].semilogy([args.stat_fit_threshold, args.stat_fit_threshold],
-                           [1, 5*maxyval], 'k', linestyle=':', alpha=0.2)
-axes[0,0].set_ylim(1, 5*maxyval)
+                           [1, 5 * maxyval], 'k', linestyle=':', alpha=0.2)
+axes[0,0].set_ylim(1, 5 * maxyval)
 axes[0,0].set_xlim(minplot, maxplot)
 
 for j in range(args.split_two_nbins):
-    axes[0, j].set_xlabel(args.split_param_two + ': ' + 
+    axes[0, j].set_xlabel(args.split_param_two + ': ' +
                           (formats[args.split_param_two] + ' to ' +
                            formats[args.split_param_two]).format(sp_two_bounds.lower()[j],
                                      sp_two_bounds.upper()[j]), size="large")
@@ -310,8 +381,8 @@ for j in range(args.split_two_nbins):
     axes[args.split_one_nbins - 1, j].set_xlabel(args.sngl_stat, size="large")
 
 for i in range(args.split_one_nbins):
-    axes[i, 0].set_ylabel(args.split_param_one + ': ' + 
-                          (formats[args.split_param_one] + ' to ' + 
+    axes[i, 0].set_ylabel(args.split_param_one + ': ' +
+                          (formats[args.split_param_one] + ' to ' +
                            formats[args.split_param_one]).format(sp_one_bounds.lower()[i],
                                       sp_one_bounds.upper()[i]) + '\ncumulative number',
                                       size="large")
