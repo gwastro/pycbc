@@ -235,6 +235,7 @@ def make_inference_summary_table(workflow, inference_file, output_dir,
 
 def make_inference_posterior_plot(
                     workflow, inference_file, output_dir, parameters=None,
+                    plot_prior_from_file=None,
                     name="inference_posterior", analysis_seg=None, tags=None):
     """ Sets up the corner plot of the posteriors in the workflow.
 
@@ -248,6 +249,8 @@ def make_inference_posterior_plot(
         The directory to store result plots and files.
     parameters : list or str
         The parameters to plot.
+    plot_prior_from_file : str, optional
+        Plot the prior from the given config file on the 1D marginal plots.
     name: str
         The name in the [executables] section of the configuration file
         to use.
@@ -281,6 +284,8 @@ def make_inference_posterior_plot(
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
     if parameters is not None:
         node.add_opt("--parameters", _params_for_pegasus(parameters))
+    if plot_prior_from_file is not None:
+        node.add_input_opt('--plot-prior', plot_prior_from_file)
 
     # add node to workflow
     workflow += node
