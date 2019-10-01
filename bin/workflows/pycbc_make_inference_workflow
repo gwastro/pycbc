@@ -214,6 +214,7 @@ workflow = core.Workflow(opts, opts.workflow_name + "-main")
 finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 
 # change working directory to the output
+origdir = os.path.abspath(os.curdir)
 os.chdir(opts.output_dir)
 
 # figure out what diagnostic jobs there are
@@ -271,8 +272,13 @@ for num_event, config_fnames in enumerate(infconfig_files):
     label = label.replace(' ', '_').replace(':', '_').replace('+', '_')
 
     # create a sub workflow for this event
+    # we need to go back to the original directory to do this for all the file
+    # references to work correctly
+    os.chdir(origdir)
     sub_workflow = core.Workflow(opts,
                                  "{}-{}".format(opts.workflow_name, label))
+    # now go back to the output
+    os.chdir(opts.output_dir)
 
     # write the configuration file to the config files directory
     overrides = infconfig_overrides[num_event]
