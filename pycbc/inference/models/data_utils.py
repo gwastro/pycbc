@@ -19,6 +19,7 @@
 import logging
 from argparse import ArgumentParser
 import numpy
+from time import sleep
 
 from pycbc.types import MultiDetOptionAction
 from pycbc.psd import (insert_psd_option_group_multi_ifo,
@@ -164,8 +165,19 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
         max_shift = int(gps_end - gps_start)
     check_start = gps_start - max_shift
     check_end = gps_end + max_shift
-    validsegs = dq.query_flag(detector, segment_name, check_start, check_end,
-                              **kwargs)
+    try:
+        validsegs = dq.query_flag(detector, segment_name, check_start,
+                                  check_end, cache=True,
+                                  **kwargs)
+    except:
+        # may be issues quering the database in a parallel environment; we'll
+        # try waiting and doing it again
+        logging.warn("Could not query segment database for DQ flags. "
+                     "Sleeping for 10s and trying again.")
+        sleep(10)
+        validsegs = dq.query_flag(detector, segment_name, check_start,
+                                  check_end, cache=True,
+                                  **kwargs)
     use_start = gps_start
     use_end = gps_end
     # shift if necessary
