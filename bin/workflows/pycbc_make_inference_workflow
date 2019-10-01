@@ -251,10 +251,6 @@ logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
 
 
-# construct Executable for running sampler
-inference_exe = core.Executable(workflow.cp, "inference",
-                                ifos=workflow.ifos, out_dir=filedir)
- 
 # figure out what parameters user wants to plot from workflow configuration
 group_prefix = "plot-group-"
 # parameters for the summary plots
@@ -273,20 +269,27 @@ for num_event, config_fnames in enumerate(infconfig_files):
     if label is None:
         label = 'Event {}'.format(num_event)
     label = label.replace(' ', '_').replace(':', '_').replace('+', '_')
+
+    # create a sub workflow for this event
+    sub_workflow = core.Workflow(opts,
+                                 "{}-{}".format(opts.workflow_name, label))
+
+    # write the configuration file to the config files directory
     overrides = infconfig_overrides[num_event]
     deletions = infconfig_deletions[num_event]
-    # write the configuration file to the config files directory
     cp = configuration.WorkflowConfigParser(config_fnames,
                                             overrideTuples=overrides,
                                             deleteTuples=deletions)
-    config_file = workflow.save_config(config_file_tmplt.format(label),
-                                       config_file_dir, cp)[0]
+    config_file = sub_workflow.save_config(config_file_tmplt.format(label),
+                                           config_file_dir, cp)[0]
     # create sym links to config file for results page
     base = "config_files/{}".format(label)
     layout.single_layout(rdir[base], [config_file])
     symlink_path(config_file, rdir[base])
 
     # make node for running sampler
+    inference_exe = core.Executable(sub_workflow.cp, "inference",
+                                    ifos=sub_workflow.ifos, out_dir=filedir)
     node = inference_exe.create_node()
     node.add_input_opt("--config-file", config_file)
     node.add_opt("--seed", opts.seed+num_event)
@@ -296,11 +299,11 @@ for num_event, config_fnames in enumerate(infconfig_files):
                                               tags=opts.tags+[label])
 
     # add node to workflow
-    workflow += node
+    sub_workflow += node
 
     # summary table
     summary_page += (inffu.make_inference_summary_table(
-        workflow, inference_file, rdir.base,
+        sub_workflow, inference_file, rdir.base,
         parameters=table_params,
         analysis_seg=analysis_index,
         result_label=label,
@@ -310,7 +313,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     summary_plots = []
     for group, params in summary_plot_params.items():
         summary_plots += inffu.make_inference_posterior_plot(
-            workflow, inference_file, rdir.base,
+            sub_workflow, inference_file, rdir.base,
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_index,
             tags=opts.tags+[label, group])
@@ -320,7 +323,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"
     psd_page.append(plotting.make_spectrum_plot(
-        workflow, [inference_file], rdir[base],
+        sub_workflow, [inference_file], rdir[base],
         tags=opts.tags+[label],
         hdf_group="data"))
 
@@ -329,8 +332,8 @@ for num_event, config_fnames in enumerate(infconfig_files):
     prior_plots = []
     for group, params in plot_params.items():
         prior_plots += inffu.make_inference_prior_plot(
-            workflow, config_file, rdir[base],
-            analysis_seg=workflow.analysis_time,
+            sub_workflow, config_file, rdir[base],
+            analysis_seg=sub_workflow.analysis_time,
             parameters=params,
             tags=opts.tags+[label, group])
     layout.single_layout(rdir[base], prior_plots)
@@ -340,7 +343,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     posterior_plots = []
     for group, params in plot_params.items():
         posterior_plots += inffu.make_inference_posterior_plot(
-            workflow, inference_file, rdir[base],
+            sub_workflow, inference_file, rdir[base],
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_index,
             tags=opts.tags+[label, group])
@@ -353,7 +356,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
         samples_plots = []
         for group, parameters in plot_params.items():
             samples_plots += inffu.make_inference_samples_plot(
-                workflow, inference_file, rdir[base],
+                sub_workflow, inference_file, rdir[base],
                 parameters=parameters,
                 analysis_seg=analysis_index,
                 tags=opts.tags+[label, group])
@@ -363,10 +366,13 @@ for num_event, config_fnames in enumerate(infconfig_files):
         # files for samples acceptance_rate subsection
         base = "acceptance_rate/{}".format(label)
         acceptance_plot = inffu.make_inference_acceptance_rate_plot(
-            workflow, inference_file, rdir[base],
+            sub_workflow, inference_file, rdir[base],
             analysis_seg=analysis_index,
             tags=opts.tags+[label])
         layout.single_layout(rdir[base], acceptance_plot)
+
+    # add the sub workflow to the main workflow
+    workflow += sub_workflow
 
 # build the summary page
 layout.two_column_layout(rdir.base, summary_page)
