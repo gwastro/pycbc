@@ -1,19 +1,17 @@
 #!/usr/bin/env python
-"""mchirp_area.py
+# mchirp_area.py
+# Integration of the area laying in the different cbc regions
+# By A. Curiel Barroso
+# August 2019
 
-Integration of the area laying in the different cbc regions
-By A. Curiel Barroso
-August 2019
-
---------------------------------------------
-This script computes the area corresponding
+"""This script computes the area corresponding
 to different CBC on the m1 & m2 plane when
 given a central mchirp value and uncertainty
 It also includes a function that calculates
 the source frame when given the detector
 frame mass and redshift
---------------------------------------------
 """
+
 from pycbc import conversions
 from scipy.integrate import quad
 
