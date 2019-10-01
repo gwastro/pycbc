@@ -424,6 +424,9 @@ while any_above_ifar_lim:
     logging.info('Maximum IFAR values per combination:')
     for k in max_ifars:
         logging.info('{}: {:.3g}'.format(k, max_ifars[k]))
+    max_combd = combined_fg_data.data['ifar'].argmax()
+    max_combd_ifar = combined_fg_data.data['ifar'][max_combd]
+    logging.info('combined: {:.3g}'.format(max_combd_ifar))
     maxcombo = max(max_ifars, key=lambda key: max_ifars[key])
     max_ifar_idx = max_each_combo[maxcombo]
     trigger_ids = {ifo: sep_fg_data[maxcombo].data['%s/trigger_id' % ifo][max_ifar_idx] for
@@ -442,10 +445,10 @@ while any_above_ifar_lim:
          ifo in all_ifos if ifo in combo])[0]
     logging.info('Removing trigger from {} foreground at time {:.2f} with '
                  'ifar {:.3g}'.format(maxcombo, maxtime, max_ifar))
-    sep_fg_data[maxcombo] = sep_fg_data[maxcombo].remove(max_ifar_idx)
     logging.info('Removing trigger from combined foreground')
     where_combined = np.nonzero(combined_fg_data.data['stat'] == 
                                 sep_fg_data[maxcombo].data['stat'][:][max_ifar_idx])
+    sep_fg_data[maxcombo] = sep_fg_data[maxcombo].remove(max_ifar_idx)
     final_combined_fg = final_combined_fg + combined_fg_data.select(where_combined)
     combined_fg_data = combined_fg_data.remove(where_combined)
     n_triggers -= 1
