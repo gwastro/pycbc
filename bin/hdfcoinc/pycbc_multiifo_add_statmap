@@ -48,7 +48,7 @@ parser.add_argument('--max-hierarchical-removal', type=int, default=0,
          "for continuous hierarchical removal until no foreground triggers "
          "are louder than the chosen threshold. Choose 0 to not do any "
          "hierarchical removals. Choose 1 to do at most 1 hierarchical "
-         "removal, etc. [default=0]')
+         "removal, etc. [default=0]")
 parser.add_argument('--hierarchical-removal-window', type=float, default=1.,
     help="Time around each trigger to window out for a loud trigger in "
          "hierarchical removal. [default=1s]")
