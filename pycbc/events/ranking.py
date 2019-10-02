@@ -184,12 +184,12 @@ def get_newsnr_sgveto_psdvar_scaled(trigs):
         Array of newsnr values
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
-    nsnr_sg_psd = \
+    nsnr_sg_psdscale = \
                  newsnr_sgveto_psdvar_scaled(
                      trigs['snr'][:], trigs['chisq'][:] / dof,
                      trigs['sg_chisq'][:],
                      trigs['psd_var_val'][:])
-    return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+    return numpy.array(nsnr_sg_psdscale, ndmin=1, dtype=numpy.float32)
 
 
 def get_newsnr_sgveto_psdvar_scaled_threshold(trigs):
@@ -210,9 +210,9 @@ def get_newsnr_sgveto_psdvar_scaled_threshold(trigs):
         Array of newsnr values
     """
     dof = 2. * trigs['chisq_dof'][:] - 2.
-    nsnr_sg_psd = \
+    nsnr_sg_psdt = \
                  newsnr_sgveto_psdvar_scaled_threshold(
                      trigs['snr'][:], trigs['chisq'][:] / dof,
                      trigs['sg_chisq'][:],
                      trigs['psd_var_val'][:])
-    return numpy.array(nsnr_sg_psd, ndmin=1, dtype=numpy.float32)
+    return numpy.array(nsnr_sg_psdt, ndmin=1, dtype=numpy.float32)
