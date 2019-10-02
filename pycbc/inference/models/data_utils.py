@@ -20,6 +20,10 @@ import logging
 from argparse import ArgumentParser
 import numpy
 from time import sleep
+try:
+    from mpi4py import MPI
+except ImportError:
+    MPI = None
 
 from pycbc.types import MultiDetOptionAction
 from pycbc.psd import (insert_psd_option_group_multi_ifo,
@@ -165,19 +169,16 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
         max_shift = int(gps_end - gps_start)
     check_start = gps_start - max_shift
     check_end = gps_end + max_shift
-    try:
-        validsegs = dq.query_flag(detector, segment_name, check_start,
-                                  check_end, cache=True,
-                                  **kwargs)
-    except:
-        # may be issues quering the database in a parallel environment; we'll
-        # try waiting and doing it again
-        logging.warn("Could not query segment database for DQ flags. "
-                     "Sleeping for 10s and trying again.")
-        sleep(10)
-        validsegs = dq.query_flag(detector, segment_name, check_start,
-                                  check_end, cache=True,
-                                  **kwargs)
+    # if we're running in an mpi enviornment and we're not the parent process,
+    # we'll wait before quering the segment database. This will result in
+    # getting the segments from the cache, so as not to overload the database
+    if MPI is not None and (MPI.COMM_WORLD.Get_size() > 1 and
+                            MPI.COMM_WORLD.Get_rank() != 0):
+        # we'll wait for 2 minutes
+        sleep(120)
+    validsegs = dq.query_flag(detector, segment_name, check_start,
+                              check_end, cache=True,
+                              **kwargs)
     use_start = gps_start
     use_end = gps_end
     # shift if necessary
@@ -317,8 +318,9 @@ def data_from_cli(opts, check_for_valid_times=True,
             logging.info("Checking that {} has valid data in the requested "
                          "analysis times".format(det))
             try:
-                check_validtimes(det, opts.gps_start_time[det],
-                                 opts.gps_end_time[det],
+                pad = opts.pad_data[det]
+                check_validtimes(det, opts.gps_start_time[det]-pad,
+                                 opts.gps_end_time[det]+pad,
                                  shift_to_valid=False,
                                  segment_name=opts.dq_segment_name,
                                  source=opts.dq_source,
@@ -344,6 +346,11 @@ def data_from_cli(opts, check_for_valid_times=True,
     if not opts.gate_overwhitened:
         strain_dict = apply_gates_to_td(strain_dict, gates)
 
+    # check that there aren't nans in the data
+    for det, strain in strain_dict.items():
+        if numpy.isnan(strain.numpy()).any():
+            raise ValueError("NaN found in strain from {}".format(det))
+
     # get strain time series to use for PSD estimation
     # if user has not given the PSD time options then use same data as analysis
     if opts.psd_start_time and opts.psd_end_time:
@@ -356,15 +363,16 @@ def data_from_cli(opts, check_for_valid_times=True,
                 logging.info("Checking that {} has valid data in requested "
                              "times for PSD estimation".format(det))
                 try:
+                    pad = opts.pad_data[det]
                     psd_start, psd_end = check_validtimes(
-                        det, opts.psd_start_time[det],
-                        opts.psd_end_time[det],
+                        det, opts.psd_start_time[det]-pad,
+                        opts.psd_end_time[det]+pad,
                         shift_to_valid=shift_psd_times_to_valid,
                         segment_name=opts.dq_segment_name,
                         source=opts.dq_source,
                         server=opts.dq_server,
                         veto_definer=opts.veto_definer)
-                    psd_times[det] = (psd_start, psd_end)
+                    psd_times[det] = (psd_start+pad, psd_end-pad)
                     dets_with_data.append(det)
                 except NoValidDataError as e:
                     if err_on_missing_detectors:
@@ -400,6 +408,11 @@ def data_from_cli(opts, check_for_valid_times=True,
     if instruments == []:
         raise NoValidDataError("No valid data could be found in any of the "
                                "requested instruments.")
+
+    # check that there aren't nans in the data
+    for det, strain in psd_strain_dict.items():
+        if numpy.isnan(strain.numpy()).any():
+            raise ValueError("NaN found in strain from {}".format(det))
 
     # FFT strain and save each of the length of the FFT, delta_f, and
     # low frequency cutoff to a dict
