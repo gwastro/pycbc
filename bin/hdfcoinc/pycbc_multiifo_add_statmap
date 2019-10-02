@@ -430,7 +430,7 @@ while True:
         max_combd_ifar = combined_fg_data.data['ifar'][max_combd]
         logging.info('combined: {:.3g}'.format(max_combd_ifar))
 
-    maxcombo = max(max_ifars, key=lambda key: max_ifars[key])
+    maxcombo = max(max_ifars, key=lambda k: max_ifars[k])
     max_ifar_idx = max_each_combo[maxcombo]
     max_ifar = max_ifars[maxcombo]
     if not max_ifar > args.hierarchical_removal_ifar_thresh:
@@ -486,6 +486,7 @@ while True:
         bg_time_ct[key] -= 2. * args.hierarchical_removal_window
         sep_bg_data[key].data['ifar'] = conv.sec_to_year(bg_time_ct[key] / (bnlouder + 1))
         sep_fg_data[key].data['ifar'] = conv.sec_to_year(bg_time_ct[key] / (fnlouder + 1))
+
     logging.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
         bnlouder, fnlouder = coinc.calculate_n_louder(sep_bg_data[key].data['stat'],
