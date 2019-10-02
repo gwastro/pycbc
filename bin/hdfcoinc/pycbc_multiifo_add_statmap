@@ -434,8 +434,8 @@ while True:
     max_ifar_idx = max_each_combo[maxcombo]
     max_ifar = max_ifars[maxcombo]
     if not max_ifar > args.hierarchical_removal_ifar_thresh:
-        logging.info("Loudest event IFAR of %.3f in %s is less than threshold %f, 
-                     "stopping hierarchical removal"
+        logging.info("Loudest event IFAR of %.3f in %s is less than threshold %f,"
+                     " stopping hierarchical removal"
                      % (max_ifar, maxcombo, args.hierarchical_removal_ifar_thresh))
         break
 
