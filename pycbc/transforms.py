@@ -373,10 +373,10 @@ class MchirpQToMass1Mass2(BaseTransform):
             of transformed values.
         """
         out = {}
-        out[parameters.mass1] = conversions.mass1_from_mchirp_q(
+        out[self.mass1_param] = conversions.mass1_from_mchirp_q(
                                                 maps[self.mchirp_param],
                                                 maps[self.q_param])
-        out[parameters.mass2] = conversions.mass2_from_mchirp_q(
+        out[self.mass2_param] = conversions.mass2_from_mchirp_q(
                                                 maps[self.mchirp_param],
                                                 maps[self.q_param])
         return self.format_output(maps, out)
@@ -428,6 +428,7 @@ class MchirpQToMass1Mass2(BaseTransform):
         m1 = maps[self.mass1_param]
         m2 = maps[self.mass2_param]
         return conversions.mchirp_from_mass1_mass2(m1, m2)/m2**2.
+
 
 class MchirpEtaToMass1Mass2(BaseTransform):
     """ Converts chirp mass and symmetric mass ratio to component masses.
