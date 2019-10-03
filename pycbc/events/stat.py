@@ -284,7 +284,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.bins['dphi'] = {ifos: histfile['pbins'][:]}
         self.bins['snr'] = {ifos: histfile['sbins'][:]}
         self.bins['sigma_ratio'] = {ifos: histfile['rbins'][:]}
-        return
 
     def get_threehists(self, ifos=None, norm='max'): # pylint:disable=unused-argument
         if sorted(ifos) != ['H1', 'L1', 'V1']:
@@ -305,7 +304,6 @@ class PhaseTDStatistic(NewSNRStatistic):
             self.bins['dphi'][two_combo] = histfile['pbins'][:]
             self.bins['snr'][two_combo] = histfile['sbins'][:]
             self.bins['sigma_ratio'][two_combo] = histfile['rbins'][:]
-        return
 
     def single(self, trigs):
         """Calculate the single detector statistic & assemble other parameters
@@ -374,9 +372,7 @@ class PhaseTDStatistic(NewSNRStatistic):
 
         # does not require ifos to be specified, only 1 p/t/a file
         if self.hist is None:
-            self.get_hist(ifos)
-        else:
-            logging.info("Using pre-set signal histogram")
+            self.get_hist()
 
         # for 2-ifo pipeline, add time shift to 2nd ifo ('s1')
         slidevec = [0, 1]
