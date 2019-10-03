@@ -25,6 +25,7 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     del_msrc = msrc * ((del_mdet/mdet)**2 + (del_z/(1 + z))**2)**(0.5)
     return (msrc, del_msrc)
 
+
 # Integration function
 def mchange(x, mc):
     """This function returns a component mass as a function of mchirp and
