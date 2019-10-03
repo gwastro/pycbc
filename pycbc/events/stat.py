@@ -287,15 +287,15 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.bins['snr'] = {ifos: histfile['sbins'][:]}
         self.bins['sigma_ratio'] = {ifos: histfile['rbins'][:]}
 
-    def get_threehists(self, ifos=None, norm='max'):
+    def get_threehists(self, ifos=None, norm='max'): # pylint:disable=unused-argument
         if sorted(ifos) != ['H1', 'L1', 'V1']:
-            return RuntimeError("Can't use for 3-ifo combinations that are not HLV")
+            return RuntimeError("Can't use for 3-ifo combinations if not HLV")
         self.hist = {}
         self.bins['dt'] = {}
         self.bins['dphi'] = {}
         self.bins['snr'] = {}
         self.bins['sigma_ratio'] = {}
-        for two_combo in [('H1','L1'), ('H1','V1'), ('L1','V1')]:
+        for two_combo in [('H1', 'L1'), ('H1', 'V1'), ('L1', 'V1')]:
             match = self.match_file(two_combo)
             logging.info("Using signal hist %s for ifos %s", match, two_combo)
             histfile = self.files[match]
@@ -306,6 +306,7 @@ class PhaseTDStatistic(NewSNRStatistic):
             self.bins['dphi'][two_combo] = histfile['pbins'][:]
             self.bins['snr'][two_combo] = histfile['sbins'][:]
             self.bins['sigma_ratio'][two_combo] = histfile['rbins'][:]
+        return
 
     def single(self, trigs):
         """Calculate the single detector statistic & assemble other parameters
@@ -409,7 +410,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         assert len(s) == 2
         assert len(to_shift) == 2
 
-        #hist_ifos = self.ifos if len(self.ifos) == 2 else ['H1', 'L1']
         if self.hist is None:
             self.get_hist(self.ifos)
 
@@ -824,14 +824,10 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
                          sngl[0] in twoifos]
             logr_lv = self.logsignalrate_multiifo(
                                        s_two, slide * step, shift_two, twoifos)
-            if len(logr_hl):
-               print(logr_hl[:20], logr_hv[:20], logr_lv[:20])
             logr_s = (logr_hl + logr_hv + logr_lv) * (2. / 3.)
         else:
             logr_s = self.logsignalrate_multiifo(
                     [sngl[1] for sngl in s], slide * step, to_shift, self.ifos)
-            if len(logr_s):
-               print(logr_s[:20])
 
         loglr = logr_s + network_logvol - ln_noise_rate
         # cut off underflowing and very small values
