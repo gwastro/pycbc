@@ -261,8 +261,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         else:
             ifos = ifos or self.ifos  # if None, use the instance attribute
             if len(ifos) != 2:
-                #raise RuntimeError("Need exactly 2 ifos for the p/t/a "
-                #                   "statistic! Ifos given were " + ifos)
                 if len(ifos) == 3:
                     self.get_threehists(ifos=ifos, norm='max')
                     return
@@ -286,10 +284,11 @@ class PhaseTDStatistic(NewSNRStatistic):
         self.bins['dphi'] = {ifos: histfile['pbins'][:]}
         self.bins['snr'] = {ifos: histfile['sbins'][:]}
         self.bins['sigma_ratio'] = {ifos: histfile['rbins'][:]}
+        return
 
     def get_threehists(self, ifos=None, norm='max'): # pylint:disable=unused-argument
         if sorted(ifos) != ['H1', 'L1', 'V1']:
-            return RuntimeError("Can't use for 3-ifo combinations if not HLV")
+            raise RuntimeError("Can't use for 3-ifo combinations if not HLV")
         self.hist = {}
         self.bins['dt'] = {}
         self.bins['dphi'] = {}
@@ -393,7 +392,8 @@ class PhaseTDStatistic(NewSNRStatistic):
         sn1 = numpy.array(s1['snr'], ndmin=1)
         rd = numpy.array((s0['sigmasq'] / s1['sigmasq']) ** 0.5, ndmin=1)
 
-        return self.signal_hist(['H1','L1'], td, pd, sn0, sn1, rd)
+        # hardcode H1L1 analysis
+        return self.signal_hist(['H1', 'L1'], td, pd, sn0, sn1, rd)
 
     def logsignalrate_multiifo(self, s, shift, to_shift, histifos):
         """
@@ -806,32 +806,20 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         # logsignalrate function from PhaseTDStatistic
         if len(s) == 3:
             # geometric average of products of 2 2-ifo hists
-            twoifos = ['H1', 'L1']
-            s_two = [sngl[1] for sngl in s if sngl[0] in twoifos]
-            shift_two = [sh for sngl, sh in zip(s, to_shift) if \
-                         sngl[0] in twoifos]
-            logr_hl = self.logsignalrate_multiifo(
+            logr_s = 0
+            for twoifos in [['H1', 'L1'], ['H1', 'V1'], ['L1', 'V1']]:
+                s_two = [sngl[1] for sngl in s if sngl[0] in twoifos]
+                shift_two = [sh for sngl, sh in zip(s, to_shift) if \
+                             sngl[0] in twoifos]
+                logr_s += (2. / 3.) * self.logsignalrate_multiifo(
                                        s_two, slide * step, shift_two, twoifos)
-            twoifos = ['H1', 'V1']
-            s_two = [sngl[1] for sngl in s if sngl[0] in twoifos]
-            shift_two = [sh for sngl, sh in zip(s, to_shift) if \
-                         sngl[0] in twoifos]
-            logr_hv = self.logsignalrate_multiifo(
-                                       s_two, slide * step, shift_two, twoifos)
-            twoifos = ['L1', 'V1']
-            s_two = [sngl[1] for sngl in s if sngl[0] in twoifos]
-            shift_two = [sh for sngl, sh in zip(s, to_shift) if \
-                         sngl[0] in twoifos]
-            logr_lv = self.logsignalrate_multiifo(
-                                       s_two, slide * step, shift_two, twoifos)
-            logr_s = (logr_hl + logr_hv + logr_lv) * (2. / 3.)
         else:
             logr_s = self.logsignalrate_multiifo(
                     [sngl[1] for sngl in s], slide * step, to_shift, self.ifos)
 
         loglr = logr_s + network_logvol - ln_noise_rate
         # cut off underflowing and very small values
-        loglr[loglr < -50.] = -50.
+        loglr[loglr < -40.] = -40.
         return loglr
 
 
