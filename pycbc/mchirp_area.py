@@ -17,6 +17,10 @@ from scipy.integrate import quad
 
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
+    """This function takes values of redshift, redshift uncertainty,
+    detector mass and its uncertainty and computes the source mass
+    and its uncertainty.
+    """
     msrc = (mdet) / (1 + z)
     del_msrc = msrc * ((del_mdet/mdet)**2 + (del_z/(1 + z))**2)**(0.5)
     return (msrc, del_msrc)
@@ -24,6 +28,8 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
 
 # Integration function
 def mchange(x, mc):
+    """This function takes the value of one component mass
+    """
     return conversions.mass2_from_mchirp_mass1(mc, x)
 
 
@@ -35,7 +41,6 @@ def intmc(mc, x_min, x_max):
 def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
     trig_mc = src_mass_from_z_det_mass(z["central"], z["delta"],
                                        trig_mc_det["central"],
-
                                        trig_mc_det["delta"])
     mcb = trig_mc[0] + trig_mc[1]
     mcs = trig_mc[0] - trig_mc[1]
