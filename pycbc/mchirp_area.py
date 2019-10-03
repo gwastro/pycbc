@@ -12,7 +12,7 @@ the source frame when given the detector
 frame mass and redshift
 """
 
-from pycbc import conversions
+from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from scipy.integrate import quad
 
 
@@ -25,20 +25,28 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     del_msrc = msrc * ((del_mdet/mdet)**2 + (del_z/(1 + z))**2)**(0.5)
     return (msrc, del_msrc)
 
-
 # Integration function
 def mchange(x, mc):
-    """This function takes the value of one component mass
+    """This function returns a component mass as a function of mchirp and
+    the other component mass.
     """
-    return conversions.mass2_from_mchirp_mass1(mc, x)
+    return m2mcm1(mc, x)
 
 
 def intmc(mc, x_min, x_max):
+    """This function returns the integral of mchange between the minimum and
+    maximum values of a component mass taking mchirp as an argument.
+    """
     integral = quad(mchange, x_min, x_max, args=mc)
     return integral[0]
 
 
 def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
+    """This function computes the area inside the lines of the second component
+    mass as a function of the first component mass for the two extreme values
+    of mchirp: mchirp +/- mchirp_uncertainty, for each region of the source
+    classifying diagram.
+    """
     trig_mc = src_mass_from_z_det_mass(z["central"], z["delta"],
                                        trig_mc_det["central"],
                                        trig_mc_det["delta"])
@@ -57,8 +65,7 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
     if mib < gap_max:
         abbh = 0.0
     else:
-        limb_bbh = min(m1_max,
-                       conversions.mass2_from_mchirp_mass1(mcb, gap_max))
+        limb_bbh = min(m1_max, m2mcm1(mcb, gap_max))
         intb_bbh = intmc(mcb, mib, limb_bbh)
 
         if mis < gap_max:
@@ -66,13 +73,11 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
             lims2_bbh = lims1_bbh
         else:
             lims1_bbh = mis
-            lims2_bbh = min(m1_max,
-                            conversions.mass2_from_mchirp_mass1(mcs, gap_max))
+            lims2_bbh = min(m1_max, m2mcm1(mcs, gap_max))
 
         ints_bbh = intmc(mcs, lims1_bbh, lims2_bbh)
 
-        limdiag_bbh = max(conversions.mass2_from_mchirp_mass1(mcs, lims1_bbh),
-                          gap_max)
+        limdiag_bbh = max(m2mcm1(mcs, lims1_bbh), gap_max)
         intline_sup_bbh = 0.5 * (limdiag_bbh + mib) * (mib - lims1_bbh)
         intline_inf_bbh = (limb_bbh - lims2_bbh) * gap_max
         int_sup_bbh = intb_bbh + intline_sup_bbh
@@ -81,29 +86,24 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
         abbh = int_sup_bbh - int_inf_bbh
 
     # AREA FOR BHG
-    if (conversions.mass2_from_mchirp_mass1(mcb, gap_max) < ns_max or
-            conversions.mass2_from_mchirp_mass1(mcs, m1_max) > gap_max):
+    if m2mcm1(mcb, gap_max) < ns_max or m2mcm1(mcs, m1_max) > gap_max:
         abhg = 0.0
     else:
-        if conversions.mass2_from_mchirp_mass1(mcb, m1_max) > gap_max:
+        if m2mcm1(mcb, m1_max) > gap_max:
             limb2_bhg = m1_max
             limb1_bhg = limb2_bhg
         else:
-            limb2_bhg = min(m1_max,
-                            conversions.mass2_from_mchirp_mass1(mcb, ns_max))
-            limb1_bhg = max(gap_max,
-                            conversions.mass2_from_mchirp_mass1(mcb, gap_max))
+            limb2_bhg = min(m1_max, m2mcm1(mcb, ns_max))
+            limb1_bhg = max(gap_max, m2mcm1(mcb, gap_max))
 
         intb_bhg = intmc(mcb, limb1_bhg, limb2_bhg)
 
-        if conversions.mass2_from_mchirp_mass1(mcs, gap_max) < ns_max:
+        if m2mcm1(mcs, gap_max) < ns_max:
             lims2_bhg = gap_max
             lims1_bhg = lims2_bhg
         else:
-            lims1_bhg = max(gap_max,
-                            conversions.mass2_from_mchirp_mass1(mcs, gap_max))
-            lims2_bhg = min(m1_max,
-                            conversions.mass2_from_mchirp_mass1(mcs, ns_max))
+            lims1_bhg = max(gap_max, m2mcm1(mcs, gap_max))
+            lims2_bhg = min(m1_max, m2mcm1(mcs, ns_max))
 
         intline_inf_bhg = (limb2_bhg - lims2_bhg) * ns_max
         intline_sup_bhg = (limb1_bhg - lims1_bhg) * gap_max
@@ -114,33 +114,28 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
         abhg = int_sup_bhg - int_inf_bhg
 
     # AREA FOR GG
-    if (conversions.mass2_from_mchirp_mass1(mcs, gap_max) > gap_max or
-            conversions.mass2_from_mchirp_mass1(mcb, ns_max) < ns_max):
+    if m2mcm1(mcs, gap_max) > gap_max or m2mcm1(mcb, ns_max) < ns_max:
         agg = 0.0
     else:
-        if conversions.mass2_from_mchirp_mass1(mcb, gap_max) > gap_max:
+        if m2mcm1(mcb, gap_max) > gap_max:
             limb2_gg = gap_max
             limb1_gg = limb2_gg
         else:
             limb1_gg = mib
-            limb2_gg = min(gap_max,
-                           conversions.mass2_from_mchirp_mass1(mcb, ns_max))
+            limb2_gg = min(gap_max, m2mcm1(mcb, ns_max))
 
         intb_gg = intmc(mcb, limb1_gg, limb2_gg)
 
-        if conversions.mass2_from_mchirp_mass1(mcs, ns_max) < ns_max:
+        if m2mcm1(mcs, ns_max) < ns_max:
             lims2_gg = ns_max
             lims1_gg = lims2_gg
         else:
             lims1_gg = mis
-            lims2_gg = min(gap_max,
-                           conversions.mass2_from_mchirp_mass1(mcs, ns_max))
+            lims2_gg = min(gap_max, m2mcm1(mcs, ns_max))
 
         ints_gg = intmc(mcs, lims1_gg, lims2_gg)
-        limdiag1_gg = max(conversions.mass2_from_mchirp_mass1(mcs, lims1_gg),
-                          ns_max)
-        limdiag2_gg = min(conversions.mass2_from_mchirp_mass1(mcb, limb1_gg),
-                          gap_max)
+        limdiag1_gg = max(m2mcm1(mcs, lims1_gg), ns_max)
+        limdiag2_gg = min(m2mcm1(mcb, limb1_gg), gap_max)
         intline_sup_gg = (0.5 * (limb1_gg - lims1_gg)
                           * (limdiag1_gg + limdiag2_gg))
         intline_inf_gg = (limb2_gg - lims2_gg) * ns_max
@@ -150,15 +145,14 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
         agg = int_sup_gg - int_inf_gg
 
     # AREA FOR BNS
-    if conversions.mass2_from_mchirp_mass1(mcs, ns_max) > ns_max:
+    if m2mcm1(mcs, ns_max) > ns_max:
         abns = 0.0
     else:
-        if conversions.mass2_from_mchirp_mass1(mcb, ns_max) > ns_max:
+        if m2mcm1(mcb, ns_max) > ns_max:
             limb2_bns = ns_max
             limb1_bns = limb2_bns
         else:
-            limb2_bns = min(ns_max,
-                            conversions.mass2_from_mchirp_mass1(mcb, m2_min))
+            limb2_bns = min(ns_max, m2mcm1(mcb, m2_min))
             limb1_bns = mib
 
         intb_bns = intmc(mcb, limb1_bns, limb2_bns)
@@ -167,16 +161,13 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
             lims2_bns = m2_min
             lims1_bns = lims2_bns
         else:
-            lims2_bns = min(ns_max,
-                            conversions.mass2_from_mchirp_mass1(mcs, m2_min))
+            lims2_bns = min(ns_max, m2mcm1(mcs, m2_min))
             lims1_bns = mis
 
         ints_bns = intmc(mcs, lims1_bns, lims2_bns)
         intline_inf_bns = (limb2_bns - lims2_bns) * m2_min
-        limdiag1_bns = max(conversions.mass2_from_mchirp_mass1(mcs, lims1_bns),
-                           m2_min)
-        limdiag2_bns = min(conversions.mass2_from_mchirp_mass1(mcb, limb1_bns),
-                           ns_max)
+        limdiag1_bns = max(m2mcm1(mcs, lims1_bns), m2_min)
+        limdiag2_bns = min(m2mcm1(mcb, limb1_bns), ns_max)
         intline_sup_bns = (0.5 * (limdiag1_bns + limdiag2_bns)
                            * (limb1_bns - lims1_bns))
         int_sup_bns = intb_bns + intline_sup_bns
@@ -185,29 +176,24 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
         abns = int_sup_bns - int_inf_bns
 
     # AREA FOR GNS
-    if (conversions.mass2_from_mchirp_mass1(mcs, gap_max) > ns_max or
-            conversions.mass2_from_mchirp_mass1(mcb, ns_max) < m2_min):
+    if m2mcm1(mcs, gap_max) > ns_max or m2mcm1(mcb, ns_max) < m2_min:
         agns = 0.0
     else:
-        if conversions.mass2_from_mchirp_mass1(mcb, gap_max) > ns_max:
+        if m2mcm1(mcb, gap_max) > ns_max:
             limb2_gns = gap_max
             limb1_gns = limb2_gns
         else:
-            limb2_gns = min(gap_max,
-                            conversions.mass2_from_mchirp_mass1(mcb, m2_min))
-            limb1_gns = max(ns_max,
-                            conversions.mass2_from_mchirp_mass1(mcb, ns_max))
+            limb2_gns = min(gap_max, m2mcm1(mcb, m2_min))
+            limb1_gns = max(ns_max, m2mcm1(mcb, ns_max))
 
         intb_gns = intmc(mcb, limb1_gns, limb2_gns)
 
-        if conversions.mass2_from_mchirp_mass1(mcs, ns_max) < m2_min:
+        if m2mcm1(mcs, ns_max) < m2_min:
             lims2_gns = ns_max
             lims1_gns = lims2_gns
         else:
-            lims1_gns = max(ns_max,
-                            conversions.mass2_from_mchirp_mass1(mcs, ns_max))
-            lims2_gns = min(gap_max,
-                            conversions.mass2_from_mchirp_mass1(mcs, m2_min))
+            lims1_gns = max(ns_max, m2mcm1(mcs, ns_max))
+            lims2_gns = min(gap_max, m2mcm1(mcs, m2_min))
 
         intline_inf_gns = (limb2_gns - lims2_gns) * m2_min
         intline_sup_gns = (limb1_gns - lims1_gns) * ns_max
@@ -218,29 +204,24 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
         agns = int_sup_gns - int_inf_gns
 
     # AREA FOR NSBH
-    if (conversions.mass2_from_mchirp_mass1(mcs, m1_max) > ns_max or
-            conversions.mass2_from_mchirp_mass1(mcb, gap_max) < m2_min):
+    if m2mcm1(mcs, m1_max) > ns_max or m2mcm1(mcb, gap_max) < m2_min):
         ansbh = 0.0
     else:
-        if conversions.mass2_from_mchirp_mass1(mcb, m1_max) > ns_max:
+        if m2mcm1(mcb, m1_max) > ns_max:
             limb2_nsbh = m1_max
             limb1_nsbh = limb2_nsbh
         else:
-            limb1_nsbh = max(gap_max,
-                             conversions.mass2_from_mchirp_mass1(mcb, ns_max))
-            limb2_nsbh = min(m1_max,
-                             conversions.mass2_from_mchirp_mass1(mcb, m2_min))
+            limb1_nsbh = max(gap_max, m2mcm1(mcb, ns_max))
+            limb2_nsbh = min(m1_max, m2mcm1(mcb, m2_min))
 
         intb_nsbh = intmc(mcb, limb1_nsbh, limb2_nsbh)
 
-        if conversions.mass2_from_mchirp_mass1(mcs, gap_max) < m2_min:
+        if m2mcm1(mcs, gap_max) < m2_min:
             lims1_nsbh = gap_max
             lims2_nsbh = lims1_nsbh
         else:
-            lims1_nsbh = max(gap_max,
-                             conversions.mass2_from_mchirp_mass1(mcs, ns_max))
-            lims2_nsbh = min(m1_max,
-                             conversions.mass2_from_mchirp_mass1(mcs, m2_min))
+            lims1_nsbh = max(gap_max, m2mcm1(mcs, ns_max))
+            lims2_nsbh = min(m1_max, m2mcm1(mcs, m2_min))
 
         intline_inf_nsbh = (limb2_nsbh - lims2_nsbh) * m2_min
         intline_sup_nsbh = (limb1_nsbh - lims1_nsbh) * ns_max
