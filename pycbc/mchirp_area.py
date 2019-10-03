@@ -204,7 +204,7 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
         agns = int_sup_gns - int_inf_gns
 
     # AREA FOR NSBH
-    if m2mcm1(mcs, m1_max) > ns_max or m2mcm1(mcb, gap_max) < m2_min):
+    if m2mcm1(mcs, m1_max) > ns_max or m2mcm1(mcb, gap_max) < m2_min:
         ansbh = 0.0
     else:
         if m2mcm1(mcb, m1_max) > ns_max:
