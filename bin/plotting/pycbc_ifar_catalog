@@ -72,7 +72,7 @@ except KeyError:
     h_iterations = 0
 
 if h_inc_back_num is None:
-    print 'Using', h_iterations, 'hierarchical removal iterations'
+    print('Using', h_iterations, 'hierarchical removal iterations')
     h_inc_back_num = h_iterations
 
 if h_inc_back_num > h_iterations:
