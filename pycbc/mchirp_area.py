@@ -1,15 +1,13 @@
 #!/usr/bin/env python
-# mchirp_area.py
+#
 # Integration of the area laying in the different cbc regions
 # By A. Curiel Barroso
 # August 2019
 
-"""This script computes the area corresponding
-to different CBC on the m1 & m2 plane when
-given a central mchirp value and uncertainty
-It also includes a function that calculates
-the source frame when given the detector
-frame mass and redshift
+"""This script computes the area corresponding to different CBC on the m1 & m2
+plane when given a central mchirp value and uncertainty.
+It also includes a function that calculates the source frame when given the
+detector frame mass and redshift.
 """
 
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
@@ -21,8 +19,9 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     detector mass and its uncertainty and computes the source mass
     and its uncertainty.
     """
-    msrc = (mdet) / (1 + z)
-    del_msrc = msrc * ((del_mdet/mdet)**2 + (del_z/(1 + z))**2)**(0.5)
+    msrc = mdet / (1. + z)
+    del_msrc = msrc * ((del_mdet / mdet) ** 2.
+                       + (del_z / (1. + z)) ** 2.) ** 0.5
     return (msrc, del_msrc)
 
 
@@ -59,8 +58,8 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
     gap_max = mass_bdary["gap_max"]
     # The points where the equal mass line and a chirp mass
     # curve intersect is m1 = m2 = 2**0.2 * mchirp
-    mib = (2**0.2) * mcb
-    mis = (2**0.2) * mcs
+    mib = (2.**0.2) * mcb
+    mis = (2.**0.2) * mcs
 
     # AREA FOR BBH
     if mib < gap_max:
