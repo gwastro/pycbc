@@ -1,20 +1,17 @@
 #!/usr/bin/env python
-"""mass_area_plot.py
+#
+# Integration of the area laying in the different cbc regions
+# By A. Curiel Barroso
+# August 2019
 
-Integration of the area laying in the different cbc regions
-By A. Curiel Barroso
-August 2019
-
---------------------------------------------
-This script computes the area corresponding
-to different CBC on the m1 & m2 plane when
-given a central mchirp value and uncertainty
---------------------------------------------
+"""This script computes the area corresponding to different CBC on
+the m1 & m2 plane when given a central mchirp value and uncertainty.
 """
+
 import argparse
 from mchirp_area import calc_areas
 from mchirp_area import src_mass_from_z_det_mass
-from pycbc import conversions
+from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 import numpy
 from matplotlib import use; use("Agg")
 from matplotlib import pyplot
@@ -78,25 +75,20 @@ mcs = src_mchirp[0] - src_mchirp[1]
 mib = (2**0.2)*mcb
 mis = (2**0.2)*mcs
 
-lim_m1b = min(m1_max, conversions.mass2_from_mchirp_mass1(mcb, m2_min))
+lim_m1b = min(m1_max, m2mcm1(mcb, m2_min))
 m1b = numpy.linspace(mib, lim_m1b, num=100)
-m2b = conversions.mass2_from_mchirp_mass1(mcb, m1b)
+m2b = m2mcm1(mcb, m1b)
 
-lim_m1s = min(m1_max, conversions.mass2_from_mchirp_mass1(mcs, m2_min))
+lim_m1s = min(m1_max, m2mcm1(mcs, m2_min))
 m1s = numpy.linspace(mis, lim_m1s, num=100)
-m2s = conversions.mass2_from_mchirp_mass1(mcs, m1s)
+m2s = m2mcm1(mcs, m1s)
 
 if mib > m1_max:
-    pyplot.plot(
-        (m1_max, m1_max),
-        (conversions.mass2_from_mchirp_mass1(mcs, lim_m1s), m1_max),
-        "b")
+    pyplot.plot((m1_max, m1_max), (m2mcm1(mcs, lim_m1s), m1_max), "b")
 else:
     pyplot.plot(m1b, m2b, "b")
-    pyplot.plot(
-        (m1_max, m1_max),
-        (conversions.mass2_from_mchirp_mass1(mcs, lim_m1s),
-         conversions.mass2_from_mchirp_mass1(mcb, lim_m1b)), "b")
+    pyplot.plot((m1_max, m1_max), (m2mcm1(mcs, lim_m1s),
+                                   m2mcm1(mcb, lim_m1b)),"b")
 
 if mis >= m2_min:
     pyplot.plot(m1s, m2s, "b")
