@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-#
 # Integration of the area laying in the different cbc regions
 # By A. Curiel Barroso
 # August 2019
 
-"""This script computes the area corresponding to different CBC on the m1 & m2
+"""Functions to compute the area corresponding to different CBC on the m1 & m2
 plane when given a central mchirp value and uncertainty.
 It also includes a function that calculates the source frame when given the
 detector frame mass and redshift.
@@ -15,9 +13,8 @@ from scipy.integrate import quad
 
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
-    """This function takes values of redshift, redshift uncertainty,
-    detector mass and its uncertainty and computes the source mass
-    and its uncertainty.
+    """Takes values of redshift, redshift uncertainty, detector mass and its
+    uncertainty and computes the source mass and its uncertainty.
     """
     msrc = mdet / (1. + z)
     del_msrc = msrc * ((del_mdet / mdet) ** 2.
@@ -27,23 +24,23 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
 
 # Integration function
 def mchange(x, mc):
-    """This function returns a component mass as a function of mchirp and
-    the other component mass.
+    """Returns a component mass as a function of mchirp and the other
+    component mass.
     """
     return m2mcm1(mc, x)
 
 
 def intmc(mc, x_min, x_max):
-    """This function returns the integral of mchange between the minimum and
-    maximum values of a component mass taking mchirp as an argument.
+    """Returns the integral of mchange between the minimum and maximum values
+    of a component mass taking mchirp as an argument.
     """
     integral = quad(mchange, x_min, x_max, args=mc)
     return integral[0]
 
 
 def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
-    """This function computes the area inside the lines of the second component
-    mass as a function of the first component mass for the two extreme values
+    """Computes the area inside the lines of the second component mass as a
+    function of the first component mass for the two extreme values
     of mchirp: mchirp +/- mchirp_uncertainty, for each region of the source
     classifying diagram.
     """
