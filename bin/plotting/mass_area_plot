@@ -112,6 +112,6 @@ pyplot.plot((gap_max, m1_max), (gap_max, gap_max), "k:")
 
 pyplot.xlabel("M1")
 pyplot.ylabel("M2")
-pyplot.title("MChirp = " + str((0.5) * (mcb + mcs)) + " +/- "
-             + str((mcb - mcs) * (0.5)))
+pyplot.title("MChirp = " + str(0.5 * (mcb + mcs)) + " +/- "
+             + str((mcb - mcs) * 0.5))
 pyplot.savefig("mass_plot.png")
