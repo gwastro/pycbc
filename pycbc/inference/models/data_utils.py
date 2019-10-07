@@ -273,8 +273,8 @@ def data_opts_from_config(cp, section, filter_flow):
     return opts
 
 
-def data_from_cli(opts, check_for_valid_times=True,
-                  shift_psd_times_to_valid=True,
+def data_from_cli(opts, check_for_valid_times=False,
+                  shift_psd_times_to_valid=False,
                   err_on_missing_detectors=False):
     """Loads the data needed for a model from the given command-line options.
 
@@ -287,10 +287,10 @@ def data_from_cli(opts, check_for_valid_times=True,
         returned by `parser.parse_args`).
     check_for_valid_times : bool, optional
         Check that valid data exists in the requested gps times. Default is
-        True.
+        False.
     shift_psd_times_to_valid : bool, optional
         If estimating the PSD from data, shift the PSD times to a valid
-        segment if needed. Default is True.
+        segment if needed. Default is False.
     err_on_missing_detectors : bool, optional
         Raise a NoValidDataError if any detector does not have valid data.
         Otherwise, a warning is printed, and that detector is skipped.
