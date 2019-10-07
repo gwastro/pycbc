@@ -60,7 +60,9 @@ parser.add_argument('--output-file', help="name of output file")
 
 args = parser.parse_args()
 
-if args.max_hierarchical_removal and args.background_files:
+injection_style = args.background_files != None
+
+if args.max_hierarchical_removal and injection_style:
     raise NotImplementedError("Hierarchical background removal doesn't make "
                               "sense for injections.")
 
@@ -113,11 +115,11 @@ logging.info('Copying foreground datasets')
 for k in files[0]['foreground']:
     if not k.startswith('fap') and k not in all_ifos:
         pycbc.io.combine_and_copy(f, files, 'foreground/' + k)
-
-logging.info('Copying background datasets')
-for k in files[0]['background']:
-    if k not in all_ifos:
-        pycbc.io.combine_and_copy(f, files, 'background/' + k)
+if not injection_style:
+    logging.info('Copying background datasets')
+    for k in files[0]['background']:
+        if k not in all_ifos:
+            pycbc.io.combine_and_copy(f, files, 'background/' + k)
 
 if args.output_coinc_types:
     # create dataset of ifo combination strings
@@ -152,10 +154,11 @@ for f_in in files:
                                     f_in['foreground/{}/time'.format(ifo)][:]])
             fg_trig_ids[ifo] = np.concatenate([fg_trig_ids[ifo],
                               f_in['foreground/{}/trigger_id'.format(ifo)][:]])
-            bg_trig_times[ifo] = np.concatenate([bg_trig_times[ifo],
-                                    f_in['background/{}/time'.format(ifo)][:]])
-            bg_trig_ids[ifo] = np.concatenate([bg_trig_ids[ifo],
-                              f_in['background/{}/trigger_id'.format(ifo)][:]])
+            if not injection_style:
+                bg_trig_times[ifo] = np.concatenate([bg_trig_times[ifo],
+                                        f_in['background/{}/time'.format(ifo)][:]])
+                bg_trig_ids[ifo] = np.concatenate([bg_trig_ids[ifo],
+                                  f_in['background/{}/trigger_id'.format(ifo)][:]])
         else:
             fg_trig_times[ifo] = np.concatenate([fg_trig_times[ifo],
                                  -1 * np.ones_like(f_in['foreground/fap'][:],
@@ -163,20 +166,22 @@ for f_in in files:
             fg_trig_ids[ifo] = np.concatenate([fg_trig_ids[ifo],
                                  -1 * np.ones_like(f_in['foreground/fap'][:],
                                                    dtype=np.uint32)])
-            bg_trig_times[ifo] = np.concatenate([bg_trig_times[ifo],
-                                 -1 * np.ones_like(f_in['background/stat'][:],
-                                                   dtype=np.uint32)])
-            bg_trig_ids[ifo] = np.concatenate([bg_trig_ids[ifo],
-                                 -1 * np.ones_like(f_in['background/stat'][:],
-                                                   dtype=np.uint32)])
+            if not injection_style:
+                bg_trig_times[ifo] = np.concatenate([bg_trig_times[ifo],
+                                     -1 * np.ones_like(f_in['background/stat'][:],
+                                                       dtype=np.uint32)])
+                bg_trig_ids[ifo] = np.concatenate([bg_trig_ids[ifo],
+                                     -1 * np.ones_like(f_in['background/stat'][:],
+                                                       dtype=np.uint32)])
 n_triggers = f['foreground/ifar'].size
 logging.info('{} foreground events before clustering'.format(n_triggers))
 
 for ifo in all_ifos:
     f['foreground/{}/time'.format(ifo)] = fg_trig_times[ifo]
     f['foreground/{}/trigger_id'.format(ifo)] = fg_trig_ids[ifo]
-    f['background/{}/time'.format(ifo)] = bg_trig_times[ifo]
-    f['background/{}/trigger_id'.format(ifo)] = bg_trig_ids[ifo]
+    if not injection_style:
+        f['background/{}/time'.format(ifo)] = bg_trig_times[ifo]
+        f['background/{}/trigger_id'.format(ifo)] = bg_trig_ids[ifo]
 # fg_times is a tuple of trigger time arrays
 fg_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
@@ -228,7 +233,6 @@ far = {}
 far_exc = {}
 fnlouder = {}
 fnlouder_exc = {}
-injection_style = args.background_files != None
 if injection_style:
     # if background files are provided, this is being used for injections
     # use provided background files to calculate the FARs
