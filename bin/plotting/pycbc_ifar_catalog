@@ -123,9 +123,7 @@ if opts.open_box:
         raise RuntimeError("Can't both remove and truncate foreground events!")
 
     if opts.remove_threshold is not None:
-        print len(fore_ifar)
         fore_ifar = fore_ifar[fore_ifar < opts.remove_threshold]
-        print len(fore_ifar)
 
     sortifar = fore_ifar.argsort()
     fore_ifar = fore_ifar[sortifar]
