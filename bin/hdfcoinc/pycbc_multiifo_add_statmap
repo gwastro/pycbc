@@ -60,7 +60,9 @@ parser.add_argument('--output-file', help="name of output file")
 
 args = parser.parse_args()
 
-if args.max_hierarchical_removal and args.background_files:
+injection_style = args.background_files != None
+
+if args.max_hierarchical_removal and injection_style:
     raise NotImplementedError("Hierarchical background removal doesn't make "
                               "sense for injections.")
 
@@ -113,7 +115,6 @@ logging.info('Copying foreground datasets')
 for k in files[0]['foreground']:
     if not k.startswith('fap') and k not in all_ifos:
         pycbc.io.combine_and_copy(f, files, 'foreground/' + k)
-injection_style = args.background_files != None
 if not injection_style:
     logging.info('Copying background datasets')
     for k in files[0]['background']:
