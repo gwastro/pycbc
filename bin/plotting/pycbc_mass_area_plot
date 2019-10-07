@@ -9,8 +9,8 @@ the m1 & m2 plane when given a central mchirp value and uncertainty.
 """
 
 import argparse
-from mchirp_area import calc_areas
-from mchirp_area import src_mass_from_z_det_mass
+from pycbc.mchirp_area import calc_areas
+from pycbc.mchirp_area import src_mass_from_z_det_mass
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 import numpy
 from matplotlib import use; use("Agg")
