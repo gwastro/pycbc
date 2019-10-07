@@ -323,7 +323,7 @@ for ifo in all_ifos:
     grps += ['%s/time' % ifo]
     grps += ['%s/trigger_id' % ifo]
 
-fg_grps = grps + ['fap']
+fg_grps = grps + ['fap', 'fap_exc', 'ifar_exc']
 
 combined_bg_data = pycbc.io.DictArray(data={g: f['background/%s' % g][:] for g in grps})
 combined_fg_data = pycbc.io.DictArray(data={g: f['foreground/%s' % g][:] for g in fg_grps})
@@ -491,8 +491,9 @@ while True:
         bnlouder, fnlouder = coinc.calculate_n_louder(sep_bg_data[key].data['stat'],
                                     sep_fg_data[key].data['stat'],
                                     sep_bg_data[key].data['decimation_factor'])
-        bg_time_ct[key] -= 2. * args.hierarchical_removal_window
-        fg_time_ct[key] -= 2. * args.hierarchical_removal_window
+        # In principle, bg time should be adjusted, but is expected to be a
+        # negligible corection
+        fg_time_ct[key] -= args.cluster_window
         sep_bg_data[key].data['ifar'] = conv.sec_to_year(bg_time_ct[key] / (bnlouder + 1))
         sep_fg_data[key].data['ifar'] = conv.sec_to_year(bg_time_ct[key] / (fnlouder + 1))
         sep_fg_data[key].data['fap'] = 1 - np.exp( - fg_time_ct[key] / sep_fg_data[key].data['ifar'])
@@ -518,7 +519,9 @@ while True:
     # Combine the FARs with the mask to obtain the new ifars
     combined_fg_data.data['ifar'] = conv.sec_to_year(
         1. / np.sum(isincombo_mask * fg_fars, axis=0))
+    fg_time -= args.cluster_window
     combined_fg_data.data['fap'] = 1 - np.exp( - fg_time / combined_fg_data.data['ifar'])
+
 
 for combo in all_ifo_combos:
     final_fg_data[combo] = final_fg_data[combo] + sep_fg_data[combo]
