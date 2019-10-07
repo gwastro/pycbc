@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+#
+# Integration of the area laying in the different cbc regions
+# By A. Curiel Barroso
+# August 2019
+
+"""This script computes the area corresponding to different CBC on the m1 & m2
+plane as a function of central mchirp value.
+"""
+
+import argparse
+from pycbc.mchirp_area import calc_areas
+import numpy
+from matplotlib import use; use("Agg")
+from matplotlib import pyplot
+
+# ARGUMENT PARSER
+parser = argparse.ArgumentParser()
+parser.add_argument("--min-m2", type=float, help="Minimum value for m2")
+parser.add_argument("--max-m1", type=float, help="Maximum value for m1")
+parser.add_argument("--ns-max", type=float, help="Maximum neutron star mass")
+parser.add_argument("--gap-max", type=float, help="Minimum black hole mass")
+parser.add_argument("--central-z", type=float, help="Central redshift value")
+parser.add_argument("--delta-z", type=float, help="Redshift uncertainty")
+args = parser.parse_args()
+
+if args.min_m2 and args.max_m1:
+    m1_max = float(args.max_m1)
+    m2_min = float(args.min_m2)
+
+if args.min_m2 and args.max_m1:
+    ns_max = float(args.ns_max)
+    gap_max = float(args.gap_max)
+
+if args.central_z and args.delta_z:
+    central_z = float(args.central_z)
+    delta_z = float(args.delta_z)
+else:
+    central_z = 0.0
+    delta_z = 0.0
+
+mass_limits = {"max_m1": m1_max, "min_m2": m2_min}
+mass_bdary = {"ns_max": ns_max, "gap_max": gap_max}
+z = {"central": central_z, "delta": delta_z}
+n = 1000
+
+x_mc = numpy.zeros(n, float)
+y_abbh = numpy.zeros(n, float)
+y_abhg = numpy.zeros(n, float)
+y_agg = numpy.zeros(n, float)
+y_ansbh = numpy.zeros(n, float)
+y_agns = numpy.zeros(n, float)
+y_abns = numpy.zeros(n, float)
+
+for i in range(0, n):
+    central_mc = 0.8 + i*(10.0 - 0.8)/(n - 1)
+    delta_mc = central_mc * 0.01
+    trig_mc = {"central": central_mc, "delta": delta_mc}
+    x_mc[i] = central_mc
+    areas = calc_areas(trig_mc, mass_limits, mass_bdary, z)
+    y_abbh[i] = areas["bbh"]
+    y_abhg[i] = areas["bhg"]
+    y_agg[i] = areas["gg"]
+    y_ansbh[i] = areas["nsbh"]
+    y_agns[i] = areas["gns"]
+    y_abns[i] = areas["bns"]
+
+pyplot.plot(x_mc, y_abbh, label="Binary Black Hole")
+pyplot.plot(x_mc, y_abhg, label="Black Hole + Mass Gap Object")
+pyplot.plot(x_mc, y_agg, label="Binary Mass Gap Object")
+pyplot.plot(x_mc, y_ansbh, label="Neutron Star + Black Hole")
+pyplot.plot(x_mc, y_agns, label="Neutron Star + Mass Gap Object")
+pyplot.plot(x_mc, y_abns, label="Binary Neutron Star")
+
+pyplot.legend()
+pyplot.xlabel("Central MChirp (Solar Masses)")
+pyplot.ylabel("Area (Solar Masses Squared)")
+pyplot.yscale("log")
+pyplot.title("Area vs MChirp (1% uncertainty)")
+
+pyplot.savefig("mchirp_plot.png")
