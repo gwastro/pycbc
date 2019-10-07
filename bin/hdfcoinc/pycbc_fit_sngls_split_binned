@@ -156,7 +156,7 @@ else:
 bb_input = (params[args.bin_param].min(), pbin_upper_lim, args.num_bins)
 
 logging.info('splitting {} into bins'.format(args.bin_param))
-if args.bin_param_spacing == 'log':
+if args.bin_spacing == 'log':
     assert params[args.bin_param].min() > 0
     pbins = bin_utils.LogarithmicBins(*bb_input)
 else:
