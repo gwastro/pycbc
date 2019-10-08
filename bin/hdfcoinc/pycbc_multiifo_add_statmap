@@ -535,7 +535,7 @@ while True:
     combined_fg_data.data['ifar'] = conv.sec_to_year(
         1. / np.sum(isincombo_mask * fg_fars, axis=0))
     fg_time -= args.cluster_window
-    combined_fg_data.data['fap'] = 1 - 
+    combined_fg_data.data['fap'] = 1 - \
         np.exp(-conv.sec_to_year(fg_time) / combined_fg_data.data['ifar'])
 
 for combo in all_ifo_combos:
