@@ -19,11 +19,11 @@ import argparse
 import h5py
 import numpy
 import sys
-import lal
 import matplotlib as mpl; mpl.use('Agg')
 import pylab
 import pycbc.results
 import pycbc.version
+from pycbc import conversions
 from scipy.stats import norm, poisson
 
 pylab.rc('text', usetex=True)
@@ -31,13 +31,13 @@ pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 parser = argparse.ArgumentParser(usage='pycbc_ifar_catalog [--options]',
                     description='Plots cumulative IFAR vs count for'
-                          ' coincident foreground triggers.')
+                          ' coincident foreground triggers')
 parser.add_argument('--version', action='version',
                     version=pycbc.version.git_verbose_msg)
-parser.add_argument('--trigger-file', type=str, required=True,
-                    help='Path to coincident trigger HDF file.')
-parser.add_argument('--output-file', type=str, required=True,
-                    help='Path to output plot.')
+parser.add_argument('--trigger-files', nargs='+',
+                    help='Path to coincident trigger HDF file(s)')
+parser.add_argument('--output-file', required=True,
+                    help='Path to output plot')
 parser.add_argument('--truncate-threshold', type=float,
                     help='Truncate plot above IFAR threshold (units: years)')
 parser.add_argument('--remove-threshold', type=float,
@@ -57,17 +57,15 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
                          'background after doing 1 hierarchical removal, and '
                          'includes updated FARs from after 1 hierarchical '
                          'removal. [default=None]')
-parser.add_argument('--open-box', action='store_true', default=False,
-                    help='Show the foreground triggers on the output plot. ')
 opts = parser.parse_args()
 
-fp = h5py.File(opts.trigger_file, 'r')
+trigf = [h5py.File(f, 'r') for f in opts.trigger_files]
 
 # Parse which inclusive background to use for the plotting
 h_inc_back_num = opts.use_hierarchical_level
 
 try:
-    h_iterations = fp.attrs['hierarchical_removal_iterations']
+    h_iterations = [f.attrs['hierarchical_removal_iterations'] for f in trigf]
 except KeyError:
     h_iterations = 0
 
@@ -101,38 +99,45 @@ if h_inc_back_num > h_iterations:
     sys.exit(0)
 
 # get foreground IFAR values and cumulative number for each IFAR value
-if opts.open_box:
-
-    if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
-        fore_ifar = fp['foreground_h%s/ifar' % h_inc_back_num][:]
+if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
+    fore_ifar = numpy.array([])
+    supp_fore_ifar = numpy.array([])
+    for f in trigf:
+        ifar = f['foreground_h%s/ifar' % h_inc_back_num][:]
         # Get ifar of hierarchically removed foreground triggers
-        supp_fore_ifar = fp['foreground/ifar'][:]
+        supp_ifar = f['foreground/ifar'][:]
+        # increment arrays to be plotted
+        fore_ifar = numpy.append(fore_ifar, ifar)
+        supp_fore_ifar = numpy.append(supp_fore_ifar, supp_ifar)
 
-        # Use to plot hierarchically removed foreground triggers
-        # on the plot and correct the cumulative number at IFAR level
-        hrm_sorted = sorted(supp_fore_ifar)
-        idx_start = len(supp_fore_ifar) - h_inc_back_num
+    # Use to plot hierarchically removed foreground triggers
+    # on the plot and correct the cumulative number at IFAR level
+    hrm_sorted = sorted(supp_fore_ifar)
+    idx_start = len(supp_fore_ifar) - h_inc_back_num
 
-        h_rm_ifar = hrm_sorted[idx_start:]
-        h_rm_cumnum = numpy.arange(len(h_rm_ifar), 0, -1)
+    h_rm_ifar = hrm_sorted[idx_start:]
+    h_rm_cumnum = numpy.arange(len(h_rm_ifar), 0, -1)
 
-    else:
-        fore_ifar = fp['foreground/ifar'][:]
+else:
+    fore_ifar = fp['foreground/ifar'][:]
 
-    if opts.remove_threshold is not None and opts.truncate_threshold is not None:
-        raise RuntimeError("Can't both remove and truncate foreground events!")
+if opts.remove_threshold is not None and opts.truncate_threshold is not None:
+    raise RuntimeError("Can't both remove and truncate foreground events!")
 
-    if opts.remove_threshold is not None:
-        fore_ifar = fore_ifar[fore_ifar < opts.remove_threshold]
+if opts.remove_threshold is not None:
+    fore_ifar = fore_ifar[fore_ifar < opts.remove_threshold]
 
-    sortifar = fore_ifar.argsort()
-    fore_ifar = fore_ifar[sortifar]
-    fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
+sortifar = fore_ifar.argsort()
+fore_ifar = fore_ifar[sortifar]
+fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
 
 # get expected (noise-only) foreground IFAR values and cumulative number for each IFAR value
 expected_ifar = numpy.logspace(-4., numpy.log10(opts.truncate_threshold) or 5,
                                num=1000, base=10.0)
-expected_cumnum = fp.attrs['foreground_time'] / expected_ifar / lal.YRJUL_SI 
+fg_time = 0
+for f in trigf:
+    fg_time += f.attrs['foreground_time']
+expected_cumnum = conversions.sec_to_year(fg_time) / expected_ifar
 
 # make figure
 fig = pylab.figure(1)
