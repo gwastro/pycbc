@@ -162,7 +162,7 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
 
     # make a node for plotting the posterior as a corner plot
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                      out_dir=output_dir, universe="local",
+                      out_dir=output_dir,
                       tags=tags).create_node()
 
     # add command line options
@@ -276,7 +276,7 @@ def make_inference_posterior_plot(
 
     # make a node for plotting the posterior as a corner plot
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                      out_dir=output_dir, universe="local",
+                      out_dir=output_dir,
                       tags=tags).create_node()
 
     # add command line options
@@ -317,7 +317,7 @@ def make_inference_samples_plot(
 
     # make a node for plotting the posterior as a corner plot
     node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
-                      out_dir=output_dir, universe="local",
+                      out_dir=output_dir,
                       tags=tags).create_node()
 
     # add command line options
