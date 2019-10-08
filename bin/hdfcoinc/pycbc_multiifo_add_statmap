@@ -277,8 +277,8 @@ fg_fars = np.array([list(far[ct]) for ct in all_ifo_combos])
 fg_fars_exc = np.array([list(far_exc[ct]) for ct in all_ifo_combos])
 
 # Combine the FARs with the mask to obtain the new ifars
-fg_ifar = conv.sec_to_year(1. /np.sum(isincombo_mask*fg_fars, axis=0))
-fg_ifar_exc = conv.sec_to_year(1. /np.sum(isincombo_mask*fg_fars_exc, axis=0))
+fg_ifar = conv.sec_to_year(1. / np.sum(isincombo_mask * fg_fars, axis=0))
+fg_ifar_exc = conv.sec_to_year(1. / np.sum(isincombo_mask * fg_fars_exc, axis=0))
 fg_time = f.attrs['foreground_time']
 del isincombo_mask, fg_fars, fg_fars_exc, _
 
@@ -481,13 +481,14 @@ while True:
                                       args.hierarchical_removal_window)[0]
             all_hred_idx += list(hred_ids)
         logging.info('Removing {} background triggers from {}'.format(
-                     len(all_hred_idx), combo))
+                        len(all_hred_idx), combo))
         sep_bg_data[combo] = sep_bg_data[combo].remove(all_hred_idx)
 
     hred_ids = []
     for ifo in all_ifos:
-        within_window = abs(combined_bg_data.data['%s/time' % ifo][:] -
-                            maxtime) < args.hierarchical_removal_window
+        within_window = \
+            abs(combined_bg_data.data['%s/time' % ifo][:] - maxtime) \
+              < args.hierarchical_removal_window
         hred_ids += list(np.nonzero(within_window)[0])
     logging.info('Removing {} background triggers from combined'
                  ' background'.format(len(hred_ids)))
@@ -505,13 +506,12 @@ while True:
         # In principle, bg time should be adjusted, but is expected to be a
         # negligible corection
         fg_time_ct[key] -= args.cluster_window
-        sep_bg_data[key].data['ifar'] = conv.sec_to_year(bg_time_ct[key] /
-                                                         (bnlouder + 1))
-        sep_fg_data[key].data['ifar'] = conv.sec_to_year(bg_time_ct[key] /
-                                                         (fnlouder + 1))
-        sep_fg_data[key].data['fap'] = 1 - np.exp( - \
-                                           conv.sec_to_year(fg_time_ct[key]) /\
-                                           sep_fg_data[key].data['ifar'])
+        sep_bg_data[key].data['ifar'] = conv.sec_to_year(
+                                                bg_time_ct[key] / (bnlouder + 1))
+        sep_fg_data[key].data['ifar'] = conv.sec_to_year(
+                                                bg_time_ct[key] / (fnlouder + 1))
+        sep_fg_data[key].data['fap'] = 1 - \
+            np.exp(-conv.sec_to_year(fg_time_ct[key]) / sep_fg_data[key].data['ifar'])
 
     logging.info("Recalculating combined IFARs")
     for key in all_ifo_combos:
@@ -535,8 +535,8 @@ while True:
     combined_fg_data.data['ifar'] = conv.sec_to_year(
         1. / np.sum(isincombo_mask * fg_fars, axis=0))
     fg_time -= args.cluster_window
-    combined_fg_data.data['fap'] = 1 - np.exp( - conv.sec_to_year(fg_time) /
-                                              combined_fg_data.data['ifar'])
+    combined_fg_data.data['fap'] = 1 - 
+        np.exp(-conv.sec_to_year(fg_time) / combined_fg_data.data['ifar'])
 
 for combo in all_ifo_combos:
     final_fg_data[combo] = final_fg_data[combo] + sep_fg_data[combo]
