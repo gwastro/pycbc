@@ -276,9 +276,8 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.get_newsnr = ranking.get_newsnr
         self.hist = None
 
-    def get_hist(self, ifos=None, norm='max'):
+    def get_hist(self, ifos=None):
         """Read in a signal density file for the ifo combination"""
-
 
         ifos = ifos or self.ifos
 
@@ -420,7 +419,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # Calculate differences
                 pdif = (pref - p) % (numpy.pi * 2.0)
                 tdif = shift[rtype] * to_shift[ref_ifo] + \
-                                      tref - shift[rtype] * to_shift[ifo] - t
+                           tref - shift[rtype] * to_shift[ifo] - t
                 sdif = s / sref * sense / senseref * sigref / sig
 
                 # Put into bins
@@ -431,8 +430,8 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
             # convert binned to same dtype as stored in hist
             nbinned = numpy.zeros(len(pbin), dtype=self.pdtype)
-            for i in range(len(binned)):
-                nbinned['c%s' % i] = binned[i]
+            for i, b in enumerate(binned):
+                nbinned['c%s' % i] = b
 
             # Read signal weight from precalculated histogram
             l = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
@@ -997,6 +996,7 @@ class ExpFitSGBgRateStatistic(ExpFitStatistic):
         loglr = - ln_noise_rate + self.benchmark_lograte
         return loglr
 
+
 class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
 
     def __init__(self, files, ifos=None):
@@ -1084,7 +1084,8 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         return loglr
 
 
-class ExpFitSGFgBgRateNewStatistic(PhaseTDNewStatistic, ExpFitSGBgRateStatistic):
+class ExpFitSGFgBgRateNewStatistic(PhaseTDNewStatistic,
+                                   ExpFitSGBgRateStatistic):
 
     def __init__(self, files, ifos=None):
         # read in background fit info and store it
@@ -1183,7 +1184,7 @@ class TwoOGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
         # model signal rate as uniform over chirp mass, background rate is
         # proportional to mchirp^(-11/3) due to density of templates
         logr_s = ExpFitSGFgBgRateNewStatistic.logsignalrate_multiifo(
-                                                   self, stats, shift, to_shift)
+                                                  self, stats, shift, to_shift)
         logr_s += numpy.log((self.mchirp / 20.0) ** (11./3.0))
         return logr_s
 
@@ -1227,7 +1228,6 @@ sngl_statistic_dict = {
     'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
     'newsnr_sgveto_psdvar_scaled_threshold':
         NewSNRSGPSDScaledThresholdStatistic,
-    'newsnr_sgveto_psdvar_com': NewSNRSGPSDComStatistic,
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
 
