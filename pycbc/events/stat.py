@@ -204,25 +204,6 @@ class NewSNRSGPSDScaledThresholdStatistic(NewSNRSGStatistic):
         return ranking.get_newsnr_sgveto_psdvar_scaled_threshold(trigs)
 
 
-class NewSNRSGPSDComStatistic(NewSNRSGStatistic):
-    """Calculate the NewSNRSGPSD coincident detection statistic"""
-
-    def single(self, trigs):
-        """Calculate the single detector statistic, here equal to newsnr
-        combined with sgveto and psdvar statistic
-
-        Parameters
-        ----------
-        trigs: dict of numpy.ndarrays
-
-        Returns
-        -------
-        numpy.ndarray
-            The array of single detector values
-        """
-        return ranking.get_newsnr_sgveto_psdvar_com(trigs)
-
-
 class NetworkSNRStatistic(NewSNRStatistic):
     """Same as the NewSNR statistic, but just sum of squares of SNRs"""
 
@@ -302,6 +283,8 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         ifos = ifos or self.ifos
 
         for name in self.files:
+            # Pick out the statistic files that provide phase / time/ amp
+            # relationships and match to the ifos in use
             if 'phasetd_newsnr' in name:
                 ifokey = name.split('_')[2]
                 num = len(ifokey) / 2
@@ -314,7 +297,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 else:
                     break
         else:
-            raise RuntimeError("Couldn't figure out which statistic file to use")
+            raise RuntimeError("Couldn't figure out which stat file to use")
         logging.info("Using signal histogram %s for ifos %s", name, ifos)
         histfile = self.files[name]
 
@@ -331,7 +314,8 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             param = histfile[ifo]['param_bin'][:]
             ncol = param.shape[1]
             self.pdtype = [('c%s' % i, int) for i in range(ncol)]
-            self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]), dtype=self.pdtype)
+            self.param_bin[ifo] = numpy.zeros(len(self.weights[ifo]),
+                                              dtype=self.pdtype)
             for i in range(ncol):
                 self.param_bin[ifo]['c%s' % i] = param[:, i]
 
@@ -400,10 +384,14 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         else:
             logging.info("Using pre-set signal histogram")
 
-        # Figure out which weights each trigger will use
-        snrs = numpy.array([numpy.array(stats[ifo]['snr'], ndmin=1) for ifo in self.ifos])
+        # figure out which ifo has the smallest SNR of the contributing ifos
+        # Store a list 'rtypes' by ifo of which triggers that reference ifo
+        # should handle. This corresponds to which histogram will be used
+        snrs = numpy.array([numpy.array(stats[ifo]['snr'], ndmin=1)
+                           for ifo in self.ifos])
         smin = numpy.argmin(snrs, axis=0)
-        rtypes = {ifo: numpy.where(smin == j)[0] for j, ifo in enumerate(self.ifos)}
+        rtypes = {ifo: numpy.where(smin == j)[0]
+                       for j, ifo in enumerate(self.ifos)}
 
         # Get reference ifo information
         rate = numpy.zeros(len(shift), dtype=numpy.float32)
@@ -431,7 +419,8 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
                 # Calculate differences
                 pdif = (pref - p) % (numpy.pi * 2.0)
-                tdif = shift[rtype] * to_shift[ref_ifo] + tref - shift[rtype] * to_shift[ifo] - t
+                tdif = shift[rtype] * to_shift[ref_ifo] + \
+                                      tref - shift[rtype] * to_shift[ifo] - t
                 sdif = s / sref * sense / senseref * sigref / sig
 
                 # Put into bins
@@ -898,6 +887,7 @@ class PhaseTDNewExpFitStatistic(PhaseTDNewStatistic, ExpFitCombinedSNR):
         # scale to resemble network SNR
         return cstat / (2.**0.5)
 
+
 class PhaseTDExpFitSGStatistic(PhaseTDExpFitStatistic):
     """Statistic combining exponential noise model with signal histogram PDF
 
@@ -1093,6 +1083,7 @@ class ExpFitSGFgBgRateStatistic(PhaseTDStatistic, ExpFitSGBgRateStatistic):
         loglr[loglr < -30.] = -30.
         return loglr
 
+
 class ExpFitSGFgBgRateNewStatistic(PhaseTDNewStatistic, ExpFitSGBgRateStatistic):
 
     def __init__(self, files, ifos=None):
@@ -1170,25 +1161,32 @@ class ExpFitSGFgBgRateNewStatistic(PhaseTDNewStatistic, ExpFitSGBgRateStatistic)
         loglr[loglr < -30.] = -30.
         return loglr
 
-class TwoGCStatistic(ExpFitSGFgBgRateNewStatistic):
+
+class TwoOGCStatistic(ExpFitSGFgBgRateNewStatistic):
     def __init__(self, files, ifos=None):
         ExpFitSGFgBgRateNewStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled
 
-class TwoGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
+
+class TwoOGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
     def __init__(self, files, ifos=None):
         ExpFitSGFgBgRateNewStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
 
     def single(self, trigs):
         from pycbc.conversions import mchirp_from_mass1_mass2
-        self.mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'], trigs.param['mass2'])
+        self.mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
+                                              trigs.param['mass2'])
         return ExpFitSGFgBgRateNewStatistic.single(self, trigs)
 
     def logsignalrate_multiifo(self, stats, shift, to_shift):
-        logr_s = ExpFitSGFgBgRateNewStatistic.logsignalrate_multiifo(self, stats, shift, to_shift)
+        # model signal rate as uniform over chirp mass, background rate is
+        # proportional to mchirp^(-11/3) due to density of templates
+        logr_s = ExpFitSGFgBgRateNewStatistic.logsignalrate_multiifo(
+                                                   self, stats, shift, to_shift)
         logr_s += numpy.log((self.mchirp / 20.0) ** (11./3.0))
         return logr_s
+
 
 statistic_dict = {
     'newsnr': NewSNRStatistic,
@@ -1207,12 +1205,13 @@ statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'phasetd_exp_fit_stat_sgveto_psdvar': PhaseTDExpFitSGPSDStatistic,
-    'phasetd_exp_fit_stat_sgveto_psdvar_scaled': PhaseTDExpFitSGPSDScaledStatistic,
+    'phasetd_exp_fit_stat_sgveto_psdvar_scaled':
+        PhaseTDExpFitSGPSDScaledStatistic,
     'exp_fit_sg_bg_rate': ExpFitSGBgRateStatistic,
     'exp_fit_sg_fgbg_rate': ExpFitSGFgBgRateStatistic,
     'exp_fit_sg_fgbg_rate_new': ExpFitSGFgBgRateNewStatistic,
-    '2gc': TwoGCStatistic,
-    '2gcbbh': TwoGCBBHStatistic,
+    '2ogc': TwoOGCStatistic,
+    '2ogcbbh': TwoOGCBBHStatistic,
 }
 
 sngl_statistic_dict = {
@@ -1226,7 +1225,8 @@ sngl_statistic_dict = {
     'newsnr_sgveto': NewSNRSGStatistic,
     'newsnr_sgveto_psdvar': NewSNRSGPSDStatistic,
     'newsnr_sgveto_psdvar_scaled': NewSNRSGPSDScaledStatistic,
-    'newsnr_sgveto_psdvar_scaled_threshold': NewSNRSGPSDScaledThresholdStatistic,
+    'newsnr_sgveto_psdvar_scaled_threshold':
+        NewSNRSGPSDScaledThresholdStatistic,
     'newsnr_sgveto_psdvar_com': NewSNRSGPSDComStatistic,
     'exp_fit_sg_csnr_psdvar': ExpFitSGPSDCombinedSNR
 }
