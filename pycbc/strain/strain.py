@@ -202,6 +202,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
     """
     gating_info = {}
 
+    injector = InjectionSet.from_cli(opt)
+
     if opt.frame_cache or opt.frame_files or opt.frame_type or opt.hdf_store:
         if opt.frame_cache:
             frame_source = opt.frame_cache
@@ -247,9 +249,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             l = opt.normalize_strain
             strain = strain / l
 
-        if opt.injection_file:
+        if injector is not None:
             logging.info("Applying injections")
-            injector = InjectionSet(opt.injection_file)
             injections = \
                 injector.apply(strain, opt.channel_name[0:2],
                                distance_scale=opt.injection_scale_factor,
@@ -385,9 +386,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                              'ifo:channel (e.g. H1:CALIB-STRAIN) to inject '
                              'simulated signals into fake strain')
 
-        if opt.injection_file:
+        if injector is not None:
             logging.info("Applying injections")
-            injector = InjectionSet(opt.injection_file)
             injections = \
                 injector.apply(strain, opt.channel_name[0:2],
                                distance_scale=opt.injection_scale_factor,
@@ -417,7 +417,7 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                              pd_taper_window) )
         gate_data(strain, gate_params)
 
-    if opt.injection_file:
+    if injector is not None:
         strain.injections = injections
     strain.gating_info = gating_info
 
@@ -538,6 +538,15 @@ def insert_strain_option_group(parser, gps_times=True):
     data_reading_group.add_argument("--injection-scale-factor", type=float,
                     default=1, help="Divide injections by this factor "
                     "before injecting into the data.")
+
+    data_reading_group.add_argument('--injection-f-ref', type=float,
+                                    help='Reference frequency in Hz for '
+                                         'creating CBC injections from an XML '
+                                         'file.')
+
+    data_reading_group.add_argument('--injection-f-final', type=float,
+                                    help='Override the f_final field of a CBC '
+                                         'XML injection file.')
 
     data_reading_group.add_argument("--gating-file", type=str,
                     help="(optional) Text file of gating segments to apply."
