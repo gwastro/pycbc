@@ -30,11 +30,29 @@ from pycbc.psd import (insert_psd_option_group_multi_ifo,
                        from_cli_multi_ifos as psd_from_cli_multi_ifos,
                        verify_psd_options_multi_ifo)
 from pycbc import strain
-from pycbc.strain import from_cli_multi_ifos as strain_from_cli_multi_ifos
 from pycbc.strain import (gates_from_cli, psd_gates_from_cli,
                           apply_gates_to_td, apply_gates_to_fd,
                           verify_strain_options_multi_ifo)
 from pycbc import dq
+
+
+def strain_from_cli_multi_ifos(*args, **kwargs):
+    """Wrapper around strain.from_cli_multi_ifos that tries a few times before
+    quiting.
+
+    When running in a parallel environment, multiple concurrent queries to the
+    segment data base can cause time out errors. If that happens, this will
+    sleep for a few seconds, then try again a few times before giving up.
+    """
+    count = 0
+    while count < 3:
+        try:
+            return strain.from_cli_multi_ifos(*args, **kwargs)
+        except RuntimeError as e:
+            count += 1
+            sleep(10)
+    # if get to here, we've tries 3 times and still got an error, so exit
+    raise RuntimeError(e)
 
 
 #
