@@ -23,6 +23,7 @@ from __future__ import print_function
 
 import sys
 import os, subprocess, shutil
+import platform
 
 from distutils.errors import DistutilsError
 from distutils.command.clean import clean as _clean
@@ -122,8 +123,8 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.14.dev2'
-        vinfo.release = 'False'
+        vinfo.version = '1.14.2'
+        vinfo.release = 'True'
 
     with open('pycbc/version.py', 'w') as f:
         f.write("# coding: utf-8\n")
@@ -208,8 +209,10 @@ cythonext = ['waveform.spa_tmplt',
              'filter.matchedfilter',
              'vetoes.chisq']
 ext = []
-cython_compile_args = ['-O3', '-w', '-msse4.2', '-ffast-math',
+cython_compile_args = ['-O3', '-w', '-ffast-math',
                        '-ffinite-math-only']
+if platform.machine() == 'x86_64':
+    cython_compile_args.append('-msse4.2')
 cython_link_args = []
 # Mac's clang compiler doesn't have openMP support by default. Therefore
 # disable openmp builds on MacOSX. Optimization should never really be a

@@ -16,6 +16,7 @@
 This modules provides classes and functions for transforming parameters.
 """
 
+import os
 import copy
 import logging
 import numpy
@@ -975,22 +976,28 @@ class LambdaFromTOVFile(BaseTransform):
         Path of the mass-Lambda data file. The first column in the data file
         should contain mass values, and the second column Lambda values.
     distance : float, optional
+        The distance (in Mpc) of the source. Used to redshift the mass. If
+        None, then a distance must be provided to the transform.
+    file_columns : list of str, optional
+        The names and order of columns in the ``mass_lambda_file``. Must
+        contain at least 'mass' and 'lambda'. If not provided, will assume the
+        order is ('mass', 'lambda').
     """
     name = 'lambda_from_tov_file'
 
     def __init__(self, mass_param, lambda_param, mass_lambda_file,
-                 distance=None):
+                 distance=None, file_columns=None):
         self._mass_lambda_file = mass_lambda_file
         self._mass_param = mass_param
         self._lambda_param = lambda_param
         self._distance = distance
         self._inputs = [mass_param, 'distance']
         self._outputs = [lambda_param]
-        logging.info("Loading mass-Lambda data from %s for computing %s",
-                     self._mass_lambda_file, self._lambda_param)
-        data = numpy.loadtxt(self._mass_lambda_file)
-        self._mass_data = data[:, 0]
-        self._lambda_data = data[:, 1]
+        if file_columns is None:
+            file_columns = ['mass', 'lambda']
+        dtype = [(fname, float) for fname in file_columns]
+        data = numpy.loadtxt(self._mass_lambda_file, dtype=dtype)
+        self._data = data
         super(LambdaFromTOVFile, self).__init__()
 
     @property
@@ -1004,18 +1011,22 @@ class LambdaFromTOVFile(BaseTransform):
         return self._lambda_param
 
     @property
+    def data(self):
+        return self._data
+
+    @property
     def mass_data(self):
         """Returns the mass data read from the mass-Lambda data file for
         an EOS.
         """
-        return self._mass_data
+        return self._data['mass']
 
     @property
     def lambda_data(self):
         """Returns the Lambda data read from the mass-Lambda data file for
         an EOS.
         """
-        return self._lambda_data
+        return self._data['lambda']
 
     @property
     def distance(self):
@@ -1077,8 +1088,113 @@ class LambdaFromTOVFile(BaseTransform):
                                 "when initializing `LambdaFromTOVFile`.")
                 raise e
         out = {self._lambda_param : self.lambda_from_tov_data(
-            m, d, self._mass_data, self._lambda_data)}
+            m, d, self._data['mass'], self._data['lambda'])}
         return self.format_output(maps, out)
+
+
+class LambdaFromMultipleTOVFiles(BaseTransform):
+    """Uses multiple equation of states.
+
+    Parameters
+    ----------
+    mass_param : str
+        The name of the mass parameter to transform.
+    lambda_param : str
+        The name of the tidal deformability parameter that mass_param is to
+        be converted to interpolating from the data in the mass-Lambda file.
+    mass_lambda_file : str
+        Path of the mass-Lambda data file. The first column in the data file
+        should contain mass values, and the second column Lambda values.
+    distance : float, optional
+        The distance (in Mpc) of the source. Used to redshift the mass. If
+        None, then a distance must be provided to the transform.
+    file_columns : list of str, optional
+        The names and order of columns in the ``mass_lambda_file``. Must
+        contain at least 'mass' and 'lambda'. If not provided, will assume the
+        order is ('radius', 'mass', 'lambda').
+    """
+
+    name = 'lambda_from_multiple_tov_files'
+    
+    def __init__(self, mass_param, lambda_param, map_file, distance=None,
+                 file_columns=None):
+        self._map_file = map_file
+        self._mass_param = mass_param
+        self._lambda_param = lambda_param
+        self._distance = distance
+        self._inputs = [mass_param, 'eos', 'distance']
+        self._outputs = [lambda_param]
+        # create a dictionary of the EOS files from the map_file
+        self._eos_files = {} 
+        with open(self._map_file, 'r') as fp:
+            for line in fp:
+                fname = line.rstrip('\n') 
+                eosidx = int(os.path.basename(fname).split('.')[0])
+                self._eos_files[eosidx] = os.path.abspath(fname)
+        # create an eos cache for fast load later
+        self._eos_cache = {}
+        if file_columns is None:
+            file_columns = ('radius', 'mass', 'lambda')
+        self._file_columns = file_columns
+        super(LambdaFromMultipleTOVFiles, self).__init__()
+    
+    
+    @property
+    def mass_param(self):
+        """Returns the input mass parameter."""
+        return self._mass_param
+
+    @property
+    def lambda_param(self):
+        """Returns the output lambda parameter."""
+        return self._lambda_param
+
+    @property
+    def map_file(self):
+        """Returns the mass data read from the mass-Lambda data file for
+        an EOS.
+        """
+        return self._map_file
+
+    @property
+    def distance(self):
+        """Returns the fixed distance to transform mass samples from detector
+        to source frame if one is specified.
+        """
+        return self._distance
+
+    def get_eos(self, eos_index):
+        """Gets the EOS for the given index.
+
+        If the index is not in range returns None.
+        """
+        try:
+            eos = self._eos_cache[eos_index]
+        except KeyError:
+            try:
+                fname = self._eos_files[eos_index]
+                eos = LambdaFromTOVFile(mass_param=self._mass_param,
+                                        lambda_param=self._lambda_param,
+                                        mass_lambda_file=fname,
+                                        distance=self._distance,
+                                        file_columns=self._file_columns)
+                self._eos_cache[eos_index] = eos
+            except KeyError:
+                eos = None
+        return eos
+
+    def transform(self,maps):
+        """Transforms mass value and eos index into a lambda value """
+        m = maps[self._mass_param]
+        # floor
+        eos_index = int(maps['eos'])
+        eos = self.get_eos(eos_index)
+        if eos is not None:
+            return eos.transform(maps)
+        else:
+            # no eos, just return nan
+            out = {self._lambda_param : numpy.nan}
+            return self.format_output(maps, out)
 
 
 class Logit(BaseTransform):
@@ -1646,7 +1762,8 @@ transforms = {
     CartesianSpinToChiP.name : CartesianSpinToChiP,
     Logit.name : Logit,
     Logistic.name : Logistic,
-    LambdaFromTOVFile.name : LambdaFromTOVFile
+    LambdaFromTOVFile.name : LambdaFromTOVFile,
+    LambdaFromMultipleTOVFiles.name : LambdaFromMultipleTOVFiles
 }
 
 # standard CBC transforms: these are transforms that do not require input

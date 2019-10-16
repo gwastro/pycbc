@@ -170,10 +170,7 @@ class _XMLInjectionSet(object):
                           if inj.simulation_id in simulation_ids]
         injection_parameters = []
         for inj in injections:
-            if f_lower is None:
-                f_l = inj.f_lower
-            else:
-                f_l = f_lower
+            f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
             # Add 2s to end_time to account for ringdown and light-travel delay
             end_time = inj.get_time_geocent() + 2
@@ -186,7 +183,7 @@ class _XMLInjectionSet(object):
             if end_time < t0 or start_time > t1:
                 continue
             signal = self.make_strain_from_inj_object(inj, strain.delta_t,
-                     detector_name, f_lower=f_l, distance_scale=distance_scale)
+                    detector_name, f_lower=f_l, distance_scale=distance_scale)
             if float(signal.start_time) > t1:
                 continue
 
@@ -233,10 +230,7 @@ class _XMLInjectionSet(object):
             h(t) corresponding to the injection.
         """
         detector = Detector(detector_name)
-        if f_lower is None:
-            f_l = inj.f_lower
-        else:
-            f_l = f_lower
+        f_l = inj.f_lower if f_lower is None else f_lower
 
         name, phase_order = legacy_approximant_name(inj.waveform)
 
@@ -855,6 +849,21 @@ class InjectionSet(object):
                 injcls = hdfinjtypes[injtype]
             injcls.write(filename, samples, write_params, static_args,
                          **metadata)
+
+    @staticmethod
+    def from_cli(opt):
+        """Return an instance of InjectionSet configured as specified
+        on the command line.
+        """
+        if opt.injection_file is None:
+            return None
+
+        kwa = {}
+        if opt.injection_f_ref is not None:
+            kwa['f_ref'] = opt.injection_f_ref
+        if opt.injection_f_final is not None:
+            kwa['f_final'] = opt.injection_f_final
+        return InjectionSet(opt.injection_file, **kwa)
 
 
 class SGBurstInjectionSet(object):

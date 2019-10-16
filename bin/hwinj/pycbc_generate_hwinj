@@ -367,10 +367,10 @@ sngl.spin2x = opts.spin2x
 
 # generate waveform
 logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
-             'SNR calculation', sim.distance, opts.low_frequency_cutoff)
+             'SNR calculation', sim.distance, opts.waveform_low_frequency_cutoff)
 h_plus, h_cross = get_td_waveform(sim, approximant=name,
                                   phase_order=phase_order,
-                                  f_lower=opts.low_frequency_cutoff,
+                                  f_lower=opts.waveform_low_frequency_cutoff,
                                   delta_t=1.0 / sample_rate)
 
 # zero pad polarizations to get integer second time series
@@ -479,10 +479,10 @@ for ifo in opts.instruments:
 
 # generate waveform
 logging.info('Generating waveform at %.3fMpc beginning at %.3fHz for '
-             'SNR calculation', sim.distance, opts.low_frequency_cutoff)
+             'SNR calculation', sim.distance, opts.waveform_low_frequency_cutoff)
 h_plus, h_cross = get_td_waveform(sim, approximant=name,
                                   phase_order=phase_order,
-                                  f_lower=opts.low_frequency_cutoff,
+                                  f_lower=opts.waveform_low_frequency_cutoff,
                                   delta_t=1.0 / sample_rate)
 
 # zero pad polarizations to get integer second time series

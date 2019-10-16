@@ -6,7 +6,8 @@ coincidences from *any* coincidence type with ifar above a certain threshold
 
 import h5py, numpy as np, argparse, logging, pycbc, pycbc.io
 import pycbc.version
-from pycbc.events import veto
+from pycbc.events import veto, coinc
+import pycbc.conversions as conv
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version",
@@ -42,14 +43,13 @@ for k in keys:
     if 'background_exc' not in k:
         f_out[k] = f_in[k][:]
 
-logging.info("Collating all foreground times")
+logging.info("Collating foreground times from other coinc types")
 all_fg_times = []
-for f in f_others + [f_in]:
+for f in f_others:
     ifar_above_thresh = np.nonzero(f['foreground/ifar'][:] > \
                                        args.censor_ifar_threshold)[0]
     mean_times = np.mean([f['foreground/%s/time' % ifo][:]
                           for ifo in f.attrs['ifos'].split(' ')], axis=0)
-
     all_fg_times += list(mean_times[ifar_above_thresh])
 
 all_fg_times = np.array(all_fg_times)
@@ -63,12 +63,10 @@ data = {g: f_in['background_exc/%s' % g] for g in groups}
 all_trigs = pycbc.io.DictArray(data=data)
 
 n_triggers = f_in['background_exc/%s/time' % all_ifos[0]].size
-
 logging.info('%d background_exc triggers' % n_triggers)
 
 logging.info('Finding background_exc triggers within {}s of any '
              'foreground triggers'.format(args.veto_window))
-
 remove_start_time = all_fg_times - args.veto_window
 remove_end_time = all_fg_times + args.veto_window
 all_vetoed_idx = []
@@ -77,7 +75,6 @@ for ifo in all_ifos:
                        f_in['background_exc/%s/time' % ifo][:],
                        remove_start_time, remove_end_time)
     all_vetoed_idx += list(fg_veto_ids)
-
 all_vetoed_idx = np.unique(all_vetoed_idx)
 
 logging.info('Removing {} background_exc triggers close to foreground'
@@ -86,7 +83,24 @@ filtered_trigs = all_trigs.remove(all_vetoed_idx)
 n_triggers_new = len(filtered_trigs.data['stat'])
 logging.info('%d triggers remaining' % n_triggers_new)
 
-logging.info('Writing updated background_exc to output file')
+logging.info('Writing updated background_exc to file')
 for k in filtered_trigs.data:
     f_out['background_exc/%s' % k] = filtered_trigs.data[k]
+
+logging.info('Recalculating IFARs')
+bnlouder, fnlouder = coinc.calculate_n_louder(filtered_trigs.data['stat'],
+                                    f_in['foreground/stat'][:],
+                                    filtered_trigs.data['decimation_factor'])
+# In principle exc background time should be recalculated
+# However we expect exclude zerolag to be a (very) small correction
+fg_time_exc = conv.sec_to_year(f_in.attrs['foreground_time_exc'])
+bg_time_exc = conv.sec_to_year(f_in.attrs['background_time_exc'])
+fg_ifar_exc = bg_time_exc / (fnlouder + 1)
+bg_ifar_exc = bg_time_exc / (bnlouder + 1)
+
+logging.info('Writing updated ifars to file')
+f_out['foreground/ifar_exc'][:] = fg_ifar_exc
+f_out['foreground/fap_exc'][:] = 1 - np.exp(-fg_time_exc / fg_ifar_exc)
+f_out['background_exc/ifar'][:] = bg_ifar_exc
+
 logging.info("Done!")

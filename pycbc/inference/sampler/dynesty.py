@@ -193,8 +193,10 @@ class DynestySampler(BaseSampler):
         """
 
         dynesty_samples = self._sampler.results['samples']
-        weights = numpy.exp(self._sampler.results['logwt'] - 
-                            self._sampler.results['logz'][-1])
+        wt = numpy.exp(self._sampler.results['logwt'] - 
+                       self._sampler.results['logz'][-1])
+        # Make sure that sum of weights equal to 1
+        weights = wt/numpy.sum(wt)
         posterior_dynesty = resample_equal(dynesty_samples, weights)
         return posterior_dynesty
 

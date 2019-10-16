@@ -344,8 +344,6 @@ class PhaseTDStatistic(NewSNRStatistic):
         # does not require ifos to be specified, only 1 p/t/a file
         if self.hist is None:
             self.get_hist()
-        else:
-            logging.info("Using pre-set signal histogram")
 
         # for 2-ifo pipeline, add time shift to 2nd ifo ('s1')
         slidevec = [0, 1]

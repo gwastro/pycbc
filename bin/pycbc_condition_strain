@@ -101,7 +101,7 @@ if args.output_strain_file.endswith('.gwf'):
         # Last frame duration can be shorter than duration if stop doesn't allow
         for s in range(start, stop, step):
             ts = out_strain.time_slice(s, s+step if s+step < stop else stop)
-            pycbc.frame.write_frame(filename.format(s, step if s+step < stop else stop),
+            pycbc.frame.write_frame(filename.format(s, step if s+step < stop else stop - s),
                                     output_channel_name, ts)
     else:
         pycbc.frame.write_frame(args.output_strain_file, output_channel_name,
