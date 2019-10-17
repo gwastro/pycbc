@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Tito Dal Canton
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+"""
+Read strain data, apply the standard preparation done in offline CBC searches
+(highpass, downsampling, gating, injections etc) and write the result back to a
+file. Optionally also write the gating data to a text file. This program can
+also be used to generate frames of simulated strain data, with or without
+injections.
+"""
+
+import logging
+import argparse
+import pycbc.strain
+import pycbc.version
+import pycbc.frame
+from pycbc.types import float32, float64
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--version", action="version",
+                    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--output-strain-file', required=True,
+                    help='Name of output frame file. The file format is '
+                         'selected based on the extension (.gwf, .npy, .hdf '
+                         'and .txt accepted)')
+parser.add_argument('--output-channel-name',
+                    help='Name of channel in output frame file (default: same '
+                         'as input channel)')
+parser.add_argument('--output-gates-file',
+                    help='Save gating info to specified file, in the same '
+                         'format as accepted by the --gating-file option')
+parser.add_argument('--output-precision', type=str,
+                    choices=['single', 'double'], default='double',
+                    help='Precision of output strain, %(default)s by default')
+parser.add_argument('--dyn-range-factor', action='store_true',
+                    help='Scale the output strain by a large factor (%f) '
+                         'to avoid underflows in subsequent '
+                         'calculations' % pycbc.DYN_RANGE_FAC)
+parser.add_argument('--low-frequency-cutoff', type=float,
+                    help='Provide a low-frequency-cutoff for fake strain. '
+                         'This is only needed if fake-strain or '
+                         'fake-strain-from-file is used')
+parser.add_argument('--frame-duration', type=int,
+                    help='Split all data into smaller frame files of the given duration if specified.')
+
+pycbc.strain.insert_strain_option_group(parser)
+args = parser.parse_args()
+
+if args.frame_duration is not None and args.frame_duration <= 0:
+    parser.error('Frame duration should be positive integer, {} given'.format(args.frame_duration))
+
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+
+# read and condition strain as pycbc_inspiral would do
+out_strain = pycbc.strain.from_cli(args, dyn_range_fac=pycbc.DYN_RANGE_FAC)
+
+# if requested, save the gates while we have them
+if args.output_gates_file:
+    logging.info('Writing output gates')
+    with file(args.output_gates_file, 'wb') as gate_f:
+        for k, v in out_strain.gating_info.items():
+            for t, w, p in v:
+                gate_f.write('%.4f %.2f %.2f\n' % (t, w, p))
+
+# force strain precision to be as requested
+out_strain = out_strain.astype(
+        float32 if args.output_precision == 'single' else float64)
+
+# unless asked otherwise, revert the dynamic range factor
+if not args.dyn_range_factor:
+    out_strain /= pycbc.DYN_RANGE_FAC
+
+logging.info('Writing output strain')
+output_channel_name = args.output_channel_name or args.channel_name
+if args.output_strain_file.endswith('.gwf'):
+
+    if args.frame_duration:
+        start = args.gps_start_time
+        stop = args.gps_end_time
+        step = args.frame_duration
+        # Filename with split the given name as prefix and add `start_time-duration`
+        filename = args.output_strain_file.rsplit('.', 2)[0]
+        filename += '_{0}-{1}.'+args.output_strain_file.rsplit('.', 2)[1]
+
+        # Last frame duration can be shorter than duration if stop doesn't allow
+        for s in range(start, stop, step):
+            ts = out_strain.time_slice(s, s+step if s+step < stop else stop)
+            pycbc.frame.write_frame(filename.format(s, step if s+step < stop else stop - s),
+                                    output_channel_name, ts)
+    else:
+        pycbc.frame.write_frame(args.output_strain_file, output_channel_name,
+                                out_strain)
+
+else:
+    out_strain.save(args.output_strain_file, group=output_channel_name)
+
+logging.info('Done')
