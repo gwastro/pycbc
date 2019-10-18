@@ -332,13 +332,13 @@ def shift_sum(corr, points, bins):
             cargs = (corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins)
 
             if np >= 4:
-                outp, phase, np = shift_sum_points(4, cargs)
+                outp, phase, np = shift_sum_points(4, cargs) # pylint:disable=no-value-for-parameter
             elif np >= 3:
-                outp, phase, np = shift_sum_points(3, cargs)
+                outp, phase, np = shift_sum_points(3, cargs) # pylint:disable=no-value-for-parameter
             elif np >= 2:
-                outp, phase, np = shift_sum_points(2, cargs)
+                outp, phase, np = shift_sum_points(2, cargs) # pylint:disable=no-value-for-parameter
             elif np == 1:
-                outp, phase, np = shift_sum_points(1, cargs)
+                outp, phase, np = shift_sum_points(1, cargs) # pylint:disable=no-value-for-parameter
 
     o = outc.get()
     return (o.conj() * o).sum(axis=1).real
