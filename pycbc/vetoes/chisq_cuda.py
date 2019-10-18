@@ -232,7 +232,8 @@ _pchisq_cache_pow2 = {}
 def get_pchisq_fn_pow2(np, fuse_correlate=False):
     if np not in _pchisq_cache_pow2:
         nt = 256
-        mod = SourceModule(chisqkernel_pow2.render(NT=nt, NP=np, fuse=fuse_correlate))
+        mod = SourceModule(chisqkernel_pow2.render(NT=nt, NP=np,
+                                                   fuse=fuse_correlate))
         fn = mod.get_function("power_chisq_at_points_%s_pow2" % (np))
         if fuse_correlate:
             fn.prepare("PPPI" + "I" * np + "PPPI")
@@ -290,7 +291,8 @@ def shift_sum_points_pow2(num, arg_tuple):
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
     else:
         args += [corr.data.gpudata]
-    args +=[outp.gpudata, N] + points[0:num] + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
+    args += [outp.gpudata, N] + points[0:num] + [kmin.gpudata,
+                                kmax.gpudata, bv.gpudata, nbins]
     fn.prepared_call(*args)
     outp = outp[num*nbins:]
     points = points[num:]
