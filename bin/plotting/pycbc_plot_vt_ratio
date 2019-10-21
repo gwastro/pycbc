@@ -119,7 +119,7 @@ plt.plot(xlimits, [1, 1], 'k', lw=3, zorder=0)
 plt.xlim(xlimits) # reassert the x limits so that the plot doesn't expand
 
 ax_mi.legend(bbox_to_anchor=(0.5, 1.01), ncol=len(args.ifars),
-                             loc='lower center')
+             loc='lower center')
 ax_mi.get_legend().get_title().set_fontsize('14')
 ax_mi.get_legend().get_frame().set_alpha(0.7)
 ax_mi.set_xlabel(x_param)
