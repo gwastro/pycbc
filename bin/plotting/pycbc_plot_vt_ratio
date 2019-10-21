@@ -106,7 +106,7 @@ for idv in idxs:
 
 if args.log_x and args.log_y:
     plt.loglog()
-elif args.log_x and args.log_y:
+elif args.log_x and not args.log_y:
     plt.semilogx()
 elif args.log_y and not args.log_x:
     plt.semilogy()
