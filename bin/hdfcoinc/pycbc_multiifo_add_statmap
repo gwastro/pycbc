@@ -331,7 +331,7 @@ combined_bg_data = pycbc.io.DictArray(data={g: f['background/%s' % g][:]
 combined_fg_data = pycbc.io.DictArray(data={g: f['foreground/%s' % g][:]
                                             for g in fg_grps})
 
-#Get coincidence type for all coincidences
+# Get coinc type for all coincidences
 fg_coinc_type = np.array([])
 bg_coinc_type = np.array([])
 for f_in in files:
