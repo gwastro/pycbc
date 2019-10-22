@@ -89,19 +89,13 @@ else:
 time = sngl_file.end_time
 utc = lal.GPSToUTC(int(time))[0:6]
 
-try:
-    psd_var = sngl_file.psd_var_val
-except:
-    psd_var = None
-
-try:
-    sg_chisq = sngl_file.sgchisq
-except:
-    sg_chisq = None
-
-# This might involve a lot of lines, but it's clear what goes in the output
-# and in what order.
+# Headers here will contain the list of headers that will appear in the
+# resulting single-detector summary table.
 headers = []
+# Data will store the list of values that will appear in the resulting
+# single-detector summary table. There will only ever be one row in this table
+# that corresponding to the selected trigger. So this will be a list of a
+# single list that will hold the values to go into the table.
 data = [[]]
 
 # DQ summary link
@@ -128,12 +122,16 @@ data[0].append('%5.2f' % sngl_file.rchisq)
 data[0].append('%i' % sngl_file.get_column('chisq_dof'))
 headers.append("&chi;<sup>2</sup><sub>r</sub>")
 headers.append("&chi;<sup>2</sup>&nbsp;bins")
-if sg_chisq is not None:
-    data[0].append('%5.2f' % sg_chisq)
+try:
+    data[0].append('%5.2f' % sngl_file.sgchisq)
     headers.append("sg&chi;<sup>2</sup>")
-if psd_var is not None:
-    data[0].append('%5.2f' % psd_var)
+except:
+    pass
+try:
+    data[0].append('%5.2f' % sngl_file.psd_var_val)
     headers.append("PSD var")
+except:
+    pass
 
 # Template parameters
 data[0].append('%5.2f' % sngl_file.mass1)

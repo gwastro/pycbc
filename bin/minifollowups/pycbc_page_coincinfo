@@ -148,6 +148,9 @@ for fname in args.single_trigger_files:
 
 bank = h5py.File(args.bank_file, 'r')
 statmapfile = d
+# Data will store the values that will appear in the resulting single-detector
+# table. Each entry in data corresponds to each row in the final table and
+# should be a list of values. So data is will be a list of lists.
 data = []
 for ifo in files.keys():
 
@@ -165,18 +168,8 @@ for ifo in files.keys():
 
     time = d['end_time'][:][i]
     utc = lal.GPSToUTC(int(time))[0:6]
-    try:
-        psd_var = d['psd_var_val'][i]
-    except:
-        psd_var = None
 
-    try:
-        sg_chisq = d['sg_chisq'][i]
-    except:
-        sg_chisq = None
-
-    # This might involve a lot of lines, but it's clear what goes in the output
-    # and in what order.
+    # Headers will store the headers that will appear in the table.
     headers = []
     data.append([])
 
@@ -204,12 +197,16 @@ for ifo in files.keys():
     data[-1].append('%i' % d['chisq_dof'][i])
     headers.append("&chi;<sup>2</sup><sub>r</sub>")
     headers.append("&chi;<sup>2</sup>&nbsp;bins")
-    if sg_chisq is not None:
-        data[-1].append('%5.2f' % sg_chisq)
+    try:
+        data[-1].append('%5.2f' % d['sg_chisq'][i])
         headers.append("sg&chi;<sup>2</sup>")
-    if psd_var is not None:
-        data[-1].append('%5.2f' % psd_var)
+    except:
+        pass
+    try:
+        data[-1].append('%5.2f' % d['psd_var_val'][i])
         headers.append("PSD var")
+    except:
+        pass
 
     # Template parameters
     data[-1].append('%5.2f' % bank['mass1'][tid])
