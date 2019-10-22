@@ -300,7 +300,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         logging.info("Using signal histogram %s for ifos %s", name, ifos)
         histfile = self.files[name]
 
-
         # This order matters, we need to retrieve the order used to
         # generate the histogram as the first ifos if the reference
         self.hist_ifos = histfile.attrs['ifos']
@@ -318,9 +317,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             for i in range(ncol):
                 self.param_bin[ifo]['c%s' % i] = param[:, i]
 
-            l = self.param_bin[ifo].argsort()
-            self.param_bin[ifo] = self.param_bin[ifo][l]
-            self.weights[ifo] = self.weights[ifo][l]
+            lsort = self.param_bin[ifo].argsort()
+            self.param_bin[ifo] = self.param_bin[ifo][lsort]
+            self.weights[ifo] = self.weights[ifo][lsort]
 
             self.max_penalty = self.weights[ifo].min()
 
@@ -390,7 +389,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                            for ifo in self.ifos])
         smin = numpy.argmin(snrs, axis=0)
         rtypes = {ifo: numpy.where(smin == j)[0]
-                       for j, ifo in enumerate(self.ifos)}
+                  for j, ifo in enumerate(self.ifos)}
 
         # Get reference ifo information
         rate = numpy.zeros(len(shift), dtype=numpy.float32)
@@ -434,13 +433,13 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 nbinned['c%s' % i] = b
 
             # Read signal weight from precalculated histogram
-            l = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
-            l[l == len(self.weights[ref_ifo])] = 0
-            rate[rtype] = self.weights[ref_ifo][l]
+            loc = numpy.searchsorted(self.param_bin[ref_ifo], nbinned)
+            loc[loc == len(self.weights[ref_ifo])] = 0
+            rate[rtype] = self.weights[ref_ifo][loc]
 
             # These weren't in our histogram so give them max penalty instead
             # of random value
-            missed = numpy.where(self.param_bin[ref_ifo][l] != nbinned)[0]
+            missed = numpy.where(self.param_bin[ref_ifo][loc] != nbinned)[0]
             rate[rtype][missed] = self.max_penalty
 
             # Scale by signal population SNR
