@@ -274,7 +274,14 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
         # Assign attribute so that it can be replaced with other functions
         self.get_newsnr = ranking.get_newsnr
-        self.hist = None
+        self.hist = self.hist_ifos = None
+        self.ref_snr = 5.0
+        self.relsense = {}
+        self.swidth = self.pwidth = self.twidth = None
+        self.max_penalty = None
+        self.pdtype = []
+        self.weights = {}
+        self.param_bin = {}
 
     def get_hist(self, ifos=None):
         """Read in a signal density file for the ifo combination"""
@@ -304,8 +311,6 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         # generate the histogram as the first ifos if the reference
         self.hist_ifos = histfile.attrs['ifos']
 
-        self.weights = {}
-        self.param_bin = {}
         for ifo in self.hist_ifos:
             self.weights[ifo] = histfile[ifo]['weights'][:]
 
@@ -330,17 +335,9 @@ class PhaseTDNewStatistic(NewSNRStatistic):
         self.pwidth = histfile.attrs['pwidth']
         self.swidth = histfile.attrs['swidth']
 
-        # Need these to push points back to space as we don't store outside
-        # certain ranges
-        self.srbinmax = histfile.attrs['srbmax']
-        self.srbinmin = histfile.attrs['srbmin']
-
         relfac = histfile.attrs['sensitivity_ratios']
-        self.relsense = {}
         for ifo, sense in zip(self.hist_ifos, relfac):
             self.relsense[ifo] = sense
-
-        self.ref_snr = 5.0
 
     def single(self, trigs):
         """Calculate the single detector statistic & assemble other parameters
@@ -418,7 +415,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # Calculate differences
                 pdif = (pref - p) % (numpy.pi * 2.0)
                 tdif = shift[rtype] * to_shift[ref_ifo] + \
-                           tref - shift[rtype] * to_shift[ifo] - t
+                       tref - shift[rtype] * to_shift[ifo] - t
                 sdif = s / sref * sense / senseref * sigref / sig
 
                 # Put into bins
@@ -1172,6 +1169,7 @@ class TwoOGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
     def __init__(self, files, ifos=None):
         ExpFitSGFgBgRateNewStatistic.__init__(self, files, ifos=ifos)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
+        self.mchirp = None
 
     def single(self, trigs):
         from pycbc.conversions import mchirp_from_mass1_mass2
