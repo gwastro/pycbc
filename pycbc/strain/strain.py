@@ -352,7 +352,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             raise ValueError('Please provide low frequency cutoff to '
                              'generate a fake strain')
         duration = opt.gps_end_time - opt.gps_start_time
-        tlen = duration * opt.sample_rate
         pdf = 1.0/128
         plen = int(opt.sample_rate / pdf) / 2 + 1
 
@@ -367,8 +366,8 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
 
         if opt.fake_strain == 'zeroNoise':
             logging.info("Making zero-noise time series")
-            strain = TimeSeries(pycbc.types.zeros(tlen),
-                                delta_t=1.0/opt.sample_rate,
+            strain = TimeSeries(pycbc.types.zeros(duration * 16384),
+                                delta_t=1.0/16384,
                                 epoch=opt.gps_start_time)
         else:
             logging.info("Making colored noise")
@@ -378,7 +377,6 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
                                           opt.gps_end_time,
                                           seed=opt.fake_strain_seed,
                                           low_frequency_cutoff=lowfreq)
-            strain = resample_to_delta_t(strain, 1.0/opt.sample_rate)
 
         if not opt.channel_name and (opt.injection_file \
                                      or opt.sgburst_injection_file):
@@ -398,6 +396,11 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector =  SGBurstInjectionSet(opt.sgburst_injection_file)
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
+
+        logging.info("Resampling data")
+        strain = resample_to_delta_t(strain,
+                                     1.0 / opt.sample_rate,
+                                     method='ldas')
 
         if precision == 'single':
             logging.info("Converting to float32")
