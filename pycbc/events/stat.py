@@ -288,6 +288,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
 
         ifos = ifos or self.ifos
 
+        selected = None
         for name in self.files:
             # Pick out the statistic files that provide phase / time/ amp
             # relationships and match to the ifos in use
@@ -301,10 +302,13 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 if False in match:
                     continue
                 else:
+                    selected = name
                     break
-        else:
+
+        if selected is None:
             raise RuntimeError("Couldn't figure out which stat file to use")
-        logging.info("Using signal histogram %s for ifos %s", name, ifos)
+
+        logging.info("Using signal histogram %s for ifos %s", selected, ifos)
         histfile = self.files[name]
 
         # This order matters, we need to retrieve the order used to
