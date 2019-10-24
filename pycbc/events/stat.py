@@ -309,7 +309,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
             raise RuntimeError("Couldn't figure out which stat file to use")
 
         logging.info("Using signal histogram %s for ifos %s", selected, ifos)
-        histfile = self.files[name]
+        histfile = self.files[selected]
 
         # This order matters, we need to retrieve the order used to
         # generate the histogram as the first ifos if the reference
@@ -419,7 +419,7 @@ class PhaseTDNewStatistic(NewSNRStatistic):
                 # Calculate differences
                 pdif = (pref - p) % (numpy.pi * 2.0)
                 tdif = shift[rtype] * to_shift[ref_ifo] + \
-                       tref - shift[rtype] * to_shift[ifo] - t
+                    tref - shift[rtype] * to_shift[ifo] - t
                 sdif = s / sref * sense / senseref * sigref / sig
 
                 # Put into bins
