@@ -435,13 +435,23 @@ _v2zs = {_c: ComovingVolInterpolator('redshift', cosmology=_c)
          for _c in astropy.cosmology.parameters.available}
 
 
-def redshift_from_comoving_volume(vc, **kwargs):
+def redshift_from_comoving_volume(vc, interp=True, **kwargs):
     r"""Returns the redshift from the given comoving volume.
 
     Parameters
     ----------
     vc : float
         The comoving volume, in units of cubed Mpc.
+    interp : bool, optional
+        If true, this will setup an interpolator between redshift and comoving
+        volume the first time this function is called. This is useful when
+        making many successive calls to this function (and is necessary when
+        using this function in a transform when doing parameter estimation).
+        However, setting up the interpolator the first time takes O(10)s of
+        seconds. If you will only be making a single call to this function, or
+        will only run it on an array with < ~100000 elements, it is faster to
+        not use the interpolator (i.e., set ``interp=False``). Default is
+        ``True``.
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
         select a cosmology. If none provided, will use
@@ -453,21 +463,32 @@ def redshift_from_comoving_volume(vc, **kwargs):
         The redshift at the given comoving volume.
     """
     cosmology = get_cosmology(**kwargs)
+    lookup = _v2zs if interp else {}
     try:
-        z = _v2zs[cosmology.name](vc)
+        z = lookup[cosmology.name](vc)
     except KeyError:
-        # not a standard cosmology, call the redshift function
+        # not using interp or not a standard cosmology,
+        # call the redshift function directly
         z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
     return z
 
 
-def distance_from_comoving_volume(vc, **kwargs):
+def distance_from_comoving_volume(vc, interp=True, **kwargs):
     r"""Returns the luminosity distance from the given comoving volume.
 
     Parameters
     ----------
     vc : float
         The comoving volume, in units of cubed Mpc.
+    interp : bool, optional
+        If true, this will setup an interpolator between distance and comoving
+        volume the first time this function is called. This is useful when
+        making many successive calls to this function (such as when using this
+        function in a transform for parameter estimation).  However, setting up
+        the interpolator the first time takes O(10)s of seconds. If you will
+        only be making a single call to this function, or will only run it on
+        an array with < ~100000 elements, it is faster to not use the
+        interpolator (i.e., set ``interp=False``). Default is ``True``.
     \**kwargs :
         All other keyword args are passed to :py:func:`get_cosmology` to
         select a cosmology. If none provided, will use
@@ -479,10 +500,12 @@ def distance_from_comoving_volume(vc, **kwargs):
         The luminosity distance at the given comoving volume.
     """
     cosmology = get_cosmology(**kwargs)
+    lookup = _v2ds if interp else {}
     try:
-        dist = _v2ds[cosmology.name](vc)
+        dist = lookup[cosmology.name](vc)
     except KeyError:
-        # not a standard cosmology, call the redshift function
+        # not using interp or not a standard cosmology,
+        # call the redshift function directly
         z = z_at_value(cosmology.comoving_volume, vc, units.Mpc**3)
         dist = cosmology.luminosity_distance(z).value
     return dist
