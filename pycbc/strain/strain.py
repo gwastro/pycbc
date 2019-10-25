@@ -718,12 +718,12 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                          "before injecting into the data.")
 
     # Gating options
-    data_reading_group_multi.add_argument("--gating-file", type=str,
-                      nargs="+", action=MultiDetOptionAction,
+    data_reading_group_multi.add_argument("--gating-file", nargs="+",
+                      action=MultiDetOptionAction,
                       metavar='IFO:FILE',
-                      help="(optional) Text file of gating segments to apply."
-                          " Format of each line is (all times in secs):"
-                          "  gps_time zeros_half_width pad_half_width"
+                      help='(optional) Text file of gating segments to apply."
+                           ' Format of each line (units s) :'
+                           ' gps_time zeros_half_width pad_half_width')
     data_reading_group_multi.add_argument('--autogating-threshold', type=float,
                                     nargs="+", action=MultiDetOptionAction,
                                     metavar='IFO:SIGMA',
