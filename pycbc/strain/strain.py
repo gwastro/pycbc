@@ -721,7 +721,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
     data_reading_group_multi.add_argument("--gating-file", nargs="+",
                       action=MultiDetOptionAction,
                       metavar='IFO:FILE',
-                      help='(optional) Text file of gating segments to apply."
+                      help='(optional) Text file of gating segments to apply.'
                            ' Format of each line (units s) :'
                            ' gps_time zeros_half_width pad_half_width')
     data_reading_group_multi.add_argument('--autogating-threshold', type=float,
@@ -766,17 +766,17 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
-                         "A list of zeros for transfer function")
+                          "A list of zeros for transfer function")
     data_reading_group_multi.add_argument("--zpk-p", type=float,
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
-                         "A list of poles for transfer function")
+                          "A list of poles for transfer function")
     data_reading_group_multi.add_argument("--zpk-k", type=float,
                      nargs="+", action=MultiDetOptionAppendAction,
                      metavar='IFO:VALUE',
                      help="(optional) Zero-pole-gain (zpk) filter strain. "
-                         "Transfer function gain")
+                          "Transfer function gain")
 
     return data_reading_group_multi
 
