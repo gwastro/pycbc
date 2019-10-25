@@ -780,6 +780,7 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
 
     return data_reading_group_multi
 
+
 ensure_one_opt_groups = []
 ensure_one_opt_groups.append(['--frame-cache','--fake-strain',
                               '--fake-strain-from-file',
@@ -790,7 +791,7 @@ required_opts_list = ['--gps-start-time', '--gps-end-time',
                       '--strain-high-pass', '--pad-data', '--sample-rate',
                       '--channel-name']
 
-                                          
+
 def verify_strain_options(opts, parser):
     """Sanity check provided strain arguments.
 
@@ -811,7 +812,7 @@ def verify_strain_options(opts, parser):
         ensure_one_opt(opts, parser, opt_group)
     required_opts(opts, parser, required_opts_list)
 
-                                          
+
 def verify_strain_options_multi_ifo(opts, parser, ifos):
     """Sanity check provided strain arguments.
 
@@ -886,7 +887,7 @@ def gate_data(data, gate_params):
 
     return data
 
-                                          
+
 class StrainSegments(object):
     """ Class for managing manipulation of strain data for the purpose of
         matched filtering. This includes methods for segmenting and
@@ -1188,7 +1189,7 @@ class StrainSegments(object):
         for ifo in ifos:
             required_opts_multi_ifo(opt, parser, ifo, cls.required_opts_list)
 
-                                          
+
 class StrainBuffer(pycbc.frame.DataBuffer):
     def __init__(self, frame_src, channel_name, start_time,
                  max_buffer=512,
