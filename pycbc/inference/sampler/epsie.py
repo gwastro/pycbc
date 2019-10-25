@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import itertools
+import numpy
 
 import epsie
 from epsie.samplers import ParallelTemperedSampler
@@ -164,8 +165,6 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
 
         The arrays have shape ``ntemps x nchains x niterations``.
         """
-        print('hasblobs:', self._sampler.chains[0].hasblobs)
-        print('hasblobs2:', self._sampler.chains[0].chains[0].hasblobs)
         return epsie.array2dict(self._sampler.blobs)
 
     def clear_samples(self):
@@ -199,12 +198,12 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         """Sets the state of the sampler back to the instance saved in a file.
         """
         with self.io(filename, 'r') as fp:
-            sampler_state = fp.read_state()
+            # get the numpy state
             numpy_rstate_group = '/'.join([fp.sampler_group,
                                            'numpy_random_state'])
             rstate = fp.read_random_state(group=numpy_rstate_group)
-        # set the sampler state for epsie
-        self._sampler.set_state(sampler_state)
+            # set the sampler state for epsie
+            self._sampler.set_state_from_checkpoint(fp, path=fp.state_path)
         # set the global numpy random state for pycbc
         numpy.random.set_state(rstate)
 
@@ -249,12 +248,17 @@ class EpsieSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             if self.ntemps > 1:
                 fp.write_temperature_data(self._sampler.temperature_swaps,
                                           last_iteration=self.niterations)
-            # write the sampler's state
-            fp.write_state(self._sampler.state)
             # write numpy's global state (for the distributions)
             numpy_rstate_group = '/'.join([fp.sampler_group,
                                            'numpy_random_state'])
             fp.write_random_state(group=numpy_rstate_group)
+            # write the sampler's state
+            # make sure to remove the last checkpoint
+            try:
+                del fp[fp.state_path]
+            except KeyError:
+                pass
+            #self._sampler.checkpoint(fp, path=fp.state_path)
 
     def finalize(self):
         pass

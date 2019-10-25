@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+from epsie.samplers import load_state
+
 from .base_sampler import BaseSamplerFile
 from .base_multitemper import (MultiTemperedMCMCIO, MultiTemperedMetadataIO)
 
@@ -32,7 +34,11 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         """The betas that were used."""
         return self[self.sampler_group]['betas'][()]
 
-    
+    @property
+    def state_path(self):
+        """The path to write the sampler state to."""
+        return '/'.join([self.sampler_group, 'checkpoint'])
+
     def write_sampler_metadata(self, sampler):
         """Adds writing betas to MultiTemperedMCMCIO.
         """
@@ -69,85 +75,16 @@ class EpsieFile(MultiTemperedMCMCIO, MultiTemperedMetadataIO,
         self.write_samples(temperature_data, last_iteration=last_iteration,
                            group=group)
 
-    def write_state(self, state):
-        """Writes the given state to file.
-
-        Parameters
-        ----------
-        state : dict
-            Dictionary (of possibly other dicts) giving all of the information
-            needed to restart the epsie sampler.
-        """
-        group = '/'.join([self.sampler_group, 'state'])
-        write_recursive_dict(self, group, state)
-
-    def read_state(self):
-        """Reads the sampler state from the given file.
-
-        Returns
-        -------
-        dict :
-            The state as a dictionary. This can be passed to the sampler to
-            set its state.
-        """
-        group = '/'.join([self.sampler_group, 'state'])
-        return read_recursive_dict(self, group)
-
-
-def write_recursive_dict(fp, group, write_dict):
-    """Writes a dictionary to the given group.
-
-    If an element in the given dict is itself a dict, the element will be
-    written as a sub-group. This continues until all sub dictionaries have
-    been written.
-
-    Parameters
-    ----------
-    fp : h5py.File instance
-        An hdf file to write the dictionary to.
-    group : str
-        Name of the top-level group to write to.
-    write_dict : dict
-        The (possibly nested) dictionary to write.
-    """
-    for key, val in write_dict.items():
-        writeto = '/'.join([str(group), str(key)])
-        if isinstance(val, dict):
-            # call myself with the new sub group
-            write_recursive_dict(fp, writeto, val)
-        else:
-            fp[writeto] = val
-
-
-def read_recursive_dict(fp, group):
-    """Creates a dictionary of all datasets in a given group.
-
-    If the group contains sub-groups, the information in that group is returned
-    as a sub-dictionary.
-
-    Parameters
-    ----------
-    fp : h5py.File instance
-        An hdf file to read the dictionary from.
-    group : str
-        Name of the top-level group to read from.
-
-    Returns
-    -------
-    dict :
-        Dictionary representing all elements in the group.
-    """
-    out = {}
-    for key in fp[group].keys():
-        readfrom = '/'.join([group, key])
-        # if key is an int, cast it like that
-        try:
-            key = int(key)
-        except ValueError:
-            pass
-        if isinstance(fp[readfrom], h5py.Group):
-            # call myself to get the sub info
-            out[key] = read_recursive_dict(fp, readfrom)
-        else:
-            out[key] = fp[readfrom][()]
-    return out
+    def validate(self):
+        """Adds looking for checkpoint group to validation test."""
+        valid = super(EpsieFile, self).validate()
+        return valid
+        if valid:
+            valid = self.state_path in self
+        # try to load the checkpoint
+        if valid:
+            try:
+                load_state(self, self.state_path)
+            except:
+                valid = False
+        return valid
