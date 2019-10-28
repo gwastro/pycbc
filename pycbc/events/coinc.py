@@ -25,7 +25,7 @@
 coincident triggers.
 """
 
-import h5py, numpy, logging, pycbc.pnutils, copy, lal
+import numpy, logging, pycbc.pnutils, copy, lal
 from pycbc.detector import Detector
 
 
