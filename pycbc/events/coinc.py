@@ -762,17 +762,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.num_templates = num_templates
         self.analysis_block = analysis_block
 
-        # Only pass a valid stat file for this ifo pair
-        for fname in stat_files:
-            f = h5py.File(fname, 'r')
-            ifos_set = set([f.attrs['ifo0'], f.attrs['ifo1']])
-            f.close()
-            if ifos_set == set(ifos):
-                stat_files = [fname]
-                logging.info('Setup ifos %s-%s with file %s and stat %s',
-                             ifos[0], ifos[1], fname, background_statistic)
-
-        self.stat_calculator = stat.get_statistic(background_statistic)(stat_files)
+        stat_class = stat.get_statistic(background_statistic)
+        self.stat_calculator = stat_class(stat_files, ifos)
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
