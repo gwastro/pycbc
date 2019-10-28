@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Alex Nitz
+# Copyright (C) 2015  Alex Nitz, Josh Willis
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
 # Free Software Foundation; either version 3 of the License, or (at your
@@ -92,7 +92,97 @@ __global__ void power_chisq_at_points_${NP}(
         %endif
 
         %for p in range(NP):
-            __sincosf(phase${p} * i, &im, &re);
+            sincosf(phase${p} * i, &im, &re);
+            chisq[threadIdx.x + ${NT*p}].x += re * qt.x - im * qt.y;
+            chisq[threadIdx.x + ${NT*p}].y += im * qt.x + re * qt.y;
+        %endfor
+    }
+
+    float x, y, x2, y2;
+    // logarithmic reduction within thread block
+    for (int j=${NT} / 2; j>=1; j/=2){
+        if (threadIdx.x <j){
+            %for p in range(NP):
+                __syncthreads();
+                x = chisq[threadIdx.x + ${NT*p}].x;
+                y = chisq[threadIdx.x + ${NT*p}].y;
+                x2 = chisq[threadIdx.x + j + ${NT*p}].x;
+                y2 = chisq[threadIdx.x + j + ${NT*p}].y;
+                 __syncthreads();
+                chisq[threadIdx.x + ${NT*p}].x = x + x2;
+                chisq[threadIdx.x + ${NT*p}].y = y + y2;
+            %endfor
+        }
+    }
+
+    if (threadIdx.x == 0){
+        % for p in range(NP):
+            atomicAdd(&outc[bv[blockIdx.x] + nbins * ${p}].x, chisq[0 + ${NT*p}].x);
+            atomicAdd(&outc[bv[blockIdx.x] + nbins * ${p}].y, chisq[0 + ${NT*p}].y);
+        % endfor
+    }
+
+}
+""")
+
+chisqkernel_pow2 = Template("""
+#include <stdio.h>
+#include <stdint.h> // For uint64_t
+__global__ void power_chisq_at_points_${NP}_pow2(
+                                      %if fuse:
+                                          float2* htilde,
+                                          float2* stilde,
+                                      %else:
+                                          float2* corr,
+                                      %endif
+                                      float2* outc, unsigned int N,
+                                      %for p in range(NP):
+                                        unsigned int points${p},
+                                      %endfor
+                                      unsigned int* kmin,
+                                      unsigned int* kmax,
+                                      unsigned int* bv,
+                                      unsigned int nbins){
+    __shared__ unsigned int s;
+    __shared__ unsigned int e;
+    __shared__ float2 chisq[${NT} * ${NP}];
+    float twopi = 6.283185307179586f;
+    uint64_t NN;
+
+    NN = (uint64_t) N;
+
+    // load integration boundaries (might not be bin boundaries if bin is large)
+    if (threadIdx.x == 0){
+        s = kmin[blockIdx.x];
+        e = kmax[blockIdx.x];
+    }
+
+    % for p in range(NP):
+        chisq[threadIdx.x + ${NT*p}].x = 0;
+        chisq[threadIdx.x + ${NT*p}].y = 0;
+    % endfor
+    __syncthreads();
+
+    // calculate the chisq integral for each thread
+    // sliding reduction for each thread from s, e
+    for (int i = threadIdx.x + s; i < e; i += blockDim.x){
+        float re, im;
+
+        %if fuse:
+            float2 qt, st, ht;
+            st = stilde[i];
+            ht = htilde[i];
+            qt.x = ht.x * st.x + ht.y * st.y;
+            qt.y = ht.x * st.y - ht.y * st.x;
+        %else:
+            float2 qt = corr[i];
+        %endif
+
+        %for p in range(NP):
+            uint64_t prod${p} = points${p} * i;
+            unsigned int k${p} = (unsigned int) (prod${p}&(NN-1));
+            float phase${p} = twopi * k${p}/((float) N);
+            __sincosf(phase${p}, &im, &re);
             chisq[threadIdx.x + ${NT*p}].x += re * qt.x - im * qt.y;
             chisq[threadIdx.x + ${NT*p}].y += im * qt.x + re * qt.y;
         %endfor
@@ -138,6 +228,20 @@ def get_pchisq_fn(np, fuse_correlate=False):
         _pchisq_cache[np] = (fn, nt)
     return _pchisq_cache[np]
 
+_pchisq_cache_pow2 = {}
+def get_pchisq_fn_pow2(np, fuse_correlate=False):
+    if np not in _pchisq_cache_pow2:
+        nt = 256
+        mod = SourceModule(chisqkernel_pow2.render(NT=nt, NP=np,
+                                                   fuse=fuse_correlate))
+        fn = mod.get_function("power_chisq_at_points_%s_pow2" % (np))
+        if fuse_correlate:
+            fn.prepare("PPPI" + "I" * np + "PPPI")
+        else:
+            fn.prepare("PPI" + "I" * np + "PPPI")
+        _pchisq_cache_pow2[np] = (fn, nt)
+    return _pchisq_cache_pow2[np]
+
 def get_cached_bin_layout(bins):
     bv, kmin, kmax = [], [], []
     for i in range(len(bins)-1):
@@ -157,48 +261,86 @@ def get_cached_bin_layout(bins):
     kmax = pycuda.gpuarray.to_gpu_async(numpy.array(kmax, dtype=numpy.uint32))
     return kmin, kmax, bv
 
-def shift_sum_points(num, arg_tuple):
-    corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
+def shift_sum_points(num, N, arg_tuple):
     #fuse = 'fuse' in corr.gpu_callback_method
     fuse = False
 
     fn, nt = get_pchisq_fn(num, fuse_correlate = fuse)
+    corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
     args = [(nb, 1), (nt, 1, 1)]
-
     if fuse:
         args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
     else:
         args += [corr.data.gpudata]
-
     args +=[outp.gpudata, N] + phase[0:num] + [kmin.gpudata, kmax.gpudata, bv.gpudata, nbins]
     fn.prepared_call(*args)
-
     outp = outp[num*nbins:]
     phase = phase[num:]
     np -= num
     return outp, phase, np
 
+def shift_sum_points_pow2(num, arg_tuple):
+    #fuse = 'fuse' in corr.gpu_callback_method
+    fuse = False
+
+    fn, nt = get_pchisq_fn_pow2(num, fuse_correlate = fuse)
+
+    corr, outp, points, np, nb, N, kmin, kmax, bv, nbins = arg_tuple
+    args = [(nb, 1), (nt, 1, 1)]
+    if fuse:
+        args += [corr.htilde.data.gpudata, corr.stilde.data.gpudata]
+    else:
+        args += [corr.data.gpudata]
+    args += [outp.gpudata, N] + points[0:num] + [kmin.gpudata,
+                                kmax.gpudata, bv.gpudata, nbins]
+    fn.prepared_call(*args)
+    outp = outp[num*nbins:]
+    points = points[num:]
+    np -= num
+    return outp, points, np
+
+_pow2_cache = {}
+def get_cached_pow2(N):
+    if N not in _pow2_cache:
+        _pow2_cache[N] = not(N & (N-1))
+    return _pow2_cache[N]
+
 def shift_sum(corr, points, bins):
     kmin, kmax, bv = get_cached_bin_layout(bins)
     nb = len(kmin)
     N = numpy.uint32(len(corr))
+    is_pow2 = get_cached_pow2(N)
     nbins = numpy.uint32(len(bins) - 1)
     outc = pycuda.gpuarray.zeros((len(points), nbins), dtype=numpy.complex64)
     outp = outc.reshape(nbins * len(points))
-    phase = [numpy.float32(p * 2.0 * numpy.pi / N) for p in points]
     np = len(points)
 
-    while np > 0:
-        cargs = (corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins)
+    if is_pow2:
+        lpoints = points.tolist()
+        while np > 0:
+            cargs = (corr, outp, lpoints, np, nb, N, kmin, kmax, bv, nbins)
 
-        if np >= 4:
-            outp, phase, np = shift_sum_points(4, cargs)
-        elif np >= 3:
-            outp, phase, np = shift_sum_points(3, cargs)
-        elif np >= 2:
-            outp, phase, np = shift_sum_points(2, cargs)
-        elif np == 1:
-            outp, phase, np = shift_sum_points(1, cargs)
+            if np >= 4:
+                outp, lpoints, np = shift_sum_points_pow2(4, cargs)
+            elif np >= 3:
+                outp, lpoints, np = shift_sum_points_pow2(3, cargs)
+            elif np >= 2:
+                outp, lpoints, np = shift_sum_points_pow2(2, cargs)
+            elif np == 1:
+                outp, lpoints, np = shift_sum_points_pow2(1, cargs)
+    else:
+        phase = [numpy.float32(p * 2.0 * numpy.pi / N) for p in points]
+        while np > 0:
+            cargs = (corr, outp, phase, np, nb, N, kmin, kmax, bv, nbins)
+
+            if np >= 4:
+                outp, phase, np = shift_sum_points(4, cargs) # pylint:disable=no-value-for-parameter
+            elif np >= 3:
+                outp, phase, np = shift_sum_points(3, cargs) # pylint:disable=no-value-for-parameter
+            elif np >= 2:
+                outp, phase, np = shift_sum_points(2, cargs) # pylint:disable=no-value-for-parameter
+            elif np == 1:
+                outp, phase, np = shift_sum_points(1, cargs) # pylint:disable=no-value-for-parameter
 
     o = outc.get()
     return (o.conj() * o).sum(axis=1).real

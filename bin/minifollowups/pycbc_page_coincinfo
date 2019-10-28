@@ -43,6 +43,10 @@ trig_input.add_argument('--n-loudest', type=int,
 trig_input.add_argument('--trigger-id', type=int,
     help="Examine the trigger with specified ID, use with statmap file. An "
          "alternative to --n-loudest. Cannot be used together")
+parser.add_argument('--include-summary-page-link', action='store_true',
+    help="If given, will include a link to the DQ summary page on the "
+         "single detector trigger tables.")
+
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -135,7 +139,6 @@ else:
         idx[ifo] = d['%s/trigger_id' % ifo][n]
 
 # Store the single detector trigger files keyed by ifo in a dictionary
-table = []
 files = {}
 for fname in args.single_trigger_files:
     f2 = h5py.File(fname, 'r')
@@ -145,6 +148,10 @@ for fname in args.single_trigger_files:
 
 bank = h5py.File(args.bank_file, 'r')
 statmapfile = d
+# Data will store the values that will appear in the resulting single-detector
+# table. Each entry in data corresponds to each row in the final table and
+# should be a list of values. So data is will be a list of lists.
+data = []
 for ifo in files.keys():
 
     # ignore ifo if coinc didn't participate (only for multi-ifo workflow)
@@ -162,24 +169,60 @@ for ifo in files.keys():
     time = d['end_time'][:][i]
     utc = lal.GPSToUTC(int(time))[0:6]
 
-    data = [pycbc.results.dq.get_summary_page_link(ifo, utc),
-            str(datetime.datetime(*utc)),
-            '%.3f'  % time,
-            '%5.2f' % d['snr'][i],
-            '%5.2f' % ranking.newsnr(d['snr'][i], rchisq),
-            '%5.2f' % rchisq,
-            '%i'    % d['chisq_dof'][i],
-            '%5.2f' % d['coa_phase'][i],
-            '%5.2f' % bank['mass1'][tid],
-            '%5.2f' % bank['mass2'][tid],
-            '%5.2f' % mchirp,
-            '%5.2f' % bank['spin1z'][tid],
-            '%5.2f' % bank['spin2z'][tid],
-            '%5.2f' % d['template_duration'][i]
-           ]
-    table.append(data)
+    # Headers will store the headers that will appear in the table.
+    headers = []
+    data.append([])
 
-html += str(pycbc.results.static_table(table, pycbc.results.sngl_table_headers))
+    # DQ summary link
+    if args.include_summary_page_link:
+        data[-1].append(pycbc.results.dq.get_summary_page_link(ifo, utc))
+        headers.append("Detector&nbsp;status")
+
+    # End times
+    data[-1].append(str(datetime.datetime(*utc)))
+    data[-1].append('%.3f' % time)
+    headers.append("UTC")
+    headers.append("End&nbsp;time")
+
+    # SNR and phase (not showing any single-det stat here)
+    data[-1].append('%5.2f' % d['snr'][i])
+    data[-1].append('%5.2f' % d['coa_phase'][i])
+    #data[-1].append('%5.2f' % ranking.newsnr(d['snr'][i], rchisq))
+    headers.append("&rho;")
+    headers.append("Phase")
+    #headers.append("Stat")
+
+    # Signal-glitch discrimators
+    data[-1].append('%5.2f' % rchisq)
+    data[-1].append('%i' % d['chisq_dof'][i])
+    headers.append("&chi;<sup>2</sup><sub>r</sub>")
+    headers.append("&chi;<sup>2</sup>&nbsp;bins")
+    try:
+        data[-1].append('%5.2f' % d['sg_chisq'][i])
+        headers.append("sg&chi;<sup>2</sup>")
+    except:
+        pass
+    try:
+        data[-1].append('%5.2f' % d['psd_var_val'][i])
+        headers.append("PSD var")
+    except:
+        pass
+
+    # Template parameters
+    data[-1].append('%5.2f' % bank['mass1'][tid])
+    data[-1].append('%5.2f' % bank['mass2'][tid])
+    data[-1].append('%5.2f' % mchirp)
+    data[-1].append('%5.2f' % bank['spin1z'][tid])
+    data[-1].append('%5.2f' % bank['spin2z'][tid])
+    data[-1].append('%5.2f' % d['template_duration'][i])
+    headers.append("m<sub>1</sub>")
+    headers.append("m<sub>2</sub>")
+    headers.append("M<sub>c</sub>")
+    headers.append("s<sub>1z</sub>")
+    headers.append("s<sub>2z</sub>")
+    headers.append("Duration")
+
+html += str(pycbc.results.static_table(data, headers))
 ###############################################################################
 
 pycbc.results.save_fig_with_metadata(html, args.output_file, {},
