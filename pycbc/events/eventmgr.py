@@ -25,6 +25,7 @@
 produces event triggers
 """
 from __future__ import absolute_import
+import json
 import numpy, copy, os.path
 import logging
 
@@ -926,6 +927,28 @@ class EventManagerMultiDet(EventManagerMultiDetBase):
             self.write_to_hdf(outname)
         else:
             raise ValueError('Cannot write to this format')
+
+    def output_json_metadata(self):
+        """Outputs json formatted metadata to pass to
+        Grafana dashboard.
+        """
+        metadata = {}
+        metadata["run_time"] = str(self.run_time)
+        metadata["monitoring_event"] = "metadata"
+        metadata["payload"] = []
+        metadata["payload"].append({"name" : "setup_time",
+                                    "value" : str(self.setup_time)})
+        metadata["payload"].append({"name" : "ncores",
+                                    "value" : str(self.ncores)})
+        metadata["payload"].append({"name" : "nfilters",
+                                    "value" : str(self.nfilters)})
+        metadata["payload"].append({"name" : "ntemplates",
+                                    "value" : str(self.ntemplates)})
+
+        header = "@@@MONITORING_PAYLOAD - START@@@"
+        json_data = json.dumps(metadata, indent=4)
+        footer = "@@@MONITORING_PAYLOAD - END@@@"
+        return json_data
 
     def write_to_hdf(self, outname):
         class fw(object):
