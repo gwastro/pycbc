@@ -439,11 +439,6 @@ tstop = time.time()
 run_time = tstop - tstart
 event_mgr.save_performance(ncores, nfilters, ntemplates, run_time, tsetup)
 
-# Output metadata for Grafana Dashboard
-metadata_logging_str = event_mgr.output_json_metadata()
-logging.info("Writing metadata")
-logging.info(metadata_logging_str)
-
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
@@ -452,6 +447,11 @@ if opt.fftw_output_float_wisdom_file:
 
 if opt.fftw_output_double_wisdom_file:
     fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
+
+# Output metadata for Grafana Dashboard
+metadata_logging_str = event_mgr.output_json_metadata()
+logging.info("Writing metadata")
+logging.info(metadata_logging_str)
 
 logging.info("Finished")
 
