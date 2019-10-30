@@ -421,7 +421,7 @@ class _HDFInjectionSet(object):
             # write metadata
             if static_args is None:
                 static_args = {}
-            fp.attrs["static_args"] = static_args.keys()
+            fp.attrs["static_args"] = list(static_args.keys())
             fp.attrs['injtype'] = cls.injtype
             for key, val in metadata.items():
                 fp.attrs[key] = val
