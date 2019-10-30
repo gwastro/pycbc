@@ -319,9 +319,8 @@ comments = ['Automatic PyCBC followup of trigger {0} to find the parameters '
             '{0} and does not reflect this triggers\' '
             'parameters.'.format(fp['gid'][()])]
 
-doc = live.SingleCoincForGraceDB(coinc_ifos, coinc_results,
-                                 upload_snr_series=True,
-                                 followup_ifos=fup_ifos, **kwargs)
+doc = live.SingleCoincForGraceDB(ifos, coinc_results,
+                                 upload_snr_series=True, **kwargs)
 tmpdir = tempfile.mkdtemp()
 xml_path = os.path.join(
         tmpdir, '{:.3f}.xml.gz'.format(loudest_snr_time_allifos))
