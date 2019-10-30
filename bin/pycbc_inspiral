@@ -439,6 +439,11 @@ tstop = time.time()
 run_time = tstop - tstart
 event_mgr.save_performance(ncores, nfilters, ntemplates, run_time, tsetup)
 
+# Output metadata for Grafana Dashboard
+metadata_logging_str = event_mgr.output_json_metadata()
+logging.info("Writing metadata")
+logging.info(metadata_logging_str)
+
 logging.info("Writing out triggers")
 event_mgr.write_events(opt.output)
 
