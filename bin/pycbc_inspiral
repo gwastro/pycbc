@@ -451,9 +451,8 @@ if opt.fftw_output_float_wisdom_file:
 if opt.fftw_output_double_wisdom_file:
     fft.fftw.export_double_wisdom_to_filename(opt.fftw_output_double_wisdom_file)
 
+logging.info("Finished")
+
 # Output metadata for Grafana Dashboard
 metadata_logging_str = event_mgr.output_json_metadata()
-logging.info("Writing metadata")
-logging.info(metadata_logging_str)
-
-logging.info("Finished")
+sys.stdout.write(metadata_logging_str)
