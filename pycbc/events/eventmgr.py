@@ -537,17 +537,17 @@ class EventManager(object):
         Grafana dashboard.
         """
         metadata = {}
-        metadata["run_time"] = str(self.run_time)
+        metadata["run_time"] = self.run_time
         metadata["monitoring_event"] = "metadata"
         metadata["payload"] = []
         metadata["payload"].append({"name" : "setup_time",
-                                    "value" : str(self.setup_time)})
+                                    "value" : self.setup_time})
         metadata["payload"].append({"name" : "ncores",
-                                    "value" : str(self.ncores)})
+                                    "value" : self.ncores})
         metadata["payload"].append({"name" : "nfilters",
-                                    "value" : str(self.nfilters)})
+                                    "value" : self.nfilters})
         metadata["payload"].append({"name" : "ntemplates",
-                                    "value" : str(self.ntemplates)})
+                                    "value" : self.ntemplates})
 
         # needed header and footers
         header = "@@@MONITORING_PAYLOAD - START@@@"
