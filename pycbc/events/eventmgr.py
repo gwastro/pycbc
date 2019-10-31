@@ -537,9 +537,8 @@ class EventManager(object):
         """Outputs json formatted metadata to pass to
         Grafana dashboard.
         """
-        unix_epoch_time = subprocess.check_output("date +%s",
-                                                  shell=True).splitlines()[0]
-        unix_epoch_time = int(unix_epoch_time)
+        unix_epoch_time = int(subprocess.check_output("date +%s",
+                                                      shell=True))
         metadata = {}
         metadata["ts"] = unix_epoch_time 
         metadata["monitoring_event"] = "metadata"
