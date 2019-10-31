@@ -32,6 +32,7 @@ import logging
 from pycbc.types import Array
 from pycbc.scheme import schemed
 from pycbc.detector import Detector
+import subprocess
 
 from . import coinc, ranking
 
@@ -536,10 +537,15 @@ class EventManager(object):
         """Outputs json formatted metadata to pass to
         Grafana dashboard.
         """
+        unix_epoch_time = subprocess.check_output("date +%s",
+                                                  shell=True).splitlines()[0]
+        unix_epoch_time = int(unix_epoch_time)
         metadata = {}
-        metadata["run_time"] = self.run_time
+        metadata["ts"] = unix_epoch_time 
         metadata["monitoring_event"] = "metadata"
         metadata["payload"] = []
+        metadata["payload"].append({"name" : "run_time",
+                                    "value" : self.run_time})
         metadata["payload"].append({"name" : "setup_time",
                                     "value" : self.setup_time})
         metadata["payload"].append({"name" : "ncores",
