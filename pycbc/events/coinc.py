@@ -907,7 +907,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.singles_dtype = []
         data = False
         for ifo in self.ifos:
-            if ifo in results and results[ifo] is not False:
+            if ifo in results and results[ifo] is not False \
+                    and len(results[ifo]['snr']):
                 data = results[ifo]
                 break
 
@@ -944,6 +945,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         """
         if len(self.singles.keys()) == 0:
             self.set_singles_buffer(results)
+        # If this *still* didn't work, no triggers in first set, try next time
+        if len(self.singles.keys()) == 0:
+            return {}
 
         # convert to single detector trigger values
         # FIXME Currently configured to use pycbc live output
