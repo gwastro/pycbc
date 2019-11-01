@@ -30,6 +30,9 @@ RUN yum install -y libibverbs libibverbs-devel libibmad libibmad-devel libibumad
     pip install schwimmbad && \
     MPICC=/opt/mvapich2-2.1/bin CFLAGS='-I /opt/mvapich2-2.1/include -L /opt/mvapich2-2.1/lib -lmpi' pip install --no-cache-dir mpi4py
 
+# Now update all of our library installations
+RUN rm -f /etc/ld.so.cache && /sbin/ldconfig
+
 # When the container is started with
 #   docker run -it pycbc/pycbc-el7:latest
 # the default is to start a loging shell as the pycbc user.
