@@ -760,7 +760,7 @@ with ctx:
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
 
-                evnt.check_coincs(results.keys(), best_coinc,
+                evnt.check_coincs(list(results.keys()), best_coinc,
                                   psds, args.low_frequency_cutoff,
                                   data_reader, bank)
 
