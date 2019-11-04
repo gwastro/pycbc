@@ -271,30 +271,30 @@ class LiveEventManager(object):
                 cmd += psd_fils_str
 
                 curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
-                hdfp = h5py.File(curr_fname, 'w')
-                for ifo in coinc_ifos:
-                    curr_time = \
-                        coinc_results['foreground/{}/end_time'.format(ifo)]
-                    hdfp['coinc_times/{}'.format(ifo)] = curr_time
-                f_end = bank.end_frequency(template_id)
-                if f_end is None or f_end >= (flen * delta_f):
-                    f_end = (flen-1) * delta_f
-                hdfp['flen'] = flen
-                hdfp['delta_f'] = delta_f
-                hdfp['f_end'] = f_end
-                hdfp['sample_rate'] = bank.sample_rate
-                hdfp['flow'] = bank.table[template_id].f_lower
-                hdfp['mass1'] = bank.table[template_id].mass1
-                hdfp['mass2'] = bank.table[template_id].mass2
-                hdfp['spin1z'] = bank.table[template_id].spin1z
-                hdfp['spin2z'] = bank.table[template_id].spin2z
-                hdfp['template_duration'] = \
-                    bank.table[template_id].template_duration
-                hdfp['ifar'] = ifar
-                hdfp['gid'] = gid
-                for ifo in args.channel_name:
-                    hdfp['channel_names/{}'.format(ifo)] = \
-                        args.channel_name[ifo]
+                with h5py.File(curr_fname, 'w') as hdfp:
+                    for ifo in coinc_ifos:
+                        curr_time = \
+                            coinc_results['foreground/{}/end_time'.format(ifo)]
+                        hdfp['coinc_times/{}'.format(ifo)] = curr_time
+                    f_end = bank.end_frequency(template_id)
+                    if f_end is None or f_end >= (flen * delta_f):
+                        f_end = (flen-1) * delta_f
+                    hdfp['flen'] = flen
+                    hdfp['delta_f'] = delta_f
+                    hdfp['f_end'] = f_end
+                    hdfp['sample_rate'] = bank.sample_rate
+                    hdfp['flow'] = bank.table[template_id].f_lower
+                    hdfp['mass1'] = bank.table[template_id].mass1
+                    hdfp['mass2'] = bank.table[template_id].mass2
+                    hdfp['spin1z'] = bank.table[template_id].spin1z
+                    hdfp['spin2z'] = bank.table[template_id].spin2z
+                    hdfp['template_duration'] = \
+                        bank.table[template_id].template_duration
+                    hdfp['ifar'] = ifar
+                    hdfp['gid'] = gid
+                    for ifo in args.channel_name:
+                        hdfp['channel_names/{}'.format(ifo)] = \
+                            args.channel_name[ifo]
 
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant {} '.format(apr)
