@@ -325,13 +325,13 @@ class BaseMCMC(object):
             # the extra factor of 2 is to account for the fact that the thin
             # interval will need to be at least twice as large as a previously
             # used interval
-            thinfactor = 2 * self.niterations // self.max_samples_per_chain
+            thinfactor = 2*(self.niterations // self.max_samples_per_chain)
+            # make sure it's at least 1
+            thinfactor = max(thinfactor, 1)
             # make the new interval is a multiple of the previous, to ensure
             # that any samples currently on disk can be thinned accordingly
             thin_interval = (thinfactor // self.thin_interval) * \
                 self.thin_interval
-            # make sure it's at least 1
-            thin_interval = max(thin_interval, 1)
         else:
             thin_interval = self.thin_interval
         return thin_interval
@@ -464,6 +464,7 @@ class BaseMCMC(object):
         else:
             with self.io(self.checkpoint_file, "r") as fp:
                 self._lastclear = fp.niterations
+                self.thin_interval = fp.thinned_by
         if self.target_eff_nsamples is not None:
             target_nsamples = self.target_eff_nsamples
             with self.io(self.checkpoint_file, "r") as fp:
@@ -546,28 +547,33 @@ class BaseMCMC(object):
     def checkpoint(self):
         """Dumps current samples to the checkpoint file."""
         # thin and write new samples
+        # get the updated thin interval to use
+        thin_interval = self.get_thin_interval()
         for fn in [self.checkpoint_file, self.backup_file]:
             with self.io(fn, "a") as fp:
                 # write the current number of iterations
                 fp.write_niterations(self.niterations)
-                thin_interval = self.get_thin_interval()
                 # thin samples on disk if it changed
                 if thin_interval > 1:
                     # if this is the first time writing, set the file's
                     # thinned_by
                     if fp.last_iteration() == 0:
                         fp.thinned_by = thin_interval
-                    else:
-                        # check if we need to thin the current samples on disk
-                        thin_by = thin_interval // fp.thinned_by
-                        if thin_by > 1:
-                            logging.info("Thinning samples in %s by a factor "
-                                         "of %i", fn, int(thin_by))
-                            fp.thin(thin_by)
+                    elif thin_interval < fp.thinned_by:
+                        # whatever was done previously resulted in a larger
+                        # thin interval, so we'll set it to the file's
+                        thin_interval = fp.thinned_by
+                    elif thin_interval > fp.thinned_by:
+                        # we need to thin the samples on disk
+                        logging.info("Thinning samples in %s by a factor "
+                                     "of %i", fn, int(thin_interval))
+                        fp.thin(thin_interval)
                 fp_lastiter = fp.last_iteration()
             logging.info("Writing samples to %s with thin interval %i", fn,
                          thin_interval)
             self.write_results(fn)
+        # update the running thin interval
+        self.thin_interval = thin_interval
         # see if we had anything to write after thinning; if not, don't try
         # to compute anything
         with self.io(self.checkpoint_file, "r") as fp:
@@ -742,7 +748,7 @@ class BaseMCMC(object):
         """
         if self.acls is None:
             return None
-        return {p: acl * self.get_thin_interval()
+        return {p: acl * self.thin_interval
                 for (p, acl) in self.acls.items()}
 
     @abstractmethod
