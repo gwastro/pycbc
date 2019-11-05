@@ -105,7 +105,8 @@ class SingleCoincForGraceDB(object):
             Strain channel names for each detector.
             Will be recorded in the sngl_inspiral table.
         """
-        self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
+        self.template_id = \
+                coinc_results['foreground/%s/template_id' % next(iter(ifos))]
         self.coinc_results = coinc_results
         self.ifos = ifos
 
