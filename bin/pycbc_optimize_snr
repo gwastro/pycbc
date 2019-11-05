@@ -250,7 +250,7 @@ for ifo in ifos:
     snr_slice = snr_series_dict[ifo].time_slice(time_window[0], time_window[1])
     max_snr_idx = numpy.argmax(abs(snr_slice))
     idx_offset = snr_slice.start_time - snr_series_dict[ifo].start_time
-    idx_offset = int(idx_offset * sample_rate + 0.5)
+    idx_offset = int(float(idx_offset) * sample_rate + 0.5)
     max_snr_idx = max_snr_idx + idx_offset
     new_snr_slice = slice(max_snr_idx - int(sample_rate/10),
                           max_snr_idx + int(sample_rate/10)+1)
