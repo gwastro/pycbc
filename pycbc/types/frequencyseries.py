@@ -424,13 +424,14 @@ class FrequencySeries(Array):
             psddict = {ifo: output}
             utils.write_filename(make_psd_xmldoc(psddict), path,
                                  gz=path.endswith(".gz"))
-        elif ext =='.hdf':
+        elif ext == '.hdf':
             key = 'data' if group is None else group
-            f = h5py.File(path)
-            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
-                                  compression_opts=9, shuffle=True)
-            ds.attrs['epoch'] = float(self.epoch)
-            ds.attrs['delta_f'] = float(self.delta_f)
+            with h5py.File(path, 'w') as f:
+                ds = f.create_dataset(key, data=self.numpy(),
+                                      compression='gzip',
+                                      compression_opts=9, shuffle=True)
+                ds.attrs['epoch'] = float(self.epoch)
+                ds.attrs['delta_f'] = float(self.delta_f)
         else:
             raise ValueError('Path must end with .npy, .txt, .xml, .xml.gz '
                              'or .hdf')
