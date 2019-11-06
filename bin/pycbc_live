@@ -15,6 +15,10 @@ from time import time
 import os.path
 import itertools
 import platform
+import distutils
+import subprocess
+import random
+import string
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
@@ -28,6 +32,7 @@ from pycbc.events.single import LiveSingleFarThreshold
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
+from pycbc.waveform.waveform import props
 
 
 def ptof(p, ft):
@@ -50,14 +55,21 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
     # take max of original IFAR and combined IFAR & apply trials factor
     return numpy.maximum(ifar, nifar) / 2.
 
+# https://pynative.com/python-generate-random-string/
+def random_string(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
+
+
 class LiveEventManager(object):
     def __init__(self, output_path,
-                       use_date_prefix=False,
-                       ifar_upload_threshold=None,
-                       pval_livetime=None,
-                       enable_gracedb_upload=False,
-                       gracedb_testing=True,
-                 ):
+                 use_date_prefix=False,
+                 ifar_upload_threshold=None,
+                 pval_livetime=None,
+                 enable_gracedb_upload=False,
+                 gracedb_testing=True,
+                 run_snr_optimization=False):
         self.path = output_path
 
         # Figure out what we are supposed to process within the pool of MPI processes
@@ -70,6 +82,8 @@ class LiveEventManager(object):
         self.pvalue_livetime = pval_livetime
         self.gracedb_testing = gracedb_testing
         self.enable_gracedb_upload = enable_gracedb_upload
+
+        self.run_snr_optimization = run_snr_optimization
 
     def commit_results(self, results):
         self.comm.gather(results, root=0)
@@ -206,18 +220,95 @@ class LiveEventManager(object):
                                           low_frequency_cutoff=f_low,
                                           channel_names=args.channel_name)
 
-            end_time = int(coinc_results['foreground/%s/end_time' % coinc_ifos[0]])
-            fname = os.path.join(self.path, 'coinc-%s.xml.gz' % end_time)
+            end_time = int(coinc_results['foreground/%s/end_time'
+                                         % coinc_ifos[0]])
+            fname = 'coinc-{}-{}.xml.gz'.format(end_time, random_string(6))
+            fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
-            comments = ['using ranking statistic: %s' % args.background_statistic]
+            comments = ['using ranking statistic: %s' 
+                        % args.background_statistic]
 
             ifar = coinc_results['foreground/ifar']
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
-                event.upload(fname, gracedb_server=args.gracedb_server,
-                             testing=self.gracedb_testing,
-                             extra_strings=comments)
+                gid = event.upload(fname, gracedb_server=args.gracedb_server,
+                                   testing=self.gracedb_testing,
+                                   extra_strings=comments)
             else:
+                gid = None
                 event.save(fname)
+
+            if self.run_snr_optimization and gid is not None:
+                template_id = \
+                    coinc_results['foreground/{}/template_id'.format(ifos[0])]
+                p = props(bank.table[template_id])
+                apr = p.pop('approximant')
+                min_buffer = bank.minimum_buffer + 0.5
+                buff_size = \
+                    pycbc.waveform.get_waveform_filter_length_in_time(apr, **p)
+
+                tlen = bank.round_up((buff_size + min_buffer) \
+                    * bank.sample_rate)
+                flen = int(tlen / 2 + 1)
+                delta_f = bank.sample_rate / float(tlen)
+                cmd = 'timeout 400 '
+                exepath = distutils.spawn.find_executable('pycbc_optimize_snr')
+                cmd += exepath + ' '
+                data_fils_str = '--data-files '
+                psd_fils_str = '--psd-files '
+                for ifo in ifos:
+                    curr_fname = \
+                        fname.replace('.xml.gz',
+                                      '_{}_data_overwhitened.hdf'.format(ifo))
+                    curr_data = data_readers[ifo].overwhitened_data(delta_f)
+                    curr_data.save(curr_fname)
+                    data_fils_str += '{}:{} ' .format(ifo, curr_fname)
+                    curr_fname = fname.replace('.xml.gz', 
+                                               '_{}_psd.hdf'.format(ifo))
+                    curr_psd = curr_data.psd
+                    curr_psd.save(curr_fname)
+                    psd_fils_str += '{}:{} ' .format(ifo, curr_fname)
+                cmd += data_fils_str
+                cmd += psd_fils_str
+
+                curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
+                hdfp = h5py.File(curr_fname, 'w')
+                for ifo in coinc_ifos:
+                    curr_time = \
+                        coinc_results['foreground/{}/end_time'.format(ifo)]
+                    hdfp['coinc_times/{}'.format(ifo)] = curr_time
+                f_end = bank.end_frequency(template_id)
+                if f_end is None or f_end >= (flen * delta_f):
+                    f_end = (flen-1) * delta_f
+                hdfp['flen'] = flen
+                hdfp['delta_f'] = delta_f
+                hdfp['f_end'] = f_end
+                hdfp['sample_rate'] = bank.sample_rate
+                hdfp['flow'] = bank.table[template_id].f_lower
+                hdfp['mass1'] = bank.table[template_id].mass1
+                hdfp['mass2'] = bank.table[template_id].mass2
+                hdfp['spin1z'] = bank.table[template_id].spin1z
+                hdfp['spin2z'] = bank.table[template_id].spin2z
+                hdfp['template_duration'] = \
+                    bank.table[template_id].template_duration
+                hdfp['ifar'] = ifar
+                hdfp['gid'] = gid
+                for ifo in args.channel_name:
+                    hdfp['channel_names/{}'.format(ifo)] = \
+                        args.channel_name[ifo]
+
+                cmd += '--params-file {} '.format(curr_fname)
+                cmd += '--approximant {} '.format(apr)
+                cmd += '--gracedb-server {} '.format(args.gracedb_server)
+                if not self.gracedb_testing:
+                    cmd += '--production '
+                cmd += '--verbose '
+                log_fname = \
+                        fname.replace('.xml.gz', '_optimize_snr_log.dat')
+
+                cmd += '&> {} '.format(log_fname)
+                logging.info('Running %s', cmd)
+                subprocess.Popen(cmd, shell=True)
+
 
     def check_singles(self, results, data_reader, psds, f_low):
         active = [k for k in results if results[k] != None]
@@ -447,6 +538,11 @@ parser.add_argument('--size-override', type=int, metavar='N',
                          " Useful for debugging and running a portion of a bank")
 parser.add_argument('--fftw-planning-limit', type=float,
                     help="Time in seconds to allow for a plan to be created")
+parser.add_argument('--run-snr-optimization', action='store_true',
+                    default=False,
+                    help='Run spawned followup processes to maximize SNR for '
+                         'any trigger uploaded to GraceDB')
+                   
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
@@ -483,7 +579,7 @@ evnt = LiveEventManager(args.output_path,
                         pval_livetime=args.pvalue_combination_livetime,
                         enable_gracedb_upload=args.enable_gracedb_upload,
                         gracedb_testing=not args.enable_production_gracedb_upload,
-                       )
+                        run_snr_optimization=args.run_snr_optimization)
 
 sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
@@ -664,7 +760,7 @@ with ctx:
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
 
-                evnt.check_coincs(results.keys(), best_coinc,
+                evnt.check_coincs(list(results.keys()), best_coinc,
                                   psds, args.low_frequency_cutoff,
                                   data_reader, bank)
 
