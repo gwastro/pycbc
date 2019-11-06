@@ -140,7 +140,7 @@ for ifo in args.data_files.keys():
     data[ifo].psd = load_frequencyseries(args.psd_files[ifo])
 
 fp = h5py.File(args.params_file, 'r')
-ifos = data.keys()
+ifos = list(data.keys())
 
 coinc_times = {}
 for ifo in ifos:
