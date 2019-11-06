@@ -1175,6 +1175,8 @@ class TwoOGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
         from pycbc.conversions import mchirp_from_mass1_mass2
         self.mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
                                               trigs.param['mass2'])
+        if self.mchirp > 40.:
+            self.mchirp = 40.
         return ExpFitSGFgBgRateNewStatistic.single(self, trigs)
 
     def logsignalrate_multiifo(self, stats, shift, to_shift):
