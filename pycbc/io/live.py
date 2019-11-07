@@ -86,7 +86,7 @@ class SingleCoincForGraceDB(object):
         Parameters
         ----------
         ifos: list of strs
-            A list of the ifos pariticipating in this trigger
+            A list of the ifos participating in this trigger.
         coinc_results: dict of values
             A dictionary of values. The format is defined in
             pycbc/events/coinc.py and matches the on disk representation
