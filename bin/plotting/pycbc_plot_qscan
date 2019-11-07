@@ -60,6 +60,8 @@ parser.add_argument('--time-windows', required=True, type=t_window,
                          'be provided as start1,end1 start2,end2 ... '
                          'where start/end times are relative to --center-time '
                          'and both positive')
+parser.add_argument("--low-frequency-cutoff", type=float,
+                    help="The low frequency cutoff to use for filtering (Hz)")
 
 parser.add_argument('--qtransform-delta-t', default=0.001, type=float,
                     help='The time resolution to interpolate to (optional)')
