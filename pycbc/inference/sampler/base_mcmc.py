@@ -284,6 +284,8 @@ class BaseMCMC(object):
         """
         if interval is None:
             interval = 1
+        if interval < 1:
+            raise ValueError("thin interval must be >= 1")
         self._thin_interval = interval
 
     @property
@@ -330,8 +332,11 @@ class BaseMCMC(object):
             thinfactor = max(thinfactor, 1)
             # make the new interval is a multiple of the previous, to ensure
             # that any samples currently on disk can be thinned accordingly
-            thin_interval = (thinfactor // self.thin_interval) * \
-                self.thin_interval
+            if thinfactor < self.thin_interval:
+                thin_interval = self.thin_interval
+            else:
+                thin_interval = (thinfactor // self.thin_interval) * \
+                    self.thin_interval
         else:
             thin_interval = self.thin_interval
         return thin_interval
