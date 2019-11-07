@@ -53,7 +53,12 @@ parser.add_argument("--output-file",
                     help="File to store the coincident triggers")
 parser.add_argument("--batch-singles", default=5000, type=int,
                     help="Number of single triggers to process at once")
+parser.add_argument("--legacy-output", action="store_true")
 args = parser.parse_args()
+
+if args.legacy_output:
+    assert (args.pivot_ifo == 'L1')
+    assert (args.fixed_ifo == 'H1')
 
 # flatten the list of lists of filenames to a single list (may be empty)
 args.statistic_files = sum(args.statistic_files, [])
@@ -373,16 +378,30 @@ if len(data['stat']) > 0:
 
 # Store coinc segments keyed by detector combination
 key = ''.join(sorted(trigs.ifos))
-f['segments/%s/start' % key], f['segments/%s/end' % key] = trigs.singles[0].valid
+if args.legacy_output:
+    # Associated segments will all be equal here
+    sngl = trigs.singles[0]
+    f['segments/H1/start'] , f['segments/H1/end'] = sngl.valid
+    f['segments/L1/start'] , f['segments/L1/end'] = sngl.valid
+    f['segments/coinc/start'] , f['segments/coinc/end'] = sngl.valid
+else:
+    f['segments/%s/start' % key], f['segments/%s/end' % key] = trigs.singles[0].valid
 
 f.attrs['timeslide_interval'] = args.timeslide_interval
-f.attrs['num_of_ifos'] = len(args.trigger_files)
-f.attrs['pivot'] = args.pivot_ifo
-f.attrs['fixed'] = args.fixed_ifo
-for i, sngl in zip(trigs.ifos, trigs.singles):
-    f.attrs['%s_foreground_time' % i] = abs(sngl.segs)
 f.attrs['coinc_time'] = abs(coinc_segs)
-f.attrs['ifos'] = ' '.join(sorted(trigs.ifos))
+if args.legacy_output:
+    f.attrs['detector_1'] = 'H1'
+    f.attrs['detector_2'] = 'L1'
+    # These two will be equal, so order is irrelevant
+    f.attrs['foreground_time1'] = abs(trigs.singles[0].segs)
+    f.attrs['foreground_time2'] = abs(trigs.singles[1].segs)
+else:
+    f.attrs['num_of_ifos'] = len(args.trigger_files)
+    f.attrs['pivot'] = args.pivot_ifo
+    f.attrs['fixed'] = args.fixed_ifo
+    for i, sngl in zip(trigs.ifos, trigs.singles):
+        f.attrs['%s_foreground_time' % i] = abs(sngl.segs)
+    f.attrs['ifos'] = ' '.join(sorted(trigs.ifos))
 
 # What does this code actually calculate?
 if args.timeslide_interval:
@@ -391,5 +410,13 @@ if args.timeslide_interval:
 else:
     nslides = 0
 f.attrs['num_slides'] = nslides
+
+if args.legacy_output:
+    f['time1'] = f['H1/time'][:]
+    f['trigger_id1'] = f['H1/trigger_id'][:]
+    f['time2'] = f['L1/time'][:]
+    f['trigger_id2'] = f['L1/trigger_id'][:]
+    del f['H1']
+    del f['L1']
 
 logging.info('Done')
