@@ -1077,7 +1077,7 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
     return (a + b*(1-spin)**c)/(2*numpy.pi*f0*lal.MTSUN_SI)
 
 def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
-    """Returns the QNM frequency (in Hz) of a chosen new (l,m) mode from the 
+    """Returns the QNM frequency (in Hz) of a chosen new (l,m) mode from the
     given current (l,m) mode.
 
     Parameters
@@ -1109,13 +1109,14 @@ def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     if abs(spin) > 0.9996 or mass < 0:
         return numpy.nan
     else:
-        return freq_from_final_mass_spin(mass, spin, l=new_l, m=new_m, nmodes=1)
+        return freq_from_final_mass_spin(mass, spin,
+                                         l=new_l, m=new_m, nmodes=1)
 
 
 def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     """Returns the QNM damping time (in seconds) of a chosen new (l,m) mode
     from the given current (l,m) mode.
-    
+
     Parameters
     ----------
     f0 : float or array
@@ -1145,7 +1146,8 @@ def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     if abs(spin) > 0.9996 or mass < 0:
         return numpy.nan
     else:
-        return tau_from_final_mass_spin(mass, spin, l=new_l, m=new_m, nmodes=1)
+        return tau_from_final_mass_spin(mass, spin,
+                                        l=new_l, m=new_m, nmodes=1)
 
 def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                            spin2x=0., spin2y=0., spin2z=0.,
