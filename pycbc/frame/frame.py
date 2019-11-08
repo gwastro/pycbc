@@ -617,7 +617,7 @@ class DataBuffer(object):
             name = '%s/%s-%s-%s.gwf' % (pattern, self.beg, s, self.dur)
             # check that file actually exists, else abort now
             if not os.path.exists(name):
-                logging.info("%s does not seem to exist yet" % name)
+                logging.info("%s not found yet", os.path.basename(name))
                 raise RuntimeError
 
             keys.append(name)
