@@ -597,7 +597,7 @@ if evnt.rank == 0 and args.enable_gracedb_upload:
     from ligo.gracedb.rest import GraceDb
     gdb_client = GraceDb(args.gracedb_server) if args.gracedb_server else GraceDb()
     response = gdb_client.ping()
-    logging.info('GraceDB ping response: %s %d',
+    logging.info('GraceDB ping response: %s %s',
                  response.status, response.reason)
     del gdb_client
 
