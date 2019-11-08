@@ -61,7 +61,7 @@ parser.add_argument('--time-windows', required=True, type=t_window,
                          'where start/end times are relative to --center-time '
                          'and both positive')
 parser.add_argument("--low-frequency-cutoff", type=float,
-                    help="The low frequency cutoff to use for filtering (Hz)")
+                    help="The low frequency cutoff to use for fake strain generation")
 
 parser.add_argument('--qtransform-delta-t', default=0.001, type=float,
                     help='The time resolution to interpolate to (optional)')
