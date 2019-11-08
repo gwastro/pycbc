@@ -562,16 +562,17 @@ pycbc.init_logging(args.verbose, format=log_format)
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
 
-sr = args.sample_rate
-flow = args.low_frequency_cutoff
-
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
 total_pad = args.trim_padding * 2 + valid_pad
-bank = waveform.LiveFilterBank(args.bank_file, sr, total_pad,
-                       low_frequency_cutoff=None if args.enable_bank_start_frequency else flow,
-                       approximant=args.approximant,
-                       increment=args.increment)
+lfc = None if args.enable_bank_start_frequency else args.low_frequency_cutoff
+bank = waveform.LiveFilterBank(
+        args.bank_file, args.sample_rate, total_pad, low_frequency_cutoff=lfc,
+        approximant=args.approximant, increment=args.increment)
+if bank.min_f_lower < args.low_frequency_cutoff:
+    parser.error('--low-frequency-cutoff ({} Hz) must not be larger than the '
+                 'minimum f_lower across all templates '
+                 '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
 evnt = LiveEventManager(args.output_path,
                         use_date_prefix=args.day_hour_output_prefix,
