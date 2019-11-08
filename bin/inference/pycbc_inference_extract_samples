@@ -27,6 +27,9 @@
 """Extracts posterior samples from a Sampler HDF file, writing to a
 posterior HDF file. Parameters can be renamed in the output file using the
 --parameters option.
+
+If more than one file is provided, the samples from all of the files will
+be combined.
 """
 
 import os
@@ -36,6 +39,21 @@ import numpy
 import pycbc
 from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,
                                 PosteriorFile, loadfile)
+
+
+def isthesame(current_val, val):
+    """Checks that attrs values from two hdf files are the same (or nearly so).
+    """
+    if isinstance(current_val, float):
+        issame = numpy.isclose(current_val, val)
+    else:
+        issame = current_val == val
+    try:  #  guess that we have an array
+        issame = all(issame)
+    except TypeError:
+        # we didn't have an array, assume it was a single value
+        pass
+    return issame
 
 parser = ResultsArgumentParser(defaultparams='all', autoparamlabels=False,
                                description=__doc__)
@@ -50,7 +68,9 @@ parser.add_argument("--skip-groups", default=None, nargs="+",
                          "(aside from samples; samples are always written), "
                          "for example, 'sampler_info'. If 'all' write skip "
                          "all groups, only writing the samples. Default is "
-                         "to write all groups.")
+                         "to write all groups if only one file is provided. "
+                         "If multiple files are provided, only the samples "
+                         "will be written.")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Be verbose")
 
@@ -64,10 +84,17 @@ if os.path.exists(opts.output_file) and not opts.force:
                   "overwrite.")
 
 # load the samples
-fp, params, labels, samples = results_from_cli(opts)
+fps, params, labels, samples = results_from_cli(opts)
+if len(opts.input_file) == 1:
+    fps = [fps]
 
 # convert samples to a dict in which the keys are the labels
-samples = {labels[p]: samples[p] for p in params}
+# also stack results if multiple files were provided
+if len(opts.input_file) > 1:
+    samples = {labels[p]: numpy.concatenate([s[p] for s in samples])
+               for p in params}
+else:
+    samples = {labels[p]: samples[p] for p in params}
 
 # create the file
 outtype = PosteriorFile.name
@@ -77,28 +104,58 @@ out = loadfile(opts.output_file, 'w', filetype=outtype)
 out.write_samples(samples)
 
 # Preserve samples group metadata
-for key, val in fp[fp.samples_group].attrs.items():
-    out[out.samples_group].attrs[key] = val
+for fp in fps:
+    for key, val in fp[fp.samples_group].attrs.items():
+        try:
+            current_val = out[out.samples_group].attrs[key]
+        except KeyError:
+            out[out.samples_group].attrs[key] = val
+            current_val = val
+        # enforce that the metadata must be the same across multiple files
+        if not isthesame(current_val, val):
+            raise ValueError("cannot combine all files; samples group attr {} "
+                             "is not the same across all files. ({} vs {})"
+                             .format(key, current_val, val))
 
 # Preserve top-level metadata...
 # ...except for: the filetype, since that's set when the file was loaded;
-# the automatic thinning settings, since those will no longer make sense
+# the automatic thinning settings, since those will no longer make sense;
+# cmd (we will replace it with this program's command)
+# resume points (may not be the same across multiple files)
+# effective nsamples (that can just be obtained from the samples size)
 skip_attrs = ['filetype', 'thin_start', 'thin_interval', 'thin_end',
-              'thinned_by']
-for key in fp.attrs:
-    if key not in skip_attrs:
-        out.attrs[key] = fp.attrs[key]
+              'thinned_by', 'cmd', 'resume_points', 'effective_nsamples']
+# also skip evidence if multiple files are being combined, since that will
+# not be the same
+if len(opts.input_file) > 1:
+    skip_attrs += ['log_evidence', 'dlog_evidence']
+for fp in fps:
+    for key in fp.attrs:
+        if key not in skip_attrs:
+            val = fp.attrs[key]
+            try:
+                current_val = out.attrs[key]
+            except KeyError:
+                out.attrs[key] = val
+                current_val = out.attrs[key]
+            if not isthesame(current_val, val):
+                raise ValueError("cannot combine all files; file attr {} is "
+                                 "not the same across all files ({} vs {})"
+                                 .format(key, current_val, val))
 
 # store what parameters were renamed
 out.attrs['remapped_params'] = list(labels.items())
 
 # write the other groups
-skip_groups = opts.skip_groups
-if skip_groups is not None and 'all' in opts.skip_groups:
-    skip_groups = [group for group in fp.keys()
-                   if group != fp.samples_group]
-fp.copy_info(out, ignore=skip_groups)
+if len(opts.input_file) == 1:
+    fp = fps[0]
+    skip_groups = opts.skip_groups
+    if skip_groups is not None and 'all' in opts.skip_groups:
+        skip_groups = [group for group in fp.keys()
+                       if group != fp.samples_group]
+    fp.copy_info(out, ignore=skip_groups)
 
 # close and exit
-fp.close()
+for fp in fps:
+    fp.close()
 out.close()
