@@ -127,7 +127,7 @@ class BaseDataModel(BaseModel):
         If that raises an ``AttributeError``, will call `_loglr`` to
         calculate it and store it to ``current_stats``.
         """
-        return self._trytoget('loglr', self._loglr)
+        return self._trytoget('loglr', self._loglr, apply_transforms=True)
 
     @abstractmethod
     def _loglr(self):
