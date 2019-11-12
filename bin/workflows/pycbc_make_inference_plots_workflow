@@ -1,0 +1,428 @@
+#!/usr/bin/env python
+
+# Copyright (C) 2016 Christopher M. Biwer, Alexander Harvey Nitz
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+""" Creates a DAX for a parameter estimation workflow.
+"""
+
+import argparse
+import h5py
+import logging
+import os
+import Pegasus.DAX3 as dax
+import pycbc
+import pycbc.workflow.minifollowups as mini
+import pycbc.workflow.pegasus_workflow as wdax
+import socket
+import sys
+import numpy
+from ligo import segments
+from pycbc import results
+from pycbc.results import layout
+from pycbc.types import MultiDetOptionAction
+from pycbc.types import MultiDetOptionAppendAction
+from pycbc.workflow import configuration
+from pycbc.workflow import core
+from pycbc.workflow import datafind
+from pycbc.workflow import plotting
+from pycbc import __version__
+import pycbc.workflow.inference_followups as inffu
+
+
+def load_samples_cache(samples_cache):
+    """Loads samples files from the given config file.
+    
+    Each line in the cache file should be a comma-separated list of label,
+    config file(s), samples file(s). The config file(s) are needed in order to
+    plot the prior. Multiple config and samples files should be space
+    separated. For example::
+
+        Event 1,config.ini,samples1.hdf samples2.hdf
+
+    Labels must be unique across all events. Otherwise, a ``ValueError`` is
+    raised.
+
+    Parameters
+    ----------
+    config_cache : str
+        The name of the cache file.
+
+    Returns
+    -------
+    labels : list
+        List of strings giving a label for each event.
+    config_files : list
+        List of the config files. Each element is itself a list providing
+        all of the config files to combine.
+    samples_files : list
+        List of the samples files. Each element is itself a list providing
+        all of the samples files to combine.
+    """
+    labels = []
+    config_files = []
+    samples_files = []
+    with open(samples_cache, 'r') as fp:
+        for line in fp:
+            if line.startswith('#'):
+                continue
+            line = line.replace('\n', '')
+            lbl, cfs, smps = line.split(',')
+            cfs = map(os.path.abspath, cfs.strip().split())
+            smps = map(os.path.abspath, smps.strip().split())
+            labels.append(lbl.strip())
+            config_files.append(cfs)
+            samples_files.append(smps)
+    # check that the labels are unique
+    if not len(set(labels)) == len(labels):
+        raise ValueError("all labels in config cache must be unique")
+    return labels, config_files, samples_files
+
+def symlink_path(f, path):
+    """ Symlinks a path.
+    """
+    if f is None:
+        return
+    try:
+        os.symlink(f.storage_path, os.path.join(path, f.name))
+    except OSError:
+        pass
+
+def get_plot_group(cp, section_tag):
+    """Gets plotting groups from [workflow-section_tag]."""
+    group_prefix = "plot-group-"
+    # parameters for the summary plots
+    plot_groups = {}
+    opts = [opt for opt in cp.options("workflow-{}".format(section_tag))
+            if opt.startswith(group_prefix)]
+    for opt in opts:
+        group = opt.replace(group_prefix, "").replace("-", "_")
+        plot_groups[group] = cp.get_opt_tag("workflow", opt, section_tag)
+    return plot_groups
+
+# command line parser
+parser = argparse.ArgumentParser(description=__doc__[1:])
+
+# version option
+parser.add_argument("--version", action="version", version=__version__,
+                    help="Prints version information.")
+
+# workflow options
+parser.add_argument("--workflow-name", required=True,
+                    help="Name of the workflow to append in various places.")
+parser.add_argument("--tags", nargs="+", default=[],
+                    help="Tags to apend in various places.")
+parser.add_argument("--output-dir", default=None,
+                    help="Path to directory where the workflow will be "
+                         "written. Default is to use "
+                         "{workflow-name}_output.")
+parser.add_argument("--output-map", default="output.map",
+                    help="Path to an output map file. Default is "
+                         "output.map.")
+parser.add_argument("--transformation-catalog", default=None,
+                    help="Path to transformation catalog file.")
+parser.add_argument("--dax-file", default=None,
+                    help="Path to DAX file. Default is to write to the "
+                         "output directory with name {workflow-name}.dax.")
+# inference options
+parser.add_argument("--seed", type=int, default=0,
+                    help="Seed to use for inference job(s). If multiple "
+                         "events are analyzed, the seed will be incremented "
+                         "by one for each event.")
+# input configuration file options
+parser.add_argument("--samples-file-cache", required=True,
+                    help="Text file listing a label, the samples "
+                         "file(s) to create posteriors for, and any "
+                         "additional arguments for extracting samples."
+                    )
+#parser.add_argument("--posterior-files", metavar="FILE[:LABEL]", nargs="+",
+#                    required=True,
+#                    help="Posterior files to create plots for.")
+#parser.add_argument("--config-files", metavar="FILE:CONFIG", nargs="+",
+#                    help="Specify the config files used for each file. Needed "
+#                         "for plotting priors.")
+# add option groups
+configuration.add_workflow_command_line_group(parser)
+
+# parser command line
+opts = parser.parse_args()
+
+# get posterior files and labels
+elabels, infconfig_files, samples_files = \
+    load_samples_cache(samples_cache)
+
+#labels = {}
+#posterior_files = []
+#for fn in opts.posterior_files:
+#    try:
+#        fn, label = fn.split(':')
+#    except ValueError:
+#        # assume no label provided
+#        label = os.path.basename(fn).replace('.hdf', '').replace('_', ' ')
+#    labels[fn] = fn
+#    posterior_files.append(fn)
+#
+## try to get config files
+#config_files = {}
+#for fn in opts.config_files:
+#    fn, cfg = fn.split(':')
+#    # make sure the file name exists
+#    if fn not in labels:
+#        raise ValueError("config file provided for unrecognized file: {}"
+#                         .format(fn))
+#    config_files[fn] = cfg
+
+
+posterior_file_dir = 'posterior_files'
+config_file_dir = 'config_files'
+
+# make data output directory
+if opts.output_dir is None:
+    opts.output_dir = opts.workflow_name + '_output'
+core.makedir(opts.output_dir)
+core.makedir('{}/{}'.format(opts.output_dir, config_file_dir))
+core.makedir('{}/{}'.format(opts.output_dir, posterior_file_dir))
+
+# set the dax file name
+dax_file = opts.dax_file
+if dax_file is None:
+    dax_file = "{}.dax".format(opts.workflow_name)
+
+# the file we'll store all output files in
+filedir = 'output'
+
+# log to terminal until we know where the path to log output file
+log_format = "%(asctime)s:%(levelname)s : %(message)s"
+logging.basicConfig(format=log_format, level=logging.INFO)
+
+# create workflow and sub-workflows
+container = core.Workflow(opts, opts.workflow_name)
+workflow = core.Workflow(opts, opts.workflow_name + "-main")
+finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
+
+# change working directory to the output
+origdir = os.path.abspath(os.curdir)
+os.chdir(opts.output_dir)
+
+# figure out what diagnostic jobs there are
+diagnostics = []
+if "inference_samples" in workflow.cp.options("executables"):
+    diagnostics.append('samples')
+if "inference_rate" in workflow.cp.options("executables"):
+    diagnostics.append('acceptance_rate')
+
+# sections for output HTML pages
+rdir = layout.SectionNumber("results",
+                            ["detector_sensitivity", "priors", "posteriors"] +
+                            diagnostics +
+                            ["config_files", "workflow"])
+
+# make results directories
+core.makedir(rdir.base)
+core.makedir(rdir["workflow"])
+core.makedir(rdir["config_files"])
+
+# create files for workflow log
+log_file_txt = core.File(workflow.ifos, "workflow-log", workflow.analysis_time,
+                      extension=".txt", directory=rdir["workflow"])
+log_file_html = core.File(workflow.ifos, "WORKFLOW-LOG", workflow.analysis_time,
+                        extension=".html", directory=rdir["workflow"])
+
+# switch saving log to file
+logging.basicConfig(format=log_format, level=logging.INFO,
+                    filename=log_file_txt.storage_path, filemode="w")
+log_file = logging.FileHandler(filename=log_file_txt.storage_path, mode="w")
+log_file.setLevel(logging.INFO)
+formatter = logging.Formatter(log_format)
+log_file.setFormatter(formatter)
+logging.getLogger("").addHandler(log_file)
+logging.info("Created log file %s" % log_file_txt.storage_path)
+
+
+# figure out what parameters user wants to plot from workflow configuration
+group_prefix = "plot-group-"
+# parameters for the summary plots
+summary_plot_params = get_plot_group(workflow.cp, 'summary_plots')
+# parameters to plot in large corner plots
+plot_params = get_plot_group(workflow.cp, 'plot_parameters')
+# get parameters for the summary tables
+table_params = workflow.cp.get_opt_tag('workflow', 'table-parameters',
+                                       'summary_table')
+summary_page = []
+psd_page = []
+config_files = {}
+for num_event, config_fnames in enumerate(infconfig_files):
+    label = elabels[num_event]
+    if label is None:
+        label = 'Event {}'.format(num_event)
+    label = label.replace(' ', '_').replace(':', '_').replace('+', '_')
+
+    # create a sub workflow for this event
+    # we need to go back to the original directory to do this for all the file
+    # references to work correctly
+    os.chdir(origdir)
+    sub_workflow = core.Workflow(opts,
+                                 "{}-{}".format(opts.workflow_name, label))
+    # now go back to the output
+    os.chdir(opts.output_dir)
+
+    # write the configuration file to the config files directory
+    overrides = infconfig_overrides[num_event]
+    deletions = infconfig_deletions[num_event]
+    cp = configuration.WorkflowConfigParser(config_fnames,
+                                            overrideTuples=overrides,
+                                            deleteTuples=deletions)
+    config_file = sub_workflow.save_config(config_file_tmplt.format(label),
+                                           config_file_dir, cp)[0]
+    # create sym links to config file for results page
+    base = "config_files/{}".format(label)
+    layout.single_layout(rdir[base], [config_file])
+    symlink_path(config_file, rdir[base])
+
+    # make node for running sampler
+    inference_exe = core.Executable(sub_workflow.cp, "inference",
+                                    ifos=sub_workflow.ifos, out_dir=filedir)
+    node = inference_exe.create_node()
+    node.add_input_opt("--config-file", config_file)
+    node.add_opt("--seed", opts.seed+num_event)
+    analysis_index = segments.segment(num_event, num_event+1)
+    inference_file = node.new_output_file_opt(analysis_index, ".hdf",
+                                              "--output-file",
+                                              tags=opts.tags+[label])
+
+    # add node to workflow
+    sub_workflow += node
+
+    # summary table
+    summary_page += (inffu.make_inference_summary_table(
+        sub_workflow, inference_file, rdir.base,
+        parameters=table_params,
+        analysis_seg=analysis_index,
+        result_label=label,
+        tags=opts.tags+[label]),)
+
+    # summary posteriors
+    summary_plots = []
+    for group, params in summary_plot_params.items():
+        summary_plots += inffu.make_inference_posterior_plot(
+            sub_workflow, inference_file, rdir.base,
+            parameters=params, plot_prior_from_file=config_file,
+            analysis_seg=analysis_index,
+            tags=opts.tags+[label, group])
+    summary_page += list(layout.grouper(summary_plots, 2))
+    
+
+    # files for detector_sensitivity summary subsection
+    base = "detector_sensitivity"
+    psd_page.append(plotting.make_spectrum_plot(
+        sub_workflow, [inference_file], rdir[base],
+        tags=opts.tags+[label],
+        hdf_group="data"))
+
+    # files for priors summary section
+    base = "priors/{}".format(label)
+    prior_plots = []
+    for group, params in plot_params.items():
+        prior_plots += inffu.make_inference_prior_plot(
+            sub_workflow, config_file, rdir[base],
+            analysis_seg=sub_workflow.analysis_time,
+            parameters=params,
+            tags=opts.tags+[label, group])
+    layout.single_layout(rdir[base], prior_plots)
+
+    # files for posteriors summary subsection
+    base = "posteriors/{}".format(label)
+    posterior_plots = []
+    for group, params in plot_params.items():
+        posterior_plots += inffu.make_inference_posterior_plot(
+            sub_workflow, inference_file, rdir[base],
+            parameters=params, plot_prior_from_file=config_file,
+            analysis_seg=analysis_index,
+            tags=opts.tags+[label, group])
+    layout.single_layout(rdir[base], posterior_plots)
+
+    # files for diagnostics section
+    if 'samples' in diagnostics:
+        # files for samples summary subsection
+        base = "samples/{}".format(label)
+        samples_plots = []
+        for group, parameters in plot_params.items():
+            samples_plots += inffu.make_inference_samples_plot(
+                sub_workflow, inference_file, rdir[base],
+                parameters=parameters,
+                analysis_seg=analysis_index,
+                tags=opts.tags+[label, group])
+        layout.group_layout(rdir[base], samples_plots)
+
+    if 'acceptance_rate' in diagnostics:
+        # files for samples acceptance_rate subsection
+        base = "acceptance_rate/{}".format(label)
+        acceptance_plot = inffu.make_inference_acceptance_rate_plot(
+            sub_workflow, inference_file, rdir[base],
+            analysis_seg=analysis_index,
+            tags=opts.tags+[label])
+        layout.single_layout(rdir[base], acceptance_plot)
+
+    # add the sub workflow to the main workflow
+    workflow += sub_workflow
+
+# build the summary page
+layout.two_column_layout(rdir.base, summary_page)
+
+# build the psd page
+layout.group_layout(rdir['detector_sensitivity'], psd_page)
+
+# build the config page
+
+# create versioning HTML pages
+results.create_versioning_page(rdir["workflow/version"], container.cp)
+
+# create node for making HTML pages
+plotting.make_results_web_page(finalize_workflow,
+    os.path.join(os.getcwd(), rdir.base))
+
+# add sub-workflows to workflow
+container += workflow
+container += finalize_workflow
+
+# make finalize sub-workflow depend on main sub-workflow
+dep = dax.Dependency(parent=workflow.as_job, child=finalize_workflow.as_job)
+container._adag.addDependency(dep)
+
+# write dax
+container.save(filename=dax_file, output_map_path=opts.output_map,
+               transformation_catalog_path=opts.transformation_catalog)
+
+# save workflow configuration file
+base = rdir["workflow/configuration"]
+core.makedir(base)
+wf_ini = workflow.save_config("workflow.ini", base, container.cp)
+layout.single_layout(base, wf_ini)
+
+# close the log and flush to the html file
+logging.shutdown()
+with open (log_file_txt.storage_path, "r") as log_file:
+    log_data = log_file.read()
+log_str = """
+<p>Workflow generation script created workflow in output directory: %s</p>
+<p>Workflow name is: %s</p>
+<p>Workflow generation script run on host: %s</p>
+<pre>%s</pre>
+""" % (os.getcwd(), opts.workflow_name, socket.gethostname(), log_data)
+kwds = {"title" : "Workflow Generation Log",
+        "caption" : "Log of the workflow script %s" % sys.argv[0],
+        "cmd" : " ".join(sys.argv)}
+results.save_fig_with_metadata(log_str, log_file_html.storage_path, **kwds)
+layout.single_layout(rdir["workflow"], ([log_file_html]))
