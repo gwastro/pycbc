@@ -1179,15 +1179,18 @@ class TwoOGCBBHStatistic(ExpFitSGFgBgRateNewStatistic):
         ExpFitSGFgBgRateNewStatistic.__init__(self, files=files, ifos=ifos,
                                               **kwargs)
         self.get_newsnr = ranking.get_newsnr_sgveto_psdvar_scaled_threshold
-        self.max_chirp_mass = max_chirp_mass
+        # Be careful! The input type here might be a str, so we need to make
+        # sure to cast to float.
+        self.max_chirp_mass = float(max_chirp_mass)
         self.curr_mchirp = None
 
     def single(self, trigs):
         from pycbc.conversions import mchirp_from_mass1_mass2
-        self.mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
-                                              trigs.param['mass2'])
-        if max_chirp_mass is not None and self.mchirp > self.max_chirp_mass:
-            self.curr_mchirp = self.max_chirp_mass
+        self.curr_mchirp = mchirp_from_mass1_mass2(trigs.param['mass1'],
+                                                   trigs.param['mass2'])
+        mcm = self.max_chirp_mass
+        if mcm is not None and self.curr_mchirp > mcm:
+            self.curr_mchirp = mcm
         return ExpFitSGFgBgRateNewStatistic.single(self, trigs)
 
     def logsignalrate_multiifo(self, stats, shift, to_shift):

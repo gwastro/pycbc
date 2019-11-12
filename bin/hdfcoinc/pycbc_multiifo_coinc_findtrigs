@@ -224,8 +224,8 @@ for inputstr in args.statistic_key_word_arguments:
         key, value = inputstr.split(':')
         extra_kwargs[key] = value
     except ValueError:
-        err_txt = "--statistic-key-word-arguments must take input in the "
-                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... "
+        err_txt = "--statistic-key-word-arguments must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
                   "Received {}".format(args.statistic_key_word_arguments)
         raise ValueError(err_txt)
 
