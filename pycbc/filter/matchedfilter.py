@@ -1691,7 +1691,7 @@ class LiveBatchMatchedFilter(object):
         for htilde in tgroup:
             sgm = htilde.sigmasq(psd)
             norm = 4.0 * htilde.delta_f / (sgm ** 0.5)
-        
+
             for seg in segs:
                 l = htilde.out[seg].abs_arg_max()
                 l += valid_start
