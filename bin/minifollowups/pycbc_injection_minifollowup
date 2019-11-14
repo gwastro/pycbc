@@ -61,6 +61,9 @@ parser.add_argument('--inj-window', type=int, default=0.5,
 parser.add_argument('--ifar-threshold', type=float, default=None,
                     help="If given also followup injections with ifar smaller "
                          "than this threshold.")
+parser.add_argument('--maximum-decisive-snr', type=float, default=None,
+                    help="If given, only followup injections where the "
+                         "decisive SNR is smaller than this value.")
 parser.add_argument('--output-map')
 parser.add_argument('--output-file')
 parser.add_argument('--transformation-catalog')
@@ -121,6 +124,9 @@ try:
                        f['injections/optimal_snr_2'][:][missed]]
         # 'decisive' opt SNR is 2nd smallest
         dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
+        if args.maximum_decisive_snr is not None:
+            # By setting to 0, these injections will not be considered
+            dec_snr[dec_snr > args.maximum_decisive_snr] = 0
         sorting = dec_snr.argsort()
     else:
         optstrings = [os for os in f['injections'].keys() if \
