@@ -1106,11 +1106,11 @@ def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
     spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
 
-    if abs(spin) > 0.9996 or mass < 0:
-        return numpy.nan
-    else:
-        return freq_from_final_mass_spin(mass, spin,
-                                         l=new_l, m=new_m, nmodes=1)
+    mass[mass < 0] = numpy.nan
+    spin[numpy.abs(spin) > 0.9996] = numpy.nan
+
+    return freq_from_final_mass_spin(mass, spin,
+                                     l=new_l, m=new_m, nmodes=1)
 
 
 def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
@@ -1143,11 +1143,11 @@ def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
     mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
     spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
 
-    if abs(spin) > 0.9996 or mass < 0:
-        return numpy.nan
-    else:
-        return tau_from_final_mass_spin(mass, spin,
-                                        l=new_l, m=new_m, nmodes=1)
+    mass[mass < 0] = numpy.nan
+    spin[numpy.abs(spin) > 0.9996] = numpy.nan
+
+    return tau_from_final_mass_spin(mass, spin,
+                                    l=new_l, m=new_m, nmodes=1)
 
 def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                            spin2x=0., spin2y=0., spin2z=0.,
