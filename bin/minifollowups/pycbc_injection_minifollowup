@@ -124,10 +124,6 @@ try:
                        f['injections/optimal_snr_2'][:][missed]]
         # 'decisive' opt SNR is 2nd largest
         dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
-        if args.maximum_decisive_snr is not None:
-            # By setting to 0, these injections will not be considered
-            dec_snr[dec_snr > args.maximum_decisive_snr] = 0
-        sorting = dec_snr.argsort()
     else:
         optstrings = [os for os in f['injections'].keys() if \
                       os.startswith('optimal_snr_')]
@@ -135,11 +131,11 @@ try:
         # 2nd largest opt SNR
         dec_snr = [sorted(snrs)[-2] for snrs in zip(*optimal_snr)]
         dec_snr = numpy.array(dec_snr)
-        if args.maximum_decisive_snr is not None:
-            # By setting to 0, these injections will not be considered
-            dec_snr[dec_snr > args.maximum_decisive_snr] = 0
-        sorting = dec_snr.argsort()
-
+    
+    if args.maximum_decisive_snr is not None:
+        # By setting to 0, these injections will not be considered
+        dec_snr[dec_snr > args.maximum_decisive_snr] = 0
+    sorting = dec_snr.argsort()
     sorting = sorting[::-1]  # descending order of dec opt SNR
 except KeyError:
     # Fall back to effective distance if optimal SNR not available
