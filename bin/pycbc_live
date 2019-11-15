@@ -26,7 +26,7 @@ from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
 from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
-from pycbc.events.single import LiveSingleFarThreshold
+from pycbc.events.single import LiveSingle
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
@@ -546,7 +546,7 @@ parser.add_argument('--run-snr-optimization', action='store_true',
 
 
 scheme.insert_processing_option_group(parser)
-LiveSingleFarThreshold.insert_args(parser)
+LiveSingle.insert_args(parser)
 fft.insert_fft_option_group(parser)
 Coincer.insert_args(parser)
 SingleDetSGChisq.insert_option_group(parser)
@@ -655,7 +655,7 @@ with ctx:
 
     # create single-detector background "estimators"
     if args.enable_single_detector_background and evnt.rank == 0:
-        sngl_estimator = {ifo: LiveSingleFarThreshold.from_cli(args, ifo)
+        sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
                           for ifo in ifos}
 
     # Create double coincident background estimator for every combo

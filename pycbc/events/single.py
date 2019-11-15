@@ -8,11 +8,13 @@ class LiveSingle(object):
     def __init__(self, ifo,
                  newsnr_threshold=10.0,
                  reduced_chisq_threshold=5,
-                 duration_threshold=0):
+                 duration_threshold=0,
+                 fixed_ifar=False):
         self.ifo = ifo
         self.newsnr_threshold = newsnr_threshold
         self.reduced_chisq_threshold = reduced_chisq_threshold
         self.duration_threshold = duration_threshold
+        self.fixed_ifar=fixed_ifar
 
     @staticmethod
     def insert_args(parser):
@@ -34,7 +36,7 @@ class LiveSingle(object):
            duration_threshold=args.single_duration_threshold[ifo],
            )
 
-    def check(self, triggers, data_reader, conservative=False):
+    def check(self, triggers, data_reader, conservative=True):
         """ Look for a single detector trigger that passes the thresholds in
         the current data.
         """
@@ -54,56 +56,29 @@ class LiveSingle(object):
             fake_coinc = {'foreground/%s/%s' % (self.ifo, k): triggers[k][i]
                           for k in triggers}
             fake_coinc['foreground/stat'] = nsnr
-            fake_coinc['foreground/ifar'] = calculate_ifar(triggers, nsnr, ifo,
-                                                           fixed_ifar=self.fixed_ifar,
-                                                           conservative=conservative)
+            fake_coinc['foreground/ifar'] = self.calculate_ifar(triggers, nsnr, self.ifo,
+                                                                conservative=conservative)
             fake_coinc['HWINJ'] = data_reader.near_hwinj()
             return fake_coinc
         return None
 
-
-class LiveSingleFarThreshold(LiveSingle):
-    def __init__(self, ifo,
-                 newsnr_threshold=10.0,
-                 reduced_chisq_threshold=5,
-                 duration_threshold=0,
-                 fixed_ifar=0):
-        super(LiveSingleFarThreshold).__init__(self, ifo,
-              newsnr_threshold=10.0,
-              reduced_chisq_threshold=5,
-              duration_threshold=0)
-        self.fixed_ifar = fixed_ifar
-
-
-class LiveSingleCalculateIfar(LiveSingle):
-    def __init__(self, ifo,
-                 newsnr_threshold=10.0,
-                 reduced_chisq_threshold=5,
-                 duration_threshold=0):
-        super(LiveSingleFarThreshold).__init__(self, ifo,
-              newsnr_threshold=10.0,
-              reduced_chisq_threshold=5,
-              duration_threshold=0)
-        self.fixed_ifar = False
-
+    def calculate_ifar(self, triggers, newsnr, fit_threshold=6.0,
+                       conservative=True):
+        if self.fixed_ifar:
+            return self.fixed_ifar
+        # Fit coefficients for each ifo based on O3a trigger fits files
+        if conservative:
+            cct_to_use = 'conservative'
+        else:
+            cct_to_use = self.ifo
+        cct = single_fits_coeff_count_time[cct_to_use]
+        n_louder = cct[1] * fits.cum_fit('exponential', newsnr, cct[0],
+                                         fit_threshold)
+        return conv.sec_to_year(cct[2] / (n_louder))
 
 single_fits_coeff_count_time = {
     'H1': (5.69015, 107893373, 10184192),
-    'L1': (5.72713,  95714610, 10908800),
+    'L1': (5.72713, 95714610, 10908800),
     'V1': (5.58611, 112008750, 11468656),
     'conservative': (5.03662, 28909432, 10184192)
 }
-
-def calculate_ifar(triggers, newsnr, ifo, fit_threshold=6.0,
-                   fixed_ifar=False, conservative=False):
-    if fixed_ifar:
-        return fixed_ifar
-    # Fit coefficients for each ifo based on O3a trigger fits files
-    if conservative:
-        cct_to_use = 'conservative'
-    else:
-        cct_to_use = ifo
-    cct = single_fits_coeff_count_time[cct_to_use]
-    n_louder = cct[1] * fits.cum_fit('exponential', newsnr, cct[0],
-                                     fit_threshold)
-    return conv.sec_to_year(cct[2] / (n_louder))
