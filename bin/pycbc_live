@@ -311,7 +311,8 @@ class LiveEventManager(object):
         active = [k for k in results if results[k] != None]
         if len(active) == 1:
             ifo = active[0]
-            single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
+            single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo],
+                                               args.conservative_sngl_ifar_est)
 
             if single is not None:
                 fud = self.compute_followup_data([ifo], single, data_reader,
@@ -505,6 +506,9 @@ parser.add_argument('--enable-profiling', type=int, metavar='RANK',
                          ' with given rank at the end of program execution')
 
 parser.add_argument('--enable-background-estimation', default=False, action='store_true')
+parser.add_argument('--conservative-sngl-ifar-est', default=True, action='store_true',
+                    help='Use conservative trigger fit values in estimation of '
+                         'single trigger ifars. Default=True')
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading coincident '
                          'triggers to GraceDB, in years.')
