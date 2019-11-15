@@ -122,7 +122,7 @@ try:
     if 'optimal_snr_1' in f['injections'].keys():  # 2-ifo pipeline case
         optimal_snr = [f['injections/optimal_snr_1'][:][missed],
                        f['injections/optimal_snr_2'][:][missed]]
-        # 'decisive' opt SNR is 2nd smallest
+        # 'decisive' opt SNR is 2nd largest
         dec_snr = numpy.minimum(optimal_snr[0], optimal_snr[1])
         if args.maximum_decisive_snr is not None:
             # By setting to 0, these injections will not be considered
@@ -132,9 +132,13 @@ try:
         optstrings = [os for os in f['injections'].keys() if \
                       os.startswith('optimal_snr_')]
         optimal_snr = [f['injections/%s' % os][:][missed] for os in optstrings]
-        # 2nd smallest opt SNR
-        dec_snr = [sorted(snrs)[1] for snrs in zip(*optimal_snr)]
-        sorting = numpy.array(dec_snr).argsort()
+        # 2nd largest opt SNR
+        dec_snr = [sorted(snrs)[-2] for snrs in zip(*optimal_snr)]
+        dec_snr = numpy.array(dec_snr)
+        if args.maximum_decisive_snr is not None:
+            # By setting to 0, these injections will not be considered
+            dec_snr[dec_snr > args.maximum_decisive_snr] = 0
+        sorting = dec_snr.argsort()
 
     sorting = sorting[::-1]  # descending order of dec opt SNR
 except KeyError:
