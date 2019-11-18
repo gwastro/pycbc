@@ -29,6 +29,12 @@ parser.add_argument("--statistic-files", nargs='*', action='append', default=[],
 parser.add_argument("--ranking-statistic", choices=stat.statistic_dict.keys(),
                     default='newsnr',
                     help="The coinc ranking statistic to calculate")
+parser.add_argument("--statistic-keywords", nargs='*',
+                    default=[],
+                    help="Provide additional key-word arguments to be sent to "
+                         "the statistic class when it is initialized. Should "
+                         "be given in format --statistic-keywords "
+                         "KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ...")
 parser.add_argument("--use-maxalpha", action="store_true")
 parser.add_argument("--coinc-threshold", type=float, default=0.0,
                     help="Seconds to add to time-of-flight coincidence window")
@@ -212,8 +218,20 @@ for sngl in trigs.singles:
     sngl.valid = veto.segments_to_start_end(sngl.segs)
 
 # Stat class instance to calculate the coinc ranking statistic
+extra_kwargs = {}
+for inputstr in args.statistic_keywords:
+    try:
+        key, value = inputstr.split(':')
+        extra_kwargs[key] = value
+    except ValueError:
+        err_txt = "--statistic-keywords must take input in the " \
+                  "form KWARG1:VALUE1 KWARG2:VALUE2 KWARG3:VALUE3 ... " \
+                  "Received {}".format(args.statistic_keywords)
+        raise ValueError(err_txt)
+
 rank_method = stat.get_statistic(args.ranking_statistic)(args.statistic_files,
-                                                         ifos=trigs.ifos)
+                                                         ifos=trigs.ifos,
+                                                         **extra_kwargs)
 
 # Sanity check, time slide interval should be larger than twice the
 # Earth crossing time, which is approximately 0.085 seconds.
