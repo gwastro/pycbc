@@ -85,6 +85,8 @@ def load_samples_cache(samples_cache):
             labels.append(lbl.strip())
             config_files.append(cfs)
             samples_files.append(smps)
+    if len(samples_files) == 0:
+        raise ValueError("no samples files found in given cache")
     # check that the labels are unique
     if not len(set(labels)) == len(labels):
         raise ValueError("all labels in config cache must be unique")
@@ -161,29 +163,7 @@ opts = parser.parse_args()
 
 # get posterior files and labels
 elabels, infconfig_files, samples_files = \
-    load_samples_cache(samples_cache)
-
-#labels = {}
-#posterior_files = []
-#for fn in opts.posterior_files:
-#    try:
-#        fn, label = fn.split(':')
-#    except ValueError:
-#        # assume no label provided
-#        label = os.path.basename(fn).replace('.hdf', '').replace('_', ' ')
-#    labels[fn] = fn
-#    posterior_files.append(fn)
-#
-## try to get config files
-#config_files = {}
-#for fn in opts.config_files:
-#    fn, cfg = fn.split(':')
-#    # make sure the file name exists
-#    if fn not in labels:
-#        raise ValueError("config file provided for unrecognized file: {}"
-#                         .format(fn))
-#    config_files[fn] = cfg
-
+    load_samples_cache(opts.samples_file_cache)
 
 posterior_file_dir = 'posterior_files'
 config_file_dir = 'config_files'
@@ -251,6 +231,10 @@ logging.getLogger("").addHandler(log_file)
 logging.info("Created log file %s" % log_file_txt.storage_path)
 
 
+# get the parameters that will be used for posterior files and plots
+posterior_params = workflow.cp.get_opt_tag('workflow', 'posterior-parameters',
+                                           'parameters')
+
 # figure out what parameters user wants to plot from workflow configuration
 group_prefix = "plot-group-"
 # parameters for the summary plots
@@ -263,11 +247,13 @@ table_params = workflow.cp.get_opt_tag('workflow', 'table-parameters',
 summary_page = []
 psd_page = []
 config_files = {}
-for num_event, config_fnames in enumerate(infconfig_files):
+for num_event, samples_filelist in enumerate(samples_files):
     label = elabels[num_event]
     if label is None:
         label = 'Event {}'.format(num_event)
     label = label.replace(' ', '_').replace(':', '_').replace('+', '_')
+
+    config_fnames = infconfig_files[num_event]
 
     # create a sub workflow for this event
     # we need to go back to the original directory to do this for all the file
@@ -279,11 +265,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     os.chdir(opts.output_dir)
 
     # write the configuration file to the config files directory
-    overrides = infconfig_overrides[num_event]
-    deletions = infconfig_deletions[num_event]
-    cp = configuration.WorkflowConfigParser(config_fnames,
-                                            overrideTuples=overrides,
-                                            deleteTuples=deletions)
+    cp = configuration.WorkflowConfigParser(config_fnames)
     config_file = sub_workflow.save_config(config_file_tmplt.format(label),
                                            config_file_dir, cp)[0]
     # create sym links to config file for results page
@@ -291,23 +273,18 @@ for num_event, config_fnames in enumerate(infconfig_files):
     layout.single_layout(rdir[base], [config_file])
     symlink_path(config_file, rdir[base])
 
-    # make node for running sampler
-    inference_exe = core.Executable(sub_workflow.cp, "inference",
-                                    ifos=sub_workflow.ifos, out_dir=filedir)
-    node = inference_exe.create_node()
-    node.add_input_opt("--config-file", config_file)
-    node.add_opt("--seed", opts.seed+num_event)
-    analysis_index = segments.segment(num_event, num_event+1)
-    inference_file = node.new_output_file_opt(analysis_index, ".hdf",
-                                              "--output-file",
-                                              tags=opts.tags+[label])
+    # convert the samples files to workflow File types
+    samples_filelist = core.FileList(map(core.File, samples_filelist))
 
-    # add node to workflow
-    sub_workflow += node
+    # make node for running extract samples
+    posterior_file = inffu.create_posterior_files(
+        sub_workflow, samples_filelist, output_dir,
+        parameters=posterior_params, analysis_seg=analysis_index,
+        tags=opts.tags+[label])
 
     # summary table
     summary_page += (inffu.make_inference_summary_table(
-        sub_workflow, inference_file, rdir.base,
+        sub_workflow, posterior_file, rdir.base,
         parameters=table_params,
         analysis_seg=analysis_index,
         result_label=label,
@@ -317,7 +294,7 @@ for num_event, config_fnames in enumerate(infconfig_files):
     summary_plots = []
     for group, params in summary_plot_params.items():
         summary_plots += inffu.make_inference_posterior_plot(
-            sub_workflow, inference_file, rdir.base,
+            sub_workflow, posterior_file, rdir.base,
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_index,
             tags=opts.tags+[label, group])
@@ -326,8 +303,9 @@ for num_event, config_fnames in enumerate(infconfig_files):
 
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"
+    # we'll just use the first file, and assume the rest are the same
     psd_page.append(plotting.make_spectrum_plot(
-        sub_workflow, [inference_file], rdir[base],
+        sub_workflow, [samples_filelist[0]], rdir[base],
         tags=opts.tags+[label],
         hdf_group="data"))
 
@@ -347,32 +325,33 @@ for num_event, config_fnames in enumerate(infconfig_files):
     posterior_plots = []
     for group, params in plot_params.items():
         posterior_plots += inffu.make_inference_posterior_plot(
-            sub_workflow, inference_file, rdir[base],
+            sub_workflow, posterior_file, rdir[base],
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_index,
             tags=opts.tags+[label, group])
     layout.single_layout(rdir[base], posterior_plots)
 
     # files for diagnostics section
+    # Note: all diagnositics plots use the samples files, not the posteriors
     if 'samples' in diagnostics:
         # files for samples summary subsection
         base = "samples/{}".format(label)
         samples_plots = []
-        for group, parameters in plot_params.items():
+        for kk, sf in enumerate(samples_filelist):
             samples_plots += inffu.make_inference_samples_plot(
-                sub_workflow, inference_file, rdir[base],
-                parameters=parameters,
+                sub_workflow, sf, rdir[base],
                 analysis_seg=analysis_index,
-                tags=opts.tags+[label, group])
+                tags=opts.tags+[label, group, kk])
         layout.group_layout(rdir[base], samples_plots)
 
     if 'acceptance_rate' in diagnostics:
         # files for samples acceptance_rate subsection
         base = "acceptance_rate/{}".format(label)
-        acceptance_plot = inffu.make_inference_acceptance_rate_plot(
-            sub_workflow, inference_file, rdir[base],
-            analysis_seg=analysis_index,
-            tags=opts.tags+[label])
+        for kk, sf in enumerate(samples_filelist):
+            acceptance_plot = inffu.make_inference_acceptance_rate_plot(
+                sub_workflow, sf, rdir[base],
+                analysis_seg=analysis_index,
+                tags=opts.tags+[label, kk])
         layout.single_layout(rdir[base], acceptance_plot)
 
     # add the sub workflow to the main workflow

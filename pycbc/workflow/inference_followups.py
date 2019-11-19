@@ -178,6 +178,59 @@ def make_inference_prior_plot(workflow, config_file, output_dir,
 
     return node.output_files
 
+
+def create_posterior_files(workflow, samples_files, output_dir,
+                           parameters=None, name="extract_posterior",
+                           analysis_seg=None, tags=None):
+    """Sets up job to create posterior files from some given samples files.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The workflow instance we are populating
+    samples_files : str or list of str
+        One or more files to extract the posterior samples from.
+    output_dir: str
+        The directory to store result plots and files.
+    parameters : list, optional
+        A list of the parameters to extract, and (optionally) a name for them
+        to be mapped to. This is passed to the program's ``--parameters``
+        argument.
+    name: str, optional
+        The name in the [executables] section of the configuration file
+        to use.
+    analysis_segs: {None, ligo.segments.Segment}
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: list, optional
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of result and output files.
+    """
+    if analysis set is None:
+        analysis_seg = workflow.analysis_time
+    if tags is None:
+        tags = []
+    extract_posterior_exe = core.Executable(workflow.cp, name,
+                                            ifos=workflow.ifos,
+                                            out_dir=output_dir)
+    node = extract_posterior_exe.create_node()
+    if not isinstance(sample_files, list):
+        sample_files = [sample_files]
+    node.add_input_list_opt("--input-file", samples_files)
+    if parameters is not None:
+        node.add_opt("--parameters", _params_for_pegasus(parameters))
+    posterior_file = node.new_output_file_opt(analysis_seg, ".hdf",
+                                              "--output-file",
+                                              tags=tags)
+    # add node to workflow
+    workflow += node
+    return node.output_files
+
+
 def make_inference_summary_table(workflow, inference_file, output_dir,
                     result_label=None,
                     parameters=None, name="inference_table",
@@ -323,7 +376,8 @@ def make_inference_samples_plot(
     # add command line options
     node.add_input_opt("--input-file", inference_file)
     node.new_output_file_opt(analysis_seg, ".png", "--output-file")
-    node.add_opt("--parameters", _params_for_pegasus(parameters))
+    if parameters is not None:
+        node.add_opt("--parameters", _params_for_pegasus(parameters))
 
     # add node to workflow
     workflow += node
