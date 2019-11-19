@@ -757,7 +757,7 @@ class TimeSeries(Array):
             _numpy.savetxt(path, output)
         elif ext =='.hdf':
             key = 'data' if group is None else group
-            with h5py.File(path, 'w') as f:
+            with h5py.File(path, 'a') as f:
                 ds = f.create_dataset(key, data=self.numpy(),
                                       compression='gzip',
                                       compression_opts=9, shuffle=True)
