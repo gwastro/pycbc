@@ -18,11 +18,9 @@ from __future__ import division
 import math
 import numpy as np
 import pycbc
-#import pycbc.tmpltbank.em_progenitors
 import os.path
 import scipy.optimize
 import scipy.interpolate
-#from lal import LAL_PI, LAL_MTSUN_SI
 
 #############################################################################
 # Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz formalism #
@@ -112,11 +110,8 @@ def PG_ISSO_eq(r, chi, incl):
 
     X=chi2*(chi2*(3*chi2+4*r*(2*r-3))+r2*(15*r*(r-4)+28))-6*r4*(r2-4)
     Y=chi4*(chi4+r2*(7*r*(three_r-4)+36))+6*r*r_minus_2*(chi4*chi2+2*r2*r*(chi2*(three_r+2)+3*r2*r_minus_2))
-    #X=chi**2*(chi**2*(3*chi**2+4*r*(2*r-3))+r**2*(15*r*(r-4)+28))-6*r**4*(r**2-4)
-    #Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*(chi**2*(3*r+2)+3*r**2*(r-2)))
     Z=ISCO_eq(r, chi)
-
-    #return r**8*Z+chi**2*(1-cos_incl**2)*(chi**2*(1-cos_incl**2)*Y-2*r**4*X)
+    
     return r4*r4*Z+chi2*sin_incl2*(chi2*sin_incl2*Y-2*r4*X)
 
 # ISSO radius solver
