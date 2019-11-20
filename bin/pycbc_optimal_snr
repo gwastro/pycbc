@@ -99,12 +99,21 @@ class TimeVaryingPSD(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", action=pycbc.version.Version)
-    parser.add_argument('--input-file', '-i', dest='inj_xml', required=True,
+    parser.add_argument('--input-file', '-i', dest='injection_file',
+                        required=True,
                         help='Input LIGOLW file defining injections')
+    parser.add_argument('--injection-f-ref', type=float,
+                        help='Reference frequency in Hz for '
+                             'creating CBC injections from an XML '
+                             'file.')
+    parser.add_argument('--injection-f-final', type=float,
+                        help='Override the f_final field of a CBC '
+                             'XML injection file.')
     parser.add_argument('--output-file', '-o', dest='out_file', required=True,
                         help='Output LIGOLW file')
     parser.add_argument('--f-low', type=float, default=30.,
-                        help='Start frequency of matched-filter integration in Hz (default %(default)s)')
+                        help='Start frequency of matched-filter integration '
+                             'in Hz (default %(default)s)')
     parser.add_argument('--seg-length', type=float, default=256,
                         help='Segment duration in seconds (default %(default)s)')
     parser.add_argument('--sample-rate', type=float, default=16384,
@@ -212,7 +221,7 @@ if __name__ == '__main__':
         return inj
 
     logging.info("Loading injections")
-    injections = pycbc.inject.InjectionSet(opts.inj_xml)
+    injections = pycbc.inject.InjectionSet.from_cli(opts)
     np.random.seed(100)
     inj_table = sorted(injections.table, key=lambda x: np.random.random())
 
