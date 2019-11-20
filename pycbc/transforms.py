@@ -1885,6 +1885,7 @@ transforms = {
     CustomTransform.name : CustomTransform,
     MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
     Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
+    MchirpEtaToMass1Mass2.name : MchirpEtaToMass1Mass2,
     Mass1Mass2ToMchirpEta.name : Mass1Mass2ToMchirpEta,
     ChirpDistanceToDistance.name : ChirpDistanceToDistance,
     DistanceToChirpDistance.name : DistanceToChirpDistance,
