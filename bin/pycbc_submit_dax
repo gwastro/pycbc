@@ -417,12 +417,6 @@ if [ ! -z ${TRANSFORMATION_CATALOG} ] ; then
   echo "pegasus.catalog.transformation.file ${PWD}/transformation-catalog.txt" >> pegasus-properties.conf
 fi
 
-# Extra dibbs metadata information
-echo >> pegasus-properties.conf
-echo "# help Pegasus developers collect data on integrity failures" >> pegasus-properties.conf
-echo "pegasus.monitord.encoding = json" >> pegasus-properties.conf
-echo "pegasus.catalog.workflow.amqp.url = amqp://friend:donatedata@msgs.pegasus.isi.edu:5672/prod/workflows" >> pegasus-properties.conf
-
 echo >> pegasus-properties.conf
 cat extra-properties.conf >> pegasus-properties.conf
 
