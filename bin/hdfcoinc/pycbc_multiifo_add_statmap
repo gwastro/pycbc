@@ -120,6 +120,9 @@ if not injection_style:
     for k in files[0]['background']:
         if k not in all_ifos:
             pycbc.io.combine_and_copy(f, files, 'background/' + k)
+    for k in files[0]['background_exc']:
+        if k not in all_ifos:
+            pycbc.io.combine_and_copy(f, files, 'background_exc/' + k)
 
 if args.output_coinc_types:
     # create dataset of ifo combination strings
@@ -138,12 +141,16 @@ fg_trig_times = {}
 fg_trig_ids = {}
 bg_trig_times = {}
 bg_trig_ids = {}
+bg_exc_trig_times = {}
+bg_exc_trig_ids = {}
 
 for ifo in all_ifos:
     fg_trig_times[ifo] = np.array([], dtype=np.uint32)
     fg_trig_ids[ifo] = np.array([], dtype=np.uint32)
     bg_trig_times[ifo] = np.array([], dtype=np.uint32)
     bg_trig_ids[ifo] = np.array([], dtype=np.uint32)
+    bg_exc_trig_times[ifo] = np.array([], dtype=np.uint32)
+    bg_exc_trig_ids[ifo] = np.array([], dtype=np.uint32)
 
 # For each file, append the trigger time and id data for each ifo
 # If an ifo does not participate in any given coinc then fill with -1 values
@@ -159,6 +166,10 @@ for f_in in files:
                                         f_in['background/{}/time'.format(ifo)][:]])
                 bg_trig_ids[ifo] = np.concatenate([bg_trig_ids[ifo],
                                   f_in['background/{}/trigger_id'.format(ifo)][:]])
+                bg_exc_trig_times[ifo] = np.concatenate([bg_exc_trig_times[ifo],
+                                        f_in['background_exc/{}/time'.format(ifo)][:]])
+                bg_exc_trig_ids[ifo] = np.concatenate([bg_exc_trig_ids[ifo],
+                                  f_in['background_exc/{}/trigger_id'.format(ifo)][:]])
         else:
             fg_trig_times[ifo] = np.concatenate([fg_trig_times[ifo],
                                  -1 * np.ones_like(f_in['foreground/fap'][:],
@@ -173,6 +184,12 @@ for f_in in files:
                 bg_trig_ids[ifo] = np.concatenate([bg_trig_ids[ifo],
                                      -1 * np.ones_like(f_in['background/stat'][:],
                                                        dtype=np.uint32)])
+                bg_exc_trig_times[ifo] = np.concatenate([bg_exc_trig_times[ifo],
+                                     -1 * np.ones_like(f_in['background_exc/stat'][:],
+                                                       dtype=np.uint32)])
+                bg_exc_trig_ids[ifo] = np.concatenate([bg_exc_trig_ids[ifo],
+                                     -1 * np.ones_like(f_in['background_exc/stat'][:],
+                                                       dtype=np.uint32)])
 n_triggers = f['foreground/ifar'].size
 logging.info('{} foreground events before clustering'.format(n_triggers))
 
@@ -182,6 +199,9 @@ for ifo in all_ifos:
     if not injection_style:
         f['background/{}/time'.format(ifo)] = bg_trig_times[ifo]
         f['background/{}/trigger_id'.format(ifo)] = bg_trig_ids[ifo]
+        f['background_exc/{}/time'.format(ifo)] = bg_exc_trig_times[ifo]
+        f['background_exc/{}/trigger_id'.format(ifo)] = bg_exc_trig_ids[ifo]
+
 # fg_times is a tuple of trigger time arrays
 fg_times = (f['foreground/%s/time' % ifo][:] for ifo in all_ifos)
 
