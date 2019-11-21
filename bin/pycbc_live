@@ -192,7 +192,7 @@ class LiveEventManager(object):
         for ifo in ifos:
             if data_readers[ifo].near_hwinj():
                 coinc_results['HWINJ'] = True
-                break    
+                break
 
         if 'foreground/ifar' in coinc_results:
             logging.info('computing followup data for coinc')
@@ -225,7 +225,7 @@ class LiveEventManager(object):
             fname = 'coinc-{}-{}.xml.gz'.format(end_time, random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
-            comments = ['using ranking statistic: %s' 
+            comments = ['using ranking statistic: %s'
                         % args.background_statistic]
 
             ifar = coinc_results['foreground/ifar']
@@ -237,9 +237,9 @@ class LiveEventManager(object):
                 gid = None
                 event.save(fname)
 
-            if self.run_snr_optimization and gid is not None:
+            if self.run_snr_optimization:
                 template_id = \
-                    coinc_results['foreground/{}/template_id'.format(ifos[0])]
+                    coinc_results['foreground/{}/template_id'.format(live_ifos[0])]
                 p = props(bank.table[template_id])
                 apr = p.pop('approximant')
                 min_buffer = bank.minimum_buffer + 0.5
@@ -262,7 +262,7 @@ class LiveEventManager(object):
                     curr_data = data_readers[ifo].overwhitened_data(delta_f)
                     curr_data.save(curr_fname)
                     data_fils_str += '{}:{} ' .format(ifo, curr_fname)
-                    curr_fname = fname.replace('.xml.gz', 
+                    curr_fname = fname.replace('.xml.gz',
                                                '_{}_psd.hdf'.format(ifo))
                     curr_psd = curr_data.psd
                     curr_psd.save(curr_fname)
@@ -291,7 +291,7 @@ class LiveEventManager(object):
                     hdfp['template_duration'] = \
                         bank.table[template_id].template_duration
                     hdfp['ifar'] = ifar
-                    hdfp['gid'] = gid
+                    hdfp['gid'] = gid if gid else -1
                     for ifo in args.channel_name:
                         hdfp['channel_names/{}'.format(ifo)] = \
                             args.channel_name[ifo]
@@ -302,6 +302,9 @@ class LiveEventManager(object):
                 if not self.gracedb_testing:
                     cmd += '--production '
                 cmd += '--verbose '
+                cmd += '--output-path {} '.format(self.path)
+                if self.enable_gracedb_upload:
+                    cmd += '--enable-gracedb-upload '
                 log_fname = \
                         fname.replace('.xml.gz', '_optimize_snr_log.dat')
 
@@ -542,7 +545,7 @@ parser.add_argument('--run-snr-optimization', action='store_true',
                     default=False,
                     help='Run spawned followup processes to maximize SNR for '
                          'any trigger uploaded to GraceDB')
-                   
+
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
@@ -665,12 +668,12 @@ with ctx:
             logging.info('Will calculate %s background', combo)
             estimators.append(Coincer.from_cli(args,
                               len(bank), args.analysis_chunk, list(combo)))
-                              
+
         my_coinc_id = 999999
         def set_coinc_id(i):
             global my_coinc_id
             my_coinc_id = i
-        
+
         def get_coinc(results):
             c = estimators[my_coinc_id]
             r = c.add_singles(results)
@@ -682,7 +685,7 @@ with ctx:
             estim = estimators[my_coinc_id]
             bg_time = estim.background_time / lal.YRJUL_SI
             return estim.ifos, estim.coincs.data, bg_time
-            
+
         coinc_pool = BroadcastPool(len(estimators))
         coinc_pool.allmap(set_coinc_id, range(len(estimators)))
 
@@ -759,7 +762,7 @@ with ctx:
             # Look for coincident triggers and do background estimation
             if args.enable_background_estimation:
                 coinc_results = coinc_pool.broadcast(get_coinc, results)
-                
+
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
 
