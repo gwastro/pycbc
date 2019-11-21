@@ -334,7 +334,7 @@ class _HDFInjectionSet(object):
         group = fp if hdf_group is None else fp[hdf_group]
         self.filehandler = fp
         # get parameters
-        parameters = group.keys()
+        parameters = list(group.keys())
         # get all injection parameter values
         injvals = {param: group[param][()] for param in parameters}
         # if there were no variable args, then we only have a single injection
@@ -421,7 +421,7 @@ class _HDFInjectionSet(object):
             # write metadata
             if static_args is None:
                 static_args = {}
-            fp.attrs["static_args"] = static_args.keys()
+            fp.attrs["static_args"] = list(static_args.keys())
             fp.attrs['injtype'] = cls.injtype
             for key, val in metadata.items():
                 fp.attrs[key] = val

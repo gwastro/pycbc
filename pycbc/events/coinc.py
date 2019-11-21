@@ -25,7 +25,7 @@
 coincident triggers.
 """
 
-import h5py, numpy, logging, pycbc.pnutils, copy, lal
+import numpy, logging, pycbc.pnutils, copy, lal
 from pycbc.detector import Detector
 
 
@@ -762,17 +762,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.num_templates = num_templates
         self.analysis_block = analysis_block
 
-        # Only pass a valid stat file for this ifo pair
-        for fname in stat_files:
-            f = h5py.File(fname, 'r')
-            ifos_set = set([f.attrs['ifo0'], f.attrs['ifo1']])
-            f.close()
-            if ifos_set == set(ifos):
-                stat_files = [fname]
-                logging.info('Setup ifos %s-%s with file %s and stat %s',
-                             ifos[0], ifos[1], fname, background_statistic)
-
-        self.stat_calculator = stat.get_statistic(background_statistic)(stat_files)
+        stat_class = stat.get_statistic(background_statistic)
+        self.stat_calculator = stat_class(stat_files, ifos)
 
         self.timeslide_interval = timeslide_interval
         self.return_background = return_background
@@ -916,7 +907,8 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         self.singles_dtype = []
         data = False
         for ifo in self.ifos:
-            if ifo in results and results[ifo] is not False:
+            if ifo in results and results[ifo] is not False \
+                    and len(results[ifo]['snr']):
                 data = results[ifo]
                 break
 
@@ -953,6 +945,9 @@ class LiveCoincTimeslideBackgroundEstimator(object):
         """
         if len(self.singles.keys()) == 0:
             self.set_singles_buffer(results)
+        # If this *still* didn't work, no triggers in first set, try next time
+        if len(self.singles.keys()) == 0:
+            return {}
 
         # convert to single detector trigger values
         # FIXME Currently configured to use pycbc live output
