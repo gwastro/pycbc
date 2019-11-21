@@ -436,7 +436,13 @@ wf.setup_foreground_minifollowups(workflow, combined_bg_file,
                                   full_insps, hdfbank[0], insp_files_seg_file,
                                   data_analysed_name, trig_generated_name,
                                   'daxes', mfup_dir,
-                                  tags=combined_bg_file.tags)
+                                  tags=combined_bg_file.tags + ['foreground'])
+
+wf.setup_foreground_minifollowups(workflow, combined_bg_file,
+                                  full_insps, hdfbank[0], insp_files_seg_file,
+                                  data_analysed_name, trig_generated_name, 'daxes',
+                                  rdir['coincident_triggers/loudest_background_followup'],
+                                  tags=combined_bg_file.tags + ['background'])
 
 # Sub-pages for each ifo combination
 
