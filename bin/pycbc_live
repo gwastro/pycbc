@@ -271,30 +271,30 @@ class LiveEventManager(object):
                 cmd += psd_fils_str
 
                 curr_fname = fname.replace('.xml.gz', '_attributes.hdf')
-                hdfp = h5py.File(curr_fname, 'w')
-                for ifo in coinc_ifos:
-                    curr_time = \
-                        coinc_results['foreground/{}/end_time'.format(ifo)]
-                    hdfp['coinc_times/{}'.format(ifo)] = curr_time
-                f_end = bank.end_frequency(template_id)
-                if f_end is None or f_end >= (flen * delta_f):
-                    f_end = (flen-1) * delta_f
-                hdfp['flen'] = flen
-                hdfp['delta_f'] = delta_f
-                hdfp['f_end'] = f_end
-                hdfp['sample_rate'] = bank.sample_rate
-                hdfp['flow'] = bank.table[template_id].f_lower
-                hdfp['mass1'] = bank.table[template_id].mass1
-                hdfp['mass2'] = bank.table[template_id].mass2
-                hdfp['spin1z'] = bank.table[template_id].spin1z
-                hdfp['spin2z'] = bank.table[template_id].spin2z
-                hdfp['template_duration'] = \
-                    bank.table[template_id].template_duration
-                hdfp['ifar'] = ifar
-                hdfp['gid'] = gid
-                for ifo in args.channel_name:
-                    hdfp['channel_names/{}'.format(ifo)] = \
-                        args.channel_name[ifo]
+                with h5py.File(curr_fname, 'w') as hdfp:
+                    for ifo in coinc_ifos:
+                        curr_time = \
+                            coinc_results['foreground/{}/end_time'.format(ifo)]
+                        hdfp['coinc_times/{}'.format(ifo)] = curr_time
+                    f_end = bank.end_frequency(template_id)
+                    if f_end is None or f_end >= (flen * delta_f):
+                        f_end = (flen-1) * delta_f
+                    hdfp['flen'] = flen
+                    hdfp['delta_f'] = delta_f
+                    hdfp['f_end'] = f_end
+                    hdfp['sample_rate'] = bank.sample_rate
+                    hdfp['flow'] = bank.table[template_id].f_lower
+                    hdfp['mass1'] = bank.table[template_id].mass1
+                    hdfp['mass2'] = bank.table[template_id].mass2
+                    hdfp['spin1z'] = bank.table[template_id].spin1z
+                    hdfp['spin2z'] = bank.table[template_id].spin2z
+                    hdfp['template_duration'] = \
+                        bank.table[template_id].template_duration
+                    hdfp['ifar'] = ifar
+                    hdfp['gid'] = gid
+                    for ifo in args.channel_name:
+                        hdfp['channel_names/{}'.format(ifo)] = \
+                            args.channel_name[ifo]
 
                 cmd += '--params-file {} '.format(curr_fname)
                 cmd += '--approximant {} '.format(apr)
@@ -562,16 +562,17 @@ pycbc.init_logging(args.verbose, format=log_format)
 ctx = scheme.from_cli(args)
 fft.from_cli(args)
 
-sr = args.sample_rate
-flow = args.low_frequency_cutoff
-
 # Approximant guess of the total padding
 valid_pad = args.analysis_chunk
 total_pad = args.trim_padding * 2 + valid_pad
-bank = waveform.LiveFilterBank(args.bank_file, sr, total_pad,
-                       low_frequency_cutoff=None if args.enable_bank_start_frequency else flow,
-                       approximant=args.approximant,
-                       increment=args.increment)
+lfc = None if args.enable_bank_start_frequency else args.low_frequency_cutoff
+bank = waveform.LiveFilterBank(
+        args.bank_file, args.sample_rate, total_pad, low_frequency_cutoff=lfc,
+        approximant=args.approximant, increment=args.increment)
+if bank.min_f_lower < args.low_frequency_cutoff:
+    parser.error('--low-frequency-cutoff ({} Hz) must not be larger than the '
+                 'minimum f_lower across all templates '
+                 '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
 evnt = LiveEventManager(args.output_path,
                         use_date_prefix=args.day_hour_output_prefix,
@@ -595,7 +596,9 @@ if evnt.rank == 0 and args.enable_gracedb_upload:
     logging.info('Testing access to GraceDB')
     from ligo.gracedb.rest import GraceDb
     gdb_client = GraceDb(args.gracedb_server) if args.gracedb_server else GraceDb()
-    gdb_client.ping()
+    response = gdb_client.ping()
+    logging.info('GraceDB ping response: %s %s',
+                 response.status, response.reason)
     del gdb_client
 
 # I'm not the root, so do some actual filtering.

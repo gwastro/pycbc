@@ -13,4 +13,5 @@ rsync --exclude='SEOBNRv1ROM*' --exclude='SEOBNRv2ROM_DS_HI_v1.0.hdf5' --exclude
 umount /cvmfs/config-osg.opensciencegrid.org
 umount /cvmfs/oasis.opensciencegrid.org
 chown -R 1000:1000 /opt/pycbc/src /opt/pycbc/pycbc-software
+chmod -R u=rwX,g=rX,o=rX /opt/pycbc
 exit 0

@@ -86,7 +86,7 @@ class SingleCoincForGraceDB(object):
         Parameters
         ----------
         ifos: list of strs
-            A list of the ifos pariticipating in this trigger
+            A list of the ifos participating in this trigger.
         coinc_results: dict of values
             A dictionary of values. The format is defined in
             pycbc/events/coinc.py and matches the on disk representation
@@ -299,7 +299,7 @@ class SingleCoincForGraceDB(object):
             psd_series_plot_fname = snr_series_fname.replace('.hdf',
                                                              '_psd.png')
             pylab.figure()
-            for ifo in self.snr_series:
+            for ifo in sorted(self.snr_series):
                 curr_snrs = self.snr_series[ifo]
                 curr_snrs.save(snr_series_fname, group='%s/snr' % ifo)
                 pylab.plot(curr_snrs.sample_times, abs(curr_snrs),
@@ -318,7 +318,7 @@ class SingleCoincForGraceDB(object):
             pylab.close()
 
             pylab.figure()
-            for ifo in self.snr_series:
+            for ifo in sorted(self.snr_series):
                 # Undo dynamic range factor
                 curr_psd = self.psds[ifo].astype(numpy.float64)
                 curr_psd /= pycbc.DYN_RANGE_FAC ** 2.0
@@ -327,8 +327,8 @@ class SingleCoincForGraceDB(object):
                 pylab.loglog(curr_psd.sample_frequencies[1:],
                              curr_psd[1:]**0.5, c=ifo_color(ifo), label=ifo)
             pylab.legend()
-            pylab.xlim([20, 2000])
-            pylab.ylim([1E-24, 1E-21])
+            pylab.xlim([10, 1300])
+            pylab.ylim([3E-24, 1E-20])
             pylab.xlabel('Frequency (Hz)')
             pylab.ylabel('ASD')
             pylab.savefig(psd_series_plot_fname)
