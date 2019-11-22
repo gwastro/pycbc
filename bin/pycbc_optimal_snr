@@ -118,10 +118,10 @@ if __name__ == '__main__':
                         help='Data sample rate in Hz (default %(default)s)')
     parser.add_argument('--snr-columns', nargs='+', action=MultiDetOptionAction,
                         metavar='DETECTOR:COLUMN', required=True,
-                        help='Defines in which column of the sim_inspiral table' \
-                        ' the optimal SNR for each detector should be stored.' \
-                        ' COLUMN should be an existing sim_inspiral column with ' \
-                        ' no useful data in it, good candidates are usually' \
+                        help='Defines in which column of the sim_inspiral table'
+                        ' the optimal SNR for each detector should be stored.'
+                        ' COLUMN should be an existing sim_inspiral column with '
+                        ' no useful data in it, good candidates are usually'
                         ' alpha1, alpha2 etc.')
     parser.add_argument('--cores', default=1, type=int,
                         help='Parallelize the computation over the given '
@@ -188,7 +188,7 @@ if __name__ == '__main__':
         # leave 4 s of padding at the end for possible ringdown
         start_time = int(injection_time + 4. - seg_len)
         strain = TimeSeries(zeros(tlen, dtype=float32), delta_t=delta_t,
-                        epoch=start_time)
+                            epoch=start_time)
         injections.apply(strain, det, distance_scale=1./pycbc.DYN_RANGE_FAC,
                          simulation_ids=[simulation_id])
         return make_frequency_series(strain)
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     llw_root = llw_doc.childNodes[0]
     llw_root.removeChild(injections.table)
     llw_root.appendChild(out_sim_inspiral)
-    ligolw_utils.write_filename\
-        (llw_doc, opts.out_file, gz=opts.out_file.endswith('gz'))
+    ligolw_utils.write_filename(llw_doc, opts.out_file,
+                                gz=opts.out_file.endswith('gz'))
 
     logging.info('Done')
