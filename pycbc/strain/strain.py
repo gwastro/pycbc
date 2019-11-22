@@ -1041,7 +1041,7 @@ class StrainSegments(object):
         """ Return a list of the FFT'd segments.
         Return the list of FrequencySeries. Additional properties are
         added that describe the strain segment. The property 'analyze'
-        is a slice corresponding to the portion of the time domain equivelant
+        is a slice corresponding to the portion of the time domain equivalent
         of the segment to analyze for triggers. The value 'cumulative_index'
         indexes from the beginning of the original strain series.
         """
