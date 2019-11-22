@@ -107,6 +107,12 @@ if __name__ == '__main__':
     parser.add_argument('--injection-f-final', type=float,
                         help='Override the f_final field of a CBC '
                              'XML injection file.')
+    parser.add_argument('--input-sort', type=str, choices=['random', 'time'],
+                        default='random',
+                        help='Sort injections by the given criterion before '
+                             'processing them. Sorting by time may speed up '
+                             'the calculation when the approximant is very '
+                             'fast and injections are tightly spaced in time')
     parser.add_argument('--output-file', '-o', dest='out_file', required=True,
                         help='Output LIGOLW file')
     parser.add_argument('--f-low', type=float, default=30.,
@@ -220,8 +226,13 @@ if __name__ == '__main__':
 
     logging.info("Loading injections")
     injections = pycbc.inject.InjectionSet.from_cli(opts)
-    np.random.seed(100)
-    inj_table = sorted(injections.table, key=lambda x: np.random.random())
+
+    if opts.input_sort == 'random':
+        np.random.seed(100)
+        sort_func = lambda x: np.random.random()
+    elif opts.input_sort == 'time':
+        sort_func = lambda x: x.geocent_end_time
+    inj_table = sorted(injections.table, key=sort_func)
 
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
