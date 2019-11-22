@@ -158,7 +158,7 @@ if __name__ == '__main__':
     delta_t = 1. / sample_rate
     delta_f = 1. / seg_len
     tlen = int(seg_len * sample_rate)
-    flen = tlen / 2 + 1
+    flen = tlen // 2 + 1
     f_low = opts.f_low
 
     logging.info("Loading PSDs")
