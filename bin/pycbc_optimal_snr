@@ -226,19 +226,24 @@ if __name__ == '__main__':
     out_sim_inspiral = lsctables.New(lsctables.SimInspiralTable,
                                      columns=injections.table.columnnames)
 
-    logging.info('Starting workers')
-    pool = multiprocessing.Pool(processes=opts.cores)
+    if opts.cores > 1:
+        logging.info('Starting workers')
+        pool = multiprocessing.Pool(processes=opts.cores)
+        iterator = pool.imap(compute_optimal_snr, inj_table)
+    else:
+        # do not bother spawning extra processes if running single-core
+        iterator = (compute_optimal_snr(inj) for inj in inj_table)
 
-    progress = lambda x, **kwargs: x
     if opts.progress:
         try:
-            from tqdm import tqdm as progress
+            from tqdm import tqdm
+
+            iterator = tqdm(iterator, total=len(inj_table))
         except ImportError:
             logging.warn('cannot import tqdm; not showing progress bar')
             pass
 
-    for inj in progress(pool.imap(compute_optimal_snr, inj_table),
-                        total=len(inj_table)):
+    for inj in iterator:
         out_sim_inspiral.append(inj)
 
     out_sim_inspiral.sort(key=lambda x: x.geocent_end_time)
