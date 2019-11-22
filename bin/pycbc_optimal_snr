@@ -62,12 +62,11 @@ class TimeVaryingPSD(object):
     def __call__(self, time=None):
         mask = np.logical_and(self.start_times <= time,
                               self.end_times > time)
-        if np.count_nonzero(mask) >= 1:
-            center_times = (self.start_times[mask] + self.end_times[mask]) / 2.
-            closest_idx = np.argsort(abs(center_times - time))[0]
-            return self.get_psd(np.flatnonzero(mask)[closest_idx])
-        else:
+        if not mask.any():
             return None
+        center_times = (self.start_times[mask] + self.end_times[mask]) / 2.
+        closest_idx = np.argmin(abs(center_times - time))
+        return self.get_psd(np.flatnonzero(mask)[closest_idx])
 
     def get_psd(self, index):
         curr_pid = multiprocessing.current_process().pid
