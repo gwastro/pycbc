@@ -36,6 +36,7 @@ from pycbc.types import MultiDetOptionAction
 from pycbc.types import MultiDetOptionAppendAction
 from pycbc.workflow import configuration
 from pycbc.workflow import core
+from pycbc.workflow import pegasus_workflow
 from pycbc.workflow import datafind
 from pycbc.workflow import plotting
 from pycbc import __version__
@@ -114,6 +115,18 @@ def get_plot_group(cp, section_tag):
         plot_groups[group] = cp.get_opt_tag("workflow", opt, section_tag)
     return plot_groups
 
+
+def get_posterior_params(cp, section='workflow-posterior_parameters'):
+    """Gets the posterior parameters from the given config file."""
+    params = []
+    for opt in cp.options(section):
+        val = cp.get(section, opt)
+        if val == '':
+            val = opt
+        params.append('{}:{}'.format(opt, val))
+    return params
+
+
 # command line parser
 parser = argparse.ArgumentParser(description=__doc__[1:])
 
@@ -145,9 +158,9 @@ parser.add_argument("--seed", type=int, default=0,
                          "by one for each event.")
 # input configuration file options
 parser.add_argument("--samples-file-cache", required=True,
-                    help="Text file listing a label, the samples "
-                         "file(s) to create posteriors for, and any "
-                         "additional arguments for extracting samples."
+                    help="Text file listing a label, the inference config "
+                         "file used, and the samples "
+                         "file(s) to create posteriors for."
                     )
 #parser.add_argument("--posterior-files", metavar="FILE[:LABEL]", nargs="+",
 #                    required=True,
@@ -167,6 +180,7 @@ elabels, infconfig_files, samples_files = \
 
 posterior_file_dir = 'posterior_files'
 config_file_dir = 'config_files'
+config_file_tmplt = 'inference-{}.ini'
 
 # make data output directory
 if opts.output_dir is None:
@@ -232,8 +246,7 @@ logging.info("Created log file %s" % log_file_txt.storage_path)
 
 
 # get the parameters that will be used for posterior files and plots
-posterior_params = workflow.cp.get_opt_tag('workflow', 'posterior-parameters',
-                                           'parameters')
+posterior_params = get_posterior_params(workflow.cp)
 
 # figure out what parameters user wants to plot from workflow configuration
 group_prefix = "plot-group-"
@@ -274,13 +287,16 @@ for num_event, samples_filelist in enumerate(samples_files):
     symlink_path(config_file, rdir[base])
 
     # convert the samples files to workflow File types
-    samples_filelist = core.FileList(map(core.File, samples_filelist))
+    samples_filelist = core.FileList(map(pegasus_workflow.File,
+                                         samples_filelist))
+
+    analysis_index = segments.segment(num_event, num_event+1)
 
     # make node for running extract samples
     posterior_file = inffu.create_posterior_files(
-        sub_workflow, samples_filelist, output_dir,
+        sub_workflow, samples_filelist, posterior_file_dir,
         parameters=posterior_params, analysis_seg=analysis_index,
-        tags=opts.tags+[label])
+        tags=opts.tags+[label])[0]
 
     # summary table
     summary_page += (inffu.make_inference_summary_table(
@@ -341,7 +357,7 @@ for num_event, samples_filelist in enumerate(samples_files):
             samples_plots += inffu.make_inference_samples_plot(
                 sub_workflow, sf, rdir[base],
                 analysis_seg=analysis_index,
-                tags=opts.tags+[label, group, kk])
+                tags=opts.tags+[label, group, str(kk)])
         layout.group_layout(rdir[base], samples_plots)
 
     if 'acceptance_rate' in diagnostics:
@@ -351,7 +367,7 @@ for num_event, samples_filelist in enumerate(samples_files):
             acceptance_plot = inffu.make_inference_acceptance_rate_plot(
                 sub_workflow, sf, rdir[base],
                 analysis_seg=analysis_index,
-                tags=opts.tags+[label, kk])
+                tags=opts.tags+[label, str(kk)])
         layout.single_layout(rdir[base], acceptance_plot)
 
     # add the sub workflow to the main workflow

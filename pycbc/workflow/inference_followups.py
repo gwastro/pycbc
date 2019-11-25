@@ -210,22 +210,20 @@ def create_posterior_files(workflow, samples_files, output_dir,
     pycbc.workflow.FileList
         A list of result and output files.
     """
-    if analysis set is None:
+    if analysis_seg is None:
         analysis_seg = workflow.analysis_time
     if tags is None:
         tags = []
-    extract_posterior_exe = core.Executable(workflow.cp, name,
-                                            ifos=workflow.ifos,
-                                            out_dir=output_dir)
+    extract_posterior_exe = Executable(workflow.cp, name,
+                                       ifos=workflow.ifos,
+                                       out_dir=output_dir)
     node = extract_posterior_exe.create_node()
-    if not isinstance(sample_files, list):
-        sample_files = [sample_files]
+    if not isinstance(samples_files, list):
+        samples_files = [samples_files]
     node.add_input_list_opt("--input-file", samples_files)
     if parameters is not None:
         node.add_opt("--parameters", _params_for_pegasus(parameters))
-    posterior_file = node.new_output_file_opt(analysis_seg, ".hdf",
-                                              "--output-file",
-                                              tags=tags)
+    node.new_output_file_opt(analysis_seg, ".hdf", "--output-file", tags=tags)
     # add node to workflow
     workflow += node
     return node.output_files
