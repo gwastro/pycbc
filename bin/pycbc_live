@@ -331,6 +331,7 @@ class LiveEventManager(object):
                                      testing=self.gracedb_testing)
                     else:
                         event.save(fname)
+                    exit()
 
     def dump(self, results, name, store_psd=False, time_index=None,
              store_loudest_index=False, raw_results=None, gates=None):
@@ -764,12 +765,12 @@ with ctx:
                 # Pick the best coinc in this chunk
                 best_coinc = Coincer.pick_best_coinc(coinc_results)
 
-                evnt.check_coincs(list(results.keys()), best_coinc,
-                                  psds, args.low_frequency_cutoff,
-                                  data_reader, bank)
+#                evnt.check_coincs(list(results.keys()), best_coinc,
+#                                  psds, args.low_frequency_cutoff,
+#                                  data_reader, bank)
 
-            # Check for singles if we don't have coinc time
-            if args.enable_single_detector_background:
+#            # Check for singles if we don't have coinc time
+#            if args.enable_single_detector_background:
                 evnt.check_singles(results, data_reader, psds,
                                    args.low_frequency_cutoff)
 
