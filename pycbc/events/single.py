@@ -1,6 +1,6 @@
 """ utilities for assigning FAR to single detector triggers
 """
-from pycbc.events import ranking
+from pycbc.events import ranking, trigger_fits as fits
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
 
@@ -9,12 +9,14 @@ class LiveSingle(object):
                  newsnr_threshold=10.0,
                  reduced_chisq_threshold=5,
                  duration_threshold=0,
-                 fixed_ifar=False):
+                 sngl_ifo_est_dist='conservative',
+                 fixed_ifar=0.06):
         self.ifo = ifo
         self.newsnr_threshold = newsnr_threshold
         self.reduced_chisq_threshold = reduced_chisq_threshold
         self.duration_threshold = duration_threshold
-        self.fixed_ifar=fixed_ifar
+        self.sngl_ifo_est_dist = sngl_ifo_est_dist
+        self.fixed_ifar = fixed_ifar
 
     @staticmethod
     def insert_args(parser):
@@ -22,21 +24,26 @@ class LiveSingle(object):
                             type=float, action=MultiDetOptionAction)
         parser.add_argument('--single-reduced-chisq-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--single-fixed-ifar', nargs='+',
+        parser.add_argument('--single-fixed-ifar', nargs='+', default=None,
                             type=float, action=MultiDetOptionAction)
+        parser.add_argument('--sngl-ifar-est-dist', nargs='+',
+                            action=MultiDetOptionAction)
         parser.add_argument('--single-duration-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
 
     @classmethod
     def from_cli(cls, args, ifo):
+        if args.single_fixed_ifar:
+            sngl_ifo_est_dist='fixed'
         return cls(
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
-           fixed_ifar=args.single_fixed_ifar[ifo],
            duration_threshold=args.single_duration_threshold[ifo],
+           sngl_ifo_est_dist=args.sngl_ifar_est_dist[ifo],
+           fixed_ifar=args.single_fixed_ifar
            )
 
-    def check(self, triggers, data_reader, conservative=True):
+    def check(self, triggers, data_reader):
         """ Look for a single detector trigger that passes the thresholds in
         the current data.
         """
@@ -50,35 +57,36 @@ class LiveSingle(object):
         nsnr = ranking.newsnr(triggers['snr'][i], rchisq)
         dur = triggers['template_duration'][i]
 
-        if nsnr > self.newsnr_threshold and \
+        if nsnr self.newsnr_threshold and \
                 rchisq < self.reduced_chisq_threshold and \
                 dur > self.duration_threshold:
             fake_coinc = {'foreground/%s/%s' % (self.ifo, k): triggers[k][i]
                           for k in triggers}
             fake_coinc['foreground/stat'] = nsnr
-            fake_coinc['foreground/ifar'] = self.calculate_ifar(triggers, nsnr, self.ifo,
-                                                                conservative=conservative)
+            fake_coinc['foreground/ifar'] = self.calculate_ifar(triggers, nsnr)
             fake_coinc['HWINJ'] = data_reader.near_hwinj()
             return fake_coinc
         return None
 
-    def calculate_ifar(self, triggers, newsnr, fit_threshold=6.0,
-                       conservative=True):
-        if self.fixed_ifar:
-            return self.fixed_ifar
-        # Fit coefficients for each ifo based on O3a trigger fits files
-        if conservative:
-            cct_to_use = 'conservative'
+    def calculate_ifar(self, triggers, newsnr, fit_threshold=6.0):
+        if self.sngl_ifo_est_dist == 'fixed':
+            return self.fixed_ifar[self.ifo]
+        elif self.sngl_ifo_est_dist == 'conservative':
+            cct = single_fits_coeff_count_time['conservative']
+        elif self.sngl_ifo_est_dist == 'individual':
+            cct = single_fits_coeff_count_time[self.ifo]
+        print('using cct values {}'.format(cct))
+        if newsnr < fit_threshold:
+            n_louder = cct[1] + 1
+            logging.WARN('newsnr is below fit threshold, this is an upper bound to IFAR')
         else:
-            cct_to_use = self.ifo
-        cct = single_fits_coeff_count_time[cct_to_use]
-        n_louder = cct[1] * fits.cum_fit('exponential', newsnr, cct[0],
-                                         fit_threshold)
-        return conv.sec_to_year(cct[2] / (n_louder))
+            n_louder = cct[1] * fits.cum_fit('exponential', [newsnr], cct[0],
+                                             fit_threshold)
+        return conv.sec_to_year(cct[2] / (n_louder + 1))[0]
 
 single_fits_coeff_count_time = {
     'H1': (5.69015, 107893373, 10184192),
     'L1': (5.72713, 95714610, 10908800),
     'V1': (5.58611, 112008750, 11468656),
-    'conservative': (5.03662, 28909432, 10184192)
+    'conservative': (5.03662, 112008750, 10184192)
 }
