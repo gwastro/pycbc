@@ -107,19 +107,11 @@ else:
                "Exclusive IFAR (yr)",
                "Exclusive FAP"
               ]
-
-    try:
-        table = numpy.array([['%5.2f' % d['stat'][n],
-                              '%5.2f' % d['ifar'][n],
-                              '%5.2e' % d['fap'][n],
-                              '%5.2f' % d['ifar_exc'][n],
-                              '%5.2e' % d['fap_exc'][n]
-                             ]], dtype=str)
-    except KeyError: # injections may not have inclusive IFAR
-        table = numpy.array([['%5.2f' % d['stat'][n],
-                              '%5.2f' % d['ifar_exc'][n],
-                              '%5.2e' % d['fap_exc'][n]
-                             ]], dtype=str)
+    dsets = ['stat', 'ifar', 'fap', 'ifar_exc', 'fap_exc']
+    formats = ['%5.2f', '%5.2f', '%5.2e', '%5.2f', '%5.2e']
+    # get value unless it doesnt exist, in which case use -1 value
+    table = numpy.array([[fmt % d[dst][n] if dst in d else fmt % -1
+                          for fmt, dst in zip(formats, dsets)]], dtype=str)
 
 html = pycbc.results.dq.redirect_javascript + \
                                 str(pycbc.results.static_table(table, headers))
