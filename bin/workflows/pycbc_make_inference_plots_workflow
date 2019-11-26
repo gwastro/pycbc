@@ -123,7 +123,7 @@ def get_posterior_params(cp, section='workflow-posterior_parameters'):
         val = cp.get(section, opt)
         if val == '':
             val = opt
-        params.append('{}:{}'.format(opt, val))
+        params.append('{}:{}'.format(val, opt))
     return params
 
 
@@ -268,18 +268,9 @@ for num_event, samples_filelist in enumerate(samples_files):
 
     config_fnames = infconfig_files[num_event]
 
-    # create a sub workflow for this event
-    # we need to go back to the original directory to do this for all the file
-    # references to work correctly
-    os.chdir(origdir)
-    sub_workflow = core.Workflow(opts,
-                                 "{}-{}".format(opts.workflow_name, label))
-    # now go back to the output
-    os.chdir(opts.output_dir)
-
     # write the configuration file to the config files directory
     cp = configuration.WorkflowConfigParser(config_fnames)
-    config_file = sub_workflow.save_config(config_file_tmplt.format(label),
+    config_file = workflow.save_config(config_file_tmplt.format(label),
                                            config_file_dir, cp)[0]
     # create sym links to config file for results page
     base = "config_files/{}".format(label)
@@ -287,20 +278,25 @@ for num_event, samples_filelist in enumerate(samples_files):
     symlink_path(config_file, rdir[base])
 
     # convert the samples files to workflow File types
-    samples_filelist = core.FileList(map(pegasus_workflow.File,
-                                         samples_filelist))
+    for ii, fname in enumerate(samples_filelist):
+        pfile = pegasus_workflow.File(fname)
+        pfile.PFN(fname, "local")
+        # set the storage path to be the same
+        pfile.storage_path = fname
+        samples_filelist[ii] = pfile
+    samples_filelist = core.FileList(samples_filelist)
 
     analysis_index = segments.segment(num_event, num_event+1)
 
     # make node for running extract samples
     posterior_file = inffu.create_posterior_files(
-        sub_workflow, samples_filelist, posterior_file_dir,
+        workflow, samples_filelist, posterior_file_dir,
         parameters=posterior_params, analysis_seg=analysis_index,
         tags=opts.tags+[label])[0]
 
     # summary table
     summary_page += (inffu.make_inference_summary_table(
-        sub_workflow, posterior_file, rdir.base,
+        workflow, posterior_file, rdir.base,
         parameters=table_params,
         analysis_seg=analysis_index,
         result_label=label,
@@ -310,7 +306,7 @@ for num_event, samples_filelist in enumerate(samples_files):
     summary_plots = []
     for group, params in summary_plot_params.items():
         summary_plots += inffu.make_inference_posterior_plot(
-            sub_workflow, posterior_file, rdir.base,
+            workflow, posterior_file, rdir.base,
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_index,
             tags=opts.tags+[label, group])
@@ -321,7 +317,7 @@ for num_event, samples_filelist in enumerate(samples_files):
     base = "detector_sensitivity"
     # we'll just use the first file, and assume the rest are the same
     psd_page.append(plotting.make_spectrum_plot(
-        sub_workflow, [samples_filelist[0]], rdir[base],
+        workflow, [samples_filelist[0]], rdir[base],
         tags=opts.tags+[label],
         hdf_group="data"))
 
@@ -330,8 +326,8 @@ for num_event, samples_filelist in enumerate(samples_files):
     prior_plots = []
     for group, params in plot_params.items():
         prior_plots += inffu.make_inference_prior_plot(
-            sub_workflow, config_file, rdir[base],
-            analysis_seg=sub_workflow.analysis_time,
+            workflow, config_file, rdir[base],
+            analysis_seg=workflow.analysis_time,
             parameters=params,
             tags=opts.tags+[label, group])
     layout.single_layout(rdir[base], prior_plots)
@@ -341,7 +337,7 @@ for num_event, samples_filelist in enumerate(samples_files):
     posterior_plots = []
     for group, params in plot_params.items():
         posterior_plots += inffu.make_inference_posterior_plot(
-            sub_workflow, posterior_file, rdir[base],
+            workflow, posterior_file, rdir[base],
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_index,
             tags=opts.tags+[label, group])
@@ -355,7 +351,7 @@ for num_event, samples_filelist in enumerate(samples_files):
         samples_plots = []
         for kk, sf in enumerate(samples_filelist):
             samples_plots += inffu.make_inference_samples_plot(
-                sub_workflow, sf, rdir[base],
+                workflow, sf, rdir[base],
                 analysis_seg=analysis_index,
                 tags=opts.tags+[label, group, str(kk)])
         layout.group_layout(rdir[base], samples_plots)
@@ -365,13 +361,10 @@ for num_event, samples_filelist in enumerate(samples_files):
         base = "acceptance_rate/{}".format(label)
         for kk, sf in enumerate(samples_filelist):
             acceptance_plot = inffu.make_inference_acceptance_rate_plot(
-                sub_workflow, sf, rdir[base],
+                workflow, sf, rdir[base],
                 analysis_seg=analysis_index,
                 tags=opts.tags+[label, str(kk)])
         layout.single_layout(rdir[base], acceptance_plot)
-
-    # add the sub workflow to the main workflow
-    workflow += sub_workflow
 
 # build the summary page
 layout.two_column_layout(rdir.base, summary_page)
