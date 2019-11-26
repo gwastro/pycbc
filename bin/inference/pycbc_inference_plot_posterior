@@ -37,7 +37,7 @@ from matplotlib import (patches, use)
 import pycbc
 import pycbc.version
 from pycbc.results import metadata
-
+from pycbc.io import FieldArray
 from pycbc import __version__
 from pycbc import conversions
 from pycbc.workflow import WorkflowConfigParser
@@ -100,10 +100,6 @@ else:
     zvals = None
     zlbl = None
 
-# closet the files, we don't need them anymore
-for fp in fps:
-    fp.close()
-
 # if no plotting options selected, then the default options are based
 # on the number of parameters
 plot_options = [opts.plot_marginal, opts.plot_scatter, opts.plot_density]
@@ -129,6 +125,24 @@ if opts.plot_prior is not None:
     prior = option_utils.prior_from_config(cp)
     logging.info("Drawing samples from prior")
     prior_samples = prior.rvs(opts.prior_nsamples)
+    # add the static params
+    for param in fp.attrs['static_params']:
+        setattr(prior_samples, param, fp.attrs[param])
+    # remap any parameters
+    if 'remapped_params' in fp.attrs:
+        remapped_params = {}
+        for func, param in fp.attrs['remapped_params']:
+            try:
+                remapped_params[param] = prior_samples[func]
+            except NameError:
+                continue
+        prior_samples = FieldArray.from_kwargs(**remapped_params)
+        for param in fp.attrs['static_params']:
+            setattr(prior_samples, param, fp.attrs[param])
+
+# close the files, we don't need them anymore
+for fp in fps:
+    fp.close()
 
 # get minimum and maximum ranges for each parameter from command line
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
