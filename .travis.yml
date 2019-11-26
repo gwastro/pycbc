@@ -110,10 +110,11 @@ deploy:
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
   local_dir: _gh-pages
-  keep-history: true
+  keep-history: false
   on:
     branch: master
     condition: $PYCBC_CONTAINER = build_and_test
+    python: 2.7
 - provider: pypi
   user: $PYPI_USER
   password: $PYPI_TOKEN
