@@ -69,7 +69,6 @@ def load_html_metadata(filename):
 def save_png_with_metadata(fig, filename, fig_kwds, kwds):
     """ Save a matplotlib figure to a png with metadata
     """
-    from PIL import Image, PngImagePlugin
     fig.savefig(filename, **fig_kwds)
 
     im = Image.open(filename)
@@ -81,18 +80,21 @@ def save_png_with_metadata(fig, filename, fig_kwds, kwds):
     im.save(filename, "png", pnginfo=meta)
 
 def load_png_metadata(filename):
-    from PIL import Image, PngImagePlugin
     data = Image.open(filename).info
     cp = ConfigParser.ConfigParser(data)
     cp.add_section(os.path.basename(filename))
     return cp
 
-_metadata_saver = {'.png':save_png_with_metadata,
-                   '.html':save_html_with_metadata,
-                  }
-_metadata_loader = {'.png':load_png_metadata,
-                    '.html':load_html_metadata,
-                   }
+_metadata_saver = {'.html':save_html_with_metadata}
+_metadata_loader = {'.html':load_html_metadata}
+
+# Check if we have the ability to read / edit PNG files
+try:
+    from PIL import Image, PngImagePlugin
+    _metadata_saver['png'] = save_png_with_metadata
+    _metadata_loader['png'] = load_png_metadata
+except ImportError:
+    pass
 
 def save_fig_with_metadata(fig, filename, fig_kwds=None, **kwds):
     """ Save plot to file with metadata included. Kewords translate to metadata
