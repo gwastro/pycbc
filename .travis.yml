@@ -114,7 +114,7 @@ deploy:
   on:
     branch: master
     condition: $PYCBC_CONTAINER = build_and_test
-    python: 2.7
+    python: 3.6
 - provider: pypi
   user: $PYPI_USER
   password: $PYPI_TOKEN
