@@ -558,7 +558,7 @@ class EventManager(object):
         header = "@@@MONITORING_PAYLOAD - START@@@"
         json_data = json.dumps(metadata, indent=4)
         footer = "@@@MONITORING_PAYLOAD - END@@@"
-        return json_data
+        return header + "\n" + json_data + "\n" + footer
 
 class EventManagerMultiDetBase(EventManager):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
