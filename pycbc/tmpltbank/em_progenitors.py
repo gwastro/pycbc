@@ -164,11 +164,9 @@ def PG_ISSO_solver(chi,incl):
     # Otherwise, find the ISSO radius for a generic inclination
     else:
         initial_guess = max(rISCO_limit,rISSO_at_pole_limit)
-        #solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, cos_incl))
         solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, incl))
         if solution < 1 or solution > 9:
             initial_guess = min(rISCO_limit,rISSO_at_pole_limit)
-            #solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, cos_incl))
             solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, incl))
 
     return solution
@@ -280,7 +278,6 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 ########################################################################################
 # NS-BH merger remnant mass [Foucart, Hinderer, Nissanke PRD 98, 081501(R) (2018)].    #
 #                                                                                      #
-# * FIXME: Allowing for negative remanant mass to be able to solve remnant mass == 0 if neeeded #
 # * THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this).                     #
 # * Physical parameters passed to remnant_mass (see sanity checks below) must not be   #
 #   unphysical.                                                                        #
@@ -292,7 +289,7 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     """
     Function that determines the remnant disk mass of
     an NS-BH system using the fit to numerical-relativity
-    results discussed in Foucart PRD 86, 124007 (2012).
+    results discussed in Foucart, Hinderer, Nissanke PRD 98, 081501(R) (2018).
 
     Parameters
     -----------
