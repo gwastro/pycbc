@@ -59,12 +59,12 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     keys, values = zip(*dict_.items())
 
     # apply formatting
-    keys = map(key_format, keys)
-    values = map(val_format, values)
+    keys = list(map(key_format, keys))
+    values = list(map(val_format, values))
 
     # work out longest elements in each column
-    nckey = max(map(len, keys))
-    ncval = max(map(len, values))
+    nckey = max(list(map(len, keys)))
+    ncval = max(list(map(len, values)))
     if header:
         khead, vhead = header
         nckey = max(nckey, len(khead))
@@ -82,8 +82,10 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     if header:
         lines.extend((row(*header), divider))
     params = zip(keys, values)
+    
     if sort:
         params = sorted(params)
+        
     for key, val in params:
         fmt = '{{0:{0}s}}  {{1}}'.format(nckey, ncval)
         lines.append(fmt.format(key, val))
