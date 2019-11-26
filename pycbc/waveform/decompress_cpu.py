@@ -25,20 +25,21 @@ domain waveforms.
 """
 from __future__ import absolute_import
 import numpy
+from ..types import real_same_precision_as
+from ..types import complex_same_precision_as
 from .decompress_cpu_cython import decomp_ccode_double, decomp_ccode_float
 
 def inline_linear_interp(amp, phase, sample_frequencies, output,
                          df, f_lower, imin, start_index):
-    # FIXME: This function needs to enforce that *all* variables are the same
-    #        precision and fail if they're not. Otherwise we'll get nasty C
-    #        errors (or worse, unpredictable behaviour if it tries to read
-    #        random memory)
 
-    sample_frequencies = numpy.array(sample_frequencies)
-    amp = numpy.array(amp)
-    phase = numpy.array(phase)
+    rprec = real_same_precision_as(output)
+    cprec = complex_same_precision_as(output)
+    sample_frequencies = numpy.array(sample_frequencies, copy=False,
+                                     dtype=rprec)
+    amp = numpy.array(amp, copy=False, dtype=rprec)
+    phase = numpy.array(phase, copy=False, dtype=rprec)
     sflen = len(sample_frequencies)
-    h = numpy.array(output.data, copy=False)
+    h = numpy.array(output.data, copy=False, dtype=cprec)
     hlen = len(output)
     delta_f = float(df)
     if output.precision == 'single':

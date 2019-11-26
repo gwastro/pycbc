@@ -21,7 +21,6 @@ other modules and packages may use in addition to some optimized utilities.
 import os, sys
 import logging
 from collections import OrderedDict
-import pycbc
 
 # Work around different Python versions to get runtime
 # info on hardware cache sizes

@@ -32,8 +32,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <complex>
-#include <omp.h> // FIXME: Does this need to be optional for clang??
-
+#ifndef __clang__
+    #include <omp.h>
+#endif
 #include <x86intrin.h>
 
 #ifdef __AVX2__

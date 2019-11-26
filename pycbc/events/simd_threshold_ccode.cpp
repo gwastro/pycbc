@@ -48,7 +48,9 @@
  * compartmentalize SIMD code from OpenMP code.
  */
 
-#include <omp.h> // FIXME: Does this need to be optional for clang??
+#ifndef __clang__
+    #include <omp.h> 
+#endif
 #include <stdint.h> // For uint32_t, int64_t
 #include <complex>
 #include <math.h> // For M_SQRT2
