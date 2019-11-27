@@ -21,7 +21,7 @@ warn_msg = ("The FFTW_pruned module can be used to speed up computing SNR "
             "timeseries by computing first at a low sample rate and then "
             "computing at full sample rate only at certain samples. This code "
             "has not yet been used in production, and has no test case. "
-            "This has also been moved from weave to Cython in this state. "
+            "This was also ported to Cython in this state. "
             "This code would need verification before trusting results. "
             "Please do contribute test cases.")
 
