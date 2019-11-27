@@ -26,12 +26,12 @@
 This modules provides python contexts that set the default behavior for PyCBC
 objects.
 """
+from __future__ import print_function
 import os
 import pycbc
 from decorator import decorator
 import logging
 from .libutils import get_ctypes_library
-from __future__ import print_function
 
 try:
     _libgomp = get_ctypes_library("gomp", ['gomp'])
