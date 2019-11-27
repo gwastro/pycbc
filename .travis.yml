@@ -64,6 +64,9 @@ matrix:
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
     language: python
     python: 3.6
+  - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
+    language: python
+    python: 3.7
 
 before_install:
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then docker pull $DOCKER_IMG; fi
