@@ -188,12 +188,13 @@ def schemed(prefix):
         try:
             return _import_cache[mgr.state][fn](*args, **kwds)
         except KeyError:
+            exc_errors = []
             for sch in mgr.state.__class__.__mro__[0:-2]:
                 try:
                     backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                     schemed_fn = getattr(backend, fn.__name__)
                 except (ImportError, AttributeError) as e:
-                    print(e)
+                    exc_errors += [e]
                     continue
 
                 if mgr.state not in _import_cache:
@@ -203,6 +204,8 @@ def schemed(prefix):
 
                 return schemed_fn(*args, **kwds)
 
+            for emsg in exc_errors:
+                print(emsg)
             err = ("Failed to find implementation of (%s) "
                   "for %s scheme." % (str(fn), current_prefix()))
             raise RuntimeError(err)
