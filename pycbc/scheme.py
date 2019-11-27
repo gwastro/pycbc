@@ -31,6 +31,7 @@ import pycbc
 from decorator import decorator
 import logging
 from .libutils import get_ctypes_library
+from __future__ import print_function
 
 try:
     _libgomp = get_ctypes_library("gomp", ['gomp'])
@@ -204,10 +205,10 @@ def schemed(prefix):
 
                 return schemed_fn(*args, **kwds)
 
+            err = "Failed to find implementation of (%s) "
+                  "for %s scheme." % (str(fn), current_prefix())
             for emsg in exc_errors:
-                print(emsg)
-            err = ("Failed to find implementation of (%s) "
-                  "for %s scheme." % (str(fn), current_prefix()))
+                err += print(emsg)
             raise RuntimeError(err)
 
     return scheming_function
