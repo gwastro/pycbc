@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pycbc, os, subprocess, ctypes
+import os, subprocess, ctypes
 from mako.template import Template
 
 full_corr = """
