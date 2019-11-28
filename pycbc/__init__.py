@@ -78,6 +78,7 @@ def makedir(path):
     if path is not None and not os.path.exists(path):
         os.makedirs(path)
 
+
 # PyCBC-Specific Constants
 
 # Set the value we want any aligned memory calls to use
