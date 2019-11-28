@@ -232,6 +232,23 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     return vol, vol_err
 
 
+def chirp_volume_montecarlo(
+    found_d, missed_d, found_mchirp, missed_mchirp,
+    distribution_param, distribution, limits_param, min_param, max_param)
+
+    assert distribution_param == 'chirp_distance'
+    assert limits_param == 'chirp_distance'
+
+    mchirp_standard_bns = 1.4 * 2.**(-1. / 5.)
+    found_dchirp = found_d * (found_mchirp / mchirp_standard_bns) ** (5./6)
+    missed_dchirp = missed_d * (missed_mchirp / mchirp_standard_bns) ** (5./6)
+
+    # treat chirp distances in MC volume estimate as physical distances
+    return volume_montecarlo(found_dchirp, missed_dchirp, found_mchirp,
+                             missed_mchirp, 'distance', distribution,
+                             'distance', min_param, max_param)
+
+
 def volume_binned_pylal(f_dist, m_dist, bins=15):
     """ Compute the sensitive volume using a distance binned efficiency estimate
 
