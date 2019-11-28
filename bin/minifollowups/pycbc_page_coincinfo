@@ -72,46 +72,25 @@ else:
 
 # Make a table for the coincident information #################################
 
-# Check if using input files from old (2-ifo) coinc code
-if 'detector_1' in f.attrs:
-    # Make a table for the coincident information
-    headers = ["Coincident ranking statistic",
-               "Inclusive IFAR (yr)",
-               "Inclusive FAP",
-               "Exclusive IFAR (yr)",
-               "Exclusive FAP",
-               "Time delay (s)"
-              ]
+hdrs = ["Coincident ranking statistic",
+           "Inclusive IFAR (yr)",
+           "Inclusive FAP",
+           "Exclusive IFAR (yr)",
+           "Exclusive FAP"
+        ]
 
-    try:
-        fap_inclusive = d['fap'][n]
-        fap_exclusive = d['fap_exc'][n]
-        ifar_exclusive = d['ifar_exc'][n]
-    except:
-        fap_inclusive = -1
-        fap_exclusive = -1
-        ifar_exclusive = -1
-    table = numpy.array([['%5.2f' % d['stat'][n],
-                          '%5.2f' % d['ifar'][n],
-                          '%5.2e' % fap_inclusive,
-                          '%5.2f' % ifar_exclusive,
-                          '%5.2e' % fap_exclusive,
-                          '%5.4f' % (d['time2'][n] - d['time1'][n])
-                         ]], dtype=str)
-else:
-    # Version used for multi-ifo coinc code
-    # TODO: Figure out what to do for timedelays
-    headers = ["Coincident ranking statistic",
-               "Inclusive IFAR (yr)",
-               "Inclusive FAP",
-               "Exclusive IFAR (yr)",
-               "Exclusive FAP"
-              ]
-    dsets = ['stat', 'ifar', 'fap', 'ifar_exc', 'fap_exc']
-    formats = ['%5.2f', '%5.2f', '%5.2e', '%5.2f', '%5.2e']
-    # get value unless it doesnt exist, in which case use -1 value
-    table = numpy.array([[fmt % d[dst][n] if dst in d else fmt % -1
-                          for fmt, dst in zip(formats, dsets)]], dtype=str)
+dsets = ['stat', 'ifar', 'fap', 'ifar_exc', 'fap_exc']
+formats = ['%5.2f', '%5.2f', '%5.2e', '%5.2f', '%5.2e']
+tbl = [[h, fmt % d[dst][n]] for fmt, dst, h in zip(formats, dsets, hdrs) if dst in d]
+headers, table = zip(*tbl)
+headers = list(headers)
+table = numpy.array([table], dtype=str)
+
+if 'detector_1' in f.attrs:
+    headers.append("Time delay (s)")
+    tdelay = '%5.4f' % (d['time2'][n] - d['time1'][n])
+    table = numpy.array([list(table[0]) + [tdelay]])
+
 
 html = pycbc.results.dq.redirect_javascript + \
                                 str(pycbc.results.static_table(table, headers))
