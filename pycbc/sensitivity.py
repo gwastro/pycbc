@@ -2,6 +2,7 @@
 """
 import numpy
 from . import bin_utils
+from pycbc.conversions import chirp_distance
 
 
 def compute_search_efficiency_in_bins(
@@ -150,7 +151,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
         all_mchirp = numpy.concatenate((found_mchirp, missed_mchirp))
         max_mchirp = all_mchirp.max()
         if max_param is not None:
-            # use largest actually injected mchirp for conversion
+            # use largest injected mchirp to convert back to distance
             max_distance = max_param * \
                                   (max_mchirp / mchirp_standard_bns)**(5. / 6.)
         else:
@@ -239,10 +240,8 @@ def chirp_volume_montecarlo(
     assert distribution_param == 'chirp_distance'
     assert limits_param == 'chirp_distance'
 
-    mchirp_standard_bns = 1.4 * 2.**(-1. / 5.)
-    found_dchirp = found_d * (found_mchirp / mchirp_standard_bns) ** (5./6)
-    missed_dchirp = missed_d * (missed_mchirp / mchirp_standard_bns) ** (5./6)
-
+    found_dchirp = chirp_distance(found_d, found_mchirp)
+    missed_dchirp = chirp_distance(missed_d, missed_mchirp)
     # treat chirp distances in MC volume estimate as physical distances
     return volume_montecarlo(found_dchirp, missed_dchirp, found_mchirp,
                              missed_mchirp, 'distance', distribution,
