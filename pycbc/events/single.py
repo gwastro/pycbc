@@ -3,6 +3,7 @@
 from pycbc.events import ranking, trigger_fits as fits
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
+import logging
 
 class LiveSingle(object):
     def __init__(self, ifo,
@@ -10,7 +11,7 @@ class LiveSingle(object):
                  reduced_chisq_threshold=5,
                  duration_threshold=0,
                  sngl_ifo_est_dist='conservative',
-                 fixed_ifar=0.06):
+                 fixed_ifar=None):
         self.ifo = ifo
         self.newsnr_threshold = newsnr_threshold
         self.reduced_chisq_threshold = reduced_chisq_threshold
@@ -34,7 +35,7 @@ class LiveSingle(object):
     @classmethod
     def from_cli(cls, args, ifo):
         if args.single_fixed_ifar:
-            sngl_ifo_est_dist = 'fixed'
+            self.sngl_ifo_est_dist = 'fixed'
         return cls(
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
@@ -57,21 +58,22 @@ class LiveSingle(object):
         nsnr = ranking.newsnr(triggers['snr'][i], rchisq)
         dur = triggers['template_duration'][i]
 
-        if nsnr > 6 :# self.newsnr_threshold and \
-#                rchisq < self.reduced_chisq_threshold and \
-#                dur > self.duration_threshold:
+        if nsnr >  self.newsnr_threshold: # and \
+#                dur > self.duration_threshold: #and \
+#                rchisq < self.reduced_chisq_threshold:
             fake_coinc = {'foreground/%s/%s' % (self.ifo, k): triggers[k][i]
                           for k in triggers}
             fake_coinc['foreground/stat'] = nsnr
-            fake_coinc['foreground/ifar'] = self.calculate_ifar(triggers, nsnr)
+            fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr)
             fake_coinc['HWINJ'] = data_reader.near_hwinj()
+            print("Newsnr(=stat): {}\nifar: {}\nduration: {}\nrchisq: {}\nsnr: {}".format(nsnr, fake_coinc['foreground/ifar'], dur, rchisq, triggers['snr'][i]))
             return fake_coinc
         return None
 
-    def calculate_ifar(self, triggers, newsnr, fit_threshold=6.0):
+    def calculate_ifar(self, newsnr, fit_threshold=6.0):
         if self.sngl_ifo_est_dist == 'fixed':
             return self.fixed_ifar[self.ifo]
-        elif self.sngl_ifo_est_dist == 'conservative':
+        if self.sngl_ifo_est_dist == 'conservative':
             cct = single_fits_coeff_count_time['conservative']
         elif self.sngl_ifo_est_dist == 'individual':
             cct = single_fits_coeff_count_time[self.ifo]

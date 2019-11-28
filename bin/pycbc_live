@@ -331,6 +331,7 @@ class LiveEventManager(object):
                                      testing=self.gracedb_testing)
                     else:
                         event.save(fname)
+                    print('Found single trigger in {}!'.format(ifo))
                     exit()
 
     def dump(self, results, name, store_psd=False, time_index=None,
