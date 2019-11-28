@@ -35,7 +35,7 @@ class LiveSingle(object):
     @classmethod
     def from_cli(cls, args, ifo):
         if args.single_fixed_ifar:
-            self.sngl_ifo_est_dist = 'fixed'
+            args.sngl_ifar_est_dist = 'fixed'
         return cls(
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
@@ -58,7 +58,7 @@ class LiveSingle(object):
         nsnr = ranking.newsnr(triggers['snr'][i], rchisq)
         dur = triggers['template_duration'][i]
 
-        if nsnr >  self.newsnr_threshold: # and \
+        if nsnr > self.newsnr_threshold: # and \
 #                dur > self.duration_threshold: #and \
 #                rchisq < self.reduced_chisq_threshold:
             fake_coinc = {'foreground/%s/%s' % (self.ifo, k): triggers[k][i]
@@ -80,7 +80,7 @@ class LiveSingle(object):
         print('using cct values {}'.format(cct))
         if newsnr < fit_threshold:
             n_louder = cct[1] + 1
-            logging.WARN('newsnr is below fit threshold, this is an upper '
+            logging.info('newsnr is below fit threshold, this is an upper '
                          'bound to IFAR')
         else:
             n_louder = cct[1] * fits.cum_fit('exponential', [newsnr], cct[0],
