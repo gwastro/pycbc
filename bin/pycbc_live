@@ -229,7 +229,7 @@ class LiveEventManager(object):
                 gid = None
                 event.save(fname)
 
-            if self.run_snr_optimization and ifar < self.ifar_upload_threshold:
+            if self.run_snr_optimization and self.ifar_upload_threshold < ifar:
                 template_id = \
                     coinc_results['foreground/{}/template_id'.format(live_ifos[0])]
                 p = props(bank.table[template_id])
