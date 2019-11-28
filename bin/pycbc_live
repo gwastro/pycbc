@@ -283,7 +283,9 @@ class LiveEventManager(object):
                     hdfp['template_duration'] = \
                         bank.table[template_id].template_duration
                     hdfp['ifar'] = ifar
-                    hdfp['gid'] = gid if gid else -1
+                    if gid is not None:
+                        hdfp['gid'] = gid
+
                     for ifo in args.channel_name:
                         hdfp['channel_names/{}'.format(ifo)] = \
                             args.channel_name[ifo]
