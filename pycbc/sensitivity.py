@@ -234,7 +234,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
 
 def chirp_volume_montecarlo(
     found_d, missed_d, found_mchirp, missed_mchirp,
-    distribution_param, distribution, limits_param, min_param, max_param)
+    distribution_param, distribution, limits_param, min_param, max_param):
 
     assert distribution_param == 'chirp_distance'
     assert limits_param == 'chirp_distance'
