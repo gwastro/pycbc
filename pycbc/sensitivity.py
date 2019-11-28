@@ -91,7 +91,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     Injections should be made over a range of distances such that sensitive
     volume due to signals closer than D_min is negligible, and efficiency at
     distances above D_max is negligible
-    TODO : Replace this function by Collin's formula given in Usman et al .. ?
+    TODO : Replace this function by Collin's formula given in Usman et al. ?
     OR get that coded as a new function?
 
     Parameters
@@ -112,7 +112,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
         'log' (uniform in log D)
         'uniform' (uniform in D)
         'distancesquared' (uniform in D**2)
-        'volume' (uniform in D***3)
+        'volume' (uniform in D**3)
     limits_param: string
         Parameter Dlim specifying limits inside which injections were made
         may be 'distance', 'chirp distance'
@@ -233,8 +233,8 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
 
 
 def chirp_volume_montecarlo(
-    found_d, missed_d, found_mchirp, missed_mchirp,
-    distribution_param, distribution, limits_param, min_param, max_param):
+        found_d, missed_d, found_mchirp, missed_mchirp,
+        distribution_param, distribution, limits_param, min_param, max_param):
 
     assert distribution_param == 'chirp_distance'
     assert limits_param == 'chirp_distance'
