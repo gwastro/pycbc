@@ -31,6 +31,8 @@ import subprocess, os, sys, tempfile, signal, warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 import logging
+import random
+import string
 
 try:
     # This will fail when pycbc is imported during the build process,

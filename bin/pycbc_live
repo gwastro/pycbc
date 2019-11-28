@@ -17,8 +17,6 @@ import itertools
 import platform
 import distutils
 import subprocess
-import random
-import string
 from mpi4py import MPI as mpi
 from pycbc.pool import BroadcastPool
 from pycbc import fft, version, waveform, scheme, makedir
@@ -540,7 +538,6 @@ parser.add_argument('--run-snr-optimization', action='store_true',
                     help='Run spawned followup processes to maximize SNR for '
                          'any trigger uploaded to GraceDB')
 
-print("Moved random string to init")
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)

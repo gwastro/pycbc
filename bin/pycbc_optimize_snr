@@ -8,8 +8,6 @@ import time
 import types
 import logging
 import tempfile
-import random
-import string
 import pycbc
 from pycbc import version, waveform
 from pycbc.types import MultiDetOptionAction, zeros, load_frequencyseries
