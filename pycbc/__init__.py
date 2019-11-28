@@ -78,6 +78,22 @@ def makedir(path):
     if path is not None and not os.path.exists(path):
         os.makedirs(path)
 
+# PyCBC-Specific Constants
+
+# Set the value we want any aligned memory calls to use
+# N.B.: *Not* all pycbc memory will be aligned to multiples
+# of this value
+
+PYCBC_ALIGNMENT = 32
+
+# Dynamic range factor: a large constant for rescaling
+# GW strains.  This is 2**69 rounded to 17 sig.fig.
+
+DYN_RANGE_FAC =  5.9029581035870565e+20
+
+# String used to separate parameters in configuration file section headers.
+# This is used by the distributions and transforms modules
+VARARGS_DELIM = '+'
 
 # Check for optional components of the PyCBC Package
 try:
@@ -110,20 +126,3 @@ if sys.platform == 'darwin':
     HAVE_OMP = False
 else:
     HAVE_OMP = True
-
-# PyCBC-Specific Constants
-
-# Set the value we want any aligned memory calls to use
-# N.B.: *Not* all pycbc memory will be aligned to multiples
-# of this value
-
-PYCBC_ALIGNMENT = 32
-
-# Dynamic range factor: a large constant for rescaling
-# GW strains.  This is 2**69 rounded to 17 sig.fig.
-
-DYN_RANGE_FAC =  5.9029581035870565e+20
-
-# String used to separate parameters in configuration file section headers.
-# This is used by the distributions and transforms modules
-VARARGS_DELIM = '+'
