@@ -29,12 +29,6 @@ from pycbc.psd import interpolate
 Nfeval = 0
 start_time = time.time()
 
-# https://pynative.com/python-generate-random-string/
-def random_string(stringLength=10):
-    """Generate a random string of fixed length """
-    letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(stringLength))
-
 def callback_func(Xi, convergence=0):
     global Nfeval
     logging.info("CURRENTLY AT {} {}".format(Nfeval, convergence))
@@ -343,7 +337,7 @@ if args.enable_gracedb_upload:
                     extra_strings=comments)
 else:
     gid = None
-    fname = 'coinc-{:.3f}-{}.xml.gz'.format(loudest_snr_time_allifos, random_string(6))
+    fname = 'coinc-{:.3f}-{}.xml.gz'.format(loudest_snr_time_allifos, pycbc.random_string(6))
     fname = os.path.join(args.output_path, fname)
     doc.save(fname)
 

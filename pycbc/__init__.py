@@ -171,3 +171,10 @@ def multiprocess_cache_dir():
     os.environ['PYTHONCOMPILED'] = cache_dir
     try: os.makedirs(cache_dir)
     except OSError: pass
+
+# https://pynative.com/python-generate-random-string/
+def random_string(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
+

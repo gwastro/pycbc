@@ -55,12 +55,6 @@ def combine_ifar_pvalue(ifar, pvalue, livetime):
     # take max of original IFAR and combined IFAR & apply trials factor
     return numpy.maximum(ifar, nifar) / 2.
 
-# https://pynative.com/python-generate-random-string/
-def random_string(stringLength=10):
-    """Generate a random string of fixed length """
-    letters = string.ascii_lowercase
-    return ''.join(random.choice(letters) for i in range(stringLength))
-
 
 class LiveEventManager(object):
     def __init__(self, output_path,
@@ -222,7 +216,7 @@ class LiveEventManager(object):
 
             end_time = int(coinc_results['foreground/%s/end_time'
                                          % coinc_ifos[0]])
-            fname = 'coinc-{}-{}.xml.gz'.format(end_time, random_string(6))
+            fname = 'coinc-{}-{}.xml.gz'.format(end_time, pycbc.random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
             comments = ['using ranking statistic: %s'
@@ -237,7 +231,7 @@ class LiveEventManager(object):
                 gid = None
                 event.save(fname)
 
-            if self.run_snr_optimization:
+            if self.run_snr_optimization and ifar < self.ifar_upload_threshold:
                 template_id = \
                     coinc_results['foreground/{}/template_id'.format(live_ifos[0])]
                 p = props(bank.table[template_id])
@@ -546,6 +540,7 @@ parser.add_argument('--run-snr-optimization', action='store_true',
                     help='Run spawned followup processes to maximize SNR for '
                          'any trigger uploaded to GraceDB')
 
+print("Moved random string to init")
 
 scheme.insert_processing_option_group(parser)
 LiveSingleFarThreshold.insert_args(parser)
