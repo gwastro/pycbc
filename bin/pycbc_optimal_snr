@@ -240,7 +240,7 @@ if __name__ == '__main__':
     if opts.cores > 1:
         logging.info('Starting workers')
         pool = multiprocessing.Pool(processes=opts.cores)
-        iterator = pool.imap(compute_optimal_snr, inj_table)
+        iterator = pool.imap_unordered(compute_optimal_snr, inj_table)
     else:
         # do not bother spawning extra processes if running single-core
         iterator = (compute_optimal_snr(inj) for inj in inj_table)
