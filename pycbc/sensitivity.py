@@ -1,6 +1,7 @@
 """ This module contains utilities for calculating search sensitivity
 """
 import numpy
+from pycbc.conversions import chirp_distance
 from . import bin_utils
 
 
@@ -91,7 +92,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     Injections should be made over a range of distances such that sensitive
     volume due to signals closer than D_min is negligible, and efficiency at
     distances above D_max is negligible
-    TODO : Replace this function by Collin's formula given in Usman et al .. ?
+    TODO : Replace this function by Collin's formula given in Usman et al. ?
     OR get that coded as a new function?
 
     Parameters
@@ -112,7 +113,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
         'log' (uniform in log D)
         'uniform' (uniform in D)
         'distancesquared' (uniform in D**2)
-        'volume' (uniform in D***3)
+        'volume' (uniform in D**3)
     limits_param: string
         Parameter Dlim specifying limits inside which injections were made
         may be 'distance', 'chirp distance'
@@ -150,7 +151,7 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
         all_mchirp = numpy.concatenate((found_mchirp, missed_mchirp))
         max_mchirp = all_mchirp.max()
         if max_param is not None:
-            # use largest actually injected mchirp for conversion
+            # use largest injected mchirp to convert back to distance
             max_distance = max_param * \
                                   (max_mchirp / mchirp_standard_bns)**(5. / 6.)
         else:
@@ -230,6 +231,21 @@ def volume_montecarlo(found_d, missed_d, found_mchirp, missed_mchirp,
     vol = mc_prefactor * mc_sum
     vol_err = mc_prefactor * (Ninj * mc_sample_variance) ** 0.5
     return vol, vol_err
+
+
+def chirp_volume_montecarlo(
+        found_d, missed_d, found_mchirp, missed_mchirp,
+        distribution_param, distribution, limits_param, min_param, max_param):
+
+    assert distribution_param == 'chirp_distance'
+    assert limits_param == 'chirp_distance'
+
+    found_dchirp = chirp_distance(found_d, found_mchirp)
+    missed_dchirp = chirp_distance(missed_d, missed_mchirp)
+    # treat chirp distances in MC volume estimate as physical distances
+    return volume_montecarlo(found_dchirp, missed_dchirp, found_mchirp,
+                             missed_mchirp, 'distance', distribution,
+                             'distance', min_param, max_param)
 
 
 def volume_binned_pylal(f_dist, m_dist, bins=15):
