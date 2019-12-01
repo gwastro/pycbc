@@ -40,7 +40,6 @@ def get_psd(input_tuple):
     """
     seg = input_tuple[0]
     i = input_tuple[1]
-    pycbc.multiprocess_cache_dir()
     
     logging.info('%d: getting strain for %.1f-%.1f (%.1f s)', i, seg[0],
                  seg[1], abs(seg))

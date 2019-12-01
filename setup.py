@@ -34,9 +34,9 @@ from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools import find_packages
 
 requires = []
-setup_requires = ['numpy>=1.13.0']
+setup_requires = ['numpy>=1.16.0']
 install_requires =  setup_requires + ['Mako>=1.0.1',
-                      'cython',
+                      'cython>=0.29',
                       'decorator>=3.4.2',
                       'scipy>=0.16.0; python_version >= "3.5"',
                       'scipy>=0.16.0,<1.3.0; python_version <= "3.4"',
