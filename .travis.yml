@@ -64,6 +64,9 @@ matrix:
   - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
     language: python
     python: 3.6
+  - env: PYCBC_CONTAINER=build_and_test LAL_DATA_PATH=$TRAVIS_BUILD_DIR LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR PYTHON3='TRUE'
+    language: python
+    python: 3.7
 
 before_install:
 - if [ "x${PYCBC_CONTAINER}" == "xpycbc_rhel_virtualenv" ] ; then docker pull $DOCKER_IMG; fi
@@ -110,10 +113,11 @@ deploy:
   skip_cleanup: true
   github_token: $GITHUB_TOKEN
   local_dir: _gh-pages
-  keep-history: true
+  keep-history: false
   on:
     branch: master
     condition: $PYCBC_CONTAINER = build_and_test
+    python: 3.6
 - provider: pypi
   user: $PYPI_USER
   password: $PYPI_TOKEN

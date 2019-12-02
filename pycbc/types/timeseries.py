@@ -867,7 +867,7 @@ class TimeSeries(Array):
               low_frequency_cutoff=None, high_frequency_cutoff=None):
         """ Return the match between the two TimeSeries or FrequencySeries.
 
-        Return the match between two waveforms. This is equivelant to the overlap
+        Return the match between two waveforms. This is equivalent to the overlap
         maximized over time and phase. By default, the other vector will be
         resized to match self. This may remove high frequency content or the
         end of the vector.

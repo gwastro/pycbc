@@ -21,7 +21,6 @@ other modules and packages may use in addition to some optimized utilities.
 import os, sys
 import logging
 from collections import OrderedDict
-import pycbc
 
 # Work around different Python versions to get runtime
 # info on hardware cache sizes
@@ -42,66 +41,6 @@ else:
         HAVE_GETCONF = True
     except:
         pass
-
-if pycbc.HAVE_OMP:
-    omp_support = """
-#include <omp.h>
-"""
-    omp_libs = ['gomp']
-    omp_flags = ['-fopenmp']
-else:
-    omp_support = ""
-    omp_libs = []
-    omp_flags = []
-
-# The following are intended to also be used by weave
-# functions. It would be good to figure out a way to
-# test for the presence of <x86intrin.h>, and make
-# this conditional, or else define something to
-# flag to other codes that it cannot be used.
-#
-# The constant ALGN is how much to align in bytes, and
-# ALGN_FLT and ALGN_DBL are that value as a number of
-# floats and doubles, respectively.
-
-simd_intel_intrin_support = """
-#include <x86intrin.h>
-
-#ifdef __AVX2__
-#define _HAVE_AVX2 1
-#else
-#define _HAVE_AVX2 0
-#endif
-
-#ifdef __AVX__
-#define _HAVE_AVX 1
-#else
-#define _HAVE_AVX 0
-#endif
-
-#ifdef __SSE4_1__
-#define _HAVE_SSE4_1 1
-#else
-#define _HAVE_SSE4_1 0
-#endif
-
-#ifdef __SSE3__
-#define _HAVE_SSE3 1
-#else
-#define _HAVE_SSE3 0
-#endif
-
-#if _HAVE_AVX
-#define ALGN 32
-#define ALGN_FLT 8
-#define ALGN_DBL 4
-#else
-#define ALGN 16
-#define ALGN_FLT 4
-#define ALGN_DBL 2
-#endif
-
-"""
 
 if os.environ.get("LEVEL2_CACHE_SIZE", None):
     LEVEL2_CACHE_SIZE = int(os.environ["LEVEL2_CACHE_SIZE"])

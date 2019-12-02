@@ -26,6 +26,7 @@
 This modules provides python contexts that set the default behavior for PyCBC
 objects.
 """
+from __future__ import print_function
 import os
 import pycbc
 from decorator import decorator
@@ -188,11 +189,13 @@ def schemed(prefix):
         try:
             return _import_cache[mgr.state][fn](*args, **kwds)
         except KeyError:
+            exc_errors = []
             for sch in mgr.state.__class__.__mro__[0:-2]:
                 try:
                     backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                     schemed_fn = getattr(backend, fn.__name__)
-                except (ImportError, AttributeError):
+                except (ImportError, AttributeError) as e:
+                    exc_errors += [e]
                     continue
 
                 if mgr.state not in _import_cache:
@@ -202,8 +205,10 @@ def schemed(prefix):
 
                 return schemed_fn(*args, **kwds)
 
-            err = ("Failed to find implementation of (%s) "
-                  "for %s scheme." % (str(fn), current_prefix()))
+            err = """Failed to find implementation of (%s)
+                  for %s scheme." % (str(fn), current_prefix())"""
+            for emsg in exc_errors:
+                err += print(emsg)
             raise RuntimeError(err)
 
     return scheming_function
@@ -317,6 +322,4 @@ class ChooseBySchemeDict(dict):
                 break
             except:
                 pass
-
-
 

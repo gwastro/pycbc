@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import pycbc, os, subprocess, ctypes
+import os, subprocess, ctypes
 from mako.template import Template
 
 full_corr = """
@@ -164,7 +164,8 @@ def compile(source, name):
     """ Compile the string source code into a shared object linked against
     the static version of cufft for callback support.
     """
-    cache = os.path.join(pycbc._cache_dir_path, name)
+    # If we start using this again, we should find a better place for the cache
+    cache = os.path.join('/tmp', name)
     hash_file = cache + ".hash"
     lib_file = cache + ".so"
     obj_file = cache + ".o"
