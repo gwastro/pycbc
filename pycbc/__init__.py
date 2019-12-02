@@ -31,6 +31,8 @@ import subprocess, os, sys, tempfile, signal, warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 import logging
+import random
+import string
 
 try:
     # This will fail when pycbc is imported during the build process,
@@ -127,3 +129,9 @@ if sys.platform == 'darwin':
     HAVE_OMP = False
 else:
     HAVE_OMP = True
+
+# https://pynative.com/python-generate-random-string/
+def random_string(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))

@@ -127,6 +127,10 @@ parser.add_argument('--gracedb-server', metavar='URL',
                          'If not provided, the default URL is used.')
 parser.add_argument('--production', action='store_true',
                     help='Upload a production event rather than a test event')
+parser.add_argument('--enable-gracedb-upload', action='store_true', default=False,
+                    help='Upload triggers to GraceDB')
+parser.add_argument('--output-path', required=True,
+                    help='Path to a directory to store results in')
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -150,7 +154,7 @@ for ifo in ifos:
         pass
 
 coinc_ifos = list(coinc_times.keys())
-    
+
 logging.info("Following up GID {}".format(fp['gid'][()]))
 flen = fp['flen'][()]
 approximant = args.approximant
@@ -324,10 +328,16 @@ doc = live.SingleCoincForGraceDB(ifos, coinc_results,
 tmpdir = tempfile.mkdtemp()
 xml_path = os.path.join(
         tmpdir, '{:.3f}.xml.gz'.format(loudest_snr_time_allifos))
-gid = doc.upload(xml_path,
-                 gracedb_server=args.gracedb_server,
-                 testing=(not args.production),
-                 extra_strings=comments)
+if args.enable_gracedb_upload:
+    gid = doc.upload(xml_path,
+                    gracedb_server=args.gracedb_server,
+                    testing=(not args.production),
+                    extra_strings=comments)
+else:
+    gid = None
+    fname = 'coinc-{:.3f}-{}.xml.gz'.format(loudest_snr_time_allifos, pycbc.random_string(6))
+    fname = os.path.join(args.output_path, fname)
+    doc.save(fname)
 
 if gid is not None:
     logging.info('Event uploaded as %s', gid)
