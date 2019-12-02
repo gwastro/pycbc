@@ -323,13 +323,10 @@ for num_event, samples_filelist in enumerate(samples_files):
 
     # files for priors summary section
     base = "priors/{}".format(label)
-    prior_plots = []
-    for group, params in plot_params.items():
-        prior_plots += inffu.make_inference_prior_plot(
-            workflow, config_file, rdir[base],
-            analysis_seg=workflow.analysis_time,
-            parameters=params,
-            tags=opts.tags+[label, group])
+    prior_plots = inffu.make_inference_prior_plot(
+        workflow, config_file, rdir[base],
+        analysis_seg=workflow.analysis_time,
+        tags=opts.tags+[label])
     layout.single_layout(rdir[base], prior_plots)
 
     # files for posteriors summary subsection
