@@ -122,7 +122,7 @@ try:
     HAVE_MKL=True
 except ImportError:
     HAVE_MKL=False
-  
+
 # Check for openmp suppport, currently we pressume it exists, unless on
 # platforms (mac) that are silly and don't use the standard gcc.
 if sys.platform == 'darwin':
@@ -135,3 +135,4 @@ def random_string(stringLength=10):
     """Generate a random string of fixed length """
     letters = string.ascii_lowercase
     return ''.join(random.choice(letters) for i in range(stringLength))
+
