@@ -11,6 +11,36 @@ detector frame mass and redshift.
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from scipy.integrate import quad
 
+def insert_args(parser):
+    mchirp_group = parser.add_argument_group("Arguments for computing "
+                               "the areas of the CBC regions using mchirp.")
+    mchirp_group.add_argument('--max-m1', type=float, default=45.0,
+                              help="Maximum value for m1")
+    mchirp_group.add_argument('--min-m2', type=float, default=1.0,
+                              help="Minimum value for m2")
+    mchirp_group.add_argument('--ns-max', type=float, default=3.0,
+                              help="Maximum neutron star mass")
+    mchirp_group.add_argument('--gap-max', type=float, default=5.0,
+                              help="Minimum black hole mass")
+    mchirp_group.add_argument('--eff-to-lum-distance-coeff', type=float,
+                              metavar='a0',
+                              help='Coefficient to estimate the value of the '
+                                   'luminosity distance from the minimum '
+                                   'eff distance by D_lum = a0 * min(D_eff).')
+    mchirp_group.add_argument('--lum-distance-to-delta-coeff', type=float,
+                              nargs=2, metavar=('b0','b1'),
+                              help='Coefficients to estimate the value of the '
+                                   'uncertainty on the luminosity distance from '
+                                   'the estimated luminosity distance and the '
+                                   'coinc snr by delta_lum = D_lum * exp(b0) * '
+                                   'coinc_snr ** b1.')
+
+def from_cli(args):
+    return {'mass_limits': {'max_m1': args.max_m1, 'min_m2': args.min_m2},
+            'mass_bdary': {'ns_max': args.ns_max, 'gap_max': args.gap_max},
+            'estimation_coeff': {'a0': args.eff_to_lum_distance_coeff,
+            'b0': args.lum_distance_to_delta_coeff[0],
+            'b1': args.lum_distance_to_delta_coeff[1]}}    
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     """Takes values of redshift, redshift uncertainty, detector mass and its
@@ -22,19 +52,11 @@ def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     return (msrc, del_msrc)
 
 
-# Integration function
-def mchange(x, mc):
-    """Returns a component mass as a function of mchirp and the other
-    component mass.
-    """
-    return m2mcm1(mc, x)
-
-
 def intmc(mc, x_min, x_max):
     """Returns the integral of mchange between the minimum and maximum values
     of a component mass taking mchirp as an argument.
     """
-    integral = quad(mchange, x_min, x_max, args=mc)
+    integral = quad(lambda x,mc: m2mcm1(mc, x), x_min, x_max, args=mc)
     return integral[0]
 
 
@@ -236,3 +258,9 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
         "bhg": abhg,
         "bbh": abbh
         }
+
+def calc_probabilities(trig_mc_det, mass_limits, mass_bdary, z):
+    areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z)
+    total_area = sum(areas.values())
+    probabilities = {key: areas[key]/total_area for key in areas}
+    return probabilities

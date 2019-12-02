@@ -3,6 +3,7 @@ import os
 import pycbc
 import numpy
 import lal
+import math
 from six import u as unicode
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
@@ -13,7 +14,8 @@ from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc.results import ifo_color
-
+from pycbc.mchirp_area import calc_probabilities
+from pycbc.cosmology import _redshift
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
@@ -104,6 +106,9 @@ class SingleCoincForGraceDB(object):
         channel_names: dict of strings, optional
             Strain channel names for each detector.
             Will be recorded in the sngl_inspiral table.
+        mc_area_args: dict of dicts, optional
+            Dictionary providing arguments to be used in source probability
+            estimation with pycbc/mchirp_area.py
         """
         self.template_id = coinc_results['foreground/%s/template_id' % ifos[0]]
         self.coinc_results = coinc_results
@@ -250,6 +255,23 @@ class SingleCoincForGraceDB(object):
             fseries.data.data = psd.numpy()[kmin:] / pycbc.DYN_RANGE_FAC ** 2.0
             psds_lal[ifo] = fseries
         make_psd_xmldoc(psds_lal, outdoc)
+
+        # source probabilities estimation
+        if 'mc_area_args' in kwargs:
+            mass_limits = kwargs['mc_area_args']['mass_limits']
+            mass_bdary = kwargs['mc_area_args']['mass_bdary']
+            trig_mc = {'central': coinc_spiral_row.mchirp,
+                       'delta': coinc_spiral_row.mchirp * 0.01}
+            coeff = kwargs['mc_area_args']['estimation_coeff']
+            eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
+            dist_estimation = coeff['a0'] * min(eff_distances)
+            dist_std_estimation = (dist_estimation * math.exp(coeff['b0']) *
+                                   coinc_inspiral_row.snr ** coeff['b1'])
+            z_estimation = _redshift(dist_estimation)
+            z_std_estimation = _redshift(dist_std_estimation)
+            z = {'central': z_estimation, 'delta': z_std_estimation}
+            probs = calc_probabilities(trig_mc, mass_limits, mass_bdary, z)
+            
 
         self.outdoc = outdoc
         self.time = sngl_populated.get_end()
