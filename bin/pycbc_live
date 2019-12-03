@@ -311,7 +311,6 @@ class LiveEventManager(object):
         active = [k for k in results if results[k] != None]
         if len(active) != 0:# == 1:
             for ifo in active:
-                ifo = active[0]
                 single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
 
                 if single is not None:
