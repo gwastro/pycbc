@@ -1,9 +1,9 @@
 """ utilities for assigning FAR to single detector triggers
 """
+import logging, sys
 from pycbc.events import ranking, trigger_fits as fits
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
-import logging
 
 class LiveSingle(object):
     def __init__(self, ifo,
@@ -27,15 +27,18 @@ class LiveSingle(object):
                             type=float, action=MultiDetOptionAction)
         parser.add_argument('--single-fixed-ifar', nargs='+', default=None,
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--sngl-ifar-est-dist', nargs='+',
-                            action=MultiDetOptionAction)
+        if '--single-fixed-ifar' in sys.argv:
+            parser.add_argument('--sngl-ifar-est-dist', nargs='+',
+                                default='fixed', action=MultiDetOptionAction)
+        else:
+            parser.add_argument('--sngl-ifar-est-dist', nargs='+',
+                                default='conservative',
+                                action=MultiDetOptionAction)
         parser.add_argument('--single-duration-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
 
     @classmethod
     def from_cli(cls, args, ifo):
-        if args.single_fixed_ifar:
-            args.sngl_ifar_est_dist = 'fixed'
         return cls(
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
@@ -58,15 +61,14 @@ class LiveSingle(object):
         nsnr = ranking.newsnr(triggers['snr'][i], rchisq)
         dur = triggers['template_duration'][i]
 
-        if nsnr > self.newsnr_threshold: # and \
-#                dur > self.duration_threshold: #and \
-#                rchisq < self.reduced_chisq_threshold:
+        if nsnr > self.newsnr_threshold and \
+                dur > self.duration_threshold and \
+                rchisq < self.reduced_chisq_threshold:
             fake_coinc = {'foreground/%s/%s' % (self.ifo, k): triggers[k][i]
                           for k in triggers}
             fake_coinc['foreground/stat'] = nsnr
             fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr)
             fake_coinc['HWINJ'] = data_reader.near_hwinj()
-            print("Newsnr(=stat): {}\nifar: {}\nduration: {}\nrchisq: {}\nsnr: {}".format(nsnr, fake_coinc['foreground/ifar'], dur, rchisq, triggers['snr'][i]))
             return fake_coinc
         return None
 
@@ -84,8 +86,8 @@ class LiveSingle(object):
                          'bound to IFAR')
         else:
             n_louder = cct[1] * fits.cum_fit('exponential', [newsnr], cct[0],
-                                             fit_threshold)
-        return conv.sec_to_year(cct[2] / (n_louder + 1))[0]
+                                             fit_threshold)[0]
+        return conv.sec_to_year(cct[2] / (n_louder + 1))
 
 
 single_fits_coeff_count_time = {
