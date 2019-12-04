@@ -260,15 +260,17 @@ class SingleCoincForGraceDB(object):
         if 'mc_area_args' in kwargs:
             mass_limits = kwargs['mc_area_args']['mass_limits']
             mass_bdary = kwargs['mc_area_args']['mass_bdary']
-            trig_mc = {'central': coinc_spiral_row.mchirp,
-                       'delta': coinc_spiral_row.mchirp * 0.01}
             coeff = kwargs['mc_area_args']['estimation_coeff']
+            trig_mc = {'central': coinc_spiral_row.mchirp,
+                       'delta': coinc_spiral_row.mchirp * coeff['m0']}
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
             dist_estimation = coeff['a0'] * min(eff_distances)
             dist_std_estimation = (dist_estimation * math.exp(coeff['b0']) *
                                    coinc_inspiral_row.snr ** coeff['b1'])
             z_estimation = _redshift(dist_estimation)
-            z_std_estimation = _redshift(dist_std_estimation)
+            z_est_max = _redshift(dist_estimation + dist_std_estimation)
+            z_est_min = _redshift(dist_estimation - dist_std_estimation)
+            z_std_estimation = 0.5 * (z_est_max - z_est_min)
             z = {'central': z_estimation, 'delta': z_std_estimation}
             mass_gap = kwargs['mc_area_args']['mass_gap']
             probabilities = calc_probabilities(trig_mc, mass_limits,
