@@ -273,6 +273,8 @@ with ctx:
         td_template = resample_to_delta_t(td_template, gwstrain.delta_t,
                                           method='ldas')
         td_template = td_template * pycbc.DYN_RANGE_FAC
+        # apply a time shift so that the merger is at time zero,
+        # the usual convention for templates
         detector = Detector(opt.channel_name[:2])
         ltt = detector.time_delay_from_earth_center(
                 inj.longitude, inj.latitude, float(inj.get_end()))
