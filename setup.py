@@ -121,8 +121,8 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.15.dev1'
-        vinfo.release = 'False'
+        vinfo.version = '1.15.0'
+        vinfo.release = 'True'
 
     with open('pycbc/version.py', 'w') as f:
         f.write("# coding: utf-8\n")
@@ -240,24 +240,21 @@ e = Extension("pycbc.events.eventmgr_cython",
               compiler_directives={'embedsignature': True})
 ext.append(e)
 e = Extension("pycbc.events.simd_threshold_cython",
-              ["pycbc/events/simd_threshold_cython.pyx",
-               "pycbc/events/simd_threshold_ccode.cpp"],
+              ["pycbc/events/simd_threshold_cython.pyx"],
               language='c++',
               extra_compile_args=cython_compile_args,
               extra_link_args=cython_link_args,
               compiler_directives={'embedsignature': True})
 ext.append(e)
 e = Extension("pycbc.filter.simd_correlate_cython",
-              ["pycbc/filter/simd_correlate_cython.pyx",
-               "pycbc/filter/simd_correlate_ccode.cpp"],
+              ["pycbc/filter/simd_correlate_cython.pyx"],
               language='c++',
               extra_compile_args=cython_compile_args,
               extra_link_args=cython_link_args,
               compiler_directives={'embedsignature': True})
 ext.append(e)
 e = Extension("pycbc.waveform.decompress_cpu_cython",
-              ["pycbc/waveform/decompress_cpu_cython.pyx",
-               "pycbc/waveform/decompress_cpu_ccode.cpp"],
+              ["pycbc/waveform/decompress_cpu_cython.pyx"],
               language='c++',
               extra_compile_args=cython_compile_args,
               extra_link_args=cython_link_args,
