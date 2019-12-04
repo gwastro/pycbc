@@ -34,13 +34,17 @@ def insert_args(parser):
                                    'the estimated luminosity distance and the '
                                    'coinc snr by delta_lum = D_lum * exp(b0) * '
                                    'coinc_snr ** b1.')
+    mchirp_group.add_argument('--mass-gap-separate', action='store_true',
+                              help='Gives separate probabilities for each kind '
+                                   'of mass gap CBC sources: gns, gg, bhg.')
 
 def from_cli(args):
     return {'mass_limits': {'max_m1': args.max_m1, 'min_m2': args.min_m2},
             'mass_bdary': {'ns_max': args.ns_max, 'gap_max': args.gap_max},
             'estimation_coeff': {'a0': args.eff_to_lum_distance_coeff,
             'b0': args.lum_distance_to_delta_coeff[0],
-            'b1': args.lum_distance_to_delta_coeff[1]}}    
+            'b1': args.lum_distance_to_delta_coeff[1]}
+            'mass_gap': args.mass_gap_separate}    
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     """Takes values of redshift, redshift uncertainty, detector mass and its
@@ -60,7 +64,7 @@ def intmc(mc, x_min, x_max):
     return integral[0]
 
 
-def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
+def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
     """Computes the area inside the lines of the second component mass as a
     function of the first component mass for the two extreme values
     of mchirp: mchirp +/- mchirp_uncertainty, for each region of the source
@@ -249,15 +253,23 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z):
         int_inf_nsbh = ints_nsbh + intline_inf_nsbh
 
         ansbh = int_sup_nsbh - int_inf_nsbh
+    if mass_gap is not False:
+        return {
+            "bns": abns,
+            "gns": agns,
+            "nsbh": ansbh,
+            "gg": agg,
+            "bhg": abhg,
+            "bbh": abbh
+            }
+    else:
+	return {
+            "bns": abns,
+            "nsbh": ansbh,
+            "bbh": abbh,
+            "mass_gap": agns + agg + abhg
+            }
 
-    return {
-        "bns": abns,
-        "gns": agns,
-        "nsbh": ansbh,
-        "gg": agg,
-        "bhg": abhg,
-        "bbh": abbh
-        }
 
 def calc_probabilities(trig_mc_det, mass_limits, mass_bdary, z):
     areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z)
