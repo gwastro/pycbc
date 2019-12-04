@@ -22,6 +22,11 @@ def insert_args(parser):
                               help="Maximum neutron star mass")
     mchirp_group.add_argument('--gap-max', type=float, default=5.0,
                               help="Minimum black hole mass")
+    mchirp_group.add_argument('--mchirp-to-delta-coeff', type=float,
+                              metavar='m0', default=0.01,
+                              help='Coefficient to estimate the value of the '
+                                    'mchirp uncertainty by mchirp_delta = '
+                                    'm0 * mchirp.')
     mchirp_group.add_argument('--eff-to-lum-distance-coeff', type=float,
                               metavar='a0',
                               help='Coefficient to estimate the value of the '
@@ -43,7 +48,8 @@ def from_cli(args):
             'mass_bdary': {'ns_max': args.ns_max, 'gap_max': args.gap_max},
             'estimation_coeff': {'a0': args.eff_to_lum_distance_coeff,
             'b0': args.lum_distance_to_delta_coeff[0],
-            'b1': args.lum_distance_to_delta_coeff[1]}
+            'b1': args.lum_distance_to_delta_coeff[1],
+            'm0': args.mchirp_to_delta_coeff}
             'mass_gap': args.mass_gap_separate}    
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
