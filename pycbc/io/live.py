@@ -270,8 +270,12 @@ class SingleCoincForGraceDB(object):
             z_estimation = _redshift(dist_estimation)
             z_std_estimation = _redshift(dist_std_estimation)
             z = {'central': z_estimation, 'delta': z_std_estimation}
-            probs = calc_probabilities(trig_mc, mass_limits, mass_bdary, z)
-            
+            mass_gap = kwargs['mc_area_args']['mass_gap']
+            probabilities = calc_probabilities(trig_mc, mass_limits,
+                                               mass_bdary, z, mass_gap)
+            self.probabilities = json.dumps(probs)
+        else:
+            self.probabilities = None
 
         self.outdoc = outdoc
         self.time = sngl_populated.get_end()
@@ -286,6 +290,14 @@ class SingleCoincForGraceDB(object):
         """
         gz = filename.endswith('.gz')
         ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
+        
+        if self.probabilities is not None:
+            if filename endswith('.xml.gz'):
+                prob_fname = filename.replace('.xml.gz', '_probs.json')
+            else:
+                prob_fname = filename.replace('.xml', '_probs.json')
+            with open(prob_fname,'w') as prob_outfile:
+                prob_outfile.write(self.probabilities)
 
     def upload(self, fname, gracedb_server=None, testing=True,
                extra_strings=None):
