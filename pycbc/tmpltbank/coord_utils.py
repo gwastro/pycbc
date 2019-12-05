@@ -226,6 +226,17 @@ def get_random_mass(numPoints, massRangeParams):
     # disk mass and that pass the mass and spin range cuts.
     else:
         ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
+        boundary_mass = massRangeParams.ns_bh_boundary_mass
+        if max_ns_g_mass < boundary_mass:
+            warn_msg = "WARNING: "
+            warn_msg += "Option of ns-bh-boundary-mass is  %s " %(boundary_mass)
+            warn_msg += "which is higher than the maximum NS gravitational "
+            warn_msg += "mass admitted by the EOS that was prescribed "
+            warn_msg += "(%s). " %(max_ns_g_mass)
+            warn_msg += "The code will proceed using the latter value "
+            warn_msg += "as the boundary mass."
+            logging.warn(warn_msg)
+            boundary_mass = max_ns_g_mass
 
         # Empty arrays to store points that pass all cuts
         mass1_out = []
@@ -252,9 +263,9 @@ def get_random_mass(numPoints, massRangeParams):
             mask_not_bbh = numpy.zeros(len(mass1), dtype=bool)
 
             # Keep a point if:
-            # 1) the secondary mass is a not BH (mass2 < ns_bh_boundary_mass)
+            # 1) the secondary object is a not a BH (mass2 < boundary mass)
             #    [Store masses and spins of non BBHs]        
-            mask_not_bbh[mass2 < massRangeParams.ns_bh_boundary_mass] = True
+            mask_not_bbh[mass2 < boundary_mass] = True
             mass1_not_bbh= mass1[mask_not_bbh]
             mass2_not_bbh = mass2[mask_not_bbh]
             spin1z_not_bbh = spin1z[mask_not_bbh]
@@ -262,7 +273,7 @@ def get_random_mass(numPoints, massRangeParams):
             # 2) and if the primary mass is a NS (i.e., it is a BNS), or...
             mask_nsbh = numpy.zeros(len(mass1_not_bbh), dtype=bool)
             #    [mask_nsbh identifies NSBH systems]
-            mask_nsbh[mass1_not_bbh > max_ns_g_mass] = True 
+            mask_nsbh[mass1_not_bbh > boundary_mass] = True
             #    [mask_bns identifies BNS systems]
             mask_bns = ~mask_nsbh
             #    [Store masses and spins of BNSs] 
