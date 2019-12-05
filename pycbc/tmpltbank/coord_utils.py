@@ -21,7 +21,6 @@ import os.path
 from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
 from pycbc import pnutils
-#from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data, load_ns_sequence, min_eta_for_em_bright
 from pycbc.tmpltbank.em_progenitors import load_ns_sequence, remnant_masses
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
@@ -227,21 +226,6 @@ def get_random_mass(numPoints, massRangeParams):
     # disk mass and that pass the mass and spin range cuts.
     else:
         ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
-
-        # Generate EM constraint surface: minumum eta as a function of BH spin
-        # and NS mass required to produce an EM counterpart
-        #if not os.path.isfile('constraint_em_bright.npz'):
-        #    logging.info("""constraint_em_bright.npz not found.
-        #                Generating the constraint surface for EM bright binaries
-        #                in the physical parameter space.  One day, this will be
-        #                made faster, for now be patient and wait a few minutes!""")
-        #    generate_em_constraint_data(massRangeParams.minMass2, massRangeParams.maxMass2, massRangeParams.delta_ns_mass, \
-        #                                -1.0, massRangeParams.maxBHSpinMag, massRangeParams.delta_bh_spin, \
-        #                                massRangeParams.ns_eos, massRangeParams.remnant_mass_threshold, 0.0)
-        #constraint_datafile = numpy.load('constraint_em_bright.npz')
-        #mNS_pts = constraint_datafile['mNS_pts']
-        #bh_spin_z_pts = constraint_datafile['sBH_pts']
-        #eta_mins = constraint_datafile['eta_mins']
 
         # Empty arrays to store points that pass all cuts
         mass1_out = []
