@@ -43,10 +43,10 @@ def inline_linear_interp(amp, phase, sample_frequencies, output,
     hlen = len(output)
     delta_f = float(df)
     if output.precision == 'single':
-        decomp_ccode_float(h, delta_f, hlen, start_index, sample_frequencies, amp,
-                           phase, sflen, imin)
+        decomp_ccode_float(h, delta_f, hlen, start_index, sample_frequencies,
+                           amp, phase, sflen, imin)
     else:
-        decomp_ccode_double(h, delta_f, hlen, start_index, sample_frequencies, amp,
-                           phase, sflen, imin)
+        decomp_ccode_double(h, delta_f, hlen, start_index, sample_frequencies,
+                            amp, phase, sflen, imin)
 
     return output
