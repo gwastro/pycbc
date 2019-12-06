@@ -162,16 +162,20 @@
                 
                 <!-- set list of files which are handled in wells -->
                 {% set well_filenames = []%}
+                
+                {% set wells = [fname for fname in dir.files if 'well' in fname] %}
 
                 <!-- include well if it exists and check meta-data if well renders any files inside it -->
-                {% set well_path = plots_dir+dir.path+'/well.html' %}
-                {% set well_filenames += ['well.html'] %}
-                {% if path_exists(well_path) %}
-                    {{ setup_template_render(well_path, None) }}
-                    {% if get_embedded_config(well_path).has_option('well.html', 'filenames') %}
-                        {% set well_filenames += get_embedded_config(well_path).get('well.html', 'filenames').split(',') %}
+                {% for wellname in wells %}
+                    {% set well_path = plots_dir + dir.path + '/' + wellname %}
+                    {% set well_filenames += ['well.html'] %}
+                    {% if path_exists(well_path) %}
+                        {{ setup_template_render(well_path, None) }}
+                        {% if get_embedded_config(well_path).has_option(wellname, 'filenames') %}
+                            {% set well_filenames += get_embedded_config(well_path).get(wellname, 'filenames').split(',') %}
+                        {% endif %}
                     {% endif %}
-                {% endif %}
+                {% endfor %}
 
                 <hr class="row-divider">
 
