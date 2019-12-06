@@ -57,6 +57,7 @@ def render_workflow_html_template(filename, subtemplate, filelists, **kwargs):
     # save as html page
     kwds = {'render-function' : 'render_tmplt',
             'filenames' : ','.join(filenames)}
+    kwds.update(kwargs)
     save_html_with_metadata(str(output), filename, None, kwds)
 
 def get_embedded_config(filename):

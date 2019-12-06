@@ -165,12 +165,40 @@
                 
                 {% set wells = [fname for fname in dir.files if 'well' in fname] %}
 
+                {% set j = 0 %}
                 <!-- include well if it exists and check meta-data if well renders any files inside it -->
                 {% for wellname in wells %}
                     {% set well_path = plots_dir + dir.path + '/' + wellname %}
                     {% set well_filenames += ['well.html'] %}
                     {% if path_exists(well_path) %}
-                        {{ setup_template_render(well_path, None) }}
+                    
+                        {% set cp = get_embedded_config(well_path) %}
+                        {% if not cp.has_option(wellname, 'collapse') %}
+                            <!-- regular well -->
+                            {{ setup_template_render(well_path, None) }}
+                        {% else %}
+                            <!-- well within a collapseable box -->
+                            <div class="panel-group" id="accordion">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{i}}">
+                                            {% if cp.check_option(wellname, 'title') %}
+                                                {{cp.get(wellname, 'title')}}
+                                            {% else %}
+                                                {{wellname}}
+                                            {% endif %}
+                                        </h4>
+                                    </div>
+                                    <div id="collapse{{i}}" class="panel-collapse collapse">
+                                        <div class="panel-body">
+                                            {{ setup_template_render(well_path, None) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>    
+                            {% set j = j + 1 %}                 
+                        {% endif %}
+
                         {% if get_embedded_config(well_path).has_option(wellname, 'filenames') %}
                             {% set well_filenames += get_embedded_config(well_path).get(wellname, 'filenames').split(',') %}
                         {% endif %}
