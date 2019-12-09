@@ -162,22 +162,23 @@
                 
                 {% set wellnames = [] %}
                 {% for wellname in dir.files %}
-                    {% if wellname.filename().find('well') == -1 %}
-                        {% set wellnames = wellnames + [wellname] %}
+                    {% if wellname.filename().find('well') == 0 %}
+                        {% set _ = wellnames.append(wellname) %}
                     {% endif %}
                 {% endfor %}
                 
                 <!-- include well if it exists and check meta-data if well renders any files inside it -->
                 {% for wellname in wellnames %}
-                    {% set well_path = plots_dir + dir.path + '/' + wellname %}
-                    {% set well_filenames = well_filenames + [wellname] %}
+                    {{wellname.filename()}}
+                    {% set well_path = plots_dir + dir.path + '/' + wellname.filename() %}
+                    {% set _ = well_filenames.append(wellname.filename()) %}
                     {% if path_exists(well_path) %}
                     
                         {% set cp = get_embedded_config(well_path) %}
                         {{ setup_template_render(well_path, None) }}            
                         
                         {% if get_embedded_config(well_path).has_option(wellname, 'filenames') %}
-                            {% set well_filenames = well_filenames + get_embedded_config(well_path).get(wellname, 'filenames').split(',') %}
+                            {% set _ = well_filenames.extend(get_embedded_config(well_path).get(wellname, 'filenames').split(',')) %}
                         {% endif %}
                         
                     {% endif %}
