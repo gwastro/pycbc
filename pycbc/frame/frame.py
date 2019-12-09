@@ -22,6 +22,7 @@ import lal
 import numpy
 import os.path, glob, time
 import gwdatafind
+from six.moves.urllib.parse import urlparse
 from pycbc.types import TimeSeries, zeros
 
 
@@ -293,8 +294,7 @@ def frame_paths(frame_type, start_time, end_time, server=None, url_type='file'):
     connection.find_times(site, frame_type,
                           gpsstart=start_time, gpsend=end_time)
     cache = connection.find_frame_urls(site, frame_type, start_time, end_time,urltype=url_type)
-    paths = [entry.path for entry in cache]
-    return paths
+    return [urlparse(entry).path for entry in cache]
 
 def query_and_read_frame(frame_type, channels, start_time, end_time,
                          sieve=None, check_integrity=False):

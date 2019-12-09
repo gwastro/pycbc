@@ -952,10 +952,12 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     # directory to check if this was expected.
     log_datafind_command(observatory, frameType, startTime, endTime,
                          os.path.join(outputDir,'logs'), **dfKwargs)
-    logging.info("Asking datafind server for frames.")
-    dfCache = connection.find_frame_urls(observatory, frameType,
-                                        startTime, endTime, **dfKwargs)
-    logging.info("Frames returned")
+    logging.debug("Asking datafind server for frames.")
+    dfCache = lal.Cache.from_urls(
+        connection.find_frame_urls(observatory, frameType,
+                                   startTime, endTime, **dfKwargs),
+    )
+    logging.debug("Frames returned")
     # workflow format output file
     cache_file = File(ifo, 'DATAFIND', seg, extension='lcf',
                       directory=outputDir, tags=tags)
