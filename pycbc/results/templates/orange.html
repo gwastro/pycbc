@@ -169,18 +169,38 @@
                 
                 <!-- include well if it exists and check meta-data if well renders any files inside it -->
                 {% for wellname in wellnames %}
-                    {{wellname.filename()}}
                     {% set well_path = plots_dir + dir.path + '/' + wellname.filename() %}
                     {% set _ = well_filenames.append(wellname.filename()) %}
                     {% if path_exists(well_path) %}
                     
                         {% set cp = get_embedded_config(well_path) %}
-                        {{ setup_template_render(well_path, None) }}            
                         
-                        {% if get_embedded_config(well_path).has_option(wellname, 'filenames') %}
-                            {% set _ = well_filenames.extend(get_embedded_config(well_path).get(wellname, 'filenames').split(',')) %}
+                        {% if cp.check_option(wellname.filename(), 'filenames') %}
+                            {% set _ = well_filenames.extend(get_embedded_config(well_path).get(wellname.filename(), 'filenames').split(',')) %}
                         {% endif %}
                         
+                        {% if not cp.check_option(wellname.filename(), 'collapse') %}
+                            {{ setup_template_render(well_path, None) }}     
+                        {% else %}
+                            <div class="panel-group" id="accordion">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{loop.index}}well">
+                                            {% if cp.check_option(wellname.filename(), 'title') %}
+                                                W{{loop.index}}. {{cp.get(wellname.filename(), 'title')}}
+                                            {% else %}
+                                                W{{loop.index}}. {{wellname.filename()}}
+                                            {% endif %}
+                                        </h4>
+                                    </div>
+                                    <div id="collapse{{loop.index}}well" class="panel-collapse collapse">
+                                        <div class="panel-body">
+                                            {{setup_template_render(well_path, None) }}     
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}                               
                     {% endif %}
                 {% endfor %}
 
