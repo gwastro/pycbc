@@ -79,12 +79,12 @@ parser.add_argument('--qtransform-frange-upper', default=None, type=float,
                          'qtransform. Optional, default=Half of Nyquist')
 parser.add_argument('--qtransform-qrange-lower', default=4, type=float,
                     help='Lower limit of the range of q to consider, '
-                         'default=4')
+                         'default=%(default)f')
 parser.add_argument('--qtransform-qrange-upper', default=64, type=float,
                     help='Upper limit of the range of q to consider, '
-                         'default=64')
+                         'default=%(default)f')
 parser.add_argument('--qtransform-mismatch', default=0.2, type=float,
-                    help='Mismatch between frequency tiles, default=0.2')
+                    help='Mismatch between frequency tiles, default=%(default)f')
 
 parser.add_argument('--linear-y-axis', dest='log_y', default=True,
                     action='store_false',
@@ -97,7 +97,7 @@ parser.add_argument('--plot-title',
 parser.add_argument('--plot-caption',
                     help="If given, use this as the plot caption")
 parser.add_argument('--colormap', choices=plt.colormaps(), default='viridis',
-                    help='Colormap to use (default viridis)')
+                    help='Colormap to use (default %(default)s)')
 
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
