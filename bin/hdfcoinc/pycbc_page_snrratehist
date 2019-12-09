@@ -14,9 +14,7 @@ def sigma_from_p(p):
 
 def p_from_sigma(sig):
     return 1 - (1 - erf(sig / 2**0.5)) / 2
-    
-pylab.rc('text', usetex=True)
-pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+
 
 parser = argparse.ArgumentParser()
 # General required options
