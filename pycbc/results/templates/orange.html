@@ -182,7 +182,7 @@
                         {% if not cp.check_option(wellname.filename(), 'collapse') %}
                             {{ setup_template_render(well_path, None) }}     
                         {% else %}
-                            <div class="panel-group" id="accordion">
+                            <div class="panel-group" id="accordion1">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
                                         <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{loop.index}}well">
@@ -217,6 +217,7 @@
                             <div class="row" style="padding:15px">
                                 <button id="collapse-init" class="btn btn-xs btn-primary">Expand All</button>
                             </div>
+                            {% set count = [1] %}
                             {% for file in dir.files %}
                                 {% if path_exists(file.path) %}
 
@@ -229,9 +230,9 @@
                                                 <div class="panel-heading">
                                                     <h4 class="panel-title" data-toggle="collapse" data-target="#collapseorange{{loop.index}}">
                                                         {% if cp.check_option(file.filename(), 'title') %}
-                                                            B{{loop.index}}. {{cp.get(file.filename(), 'title')}}
+                                                            B{{count|length}}. {{cp.get(file.filename(), 'title')}}
                                                         {% else %}
-                                                            B{{loop.index}}. {{file.filename()}}
+                                                            B{{count|length}}. {{file.filename()}}
                                                         {% endif %}
                                                     </h4>
                                                 </div>
@@ -242,7 +243,7 @@
                                                 </div>
                                             </div>
                                         </div>
-
+                                    {% set _ = count.append(1) %}
                                     {% endif %}
                                 {% endif %}
                             {% endfor %}
