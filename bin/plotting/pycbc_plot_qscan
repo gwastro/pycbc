@@ -72,11 +72,11 @@ parser.add_argument('--qtransform-logfsteps', type=int, default=200,
                          '--qtransform-delta-f option) and set the number '
                          'of steps to take')
 parser.add_argument('--qtransform-frange-lower', default=None, type=float,
-                    help='Lower frequency at which to compute qtransform. '
-                         'Optional, default=10')
+                    help='Lower frequency (in Hz) at which to compute '
+                         'qtransform. Optional, default=20 Hz')
 parser.add_argument('--qtransform-frange-upper', default=None, type=float,
-                    help='Upper frequency at which to compute qtransform. '
-                         'Optional, default=Half of Nyquist')
+                    help='Upper frequency (in Hz) at which to compute '
+                         'qtransform. Optional, default=Half of Nyquist')
 parser.add_argument('--qtransform-qrange-lower', default=4, type=float,
                     help='Lower limit of the range of q to consider, '
                          'default=4')
@@ -129,7 +129,7 @@ strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.qtransform_frange_upper is None and \
         opts.qtransform_frange_lower is None:
-    curr_frange = (30, opts.sample_rate / 4.)
+    curr_frange = (20, opts.sample_rate / 4.)
 elif opts.qtransform_frange_upper is None or \
           opts.qtransform_frange_lower is None:
     parser.error('Must provide either both --qtransform-frange-upper and '
