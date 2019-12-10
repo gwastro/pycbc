@@ -275,16 +275,21 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 
     return f(ns_g_mass)
 
-########################################################################################
-# NS-BH merger remnant mass [Foucart, Hinderer, Nissanke PRD 98, 081501(R) (2018)].    #
-#                                                                                      #
-# * THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this).                     #
-# * Physical parameters passed to remnant_mass (see sanity checks below) must not be   #
-#   unphysical.                                                                        #
-# * Tilted BH spin cases are handled by identifying rISCO(chi_eff) with rISSO(chi,incl)#
-#   (without any need to solve for chi_eff).  This approximation was suggested in      #
-#   Stone, Loeb, Berger, PRD 87, 084053 (2013) for the previous NS-BH remnant mass fit.#
-########################################################################################
+##############################################################################
+# NS-BH merger remnant mass [Foucart, Hinderer, Nissanke PRD 98, 081501(R)   # 
+#                            (2018)].                                        #
+#                                                                            #
+# * THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this).           #
+# * Physical parameters passed to remnant_mass (see sanity checks below)     #
+#   must not be                                                              #
+#   unphysical.                                                              #
+# * Tilted BH spin cases are handled by identifying rISCO(chi_eff) with      #
+#   rISSO(chi,incl)                                                          #
+#   (without any need to solve for chi_eff).  This approximation was         #
+#   suggested in                                                             #
+#   Stone, Loeb, Berger, PRD 87, 084053 (2013) for the previous NS-BH        #
+#   remnant mass fit.                                                        #
+##############################################################################
 def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     """
     Function that determines the remnant disk mass of
@@ -318,10 +323,10 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 
     # Sanity checks on eta and chi
     if not (eta>0. and eta<=0.25 and abs(chi)<=1 and ns_g_mass>0):
-        print('The BH spin magnitude must be <=1, eta must be between 0 and 
-               0.25, and the NS mass must be positive.')
+        print('The BH spin magnitude must be <= 1, eta must be between 0 and
+              0.25, and the NS mass must be positive.')
         print('The function remnant_mass was launched with ns_mass={0}, eta={1},
-               chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
+              chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
         raise Exception('Unphysical parameters!')
 
     # NS compactness and rest mass
