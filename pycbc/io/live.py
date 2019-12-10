@@ -294,10 +294,7 @@ class SingleCoincForGraceDB(object):
         ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
         
         if self.probabilities is not None:
-            if filename endswith('.xml.gz'):
-                prob_fname = filename.replace('.xml.gz', '_probs.json')
-            else:
-                prob_fname = filename.replace('.xml', '_probs.json')
+            prob_fname = filename.replace('.xml.gz', '_probs.json')
             with open(prob_fname,'w') as prob_outfile:
                 prob_outfile.write(self.probabilities)
 
