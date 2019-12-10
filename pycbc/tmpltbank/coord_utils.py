@@ -264,7 +264,7 @@ def get_random_mass(numPoints, massRangeParams):
 
             # Keep a point if:
             # 1) the secondary object is a not a BH (mass2 < boundary mass)
-            #    [Store masses and spins of non BBHs] 
+            #    [Store masses and spins of non BBH]
             mask_not_bbh[mass2 < boundary_mass] = True
             mass1_not_bbh = mass1[mask_not_bbh]
             mass2_not_bbh = mass2[mask_not_bbh]
@@ -294,21 +294,21 @@ def get_random_mass(numPoints, massRangeParams):
             #     threshold mass]
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
             if len(eta_nsbh) != 0:
-                remnant = remnant_masses(eta_nsbh, mass2_nsbh, ns_sequence, 
-                                         spin1z_nsbh, 0., 
+                remnant = remnant_masses(eta_nsbh, mass2_nsbh, ns_sequence,
+                                         spin1z_nsbh, 0.,
                                          massRangeParams.remnant_mass_threshold)
                 mask_bright_nsbh[remnant > massRangeParams.remnant_mass_threshold] = True
 
             # Keep only points that correspond to binaries that can produce an
             # EM counterpart (i.e., BNSs and EM-bright NSBHs) and add their
             # properties to the pile of accpeted points to output
-            mass1_out = numpy.concatenate((mass1_out, mass1_bns, 
+            mass1_out = numpy.concatenate((mass1_out, mass1_bns,
                                            mass1_nsbh[mask_bright_nsbh]))
-            mass2_out = numpy.concatenate((mass2_out, mass2_bns, 
+            mass2_out = numpy.concatenate((mass2_out, mass2_bns,
                                            mass2_nsbh[mask_bright_nsbh]))
-            spin1z_out = numpy.concatenate((spin1z_out, spin1z_bns, 
+            spin1z_out = numpy.concatenate((spin1z_out, spin1z_bns,
                                             spin1z_nsbh[mask_bright_nsbh]))
-            spin2z_out = numpy.concatenate((spin2z_out, spin2z_bns, 
+            spin2z_out = numpy.concatenate((spin2z_out, spin2z_bns,
                                             spin2z_nsbh[mask_bright_nsbh]))
 
             # Number of points that survived all cuts
