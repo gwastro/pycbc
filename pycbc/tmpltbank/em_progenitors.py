@@ -345,5 +345,3 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 remnant_masses = np.vectorize(remnant_mass)
 remnant_masses.excluded.add(2)
 remnant_masses.excluded.add(5)
-
-
