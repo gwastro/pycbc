@@ -278,7 +278,18 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
 
 
 def calc_probabilities(trig_mc_det, mass_limits, mass_bdary, z):
-    areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z)
-    total_area = sum(areas.values())
-    probabilities = {key: areas[key]/total_area for key in areas}
+    # If the mchirp is greater than a mchirp corresponding to two masses
+    # equal to the maximum mass, the probability for BBH is 100%
+    mc_max = mass_limits['max_m1'] / (2 ** 0.2)
+    if trig_mc_det > mc_max * (1 + z['central']):
+        if mass_gap is not False:
+            probabilities = {'bns': 0.0, 'gns': 0.0, 'nsbh': 0.0, 'gg': 0.0,
+                             'bhg': 0.0, 'bbh': 1.0}
+        else:
+            probabilities = {'bns': 0.0, 'nsbh': 0.0, 'bbh': 1.0,
+                             'mass_gap': 0.0}
+    else:
+        areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z)
+        total_area = sum(areas.values())
+        probabilities = {key: areas[key]/total_area for key in areas}
     return probabilities
