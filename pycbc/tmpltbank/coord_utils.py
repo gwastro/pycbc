@@ -264,7 +264,7 @@ def get_random_mass(numPoints, massRangeParams):
 
             # Keep a point if:
             # 1) the secondary object is a not a BH (mass2 < boundary mass)
-            #    [Store masses and spins of non BBHs]       
+            #    [Store masses and spins of non BBHs] 
             mask_not_bbh[mass2 < boundary_mass] = True
             mass1_not_bbh = mass1[mask_not_bbh]
             mass2_not_bbh = mass2[mask_not_bbh]
