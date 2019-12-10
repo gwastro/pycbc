@@ -111,7 +111,7 @@ def PG_ISSO_eq(r, chi, incl):
     X=chi2*(chi2*(3*chi2+4*r*(2*r-3))+r2*(15*r*(r-4)+28))-6*r4*(r2-4)
     Y=chi4*(chi4+r2*(7*r*(three_r-4)+36))+6*r*r_minus_2*(chi4*chi2+2*r2*r*(chi2*(three_r+2)+3*r2*r_minus_2))
     Z=ISCO_eq(r, chi)
- 
+
     return r4*r4*Z+chi2*sin_incl2*(chi2*sin_incl2*Y-2*r4*X)
 
 # ISSO radius solver
@@ -318,8 +318,10 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 
     # Sanity checks on eta and chi
     if not (eta>0. and eta<=0.25 and abs(chi)<=1 and ns_g_mass>0):
-        print('The BH spin magnitude must be <=1, eta must be between 0 and 0.25, and the NS mass must be positive.')
-        print('The function remnant_mass was launched with ns_mass={0}, eta={1}, chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
+        print('The BH spin magnitude must be <=1, eta must be between 0 and 
+               0.25, and the NS mass must be positive.')
+        print('The function remnant_mass was launched with ns_mass={0}, eta={1},
+               chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
         raise Exception('Unphysical parameters!')
 
     # NS compactness and rest mass
@@ -343,5 +345,7 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
 # the arguments to exclude from vectorization.                                 #
 ################################################################################
 remnant_masses = np.vectorize(remnant_mass)
+
+
 remnant_masses.excluded.add(2)
 remnant_masses.excluded.add(5)
