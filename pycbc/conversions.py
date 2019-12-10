@@ -34,7 +34,7 @@ import numpy
 import lal
 import lalsimulation as lalsim
 from pycbc.detector import Detector
-
+import pycbc.cosmology
 from .coordinates import spherical_to_cartesian as _spherical_to_cartesian
 
 #
@@ -402,6 +402,19 @@ def lambda_tilde(mass1, mass2, lambda1, lambda2):
     p1 = (lsum) * (1 + 7. * eta - 31 * eta ** 2.0)
     p2 = (1 - 4 * eta)**0.5 * (1 + 9 * eta - 11 * eta ** 2.0) * (ldiff)
     return formatreturn(8.0 / 13.0 * (p1 + p2), input_is_array)
+
+
+def lambda_from_mass_tov_file(mass, tov_file, distance=0.):
+    """Return the lambda parameter(s) corresponding to the input mass(es)
+    interpolating from the mass-Lambda data for a particular EOS read in from
+    an ASCII file.
+    """
+    data = numpy.loadtxt(tov_file)
+    mass_from_file = data[:, 0]
+    lambda_from_file = data[:, 1]
+    mass_src = mass/(1.0 + pycbc.cosmology.redshift(distance))
+    lambdav = numpy.interp(mass_src, mass_from_file, lambda_from_file)
+    return lambdav
 
 #
 # =============================================================================
@@ -969,16 +982,22 @@ def tau_from_final_mass_spin(final_mass, final_spin, l=2, m=2, nmodes=1):
     return get_lm_f0tau(final_mass, final_spin, l, m, nmodes)[1]
 
 
-# The following are from Table VIII of Berti et al., PRD 73 064030,
-# arXiv:gr-qc/0512160 (2006).
-# Keys are l,m. Constants are for converting from
+# The following are from Table VIII, IX, X of Berti et al.,
+# PRD 73 064030, arXiv:gr-qc/0512160 (2006).
+# Keys are l,m (only n=0 supported). Constants are for converting from
 # frequency and damping time to mass and spin.
 _berti_spin_constants = {
-    (2,2): (0.7, 1.4187, -0.4990),
+    (2, 2): (0.7, 1.4187, -0.4990),
+    (3, 3): (0.9, 2.343, -0.4810),
+    (4, 4): (1.1929, 3.1191, -0.4825),
+    (2, 1): (-0.3, 2.3561, -0.2277)
     }
 
 _berti_mass_constants = {
-    (2,2): (1.5251, -1.1568, 0.1292),
+    (2, 2): (1.5251, -1.1568, 0.1292),
+    (3, 3): (1.8956, -1.3043, 0.1818),
+    (4, 4): (2.3, -1.5056, 0.2244),
+    (2, 1): (0.6, -0.2339, 0.4175)
     }
 
 
@@ -986,8 +1005,8 @@ def final_spin_from_f0_tau(f0, tau, l=2, m=2):
     """Returns the final spin based on the given frequency and damping time.
 
     .. note::
-        Currently, only l = m = 2 is supported. Any other indices will raise
-        a ``KeyError``.
+        Currently, only (l,m) = (2,2), (3,3), (4,4), (2,1) are supported.
+        Any other indices will raise a ``KeyError``.
 
     Parameters
     ----------
@@ -1031,8 +1050,8 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
     and damping time.
 
     .. note::
-        Currently, only l = m = 2 is supported. Any other indices will raise
-        a ``KeyError``.
+        Currently, only (l,m) = (2,2), (3,3), (4,4), (2,1) are supported.
+        Any other indices will raise a ``KeyError``.
 
     Parameters
     ----------
@@ -1056,6 +1075,220 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
     spin = final_spin_from_f0_tau(f0, tau, l=l, m=m)
     a, b, c = _berti_mass_constants[l,m]
     return (a + b*(1-spin)**c)/(2*numpy.pi*f0*lal.MTSUN_SI)
+
+def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
+    """Returns the QNM frequency (in Hz) of a chosen new (l,m) mode from the
+    given current (l,m) mode.
+
+    Parameters
+    ----------
+    f0 : float or array
+        Frequency of the current QNM (in Hz).
+    tau : float or array
+        Damping time of the current QNM (in seconds).
+    current_l : int, optional
+        l-index of the current QNM.
+    current_m : int, optional
+        m-index of the current QNM.
+    new_l : int, optional
+        l-index of the new QNM to convert to.
+    new_m : int, optional
+        m-index of the new QNM to convert to.
+
+    Returns
+    -------
+    float or array
+        The frequency of the new (l, m) QNM mode. If the combination of
+        frequency and damping time provided for the current (l, m) QNM mode
+        correspond to an unphysical Kerr black hole mass and/or spin,
+        ``numpy.nan`` will be returned.
+    """
+    mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
+
+    mass[mass < 0] = numpy.nan
+    spin[numpy.abs(spin) > 0.9996] = numpy.nan
+
+    return freq_from_final_mass_spin(mass, spin,
+                                     l=new_l, m=new_m, nmodes=1)
+
+
+def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
+    """Returns the QNM damping time (in seconds) of a chosen new (l,m) mode
+    from the given current (l,m) mode.
+
+    Parameters
+    ----------
+    f0 : float or array
+        Frequency of the current QNM (in Hz).
+    tau : float or array
+        Damping time of the current QNM (in seconds).
+    current_l : int, optional
+        l-index of the current QNM.
+    current_m : int, optional
+        m-index of the current QNM.
+    new_l : int, optional
+        l-index of the new QNM to convert to.
+    new_m : int, optional
+        m-index of the new QNM to convert to.
+
+    Returns
+    -------
+    float or array
+        The daming time of the new (l, m) QNM mode. If the combination of
+        frequency and damping time provided for the current (l, m) QNM mode
+        correspond to an unphysical Kerr black hole mass and/or spin,
+        ``numpy.nan`` will be returned.
+    """
+    mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
+
+    mass[mass < 0] = numpy.nan
+    spin[numpy.abs(spin) > 0.9996] = numpy.nan
+
+    return tau_from_final_mass_spin(mass, spin,
+                                    l=new_l, m=new_m, nmodes=1)
+
+def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
+                           spin2x=0., spin2y=0., spin2z=0.,
+                           approximant='SEOBNRv4'):
+    """Estimates the final mass and spin from the given initial parameters.
+
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
+    Parameters
+    ----------
+    mass1 : float
+        The mass of one of the components, in solar masses.
+    mass2 : float
+        The mass of the other component, in solar masses.
+    spin1x : float, optional
+        The dimensionless x-component of the spin of mass1. Default is 0.
+    spin1y : float, optional
+        The dimensionless y-component of the spin of mass1. Default is 0.
+    spin1z : float, optional
+        The dimensionless z-component of the spin of mass1. Default is 0.
+    spin2x : float, optional
+        The dimensionless x-component of the spin of mass2. Default is 0.
+    spin2y : float, optional
+        The dimensionless y-component of the spin of mass2. Default is 0.
+    spin2z : float, optional
+        The dimensionless z-component of the spin of mass2. Default is 0.
+    approximant : str, optional
+        The waveform approximant to use for the fit function. Default is
+        "SEOBNRv4".
+
+    Returns
+    -------
+    final_mass : float
+        The final mass, in solar masses.
+    final_spin : float
+        The dimensionless final spin.
+    """
+    args = (mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z)
+    args = ensurearray(*args)
+    input_is_array = args[-1]
+    origshape = args[0].shape
+    # flatten inputs for storing results
+    args = [a.ravel() for a in args[:-1]]
+    mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = args
+    final_mass = numpy.zeros(mass1.shape)
+    final_spin = numpy.zeros(mass1.shape)
+    for ii in range(final_mass.size):
+        m1 = mass1[ii]
+        m2 = mass2[ii]
+        spin1 = [spin1x[ii], spin1y[ii], spin1z[ii]]
+        spin2 = [spin2x[ii], spin2y[ii], spin2z[ii]]
+        _, fm, fs = lalsim.SimIMREOBFinalMassSpin(m1, m2, spin1, spin2,
+                                                  getattr(lalsim, approximant))
+        final_mass[ii] = fm * (m1 + m2)
+        final_spin[ii] = fs
+    final_mass = final_mass.reshape(origshape)
+    final_spin = final_spin.reshape(origshape)
+    return (formatreturn(final_mass, input_is_array),
+            formatreturn(final_spin, input_is_array))
+
+
+def final_mass_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
+                            spin2x=0., spin2y=0., spin2z=0.,
+                            approximant='SEOBNRv4'):
+    """Estimates the final mass from the given initial parameters.
+
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
+    Parameters
+    ----------
+    mass1 : float
+        The mass of one of the components, in solar masses.
+    mass2 : float
+        The mass of the other component, in solar masses.
+    spin1x : float, optional
+        The dimensionless x-component of the spin of mass1. Default is 0.
+    spin1y : float, optional
+        The dimensionless y-component of the spin of mass1. Default is 0.
+    spin1z : float, optional
+        The dimensionless z-component of the spin of mass1. Default is 0.
+    spin2x : float, optional
+        The dimensionless x-component of the spin of mass2. Default is 0.
+    spin2y : float, optional
+        The dimensionless y-component of the spin of mass2. Default is 0.
+    spin2z : float, optional
+        The dimensionless z-component of the spin of mass2. Default is 0.
+    approximant : str, optional
+        The waveform approximant to use for the fit function. Default is
+        "SEOBNRv4".
+
+    Returns
+    -------
+    float
+        The final mass, in solar masses.
+    """
+    return get_final_from_initial(mass1, mass2, spin1x, spin1y, spin1z,
+                                  spin2x, spin2y, spin2z, approximant)[0]
+
+
+def final_spin_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
+                            spin2x=0., spin2y=0., spin2z=0.,
+                            approximant='SEOBNRv4'):
+    """Estimates the final spin from the given initial parameters.
+
+    This uses the fits used by the EOBNR models for converting from initial
+    parameters to final. Which version used can be controlled by the
+    ``approximant`` argument.
+
+    Parameters
+    ----------
+    mass1 : float
+        The mass of one of the components, in solar masses.
+    mass2 : float
+        The mass of the other component, in solar masses.
+    spin1x : float, optional
+        The dimensionless x-component of the spin of mass1. Default is 0.
+    spin1y : float, optional
+        The dimensionless y-component of the spin of mass1. Default is 0.
+    spin1z : float, optional
+        The dimensionless z-component of the spin of mass1. Default is 0.
+    spin2x : float, optional
+        The dimensionless x-component of the spin of mass2. Default is 0.
+    spin2y : float, optional
+        The dimensionless y-component of the spin of mass2. Default is 0.
+    spin2z : float, optional
+        The dimensionless z-component of the spin of mass2. Default is 0.
+    approximant : str, optional
+        The waveform approximant to use for the fit function. Default is
+        "SEOBNRv4".
+
+    Returns
+    -------
+    float
+        The dimensionless final spin.
+    """
+    return get_final_from_initial(mass1, mass2, spin1x, spin1y, spin1z,
+                                  spin2x, spin2y, spin2z, approximant)[1]
 
 
 #
@@ -1255,7 +1488,8 @@ def nltides_gw_phase_diff_isco(f_low, f0, amplitude, n, m1, m2):
     return formatreturn(phi_i - phi_l, input_is_array)
 
 
-__all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
+__all__ = ['dquadmon_from_lambda', 'lambda_tilde',
+           'lambda_from_mass_tov_file', 'primary_mass',
            'secondary_mass', 'mtotal_from_mass1_mass2',
            'q_from_mass1_mass2', 'invq_from_mass1_mass2',
            'eta_from_mass1_mass2', 'mchirp_from_mass1_mass2',
@@ -1284,6 +1518,7 @@ __all__ = ['dquadmon_from_lambda', 'lambda_tilde', 'primary_mass',
            'chirp_distance', 'det_tc', 'snr_from_loglr',
            'freq_from_final_mass_spin', 'tau_from_final_mass_spin',
            'final_spin_from_f0_tau', 'final_mass_from_f0_tau',
+           'final_mass_from_initial', 'final_spin_from_initial',
            'optimal_dec_from_detector', 'optimal_ra_from_detector',
            'chi_eff_from_spherical', 'chi_p_from_spherical',
            'nltides_gw_phase_diff_isco',

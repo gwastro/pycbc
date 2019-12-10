@@ -1,0 +1,107 @@
+#!/bin/env python
+"""Generate the standardized file detailing the candidates/background to
+follow-up.
+"""
+import h5py, numpy, argparse, logging, pycbc
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--statmap-file',
+    help="Statmap file containing the candidates/background to follow up")
+parser.add_argument('--bank-file',
+    help="HDF format template bank file")
+parser.add_argument('--min-stat', type=float,
+    help="Minimum statistic value to follow up")
+parser.add_argument('--foreground-only', action='store_true',
+    help="Only make an followup input file which contains zerolag candidates")
+parser.add_argument('--output-file')
+
+args = parser.parse_args()
+pycbc.init_logging(args.verbose)
+
+# Currently this expects the 2-ifo format, but the output file format
+# should be ok for multi-ifo as well
+bank = h5py.File(args.bank_file, 'r')
+sfile = h5py.File(args.statmap_file, 'r')
+
+if 'detector_1' in sfile.attrs:
+    pivot = sfile.attrs['detector_1']
+    fixed = sfile.attrs['detector_2']
+    ifos = [pivot, fixed]
+else:
+    pivot = sfile.attrs['pivot']
+    fixed = sfile.attrs['fixed']
+    ifos = sfile.attrs['ifos'].split(' ')
+
+slide = sfile.attrs['timeslide_interval']
+
+odtype = [(ifo, numpy.float64) for ifo in ifos]
+dtype = odtype + [('time', numpy.float64),
+                  ('template_id', numpy.uint64),
+                  ('stat', numpy.float32),
+         ]
+
+# Determine which events we will include in our followup file
+if args.foreground_only:
+    sections = ['foreground']
+else:
+    sections = ['background', 'background_exc', 'foreground']
+
+values = []
+for k in sfile:
+    if k in sections:
+        if 'detector_1' in sfile.attrs:
+            tpivot = sfile[k]['time1'][:].astype(numpy.float64)
+            tfixed = sfile[k]['time2'][:].astype(numpy.float64)
+        else:
+            tpivot = sfile[k][pivot]['time'][:].astype(numpy.float64)
+            tfixed = sfile[k][fixed]['time'][:].astype(numpy.float64)
+
+        template = sfile[k]['template_id'][:]
+
+        value = numpy.zeros(len(tpivot), dtype=dtype)
+
+        if k is not 'foreground':
+            tfixed += sfile[k]['timeslide_id'][:] * slide
+            for ifo in ifos:
+                if ifo == pivot:
+                    continue
+                value[ifo] = -sfile[k]['timeslide_id'][:] * slide
+
+        value['time'] = 0.5 * (tpivot + tfixed)
+        value['template_id'] = template
+        value['stat'] = sfile[k]['stat'][:]
+
+        if args.min_stat:
+            keep = sfile[k]['stat'][:] > args.min_stat
+            value = value[keep]
+
+        values.append(value)
+
+# Compress to only the unique candidates (as there is overlap due to the
+# multiple background types)
+values = numpy.concatenate(values)
+values, invmap = numpy.unique(values, return_inverse=True)
+logging.info('%s triggers to follow up', len(values))
+
+f = h5py.File(args.output_file, 'w')
+f['inverse'] = invmap
+f.attrs['sections'] = sections
+f['time'] = values['time']
+
+offsets = numpy.zeros(len(values), dtype=odtype)
+for ifo in ifos:
+    offsets[ifo] = values[ifo]
+f['offsets'] = offsets
+f['stat'] = values['stat']
+
+wdtype = [(k, numpy.float64) for k in bank]
+wparam = numpy.zeros(len(values), dtype=wdtype)
+for k in bank:
+    wparam[k] = bank[k][:][values['template_id']]
+
+f['waveparams'] = wparam
+
+logging.info('Done')

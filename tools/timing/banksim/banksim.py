@@ -44,9 +44,9 @@ from math import cos, sin
 import pycbc.psd
 
 def update_progress(progress):
-    print '\r\r[{0}] {1:.2%}'.format('#'*(int(progress*100)/2)+' '*(50-int(progress*100)/2), progress),
+    print('\r\r[{0}] {1:.2%}'.format('#'*(int(progress*100)/2)+' '*(50-int(progress*100)/2), progress), end=' ')
     if progress == 100:
-        print "Done"
+        print("Done")
     sys.stdout.flush()
 
 ## Remove the need for these functions ########################################
@@ -186,7 +186,7 @@ if options.use_cuda:
 else:
     ctx = DefaultScheme()
 
-print "STARTING THE BANKSIM"
+print("STARTING THE BANKSIM")
 
 # Load in the template bank file
 indoc = ligolw_utils.load_filename(options.bank_file, False)
@@ -199,8 +199,8 @@ except ValueError:
 fout = open(options.out_file, "w")
 fout2 = open(options.out_file+".found", "w")
 
-print "Writing matches to " + options.out_file
-print "Writing recovered template in " + options.out_file+".found"
+print("Writing matches to " + options.out_file)
+print("Writing recovered template in " + options.out_file+".found")
 
 # Load in the simulation list
 indoc = ligolw_utils.load_filename(options.sim_file, False)

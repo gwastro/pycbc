@@ -34,12 +34,18 @@ from pycbc import waveform as _waveform
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
 from .emcee import EmceeFile
 from .emcee_pt import EmceePTFile
+from .cpnest import CPNestFile
+from .multinest import MultinestFile
+from .dynesty import DynestyFile
 from .posterior import PosteriorFile
 from .txt import InferenceTXTFile
 
 filetypes = {
     EmceeFile.name: EmceeFile,
     EmceePTFile.name: EmceePTFile,
+    CPNestFile.name: CPNestFile,
+    MultinestFile.name: MultinestFile,
+    DynestyFile.name: DynestyFile,
     PosteriorFile.name: PosteriorFile
 }
 
@@ -150,7 +156,7 @@ def check_integrity(filename):
     # will raise an IOError
     with loadfile(filename, 'r') as fp:
         # check that all datasets in samples have the same shape
-        parameters = fp[fp.samples_group].keys()
+        parameters = list(fp[fp.samples_group].keys())
         # but only do the check if parameters have been written
         if len(parameters) > 0:
             group = fp.samples_group + '/{}'
@@ -419,10 +425,18 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         to not be included. May also specify sampler-specific arguments. Note
         that ``input-file``, ``file-help``, and ``parameters`` are always
         added.
+    defaultparams : {'variable_params', 'all'}, optional
+        If no ``--parameters`` provided, which collection of parameters to
+        load. If 'all' will load all parameters in the file's
+        ``samples_group``. If 'variable_params' or None (the default) will load
+        the variable parameters.
+    autoparamlabels : bool, optional
+        Passed to ``add_results_option_group``; see that function for details.
     \**kwargs :
         All other keyword arguments are passed to ``argparse.ArgumentParser``.
     """
-    def __init__(self, skip_args=None, **kwargs):
+    def __init__(self, skip_args=None, defaultparams=None,
+                 autoparamlabels=True, **kwargs):
         super(ResultsArgumentParser, self).__init__(**kwargs)
         # add attribute to communicate to arguments what to do when there is
         # no input files
@@ -430,8 +444,11 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         if skip_args is None:
             skip_args = []
         self.skip_args = skip_args
+        if defaultparams is None:
+            defaultparams = 'variable_params'
+        self.defaultparams = defaultparams
         # add the results option grup
-        self.add_results_option_group()
+        self.add_results_option_group(autoparamlabels=autoparamlabels)
 
     @property
     def actions(self):
@@ -471,7 +488,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
         # populate the parameters option if it wasn't specified
         if opts.parameters is None:
             parameters = get_common_parameters(opts.input_file,
-                                               collection='variable_params')
+                                               collection=self.defaultparams)
             # now call parse parameters action to populate the namespace
             self.actions['parameters'](self, opts, parameters)
         # parse the sampler-specific options and check for any unknowns
@@ -489,7 +506,7 @@ class ResultsArgumentParser(argparse.ArgumentParser):
             unknown = set.intersection(*unknown)
         return opts, list(unknown)
 
-    def add_results_option_group(self):
+    def add_results_option_group(self, autoparamlabels=True):
         """Adds the options used to call pycbc.inference.io.results_from_cli
         function to the parser.
 
@@ -498,6 +515,14 @@ class ResultsArgumentParser(argparse.ArgumentParser):
 
         Any argument strings included in the ``skip_args`` attribute will not
         be added.
+
+        Parameters
+        ----------
+        autoparamlabels : bool, optional
+            If True, the ``--parameters`` option will use labels from
+            ``waveform.parameters`` if a parameter name is the same as a
+            parameter there. Otherwise, will just use whatever label is
+            provided. Default is True.
         """
         results_reading_group = self.add_argument_group(
             title="Arguments for loading results",
@@ -520,9 +545,20 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "arguments that may be passed. This option is like an "
                  "advanced --help: if run, the program will just print the "
                  "information to screen, then exit.")
+        if autoparamlabels:
+            paramparser = ParseParametersArg
+            lblhelp = (
+                "If LABEL is the same as a parameter in "
+                "pycbc.waveform.parameters, the label "
+                "property of that parameter will be used (e.g., if LABEL "
+                "were 'mchirp' then {} would be used). "
+                .format(_waveform.parameters.mchirp.label))
+        else:
+            paramparser = ParseLabelArg
+            lblhelp = ''
         results_reading_group.add_argument(
             "--parameters", type=str, nargs="+", metavar="PARAM[:LABEL]",
-            action=ParseParametersArg,
+            action=paramparser,
             help="Name of parameters to load. If none provided will load all "
                  "of the model params in the input-file. If provided, the "
                  "parameters can be any of the model params or posterior "
@@ -532,14 +568,21 @@ class ResultsArgumentParser(argparse.ArgumentParser):
                  "files may be used. Syntax for functions is python; any math "
                  "functions in the numpy libary may be used. Can optionally "
                  "also specify a LABEL for each parameter. If no LABEL is "
-                 "provided, PARAM will used as the LABEL. If LABEL is the "
-                 "same as a parameter in pycbc.waveform.parameters, the label "
-                 "property of that parameter will be used (e.g., if LABEL "
-                 "were 'mchirp' then {} would be used). To see all possible "
-                 "parameters that may be used with the given input file(s), "
-                 "as well as all avaiable functions, run --file-help, along "
-                 "with one or more input files.".format(
-                    _waveform.parameters.mchirp.label))
+                 "provided, PARAM will used as the LABEL. {}"
+                 "To see all possible parameters that may be used with the "
+                 "given input file(s), as well as all avaiable functions, "
+                 "run --file-help, along with one or more input files."
+                 .format(lblhelp))
+        results_reading_group.add_argument(
+            "--constraint", type=str, nargs="+", metavar="CONSTRAINT[:FILE]",
+            help="Apply a constraint to the samples. If a file is provided "
+                 "after the constraint, it will only be applied to the given "
+                 "file. Otherwise, the constraint will be applied to all "
+                 "files. Only one constraint may be applied to a file. "
+                 "Samples that violate the constraint will be removed. Syntax "
+                 "is python; any parameter or function of parameter can be "
+                 "used, similar to the parameters argument. Multiple "
+                 "constraints may be combined by using '&' and '|'.")
         return results_reading_group
 
 
@@ -579,6 +622,22 @@ def results_from_cli(opts, load_samples=True, **kwargs):
     if isinstance(input_files, str):
         input_files = [input_files]
 
+    # load constraints
+    constraints = {}
+    if opts.constraint is not None:
+        for constraint in opts.constraint:
+            if len(constraint.split(':')) == 2:
+                constraint, fn = constraint.split(':')
+                constraints[fn] = constraint
+            # no file provided, make sure there's only one constraint
+            elif len(opts.constraint) > 1:
+                raise ValueError("must provide a file to apply constraints "
+                                 "to if providing more than one constraint")
+            else:
+                # this means no file, only one constraint, apply to all
+                # files
+                constraints = {fn: constraint for fn in input_files}
+                
     # loop over all input files
     for input_file in input_files:
         logging.info("Reading input file %s", input_file)
@@ -595,12 +654,23 @@ def results_from_cli(opts, load_samples=True, **kwargs):
                 opts.parameters, fp.variable_params)
 
             # read samples from file
-            samples = fp.samples_from_cli(opts, parameters=file_parameters, **kwargs)
+            samples = fp.samples_from_cli(opts, parameters=file_parameters,
+                                          **kwargs)
 
-            logging.info("Using {} samples".format(samples.size))
+            logging.info("Loaded {} samples".format(samples.size))
 
             # add parameters not included in file
             samples = _transforms.apply_transforms(samples, ts)
+
+            if input_file in constraints:
+                logging.info("Applying constraints")
+                mask = samples[constraints[input_file]]
+                samples = samples[mask] 
+                if samples.size == 0:
+                    raise ValueError("No samples remain after constraint {} "
+                                     "applied".format(constraints[input_file]))
+                logging.info("{} samples remain".format(samples.size))
+
 
         # else do not read samples
         else:

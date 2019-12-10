@@ -125,4 +125,4 @@ pylab.ylabel(r'$1-p_\mathrm{astro}$')
 pylab.legend(loc='best')
 pylab.yscale('log')
 pylab.savefig(opts.pastro_figure)
-print p_astro
+print(p_astro)

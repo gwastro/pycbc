@@ -20,6 +20,7 @@ import argparse
 import logging
 import sys
 
+import numpy
 from matplotlib import use
 use('agg')
 from matplotlib import pyplot as plt
@@ -88,13 +89,13 @@ acfs = samplers[fp.sampler].compute_acf(fp.filename,
 
 # check if we have multiple temperatures
 if opts.per_walker:
-    multi_tempered = acfs.values()[0].ndim == 3
+    multi_tempered = tuple(acfs.values())[0].ndim == 3
 else:
-    multi_tempered = acfs.values()[0].ndim == 2
+    multi_tempered = tuple(acfs.values())[0].ndim == 2
 try:
     temps = additional_args['temps']
     if temps == 'all':
-        temps = range(acfs.values()[0].shape[0])
+        temps = range(tuple(acfs.values())[0].shape[0])
     if isinstance(temps, int):
         temps = [temps]
 except KeyError:
@@ -117,11 +118,14 @@ for kk,tk in enumerate(temps):
             acf = acfs[param]
         if opts.per_walker:
             lbl = '{}, walker {}'
+            # account for thinning that was done on the fly
+            xvals = numpy.arange(acf.shape[1])*fp.thinned_by
             for wi in range(acf.shape[0]):
                 wnum = opts.walkers[wi] if opts.walkers is not None else wi
-                ax.plot(acf[wi,:], label=lbl.format(labels[param], wnum))
+                ax.plot(xvals, acf[wi,:], label=lbl.format(labels[param], wnum))
         else:
-            ax.plot(acf, label=labels[param])
+            xvals = numpy.arange(len(acf))*fp.thinned_by
+            ax.plot(xvals, acf, label=labels[param])
     if multi_tempered:
         t = 1./fp[fp.sampler_group].attrs['betas'][tk]
         ax.set_title(r'$T = {}$ (chain {})'.format(t, tk))

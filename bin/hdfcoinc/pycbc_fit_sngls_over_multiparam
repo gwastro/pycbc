@@ -15,7 +15,7 @@
 from __future__ import division
 
 import sys, h5py, argparse, logging, pycbc.version, numpy
-from pycbc.events import trigger_fits as trstats
+from pycbc.events import triggers
 
 parser = argparse.ArgumentParser(usage="",
     description="Smooth (regress) the dependence of coefficients describing "
@@ -44,9 +44,8 @@ parser.add_argument("--fit-param", nargs='+',
                          "template fit file or choose from mchirp, mtotal, "
                          "chi_eff, eta, tau_0, tau_3, template_duration, "
                          "a frequency cutoff in pnutils or a frequency function"
-                         "in LALSimulation. If the background is regressed over "
-                         "multiple parameters, one can simply provide them as "
-                         "a list.")
+                         "in LALSimulation. To regress the background over "
+                         "multiple parameters, provide them as a list.")
 parser.add_argument("--approximant", default="SEOBNRv4",
                     help="Approximant for template duration. Default SEOBNRv4")
 parser.add_argument("--f-lower", type=float, default=0.,
@@ -60,8 +59,7 @@ parser.add_argument("--log-param", nargs='+',
                     help="Take the log of the fit param before smoothing.")
 parser.add_argument("--smoothing-width", type=float, nargs='+', required=True,
                     help="Distance in the space of fit param values (or the "
-                         "logs of them) to smooth over. Required. For log "
-                         "template duration, try 0.2"
+                         "logs of them) to smooth over. Required. "
                          "This must be a list corresponding to the smoothing "
                          "parameters.")
 args = parser.parse_args()
@@ -80,12 +78,12 @@ tid = fits['template_id'][:]
 
 logging.info('Calculating template parameter values')
 bank = h5py.File(args.bank_file, 'r')
-m1, m2, s1z, s2z = trstats.get_masses(bank, tid)
+m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
 
 parvals = []
 
 for param, slog in zip(args.fit_param, args.log_param):
-    data = trstats.get_param(param, args, m1, m2, s1z, s2z)
+    data = triggers.get_param(param, args, m1, m2, s1z, s2z)
     if slog in ['false', 'False', 'FALSE']:
         logging.info('Using param: %s', param)
         parvals.append(data)
@@ -95,7 +93,7 @@ for param, slog in zip(args.fit_param, args.log_param):
     else:
         raise ValueError("invalid log param argument, use 'true', or 'false'")
 
-if 'count_in_template' in fits.keys():  # recently introduced dataset
+if 'count_in_template' in fits.keys(): # older files may not have this dataset
     tcount = True
 else:
     tcount = False
@@ -132,6 +130,10 @@ outfile = h5py.File(args.output, 'w')
 outfile['template_id'] = tid
 outfile['count_above_thresh'] = nabove_smoothed
 outfile['fit_coeff'] = alpha_smoothed
+try:
+    outfile['median_sigma'] = fits['median_sigma'][:]
+except KeyError:
+    logging.info('Median_sigma dataset not present in input file')
 if tcount: outfile['count_in_template'] = ntotal_smoothed
 
 for param, vals, slog in zip(args.fit_param, parvals, args.log_param):
@@ -147,5 +149,5 @@ if 'analysis_time' in fits.attrs:
     outfile.attrs['analysis_time'] = fits.attrs['analysis_time']
 
 # add a magic file attribute so that coinc_findtrigs can parse it
-outfile.attrs['stat'] = ifo + '-fit_coeffs'
+outfile.attrs['stat'] = ifo + b'-fit_coeffs'
 logging.info('Done!')

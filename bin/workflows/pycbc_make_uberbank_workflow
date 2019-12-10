@@ -30,7 +30,6 @@ clear enough to allow someone to do that.
 from __future__ import division
 import os
 import argparse
-import urlparse
 from Pegasus import DAX3 as dax
 import pycbc
 import pycbc.version

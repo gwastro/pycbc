@@ -20,7 +20,7 @@ parser.add_argument('--chisq-choice', choices=chisq_choices,
 args = parser.parse_args()
 
 f = h5py.File(args.trigger_file, 'r')
-ifo = f.keys()[0]
+ifo = tuple(f.keys())[0]
 f = f[ifo]
 snr = f['snr'][:]
 chisq = get_chisq_from_file_choice(f, args.chisq_choice)
@@ -53,7 +53,10 @@ for i, cval in enumerate(args.newsnr_contours):
         label = "$\\hat{\\rho} = %s$" % cval
     else:
         label = "$%s$" % cval
-    label_pos_idx = numpy.where(snrv > snr.max() * 0.8)[0][0]
+    try:
+        label_pos_idx = numpy.where(snrv > snr.max() * 0.8)[0][0]
+    except IndexError:
+        label_pos_idx = 0
     pylab.text(snrv[label_pos_idx], r[label_pos_idx], label, fontsize=6,
                horizontalalignment='center', verticalalignment='center',
                bbox=dict(facecolor='white', lw=0, pad=0, alpha=0.9))

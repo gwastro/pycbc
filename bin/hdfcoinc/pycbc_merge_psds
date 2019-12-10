@@ -34,7 +34,7 @@ inc = {}
 start, end = {}, {}
 for psd_file in args.psd_files:
     f = h5py.File(psd_file, 'r')
-    ifo = f.keys()[0]
+    ifo = tuple(f.keys())[0]
     if ifo not in inc:
         inc[ifo] = 0
         start[ifo], end[ifo] = [], []

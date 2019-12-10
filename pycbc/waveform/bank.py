@@ -262,13 +262,23 @@ class TemplateBank(object):
             f = h5py.File(filename, 'r')
             self.filehandler = f
             try:
-                fileparams = map(str, f.attrs['parameters'])
+                fileparams = list(f.attrs['parameters'])
             except KeyError:
                 # just assume all of the top-level groups are the parameters
-                fileparams = map(str, f.keys())
+                fileparams = list(f.keys())
                 logging.info("WARNING: no parameters attribute found. "
                     "Assuming that %s " %(', '.join(fileparams)) +
                     "are the parameters.")
+            tmp_params = []
+            # At this point fileparams might be bytes. Fix if it is
+            for param in fileparams:
+                try:
+                    param = param.decode()
+                    tmp_params.append(param)
+                except AttributeError:
+                    tmp_params.append(param)
+            fileparams = tmp_params
+
             # use WaveformArray's syntax parser to figure out what fields
             # need to be loaded
             if parameters is None:
@@ -281,8 +291,8 @@ class TemplateBank(object):
             dtype = []
             data = {}
             for key in common_fields+add_fields:
-                data[str(key)] = f[key][:]
-                dtype.append((str(key), data[key].dtype))
+                data[key] = f[key][:]
+                dtype.append((key, data[key].dtype))
             num = f[fileparams[0]].size
             self.table = pycbc.io.WaveformArray(num, dtype=dtype)
             for key in data:

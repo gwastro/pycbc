@@ -19,7 +19,7 @@ import argparse, logging
 
 import numpy as np
 
-from pycbc.events import trigger_fits as trstats
+from pycbc.events import triggers
 import pycbc.version
 
 parser = argparse.ArgumentParser(usage="",
@@ -102,8 +102,8 @@ if args.use_template_fit_param:
 else:
     logging.info('Calculating template parameter values')
     bank = h5py.File(args.bank_file, 'r')
-    m1, m2, s1z, s2z = trstats.get_masses(bank, tid)
-    parvals = trstats.get_param(args.fit_param, args, m1, m2, s1z, s2z) 
+    m1, m2, s1z, s2z = triggers.get_mass_spin(bank, tid)
+    parvals = triggers.get_param(args.fit_param, args, m1, m2, s1z, s2z) 
 
 if 'count_in_template' in fits.keys():  # recently introduced extra dataset
     tcount = True

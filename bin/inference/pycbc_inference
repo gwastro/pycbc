@@ -27,13 +27,15 @@ import numpy
 
 import pycbc
 from pycbc import (distributions, transforms, fft,
-                   opt, psd, scheme, strain, weave)
+                   opt, psd, scheme, strain)
 from pycbc.waveform import generator
 
 from pycbc import __version__
 from pycbc import inference
 from pycbc.inference import (models, burn_in, option_utils)
 from pycbc.strain.calibration import Recalibrate
+from pycbc.workflow import configuration
+from pycbc.inject import InjectionSet
 
 # command line usage
 parser = argparse.ArgumentParser(usage=__file__ + " [--options]",
@@ -79,14 +81,13 @@ parser.add_argument("--seed", type=int, default=0,
                     help="Seed to use for the random number generator that "
                          "initially distributes the walkers. Default is 0.")
 # add config options
-option_utils.add_config_opts_to_parser(parser)
+configuration.add_workflow_command_line_group(parser)
 # add module pre-defined options
 fft.insert_fft_option_group(parser)
 opt.insert_optimization_option_group(parser)
 psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
 strain.insert_strain_option_group_multi_ifo(parser)
-weave.insert_weave_option_group(parser)
 strain.add_gate_option_group(parser)
 
 # parse command line
@@ -106,7 +107,6 @@ opt.verify_optimization_options(opts, parser)
 #psd.verify_psd_options(opts, parser)
 scheme.verify_processing_options(opts, parser)
 #strain.verify_strain_options(opts, parser)
-weave.verify_weave_options(opts, parser)
 
 # set seed
 numpy.random.seed(opts.seed)
@@ -136,8 +136,46 @@ if stilde_dict:
 with ctx:
 
     # read configuration file
-    cp = option_utils.config_parser_from_cli(opts)
+    cp = configuration.WorkflowConfigParser.from_cli(opts)
 
+    # create an empty checkpoint file, if needed
+    condor_ckpt = cp.has_option('sampler', 'checkpoint-signal')
+    if condor_ckpt:
+        logging.info(
+            "Sampler will exit with signal {} after checkpointing".format(
+                cp.get('sampler', 'checkpoint-signal')))
+        # create an empty output file to keep condor happy
+        open(opts.output_file, 'a').close()
+    
+    # Note: PyCBC's multi-ifo parser uses key:ifo for
+    # the injection file, even though we will use the same
+    # injection file for all detectors. This
+    # should be fixed in a future version of PyCBC. Once it is,
+    # update this. Until then, just use the first file.
+    if opts.injection_file:
+        injection_file = tuple(opts.injection_file.values())[0]  
+        # None if not set
+    else:
+        injection_file = None
+
+    # If FROM_INJECTION placeholders for static params are set in config file, 
+    # insert injected parameters.
+    if injection_file \
+        and "FROM_INJECTION" in dict(cp.items('static_params')).values():
+        inj = InjectionSet(injection_file)
+        for opt in cp.options(section='static_params'):
+            if cp.get('static_params', opt) == "FROM_INJECTION" \
+                                and opt not in inj.table.fieldnames:
+                raise ValueError("Static param placeholder \"FROM_INJECTION\" \
+                            has no counterpart in injection file.")
+            elif cp.get('static_params', opt) == "FROM_INJECTION":
+                if isinstance(inj.table[opt][0], numpy.ndarray):
+                    if inj.table[opt][0].ndim > 0:
+                        cp.set('static_params', opt, 
+                               str(list(inj.table[opt][0])))
+                else: 
+                    cp.set('static_params', opt, str(inj.table[opt][0]))
+    
     # get ifo-specific instances of calibration model
     if cp.has_section('calibration'):
         logging.info("Initializing calibration model")
@@ -166,15 +204,6 @@ with ctx:
         cp, model, nprocesses=opts.nprocesses, use_mpi=opts.use_mpi)
 
     # set up output/checkpoint file
-    # Note: PyCBC's multi-ifo parser uses key:ifo for
-    # the injection file, even though we will use the same
-    # injection file all detectors. This
-    # should be fixed in a future version of PyCBC. Once it is,
-    # update this. Until then, just use the first file.
-    if opts.injection_file:
-        injection_file = opts.injection_file.values()[0]  # None if not set
-    else:
-        injection_file = None
     sampler.setup_output(opts.output_file, force=opts.force,
                          injection_file=injection_file)
 
@@ -202,12 +231,23 @@ with ctx:
     # Finalize the output 
     sampler.finalize()
 
+if condor_ckpt:
+   # unlink the empty output file
+   try:
+       os.unlink(opts.output_file)
+   except:
+       pass
+
 # rename checkpoint to output and delete backup
 logging.info("Moving checkpoint to output")
 os.rename(sampler.checkpoint_file, opts.output_file)
 if not opts.save_backup:
     logging.info("Deleting backup file")
     os.remove(sampler.backup_file)
+
+if condor_ckpt:
+   # create an empty checkpoint file
+   open(sampler.checkpoint_file, 'a').close()
 
 # exit
 logging.info("Done")

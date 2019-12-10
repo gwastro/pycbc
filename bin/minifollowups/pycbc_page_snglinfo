@@ -42,17 +42,23 @@ parser.add_argument('--veto-file',
 parser.add_argument('--veto-segment-name',
     help="If using veto file, the name of the segments to use as a veto.")
 parser.add_argument("--instrument", help="Name of ifo (e.g. H1)")
-parser.add_argument("--n-loudest", type=int, default=None,
+trig_args = parser.add_mutually_exclusive_group(required=True)
+trig_args.add_argument("--n-loudest", type=int, default=None,
     help="Examine the n'th loudest trigger (loudest is n=0). Must supply "
          "either this or --trigger-id.")
-parser.add_argument("--trigger-id", type=int, default=None,
+trig_args.add_argument("--trigger-id", type=int, default=None,
     help="Use the trigger with this ID in the HDF file. Must supply either "
          "this option or --n-loudest.")
 parser.add_argument('--ranking-statistic', default='newsnr',
     help="How to rank triggers when determining loudest triggers. Default "
          "'newsnr'")
+parser.add_argument('--include-summary-page-link', action='store_true',
+    help="If given, will include a link to the DQ summary page")
+
+
 
 args = parser.parse_args()
+
 pycbc.init_logging(args.verbose)
 
 # Get the single-ifo triggers
@@ -61,7 +67,7 @@ sngl_file = hdf.SingleDetTriggers(args.single_trigger_file, args.bank_file,
 
 
 if args.trigger_id is not None:
-    sngl_file.mask = numpy.array([args.trigger_id])
+    sngl_file.mask = [args.trigger_id]
     sngl_file.mask_to_n_loudest_clustered_events(n_loudest=1,
                                       ranking_statistic=args.ranking_statistic)
     stat = sngl_file.stat[0]
@@ -72,32 +78,77 @@ elif args.n_loudest is not None:
                                       ranking_statistic=args.ranking_statistic)
     # Restrict to only the nth loudest, instead of all triggers up to nth
     # loudest
-    stat = sngl_file.stat[-1]
-    sngl_file.mask = sngl_file.mask[-1]
+    stat = sngl_file.stat
+    l = stat.argsort()
+    stat = stat[l[0]]
+    sngl_file.mask = sngl_file.mask[l[0]]
 else:
     raise ValueError("Must give --n-loudest or --trigger-id.")
 
 # make a table for the single detector information ############################
-time = sngl_file.end_time 
+time = sngl_file.end_time
 utc = lal.GPSToUTC(int(time))[0:6]
-data = [[pycbc.results.dq.get_summary_page_link(args.instrument, utc),
-        str(datetime.datetime(*utc)),
-        '%.3f'  % time,
-        '%5.2f' % sngl_file.snr,
-        '%5.2f' % stat,
-        '%5.2f' % sngl_file.rchisq,            
-        '%i'    % sngl_file.get_column('chisq_dof'),
-        '%5.2f' % sngl_file.get_column('coa_phase'),
-        '%5.2f' % sngl_file.mass1,
-        '%5.2f' % sngl_file.mass2,
-        '%5.2f' % sngl_file.mchirp,
-        '%5.2f' % sngl_file.spin1z,
-        '%5.2f' % sngl_file.spin2z,
-        '%5.2f' % sngl_file.template_duration,
-       ]]
+
+# Headers here will contain the list of headers that will appear in the
+# resulting single-detector summary table.
+headers = []
+# Data will store the list of values that will appear in the resulting
+# single-detector summary table. There will only ever be one row in this table
+# that corresponding to the selected trigger. So this will be a list of a
+# single list that will hold the values to go into the table.
+data = [[]]
+
+# DQ summary link
+if args.include_summary_page_link:
+    data[0].append(pycbc.results.dq.get_summary_page_link(args.instrument, utc))
+    headers.append("Detector&nbsp;status")
+
+# End times
+data[0].append(str(datetime.datetime(*utc)))
+data[0].append('%.3f' % time)
+headers.append("UTC")
+headers.append("End&nbsp;time")
+
+# SNR and statistic
+data[0].append('%5.2f' % sngl_file.snr)
+data[0].append('%5.2f' % sngl_file.get_column('coa_phase'))
+data[0].append('%5.2f' % stat)
+headers.append("&rho;")
+headers.append("Phase")
+headers.append("Stat")
+
+# Signal-glitch discrimators
+data[0].append('%5.2f' % sngl_file.rchisq)
+data[0].append('%i' % sngl_file.get_column('chisq_dof'))
+headers.append("&chi;<sup>2</sup><sub>r</sub>")
+headers.append("&chi;<sup>2</sup>&nbsp;bins")
+try:
+    data[0].append('%5.2f' % sngl_file.sgchisq)
+    headers.append("sg&chi;<sup>2</sup>")
+except:
+    pass
+try:
+    data[0].append('%5.2f' % sngl_file.psd_var_val)
+    headers.append("PSD var")
+except:
+    pass
+
+# Template parameters
+data[0].append('%5.2f' % sngl_file.mass1)
+data[0].append('%5.2f' % sngl_file.mass2)
+data[0].append('%5.2f' % sngl_file.mchirp)
+data[0].append('%5.2f' % sngl_file.spin1z)
+data[0].append('%5.2f' % sngl_file.spin2z)
+data[0].append('%5.2f' % sngl_file.template_duration)
+headers.append("m<sub>1</sub>")
+headers.append("m<sub>2</sub>")
+headers.append("M<sub>c</sub>")
+headers.append("s<sub>1z</sub>")
+headers.append("s<sub>2z</sub>")
+headers.append("Duration")
 
 html = pycbc.results.dq.redirect_javascript + \
-        str(pycbc.results.static_table(data, pycbc.results.sngl_table_headers))
+        str(pycbc.results.static_table(data, headers))
 ###############################################################################
 
 if args.n_loudest:

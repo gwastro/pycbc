@@ -32,7 +32,6 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest',
               'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
               'sphinx.ext.viewcode', 'sphinxcontrib.programoutput',
               'sphinx.ext.napoleon', 'sphinx.ext.mathjax',
-              'matplotlib.sphinxext.only_directives',
               'matplotlib.sphinxext.plot_directive', 'sphinx.ext.autosummary',
               'sphinx.ext.inheritance_diagram',
               ]

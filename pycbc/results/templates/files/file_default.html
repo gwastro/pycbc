@@ -4,7 +4,7 @@
 
 <!--html file condition-->
 {% elif filename.endswith('html') %}
-    {{ open(path, 'rb').read() }}
+    {{ open(path, 'r').read() }}
 
 <!--segment XML file condition-->
 {% elif ( filename.endswith('xml') or filename.endswith('xml.gz') ) and content %}
@@ -22,7 +22,7 @@
     <tbody>
 
     <!--table rows-->
-    {% for channel, segmentlist in content.iteritems() %}
+    {% for channel, segmentlist in content.items() %}
         {% for seg in segmentlist %}
             <tr>
                 <td>{{channel}}</td>
@@ -37,7 +37,7 @@
 
 <!--configuration files-->
 {% elif filename.endswith('.ini') %}
-    <pre>{{ open(path, 'rb').read() }}</pre>
+    <pre>{{ open(path, 'r').read() }}</pre>
 
 <!--html file fragments-->
 {% elif filename.endswith('.htmlf') %}

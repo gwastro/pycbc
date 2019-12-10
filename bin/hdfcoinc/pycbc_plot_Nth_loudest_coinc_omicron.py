@@ -13,7 +13,6 @@ from glue.ligolw import ligolw, lsctables, table, utils
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import pycbc.pnutils
 import pycbc.events
 from pycbc.waveform import get_td_waveform, frequency_from_polarizations, amplitude_from_polarizations
 
@@ -72,7 +71,7 @@ snr = single_trig_file[args.ifo]['snr'][idx]
 chisq = single_trig_file[args.ifo]['chisq'][idx]
 chisq_dof = single_trig_file[args.ifo]['chisq_dof'][idx]
 reduced_chisq = chisq/(2*chisq_dof - 2)
-newsnr = pycbc.events.newsnr(snr,reduced_chisq)
+newsnr = pycbc.events.ranking.newsnr(snr,reduced_chisq)
 cbc_end_time = single_trig_file[args.ifo]['end_time'][idx]
 template_id = single_trig_file[args.ifo]['template_id'][idx]
 

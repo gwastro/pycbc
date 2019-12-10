@@ -42,7 +42,7 @@ else:
             i = ids[ifo]
             snr = f['snr'][:][i]
             chisq = f['chisq'][:][i] / (2 * f['chisq_dof'][:][i] - 2)
-            newsnr = pycbc.events.newsnr(snr, chisq)
+            newsnr = pycbc.events.ranking.newsnr(snr, chisq)
             
             found_names += ["%s SNR" % ifo, "CHISQ", "NewSNR"]
             found_cols += [snr, chisq, newsnr]
@@ -73,7 +73,7 @@ format_strings = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
                   '##.##', '##.##'
                  ] + found_formats
 
-html_table = pycbc.results.table(columns, names, 
+html_table = pycbc.results.html_table(columns, names, 
                                  format_strings=format_strings, 
                                  page_size=20)
                                  

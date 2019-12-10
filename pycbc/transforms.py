@@ -16,6 +16,7 @@
 This modules provides classes and functions for transforming parameters.
 """
 
+import os
 import copy
 import logging
 import numpy
@@ -138,7 +139,7 @@ class BaseTransform(object):
         else:
             additional_opts = additional_opts.copy()
         outputs = set(outputs.split(VARARGS_DELIM))
-        special_args = ['name'] + skip_opts + additional_opts.keys()
+        special_args = ['name'] + skip_opts + list(additional_opts.keys())
         # get any extra arguments to pass to init
         extra_args = {}
         for opt in cp.options("-".join([section, tag])):
@@ -931,6 +932,386 @@ class CartesianSpinToChiP(BaseTransform):
         return self.format_output(maps, out)
 
 
+class LambdaFromTOVFile(BaseTransform):
+    """Transforms mass values corresponding to Lambda values for a given EOS
+    interpolating from the mass-Lambda data for that EOS read in from an
+    external ASCII file. The interpolation of the mass-Lambda data is a
+    one-dimensional piecewise linear interpolation. The mass values to be
+    transformed are assumed to be detector frame masses, so a distance should
+    be provided along with the mass for transformation to the source frame
+    mass before the Lambda values are extracted from the interpolation. If
+    the mass value inputted is in the source frame, then provide distance=0.
+    If the transform is read in from a config file, an example code block
+    would be:
+
+    .. code-block:: ini
+
+        [{section}-lambda1]
+        name = lambda_from_tov_file
+        mass_param = mass1
+        lambda_param = lambda1
+        distance = 40
+        mass_lambda_file = {filepath}
+
+    If this transform is used in a parameter estimation analysis where
+    distance is a variable parameter, the distance to be used will vary
+    with each draw. In that case, the example code block will be:
+
+    .. code-block:: ini
+
+        [{section}-lambda1]
+        name = lambda_from_tov_file
+        mass_param = mass1
+        lambda_param = lambda1
+        mass_lambda_file = filepath
+
+    Parameters
+    ----------
+    mass_param : str
+        The name of the mass parameter to transform.
+    lambda_param : str
+        The name of the tidal deformability parameter that mass_param is to
+        be converted to interpolating from the data in the mass-Lambda file.
+    mass_lambda_file : str
+        Path of the mass-Lambda data file. The first column in the data file
+        should contain mass values, and the second column Lambda values.
+    distance : float, optional
+        The distance (in Mpc) of the source. Used to redshift the mass. If
+        None, then a distance must be provided to the transform.
+    file_columns : list of str, optional
+        The names and order of columns in the ``mass_lambda_file``. Must
+        contain at least 'mass' and 'lambda'. If not provided, will assume the
+        order is ('mass', 'lambda').
+    """
+    name = 'lambda_from_tov_file'
+
+    def __init__(self, mass_param, lambda_param, mass_lambda_file,
+                 distance=None, file_columns=None):
+        self._mass_lambda_file = mass_lambda_file
+        self._mass_param = mass_param
+        self._lambda_param = lambda_param
+        self._distance = distance
+        self._inputs = [mass_param, 'distance']
+        self._outputs = [lambda_param]
+        if file_columns is None:
+            file_columns = ['mass', 'lambda']
+        dtype = [(fname, float) for fname in file_columns]
+        data = numpy.loadtxt(self._mass_lambda_file, dtype=dtype)
+        self._data = data
+        super(LambdaFromTOVFile, self).__init__()
+
+    @property
+    def mass_param(self):
+        """Returns the input mass parameter."""
+        return self._mass_param
+
+    @property
+    def lambda_param(self):
+        """Returns the output lambda parameter."""
+        return self._lambda_param
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def mass_data(self):
+        """Returns the mass data read from the mass-Lambda data file for
+        an EOS.
+        """
+        return self._data['mass']
+
+    @property
+    def lambda_data(self):
+        """Returns the Lambda data read from the mass-Lambda data file for
+        an EOS.
+        """
+        return self._data['lambda']
+
+    @property
+    def distance(self):
+        """Returns the fixed distance to transform mass samples from detector
+        to source frame if one is specified.
+        """
+        return self._distance
+
+    @staticmethod
+    def lambda_from_tov_data(m, d, mass_data, lambda_data):
+        """Returns Lambda corresponding to a given mass interpolating from the
+        TOV data.
+
+        Parameters
+        ----------
+        m : float
+            Value of the mass.
+        d : float
+            Value of distance.
+        mass_data : array
+            Mass array from the Lambda-M curve of an EOS.
+        lambda_data : array
+            Lambda array from the Lambda-M curve of an EOS.
+
+        Returns
+        -------
+        lambdav : float
+            The Lambda corresponding to the mass `m` for the EOS considered.
+        """
+        m_src = m/(1.0 + cosmology.redshift(abs(d)))
+        lambdav = numpy.interp(m_src, mass_data, lambda_data)
+        return lambdav
+
+    def transform(self, maps):
+        """Computes the transformation of mass to Lambda.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        out : dict or FieldArray
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
+        """
+        m = maps[self._mass_param]
+        if self._distance is not None:
+            d = self._distance
+        else:
+            try:
+                d = maps['distance']
+            except KeyError as e:
+                logging.warning("Either provide `distance` samples in the "
+                                "list of samples to be transformed, or "
+                                "provide a fixed `distance` value as input "
+                                "when initializing `LambdaFromTOVFile`.")
+                raise e
+        out = {self._lambda_param : self.lambda_from_tov_data(
+            m, d, self._data['mass'], self._data['lambda'])}
+        return self.format_output(maps, out)
+
+
+class LambdaFromMultipleTOVFiles(BaseTransform):
+    """Uses multiple equation of states.
+
+    Parameters
+    ----------
+    mass_param : str
+        The name of the mass parameter to transform.
+    lambda_param : str
+        The name of the tidal deformability parameter that mass_param is to
+        be converted to interpolating from the data in the mass-Lambda file.
+    mass_lambda_file : str
+        Path of the mass-Lambda data file. The first column in the data file
+        should contain mass values, and the second column Lambda values.
+    distance : float, optional
+        The distance (in Mpc) of the source. Used to redshift the mass. If
+        None, then a distance must be provided to the transform.
+    file_columns : list of str, optional
+        The names and order of columns in the ``mass_lambda_file``. Must
+        contain at least 'mass' and 'lambda'. If not provided, will assume the
+        order is ('radius', 'mass', 'lambda').
+    """
+
+    name = 'lambda_from_multiple_tov_files'
+    
+    def __init__(self, mass_param, lambda_param, map_file, distance=None,
+                 file_columns=None):
+        self._map_file = map_file
+        self._mass_param = mass_param
+        self._lambda_param = lambda_param
+        self._distance = distance
+        self._inputs = [mass_param, 'eos', 'distance']
+        self._outputs = [lambda_param]
+        # create a dictionary of the EOS files from the map_file
+        self._eos_files = {} 
+        with open(self._map_file, 'r') as fp:
+            for line in fp:
+                fname = line.rstrip('\n') 
+                eosidx = int(os.path.basename(fname).split('.')[0])
+                self._eos_files[eosidx] = os.path.abspath(fname)
+        # create an eos cache for fast load later
+        self._eos_cache = {}
+        if file_columns is None:
+            file_columns = ('radius', 'mass', 'lambda')
+        self._file_columns = file_columns
+        super(LambdaFromMultipleTOVFiles, self).__init__()
+    
+    
+    @property
+    def mass_param(self):
+        """Returns the input mass parameter."""
+        return self._mass_param
+
+    @property
+    def lambda_param(self):
+        """Returns the output lambda parameter."""
+        return self._lambda_param
+
+    @property
+    def map_file(self):
+        """Returns the mass data read from the mass-Lambda data file for
+        an EOS.
+        """
+        return self._map_file
+
+    @property
+    def distance(self):
+        """Returns the fixed distance to transform mass samples from detector
+        to source frame if one is specified.
+        """
+        return self._distance
+
+    def get_eos(self, eos_index):
+        """Gets the EOS for the given index.
+
+        If the index is not in range returns None.
+        """
+        try:
+            eos = self._eos_cache[eos_index]
+        except KeyError:
+            try:
+                fname = self._eos_files[eos_index]
+                eos = LambdaFromTOVFile(mass_param=self._mass_param,
+                                        lambda_param=self._lambda_param,
+                                        mass_lambda_file=fname,
+                                        distance=self._distance,
+                                        file_columns=self._file_columns)
+                self._eos_cache[eos_index] = eos
+            except KeyError:
+                eos = None
+        return eos
+
+    def transform(self,maps):
+        """Transforms mass value and eos index into a lambda value """
+        m = maps[self._mass_param]
+        # floor
+        eos_index = int(maps['eos'])
+        eos = self.get_eos(eos_index)
+        if eos is not None:
+            return eos.transform(maps)
+        else:
+            # no eos, just return nan
+            out = {self._lambda_param : numpy.nan}
+            return self.format_output(maps, out)
+
+
+class Log(BaseTransform):
+    """Applies a log transform from an `inputvar` parameter to an `outputvar`
+    parameter. This is the inverse of the exponent transform.
+
+    Parameters
+    ----------
+    inputvar : str
+        The name of the parameter to transform.
+    outputvar : str
+        The name of the transformed parameter.
+    """
+    name = 'log'
+
+    def __init__(self, inputvar, outputvar):
+        self._inputvar = inputvar
+        self._outputvar = outputvar
+        self._inputs = [inputvar]
+        self._outputs = [outputvar]
+        super(Log, self).__init__()
+
+    @property
+    def inputvar(self):
+        """Returns the input parameter."""
+        return self._inputvar
+
+    @property
+    def outputvar(self):
+        """Returns the output parameter."""
+        return self._outputvar
+
+    def transform(self, maps):
+        r"""Computes :math:`\log(x)`.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        out : dict or FieldArray
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
+        """
+        x = maps[self._inputvar]
+        out = {self._outputvar : numpy.log(x)}
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        r"""Computes :math:`y = e^{x}`.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        out : dict or FieldArray
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
+        """
+        y = maps[self._outputvar]
+        out = {self._inputvar : numpy.exp(y)}
+        return self.format_output(maps, out)
+
+    def jacobian(self, maps):
+        r"""Computes the Jacobian of :math:`y = \log(x)`.
+
+        This is:
+
+        .. math::
+
+            \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{1}{x}.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        float
+            The value of the jacobian at the given point(s).
+        """
+        x = maps[self._inputvar]
+        return 1./x
+
+    def inverse_jacobian(self, maps):
+        r"""Computes the Jacobian of :math:`y = e^{x}`.
+
+        This is:
+
+        .. math::
+
+            \frac{\mathrm{d}y}{\mathrm{d}x} = e^{x}.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        float
+            The value of the jacobian at the given point(s).
+        """
+        x = maps[self._outputvar]
+        return numpy.exp(x)
+
+
 class Logit(BaseTransform):
     """Applies a logit transform from an `inputvar` parameter to an `outputvar`
     parameter. This is the inverse of the logistic transform.
@@ -1352,6 +1733,29 @@ class ChiPToCartesianSpin(CartesianSpinToChiP):
     inverse_jacobian = inverse.jacobian
 
 
+class Exponent(Log):
+    """Applies an exponent transform to an `inputvar` parameter.
+    
+    This is the inverse of the log transform.
+
+    Parameters
+    ----------
+    inputvar : str
+        The name of the parameter to transform.
+    outputvar : str
+        The name of the transformed parameter.
+    """
+    name = 'exponent'
+    inverse = Log
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+    def __init__(self, inputvar, outputvar):
+        super(Exponent, self).__init__(outputvar, inputvar)
+
+
 class Logistic(Logit):
     """Applies a logistic transform from an `input` parameter to an `output`
     parameter. This is the inverse of the logit transform.
@@ -1464,6 +1868,7 @@ SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
 AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
 PrecessionMassSpinToCartesianSpin.inverse = CartesianSpinToPrecessionMassSpin
 ChiPToCartesianSpin.inverse = CartesianSpinToChiP
+Log.inverse = Exponent
 Logit.inverse = Logistic
 
 
@@ -1480,6 +1885,7 @@ transforms = {
     CustomTransform.name : CustomTransform,
     MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
     Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
+    MchirpEtaToMass1Mass2.name : MchirpEtaToMass1Mass2,
     Mass1Mass2ToMchirpEta.name : Mass1Mass2ToMchirpEta,
     ChirpDistanceToDistance.name : ChirpDistanceToDistance,
     DistanceToChirpDistance.name : DistanceToChirpDistance,
@@ -1494,8 +1900,12 @@ transforms = {
     CartesianSpinToPrecessionMassSpin.name : CartesianSpinToPrecessionMassSpin,
     ChiPToCartesianSpin.name : ChiPToCartesianSpin,
     CartesianSpinToChiP.name : CartesianSpinToChiP,
+    Log.name : Log,
+    Exponent.name : Exponent,
     Logit.name : Logit,
     Logistic.name : Logistic,
+    LambdaFromTOVFile.name : LambdaFromTOVFile,
+    LambdaFromMultipleTOVFiles.name : LambdaFromMultipleTOVFiles
 }
 
 # standard CBC transforms: these are transforms that do not require input

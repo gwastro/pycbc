@@ -28,12 +28,13 @@ import os
 import copy
 import argparse
 import tempfile
-import ConfigParser
+from six.moves import configparser as ConfigParser
 import numpy
 import logging
 import distutils.spawn
 import h5py
 from scipy import spatial
+from six.moves import range
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
@@ -395,7 +396,7 @@ if opts.filter_points:
 
     logging.info("Removing far-away points.")
 
-    for i in xrange(len(v1s)):
+    for i in range(len(v1s)):
         if dists[i] < 2.:
             newV1s.append(v1s[i])
             newV2s.append(v2s[i])
@@ -424,7 +425,7 @@ logging.info("Printing split banks to HDF file.")
 v1s = []
 v2s = []
 v3s = []
-for i in xrange(len(newV1s)):
+for i in range(len(newV1s)):
     v1s.append(newV1s[i])
     v2s.append(newV2s[i])
     if opts.threed_lattice:
@@ -562,7 +563,7 @@ else:
 
 all_outs = wf.FileList([])
 
-for idx in xrange(num_banks):
+for idx in range(num_banks):
     stackid = 'job%05d' %(idx)
     stack_node = stack_exe.create_node(input_h5file, idx,
                                        workflow.analysis_time,

@@ -389,7 +389,7 @@ constrained to be <= 4 by using a function from the conversions module.
 
    [constraint-1]
    name = custom
-   constraint_args = q_from_mass1_mass2(mass1, mass2) <= 4
+   constraint_arg = q_from_mass1_mass2(mass1, mass2) <= 4
 
 ------------------------------
 Checkpointing and output files
@@ -451,7 +451,7 @@ quickly on a laptop to check that a sampler is working properly.
 This example demonstrates how to sample a 2D normal distribution with the
 ``emcee`` sampler. First, we create the following configuration file:
 
-.. literalinclude:: ../examples/inference/analytic-normal2d/normal2d.ini 
+.. literalinclude:: ../examples/inference/analytic-normal2d/normal2d.ini
    :language: ini
 
 :download:`Download <../examples/inference/analytic-normal2d/normal2d.ini>`
@@ -462,7 +462,7 @@ The number of dimensions of the distribution is set by the number of
 ``variable_params``. The names of the parameters do not matter, just that just
 that the prior sections use the same names.
 
-Now run: 
+Now run:
 
 .. literalinclude:: ../examples/inference/analytic-normal2d/run.sh
    :language: bash
@@ -503,7 +503,7 @@ To make a movie showing how the walkers evolved, run:
 
 .. note::
    You need ``ffmpeg`` installed for the mp4 to be created.
-   
+
 See below for more information on using ``pycbc_inference_plot_movie``.
 
 
@@ -632,15 +632,15 @@ the following:
 
   .. code-block:: bash
 
-     wget https://www.gw-openscience.org/GW150914data/H-H1_LOSC_4_V2-1126257414-4096.gwf
-     wget https://www.gw-openscience.org/GW150914data/L-L1_LOSC_4_V2-1126257414-4096.gwf
+     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf
+     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf
 
   Then set the following enviornment variables:
 
   .. code-block:: bash
 
-     export FRAMES="--frame-files H1:H-H1_LOSC_4_V2-1126257414-4096.gwf L1:L-L1_LOSC_4_V2-1126257414-4096.gwf"
-     export CHANNELS="H1:LOSC-STRAIN L1:LOSC-STRAIN"
+     export FRAMES="--frame-files H1:H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf L1:L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf"
+     export CHANNELS="H1:GWOSC-4KHZ_R1_STRAIN L1:GWOSC-4KHZ_R1_STRAIN"
 
 Now run:
 
@@ -660,7 +660,7 @@ Visualizing the Posteriors
 
 ===============================================
 Workflows
-=============================================== 
+===============================================
 
 .. toctree::
    :maxdepth: 1
@@ -670,7 +670,7 @@ Workflows
 
 ===============================================
 For Developers
-=============================================== 
+===============================================
 
 .. toctree::
     :maxdepth: 1

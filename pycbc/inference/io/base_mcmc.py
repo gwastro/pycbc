@@ -26,6 +26,8 @@
 
 from __future__ import (absolute_import, division)
 
+from six import string_types
+
 import numpy
 import argparse
 
@@ -174,7 +176,7 @@ class MCMCMetadataIO(object):
                 # dataset doesn't exist yet
                 self[group.format(param)] = acls[param]
         # write the maximum over all params
-        acl = numpy.array(acls.values()).max()
+        acl = numpy.array(list(acls.values())).max()
         self[self.sampler_group].attrs['acl'] = acl
         # set the default thin interval to be the acl (if it is finite)
         if numpy.isfinite(acl):
@@ -386,7 +388,7 @@ class SingleTempMCMCIO(object):
         dict
             A dictionary of field name -> numpy array pairs.
         """
-        if isinstance(fields, (str, unicode)):
+        if isinstance(fields, string_types):
             fields = [fields]
         # walkers to load
         if walkers is not None:

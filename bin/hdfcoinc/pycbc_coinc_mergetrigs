@@ -46,13 +46,13 @@ trigger_columns = []
 for fname in args.trigger_files:
     try:
         f2 = h5py.File(fname, 'r')
-    except IOError:
+    except IOError as e:
         logging.error("Cannot open %s" % fname)
-        raise IOError
-    ifo = f2.keys()[0]
+        raise e
+    ifo = tuple(f2.keys())[0]
     if len(f2[ifo].keys()) > 0:
         k = f2[ifo].keys()
-        trigger_columns = f2[ifo].keys()
+        trigger_columns = list(f2[ifo].keys())
         if not 'template_hash' in trigger_columns:
             f2.close()
             continue
@@ -78,9 +78,9 @@ gating = {}
 for filename in args.trigger_files:
     try:
         data = h5py.File(filename, 'r')
-    except IOError:
+    except IOError as e:
         logging.error('Cannot open %s' % filename)
-        raise IOError
+        raise e
     ifo_data = data[ifo]
     s, e = ifo_data['search/start_time'][:], ifo_data['search/end_time'][:]
     start, end = numpy.append(start, s), numpy.append(end, e)

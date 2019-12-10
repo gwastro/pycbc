@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 """Associate coincident triggers with injections listed in one or more LIGOLW
 files.
 """
@@ -8,9 +7,10 @@ import argparse, h5py, logging, types, numpy, os.path
 from glue.ligolw import ligolw, table, lsctables, utils as ligolw_utils
 from ligo import segments
 from pycbc import events
-from pycbc.events import indices_within_segments as veto_indices
+from pycbc.events import indices_within_segments
 from pycbc.types import MultiDetOptionAction
 import pycbc.version
+
 
 # dummy class needed for loading LIGOLW files
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
@@ -33,9 +33,10 @@ def keep_ind(times, start, end):
     time_sorting = times.argsort()
     times = times[time_sorting]
     indices = numpy.array([], dtype=numpy.uint32)
-    right = numpy.searchsorted(times, end, side='right')
+    leftidx = numpy.searchsorted(times, start, side='left')
+    rightidx = numpy.searchsorted(times, end, side='right')
 
-    for li, ri in zip(left, right):
+    for li, ri in zip(leftidx, rightidx):
         seg_indices = numpy.arange(li, ri, 1).astype(numpy.uint32)
         indices=numpy.union1d(seg_indices, indices)
     return time_sorting[indices]
@@ -57,9 +58,12 @@ parser.add_argument('--veto-file')
 parser.add_argument('--segment-name', default=None,
                     help='Name of segment list to use for vetoes. Optional')
 parser.add_argument('--injection-window', type=float, required=True)
+parser.add_argument('--min-required-ifos', type=int, default=2,
+                    help='Minimum number of IFOs required to be observing and'
+                    ' not vetoed for an injection to be counted. Default 2')
 parser.add_argument('--optimal-snr-column', nargs='+',
                     action=MultiDetOptionAction, metavar='DETECTOR:COLUMN',
-                    help='Names of the sim_inspiral columns containing the' \
+                    help='Names of the sim_inspiral columns containing the'
                     ' optimal SNRs.')
 parser.add_argument('--redshift-column', default=None,
                     help='Name of sim_inspiral column containing redshift. '
@@ -73,6 +77,7 @@ if args.verbose:
     logging.basicConfig(format='%(asctime)s : %(message)s', level=log_level)
 
 fo = h5py.File(args.output_file, 'w')
+
 injection_index = 0
 for trigger_file, injection_file in zip(args.trigger_files,
                                         args.injection_files):
@@ -85,16 +90,29 @@ for trigger_file, injection_file in zip(args.trigger_files,
         ifo_list = ['H1', 'L1']
     else:
         multi_ifo_style = True
-        # Get list of groups which contain subgroup 'time' - these will be the IFOs
-        ifo_list = [key for key in f['foreground'] if 'time' in f['foreground/%s/' % key]]
+        # Get list of groups which contain subgroup 'time'
+        # - these will be the IFOs
+        ifo_list = [key for key in f['foreground']
+                    if 'time' in f['foreground/%s/' % key]]
         assert len(ifo_list) > 1
+    # Check required ifos option
+    if len(ifo_list) < args.min_required_ifos:
+        raise RuntimeError('min-required-ifos (%s) must be <= number of ifos'
+                           ' being searched (%s)' %
+                           (args.min_required_ifos, len(ifo_list)))
+    fo.attrs['ifos'] = ' '.join(sorted(ifo_list))
 
     template_id = f['foreground/template_id'][:]
     stat = f['foreground/stat'][:]
     ifar_exc = f['foreground/ifar_exc'][:]
-    ifar = f['foreground/ifar'][:]
-    fap = f['foreground/fap'][:]
     fap_exc = f['foreground/fap_exc'][:]
+    try:
+        ifar = f['foreground/ifar'][:]
+        fap = f['foreground/fap'][:]
+    except KeyError:
+        logging.info('No inclusive ifar/fap. Proceeding anyway')
+        ifar = None
+        fap = None
     if multi_ifo_style:
         # using multi-ifo-style trigger file input
         ifo_times = ()
@@ -104,7 +122,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
              ifo_times += (f['foreground/%s/time' % ifo][:],)
              time_dict[ifo] = f['foreground/%s/time' % ifo][:]
              trig_dict[ifo] = f['foreground/%s/trigger_id' % ifo][:]
-        time = numpy.array([events.mean_if_greater_than_zero(vals)[0] 
+        time = numpy.array([events.mean_if_greater_than_zero(vals)[0]
                                                    for vals in zip(*ifo_times)])
         # We will discard injections which cannot be associated with a
         # coincident event, thus combine segments over all combinations
@@ -116,7 +134,7 @@ for trigger_file, injection_file in zip(args.trigger_files,
             else:
                 starts = f['/segments/%s/start' % key][:]
                 ends = f['/segments/%s/end' % key][:]
-                any_seg += events.start_end_to_segments(starts,ends)
+                any_seg += events.start_end_to_segments(starts, ends)
         ana_start, ana_end = events.segments_to_start_end(any_seg)
     else:
         # Using the old 2-ifo organisation
@@ -132,10 +150,10 @@ for trigger_file, injection_file in zip(args.trigger_files,
 
     logging.info('Read in the injection file')
     indoc = ligolw_utils.load_filename(injection_file, False,
-                                            contenthandler=LIGOLWContentHandler)
+                                       contenthandler=LIGOLWContentHandler)
     sim_table = table.get_table(indoc, lsctables.SimInspiralTable.tableName)
-    inj_time = numpy.array(sim_table.get_column('geocent_end_time')
-                           + 1e-9 * sim_table.get_column('geocent_end_time_ns'),
+    inj_time = numpy.array(sim_table.get_column('geocent_end_time') +
+                           1e-9 * sim_table.get_column('geocent_end_time_ns'),
                            dtype=numpy.float64)
 
     logging.info('Determined the found injections by time')
@@ -151,7 +169,8 @@ for trigger_file, injection_file in zip(args.trigger_files,
                  % (len(found), len(missed), len(ambiguous)))
 
     if len(ambiguous) > 0:
-        logging.warn('More than one coinc trigger found associated to injection')
+        logging.warn('More than one coinc trigger found associated '
+                     'with injection')
         am = numpy.arange(0, len(inj_time), 1)[left[ambiguous]]
         bm = numpy.arange(0, len(inj_time), 1)[right[ambiguous]]
 
@@ -159,26 +178,38 @@ for trigger_file, injection_file in zip(args.trigger_files,
     ki = keep_ind(inj_time, ana_start, ana_end)
     found_within_time = numpy.intersect1d(ki, found)
     missed_within_time = numpy.intersect1d(ki, missed)
-    logging.info('Found: %s, Missed: %s'
-                 % (len(found_within_time), len(missed_within_time)))
+    logging.info('Found: %s, Missed: %s' %
+                 (len(found_within_time), len(missed_within_time)))
 
     logging.info('Removing injections in vetoed time')
 
-    vi = numpy.array([])
+    # Put individual detector vetoes into list of all vetoed indices, if an
+    # injection is vetoed in N ifos then its index will appear N times
+    vetoid = numpy.array([])
     for ifo in ifo_list:
-        vi = numpy.append(vi, veto_indices(inj_time, [args.veto_file],
-                                        ifo=ifo, segment_name=args.segment_name))
+        vi, _ = indices_within_segments(inj_time, [args.veto_file], ifo=ifo,
+                                        segment_name=args.segment_name)
+        vetoid = numpy.append(vetoid, vi)
+        del vi
 
-    found_after_vetoes = numpy.delete(found_within_time,
-                                      numpy.where(numpy.in1d(found_within_time, vi))[0])
-    missed_after_vetoes = numpy.delete(missed_within_time,
-                                       numpy.where(numpy.in1d(missed_within_time, vi))[0])
-    logging.info('Found: %s, Missed: %s' % (len(found_after_vetoes),
-                                            len(missed_after_vetoes)))
+    # Find out which of these indices are unique, and how many times each
+    # vetoed index occurs - this is how many detectors it is vetoed in
+    vetoid_unique, count_vetoid = numpy.unique(vetoid, return_counts=True)
+
+    # remove injections where the number of unvetoed ifos is less than the
+    # minimum specified by the user
+    vetoed_all = vetoid_unique[(len(ifo_list) - count_vetoid)
+                               < args.min_required_ifos]
+    found_after_vetoes = numpy.array([i for i in found_within_time
+                                      if i not in vetoed_all])
+    missed_after_vetoes = numpy.array([i for i in missed_within_time
+                                       if i not in vetoed_all])
+
+    logging.info('Found: %s, Missed: %s' %
+                 (len(found_after_vetoes), len(missed_after_vetoes)))
 
     found_fore = numpy.arange(0, len(stat), 1)[left[found]]
     found_fore_v = numpy.arange(0, len(stat), 1)[left[found_after_vetoes]]
-
     logging.info('Saving injection information')
     columns = ['mass1', 'mass2', 'spin1x', 'spin1y',
                'spin1z', 'spin2x', 'spin2y', 'spin2z',
@@ -205,19 +236,25 @@ for trigger_file, injection_file in zip(args.trigger_files,
         hdf_append(fo, 'injections/redshift',
                    sim_table.get_column(args.redshift_column))
 
+    # copy over common search info
+    if 'foreground_time' in f.attrs.keys():
+        fo.attrs['foreground_time'] = f.attrs['foreground_time']
+    if 'foreground_time_exc' in f.attrs.keys():
+        fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
+
     if multi_ifo_style:
         for key in f['segments'].keys():
-            if key == 'foreground':
+            if 'foreground' in key:
                 continue
             if key not in fo:
-                 fo.create_group(key)
+                fo.create_group(key)
             fo[key].attrs['pivot'] = f[key].attrs['pivot']
             fo[key].attrs['fixed'] = f[key].attrs['fixed']
+            fo[key].attrs['foreground_time'] = f[key].attrs['foreground_time']
             fo[key].attrs['foreground_time_exc'] = f[key].attrs['foreground_time_exc']
     else:
         fo.attrs['detector_1'] = f.attrs['detector_1']
         fo.attrs['detector_2'] = f.attrs['detector_2']
-        fo.attrs['foreground_time_exc'] = f.attrs['foreground_time_exc']
 
     hdf_append(fo, 'missed/all', missed + injection_index)
     hdf_append(fo, 'missed/within_analysis', missed_within_time + injection_index)
@@ -225,18 +262,21 @@ for trigger_file, injection_file in zip(args.trigger_files,
     hdf_append(fo, 'found/template_id', template_id[time_sorting][found_fore])
     hdf_append(fo, 'found/injection_index', found + injection_index)
     hdf_append(fo, 'found/stat', stat[time_sorting][found_fore])
-    hdf_append(fo, 'found/ifar', ifar[time_sorting][found_fore])
     hdf_append(fo, 'found/ifar_exc', ifar_exc[time_sorting][found_fore])
-    hdf_append(fo, 'found/fap', fap[time_sorting][found_fore])
+    hdf_append(fo, 'found/fap_exc', ifar_exc[time_sorting][found_fore])
+    if ifar is not None:
+        hdf_append(fo, 'found/ifar', ifar[time_sorting][found_fore])
+        hdf_append(fo, 'found/fap', fap[time_sorting][found_fore])
     hdf_append(fo, 'found_after_vetoes/template_id',
                template_id[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/injection_index',
                found_after_vetoes + injection_index)
     hdf_append(fo, 'found_after_vetoes/stat', stat[time_sorting][found_fore_v])
-    hdf_append(fo, 'found_after_vetoes/ifar', ifar[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/ifar_exc', ifar_exc[time_sorting][found_fore_v])
-    hdf_append(fo, 'found_after_vetoes/fap', fap[time_sorting][found_fore_v])
     hdf_append(fo, 'found_after_vetoes/fap_exc', fap_exc[time_sorting][found_fore_v])
+    if ifar is not None:
+        hdf_append(fo, 'found_after_vetoes/ifar', ifar[time_sorting][found_fore_v])
+        hdf_append(fo, 'found_after_vetoes/fap', fap[time_sorting][found_fore_v])
     if multi_ifo_style:
         for ifo in ifo_list:
             hdf_append(fo, 'found/%s/time' % ifo,

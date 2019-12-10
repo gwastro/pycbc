@@ -37,13 +37,13 @@ import logging
 import requests
 import distutils.spawn
 import itertools
-import glue.pipeline
-
+import six
 from six.moves import configparser as ConfigParser
 from six.moves.urllib.parse import urlparse
 from six.moves import http_cookiejar as cookielib
 from six.moves.http_cookiejar import (_warn_unhandled_exception,
                                       LoadError, Cookie)
+import glue.pipeline
 from bs4 import BeautifulSoup
 
 def _really_load(self, f, filename, ignore_discard, ignore_expires):
@@ -76,7 +76,7 @@ def _really_load(self, f, filename, ignore_discard, ignore_expires):
             # support HttpOnly cookies (as stored by curl or old Firefox).
             if sline.startswith("#HttpOnly_"):
                 line = sline[10:]
-            # skip comments and blank lines XXX what is $ for?
+            # skip comments and blank lines ... what is $ for?
             elif (sline.startswith(("#", "$")) or sline == ""):
                 continue
 
@@ -150,16 +150,25 @@ def istext(s, text_characters=None, threshold=0.3):
     Code modified from
     https://www.safaribooksonline.com/library/view/python-cookbook-2nd/0596007973/ch01s12.html
     """
-    text_characters = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
-    _null_trans = string.maketrans("", "")
     # if s contains any null, it's not text:
-    if "\0" in s:
+    if six.PY2 and "\0" in s:
         return False
     # an "empty" string is "text" (arbitrary but reasonable choice):
     if not s:
         return True
-    # Get the substring of s made up of non-text characters
-    t = s.translate(_null_trans, text_characters)
+
+    text_characters = "".join(map(chr, range(32, 127))) + "\n\r\t\b"
+    if six.PY2:
+        _null_trans = string.maketrans("", "")
+        # Get the substring of s made up of non-text characters
+        t = s.translate(_null_trans, text_characters)
+    else:
+        # Not yet sure how to deal with this in python3. Will need example.
+        return True
+
+        # trans = str.maketrans('', '', text_characters)
+        # t = s.translate(trans)
+
     # s is 'text' if less than 30% of its characters are non-text ones:
     return len(t)/float(len(s)) <= threshold
 
@@ -231,7 +240,7 @@ def resolve_url(url, directory=None, permissions=None):
                   desc[0]['content'] == 'https://git.ligo.org/users/sign_in':
                     raise ValueError(ecp_cookie_error.format(url))
 
-        output_fp = open(filename, 'w')
+        output_fp = open(filename, 'wb')
         output_fp.write(r.content)
         output_fp.close()
 
@@ -299,8 +308,9 @@ def add_workflow_command_line_group(parser):
     parser : argparse.ArgumentParser instance
         The initialized argparse instance to add the workflow option group to.
     """
-    workflowArgs = parser.add_argument_group('workflow',
-                                          'Options needed for workflow setup.')
+    workflowArgs = parser.add_argument_group('Configuration',
+                                             'Options needed for parsing '
+                                             'config file(s).')
     workflowArgs.add_argument("--config-files", nargs="+", action='store',
                            metavar="CONFIGFILE",
                            help="List of config files to be used in "
@@ -417,14 +427,11 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             logging.info("Overriding section %s option %s with value %s "
                 "in configuration.", section, option, value )
 
+        # Resolve any URLs needing resolving
+        self.curr_resolved_files = {}
+        self.resolve_urls()
 
         # Check for any substitutions that can be made
-        # FIXME: The python 3 version of ConfigParser can do this automatically
-        # move over to that if it can be backported to python2.X.
-        # We use the same formatting as the new configparser module when doing
-        # ExtendedInterpolation
-        # This is described at
-        # http://docs.python.org/3.4/library/configparser.html
         self.perform_extended_interpolation()
 
         # Check for duplicate options in sub-sections
@@ -537,7 +544,6 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                 if newStr != value:
                     self.set('executables', option, newStr)
 
-
     def interpolate_exe(self, testString):
         """
         Replace testString with a path to an executable based on the format.
@@ -565,7 +571,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         if not (testString.startswith('${') and testString.endswith('}')):
             return testString
 
-        # This may not be an exe interpolation, so even if it has ${XXX} form
+        # This may not be an exe interpolation, so even if it has ${ ... } form
         # I may not have to do anything
         newString = testString
 
@@ -584,6 +590,75 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                     raise ValueError(errmsg)
 
         return newString
+
+    def resolve_urls(self):
+        """
+        This function will look through all sections of the
+        ConfigParser object and replace any URLs that are given the resolve
+        magic flag with a path on the local drive.
+
+        Specifically for any values that look like
+
+        ${resolve:https://git.ligo.org/detchar/SOME_GATING_FILE.txt}
+
+        the file will be replaced with the output of resolve_url(URL)
+
+        Otherwise values will be unchanged.
+        """
+        # Only works on executables section
+        for section in self.sections():
+            for option, value in self.items(section):
+                # Check the value
+                new_str = self.resolve_file_url(value)
+                if new_str is not None and new_str != value:
+                    self.set(section, option, new_str)
+
+    def resolve_file_url(self, test_string):
+        """
+        Replace test_string with a path to an executable based on the format.
+
+        If this looks like
+
+        ${which:lalapps_tmpltbank}
+
+        it will return the equivalent of which(lalapps_tmpltbank)
+
+        Otherwise it will return an unchanged string.
+
+        Parameters
+        -----------
+        test_string : string
+            The input string
+
+        Returns
+        --------
+        new_string : string
+            The output string.
+        """
+        # First check if any interpolation is needed and abort if not
+        test_string = test_string.strip()
+        if not (test_string.startswith('${') and test_string.endswith('}')):
+            return test_string
+
+        # This may not be a "resolve" interpolation, so even if it has
+        # ${ ... } form I may not have to do anything
+
+        # Strip the ${ and }
+        test_string = test_string[2:-1]
+
+        test_list = test_string.split(':', 1)
+
+        if len(test_list) == 2:
+            if test_list[0] == 'resolve':
+                curr_lfn = os.path.basename(test_list[1])
+                if curr_lfn in self.curr_resolved_files:
+                    return self.curr_resolved_files[curr_lfn]
+                local_url = resolve_url(test_list[1])
+                self.curr_resolved_files[curr_lfn] = local_url
+                return local_url
+
+        return None
+
 
     def get_subsections(self, section_name):
         """ Return a list of subsections for the given section name
@@ -1000,6 +1075,26 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         except ConfigParser.Error:
             return False
 
+    def section_to_cli(self, section):
+        """Converts a section into a command-line string.
+
+        For example:
+
+        .. code::
+
+            [section_name]
+            foo =
+            bar = 10
+
+        yields: `'--foo --bar 10'`.
+        """
+        opts = []
+        for opt in self.options(section):
+            opts.append('--{}'.format(opt))
+            val = self.get(section, opt)
+            if val != '':
+                opts.append(val)
+        return ' '.join(opts)
 
     @staticmethod
     def add_config_opts_to_parser(parser):
@@ -1016,7 +1111,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
     @classmethod
     def from_cli(cls, opts):
-        """Loads a config file from the given options, with overrides applied.
+        """Loads a config file from the given options, with overrides and
+        deletes applied.
         """
         # read configuration file
         logging.info("Reading configuration file")
@@ -1025,4 +1121,8 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
                          for override in opts.config_overrides]
         else:
             overrides = None
-        return cls(opts.config_files, overrides)
+        if opts.config_delete is not None:
+            deletes = [delete.split(":") for delete in opts.config_delete]
+        else:
+            deletes = None
+        return cls(opts.config_files, overrides, deleteTuples=deletes)

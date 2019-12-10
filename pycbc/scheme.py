@@ -26,6 +26,7 @@
 This modules provides python contexts that set the default behavior for PyCBC
 objects.
 """
+from __future__ import print_function
 import os
 import pycbc
 from decorator import decorator
@@ -151,16 +152,32 @@ class MKLScheme(CPUScheme):
 class NumpyScheme(CPUScheme):
     pass
 
-class DefaultScheme(CPUScheme):
+
+scheme_prefix = {
+    CUDAScheme: "cuda",
+    CPUScheme: "cpu",
+    MKLScheme: "mkl",
+    NumpyScheme: "numpy",
+}
+_scheme_map = {v: k for (k, v) in scheme_prefix.items()}
+
+_default_scheme_prefix = os.getenv("PYCBC_SCHEME", "cpu")
+try:
+    _default_scheme_class = _scheme_map[_default_scheme_prefix]
+except KeyError as exc:
+    raise RuntimeError(
+        "PYCBC_SCHEME={!r} not recognised, please select one of: {}".format(
+            _default_scheme_prefix,
+            ", ".join(map(repr, _scheme_map)),
+        ),
+    )
+
+class DefaultScheme(_default_scheme_class):
     pass
 
 default_context = DefaultScheme()
 mgr.state = default_context
-scheme_prefix = {CUDAScheme: "cuda",
-                 CPUScheme: "cpu",
-                 MKLScheme: "mkl",
-                 NumpyScheme: "numpy",
-                 DefaultScheme: 'cpu'}
+scheme_prefix[DefaultScheme] = _default_scheme_prefix
 
 def current_prefix():
     return scheme_prefix[type(mgr.state)]
@@ -172,11 +189,13 @@ def schemed(prefix):
         try:
             return _import_cache[mgr.state][fn](*args, **kwds)
         except KeyError:
+            exc_errors = []
             for sch in mgr.state.__class__.__mro__[0:-2]:
                 try:
                     backend = __import__(prefix + scheme_prefix[sch], fromlist=[fn.__name__])
                     schemed_fn = getattr(backend, fn.__name__)
-                except (ImportError, AttributeError):
+                except (ImportError, AttributeError) as e:
+                    exc_errors += [e]
                     continue
 
                 if mgr.state not in _import_cache:
@@ -186,8 +205,10 @@ def schemed(prefix):
 
                 return schemed_fn(*args, **kwds)
 
-            err = ("Failed to find implementation of (%s) "
-                  "for %s scheme." % (str(fn), current_prefix()))
+            err = """Failed to find implementation of (%s)
+                  for %s scheme." % (str(fn), current_prefix())"""
+            for emsg in exc_errors:
+                err += print(emsg)
             raise RuntimeError(err)
 
     return scheming_function
@@ -301,6 +322,4 @@ class ChooseBySchemeDict(dict):
                 break
             except:
                 pass
-
-
 

@@ -30,9 +30,11 @@ from __future__ import absolute_import
 from abc import ABCMeta, abstractmethod, abstractproperty
 import os
 import shutil
-from pycbc import distributions
 import logging
 
+from six import add_metaclass
+
+from pycbc import distributions
 from pycbc.inference.io import validate_checkpoint_files
 
 #
@@ -44,6 +46,7 @@ from pycbc.inference.io import validate_checkpoint_files
 #
 
 
+@add_metaclass(ABCMeta)
 class BaseSampler(object):
     """Abstract base class for all inference samplers.
 
@@ -55,7 +58,6 @@ class BaseSampler(object):
     model : Model
         An instance of a model from ``pycbc.inference.models``.
     """
-    __metaclass__ = ABCMeta
     name = None
 
     def __init__(self, model):
@@ -164,6 +166,13 @@ class BaseSampler(object):
         injection_file : str, optional
             If an injection was added to the data, write its information.
         """
+        # check that the output file doesn't already exist
+        if os.path.exists(output_file):
+            if force:
+                os.remove(output_file)
+            else:
+                raise OSError("output-file already exists; use force if you "
+                              "wish to overwrite it.")
         # check for backup file(s)
         checkpoint_file = output_file + '.checkpoint'
         backup_file = output_file + '.bkup'
@@ -176,7 +185,7 @@ class BaseSampler(object):
         self.new_checkpoint = False  # keeps track if this is a new file or not
         if not checkpoint_valid:
             logging.info("Checkpoint not found or not valid")
-            create_new_output_file(self, checkpoint_file, force=force,
+            create_new_output_file(self, checkpoint_file,
                                    injection_file=injection_file)
             # now the checkpoint is valid
             self.new_checkpoint = True
@@ -201,8 +210,7 @@ class BaseSampler(object):
 # =============================================================================
 #
 
-def create_new_output_file(sampler, filename, force=False, injection_file=None,
-                           **kwargs):
+def create_new_output_file(sampler, filename, injection_file=None, **kwargs):
     """Creates a new output file.
 
     If the output file already exists, an ``OSError`` will be raised. This can
@@ -222,12 +230,6 @@ def create_new_output_file(sampler, filename, force=False, injection_file=None,
         All other keyword arguments are passed through to the file's
         ``write_metadata`` function.
     """
-    if os.path.exists(filename):
-        if force:
-            os.remove(filename)
-        else:
-            raise OSError("output-file already exists; use force if you "
-                          "wish to overwrite it.")
     logging.info("Creating file {}".format(filename))
     with sampler.io(filename, "w") as fp:
         # create the samples group and sampler info group

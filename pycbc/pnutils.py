@@ -544,7 +544,7 @@ def get_inspiral_tf(tc, mass1, mass2, spin1, spin2, f_low, n_points=100,
     try:
         approximant = eval(approximant, {'__builtins__': None},
                            dict(params=params))
-    except NameError:
+    except (NameError, TypeError):
         pass
 
     if approximant in ['TaylorF2', 'SPAtmplt']:

@@ -15,11 +15,17 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging, os.path
-import urlparse, urllib
+from six.moves.urllib.request import pathname2url
+from six.moves.urllib.parse import urljoin
 import distutils.spawn
 from pycbc.workflow.core import Executable, FileList, Node, makedir, File, Workflow
 from pycbc.workflow.plotting import PlotExecutable, requirestr, excludestr
-from itertools import izip_longest
+try:
+    # Python 3
+    from itertools import zip_longest
+except ImportError:
+    # Python 2
+    from itertools import izip_longest as zip_longest
 from Pegasus import DAX3 as dax
 from pycbc.workflow import pegasus_workflow as wdax
 
@@ -27,7 +33,7 @@ def grouper(iterable, n, fillvalue=None):
     """ Create a list of n length tuples
     """
     args = [iter(iterable)] * n
-    return izip_longest(*args, fillvalue=fillvalue)
+    return zip_longest(*args, fillvalue=fillvalue)
 
 def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
                        tmpltbank_file, insp_segs, insp_data_name,
@@ -78,10 +84,9 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
-    exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
+    exe = Executable(workflow.cp, 'foreground_minifollowup', ifos=workflow.ifos, out_dir=dax_output, tags=tags)
 
     node = exe.create_node()
     node.add_input_opt('--config-files', config_file)
@@ -91,9 +96,11 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     node.add_input_opt('--inspiral-segments', insp_segs)
     node.add_opt('--inspiral-data-read-name', insp_data_name)
     node.add_opt('--inspiral-data-analyzed-name', insp_anal_name)
-    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
-    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
+    if tags:
+        node.add_list_opt('--tags', tags)
+    node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file')
+    node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map')
+    node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog')
 
     name = node.output_files[0].name
     map_file = node.output_files[1]
@@ -123,9 +130,10 @@ def setup_foreground_minifollowups(workflow, coinc_file, single_triggers,
     logging.info('Leaving minifollowups module')
 
 def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
-                                  insp_segs, insp_data_name, insp_anal_name,
-                                  dax_output, out_dir, veto_file=None,
-                                  veto_segment_name=None, tags=None):
+                                   insp_segs, insp_data_name, insp_anal_name,
+                                   dax_output, out_dir, veto_file=None,
+                                   veto_segment_name=None, statfiles=None,
+                                   tags=None):
     """ Create plots that followup the Nth loudest clustered single detector
     triggers from a merged single detector trigger HDF file.
 
@@ -145,6 +153,9 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         The name of the segmentlist storing data analyzed.
     out_dir: path
         The directory to store minifollowups result plots and files
+    statfiles: FileList (optional, default=None)
+        Supplementary files necessary for computing the single-detector
+        statistic.
     tags: {None, optional}
         Tags to add to the minifollowups executables
     Returns
@@ -172,8 +183,7 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
     exe = Executable(workflow.cp, 'singles_minifollowup',
                      ifos=curr_ifo, out_dir=dax_output, tags=tags)
@@ -193,6 +203,9 @@ def setup_single_det_minifollowups(workflow, single_trig_file, tmpltbank_file,
         assert(veto_segment_name is not None)
         node.add_input_opt('--veto-file', veto_file)
         node.add_opt('--veto-segment-name', veto_segment_name)
+    if statfiles is not None:
+        statfiles = statfiles.find_output_with_ifo(curr_ifo)
+        node.add_input_list_opt('--statistic-files', statfiles)
     node.new_output_file_opt(workflow.analysis_time, '.dax', '--output-file', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.dax.map', '--output-map', tags=tags)
     node.new_output_file_opt(workflow.analysis_time, '.tc.txt', '--transformation-catalog', tags=tags)
@@ -274,8 +287,7 @@ def setup_injection_minifollowups(workflow, injection_file, inj_xml_file,
     workflow.cp.write(open(config_path, 'w'))
 
     config_file = wdax.File(os.path.basename(config_path))
-    config_file.PFN(urlparse.urljoin('file:', urllib.pathname2url(config_path)),
-                    site='local')
+    config_file.PFN(urljoin('file:', pathname2url(config_path)), site='local')
 
     exe = Executable(workflow.cp, 'injection_minifollowup', ifos=workflow.ifos, out_dir=dax_output)
 
@@ -545,7 +557,7 @@ def make_coinc_info(workflow, singles, bank, coinc, out_dir,
     return files
 
 def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
-                  tags=None, rank=None):
+                  tags=None):
     """Setup a job to create sngl detector sngl ifo html summary snippet.
     """
     tags = [] if tags is None else tags
@@ -557,8 +569,6 @@ def make_sngl_ifo(workflow, sngl_file, bank_file, trigger_id, out_dir, ifo,
     node.add_input_opt('--single-trigger-file', sngl_file)
     node.add_input_opt('--bank-file', bank_file)
     node.add_opt('--trigger-id', str(trigger_id))
-    if rank is not None:
-        node.add_opt('--n-loudest', str(rank))
     node.add_opt('--instrument', ifo)
     node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
     workflow += node
@@ -793,6 +803,46 @@ def make_singles_timefreq(workflow, single, bank_file, trig_time, out_dir,
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files
+
+def make_skipped_html(workflow, skipped_data, out_dir, tags):
+    """
+    Make a html snippet from the list of skipped background coincidences
+    """
+    exe = Executable(workflow.cp, 'html_snippet',
+                     ifos=workflow.ifos, out_dir=out_dir, tags=tags)
+
+    node = exe.create_node()
+
+    parsed_data = {}
+    for ifo, time in skipped_data:
+        if ifo not in parsed_data:
+            parsed_data[ifo] = {}
+        if time not in parsed_data[ifo]:
+            parsed_data[ifo][time] = 1
+        else:
+            parsed_data[ifo][time] = parsed_data[ifo][time] + 1
+
+    n_events = len(skipped_data)
+    html_string = '"{} background events have been skipped '.format(n_events)
+    html_string += 'because one of their single triggers already appears '
+    html_string += 'in the events followed up above. '
+    html_string += 'Specifically, the following single detector triggers '
+    html_string += 'were found in these coincidences. '
+    html_template = '{} event at time {} appeared {} times. '
+    for ifo in parsed_data:
+        for time in parsed_data[ifo]:
+            n_occurances = parsed_data[ifo][time]
+            html_string += html_template.format(ifo, time, n_occurances)
+
+    html_string += '"'
+
+    node.add_opt('--html-text', html_string)
+    node.add_opt('--title', '"Events were skipped"')
+    node.new_output_file_opt(workflow.analysis_time, '.html', '--output-file')
+    workflow += node
+    files = node.output_files
+    return files
+
 
 def create_noop_node():
     """

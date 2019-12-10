@@ -1,0 +1,39 @@
+#!/bin/env python
+"""Dummy script to pass through stat files and test reranking"""
+import h5py, numpy, argparse, logging, pycbc
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--version', action='version',
+    version=pycbc.version.git_verbose_msg)
+parser.add_argument('--verbose', action='store_true')
+parser.add_argument('--output-file',
+    help="File containing the newly assigned statistic values")
+
+# Options related to getting trigger information from workflow products
+parser.add_argument('--input-file',
+    help="HDF File which gives the trigger followup information for a set")
+parser.add_argument('--start-index', type=int,
+    help="Analyzing candidates starting from this index")
+parser.add_argument('--end-index', type=int,
+    help="Analyzing candidates stopping at this index")
+parser.add_argument('--stride', type=int, default=1,
+    help="Only analyze every Nth candidate")
+
+args, unknown = parser.parse_known_args()
+
+pycbc.init_logging(args.verbose)
+
+ofile = h5py.File(args.output_file, 'w')
+
+f = h5py.File(args.input_file, 'r')
+start = 0 if args.start_index is None else args.start_index
+end = len(f['time']) if args.end_index is None else args.end_index
+stride = args.stride
+ofile.attrs['start_index'] = start
+ofile.attrs['end_index' ] = end
+ofile.attrs['stride'] = stride
+stat = f['stat'][:][start:end:stride]
+
+ofile['stat'] = stat
+logging.info('Done')

@@ -84,12 +84,22 @@ class TimeSeries(Array):
         self._delta_t = delta_t
         self._epoch = epoch
 
+    def sample_rate_close(self, other):
+        """ Check if the sample rate is close enough to allow operations """
+        if (other.delta_t - self.delta_t) / self.delta_t > 1e-4:
+            return False
+
+        if abs(1 - other.delta_t / self.delta_t) * len(self) > 0.5:
+            return False
+
+        return True
+
     def _return(self, ary):
         return TimeSeries(ary, self._delta_t, epoch=self._epoch, copy=False)
 
     def _typecheck(self, other):
         if isinstance(other, TimeSeries):
-            if other._delta_t != self._delta_t:
+            if not self.sample_rate_close(other):
                 raise ValueError('different delta_t')
             if self._epoch != other._epoch:
                 raise ValueError('different epoch')
@@ -457,6 +467,36 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
+    def filter_psd(self, segment_duration, delta_f, flow):
+        """ Calculate the power spectral density of this time series.
+
+        Use the `pycbc.psd.welch` method to estimate the psd of this time segment.
+        The psd is then truncated in the time domain to the segment duration
+        and interpolated to the requested sample frequency.
+
+        Parameters
+        ----------
+        segment_duration: float
+            Duration in seconds to use for each sample of the spectrum.
+        delta_f : float
+            Frequency spacing to return psd at.
+        flow : float
+            The low frequency cutoff to apply when truncating the inverse
+            spectrum.
+
+        Returns
+        -------
+        psd : FrequencySeries
+            Frequency series containing the estimated PSD.
+        """
+        from pycbc.psd import interpolate, inverse_spectrum_truncation
+        p = self.psd(segment_duration)
+        samples = int(p.sample_rate * segment_duration)
+        p = interpolate(p, delta_f)
+        return inverse_spectrum_truncation(p, samples,
+                                           low_frequency_cutoff=flow,
+                                           trunc_method='hann')
+
     def whiten(self, segment_duration, max_filter_duration, trunc_method='hann',
                      remove_corrupted=True, low_frequency_cutoff=None,
                      return_psd=False, **kwds):
@@ -717,11 +757,12 @@ class TimeSeries(Array):
             _numpy.savetxt(path, output)
         elif ext =='.hdf':
             key = 'data' if group is None else group
-            f = h5py.File(path)
-            ds = f.create_dataset(key, data=self.numpy(), compression='gzip',
-                                  compression_opts=9, shuffle=True)
-            ds.attrs['start_time'] = float(self.start_time)
-            ds.attrs['delta_t'] = float(self.delta_t)
+            with h5py.File(path, 'a') as f:
+                ds = f.create_dataset(key, data=self.numpy(),
+                                      compression='gzip',
+                                      compression_opts=9, shuffle=True)
+                ds.attrs['start_time'] = float(self.start_time)
+                ds.attrs['delta_t'] = float(self.delta_t)
         else:
             raise ValueError('Path must end with .npy, .txt or .hdf')
 
@@ -826,7 +867,7 @@ class TimeSeries(Array):
               low_frequency_cutoff=None, high_frequency_cutoff=None):
         """ Return the match between the two TimeSeries or FrequencySeries.
 
-        Return the match between two waveforms. This is equivelant to the overlap
+        Return the match between two waveforms. This is equivalent to the overlap
         maximized over time and phase. By default, the other vector will be
         resized to match self. This may remove high frequency content or the
         end of the vector.
