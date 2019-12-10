@@ -4,6 +4,7 @@ import pycbc
 import numpy
 import lal
 import math
+import json
 from six import u as unicode
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
@@ -317,6 +318,7 @@ class SingleCoincForGraceDB(object):
         import matplotlib
         matplotlib.use('Agg')
         import pylab
+        from matplotlib import pyplot as plt
 
         # first of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
@@ -365,6 +367,21 @@ class SingleCoincForGraceDB(object):
             pylab.xlabel('Frequency (Hz)')
             pylab.ylabel('ASD')
             pylab.savefig(psd_series_plot_fname)
+            pylab.close()
+
+        if self.probabilities is not None:
+            prob_fname = filename.replace('.xml.gz', '_probs.json')
+            prob_plot_fname = prob_fname.replace('.json', '.png')
+            probabilities = json.loads(self.probabilities)
+            labels = [key for key in probabilities]
+            sizes = [probabilities[key] for key in probabilities]
+            explode = [0.02 for key in probabilities]
+            
+            fig, ax = plt.subplots()
+            ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%')
+            ax.axis('equal')
+            plt.savefig(prob_plot_name)
+            plt.close()
 
         gid = None
         try:
@@ -410,6 +427,13 @@ class SingleCoincForGraceDB(object):
                 gracedb.writeLog(gid, 'PSD plot upload',
                                  filename=psd_series_plot_fname,
                                  tag_name=['psd'], displayName=['PSDs'])
+
+            # upload CBC probabilities in json format and plot
+            if self.probabilities is not None:
+                gracedb.writeLog(gid, 'CBC probabilities JSON file upload',
+                                 filename=prob_name)
+                gracedb.writeLog(gid, 'CBC probabilities plot upload',
+                                 filename=prob_plot_name)
 
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
