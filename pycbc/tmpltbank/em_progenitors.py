@@ -412,7 +412,7 @@ def remnant_mass_ulim(eta, ns_g_mass, bh_spin_z, ns_sequence, max_ns_g_mass, shi
 ################################################################################
 # Given a NS mass, a BH spin z-component, and and EOS, find the minimum value  #
 # of the symmetric mass ratio (eta) required to produce and EM counterpart.    #
-# The user must specify the remnant disk mass threshold (thershold) and a      #
+# The user must specify the remnant disk mass threshold (threshold) and a      #
 # default value to be assigned to eta if the NS gravitational mass exceeds the #
 # maximum NS mass allowed by the EOS (eta_default).                            #
 ################################################################################
