@@ -211,8 +211,8 @@ def load_ns_sequence(eos_name):
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
         logging.error('Only the 2H EOS is currently supported
-                       If you plan to use a different NS EOS,
-                       be sure not to filter too many templates!\n')
+                      If you plan to use a different NS EOS,
+                      be sure not to filter too many templates!\n')
         raise Exception('Unsupported EOS!')
         sys.exit(1)
 
@@ -327,12 +327,11 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     # Sanity checks on eta and chi
     if not (eta>0. and eta<=0.25 and abs(chi)<=1 and ns_g_mass>0):
         logging.error('The BH spin magnitude must be <= 1, eta must be between
-                       0 and 0.25, and the NS mass must be positive.')
+                      0 and 0.25, and the NS mass must be positive.')
         logging.info('The function remnant_mass was launched with ns_mass={0}, eta={1},
-                      chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
-        sys.exit(1)      
+                     chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
+        sys.exit(1)
         raise Exception('Unphysical parameters!')
-     
 
     # NS compactness and rest mass
     ns_compactness = ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence)
