@@ -49,7 +49,7 @@ def from_cli(args):
             'estimation_coeff': {'a0': args.eff_to_lum_distance_coeff,
             'b0': args.lum_distance_to_delta_coeff[0],
             'b1': args.lum_distance_to_delta_coeff[1],
-            'm0': args.mchirp_to_delta_coeff}
+            'm0': args.mchirp_to_delta_coeff},
             'mass_gap': args.mass_gap_separate}    
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
