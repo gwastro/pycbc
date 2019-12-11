@@ -298,8 +298,8 @@ def get_random_mass(numPoints, massRangeParams):
                                          spin1z_nsbh, 0.,
                                          massRangeParams.remnant_mass_threshold)
                 mask_bright_nsbh[remnant 
-                                 > massRangeParams.remnant_mass_threshold] 
-                = True
+                                 > 
+                                 massRangeParams.remnant_mass_threshold] = True
 
             # Keep only points that correspond to binaries that can produce an
             # EM counterpart (i.e., BNSs and EM-bright NSBHs) and add their
