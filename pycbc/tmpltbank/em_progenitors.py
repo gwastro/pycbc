@@ -24,10 +24,10 @@ import scipy.interpolate
 import logging
 import sys
 
-#############################################################################
-# Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz formalism #
-# [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].                         #
-#############################################################################
+##############################################################################
+# Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz formalism  #
+# [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].                          #
+##############################################################################
 
 # Equation that determines the ISCO radius (in BH mass units)
 def ISCO_eq(r, chi):
@@ -98,8 +98,10 @@ def PG_ISSO_eq(r, chi, incl):
     float
         r**8*Z+chi**2*(1-cos_incl**2)*(chi**2*(1-cos_incl**2)*Y-2*r**4*X)
         where
-        X=chi**2*(chi**2*(3*chi**2+4*r*(2*r-3))+r**2*(15*r*(r-4)+28))-6*r**4*(r**2-4)
-        Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*(chi**2*(3*r+2)+3*r**2*(r-2)))
+        X=chi**2*(chi**2*(3*chi**2+4*r*(2*r-3))+r**2*(15*r*(r-4)+28))-
+          6*r**4*(r**2-4)
+        Y=chi**4*(chi**4+r**2*(7*r*(3*r-4)+36))+6*r*(r-2)*(chi**6+2*r**3*
+          (chi**2*(3*r+2)+3*r**2*(r-2)))
         Z=ISCO_eq(r,chi)
     """
     chi2 = chi*chi
@@ -111,7 +113,8 @@ def PG_ISSO_eq(r, chi, incl):
     sin_incl2 = (math.sin(incl))**2
 
     X=chi2*(chi2*(3*chi2+4*r*(2*r-3))+r2*(15*r*(r-4)+28))-6*r4*(r2-4)
-    Y=chi4*(chi4+r2*(7*r*(three_r-4)+36))+6*r*r_minus_2*(chi4*chi2+2*r2*r*(chi2*(three_r+2)+3*r2*r_minus_2))
+    Y=chi4*(chi4+r2*(7*r*(three_r-4)+36))+6*r*r_minus_2*(chi4*chi2+2*r2*r*
+      (chi2*(three_r+2)+3*r2*r_minus_2))
     Z=ISCO_eq(r, chi)
 
     return r4*r4*Z+chi2*sin_incl2*(chi2*sin_incl2*Y-2*r4*X)
@@ -155,7 +158,8 @@ def PG_ISSO_solver(chi,incl):
         initial_guess = 9
     else:
         initial_guess = 6
-    rISSO_at_pole_limit = scipy.optimize.fsolve(ISSO_eq_at_pole, initial_guess, args=chi)
+    rISSO_at_pole_limit = scipy.optimize.fsolve(ISSO_eq_at_pole, initial_guess,
+                          args=chi)
 
     # If the inclination is 0 or pi, just output the ISCO radius
     if incl in [0, math.pi]:
@@ -166,20 +170,22 @@ def PG_ISSO_solver(chi,incl):
     # Otherwise, find the ISSO radius for a generic inclination
     else:
         initial_guess = max(rISCO_limit,rISSO_at_pole_limit)
-        solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, incl))
+        solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess,
+                   args=(chi, incl))
         if solution < 1 or solution > 9:
             initial_guess = min(rISCO_limit,rISSO_at_pole_limit)
-            solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess, args=(chi, incl))
+            solution = scipy.optimize.fsolve(PG_ISSO_eq, initial_guess,
+            args=(chi, incl))
 
     return solution
 
-############################################################################
-# 2H 2-piecewise polytropic EOS, NS non-rotating equilibrium sequence      #
-# File format is: grav mass (Msun)   baryonic mass (Msun)    compactness   #
-#                                                                          #
-# Eventually, the function should call an NS sequence generator within LAL #
-# the EOS prescribed by the user and store it.                             #
-############################################################################
+##############################################################################
+# 2H 2-piecewise polytropic EOS, NS non-rotating equilibrium sequence        #
+# File format is: grav mass (Msun)   baryonic mass (Msun)    compactness     #
+#                                                                            #
+# Eventually, the function should call an NS sequence generator within LAL   #
+# the EOS prescribed by the user and store it.                               #
+##############################################################################
 def load_ns_sequence(eos_name):
     """
     Load the data of an NS non-rotating equilibrium sequence
@@ -221,10 +227,10 @@ def load_ns_sequence(eos_name):
 
     return (ns_sequence, max_ns_g_mass)
 
-####################################################################################
-# Given an NS equilibrium sequence and gravitational mass (in Msun), return the NS #
-# baryonic mass (in Msun).                                                         #
-####################################################################################
+##############################################################################
+# Given an NS equilibrium sequence and gravitational mass (in Msun), return  #
+# the NS baryonic mass (in Msun).                                            #
+##############################################################################
 def ns_g_mass_to_ns_b_mass(ns_g_mass, ns_sequence):
     """
     Determines the baryonic mass of an NS given its gravitational
@@ -242,7 +248,8 @@ def ns_g_mass_to_ns_b_mass(ns_g_mass, ns_sequence):
     Returns
     ----------
     float
-        The NS baryonic mass (in solar massesr**3*(r**2*(r-6)+chi**2*(3*r+4))+chi**4*(3*r*(r-2)+chi**2))
+        The NS baryonic mass (in solar massesr**3*(r**2*(r-6)+chi**2*(3*r+4))+
+        chi**4*(3*r*(r-2)+chi**2))
     """
     x = ns_sequence[:,0]
     y = ns_sequence[:,1]
@@ -250,10 +257,10 @@ def ns_g_mass_to_ns_b_mass(ns_g_mass, ns_sequence):
 
     return f(ns_g_mass)
 
-####################################################################################
-# Given an NS equilibrium sequence and gravitational mass (in Msun), return the NS #
-# compactness.                                                                     #
-####################################################################################
+##############################################################################
+# Given an NS equilibrium sequence and gravitational mass (in Msun), return  #
+# the NS compactness.                                                        #
+##############################################################################
 def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
     """
     Determines the compactness of an NS given its
@@ -329,8 +336,9 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     if not (eta>0. and eta<=0.25 and abs(chi)<=1 and ns_g_mass>0):
         logging.error('The BH spin magnitude must be <= 1, eta must be between
                       0 and 0.25, and the NS mass must be positive.')
-        logging.info('The function remnant_mass was launched with ns_mass={0}, eta={1},
-                     chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
+        logging.info('The function remnant_mass was launched with ns_mass={0},
+                      eta={1}, chi={2}, inclination={3}\n'
+                      .format(ns_g_mass, eta, chi, incl))
         sys.exit(1)
         raise Exception('Unphysical parameters!')
 
@@ -344,20 +352,22 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     gamma = 0.255
     delta = 1.761
     # The remnant mass over the NS rest mass
-    remnant_mass = (max(alpha/eta**(1./3.)*(1-2*ns_compactness)-beta*ns_compactness/eta*PG_ISSO_solver(chi,incl)+gamma,0.))**delta
+    remnant_mass = (max(alpha/eta**(1./3.)*(1-2*ns_compactness)-beta*
+                    ns_compactness/eta*PG_ISSO_solver(chi,incl)+gamma,0.))**
+                    delta
     # Convert to solar masses
     remnant_mass = remnant_mass*ns_b_mass
 
     return remnant_mass
 
-################################################################################
-# Vectorized version of remnant_mass.  Numpy v1.7 and above allows one to list #
-# the arguments to exclude from vectorization.                                 #
-################################################################################
+#############################################################################
+# Vectorized version of remnant_mass.  Numpy v1.7 and above allows one      #
+#to list the arguments to exclude from vectorization.                       #
+#############################################################################
 remnant_masses = np.vectorize(remnant_mass)
 
 
 remnant_masses.excluded.add(2)
 
 
-remnant_masses.excluded.add(5)
+remnant_masses.excluded.add(5):
