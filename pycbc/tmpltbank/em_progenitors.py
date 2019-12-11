@@ -210,10 +210,11 @@ def load_ns_sequence(eos_name):
         ns_sequence_path = os.path.join(pycbc.tmpltbank.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
-        logging.error('Only the 2H EOS is currently supported!')
-        logging.error('If you plan to use a different NS EOS, be sure not to filter')
-        logging.error('too many templates!\n')
+        logging.error('Only the 2H EOS is currently supported
+                       If you plan to use a different NS EOS,
+                       be sure not to filter too many templates!\n')
         raise Exception('Unsupported EOS!')
+        sys.exit(1)
 
     max_ns_g_mass = max(ns_sequence[:,0])
 
@@ -330,6 +331,7 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
          logging.info('The function remnant_mass was launched with ns_mass={0}, eta={1},
               chi={2}, inclination={3}\n'.format(ns_g_mass, eta, chi, incl))
         raise Exception('Unphysical parameters!')
+        sys.exit(1)
 
     # NS compactness and rest mass
     ns_compactness = ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence)
@@ -355,4 +357,6 @@ remnant_masses = np.vectorize(remnant_mass)
 
 
 remnant_masses.excluded.add(2)
+
+
 remnant_masses.excluded.add(5)
