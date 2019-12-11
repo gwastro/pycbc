@@ -210,9 +210,9 @@ def load_ns_sequence(eos_name):
         ns_sequence_path = os.path.join(pycbc.tmpltbank.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
-        logging.error('Only the 2H EOS is currently supported
+        logging.error("Only the 2H EOS is currently supported
                       If you plan to use a different NS EOS,
-                      be sure not to filter too many templates!\\n')
+                      be sure not to filter too many templates!\n")
         raise Exception('Unsupported EOS!')
         sys.exit(1)
 
