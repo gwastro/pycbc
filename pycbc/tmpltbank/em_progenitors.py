@@ -113,9 +113,9 @@ def PG_ISSO_eq(r, chi, incl):
     sin_incl2 = (math.sin(incl))**2
 
     X=chi2*(chi2*(3*chi2+4*r*(2*r-3))+r2*(15*r*(r-4)+28))-6*r4*(r2-4)
-    Y=chi4*(chi4+r2*(7*r*(three_r-4)+36))+
-       6*r*r_minus_2*(chi4*chi2+2*r2*r*(chi2*(three_r+2)+
-       3 * r2 * r_minus_2))
+    Y=chi4*(chi4+r2*(7*r*(three_r-4)+36))
+        +6*r*r_minus_2*(chi4*chi2+2*r2*r*(chi2*(three_r+2)+
+                        3 * r2 * r_minus_2))
     Z=ISCO_eq(r, chi)
 
     return r4*r4*Z+chi2*sin_incl2*(chi2*sin_incl2*Y-2*r4*X)
