@@ -281,9 +281,9 @@ with tqdm.tqdm(args.inj_files, desc="Finding injections",
                 missed.append(i)
             else:
                 found.append(i)
-                eid = l if r - l == 1 else event_id[l + snr[l:r].argmax()]
+                eid = l + snr[l:r].argmax()
                 for col in triggers:
-                    trigs[col].append(triggers[col][i - len(allinjections or [])])
+                    trigs[col].append(triggers[col][eid])
 
         # record all injections
         if allinjections is None:
