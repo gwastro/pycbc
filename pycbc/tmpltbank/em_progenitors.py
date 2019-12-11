@@ -219,8 +219,8 @@ def load_ns_sequence(eos_name):
         warn_msg += "If you plan to use a different NS EOS,"
         warn_msg += "be sure not to filter too many templates!\n"
         logging.error(warn_msg)
-        raise Exception('Unsupported EOS!')
         sys.exit(1)
+        raise Exception('Unsupported EOS!')
 
     max_ns_g_mass = max(ns_sequence[:,0])
 
@@ -355,8 +355,8 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     delta = 1.761
     # The remnant mass over the NS rest mass
     remnant_mass = (max(alpha/eta**(1./3.)*(1 - 2*ns_compactness)
-                    - beta*ns_compactness / eta*PG_ISSO_solver(chi, incl)
-                    + gamma, 0.)) ** delta
+                   - beta*ns_compactness / eta*PG_ISSO_solver(chi, incl)
+                   + gamma, 0.)) ** delta
     # Convert to solar masses
     remnant_mass = remnant_mass*ns_b_mass
 
