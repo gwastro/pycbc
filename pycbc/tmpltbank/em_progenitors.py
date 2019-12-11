@@ -212,7 +212,7 @@ def load_ns_sequence(eos_name):
     else:
         logging.error('Only the 2H EOS is currently supported
                       If you plan to use a different NS EOS,
-                      be sure not to filter too many templates!\n')
+                      be sure not to filter too many templates!\\n')
         raise Exception('Unsupported EOS!')
         sys.exit(1)
 
