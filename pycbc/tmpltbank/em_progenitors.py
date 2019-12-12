@@ -300,7 +300,7 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 #   Stone, Loeb, Berger, PRD 87, 084053 (2013) for the previous NS-BH        #
 #   remnant mass fit.                                                        #
 ##############################################################################
-def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
+def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
     """
     Function that determines the remnant disk mass of
     an NS-BH system using the fit to numerical-relativity
@@ -321,9 +321,6 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl, shift):
     incl: float
         the inclination angle between the BH spin and the orbital
         angular momentum in radians
-    shift: float
-        an amount to be subtracted to the remnant mass predicted
-        by the model (in solar masses)
 
     Returns
     ----------
