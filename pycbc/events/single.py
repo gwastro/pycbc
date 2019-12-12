@@ -1,6 +1,8 @@
 """ utilities for assigning FAR to single detector triggers
 """
-import logging, sys
+import logging
+import sys
+import numpy as np
 from pycbc.events import ranking, trigger_fits as fits
 from pycbc.types import MultiDetOptionAction
 from pycbc import conversions as conv
@@ -54,17 +56,31 @@ class LiveSingle(object):
         if len(triggers['snr']) == 0:
             return None
 
-        i = triggers['snr'].argmax()
+        # Apply cuts to triggers before clustering
+        dur_idx = triggers['template_duration'] > self.duration_threshold
+        if not np.count_nonzero(dur_idx): return None
+        cutdur_triggers = {k: triggers[k][dur_idx] for k in triggers}
+        chisq_idx = cutdur_triggers['chisq'] < self.reduced_chisq_threshold
+        if not np.count_nonzero(chisq_idx): return None
+        cutchisq_triggers = {k: cutdur_triggers[k][chisq_idx] for k in triggers}
+        nsnr_all = ranking.newsnr(cutchisq_triggers['snr'], cutchisq_triggers['chisq'])
+        nsnr_idx = nsnr_all > self.newsnr_threshold
+        if not np.count_nonzero(nsnr_idx): return None
+        cutall_triggers = {k: cutchisq_triggers[k][nsnr_idx] for k in triggers}
+
+        #'cluster' by taking the maximal newsnr value over the trigger set
+        i = nsnr_all[nsnr_idx].argmax()
+
         # This uses the pycbc live convention of chisq always meaning the
         # reduced chisq.
-        rchisq = triggers['chisq'][i]
-        nsnr = ranking.newsnr(triggers['snr'][i], rchisq)
-        dur = triggers['template_duration'][i]
+        rchisq = cutall_triggers['chisq'][i]
+        nsnr = ranking.newsnr(cutall_triggers['snr'][i], rchisq)
+        dur = cutall_triggers['template_duration'][i]
 
         if nsnr > self.newsnr_threshold and \
                 dur > self.duration_threshold and \
                 rchisq < self.reduced_chisq_threshold:
-            fake_coinc = {'foreground/%s/%s' % (self.ifo, k): triggers[k][i]
+            fake_coinc = {'foreground/%s/%s' % (self.ifo, k): cutall_triggers[k][i]
                           for k in triggers}
             fake_coinc['foreground/stat'] = nsnr
             fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr)
@@ -72,13 +88,13 @@ class LiveSingle(object):
             return fake_coinc
         return None
 
-    def calculate_ifar(self, newsnr, fit_threshold=6.0):
+    def calculate_ifar(self, newsnr, fit_threshold=6.5):
         if self.sngl_ifo_est_dist == 'fixed':
             return self.fixed_ifar[self.ifo]
         if self.sngl_ifo_est_dist == 'conservative':
-            cct = single_fits_coeff_count_time['conservative']
+            cct = SINGLE_FITS_COEFF_COUNT_TIME['conservative']
         elif self.sngl_ifo_est_dist == 'individual':
-            cct = single_fits_coeff_count_time[self.ifo]
+            cct = SINGLE_FITS_COEFF_COUNT_TIME[self.ifo]
         print('using cct values {}'.format(cct))
         if newsnr < fit_threshold:
             n_louder = cct[1] + 1
@@ -90,7 +106,7 @@ class LiveSingle(object):
         return conv.sec_to_year(cct[2] / (n_louder + 1))
 
 
-single_fits_coeff_count_time = {
+SINGLE_FITS_COEFF_COUNT_TIME = {
     'H1': (5.69015, 107893373, 10184192),
     'L1': (5.72713, 95714610, 10908800),
     'V1': (5.58611, 112008750, 11468656),
