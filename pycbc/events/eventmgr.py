@@ -539,10 +539,26 @@ class EventManager(object):
         Grafana dashboard.
         """
         unix_epoch_time = int(time.time())
+
+        time_ratio = float(self.analysis_time) / float(self.run_time)
+        templates_per_core = float(self.ntemplates) / float(self.ncore)
+        templates_per_core *= float(time_ratio)
+        filters_per_core = float(self.nfilters) / float(self.ncores)
+        filter_rate_per_core = filters_per_core / float(self.run_time)
+        setup_time_fraction = float(self.setup_time) / float(self.run_time)
+
         metadata = {}
         metadata["ts"] = unix_epoch_time 
         metadata["monitoring_event"] = "metadata"
         metadata["payload"] = []
+        metadata["payload"].append({"name" : "job_type",
+                                    "value" : self.opt.user_tag})
+        metadata["payload"].append({"name" : "templates_per_core",
+                                    "value" : templates_per_core})
+        metadata["payload"].append({"name" : "filter_rate_per_core",
+                                    "value" : filter_rate_per_core})
+        metadata["payload"].append({"name" : "setup_time_fraction",
+                                    "value" : setup_time_fraction})
         metadata["payload"].append({"name" : "run_time",
                                     "value" : self.run_time})
         metadata["payload"].append({"name" : "setup_time",
@@ -553,12 +569,15 @@ class EventManager(object):
                                     "value" : self.nfilters})
         metadata["payload"].append({"name" : "ntemplates",
                                     "value" : self.ntemplates})
-
+        metadata["payload"].append({"name" : "gps_start_time",
+                                    "value" : self.opt.gps_start_time})
+        metadata["payload"].append({"name" : "gps_end_time",
+                                    "value" : self.opt.gps_end_time})
         # needed header and footers
-        header = "@@@MONITORING_PAYLOAD - START@@@"
+        header = "@@@MONITORING_PAYLOAD - START@@@\n"
         json_data = json.dumps(metadata, indent=4)
-        footer = "@@@MONITORING_PAYLOAD - END@@@"
-        return header + "\n" + json_data + "\n" + footer
+        footer = "\n@@@MONITORING_PAYLOAD - END@@@"
+        return header + json_data + footer
 
 class EventManagerMultiDetBase(EventManager):
     def __init__(self, opt, ifos, column, column_types, psd=None, **kwargs):
