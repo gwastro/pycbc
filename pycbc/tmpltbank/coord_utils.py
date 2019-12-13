@@ -17,9 +17,9 @@
 from __future__ import division
 import logging
 import numpy
-import os.path
 from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
+from pycbc import conversions
 from pycbc import pnutils
 from pycbc.tmpltbank.em_progenitors import load_ns_sequence, remnant_masses
 
@@ -254,7 +254,6 @@ def get_random_mass(numPoints, massRangeParams):
             mass1, mass2, spin1z, spin2z = \
                 get_random_mass_point_particles(numPoints-numPointsFound,
                                                 massRangeParams)
-            _, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
 
             # Now proceed with cutting out EM dim systems
             # Use a logical mask to track points that do not correspond to
@@ -289,11 +288,11 @@ def get_random_mass(numPoints, massRangeParams):
             spin1z_nsbh = spin1z_not_bbh[mask_nsbh]
             spin2z_nsbh = spin2z_not_bbh[mask_nsbh]
             #    [Store etas of all NSBHs]
-            _, eta_nsbh = pnutils.mass1_mass2_to_mtotal_eta(mass1_nsbh, mass2_nsbh)
+            eta_nsbh = conversions.eta_from_mass1_mass2(mass1_nsbh, mass2_nsbh)
             #    [mask_bright_nsbh will identify NSBH systems with high enough
             #     threshold mass]
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
-            if len(eta_nsbh) != 0:
+            if eta_nsbh.size != 0:
                 remnant = remnant_masses(eta_nsbh, mass2_nsbh, ns_sequence,
                                          spin1z_nsbh, 0.,
                                          massRangeParams.remnant_mass_threshold)
