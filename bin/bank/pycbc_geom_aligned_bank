@@ -205,7 +205,7 @@ parser.add_argument("--map-filename", type=str, default=None,
                          "sub-workflow will cause pycbc_submit_dax to not "
                          "work.")
 parser.add_argument("--transformation-catalog-filename", type=str, default=None,
-                    help="FIXME: see workflow/core.py - may go away soon")
+                    help="See workflow/core.py")
 parser.add_argument("--intermediate-data-file", type=str, required=True,
                     help="The HDF file to be used to store data to pass down "
                     "to the various worker jobs.")

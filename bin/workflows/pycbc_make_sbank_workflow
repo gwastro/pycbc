@@ -190,7 +190,7 @@ parser.add_argument("--map-filename", type=str, default=None,
                          "sub-workflow will cause pycbc_submit_dax to not "
                          "work.")
 parser.add_argument("--transformation-catalog-filename", type=str, default=None,
-                    help="FIXME: see workflow/core.py - may go away soon")
+                    help="See workflow/core.py")
 parser.add_argument("--is-sub-workflow", default=False, action="store_true",
                     help="Only give this option if this code is being run "
                     "as a sub-workflow within pegasus. If this means nothing "
