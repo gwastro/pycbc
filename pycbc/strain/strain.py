@@ -726,12 +726,14 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                          "before injecting into the data.")
 
     data_reading_group_multi.add_argument('--injection-f-ref', type=float,
-                                    help='Reference frequency in Hz for '
-                                         'creating CBC injections from an XML '
-                                         'file.')
+                               action=MultiDetOptionAction, metavar='IFO:VALUE'
+                               help='Reference frequency in Hz for '
+                                    'creating CBC injections from an XML '
+                                    'file.')
     data_reading_group_multi.add_argument('--injection-f-final', type=float,
-                                    help='Override the f_final field of a CBC '
-                                         'XML injection file.')
+                               action=MultiDetOptionAction, metavar='IFO:VALUE'
+                               help='Override the f_final field of a CBC '
+                                    'XML injection file.')
 
     # Gating options
     data_reading_group_multi.add_argument("--gating-file", nargs="+",
