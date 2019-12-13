@@ -822,7 +822,7 @@ class Workflow(pegasus_workflow.Workflow):
         """
         cp = self.cp if cp is None else cp
         ini_file_path = os.path.join(output_dir, fname)
-        with open(ini_file_path, "wb") as fp:
+        with open(ini_file_path, "w") as fp:
             cp.write(fp)
         ini_file = FileList([File(self.ifos, "",
                                   self.analysis_time,
