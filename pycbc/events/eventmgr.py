@@ -541,7 +541,7 @@ class EventManager(object):
         unix_epoch_time = int(time.time())
 
         time_ratio = float(self.analysis_time) / float(self.run_time)
-        templates_per_core = float(self.ntemplates) / float(self.ncore)
+        templates_per_core = float(self.ntemplates) / float(self.ncores)
         templates_per_core *= float(time_ratio)
         filters_per_core = float(self.nfilters) / float(self.ncores)
         filter_rate_per_core = filters_per_core / float(self.run_time)
