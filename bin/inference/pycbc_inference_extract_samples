@@ -146,6 +146,14 @@ for fp in fps:
 # store what parameters were renamed
 out.attrs['remapped_params'] = list(labels.items())
 
+# FIXME: remove this
+# add the detectors that were analyzed
+try:
+    analyzed_detectors = sorted(fps[0]['data'].keys())
+    out.attrs['analyzed_detectors'] = analyzed_detectors
+except KeyError:
+    pass
+
 # write the other groups
 if len(opts.input_file) == 1:
     fp = fps[0]
