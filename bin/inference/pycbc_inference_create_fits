@@ -1,0 +1,40 @@
+#! /usr/bin/env python
+
+import os
+import numpy
+import argparse
+import subprocess
+
+from pycbc.inference import io
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--input-file', required=True)
+parser.add_argument('--output-file', required=True,
+                    help='must end in ".fits"')
+parser.add_argument('--maxpts', type=int)
+
+opts = parser.parse_args()
+
+fp = io.loadfile(opts.input_file, 'r')
+samples = fp.read_samples(['ra', 'dec', 'distance', 'tc'])
+fp.close()
+
+out = numpy.zeros((samples.size, 4))
+out[:, 0] = samples['ra']
+out[:, 1] = samples['dec']
+out[:, 2] = samples['distance']
+out[:, 3] = samples['tc']
+basename = opts.output_file.replace('.fits', '')
+txtfile = '{}.dat'.format(basename)
+numpy.savetxt(txtfile, out, header='ra dec distance time')
+
+if opts.maxpts is not None:
+    maxptsarg = '--maxpts {} '.format(opts.maxpts)
+else:
+    maxptsarg = ' '
+cmd = 'ligo-skymap-from-samples {}{} --fitsoutname {}'.format(
+    maxptsarg, txtfile, opts.output_file)
+ret = subprocess.run(cmd.split())
+os.remove(txtfile)
+ret.check_returncode()
+os.remove('skypost.obj')
