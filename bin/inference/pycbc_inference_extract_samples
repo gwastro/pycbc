@@ -39,6 +39,7 @@ import numpy
 import pycbc
 from pycbc.inference.io import (ResultsArgumentParser, results_from_cli,
                                 PosteriorFile, loadfile)
+from pycbc.inference.io.base_hdf import format_attr
 
 
 def isthesame(current_val, val):
@@ -106,6 +107,7 @@ out.write_samples(samples)
 # Preserve samples group metadata
 for fp in fps:
     for key, val in fp[fp.samples_group].attrs.items():
+        val = format_attr(val)
         try:
             current_val = out[out.samples_group].attrs[key]
         except KeyError:
@@ -130,14 +132,18 @@ skip_attrs = ['filetype', 'thin_start', 'thin_interval', 'thin_end',
 if len(opts.input_file) > 1:
     skip_attrs += ['log_evidence', 'dlog_evidence']
 for fp in fps:
-    for key in fp.attrs:
+    for key in map(format_attr, fp.attrs):
         if key not in skip_attrs:
-            val = fp.attrs[key]
+            val = format_attr(fp.attrs[key])
             try:
-                current_val = out.attrs[key]
+                current_val = format_attr(out.attrs[key])
             except KeyError:
                 out.attrs[key] = val
-                current_val = out.attrs[key]
+                #try:
+                #    out.attrs[key] = val
+                #except TypeError:
+                #    out.attrs[key] = val.astype(numpy.string_)
+                current_val = format_attr(out.attrs[key])
             if not isthesame(current_val, val):
                 raise ValueError("cannot combine all files; file attr {} is "
                                  "not the same across all files ({} vs {})"

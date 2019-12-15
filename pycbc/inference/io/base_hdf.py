@@ -41,6 +41,30 @@ from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
 
 
+class _Attrs(object):
+    def __init__(self, fp):
+        self.fp = fp
+
+    def __getitem__(self, item):
+        val = super(BaseInferenceFile, self.fp).attrs[item]
+        print('here, woo')
+        try:
+            val = str(val.decode())
+        except AttributeError:
+            pass
+        #if isinstance(val, numpy.ndarray) and val.dtyp
+        return val
+
+def format_attr(val):
+    try:
+        val = str(val.decode())
+    except AttributeError:
+        pass
+    if isinstance(val, numpy.ndarray) and val.dtype.type == numpy.bytes_:
+        val = val.astype(numpy.unicode_).tolist()
+    return val
+
+
 @add_metaclass(ABCMeta)
 class BaseInferenceFile(h5py.File):
     """Base class for all inference hdf files.
@@ -74,6 +98,10 @@ class BaseInferenceFile(h5py.File):
                 self.attrs['filetype'] = filetype
             else:
                 filetype = None
+        try:
+            filetype = str(filetype.decode())
+        except AttributeError:
+            pass
         if filetype != self.name:
             raise ValueError("This file has filetype {}, whereas this class "
                              "is named {}. This indicates that the file was "
@@ -176,7 +204,7 @@ class BaseInferenceFile(h5py.File):
         addatrs = (list(self.static_params.items()) +
                    list(self[self.samples_group].attrs.items()))
         for (p, val) in addatrs:
-            setattr(samples, p, val)
+            setattr(samples, format_attr(p), format_attr(val))
         return samples
 
     @abstractmethod
