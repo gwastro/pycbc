@@ -37,4 +37,7 @@ cmd = 'ligo-skymap-from-samples {}{} --fitsoutname {}'.format(
 ret = subprocess.run(cmd.split())
 os.remove(txtfile)
 ret.check_returncode()
-os.remove('skypost.obj')
+try:
+    os.remove('skypost.obj')
+except:
+    pass
