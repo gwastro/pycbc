@@ -229,6 +229,93 @@ def create_posterior_files(workflow, samples_files, output_dir,
     return node.output_files
 
 
+def create_fits_file(workflow, inference_file, output_dir,
+                      name="create_fits_file",
+                      analysis_seg=None, tags=None):
+    """Sets up job to create fits files from some given samples files.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The workflow instance we are populating
+    inference_file: pycbc.workflow.File
+        The file with posterior samples.
+    output_dir: str
+        The directory to store result plots and files.
+    name: str
+        The name in the [executables] section of the configuration file
+        to use.
+    analysis_segs: {None, ligo.segments.Segment}
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: list, optional
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of result and output files.
+    """
+    if analysis_seg is None:
+        analysis_seg = workflow.analysis_time
+    if tags is None:
+        tags = []
+    create_fits_exe = Executable(workflow.cp, name,
+                                 ifos=workflow.ifos,
+                                 out_dir=output_dir)
+    node = create_fits_exe.create_node()
+    node.add_input_opt("--input-file", inference_file)
+    node.new_output_file_opt(analysis_seg, ".fits", "--output-file", tags=tags)
+    # add node to workflow
+    workflow += node
+    return node.output_files
+
+
+def make_inference_skymap(workflow, fits_file, output_dir,
+                          name="inference_skymap", analysis_seg=None,
+                          tags=None):
+    """Sets up the skymap plot.
+
+    Parameters
+    ----------
+    workflow: pycbc.workflow.Workflow
+        The core workflow instance we are populating
+    fits_file: pycbc.workflow.File
+        The fits file with the sky location.
+    output_dir: str
+        The directory to store result plots and files.
+    name: str
+        The name in the [executables] section of the configuration file
+        to use.
+    analysis_segs: {None, ligo.segments.Segment}
+       The segment this job encompasses. If None then use the total analysis
+       time from the workflow.
+    tags: {None, optional}
+        Tags to add to the inference executables.
+
+    Returns
+    -------
+    pycbc.workflow.FileList
+        A list of result and output files.
+    """
+    # default values
+    tags = [] if tags is None else tags
+    analysis_seg = workflow.analysis_time \
+                       if analysis_seg is None else analysis_seg
+    # make the directory that will contain the output files
+    makedir(output_dir)
+    # make a node for plotting the posterior as a corner plot
+    node = PlotExecutable(workflow.cp, name, ifos=workflow.ifos,
+                          out_dir=output_dir,
+                          tags=tags).create_node()
+    # add command line options
+    node.add_input_opt("--input-file", fits_file)
+    node.new_output_file_opt(analysis_seg, ".png", "--output-file")
+    # add node to workflow
+    workflow += node
+    return node.output_files
+
+
 def make_inference_summary_table(workflow, inference_file, output_dir,
                     result_label=None,
                     parameters=None, name="inference_table",

@@ -81,8 +81,8 @@ def load_samples_cache(samples_cache):
                 continue
             line = line.replace('\n', '')
             lbl, cfs, smps = line.split(',')
-            cfs = map(os.path.abspath, cfs.strip().split())
-            smps = map(os.path.abspath, smps.strip().split())
+            cfs = list(map(os.path.abspath, cfs.strip().split()))
+            smps = list(map(os.path.abspath, smps.strip().split()))
             labels.append(lbl.strip())
             config_files.append(cfs)
             samples_files.append(smps)
@@ -210,6 +210,10 @@ finalize_workflow = core.Workflow(opts, opts.workflow_name + "-finalization")
 origdir = os.path.abspath(os.curdir)
 os.chdir(opts.output_dir)
 
+# figure out if we are making a skymap
+make_skymap = ("create_fits_file" in workflow.cp.options("executables") and
+               "inference_skymap" in workflow.cp.options("executables"))
+
 # figure out what diagnostic jobs there are
 diagnostics = []
 if "inference_samples" in workflow.cp.options("executables"):
@@ -257,13 +261,14 @@ plot_params = get_plot_group(workflow.cp, 'plot_parameters')
 # get parameters for the summary tables
 table_params = workflow.cp.get_opt_tag('workflow', 'table-parameters',
                                        'summary_table')
-summary_page = []
 psd_page = []
 config_files = {}
 for num_event, samples_filelist in enumerate(samples_files):
+    summary_page = []
     label = elabels[num_event]
     if label is None:
         label = 'Event {}'.format(num_event)
+    summary_label = label
     label = label.replace(' ', '_').replace(':', '_').replace('+', '_')
 
     config_fnames = infconfig_files[num_event]
@@ -299,7 +304,7 @@ for num_event, samples_filelist in enumerate(samples_files):
         workflow, posterior_file, rdir.base,
         parameters=table_params,
         analysis_seg=analysis_index,
-        result_label=label,
+        #result_label=label,
         tags=opts.tags+[label]),)
 
     # summary posteriors
@@ -310,8 +315,22 @@ for num_event, samples_filelist in enumerate(samples_files):
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_index,
             tags=opts.tags+[label, group])
+
+    # sky map
+    if make_skymap:
+        # create the fits file
+        fits_file = inffu.create_fits_file(
+            workflow, posterior_file, rdir.base,
+            analysis_seg=analysis_index,
+            tags=opts.tags+[label])[0]
+        # now plot the skymap
+        skymap_plot = inffu.make_inference_skymap(
+            workflow, fits_file, rdir.base,
+            analysis_seg=analysis_index,
+            tags=opts.tags+[label])
+        summary_plots += skymap_plot
+
     summary_page += list(layout.grouper(summary_plots, 2))
-    
 
     # files for detector_sensitivity summary subsection
     base = "detector_sensitivity"
@@ -363,8 +382,11 @@ for num_event, samples_filelist in enumerate(samples_files):
                 tags=opts.tags+[label, str(kk)])
         layout.single_layout(rdir[base], acceptance_plot)
 
-# build the summary page
-layout.two_column_layout(rdir.base, summary_page)
+    # build the summary page
+    zpad = int(numpy.ceil(numpy.log10(len(samples_files))))
+    layout.two_column_layout(rdir.base, summary_page,
+                             unique=str(num_event).zfill(zpad),
+                             title=summary_label, collapse=True)
 
 # build the psd page
 layout.group_layout(rdir['detector_sensitivity'], psd_page)
