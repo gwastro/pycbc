@@ -125,6 +125,8 @@ if opts.plot_prior is not None:
     prior = option_utils.prior_from_config(cp)
     logging.info("Drawing samples from prior")
     prior_samples = prior.rvs(opts.prior_nsamples)
+    # we'll just use the first file for metadata
+    fp = fps[0]
     # add the static params
     for param in fp.attrs['static_params']:
         setattr(prior_samples, param, fp.attrs[param])
@@ -134,7 +136,7 @@ if opts.plot_prior is not None:
         for func, param in fp.attrs['remapped_params']:
             try:
                 remapped_params[param] = prior_samples[func]
-            except NameError:
+            except (NameError, TypeError):
                 continue
         prior_samples = FieldArray.from_kwargs(**remapped_params)
         for param in fp.attrs['static_params']:
@@ -162,7 +164,7 @@ if opts.plot_injection_parameters:
         # check that all of the injections are the same
         try:
             vals = injections[p]
-        except NameError:
+        except (NameError, TypeError):
             # injection doesn't have this parameter, skip
             logging.warn("Could not find injection parameter {}".format(p))
             continue
