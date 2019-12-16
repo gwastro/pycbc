@@ -312,6 +312,7 @@ for num_event, samples_filelist in enumerate(samples_files):
     for group, params in summary_plot_params.items():
         summary_plots += inffu.make_inference_posterior_plot(
             workflow, posterior_file, rdir.base,
+            name='inference_posterior_summary',
             parameters=params, plot_prior_from_file=config_file,
             analysis_seg=analysis_index,
             tags=opts.tags+[label, group])
