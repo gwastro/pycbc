@@ -109,7 +109,7 @@ class LiveSingle(object):
 
         if nsnr > self.thresholds['newsnr'] and \
                 dur > self.thresholds['duration'] and \
-                rchisq < self.threshold['reduced_chisq']:
+                rchisq < self.thresholds['reduced_chisq']:
 
             fake_coinc = {'foreground/%s/%s' % (self.ifo, k):
                           cutall_trigs[k][i] for k in trigs}
