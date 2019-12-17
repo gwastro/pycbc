@@ -1,6 +1,5 @@
 """ utilities for assigning FAR to single detector triggers
 """
-import sys
 import h5py
 import numpy as np
 from pycbc.events import ranking, trigger_fits as fits
@@ -14,21 +13,21 @@ class LiveSingle(object):
                  reduced_chisq_threshold=5,
                  duration_threshold=0,
                  fit_bins=None,
-                 fit_coeffs= None,
+                 fit_coeffs=None,
                  fit_rates=None,
                  fixed_ifar=None,
                  fit_thresh=None):
         self.ifo = ifo
         self.thresholds = {
-            "newsnr"           : newsnr_threshold,
-            "reduced_chisq"    : reduced_chisq_threshold,
-            "duration"         : duration_threshold}
+            "newsnr": newsnr_threshold,
+            "reduced_chisq": reduced_chisq_threshold,
+            "duration": duration_threshold}
         self.fit_info = {
-            "fixed_ifar" : fixed_ifar,
-            "bins"       : fit_bins,
-            "rates"      : fit_rates,
-            "coeffs"     : fit_coeffs,
-            "thresh"     : fit_thresh}
+            "fixed_ifar": fixed_ifar,
+            "bins": fit_bins,
+            "rates": fit_rates,
+            "coeffs": fit_coeffs,
+            "thresh": fit_thresh}
 
     @staticmethod
     def insert_args(parser):
@@ -43,13 +42,15 @@ class LiveSingle(object):
                                  "coefficients and counts for specific "
                                  "single trigger IFAR fitting.")
         parser.add_argument('--sngl-ifar-est-dist', nargs='+',
-                            default='conservative', action=MultiDetOptionAction)
+                            default='conservative',
+                            action=MultiDetOptionAction)
         parser.add_argument('--single-duration-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
 
     @classmethod
     def from_cli(cls, args, ifo):
-        if args.sngl_ifar_est_dist[ifo] not in ['conservative', 'mean', 'fixed']:
+        if args.sngl_ifar_est_dist[ifo] not in \
+                ['conservative', 'mean', 'fixed']:
             raise NotImplementedError("Single fitting distribution must be "
                                       "conservative, mean or fixed")
         if args.sngl_ifar_est_dist[ifo] == "fixed":
@@ -85,7 +86,8 @@ class LiveSingle(object):
             return None
 
         # Apply cuts to trigs before clustering
-        valid_idx = (trigs['template_duration'] > self.thresholds['duration']) & \
+        valid_idx = (trigs['template_duration'] >
+                     self.thresholds['duration']) & \
                     (trigs['chisq'] < self.thresholds['reduced_chisq'])
         if not np.any(valid_idx):
             return None
