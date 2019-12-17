@@ -162,12 +162,6 @@ parser.add_argument("--samples-file-cache", required=True,
                          "file used, and the samples "
                          "file(s) to create posteriors for."
                     )
-#parser.add_argument("--posterior-files", metavar="FILE[:LABEL]", nargs="+",
-#                    required=True,
-#                    help="Posterior files to create plots for.")
-#parser.add_argument("--config-files", metavar="FILE:CONFIG", nargs="+",
-#                    help="Specify the config files used for each file. Needed "
-#                         "for plotting priors.")
 # add option groups
 configuration.add_workflow_command_line_group(parser)
 
