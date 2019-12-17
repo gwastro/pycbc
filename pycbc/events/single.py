@@ -11,7 +11,7 @@ from pycbc import bin_utils
 class LiveSingle(object):
     def __init__(self, ifo,
                  newsnr_threshold=10.0,
-                 reduced_chisq_threshold=5,
+                  reduced_chisq_threshold=5,
                  duration_threshold=0,
                  fit_file=None,
                  sngl_ifo_est_dist='conservative',
@@ -24,12 +24,8 @@ class LiveSingle(object):
         self.reduced_chisq_threshold = reduced_chisq_threshold
         self.duration_threshold = duration_threshold
         self.sngl_ifo_est_dist = sngl_ifo_est_dist
-        self.fit_group = fit_file[ifo + '/' + sngl_ifo_est_dist]
-        self.fit_live_time = fit_file[ifo].attrs['live_time']
-        self.fit_threshold = fit_file.attrs['fit_threshold']
+        self.fit_file = fit_file
         self.fixed_ifar = fixed_ifar
-        dur_bin_edges = fit_file['bins_edges'][:]
-        self.duration_bins = bin_utils.IrregularBins(dur_bin_edges)
 
     @staticmethod
     def insert_args(parser):
@@ -73,7 +69,7 @@ class LiveSingle(object):
 
         # Apply cuts to trigs before clustering
         valid_idx = (trigs['template_duration'] > self.duration_threshold) & \
-                       (trigs['chisq'] < self.reduced_chisq_threshold)
+                    (trigs['chisq'] < self.reduced_chisq_threshold)
         if not np.count_nonzero(valid_idx):
             return None
         cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
@@ -83,9 +79,9 @@ class LiveSingle(object):
         if not np.count_nonzero(nsnr_idx):
             return None
         cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
-                           for k in trigs}
+                        for k in trigs}
 
-        #i 'cluster' by taking the maximal newsnr value over the trigger set
+        # 'cluster' by taking the maximal newsnr value over the trigger set
         i = nsnr_all[nsnr_idx].argmax()
 
         # This uses the pycbc live convention of chisq always meaning the
@@ -109,9 +105,14 @@ class LiveSingle(object):
     def calculate_ifar(self, newsnr, duration):
         if self.sngl_ifo_est_dist == 'fixed':
             return self.fixed_ifar
-        dur_bin = self.duration_bins[duration]
-        count = self.fit_group['counts'][dur_bin]
-        coeff = self.fit_group['fit_coeff'][dur_bin]
+        dur_bin_edges = self.fit_file['bins_edges'][:]
+        duration_bins = bin_utils.IrregularBins(dur_bin_edges)
+        dur_bin = duration_bins[duration]
+        dist_grp = self.fit_file[self.ifo + '/' + self.sngl_ifo_est_dist]
+        count = dist_grp['counts'][dur_bin]
+        coeff = dist_grp['fit_coeff'][dur_bin]
+        fit_live_time = self.fit_file[self.ifo].attrs['live_time']
+        fit_thresh = self.fit_file.attrs['fit_threshold']
         n_louder = count * fits.cum_fit('exponential', [newsnr],
-                                        coeff, self.fit_threshold)[0]
-        return conv.sec_to_year(self.fit_live_time / n_louder)
+                                        coeff, fit_thresh)[0]
+        return conv.sec_to_year(fit_live_time / n_louder)
