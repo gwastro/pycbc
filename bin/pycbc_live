@@ -309,30 +309,33 @@ class LiveEventManager(object):
 
     def check_singles(self, results, data_reader, psds, f_low):
         active = [k for k in results if results[k] != None]
-        if len(active) != 0:# == 1:
-            for ifo in active:
-                single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
+        for ifo in active:
+            single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
 
-                if single is not None:
-                    fud = self.compute_followup_data([ifo], single, data_reader,
-                                                     bank, [])
-                    event = SingleCoincForGraceDB([ifo], single, bank=bank,
-                                                  psds=psds, followup_data=fud,
-                                                  low_frequency_cutoff=f_low,
-                                                  channel_names=args.channel_name)
+            if single is None:
+                continue
+            fud = self.compute_followup_data([ifo], single, data_reader,
+                                             bank, [])
+            event = SingleCoincForGraceDB([ifo], single, bank=bank,
+                                          psds=psds, followup_data=fud,
+                                          low_frequency_cutoff=f_low,
+                                          channel_names=args.channel_name)
 
-                    end_time = int(single['foreground/%s/end_time' % ifo])
-                    fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
-                    fname = os.path.join(self.path, fname)
-                    logging.info('Single-detector candidate! Saving as %s',
-                                 fname)
-                    ifar = single['foreground/ifar']
-                    if args.enable_single_detector_upload \
-                            and self.ifar_upload_threshold < ifar:
-                        event.upload(fname, gracedb_server=args.gracedb_server,
-                                     testing=self.gracedb_testing)
-                    else:
-                        event.save(fname)
+            end_time = int(single['foreground/%s/end_time' % ifo])
+            fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
+            fname = os.path.join(self.path, fname)
+            logging.info('Single-detector candidate! Saving as %s',
+                         fname)
+            ifar = single['foreground/ifar']
+            # apply a trails factor of the number of active detectors
+            ifar /= len(active)
+            single['foreground/ifar'] = ifar
+            if args.enable_single_detector_upload \
+                    and self.ifar_upload_threshold < ifar:
+                event.upload(fname, gracedb_server=args.gracedb_server,
+                             testing=self.gracedb_testing)
+            else:
+                event.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
              store_loudest_index=False, raw_results=None, gates=None):
@@ -508,9 +511,6 @@ parser.add_argument('--enable-profiling', type=int, metavar='RANK',
                          ' with given rank at the end of program execution')
 
 parser.add_argument('--enable-background-estimation', default=False, action='store_true')
-parser.add_argument('--conservative-sngl-ifar-est', default=True, action='store_true',
-                    help='Use conservative trigger fit values in estimation of '
-                         'single trigger ifars. Default=True')
 parser.add_argument('--ifar-upload-threshold', type=float, required=True,
                     help='Inverse-FAR threshold for uploading coincident '
                          'triggers to GraceDB, in years.')
