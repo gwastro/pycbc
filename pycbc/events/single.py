@@ -1,6 +1,5 @@
 """ utilities for assigning FAR to single detector triggers
 """
-import logging
 import sys
 import h5py
 import numpy as np
@@ -65,41 +64,42 @@ class LiveSingle(object):
            fixed_ifar=args.single_fixed_ifar
            )
 
-    def check(self, triggers, data_reader):
+    def check(self, trigs, data_reader):
         """ Look for a single detector trigger that passes the thresholds in
         the current data.
         """
-        if len(triggers['snr']) == 0:
+        if len(trigs['snr']) == 0:
             return None
 
-        # Apply cuts to triggers before clustering
-        valid_idx = (triggers['template_duration'] > self.duration_threshold) & \
-                        (triggers['chisq'] < self.reduced_chisq_threshold)
+        # Apply cuts to trigs before clustering
+        valid_idx = (trigs['template_duration'] > self.duration_threshold) & \
+                       (trigs['chisq'] < self.reduced_chisq_threshold)
         if not np.count_nonzero(valid_idx):
             return None
-        cutdurchi_triggers = {k: triggers[k][valid_idx] for k in triggers}
-        nsnr_all = ranking.newsnr(cutdurchi_triggers['snr'],
-                                  cutdurchi_triggers['chisq'])
+        cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
+        nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
+                                  cutdurchi_trigs['chisq'])
         nsnr_idx = nsnr_all > self.newsnr_threshold
         if not np.count_nonzero(nsnr_idx):
             return None
-        cutall_triggers = {k: cutdurchi_triggers[k][nsnr_idx] for k in triggers}
+        cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
+                           for k in trigs}
 
-        #'cluster' by taking the maximal newsnr value over the trigger set
+        #i 'cluster' by taking the maximal newsnr value over the trigger set
         i = nsnr_all[nsnr_idx].argmax()
 
         # This uses the pycbc live convention of chisq always meaning the
         # reduced chisq.
-        rchisq = cutall_triggers['chisq'][i]
-        nsnr = ranking.newsnr(cutall_triggers['snr'][i], rchisq)
-        dur = cutall_triggers['template_duration'][i]
+        rchisq = cutall_trigs['chisq'][i]
+        nsnr = ranking.newsnr(cutall_trigs['snr'][i], rchisq)
+        dur = cutall_trigs['template_duration'][i]
 
         if nsnr > self.newsnr_threshold and \
                 dur > self.duration_threshold and \
                 rchisq < self.reduced_chisq_threshold:
-            
-            fake_coinc = {'foreground/%s/%s' % (self.ifo, k): cutall_triggers[k][i]
-                          for k in triggers}
+
+            fake_coinc = {'foreground/%s/%s' % (self.ifo, k):
+                          cutall_trigs[k][i] for k in trigs}
             fake_coinc['foreground/stat'] = nsnr
             fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr, dur)
             fake_coinc['HWINJ'] = data_reader.near_hwinj()
