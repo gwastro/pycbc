@@ -255,6 +255,13 @@ plot_params = get_plot_group(workflow.cp, 'plot_parameters')
 # get parameters for the summary tables
 table_params = workflow.cp.get_opt_tag('workflow', 'table-parameters',
                                        'summary_table')
+# get any metadata that should be printed
+if workflow.cp.has_option('workflow-summary_table', 'print-metadata'):
+    table_metadata = workflow.cp.get_opt_tag('workflow', 'print-metadata',
+                                             'summary_table')
+else:
+    table_metadata = None
+
 psd_page = []
 config_files = {}
 for num_event, samples_filelist in enumerate(samples_files):
@@ -296,7 +303,7 @@ for num_event, samples_filelist in enumerate(samples_files):
     # summary table
     summary_page += (inffu.make_inference_summary_table(
         workflow, posterior_file, rdir.base,
-        parameters=table_params,
+        parameters=table_params, print_metadata=table_metadata,
         analysis_seg=analysis_index,
         tags=opts.tags+[label]),)
 
