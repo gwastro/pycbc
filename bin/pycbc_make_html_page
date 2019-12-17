@@ -157,6 +157,8 @@ class File():
 
         return setup_template_render(self.path, self.config_path)
 
+default_logo_location = pycbc.results.__path__[0] + '/static/logo.png'
+
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
 [--options]',
@@ -176,7 +178,7 @@ parser.add_argument('-s', '--analysis-subtitle', type=str,
                   help='Subtitle to include at the top of each page.',
                   default="")
 parser.add_argument('-l', '--logo', type=str,
-                  default="https://avatars2.githubusercontent.com/u/11262917?s=200&v=4",
+                  default=default_logo_location,
                   help='File location of logo to include at top of page')
 parser.add_argument('-v', '--verbose', action='store_true',
                   help='Print extra debugging information.', default=False)
@@ -237,8 +239,11 @@ for cwd in dirs:
         if not cwd.path == "":
             print("CWD path: " + cwd.path)
             cwd_logo_loc = opts.output_path + cwd.path + '/logo.' + logo_ext
-            os.unlink(cwd_logo_loc)
-            os.symlink(logo_loc, cwd_logo_loc)
+            try:
+                os.symlink(logo_loc, cwd_logo_loc)
+            except OSError:
+                os.unlink(cwd_logo_loc)
+                os.symlink(logo_loc, cwd_logo_loc)
         context['logo'] = 'logo.' + logo_ext
     else:
         context['logo'] = opts.logo
