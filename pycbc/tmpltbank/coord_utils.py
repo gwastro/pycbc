@@ -258,7 +258,7 @@ def get_random_mass(numPoints, massRangeParams):
             # Now proceed with cutting out EM dim systems
             # Use a logical mask to track points that do not correspond to
             # BBHs. The remaining points will be BNSs and NSBHs.
-            # Further down EM-dim NSBHs will also be removed.
+            # Further down, EM-dim NSBHs will also be removed.
             mask_not_bbh = numpy.zeros(len(mass1), dtype=bool)
 
             # Keep a point if:
@@ -294,8 +294,7 @@ def get_random_mass(numPoints, massRangeParams):
             mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
             if eta_nsbh.size != 0:
                 remnant = remnant_masses(eta_nsbh, mass2_nsbh, ns_sequence,
-                                         spin1z_nsbh, 0.,
-                                         massRangeParams.remnant_mass_threshold)
+                                         spin1z_nsbh, 0.)
                 mask_bright_nsbh[remnant
                                  >
                                  massRangeParams.remnant_mass_threshold] = True

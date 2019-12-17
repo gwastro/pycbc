@@ -25,8 +25,8 @@ import logging
 import sys
 
 ##############################################################################
-# Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz formalism  #
-# [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].                          #
+# Innermost Stable Spherical Orbit (ISSO) solver in the Perez-Giz (PG)       #
+# formalism [see Stone, Loeb, Berger, PRD 87, 084053 (2013)].                #
 ##############################################################################
 
 # Equation that determines the ISCO radius (in BH mass units)
@@ -216,10 +216,10 @@ def load_ns_sequence(eos_name):
         ns_sequence_path = os.path.join(pycbc.tmpltbank.NS_SEQUENCE_FILE_DIRECTORY, 'equil_2H.dat')
         ns_sequence = np.loadtxt(ns_sequence_path)
     else:
-        warn_msg = "Only the 2H EOS is currently supported."
-        warn_msg += "If you plan to use a different NS EOS,"
-        warn_msg += "be sure not to filter too many templates!\n"
-        logging.error(warn_msg)
+        err_msg = "Only the 2H EOS is currently supported."
+        err_msg += "If you plan to use a different NS EOS,"
+        err_msg += "be sure not to filter too many templates!\n"
+        logging.error(err_msg)
         sys.exit(1)
         raise Exception('Unsupported EOS!')
 
@@ -288,18 +288,15 @@ def ns_g_mass_to_ns_compactness(ns_g_mass, ns_sequence):
 
 ##############################################################################
 # NS-BH merger remnant mass [Foucart, Hinderer, Nissanke PRD 98, 081501(R)   #
-#                            (2018)].                                        #
+# (2018)].                                                                   #
 #                                                                            #
 # * THIS ASSUMES THE NS SPIN IS 0 (the user is warned about this).           #
 # * Physical parameters passed to remnant_mass (see sanity checks below)     #
-#   must not be                                                              #
-#   unphysical.                                                              #
-# * Tilted BH spin cases are handled by identifying rISCO(chi_eff) with      #
-#   rISSO(chi,incl)                                                          #
-#   (without any need to solve for chi_eff).  This approximation was         #
-#   suggested in                                                             #
-#   Stone, Loeb, Berger, PRD 87, 084053 (2013) for the previous NS-BH        #
-#   remnant mass fit.                                                        #
+#   must not be unphysical.                                                  #
+# * Tilted BH spin cases are handled by using rISSO(chi,incl) where rISCO    #
+#   appears in the formula. This approximation was suggested in Stone, Loeb, #
+#   Berger, PRD 87, 084053 (2013) for the previous NS-BH remnant mass fit of #
+#   Foucart, PRD 86, 124007 (2012).                                          #
 ##############################################################################
 def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
     """
@@ -331,14 +328,14 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
 
     # Sanity checks on eta and chi
     if not (eta>0. and eta<=0.25 and abs(chi)<=1 and ns_g_mass>0):
-        warn_msg = "The BH spin magnitude must be <= 1,"
-        warn_msg += "eta must be between 0 and 0.25,"
-        warn_msg += "and the NS mass must be positive."
-        logging.error(warn_msg)
-        warn_msg = "The function remnant_mass was launched with"
-        warn_msg += "ns_mass={0}, eta={1}, chi={2},"
-        warn_msg += "inclination={3}\n'.format(ns_g_mass, eta, chi, incl)"
-        logging.info(warn_msg)
+        err_msg = "The BH spin magnitude must be <= 1,"
+        err_msg += "eta must be between 0 and 0.25,"
+        err_msg += "and the NS mass must be positive."
+        logging.error(err_msg)
+        info_msg = "The function remnant_mass was launched with"
+        info_msg += "ns_mass={0}, eta={1}, chi={2},"
+        info_msg += "inclination={3}\n'.format(ns_g_mass, eta, chi, incl)"
+        logging.info(info_msg)
         sys.exit(1)
         raise Exception('Unphysical parameters!')
 
@@ -362,9 +359,8 @@ def remnant_mass(eta, ns_g_mass, ns_sequence, chi, incl):
 
 
 #############################################################################
-# Vectorized version of remnant_mass.  Numpy v1.7 and above allows one      #
-#to list the arguments to exclude from vectorization.                       #
+# Vectorized version of remnant_mass. The third argument (NS equilibrium    #
+# sequence) is excluded from vectorisation.                                 #
 #############################################################################
 remnant_masses = np.vectorize(remnant_mass)
 remnant_masses.excluded.add(2)
-remnant_masses.excluded.add(5)
