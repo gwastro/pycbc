@@ -12,12 +12,24 @@ class LiveSingle(object):
                  newsnr_threshold=10.0,
                  reduced_chisq_threshold=5,
                  duration_threshold=0,
-                 fit_bins=None,
-                 fit_coeffs=None,
-                 fit_rates=None,
-                 fixed_ifar=None,
-                 fit_thresh=None):
+                 fit_file=None,
+                 sngl_ifar_est_dist=None,
+                 fixed_ifar=None):
         self.ifo = ifo
+        if sngl_ifar_est_dist in ["fixed", None]:
+            fit_bins = None
+            fit_rates = None
+            fit_thresh = None
+            fit_coeffs = None
+        else:
+            with h5py.File(fit_file, 'r') as fit_file:
+                bin_edges = fit_file['bins_edges'][:]
+                fit_bins = bin_utils.IrregularBins(bin_edges)
+                dist_grp = fit_file[ifo + '/' + sngl_ifar_est_dist]
+                live_time = fit_file[ifo].attrs['live_time']
+                fit_rates = dist_grp['counts'][:] / live_time
+                fit_coeffs = dist_grp['fit_coeff'][:]
+                fit_thresh = fit_file.attrs['fit_threshold']
         self.thresholds = {
             "newsnr": newsnr_threshold,
             "reduced_chisq": reduced_chisq_threshold,
@@ -35,7 +47,7 @@ class LiveSingle(object):
                             type=float, action=MultiDetOptionAction)
         parser.add_argument('--single-reduced-chisq-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
-        parser.add_argument('--single-fixed-ifar', nargs='+', default=None,
+        parser.add_argument('--single-fixed-ifar', nargs='+',
                             type=float, action=MultiDetOptionAction)
         parser.add_argument('--single-fit-file',
                             help="File which contains definitons of fit "
@@ -43,39 +55,20 @@ class LiveSingle(object):
                                  "single trigger IFAR fitting.")
         parser.add_argument('--sngl-ifar-est-dist', nargs='+',
                             default='conservative',
+                            choices=['conservative', 'mean', 'fixed'],
                             action=MultiDetOptionAction)
         parser.add_argument('--single-duration-threshold', nargs='+',
                             type=float, action=MultiDetOptionAction)
 
     @classmethod
     def from_cli(cls, args, ifo):
-        if args.sngl_ifar_est_dist[ifo] not in \
-                ['conservative', 'mean', 'fixed']:
-            raise NotImplementedError("Single fitting distribution must be "
-                                      "conservative, mean or fixed")
-        if args.sngl_ifar_est_dist[ifo] == "fixed":
-            fit_bins = None
-            fit_rates = None
-            fit_thresh = None
-            fit_coeffs = None
-        else:
-            with h5py.File(args.single_fit_file, 'r') as fit_file:
-                bin_edges = fit_file['bins_edges'][:]
-                fit_bins = bin_utils.IrregularBins(bin_edges)
-                dist_grp = fit_file[ifo + '/' + args.sngl_ifar_est_dist[ifo]]
-                live_time = fit_file[ifo].attrs['live_time']
-                fit_rates = dist_grp['counts'][:] / live_time
-                fit_coeffs = dist_grp['fit_coeff'][:]
-                fit_thresh = fit_file.attrs['fit_threshold']
         return cls(
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],
            duration_threshold=args.single_duration_threshold[ifo],
            fixed_ifar=args.single_fixed_ifar,
-           fit_bins=fit_bins,
-           fit_coeffs=fit_coeffs,
-           fit_rates=fit_rates,
-           fit_thresh=fit_thresh
+           fit_file=args.single_fit_file,
+           sngl_ifar_est_dist=args.sngl_ifar_est_dist[ifo]
            )
 
     def check(self, trigs, data_reader):

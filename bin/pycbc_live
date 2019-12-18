@@ -316,6 +316,11 @@ class LiveEventManager(object):
                 continue
             fud = self.compute_followup_data([ifo], single, data_reader,
                                              bank, [])
+            ifar = single['foreground/ifar']
+            # apply a trials factor of the number of active detectors
+            ifar /= len(active)
+            single['foreground/ifar'] = ifar
+
             event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
@@ -326,10 +331,6 @@ class LiveEventManager(object):
             fname = os.path.join(self.path, fname)
             logging.info('Single-detector candidate! Saving as %s',
                          fname)
-            ifar = single['foreground/ifar']
-            # apply a trails factor of the number of active detectors
-            ifar /= len(active)
-            single['foreground/ifar'] = ifar
             if args.enable_single_detector_upload \
                     and self.ifar_upload_threshold < ifar:
                 event.upload(fname, gracedb_server=args.gracedb_server,
