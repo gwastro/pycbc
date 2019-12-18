@@ -173,7 +173,7 @@ wf.makedir('daxes')
 ##############################################
 # Run the geom_bank workflow the first time  #
 ##############################################
-logging.info("Setting up the geometric bank jobs.")
+logging.info("Setting up the round of geometric bank jobs.")
 geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
                               ifos=workflow.ifos, out_dir='daxes')
 # This one's a bit weird as the dag generator names the final output file,
@@ -241,7 +241,7 @@ config_file = wf.File.from_path(config_path)
 # a PyGRB uberbank covers only potentially EM-bright systems and therfore
 # skips this step.
 if workflow.cp.has_section('sbank-coarse'):
-    logging.info("Setting up the (optional) first sbank jobs.")
+    logging.info("Setting up the (optional) first round of sbank jobs.")
     sbank_out_file_bbh = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                                  workflow.analysis_time, extension='.h5',
                                  store_file=True, directory=sbank_exe.out_dir,
@@ -271,7 +271,7 @@ if workflow.cp.has_section('sbank-coarse'):
 # Run the sbank workflow for the second time  #
 ###############################################
 
-logging.info("Setting up the final sbank jobs.")
+logging.info("Setting up the final round of sbank jobs.")
 sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                          workflow.analysis_time, extension='.h5',
                          store_file=True, directory='.',
@@ -279,7 +279,7 @@ sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
 
 seed_files = [geom_out_file.name]
 if workflow.cp.has_section('sbank-coarse'):
-    seed_files = [geom_out_file.name,sbank_out_file_bbh.name]
+    seed_files = [geom_out_file.name, sbank_out_file_bbh.name]
 
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                    os.path.abspath('sbank_final'),
