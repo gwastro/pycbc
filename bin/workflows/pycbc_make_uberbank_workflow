@@ -19,14 +19,15 @@
 """
 Workflow generator for the 'uberbank' template bank construction. The script
 as written runs a configurable example of pycbc_geom_aligned_bank and, if
-required to do so via the [sbank-coarse] tag, another idependent one of sbank.
-Typically, a standard uberbank uses this round of sbank to cover BBH sources,
-while a PyGRB uberbank does not require performing this step. It then combines
-these two banks together, if the BBH sbank was generated.  Finally, it runs a
-second example of sbank (tag: [sbank-final]) on the resulting output. It is
-foreseen that this script would be altered to generate workflows in slightly
-different configurations to the one described, so hopefully the script is
-clear enough to allow someone to do that.
+required to do so with an [sbank-coarse] section in the configuration file,
+another idependent one of sbank. Typically, a standard uberbank uses this
+round of sbank to cover BBH sources, while a PyGRB uberbank does not require
+performing this step. The script then combines these two banks together, if
+the BBH sbank was indeed generated.  Finally, it runs a second example of sbank
+(configuration file tag: [sbank-final]) on the resulting output. It is foreseen
+that this script would be altered to generate workflows in slightly different
+configurations to the one described, so hopefully the script is clear enough to
+allow someone to do that.
 """
 
 #imports
