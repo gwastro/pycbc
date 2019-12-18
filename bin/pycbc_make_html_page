@@ -221,9 +221,8 @@ dirs_0.sort(key=lambda x: x.title())
 
 local_logo = opts.logo[:4] != "http"
 if local_logo:
-    logo_ext = opts.logo.split(".")[-1]
-    logo_loc = opts.output_path + '/logo.' + logo_ext
-    shutil.copy2(opts.logo, logo_loc)
+    logo_filename=os.path.basename(opts.logo)
+    shutil.copy2(opts.logo, opts.output_path)
 
 # loop over all directories
 for cwd in dirs:
@@ -236,15 +235,7 @@ for cwd in dirs:
                'dot_dot_str'       : cwd.level() * '../',
                'plots_dir'         : opts.plots_dir}
     if local_logo:
-        if not cwd.path == "":
-            print("CWD path: " + cwd.path)
-            cwd_logo_loc = opts.output_path + cwd.path + '/logo.' + logo_ext
-            try:
-                os.symlink(logo_loc, cwd_logo_loc)
-            except OSError:
-                os.unlink(cwd_logo_loc)
-                os.symlink(logo_loc, cwd_logo_loc)
-        context['logo'] = 'logo.' + logo_ext
+        context['logo'] = context['dot_dot_str'] + logo_filename
     else:
         context['logo'] = opts.logo
     output = template.render(context)
@@ -280,7 +271,7 @@ context = {'analysis_title'    : analysis_title,
            'dot_dot_str'       : cwd.level() * '../',
            'plots_dir'         : opts.plots_dir}
 if local_logo:
-    context['logo'] = 'logo.' + logo_ext
+    context['logo'] = context['dot_dot_str'] + logo_filename
 else:
     context['logo'] = opts.logo
 output = template.render(context)
