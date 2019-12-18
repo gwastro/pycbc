@@ -18,9 +18,12 @@
 
 """
 Workflow generator for the 'uberbank' template bank construction. The script
-as written runs one configurable example of sbank, and one of
-pycbc_geom_aligned_bank independently. It then combines these two banks
-together and runs a second example of sbank and the resulting output. It is
+as written runs a configurable example of pycbc_geom_aligned_bank and, if
+required to do so via the [sbank-coarse] tag, another idependent one of sbank.
+Typically, a standard uberbank uses this round of sbank to cover BBH sources,
+while a PyGRB uberbank does not require performing this step. It then combines
+these two banks together, if the BBH sbank was generated.  Finally, it runs a
+second example of sbank (tag: [sbank-final]) on the resulting output. It is
 foreseen that this script would be altered to generate workflows in slightly
 different configurations to the one described, so hopefully the script is
 clear enough to allow someone to do that.
@@ -30,6 +33,7 @@ clear enough to allow someone to do that.
 from __future__ import division
 import os
 import argparse
+import logging
 from Pegasus import DAX3 as dax
 import pycbc
 import pycbc.version
@@ -168,7 +172,7 @@ wf.makedir('daxes')
 ##############################################
 # Run the geom_bank workflow the first time  #
 ##############################################
-
+logging.info("Setting up the geometric bank jobs.")
 geom_exe = GeomBankExecutable(workflow.cp, 'geom_aligned_bank',
                               ifos=workflow.ifos, out_dir='daxes')
 # This one's a bit weird as the dag generator names the final output file,
@@ -228,50 +232,58 @@ geom_dax_job = dax_job
 sbank_exe = SbankDaxGenerator(workflow.cp, 'sbank_workflow',
                               ifos=workflow.ifos, out_dir='daxes')
 
-sbank_out_file_bbh = wf.File(sbank_exe.ifo_list, sbank_exe.name,
-                             workflow.analysis_time, extension='.h5',
-                             store_file=True, directory=sbank_exe.out_dir,
-                             tags=['sbank_bbh'], use_tmp_subdirs=False)
-
 config_path = os.path.abspath('daxes' + '/' + 'sbank_workflow.ini')
 workflow.cp.write(open(config_path, 'w'))
 config_file = wf.File.from_path(config_path)
 
-sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
-                                   os.path.abspath('sbank_bbh'),
-                                   sbank_out_file_bbh,
-                                   workflow_name='sbank_bbh',
-                                   sub_wf_tags=['bbh'])
+# This first round of sbank is used for BBHs for the standard uberbank;
+# a PyGRB uberbank covers only potentially EM-bright systems and therfore
+# skips this step.
+if workflow.cp.has_section('sbank-coarse'):
+    logging.info("Setting up the (optional) first sbank jobs.")
+    sbank_out_file_bbh = wf.File(sbank_exe.ifo_list, sbank_exe.name,
+                                 workflow.analysis_time, extension='.h5',
+                                 store_file=True, directory=sbank_exe.out_dir,
+                                 tags=['sbank_bbh'], use_tmp_subdirs=False)
+    sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
+                                       os.path.abspath('sbank_bbh'),
+                                       sbank_out_file_bbh,
+                                       workflow_name='sbank_bbh',
+                                       sub_wf_tags=['bbh'])
 
-workflow += sbank_node
+    workflow += sbank_node
 
-dax_file = sbank_node.output_files[0]
-map_file = sbank_node.output_files[1]
-tc_file = sbank_node.output_files[2]
-dax_job = dax.DAX(dax_file)
-dax_job.addArguments('--basename %s' % \
-                     os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
+    dax_file = sbank_node.output_files[0]
+    map_file = sbank_node.output_files[1]
+    tc_file = sbank_node.output_files[2]
+    dax_job = dax.DAX(dax_file)
+    dax_job.addArguments('--basename %s' % \
+                         os.path.splitext(os.path.basename(dax_file.name))[0])
+    wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
 
-workflow._adag.addJob(dax_job)
-dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
-workflow._adag.addDependency(dep)
-sbank_bbh_dax_job = dax_job
+    workflow._adag.addJob(dax_job)
+    dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
+    workflow._adag.addDependency(dep)
+    sbank_bbh_dax_job = dax_job
 
 ###############################################
 # Run the sbank workflow for the second time  #
 ###############################################
 
+logging.info("Setting up the final sbank jobs.")
 sbank_out_file_final = wf.File(sbank_exe.ifo_list, sbank_exe.name,
                          workflow.analysis_time, extension='.h5',
                          store_file=True, directory='.',
                          tags=['sbank_final'], use_tmp_subdirs=False)
 
+seed_files = [geom_out_file.name]
+if workflow.cp.has_section('sbank-coarse'):
+    seed_files = [geom_out_file.name,sbank_out_file_bbh.name]
+
 sbank_node = sbank_exe.create_node(workflow.analysis_time, config_file,
                                    os.path.abspath('sbank_final'),
                                    sbank_out_file_final,
-                                   seed_files=[geom_out_file.name,
-                                               sbank_out_file_bbh.name],
+                                   seed_files=seed_files,
                                    workflow_name='sbank_final',
                                    sub_wf_tags=['final'])
 
@@ -289,8 +301,9 @@ wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
 workflow._adag.addJob(dax_job)
 dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
 workflow._adag.addDependency(dep)
-dep = dax.Dependency(parent=sbank_bbh_dax_job, child=dax_job)
-workflow._adag.addDependency(dep)
+if workflow.cp.has_section('sbank-coarse'):
+    dep = dax.Dependency(parent=sbank_bbh_dax_job, child=dax_job)
+    workflow._adag.addDependency(dep)
 dep = dax.Dependency(parent=geom_dax_job, child=dax_job)
 workflow._adag.addDependency(dep)
 
