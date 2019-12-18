@@ -76,25 +76,25 @@ class LiveSingle(object):
         the current data.
         """
         trigsremain = True
-        while trigsremain:
-            if len(trigs['snr']) == 0:
-                trigsremain = False
-                break
+        if len(trigs['snr']) == 0:
+            trigsremain = False
 
+        if trigsremain:
             # Apply cuts to trigs before clustering
             valid_idx = (trigs['template_duration'] >
                          self.thresholds['duration']) & \
                         (trigs['chisq'] < self.thresholds['reduced_chisq'])
             if not np.any(valid_idx):
                 trigsremain = False
-                break
+
+        if trigsremain:
             cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
             nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
                                       cutdurchi_trigs['chisq'])
             nsnr_idx = nsnr_all > self.thresholds['newsnr']
             if not np.any(nsnr_idx):
                 trigsremain = False
-                break
+        if trigsremain:
             cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
                             for k in trigs}
 
@@ -106,7 +106,6 @@ class LiveSingle(object):
             rchisq = cutall_trigs['chisq'][i]
             nsnr = ranking.newsnr(cutall_trigs['snr'][i], rchisq)
             dur = cutall_trigs['template_duration'][i]
-            break
 
         if trigsremain and nsnr > self.thresholds['newsnr'] and \
                 dur > self.thresholds['duration'] and \
