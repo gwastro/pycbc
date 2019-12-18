@@ -82,34 +82,40 @@ class LiveSingle(object):
         """ Look for a single detector trigger that passes the thresholds in
         the current data.
         """
-        if len(trigs['snr']) == 0:
-            return None
+        trigsremain = True
+        while trigsremain:
+            if len(trigs['snr']) == 0:
+                trigsremain = False
+                break
 
-        # Apply cuts to trigs before clustering
-        valid_idx = (trigs['template_duration'] >
-                     self.thresholds['duration']) & \
-                    (trigs['chisq'] < self.thresholds['reduced_chisq'])
-        if not np.any(valid_idx):
-            return None
-        cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
-        nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
-                                  cutdurchi_trigs['chisq'])
-        nsnr_idx = nsnr_all > self.thresholds['newsnr']
-        if not np.any(nsnr_idx):
-            return None
-        cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
-                        for k in trigs}
+            # Apply cuts to trigs before clustering
+            valid_idx = (trigs['template_duration'] >
+                         self.thresholds['duration']) & \
+                        (trigs['chisq'] < self.thresholds['reduced_chisq'])
+            if not np.any(valid_idx):
+                trigsremain = False
+                break
+            cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
+            nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
+                                      cutdurchi_trigs['chisq'])
+            nsnr_idx = nsnr_all > self.thresholds['newsnr']
+            if not np.any(nsnr_idx):
+                trigsremain = False
+                break
+            cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
+                            for k in trigs}
 
-        # 'cluster' by taking the maximal newsnr value over the trigger set
-        i = nsnr_all[nsnr_idx].argmax()
+            # 'cluster' by taking the maximal newsnr value over the trigger set
+            i = nsnr_all[nsnr_idx].argmax()
 
-        # This uses the pycbc live convention of chisq always meaning the
-        # reduced chisq.
-        rchisq = cutall_trigs['chisq'][i]
-        nsnr = ranking.newsnr(cutall_trigs['snr'][i], rchisq)
-        dur = cutall_trigs['template_duration'][i]
+            # This uses the pycbc live convention of chisq always meaning the
+            # reduced chisq.
+            rchisq = cutall_trigs['chisq'][i]
+            nsnr = ranking.newsnr(cutall_trigs['snr'][i], rchisq)
+            dur = cutall_trigs['template_duration'][i]
+            break
 
-        if nsnr > self.thresholds['newsnr'] and \
+        if trigsremain and nsnr > self.thresholds['newsnr'] and \
                 dur > self.thresholds['duration'] and \
                 rchisq < self.thresholds['reduced_chisq']:
 
@@ -118,10 +124,9 @@ class LiveSingle(object):
             fake_coinc['foreground/stat'] = nsnr
             fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr, dur)
             fake_coinc['HWINJ'] = data_reader.near_hwinj()
-            print("Single found: {}".format(fake_coinc))
-            exit()
-            return fake_coinc
-        return None
+        else:
+            fake_coinc = None
+        return fake_coinc
 
     def calculate_ifar(self, newsnr, duration):
         if self.fit_info['fixed_ifar']:
