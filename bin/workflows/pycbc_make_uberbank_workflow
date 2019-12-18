@@ -39,7 +39,7 @@ import pycbc.workflow as wf
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __version__ = pycbc.version.git_verbose_msg
 __date__    = pycbc.version.date
-__program__ = "pycbc_make_sbank_workflow"
+__program__ = "pycbc_make_uberbank_workflow"
 
 # Define classes for executables
 
@@ -79,6 +79,9 @@ class GeomBankExecutable(wf.Executable):
         node.new_output_file_opt(analysis_time, '.map',
                                  '--map-filename',
                                  tags=self.tags + ['MAP'])
+        node.new_output_file_opt(analysis_time, '.tc.txt',
+                                 '--transformation-catalog-filename',
+                                 tags=self.tags + ['TRANSFORMATION_CATALOG'])
         return node
 
 class SbankDaxGenerator(wf.Executable):
@@ -130,6 +133,10 @@ class SbankDaxGenerator(wf.Executable):
         node.new_output_file_opt(analysis_time, '.map',
                                  '--map-filename',
                                  tags=self.tags + sub_wf_tags + ['MAP'])
+        node.new_output_file_opt(analysis_time, '.tc.txt',
+                                 '--transformation-catalog-filename',
+                                 tags=self.tags + sub_wf_tags +
+                                 ['TRANSFORMATION_CATALOG'])
 
         return node
 
@@ -190,13 +197,15 @@ dax_file = geom_node.output_files[2]
 assert(dax_file.name.endswith('.dax'))
 map_file = geom_node.output_files[3]
 assert(map_file.name.endswith('.map'))
+tc_file = geom_node.output_files[4]
+assert(tc_file.name.endswith('.tc.txt'))
 
 # NOTE: One can use workflow += dax_job, but this seems to miss a bunch of
 #       the stuff done below, and does not consider file management
 dax_job = dax.DAX(dax_file)
 dax_job.addArguments('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file)
+wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
 
 # Tell the dax job that it needs some input files
 dax_job.uses(metadata_file, link=dax.Link.INPUT, register=False, transfer=True)
@@ -238,10 +247,11 @@ workflow += sbank_node
 
 dax_file = sbank_node.output_files[0]
 map_file = sbank_node.output_files[1]
+tc_file = sbank_node.output_files[2]
 dax_job = dax.DAX(dax_file)
 dax_job.addArguments('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file)
+wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
 
 workflow._adag.addJob(dax_job)
 dep = dax.Dependency(parent=sbank_node._dax_node, child=dax_job)
@@ -269,10 +279,11 @@ workflow += sbank_node
 
 dax_file = sbank_node.output_files[0]
 map_file = sbank_node.output_files[1]
+tc_file = sbank_node.output_files[2]
 dax_job = dax.DAX(dax_file)
 dax_job.addArguments('--basename %s' % \
                      os.path.splitext(os.path.basename(dax_file.name))[0])
-wf.Workflow.set_job_properties(dax_job, map_file)
+wf.Workflow.set_job_properties(dax_job, map_file, tc_file)
 
 
 workflow._adag.addJob(dax_job)
