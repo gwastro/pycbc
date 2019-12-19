@@ -157,7 +157,8 @@ class File():
 
         return setup_template_render(self.path, self.config_path)
 
-default_logo_location = pycbc.results.__path__[0] + '/static/logo.png'
+default_logo_location = "https://raw.githubusercontent.com/gwastro/" + \
+                        "pycbc-logo/master/pycbc_logo_name.png"
 
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
@@ -221,7 +222,7 @@ dirs_0.sort(key=lambda x: x.title())
 
 local_logo = opts.logo[:4] != "http"
 if local_logo:
-    logo_filename=os.path.basename(opts.logo)
+    logo_filename = os.path.basename(opts.logo)
     shutil.copy2(opts.logo, opts.output_path)
 
 # loop over all directories
