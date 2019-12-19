@@ -771,7 +771,7 @@ with ctx:
                                   psds, args.low_frequency_cutoff,
                                   data_reader, bank)
 
-            # Check for singles if we don't have coinc time
+            # Check for singles
             if args.enable_single_detector_background:
                 evnt.check_singles(results, data_reader, psds,
                                    args.low_frequency_cutoff)

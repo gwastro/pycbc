@@ -44,21 +44,41 @@ class LiveSingle(object):
     @staticmethod
     def insert_args(parser):
         parser.add_argument('--single-newsnr-threshold', nargs='+',
-                            type=float, action=MultiDetOptionAction)
+                            type=float, action=MultiDetOptionAction,
+                            help='Newsnr min threshold for single triggers. '
+                                 'Can be given as a single value or as '
+                                 'detector-value pairs, e.g. H1:6 L1:7 V1:6.5')
         parser.add_argument('--single-reduced-chisq-threshold', nargs='+',
-                            type=float, action=MultiDetOptionAction)
+                            type=float, action=MultiDetOptionAction,
+                            help='Maximum reduced chi-squared threshold for '
+                                 'single triggers. Can be given as a single '
+                                 'value or as detector-value pairs, e.g. '
+                                 'H1:2 L1:2 V1:3')
+        parser.add_argument('--single-duration-threshold', nargs='+',
+                            type=float, action=MultiDetOptionAction,
+                            help='Minimum duration threshold for single '
+                                 'triggers. Can be given as a single value '
+                                 'or as detector-value pairs, e.g. H1:6 L1:6 '
+                                 'V1:8')
         parser.add_argument('--single-fixed-ifar', nargs='+',
-                            type=float, action=MultiDetOptionAction)
+                            type=float, action=MultiDetOptionAction,
+                            help='A fixed value for IFAR, still uses cuts '
+                                 'defined by command line. Can be given as '
+                                 'a single value or as detector-value pairs, '
+                                 'e.g. H1:0.001 L1:0.001 V1:0.0005')
         parser.add_argument('--single-fit-file',
-                            help="File which contains definitons of fit "
-                                 "coefficients and counts for specific "
-                                 "single trigger IFAR fitting.")
+                            help='File which contains definitons of fit '
+                                 'coefficients and counts for specific '
+                                 'single trigger IFAR fitting.')
         parser.add_argument('--sngl-ifar-est-dist', nargs='+',
                             default='conservative',
-                            choices=['conservative', 'mean', 'fixed'],
-                            action=MultiDetOptionAction)
-        parser.add_argument('--single-duration-threshold', nargs='+',
-                            type=float, action=MultiDetOptionAction)
+                            choices=['conservative', 'mean'],
+                            action=MultiDetOptionAction,
+                            help='Which trigger distribution to use when '
+                                 'calculating IFAR of single triggers. '
+                                 'Default conservative. Can be given as '
+                                 'a single value or as detector-value pairs, '
+                                 'e.g. H1:mean L1:mean V1:conservative')
 
     @classmethod
     def from_cli(cls, args, ifo):
@@ -75,49 +95,48 @@ class LiveSingle(object):
         """ Look for a single detector trigger that passes the thresholds in
         the current data.
         """
-        trigsremain = True
+
         if len(trigs['snr']) == 0:
-            trigsremain = False
+            return None
 
-        if trigsremain:
-            # Apply cuts to trigs before clustering
-            valid_idx = (trigs['template_duration'] >
-                         self.thresholds['duration']) & \
-                        (trigs['chisq'] < self.thresholds['reduced_chisq'])
-            if not np.any(valid_idx):
-                trigsremain = False
+        # Apply cuts to trigs before clustering
+        # Cut on snr so that triggers which could not reach newsnr
+        # threshold do not have newsnr calculated
+        valid_idx = (trigs['template_duration'] >
+                     self.thresholds['duration']) & \
+                    (trigs['chisq'] <
+                     self.thresholds['reduced_chisq']) & \
+                    (trigs['snr'] >
+                     self.thresholds['newsnr'])
+        if not np.any(valid_idx):
+            return None
 
-        if trigsremain:
-            cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
-            nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
-                                      cutdurchi_trigs['chisq'])
-            nsnr_idx = nsnr_all > self.thresholds['newsnr']
-            if not np.any(nsnr_idx):
-                trigsremain = False
-        if trigsremain:
-            cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
-                            for k in trigs}
+        cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
+        nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
+                                  cutdurchi_trigs['chisq'])
+        nsnr_idx = nsnr_all > self.thresholds['newsnr']
+        if not np.any(nsnr_idx):
+            return None
 
-            # 'cluster' by taking the maximal newsnr value over the trigger set
-            i = nsnr_all[nsnr_idx].argmax()
+        cutall_trigs = {k: cutdurchi_trigs[k][nsnr_idx]
+                        for k in trigs}
 
-            # This uses the pycbc live convention of chisq always meaning the
-            # reduced chisq.
-            rchisq = cutall_trigs['chisq'][i]
-            nsnr = ranking.newsnr(cutall_trigs['snr'][i], rchisq)
-            dur = cutall_trigs['template_duration'][i]
+        # 'cluster' by taking the maximal newsnr value over the trigger set
+        i = nsnr_all[nsnr_idx].argmax()
 
-        if trigsremain and nsnr > self.thresholds['newsnr'] and \
-                dur > self.thresholds['duration'] and \
-                rchisq < self.thresholds['reduced_chisq']:
+        # This uses the pycbc live convention of chisq always meaning the
+        # reduced chisq.
+        rchisq = cutall_trigs['chisq'][i]
+        nsnr = ranking.newsnr(cutall_trigs['snr'][i], rchisq)
+        dur = cutall_trigs['template_duration'][i]
 
-            fake_coinc = {'foreground/%s/%s' % (self.ifo, k):
-                          cutall_trigs[k][i] for k in trigs}
-            fake_coinc['foreground/stat'] = nsnr
-            fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr, dur)
-            fake_coinc['HWINJ'] = data_reader.near_hwinj()
-        else:
-            fake_coinc = None
+        # create the coincidence
+        fake_coinc = {'foreground/%s/%s' % (self.ifo, k):
+                      cutall_trigs[k][i] for k in trigs}
+        fake_coinc['foreground/stat'] = nsnr
+        fake_coinc['foreground/ifar'] = self.calculate_ifar(nsnr, dur)
+        fake_coinc['HWINJ'] = data_reader.near_hwinj()
+
         return fake_coinc
 
     def calculate_ifar(self, newsnr, duration):
