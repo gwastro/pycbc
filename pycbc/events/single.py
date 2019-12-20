@@ -112,6 +112,9 @@ class LiveSingle(object):
             return None
 
         cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
+        
+        # This uses the pycbc live convention of chisq always meaning the
+        # reduced chisq.
         nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
                                   cutdurchi_trigs['chisq'])
         nsnr_idx = nsnr_all > self.thresholds['newsnr']
@@ -124,10 +127,7 @@ class LiveSingle(object):
         # 'cluster' by taking the maximal newsnr value over the trigger set
         i = nsnr_all[nsnr_idx].argmax()
 
-        # This uses the pycbc live convention of chisq always meaning the
-        # reduced chisq.
-        rchisq = cutall_trigs['chisq'][i]
-        nsnr = ranking.newsnr(cutall_trigs['snr'][i], rchisq)
+        nsnr = nsnr_all[nsnr_idx][i]
         dur = cutall_trigs['template_duration'][i]
 
         # create the coincidence
