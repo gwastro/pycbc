@@ -26,7 +26,7 @@ from pycbc.filter import followup_event_significance
 from pycbc.strain import StrainBuffer
 from pycbc.events.ranking import newsnr
 from pycbc.events.coinc import LiveCoincTimeslideBackgroundEstimator as Coincer
-from pycbc.events.single import LiveSingleFarThreshold
+from pycbc.events.single import LiveSingle
 from pycbc.io.live import SingleCoincForGraceDB
 import pycbc.waveform.bank
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
@@ -309,27 +309,34 @@ class LiveEventManager(object):
 
     def check_singles(self, results, data_reader, psds, f_low):
         active = [k for k in results if results[k] != None]
-        if len(active) == 1:
-            ifo = active[0]
+        for ifo in active:
             single = sngl_estimator[ifo].check(results[ifo], data_reader[ifo])
 
-            if single is not None:
-                fud = self.compute_followup_data([ifo], single, data_reader,
-                                                 bank, [])
-                event = SingleCoincForGraceDB([ifo], single, bank=bank,
-                                              psds=psds, followup_data=fud,
-                                              low_frequency_cutoff=f_low,
-                                              channel_names=args.channel_name)
+            if single is None:
+                continue
+            fud = self.compute_followup_data([ifo], single, data_reader,
+                                             bank, [])
+            ifar = single['foreground/ifar']
+            # apply a trials factor of the number of active detectors
+            ifar /= len(active)
+            single['foreground/ifar'] = ifar
 
-                end_time = int(single['foreground/%s/end_time' % ifo])
-                fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
-                fname = os.path.join(self.path, fname)
-                logging.info('Single-detector candidate! Saving as %s', fname)
-                if args.enable_single_detector_upload:
-                    event.upload(fname, gracedb_server=args.gracedb_server,
-                                 testing=self.gracedb_testing)
-                else:
-                    event.save(fname)
+            event = SingleCoincForGraceDB([ifo], single, bank=bank,
+                                          psds=psds, followup_data=fud,
+                                          low_frequency_cutoff=f_low,
+                                          channel_names=args.channel_name)
+
+            end_time = int(single['foreground/%s/end_time' % ifo])
+            fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
+            fname = os.path.join(self.path, fname)
+            logging.info('Single-detector candidate! Saving as %s',
+                         fname)
+            if args.enable_single_detector_upload \
+                    and self.ifar_upload_threshold < ifar:
+                event.upload(fname, gracedb_server=args.gracedb_server,
+                             testing=self.gracedb_testing)
+            else:
+                event.save(fname)
 
     def dump(self, results, name, store_psd=False, time_index=None,
              store_loudest_index=False, raw_results=None, gates=None):
@@ -542,7 +549,7 @@ parser.add_argument('--run-snr-optimization', action='store_true',
 
 
 scheme.insert_processing_option_group(parser)
-LiveSingleFarThreshold.insert_args(parser)
+LiveSingle.insert_args(parser)
 fft.insert_fft_option_group(parser)
 Coincer.insert_args(parser)
 SingleDetSGChisq.insert_option_group(parser)
@@ -651,7 +658,7 @@ with ctx:
 
     # create single-detector background "estimators"
     if args.enable_single_detector_background and evnt.rank == 0:
-        sngl_estimator = {ifo: LiveSingleFarThreshold.from_cli(args, ifo)
+        sngl_estimator = {ifo: LiveSingle.from_cli(args, ifo)
                           for ifo in ifos}
 
     # Create double coincident background estimator for every combo
@@ -764,7 +771,7 @@ with ctx:
                                   psds, args.low_frequency_cutoff,
                                   data_reader, bank)
 
-            # Check for singles if we don't have coinc time
+            # Check for singles
             if args.enable_single_detector_background:
                 evnt.check_singles(results, data_reader, psds,
                                    args.low_frequency_cutoff)
