@@ -112,7 +112,7 @@ class LiveSingle(object):
             return None
 
         cutdurchi_trigs = {k: trigs[k][valid_idx] for k in trigs}
-        
+
         # This uses the pycbc live convention of chisq always meaning the
         # reduced chisq.
         nsnr_all = ranking.newsnr(cutdurchi_trigs['snr'],
