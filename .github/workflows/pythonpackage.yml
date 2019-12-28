@@ -21,6 +21,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools
         pip install -r requirements.txt
+        pip install .
     - name: run pycbc test suite
       run: |
         bash tools/pycbc_test_suite.sh
