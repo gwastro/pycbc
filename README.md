@@ -30,7 +30,6 @@ For the citation of the ``pycbc library``,  please use a bibtex entry and DOI fo
 appropriate release of the PyCBC software (or the latest available release).
 A bibtex key and DOI for each release is avaliable from [Zenodo](http://zenodo.org/).
 
-[![DOI](https://zenodo.org/badge/31596861.svg)](https://zenodo.org/badge/latestdoi/31596861)
-[![PyPI version](https://badge.fury.io/py/PyCBC.svg)](https://badge.fury.io/py/PyCBC)
-[![Build Status](https://travis-ci.org/gwastro/pycbc.svg?branch=master)](https://travis-ci.org/gwastro/pycbc)
-[![Research software impact](http://depsy.org/api/package/pypi/PyCBC/badge.svg)](http://depsy.org/package/python/PyCBC)
+[![DOI](https://zenodo.org/badge/31596861.svg)](https://zenodo.org/badge/latestdoi/31596861) [![Build Status](https://travis-ci.org/gwastro/pycbc.svg?branch=master)](https://travis-ci.org/gwastro/pycbc)  
+[![PyPI version](https://badge.fury.io/py/PyCBC.svg)](https://badge.fury.io/py/PyCBC) ![PyPI - Downloads](https://img.shields.io/pypi/dm/pycbc)  
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/pycbc/badges/version.svg)](https://anaconda.org/conda-forge/pycbc) [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pycbc/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge) [![Anaconda-Server Badge](https://anaconda.org/conda-forge/pycbc/badges/downloads.svg)](https://anaconda.org/conda-forge/pycbc)  
