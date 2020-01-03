@@ -158,6 +158,10 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
+
+        # betas must be in decending order
+        betas = betas.sort()[::-1]
+
         obj = cls(model, ntemps, nwalkers, betas=betas,
                   checkpoint_interval=checkpoint_interval,
                   checkpoint_signal=checkpoint_signal,
