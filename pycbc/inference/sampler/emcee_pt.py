@@ -146,6 +146,8 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
             with h5py.File(inverse_temperatures_file, "r") as fp:
                 try:
                     betas = numpy.array(fp.attrs['betas'])
+                    # betas must be in decending order
+                    betas = numpy.sort(betas)[::-1]
                     ntemps = betas.shape[0]
                 except KeyError:
                     raise AttributeError("No attribute called betas")
@@ -158,10 +160,6 @@ class EmceePTSampler(MultiTemperedAutocorrSupport, MultiTemperedSupport,
         checkpoint_signal = cls.ckpt_signal_from_config(cp, section)
         # get the loglikelihood function
         logl = get_optional_arg_from_config(cp, section, 'logl-function')
-
-        # betas must be in decending order
-        betas = betas.sort()[::-1]
-
         obj = cls(model, ntemps, nwalkers, betas=betas,
                   checkpoint_interval=checkpoint_interval,
                   checkpoint_signal=checkpoint_signal,
