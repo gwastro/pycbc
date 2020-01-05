@@ -389,6 +389,13 @@ class Array(object):
     @_returntype
     @_convert
     @_checkother
+    def __neg__(self):
+        """ Return negation of self """
+        return - self._data
+
+    @_returntype
+    @_convert
+    @_checkother
     def __sub__(self,other):
         """ Subtract Array or scalar from Array and return an Array. """
         return self._data - other
