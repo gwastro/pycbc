@@ -467,6 +467,26 @@ class TimeSeries(Array):
                            seg_stride=seg_stride,
                            **kwds)
 
+    def gate(self, time, zero_width=0.25, taper_width=0.25):
+        """ Gate out portion of time series
+
+        Parameters
+        ----------
+        time: float
+            Central time of the gate in seconds
+        zero_width: float
+            Half-length in seconds of zeros around gate.
+        taper_width: float
+            Lenght of tapering region on either side of zero'd data
+
+        Returns
+        -------
+        data: pycbc.types.TimeSeris
+            Gated time series
+        """
+        from pycbc.strain import gate_data
+        return gate_data(self.copy(), [(time, zero_width, taper_width)])
+
     def filter_psd(self, segment_duration, delta_f, flow):
         """ Calculate the power spectral density of this time series.
 
