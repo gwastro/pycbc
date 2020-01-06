@@ -388,7 +388,6 @@ class Array(object):
 
     @_returntype
     @_convert
-    @_checkother
     def __neg__(self):
         """ Return negation of self """
         return - self._data
