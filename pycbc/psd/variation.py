@@ -167,7 +167,7 @@ def find_trigger_value(psd_var, idx, start, sample_rate):
     return vals
 
 
-def mean_square(data, delta_t, short_stride, stride):
+def mean_square(data, delta_t, srate, short_stride, stride):
     """ Calculate mean square of given time series once per stride
 
     First of all this function calculate the mean square of given time
@@ -181,9 +181,11 @@ def mean_square(data, delta_t, short_stride, stride):
 
     Parameters
     ----------
-    data : TimeSeries
+    data : numpy.ndarray
     delta_t : float
         Duration of the time series
+    srate : int
+        Sample rate of the data were it given as a TimeSeries
     short_stride : float
         Stride duration for outlier removal
     stride ; float
@@ -195,11 +197,8 @@ def mean_square(data, delta_t, short_stride, stride):
         Mean square of given time series
     """
 
-    srate = int(data.sample_rate)
-
     # Calculate mean square of data once per short stride and replace
     # outliers
-    data = numpy.array(data)
     short_ms = numpy.mean(data.reshape(-1, int(srate * short_stride)) ** 2,
                           axis=1)
     # Define an array of averages that is used to substitute outliers
@@ -286,23 +285,15 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
                               psd_long_segment - 2 * strain_crop
                               - segment + step)
 
-    # Set up the empty time series for the PSD variation estimate
-    ts_duration = end_time - start_time - 2 * strain_crop - segment + 1
-    psd_var = TimeSeries(zeros(int(numpy.floor(ts_duration / step))),
-                         delta_t=step, copy=False,
-                         epoch=start_time + strain_crop + segment)
-
     # Create a bandpass filter between low_freq and high_freq
     filt = sig.firwin(4 * srate, [low_freq, high_freq], pass_zero=False,
                       window='hann', nyq=srate / 2)
     filt.resize(int(psd_duration * srate))
     # Fourier transform the filter and take the absolute value to get
-    # rid of the phase. Save the filter as a frequency series.
+    # rid of the phase.
     filt = abs(rfft(filt))
-    my_filter = FrequencySeries(filt, delta_f=1. / psd_duration,
-                                dtype=fs_dtype)
 
-    ind = 0
+    psd_var_list = []
     for tlong in times_long:
         # Calculate PSD for long segment
         if tlong + psd_long_segment <= float(end_time):
@@ -320,15 +311,15 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
                            seg_len=int(psd_duration * strain.sample_rate),
                            seg_stride=int(psd_stride * strain.sample_rate),
                            avg_method=psd_avg_method)
+        astrain = astrain.numpy()
+        freqs = numpy.array(plong.sample_frequencies, dtype=fs_dtype)
+        plong = plong.numpy()
 
         # Make the weighting filter - bandpass, which weight by f^-7/6,
         # and whiten. The normalization is chosen so that the variance
         # will be one if this filter is applied to white noise which
         # already has a variance of one.
-        freqs = FrequencySeries(plong.sample_frequencies,
-                                delta_f=plong.delta_f,
-                                epoch=plong.epoch, dtype=fs_dtype)
-        fweight = freqs ** (-7./6.) * my_filter / numpy.sqrt(plong)
+        fweight = freqs ** (-7./6.) * filt / numpy.sqrt(plong)
         fweight[0] = 0.
         norm = (sum(abs(fweight) ** 2) / (len(fweight) - 1.)) ** -0.5
         fweight = norm * fweight
@@ -337,19 +328,17 @@ def calc_filt_psd_variation(strain, segment, short_segment, psd_long_segment,
         full_filt = sig.hann(int(psd_duration * srate)) * numpy.roll(
             irfft(fwhiten * fweight), int(psd_duration / 2) * srate)
         # Convolve the filter with long segment of data
-        wstrain = TimeSeries(sig.fftconvolve(astrain, full_filt, mode='same'),
-                             delta_t=strain.delta_t,
-                             epoch=astrain.start_time)
+        wstrain = sig.fftconvolve(astrain, full_filt, mode='same')
         wstrain = wstrain[int(strain_crop * srate):-int(strain_crop * srate)]
         # compute the mean square of the chunk of data
-        delta_t = wstrain.end_time.gpsSeconds - wstrain.start_time.gpsSeconds
-        variation = mean_square(wstrain, delta_t, short_segment, segment)
+        delta_t = len(wstrain) * strain.delta_t
+        variation = mean_square(wstrain, delta_t, srate, short_segment, segment)
+        psd_var_list.append(numpy.array(variation, dtype=wstrain.dtype))
 
-        # Store variation value
-        for i, val in enumerate(variation):
-            psd_var[ind + i] = val
+    # Package up the time series to return
+    psd_var = TimeSeries(numpy.concatenate(psd_var_list), delta_t=step,
+                         epoch=start_time + strain_crop + segment)
 
-        ind = ind + len(variation)
     return psd_var
 
 
