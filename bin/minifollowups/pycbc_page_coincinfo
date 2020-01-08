@@ -21,6 +21,7 @@ import matplotlib; matplotlib.use('Agg')
 import numpy, lal, datetime
 import pycbc.version, pycbc.results, pycbc.pnutils
 from pycbc.events import ranking
+from pycbc.results import followup
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version',
@@ -46,6 +47,9 @@ trig_input.add_argument('--trigger-id', type=int,
 parser.add_argument('--include-summary-page-link', action='store_true',
     help="If given, will include a link to the DQ summary page on the "
          "single detector trigger tables.")
+parser.add_argument('--include-gracedb-link', action='store_true',
+    help="If given, will provide a link to search GraceDB for events "
+         "within a 3s window around the coincidence time.")
 
 
 args = parser.parse_args()
@@ -84,6 +88,19 @@ formats = ['%5.2f', '%5.2f', '%5.2e', '%5.2f', '%5.2e']
 tbl = [[h, fmt % d[dst][n]] for fmt, dst, h in zip(formats, dsets, hdrs) if dst in d]
 headers, table = zip(*tbl)
 headers = list(headers)
+table = list(table)
+if args.include_gracedb_link:
+    # Get the time from the single detectors
+    if 'detector_1' in f.attrs:
+        time = (d['time2'][n] + d['time1'][n]) / 2.0
+    else:
+        times = [d['%s/time' % ifo][n] for ifo in f.attrs['ifos'].split(' ')]
+        times = numpy.array(times)
+        time = numpy.mean(times[times > 0])
+    gdb_search_link = followup.get_gracedb_search_link(time)
+    headers.append("GraceDB Search Link")
+    table.append(gdb_search_link)
+
 table = numpy.array([table], dtype=str)
 
 if 'detector_1' in f.attrs:
