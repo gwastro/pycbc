@@ -43,6 +43,8 @@ parser.add_argument('--truncate-threshold', type=float,
 parser.add_argument('--remove-threshold', type=float,
                     help='Remove detected events with IFAR above threshold'
                          ' (units years)')
+parser.add_argument('--open-box', action='store_true',
+                    help='Are we putting open box results onto the plot?')
 parser.add_argument('--use-hierarchical-level', type=int, default=None,
                     help='Indicate which inclusive background and FARs of '
                          'foreground triggers to plot if there were any '
@@ -56,7 +58,8 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
                          'removal. Choosing 1 means plotting the inclusive '
                          'background after doing 1 hierarchical removal, and '
                          'includes updated FARs from after 1 hierarchical '
-                         'removal. [default=None]')
+                         'removal. [default=plot after application of all '
+                         'hierarchical removal iterations]')
 opts = parser.parse_args()
 
 trigf = [h5py.File(f, 'r') for f in opts.trigger_files]
@@ -83,8 +86,8 @@ if h_inc_back_num > h_iterations:
     ax.set_ylim(0, 1)
 
     output_message = "No more foreground events louder than all background\n" \
-                     "at this removal level.\n" \
-                     "Attempted to show " + str(h_inc_back_num) + " removal(s),\n" \
+                     "at this removal level.\nAttempted to show " + \
+                     str(h_inc_back_num) + " removal(s),\n" \
                      "but only " + str(h_iterations) + " removal(s) done."
 
     ax.text(0.5, 0.5, output_message, horizontalalignment='center',
@@ -119,7 +122,7 @@ if h_inc_back_num >= 0 and h_iterations is not None and h_iterations != 0:
     h_rm_cumnum = numpy.arange(len(h_rm_ifar), 0, -1)
 
 else:
-    fore_ifar = fp['foreground/ifar'][:]
+    fore_ifar = f['foreground/ifar'][:]
 
 if opts.remove_threshold is not None and opts.truncate_threshold is not None:
     raise RuntimeError("Can't both remove and truncate foreground events!")
@@ -131,7 +134,8 @@ sortifar = fore_ifar.argsort()
 fore_ifar = fore_ifar[sortifar]
 fore_cumnum = numpy.arange(len(fore_ifar), 0, -1)
 
-# get expected (noise-only) foreground IFAR values and cumulative number for each IFAR value
+# get expected (noise-only) foreground IFAR values and cumulative number for
+# each IFAR value
 expected_ifar = numpy.logspace(-4., numpy.log10(opts.truncate_threshold) or 5,
                                num=1000, base=10.0)
 fg_time = 0
@@ -143,7 +147,8 @@ expected_cumnum = conversions.sec_to_year(fg_time) / expected_ifar
 fig = pylab.figure(1)
 
 # plot the expected background
-pylab.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=1, color='black', label='Expected Background')
+pylab.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=1,
+             color='black', label='Expected Background')
 
 # plot the counting error
 lower = {}
@@ -182,10 +187,14 @@ for sigma in [1, 2, 3, 4]:
         upper[sigma].append(nup + 1.5)
 
 plotifar = expected_ifar[::-1]
-pylab.fill_between(plotifar, lower[4], lower[3], facecolor='k', alpha=0.15, label=r'$<4\sigma$')
-pylab.fill_between(plotifar, lower[3], lower[2], facecolor='k', alpha=0.3, label=r'$<3\sigma$')
-pylab.fill_between(plotifar, lower[2], lower[1], facecolor='k', alpha=0.45, label=r'$<2\sigma$')
-pylab.fill_between(plotifar, lower[1], upper[1], facecolor='k', alpha=0.6, label=r'$<1\sigma$')
+pylab.fill_between(plotifar, lower[4], lower[3], facecolor='k', alpha=0.15,
+                   label=r'$<4\sigma$')
+pylab.fill_between(plotifar, lower[3], lower[2], facecolor='k', alpha=0.3,
+                   label=r'$<3\sigma$')
+pylab.fill_between(plotifar, lower[2], lower[1], facecolor='k', alpha=0.45,
+                   label=r'$<2\sigma$')
+pylab.fill_between(plotifar, lower[1], upper[1], facecolor='k', alpha=0.6,
+                   label=r'$<1\sigma$')
 pylab.fill_between(plotifar, upper[1], upper[2], facecolor='k', alpha=0.45)
 pylab.fill_between(plotifar, upper[2], upper[3], facecolor='k', alpha=0.3)
 pylab.fill_between(plotifar, upper[3], upper[4], facecolor='k', alpha=0.15)
@@ -200,26 +209,30 @@ if opts.open_box:
             pylab.arrow(opts.truncate_threshold, i, opts.truncate_threshold, 0,
                         head_width=0.1 * i, head_length=0.4 * \
                         opts.truncate_threshold, ec='b', fc='b')
-    pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue', marker='^', ms=6, label='Foreground')
+    pylab.loglog(fore_ifar, fore_cumnum, linestyle='None', color='blue',
+                 marker='^', ms=6, label='Foreground')
+    max_ifar = max(fore_ifar)
 
     if h_inc_back_num > 0:
-        pylab.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff', marker='v', label='Hierarchically Removed Foreground')
+        max_ifar = max(max_ifar, max(h_rm_ifar))
+        pylab.loglog(h_rm_ifar, h_rm_cumnum, linestyle='None', color='#b66dff',
+                     marker='v', label='Hierarchically Removed Foreground')
 
 # format plot
 if opts.open_box:
     # scale the plot around the foreground
     pylab.ylim(0.7, 0.05 * len(fore_cumnum))
-    pylab.xlim(30 * min(fore_ifar), 3 * max(fore_ifar))
+    pylab.xlim(30 * min(fore_ifar), 3 * max_ifar)
 pylab.grid()
 pylab.legend(loc='upper right', fontsize=13)
 pylab.ylabel('Cumulative Number', size='large')
 pylab.xlabel('Inverse False Alarm Rate (yr)', size='large')
 
 # save
-caption = 'This is a cumulative histogram of triggers. The blue triangles represent ' \
-          + 'coincident foreground triggers. The dashed line represents the expected background ' \
-          + 'given the analysis time. The shaded regions represent ' \
-          + 'counting errors.'
+caption = 'This is a cumulative histogram of triggers. The blue triangles ' \
+          + 'represent coincident foreground triggers. The dashed line ' \
+          + 'represents the expected background given the analysis time. ' \
+          + 'The shaded regions represent counting errors.'
 pycbc.results.save_fig_with_metadata(fig, opts.output_file,
      title='Cumulative Number vs. IFAR',
      caption=caption,
