@@ -28,12 +28,13 @@ def insert_args(parser):
                                     'mchirp uncertainty by mchirp_delta = '
                                     'm0 * mchirp.')
     mchirp_group.add_argument('--eff-to-lum-distance-coeff', type=float,
-                              metavar='a0',
+                              metavar='a0', default=0.759,
                               help='Coefficient to estimate the value of the '
                                    'luminosity distance from the minimum '
                                    'eff distance by D_lum = a0 * min(D_eff).')
     mchirp_group.add_argument('--lum-distance-to-delta-coeff', type=float,
                               nargs=2, metavar=('b0','b1'),
+                              default=[-0.449, -0.342],
                               help='Coefficients to estimate the value of the '
                                    'uncertainty on the luminosity distance from '
                                    'the estimated luminosity distance and the '
@@ -269,7 +270,7 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
             "bbh": abbh
             }
     else:
-	return {
+        return {
             "bns": abns,
             "nsbh": ansbh,
             "bbh": abbh,
@@ -277,11 +278,11 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
             }
 
 
-def calc_probabilities(trig_mc_det, mass_limits, mass_bdary, z):
+def calc_probabilities(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
     # If the mchirp is greater than a mchirp corresponding to two masses
     # equal to the maximum mass, the probability for BBH is 100%
     mc_max = mass_limits['max_m1'] / (2 ** 0.2)
-    if trig_mc_det > mc_max * (1 + z['central']):
+    if trig_mc_det['central'] > mc_max * (1 + z['central']):
         if mass_gap is not False:
             probabilities = {'bns': 0.0, 'gns': 0.0, 'nsbh': 0.0, 'gg': 0.0,
                              'bhg': 0.0, 'bbh': 1.0}
@@ -289,7 +290,7 @@ def calc_probabilities(trig_mc_det, mass_limits, mass_bdary, z):
             probabilities = {'bns': 0.0, 'nsbh': 0.0, 'bbh': 1.0,
                              'mass_gap': 0.0}
     else:
-        areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z)
+        areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap)
         total_area = sum(areas.values())
         probabilities = {key: areas[key]/total_area for key in areas}
     return probabilities
