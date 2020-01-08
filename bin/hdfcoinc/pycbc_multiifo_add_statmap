@@ -448,8 +448,6 @@ while True:
             f['foreground_h%s/%s' % (h_iterations, key)] = \
                     combined_fg_data.data[key][:]
 
-    h_iterations += 1
-
     max_each_combo = {combo: sep_fg_data[combo].data['ifar'][:].argmax()
                       for combo in all_ifo_combos}
     max_ifars = {combo: sep_fg_data[combo].data['ifar'][:][max_each_combo[combo]]
@@ -472,6 +470,8 @@ while True:
                      % (max_ifar, maxcombo,
                         args.hierarchical_removal_ifar_thresh))
         break
+
+    h_iterations += 1
 
     # Add the highest ifar (yet to be removed) to the final output
     final_fg_data[maxcombo] = final_fg_data[maxcombo] + \
@@ -577,6 +577,6 @@ for key in f:
     if 'background' in key and (key + '/ifar') in f:
         del f[key + '/ifar']
 
-f.attrs['hierarchical_removal_iterations'] = h_iterations - 1
+f.attrs['hierarchical_removal_iterations'] = h_iterations
 f.close()
 logging.info('Done!')
