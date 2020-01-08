@@ -261,14 +261,15 @@ plot_params = get_plot_group(workflow.cp, 'plot_parameters')
 # get parameters for the summary tables
 table_params = workflow.cp.get_opt_tag('workflow', 'table-parameters',
                                        'summary_table')
-summary_page = []
 psd_page = []
 config_files = {}
 # loop over number of loudest events to be analyzed
 for num_event, config_fnames in enumerate(infconfig_files):
+    summary_page = []
     label = elabels[num_event]
     if label is None:
         label = 'Event {}'.format(num_event)
+    summary_label = label
     label = label.replace(' ', '_').replace(':', '_').replace('+', '_')
 
     # create a sub workflow for this event
@@ -312,7 +313,6 @@ for num_event, config_fnames in enumerate(infconfig_files):
         sub_workflow, inference_file, rdir.base,
         parameters=table_params,
         analysis_seg=analysis_index,
-        result_label=label,
         tags=opts.tags+[label]),)
 
     # summary posteriors
@@ -380,8 +380,12 @@ for num_event, config_fnames in enumerate(infconfig_files):
     # add the sub workflow to the main workflow
     workflow += sub_workflow
 
-# build the summary page
-layout.two_column_layout(rdir.base, summary_page)
+    # build the summary page
+    zpad = int(numpy.ceil(numpy.log10(len(infconfig_files))))
+    layout.two_column_layout(rdir.base, summary_page,
+                             unique=str(num_event).zfill(zpad),
+                             title=summary_label, collapse=True)
+
 
 # build the psd page
 layout.group_layout(rdir['detector_sensitivity'], psd_page)
