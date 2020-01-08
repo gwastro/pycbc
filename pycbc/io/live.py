@@ -437,8 +437,8 @@ class SingleCoincForGraceDB(object):
                 logging.info('Uploaded source probabilities for event %s', gid)
                 gracedb.writeLog(gid, 'source probabilities plot upload',
                                  filename=prob_plot_fname)
-                logging.info('Uploaded source probabilities pie chart for
-                             event %s', gid)
+                logging.info('Uploaded source probabilities pie chart for '
+                             'event %s', gid)
 
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
