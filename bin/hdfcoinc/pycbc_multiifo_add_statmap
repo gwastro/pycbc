@@ -577,6 +577,6 @@ for key in f:
     if 'background' in key and (key + '/ifar') in f:
         del f[key + '/ifar']
 
-f.attrs['hierarchical_removal_iterations'] = h_iterations
+f.attrs['hierarchical_removal_iterations'] = h_iterations - 1
 f.close()
 logging.info('Done!')
