@@ -262,8 +262,8 @@ class SingleCoincForGraceDB(object):
             mass_limits = kwargs['mc_area_args']['mass_limits']
             mass_bdary = kwargs['mc_area_args']['mass_bdary']
             coeff = kwargs['mc_area_args']['estimation_coeff']
-            trig_mc = {'central': coinc_spiral_row.mchirp,
-                       'delta': coinc_spiral_row.mchirp * coeff['m0']}
+            trig_mc = {'central': coinc_inspiral_row.mchirp,
+                       'delta': coinc_inspiral_row.mchirp * coeff['m0']}
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
             dist_estimation = coeff['a0'] * min(eff_distances)
             dist_std_estimation = (dist_estimation * math.exp(coeff['b0']) *
@@ -276,7 +276,7 @@ class SingleCoincForGraceDB(object):
             mass_gap = kwargs['mc_area_args']['mass_gap']
             probabilities = calc_probabilities(trig_mc, mass_limits,
                                                mass_bdary, z, mass_gap)
-            self.probabilities = json.dumps(probs)
+            self.probabilities = json.dumps(probabilities)
         else:
             self.probabilities = None
 
@@ -294,10 +294,12 @@ class SingleCoincForGraceDB(object):
         gz = filename.endswith('.gz')
         ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
         
+        # save source probabilities in a json file
         if self.probabilities is not None:
             prob_fname = filename.replace('.xml.gz', '_probs.json')
             with open(prob_fname,'w') as prob_outfile:
                 prob_outfile.write(self.probabilities)
+            logging.info('Source probabilities file saved as %s', prob_fname)
 
     def upload(self, fname, gracedb_server=None, testing=True,
                extra_strings=None):
@@ -370,7 +372,7 @@ class SingleCoincForGraceDB(object):
             pylab.close()
 
         if self.probabilities is not None:
-            prob_fname = filename.replace('.xml.gz', '_probs.json')
+            prob_fname = fname.replace('.xml.gz', '_probs.json')
             prob_plot_fname = prob_fname.replace('.json', '.png')
             probabilities = json.loads(self.probabilities)
             labels = [key for key in probabilities]
@@ -380,7 +382,7 @@ class SingleCoincForGraceDB(object):
             fig, ax = plt.subplots()
             ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%')
             ax.axis('equal')
-            plt.savefig(prob_plot_name)
+            plt.savefig(prob_plot_fname)
             plt.close()
 
         gid = None
@@ -428,12 +430,15 @@ class SingleCoincForGraceDB(object):
                                  filename=psd_series_plot_fname,
                                  tag_name=['psd'], displayName=['PSDs'])
 
-            # upload CBC probabilities in json format and plot
+            # upload source probabilities in json format and plot
             if self.probabilities is not None:
-                gracedb.writeLog(gid, 'CBC probabilities JSON file upload',
-                                 filename=prob_name)
-                gracedb.writeLog(gid, 'CBC probabilities plot upload',
-                                 filename=prob_plot_name)
+                gracedb.writeLog(gid, 'source probabilities JSON file upload',
+                                 filename=prob_fname)
+                logging.info('Uploaded source probabilities for event %s', gid)
+                gracedb.writeLog(gid, 'source probabilities plot upload',
+                                 filename=prob_plot_fname)
+                logging.info('Uploaded source probabilities pie chart for
+                             event %s', gid)
 
         except Exception as exc:
             logging.error('Something failed during the upload/annotation of '
