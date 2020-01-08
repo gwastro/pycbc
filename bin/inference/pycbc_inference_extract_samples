@@ -49,11 +49,9 @@ def isthesame(current_val, val):
         issame = numpy.isclose(current_val, val)
     else:
         issame = current_val == val
-    try:  #  guess that we have an array
-        issame = all(issame)
-    except TypeError:
-        # we didn't have an array, assume it was a single value
-        pass
+    if isinstance(issame, numpy.ndarray):
+        issame = issame.all()
+    # we didn't have an array, assume it was a single value
     return issame
 
 parser = ResultsArgumentParser(defaultparams='all', autoparamlabels=False,
