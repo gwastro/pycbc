@@ -243,7 +243,7 @@ class FromFile(Arbitrary):
         if len(params) == 0:
             ps = None
         else:
-            ps = params.keys()
+            ps = list(params.keys())
         param_vals, bw = self.get_arrays_from_file(filename, params=ps)
         super(FromFile, self).__init__(bounds=params, bandwidth=bw,
                                        **param_vals)
