@@ -375,7 +375,7 @@ class SingleCoincForGraceDB(object):
             prob_fname = fname.replace('.xml.gz', '_probs.json')
             prob_plot_fname = prob_fname.replace('.json', '.png')
             probabilities = json.loads(self.probabilities)
-            labels = [*probabilities]
+            labels = list(probabilities.keys())
             sizes = [probabilities[key] for key in probabilities]
             explode = [0.02 for key in probabilities]
 
