@@ -12,8 +12,9 @@ from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from scipy.integrate import quad
 
 def insert_args(parser):
-    mchirp_group = parser.add_argument_group("Arguments for computing the areas "
-                                             "of the CBC regions using mchirp.")
+    mchirp_group = parser.add_argument_group("Arguments for computing the "
+                                             "areas of the CBC regions using "
+                                             "mchirp and effective distance.")
     mchirp_group.add_argument('--max-m1', type=float, default=45.0,
                               help="Maximum value for m1")
     mchirp_group.add_argument('--min-m2', type=float, default=1.0,
@@ -36,13 +37,14 @@ def insert_args(parser):
                               nargs=2, metavar=('b0', 'b1'),
                               default=[-0.449, -0.342],
                               help='Coefficients to estimate the value of the '
-                                   'uncertainty on the luminosity distance from '
-                                   'the estimated luminosity distance and the '
-                                   'coinc snr by delta_lum = D_lum * exp(b0) * '
-                                   'coinc_snr ** b1.')
+                                   'uncertainty on the luminosity distance '
+                                   'from the estimated luminosity distance and'
+                                   ' the coinc snr by delta_lum = D_lum * '
+                                   'exp(b0) * coinc_snr ** b1.')
     mchirp_group.add_argument('--mass-gap-separate', action='store_true',
-                              help='Gives separate probabilities for each kind '
-                                   'of mass gap CBC sources: gns, gg, bhg.')
+                              help='Gives separate probabilities for each kind'
+                                   ' of mass gap CBC sources: gns, gg, bhg.')
+
 
 def from_cli(args):
     return {'mass_limits': {'max_m1': args.max_m1, 'min_m2': args.min_m2},
@@ -52,6 +54,7 @@ def from_cli(args):
                                  'b1': args.lum_distance_to_delta_coeff[1],
                                  'm0': args.mchirp_to_delta_coeff},
             'mass_gap': args.mass_gap_separate}
+
 
 def src_mass_from_z_det_mass(z, del_z, mdet, del_mdet):
     """Takes values of redshift, redshift uncertainty, detector mass and its
