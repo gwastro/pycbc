@@ -294,7 +294,7 @@ class SingleCoincForGraceDB(object):
         gz = filename.endswith('.gz')
         ligolw_utils.write_filename(self.outdoc, filename, gz=gz)
 
-       # save source probabilities in a json file
+        # save source probabilities in a json file
         if self.probabilities is not None:
             prob_fname = filename.replace('.xml.gz', '_probs.json')
             with open(prob_fname, 'w') as prob_outfile:
@@ -375,14 +375,14 @@ class SingleCoincForGraceDB(object):
             prob_fname = fname.replace('.xml.gz', '_probs.json')
             prob_plot_fname = prob_fname.replace('.json', '.png')
             probabilities = json.loads(self.probabilities)
-            labels = [key for key in probabilities]
+            labels = [*probabilities]
             sizes = [probabilities[key] for key in probabilities]
             explode = [0.02 for key in probabilities]
 
             fig, ax = plt.subplots()
             ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%')
             ax.axis('equal')
-            plt.savefig(prob_plot_fname)
+            fig.savefig(prob_plot_fname)
             plt.close()
 
         gid = None

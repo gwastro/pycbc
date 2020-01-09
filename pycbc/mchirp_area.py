@@ -11,6 +11,7 @@ detector frame mass and redshift.
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from scipy.integrate import quad
 
+
 def insert_args(parser):
     mchirp_group = parser.add_argument_group("Arguments for computing the "
                                              "areas of the CBC regions using "
