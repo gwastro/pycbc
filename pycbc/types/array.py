@@ -41,7 +41,6 @@ from numpy.linalg import norm
 
 import pycbc.scheme as _scheme
 from pycbc.scheme import schemed, cpuonly
-from pycbc.types.aligned import ArrayWithAligned
 from pycbc.opt import LimitedSizeDict
 
 #! FIXME: the uint32 datatype has not been fully tested,
@@ -149,11 +148,6 @@ class Array(object):
         if not copy:
             if not _scheme_matches_base_array(initial_array):
                 raise TypeError("Cannot avoid a copy of this array")
-            elif issubclass(type(self._scheme), _scheme.CPUScheme):
-                # ArrayWithAligned does not copy its memory; all 
-                # the following does is add the 'isaligned' flag
-                # in case initial_array was a true numpy array
-                self._data = ArrayWithAligned(initial_array)
             else:
                 self._data = initial_array
 
@@ -192,10 +186,9 @@ class Array(object):
             #Create new instance with initial_array as initialization.
             if issubclass(type(self._scheme), _scheme.CPUScheme):
                 if hasattr(initial_array, 'get'):
-                    self._data = ArrayWithAligned(_numpy.array(initial_array.get()))
+                    self._data = _numpy.array(initial_array.get())
                 else:
-                    self._data = ArrayWithAligned(_numpy.array(initial_array, 
-                                                               dtype=dtype, ndmin=1))
+                    self._data = _numpy.array(initial_array, dtype=dtype, ndmin=1)
             elif _scheme_matches_base_array(initial_array):
                 self._data = _copy_base_array(initial_array) # pylint:disable=assignment-from-no-return
             else:
