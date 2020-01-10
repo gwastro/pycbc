@@ -302,6 +302,31 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
     workflow += node
     return node.output_files[0]
 
+def make_ifar_catalog_plot(workflow, trigger_file, out_dir, tags=None,
+                           hierarchical_level=None):
+    """ Creates a node in the workflow for plotting cumulative histogram
+    of IFAR values for combined statmap
+    """
+
+    if hierarchical_level is not None and tags:
+        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
+                hierarchical_level))] + tags
+    elif hierarchical_level is not None and not tags:
+        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
+    elif hierarchical_level is None and not tags:
+        tags = []
+
+    makedir(out_dir)
+    node = PlotExecutable(workflow.cp, 'page_ifar_catalog', ifos=workflow.ifos,
+                    out_dir=out_dir, tags=tags).create_node()
+    node.add_input_opt('--trigger-file', trigger_file)
+    if hierarchical_level is not None:
+        node.add_opt('--use-hierarchical-level', hierarchical_level)
+    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
+    workflow += node
+    return node.output_files[0]
+
+
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
                      out_dir, exclude=None, require=None, tags=None):
     tags = [] if tags is None else tags

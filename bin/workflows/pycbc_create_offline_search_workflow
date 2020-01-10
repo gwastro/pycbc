@@ -406,12 +406,12 @@ for insp_file in full_insps:
 #                                    rdir['open_box_result/significance'],
 #                                    cumulative=False,
 #                                    tags=combined_bg_file.tags + ['ifar'])
-ifar_ob = wf.make_ifar_plot(workflow, combined_bg_file,
-                            rdir['open_box_result'],
-                            tags=combined_bg_file.tags + ['open_box'])
-ifar_cb = wf.make_ifar_plot(workflow, combined_bg_file,
-                            rdir['coincident_triggers'],
-                            tags=combined_bg_file.tags)
+ifar_ob = wf.make_ifar_catalog_plot(workflow, combined_bg_file,
+                                    rdir['open_box_result'],
+                                    tags=combined_bg_file.tags + ['open_box'])
+ifar_cb = wf.make_ifar_catalog_plot(workflow, combined_bg_file,
+                                    rdir['coincident_triggers'],
+                                    tags=combined_bg_file.tags + ['closed_box'])
 #table = wf.make_foreground_table(workflow, combined_bg_file,
 #                                 hdfbank[0], rdir['open_box_result'],
 #                                 singles=insps, extension='.html',
