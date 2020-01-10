@@ -279,7 +279,7 @@ def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     return node.output_files[0]
 
 def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
-                   hierarchical_level=None):
+                   hierarchical_level=None, executable='page_ifar'):
     """ Creates a node in the workflow for plotting cumulative histogram
     of IFAR values.
     """
@@ -293,7 +293,7 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
         tags = []
 
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'page_ifar', ifos=workflow.ifos,
+    node = PlotExecutable(workflow.cp, executable, ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', trigger_file)
     if hierarchical_level is not None:
@@ -301,31 +301,6 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
     node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
     workflow += node
     return node.output_files[0]
-
-def make_ifar_catalog_plot(workflow, trigger_file, out_dir, tags=None,
-                           hierarchical_level=None):
-    """ Creates a node in the workflow for plotting cumulative histogram
-    of IFAR values for combined statmap
-    """
-
-    if hierarchical_level is not None and tags:
-        tags = [("HIERARCHICAL_LEVEL_{:02d}".format(
-                hierarchical_level))] + tags
-    elif hierarchical_level is not None and not tags:
-        tags = ["HIERARCHICAL_LEVEL_{:02d}".format(hierarchical_level)]
-    elif hierarchical_level is None and not tags:
-        tags = []
-
-    makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'page_ifar_catalog', ifos=workflow.ifos,
-                    out_dir=out_dir, tags=tags).create_node()
-    node.add_input_opt('--trigger-file', trigger_file)
-    if hierarchical_level is not None:
-        node.add_opt('--use-hierarchical-level', hierarchical_level)
-    node.new_output_file_opt(workflow.analysis_time, '.png', '--output-file')
-    workflow += node
-    return node.output_files[0]
-
 
 def make_snrchi_plot(workflow, trig_files, veto_file, veto_name,
                      out_dir, exclude=None, require=None, tags=None):
