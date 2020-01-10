@@ -1070,6 +1070,15 @@ def zeros(length, dtype=float64):
     err_msg += "the scheme. You shouldn't be seeing this error!"
     raise ValueError(err_msg)
 
+@_return_array
+@schemed(BACKEND_PREFIX)
+def empty(length, dtype=float64):
+    """ Return an empty Array (no initialization)
+    """
+    err_msg = "This function is a stub that should be overridden using "
+    err_msg += "the scheme. You shouldn't be seeing this error!"
+    raise ValueError(err_msg)
+
 def load_array(path, group=None):
     """
     Load an Array from a .hdf, .txt or .npy file. The
