@@ -232,6 +232,8 @@ if opts.open_box:
     # scale the plot around the foreground
     pylab.ylim(0.7, 0.05 * len(fore_cumnum))
     pylab.xlim(30 * min(fore_ifar), 3 * max_ifar)
+else:
+    pylab.ylim(0.7, max(expected_cumnum))
 pylab.grid()
 pylab.legend(loc='upper right', fontsize=13)
 pylab.ylabel('Cumulative Number', size='large')
