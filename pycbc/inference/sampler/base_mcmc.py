@@ -627,7 +627,8 @@ class BaseMCMC(object):
                 logging.info("Computing acls")
                 self.acls = self.compute_acl(self.checkpoint_file,
                                              start_index=burn_in_index)
-            logging.info("ACT: %s", str(numpy.array(self.acts.values()).max()))
+            logging.info("ACT: %s",
+                         str(numpy.array(list(self.acts.values())).max()))
             # write
             for fn in [self.checkpoint_file, self.backup_file]:
                 with self.io(fn, "a") as fp:
