@@ -46,9 +46,9 @@ if _scheme == 'cuda':
     import pycuda.gpuarray
     from pycuda.gpuarray import GPUArray as SchemeArray
 elif _scheme == 'cpu':
-    from pycbc.types.aligned import ArrayWithAligned as SchemeArray
+    from numpy import ndarray as SchemeArray
 
-from pycbc.types.aligned import ArrayWithAligned as CPUArray
+from numpy import ndarray as CPUArray
 
 # ********************GENERIC ARRAY TESTS ***********************
 
