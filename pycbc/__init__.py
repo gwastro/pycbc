@@ -46,7 +46,8 @@ except:
 __version__ = pycbc_version
 
 
-def init_logging(verbose=False, format='%(asctime)s %(message)s'):
+def init_logging(verbose=False, format='%(asctime)s %(message)s',
+                 level=None):
     """ Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
@@ -65,8 +66,10 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
 
     signal.signal(signal.SIGUSR1, sig_handler)
 
+    if level is None:
+        level = logging.INFO
     if verbose:
-        initial_level = logging.DEBUG
+        initial_level = level
     else:
         initial_level = logging.WARN
     logging.getLogger().setLevel(initial_level)
