@@ -131,8 +131,8 @@ parser.add_argument('--enable-gracedb-upload', action='store_true', default=Fals
                     help='Upload triggers to GraceDB')
 parser.add_argument('--output-path', required=True,
                     help='Path to a directory to store results in')
-parser.add_argument('--workers', type=int, default=-1,
-                    help='Number of CPU cores to use, -1 means all')
+parser.add_argument('--cores', type=int,
+                    help='Restrict calculation to given number of CPU cores')
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
@@ -183,7 +183,7 @@ bounds = [(minchirp, maxchirp), (0.01, 0.2499), (-0.9, 0.9), (-0.9, 0.9)]
 logging.info('Starting optimization')
 
 results = differential_evolution(compute_network_snr, bounds,
-                                 maxiter=100, workers=args.workers,
+                                 maxiter=100, workers=(args.cores or -1),
                                  popsize=200, mutation=(0.5,1),
                                  recombination=0.7, callback=callback_func,
                                  args=extra_args)
