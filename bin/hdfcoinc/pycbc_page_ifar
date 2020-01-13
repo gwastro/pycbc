@@ -260,15 +260,13 @@ pylab.loglog(expected_ifar, expected_cumnum, linestyle='--', linewidth=2, color=
 error_plus = expected_cumnum + numpy.sqrt(expected_cumnum)
 error_minus = expected_cumnum - numpy.sqrt(expected_cumnum)
 error_minus = numpy.where(error_minus<=0, 1e-5, error_minus)
-xs, ys = pylab.poly_between(expected_ifar, error_minus, error_plus)
-pylab.fill(xs, ys, facecolor='y', alpha=0.4, label='$N^{1/2}$ Errors')
+pylab.fill_between(expected_ifar, error_minus, error_plus, facecolor='y', alpha=0.4, label='$N^{1/2}$ Errors')
 
 # plot the counting error
 error_plus = expected_cumnum + 2 * numpy.sqrt(expected_cumnum)
 error_minus = expected_cumnum - 2*numpy.sqrt(expected_cumnum)
 error_minus = numpy.where(error_minus<=0, 1e-5, error_minus)
-xs, ys = pylab.poly_between(expected_ifar, error_minus, error_plus)
-pylab.fill(xs, ys, facecolor='y', alpha=0.2, label='$2N^{1/2}$ Errors')
+pylab.fill_between(expected_ifar, error_minus, error_plus, facecolor='y', alpha=0.2, label='$2N^{1/2}$ Errors')
 
 # plot the foreground triggers
 if opts.open_box:
