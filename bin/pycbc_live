@@ -85,9 +85,9 @@ class LiveEventManager(object):
         analysis_cores = 1 + bg_cores
         self.fu_cores = available_cores - analysis_cores
         if self.fu_cores <= 0:
-            logging.warn('Insufficient number of CPU cores (%d) to run search'
-                         ' and followups. Uploads will momentarily increase lag',
-                         available_cores)
+            logging.warning('Insufficient number of CPU cores (%d) to run '
+                            'search and followups. Uploads will momentarily '
+                            'increase the lag', available_cores)
             self.fu_cores = 1
 
     def commit_results(self, results):
