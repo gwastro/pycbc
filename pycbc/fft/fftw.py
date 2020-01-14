@@ -320,14 +320,14 @@ def execute(plan, invec, outvec):
 
 def fft(invec, outvec, prec, itype, otype):
     theplan, destroy = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
-                            get_measure_level(),(check_aligned(invec._data) and check_aligned(outvec._data)),
+                            get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
     destroy(theplan)
 
 def ifft(invec, outvec, prec, itype, otype):
     theplan, destroy = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
-                            get_measure_level(),(check_aligned(invec._data) and check_aligned(outvec._data)),
+                            get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
     destroy(theplan)

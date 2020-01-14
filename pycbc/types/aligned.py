@@ -39,7 +39,7 @@ def zeros(n, dtype):
     tmp = _np.zeros(nbytes+PYCBC_ALIGNMENT, dtype=_np.uint8)
     address = tmp.__array_interface__['data'][0]
     offset = (PYCBC_ALIGNMENT - address%PYCBC_ALIGNMENT)%PYCBC_ALIGNMENT
-    ret_ary =  tmp[offset:offset+nbytes].view(dtype=d)
+    ret_ary = tmp[offset:offset+nbytes].view(dtype=d)
     del tmp
     return ret_ary
 
