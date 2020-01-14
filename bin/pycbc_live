@@ -115,7 +115,7 @@ class LiveEventManager(object):
             raise RuntimeError("Not root process")
 
     def compute_followup_data(self, ifos, triggers, data_readers, bank,
-                              followup_ifos=None):
+                              followup_ifos=None, recalculate_ifar=False):
         """Figure out which of the followup detectors are usable, and compute
         SNR time series for all the available detectors.
         """
@@ -145,18 +145,14 @@ class LiveEventManager(object):
                     ifo, data_readers[ifo], bank, template_id, coinc_times)
             if snr_series is not None:
                 out[ifo] = {'snr_series': snr_series}
-                self.combine_far_with_followup(ifos[0], ifo, triggers,
-                                               snr_series, ptime, pvalue,
-                                               sigma2)
+                self.get_followup_info(ifos[0], ifo, triggers, snr_series,
+                                       ptime, pvalue, sigma2,
+                                       recalculate_ifar=recalculate_ifar)
 
         return out
 
-    def combine_far_with_followup(self, coinc_ifo, ifo, triggers, snr_series,
-                                  ptime, pvalue, sigma2):
-        # Calculate new ifar
-        triggers['foreground/ifar'] = combine_ifar_pvalue(triggers['foreground/ifar'],
-                                                          pvalue, self.pvalue_livetime)
-
+    def get_followup_info(self, coinc_ifo, ifo, triggers, snr_series, ptime,
+                          pvalue, sigma2, recalculate_ifar=False):
         # Copy the common fields from the other detector
         # ignore fields that contain detector-specific data
         fields_to_ignore = set(['end_time', 'snr', 'stat', 'coa_phase',
@@ -175,6 +171,11 @@ class LiveEventManager(object):
         triggers[base + 'snr'] = triggers[base + 'stat'] = abs(snr_series_peak)
         triggers[base + 'coa_phase'] = numpy.angle(snr_series_peak)
         triggers[base + 'sigmasq'] = sigma2
+        if recalculate_ifar:
+            # Calculate new ifar
+            triggers['foreground/ifar'] = combine_ifar_pvalue(triggers['foreground/ifar'],
+                                                              pvalue, self.pvalue_livetime)
+
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
                      data_readers, bank):
@@ -198,7 +199,9 @@ class LiveEventManager(object):
                 return
 
             fud = self.compute_followup_data(coinc_ifos, coinc_results,
-                                             data_readers, bank, followup_ifos)
+                                             data_readers, bank,
+                                             followup_ifos=followup_ifos,
+                                             recalculate_ifar=True)
 
             live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
@@ -314,8 +317,11 @@ class LiveEventManager(object):
 
             if single is None:
                 continue
+
+            other_ifos = [i for i in active if i is not ifo]
             fud = self.compute_followup_data([ifo], single, data_reader,
-                                             bank, [])
+                                             bank, followup_ifos=other_ifos,
+                                             recalculate_ifar=False)
             ifar = single['foreground/ifar']
             # apply a trials factor of the number of active detectors
             ifar /= len(active)
