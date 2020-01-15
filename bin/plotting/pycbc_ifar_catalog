@@ -62,7 +62,7 @@ parser.add_argument('--use-hierarchical-level', type=int, default=None,
                          'removal. [default=plot after application of all '
                          'hierarchical removal iterations]')
 parser.add_argument('--use-exclusive-ifar', action='store_true',
-                    help='Indicate whether to use exclusive background for '
+                    help='Whether to use exclusive background for '
                          'IFAR calculations. Default=False.')
 opts = parser.parse_args()
 
