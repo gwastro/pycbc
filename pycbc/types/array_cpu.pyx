@@ -187,9 +187,6 @@ def clear(self):
     self[:] = 0 
     
 def _scheme_matches_base_array(array):
-    # Since ArrayWithAligned is a subclass of ndarray,
-    # and since converting to ArrayWithAligned will
-    # *not* copy 'array', the following is the way to go:
     if isinstance(array, _np.ndarray):
         return True
     else:

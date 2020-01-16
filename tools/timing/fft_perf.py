@@ -59,7 +59,7 @@ N = 2**options.size
 
 vecin = zeros(N, dtype=complex64)
 vecout = zeros(N, dtype=complex64)
-print("ALIGNMENT:", vecin.data.isaligned)
+print("ALIGNMENT:", check_aligned(vecin.data))
 
 if options.import_float_wisdom:
     print("Loading a wisdom file")

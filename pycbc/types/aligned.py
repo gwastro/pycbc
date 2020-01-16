@@ -33,31 +33,15 @@ from pycbc import PYCBC_ALIGNMENT
 def check_aligned(ndarr):
     return ((ndarr.ctypes.data % PYCBC_ALIGNMENT) == 0)
 
-class ArrayWithAligned(_np.ndarray):
-    def __new__(cls, input_array):
-        obj = _np.asarray(input_array).view(cls)
-        return obj
-
-    def __array_wrap__(self, obj):
-        if obj.shape == ():
-            return obj[()]    # if ufunc output is scalar, return it
-        else:
-            return _np.ndarray.__array_wrap__(self, obj)
-
-    @property
-    def isaligned(self):
-        return check_aligned(self)
-
-    def __array_finalize__(self, obj):
-        if obj is None: return
-
 def zeros(n, dtype):
     d = _np.dtype(dtype)
     nbytes = (d.itemsize)*int(n)
     tmp = _np.zeros(nbytes+PYCBC_ALIGNMENT, dtype=_np.uint8)
     address = tmp.__array_interface__['data'][0]
     offset = (PYCBC_ALIGNMENT - address%PYCBC_ALIGNMENT)%PYCBC_ALIGNMENT
-    return ArrayWithAligned(tmp[offset:offset+nbytes].view(dtype=_np.dtype(dtype)))
+    ret_ary = tmp[offset:offset+nbytes].view(dtype=d)
+    del tmp
+    return ret_ary
 
 def empty(n, dtype):
     d = _np.dtype(dtype)
@@ -65,4 +49,6 @@ def empty(n, dtype):
     tmp = _np.empty(nbytes+PYCBC_ALIGNMENT, dtype=_np.uint8)
     address = tmp.__array_interface__['data'][0]
     offset = (PYCBC_ALIGNMENT - address%PYCBC_ALIGNMENT)%PYCBC_ALIGNMENT
-    return ArrayWithAligned(tmp[offset:offset+nbytes].view(dtype=d))
+    ret_ary = tmp[offset:offset+nbytes].view(dtype=d)
+    del tmp
+    return ret_ary
