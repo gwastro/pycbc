@@ -77,6 +77,20 @@ class LiveEventManager(object):
 
         self.run_snr_optimization = run_snr_optimization
 
+        if self.rank == 0:
+            # preestimate the number of CPU cores that we can afford giving to
+            # followup processes without slowing down the main search
+            available_cores = len(os.sched_getaffinity(0))
+            bg_cores = len(tuple(itertools.combinations(ifos, 2)))
+            analysis_cores = 1 + bg_cores
+            self.fu_cores = available_cores - analysis_cores
+            if self.fu_cores <= 0:
+                logging.warning('Insufficient number of CPU cores (%d) to '
+                                'run search and trigger followups. Uploaded '
+                                'triggers will momentarily increase the lag',
+                                available_cores)
+                self.fu_cores = 1
+
     def commit_results(self, results):
         self.comm.gather(results, root=0)
 
@@ -245,7 +259,7 @@ class LiveEventManager(object):
                     * bank.sample_rate)
                 flen = int(tlen / 2 + 1)
                 delta_f = bank.sample_rate / float(tlen)
-                cmd = 'timeout 400 '
+                cmd = 'timeout {} '.format(args.snr_opt_timeout)
                 exepath = distutils.spawn.find_executable('pycbc_optimize_snr')
                 cmd += exepath + ' '
                 data_fils_str = '--data-files '
@@ -302,6 +316,9 @@ class LiveEventManager(object):
                 cmd += '--output-path {} '.format(self.path)
                 if self.enable_gracedb_upload:
                     cmd += '--enable-gracedb-upload '
+
+                cmd += '--cores {}'.format(self.fu_cores)
+
                 log_fname = \
                         fname.replace('.xml.gz', '_optimize_snr_log.dat')
 
@@ -552,6 +569,8 @@ parser.add_argument('--run-snr-optimization', action='store_true',
                     default=False,
                     help='Run spawned followup processes to maximize SNR for '
                          'any trigger uploaded to GraceDB')
+parser.add_argument('--snr-opt-timeout', type=int, default=400, metavar='SECONDS',
+                    help='Maximum allowed duration of followup process to maximize SNR')
 
 
 scheme.insert_processing_option_group(parser)
@@ -584,6 +603,10 @@ if bank.min_f_lower < args.low_frequency_cutoff:
                  'minimum f_lower across all templates '
                  '({} Hz)'.format(args.low_frequency_cutoff, bank.min_f_lower))
 
+# ifos used for primary analysis
+ifos = set(args.channel_name.keys())
+logging.info('Running with %s', ', '.join(sorted(ifos)))
+
 evnt = LiveEventManager(args.output_path,
                         use_date_prefix=args.day_hour_output_prefix,
                         ifar_upload_threshold=args.ifar_upload_threshold,
@@ -595,11 +618,7 @@ evnt = LiveEventManager(args.output_path,
 sg_chisq = SingleDetSGChisq.from_cli(args, bank, args.chisq_bins)
 
 if args.size_override:
-    evnt.size=args.size_override
-
-# ifos used for primary analysis (only two at the moment)
-ifos = set(args.channel_name.keys())
-logging.info('Running with %s', ', '.join(sorted(ifos)))
+    evnt.size = args.size_override
 
 # make sure we can talk to GraceDB
 if evnt.rank == 0 and args.enable_gracedb_upload:
