@@ -369,8 +369,8 @@ def new_find_trigger_value(psd_var, idx, start, sample_rate):
     if not hasattr(psd_var, 'cached_psd_var_interpolant'):
         from scipy import interpolate
         psd_var.cached_psd_var_interpolant = \
-            interpolate.interp1d(psd_var.sample_times.numpy(), psd_var.numpy(), fill_value=1.0,
-                                 bounds_error=False)
+            interpolate.interp1d(psd_var.sample_times.numpy(), psd_var.numpy(),
+                                 fill_value=1.0, bounds_error=False)
     vals = psd_var.cached_psd_var_interpolant(time)
 
     return vals
