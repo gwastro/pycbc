@@ -158,7 +158,7 @@ def spa_tmplt_engine(htilde, kmin, phase_order, delta_f, piM, pfaN,
     raise ValueError(err_msg)
 
 def spa_tmplt(**kwds):
-    """ Generate a minimal TaylorF2 approximant with optimations for the sin/cos
+    """ Generate a minimal TaylorF2 approximant with optimizations for the sin/cos
     """
     # Pull out the input arguments
     f_lower = kwds['f_lower']

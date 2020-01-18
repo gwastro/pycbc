@@ -4,4 +4,6 @@ gwpy>=0.8.1
 healpy
 # Needed for gracedb uploads
 ligo-gracedb
-
+# auxiliary samplers
+cpnest
+pymultinest

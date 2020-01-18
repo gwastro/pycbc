@@ -702,7 +702,7 @@ def compute_max_snr_over_sky_loc_stat_no_phase(hplus, hcross, hphccorr,
         The SNR maximized over sky location
     """
     # NOTE: Not much optimization has been done here! This may need to be
-    # C-ified using scipy.weave.
+    # Cythonized.
 
     if out is None:
         out = zeros(len(hplus))
@@ -1319,7 +1319,7 @@ def match(vec1, vec2, psd=None, low_frequency_cutoff=None,
           high_frequency_cutoff=None, v1_norm=None, v2_norm=None):
     """ Return the match between the two TimeSeries or FrequencySeries.
 
-    Return the match between two waveforms. This is equivelant to the overlap
+    Return the match between two waveforms. This is equivalent to the overlap
     maximized over time and phase.
 
     Parameters

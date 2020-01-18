@@ -60,6 +60,8 @@ parser.add_argument('--time-windows', required=True, type=t_window,
                          'be provided as start1,end1 start2,end2 ... '
                          'where start/end times are relative to --center-time '
                          'and both positive')
+parser.add_argument("--low-frequency-cutoff", type=float,
+                    help="The low frequency cutoff to use for fake strain generation")
 
 parser.add_argument('--qtransform-delta-t', default=0.001, type=float,
                     help='The time resolution to interpolate to (optional)')
@@ -70,19 +72,19 @@ parser.add_argument('--qtransform-logfsteps', type=int, default=200,
                          '--qtransform-delta-f option) and set the number '
                          'of steps to take')
 parser.add_argument('--qtransform-frange-lower', default=None, type=float,
-                    help='Lower frequency at which to compute qtransform. '
-                         'Optional, default=10')
+                    help='Lower frequency (in Hz) at which to compute '
+                         'qtransform. Optional, default=20 Hz')
 parser.add_argument('--qtransform-frange-upper', default=None, type=float,
-                    help='Upper frequency at which to compute qtransform. '
-                         'Optional, default=Half of Nyquist')
+                    help='Upper frequency (in Hz) at which to compute '
+                         'qtransform. Optional, default=Half of Nyquist')
 parser.add_argument('--qtransform-qrange-lower', default=4, type=float,
                     help='Lower limit of the range of q to consider, '
-                         'default=4')
+                         'default=%(default)f')
 parser.add_argument('--qtransform-qrange-upper', default=64, type=float,
                     help='Upper limit of the range of q to consider, '
-                         'default=64')
+                         'default=%(default)f')
 parser.add_argument('--qtransform-mismatch', default=0.2, type=float,
-                    help='Mismatch between frequency tiles, default=0.2')
+                    help='Mismatch between frequency tiles, default=%(default)f')
 
 parser.add_argument('--linear-y-axis', dest='log_y', default=True,
                     action='store_false',
@@ -95,7 +97,7 @@ parser.add_argument('--plot-title',
 parser.add_argument('--plot-caption',
                     help="If given, use this as the plot caption")
 parser.add_argument('--colormap', choices=plt.colormaps(), default='viridis',
-                    help='Colormap to use (default viridis)')
+                    help='Colormap to use (default %(default)s)')
 
 pycbc.strain.insert_strain_option_group(parser)
 opts = parser.parse_args()
@@ -127,7 +129,7 @@ strain = pycbc.strain.from_cli(opts, pycbc.DYN_RANGE_FAC)
 
 if opts.qtransform_frange_upper is None and \
         opts.qtransform_frange_lower is None:
-    curr_frange = (30, opts.sample_rate / 4.)
+    curr_frange = (20, opts.sample_rate / 4.)
 elif opts.qtransform_frange_upper is None or \
           opts.qtransform_frange_lower is None:
     parser.error('Must provide either both --qtransform-frange-upper and '

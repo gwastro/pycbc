@@ -1197,6 +1197,121 @@ class LambdaFromMultipleTOVFiles(BaseTransform):
             return self.format_output(maps, out)
 
 
+class Log(BaseTransform):
+    """Applies a log transform from an `inputvar` parameter to an `outputvar`
+    parameter. This is the inverse of the exponent transform.
+
+    Parameters
+    ----------
+    inputvar : str
+        The name of the parameter to transform.
+    outputvar : str
+        The name of the transformed parameter.
+    """
+    name = 'log'
+
+    def __init__(self, inputvar, outputvar):
+        self._inputvar = inputvar
+        self._outputvar = outputvar
+        self._inputs = [inputvar]
+        self._outputs = [outputvar]
+        super(Log, self).__init__()
+
+    @property
+    def inputvar(self):
+        """Returns the input parameter."""
+        return self._inputvar
+
+    @property
+    def outputvar(self):
+        """Returns the output parameter."""
+        return self._outputvar
+
+    def transform(self, maps):
+        r"""Computes :math:`\log(x)`.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        out : dict or FieldArray
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
+        """
+        x = maps[self._inputvar]
+        out = {self._outputvar : numpy.log(x)}
+        return self.format_output(maps, out)
+
+    def inverse_transform(self, maps):
+        r"""Computes :math:`y = e^{x}`.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        out : dict or FieldArray
+            A map between the transformed variable name and value(s), along
+            with the original variable name and value(s).
+        """
+        y = maps[self._outputvar]
+        out = {self._inputvar : numpy.exp(y)}
+        return self.format_output(maps, out)
+
+    def jacobian(self, maps):
+        r"""Computes the Jacobian of :math:`y = \log(x)`.
+
+        This is:
+
+        .. math::
+
+            \frac{\mathrm{d}y}{\mathrm{d}x} = \frac{1}{x}.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        float
+            The value of the jacobian at the given point(s).
+        """
+        x = maps[self._inputvar]
+        return 1./x
+
+    def inverse_jacobian(self, maps):
+        r"""Computes the Jacobian of :math:`y = e^{x}`.
+
+        This is:
+
+        .. math::
+
+            \frac{\mathrm{d}y}{\mathrm{d}x} = e^{x}.
+
+        Parameters
+        ----------
+        maps : dict or FieldArray
+            A dictionary or FieldArray which provides a map between the
+            parameter name of the variable to transform and its value(s).
+
+        Returns
+        -------
+        float
+            The value of the jacobian at the given point(s).
+        """
+        x = maps[self._outputvar]
+        return numpy.exp(x)
+
+
 class Logit(BaseTransform):
     """Applies a logit transform from an `inputvar` parameter to an `outputvar`
     parameter. This is the inverse of the logistic transform.
@@ -1618,6 +1733,29 @@ class ChiPToCartesianSpin(CartesianSpinToChiP):
     inverse_jacobian = inverse.jacobian
 
 
+class Exponent(Log):
+    """Applies an exponent transform to an `inputvar` parameter.
+    
+    This is the inverse of the log transform.
+
+    Parameters
+    ----------
+    inputvar : str
+        The name of the parameter to transform.
+    outputvar : str
+        The name of the transformed parameter.
+    """
+    name = 'exponent'
+    inverse = Log
+    transform = inverse.inverse_transform
+    inverse_transform = inverse.transform
+    jacobian = inverse.inverse_jacobian
+    inverse_jacobian = inverse.jacobian
+
+    def __init__(self, inputvar, outputvar):
+        super(Exponent, self).__init__(outputvar, inputvar)
+
+
 class Logistic(Logit):
     """Applies a logistic transform from an `input` parameter to an `output`
     parameter. This is the inverse of the logit transform.
@@ -1730,6 +1868,7 @@ SphericalSpin2ToCartesianSpin2.inverse = CartesianSpin2ToSphericalSpin2
 AlignedMassSpinToCartesianSpin.inverse = CartesianSpinToAlignedMassSpin
 PrecessionMassSpinToCartesianSpin.inverse = CartesianSpinToPrecessionMassSpin
 ChiPToCartesianSpin.inverse = CartesianSpinToChiP
+Log.inverse = Exponent
 Logit.inverse = Logistic
 
 
@@ -1746,6 +1885,7 @@ transforms = {
     CustomTransform.name : CustomTransform,
     MchirpQToMass1Mass2.name : MchirpQToMass1Mass2,
     Mass1Mass2ToMchirpQ.name : Mass1Mass2ToMchirpQ,
+    MchirpEtaToMass1Mass2.name : MchirpEtaToMass1Mass2,
     Mass1Mass2ToMchirpEta.name : Mass1Mass2ToMchirpEta,
     ChirpDistanceToDistance.name : ChirpDistanceToDistance,
     DistanceToChirpDistance.name : DistanceToChirpDistance,
@@ -1760,6 +1900,8 @@ transforms = {
     CartesianSpinToPrecessionMassSpin.name : CartesianSpinToPrecessionMassSpin,
     ChiPToCartesianSpin.name : ChiPToCartesianSpin,
     CartesianSpinToChiP.name : CartesianSpinToChiP,
+    Log.name : Log,
+    Exponent.name : Exponent,
     Logit.name : Logit,
     Logistic.name : Logistic,
     LambdaFromTOVFile.name : LambdaFromTOVFile,

@@ -27,7 +27,7 @@ import numpy
 
 import pycbc
 from pycbc import (distributions, transforms, fft,
-                   opt, psd, scheme, strain, weave)
+                   opt, psd, scheme, strain)
 from pycbc.waveform import generator
 
 from pycbc import __version__
@@ -88,7 +88,6 @@ opt.insert_optimization_option_group(parser)
 psd.insert_psd_option_group_multi_ifo(parser)
 scheme.insert_processing_option_group(parser)
 strain.insert_strain_option_group_multi_ifo(parser)
-weave.insert_weave_option_group(parser)
 strain.add_gate_option_group(parser)
 
 # parse command line
@@ -108,7 +107,6 @@ opt.verify_optimization_options(opts, parser)
 #psd.verify_psd_options(opts, parser)
 scheme.verify_processing_options(opts, parser)
 #strain.verify_strain_options(opts, parser)
-weave.verify_weave_options(opts, parser)
 
 # set seed
 numpy.random.seed(opts.seed)

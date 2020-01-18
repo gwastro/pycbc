@@ -279,7 +279,7 @@ def make_seg_plot(workflow, seg_files, out_dir, seg_names=None, tags=None):
     return node.output_files[0]
 
 def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
-                   hierarchical_level=None):
+                   hierarchical_level=None, executable='page_ifar'):
     """ Creates a node in the workflow for plotting cumulative histogram
     of IFAR values.
     """
@@ -293,7 +293,7 @@ def make_ifar_plot(workflow, trigger_file, out_dir, tags=None,
         tags = []
 
     makedir(out_dir)
-    node = PlotExecutable(workflow.cp, 'page_ifar', ifos=workflow.ifos,
+    node = PlotExecutable(workflow.cp, executable, ifos=workflow.ifos,
                     out_dir=out_dir, tags=tags).create_node()
     node.add_input_opt('--trigger-file', trigger_file)
     if hierarchical_level is not None:

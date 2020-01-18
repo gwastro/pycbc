@@ -17,11 +17,11 @@
 from __future__ import division
 import logging
 import numpy
-import os.path
 from six.moves import range
 from pycbc.tmpltbank.lambda_mapping import get_chirp_params
+from pycbc import conversions
 from pycbc import pnutils
-from pycbc.tmpltbank.em_progenitors import generate_em_constraint_data, load_ns_sequence, min_eta_for_em_bright
+from pycbc.tmpltbank.em_progenitors import load_ns_sequence, remnant_masses
 
 def estimate_mass_range(numPoints, massRangeParams, metricParams, fUpper,\
                         covary=True):
@@ -225,22 +225,18 @@ def get_random_mass(numPoints, massRangeParams):
     # only systems that can yield (at least) the desired remnant
     # disk mass and that pass the mass and spin range cuts.
     else:
-        _, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
-
-        # Generate EM constraint surface: minumum eta as a function of BH spin
-        # and NS mass required to produce an EM counterpart
-        if not os.path.isfile('constraint_em_bright.npz'):
-            logging.info("""constraint_em_bright.npz not found.
-                        Generating the constraint surface for EM bright binaries
-                        in the physical parameter space.  One day, this will be
-                        made faster, for now be patient and wait a few minutes!""")
-            generate_em_constraint_data(massRangeParams.minMass2, massRangeParams.maxMass2, massRangeParams.delta_ns_mass, \
-                                        -1.0, massRangeParams.maxBHSpinMag, massRangeParams.delta_bh_spin, \
-                                        massRangeParams.ns_eos, massRangeParams.remnant_mass_threshold, 0.0)
-        constraint_datafile = numpy.load('constraint_em_bright.npz')
-        mNS_pts = constraint_datafile['mNS_pts']
-        bh_spin_z_pts = constraint_datafile['sBH_pts']
-        eta_mins = constraint_datafile['eta_mins']
+        ns_sequence, max_ns_g_mass = load_ns_sequence(massRangeParams.ns_eos)
+        boundary_mass = massRangeParams.ns_bh_boundary_mass
+        if max_ns_g_mass < boundary_mass:
+            warn_msg = "WARNING: "
+            warn_msg += "Option of ns-bh-boundary-mass is  %s " %(boundary_mass)
+            warn_msg += "which is higher than the maximum NS gravitational "
+            warn_msg += "mass admitted by the EOS that was prescribed "
+            warn_msg += "(%s). " %(max_ns_g_mass)
+            warn_msg += "The code will proceed using the latter value "
+            warn_msg += "as the boundary mass."
+            logging.warn(warn_msg)
+            boundary_mass = max_ns_g_mass
 
         # Empty arrays to store points that pass all cuts
         mass1_out = []
@@ -258,28 +254,62 @@ def get_random_mass(numPoints, massRangeParams):
             mass1, mass2, spin1z, spin2z = \
                 get_random_mass_point_particles(numPoints-numPointsFound,
                                                 massRangeParams)
-            _, eta = pnutils.mass1_mass2_to_mtotal_eta(mass1, mass2)
 
             # Now proceed with cutting out EM dim systems
-            # Logical mask to clean up points by removing EM dim binaries
-            mask = numpy.ones(len(mass1), dtype=bool)
-            # Commpute the minimum eta to generate a counterpart
-            min_eta_em = min_eta_for_em_bright(spin1z, mass2, mNS_pts, bh_spin_z_pts, eta_mins)
-            # Remove a point if:
-            # 1) eta is smaller than the eta threshold required to have a counterpart;
-            # 2) the primary is a BH (mass1 >= ns_bh_boundary_mass);
-            # 3) the secondary mass does not exceed the maximum NS mass
-            # allowed by the EOS (if the user runs with --use-eos-max-ns-mass
-            # this last condition will always be true, otherwise the user is
-            # implicitly asking to keep binaries in which the secondary may be
-            # a BH).
-            mask[(mass1 >= massRangeParams.ns_bh_boundary_mass) & (mass2 <= max_ns_g_mass) & (eta < min_eta_em)] = False
-            # Keep only binaries that can produce an EM counterpart and add them to
-            # the pile of accpeted points to output
-            mass1_out = numpy.concatenate((mass1_out, mass1[mask]))
-            mass2_out = numpy.concatenate((mass2_out, mass2[mask]))
-            spin1z_out = numpy.concatenate((spin1z_out,spin1z[mask]))
-            spin2z_out = numpy.concatenate((spin2z_out,spin2z[mask]))
+            # Use a logical mask to track points that do not correspond to
+            # BBHs. The remaining points will be BNSs and NSBHs.
+            # Further down, EM-dim NSBHs will also be removed.
+            mask_not_bbh = numpy.zeros(len(mass1), dtype=bool)
+
+            # Keep a point if:
+            # 1) the secondary object is a not a BH (mass2 < boundary mass)
+            #    [Store masses and spins of non BBH]
+            mask_not_bbh[mass2 < boundary_mass] = True
+            mass1_not_bbh = mass1[mask_not_bbh]
+            mass2_not_bbh = mass2[mask_not_bbh]
+            spin1z_not_bbh = spin1z[mask_not_bbh]
+            spin2z_not_bbh = spin2z[mask_not_bbh]
+            # 2) and if the primary mass is a NS (i.e., it is a BNS), or...
+            mask_nsbh = numpy.zeros(len(mass1_not_bbh), dtype=bool)
+            #    [mask_nsbh identifies NSBH systems]
+            mask_nsbh[mass1_not_bbh > boundary_mass] = True
+            #    [mask_bns identifies BNS systems]
+            mask_bns = ~mask_nsbh
+            #    [Store masses and spins of BNSs]
+            mass1_bns = mass1_not_bbh[mask_bns]
+            mass2_bns = mass2_not_bbh[mask_bns]
+            spin1z_bns = spin1z_not_bbh[mask_bns]
+            spin2z_bns = spin2z_not_bbh[mask_bns]
+            # 3) ...it is an NS-BH with remnant mass greater than the threshold
+            #    required to have a counterpart
+            #    [Store masses and spins of all NSBHs]
+            mass1_nsbh = mass1_not_bbh[mask_nsbh]
+            mass2_nsbh = mass2_not_bbh[mask_nsbh]
+            spin1z_nsbh = spin1z_not_bbh[mask_nsbh]
+            spin2z_nsbh = spin2z_not_bbh[mask_nsbh]
+            #    [Store etas of all NSBHs]
+            eta_nsbh = conversions.eta_from_mass1_mass2(mass1_nsbh, mass2_nsbh)
+            #    [mask_bright_nsbh will identify NSBH systems with high enough
+            #     threshold mass]
+            mask_bright_nsbh = numpy.zeros(len(mass1_nsbh), dtype=bool)
+            if eta_nsbh.size != 0:
+                remnant = remnant_masses(eta_nsbh, mass2_nsbh, ns_sequence,
+                                         spin1z_nsbh, 0.)
+                mask_bright_nsbh[remnant
+                                 >
+                                 massRangeParams.remnant_mass_threshold] = True
+
+            # Keep only points that correspond to binaries that can produce an
+            # EM counterpart (i.e., BNSs and EM-bright NSBHs) and add their
+            # properties to the pile of accpeted points to output
+            mass1_out = numpy.concatenate((mass1_out, mass1_bns,
+                                           mass1_nsbh[mask_bright_nsbh]))
+            mass2_out = numpy.concatenate((mass2_out, mass2_bns,
+                                           mass2_nsbh[mask_bright_nsbh]))
+            spin1z_out = numpy.concatenate((spin1z_out, spin1z_bns,
+                                            spin1z_nsbh[mask_bright_nsbh]))
+            spin2z_out = numpy.concatenate((spin2z_out, spin2z_bns,
+                                            spin2z_nsbh[mask_bright_nsbh]))
 
             # Number of points that survived all cuts
             numPointsFound = len(mass1_out)

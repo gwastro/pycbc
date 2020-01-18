@@ -8,6 +8,7 @@ import matplotlib; matplotlib.use('Agg')
 import pylab as pl
 from pycbc.results.color import ifo_color
 import pycbc.version
+from scipy.stats import hmean
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--version", action="version",
@@ -37,7 +38,7 @@ for pa in args.input_file:
     else:
         stf = None
     if tpc is not None:
-        label = str(ifo) + ': Mean average - ' + str(tpc.mean())
+        label = str(ifo) + ': Harmonic mean - ' + str(hmean(tpc))
         ax1.hist(tpc, 100, color=ifo_color(ifo), alpha = 0.65, label = label)
         #ax1.set_title('Templates per Core')
         ax1.set_xlabel('Templates per Core')

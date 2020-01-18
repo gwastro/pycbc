@@ -1306,7 +1306,7 @@ def cat_to_veto_def_cat(val):
     Returns
     -------
     pipedown_str : str
-        The pipedown equivelant notation that can be passed to programs
+        The pipedown equivalent notation that can be passed to programs
     that expect this definition.
     """
     if val == '1':
