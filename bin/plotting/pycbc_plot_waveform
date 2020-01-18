@@ -21,12 +21,9 @@
 import sys, argparse, matplotlib, numpy, math
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
-from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from pycbc import waveform, io
 from pycbc import version
 from pycbc import results
-from pycbc.fft import ifft
 from pycbc.types import complex_same_precision_as
 from pycbc.types import TimeSeries, zeros, complex64
 
@@ -164,14 +161,13 @@ plt.plot(template.sample_frequencies, abs(template))
 plt.xlabel('Frequency (Hz)')
 plt.xlim([0,f_length*1.1])
 plt.ylabel('abs( $\\tilde{h}(f)$ )')
-
+plt.tight_layout()
 
 if opt.plot_title is None:
     opt.plot_title = 'Waveform plot'
 if opt.plot_caption is None:
     opt.plot_caption = ("The first plot represents the template waveform"
-                        "in the time domain with the inset showing a"
-                        "zoom-up at merger. The second plot represents"
+                        "in the time domain. The second plot represents"
                         "the template waveform in the frequency domain.")
 
 results.save_fig_with_metadata(fig, opt.output_file,
