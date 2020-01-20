@@ -56,7 +56,7 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
     ----------
     verbose : bool or int, optional
         What level to set the verbosity level to. Accepts either a boolean
-        or an integer representing the level to set. If True/False will set to 
+        or an integer representing the level to set. If True/False will set to
         ``logging.INFO``/``logging.WARN``. For higher logging levels, pass
         an integer representing the level to set (see the ``logging`` module
         for details). Default is ``False`` (``logging.WARN``).
