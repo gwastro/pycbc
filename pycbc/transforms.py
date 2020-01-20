@@ -1530,7 +1530,7 @@ class Mass1Mass2ToMchirpQ(MchirpQToMass1Mass2):
         self.q_param = q_param
         self._inputs = [self.mass1_param, self.mass2_param]
         self._outputs = [self.mchirp_param, self.q_param]
-        super(MchirpQToMass1Mass2, self).__init__()
+        BaseTransform.__init__(self)
 
 
 class Mass1Mass2ToMchirpEta(MchirpEtaToMass1Mass2):
