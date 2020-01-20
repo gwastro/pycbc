@@ -123,7 +123,7 @@ class DynestySampler(BaseSampler):
         dlogz = float(cp.get(section, "dlogz"))
         loglikelihood_function = \
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
-            
+
         # optional arguments for dynesty
         cargs = {'bound': str,
                  'bootstrap': int,
