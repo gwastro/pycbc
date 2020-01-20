@@ -125,17 +125,16 @@ class DynestySampler(BaseSampler):
             get_optional_arg_from_config(cp, section, 'loglikelihood-function')
             
         # optional arguments for dynesty
-        cargs = {'bound': str, 
+        cargs = {'bound': str,
                  'bootstrap': int,
                  'enlarge': float,
                  'update_interval': float,
-                 'sample': str,
-                }
+                 'sample': str}
         extra = {}
-        for karg in nargs:
+        for karg in cargs:
             if cp.has_option(section, karg):
-                extra[karg] = cargs[karg](cp.get(section, karg))   
-            
+                extra[karg] = cargs[karg](cp.get(section, karg))
+
         obj = cls(model, nlive=nlive, dlogz=dlogz, nprocesses=nprocesses,
                   loglikelihood_function=loglikelihood_function,
                   use_mpi=use_mpi, **extra)
