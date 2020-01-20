@@ -252,7 +252,7 @@ class Executable(pegasus_workflow.Executable):
 
             self.add_pfn(exe_path, site=exe_site)
             logging.info("Using %s executable "
-                          "at %s on site %s" % (name, exe_url.path, exe_site))
+                         "at %s on site %s" % (name, exe_url.path, exe_site))
 
         # Determine the condor universe if we aren't given one
         if self.universe is None:
