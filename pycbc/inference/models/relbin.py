@@ -59,6 +59,7 @@ class Relative(BaseDataModel):
         # store data and psds as arrays for faster computation
         self.comp_data = {ifo: numpy.array(data[ifo].data) for ifo in data}
         self.comp_psds = {ifo: numpy.array(psds[ifo].data) for ifo in data}
+        self._psds = psds
         # store fiducial waveform params
         mass1 = float(mass1)
         mass2 = float(mass2)
@@ -102,22 +103,6 @@ class Relative(BaseDataModel):
         logging.info("Calculating summary data at frequency resolution %s",
                       self.df)
         self.sdat = self.summary_data()
-
-        # store the psds and calculate the inner product weight
-        logging.info("Calculating lognl")
-        kmin, kmax = self.edges[0], self.edges[-1]
-        self._kmin = {ifo: kmin for ifo in self.data}
-        self._kmax = {ifo: kmax for ifo in self.data}
-        self._data = data.copy()
-        self._f_lower = {ifo: f_lo for ifo in self.data}
-        self._f_upper = {ifo: f_hi for ifo in self.data}
-        self._N = int(1. / (data[data.keys()[0]].delta_t * self.df))
-        self._psds = {}
-        self._weight = {}
-        self._lognorm = {}
-        self._det_lognls = {}
-        self.set_psds(psds)
-        logging.info("Lognl is %s", self.lognl)
 
     def summary_data(self):
         # timeshift the fiducial waveform for each detector
@@ -164,17 +149,6 @@ class Relative(BaseDataModel):
         r1 = (r[1:] - r[:-1]) / (self.fedges[1:] - self.fedges[:-1])
         return numpy.array([r0, r1], dtype=numpy.complex128)
 
-    def binned_inner_products(self, r0, r1, sdat):
-        # <h, d> is real part of the sum over bins of A0r0 + A1r1
-        hd = numpy.sum(sdat['a0'] * r0 + sdat['a1'] * r1).real
-        # <h, h> is real part of the sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
-        hh = numpy.sum(sdat['b0'] * numpy.absolute(r0) ** 2.
-                       + 2. * sdat['b1'] * (r1 * numpy.conjugate(r0)).real).real
-        return hd - 0.5 * hh
-
-    def _loglikelihood(self):
-        return self.loglr + self.lognl
-
     def _loglr(self):
         # get model params
         p = self.current_params.copy()
@@ -206,65 +180,11 @@ class Relative(BaseDataModel):
             llr += (hd - 0.5 * hh)
         return float(llr)
 
+    def _loglikelihood(self):
+        return self.loglr + self.lognl
+
     def _lognl(self):
-        return sum([self.det_lognl(det) for det in self.data])
-
-    def det_lognorm(self, det):
-        p = self._psds[det]
-        dt = self._data[det].delta_t
-        kmin, kmax = self._kmin[det], self._kmax[det]
-        lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2. \
-                         + numpy.log(p[kmin:kmax]).sum())
-        self._lognorm[det] = lognorm
-        return self._lognorm[det]
-
-    def det_lognl(self, det):
-        try:
-            return self._det_lognls[det]
-        except KeyError:
-            # hasn't been calculated yet; calculate & store
-            kmin = self._kmin[det]
-            kmax = self._kmax[det]
-            d = self._data[det]
-            lognorm = self.det_lognorm(det)
-            lognl = lognorm - 0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
-            self._det_lognls[det] = lognl
-            return self._det_lognls[det]
-
-    def set_psds(self, psds):
-        """Sets the psds, and calculates the weight and norm from them.
-        The data and the low and high frequency cutoffs must be set first.
-        """
-        # check that the data has been set
-        if self._data is None:
-            raise ValueError("No data set")
-        if self._f_lower is None:
-            raise ValueError("low frequency cutoff not set")
-        if self._f_upper is None:
-            raise ValueError("high frequency cutoff not set")
-        # make sure the relevant caches are cleared
-        self._psds.clear()
-        self._weight.clear()
-        self._lognorm.clear()
-        self._det_lognls.clear()
-        for det, d in self._data.items():
-            if psds is None:
-                # No psd means assume white PSD
-                p = FrequencySeries(numpy.ones(int(self._N/2+1)),
-                                    delta_f=d.delta_f)
-            else:
-                # copy for storage
-                p = psds[det].copy()
-            self._psds[det] = p
-            # we'll store the weight to apply to the inner product
-            w = Array(numpy.zeros(len(p)))
-            # only set weight in band we will analyze
-            kmin = self._kmin[det]
-            kmax = self._kmax[det]
-            w[kmin:kmax] = numpy.sqrt(4.*p.delta_f/p[kmin:kmax])
-            self._weight[det] = w
-        # set the lognl and lognorm; we'll get this by just calling lognl
-        _ = self.lognl
+        return 0.
 
     def write_metadata(self, fp):
         """Adds writing the psds and lognl, since it's a constant.
@@ -284,14 +204,3 @@ class Relative(BaseDataModel):
             fp.create_group(fp.samples_group)
             attrs = fp[fp.samples_group].attrs
         attrs['lognl'] = self.lognl
-        for det in self.detectors:
-            # Save lognl for each IFO as attributes in the samples group
-            attrs['{}_lognl'.format(det)] = self.det_lognl(det)
-            # Save each IFO's low frequency cutoff used in the likelihood
-            # computation as an attribute
-            fp.attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
-            # Save the IFO's high frequency cutoff used in the likelihood
-            # computation as an attribute if one was provided the user
-            if self._f_upper[det] is not None:
-                fp.attrs['{}_likelihood_high_freq'.format(det)] = \
-                                                        self._f_upper[det]
