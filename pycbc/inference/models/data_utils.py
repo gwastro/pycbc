@@ -119,7 +119,7 @@ def create_data_parser():
     strain.add_gate_option_group(parser)
     # add arguments for dq
     dqgroup = parser.add_argument_group("Options for quering data quality "
-                                        "(DQ).")
+                                        "(DQ)")
     dqgroup.add_argument('--dq-segment-name', default='DATA',
                          help='The status flag to query for data quality. '
                               'Default is "DATA".')
@@ -459,5 +459,3 @@ def data_from_cli(opts, check_for_valid_times=False,
             stilde_dict[ifo] *= psd_dict[ifo]
 
     return strain_dict, stilde_dict, psd_dict
-
-

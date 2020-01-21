@@ -119,7 +119,7 @@ def add_gate_option_group(parser):
     parser : object
         ArgumentParser instance.
     """
-    gate_group = parser.add_argument_group("Options for gating data.")
+    gate_group = parser.add_argument_group("Options for gating data")
 
     gate_group.add_argument("--gate", nargs="+", type=str,
                             metavar="IFO:CENTRALTIME:HALFDUR:TAPERDUR",
