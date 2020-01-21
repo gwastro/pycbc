@@ -2,6 +2,12 @@
 PyCBC inference documentation (``pycbc.inference``)
 ###################################################################
 
+.. Following are useful substituions for classes and modules
+.. GaussianNoise:
+.. |GaussianNoise| replace:: :py:class:`GaussianNoise <pycbc.inference.models.GaussianNoise>`
+.. MarginalizedPhaseGaussianNoise:
+.. |MarginalizedPhaseGaussianNoise| replace:: :py:class:`MarginalizedPhaseGaussianNoise <pycbc.inference.models.MarginalizedPhaseGaussianNoise>`
+
 ===================
 Introduction
 ===================
@@ -79,11 +85,10 @@ example:
    [model]
    name = gaussian_noise
 
-In this case, the :py:class:`GaussianNoise <gwin.models.GaussianNoise>` would
-be used.  (Examples of using this model on a BBH injection and on GW150914 are
-given below.) Other arguments to configure the model may also be set in this
-section.  The recognized arguments depend on the model. The currently available
-models are:
+In this case, the |GaussianNoise| model would be used. (Examples of using this
+model on a BBH injection and on GW150914 are given below.) Other arguments to
+configure the model may also be set in this section. The recognized arguments
+depend on the model. The currently available models are:
 
 .. include:: _include/models-table.rst
 
@@ -247,16 +252,17 @@ will remain fixed throughout the run. For example:
 Setting data
 ^^^^^^^^^^^^
 
-Many models, such as the :py:class:`GaussianNoise <gwin.models.GaussianNoise>`,
-require data to be provided. To do so, a ``[data]`` section must be included
-that provides information about what data to load, and how to condition it.
+Many models, such as the |GaussianNoise| model, require data to be provided. To
+do so, a ``[data]`` section must be included that provides information about
+what data to load, and how to condition it.
 
-The type of data to be loaded depends on the model. If using the
-:py:class:`GaussianNoise <gwin.models.GaussianNoise>` or
-:py:class:`MarginalizedPhaseGaussianNoise
-<gwin.models.MarginalizedPhaseGaussianNoise>` models (the typical case), one
-will need to load gravitational-wave data.  This is accomplished using tools
-provided in the :py:mod:`pycbc.strain` module. The full set of options are:
+The type of data to be loaded depends on the model. For example, if you are
+using the |GaussianNoise| or |MarginalizedPhaseGaussianNoise| models (the
+typical case), one will need to load gravitational-wave data.  This is
+accomplished using tools provided in the :py:mod:`pycbc.strain` module. The
+full set of options are:
+
+.. include:: _include/inference_data_opts-table.rst
 
 -------------------------------
 Advanced configuration settings
