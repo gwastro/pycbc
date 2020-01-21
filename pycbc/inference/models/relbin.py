@@ -6,7 +6,6 @@ from scipy.interpolate import interp1d
 
 from pycbc.waveform.spa_tmplt import spa_tmplt
 from pycbc.detector import Detector
-from pycbc.types import Array
 
 from .base_data import BaseDataModel
 
@@ -38,7 +37,6 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
                             ff in fbin])
     # make sure grid points are precise
     fbin = numpy.array([f_full[i] for i in fbin_ind])
-
     return nbin, fbin, fbin_ind
 
 class Relative(BaseDataModel):
