@@ -25,23 +25,36 @@ except ModuleNotFoundError:  # python 3
     from io import StringIO
 
 import re
+from textwrap import TextWrapper
 
 from pycbc.inference.models import data_utils
+
+# wrapper for long metavars
+metavar_txtwrap = TextWrapper(width=34, break_long_words=False)
 
 # convenience class for storing row data
 class Row(object):
 
-    def __init__(self, divider=None):
+    def __init__(self, divider=None, lpad=3):
         if divider is None:
             divider = ' | '
         self.divider = divider
-        self.lborder = divider[1:]
+        self.lborder = ' '*lpad + divider[1:]
         self.rborder = divider[:-1]
         self.groupmsg = ''
         self.option = ''
-        self.metavar = ''
+        self._metavar = ''
         self.helpmsg = ''
 
+    @property
+    def metavar(self):
+        return self._metavar
+
+    @metavar.setter
+    def metavar(self, metavar):
+        # text wrap if metavar is more than 34 characters wide
+        self._metavar = '\n'.join(metavar_txtwrap.wrap(metavar))
+            
     @property
     def isgroup(self):
         return self.groupmsg != ''
@@ -51,28 +64,41 @@ class Row(object):
         return max(map(len, self.groupmsg.split('\n')))
 
     @property
+    def metavarlen(self):
+        return max(map(len, self.metavar.split('\n')))
+
+    @property
     def helplen(self):
         return max(map(len, self.helpmsg.split('\n')))
 
     def format(self, maxlen, optlen, metalen, helplen):
         if self.isgroup:
-            out = ['{lbdr}{msg:^{width}}{rbdr}'.format(lbdr=self.lborder,
+            out = ['{lbdr}{msg:<{width}}{rbdr}'.format(lbdr=self.lborder,
                                                        msg=msg, width=maxlen,
                                                        rbdr=self.rborder)
                    for msg in self.groupmsg.split('\n')]
         else:
             tmplt = '{msg:<{rpad}}'
             out = []
-            for ii, helpmsg in enumerate(self.helpmsg.split('\n')):
+            metavar = self.metavar.split('\n')
+            helpmsg = self.helpmsg.split('\n')
+            nlines = max(len(metavar), len(helpmsg))
+            for ii in range(nlines):
                 if ii == 0:
                     optstr = self.option
-                    metastr = self.metavar
                 else:
                     optstr = ''
+                if ii < len(metavar):
+                    metastr = metavar[ii]
+                else:
                     metastr = ''
+                if ii < len(helpmsg):
+                    helpstr = helpmsg[ii]
+                else:
+                    helpstr = ''
                 optstr = tmplt.format(msg=optstr, rpad=optlen)
                 metastr = tmplt.format(msg=metastr, rpad=metalen)
-                helpstr = tmplt.format(msg=helpmsg, rpad=helplen)
+                helpstr = tmplt.format(msg=helpstr, rpad=helplen)
                 rowstr = self.divider.join([optstr, metastr, helpstr])
                 # add borders
                 rowstr = '{}{}{}'.format(self.lborder, rowstr, self.rborder)
@@ -83,7 +109,7 @@ class Row(object):
         if self.isgroup:
             baselen = self.grouplen
         else:
-            baselen = len(self.option) + len(self.metavar) + self.helplen
+            baselen = len(self.option) + self.metavarlen + self.helplen
         return baselen + 2*len(self.divider)
 
 
@@ -178,7 +204,7 @@ while line:
 # Now format the table
 # get the maximum length of each column
 optlen = max([len(row.option) for row in table])
-metalen = max([len(row.metavar) for row in table])
+metalen = max([row.metavarlen for row in table])
 helplen = max([row.helplen for row in table])
 maxlen = optlen + metalen + helplen + 6  # the 6 is for the 2 dividers
 
@@ -199,6 +225,12 @@ formatargs = [maxlen, optlen, metalen, helplen]
 # Write the formatted table to file
 filename = 'inference_data_opts-table.rst'
 out = open(filename, 'w')
+# add the table directive
+pad = '   '
+print('.. table::', file=out)
+print(pad+':widths: grid', file=out)
+print('', file=out)
+# now the table
 print(minorline.format(*formatargs), file=out)
 # print the header
 print(header.format(*formatargs), file=out)
