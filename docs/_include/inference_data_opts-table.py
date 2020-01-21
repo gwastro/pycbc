@@ -28,13 +28,15 @@ import re
 
 from pycbc.inference.models import data_utils
 
-from _dict_to_rst import (rst_dict_table, format_class)
-
 # convenience class for storing row data
 class Row(object):
-    divider = '  '
 
-    def __init__(self):
+    def __init__(self, divider=None):
+        if divider is None:
+            divider = ' | '
+        self.divider = divider
+        self.lborder = divider[1:]
+        self.rborder = divider[:-1]
         self.groupmsg = ''
         self.option = ''
         self.metavar = ''
@@ -54,7 +56,9 @@ class Row(object):
 
     def format(self, maxlen, optlen, metalen, helplen):
         if self.isgroup:
-            out = ['{msg:^{width}}'.format(msg=msg, width=maxlen)
+            out = ['{lbdr}{msg:^{width}}{rbdr}'.format(lbdr=self.lborder,
+                                                       msg=msg, width=maxlen,
+                                                       rbdr=self.rborder)
                    for msg in self.groupmsg.split('\n')]
         else:
             tmplt = '{msg:<{rpad}}'
@@ -69,7 +73,10 @@ class Row(object):
                 optstr = tmplt.format(msg=optstr, rpad=optlen)
                 metastr = tmplt.format(msg=metastr, rpad=metalen)
                 helpstr = tmplt.format(msg=helpmsg, rpad=helplen)
-                out.append(self.divider.join([optstr, metastr, helpstr]))
+                rowstr = self.divider.join([optstr, metastr, helpstr])
+                # add borders
+                rowstr = '{}{}{}'.format(self.lborder, rowstr, self.rborder)
+                out.append(rowstr)
         return '\n'.join(out)
 
     def __len__(self):
@@ -169,43 +176,36 @@ while line:
     line = fp.readline()
 
 # Now format the table
-# get the maximum row length
-maxlen = max(map(len, table))
 # get the maximum length of each column
 optlen = max([len(row.option) for row in table])
 metalen = max([len(row.metavar) for row in table])
 helplen = max([row.helplen for row in table])
+maxlen = optlen + metalen + helplen + 6  # the 6 is for the 2 dividers
 
 # create row separators
 # "major" will have == lines
-majorbreak = Row()
-majorbreak.option = '='*optlen
-majorbreak.metavar = '='*metalen
-majorbreak.helpmsg = '='*helplen
+majorline = Row(divider='=+=')
+majorline.option = '='*optlen
+majorline.metavar = '='*metalen
+majorline.helpmsg = '='*helplen
 # "minor" will have -- lines
-minorbreak = Row()
-minorbreak.option = '-'*optlen
-minorbreak.metavar = '-'*metalen
-minorbreak.helpmsg = '-'*helplen
+minorline = Row(divider='-+-')
+minorline.option = '-'*optlen
+minorline.metavar = '-'*metalen
+minorline.helpmsg = '-'*helplen
 
 formatargs = [maxlen, optlen, metalen, helplen]
 
 # Write the formatted table to file
 filename = 'inference_data_opts-table.rst'
 out = open(filename, 'w')
-print(majorbreak.format(*formatargs), file=out)
+print(minorline.format(*formatargs), file=out)
 # print the header
 print(header.format(*formatargs), file=out)
-print(majorbreak.format(*formatargs), file=out)
+print(majorline.format(*formatargs), file=out)
 # print everything else in the table
 for ii in range(1, len(table)):
     row = table[ii]
-    if row.isgroup or ii == len(table)-1 or table[ii+1].isgroup:
-        # use a majorbreak
-        rbreak = majorbreak
-    else:
-        # use a minorbreak
-        rbreak = minorbreak
     print(row.format(*formatargs), file=out)
-    print(rbreak.format(*formatargs), file=out)
+    print(minorline.format(*formatargs), file=out)
 out.close()
