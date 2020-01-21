@@ -133,6 +133,15 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# RTD theme will ignore text wrapping table cells, leading to very long rows.
+# This is fixed with the override in the theme_overrides table.
+# from: https://rackerlabs.github.io/docs-rackspace/tools/rtd-tables.html
+html_context = {
+    'css_files': [
+        '_static/theme_overrides.css',  # override wide tables in RTD theme
+        ],
+     }
+
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 html_last_updated_fmt = '%b %d, %Y'
