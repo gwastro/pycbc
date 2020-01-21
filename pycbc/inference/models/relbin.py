@@ -170,16 +170,17 @@ class Relative(BaseDataModel):
         # <h, h> is real part of the sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
         hh = numpy.sum(sdat['b0'] * numpy.absolute(r0) ** 2.
                        + 2. * sdat['b1'] * (r1 * numpy.conjugate(r0)).real).real
-
         return hd - 0.5 * hh
 
     def _loglikelihood(self):
+        return self.loglr + self.lognl
+
+    def _loglr(self):
         # get model params
         p = self.current_params.copy()
         p.update(self.static_params)
 
-        # start at lognl to end at loglikelihood instead of loglr
-        loglike = self.lognl
+        llr = 0.
         for ifo in self.data:
             # get detector antenna pattern
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
@@ -194,15 +195,16 @@ class Relative(BaseDataModel):
             dtc = p['tc'] + dt - self.end_time - self.ta[ifo]
             # generate template and calculate waveform ratio
             r0, r1 = self.waveform_ratio(p, htf, dtc=dtc)
-            # computer inner products
-            lr = self.binned_inner_products(r0, r1, self.sdat[ifo])
-            # increment loglikelihood
-            loglike += lr
-
-        return float(loglike)
-
-    def _loglr(self):
-        return self.loglikelihood - self.lognl
+            # <h, d> is real part of sum over bins of A0r0 + A1r1
+            hd = numpy.sum(self.sdat[ifo]['a0'] * r0
+                           + self.sdat[ifo]['a1'] * r1).real
+            # <h, h> is real part of sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
+            hh = numpy.sum(self.sdat[ifo]['b0'] * numpy.absolute(r0) ** 2.
+                           + 2. * self.sdat[ifo]['b1']
+                           * (r1 * numpy.conjugate(r0)).real).real
+            # increment loglr
+            llr += (hd - 0.5 * hh)
+        return float(llr)
 
     def _lognl(self):
         return sum([self.det_lognl(det) for det in self.data])
