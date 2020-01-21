@@ -32,8 +32,8 @@ def _far_from_p(p, livetime, max_far):
 
 far_from_p = numpy.vectorize(_far_from_p)
 
-#pylab.rc('text', usetex=True)
-#pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+pylab.rc('text', usetex=True)
+pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
 parser = argparse.ArgumentParser()
 # General required options
