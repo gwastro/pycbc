@@ -171,7 +171,7 @@ class LiveEventManager(object):
                                        ptime, pvalue, sigma2,
                                        recalculate_ifar=recalculate_ifar)
 
-        # FIXME the SNR time series sample rate can vary slightly due to
+        # the SNR time series sample rate can vary slightly due to
         # rounding errors, so force all of them to be identical
         fix_delta_t = None
         for ifo in out:
