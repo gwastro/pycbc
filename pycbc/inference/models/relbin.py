@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import numpy as np
+import numpy
 import logging
 from scipy.interpolate import interp1d
 
@@ -11,7 +11,6 @@ from pycbc.types import Array
 from .base_data import BaseDataModel
 
 
-# construct frequency bins for relative binning
 def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     """
     construct frequency binning
@@ -20,24 +19,27 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     chi, eps are tunable parameters [see Barak, Dai & Venumadhav 2018]
     return the number of bins, a list of bin-edge frequencies, and their positions in the full frequency grid
     """
-    f = np.linspace(f_lo, f_hi, 10000)
+    f = numpy.linspace(f_lo, f_hi, 10000)
     # f^ga power law index
-    ga = np.array([-5.0/3.0, -2.0/3.0, 1.0, 5.0/3.0, 7.0/3.0])
-    dalp = chi*2.0*np.pi/np.absolute(f_lo**ga - f_hi**ga)
-    dphi = np.sum(np.array([np.sign(ga[i])*dalp[i]*f**ga[i] for i in range(len(ga))]), axis=0)
-    Dphi = dphi - dphi[0]
+    ga = numpy.array([-5./3, -2./3, 1., 5./3, 7./3])
+    dalp = chi * 2.0 * numpy.pi / numpy.absolute((f_lo ** ga) - (f_hi ** ga))
+    dphi = numpy.sum(numpy.array([numpy.sign(g) * d * (f ** g) for
+                                  g, d in zip(ga, dalp)]), axis=0)
+    dphi_diff = dphi - dphi[0]
     # now construct frequency bins
-    Nbin = int(Dphi[-1]//eps)
-    Dphi2f = interp1d(Dphi, f, kind='slinear', bounds_error=False, fill_value=0.0)
-    Dphi_grid = np.linspace(Dphi[0], Dphi[-1], Nbin+1)
+    nbin = int(dphi_diff[-1] / eps)
+    dphi2f = interp1d(dphi_diff, f, kind='slinear', bounds_error=False,
+                      fill_value=0.0)
+    dphi_grid = numpy.linspace(dphi_diff[0], dphi_diff[-1], nbin+1)
     # frequency grid points
-    fbin = Dphi2f(Dphi_grid)
+    fbin = dphi2f(dphi_grid)
     # indices of frequency grid points in the FFT array
-    fbin_ind = np.array([np.argmin(np.absolute(f_full - ff)) for ff in fbin])
+    fbin_ind = numpy.array([numpy.argmin(numpy.absolute(f_full - ff)) for
+                            ff in fbin])
     # make sure grid points are precise
-    fbin = np.array([f_full[i] for i in fbin_ind])
+    fbin = numpy.array([f_full[i] for i in fbin_ind])
 
-    return (Nbin, fbin, fbin_ind)
+    return nbin, fbin, fbin_ind
 
 class Relative(BaseDataModel):
     name = "relative"
@@ -45,32 +47,32 @@ class Relative(BaseDataModel):
                  ra, dec, tc, low_frequency_cutoff,
                  high_frequency_cutoff, epsilon=0.5, **kwargs):
         super(Relative, self).__init__(data=data, **kwargs)
-        # define things
+        # store data and frequencies
         f_lo = float(low_frequency_cutoff)
         f_hi = float(high_frequency_cutoff)
-        self.f = np.array(data[data.keys()[0]].sample_frequencies)
+        self.f = numpy.array(data[data.keys()[0]].sample_frequencies)
         self.df = data[data.keys()[0]].delta_f
-        self.fref = f_lo
-        self.data = data.copy()
-        # cast data and psds to arrays for faster computation
-        self.comp_data = {ifo: np.array(data[ifo].data) for ifo in data}
-        self.comp_psds = {ifo: np.array(psds[ifo].data) for ifo in data}
+        self.data = data
+        self.end_time = float(data[data.keys()[0]].end_time)
         self.det = {ifo: Detector(ifo) for ifo in data}
+        epsilon = float(epsilon)
+        # store data and psds as arrays for faster computation
+        self.comp_data = {ifo: numpy.array(data[ifo].data) for ifo in data}
+        self.comp_psds = {ifo: numpy.array(psds[ifo].data) for ifo in data}
+        # store fiducial waveform params
         mass1 = float(mass1)
         mass2 = float(mass2)
         spin1z = float(spin1z)
         spin2z = float(spin2z)
-        self.ra = float(ra)
-        self.dec = float(dec)
-        self.tc = float(tc)
-        epsilon = float(epsilon)
-        self.end_time = float(data[data.keys()[0]].end_time)
+        ra = float(ra)
+        dec = float(dec)
+        tc = float(tc)
 
         # get detector-specific arrival times relative to end of data
-        dt = {ifo: self.det[ifo].time_delay_from_earth_center(
-                  self.ra, self.dec, self.tc) for ifo in data}
-        self.tc_loc = {ifo: self.tc + dt[ifo] - self.end_time
-                       for ifo in data}
+        dt = {ifo: self.det[ifo].time_delay_from_earth_center(ra, dec, tc) for
+              ifo in data}
+        self.ta = {ifo: tc + dt[ifo] - self.end_time for ifo in data}
+
         # generate fiducial waveform
         logging.info("Generating fiducial waveform")
         hp = spa_tmplt(f_lower=f_lo, f_upper=f_hi+self.df,
@@ -79,23 +81,26 @@ class Relative(BaseDataModel):
                        spin2z=spin2z, distance=1.,
                        spin_order=-1, phase_order=-1)
         hp.resize(len(self.f))
-        self.h00 = np.array(hp)
+        self.h00 = numpy.array(hp)
+
         # compute frequency bins
         logging.info("Computing frequency bins")
         nbin, fbin, fbin_ind = setup_bins(f_full=self.f, f_lo=f_lo, f_hi=f_hi,
                                           eps=epsilon)
+        logging.info('Using %s bins for this model', nbin)
+        # store bins and edges in sample and frequency space
         self.edges = fbin_ind
-        self.fedges = np.array(fbin).astype(np.float64)
-        self.fedges32 = np.array(fbin).astype(np.float32)
-        self.bins = np.array([(self.edges[i], self.edges[i+1]) for
-                                  i in range(len(self.edges) - 1)])
-        self.fbins = np.array([(fbin[i], fbin[i+1]) for
-                                i in range(len(fbin) - 1)])
+        self.fedges = numpy.array(fbin).astype(numpy.float32)
+        self.bins = numpy.array([(self.edges[i], self.edges[i+1]) for
+                                 i in range(len(self.edges) - 1)])
+        self.fbins = numpy.array([(fbin[i], fbin[i+1]) for
+                                  i in range(len(fbin) - 1)])
+        # store low res fiducial waveform
         self.h00_sparse = self.h00.copy().take(self.edges)
-        logging.info('Using %s bins for this model', len(self.bins))
 
         # compute summary data
-        logging.info("Calculating summary data")
+        logging.info("Calculating summary data at frequency resolution %s",
+                      self.df)
         self.sdat = self.summary_data()
 
         # store the psds and calculate the inner product weight
@@ -106,64 +111,67 @@ class Relative(BaseDataModel):
         self._data = data.copy()
         self._f_lower = {ifo: f_lo for ifo in self.data}
         self._f_upper = {ifo: f_hi for ifo in self.data}
-        self._N = int(1./(data[data.keys()[0]].delta_t * self.df))
+        self._N = int(1. / (data[data.keys()[0]].delta_t * self.df))
         self._psds = {}
         self._weight = {}
         self._lognorm = {}
         self._det_lognls = {}
         self.set_psds(psds)
-        logging.info("Lognl is {}".format(self.lognl))
+        logging.info("Lognl is %s", self.lognl)
 
     def summary_data(self):
         # timeshift the fiducial waveform for each detector
-        h0 = {ifo: self.h00.copy() * np.exp(-2.0j * np.pi * self.f * self.tc_loc[ifo])
-              for ifo in self.data}
+        shift = {ifo: numpy.exp(-2.0j * numpy.pi * self.f * self.ta[ifo]) for
+                 ifo in self.data}
+        h0 = {ifo: self.h00.copy() * shift[ifo] for ifo in self.data}
         # calculate coefficients
-        logging.info("Using {} seconds of data".format(1./self.df))
         sdat = {}
         for ifo in self.data:
-            a0 = np.array([4.*self.df*np.sum(np.conjugate(self.comp_data[ifo][l:h]) \
-                                     *h0[ifo][l:h] \
-                                     /self.comp_psds[ifo][l:h]) for l, h in self.bins])
-            b0 = np.array([4.*self.df*np.sum(np.absolute(h0[ifo][l:h]) ** 2.0 \
-                                     /self.comp_psds[ifo][l:h]) for l, h in self.bins])
-            a1 = np.array([4.*self.df*np.sum(np.conjugate(self.comp_data[ifo][l:h]) \
-                                     *h0[ifo][l:h] \
-                                     /self.comp_psds[ifo][l:h] \
-                                     *(self.f[l:h] - 0.5*(fl+fh))) for (l, h), (fl, fh) in zip(self.bins, self.fbins)])
-            b1 = np.array([4.*self.df*np.sum(np.absolute(h0[ifo][l:h]) ** 2.0 \
-                                     /self.comp_psds[ifo][l:h] \
-                                     *(self.f[l:h] - 0.5*(fl+fh))) for (l, h), (fl, fh) in zip(self.bins, self.fbins)])
+            hd = numpy.conjugate(self.comp_data[ifo]) * h0[ifo]
+            hd /= self.comp_psds[ifo]
+            hh = (numpy.absolute(h0[ifo]) ** 2.0) / self.comp_psds[ifo]
+            # constant terms
+            a0 = numpy.array([4. * self.df * numpy.sum(hd[l:h]) for
+                              l, h in self.bins])
+            b0 = numpy.array([4. * self.df * numpy.sum(hh[l:h]) for
+                              l, h in self.bins])
+            # linear terms
+            bin_centers = [0.5 * (fl + fh) for fl, fh in self.fbins]
+            a1 = numpy.array([4. * self.df * \
+                              numpy.sum(hd[l:h] * (self.f[l:h] - bc)) for
+                              (l, h), bc in zip(self.bins, bin_centers)])
+            b1 = numpy.array([4. * self.df * \
+                              numpy.sum(hh[l:h] * (self.f[l:h] - bc)) for
+                              (l, h), bc in zip(self.bins, bin_centers)])
+
             sdat[ifo] = {'a0': a0, 'a1': a1,
                          'b0': b0, 'b1': b1}
         return sdat
 
     def waveform_ratio(self, p, htf, dtc=0.0):
         # generate template
-        s1z = p['spin1z']
-        s2z = p['spin2z']
-        hp = spa_tmplt(sample_points=self.fedges32,
-                       mass1=p['mass1'],
-                       mass2=p['mass2'], spin1z=s1z,
-                       spin2z=s2z, distance=1.,
-                       spin_order=-1, phase_order=-1)
-        htarget = np.array(hp)
-        # apply antenna pattern, inclination, and distance
+        hp = spa_tmplt(sample_points=self.fedges,
+                       mass1=p['mass1'], mass2=p['mass2'],
+                       spin1z=p['spin1z'], spin2z=p['spin2z'],
+                       distance=1., spin_order=-1, phase_order=-1)
+        htarget = numpy.array(hp)
+        # apply antenna pattern, inclination, and distance factor
         htarget *= htf
         # compute waveform ratio and timeshift
-        r = htarget / self.h00_sparse * np.exp(-2.0j * np.pi * self.fedges * dtc)
+        shift = numpy.exp(-2.0j * numpy.pi * self.fedges * dtc)
+        r = htarget / self.h00_sparse * shift
         r0 = 0.5 * (r[:-1] + r[1:])
         r1 = (r[1:] - r[:-1]) / (self.fedges[1:] - self.fedges[:-1])
-        return np.array([r0, r1], dtype=np.complex128)
+        return numpy.array([r0, r1], dtype=numpy.complex128)
 
-    def calc_inner_products(self, r0, r1, sdata):
-        # <h, d> is the sum over bins of A0r0 + A1r1
-        hd = np.sum(sdata['a0']*r0 + sdata['a1']*r1)
-        # <h, h> is the sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
-        hh = np.sum(sdata['b0']*np.absolute(r0)**2.
-                    + 2.*sdata['b1']*(r1*np.conjugate(r0)).real).real
+    def binned_inner_products(self, r0, r1, sdat):
+        # <h, d> is real part of the sum over bins of A0r0 + A1r1
+        hd = numpy.sum(sdat['a0'] * r0 + sdat['a1'] * r1).real
+        # <h, h> is real part of the sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
+        hh = numpy.sum(sdat['b0'] * numpy.absolute(r0) ** 2.
+                       + 2. * sdat['b1'] * (r1 * numpy.conjugate(r0)).real).real
 
-        return (hd - 0.5*hh).real
+        return hd - 0.5 * hh
 
     def _loglikelihood(self):
         # get model params
@@ -177,17 +185,17 @@ class Relative(BaseDataModel):
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
                                                    p['polarization'],
                                                    p['tc'])
-            ip = np.cos(p['inclination'])
+            ip = numpy.cos(p['inclination'])
             ic = 0.5 * (1.0 + ip * ip)
             htf = (fp * ip + 1.0j * fc * ic) / p['distance']
             # get timeshift relative to fiducial waveform
             dt = self.det[ifo].time_delay_from_earth_center(p['ra'], p['dec'],
                                                             p['tc'])
-            dtc = p['tc'] + dt - self.end_time - self.tc_loc[ifo]
+            dtc = p['tc'] + dt - self.end_time - self.ta[ifo]
             # generate template and calculate waveform ratio
-            rdata = self.waveform_ratio(p, htf, dtc=dtc)
+            r0, r1 = self.waveform_ratio(p, htf, dtc=dtc)
             # computer inner products
-            lr = self.calc_inner_products(rdata[0], rdata[1], self.sdat[ifo])
+            lr = self.binned_inner_products(r0, r1, self.sdat[ifo])
             # increment loglikelihood
             loglike += lr
 
@@ -203,8 +211,8 @@ class Relative(BaseDataModel):
         p = self._psds[det]
         dt = self._data[det].delta_t
         kmin, kmax = self._kmin[det], self._kmax[det]
-        lognorm = -float(self._N*np.log(np.pi*self._N*dt)/2. \
-                         + np.log(p[kmin:kmax]).sum())
+        lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2. \
+                         + numpy.log(p[kmin:kmax]).sum())
         self._lognorm[det] = lognorm
         return self._lognorm[det]
 
@@ -240,18 +248,18 @@ class Relative(BaseDataModel):
         for det, d in self._data.items():
             if psds is None:
                 # No psd means assume white PSD
-                p = FrequencySeries(np.ones(int(self._N/2+1)),
+                p = FrequencySeries(numpy.ones(int(self._N/2+1)),
                                     delta_f=d.delta_f)
             else:
                 # copy for storage
                 p = psds[det].copy()
             self._psds[det] = p
             # we'll store the weight to apply to the inner product
-            w = Array(np.zeros(len(p)))
+            w = Array(numpy.zeros(len(p)))
             # only set weight in band we will analyze
             kmin = self._kmin[det]
             kmax = self._kmax[det]
-            w[kmin:kmax] = np.sqrt(4.*p.delta_f/p[kmin:kmax])
+            w[kmin:kmax] = numpy.sqrt(4.*p.delta_f/p[kmin:kmax])
             self._weight[det] = w
         # set the lognl and lognorm; we'll get this by just calling lognl
         _ = self.lognl
