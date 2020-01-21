@@ -343,6 +343,11 @@ class LiveEventManager(object):
             # apply a trials factor of the number of active detectors
             ifar /= len(active)
             single['foreground/ifar'] = ifar
+            
+            # FIXME delta_t can vary due to rounding errors, force them to be identical
+            fix_delta_t = fud[ifo]['snr_series'].delta_t
+            for ifo in active:
+                fud[ifo]['snr_series']._delta_t = fix_delta_t
 
             event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                           psds=psds, followup_data=fud,
