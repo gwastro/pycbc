@@ -146,6 +146,7 @@ for ifo in args.data_files.keys():
 
 fp = h5py.File(args.params_file, 'r')
 ifos = list(data.keys())
+original_gid = fp['gid'][()]
 
 coinc_times = {}
 for ifo in ifos:
@@ -156,7 +157,7 @@ for ifo in ifos:
 
 coinc_ifos = list(coinc_times.keys())
 
-logging.info("Following up GID {}".format(fp['gid'][()]))
+logging.info('Following up GID %s', original_gid)
 flen = fp['flen'][()]
 approximant = args.approximant
 flow = float(fp['flow'][()])
@@ -319,27 +320,34 @@ kwargs = {'psds': {ifo: followup_data[ifo]['psd'] for ifo in ifos},
           'low_frequency_cutoff': flow,
           'followup_data': followup_data,
           'channel_names': channel_names}
-comments = ['Automatic PyCBC followup of trigger {0} to find the parameters '
-            'that maximize the SNR. The FAR of this trigger is copied from '
-            '{0} and does not reflect this triggers\' '
-            'parameters.'.format(fp['gid'][()])]
 
 doc = live.SingleCoincForGraceDB(ifos, coinc_results,
                                  upload_snr_series=True, **kwargs)
-tmpdir = tempfile.mkdtemp()
-xml_path = os.path.join(
-        tmpdir, '{:.3f}.xml.gz'.format(loudest_snr_time_allifos))
+
 if args.enable_gracedb_upload:
-    gid = doc.upload(xml_path,
-                    gracedb_server=args.gracedb_server,
-                    testing=(not args.production),
-                    extra_strings=comments)
+    comments = ['Automatic PyCBC followup of trigger '
+                '<a href="/events/{0}/view">{0}</a> to find the template '
+                'parameters that maximize the SNR. The FAR of this trigger is '
+                'copied from {0} and does not reflect this triggers\' template '
+                'parameters.'.format(original_gid)]
+
+    tmpdir = tempfile.mkdtemp()
+    xml_path = os.path.join(tmpdir,
+                            '{:.3f}.xml.gz'.format(loudest_snr_time_allifos))
+    gid = doc.upload(xml_path, gracedb_server=args.gracedb_server,
+                     testing=(not args.production), extra_strings=comments)
+    if gid is not None:
+        logging.info('Event uploaded as %s', gid)
+        shutil.rmtree(tmpdir)
+
+        # add a note to the original G event pointing to the optimized one
+        gracedb = GraceDb(args.gracedb_server) \
+                if args.gracedb_server is not None else GraceDb()
+        note = 'Result of SNR maximization uploaded as '
+               '<a href="/events/{0}/view">{0}</a>'.format(gid)
+        gracedb.writeLog(original_gid, note, tag_name=['analyst_comments'])
 else:
-    gid = None
-    fname = 'coinc-{:.3f}-{}.xml.gz'.format(loudest_snr_time_allifos, pycbc.random_string(6))
+    fname = 'coinc-{:.3f}-{}.xml.gz'.format(loudest_snr_time_allifos,
+                                            pycbc.random_string(6))
     fname = os.path.join(args.output_path, fname)
     doc.save(fname)
-
-if gid is not None:
-    logging.info('Event uploaded as %s', gid)
-    shutil.rmtree(tmpdir)

@@ -33,6 +33,14 @@ from pycbc.vetoes.sgchisq import SingleDetSGChisq
 from pycbc.waveform.waveform import props
 
 
+def ppdets(ifos):
+    """Pretty-print a list (or set) of detectors: return a string listing
+    the given detectors alphabetically and separated by commas.
+    """
+    if ifos:
+        return ', '.join(sorted(ifos))
+    return 'no detectors'
+
 def ptof(p, ft):
     """Convert p-value to FAR via foreground time `ft`.
     """
@@ -163,6 +171,17 @@ class LiveEventManager(object):
                                        ptime, pvalue, sigma2,
                                        recalculate_ifar=recalculate_ifar)
 
+        # FIXME the SNR time series sample rate can vary slightly due to
+        # rounding errors, so force all of them to be identical
+        fix_delta_t = None
+        for ifo in out:
+            if 'snr_series' not in ifo:
+                continue
+            if fix_delta_t is None:
+                fix_delta_t = out[ifo]['snr_series']._delta_t
+            else:
+                out[ifo]['snr_series']._delta_t = fix_delta_t
+
         return out
 
     def get_followup_info(self, coinc_ifo, ifo, triggers, snr_series, ptime,
@@ -187,8 +206,8 @@ class LiveEventManager(object):
         triggers[base + 'sigmasq'] = sigma2
         if recalculate_ifar:
             # Calculate new ifar
-            triggers['foreground/ifar'] = combine_ifar_pvalue(triggers['foreground/ifar'],
-                                                              pvalue, self.pvalue_livetime)
+            triggers['foreground/ifar'] = combine_ifar_pvalue(
+                    triggers['foreground/ifar'], pvalue, self.pvalue_livetime)
 
 
     def check_coincs(self, ifos, coinc_results, psds, f_low,
@@ -219,11 +238,6 @@ class LiveEventManager(object):
 
             live_ifos = [ifo for ifo in fud if 'snr_series' in fud[ifo]]
 
-            # FIXME delta_t can vary due to rounding errors, force them to be identical
-            fix_delta_t = fud[coinc_ifos[0]]['snr_series'].delta_t
-            for ifo in live_ifos:
-                fud[ifo]['snr_series']._delta_t = fix_delta_t
-
             event = SingleCoincForGraceDB(live_ifos, coinc_results, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
@@ -234,8 +248,14 @@ class LiveEventManager(object):
             fname = 'coinc-{}-{}.xml.gz'.format(end_time, pycbc.random_string(6))
             fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
-            comments = ['using ranking statistic: %s'
-                        % args.background_statistic]
+
+            # add some explanatory log entries
+            comment = ['Trigger produced as a {} coincidence. '
+                       'FAR is based on all listed detectors.<br />'
+                       'Two-detector ranking statistic: {}<br />'
+                       'Followup detectors: {}'.format(ppdets(coinc_ifos),
+                                                       args.background_statistic,
+                                                       ppdets(followup_ifos))]
 
             ifar = coinc_results['foreground/ifar']
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
@@ -335,19 +355,14 @@ class LiveEventManager(object):
             if single is None:
                 continue
 
-            other_ifos = [i for i in active if i is not ifo]
+            followup_ifos = [i for i in active if i is not ifo]
             fud = self.compute_followup_data([ifo], single, data_reader,
-                                             bank, followup_ifos=other_ifos,
+                                             bank, followup_ifos=followup_ifos,
                                              recalculate_ifar=False)
             ifar = single['foreground/ifar']
             # apply a trials factor of the number of active detectors
             ifar /= len(active)
             single['foreground/ifar'] = ifar
-            
-            # FIXME delta_t can vary due to rounding errors, force them to be identical
-            fix_delta_t = fud[ifo]['snr_series'].delta_t
-            for ifo in active:
-                fud[ifo]['snr_series']._delta_t = fix_delta_t
 
             event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                           psds=psds, followup_data=fud,
@@ -357,12 +372,19 @@ class LiveEventManager(object):
             end_time = int(single['foreground/%s/end_time' % ifo])
             fname = 'single-%s-%s.xml.gz' % (ifo, end_time)
             fname = os.path.join(self.path, fname)
-            logging.info('Single-detector candidate! Saving as %s',
-                         fname)
+            logging.info('Single-detector candidate! Saving as %s', fname)
+
+            # add some explanatory log entries
+            comments = ['Trigger produced as a {0} single. '
+                        'FAR is based on {0} only.<br />'
+                        'Followup detectors: {1}'.format(
+                                ifo, ppdets(followup_ifos))]
+
             if args.enable_single_detector_upload \
                     and self.ifar_upload_threshold < ifar:
                 event.upload(fname, gracedb_server=args.gracedb_server,
-                             testing=self.gracedb_testing)
+                             testing=self.gracedb_testing,
+                             extra_strings=comments)
             else:
                 event.save(fname)
 
@@ -610,7 +632,7 @@ if bank.min_f_lower < args.low_frequency_cutoff:
 
 # ifos used for primary analysis
 ifos = set(args.channel_name.keys())
-logging.info('Running with %s', ', '.join(sorted(ifos)))
+logging.info('Running with %s', ppdets(ifos))
 
 evnt = LiveEventManager(args.output_path,
                         use_date_prefix=args.day_hour_output_prefix,
