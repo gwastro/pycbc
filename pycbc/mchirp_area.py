@@ -10,6 +10,7 @@ detector frame mass and redshift.
 
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from scipy.integrate import quad
+from pycbc.cosmology import _redshift
 
 
 def insert_args(parser):
@@ -266,32 +267,46 @@ def calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
         ansbh = int_sup_nsbh - int_inf_nsbh
     if mass_gap is not False:
         return {
-            "bns": abns,
-            "gns": agns,
-            "nsbh": ansbh,
-            "gg": agg,
-            "bhg": abhg,
-            "bbh": abbh
+            "BNS": abns,
+            "GNS": agns,
+            "NSBH": ansbh,
+            "GG": agg,
+            "BHG": abhg,
+            "BBH": abbh
             }
     return {
-        "bns": abns,
-        "nsbh": ansbh,
-        "bbh": abbh,
-        "mass_gap": agns + agg + abhg
+        "BNS": abns,
+        "NSBH": ansbh,
+        "BBH": abbh,
+        "Mass Gap": agns + agg + abhg
         }
 
 
-def calc_probabilities(trig_mc_det, mass_limits, mass_bdary, z, mass_gap):
-    # If the mchirp is greater than a mchirp corresponding to two masses
+def calc_probabilities(mchirp, snr, eff_distance, src_args):
+    mass_limits = src_args['mass_limits']
+    mass_bdary = src_args['mass_bdary']
+    coeff = src_args['estimation_coeff']
+    trig_mc_det = {'central': mchirp, 'delta': mchirp * coeff['m0']}
+    dist_estimation = coeff['a0'] * eff_distance
+    dist_std_estimation = (dist_estimation * math.exp(coeff['b0']) *
+                           snr ** coeff['b1'])
+    z_estimation = _redshift(dist_estimation)
+    z_est_max = _redshift(dist_estimation + dist_std_estimation)
+    z_est_min = _redshift(dist_estimation - dist_std_estimation)
+    z_std_estimation = 0.5 * (z_est_max - z_est_min)
+    z = {'central': z_estimation, 'delta': z_std_estimation}
+    mass_gap = src_args['mass_gap']
+    
+# If the mchirp is greater than a mchirp corresponding to two masses
     # equal to the maximum mass, the probability for BBH is 100%
     mc_max = mass_limits['max_m1'] / (2 ** 0.2)
     if trig_mc_det['central'] > mc_max * (1 + z['central']):
         if mass_gap is not False:
-            probabilities = {'bns': 0.0, 'gns': 0.0, 'nsbh': 0.0, 'gg': 0.0,
-                             'bhg': 0.0, 'bbh': 1.0}
+            probabilities = {"BNS": 0.0, "GNS": 0.0, "NSBH": 0.0, "GG": 0.0,
+                             "BHG": 0.0, "BBH": 1.0}
         else:
-            probabilities = {'bns': 0.0, 'nsbh': 0.0, 'bbh': 1.0,
-                             'mass_gap': 0.0}
+            probabilities = {"BNS": 0.0, "NSBH": 0.0, "BBH": 1.0,
+                             "Mass Gap": 0.0}
     else:
         areas = calc_areas(trig_mc_det, mass_limits, mass_bdary, z, mass_gap)
         total_area = sum(areas.values())

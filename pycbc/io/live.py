@@ -16,7 +16,6 @@ from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc.results import ifo_color
 from pycbc.mchirp_area import calc_probabilities
-from pycbc.cosmology import _redshift
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
 # xml formats
@@ -259,23 +258,11 @@ class SingleCoincForGraceDB(object):
 
         # source probabilities estimation
         if 'mc_area_args' in kwargs:
-            mass_limits = kwargs['mc_area_args']['mass_limits']
-            mass_bdary = kwargs['mc_area_args']['mass_bdary']
-            coeff = kwargs['mc_area_args']['estimation_coeff']
-            trig_mc = {'central': coinc_inspiral_row.mchirp,
-                       'delta': coinc_inspiral_row.mchirp * coeff['m0']}
             eff_distances = [sngl.eff_distance for sngl in sngl_inspiral_table]
-            dist_estimation = coeff['a0'] * min(eff_distances)
-            dist_std_estimation = (dist_estimation * math.exp(coeff['b0']) *
-                                   coinc_inspiral_row.snr ** coeff['b1'])
-            z_estimation = _redshift(dist_estimation)
-            z_est_max = _redshift(dist_estimation + dist_std_estimation)
-            z_est_min = _redshift(dist_estimation - dist_std_estimation)
-            z_std_estimation = 0.5 * (z_est_max - z_est_min)
-            z = {'central': z_estimation, 'delta': z_std_estimation}
-            mass_gap = kwargs['mc_area_args']['mass_gap']
-            probabilities = calc_probabilities(trig_mc, mass_limits,
-                                               mass_bdary, z, mass_gap)
+            probabilities = calc_probabilities(coinc_inspiral_row.mchirp,
+                                               coinc_inspiral_row.snr,
+                                               min(eff_distances),
+                                               kwargs['mc_area_args'])
             self.probabilities = probabilities
         else:
             self.probabilities = None
