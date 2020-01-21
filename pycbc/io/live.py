@@ -317,10 +317,7 @@ class SingleCoincForGraceDB(object):
             test trigger (True) or a production trigger (False).
         """
         from ligo.gracedb.rest import GraceDb
-        import matplotlib
-        matplotlib.use('Agg')
         import pylab
-        from matplotlib import pyplot as plt
 
         # first of all, make sure the event is saved on disk
         # as GraceDB operations can fail later
@@ -374,16 +371,15 @@ class SingleCoincForGraceDB(object):
         if self.probabilities is not None:
             prob_fname = fname.replace('.xml.gz', '_probs.json')
             prob_plot_fname = prob_fname.replace('.json', '.png')
-            probabilities = json.loads(self.probabilities)
-            labels = list(probabilities.keys())
-            sizes = [probabilities[key] for key in probabilities]
-            explode = [0.02 for key in probabilities]
 
-            fig, ax = plt.subplots()
-            ax.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%')
+            prob_plot = {k:v for (k, v) in self.probabilities if v != 0.0}
+            labels, sizes = zip(*prob_plot.items())
+            fig, ax = pylab.subplots()
+            ax.pie(sizes, labels=labels, autopct='%1.1f%%',
+                   textprops={'fontsize': 15})
             ax.axis('equal')
             fig.savefig(prob_plot_fname)
-            plt.close()
+            pylab.close()
 
         gid = None
         try:
