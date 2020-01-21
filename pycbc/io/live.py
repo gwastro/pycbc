@@ -276,7 +276,7 @@ class SingleCoincForGraceDB(object):
             mass_gap = kwargs['mc_area_args']['mass_gap']
             probabilities = calc_probabilities(trig_mc, mass_limits,
                                                mass_bdary, z, mass_gap)
-            self.probabilities = json.dumps(probabilities)
+            self.probabilities = probabilities
         else:
             self.probabilities = None
 
@@ -298,7 +298,7 @@ class SingleCoincForGraceDB(object):
         if self.probabilities is not None:
             prob_fname = filename.replace('.xml.gz', '_probs.json')
             with open(prob_fname, 'w') as prob_outfile:
-                prob_outfile.write(self.probabilities)
+                json.dump(self.probabilities, prob_outfile)
             logging.info('Source probabilities file saved as %s', prob_fname)
 
     def upload(self, fname, gracedb_server=None, testing=True,
@@ -372,7 +372,7 @@ class SingleCoincForGraceDB(object):
             prob_fname = fname.replace('.xml.gz', '_probs.json')
             prob_plot_fname = prob_fname.replace('.json', '.png')
 
-            prob_plot = {k:v for (k, v) in self.probabilities if v != 0.0}
+            prob_plot = {k: v for (k, v) in self.probabilities if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             fig, ax = pylab.subplots()
             ax.pie(sizes, labels=labels, autopct='%1.1f%%',
