@@ -35,16 +35,28 @@ metavar_txtwrap = TextWrapper(width=34, break_long_words=False)
 # convenience class for storing row data
 class Row(object):
 
-    def __init__(self, divider=None, lpad=3):
+    def __init__(self, divider=None, lpad=0, wrap_option=True):
         if divider is None:
             divider = ' | '
         self.divider = divider
         self.lborder = ' '*lpad + divider[1:]
         self.rborder = divider[:-1]
         self.groupmsg = ''
-        self.option = ''
+        self.wrap_option = wrap_option
+        self._option = ''
         self._metavar = ''
         self.helpmsg = ''
+
+    @property
+    def option(self):
+        return self._option
+
+    @option.setter
+    def option(self, option):
+        if self.wrap_option:
+            # add `` around option string
+            option = '``'+option+'``'
+        self._option = option
 
     @property
     def metavar(self):
@@ -157,7 +169,7 @@ line = fp.readline()
 # now read through the rest of the lines, converting options into a list of
 # tuples with order (option, meta data, help message), grouped by option groups
 # add a header row
-header = Row()
+header = Row(wrap_option=False)
 header.option = 'Name'
 header.metavar = 'Syntax'
 header.helpmsg = 'Description'
@@ -210,12 +222,12 @@ maxlen = optlen + metalen + helplen + 6  # the 6 is for the 2 dividers
 
 # create row separators
 # "major" will have == lines
-majorline = Row(divider='=+=')
+majorline = Row(divider='=+=', wrap_option=False)
 majorline.option = '='*optlen
 majorline.metavar = '='*metalen
 majorline.helpmsg = '='*helplen
 # "minor" will have -- lines
-minorline = Row(divider='-+-')
+minorline = Row(divider='-+-', wrap_option=False)
 minorline.option = '-'*optlen
 minorline.metavar = '-'*metalen
 minorline.helpmsg = '-'*helplen
@@ -225,12 +237,6 @@ formatargs = [maxlen, optlen, metalen, helplen]
 # Write the formatted table to file
 filename = 'inference_data_opts-table.rst'
 out = open(filename, 'w')
-# add the table directive
-pad = '   '
-print('.. table::', file=out)
-print(pad+':widths: grid', file=out)
-print('', file=out)
-# now the table
 print(minorline.format(*formatargs), file=out)
 # print the header
 print(header.format(*formatargs), file=out)
