@@ -4,9 +4,9 @@ PyCBC inference documentation (``pycbc.inference``)
 
 .. Following are useful substituions for classes and modules
 .. GaussianNoise:
-.. |GaussianNoise| replace:: :py:class:`GaussianNoise <pycbc.inference.models.GaussianNoise>`
+.. |GaussianNoise| replace:: :py:class:`GaussianNoise <pycbc.inference.models.gaussian_noise.GaussianNoise>`
 .. MarginalizedPhaseGaussianNoise:
-.. |MarginalizedPhaseGaussianNoise| replace:: :py:class:`MarginalizedPhaseGaussianNoise <pycbc.inference.models.MarginalizedPhaseGaussianNoise>`
+.. |MarginalizedPhaseGaussianNoise| replace:: :py:class:`MarginalizedPhaseGaussianNoise <pycbc.inference.models.marginalized_gaussian_noise.MarginalizedPhaseGaussianNoise>`
 
 ===================
 Introduction
