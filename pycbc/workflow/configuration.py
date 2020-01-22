@@ -470,7 +470,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # and parse them
         parsedDeletes = []
         for delete in confDeletes:
-            splitDelete = delete.split(":")
+            splitDelete = delete.split(":", 2)
             if len(splitDelete) > 2:
                 raise ValueError(
                     "Deletes must be of format section:option "
@@ -483,7 +483,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # and parse them
         parsedOverrides = []
         for override in confOverrides:
-            splitOverride = override.split(":")
+            splitOverride = override.split(":", 2)
             if len(splitOverride) == 3:
                 parsedOverrides.append(tuple(splitOverride))
             elif len(splitOverride) == 2:
