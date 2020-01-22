@@ -329,7 +329,8 @@ if args.enable_gracedb_upload:
                '<a href="/events/{0}/view">{0}</a> to find the template '
                'parameters that maximize the SNR. The FAR of this trigger is '
                'copied from {0} and does not reflect this triggers\' template '
-               'parameters.').format(original_gid)
+               'parameters.')
+    comment = comment.format(original_gid)
 
     tmpdir = tempfile.mkdtemp()
     xml_path = os.path.join(tmpdir,

@@ -249,19 +249,20 @@ class LiveEventManager(object):
             fname = os.path.join(self.path, fname)
             logging.info('Coincident candidate! Saving as %s', fname)
 
-            # add some explanatory log entries
-            comment = ['Trigger produced as a {} coincidence. '
+            # verbally explain some details not obvious from the other info
+            comment = ('Trigger produced as a {} coincidence. '
                        'FAR is based on all listed detectors.<br />'
                        'Two-detector ranking statistic: {}<br />'
-                       'Followup detectors: {}'.format(ppdets(coinc_ifos),
-                                                       args.background_statistic,
-                                                       ppdets(followup_ifos))]
+                       'Followup detectors: {}')
+            comment = comment.format(ppdets(coinc_ifos),
+                                     args.background_statistic,
+                                     ppdets(followup_ifos))
 
             ifar = coinc_results['foreground/ifar']
             if self.enable_gracedb_upload and self.ifar_upload_threshold < ifar:
                 gid = event.upload(fname, gracedb_server=args.gracedb_server,
                                    testing=self.gracedb_testing,
-                                   extra_strings=comments)
+                                   extra_strings=[comment])
             else:
                 gid = None
                 event.save(fname)
@@ -374,17 +375,17 @@ class LiveEventManager(object):
             fname = os.path.join(self.path, fname)
             logging.info('Single-detector candidate! Saving as %s', fname)
 
-            # add some explanatory log entries
-            comments = ['Trigger produced as a {0} single. '
-                        'FAR is based on {0} only.<br />'
-                        'Followup detectors: {1}'.format(
-                                ifo, ppdets(followup_ifos))]
+            # verbally explain some details not obvious from the other info
+            comment = ('Trigger produced as a {0} single. '
+                       'FAR is based on {0} only.<br />'
+                       'Followup detectors: {1}')
+            comment = comment.format(ifo, ppdets(followup_ifos))
 
             if args.enable_single_detector_upload \
                     and self.ifar_upload_threshold < ifar:
                 event.upload(fname, gracedb_server=args.gracedb_server,
                              testing=self.gracedb_testing,
-                             extra_strings=comments)
+                             extra_strings=[comment])
             else:
                 event.save(fname)
 
