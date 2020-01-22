@@ -111,7 +111,7 @@ class Row(object):
                 optstr = tmplt.format(msg=optstr, rpad=optlen)
                 metastr = tmplt.format(msg=metastr, rpad=metalen)
                 helpstr = tmplt.format(msg=helpstr, rpad=helplen)
-                rowstr = self.divider.join([optstr, metastr, helpstr])
+                rowstr = self.divider.join([optstr, helpstr, metastr])
                 # add borders
                 rowstr = '{}{}{}'.format(self.lborder, rowstr, self.rborder)
                 out.append(rowstr)
