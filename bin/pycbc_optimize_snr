@@ -22,6 +22,7 @@ from scipy.optimize import differential_evolution
 from pycbc.io import live
 from pycbc.detector import Detector
 from pycbc.psd import interpolate
+from ligo.gracedb.rest import GraceDb
 
 
 Nfeval = 0
