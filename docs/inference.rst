@@ -552,6 +552,10 @@ Simulated BBH example
 This example recovers the parameters of a simulated binary black-hole (BBH)
 that has similar parameters has GW150914.
 
+^^^^^^^^^^^^^^^^^^^^^^
+Creating the injection
+^^^^^^^^^^^^^^^^^^^^^^
+
 First, we need to create an ``injection.hdf`` file that specifies the
 parameters of the simulated signal. To do that we will use
 ``pycbc_create_injection``. Like ``pycbc_inference``,
@@ -582,36 +586,40 @@ This will create the ``injection.hdf`` file, which we will give to
 ``pycbc_inference``. For more information on generating injection files, run
 ``pycbc_create_injections --help``.
 
+
+^^^^^^^^^^^^^^^^^^^^^^^
+The configuration files
+^^^^^^^^^^^^^^^^^^^^^^^
+
 Now we need to set up the configuration for ``pycbc_inference``. Since we
 will be analyzing data, we will need to provide several additional options in a
 ``[data]`` section. To keep the configuration files easy to read, we will split
 the data, sampler, and prior settings into their own configuration files.
 
-First, the model and prior settings:
+Here are the model and prior settings we will use:
 
 .. literalinclude:: ../examples/inference/priors/gw150914_like.ini
    :language: ini
 
 :download:`Download <../examples/inference/priors/gw150914_like.ini>`
 
-In the ``[model]`` section we have set the model to be ``gaussian_noise``.
-As described above, this is the standard model to use for CBC signals, assuming
-the data is stationary Gaussian noise. Notice that we had to provide additional
-arguments for the low frequency cutoff to use in each detector. These values
-are the lower cutoffs used for the likelihood integral. (See the
-|GaussianNoise| docs for details.)
+In the ``[model]`` section we have set the model to be ``gaussian_noise``.  As
+described above, this is the standard model to use for CBC signals. It assumes
+that the noise is wide-sense stationary Gaussian noise. Notice that we had to
+provide additional arguments for the low frequency cutoff to use in each
+detector. These values are the lower cutoffs used for the likelihood integral.
+(See the |GaussianNoise| docs for details.)
 
 The |GaussianNoise| model will need to generate model waveforms in order to
 evaluate the likelihood. This means that we need to provide it with a waveform
 approximant to use. Which model to use is set by the ``approximant`` argument
 in the ``[static_params]`` section. Here, we are using ``IMRPhenomPv2``. This
-is a frequency-domain, precessing model that uses the dominant, 22 quadrupole
-mode. For this reason, we are varying all three components of the spins, along
-with the masses, location, orientation, and coalescence phase of the waveform.
-We need to provide a lower frequency cutoff (``f_lower``) for this (and all)
-waveform, which is the starting frequency of the waveform. This must be
-less-than-or-equal to the smallest low frequency cutoff set in the model
-section.
+is a frequency-domain, precessing model that uses the dominant,
+:math:`\ell=|m|=2` mode. For this reason, we are varying all three components
+of each object's spin, along with the masses, location, orientation, and phase
+of the signal.  We need to provide a lower frequency cutoff (``f_lower``),
+which is the starting frequency of the waveform. This must be :math:`\leq` the
+smallest low frequency cutoff set in the model section.
 
 .. note::
    In this example we have to sample over a reference phase for the waveform
@@ -621,19 +629,18 @@ section.
    speed up the convergence of the sampler by a factor of 3 or faster. To use
    the marginalized phase model, change the model name to
    ``marginalized_phase``, and remove ``coa_phase`` from the
-   ``variable_params`` and the prior. In general, however, the marginalized
-   phase model should not be used with fully precessing models or models that
-   include higher modes. You can use it with ``IMRPhenomPv2`` due to some
-   simplifications that that approximant makes.
+   ``variable_params`` and the prior. However, the marginalized phase model
+   should not be used with fully precessing models or models that include
+   higher modes. You can use it with ``IMRPhenomPv2`` due to some
+   simplifications that the approximant makes.
 
-We also need a prior for the coaslesence time ``tc``. Here, we have done this
-by setting an reference trigger time in the ``static_params`` section, and
-varying a +/- 0.1s window around it with the ``delta_tc`` parameter. Notice
-that the trigger time is not set to a value; instead, we reference the
-``trigger-time`` option that is set in the ``[data]`` section. This way, we
-only need to set the trigger time in one place, and we can reuse this prior
-file for different BBH events by simply providing a different data
-configuration file.
+We also need a prior for the coaslesence time ``tc``. We have done this by
+setting a reference time in the ``static_params`` section, and varying a
++/-0.1s window around it with the ``delta_tc`` parameter. Notice that the
+trigger time is not set to a value; instead, we reference the ``trigger-time``
+option that is set in the ``[data]`` section. This way, we only need to set the
+trigger time in one place; we can reuse this prior file for different BBH
+events by simply providing a different data configuration file.
 
 Here is the data configuration file we will use:
 
@@ -663,27 +670,27 @@ choose 2 seconds, which is a good safety margin.
 We also have to provide arguments for estimating a PSD. Although we know the
 exact shape of the PSD in this case, we will still estimate it from the
 generated data, as this most closely resembles what you do with a real event.
-To do this, we have set ``psd-estimation``  to ``median-mean`` and we have a
-segment-length, segment-stride, and psd start and end times (which are with
-respect to the trigger time). This means that a Welch-like method will be used
-to estimate the PSD. Specifically, with these settings, we will use 512s of
-data centered on the trigger time to estimate the PSD. This time will be
-divided up into 8s-long segments (the segment-length) each overlapping by 4s
-(the segment stride). The data in each segment will be transformed to the
-frequency domain.  Two median values will be determined in each frequency bin
-from across all even/odd segments, then averaged to obtain the PSD.
+To do this, we have set ``psd-estimation``  to ``median-mean`` and we have set
+``psd-segment-length``, ``psd-segment-stride``, and ``psd-(start|end)-time``
+(which are with respect to the trigger time). This means that a Welch-like
+method will be used to estimate the PSD. Specifically, we will use 512s of data
+centered on the trigger time to estimate the PSD. This time will be divided up
+into 8s-long segments (the segment length) each overlapping by 4s (the segment
+stride). The data in each segment will be transformed to the frequency domain.
+Two median values will be determined in each frequency bin from across all
+even/odd segments, then averaged to obtain the PSD.
 
 The beginning and end of the analysis segment will be corrupted by the
 convolution of the inverse PSD with the data. To limit the amount of time that
 is corrupted, we set ``psd-inverse-length`` to ``8``. This limits the
 corruption to at most the first and last four seconds of the data segment.  To
 account for the corruption, ``psd-inverse-length/2`` seconds are
-subtracted/added by the code to the analysis start/end times specifed by the
-user before the data are transformed to the frequency domain.  Consequently,
-our data will have a frequency resolution of :math:`\Delta f = 1/16\,` Hz. The
-4s at the beginning/end of the segment are effective disgarded since the
-waveform is contained entirely in the -6/+2s we set with the analysis start/end
-time.
+subtracted/added by the code from/to the analysis start/end times specifed by
+the user before the data are transformed to the frequency domain.
+Consequently, our data will have a frequency resolution of :math:`\Delta f =
+1/16\,` Hz. The 4s at the beginning/end of the segment are effectively ignored
+since the waveform is contained entirely in the -6/+2s we set with the analysis
+start/end time.
 
 Finally, we will use the ``emcee_pt`` sampler with the following settings:
 
@@ -710,7 +717,7 @@ calculated. The number of independent samples is then
 exceeds ``effective-nsamples``, ``pycbc_inference`` will finalize the results
 and exit.
 
-Now run:
+To perform the analysis, run:
 
 .. literalinclude:: ../examples/inference/bbh-injection/run.sh
    :language: bash
@@ -770,7 +777,7 @@ argument accordingly to point to the correct location.
 .. note::
    If you are running on a cluster that has a ``LIGO_DATAFIND_SERVER`` (e.g.,
    LIGO Data Grid clusters, Atlas) you do not need to copy frame
-   files. Instead, replace the ``frame-files``` argument with ``frame-type``,
+   files. Instead, replace the ``frame-files`` argument with ``frame-type``,
    and set it to ``H1:H1_LOSC_16_V1 L1:L1_LOSC_16_V1``.
 
 Now run:
