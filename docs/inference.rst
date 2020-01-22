@@ -552,9 +552,9 @@ Simulated BBH example
 This example recovers the parameters of a simulated binary black-hole (BBH)
 that has similar parameters has GW150914.
 
-^^^^^^^^^^^^^^^^^^^^^^
-Creating the injection
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+1. Create the injection
+^^^^^^^^^^^^^^^^^^^^^^^
 
 First, we need to create an ``injection.hdf`` file that specifies the
 parameters of the simulated signal. To do that we will use
@@ -587,9 +587,9 @@ This will create the ``injection.hdf`` file, which we will give to
 ``pycbc_create_injections --help``.
 
 
-^^^^^^^^^^^^^^^^^^^^^^^
-The configuration files
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2. Setup the configuration files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Now we need to set up the configuration for ``pycbc_inference``. Since we
 will be analyzing data, we will need to provide several additional options in a
@@ -685,7 +685,7 @@ convolution of the inverse PSD with the data. To limit the amount of time that
 is corrupted, we set ``psd-inverse-length`` to ``8``. This limits the
 corruption to at most the first and last four seconds of the data segment.  To
 account for the corruption, ``psd-inverse-length/2`` seconds are
-subtracted/added by the code from/to the analysis start/end times specifed by
+subtracted/added by the code from/to the analysis start/end times specified by
 the user before the data are transformed to the frequency domain.
 Consequently, our data will have a frequency resolution of :math:`\Delta f =
 1/16\,` Hz. The 4s at the beginning/end of the segment are effectively ignored
@@ -716,6 +716,10 @@ calculated. The number of independent samples is then
 ``nwalkers x (the number of iterations since burn in)/ACL``. If this number
 exceeds ``effective-nsamples``, ``pycbc_inference`` will finalize the results
 and exit.
+
+^^^^^^
+3. Run
+^^^^^^
 
 To perform the analysis, run:
 
@@ -763,7 +767,7 @@ Center <https://www.gw-openscience.org>`_. Run:
      wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf
 
 This will download the appropriate data ("frame") files to your current working
-directory.  You can now use the following data configuraiton file:
+directory.  You can now use the following data configuration file:
 
 .. literalinclude:: ../examples/inference/gw150914/data.ini
    :language: ini
