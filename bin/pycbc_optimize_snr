@@ -136,7 +136,6 @@ parser.add_argument('--cores', type=int,
 
 args = parser.parse_args()
 pycbc.init_logging(args.verbose)
-logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 logging.info('Starting optimize SNR')
 

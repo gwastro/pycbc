@@ -47,10 +47,21 @@ __version__ = pycbc_version
 
 
 def init_logging(verbose=False, format='%(asctime)s %(message)s'):
-    """ Common utility for setting up logging in PyCBC.
+    """Common utility for setting up logging in PyCBC.
 
     Installs a signal handler such that verbosity can be activated at
     run-time by sending a SIGUSR1 to the process.
+
+    Parameters
+    ----------
+    verbose : bool or int, optional
+        What level to set the verbosity level to. Accepts either a boolean
+        or an integer representing the level to set. If True/False will set to
+        ``logging.INFO``/``logging.WARN``. For higher logging levels, pass
+        an integer representing the level to set (see the ``logging`` module
+        for details). Default is ``False`` (``logging.WARN``).
+    format : str, optional
+        The format to use for logging messages.
     """
     def sig_handler(signum, frame):
         logger = logging.getLogger()
@@ -65,12 +76,15 @@ def init_logging(verbose=False, format='%(asctime)s %(message)s'):
 
     signal.signal(signal.SIGUSR1, sig_handler)
 
-    if verbose:
-        initial_level = logging.DEBUG
-    else:
+    if not verbose:
         initial_level = logging.WARN
+    elif int(verbose) == 1:
+        initial_level = logging.INFO
+    else:
+        initial_level = int(verbose)
     logging.getLogger().setLevel(initial_level)
     logging.basicConfig(format=format, level=initial_level)
+
 
 def makedir(path):
     """

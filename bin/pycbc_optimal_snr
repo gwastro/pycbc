@@ -206,7 +206,7 @@ if __name__ == '__main__':
             psd = psds[det](injection_time)
             if psd is None:
                 continue
-            logging.debug('Trying injection %s', inj.simulation_id)
+            logging.info('Trying injection %s', inj.simulation_id)
             try:
                 wave = get_injection(injections, det, injection_time,
                                      simulation_id=inj.simulation_id)
@@ -219,7 +219,7 @@ if __name__ == '__main__':
                     logging.error('%s: waveform generation failed with the '
                                   'following exception', inj.simulation_id)
                     raise
-            logging.debug('Injection %s completed', inj.simulation_id)
+            logging.info('Injection %s completed', inj.simulation_id)
             sval = sigma(wave, psd=psd, low_frequency_cutoff=f_low)
             setattr(inj, column, sval)
         return inj

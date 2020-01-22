@@ -251,8 +251,8 @@ class Executable(pegasus_workflow.Executable):
                 self.needs_fetching = True
 
             self.add_pfn(exe_path, site=exe_site)
-            logging.debug("Using %s executable "
-                          "at %s on site %s" % (name, exe_url.path, exe_site))
+            logging.info("Using %s executable "
+                         "at %s on site %s" % (name, exe_url.path, exe_site))
 
         # Determine the condor universe if we aren't given one
         if self.universe is None:
@@ -261,7 +261,7 @@ class Executable(pegasus_workflow.Executable):
             else:
                 self.universe = 'vanilla'
 
-        logging.debug("%s executable will run as %s universe"
+        logging.info("%s executable will run as %s universe"
                      % (name, self.universe))
 
         self.set_universe(self.universe)
@@ -1923,7 +1923,7 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
         outFP = None
 
     msg = "Making external call %s" %(' '.join(cmdList))
-    logging.debug(msg)
+    logging.info(msg)
     errCode = subprocess.call(cmdList, stderr=errFP, stdout=outFP,\
                               shell=shell)
     if errFP:
@@ -1934,7 +1934,7 @@ def make_external_call(cmdList, out_dir=None, out_basename='external_call',
     if errCode and fail_on_error:
         raise CalledProcessErrorMod(errCode, ' '.join(cmdList),
                 errFile=errFile, outFile=outFile, cmdFile=cmdFile)
-    logging.debug("Call successful, or error checking disabled.")
+    logging.info("Call successful, or error checking disabled.")
 
 class CalledProcessErrorMod(Exception):
     """

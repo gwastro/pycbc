@@ -93,7 +93,7 @@ def template_overlaps(bank_filters, template, psd, low_frequency_cutoff):
             errMsg += "Masses of bank filter template: %e %e\n" \
                       %(bank_template.params.mass1, bank_template.params.mass2)
             errMsg += "Overlap: %e" %(abs(overlaps[-1]))
-            logging.debug(errMsg)
+            logging.info(errMsg)
     return overlaps
 
 def bank_chisq_from_filters(tmplt_snr, tmplt_norm, bank_snrs, bank_norms,
