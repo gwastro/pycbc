@@ -26,8 +26,8 @@ a relative binning likelihood for parameter estimation.
 """
 
 
-import numpy
 import logging
+import numpy
 from scipy.interpolate import interp1d
 
 from pycbc.waveform.spa_tmplt import spa_tmplt
@@ -85,6 +85,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     # make sure grid points are precise
     fbin = numpy.array([f_full[i] for i in fbin_ind])
     return nbin, fbin, fbin_ind
+
 
 class Relative(BaseDataModel):
     r"""Model that assumes the likelihood in a region around the peak
@@ -203,7 +204,7 @@ class Relative(BaseDataModel):
 
         # compute summary data
         logging.info("Calculating summary data at frequency resolution %s Hz",
-                      self.df)
+                     self.df)
         self.sdat = self.summary_data()
 
     def summary_data(self):
@@ -234,11 +235,11 @@ class Relative(BaseDataModel):
                               l, h in self.bins])
             # linear terms
             bin_centers = [0.5 * (fl + fh) for fl, fh in self.fbins]
-            a1 = numpy.array([4. * self.df * \
-                              numpy.sum(hd[l:h] * (self.f[l:h] - bc)) for
+            a1 = numpy.array([4. * self.df
+                              * numpy.sum(hd[l:h] * (self.f[l:h] - bc)) for
                               (l, h), bc in zip(self.bins, bin_centers)])
-            b1 = numpy.array([4. * self.df * \
-                              numpy.sum(hh[l:h] * (self.f[l:h] - bc)) for
+            b1 = numpy.array([4. * self.df
+                              * numpy.sum(hh[l:h] * (self.f[l:h] - bc)) for
                               (l, h), bc in zip(self.bins, bin_centers)])
 
             sdat[ifo] = {'a0': a0, 'a1': a1,

@@ -230,15 +230,15 @@ def spa_tmplt(**kwds):
                 raise TypeError("Output array is the wrong dtype")
             htilde = FrequencySeries(out, delta_f=delta_f, copy=False)
 
-        spa_tmplt_engine(htilde[kmin:kmax], kmin, phase_order, delta_f, piM, pfaN,
+        spa_tmplt_engine(htilde[kmin:kmax], kmin, phase_order,
+                         delta_f, piM, pfaN,
                          pfa2, pfa3, pfa4, pfa5, pfl5,
                          pfa6, pfl6, pfa7, amp_factor)
     else:
         from .spa_tmplt_cpu import spa_tmplt_inline_sequence
         htilde = numpy.empty(len(kwds['sample_points']), dtype=numpy.complex64)
-        spa_tmplt_inline_sequence(piM, pfaN,
-                      pfa2, pfa3, pfa4, pfa5, pfl5, pfa6, pfl6, pfa7,
-                      amp_factor, kwds['sample_points'], htilde
-                      )
+        spa_tmplt_inline_sequence(
+            piM, pfaN, pfa2, pfa3, pfa4, pfa5, pfl5, pfa6, pfl6, pfa7,
+            amp_factor, kwds['sample_points'], htilde)
     return htilde
 
