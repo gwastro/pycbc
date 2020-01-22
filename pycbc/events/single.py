@@ -85,14 +85,12 @@ class LiveSingle(object):
         sngl_opts_required = all([args.single_fit_file,
                                   args.single_reduced_chisq_threshold,
                                   args.single_duration_threshold,
-                                  args.single_newsnr_threshold,
-                                  args.sngl_ifar_est_dist])
+                                  args.single_newsnr_threshold])
         if args.enable_single_detector_background and not sngl_opts_required:
             raise RuntimeError("Single detector trigger options "
                 "(--single-fit-file, --single-reduced-chisq-threshold, "
-                "--single-duration-threshold, --single-newsnr-threshold, "
-                "--sngl-ifar-est-dist) must all be given if single detector "
-                "background is enabled")
+                "--single-duration-threshold, --single-newsnr-threshold) "
+                "must ALL be given if single detector background is enabled")
         return cls(
            ifo, newsnr_threshold=args.single_newsnr_threshold[ifo],
            reduced_chisq_threshold=args.single_reduced_chisq_threshold[ifo],

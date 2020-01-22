@@ -349,10 +349,6 @@ class LiveEventManager(object):
             for ifo in active:
                 fud[ifo]['snr_series']._delta_t = fix_delta_t
 
-            fix_delta_t = fud[ifo]['snr_series'].delta_t
-            for ifo in active:
-                fud[ifo]['snr_series']._delta_t = fix_delta_t
-
             event = SingleCoincForGraceDB([ifo], single, bank=bank,
                                           psds=psds, followup_data=fud,
                                           low_frequency_cutoff=f_low,
@@ -369,7 +365,6 @@ class LiveEventManager(object):
                              testing=self.gracedb_testing)
             else:
                 event.save(fname)
-            exit()
 
     def dump(self, results, name, store_psd=False, time_index=None,
              store_loudest_index=False, raw_results=None, gates=None):
