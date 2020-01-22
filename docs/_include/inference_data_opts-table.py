@@ -41,11 +41,11 @@ class Row(object):
         self.divider = divider
         self.lborder = ' '*lpad + divider[1:]
         self.rborder = divider[:-1]
-        self.groupmsg = ''
+        self._groupmsg = ''
         self.wrap_option = wrap_option
         self._option = ''
         self._metavar = ''
-        self.helpmsg = ''
+        self._helpmsg = ''
 
     @property
     def option(self):
@@ -67,6 +67,33 @@ class Row(object):
         # text wrap if metavar is more than 34 characters wide
         self._metavar = '\n'.join(metavar_txtwrap.wrap(metavar))
             
+    @staticmethod
+    def replace_doubledash(str_):
+        """Replaces all instances of --arg with ``arg`` in a string."""
+        pattern = r"--\w+-?\w*"
+        for s in re.findall(pattern, str_):
+            rep = '``' + s.replace('--', '') + '``'
+            str_ = re.sub(s, rep, str_)
+        return str_
+
+    @property
+    def helpmsg(self):
+        return self._helpmsg
+
+    @helpmsg.setter
+    def helpmsg(self, msg):
+        # replace all instances of --arg with ``arg``
+        self._helpmsg = self.replace_doubledash(msg)
+
+    @property
+    def groupmsg(self):
+        return self._groupmsg
+
+    @groupmsg.setter
+    def groupmsg(self, msg):
+        # replace all instances of --arg with ``arg``
+        self._groupmsg = self.replace_doubledash(msg)
+
     @property
     def isgroup(self):
         return self.groupmsg != ''
