@@ -104,7 +104,7 @@ def format_pyobj(obj, objtype):
     obj : python object
         The object to link to.
     objtype : str
-        The type of the object, e.g., 'class', 'function', etc. For the full
+        The type of the object, e.g., 'class', 'func', etc. For the full
         list of recognized domains, see the `sphinx docs
         <https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html>`_.
 
@@ -128,4 +128,4 @@ def format_function(func_):
 
     This can be passed to ``rst_dict_table``'s ``val_format`` argument.
     """
-    return format_pyobj(func_, 'function')
+    return format_pyobj(func_, 'func')
