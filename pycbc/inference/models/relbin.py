@@ -92,6 +92,11 @@ class Relative(BaseDataModel):
     likelihoods can be calculated at a coarser frequency resolution. For
     more details on the implementation, see https://arxiv.org/abs/1806.08792.
 
+    This model requires the use of a fiducial waveform whose parameters are
+    near the peak of the likelihood. The fiducial waveform and all template
+    waveforms used in likelihood calculation are currently generated using
+    the SPAtmplt approximant.
+
     For more details on initialization parameters and definition of terms, see
     :py:class:`models.BaseDataModel`.
     Parameters
