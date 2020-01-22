@@ -32,8 +32,8 @@ def _far_from_p(p, livetime, max_far):
 
 far_from_p = numpy.vectorize(_far_from_p)
 
-pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-pylab.rc('text', usetex=True)
+#pylab.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+#pylab.rc('text', usetex=True)
 
 parser = argparse.ArgumentParser()
 # General required options
@@ -370,11 +370,11 @@ else:
     ax2.set_yticks(fticks)
     # Set the labels
     ax2.set_yticklabels(['$10^{%i}$' %(val) for val in pticks.astype(int)])
-
+pylab.tight_layout()
 figure_title = "%s: " % f.attrs['ifos'] if 'ifos' in f.attrs else ""
 figure_title += "%s bin, Cumulative Rate vs Rank" % f.attrs['name'] if 'name' in f.attrs else "FAR vs Rank"
 
-figure_caption = figure_caption + "Orange diamonds (if present) represent triggers from the " \
+figure_caption = figure_caption + "Orange triangle (if present) represent triggers from the " \
 "zero-lag (foreground) analysis. Solid crosses show " \
 "the background inclusive of zerolag events, and grey crosses show the " \
 "background constructed without triggers that are " \
