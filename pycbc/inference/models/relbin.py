@@ -1,4 +1,30 @@
-#!/usr/bin/env python
+# Copyright (C) 2020  Daniel Finstad
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 3 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+#
+# =============================================================================
+#
+#                                   Preamble
+#
+# =============================================================================
+#
+"""This module provides model classes and functions for implementing
+a relative binning likelihood for parameter estimation.
+"""
+
 
 import numpy
 import logging
@@ -11,12 +37,33 @@ from .base_data import BaseDataModel
 
 
 def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
-    """
-    construct frequency binning
-    f_full: full frequency grid
-    [f_lo, f_hi] is the frequency range one would like to use for matched filtering
-    chi, eps are tunable parameters [see Barak, Dai & Venumadhav 2018]
-    return the number of bins, a list of bin-edge frequencies, and their positions in the full frequency grid
+    """Construct frequency bins for use in a relative likelihood
+    model. For details, see [Barak, Dai & Venumadhav 2018].
+
+    Parameters
+    ----------
+    f_full : array
+        The full resolution array of frequencies being used in the analysis.
+    f_lo : float
+        The starting frequency used in matched filtering. This will be the
+        left edge of the first frequency bin.
+    f_hi : float
+        The ending frequency used in matched filtering. This will be the right
+        edge of the last frequency bin.
+    chi : float, optional
+        Tunable parameter, see [Barak, Dai & Venumadhav 2018]
+    eps : float, optional
+        Tunable parameter, see [Barak, Dai & Venumadhav 2018]. Lower values
+        result in larger number of bins.
+
+    Returns
+    -------
+    nbin : int
+        Number of bins.
+    fbin : numpy.array of floats
+        Bin edge frequencies.
+    fbin_ind : numpy.array of ints
+        Indices of bin edges in full frequency array.
     """
     f = numpy.linspace(f_lo, f_hi, 10000)
     # f^ga power law index
@@ -40,7 +87,59 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     return nbin, fbin, fbin_ind
 
 class Relative(BaseDataModel):
+    r"""Model that assumes the likelihood in a region around the peak
+    is slowly varying such that a linear approximation can be made, and
+    likelihoods can be calculated at a coarser frequency resolution. For
+    more details on the implementation, see https://arxiv.org/abs/1806.08792.
+
+    For more details on initialization parameters and definition of terms, see
+    :py:class:`models.BaseDataModel`.
+    Parameters
+    ----------
+    data : dict
+        A dictionary of data, in which the keys are the detector names and the
+        values are the data (assumed to be unwhitened).
+    psds : dict
+        A dictionary of FrequencySeries keyed by the detector names. The
+        dictionary must have a psd for each detector specified in the data
+        dictionary. The inner products in each detector will be
+        weighted by 1/psd of that detector.
+    mass1 : float
+        The primary mass in solar masses used for generating the fiducial
+        waveform.
+    mass2 : float
+        The secondary mass in solar masses used for generating the fiducial
+        waveform.
+    spin1z : float
+        The component of primary dimensionless spin along the orbital angular
+        momentum used for generating the fiducial waveform.
+    spin2z : float
+        The component of secondary dimensionless spin along the orbital angular
+        momentum used for generating the fiducial waveform.
+    ra : float
+        The right ascension in radians used for generating the fiducial
+        waveform.
+    dec : float
+        The declination in radians used for generating the fiducial waveform.
+    tc : float
+        The GPS time of coalescence used for generating the fiducial waveform.
+    low_frequency_cutoff : float
+        The starting frequency used in computing inner products. This will be
+        the same for all detectors.
+    high_frequency_cutoff : float
+        The ending frequency used in computing inner products. This will be
+        the same for all detectors. Note that no checks are made to ensure
+        that a template waveform does not end below this frequency, so
+        choose this value to be lower than any expected final frequency
+        for template waveforms.
+    epsilon : float, optional
+        Tuning parameter used in calculating the frequency bins. Lower values
+        will result in higher resolution and more bins.
+    \**kwargs :
+        All other keyword arguments are passed to ``BaseDataModel``.
+    """
     name = "relative"
+
     def __init__(self, data, psds, mass1, mass2, spin1z, spin2z,
                  ra, dec, tc, low_frequency_cutoff,
                  high_frequency_cutoff, epsilon=0.5, **kwargs):
@@ -86,7 +185,7 @@ class Relative(BaseDataModel):
         logging.info("Computing frequency bins")
         nbin, fbin, fbin_ind = setup_bins(f_full=self.f, f_lo=f_lo, f_hi=f_hi,
                                           eps=epsilon)
-        logging.info('Using %s bins for this model', nbin)
+        logging.info("Using %s bins for this model", nbin)
         # store bins and edges in sample and frequency space
         self.edges = fbin_ind
         self.fedges = numpy.array(fbin).astype(numpy.float32)
@@ -94,15 +193,25 @@ class Relative(BaseDataModel):
                                  i in range(len(self.edges) - 1)])
         self.fbins = numpy.array([(fbin[i], fbin[i+1]) for
                                   i in range(len(fbin) - 1)])
-        # store low res fiducial waveform
+        # store low res copy of fiducial waveform
         self.h00_sparse = self.h00.copy().take(self.edges)
 
         # compute summary data
-        logging.info("Calculating summary data at frequency resolution %s",
+        logging.info("Calculating summary data at frequency resolution %s Hz",
                       self.df)
         self.sdat = self.summary_data()
 
     def summary_data(self):
+        """Compute summary data bin coefficients encoding linear
+        approximation to full resolution likelihood.
+
+        Returns
+        -------
+        dict of dicts
+            Dictionary keyed by detector name, whose values are dictionaries
+            containing bin coefficients a0, b0, a1, b1, for each frequency
+            bin.
+        """
         # timeshift the fiducial waveform for each detector
         shift = {ifo: numpy.exp(-2.0j * numpy.pi * self.f * self.ta[ifo]) for
                  ifo in self.data}
@@ -132,6 +241,9 @@ class Relative(BaseDataModel):
         return sdat
 
     def waveform_ratio(self, p, htf, dtc=0.0):
+        """Calculate waveform ratio between template and fiducial
+        waveforms.
+        """
         # generate template
         hp = spa_tmplt(sample_points=self.fedges,
                        mass1=p['mass1'], mass2=p['mass2'],
@@ -148,6 +260,21 @@ class Relative(BaseDataModel):
         return numpy.array([r0, r1], dtype=numpy.complex128)
 
     def _loglr(self):
+        r"""Computes the log likelihood ratio,
+
+        .. math::
+
+            \log \mathcal{L}(\Theta) = \sum_i
+                \left<h_i(\Theta)|d_i\right> -
+                \frac{1}{2}\left<h_i(\Theta)|h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood ratio.
+        """
         # get model params
         p = self.current_params.copy()
         p.update(self.static_params)
@@ -179,14 +306,33 @@ class Relative(BaseDataModel):
         return float(llr)
 
     def _loglikelihood(self):
+        r"""Computes the log likelihood of the parameters,
+
+        .. math::
+
+            \log p(d|\Theta, h) = \log \alpha -\frac{1}{2}\sum_i
+                \left<d_i - h_i(\Theta) | d_i - h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood evaluated at the given point.
+        """
         return self.loglr + self.lognl
 
     def _lognl(self):
+        """Calculate the log of the noise likelihood. Currently not
+        implemented, so just returns zero.
+        """
         return 0.
 
     def write_metadata(self, fp):
         """Adds writing the psds and lognl, since it's a constant.
+
         The lognl is written to the sample group's ``attrs``.
+
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
