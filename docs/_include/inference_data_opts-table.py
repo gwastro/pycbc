@@ -25,12 +25,12 @@ except ModuleNotFoundError:  # python 3
     from io import StringIO
 
 import re
-from textwrap import TextWrapper
+import textwrap
 
 from pycbc.inference.models import data_utils
 
 # wrapper for long metavars
-metavar_txtwrap = TextWrapper(width=34, break_long_words=False)
+metavar_txtwrap = textwrap.TextWrapper(width=34, break_long_words=False)
 
 # convenience class for storing row data
 class Row(object):
@@ -208,6 +208,20 @@ while line:
             line = fp.readline()
         # compile the help message
         row.helpmsg = '\n'.join(helpmsg)
+        # remove the list of PSDs from the fake strain and psd model arguments,
+        # referring instead to the psd table
+        if (m.group('option') == 'fake-strain' or
+            m.group('option') == 'psd-model'):
+            # strip off everything after the "Choose from"
+            helpmsg = row.helpmsg.replace('\n', ' ')
+            idx = re.search(r"Choose +from", helpmsg).end()
+            helpmsg = helpmsg[:idx] + " any available PSD model"
+            # for fake strain, add zero Noise
+            if m.group('option') == 'fake-strain':
+                helpmsg += ', or ``zeroNoise``.'
+            else:
+                helpmsg += '.'
+            row.helpmsg = textwrap.fill(helpmsg, width=54)
         # add the row to the table
         table.append(row)
     else:

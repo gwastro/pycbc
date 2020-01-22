@@ -264,6 +264,11 @@ full set of options are:
 
 .. include:: _include/inference_data_opts-table.rst
 
+As indicated in the table, the ``psd-model`` and ``fake-strain`` options can
+accept an analytical PSD as an argument. The available PSD models are:
+
+.. include:: _include/psd_models-table.rst
+
 -------------------------------
 Advanced configuration settings
 -------------------------------
