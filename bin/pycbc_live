@@ -175,7 +175,7 @@ class LiveEventManager(object):
         # rounding errors, so force all of them to be identical
         fix_delta_t = None
         for ifo in out:
-            if 'snr_series' not in ifo:
+            if 'snr_series' not in out[ifo]:
                 continue
             if fix_delta_t is None:
                 fix_delta_t = out[ifo]['snr_series']._delta_t
