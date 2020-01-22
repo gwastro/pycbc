@@ -210,8 +210,9 @@ while line:
         row.helpmsg = '\n'.join(helpmsg)
         # add the row to the table
         table.append(row)
-    # read the next line for the loop
-    line = fp.readline()
+    else:
+        # read the next line for the loop
+        line = fp.readline()
 
 # Now format the table
 # get the maximum length of each column
