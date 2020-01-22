@@ -23,8 +23,11 @@ pycbc_inference --verbose \
     --nprocesses ${NPROCS} \
     --config-delete "sampler:effective-nsamples" \
                     "sampler:max-samples-per-chain" \
+                    "data:frame-files" \
     --config-overrides sampler:ntemps:2 \
                        sampler:nwalkers:30 \
                        sampler:niterations:20 \
                        sampler:checkpoint-interval:10 \
+                       "data:frame-type:H1:LOSC L1:LOSC" \
+                       "data:channel-name:H1:LOSC-STRAIN L1:LOSC-STRAIN" \
     --force
