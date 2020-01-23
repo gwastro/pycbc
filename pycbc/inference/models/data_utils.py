@@ -276,13 +276,13 @@ def detectors_with_valid_data(detectors, gps_start_times, gps_end_times,
                             "the analysis, as it does not have "
                             "continuous valid data that spans the "
                             "segment [%d, %d).", det, gps_start_times[det]-pad,
-                            gps_end_times[det]+pad))
+                            gps_end_times[det]+pad)
     return dets_with_data
 
 
 def check_for_nans(strain_dict):
     """Checks if any data in a dictionary of strains has NaNs.
-    
+
     If any NaNs are found, a ``ValueError`` is raised.
 
     Parameters
