@@ -649,7 +649,7 @@ class GaussianNoise(BaseDataModel):
 
         The following options are read from the ``[model]`` section, in
         addition to ``name`` (which must be set):
-        
+
         * ``{{DET}}-low-frequency-cutoff = FLOAT`` :
           The low frequency cutoff to use for each detector {{DET}}. A cutoff
           must be provided for every detector that may be analyzed (any

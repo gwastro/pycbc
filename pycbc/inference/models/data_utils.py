@@ -523,7 +523,7 @@ def fd_data_from_strain_dict(opts, strain_dict, psd_strain_dict=None):
 
 def gate_overwhitened_data(stilde_dict, psd_dict, gates):
     """Applies gates to overwhitened data.
-    
+
     Parameters
     ----------
     stilde_dict : dict
@@ -548,5 +548,5 @@ def gate_overwhitened_data(stilde_dict, psd_dict, gates):
     out = apply_gates_to_fd(out, gates)
     # now unwhiten
     for det in gates:
-        out[ifo] *= psd_dict[ifo]
+        out[det] *= psd_dict[det]
     return out
