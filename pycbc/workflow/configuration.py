@@ -443,63 +443,23 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             self.write(fp)
             fp.close()
 
-
     @classmethod
-    def from_args(cls, args):
+    def from_cli(cls, opts):
+        """Loads a config file from the given options, with overrides and
+        deletes applied.
         """
-        Initialize a WorkflowConfigParser instance using the command line values
-        parsed in args. args must contain the values provided by the
-        workflow_command_line_group() function. If you are not using the standard
-        workflow command line interface, you should probably initialize directly
-        using __init__()
-
-        Parameters
-        -----------
-        args : argparse.ArgumentParser
-            The command line arguments parsed by argparse
-        """
-        # Identify the config files
-        confFiles = []
-
-        # files and URLs to resolve
-        if args.config_files:
-            confFiles += args.config_files
-
-        # Identify the deletes
-        confDeletes = args.config_delete or []
-        # and parse them
-        parsedDeletes = []
-        for delete in confDeletes:
-            splitDelete = delete.split(":")
-            if len(splitDelete) > 2:
-                raise ValueError(
-                    "Deletes must be of format section:option "
-                    "or section. Cannot parse %s." % str(delete))
-            else:
-                parsedDeletes.append(tuple(splitDelete))
-
-        # Identify the overrides
-        confOverrides = args.config_overrides or []
-        # and parse them
-        parsedOverrides = []
-        for override in confOverrides:
-            splitOverride = override.split(":", 2)
-            if len(splitOverride) == 3:
-                parsedOverrides.append(tuple(splitOverride))
-            elif len(splitOverride) == 2:
-                parsedOverrides.append(tuple(splitOverride + [""]))
-            elif len(splitOverride) > 3:
-                # Cannot have colons in either section name or variable name
-                # but the value may contain colons
-                rec_value = ':'.join(splitOverride[2:])
-                parsedOverrides.append(tuple(splitOverride[:2] + [rec_value]))
-            else:
-                raise ValueError(
-                    "Overrides must be of format section:option:value "
-                    "or section:option. Cannot parse %s." % str(override))
-
-        return cls(confFiles, parsedOverrides, None, parsedDeletes)
-
+        # read configuration file
+        logging.info("Reading configuration file")
+        if opts.config_overrides is not None:
+            overrides = [override.split(":", 2)
+                         for override in opts.config_overrides]
+        else:
+            overrides = None
+        if opts.config_delete is not None:
+            deletes = [delete.split(":") for delete in opts.config_delete]
+        else:
+            deletes = None
+        return cls(opts.config_files, overrides, deleteTuples=deletes)
 
     def read_ini_file(self, cpFile):
         """
@@ -1095,34 +1055,3 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
             if val != '':
                 opts.append(val)
         return ' '.join(opts)
-
-    @staticmethod
-    def add_config_opts_to_parser(parser):
-        """Adds options for configuration files to the given parser."""
-        parser.add_argument("--config-files", type=str, nargs="+",
-                            required=True,
-                            help="A file parsable by "
-                                 "pycbc.workflow.WorkflowConfigParser.")
-        parser.add_argument("--config-overrides", type=str, nargs="+",
-                            default=None, metavar="SECTION:OPTION:VALUE",
-                            help="List of section:option:value combinations "
-                                 "to add into the configuration file.")
-
-
-    @classmethod
-    def from_cli(cls, opts):
-        """Loads a config file from the given options, with overrides and
-        deletes applied.
-        """
-        # read configuration file
-        logging.info("Reading configuration file")
-        if opts.config_overrides is not None:
-            overrides = [override.split(":", 2)
-                         for override in opts.config_overrides]
-        else:
-            overrides = None
-        if opts.config_delete is not None:
-            deletes = [delete.split(":") for delete in opts.config_delete]
-        else:
-            deletes = None
-        return cls(opts.config_files, overrides, deleteTuples=deletes)
