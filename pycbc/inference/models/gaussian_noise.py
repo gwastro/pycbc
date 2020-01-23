@@ -28,7 +28,8 @@ from pycbc.strain.calibration import Recalibrate
 from pycbc.inject import InjectionSet
 
 from .base_data import BaseDataModel
-from .data_utils import (data_opts_from_config, data_from_cli)
+from .data_utils import (data_opts_from_config, data_from_cli,
+                         fd_data_from_strain_dict, gate_overwhitened_data)
 
 
 class GaussianNoise(BaseDataModel):
@@ -98,11 +99,16 @@ class GaussianNoise(BaseDataModel):
         A dictionary of starting frequencies, in which the keys are the
         detector names and the values are the starting frequencies for the
         respective detectors to be used for computing inner products.
-    psds : {None, dict}
+    psds : dict, optional
         A dictionary of FrequencySeries keyed by the detector names. The
         dictionary must have a psd for each detector specified in the data
         dictionary. If provided, the inner products in each detector will be
         weighted by 1/psd of that detector.
+    psd_segment : dict, optional
+        A dictionary of detectiors -> (start time, end time) giving the
+        times that were used for PSD estimation. These are written to file
+        when the model writes its metadata. Otherwise, these are not used
+        for any analysis purposes.
     high_frequency_cutoff : dict, optional
         A dictionary of ending frequencies, in which the keys are the
         detector names and the values are the ending frequencies for the
@@ -222,6 +228,7 @@ class GaussianNoise(BaseDataModel):
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 psd_segment=None,
                  high_frequency_cutoff=None, static_params=None,
                  **kwargs):
         # set up the boiler-plate attributes
@@ -281,6 +288,8 @@ class GaussianNoise(BaseDataModel):
         self._lognorm = {}
         self._det_lognls = {}
         self.psds = psds
+        self._psd_segment = None
+        self.psd_segment = psd_segment
         # whiten the data
         for det in self._data:
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
@@ -338,6 +347,17 @@ class GaussianNoise(BaseDataModel):
         else:
             for det in self._data.keys():
                 self._f_upper[det] = None
+
+    @property
+    def psd_segment(self):
+        return self._psd_segment
+
+    @psd_segment.setter
+    def psd_segment(self, psd_segment):
+        # copy the dictionary, make sure it provides a start and end time
+        self._psd_segment = {
+            det: (start, end)
+            for det, (start, end) in psd_segment.items()}
 
     @property
     def _extra_stats(self):
@@ -575,14 +595,29 @@ class GaussianNoise(BaseDataModel):
 
         The lognl is written to the sample group's ``attrs``.
 
+        The analyzed detectors, their analysis segments, and the segments
+        used for psd estimation are written to the file's ``attrs``, as
+        ``analyzed_detectors``, ``{{detector}}_analysis_segment``, and
+        ``{{detector}}_psd_segment``, respectively.
+
         Parameters
         ----------
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
         """
         super(GaussianNoise, self).write_metadata(fp)
+        # write the analyzed detectors and times
+        fp.attrs['analyzed_detectors'] = list(sorted(self.data.keys()))
+        for det, data in self.data.items():
+            key = '{}_analysis_segment'.format(det)
+            fp.attrs[key] = [float(data.start_time), float(data.end_time)]
         if self._psds is not None:
             fp.write_psd(self._psds)
+        # write the psd times
+        if self.psd_segment is not None:
+            for det, (start_time, end_time) in self.psd_segment.items():
+                key = '{}_psd_segment'.format(det)
+                fp.attrs[key] = [float(start_time), float(end_time)]
         try:
             attrs = fp[fp.samples_group].attrs
         except KeyError:
@@ -605,6 +640,41 @@ class GaussianNoise(BaseDataModel):
     @classmethod
     def from_config(cls, cp, data_section='data', **kwargs):
         r"""Initializes an instance of this class from the given config file.
+
+        In addition to ``[model]``, a ``data_section`` (default ``[data]``)
+        must be in the configuration file. The data section specifies settings
+        for loading data and estimating PSDs. See the `online documentation
+        <http://pycbc.org/pycbc/latest/html/inference.html#setting-data>`_ for
+        more details.
+
+        The following options are read from the ``[model]`` section, in
+        addition to ``name`` (which must be set):
+        
+        * ``{{DET}}-low-frequency-cutoff = FLOAT`` :
+          The low frequency cutoff to use for each detector {{DET}}. A cutoff
+          must be provided for every detector that may be analyzed (any
+          additional detectors are ignored).
+        * ``{{DET}}-high-frequency-cutoff = FLOAT`` :
+          (Optional) A high frequency cutoff for each detector. If not
+          provided, the Nyquist frequency is used.
+        * ``check-for-valid-times =`` :
+          (Optional) If provided, will check that there are no data quality
+          flags on during the analysis segment and the segment used for PSD
+          estimation in each detector. To check for flags,
+          :py:func:`pycbc.dq.query_flag` is used, with settings pulled from the
+          ``dq-*`` options in the ``[data]`` section. If a detector has bad
+          data quality during either the analysis segment or PSD segment, it
+          will be removed from the analysis.
+        * ``shift-psd-times-to-valid =`` :
+          (Optional) If provided, the segment used for PSD estimation will
+          automatically be shifted left or right until a continous block of
+          data with no data quality issues can be found. If no block can be
+          found with a maximum shift of +/- the requested psd segment length,
+          the detector will not be analyzed.
+        * ``err-on-missing-detectors =`` :
+          Raises an error if any detector is removed from the analysis because
+          a valid time could not be found. Otherwise, a warning is printed
+          to screen and the detector is removed from the analysis.
 
         Parameters
         ----------
@@ -635,8 +705,20 @@ class GaussianNoise(BaseDataModel):
         ignore_args += bool_args
         # load the data
         opts = data_opts_from_config(cp, data_section, flow)
-        _, data, psds = data_from_cli(opts, **data_args)
-        args.update({'data': data, 'psds': psds})
+        strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
+        # save the psd data segments if it was estimated from data
+        if opts.psd_estimation is not None:
+            _times = strain_dict.items() if not psd_strain_dict else \
+                psd_strain_dict.items()
+            args['psd_segment'] = {det: (d.start_time, d.end_time)
+                                   for det, d in _times}
+        # convert to frequency domain and get psds
+        stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
+                                                     psd_strain_dict)
+        # gate overwhitened if desiered
+        if opts.gate_overwhitened and opts.gate is not None:
+            stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
+        args.update({'data': stilde_dict, 'psds': psds})
         # any extra args
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
