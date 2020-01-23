@@ -18,8 +18,8 @@
 
 import logging
 from argparse import ArgumentParser
-import numpy
 from time import sleep
+import numpy
 try:
     from mpi4py import MPI
 except ImportError:
@@ -67,6 +67,7 @@ class NoValidDataError(Exception):
     found.
     """
     pass
+
 
 def create_data_parser():
     """Creates an argument parser for loading GW data."""
@@ -140,7 +141,7 @@ def create_data_parser():
 def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
                      max_shift=None, segment_name='DATA',
                      **kwargs):
-    """Checks DQ server to see if the given times are in a valid segment.
+    r"""Checks DQ server to see if the given times are in a valid segment.
 
     If the ``shift_to_valid`` flag is provided, the times will be shifted left
     or right to try to find a continous valid block nearby. The shifting starts
@@ -221,9 +222,8 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
 def detectors_with_valid_data(detectors, gps_start_times, gps_end_times,
                               pad_data=None, err_on_missing_detectors=False,
                               **kwargs):
-    """Determines which detectors have valid data.
-    
-    
+    r"""Determines which detectors have valid data.
+
     Parameters
     ----------
     detectors : list of str
@@ -261,8 +261,8 @@ def detectors_with_valid_data(detectors, gps_start_times, gps_end_times,
         pad_data = {det: 0 for det in detectors}
     dets_with_data = {}
     for det in detectors:
-        logging.info("Checking that {} has valid data in the requested "
-                     "segment".format(det))
+        logging.info("Checking that %s has valid data in the requested "
+                     "segment", det)
         try:
             pad = pad_data[det]
             start, end = check_validtimes(det, gps_start_times[det]-pad,
@@ -271,14 +271,12 @@ def detectors_with_valid_data(detectors, gps_start_times, gps_end_times,
             dets_with_data[det] = (start+pad, end-pad)
         except NoValidDataError as e:
             if err_on_missing_detectors:
-                raise NoValidDataError(e)
-            else:
-                logging.warn("WARNING: Detector {} will not be used in "
-                             "the analysis, as it does not have "
-                             "continuous valid data that spans the "
-                             "segment [{}, {})."
-                             .format(det, gps_start_times[det]-pad,
-                                     gps_end_times[det]+pad))
+                raise e
+            logging.warning("WARNING: Detector %s will not be used in "
+                            "the analysis, as it does not have "
+                            "continuous valid data that spans the "
+                            "segment [%d, %d).", det, gps_start_times[det]-pad,
+                            gps_end_times[det]+pad))
     return dets_with_data
 
 
@@ -293,8 +291,8 @@ def check_for_nans(strain_dict):
         Dictionary of detectors ->
         :py:class:`pycbc.types.timeseries.TimeSeries`.
     """
-    for det, strain in strain_dict.items():
-        if numpy.isnan(strain.numpy()).any():
+    for det, ts in strain_dict.items():
+        if numpy.isnan(ts.numpy()).any():
             raise ValueError("NaN found in strain from {}".format(det))
 
 
@@ -337,10 +335,10 @@ def data_opts_from_config(cp, section, filter_flow):
         gps_end[det] += opts.trigger_time
         if opts.psd_inverse_length is not None:
             pad = int(numpy.ceil(opts.psd_inverse_length[det] / 2))
-            logging.info("Padding {} analysis start and end times by {} "
+            logging.info("Padding %s analysis start and end times by %d "
                          "(= psd-inverse-length/2) seconds to "
-                         "account for PSD wrap around effects."
-                         .format(det, pad))
+                         "account for PSD wrap around effects.",
+                         det, pad)
         gps_start[det] -= pad
         gps_end[det] += pad
         if opts.psd_start_time is not None:
