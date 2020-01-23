@@ -8,6 +8,7 @@ It also includes a function that calculates the source frame when given the
 detector frame mass and redshift.
 """
 
+import math
 from pycbc.conversions import mass2_from_mchirp_mass1 as m2mcm1
 from scipy.integrate import quad
 from pycbc.cosmology import _redshift

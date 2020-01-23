@@ -3,7 +3,6 @@ import os
 import pycbc
 import numpy
 import lal
-import math
 import json
 from six import u as unicode
 from glue.ligolw import ligolw
@@ -359,7 +358,8 @@ class SingleCoincForGraceDB(object):
             prob_fname = fname.replace('.xml.gz', '_probs.json')
             prob_plot_fname = prob_fname.replace('.json', '.png')
 
-            prob_plot = {k: v for (k, v) in self.probabilities if v != 0.0}
+            prob_plot = {k: v for (k, v) in self.probabilities.items()
+                         if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
             fig, ax = pylab.subplots()
             ax.pie(sizes, labels=labels, autopct='%1.1f%%',
