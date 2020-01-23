@@ -647,7 +647,7 @@ class GaussianNoise(BaseDataModel):
         # should be fixed in a future version of PyCBC. Once it is,
         # update this. Until then, just use the first file.
         if opts.injection_file:
-            injection_file = tuple(opts.injection_file.values())[0]  
+            injection_file = tuple(opts.injection_file.values())[0]
             # None if not set
         else:
             injection_file = None
@@ -702,11 +702,11 @@ def get_static_params_from_injection(static_params, injection_file):
         # make sure there's actually an injection file
         if injection_file is None:
             raise ValueError("one or more static params are set to "
-                             "FROM_INJECTION, but not injection file "
+                             "FROM_INJECTION, but no injection file "
                              "provided in data section")
         inj = InjectionSet(injection_file)
         # make sure there's only one injection provided
-        if inj.size > 1:
+        if inj.table.size > 1:
             raise ValueError("Some static params set to FROM_INJECTION, but "
                              "more than one injection exists in the injection "
                              "file.")

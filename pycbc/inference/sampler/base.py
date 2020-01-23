@@ -208,7 +208,7 @@ class BaseSampler(object):
 #
 
 def create_new_output_file(sampler, filename, **kwargs):
-    """Creates a new output file.
+    r"""Creates a new output file.
 
     If the output file already exists, an ``OSError`` will be raised. This can
     be overridden by setting ``force`` to ``True``.
