@@ -451,12 +451,13 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # read configuration file
         logging.info("Reading configuration file")
         if opts.config_overrides is not None:
-            overrides = [override.split(":", 2)
+            overrides = [tuple(override.split(":", 2))
                          for override in opts.config_overrides]
         else:
             overrides = None
         if opts.config_delete is not None:
-            deletes = [delete.split(":") for delete in opts.config_delete]
+            deletes = [tuple(delete.split(":"))
+                       for delete in opts.config_delete]
         else:
             deletes = None
         return cls(opts.config_files, overrides, deleteTuples=deletes)
