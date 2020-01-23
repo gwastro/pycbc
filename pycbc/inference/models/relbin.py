@@ -287,7 +287,6 @@ class RelativeSPA(BaseDataModel):
         p.update(self.static_params)
 
         llr = 0.
-        new_llr = 0.
         for ifo in self.data:
             # get detector antenna pattern
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
