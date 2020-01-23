@@ -282,6 +282,22 @@ def detectors_with_valid_data(detectors, gps_start_times, gps_end_times,
     return dets_with_data
 
 
+def check_for_nans(strain_dict):
+    """Checks if any data in a dictionary of strains has NaNs.
+    
+    If any NaNs are found, a ``ValueError`` is raised.
+
+    Parameters
+    ----------
+    strain_dict : dict
+        Dictionary of detectors ->
+        :py:class:`pycbc.types.timeseries.TimeSeries`.
+    """
+    for det, strain in strain_dict.items():
+        if numpy.isnan(strain.numpy()).any():
+            raise ValueError("NaN found in strain from {}".format(det))
+
+
 def data_opts_from_config(cp, section, filter_flow):
     """Loads data options from a section in a config file.
 
@@ -412,9 +428,7 @@ def data_from_cli(opts, check_for_valid_times=False,
         strain_dict = apply_gates_to_td(strain_dict, gates)
 
     # check that there aren't nans in the data
-    for det, strain in strain_dict.items():
-        if numpy.isnan(strain.numpy()).any():
-            raise ValueError("NaN found in strain from {}".format(det))
+    check_for_nans(strain_dict)
 
     # get strain time series to use for PSD estimation
     # if user has not given the PSD time options then use same data as analysis
@@ -458,10 +472,8 @@ def data_from_cli(opts, check_for_valid_times=False,
         raise NoValidDataError("No valid data could be found in any of the "
                                "requested instruments.")
 
-    # check that there aren't nans in the data
-    for det, strain in psd_strain_dict.items():
-        if numpy.isnan(strain.numpy()).any():
-            raise ValueError("NaN found in strain from {}".format(det))
+    # check that there aren't nans in the psd data
+    check_for_nans(psd_strain_dict)
 
     # FFT strain and save each of the length of the FFT, delta_f, and
     # low frequency cutoff to a dict
