@@ -218,6 +218,70 @@ def check_validtimes(detector, gps_start, gps_end, shift_to_valid=False,
     return use_start, use_end
 
 
+def detectors_with_valid_data(detectors, gps_start_times, gps_end_times,
+                              pad_data=None, err_on_missing_detectors=False,
+                              **kwargs):
+    """Determines which detectors have valid data.
+    
+    
+    Parameters
+    ----------
+    detectors : list of str
+        Names of the detector names to check.
+    gps_start_times : dict
+        Dictionary of detector name -> start time listing the GPS start times
+        of the segment to check for each detector.
+    gps_end_times : dict
+        Dictionary of detector name -> end time listing the GPS end times of
+        the segment to check for each detector.
+    pad_data : dict, optional
+        Dictionary of detector name -> pad time to add to the beginning/end of
+        the GPS start/end times before checking. A pad time for every detector
+        in ``detectors`` must be given. Default (None) is to apply no pad to
+        the times.
+    err_on_missing_detectors : bool, optional
+        If True, a ``NoValidDataError`` will be raised if any detector does not
+        have continous valid data in its requested segment. Otherwise, the
+        detector will not be included in the returned list of detectors with
+        valid data. Default is False.
+    \**kwargs :
+        All other keyword arguments are passed to ``check_validtimes``.
+
+    Returns
+    -------
+    dict :
+        A dictionary of detector name -> valid times giving the detectors with
+        valid data and their segments. If ``shift_to_valid`` was passed to
+        ``check_validtimes`` this may not be the same as the input segments. If
+        no valid times could be found for a detector (and
+        ``err_on_missing_detectors`` is False), it will not be included in the
+        returned dictionary.
+    """
+    if pad_data is None:
+        pad_data = {det: 0 for det in detectors}
+    dets_with_data = {}
+    for det in detectors:
+        logging.info("Checking that {} has valid data in the requested "
+                     "segment".format(det))
+        try:
+            pad = pad_data[det]
+            start, end = check_validtimes(det, gps_start_times[det]-pad,
+                                          gps_end_times[det]+pad,
+                                          **kwargs)
+            dets_with_data[det] = (start+pad, end-pad)
+        except NoValidDataError as e:
+            if err_on_missing_detectors:
+                raise NoValidDataError(e)
+            else:
+                logging.warn("WARNING: Detector {} will not be used in "
+                             "the analysis, as it does not have "
+                             "continuous valid data that spans the "
+                             "segment [{}, {})."
+                             .format(det, gps_start_times[det]-pad,
+                                     gps_end_times[det]+pad))
+    return dets_with_data
+
+
 def data_opts_from_config(cp, section, filter_flow):
     """Loads data options from a section in a config file.
 
@@ -331,32 +395,15 @@ def data_from_cli(opts, check_for_valid_times=False,
 
     # validate times
     if check_for_valid_times:
-        dets_with_data = []
-        for det in instruments:
-            logging.info("Checking that {} has valid data in the requested "
-                         "analysis times".format(det))
-            try:
-                pad = opts.pad_data[det]
-                check_validtimes(det, opts.gps_start_time[det]-pad,
-                                 opts.gps_end_time[det]+pad,
-                                 shift_to_valid=False,
-                                 segment_name=opts.dq_segment_name,
-                                 source=opts.dq_source,
-                                 server=opts.dq_server,
-                                 veto_definer=opts.veto_definer)
-                dets_with_data.append(det)
-            except NoValidDataError as e:
-                if err_on_missing_detectors:
-                    raise NoValidDataError(e)
-                else:
-                    logging.warn("WARNING: Detector {} will not be used in "
-                                 "the analysis, as it does not have "
-                                 "continuous valid data that spans the "
-                                 "anlysis segment [{}, {})."
-                                 .format(det, opts.gps_start_time[det],
-                                         opts.gps_end_time[det]))
-                    pass
-        instruments = dets_with_data
+        dets_with_data = detectors_with_valid_data(
+            instruments, opts.gps_start_time, opts.gps_end_time,
+            pad_data=opts.pad_data,
+            err_on_missing_detectors=err_on_missing_detectors,
+            shift_to_valid=False,
+            segment_name=opts.dq_segment_name, source=opts.dq_source,
+            server=opts.dq_server, veto_definer=opts.veto_definer)
+        # reset instruments to only be those with valid data
+        instruments = list(dets_with_data.keys())
 
     strain_dict = strain_from_cli_multi_ifos(opts, instruments,
                                              precision="double")
@@ -375,40 +422,25 @@ def data_from_cli(opts, check_for_valid_times=False,
         logging.info("Will generate a different time series for PSD "
                      "estimation")
         if check_for_valid_times:
-            psd_times = {}
-            dets_with_data = []
-            for det in instruments:
-                logging.info("Checking that {} has valid data in requested "
-                             "times for PSD estimation".format(det))
-                try:
-                    pad = opts.pad_data[det]
-                    psd_start, psd_end = check_validtimes(
-                        det, opts.psd_start_time[det]-pad,
-                        opts.psd_end_time[det]+pad,
-                        shift_to_valid=shift_psd_times_to_valid,
-                        segment_name=opts.dq_segment_name,
-                        source=opts.dq_source,
-                        server=opts.dq_server,
-                        veto_definer=opts.veto_definer)
-                    psd_times[det] = (psd_start+pad, psd_end-pad)
-                    dets_with_data.append(det)
-                except NoValidDataError as e:
-                    if err_on_missing_detectors:
-                        raise NoValidDataError(e)
-                    else:
-                        logging.warn("WARNING: Detector {} will not be used "
-                                     "in the analysis, as enough valid data "
-                                     "could not be found to estimate the PSD."
-                                     .format(det))
-                        strain_dict.pop(det)
-                        pass
-            instruments = dets_with_data
+            psd_times = detectors_with_valid_data(
+                instruments, opts.psd_start_time, opts.psd_end_time,
+                pad_data=opts.pad_data,
+                err_on_missing_detectors=err_on_missing_detectors,
+                shift_to_valid=shift_psd_times_to_valid,
+                segment_name=opts.dq_segment_name, source=opts.dq_source,
+                server=opts.dq_server, veto_definer=opts.veto_definer)
+            # remove detectors from the strain dict that did not have valid
+            # times for PSD estimation
+            for det in set(strain_dict.keys())-set(psd_times.keys()):
+                _ = strain_dict.pop(det)
+            # reset instruments to only be those with valid data
+            instruments = list(psd_times.keys())
         else:
-            psd_times = {det: (opts.psd_start_time, opts.psd_end_time)
+            psd_times = {det: (opts.psd_start_time[det],
+                               opts.psd_end_time[det])
                          for det in instruments}
         psd_strain_dict = {}
         for det, (psd_start, psd_end) in psd_times.items():
-            #psd_opts = opts
             opts.gps_start_time = psd_start
             opts.gps_end_time = psd_end
             psd_strain_dict.update(
@@ -416,7 +448,6 @@ def data_from_cli(opts, check_for_valid_times=False,
         # apply any gates
         logging.info("Applying gates to PSD data")
         psd_strain_dict = apply_gates_to_td(psd_strain_dict, psd_gates)
-
     elif opts.psd_start_time or opts.psd_end_time:
         raise ValueError("Must give psd-start-time and psd-end-time")
     else:
