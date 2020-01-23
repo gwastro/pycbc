@@ -88,7 +88,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     return nbin, fbin, fbin_ind
 
 
-class Relative(BaseDataModel):
+class RelativeSPA(BaseDataModel):
     r"""Model that assumes the likelihood in a region around the peak
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For
@@ -145,12 +145,12 @@ class Relative(BaseDataModel):
     \**kwargs :
         All other keyword arguments are passed to ``BaseDataModel``.
     """
-    name = "relative"
+    name = "relative_spa"
 
     def __init__(self, data, psds, mass1, mass2, spin1z, spin2z,
                  ra, dec, tc, low_frequency_cutoff,
                  high_frequency_cutoff, epsilon=0.5, **kwargs):
-        super(Relative, self).__init__(data=data, **kwargs)
+        super(RelativeSPA, self).__init__(data=data, **kwargs)
         # store data and frequencies
         f_lo = float(low_frequency_cutoff)
         f_hi = float(high_frequency_cutoff)
@@ -348,7 +348,7 @@ class Relative(BaseDataModel):
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
         """
-        super(Relative, self).write_metadata(fp)
+        super(RelativeSPA, self).write_metadata(fp)
         if self._psds is not None:
             fp.write_psd(self._psds)
         try:
