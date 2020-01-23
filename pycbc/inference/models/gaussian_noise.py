@@ -18,12 +18,17 @@
 
 import logging
 import numpy
+
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
 from pycbc.waveform import generator
 from pycbc.types import Array, FrequencySeries
+from pycbc.strain import gates_from_cli
+from pycbc.strain.calibration import Recalibrate
+from pycbc.inject import InjectionSet
 
 from .base_data import BaseDataModel
+from .data_utils import (data_opts_from_config, data_from_cli)
 
 
 class GaussianNoise(BaseDataModel):
@@ -223,16 +228,16 @@ class GaussianNoise(BaseDataModel):
         super(GaussianNoise, self).__init__(variable_params, data,
                                             static_params=static_params,
                                             **kwargs)
-        # check if low frequency cutoff has been provided for every IFO.
-        if set(low_frequency_cutoff.keys()) != set(self.data.keys()):
-            raise KeyError("IFOs for which data has been provided should "
-                           "match IFOs for which low-frequency-cutoff has "
-                           "been provided for likelihood inner product "
-                           "calculation. If loading the model settings from "
-                           "a config file, please provide an "
-                           "`IFO-low-frequency-cutoff` input for each "
-                           "detector in the `[model]` section, where IFO is "
-                           "the name of the detector.")
+        # check if low frequency cutoff has been provided for every IFO with
+        # data
+        if set(self.data.keys()) - set(low_frequency_cutoff.keys()):
+            raise KeyError("A low-frequency-cutoff must be provided for every "
+                           "detector for which data has been provided. If "
+                           "loading the model settings from "
+                           "a config file, please provide "
+                           "`{DETECTOR}-low-frequency-cutoff` options for "
+                           "every detector in the `[model]` section, where "
+                           "`{DETECTOR} is the name of the detector.")
         # create the waveform generator
         # the waveform generator will get the variable_params + the output
         # of the waveform transforms, so we'll add them to the list of
@@ -598,29 +603,70 @@ class GaussianNoise(BaseDataModel):
                                                         self._f_upper[det]
 
     @classmethod
-    def from_config(cls, cp, **kwargs):
+    def from_config(cls, cp, data_section='data', **kwargs):
         r"""Initializes an instance of this class from the given config file.
 
         Parameters
         ----------
         cp : WorkflowConfigParser
             Config file parser to read.
+        data_section : str, optional
+            The name of the section to load data options from.
         \**kwargs :
             All additional keyword arguments are passed to the class. Any
             provided keyword will over ride what is in the config file.
         """
         args = cls._init_args_from_config(cp)
-        args['low_frequency_cutoff'] = low_frequency_cutoff_from_config(cp)
-        args['high_frequency_cutoff'] = high_frequency_cutoff_from_config(cp)
+        flow = low_frequency_cutoff_from_config(cp)
+        fhigh = high_frequency_cutoff_from_config(cp)
+        args['low_frequency_cutoff'] = flow
+        args['high_frequency_cutoff'] = fhigh
         # get any other keyword arguments provided in the model section
         ignore_args = ['name']
         for option in cp.options("model"):
             if any([option.endswith("-low-frequency-cutoff"),
                     option.endswith("-high-frequency-cutoff")]):
                 ignore_args.append(option)
+        # data args
+        bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
+                     'err-on-missing-detectors']
+        data_args = {arg.replace('-', '_'): True for arg in bool_args
+                     if cp.has_option('model', arg)}
+        ignore_args += bool_args
+        # load the data
+        opts = data_opts_from_config(cp, data_section, flow)
+        _, data, psds = data_from_cli(opts, **data_args)
+        args.update({'data': data, 'psds': psds})
+        # any extra args
         args.update(cls.extra_args_from_config(cp, "model",
                                                skip_args=ignore_args))
-        args.update(kwargs)
+        # get the injection file
+        # Note: PyCBC's multi-ifo parser uses key:ifo for
+        # the injection file, even though we will use the same
+        # injection file for all detectors. This
+        # should be fixed in a future version of PyCBC. Once it is,
+        # update this. Until then, just use the first file.
+        if opts.injection_file:
+            injection_file = tuple(opts.injection_file.values())[0]
+            # None if not set
+        else:
+            injection_file = None
+        args['injection_file'] = injection_file
+        # update any static params that are set to FROM_INJECTION
+        replace_params = get_static_params_from_injection(
+            args['static_params'], injection_file)
+        args['static_params'].update(replace_params)
+        # get ifo-specific instances of calibration model
+        if cp.has_section('calibration'):
+            logging.info("Initializing calibration model")
+            recalib = {
+                ifo: Recalibrate.from_config(cp, ifo, section='calibration')
+                for ifo in opts.instruments}
+            args['recalibration'] = recalib
+        # get gates for templates
+        gates = gates_from_cli(opts)
+        if gates:
+            args['gates'] = gates
         return cls(**args)
 
 
@@ -631,6 +677,49 @@ class GaussianNoise(BaseDataModel):
 #
 # =============================================================================
 #
+def get_static_params_from_injection(static_params, injection_file):
+    """Gets FROM_INJECTION static params from injection.
+
+    Parameters
+    ----------
+    static_params : dict
+        Dictionary of static params.
+    injection_file : str
+        Name of the injection file to use.
+
+    Returns
+    -------
+    dict :
+        A dictionary mapping parameter names to values retrieved from the
+        injection file. The dictionary will only contain parameters that were
+        set to ``"FROM_INJECTION"`` in the ``static_params``.
+        Parameter names -> values The injection parameters.
+    """
+    # pull out the parameters that need replacing
+    replace_params = {p: None for (p, val) in static_params.items()
+                      if val == 'FROM_INJECTION'}
+    if replace_params != {}:
+        # make sure there's actually an injection file
+        if injection_file is None:
+            raise ValueError("one or more static params are set to "
+                             "FROM_INJECTION, but no injection file "
+                             "provided in data section")
+        inj = InjectionSet(injection_file)
+        # make sure there's only one injection provided
+        if inj.table.size > 1:
+            raise ValueError("Some static params set to FROM_INJECTION, but "
+                             "more than one injection exists in the injection "
+                             "file.")
+        for param in replace_params:
+            try:
+                injval = inj.table[param][0]
+            except NameError:
+                # means the parameter doesn't exist
+                raise ValueError("Static param {} with placeholder "
+                                 "FROM_INJECTION has no counterpart in "
+                                 "injection file.".format(param))
+            replace_params[param] = injval
+    return replace_params
 
 
 def create_waveform_generator(variable_params, data,

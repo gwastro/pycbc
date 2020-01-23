@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # sampler parameters
-PRIOR_CONFIG=gw150914_like.ini
+PRIOR_CONFIG=../priors/gw150914_like.ini
 DATA_CONFIG=data.ini
-SAMPLER_CONFIG=emcee_pt-gw150914_like.ini
+SAMPLER_CONFIG=../samplers/emcee_pt-gw150914_like.ini
 OUTPUT_PATH=inference.hdf
 
 # the following sets the number of cores to use; adjust as needed to
@@ -20,4 +20,10 @@ pycbc_inference --verbose \
     --config-file ${PRIOR_CONFIG} ${DATA_CONFIG} ${SAMPLER_CONFIG} \
     --output-file ${OUTPUT_PATH} \
     --nprocesses ${NPROCS} \
+    --config-delete "sampler:effective-nsamples" \
+                    "sampler:max-samples-per-chain" \
+    --config-overrides sampler:ntemps:2 \
+                       sampler:nwalkers:30 \
+                       sampler:niterations:20 \
+                       sampler:checkpoint-interval:10 \
     --force

@@ -12,4 +12,4 @@ pycbc_inference_plot_posterior \
                  mass1 mass2 spin1_a spin1_azimuthal spin1_polar \
                  spin2_a spin2_azimuthal spin2_polar \
                  "inclination*180/pi:$\iota$ (deg)" distance \
-                 tc
+                 'delta_tc:$\Delta t_c$ (s)'

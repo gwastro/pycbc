@@ -57,6 +57,10 @@ class BaseDataModel(BaseModel):
     gates : dict of tuples, optional
         Dictionary of detectors -> tuples of specifying gate times. The
         sort of thing returned by `pycbc.gate.gates_from_cli`.
+    injection_file : str, optional
+        If an injection was added to the data, the name of the injection file
+        used. If provided, the injection parameters will be written to
+        file when ``write_metadata`` is called.
 
     \**kwargs :
         All other keyword arguments are passed to ``BaseModel``.
@@ -75,11 +79,12 @@ class BaseDataModel(BaseModel):
     See ``BaseModel`` for additional attributes and properties.
     """
     def __init__(self, variable_params, data, recalibration=None, gates=None,
-                 **kwargs):
+                 injection_file=None, **kwargs):
         self._data = None
         self.data = data
         self.recalibration = recalibration
         self.gates = gates
+        self.injection_file = injection_file
         super(BaseDataModel, self).__init__(variable_params, **kwargs)
 
     @property
@@ -157,3 +162,6 @@ class BaseDataModel(BaseModel):
         """
         super(BaseDataModel, self).write_metadata(fp)
         fp.write_stilde(self.data)
+        # save injection parameters
+        if self.injection_file is not None:
+            fp.write_injections(self.injection_file)

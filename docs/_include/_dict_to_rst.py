@@ -94,9 +94,38 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     return '\n'.join(lines)
 
 
+def format_pyobj(obj, objtype):
+    """Function for formatting python objects in the table.
+
+    An object can be a module, class, or function.
+
+    Parameters
+    ----------
+    obj : python object
+        The object to link to.
+    objtype : str
+        The type of the object, e.g., 'class', 'func', etc. For the full
+        list of recognized domains, see the `sphinx docs
+        <https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html>`_.
+
+    Returns
+    -------
+    str :
+        Formatted RST string that will cross reference to the object.
+    """
+    return ':py:{0}:`{1}.{2}`'.format(objtype, obj.__module__, obj.__name__)
+
+
 def format_class(class_):
     """Function for formatting classes in the table.
 
     This can be passed to ``rst_dict_table``'s ``val_format`` argument.
     """
-    return ':py:class:`{0}.{1}`'.format(class_.__module__, class_.__name__)
+    return format_pyobj(class_, 'class')
+
+def format_function(func_):
+    """Function for formatting python functions in the table.
+
+    This can be passed to ``rst_dict_table``'s ``val_format`` argument.
+    """
+    return format_pyobj(func_, 'func')
