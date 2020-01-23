@@ -26,6 +26,7 @@ from .gaussian_noise import GaussianNoise
 from .marginalized_gaussian_noise import (MarginalizedPhaseGaussianNoise,
                                           MarginalizedGaussianNoise)
 from .single_template import SingleTemplate
+from .relbin import RelativeSPA
 
 
 # Used to manage a model instance across multiple cores or MPI
@@ -44,7 +45,7 @@ def _call_global_model_logprior(*args, **kwds):
     like ``emcee_pt``.
     """
     # pylint:disable=not-callable
-    return _global_instance(*args, callstat='logprior', **kwds)  
+    return _global_instance(*args, callstat='logprior', **kwds)
 
 
 class CallModel(object):
@@ -183,5 +184,6 @@ models = {_cls.name: _cls for _cls in (
     GaussianNoise,
     MarginalizedPhaseGaussianNoise,
     MarginalizedGaussianNoise,
-    SingleTemplate
+    SingleTemplate,
+    RelativeSPA
 )}
