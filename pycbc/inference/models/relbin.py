@@ -29,6 +29,7 @@ a relative binning likelihood for parameter estimation.
 import logging
 import numpy
 from scipy.interpolate import interp1d
+from scipy import special
 
 from pycbc.waveform.spa_tmplt import spa_tmplt
 from pycbc.detector import Detector
@@ -286,6 +287,7 @@ class Relative(BaseDataModel):
         p.update(self.static_params)
 
         llr = 0.
+        new_llr = 0.
         for ifo in self.data:
             # get detector antenna pattern
             fp, fc = self.det[ifo].antenna_pattern(p['ra'], p['dec'],
@@ -303,6 +305,8 @@ class Relative(BaseDataModel):
             # <h, d> is real part of sum over bins of A0r0 + A1r1
             hd = numpy.sum(self.sdat[ifo]['a0'] * r0
                            + self.sdat[ifo]['a1'] * r1).real
+            # marginalize over phase
+            hd = numpy.log(special.i0e(hd)) + abs(hd)
             # <h, h> is real part of sum over bins of B0|r0|^2 + 2B1Re(r1r0*)
             hh = numpy.sum(self.sdat[ifo]['b0'] * numpy.absolute(r0) ** 2.
                            + 2. * self.sdat[ifo]['b1']
