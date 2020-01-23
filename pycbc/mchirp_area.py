@@ -297,7 +297,7 @@ def calc_probabilities(mchirp, snr, eff_distance, src_args):
     z_std_estimation = 0.5 * (z_est_max - z_est_min)
     z = {'central': z_estimation, 'delta': z_std_estimation}
     mass_gap = src_args['mass_gap']
-    
+
 # If the mchirp is greater than a mchirp corresponding to two masses
     # equal to the maximum mass, the probability for BBH is 100%
     mc_max = mass_limits['max_m1'] / (2 ** 0.2)
