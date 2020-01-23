@@ -145,58 +145,10 @@ class BaseSampler(object):
         """Do any finalization to the samples file before exiting."""
         pass
 
+    @abstractmethod
     def setup_output(self, output_file, force=False):
         """Sets up the sampler's checkpoint and output files.
-
-        The checkpoint file has the same name as the output file, but with
-        ``.checkpoint`` appended to the name. A backup file will also be
-        created.
-
-        If the output file already exists, an ``OSError`` will be raised.
-        This can be overridden by setting ``force`` to ``True``.
-
-        Parameters
-        ----------
-        sampler : sampler instance
-            Sampler
-        output_file : str
-            Name of the output file.
-        force : bool, optional
-            If the output file already exists, overwrite it.
         """
-        # check that the output file doesn't already exist
-        if os.path.exists(output_file):
-            if force:
-                os.remove(output_file)
-            else:
-                raise OSError("output-file already exists; use force if you "
-                              "wish to overwrite it.")
-        # check for backup file(s)
-        checkpoint_file = output_file + '.checkpoint'
-        backup_file = output_file + '.bkup'
-        # check if we have a good checkpoint and/or backup file
-        logging.info("Looking for checkpoint file")
-        checkpoint_valid = validate_checkpoint_files(checkpoint_file,
-                                                     backup_file)
-        # Create a new file if the checkpoint doesn't exist, or if it is
-        # corrupted
-        self.new_checkpoint = False  # keeps track if this is a new file or not
-        if not checkpoint_valid:
-            logging.info("Checkpoint not found or not valid")
-            create_new_output_file(self, checkpoint_file)
-            # now the checkpoint is valid
-            self.new_checkpoint = True
-            # copy to backup
-            shutil.copy(checkpoint_file, backup_file)
-        # write the command line, startup
-        for fn in [checkpoint_file, backup_file]:
-            with self.io(fn, "a") as fp:
-                fp.write_command_line()
-                fp.write_resume_point()
-        # store
-        self.checkpoint_file = checkpoint_file
-        self.backup_file = backup_file
-        self.checkpoint_valid = checkpoint_valid
 
 
 #
@@ -206,6 +158,59 @@ class BaseSampler(object):
 #
 # =============================================================================
 #
+
+def setup_output(sampler, output_file, force=False):
+    """Sets up the sampler's checkpoint and output files.
+
+    The checkpoint file has the same name as the output file, but with
+    ``.checkpoint`` appended to the name. A backup file will also be
+    created.
+
+    If the output file already exists, an ``OSError`` will be raised.
+    This can be overridden by setting ``force`` to ``True``.
+
+    Parameters
+    ----------
+    sampler : sampler instance
+        Sampler
+    output_file : str
+        Name of the output file.
+    force : bool, optional
+        If the output file already exists, overwrite it.
+    """
+    # check that the output file doesn't already exist
+    if os.path.exists(output_file):
+        if force:
+            os.remove(output_file)
+        else:
+            raise OSError("output-file already exists; use force if you "
+                          "wish to overwrite it.")
+    # check for backup file(s)
+    checkpoint_file = output_file + '.checkpoint'
+    backup_file = output_file + '.bkup'
+    # check if we have a good checkpoint and/or backup file
+    logging.info("Looking for checkpoint file")
+    checkpoint_valid = validate_checkpoint_files(checkpoint_file,
+                                                 backup_file)
+    # Create a new file if the checkpoint doesn't exist, or if it is
+    # corrupted
+    sampler.new_checkpoint = False  # keeps track if this is a new file or not
+    if not checkpoint_valid:
+        logging.info("Checkpoint not found or not valid")
+        create_new_output_file(sampler, checkpoint_file)
+        # now the checkpoint is valid
+        sampler.new_checkpoint = True
+        # copy to backup
+        shutil.copy(checkpoint_file, backup_file)
+    # write the command line, startup
+    for fn in [checkpoint_file, backup_file]:
+        with sampler.io(fn, "a") as fp:
+            fp.write_command_line()
+            fp.write_resume_point()
+    # store
+    sampler.checkpoint_file = checkpoint_file
+    sampler.backup_file = backup_file
+    sampler.checkpoint_valid = checkpoint_valid
 
 def create_new_output_file(sampler, filename, **kwargs):
     r"""Creates a new output file.
