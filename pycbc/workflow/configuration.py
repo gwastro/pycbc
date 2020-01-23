@@ -483,7 +483,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # and parse them
         parsedOverrides = []
         for override in confOverrides:
-            splitOverride = override.split(":")
+            splitOverride = override.split(":", 2)
             if len(splitOverride) == 3:
                 parsedOverrides.append(tuple(splitOverride))
             elif len(splitOverride) == 2:
@@ -1117,7 +1117,7 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
         # read configuration file
         logging.info("Reading configuration file")
         if opts.config_overrides is not None:
-            overrides = [override.split(":")
+            overrides = [override.split(":", 2)
                          for override in opts.config_overrides]
         else:
             overrides = None

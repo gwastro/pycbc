@@ -277,8 +277,6 @@ usage="
 
     --clean-pycbc                   check out pycbc git repo from scratch
 
-    --clean-weave-cache             clean weave code cache before running analysis
-
     --lalsuite-commit=<commit>      specify a commit (or tag or branch) of lalsuite to build from
 
     --blessed-lalsuite              get the lalsuite commit to build from
@@ -313,7 +311,7 @@ usage="
 
     --verbose-python                run PyInstalled Python in verbose mode, showing imports
 
-    --no-analysis                   for testing, don't run analysis, assume weave cache is already there
+    --no-analysis                   for testing, don't run analysis
 
     --silent-build                  do not brint build messages unless there is an error
 
@@ -361,7 +359,6 @@ for i in $*; do
         --pycbc-commit=*) pycbc_commit="`echo $i|sed 's/^--pycbc-commit=//'`";;
         --pycbc-fetch-ref=*) pycbc_fetch_ref="`echo $i|sed 's/^--pycbc-fetch-ref=//'`";;
         --clean-pycbc) scratch_pycbc=true;;
-        --clean-weave-cache) rm -rf "$SOURCE/test/pycbc_inspiral";;
         --clean-sundays)
             if [ `date +%u` -eq 7 ]; then
                 if [ -r "$SOURCE/last_sunday_build" ]; then
@@ -1116,6 +1113,7 @@ fi
 rm -rf "$ENVIRONMENT/dist"
 mkdir -p "$ENVIRONMENT/dist"
 
+# Ian doesn't understand what this means. Does removing weave change this?
 # if the build machine has dbhash & shelve, scipy weave will use bsddb
 # make sure these exist and get added to the bundle(s)
 python -c "import dbhash, shelve"
@@ -1276,17 +1274,6 @@ else
     if test "$libgomp" != "libgomp.so.1"; then
         cp "$libgomp" .
     fi
-fi
-
-# OSX doesn't have a GNU error C extension, so drop an "error.h" header
-# with a fake 'error' function somewhere for scipy wave to pick it up
-if test ".$appendix" = "._OSX64"; then
-    if test -d scipy/weave; then
-        f=scipy/weave/error.h
-    else
-        f=weave/error.h
-    fi
-    echo '#define error(status, errnum, errstr, ...) fprintf(stderr,"pycbc_inspiral: %d:%d:" errstr, status, errnum, ##__VA_ARGS__)' > $f
 fi
 
 # TEST BUNDLE
@@ -1469,9 +1456,7 @@ do
       NO_TMPDIR=1 \
       INITIAL_LOG_LEVEL=10 \
       LEVEL2_CACHE_SIZE=8192 \
-      WEAVE_FLAGS='-O3 -march=core2 -w' \
-      FIXED_WEAVE_CACHE="$PWD/pycbc_inspiral"
-    base_args="--fixed-weave-cache ${processing_scheme} \
+    base_args="${processing_scheme} \
       --frame-files $frames \
       --sample-rate 2048 \
       --sgchisq-snr-threshold 6.0 \
@@ -1519,7 +1504,7 @@ done
 echo -e "\\n\\n>> [`date`] test for GW150914"
 python $SOURCE/pycbc/tools/einsteinathome/check_GW150914_detection.py H1-INSPIRAL-OUT.hdf
 
-# run a set of injections to weave compile the injection code path
+# run a set of injections
 echo -e "\\n\\n>> [`date`] running pycbc_inspiral with injections"
 args="${base_args} \
   --approximant ${gw150914_approx} \
@@ -1529,8 +1514,8 @@ args="${base_args} \
 
 fi # if $run_analysis
 
-# zip weave cache
-echo -e "\\n\\n>> [`date`] zipping weave cache"
+# zip cache
+echo -e "\\n\\n>> [`date`] zipping cache"
 cache="$ENVIRONMENT/dist/pythoncompiled$appendix.zip"
 rm -f "$cache"
 # Fetch any extra libraries specified on the command line

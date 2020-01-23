@@ -70,6 +70,28 @@ else
 fi
 popd
 
+## Run inference on BBH example; this will also run
+## a test of create_injections
+pushd examples/inference/bbh-injection
+bash -e make_injection.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+# now run inference
+bash -e run_test.sh
+if test $? -ne 0 ; then
+    RESULT=1
+    echo -e "    FAILED!"
+    echo -e "---------------------------------------------------------"
+else
+    echo -e "    Pass."
+fi
+popd
+
 ## Run inference on GW150914 data
 pushd examples/inference/gw150914
 bash -e run_test.sh

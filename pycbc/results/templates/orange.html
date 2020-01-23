@@ -100,12 +100,16 @@
 
         <!-- title and subtitle -->
         <div class="row" style="padding-top:10px">
-            <div class="col-md-6">
-                <p class="text-left"><b>{{analysis_title}}</b></p>
+            <div class="col-md-4">
+                <p class="text-left">
+                    <img src={{logo}} alt="PyCBC logo" style="height:3em;">
+                </p>
             </div>
-            <div class="col-md-6">
-                <p class="text-right"><b>{{analysis_subtitle}}</b></p>
+            <div class="col-md-4">
+                <p class="text-center" style="font-size:150%;"><b>{{analysis_title}}</b></p>
+                <p class="text-center">{{analysis_subtitle}}</p>
             </div>
+            <div class="col-md-4"></div>
         </div>
 
     <!-- button for collapsed navbar -->
@@ -157,19 +161,52 @@
                      </div>
                 </div>
 
-                <!-- set file counter integer -->
-                {% set i = 1 %}
-
-                <!-- include well if it exists and check meta-data if well renders any files inside it -->
-                {% set well_path = plots_dir+dir.path+'/well.html' %}
-                {% if path_exists(well_path) %}
-                    {{ setup_template_render(well_path, None) }}
-                    {% if get_embedded_config(well_path).has_option('well.html', 'filenames') %}
-                        {% set well_filenames = get_embedded_config(well_path).get('well.html', 'filenames').split(',') %}
-                    {% else %}
-                        {% set well_filenames = [] %}
+                <!-- set list of files which are handled in wells -->
+                {% set well_filenames = []%}
+                
+                {% set wellnames = [] %}
+                {% for wellname in dir.files %}
+                    {% if wellname.filename().find('well') == 0 %}
+                        {% set _ = wellnames.append(wellname) %}
                     {% endif %}
-                {% endif %}
+                {% endfor %}
+                
+                <!-- include well if it exists and check meta-data if well renders any files inside it -->
+                {% for wellname in wellnames %}
+                    {% set well_path = plots_dir + dir.path + '/' + wellname.filename() %}
+                    {% set _ = well_filenames.append(wellname.filename()) %}
+                    {% if path_exists(well_path) %}
+                    
+                        {% set cp = get_embedded_config(well_path) %}
+                        
+                        {% if cp.check_option(wellname.filename(), 'filenames') %}
+                            {% set _ = well_filenames.extend(get_embedded_config(well_path).get(wellname.filename(), 'filenames').split(',')) %}
+                        {% endif %}
+                        
+                        {% if not cp.check_option(wellname.filename(), 'collapse') %}
+                            {{ setup_template_render(well_path, None) }}     
+                        {% else %}
+                            <div class="panel-group" id="accordion1">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{loop.index}}well">
+                                            {% if cp.check_option(wellname.filename(), 'title') %}
+                                                W{{loop.index}}. {{cp.get(wellname.filename(), 'title')}}
+                                            {% else %}
+                                                W{{loop.index}}. {{wellname.filename()}}
+                                            {% endif %}
+                                        </h4>
+                                    </div>
+                                    <div id="collapse{{loop.index}}well" class="panel-collapse collapse">
+                                        <div class="panel-body">
+                                            {{setup_template_render(well_path, None) }}     
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}                               
+                    {% endif %}
+                {% endfor %}
 
                 <hr class="row-divider">
 
@@ -184,35 +221,34 @@
                             <div class="row" style="padding:15px">
                                 <button id="collapse-init" class="btn btn-xs btn-primary">Expand All</button>
                             </div>
+                            {% set count = [1] %}
                             {% for file in dir.files %}
                                 {% if path_exists(file.path) %}
 
                                     <!-- get config file -->
                                     {% set cp = get_embedded_config(file.path) %}
-
                                     <!-- do not show well.html -->
-                                    {% if not file.filename() == 'well.html' and file.filename() not in well_filenames %}
+                                    {% if not file.filename() in well_filenames %}
                                         <div class="panel-group" id="accordion">
                                             <div class="panel panel-default">
                                                 <div class="panel-heading">
-                                                    <h4 class="panel-title" data-toggle="collapse" data-target="#collapse{{i}}">
+                                                    <h4 class="panel-title" data-toggle="collapse" data-target="#collapseorange{{loop.index}}">
                                                         {% if cp.check_option(file.filename(), 'title') %}
-                                                            B{{i}}. {{cp.get(file.filename(), 'title')}}
+                                                            B{{count|length}}. {{cp.get(file.filename(), 'title')}}
                                                         {% else %}
-                                                            B{{i}}. {{file.filename()}}
+                                                            B{{count|length}}. {{file.filename()}}
                                                         {% endif %}
                                                     </h4>
                                                 </div>
-                                                <div id="collapse{{i}}" class="panel-collapse collapse">
+                                                <div id="collapseorange{{loop.index}}" class="panel-collapse collapse">
                                                     <div class="panel-body">
                                                         {{file.render()}}
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        {% set i = i + 1 %}
+                                    {% set _ = count.append(1) %}
                                     {% endif %}
-
                                 {% endif %}
                             {% endfor %}
                     </div>

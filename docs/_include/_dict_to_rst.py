@@ -59,12 +59,12 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     keys, values = zip(*dict_.items())
 
     # apply formatting
-    keys = map(key_format, keys)
-    values = map(val_format, values)
+    keys = list(map(key_format, keys))
+    values = list(map(val_format, values))
 
     # work out longest elements in each column
-    nckey = max(map(len, keys))
-    ncval = max(map(len, values))
+    nckey = max(list(map(len, keys)))
+    ncval = max(list(map(len, values)))
     if header:
         khead, vhead = header
         nckey = max(nckey, len(khead))
@@ -82,8 +82,10 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     if header:
         lines.extend((row(*header), divider))
     params = zip(keys, values)
+    
     if sort:
         params = sorted(params)
+        
     for key, val in params:
         fmt = '{{0:{0}s}}  {{1}}'.format(nckey, ncval)
         lines.append(fmt.format(key, val))
@@ -92,9 +94,38 @@ def rst_dict_table(dict_, key_format=str, val_format=str, header=None,
     return '\n'.join(lines)
 
 
+def format_pyobj(obj, objtype):
+    """Function for formatting python objects in the table.
+
+    An object can be a module, class, or function.
+
+    Parameters
+    ----------
+    obj : python object
+        The object to link to.
+    objtype : str
+        The type of the object, e.g., 'class', 'func', etc. For the full
+        list of recognized domains, see the `sphinx docs
+        <https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html>`_.
+
+    Returns
+    -------
+    str :
+        Formatted RST string that will cross reference to the object.
+    """
+    return ':py:{0}:`{1}.{2}`'.format(objtype, obj.__module__, obj.__name__)
+
+
 def format_class(class_):
     """Function for formatting classes in the table.
 
     This can be passed to ``rst_dict_table``'s ``val_format`` argument.
     """
-    return ':py:class:`{0}.{1}`'.format(class_.__module__, class_.__name__)
+    return format_pyobj(class_, 'class')
+
+def format_function(func_):
+    """Function for formatting python functions in the table.
+
+    This can be passed to ``rst_dict_table``'s ``val_format`` argument.
+    """
+    return format_pyobj(func_, 'func')

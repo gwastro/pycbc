@@ -70,7 +70,7 @@ def make_pygrb_skygrid_plot(workflow, out_dir, exclude=None, require=None,
 
     # Exectuable
     exec_name = 'pygrb_plot_skygrid'
-    logging.debug("Executable name: %s" % exec_name)
+    logging.info("Executable name: %s" % exec_name)
     # Initialize job node
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     node = PlotExecutable(workflow.cp, exec_name,
@@ -97,7 +97,7 @@ def make_pygrb_timeseries_or_signal_consistency_plot(workflow, exec_name,
     out_dir, injs=True, ifo=None, exclude=None, require=None, tags=[]):
     """Adds a PyGRB signal consistency plot to the workflow"""
 
-    logging.debug("Executable name: %s" % exec_name)
+    logging.info("Executable name: %s" % exec_name)
     # Initialize job node
     grb_name = workflow.cp.get('workflow', 'trigger-name')
     node = PlotExecutable(workflow.cp, exec_name, ifos=wflow.ifos,

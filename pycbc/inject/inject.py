@@ -37,6 +37,7 @@ from pycbc.waveform import get_td_waveform, utils as wfutils
 from pycbc.waveform import ringdown_td_approximants
 from pycbc.types import float64, float32, TimeSeries
 from pycbc.detector import Detector
+from pycbc.conversions import tau0_from_mass1_mass2
 import pycbc.io
 
 from six import add_metaclass
@@ -174,12 +175,10 @@ class _XMLInjectionSet(object):
             # roughly estimate if the injection may overlap with the segment
             # Add 2s to end_time to account for ringdown and light-travel delay
             end_time = inj.get_time_geocent() + 2
-            inj_length = sim.SimInspiralTaylorLength(
-                strain.delta_t, inj.mass1 * lal.MSUN_SI,
-                inj.mass2 * lal.MSUN_SI, f_l, 0)
+            inj_length = tau0_from_mass1_mass2(inj.mass1, inj.mass2, f_l)
             # Start time is taken as twice approx waveform length with a 1s
             # safety buffer
-            start_time = inj.get_time_geocent() - 2 * (inj_length+1)
+            start_time = inj.get_time_geocent() - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
             signal = self.make_strain_from_inj_object(inj, strain.delta_t,
@@ -486,21 +485,15 @@ class CBCHDFInjectionSet(_HDFInjectionSet):
         injections = self.table
         if simulation_ids:
             injections = injections[list(simulation_ids)]
-        for ii in range(injections.size):
-            inj = injections[ii]
-            if f_lower is None:
-                f_l = inj.f_lower
-            else:
-                f_l = f_lower
+        for ii, inj in enumerate(injections):
+            f_l = inj.f_lower if f_lower is None else f_lower
             # roughly estimate if the injection may overlap with the segment
             # Add 2s to end_time to account for ringdown and light-travel delay
             end_time = inj.tc + 2
-            inj_length = sim.SimInspiralTaylorLength(
-                strain.delta_t, inj.mass1 * lal.MSUN_SI,
-                inj.mass2 * lal.MSUN_SI, f_l, 0)
+            inj_length = tau0_from_mass1_mass2(inj.mass1, inj.mass2, f_l)
             # Start time is taken as twice approx waveform length with a 1s
             # safety buffer
-            start_time = inj.tc - 2 * (inj_length+1)
+            start_time = inj.tc - 2 * (inj_length + 1)
             if end_time < t0 or start_time > t1:
                 continue
             signal = self.make_strain_from_inj_object(inj, strain.delta_t,

@@ -397,6 +397,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             injector.apply(strain, opt.channel_name[0:2],
                              distance_scale=opt.injection_scale_factor)
 
+        if opt.strain_high_pass:
+            logging.info("Highpass Filtering")
+            strain = highpass(strain, frequency=opt.strain_high_pass)
+
         logging.info("Resampling data")
         strain = resample_to_delta_t(strain, 1. / opt.sample_rate)
 
@@ -408,6 +412,10 @@ def from_cli(opt, dyn_range_fac=1, precision='single',
             strain = (dyn_range_fac * strain).astype(pycbc.types.float64)
         else:
             raise ValueError("Unrecognized precision {}".format(precision))
+
+        if opt.strain_high_pass:
+            logging.info("Highpass Filtering")
+            strain = highpass(strain, frequency=opt.strain_high_pass)
 
     if opt.taper_data:
         logging.info("Tapering data")
@@ -716,6 +724,16 @@ def insert_strain_option_group_multi_ifo(parser, gps_times=True):
                     metavar="IFO:VAL", default=1.,
                     help="Multiple injections by this factor "
                          "before injecting into the data.")
+
+    data_reading_group_multi.add_argument('--injection-f-ref', type=float,
+                               action=MultiDetOptionAction, metavar='IFO:VALUE',
+                               help='Reference frequency in Hz for '
+                                    'creating CBC injections from an XML '
+                                    'file.')
+    data_reading_group_multi.add_argument('--injection-f-final', type=float,
+                               action=MultiDetOptionAction, metavar='IFO:VALUE',
+                               help='Override the f_final field of a CBC '
+                                    'XML injection file.')
 
     # Gating options
     data_reading_group_multi.add_argument("--gating-file", nargs="+",
@@ -1041,7 +1059,7 @@ class StrainSegments(object):
         """ Return a list of the FFT'd segments.
         Return the list of FrequencySeries. Additional properties are
         added that describe the strain segment. The property 'analyze'
-        is a slice corresponding to the portion of the time domain equivelant
+        is a slice corresponding to the portion of the time domain equivalent
         of the segment to analyze for triggers. The value 'cumulative_index'
         indexes from the beginning of the original strain series.
         """

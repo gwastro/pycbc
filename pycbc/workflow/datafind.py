@@ -416,7 +416,7 @@ def setup_datafind_runtime_cache_multi_calls_perifo(cp, scienceSegs,
         for seg in scienceSegsIfo:
             msg = "Finding data between %d and %d " %(seg[0],seg[1])
             msg += "for ifo %s" %(ifo)
-            logging.debug(msg)
+            logging.info(msg)
             # WARNING: For now the workflow will expect times to be in integer seconds
             startTime = int(seg[0])
             endTime = int(seg[1])
@@ -952,10 +952,10 @@ def run_datafind_instance(cp, outputDir, connection, observatory, frameType,
     # directory to check if this was expected.
     log_datafind_command(observatory, frameType, startTime, endTime,
                          os.path.join(outputDir,'logs'), **dfKwargs)
-    logging.debug("Asking datafind server for frames.")
+    logging.info("Asking datafind server for frames.")
     dfCache = connection.find_frame_urls(observatory, frameType,
                                         startTime, endTime, **dfKwargs)
-    logging.debug("Frames returned")
+    logging.info("Frames returned")
     # workflow format output file
     cache_file = File(ifo, 'DATAFIND', seg, extension='lcf',
                       directory=outputDir, tags=tags)

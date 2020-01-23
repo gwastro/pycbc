@@ -4,6 +4,7 @@ import ctypes
 import pycbc.scheme as _scheme
 from pycbc.libutils import get_ctypes_library
 from .core import _BaseFFT, _BaseIFFT
+from ..types import check_aligned
 
 # IMPORTANT NOTE TO PYCBC DEVELOPERS:
 # Because this module is loaded automatically when present, and because
@@ -319,14 +320,14 @@ def execute(plan, invec, outvec):
 
 def fft(invec, outvec, prec, itype, otype):
     theplan, destroy = plan(len(invec), invec.dtype, outvec.dtype, FFTW_FORWARD,
-                   get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
+                            get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
     destroy(theplan)
 
 def ifft(invec, outvec, prec, itype, otype):
     theplan, destroy = plan(len(outvec), invec.dtype, outvec.dtype, FFTW_BACKWARD,
-                   get_measure_level(),(invec._data.isaligned and outvec._data.isaligned),
+                            get_measure_level(),(check_aligned(invec.data) and check_aligned(outvec.data)),
                    _scheme.mgr.state.num_threads, (invec.ptr == outvec.ptr))
     execute(theplan, invec, outvec)
     destroy(theplan)
@@ -400,7 +401,7 @@ def _fftw_setup(fftobj):
     if nthreads != _fftw_current_nthreads:
         _fftw_plan_with_nthreads(nthreads)
     mlvl = get_measure_level()
-    aligned = fftobj.invec.data.isaligned and fftobj.outvec.data.isaligned
+    aligned = check_aligned(fftobj.invec.data) and check_aligned(fftobj.outvec.data)
     flags = get_flag(mlvl, aligned)
     plan_func = _plan_funcs_dict[ (str(fftobj.invec.dtype), str(fftobj.outvec.dtype)) ]
     tmpin = zeros(len(fftobj.invec), dtype = fftobj.invec.dtype)

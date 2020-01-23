@@ -282,7 +282,7 @@ logging.info('setting up plotting variables')
 histcolors = ['r',(1.0,0.6,0),'y','g','c','b','m','k',(0.8,0.25,0),(0.25,0.8,0)]
 fig, axes = plt.subplots(args.split_one_nbins, args.split_two_nbins,
                          sharex=True, sharey=True,
-                         figsize=(3 * args.split_two_nbins,
+                         figsize=(3 * (args.split_two_nbins + 1),
                                   3 * args.split_one_nbins))
 
 # setting up overall legend outside the split-up plots
@@ -299,8 +299,8 @@ line_fit, = axes[0,0].plot([0,0], [0,0], linestyle='--',
                            color='k', alpha=0.6)
 lines.append(line_fit)
 labels.append(args.fit_function + ' fit to counts')
-lgd = axes[0,0].legend(lines, labels, labelspacing=0.2,
-                       bbox_to_anchor=(-0.5, 0.5), title=args.bin_param)
+fig.legend(lines, labels, labelspacing=0.2,
+           loc='upper left', title=args.bin_param)
 
 pidx = []
 for i in range(args.num_bins):
@@ -387,13 +387,11 @@ for i in range(args.split_one_nbins):
                                       sp_one_bounds.upper()[i]) + '\ncumulative number',
                                       size="large")
 
-axes[0,0].add_artist(lgd)
-
-fkwds = {'bbox_extra_artists': (lgd,), 'bbox_inches': 'tight'}
+fig.tight_layout(rect=(1./(args.split_two_nbins+1), 0, 1, 1))
 
 logging.info('saving to file ' + args.output_file)
 results.save_fig_with_metadata(
-    fig, args.output_file, fig_kwds=fkwds,
+    fig, args.output_file,
     title="{}: {} histogram of single detector triggers split by"
           " {} and {}".format(args.ifo, args.sngl_stat, args.split_param_one,
                               args.split_param_two),

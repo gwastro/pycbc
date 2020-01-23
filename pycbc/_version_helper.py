@@ -64,6 +64,8 @@ def call(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     if p.returncode != 0 and on_error == 'raise':
         raise GitInvocationError('Failed to run "%s"' % " ".join(command))
 
+    out = out.decode('utf-8')
+
     if returncode:
         return out.strip(), p.returncode
     else:

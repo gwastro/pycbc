@@ -157,6 +157,9 @@ class File():
 
         return setup_template_render(self.path, self.config_path)
 
+default_logo_location = "https://raw.githubusercontent.com/gwastro/" + \
+                        "pycbc-logo/master/pycbc_logo_name.png"
+
 # parse command line
 parser = argparse.ArgumentParser(usage='pycbc_make_html_page \
 [--options]',
@@ -175,6 +178,9 @@ parser.add_argument('-t', '--analysis-title', type=str,
 parser.add_argument('-s', '--analysis-subtitle', type=str,
                   help='Subtitle to include at the top of each page.',
                   default="")
+parser.add_argument('-l', '--logo', type=str,
+                  default=default_logo_location,
+                  help='File location of logo to include at top of page')
 parser.add_argument('-v', '--verbose', action='store_true',
                   help='Print extra debugging information.', default=False)
 parser.add_argument('-P', '--protect-results', action='store_true',
@@ -214,6 +220,11 @@ for cwd in dirs:
     cwd.files.sort(key=lambda x: x.path)
 dirs_0.sort(key=lambda x: x.title())
 
+local_logo = opts.logo[:4] != "http"
+if local_logo:
+    logo_filename = os.path.basename(opts.logo)
+    shutil.copy2(opts.logo, opts.output_path)
+
 # loop over all directories
 for cwd in dirs:
 
@@ -224,6 +235,10 @@ for cwd in dirs:
                'dir'               : cwd,
                'dot_dot_str'       : cwd.level() * '../',
                'plots_dir'         : opts.plots_dir}
+    if local_logo:
+        context['logo'] = context['dot_dot_str'] + logo_filename
+    else:
+        context['logo'] = opts.logo
     output = template.render(context)
 
     # if directory does not exist make it and copy directory permissions
@@ -256,6 +271,10 @@ context = {'analysis_title'    : analysis_title,
            'dir'               : cwd,
            'dot_dot_str'       : cwd.level() * '../',
            'plots_dir'         : opts.plots_dir}
+if local_logo:
+    context['logo'] = context['dot_dot_str'] + logo_filename
+else:
+    context['logo'] = opts.logo
 output = template.render(context)
 if not os.path.exists(opts.output_path+cwd.path):
     os.makedirs(opts.output_path+cwd.path)

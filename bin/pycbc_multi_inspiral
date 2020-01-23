@@ -26,7 +26,6 @@ from pycbc.filter import MatchedFilterControl
 from pycbc.types import TimeSeries, zeros, float32, complex64
 from pycbc.types import MultiDetOptionAction
 import pycbc.detector
-import pycbc.weave
 import numpy as np
 
 import time
@@ -113,7 +112,6 @@ scheme.insert_processing_option_group(parser)
 fft.insert_fft_option_group(parser)
 from pycbc.vetoes.sgchisq import SingleDetSGChisq
 pycbc.opt.insert_optimization_option_group(parser)
-pycbc.weave.insert_weave_option_group(parser)
 pycbc.inject.insert_injfilterrejector_option_group_multi_ifo(parser)
 SingleDetSGChisq.insert_option_group(parser)
 opt = parser.parse_args()

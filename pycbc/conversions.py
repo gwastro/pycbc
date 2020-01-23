@@ -1005,7 +1005,7 @@ def final_spin_from_f0_tau(f0, tau, l=2, m=2):
     """Returns the final spin based on the given frequency and damping time.
 
     .. note::
-        Currently, only (l,m) = (2,2), (3,2), (4,4), (2,1) are supported.
+        Currently, only (l,m) = (2,2), (3,3), (4,4), (2,1) are supported.
         Any other indices will raise a ``KeyError``.
 
     Parameters
@@ -1050,7 +1050,7 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
     and damping time.
 
     .. note::
-        Currently, only (l,m) = (2,2), (3,2), (4,4), (2,1) are supported.
+        Currently, only (l,m) = (2,2), (3,3), (4,4), (2,1) are supported.
         Any other indices will raise a ``KeyError``.
 
     Parameters
@@ -1076,6 +1076,78 @@ def final_mass_from_f0_tau(f0, tau, l=2, m=2):
     a, b, c = _berti_mass_constants[l,m]
     return (a + b*(1-spin)**c)/(2*numpy.pi*f0*lal.MTSUN_SI)
 
+def freqlmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
+    """Returns the QNM frequency (in Hz) of a chosen new (l,m) mode from the
+    given current (l,m) mode.
+
+    Parameters
+    ----------
+    f0 : float or array
+        Frequency of the current QNM (in Hz).
+    tau : float or array
+        Damping time of the current QNM (in seconds).
+    current_l : int, optional
+        l-index of the current QNM.
+    current_m : int, optional
+        m-index of the current QNM.
+    new_l : int, optional
+        l-index of the new QNM to convert to.
+    new_m : int, optional
+        m-index of the new QNM to convert to.
+
+    Returns
+    -------
+    float or array
+        The frequency of the new (l, m) QNM mode. If the combination of
+        frequency and damping time provided for the current (l, m) QNM mode
+        correspond to an unphysical Kerr black hole mass and/or spin,
+        ``numpy.nan`` will be returned.
+    """
+    mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
+
+    mass[mass < 0] = numpy.nan
+    spin[numpy.abs(spin) > 0.9996] = numpy.nan
+
+    return freq_from_final_mass_spin(mass, spin,
+                                     l=new_l, m=new_m, nmodes=1)
+
+
+def taulmn_from_other_lmn(f0, tau, current_l, current_m, new_l, new_m):
+    """Returns the QNM damping time (in seconds) of a chosen new (l,m) mode
+    from the given current (l,m) mode.
+
+    Parameters
+    ----------
+    f0 : float or array
+        Frequency of the current QNM (in Hz).
+    tau : float or array
+        Damping time of the current QNM (in seconds).
+    current_l : int, optional
+        l-index of the current QNM.
+    current_m : int, optional
+        m-index of the current QNM.
+    new_l : int, optional
+        l-index of the new QNM to convert to.
+    new_m : int, optional
+        m-index of the new QNM to convert to.
+
+    Returns
+    -------
+    float or array
+        The daming time of the new (l, m) QNM mode. If the combination of
+        frequency and damping time provided for the current (l, m) QNM mode
+        correspond to an unphysical Kerr black hole mass and/or spin,
+        ``numpy.nan`` will be returned.
+    """
+    mass = final_mass_from_f0_tau(f0, tau, l=current_l, m=current_m)
+    spin = final_spin_from_f0_tau(f0, tau, l=current_l, m=current_m)
+
+    mass[mass < 0] = numpy.nan
+    spin[numpy.abs(spin) > 0.9996] = numpy.nan
+
+    return tau_from_final_mass_spin(mass, spin,
+                                    l=new_l, m=new_m, nmodes=1)
 
 def get_final_from_initial(mass1, mass2, spin1x=0., spin1y=0., spin1z=0.,
                            spin2x=0., spin2y=0., spin2z=0.,

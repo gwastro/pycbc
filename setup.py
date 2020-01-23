@@ -34,11 +34,12 @@ from setuptools.command.build_ext import build_ext as _build_ext
 from setuptools import find_packages
 
 requires = []
-setup_requires = ['numpy>=1.13.0,<1.15.3; python_version <= "2.7"',
-                  'numpy>=1.13.0; python_version > "3.0"']
+setup_requires = ['numpy>=1.16.0']
 install_requires =  setup_requires + ['Mako>=1.0.1',
-                      'cython',
+                      'cython>=0.29',
                       'decorator>=3.4.2',
+                      'numpy>=1.16.0; python_version >= "3.5"',
+                      'numpy>=1.16.0,<1.17.0; python_version <= "2.7"',
                       'scipy>=0.16.0; python_version >= "3.5"',
                       'scipy>=0.16.0,<1.3.0; python_version <= "3.4"',
                       'matplotlib>=1.5.1',
@@ -55,7 +56,6 @@ install_requires =  setup_requires + ['Mako>=1.0.1',
                       'six>=1.10.0',
                       'ligo-segments',
                       'tqdm',
-                      'weave>=0.16.0; python_version <= "2.7"',
                       ]
 
 def find_files(dirname, relpath=None):
@@ -123,7 +123,7 @@ def get_version_info():
         vinfo = _version_helper.generate_git_version_info()
     except:
         vinfo = vdummy()
-        vinfo.version = '1.14.dev5'
+        vinfo.version = '1.15.dev4'
         vinfo.release = 'False'
 
     with open('pycbc/version.py', 'w') as f:
@@ -237,6 +237,27 @@ e = Extension("pycbc.fft.fftw_pruned_cython",
 ext.append(e)
 e = Extension("pycbc.events.eventmgr_cython",
               ["pycbc/events/eventmgr_cython.pyx"],
+              extra_compile_args=cython_compile_args,
+              extra_link_args=cython_link_args,
+              compiler_directives={'embedsignature': True})
+ext.append(e)
+e = Extension("pycbc.events.simd_threshold_cython",
+              ["pycbc/events/simd_threshold_cython.pyx"],
+              language='c++',
+              extra_compile_args=cython_compile_args,
+              extra_link_args=cython_link_args,
+              compiler_directives={'embedsignature': True})
+ext.append(e)
+e = Extension("pycbc.filter.simd_correlate_cython",
+              ["pycbc/filter/simd_correlate_cython.pyx"],
+              language='c++',
+              extra_compile_args=cython_compile_args,
+              extra_link_args=cython_link_args,
+              compiler_directives={'embedsignature': True})
+ext.append(e)
+e = Extension("pycbc.waveform.decompress_cpu_cython",
+              ["pycbc/waveform/decompress_cpu_cython.pyx"],
+              language='c++',
               extra_compile_args=cython_compile_args,
               extra_link_args=cython_link_args,
               compiler_directives={'embedsignature': True})

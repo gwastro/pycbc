@@ -34,9 +34,7 @@ This document explains how to set up a virtual environment to install PyCBC
 either for development or use in a production analysis with a release. The
 code build will be a standard Python install which requires that the
 installation directory containing the Python libraries is accessible at
-runtime. Some executables also use weave for just-in-time compilation of code
-at runtime. These executables require a gcc and Python build environment on
-the execution machine.
+runtime.
 
 If you wish to run PyCBC executables on a machine that does not have the
 required environment, then you must use PyInstaller to build bundled versions

@@ -147,7 +147,7 @@ def _iter_qs(qrange, deltam):
     dq = cumum / nplanes
     for i in range(nplanes):
         yield qrange[0] * exp(2**(1/2.) * dq * (i + .5))
-    raise StopIteration()
+    return
 
 def _iter_frequencies(q, frange, mismatch, dur):
     """Iterate over the frequencies of this 'QPlane'
@@ -179,7 +179,7 @@ def _iter_frequencies(q, frange, mismatch, dur):
         yield (float(minf) *
                exp(2 / (2 + q**2)**(1/2.) * (i + .5) * fstep) //
                fstepmin * fstepmin)
-    raise StopIteration()
+    return
 
 def qseries(fseries, Q, f0, return_complex=False):
     """Calculate the energy 'TimeSeries' for the given fseries
