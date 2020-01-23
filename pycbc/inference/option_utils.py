@@ -17,7 +17,6 @@
 """This module contains standard options used for inference-related programs.
 """
 
-import logging
 import argparse
 
 from six import string_types
