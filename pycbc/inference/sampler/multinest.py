@@ -29,7 +29,6 @@ packages for parameter estimation.
 from __future__ import absolute_import
 
 import logging
-import shutil
 import sys
 import numpy
 
@@ -37,7 +36,7 @@ from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
 from pycbc.pool import is_main_process
 from pycbc.transforms import apply_transforms
-from .base import (BaseSampler, setup_output, create_new_output_file)
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 
 
