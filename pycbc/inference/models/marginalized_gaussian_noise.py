@@ -26,10 +26,10 @@ from pycbc.filter.matchedfilter import matched_filter_core
 from pycbc.distributions import read_distributions_from_config
 from pycbc.waveform import generator
 
-from .gaussian_noise import GaussianNoise
+from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 
 
-class MarginalizedPhaseGaussianNoise(GaussianNoise):
+class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
     r"""The likelihood is analytically marginalized over phase.
 
     This class can be used with signal models that can be written as:
@@ -109,6 +109,21 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
                                     \left<d_i, d_i\right> \right]
     """
     name = 'marginalized_phase'
+
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 static_params=None, **kwargs):
+        # set up the boiler-plate attributes
+        super(MarginalizedPhaseGaussianNoise, self).__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
+            gates=self.gates, **self.static_params)
 
     @property
     def _extra_stats(self):
