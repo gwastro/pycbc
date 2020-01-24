@@ -104,11 +104,6 @@ class GaussianNoise(BaseDataModel):
         dictionary must have a psd for each detector specified in the data
         dictionary. If provided, the inner products in each detector will be
         weighted by 1/psd of that detector.
-    psd_segment : dict, optional
-        A dictionary of detectiors -> (start time, end time) giving the
-        times that were used for PSD estimation. These are written to file
-        when the model writes its metadata. Otherwise, these are not used
-        for any analysis purposes.
     high_frequency_cutoff : dict, optional
         A dictionary of ending frequencies, in which the keys are the
         detector names and the values are the ending frequencies for the
@@ -228,7 +223,6 @@ class GaussianNoise(BaseDataModel):
     name = 'gaussian_noise'
 
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
-                 psd_segment=None,
                  high_frequency_cutoff=None, static_params=None,
                  **kwargs):
         # set up the boiler-plate attributes
@@ -282,14 +276,16 @@ class GaussianNoise(BaseDataModel):
                                                      d.delta_f, self._N)
             self._kmin[det] = kmin
             self._kmax[det] = kmax
+        # store the psd segments
+        self._psd_segments = {}
+        if psds is not None:
+            self.set_psd_segments(psds)
         # store the psds and calculate the inner product weight
         self._psds = {}
         self._weight = {}
         self._lognorm = {}
         self._det_lognls = {}
         self.psds = psds
-        self._psd_segment = None
-        self.psd_segment = psd_segment
         # whiten the data
         for det in self._data:
             self._data[det][kmin:kmax] *= self._weight[det][kmin:kmax]
@@ -349,17 +345,6 @@ class GaussianNoise(BaseDataModel):
                 self._f_upper[det] = None
 
     @property
-    def psd_segment(self):
-        return self._psd_segment
-
-    @psd_segment.setter
-    def psd_segment(self, psd_segment):
-        # copy the dictionary, make sure it provides a start and end time
-        self._psd_segment = {
-            det: (start, end)
-            for det, (start, end) in psd_segment.items()}
-
-    @property
     def _extra_stats(self):
         """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
         detector."""
@@ -408,6 +393,35 @@ class GaussianNoise(BaseDataModel):
             self._weight[det] = w
         # set the lognl and lognorm; we'll get this by just calling lognl
         _ = self.lognl
+
+    @property
+    def psd_segments(self):
+        """Dictionary giving times used for PSD estimation for each detector.
+
+        If a detector's PSD was not estimated from data, or the segment wasn't
+        provided, that detector will not be in the dictionary.
+        """
+        return self._psd_segments
+
+    def set_psd_segments(self, psds):
+        """Sets the PSD segments from a dictionary of PSDs.
+
+        This attempts to get the PSD segment from a ``psd_segment`` attribute
+        of each detector's PSD frequency series. If that attribute isn't set,
+        then that detector is not added to the dictionary of PSD segments.
+
+        Parameters
+        ----------
+        psds : dict
+            Dictionary of detector name -> PSD frequency series. The segment
+            used for each PSD will try to be retrieved from the PSD's
+            ``.psd_segment`` attribute.
+        """
+        for det, p in psds.items():
+            try:
+                self._psd_segments[det] = p.psd_segment
+            except AttributeError:
+                continue
 
     def det_lognorm(self, det):
         """The log of the likelihood normalization in the given detector."""
@@ -607,17 +621,16 @@ class GaussianNoise(BaseDataModel):
         """
         super(GaussianNoise, self).write_metadata(fp)
         # write the analyzed detectors and times
-        fp.attrs['analyzed_detectors'] = list(sorted(self.data.keys()))
+        fp.attrs['analyzed_detectors'] = self.detectors
         for det, data in self.data.items():
             key = '{}_analysis_segment'.format(det)
             fp.attrs[key] = [float(data.start_time), float(data.end_time)]
         if self._psds is not None:
             fp.write_psd(self._psds)
-        # write the psd times
-        if self.psd_segment is not None:
-            for det, (start_time, end_time) in self.psd_segment.items():
-                key = '{}_psd_segment'.format(det)
-                fp.attrs[key] = [float(start_time), float(end_time)]
+        # write the times used for psd estimation (if they were provided)
+        for det in self.psd_segments:
+            key = '{}_psd_segment'.format(det)
+            fp.attrs[key] = list(map(float, self.psd_segments[det]))
         try:
             attrs = fp[fp.samples_group].attrs
         except KeyError:
@@ -706,15 +719,15 @@ class GaussianNoise(BaseDataModel):
         # load the data
         opts = data_opts_from_config(cp, data_section, flow)
         strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
-        # save the psd data segments if it was estimated from data
-        if opts.psd_estimation is not None:
-            _times = strain_dict.items() if not psd_strain_dict else \
-                psd_strain_dict.items()
-            args['psd_segment'] = {det: (d.start_time, d.end_time)
-                                   for det, d in _times}
         # convert to frequency domain and get psds
         stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
                                                      psd_strain_dict)
+        # save the psd data segments if the psd was estimated from data
+        if opts.psd_estimation is not None:
+            _tdict = psd_strain_dict or strain_dict
+            for det in psds:
+                psds[det].psd_segment = (_tdict[det].start_time,
+                                         _tdict[det].end_time)
         # gate overwhitened if desiered
         if opts.gate_overwhitened and opts.gate is not None:
             stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
