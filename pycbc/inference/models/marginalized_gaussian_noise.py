@@ -146,7 +146,7 @@ class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self._waveform_generator.generate(**params)
+            wfs = self.waveform_generator.generate(**params)
         except NoWaveformError:
             return self._nowaveform_loglr()
         hh = 0.
@@ -177,7 +177,7 @@ class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
         return numpy.log(special.i0e(hd)) + hd - 0.5*hh
 
 
-class MarginalizedGaussianNoise(GaussianNoise):
+class MarginalizedGaussianNoise(BaseGaussianNoise):
     r"""The likelihood is analytically marginalized over phase and/or time
     and/or distance.
 
@@ -617,7 +617,7 @@ class MarginalizedGaussianNoise(GaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self._waveform_generator.generate(**params)
+            wfs = self.waveform_generator.generate(**params)
         except NoWaveformError:
             return self._nowaveform_loglr()
         opt_snr = 0.

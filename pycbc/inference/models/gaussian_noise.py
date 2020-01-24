@@ -374,7 +374,7 @@ class BaseGaussianNoise(BaseDataModel):
         fp : pycbc.inference.io.BaseInferenceFile instance
             The inference file to write to.
         """
-        super(GaussianNoise, self).write_metadata(fp)
+        super(BaseGaussianNoise, self).write_metadata(fp)
         # write the analyzed detectors and times
         fp.attrs['analyzed_detectors'] = self.detectors
         for det, data in self.data.items():
@@ -780,7 +780,7 @@ class GaussianNoise(BaseGaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self._waveform_generator.generate(**params)
+            wfs = self.waveform_generator.generate(**params)
         except NoWaveformError:
             return self._nowaveform_loglr()
         lr = 0.
