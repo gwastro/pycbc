@@ -212,6 +212,7 @@ def setup_output(sampler, output_file, force=False):
     sampler.backup_file = backup_file
     sampler.checkpoint_valid = checkpoint_valid
 
+
 def create_new_output_file(sampler, filename, **kwargs):
     r"""Creates a new output file.
 
