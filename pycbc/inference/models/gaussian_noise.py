@@ -33,7 +33,499 @@ from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
 
 
-class GaussianNoise(BaseDataModel):
+class BaseGaussianNoise(BaseDataModel):
+    r"""Model for analyzing GW data with assuming a wide-sense stationary
+    Gaussian noise model.
+
+    This model will load gravitational wave data and calculate the log noise
+    likelihood and normalization. It does not actually implement the log
+    likelihood ratio, however, since that can differ depending on additional
+    assumptions that are made. Models that analyze GW data assuming it is
+    stationary Gaussian should therefore inherit from this class and implement
+    their own ``_loglr`` function.
+
+    For more details on the inner product used, the log noise likelihood, and
+    normalization, see :py:class:`GaussianNoise`.
+
+    Parameters
+    ----------
+    variable_params : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    data : dict
+        A dictionary of data, in which the keys are the detector names and the
+        values are the data (assumed to be unwhitened). All data must have the
+        same frequency resolution.
+    low_frequency_cutoff : dict
+        A dictionary of starting frequencies, in which the keys are the
+        detector names and the values are the starting frequencies for the
+        respective detectors to be used for computing inner products.
+    psds : dict, optional
+        A dictionary of FrequencySeries keyed by the detector names. The
+        dictionary must have a psd for each detector specified in the data
+        dictionary. If provided, the inner products in each detector will be
+        weighted by 1/psd of that detector.
+    high_frequency_cutoff : dict, optional
+        A dictionary of ending frequencies, in which the keys are the
+        detector names and the values are the ending frequencies for the
+        respective detectors to be used for computing inner products. If not
+        provided, the minimum of the largest frequency stored in the data
+        and a given waveform will be used.
+    normalize : bool, optional
+        If True, the normalization factor :math:`alpha` will be included in the
+        log likelihood. See :py:class:`GaussianNoise` for details. Default is
+        to not include it.
+    static_params : dict, optional
+        A dictionary of parameter names -> values to keep fixed.
+    \**kwargs :
+        All other keyword arguments are passed to ``BaseDataModel``.
+    """
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 static_params=None, **kwargs):
+        # set up the boiler-plate attributes
+        super(BaseGaussianNoise, self).__init__(variable_params, data,
+                                                static_params=static_params,
+                                                **kwargs)
+        # check if low frequency cutoff has been provided for every IFO with
+        # data
+        if set(self.data.keys()) - set(low_frequency_cutoff.keys()):
+            raise KeyError("A low-frequency-cutoff must be provided for every "
+                           "detector for which data has been provided. If "
+                           "loading the model settings from "
+                           "a config file, please provide "
+                           "`{DETECTOR}-low-frequency-cutoff` options for "
+                           "every detector in the `[model]` section, where "
+                           "`{DETECTOR} is the name of the detector.")
+        # check that the data sets all have the same delta fs and delta ts
+        dts = numpy.array([d.delta_t for d in self.data.values()])
+        dfs = numpy.array([d.delta_f for d in self.data.values()])
+        if not all(dts == dts[0]):
+            raise ValueError("all data must have the same sample rate")
+        if not all(dfs == dfs[0]):
+            raise ValueError("all data must have the same segment length")
+        # store the number of samples in the time domain
+        self._N = int(1./(dts[0]*dfs[0]))
+        # Set low frequency cutoff
+        self._f_lower = None
+        self.low_frequency_cutoff = low_frequency_cutoff
+        # set upper frequency cutoff
+        self._f_upper = None
+        self.high_frequency_cutoff = high_frequency_cutoff
+        # Set the cutoff indices
+        self._kmin = {}
+        self._kmax = {}
+        for (det, d) in self._data.items():
+            kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
+                                                     self._f_upper[det],
+                                                     d.delta_f, self._N)
+            self._kmin[det] = kmin
+            self._kmax[det] = kmax
+        # store the psd segments
+        self._psd_segments = {}
+        if psds is not None:
+            self.set_psd_segments(psds)
+        # store the psds and calculate the inner product weight
+        self._psds = {}
+        self._weight = {}
+        self._lognorm = {}
+        self._det_lognls = {}
+        self._whitened_data = {}
+        # set the normalization state
+        self._normalize = False
+        self.normalize = normalize
+        # store the psds and whiten the data
+        self.psds = psds
+
+    @property
+    def low_frequency_cutoff(self):
+        """The low frequency cutoff of the inner product."""
+        return self._f_lower
+
+    @low_frequency_cutoff.setter
+    def low_frequency_cutoff(self, low_frequency_cutoff):
+        """Sets the lower frequency cutoff.
+
+        Parameters
+        ----------
+        low_frequency_cutoff : dict
+            Dictionary mapping detector names to frequencies. A cutoff
+            must be provided for every detector.
+        """
+        # check that all the detectors are accounted for
+        missing = set(self._data.keys()) - set(low_frequency_cutoff.keys())
+        if any(missing):
+            raise ValueError("Missing low frequency cutoffs for detector(s) "
+                             "{}".format(', '.join(list(missing))))
+        self._f_lower = low_frequency_cutoff.copy()
+
+    @property
+    def high_frequency_cutoff(self):
+        """The high frequency cutoff of the inner product."""
+        return self._f_upper
+
+    @high_frequency_cutoff.setter
+    def high_frequency_cutoff(self, high_frequency_cutoff):
+        """Sets the high frequency cutoff.
+
+        Parameters
+        ----------
+        high_frequency_cutoff : dict
+            Dictionary mapping detector names to frequencies. If a high
+            frequency cutoff is not provided for one or more detectors, the
+            Nyquist frequency will be used for those detectors.
+        """
+        self._f_upper = {}
+        if high_frequency_cutoff is not None and bool(high_frequency_cutoff):
+            for det in self._data:
+                if det in high_frequency_cutoff:
+                    self._f_upper[det] = high_frequency_cutoff[det]
+                else:
+                    self._f_upper[det] = None
+        else:
+            for det in self._data.keys():
+                self._f_upper[det] = None
+
+    @property
+    def psds(self):
+        """Returns the psds that are set."""
+        return self._psds
+
+    @psds.setter
+    def psds(self, psds):
+        """Sets the psds, and calculates the weight and norm from them.
+
+        The data and the low and high frequency cutoffs must be set first.
+        """
+        # check that the data has been set
+        if self._data is None:
+            raise ValueError("No data set")
+        if self._f_lower is None:
+            raise ValueError("low frequency cutoff not set")
+        if self._f_upper is None:
+            raise ValueError("high frequency cutoff not set")
+        # make sure the relevant caches are cleared
+        self._psds.clear()
+        self._weight.clear()
+        self._lognorm.clear()
+        self._det_lognls.clear()
+        self._whitened_data.clear()
+        for det, d in self._data.items():
+            if psds is None:
+                # No psd means assume white PSD
+                p = FrequencySeries(numpy.ones(int(self._N/2+1)),
+                                    delta_f=d.delta_f)
+            else:
+                # copy for storage
+                p = psds[det].copy()
+            self._psds[det] = p
+            # we'll store the weight to apply to the inner product
+            w = Array(numpy.zeros(len(p)))
+            # only set weight in band we will analyze
+            kmin = self._kmin[det]
+            kmax = self._kmax[det]
+            w[kmin:kmax] = numpy.sqrt(4.*p.delta_f/p[kmin:kmax])
+            self._weight[det] = w
+            self._whitened_data[det] = d.copy()
+            self._whitened_data[det][kmin:kmax] *= w[kmin:kmax]
+        # set the lognl and lognorm; we'll get this by just calling lognl
+        _ = self.lognl
+
+    @property
+    def psd_segments(self):
+        """Dictionary giving times used for PSD estimation for each detector.
+
+        If a detector's PSD was not estimated from data, or the segment wasn't
+        provided, that detector will not be in the dictionary.
+        """
+        return self._psd_segments
+
+    def set_psd_segments(self, psds):
+        """Sets the PSD segments from a dictionary of PSDs.
+
+        This attempts to get the PSD segment from a ``psd_segment`` attribute
+        of each detector's PSD frequency series. If that attribute isn't set,
+        then that detector is not added to the dictionary of PSD segments.
+
+        Parameters
+        ----------
+        psds : dict
+            Dictionary of detector name -> PSD frequency series. The segment
+            used for each PSD will try to be retrieved from the PSD's
+            ``.psd_segment`` attribute.
+        """
+        for det, p in psds.items():
+            try:
+                self._psd_segments[det] = p.psd_segment
+            except AttributeError:
+                continue
+
+    def det_lognorm(self, det):
+        """The log of the likelihood normalization in the given detector.
+
+        If ``self.normalize`` is False, will just return 0.
+        """
+        if not self.normalize:
+            return 0.
+        else:
+            try:
+                return self._lognorm[det]
+            except KeyError:
+                # hasn't been calculated yet
+                p = self._psds[det]
+                dt = self._whitened_data[det].delta_t
+                kmin = self._kmin[det]
+                kmax = self._kmax[det]
+                lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
+                                 + numpy.log(p[kmin:kmax]).sum())
+                self._lognorm[det] = lognorm
+                return self._lognorm[det]
+
+    @property
+    def normalize(self):
+        """Determines if the loglikelihood includes the normalization term.
+        """
+        return self._normalize
+
+    @normalize.setter
+    def normalize(self, normalize):
+        """Clears the current stats if the normalization state is changed.
+        """
+        if normalize != self._normalize:
+            self._current_stats = ModelStats()
+            self._lognorm.clear()
+            self._det_lognls.clear()
+        self._normalize = normalize
+
+    @property
+    def lognorm(self):
+        """The log of the normalization of the log likelihood."""
+        return sum(self.det_lognorm(det) for det in self._data)
+
+    def det_lognl(self, det):
+        r"""Returns the log likelihood of the noise in the given detector:
+
+        .. math::
+
+            \log p(d_i|n_i) = \log \alpha_i -
+                \frac{1}{2} \left<d_i | d_i\right>.
+
+
+        Parameters
+        ----------
+        det : str
+            The name of the detector.
+
+        Returns
+        -------
+        float :
+            The log likelihood of the noise in the requested detector.
+        """
+        try:
+            return self._det_lognls[det]
+        except KeyError:
+            # hasn't been calculated yet; calculate & store
+            kmin = self._kmin[det]
+            kmax = self._kmax[det]
+            d = self._whitened_data[det]
+            lognorm = self.det_lognorm(det)
+            lognl = lognorm - 0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
+            self._det_lognls[det] = lognl
+            return self._det_lognls[det]
+
+    def _lognl(self):
+        """Computes the log likelihood assuming the data is noise.
+
+        Since this is a constant for Gaussian noise, this is only computed once
+        then stored.
+        """
+        return sum(self.det_lognl(det) for det in self._data)
+
+    def _loglikelihood(self):
+        r"""Computes the log likelihood of the paramaters,
+
+        .. math::
+
+            \log p(d|\Theta, h) = \log \alpha -\frac{1}{2}\sum_i
+                \left<d_i - h_i(\Theta) | d_i - h_i(\Theta)\right>,
+
+        at the current parameter values :math:`\Theta`.
+
+        Returns
+        -------
+        float
+            The value of the log likelihood evaluated at the given point.
+        """
+        # since the loglr has fewer terms, we'll call that, then just add
+        # back the noise term that canceled in the log likelihood ratio
+        return self.loglr + self.lognl
+
+    def write_metadata(self, fp):
+        """Adds writing the psds and lognl, since it's a constant.
+
+        The lognl is written to the sample group's ``attrs``.
+
+        The analyzed detectors, their analysis segments, and the segments
+        used for psd estimation are written to the file's ``attrs``, as
+        ``analyzed_detectors``, ``{{detector}}_analysis_segment``, and
+        ``{{detector}}_psd_segment``, respectively.
+
+        Parameters
+        ----------
+        fp : pycbc.inference.io.BaseInferenceFile instance
+            The inference file to write to.
+        """
+        super(GaussianNoise, self).write_metadata(fp)
+        # write the analyzed detectors and times
+        fp.attrs['analyzed_detectors'] = self.detectors
+        for det, data in self.data.items():
+            key = '{}_analysis_segment'.format(det)
+            fp.attrs[key] = [float(data.start_time), float(data.end_time)]
+        if self._psds is not None:
+            fp.write_psd(self._psds)
+        # write the times used for psd estimation (if they were provided)
+        for det in self.psd_segments:
+            key = '{}_psd_segment'.format(det)
+            fp.attrs[key] = list(map(float, self.psd_segments[det]))
+        try:
+            attrs = fp[fp.samples_group].attrs
+        except KeyError:
+            # group doesn't exist, create it
+            fp.create_group(fp.samples_group)
+            attrs = fp[fp.samples_group].attrs
+        attrs['lognl'] = self.lognl
+        for det in self.detectors:
+            # Save lognl for each IFO as attributes in the samples group
+            attrs['{}_lognl'.format(det)] = self.det_lognl(det)
+            # Save each IFO's low frequency cutoff used in the likelihood
+            # computation as an attribute
+            fp.attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
+            # Save the IFO's high frequency cutoff used in the likelihood
+            # computation as an attribute if one was provided the user
+            if self._f_upper[det] is not None:
+                fp.attrs['{}_likelihood_high_freq'.format(det)] = \
+                                                        self._f_upper[det]
+
+    @classmethod
+    def from_config(cls, cp, data_section='data', **kwargs):
+        r"""Initializes an instance of this class from the given config file.
+
+        In addition to ``[model]``, a ``data_section`` (default ``[data]``)
+        must be in the configuration file. The data section specifies settings
+        for loading data and estimating PSDs. See the `online documentation
+        <http://pycbc.org/pycbc/latest/html/inference.html#setting-data>`_ for
+        more details.
+
+        The following options are read from the ``[model]`` section, in
+        addition to ``name`` (which must be set):
+
+        * ``{{DET}}-low-frequency-cutoff = FLOAT`` :
+          The low frequency cutoff to use for each detector {{DET}}. A cutoff
+          must be provided for every detector that may be analyzed (any
+          additional detectors are ignored).
+        * ``{{DET}}-high-frequency-cutoff = FLOAT`` :
+          (Optional) A high frequency cutoff for each detector. If not
+          provided, the Nyquist frequency is used.
+        * ``check-for-valid-times =`` :
+          (Optional) If provided, will check that there are no data quality
+          flags on during the analysis segment and the segment used for PSD
+          estimation in each detector. To check for flags,
+          :py:func:`pycbc.dq.query_flag` is used, with settings pulled from the
+          ``dq-*`` options in the ``[data]`` section. If a detector has bad
+          data quality during either the analysis segment or PSD segment, it
+          will be removed from the analysis.
+        * ``shift-psd-times-to-valid =`` :
+          (Optional) If provided, the segment used for PSD estimation will
+          automatically be shifted left or right until a continous block of
+          data with no data quality issues can be found. If no block can be
+          found with a maximum shift of +/- the requested psd segment length,
+          the detector will not be analyzed.
+        * ``err-on-missing-detectors =`` :
+          Raises an error if any detector is removed from the analysis because
+          a valid time could not be found. Otherwise, a warning is printed
+          to screen and the detector is removed from the analysis.
+        * ``normalize =``:
+          (Optional) Turn on the normalization factor.
+
+        Parameters
+        ----------
+        cp : WorkflowConfigParser
+            Config file parser to read.
+        data_section : str, optional
+            The name of the section to load data options from.
+        \**kwargs :
+            All additional keyword arguments are passed to the class. Any
+            provided keyword will over ride what is in the config file.
+        """
+        args = cls._init_args_from_config(cp)
+        flow = low_frequency_cutoff_from_config(cp)
+        fhigh = high_frequency_cutoff_from_config(cp)
+        args['low_frequency_cutoff'] = flow
+        args['high_frequency_cutoff'] = fhigh
+        # check if normalize is set
+        if cp.has_option('model', 'normalize'):
+            args['normalize'] = True
+        # get any other keyword arguments provided in the model section
+        ignore_args = ['name', 'normalize']
+        for option in cp.options("model"):
+            if any([option.endswith("-low-frequency-cutoff"),
+                    option.endswith("-high-frequency-cutoff")]):
+                ignore_args.append(option)
+        # data args
+        bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
+                     'err-on-missing-detectors']
+        data_args = {arg.replace('-', '_'): True for arg in bool_args
+                     if cp.has_option('model', arg)}
+        ignore_args += bool_args
+        # load the data
+        opts = data_opts_from_config(cp, data_section, flow)
+        strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
+        # convert to frequency domain and get psds
+        stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
+                                                     psd_strain_dict)
+        # save the psd data segments if the psd was estimated from data
+        if opts.psd_estimation is not None:
+            _tdict = psd_strain_dict or strain_dict
+            for det in psds:
+                psds[det].psd_segment = (_tdict[det].start_time,
+                                         _tdict[det].end_time)
+        # gate overwhitened if desiered
+        if opts.gate_overwhitened and opts.gate is not None:
+            stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
+        args.update({'data': stilde_dict, 'psds': psds})
+        # any extra args
+        args.update(cls.extra_args_from_config(cp, "model",
+                                               skip_args=ignore_args))
+        # get the injection file
+        # Note: PyCBC's multi-ifo parser uses key:ifo for
+        # the injection file, even though we will use the same
+        # injection file for all detectors. This
+        # should be fixed in a future version of PyCBC. Once it is,
+        # update this. Until then, just use the first file.
+        if opts.injection_file:
+            injection_file = tuple(opts.injection_file.values())[0]
+            # None if not set
+        else:
+            injection_file = None
+        args['injection_file'] = injection_file
+        # update any static params that are set to FROM_INJECTION
+        replace_params = get_static_params_from_injection(
+            args['static_params'], injection_file)
+        args['static_params'].update(replace_params)
+        # get ifo-specific instances of calibration model
+        if cp.has_section('calibration'):
+            logging.info("Initializing calibration model")
+            recalib = {
+                ifo: Recalibrate.from_config(cp, ifo, section='calibration')
+                for ifo in opts.instruments}
+            args['recalibration'] = recalib
+        # get gates for templates
+        gates = gates_from_cli(opts)
+        if gates:
+            args['gates'] = gates
+        return cls(**args)
+
+
+class GaussianNoise(BaseGaussianNoise):
     r"""Model that assumes data is stationary Gaussian noise.
 
     With Gaussian noise the log likelihood functions for signal
@@ -240,125 +732,16 @@ class GaussianNoise(BaseDataModel):
                  high_frequency_cutoff=None, normalize=False,
                  static_params=None, **kwargs):
         # set up the boiler-plate attributes
-        super(GaussianNoise, self).__init__(variable_params, data,
-                                            static_params=static_params,
-                                            **kwargs)
-        # check if low frequency cutoff has been provided for every IFO with
-        # data
-        if set(self.data.keys()) - set(low_frequency_cutoff.keys()):
-            raise KeyError("A low-frequency-cutoff must be provided for every "
-                           "detector for which data has been provided. If "
-                           "loading the model settings from "
-                           "a config file, please provide "
-                           "`{DETECTOR}-low-frequency-cutoff` options for "
-                           "every detector in the `[model]` section, where "
-                           "`{DETECTOR} is the name of the detector.")
+        super(GaussianNoise, self).__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
         # create the waveform generator
-        # the waveform generator will get the variable_params + the output
-        # of the waveform transforms, so we'll add them to the list of
-        # parameters
-        if self.waveform_transforms is not None:
-            wfoutputs = set.union(*[t.outputs
-                                    for t in self.waveform_transforms])
-        else:
-            wfoutputs = set()
-        params = list(self.variable_params) + list(wfoutputs)
-        self._waveform_generator = create_waveform_generator(
-            params, self.data, recalibration=self.recalibration,
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
             gates=self.gates, **self.static_params)
-        # check that the data sets all have the same delta fs and delta ts
-        dts = numpy.array([d.delta_t for d in self.data.values()])
-        dfs = numpy.array([d.delta_f for d in self.data.values()])
-        if not all(dts == dts[0]):
-            raise ValueError("all data must have the same sample rate")
-        if not all(dfs == dfs[0]):
-            raise ValueError("all data must have the same segment length")
-        # store the number of samples in the time domain
-        self._N = int(1./(dts[0]*dfs[0]))
-        # Set low frequency cutoff
-        self._f_lower = None
-        self.low_frequency_cutoff = low_frequency_cutoff
-        # set upper frequency cutoff
-        self._f_upper = None
-        self.high_frequency_cutoff = high_frequency_cutoff
-        # Set the cutoff indices
-        self._kmin = {}
-        self._kmax = {}
-        for (det, d) in self._data.items():
-            kmin, kmax = pyfilter.get_cutoff_indices(self._f_lower[det],
-                                                     self._f_upper[det],
-                                                     d.delta_f, self._N)
-            self._kmin[det] = kmin
-            self._kmax[det] = kmax
-        # store the psd segments
-        self._psd_segments = {}
-        if psds is not None:
-            self.set_psd_segments(psds)
-        # store the psds and calculate the inner product weight
-        self._psds = {}
-        self._weight = {}
-        self._lognorm = {}
-        self._det_lognls = {}
-        self._whitened_data = {}
-        # set the normalization state
-        self._normalize = False
-        self.normalize = normalize
-        # store the psds and whiten the data
-        self.psds = psds
-
-    @property
-    def waveform_generator(self):
-        """The waveform generator used."""
-        return self._waveform_generator
-
-    @property
-    def low_frequency_cutoff(self):
-        """The low frequency cutoff of the inner product."""
-        return self._f_lower
-
-    @low_frequency_cutoff.setter
-    def low_frequency_cutoff(self, low_frequency_cutoff):
-        """Sets the lower frequency cutoff.
-
-        Parameters
-        ----------
-        low_frequency_cutoff : dict
-            Dictionary mapping detector names to frequencies. A cutoff
-            must be provided for every detector.
-        """
-        # check that all the detectors are accounted for
-        missing = set(self._data.keys()) - set(low_frequency_cutoff.keys())
-        if any(missing):
-            raise ValueError("Missing low frequency cutoffs for detector(s) "
-                             "{}".format(', '.join(list(missing))))
-        self._f_lower = low_frequency_cutoff.copy()
-
-    @property
-    def high_frequency_cutoff(self):
-        """The high frequency cutoff of the inner product."""
-        return self._f_upper
-
-    @high_frequency_cutoff.setter
-    def high_frequency_cutoff(self, high_frequency_cutoff):
-        """Sets the high frequency cutoff.
-
-        Parameters
-        ----------
-        high_frequency_cutoff : dict
-            Dictionary mapping detector names to frequencies. If a high
-            frequency cutoff is not provided for one or more detectors, the
-            Nyquist frequency will be used for those detectors.
-        """
-        self._f_upper = {}
-        if high_frequency_cutoff is not None and bool(high_frequency_cutoff):
-            for det in self._data:
-                if det in high_frequency_cutoff:
-                    self._f_upper[det] = high_frequency_cutoff[det]
-                else:
-                    self._f_upper[det] = None
-        else:
-            for det in self._data.keys():
-                self._f_upper[det] = None
 
     @property
     def _extra_stats(self):
@@ -367,130 +750,6 @@ class GaussianNoise(BaseDataModel):
         return ['loglr'] + \
                ['{}_cplx_loglr'.format(det) for det in self._data] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
-
-    @property
-    def psds(self):
-        """Returns the psds that are set."""
-        return self._psds
-
-    @psds.setter
-    def psds(self, psds):
-        """Sets the psds, and calculates the weight and norm from them.
-
-        The data and the low and high frequency cutoffs must be set first.
-        """
-        # check that the data has been set
-        if self._data is None:
-            raise ValueError("No data set")
-        if self._f_lower is None:
-            raise ValueError("low frequency cutoff not set")
-        if self._f_upper is None:
-            raise ValueError("high frequency cutoff not set")
-        # make sure the relevant caches are cleared
-        self._psds.clear()
-        self._weight.clear()
-        self._lognorm.clear()
-        self._det_lognls.clear()
-        self._whitened_data.clear()
-        for det, d in self._data.items():
-            if psds is None:
-                # No psd means assume white PSD
-                p = FrequencySeries(numpy.ones(int(self._N/2+1)),
-                                    delta_f=d.delta_f)
-            else:
-                # copy for storage
-                p = psds[det].copy()
-            self._psds[det] = p
-            # we'll store the weight to apply to the inner product
-            w = Array(numpy.zeros(len(p)))
-            # only set weight in band we will analyze
-            kmin = self._kmin[det]
-            kmax = self._kmax[det]
-            w[kmin:kmax] = numpy.sqrt(4.*p.delta_f/p[kmin:kmax])
-            self._weight[det] = w
-            self._whitened_data[det] = d.copy()
-            self._whitened_data[det][kmin:kmax] *= w[kmin:kmax]
-        # set the lognl and lognorm; we'll get this by just calling lognl
-        _ = self.lognl
-
-    @property
-    def psd_segments(self):
-        """Dictionary giving times used for PSD estimation for each detector.
-
-        If a detector's PSD was not estimated from data, or the segment wasn't
-        provided, that detector will not be in the dictionary.
-        """
-        return self._psd_segments
-
-    def set_psd_segments(self, psds):
-        """Sets the PSD segments from a dictionary of PSDs.
-
-        This attempts to get the PSD segment from a ``psd_segment`` attribute
-        of each detector's PSD frequency series. If that attribute isn't set,
-        then that detector is not added to the dictionary of PSD segments.
-
-        Parameters
-        ----------
-        psds : dict
-            Dictionary of detector name -> PSD frequency series. The segment
-            used for each PSD will try to be retrieved from the PSD's
-            ``.psd_segment`` attribute.
-        """
-        for det, p in psds.items():
-            try:
-                self._psd_segments[det] = p.psd_segment
-            except AttributeError:
-                continue
-
-    def det_lognorm(self, det):
-        """The log of the likelihood normalization in the given detector.
-
-        If ``self.normalize`` is False, will just return 0.
-        """
-        if not self.normalize:
-            return 0.
-        else:
-            try:
-                return self._lognorm[det]
-            except KeyError:
-                # hasn't been calculated yet
-                p = self._psds[det]
-                dt = self._whitened_data[det].delta_t
-                kmin = self._kmin[det]
-                kmax = self._kmax[det]
-                lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
-                                 + numpy.log(p[kmin:kmax]).sum())
-                self._lognorm[det] = lognorm
-                return self._lognorm[det]
-
-    @property
-    def normalize(self):
-        """Determines if the loglikelihood includes the normalization term.
-        """
-        return self._normalize
-
-    @normalize.setter
-    def normalize(self, normalize):
-        """Clears the current stats if the normalization state is changed.
-        """
-        if normalize != self._normalize:
-            self._current_stats = ModelStats()
-            self._lognorm.clear()
-            self._det_lognls.clear()
-        self._normalize = normalize
-
-    @property
-    def lognorm(self):
-        """The log of the normalization of the log likelihood."""
-        return sum(self.det_lognorm(det) for det in self._data)
-
-    def _lognl(self):
-        """Computes the log likelihood assuming the data is noise.
-
-        Since this is a constant for Gaussian noise, this is only computed once
-        then stored.
-        """
-        return sum(self.det_lognl(det) for det in self._data)
 
     def _nowaveform_loglr(self):
         """Convenience function to set loglr values if no waveform generated.
@@ -551,56 +810,6 @@ class GaussianNoise(BaseDataModel):
         self._current_stats.loglikelihood = lr + self.lognl
         return float(lr)
 
-    def _loglikelihood(self):
-        r"""Computes the log likelihood of the paramaters,
-
-        .. math::
-
-            \log p(d|\Theta, h) = \log \alpha -\frac{1}{2}\sum_i
-                \left<d_i - h_i(\Theta) | d_i - h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
-
-        Returns
-        -------
-        float
-            The value of the log likelihood evaluated at the given point.
-        """
-        # since the loglr has fewer terms, we'll call that, then just add
-        # back the noise term that canceled in the log likelihood ratio
-        return self.loglr + self.lognl
-
-    def det_lognl(self, det):
-        r"""Returns the log likelihood of the noise in the given detector:
-
-        .. math::
-
-            \log p(d_i|n_i) = \log \alpha_i -
-                \frac{1}{2} \left<d_i | d_i\right>.
-
-
-        Parameters
-        ----------
-        det : str
-            The name of the detector.
-
-        Returns
-        -------
-        float :
-            The log likelihood of the noise in the requested detector.
-        """
-        try:
-            return self._det_lognls[det]
-        except KeyError:
-            # hasn't been calculated yet; calculate & store
-            kmin = self._kmin[det]
-            kmax = self._kmax[det]
-            d = self._whitened_data[det]
-            lognorm = self.det_lognorm(det)
-            lognl = lognorm - 0.5 * d[kmin:kmax].inner(d[kmin:kmax]).real
-            self._det_lognls[det] = lognl
-            return self._det_lognls[det]
-
     def det_cplx_loglr(self, det):
         """Returns the complex log likelihood ratio in the given detector.
 
@@ -645,170 +854,6 @@ class GaussianNoise(BaseDataModel):
             # now try returning again
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
 
-    def write_metadata(self, fp):
-        """Adds writing the psds and lognl, since it's a constant.
-
-        The lognl is written to the sample group's ``attrs``.
-
-        The analyzed detectors, their analysis segments, and the segments
-        used for psd estimation are written to the file's ``attrs``, as
-        ``analyzed_detectors``, ``{{detector}}_analysis_segment``, and
-        ``{{detector}}_psd_segment``, respectively.
-
-        Parameters
-        ----------
-        fp : pycbc.inference.io.BaseInferenceFile instance
-            The inference file to write to.
-        """
-        super(GaussianNoise, self).write_metadata(fp)
-        # write the analyzed detectors and times
-        fp.attrs['analyzed_detectors'] = self.detectors
-        for det, data in self.data.items():
-            key = '{}_analysis_segment'.format(det)
-            fp.attrs[key] = [float(data.start_time), float(data.end_time)]
-        if self._psds is not None:
-            fp.write_psd(self._psds)
-        # write the times used for psd estimation (if they were provided)
-        for det in self.psd_segments:
-            key = '{}_psd_segment'.format(det)
-            fp.attrs[key] = list(map(float, self.psd_segments[det]))
-        try:
-            attrs = fp[fp.samples_group].attrs
-        except KeyError:
-            # group doesn't exist, create it
-            fp.create_group(fp.samples_group)
-            attrs = fp[fp.samples_group].attrs
-        attrs['lognl'] = self.lognl
-        for det in self.detectors:
-            # Save lognl for each IFO as attributes in the samples group
-            attrs['{}_lognl'.format(det)] = self.det_lognl(det)
-            # Save each IFO's low frequency cutoff used in the likelihood
-            # computation as an attribute
-            fp.attrs['{}_likelihood_low_freq'.format(det)] = self._f_lower[det]
-            # Save the IFO's high frequency cutoff used in the likelihood
-            # computation as an attribute if one was provided the user
-            if self._f_upper[det] is not None:
-                fp.attrs['{}_likelihood_high_freq'.format(det)] = \
-                                                        self._f_upper[det]
-
-    @classmethod
-    def from_config(cls, cp, data_section='data', **kwargs):
-        r"""Initializes an instance of this class from the given config file.
-
-        In addition to ``[model]``, a ``data_section`` (default ``[data]``)
-        must be in the configuration file. The data section specifies settings
-        for loading data and estimating PSDs. See the `online documentation
-        <http://pycbc.org/pycbc/latest/html/inference.html#setting-data>`_ for
-        more details.
-
-        The following options are read from the ``[model]`` section, in
-        addition to ``name`` (which must be set):
-
-        * ``{{DET}}-low-frequency-cutoff = FLOAT`` :
-          The low frequency cutoff to use for each detector {{DET}}. A cutoff
-          must be provided for every detector that may be analyzed (any
-          additional detectors are ignored).
-        * ``{{DET}}-high-frequency-cutoff = FLOAT`` :
-          (Optional) A high frequency cutoff for each detector. If not
-          provided, the Nyquist frequency is used.
-        * ``check-for-valid-times =`` :
-          (Optional) If provided, will check that there are no data quality
-          flags on during the analysis segment and the segment used for PSD
-          estimation in each detector. To check for flags,
-          :py:func:`pycbc.dq.query_flag` is used, with settings pulled from the
-          ``dq-*`` options in the ``[data]`` section. If a detector has bad
-          data quality during either the analysis segment or PSD segment, it
-          will be removed from the analysis.
-        * ``shift-psd-times-to-valid =`` :
-          (Optional) If provided, the segment used for PSD estimation will
-          automatically be shifted left or right until a continous block of
-          data with no data quality issues can be found. If no block can be
-          found with a maximum shift of +/- the requested psd segment length,
-          the detector will not be analyzed.
-        * ``err-on-missing-detectors =`` :
-          Raises an error if any detector is removed from the analysis because
-          a valid time could not be found. Otherwise, a warning is printed
-          to screen and the detector is removed from the analysis.
-        * ``normalize =``:
-          (Optional) Turn on the normalization factor.
-
-        Parameters
-        ----------
-        cp : WorkflowConfigParser
-            Config file parser to read.
-        data_section : str, optional
-            The name of the section to load data options from.
-        \**kwargs :
-            All additional keyword arguments are passed to the class. Any
-            provided keyword will over ride what is in the config file.
-        """
-        args = cls._init_args_from_config(cp)
-        flow = low_frequency_cutoff_from_config(cp)
-        fhigh = high_frequency_cutoff_from_config(cp)
-        args['low_frequency_cutoff'] = flow
-        args['high_frequency_cutoff'] = fhigh
-        # check if normalize is set
-        if cp.has_option('model', 'normalize'):
-            args['normalize'] = True
-        # get any other keyword arguments provided in the model section
-        ignore_args = ['name', 'normalize']
-        for option in cp.options("model"):
-            if any([option.endswith("-low-frequency-cutoff"),
-                    option.endswith("-high-frequency-cutoff")]):
-                ignore_args.append(option)
-        # data args
-        bool_args = ['check-for-valid-times', 'shift-psd-times-to-valid',
-                     'err-on-missing-detectors']
-        data_args = {arg.replace('-', '_'): True for arg in bool_args
-                     if cp.has_option('model', arg)}
-        ignore_args += bool_args
-        # load the data
-        opts = data_opts_from_config(cp, data_section, flow)
-        strain_dict, psd_strain_dict = data_from_cli(opts, **data_args)
-        # convert to frequency domain and get psds
-        stilde_dict, psds = fd_data_from_strain_dict(opts, strain_dict,
-                                                     psd_strain_dict)
-        # save the psd data segments if the psd was estimated from data
-        if opts.psd_estimation is not None:
-            _tdict = psd_strain_dict or strain_dict
-            for det in psds:
-                psds[det].psd_segment = (_tdict[det].start_time,
-                                         _tdict[det].end_time)
-        # gate overwhitened if desiered
-        if opts.gate_overwhitened and opts.gate is not None:
-            stilde_dict = gate_overwhitened_data(stilde_dict, psds, opts.gate)
-        args.update({'data': stilde_dict, 'psds': psds})
-        # any extra args
-        args.update(cls.extra_args_from_config(cp, "model",
-                                               skip_args=ignore_args))
-        # get the injection file
-        # Note: PyCBC's multi-ifo parser uses key:ifo for
-        # the injection file, even though we will use the same
-        # injection file for all detectors. This
-        # should be fixed in a future version of PyCBC. Once it is,
-        # update this. Until then, just use the first file.
-        if opts.injection_file:
-            injection_file = tuple(opts.injection_file.values())[0]
-            # None if not set
-        else:
-            injection_file = None
-        args['injection_file'] = injection_file
-        # update any static params that are set to FROM_INJECTION
-        replace_params = get_static_params_from_injection(
-            args['static_params'], injection_file)
-        args['static_params'].update(replace_params)
-        # get ifo-specific instances of calibration model
-        if cp.has_section('calibration'):
-            logging.info("Initializing calibration model")
-            recalib = {
-                ifo: Recalibrate.from_config(cp, ifo, section='calibration')
-                for ifo in opts.instruments}
-            args['recalibration'] = recalib
-        # get gates for templates
-        gates = gates_from_cli(opts)
-        if gates:
-            args['gates'] = gates
-        return cls(**args)
 
 
 #
@@ -863,7 +908,7 @@ def get_static_params_from_injection(static_params, injection_file):
     return replace_params
 
 
-def create_waveform_generator(variable_params, data,
+def create_waveform_generator(variable_params, data, waveform_transforms=None,
                               recalibration=None, gates=None,
                               **static_params):
     """Creates a waveform generator for use with a model.
@@ -876,6 +921,9 @@ def create_waveform_generator(variable_params, data,
         Dictionary mapping detector names to either a
         :py:class:`<pycbc.types.TimeSeries TimeSeries>` or
         :py:class:`<pycbc.types.FrequencySeries FrequencySeries>`.
+    waveform_transforms : list, optional
+        The list of transforms applied to convert variable parameters into
+        parameters that will be understood by the waveform generator.
     recalibration : dict, optional
         Dictionary mapping detector names to
         :py:class:`<pycbc.calibration.Recalibrate>` instances for
@@ -889,6 +937,15 @@ def create_waveform_generator(variable_params, data,
     pycbc.waveform.FDomainDetFrameGenerator
         A waveform generator for frequency domain generation.
     """
+    # the waveform generator will get the variable_params + the output
+    # of the waveform transforms, so we'll add them to the list of
+    # parameters
+    if waveform_transforms is not None:
+        wfoutputs = set.union(*[t.outputs
+                                for t in waveform_transforms])
+    else:
+        wfoutputs = set()
+    variable_params = list(variable_params) + list(wfoutputs)
     # figure out what generator to use based on the approximant
     try:
         approximant = static_params['approximant']
