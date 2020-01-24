@@ -341,9 +341,9 @@ def data_opts_from_config(cp, section, filter_flow):
                          det, pad)
         gps_start[det] -= pad
         gps_end[det] += pad
-        if opts.psd_start_time is not None:
+        if opts.psd_start_time[det] is not None:
             opts.psd_start_time[det] += opts.trigger_time
-        if opts.psd_end_time is not None:
+        if opts.psd_end_time[det] is not None:
             opts.psd_end_time[det] += opts.trigger_time
     opts.gps_start_time = gps_start
     opts.gps_end_time = gps_end
