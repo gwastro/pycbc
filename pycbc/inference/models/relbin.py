@@ -34,7 +34,7 @@ from scipy import special
 from pycbc.waveform.spa_tmplt import spa_tmplt
 from pycbc.detector import Detector
 
-from .base_data import BaseDataModel
+from .gaussian_noise import BaseGaussianNoise
 
 
 def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
@@ -88,7 +88,7 @@ def setup_bins(f_full, f_lo, f_hi, chi=1.0, eps=0.5):
     return nbin, fbin, fbin_ind
 
 
-class RelativeSPA(BaseDataModel):
+class RelativeSPA(BaseGaussianNoise):
     r"""Model that assumes the likelihood in a region around the peak
     is slowly varying such that a linear approximation can be made, and
     likelihoods can be calculated at a coarser frequency resolution. For

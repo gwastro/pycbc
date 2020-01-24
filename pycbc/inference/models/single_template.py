@@ -23,13 +23,13 @@ from pycbc import filter as pyfilter
 from pycbc.waveform import get_fd_waveform
 from pycbc.detector import Detector
 
-from .base_data import BaseDataModel
+from .gaussian_noise import BaseGaussianNoise
 
 # In this model we only calculate terms up to a constant.
 # We are primarily interested in the posterior result
 
 
-class SingleTemplate(BaseDataModel):
+class SingleTemplate(BaseGaussianNoise):
     r"""Model that assumes we know all the intrinsic parameters.
 
     This model assumes we know all the intrinsic parameters, and are only
