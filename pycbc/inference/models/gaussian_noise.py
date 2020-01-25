@@ -38,14 +38,16 @@ class BaseGaussianNoise(BaseDataModel):
     Gaussian noise model.
 
     This model will load gravitational wave data and calculate the log noise
-    likelihood and normalization. It does not actually implement the log
-    likelihood ratio, however, since that can differ depending on additional
-    assumptions that are made. Models that analyze GW data assuming it is
-    stationary Gaussian should therefore inherit from this class and implement
-    their own ``_loglr`` function.
+    likelihood ``_lognl`` and normalization. It also implements the
+    ``_loglikelihood`` function as the sum of the log likelihood ratio and the
+    ``lognl``. It does not implement a log likelihood ratio function
+    ``_loglr``, however, since that can differ depending on the signal model.
+    Models that analyze GW data assuming it is stationary Gaussian should
+    therefore inherit from this class and implement their own ``_loglr``
+    function.
 
-    For more details on the inner product used, the log noise likelihood, and
-    normalization, see :py:class:`GaussianNoise`.
+    For more details on the inner product used, the log likelihood of the
+    noise, and the normalization factor, see :py:class:`GaussianNoise`.
 
     Parameters
     ----------
@@ -78,6 +80,21 @@ class BaseGaussianNoise(BaseDataModel):
         A dictionary of parameter names -> values to keep fixed.
     \**kwargs :
         All other keyword arguments are passed to ``BaseDataModel``.
+
+    Attributes
+    ----------
+    data : dict
+        Dictionary of detectors -> frequency-domain data.
+    low_frequency_cutoff
+    high_frequency_cutoff
+    kmin
+    kmax
+    psds
+    psd_segments
+    weight
+    whitened_data
+    normalize
+    lognorm
     """
     def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
                  high_frequency_cutoff=None, normalize=False,
@@ -186,8 +203,34 @@ class BaseGaussianNoise(BaseDataModel):
                 self._f_upper[det] = None
 
     @property
+    def kmin(self):
+        """Dictionary of starting indices for the inner product.
+
+        This is determined from the lower frequency cutoff and the ``delta_f``
+        of the data using
+        :py:func:`pycbc.filter.matchedfilter.get_cutoff_indices`.
+        """
+        return self._kmin
+
+    @property
+    def kmax(self):
+        """Dictionary of ending indices for the inner product.
+
+        This is determined from the high frequency cutoff and the ``delta_f``
+        of the data using
+        :py:func:`pycbc.filter.matchedfilter.get_cutoff_indices`. If no high
+        frequency cutoff was provided, this will be the indice corresponding to
+        the Nyquist frequency.
+        """
+        return self._kmax
+
+    @property
     def psds(self):
-        """Returns the psds that are set."""
+        """Dictionary of detectors -> PSD frequency series.
+
+        If no PSD was provided for a detector, this will just be a frequency
+        series of ones.
+        """
         return self._psds
 
     @psds.setter
@@ -258,6 +301,26 @@ class BaseGaussianNoise(BaseDataModel):
                 self._psd_segments[det] = p.psd_segment
             except AttributeError:
                 continue
+
+    @property
+    def weight(self):
+        r"""Dictionary of detectors -> frequency series of inner-product
+        weights.
+
+        The weights are :math:`\sqrt{4 \Delta f / S_n(f)}`. This is set when
+        the PSDs are set.
+        """
+        return self._weight
+
+    @property
+    def whitened_data(self):
+        r"""Dictionary of detectors -> whitened data frequency series.
+
+        The whitened data is the data multiplied by the inner-product weight.
+        Note that this includes the :math:`\sqrt{4 \Delta f}` factor. This
+        is set when the PSDs are set.
+        """
+        return self._whitened_data
 
     def det_lognorm(self, det):
         """The log of the likelihood normalization in the given detector.
