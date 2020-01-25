@@ -69,6 +69,8 @@ class BaseDataModel(BaseModel):
     ----------
     data : dict
         The data that the class was initialized with.
+    detectors : list
+        List of detector names used.
     lognl :
         Returns the log likelihood of the noise.
     loglr :
