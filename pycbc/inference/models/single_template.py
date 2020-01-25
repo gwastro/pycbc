@@ -35,66 +35,65 @@ class SingleTemplate(BaseGaussianNoise):
     This model assumes we know all the intrinsic parameters, and are only
     maximizing over the extrinsic ones. We also assume a dominant mode waveform
     approximant only and non-precessing.
+
+
+    Parameters
+    ----------
+    variable_params : (tuple of) string(s)
+        A tuple of parameter names that will be varied.
+    data : dict
+        A dictionary of data, in which the keys are the detector names and the
+        values are the data (assumed to be unwhitened). All data must have the
+        same frequency resolution.
+    low_frequency_cutoff : dict
+        A dictionary of starting frequencies, in which the keys are the
+        detector names and the values are the starting frequencies for the
+        respective detectors to be used for computing inner products.
+    sample_rate : int, optional
+        The sample rate to use. Default is 32768.
+    \**kwargs :
+        All other keyword arguments are passed to
+        :py:class:`BaseGaussianNoise`; see that class for details.
     """
     name = 'single_template'
 
-    def __init__(self, data, psds,
-                 low_frequency_cutoff=None,
-                 high_frequency_cutoff=None,
-                 sample_rate=32768,
-                 **kwargs):
-
-        super(SingleTemplate, self).__init__(data=data, **kwargs)
-
-        if low_frequency_cutoff is not None:
-            low_frequency_cutoff = float(low_frequency_cutoff)
-
-        if high_frequency_cutoff is not None:
-            high_frequency_cutoff = float(high_frequency_cutoff)
-
+    def __init__(self, variable_params, data, low_frequency_cutoff,
+                 sample_rate=32768, **kwargs)::
+        super(SingleTemplate, self).__init__(
+            variable_params, data, low_frequency_cutoff, **kwargs)
         # Generate template waveforms
-        df = data[tuple(data.keys())[0]].delta_f
+        df = data[self.detectors[0]].delta_f
         p = self.static_params.copy()
         if 'distance' in p:
-            p.pop('distance')
+            _ = p.pop('distance')
         if 'inclination' in p:
-            p.pop('inclination')
-
+            _ = p.pop('inclination')
         hp, _ = get_fd_waveform(delta_f=df, distance=1, inclination=0, **p)
-
-        if high_frequency_cutoff is None:
-            high_frequency_cutoff = len(data[tuple(data.keys())[0]]-1) * df
-
-        # Extend data and template to high sample rate
+        # Extend template to high sample rate
         flen = int(sample_rate / df) / 2 + 1
         hp.resize(flen)
-        for ifo in data:
-            data[ifo].resize(flen)
-
         # Calculate high sample rate SNR time series
         self.sh = {}
         self.hh = {}
         self.det = {}
-        for ifo in data:
+        for ifo in self.data:
+            flow = self.kmin * df
+            fhigh = self.kmax * df
+            # Extend data to high sample rate
+            self.data[ifo].resize(flen) 
             self.det[ifo] = Detector(ifo)
             snr, _, _ = pyfilter.matched_filter_core(
-                hp, data[ifo],
-                psd=psds[ifo],
-                low_frequency_cutoff=low_frequency_cutoff,
-                high_frequency_cutoff=high_frequency_cutoff)
+                hp, self.data[ifo],
+                psd=self.psds[ifo],
+                low_frequency_cutoff=flow,
+                high_frequency_cutoff=fhigh)
 
             self.sh[ifo] = 4 * df * snr
             self.hh[ifo] = -0.5 * pyfilter.sigmasq(
-                hp, psd=psds[ifo],
-                low_frequency_cutoff=low_frequency_cutoff,
-                high_frequency_cutoff=high_frequency_cutoff)
+                hp, psd=self.psds[ifo],
+                low_frequency_cutoff=flow,
+                high_frequency_cutoff=fhigh)
         self.time = None
-
-    def _loglikelihood(self):
-        return self.loglr
-
-    def _lognl(self):
-        return 0
 
     def _loglr(self):
         r"""Computes the log likelihood ratio
