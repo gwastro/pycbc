@@ -177,7 +177,11 @@ class BaseGaussianNoise(BaseDataModel):
 
     @property
     def high_frequency_cutoff(self):
-        """The high frequency cutoff of the inner product."""
+        """The high frequency cutoff of the inner product.
+
+        If a high frequency cutoff was not provided for a detector, it will
+        be ``None``.
+        """
         return self._f_upper
 
     @high_frequency_cutoff.setter
