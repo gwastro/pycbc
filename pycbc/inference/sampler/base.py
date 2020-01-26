@@ -62,6 +62,10 @@ class BaseSampler(object):
 
     def __init__(self, model):
         self.model = model
+        self.checkpoint_file = None
+        self.backup_file = None
+        self.checkpoint_valid = None
+        self.new_checkpoint = None
 
     # @classmethod <--uncomment when we move to python 3.3
     @abstractmethod
