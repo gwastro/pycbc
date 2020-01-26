@@ -58,7 +58,7 @@ class SingleTemplate(BaseGaussianNoise):
     name = 'single_template'
 
     def __init__(self, variable_params, data, low_frequency_cutoff,
-                 sample_rate=32768, **kwargs)::
+                 sample_rate=32768, **kwargs):
         super(SingleTemplate, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
         # Generate template waveforms
@@ -77,8 +77,8 @@ class SingleTemplate(BaseGaussianNoise):
         self.hh = {}
         self.det = {}
         for ifo in self.data:
-            flow = self.kmin * df
-            fhigh = self.kmax * df
+            flow = self.kmin[ifo] * df
+            fhigh = self.kmax[ifo] * df
             # Extend data to high sample rate
             self.data[ifo].resize(flen) 
             self.det[ifo] = Detector(ifo)

@@ -147,22 +147,16 @@ class RelativeSPA(BaseGaussianNoise):
                  ra_ref, dec_ref, tc_ref,
                  epsilon=0.5,
                  **kwargs):
-        super(SingleTemplate, self).__init__(
+        super(RelativeSPA, self).__init__(
             variable_params, data, low_frequency_cutoff, **kwargs)
         # check that all of the frequency cutoffs are the same
         # FIXME: this can probably be loosened at some point
         kmins = list(self.kmin.values())
         kmaxs = list(self.kmax.values())
-        if any(kk ! = kmins[0] for kk in kmins):
+        if any(kk != kmins[0] for kk in kmins):
             raise ValueError("All lower frequency cutoffs must be the same")
         if any(kk != kmaxs[0] for kk in kmaxs):
             raise ValueError("All high frequency cutoffs must be the same")
-        #f_lows = list(self.low_frequency_cutoff.values())
-        #if any(f_ ! = f_lows[0] for f_ in f_lows):
-        #    raise ValueError("All lower frequency cutoffs must be the same")
-        #f_highs = list(self.high_frequency_cutoff.values())
-        #if any(f_ != f_highs[0] for f_ in f_highs):
-        #    raise ValueError("All high frequency cutoffs must be the same")
         # store data and frequencies
         d0 = list(self.data.values())[0]
         self.f = numpy.array(d0.sample_frequencies)
@@ -183,10 +177,13 @@ class RelativeSPA(BaseGaussianNoise):
         self.tc_ref = float(tc_ref)
 
         # get detector-specific arrival times relative to end of data
-        dt = {ifo: self.det[ifo].time_delay_from_earth_center(ra_ref, dec_ref,
-                                                              tc_ref)
+        dt = {ifo:
+              self.det[ifo].time_delay_from_earth_center(self.ra_ref,
+                                                         self.dec_ref,
+                                                         self.tc_ref)
               for ifo in self.data}
-        self.ta = {ifo: tc_ref + dt[ifo] - self.end_time for ifo in data}
+        self.ta = {ifo: self.tc_ref + dt[ifo] - self.end_time
+                   for ifo in self.data}
 
         # generate fiducial waveform
         logging.info("Generating fiducial waveform")
@@ -359,7 +356,7 @@ class RelativeSPA(BaseGaussianNoise):
         super(RelativeSPA, self).write_metadata(fp)
         fp.attrs['mass1_ref'] = self.mass1_ref
         fp.attrs['mass2_ref'] = self.mass2_ref
-        fp.attrs['spin1z_ref'] self.spin1z_ref
+        fp.attrs['spin1z_ref'] = self.spin1z_ref
         fp.attrs['spin2z_ref'] = self.spin2z_ref
         fp.attrs['ra_ref'] = self.ra_ref
         fp.attrs['dec_ref'] = self.dec_ref
