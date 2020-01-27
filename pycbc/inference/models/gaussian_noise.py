@@ -17,9 +17,9 @@
 """
 
 import logging
-import numpy
 from abc import ABCMeta
 from six import add_metaclass
+import numpy
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
