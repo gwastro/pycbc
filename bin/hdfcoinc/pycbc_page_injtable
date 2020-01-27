@@ -1,10 +1,9 @@
-#!/usr/bin/env python
-""" Make a table of found injection information
-"""
 import argparse, h5py, numpy, pycbc.results, pycbc.detector, sys
 from pycbc.types import MultiDetOptionAction
 import pycbc.pnutils, pycbc.events
 import pycbc.version
+from itertools import combinations
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--version", action="version", version=pycbc.version.git_verbose_msg)
@@ -15,7 +14,7 @@ parser.add_argument('--show-missed', action='store_true')
 parser.add_argument('--output-file')
 args = parser.parse_args()
 
-f = h5py.File(args.injection_file)
+f = h5py.File(args.injection_file,'r')
 inj = f['injections']
 found_cols, found_names, found_formats = [], [], []
 
@@ -26,15 +25,36 @@ else:
     title = "Found Injections"
     found = f['found_after_vetoes']
     idx = found['injection_index'][:]
-    tdiff = (found['time1'][:] - found['time2'][:]) * 1000
-    tdiff_str = '%s - %s time (ms)' % (f.attrs['detector_1'], f.attrs['detector_2'])
-    
-    found_cols = [tdiff, found['stat'], found['ifar'], found['ifar_exc']]
-    found_names = [tdiff_str, 'Ranking Stat.', 'Inc. IFAR (yrs)', 'Exc. IFAR']
-    found_formats =  ['##.##', '##.##', '##', '##']
+    if('detector_1' in f.attrs):
+        tdiff = (found['time1'][:] - found['time2'][:]) * 1000
+        tdiff_str = '%s - %s time (ms)' % (f.attrs['detector_1'], f.attrs['detector_2'])
+        ids = {f.attrs['detector_1']: found['trigger_id1'][:],
+               f.attrs['detector_2']: found['trigger_id2'][:],}
 
-    ids = {f.attrs['detector_1']: found['trigger_id1'][:],
-           f.attrs['detector_2']: found['trigger_id2'][:],}
+    else:
+        detectors = ['L1','H1','V1','K1','I1']
+        keys = f['found_after_vetoes'].keys()
+        detectors_used = []
+        found = f['found_after_vetoes']
+        for det in detectors:
+            if(det in keys):
+                detectors_used.append(det)
+        detectors_two_combinations= numpy.array(list(combinations(detectors_used,2)))
+        tdiff = []
+        tdiff_str = []
+        tdiff_format =[]
+        for i in range(len(detectors_two_combinations)):
+            tdiff_1 = ((found[detectors_two_combinations[i,0]+'/time'][:] - found[detectors_two_combinations[i,1]+'/time'][:])*1000)
+            tdiff.append(tdiff_1)
+            tdiff_head= '%s - %s time (ms)' % (detectors_two_combinations[i,0], detectors_two_combinations[i,1])
+            tdiff_str.append(tdiff_head)
+            tdiff_format.append('##.##')
+        ids = {detector:found[detector+'/trigger_id'][:] for detector in detectors_used}
+    
+    found_cols = tdiff + [found['stat'], found['fap_exc'], found['ifar_exc']]
+    found_names = tdiff_str + ['Ranking Stat.', 'Exc. FAP', 'Exc. IFAR']
+    found_formats =  tdiff_format + ['##.##', '##', '##']
+
 
     if args.single_trigger_files:
         for ifo in args.single_trigger_files:
@@ -47,8 +67,20 @@ else:
             found_names += ["%s SNR" % ifo, "CHISQ", "NewSNR"]
             found_cols += [snr, chisq, newsnr]
             found_formats += ['##.##', '##.##', '##.##']
-          
-dec_dist = numpy.maximum(inj['eff_dist_h'][:][idx], inj['eff_dist_l'][:][idx])
+
+eff_dist = {'eff_dist_l':'Eff Dist(L)','eff_dist_h':'Eff Dist(H)','eff_dist_v':'Eff Dist(V)',
+            'eff_dist_k':'Eff Dist(K)','eff_dist_i':'Eff Dist(I)'}
+keys = inj.keys()
+eff_dist_str = []
+eff_distance = []
+eff_dist_format = []
+for dist in eff_dist :
+    if(dist in keys):
+        eff_distance.append(inj[dist][:][idx])
+        eff_dist_str.append(eff_dist[dist])
+        eff_dist_format.append('##.##')
+                
+dec_dist = numpy.max(eff_distance,0)
 m1, m2 = inj['mass1'][:][idx], inj['mass2'][:][idx]
 mchirp, eta = pycbc.pnutils.mass1_mass2_to_mchirp_eta(m1, m2)
 dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
@@ -56,23 +88,18 @@ dec_chirp_dist = pycbc.pnutils.chirp_distance(dec_dist, mchirp)
 columns = [dec_chirp_dist, inj['end_time'][:][idx], m1, m2, mchirp, eta,
            inj['spin1x'][:][idx], inj['spin1y'][:][idx], inj['spin1z'][:][idx],
            inj['spin2x'][:][idx], inj['spin2y'][:][idx], inj['spin2z'][:][idx],
-           inj['distance'][:][idx],
-           inj['eff_dist_h'][:][idx], inj['eff_dist_l'][:][idx], 
-           ] + found_cols
+           inj['distance'][:][idx]] + eff_distance + found_cols
          
 names = ['DChirp Dist', 'Inj Time', 'Mass1', 'Mass2', 'Mchirp', 'Eta',
          's1x', 's1y', 's1z',
          's2x', 's2y', 's2z', 
-         'Dist',
-         'Eff Dist (H)', '(L)',
-        ] + found_names
+         'Dist']  + eff_dist_str + found_names 
+
 format_strings = ['##.##', '##.##', '##.##', '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
                   '##.##', '##.##', '##.##',
-                  '##.##',
-                  '##.##', '##.##'
-                 ] + found_formats
-
+                  '##.##'] + eff_dist_format +  found_formats 
+columns = numpy.array(columns)
 html_table = pycbc.results.html_table(columns, names, 
                                  format_strings=format_strings, 
                                  page_size=20)
@@ -81,4 +108,3 @@ kwds = { 'title' : title,
         'caption' : "A table of %s and their coincident statistic information." % title.lower(),
         'cmd' :' '.join(sys.argv), }
 pycbc.results.save_fig_with_metadata(str(html_table), args.output_file, **kwds)
-
