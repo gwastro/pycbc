@@ -22,9 +22,6 @@ import numpy
 from scipy import special
 
 from pycbc.waveform import NoWaveformError
-from pycbc.filter.matchedfilter import matched_filter_core
-from pycbc.distributions import read_distributions_from_config
-from pycbc.waveform import generator
 
 from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 
