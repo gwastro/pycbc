@@ -322,29 +322,6 @@ class RelativeSPA(BaseGaussianNoise):
             llr += (hd - 0.5 * hh)
         return float(llr)
 
-    def _loglikelihood(self):
-        r"""Computes the log likelihood of the parameters,
-
-        .. math::
-
-            \log p(d|\Theta, h) = \log \alpha -\frac{1}{2}\sum_i
-                \left<d_i - h_i(\Theta) | d_i - h_i(\Theta)\right>,
-
-        at the current parameter values :math:`\Theta`.
-
-        Returns
-        -------
-        float
-            The value of the log likelihood evaluated at the given point.
-        """
-        return self.loglr + self.lognl
-
-    def _lognl(self):
-        """Calculate the log of the noise likelihood. Currently not
-        implemented, so just returns zero.
-        """
-        return 0.
-
     def write_metadata(self, fp):
         """Adds writing the fiducial parameters and epsilon to file's attrs.
 
