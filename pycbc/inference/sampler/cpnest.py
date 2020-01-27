@@ -33,7 +33,7 @@ import os
 import cpnest
 import cpnest.model as cpm
 from pycbc.inference.io import (CPNestFile, validate_checkpoint_files)
-from .base import BaseSampler
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 
 
@@ -157,6 +157,27 @@ class CPNestSampler(BaseSampler):
         Should also set the sampler's random state.
         """
         pass
+
+    def setup_output(self, output_file, force=False):
+        """Sets up the sampler's checkpoint and output files.
+
+        The checkpoint file has the same name as the output file, but with
+        ``.checkpoint`` appended to the name. A backup file will also be
+        created.
+
+        If the output file already exists, an ``OSError`` will be raised.
+        This can be overridden by setting ``force`` to ``True``.
+
+        Parameters
+        ----------
+        sampler : sampler instance
+            Sampler
+        output_file : str
+            Name of the output file.
+        force : bool, optional
+            If the output file already exists, overwrite it.
+        """
+        setup_output(self, output_file, force=force)
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state

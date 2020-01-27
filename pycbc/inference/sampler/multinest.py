@@ -29,12 +29,14 @@ packages for parameter estimation.
 from __future__ import absolute_import
 
 import logging
+import sys
 import numpy
 
 from pycbc.inference.io import (MultinestFile, validate_checkpoint_files)
 from pycbc.distributions import read_constraints_from_config
+from pycbc.pool import is_main_process
 from pycbc.transforms import apply_transforms
-from .base import BaseSampler
+from .base import (BaseSampler, setup_output)
 from .base_mcmc import get_optional_arg_from_config
 
 
@@ -90,6 +92,7 @@ class MultinestSampler(BaseSampler):
         self._dlogz = None
         self._importance_logz = None
         self._importance_dlogz = None
+        self.is_main_process = is_main_process()
 
     @property
     def io(self):
@@ -261,6 +264,7 @@ class MultinestSampler(BaseSampler):
                                sampling_efficiency=self._eff,
                                importance_nested_sampling=self._ins,
                                max_iter=iterinterval,
+                               n_iter_before_update=iterinterval,
                                seed=numpy.random.randint(0, 1e6),
                                outputfiles_basename=outputfiles_basename,
                                multimodal=False, verbose=True)
@@ -282,9 +286,12 @@ class MultinestSampler(BaseSampler):
             if self._samples.shape[0] == 0:
                 continue
             # dump the current results
-            self.checkpoint()
+            if self.is_main_process:
+                self.checkpoint()
             # check if we're finished
             done = self.check_if_finished()
+        if not self.is_main_process:
+            sys.exit()
 
     def write_results(self, filename):
         """Writes samples, model stats, acceptance fraction, and random state
@@ -320,6 +327,36 @@ class MultinestSampler(BaseSampler):
             self.checkpoint_file, self.backup_file)
         if not checkpoint_valid:
             raise IOError("error writing to checkpoint file")
+
+    def setup_output(self, output_file, force=False):
+        """Sets up the sampler's checkpoint and output files.
+
+        The checkpoint file has the same name as the output file, but with
+        ``.checkpoint`` appended to the name. A backup file will also be
+        created.
+
+        If the output file already exists, an ``OSError`` will be raised.
+        This can be overridden by setting ``force`` to ``True``.
+
+        Parameters
+        ----------
+        sampler : sampler instance
+            Sampler
+        output_file : str
+            Name of the output file.
+        force : bool, optional
+            If the output file already exists, overwrite it.
+        """
+        if self.is_main_process:
+            setup_output(self, output_file, force=force)
+        else:
+            # child processes just store filenames
+            checkpoint_file = output_file + '.checkpoint'
+            backup_file = output_file + '.bkup'
+            self.checkpoint_file = checkpoint_file
+            self.backup_file = backup_file
+            self.checkpoint_valid = True
+            self.new_checkpoint = True
 
     def finalize(self):
         """All data is written by the last checkpoint in the run method, so
