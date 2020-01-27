@@ -132,6 +132,17 @@ class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
         return ['loglr', 'maxl_phase'] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
 
+    def _nowaveform_loglr(self):
+        """Convenience function to set loglr values if no waveform generated.
+        """
+        setattr(self._current_stats, 'loglikelihood', -numpy.inf)
+        # maxl phase doesn't exist, so set it to nan
+        setattr(self._current_stats, 'maxl_phase', numpy.nan)
+        for det in self._data:
+            # snr can't be < 0 by definition, so return 0
+            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
+        return -numpy.inf
+
     def _loglr(self):
         r"""Computes the log likelihood ratio,
         .. math::

@@ -18,6 +18,8 @@
 
 import logging
 import numpy
+from abc import ABCMeta
+from six import add_metaclass
 
 from pycbc import filter as pyfilter
 from pycbc.waveform import NoWaveformError
@@ -33,6 +35,7 @@ from .data_utils import (data_opts_from_config, data_from_cli,
                          fd_data_from_strain_dict, gate_overwhitened_data)
 
 
+@add_metaclass(ABCMeta)
 class BaseGaussianNoise(BaseDataModel):
     r"""Model for analyzing GW data with assuming a wide-sense stationary
     Gaussian noise model.
@@ -333,19 +336,18 @@ class BaseGaussianNoise(BaseDataModel):
         """
         if not self.normalize:
             return 0.
-        else:
-            try:
-                return self._lognorm[det]
-            except KeyError:
-                # hasn't been calculated yet
-                p = self._psds[det]
-                dt = self._whitened_data[det].delta_t
-                kmin = self._kmin[det]
-                kmax = self._kmax[det]
-                lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
-                                 + numpy.log(p[kmin:kmax]).sum())
-                self._lognorm[det] = lognorm
-                return self._lognorm[det]
+        try:
+            return self._lognorm[det]
+        except KeyError:
+            # hasn't been calculated yet
+            p = self._psds[det]
+            dt = self._whitened_data[det].delta_t
+            kmin = self._kmin[det]
+            kmax = self._kmax[det]
+            lognorm = -float(self._N*numpy.log(numpy.pi*self._N*dt)/2.
+                             + numpy.log(p[kmin:kmax]).sum())
+            self._lognorm[det] = lognorm
+            return self._lognorm[det]
 
     @property
     def normalize(self):
@@ -920,7 +922,6 @@ class GaussianNoise(BaseGaussianNoise):
             self._loglr()
             # now try returning again
             return getattr(self._current_stats, '{}_optimal_snrsq'.format(det))
-
 
 
 #

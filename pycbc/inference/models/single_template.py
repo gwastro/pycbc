@@ -80,7 +80,7 @@ class SingleTemplate(BaseGaussianNoise):
             flow = self.kmin[ifo] * df
             fhigh = self.kmax[ifo] * df
             # Extend data to high sample rate
-            self.data[ifo].resize(flen) 
+            self.data[ifo].resize(flen)
             self.det[ifo] = Detector(ifo)
             snr, _, _ = pyfilter.matched_filter_core(
                 hp, self.data[ifo],
