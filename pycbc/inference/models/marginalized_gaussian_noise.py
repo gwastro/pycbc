@@ -151,7 +151,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
                 # calculate inner products
                 hh_i = h[self._kmin[det]:kmax].inner(
                     h[self._kmin[det]:kmax]).real
-                hd_i = self.data[det][self._kmin[det]:kmax].inner(
+                hd_i = self._whitened_data[det][self._kmin[det]:kmax].inner(
                     h[self._kmin[det]:kmax])
             # store
             setattr(self._current_stats, '{}_optimal_snrsq'.format(det), hh_i)
