@@ -26,10 +26,10 @@ from pycbc.filter.matchedfilter import matched_filter_core
 from pycbc.distributions import read_distributions_from_config
 from pycbc.waveform import generator
 
-from .gaussian_noise import GaussianNoise
+from .gaussian_noise import (BaseGaussianNoise, create_waveform_generator)
 
 
-class MarginalizedPhaseGaussianNoise(GaussianNoise):
+class MarginalizedPhaseGaussianNoise(BaseGaussianNoise):
     r"""The likelihood is analytically marginalized over phase.
 
     This class can be used with signal models that can be written as:
@@ -110,12 +110,38 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
     """
     name = 'marginalized_phase'
 
+    def __init__(self, variable_params, data, low_frequency_cutoff, psds=None,
+                 high_frequency_cutoff=None, normalize=False,
+                 static_params=None, **kwargs):
+        # set up the boiler-plate attributes
+        super(MarginalizedPhaseGaussianNoise, self).__init__(
+            variable_params, data, low_frequency_cutoff, psds=psds,
+            high_frequency_cutoff=high_frequency_cutoff, normalize=normalize,
+            static_params=static_params, **kwargs)
+        # create the waveform generator
+        self.waveform_generator = create_waveform_generator(
+            self.variable_params, self.data,
+            waveform_transforms=self.waveform_transforms,
+            recalibration=self.recalibration,
+            gates=self.gates, **self.static_params)
+
     @property
     def _extra_stats(self):
         """Adds ``loglr``, plus ``cplx_loglr`` and ``optimal_snrsq`` in each
         detector."""
         return ['loglr', 'maxl_phase'] + \
                ['{}_optimal_snrsq'.format(det) for det in self._data]
+
+    def _nowaveform_loglr(self):
+        """Convenience function to set loglr values if no waveform generated.
+        """
+        setattr(self._current_stats, 'loglikelihood', -numpy.inf)
+        # maxl phase doesn't exist, so set it to nan
+        setattr(self._current_stats, 'maxl_phase', numpy.nan)
+        for det in self._data:
+            # snr can't be < 0 by definition, so return 0
+            setattr(self._current_stats, '{}_optimal_snrsq'.format(det), 0.)
+        return -numpy.inf
 
     def _loglr(self):
         r"""Computes the log likelihood ratio,
@@ -131,7 +157,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self._waveform_generator.generate(**params)
+            wfs = self.waveform_generator.generate(**params)
         except NoWaveformError:
             return self._nowaveform_loglr()
         hh = 0.
@@ -162,7 +188,7 @@ class MarginalizedPhaseGaussianNoise(GaussianNoise):
         return numpy.log(special.i0e(hd)) + hd - 0.5*hh
 
 
-class MarginalizedGaussianNoise(GaussianNoise):
+class MarginalizedGaussianNoise(BaseGaussianNoise):
     r"""The likelihood is analytically marginalized over phase and/or time
     and/or distance.
 
@@ -602,7 +628,7 @@ class MarginalizedGaussianNoise(GaussianNoise):
         """
         params = self.current_params
         try:
-            wfs = self._waveform_generator.generate(**params)
+            wfs = self.waveform_generator.generate(**params)
         except NoWaveformError:
             return self._nowaveform_loglr()
         opt_snr = 0.
