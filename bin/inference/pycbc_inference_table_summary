@@ -45,11 +45,11 @@ parser.add_argument("--print-metadata", nargs="+", metavar="PARAM[:LABEL]",
                          "used. If nothing provided, will just print the "
                          "number of posterior samples that were used (this is "
                          "always printed).")
-parser.add_argument("--quantiles", type=float, nargs=3,
+parser.add_argument("--percentiles", type=float, nargs=3,
                     default=[5, 50, 95],
-                    help="Quantiles to calculate. Must provide 3 values. "
-                          "Default is 5 50 95 (the median with 90%% credible "
-                          "interval).")
+                    help="Percentiles to calculate. Must provide 3 values. "
+                         "Default is 5 50 95 (the median with 90%% credible "
+                         "interval).")
 
 # parse the command line
 opts = parser.parse_args()
@@ -85,17 +85,17 @@ else:
     # the sampler didn't save the loglikelihood
     maxlidx = None
 
-# make sure the quantiles are sorted
-opts.quantiles.sort()
+# make sure the percentiles are sorted
+opts.percentiles.sort()
 
 table = []
 for param in parameters:
     row = [labels[param]]
     # calculate the score at a given percentile
     x = samples[param]
-    quantiles = numpy.array([numpy.percentile(x, q)
-                              for q in sorted(opts.quantiles)])
-    values_min, values_med, values_max = quantiles
+    percentiles = numpy.array([numpy.percentile(x, q)
+                              for q in sorted(opts.percentiles)])
+    values_min, values_med, values_max = percentiles
     negerror = values_med - values_min
     poserror = values_max - values_med
     fmt = '${0}$'.format(results.format_value(
@@ -121,7 +121,7 @@ for param in parameters:
     table.append(row)
 
 # create table header
-interval = opts.quantiles[-1]-opts.quantiles[0]
+interval = opts.percentiles[-1]-opts.percentiles[0]
 headers = ["Parameter",
            "{0:d}% Credible Interval".format(int(interval)),
            "Maximum Posterior",
@@ -162,5 +162,5 @@ results.save_fig_with_metadata(
             "with the largest likelihood * prior. The maximum "
             "likelihood parameters are the parameters with the "
             "largest likelihood."
-            .format(int(interval), int(opts.quantiles[1]),
-                    int(opts.quantiles[2]), int(opts.quantiles[0])))
+            .format(int(interval), int(opts.percentiles[1]),
+                    int(opts.percentiles[2]), int(opts.percentiles[0])))
