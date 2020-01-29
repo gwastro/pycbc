@@ -304,7 +304,6 @@ for num_event, samples_filelist in enumerate(samples_files):
         workflow, posterior_file, rdir.base,
         parameters=table_params,
         analysis_seg=analysis_index,
-        #result_label=label,
         tags=opts.tags+[label]),)
 
     # summary posteriors
