@@ -48,7 +48,7 @@ parser.add_argument("--print-metadata", nargs="+", metavar="PARAM[:LABEL]",
 parser.add_argument("--quantiles", type=float, nargs=3,
                     default=[5, 50, 95],
                     help="Quantiles to calculate. Must provide 3 values. "
-                          "Default is 5 50 95 (the median with 90\% credible "
+                          "Default is 5 50 95 (the median with 90%% credible "
                           "interval).")
 
 # parse the command line
