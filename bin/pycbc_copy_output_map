@@ -1,0 +1,81 @@
+#!/bin/bash
+
+INPUT_FILE=""
+OUTPUT_FILE=""
+
+CMD_OPTS=$(getopt \
+    -o hi:o: \
+    -l help,input-file:,output-file: \
+    -n pycbc_copy_output_map \
+    -- "$@")
+
+eval set -- "$CMD_OPTS"
+
+while true
+do
+    case "$1" in
+	-h|--help)
+	    echo "usage: pycbc_copy_output_map [-h] input_map output_map [optional arguments]"
+	    echo
+	    echo "required arguments:"
+	    echo "  -i, --input-file      the .map file that will be copied from"
+	    echo "  -o, --output-file     the name of the output file to be created"
+	    echo
+	    echo "optional arguments:"
+	    echo "  -h, --help            show this help message and exit"
+	    echo
+	    exit 0 ;;
+	-i|--input-file)
+	    INPUT_FILE=$(readlink -f "$2")
+	    shift 2 ;;
+	-o|--output-file)
+	    OUTPUT_FILE=$(readlink -f "$2")
+	    shift 2 ;;
+	--)
+	    break ;;
+    esac
+done
+
+if [ "x$INPUT_FILE" == "x" ]
+then
+    echo "-i, --input-file must be specified, see -h, --help for options"
+    exit 1
+fi
+
+if [ "x$OUTPUT_FILE" == "x" ]
+then
+    echo "-o, --output-file must be specified, see -h, --help for options"
+    exit 1
+fi
+
+if [ ! -s "$INPUT_FILE" ]
+then
+    echo "$INPUT_FILE does not exist or is empty."
+    exit 1
+elif [[ "$INPUT_FILE" != *.map ]]
+then
+    echo "$INPUT_FILE is not a .map file."
+    exit 1
+fi
+
+if [ -f "$OUTPUT_FILE" ]
+then
+    echo "$OUTPUT_FILE already exists."
+    exit 1
+fi
+
+touch "$OUTPUT_FILE"
+
+while read -r LINE
+do
+    read -ra ARRAY <<< "$LINE"
+    if (( ${#ARRAY[@]} != 3 ))
+    then
+	echo "A line contained ${#ARRAY[@]} space seperated entries."
+	echo "A map file should contain 3 per line"
+	exit 1
+    elif [ -s "${ARRAY[1]}" ]
+    then
+	echo "$LINE" >> "$OUTPUT_FILE"
+    fi
+done < "$INPUT_FILE"
