@@ -445,8 +445,16 @@ class WorkflowConfigParser(glue.pipeline.DeepCopyableConfigParser):
 
     @classmethod
     def from_cli(cls, opts):
-        """Loads a config file from the given options, with overrides and
-        deletes applied.
+        """Initialize the config parser using options parsed from the command
+        line.
+
+        The parsed options ``opts`` must include options provided by
+        :py:func:`add_workflow_command_line_group`.
+
+        Parameters
+        -----------
+        opts : argparse.ArgumentParser
+            The command line arguments parsed by argparse
         """
         # read configuration file
         logging.info("Reading configuration file")
