@@ -137,10 +137,6 @@ for fp in fps:
                 current_val = format_attr(out.attrs[key])
             except KeyError:
                 out.attrs[key] = val
-                #try:
-                #    out.attrs[key] = val
-                #except TypeError:
-                #    out.attrs[key] = val.astype(numpy.string_)
                 current_val = format_attr(out.attrs[key])
             if not isthesame(current_val, val):
                 raise ValueError("cannot combine all files; file attr {} is "
