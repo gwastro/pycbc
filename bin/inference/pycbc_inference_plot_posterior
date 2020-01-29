@@ -42,7 +42,6 @@ from pycbc import __version__
 from pycbc import conversions
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import (option_utils, io)
-from pycbc import transforms
 
 from pycbc.results.scatter_histograms import create_multidim_plot
 
