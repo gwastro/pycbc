@@ -622,7 +622,7 @@ class Workflow(pegasus_workflow.Workflow):
         super(Workflow, self).__init__(name)
 
         # Parse ini file
-        self.cp = WorkflowConfigParser.from_args(args)
+        self.cp = WorkflowConfigParser.from_cli(args)
 
         # Set global values
         start_time = int(self.cp.get("workflow", "start-time"))
