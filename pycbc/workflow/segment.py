@@ -1434,6 +1434,7 @@ def get_segments_file(workflow, name, option_name, out_dir):
     if source == "file":
         local_file_path = \
             resolve_url(cp.get("workflow-segments", option_name+"-file"))
+        print local_file_path, out_dir
         return SegFile.from_segment_xml(local_file_path)
 
     segs = {}
