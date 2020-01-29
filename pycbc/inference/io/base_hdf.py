@@ -41,21 +41,29 @@ from pycbc.io import FieldArray
 from pycbc.inject import InjectionSet
 
 
-class _Attrs(object):
-    def __init__(self, fp):
-        self.fp = fp
-
-    def __getitem__(self, item):
-        val = super(BaseInferenceFile, self.fp).attrs[item]
-        print('here, woo')
-        try:
-            val = str(val.decode())
-        except AttributeError:
-            pass
-        #if isinstance(val, numpy.ndarray) and val.dtyp
-        return val
-
 def format_attr(val):
+    """Formats an attr so that it can be read in either python 2 or 3.
+
+    In python 2, strings that are saved as an attribute in an hdf file default
+    to unicode. Since unicode was removed in python 3, if you load that file
+    in a python 3 environment, the strings will be read as bytes instead, which
+    causes a number of issues. This attempts to fix that. If the value is
+    a bytes string, then it will be decoded into a string. If the value is
+    a numpy array of byte strings, it will convert the array to a list of
+    strings.
+
+    Parameters
+    ----------
+    val : obj
+        The value to format. This will try to apply decoding to the value
+
+    Returns
+    -------
+    obj
+        If ``val`` was a byte string, the value as a ``str``. If the value
+        was a numpy array of ``bytes_``, the value as a list of ``str``.
+        Otherwise, just returns the value.
+    """
     try:
         val = str(val.decode())
     except AttributeError:
