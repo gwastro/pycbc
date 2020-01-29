@@ -763,8 +763,8 @@ Center <https://www.gw-openscience.org>`_. Run:
 
   .. code-block:: bash
 
-     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/H-H1_GWOSC_4KHZ_R1-1126257415-4096.gwf
-     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_4KHZ_R1-1126257415-4096.gwf
+     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/H-H1_GWOSC_16KHZ_R1-1126257415-4096.gwf
+     wget https://www.gw-openscience.org/catalog/GWTC-1-confident/data/GW150914/L-L1_GWOSC_16KHZ_R1-1126257415-4096.gwf
 
 This will download the appropriate data ("frame") files to your current working
 directory.  You can now use the following data configuration file:
