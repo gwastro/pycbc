@@ -28,7 +28,6 @@ import numpy
 import logging
 import h5py as _h5py
 from pycbc.io.record import FieldArray, _numpy_function_lib
-from pycbc import transforms as _transforms
 from pycbc import waveform as _waveform
 
 from pycbc.inference.option_utils import (ParseLabelArg, ParseParametersArg)
@@ -649,18 +648,11 @@ def results_from_cli(opts, load_samples=True, **kwargs):
         if load_samples:
             logging.info("Loading samples")
 
-            # check if need extra parameters for a non-sampling parameter
-            file_parameters, ts = _transforms.get_common_cbc_transforms(
-                opts.parameters, fp.variable_params)
-
             # read samples from file
-            samples = fp.samples_from_cli(opts, parameters=file_parameters,
+            samples = fp.samples_from_cli(opts, parameters=opts.parameters,
                                           **kwargs)
 
             logging.info("Loaded {} samples".format(samples.size))
-
-            # add parameters not included in file
-            samples = _transforms.apply_transforms(samples, ts)
 
             if input_file in constraints:
                 logging.info("Applying constraints")

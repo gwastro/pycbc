@@ -39,7 +39,6 @@ use('agg')
 from matplotlib import pyplot
 
 import pycbc.results
-from pycbc import transforms
 
 from pycbc import __version__
 from pycbc.inference import (option_utils, io)
@@ -191,12 +190,9 @@ else:
                      "provided.")
 
 # get the samples
-file_parameters, trans = transforms.get_common_cbc_transforms(
-                                         parameters, fp.variable_params)
-samples = fp.samples_from_cli(opts, file_parameters, thin_start=thin_start,
+samples = fp.samples_from_cli(opts, parameters, thin_start=thin_start,
                               thin_interval=thinint, thin_end=thin_end,
                               iteration=itermask, flatten=False)
-samples = transforms.apply_transforms(samples, trans)
 if samples.ndim > 2:
     # multi-tempered samplers will return 3 dims, so flatten
     _, ii, jj = samples.shape

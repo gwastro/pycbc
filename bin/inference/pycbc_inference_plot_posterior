@@ -42,7 +42,6 @@ from pycbc import __version__
 from pycbc import conversions
 from pycbc.workflow import WorkflowConfigParser
 from pycbc.inference import (option_utils, io)
-from pycbc import transforms
 
 from pycbc.results.scatter_histograms import create_multidim_plot
 
@@ -130,10 +129,6 @@ if opts.plot_prior is not None:
     prior = option_utils.prior_from_config(cp)
     logging.info("Drawing samples from prior")
     prior_samples = prior.rvs(opts.prior_nsamples)
-    _, ts = transforms.get_common_cbc_transforms(
-        opts.parameters, prior_samples.fieldnames)
-    # add parameters not included in file
-    prior_samples = transforms.apply_transforms(prior_samples, ts)
 
 # get minimum and maximum ranges for each parameter from command line
 mins, maxs = option_utils.plot_ranges_from_cli(opts)
