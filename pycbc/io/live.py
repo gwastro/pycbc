@@ -14,6 +14,7 @@ from pycbc import version as pycbc_version
 from pycbc import pnutils
 from pycbc.tmpltbank import return_empty_sngl
 from pycbc.results import ifo_color
+from pycbc.results import source_color
 from pycbc.mchirp_area import calc_probabilities
 
 #FIXME Legacy build PSD xml helpers, delete me when we move away entirely from
@@ -303,6 +304,8 @@ class SingleCoincForGraceDB(object):
             test trigger (True) or a production trigger (False).
         """
         from ligo.gracedb.rest import GraceDb
+        import matplotlib
+        matplotlib.use('Agg')
         import pylab
 
         # first of all, make sure the event is saved on disk
@@ -361,8 +364,9 @@ class SingleCoincForGraceDB(object):
             prob_plot = {k: v for (k, v) in self.probabilities.items()
                          if v != 0.0}
             labels, sizes = zip(*prob_plot.items())
+            colors = [source_color(label) for label in labels]
             fig, ax = pylab.subplots()
-            ax.pie(sizes, labels=labels, autopct='%1.1f%%',
+            ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
                    textprops={'fontsize': 15})
             ax.axis('equal')
             fig.savefig(prob_plot_fname)
@@ -416,10 +420,11 @@ class SingleCoincForGraceDB(object):
             # upload source probabilities in json format and plot
             if self.probabilities is not None:
                 gracedb.writeLog(gid, 'source probabilities JSON file upload',
-                                 filename=prob_fname)
+                                 filename=prob_fname, tag_name=['em_follow'])
                 logging.info('Uploaded source probabilities for event %s', gid)
                 gracedb.writeLog(gid, 'source probabilities plot upload',
-                                 filename=prob_plot_fname)
+                                 filename=prob_plot_fname,
+                                 tag_name=['em_follow'])
                 logging.info('Uploaded source probabilities pie chart for '
                              'event %s', gid)
 
